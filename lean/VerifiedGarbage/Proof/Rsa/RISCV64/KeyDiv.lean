@@ -14,8 +14,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 In words of 64 bits, against `Div.div`'s non-restoring steps:
 
-* `passLoop_ok`: a step's pass over the remainder's `w + 1` words,
-  `2 [r] + c + ([d] ⊕ mask)` with its carries; `fixLoop_ok`: the final
+* `passLoop_ok`: a pass over the remainder's words one at a time,
+  `2 [r] + c + ([d] ⊕ mask)` with its carries; `pass4Loop_ok`: four at a
+  time (`passAt_ok` a word at an offset, `PassDone` what a pass has done to
+  its first words); `passes_ok`: a step's pass, `(k + 1) mod 4` words one at
+  a time, then the others four at a time. `fixLoop_ok`: the final
   `[r] + ([d] ∧ mask)`.
 * `qv`: the words of `[q]` after some of the quotient's bits, the dividend's
   bits not yet taken below them in the same word.
@@ -34,7 +37,7 @@ namespace VG.Proof.Rsa.RISCV64.Keys
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Loops
   VG.Impl.Bignum.RISCV64
 open VG.Impl.Rsa.RISCV64.Keys (ptr ptrs subN selBody mov)
-open VG.Impl.Rsa.RISCV64.Div (shlBody qword passBody fixBody fixK stepK divK init div wordsOf divL)
+open VG.Impl.Rsa.RISCV64.Div (shlBody qword passBody fixBody fixK stepK divK init div wordsOf divL passes)
 
 /-- The `w + 1` words of array `j` (the remainder of the division). -/
 abbrev num1 (m : Mem) (B : Addr) (w j : Nat) : Nat := wordsVal m B (arr w j) (w + 1)
@@ -188,6 +191,7 @@ theorem passLoop_ok {s : State} {B : Addr} {Z dO dB n : Nat} (hs : Scr s B Z) {b
     (hn : 1 ≤ n) (hn' : n < 2 ^ 32) (hO8 : dO % 8 = 0) (hB8 : dB % 8 = 0)
     (hO : dO + 8 * n ≤ Z) (hB : dB + 8 * n ≤ Z) (dOB : dO + 8 * n ≤ dB ∨ dB + 8 * n ≤ dO) :
     WP isa (countLoop .t2 passBody) s fun t =>
+      t.gpr .t0 = off B (dO + 8 * n) ∧ t.gpr .t1 = off B (dB + 8 * n) ∧
       (t.gpr .t3).toNat ≤ 1 ∧ (t.gpr .t4).toNat ≤ 1 ∧ t.gpr .t6 = word t.mem B (dO + 8 * (n - 1)) ∧
       wordsVal t.mem B dO n + 2 ^ (64 * n) * ((t.gpr .t3).toNat + (t.gpr .t4).toNat) +
           (if b then wordsVal s.mem B dB n + 1 else 0) =
@@ -209,7 +213,7 @@ theorem passLoop_ok {s : State} {B : Addr} {Z dO dB n : Nat} (hs : Scr s B Z) {b
     (fun i hi t ⟨j0, j1, j3, j4, j6, jout, jeq, jk⟩ hc => ?_)
     ⟨by rw [h0]; rfl, by rw [h1]; rfl, h3, h4, fun h => absurd h (Nat.lt_irrefl 0), Outside.refl _ _ _ _,
       by cases b <;> simp [wordsVal], Keep.refl _ _⟩ h2)
-    fun t ⟨_, _, j3, j4, j6, jout, jeq, jk⟩ => ⟨j3, j4, j6 (by omega_arith), jeq, jout, jk⟩
+    fun t ⟨j0, j1, j3, j4, j6, jout, jeq, jk⟩ => ⟨j0, j1, j3, j4, j6 (by omega_arith), jeq, jout, jk⟩
   have hs' := hs.congr jk.2.2
   have ja : t.gpr .a4 = dmask b := (jk.gpr (r := .a4) (by decide)).trans ha
   have hst : WP isa (.block (passBody ++ ([.addi .t2 .t2 (-1)] : List Instr))) t fun t' =>
@@ -254,6 +258,265 @@ theorem passLoop_ok {s : State} {B : Addr} {Z dO dB n : Nat} (hs : Scr s B Z) {b
       grind
     · simp only [ite_true] at k jeq ⊢
       grind
+
+/-! ## The pass four words at a time -/
+
+/-- What a pass has done to its first `i` words, from `s`: the carries bits, the
+last word written in `t6`, nothing but those words written, and the value. -/
+def PassDone (s t : State) (B : Addr) (dO dB : Nat) (b : Bool) (i : Nat) : Prop :=
+  (t.gpr .t3).toNat ≤ 1 ∧ (t.gpr .t4).toNat ≤ 1 ∧
+    (0 < i → t.gpr .t6 = word t.mem B (dO + 8 * (i - 1))) ∧ Outside B dO (8 * i) s.mem t.mem ∧
+    wordsVal t.mem B dO i + 2 ^ (64 * i) * ((t.gpr .t3).toNat + (t.gpr .t4).toNat) +
+        (if b then wordsVal s.mem B dB i + 1 else 0) =
+      2 * wordsVal s.mem B dO i + (s.gpr .t3).toNat + (s.gpr .t4).toNat +
+        (if b then 2 ^ (64 * i) else wordsVal s.mem B dB i)
+
+theorem PassDone.zero {s : State} {B : Addr} {dO dB : Nat} {b : Bool}
+    (h3 : (s.gpr .t3).toNat ≤ 1) (h4 : (s.gpr .t4).toNat ≤ 1) : PassDone s s B dO dB b 0 :=
+  ⟨h3, h4, fun h => absurd h (Nat.lt_irrefl 0), Outside.refl _ _ _ _, by cases b <;> simp [wordsVal]⟩
+
+/-- The value a pass writes to its word at `dO + 8 i`. -/
+abbrev passV (t : State) (B : Addr) (dO dB : Nat) (b : Bool) (i : Nat) : BitVec 64 :=
+  (word t.mem B (dO + 8 * i) <<< 1 ||| t.gpr .t3) + t.gpr .t4 + (word t.mem B (dB + 8 * i) ^^^ dmask b)
+
+/-- The addition's carry out of that word. -/
+abbrev passC (t : State) (B : Addr) (dO dB : Nat) (b : Bool) (i : Nat) : BitVec 64 :=
+  (if passV t B dO dB b i < word t.mem B (dB + 8 * i) ^^^ dmask b then (1 : BitVec 64) else 0) |||
+    (if (word t.mem B (dO + 8 * i) <<< 1 ||| t.gpr .t3) + t.gpr .t4 < t.gpr .t4 then 1 else 0)
+
+/-- One more word of a pass. -/
+theorem PassDone.step {s t t' : State} {B : Addr} {Z dO dB : Nat} {b : Bool} {i : Nat}
+    (hs : Scr s B Z) (hd : PassDone s t B dO dB b i)
+    (hO : dO + 8 * (i + 1) ≤ Z) (hB : dB + 8 * (i + 1) ≤ Z)
+    (dOB : dO + 8 * (i + 1) ≤ dB ∨ dB + 8 * (i + 1) ≤ dO)
+    (hm : t'.mem = t.mem.writeW (off B (dO + 8 * i)) (passV t B dO dB b i))
+    (h6 : t'.gpr .t6 = passV t B dO dB b i) (h3 : t'.gpr .t3 = word t.mem B (dO + 8 * i) >>> 63)
+    (h4 : t'.gpr .t4 = passC t B dO dB b i) : PassDone s t' B dO dB b (i + 1) := by
+  have hnw := hs.nowrap
+  obtain ⟨j3, j4, _, jout, jeq⟩ := hd
+  dsimp only [passV, passC] at hm h6 h4
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [h3]; exact (pass64_arith _ (word t.mem B (dB + 8 * i)) _ _ b j3 j4).2.1
+  · rw [h4]; exact (pass64_arith _ _ _ _ b j3 j4).2.2
+  · intro _; rw [h6, hm, Nat.add_sub_cancel, word_writeW_self]
+  · rw [hm]; exact out_step _ jout (by omega_arith)
+  · have wa : word t.mem B (dO + 8 * i) = word s.mem B (dO + 8 * i) := jout.word (by omega_arith) (by omega_arith)
+    have wb : word t.mem B (dB + 8 * i) = word s.mem B (dB + 8 * i) := jout.word (by omega_arith) (by omega_arith)
+    have k := (pass64_arith (word t.mem B (dO + 8 * i)) (word t.mem B (dB + 8 * i)) (t.gpr .t3) (t.gpr .t4)
+      b j3 j4).1
+    rw [← h3, ← h4, wa, wb] at k
+    rw [hm, fin64_wordsVal_write_top _ _ _ _ _ (by omega_arith), wordsVal_succ_top s.mem B dB i,
+      wordsVal_succ_top s.mem B dO i, Nat.mul_succ, Nat.pow_add, wa, wb]
+    generalize (word s.mem B (dO + 8 * i) <<< 1 ||| t.gpr .t3) + t.gpr .t4 +
+      (word s.mem B (dB + 8 * i) ^^^ dmask b) = o at k ⊢
+    generalize 2 ^ (64 * i) = P at jeq ⊢
+    cases b
+    · simp only [Bool.false_eq_true, ite_false] at k jeq ⊢
+      grind
+    · simp only [ite_true] at k jeq ⊢
+      grind
+
+theorem passAt_writes (o : Nat) :
+    writesOnly [.t3, .t4, .t5, .t6, .a5] (.block (VG.Impl.Rsa.RISCV64.Div.passAt o)) = true := by
+  rfl
+
+/-- `passAt o`: the pass's word at `dO + 8 i`, the pointers `o` before it. -/
+theorem passAt_ok {t : State} {B : Addr} {Z dO dB : Nat} (ht : Scr t B Z) {b : Bool} {i o : Nat}
+    (h0 : t.gpr .t0 = off B (dO + 8 * i - o)) (h1 : t.gpr .t1 = off B (dB + 8 * i - o))
+    (ha : t.gpr .a4 = dmask b) (ho : o < 2048) (hoi : o ≤ 8 * i) (hO8 : dO % 8 = 0) (hB8 : dB % 8 = 0)
+    (hO : dO + 8 * i + 8 ≤ Z) (hB : dB + 8 * i + 8 ≤ Z) :
+    WP isa (.block (VG.Impl.Rsa.RISCV64.Div.passAt o)) t fun t' =>
+      (t'.mem = t.mem.writeW (off B (dO + 8 * i)) (passV t B dO dB b i) ∧
+        t'.gpr .t6 = passV t B dO dB b i ∧ t'.gpr .t3 = word t.mem B (dO + 8 * i) >>> 63 ∧
+        t'.gpr .t4 = passC t B dO dB b i) ∧ Keep [.t3, .t4, .t5, .t6, .a5] t t' := by
+  refine WP.keep _ ?_ (passAt_writes o) (by rfl)
+  have e0 : dO + 8 * i - o + o = dO + 8 * i := by omega_arith
+  have e1 : dB + 8 * i - o + o = dB + 8 * i := by omega_arith
+  unfold VG.Impl.Rsa.RISCV64.Div.passAt
+  brun [h0, h1, ha, ho, e0, e1, ht.ld (show dO + 8 * i + 8 ≤ Z by omega_arith),
+    ht.ld (show dB + 8 * i + 8 ≤ Z by omega_arith), ht.st (show dO + 8 * i + 8 ≤ Z by omega_arith),
+    ht.al8 (show dO + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith),
+    ht.al8 (show dB + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith)]
+
+theorem PassDone.congr {s t t' : State} {B : Addr} {dO dB : Nat} {b : Bool} {i : Nat}
+    (hd : PassDone s t B dO dB b i) (hm : t'.mem = t.mem) (h3 : t'.gpr .t3 = t.gpr .t3)
+    (h4 : t'.gpr .t4 = t.gpr .t4) (h6 : t'.gpr .t6 = t.gpr .t6) : PassDone s t' B dO dB b i := by
+  obtain ⟨j3, j4, j6, jo, je⟩ := hd
+  exact ⟨h3 ▸ j3, h4 ▸ j4, fun h => by rw [h6, hm]; exact j6 h, hm ▸ jo, by rw [hm, h3, h4]; exact je⟩
+
+theorem rem4_ofNat (n : Nat) (h : n < 2 ^ 64) :
+    BitVec.ofNat 64 n &&& BitVec.ofNat 64 3 = BitVec.ofNat 64 (n % 4) := by
+  apply BitVec.eq_of_toNat_eq
+  have a := Nat.and_two_pow_sub_one_eq_mod n 2
+  simp only [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceSub, Nat.reduceMod] at a ⊢
+  rw [Nat.mod_eq_of_lt h, a]
+  omega_arith
+
+theorem quot4_ofNat (n : Nat) (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 2 = BitVec.ofNat 64 (n / 4) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega_arith
+
+/-- `g` times four words of a pass (`countLoop .t2 pass4`), after its first `r` words. -/
+theorem pass4Loop_ok {s t : State} {B : Addr} {Z dO dB r g : Nat} (hs : Scr s B Z) {b : Bool}
+    (hd : PassDone s t B dO dB b r) (hwr : t.wr = s.wr)
+    (h0 : t.gpr .t0 = off B (dO + 8 * r)) (h1 : t.gpr .t1 = off B (dB + 8 * r))
+    (h2 : t.gpr .t2 = BitVec.ofNat 64 g) (ha : t.gpr .a4 = dmask b)
+    (hg : 1 ≤ g) (hg' : g < 2 ^ 32) (hO8 : dO % 8 = 0) (hB8 : dB % 8 = 0)
+    (hO : dO + 8 * (r + 4 * g) ≤ Z) (hB : dB + 8 * (r + 4 * g) ≤ Z)
+    (dOB : dO + 8 * (r + 4 * g) ≤ dB ∨ dB + 8 * (r + 4 * g) ≤ dO) :
+    WP isa (countLoop .t2 VG.Impl.Rsa.RISCV64.Div.pass4) t fun u =>
+      PassDone s u B dO dB b (r + 4 * g) ∧ Keep passRegs t u := by
+  have hnw := hs.nowrap
+  let Inv : Nat → State → Prop := fun i u =>
+    u.gpr .t0 = off B (dO + 8 * (r + 4 * i)) ∧ u.gpr .t1 = off B (dB + 8 * (r + 4 * i)) ∧
+      PassDone s u B dO dB b (r + 4 * i) ∧ Keep passRegs t u
+  refine WP.mono (wp_countdown
+    (body := .block (VG.Impl.Rsa.RISCV64.Div.pass4 ++ ([.addi .t2 .t2 (-1)] : List Instr)))
+    (cnt := .t2) (N := g) (by omega_arith) (by omega_arith) Inv
+    (fun i hi u ⟨u0, u1, ud, uk⟩ _ => ?_)
+    ⟨by rw [h0, Nat.mul_zero, Nat.add_zero], by rw [h1, Nat.mul_zero, Nat.add_zero],
+      by rw [Nat.mul_zero, Nat.add_zero]; exact hd, Keep.refl _ _⟩ h2)
+    fun u ⟨_, _, ud, uk⟩ => ⟨ud, uk⟩
+  have hsu : Scr u B Z := hs.congr (uk.2.2.trans hwr)
+  have ua : u.gpr .a4 = dmask b := (uk.gpr (r := .a4) (by decide)).trans ha
+  obtain ⟨c, hc⟩ : ∃ c, r + 4 * i = c := ⟨_, rfl⟩
+  rw [hc] at u0 u1 ud
+  have hc4 : r + 4 * (i + 1) = c + 1 + 1 + 1 + 1 := by omega_arith
+  simp only [VG.Impl.Rsa.RISCV64.Div.pass4, List.append_assoc]
+  -- The four words.
+  rw [WP.block_append_iff]
+  refine WP.mono (passAt_ok hsu (b := b) (i := c) (o := 0) (by rw [u0, Nat.sub_zero])
+    (by rw [u1, Nat.sub_zero]) ua (by decide) (by omega_arith) hO8 hB8 (by omega_arith) (by omega_arith))
+    fun v1 ⟨⟨m1, e6, e3, e4⟩, k1⟩ => ?_
+  have d1 := PassDone.step hs ud (by omega_arith) (by omega_arith) (by omega_arith) m1 e6 e3 e4
+  have s1 : Scr v1 B Z := hsu.congr k1.2.2
+  have p0 : v1.gpr .t0 = off B (dO + 8 * c) := (k1.gpr (r := .t0) (by decide)).trans u0
+  have p1 : v1.gpr .t1 = off B (dB + 8 * c) := (k1.gpr (r := .t1) (by decide)).trans u1
+  have a1 : v1.gpr .a4 = dmask b := (k1.gpr (r := .a4) (by decide)).trans ua
+  rw [WP.block_append_iff]
+  refine WP.mono (passAt_ok s1 (b := b) (i := c + 1) (o := 8)
+    (by rw [p0, show dO + 8 * (c + 1) - 8 = dO + 8 * c by omega_arith])
+    (by rw [p1, show dB + 8 * (c + 1) - 8 = dB + 8 * c by omega_arith]) a1 (by decide) (by omega_arith)
+    hO8 hB8 (by omega_arith) (by omega_arith))
+    fun v2 ⟨⟨m2, f6, f3, f4⟩, k2⟩ => ?_
+  have d2 := PassDone.step hs d1 (by omega_arith) (by omega_arith) (by omega_arith) m2 f6 f3 f4
+  have s2 : Scr v2 B Z := s1.congr k2.2.2
+  have q0 : v2.gpr .t0 = off B (dO + 8 * c) := (k2.gpr (r := .t0) (by decide)).trans p0
+  have q1 : v2.gpr .t1 = off B (dB + 8 * c) := (k2.gpr (r := .t1) (by decide)).trans p1
+  have a2 : v2.gpr .a4 = dmask b := (k2.gpr (r := .a4) (by decide)).trans a1
+  rw [WP.block_append_iff]
+  refine WP.mono (passAt_ok s2 (b := b) (i := c + 1 + 1) (o := 16)
+    (by rw [q0, show dO + 8 * (c + 1 + 1) - 16 = dO + 8 * c by omega_arith])
+    (by rw [q1, show dB + 8 * (c + 1 + 1) - 16 = dB + 8 * c by omega_arith]) a2 (by decide) (by omega_arith)
+    hO8 hB8 (by omega_arith) (by omega_arith))
+    fun v3 ⟨⟨m3, g6, g3, g4⟩, k3⟩ => ?_
+  have d3 := PassDone.step hs d2 (by omega_arith) (by omega_arith) (by omega_arith) m3 g6 g3 g4
+  have s3 : Scr v3 B Z := s2.congr k3.2.2
+  have r0 : v3.gpr .t0 = off B (dO + 8 * c) := (k3.gpr (r := .t0) (by decide)).trans q0
+  have r1 : v3.gpr .t1 = off B (dB + 8 * c) := (k3.gpr (r := .t1) (by decide)).trans q1
+  have a3 : v3.gpr .a4 = dmask b := (k3.gpr (r := .a4) (by decide)).trans a2
+  rw [WP.block_append_iff]
+  refine WP.mono (passAt_ok s3 (b := b) (i := c + 1 + 1 + 1) (o := 24)
+    (by rw [r0, show dO + 8 * (c + 1 + 1 + 1) - 24 = dO + 8 * c by omega_arith])
+    (by rw [r1, show dB + 8 * (c + 1 + 1 + 1) - 24 = dB + 8 * c by omega_arith]) a3 (by decide)
+    (by omega_arith) hO8 hB8 (by omega_arith) (by omega_arith))
+    fun v4 ⟨⟨m4, h6, h3, h4⟩, k4⟩ => ?_
+  have d4 := PassDone.step hs d3 (by omega_arith) (by omega_arith) (by omega_arith) m4 h6 h3 h4
+  have w0 : v4.gpr .t0 = off B (dO + 8 * c) := (k4.gpr (r := .t0) (by decide)).trans r0
+  have w1 : v4.gpr .t1 = off B (dB + 8 * c) := (k4.gpr (r := .t1) (by decide)).trans r1
+  have w2 : v4.gpr .t2 = u.gpr .t2 :=
+    (k4.gpr (r := .t2) (by decide)).trans ((k3.gpr (r := .t2) (by decide)).trans
+      ((k2.gpr (r := .t2) (by decide)).trans (k1.gpr (r := .t2) (by decide))))
+  -- The pointers and the count.
+  have hb : WP isa (.block ([.addi .t0 .t0 32, .addi .t1 .t1 32] ++ ([.addi .t2 .t2 (-1)] : List Instr))) v4
+      fun x => (x.gpr .t0 = off B (dO + 8 * c + 32) ∧ x.gpr .t1 = off B (dB + 8 * c + 32) ∧
+        x.gpr .t2 = v4.gpr .t2 - BitVec.ofNat 64 1 ∧ x.mem = v4.mem) ∧ Keep [.t0, .t1, .t2] v4 x := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [w0, w1]
+  refine WP.mono hb fun x ⟨⟨x0, x1, x2, xm⟩, kx⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, by rw [x2, w2]⟩
+  · rw [x0, hc4, show dO + 8 * c + 32 = dO + 8 * (c + 1 + 1 + 1 + 1) by omega_arith]
+  · rw [x1, hc4, show dB + 8 * c + 32 = dB + 8 * (c + 1 + 1 + 1 + 1) by omega_arith]
+  · rw [hc4]
+    exact d4.congr xm (kx.gpr (by decide)) (kx.gpr (by decide)) (kx.gpr (by decide))
+  · exact Keep.trans' uk ((((k1.trans k2).trans k3).trans k4).trans kx |>.mono (by decide))
+
+/-- A step's pass over `k + 1` words (`passes kr`, `[kr] = k`): the same as `passLoop_ok`'s. -/
+theorem passes_ok {s : State} {B : Addr} {Z dO dB k : Nat} (hs : Scr s B Z) {b : Bool} {kr : Reg}
+    (h0 : s.gpr .t0 = off B dO) (h1 : s.gpr .t1 = off B dB) (hk : s.gpr kr = BitVec.ofNat 64 k)
+    (hkr : kr ∉ passRegs) (h3 : (s.gpr .t3).toNat ≤ 1) (h4 : (s.gpr .t4).toNat ≤ 1)
+    (ha : s.gpr .a4 = dmask b) (hk' : k < 2 ^ 31) (hO8 : dO % 8 = 0) (hB8 : dB % 8 = 0)
+    (hO : dO + 8 * (k + 1) ≤ Z) (hB : dB + 8 * (k + 1) ≤ Z)
+    (dOB : dO + 8 * (k + 1) ≤ dB ∨ dB + 8 * (k + 1) ≤ dO) :
+    WP isa (VG.Impl.Rsa.RISCV64.Div.passes kr) s fun t =>
+      (t.gpr .t3).toNat ≤ 1 ∧ (t.gpr .t4).toNat ≤ 1 ∧ t.gpr .t6 = word t.mem B (dO + 8 * (k + 1 - 1)) ∧
+      wordsVal t.mem B dO (k + 1) + 2 ^ (64 * (k + 1)) * ((t.gpr .t3).toNat + (t.gpr .t4).toNat) +
+          (if b then wordsVal s.mem B dB (k + 1) + 1 else 0) =
+        2 * wordsVal s.mem B dO (k + 1) + (s.gpr .t3).toNat + (s.gpr .t4).toNat +
+          (if b then 2 ^ (64 * (k + 1)) else wordsVal s.mem B dB (k + 1)) ∧
+      Outside B dO (8 * (k + 1)) s.mem t.mem ∧ Keep passRegs s t := by
+  have hnw := hs.nowrap
+  have hkr2 : kr ≠ .t2 := fun e => hkr (e ▸ by decide)
+  unfold VG.Impl.Rsa.RISCV64.Div.passes
+  rw [WP.seq_iff]
+  have hb1 : WP isa (.block [.addi .t2 kr 1, .logicImm .and .t2 .t2 3]) s fun x =>
+      (x.gpr .t2 = BitVec.ofNat 64 ((k + 1) % 4) ∧ x.mem = s.mem) ∧ Keep [.t2] s x := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [exec_addi_nat (show 1 < 2048 by decide), hk, hkr2]
+    rw [← BitVec.ofNat_add]; exact rem4_ofNat _ (by omega_arith)
+  refine WP.mono hb1 fun x1 ⟨⟨x12, xm1⟩, kx1⟩ => ?_
+  have sx1 : Scr x1 B Z := hs.congr kx1.2.2
+  have hd0 : PassDone s x1 B dO dB b 0 :=
+    (PassDone.zero h3 h4).congr xm1 (kx1.gpr (by decide)) (kx1.gpr (by decide)) (kx1.gpr (by decide))
+  -- The first `(k + 1) mod 4` words, one at a time.
+  have hq1 : WP isa (.ite (.zero .t2) (.block []) (countLoop .t2 passBody)) x1 fun y =>
+      y.gpr .t0 = off B (dO + 8 * ((k + 1) % 4)) ∧ y.gpr .t1 = off B (dB + 8 * ((k + 1) % 4)) ∧
+        PassDone s y B dO dB b ((k + 1) % 4) ∧ Keep passRegs x1 y := by
+    refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by omega_arith) x12) (fun hz => ?_) (fun hz => ?_)
+    · have hr : (k + 1) % 4 = 0 := of_decide_eq_true hz
+      rw [hr]
+      exact WP.block_nil ⟨by rw [kx1.gpr (by decide), h0]; rfl, by rw [kx1.gpr (by decide), h1]; rfl, hd0,
+        Keep.refl _ _⟩
+    · have hr : 1 ≤ (k + 1) % 4 := Nat.pos_of_ne_zero (of_decide_eq_false hz)
+      refine WP.mono (passLoop_ok sx1 (b := b) (dO := dO) (dB := dB) (n := (k + 1) % 4)
+        (by rw [kx1.gpr (by decide), h0]) (by rw [kx1.gpr (by decide), h1]) x12
+        (by rw [kx1.gpr (by decide)]; exact h3) (by rw [kx1.gpr (by decide)]; exact h4)
+        (by rw [kx1.gpr (by decide)]; exact ha) hr (by omega_arith) hO8 hB8 (by omega_arith) (by omega_arith)
+        (by omega_arith)) fun y ⟨y0, y1, y3, y4, y6, yeq, yout, ky⟩ => ⟨y0, y1, ⟨y3, y4, fun _ => y6, ?_, ?_⟩, ky⟩
+      · rw [xm1] at yout; exact yout
+      · rw [xm1, kx1.gpr (r := .t3) (by decide), kx1.gpr (r := .t4) (by decide)] at yeq; exact yeq
+  rw [WP.seq_iff]
+  refine WP.mono hq1 fun y ⟨y0, y1, yd, ky⟩ => ?_
+  rw [WP.seq_iff]
+  have kxy : Keep passRegs s y := (kx1.trans ky).mono (by decide)
+  have yk : y.gpr kr = BitVec.ofNat 64 k := (kxy.gpr hkr).trans hk
+  have hb2 : WP isa (.block [.addi .t2 kr 1, .shift .srl .d .t2 .t2 2]) y fun x =>
+      (x.gpr .t2 = BitVec.ofNat 64 ((k + 1) / 4) ∧ x.mem = y.mem) ∧ Keep [.t2] y x := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [exec_addi_nat (show 1 < 2048 by decide), yk, hkr2]
+    rw [← BitVec.ofNat_add]; exact quot4_ofNat _ (by omega_arith)
+  refine WP.mono hb2 fun x2 ⟨⟨x22, xm2⟩, kx2⟩ => ?_
+  have yd2 : PassDone s x2 B dO dB b ((k + 1) % 4) :=
+    yd.congr xm2 (kx2.gpr (by decide)) (kx2.gpr (by decide)) (kx2.gpr (by decide))
+  have hfin : ∀ u, PassDone s u B dO dB b (k + 1) → Keep passRegs s u →
+      (u.gpr .t3).toNat ≤ 1 ∧ (u.gpr .t4).toNat ≤ 1 ∧ u.gpr .t6 = word u.mem B (dO + 8 * (k + 1 - 1)) ∧
+      wordsVal u.mem B dO (k + 1) + 2 ^ (64 * (k + 1)) * ((u.gpr .t3).toNat + (u.gpr .t4).toNat) +
+          (if b then wordsVal s.mem B dB (k + 1) + 1 else 0) =
+        2 * wordsVal s.mem B dO (k + 1) + (s.gpr .t3).toNat + (s.gpr .t4).toNat +
+          (if b then 2 ^ (64 * (k + 1)) else wordsVal s.mem B dB (k + 1)) ∧
+      Outside B dO (8 * (k + 1)) s.mem u.mem ∧ Keep passRegs s u :=
+    fun u ⟨u3, u4, u6, uo, ue⟩ uk => ⟨u3, u4, u6 (by omega_arith), ue, uo, uk⟩
+  have kxy2 : Keep passRegs s x2 := (kxy.trans kx2).mono (by decide)
+  refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by omega_arith) x22) (fun hz => ?_) (fun hz => ?_)
+  · have hq : (k + 1) / 4 = 0 := of_decide_eq_true hz
+    refine WP.block_nil (hfin x2 ?_ kxy2)
+    rw [show k + 1 = (k + 1) % 4 by omega_arith]; exact yd2
+  · have hq : 1 ≤ (k + 1) / 4 := Nat.pos_of_ne_zero (of_decide_eq_false hz)
+    refine WP.mono (pass4Loop_ok hs (r := (k + 1) % 4) (g := (k + 1) / 4) yd2
+      ((kxy2.2.2)) (by rw [kx2.gpr (by decide)]; exact y0) (by rw [kx2.gpr (by decide)]; exact y1) x22
+      (by rw [kxy2.gpr (by decide), ha]) hq (by omega_arith) hO8 hB8 (by omega_arith) (by omega_arith)
+      (by omega_arith)) fun u ⟨ud, uk⟩ => hfin u ?_ ((kxy2.trans uk).mono (by decide))
+    rw [show k + 1 = (k + 1) % 4 + 4 * ((k + 1) / 4) by omega_arith]; exact ud
 
 /-- The registers the final correction changes. -/
 abbrev fixRegs : List Reg := [.t0, .t1, .t3, .t4, .t5, .t6, .a5]
@@ -558,14 +821,14 @@ theorem step_run {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
   have hx3 := hx2.of_keep k3
   have k3r : x3.gpr kr = BitVec.ofNat 64 k := by
     rw [k3.gpr (kr_nmem hkd), k2.gpr (kr_nmem hkd), k1.gpr (kr_nmem hkd), hkr]
-  have hb3 : WP isa (.block [.logicImm .and .t4 .a4 1, .addi .t2 kr 1]) x3 fun x =>
-      (x.gpr .t4 = x3.gpr .a4 &&& BitVec.ofNat 64 1 ∧ x.gpr .t2 = BitVec.ofNat 64 (k + 1) ∧ x.mem = x3.mem) ∧
-        Keep [.t2, .t4] x3 x := by
+  have hb3 : WP isa (.block [.logicImm .and .t4 .a4 1]) x3 fun x =>
+      (x.gpr .t4 = x3.gpr .a4 &&& BitVec.ofNat 64 1 ∧ x.mem = x3.mem) ∧ Keep [.t4] x3 x := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
-    have hk4 : kr ≠ .t4 := fun e => hkd (e ▸ by decide)
-    brun [exec_addi_nat (show 1 < 2048 by decide), k3r, hk4]
-    exact (BitVec.ofNat_add _ _).symm
-  refine WP.mono hb3 fun x4 ⟨⟨x44, x42, m4⟩, k4⟩ => ?_
+    brun []
+  have hk4 : kr ≠ .t4 := fun e => hkd (e ▸ by decide)
+  refine WP.mono hb3 fun x4 ⟨⟨x44, m4⟩, k4⟩ => ?_
+  have x4k : x4.gpr kr = BitVec.ofNat 64 k := by rw [k4.gpr (by simp [hk4]), k3r]
+  have hkp : kr ∉ passRegs := kr_nmem hkd
   have k14 : Keep [.t0, .t1, .t2, .t3, .t4, .t5] s x4 := ((k12.trans k3).trans k4).mono (by decide)
   have hx4 := h.of_keep k14
   have a4 : x4.gpr .a4 = dmask bm := (k14.gpr (r := .a4) (by decide)).trans ha
@@ -576,9 +839,9 @@ theorem step_run {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
   have t1 : x4.gpr .t1 = off B (arr w d) := by rw [k4.gpr (r := .t1) (by decide), p1]
   have mx : x4.mem = s.mem := by rw [m4, m3, m2]
   rw [WP.seq_iff]
-  refine WP.mono (passLoop_ok hx4.scr (b := bm) (dO := arr w r) (dB := arr w d) (n := k + 1) t0 t1 x42
+  refine WP.mono (passes_ok hx4.scr (b := bm) (dO := arr w r) (dB := arr w d) (k := k) t0 t1 x4k hkp
     (by rw [t3]; exact (shl64_arith _ 0 (by decide)).2) (by rw [x44, a3, mask_and_one]; split <;> decide)
-    a4 (by omega_arith) (by omega_arith) (arr_al _ _) (arr_al _ _) (by omega_arith) (by omega_arith)
+    a4 (by omega_arith) (arr_al _ _) (arr_al _ _) (by omega_arith) (by omega_arith)
     (by omega_arith)) fun y ⟨_, _, y6, yeq, yout, ky⟩ => ?_
   have hy := hx4.of_keep ky
   have k1y : Keep divRegs s y := Keep.trans' (k14.mono (by decide)) (ky.mono (by decide))
