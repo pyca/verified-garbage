@@ -889,7 +889,7 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
   have n10 : wordsVal s₁₀.mem B (slot w 0) w = Pv := c10.n
   have hR2 : A s₁₀.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % Pv := by
     rw [m10, p9, r8, ← Nat.pow_add]; congr 2; omega_arith
-  refine WP.mono (powWin_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
+  refine WP.mono (powWin1_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
     (by rw [n10]; exact hP2) (by rw [n10]; exact hodd)
     (by rw [n10, show wordsVal s₁₀.mem B (slot w 1) w = _ from hR2]; exact Nat.mod_lt _ (by omega_arith)) a9 a10 hL hL'
     (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot, t1⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩

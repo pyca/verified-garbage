@@ -759,8 +759,9 @@ theorem byteWin_ok {s₀ t₀ u : State} {B D : Addr} {Z w N X RR c i : Nat} (ho
 /-- `powWin`: `x^d mod m` into array 4, for `x` in array 4, `m` (odd, at least
 2) in array 0, something below `m` in array 1 (if `R² mod m`, the result is
 right) and the `L ≥ 1` bytes of `d` at `D` (`s9`, `s10`), apart from the
-working space of 24 arrays, of which it writes only arrays 1–23. -/
-theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w)
+working space of 24 arrays, of which it writes only arrays 1–23, keeping array 1's
+value. -/
+theorem powWin1_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w)
     (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
     (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
     (hinv : ((Mont.word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
@@ -822,5 +823,24 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   · show A t.mem B w 1 = RR
     rw [v 1 (by decide) (by decide) (by decide) (by decide),
       hu.fix 1 (by decide) (by decide) (by decide) (by decide) (by decide), t01, ← hRRd]
+
+/-- `powWin`, without what it leaves in array 1. -/
+theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hinv : ((Mont.word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hN : 2 ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1)
+    (hRRlt : wordsVal s.mem B (slot w 1) w < wordsVal s.mem B (slot w 0) w)
+    (h9 : s.gpr .s9 = off D 0) (h10 : s.gpr .s10 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, VG.Proof.Bignum.ofs B x < Z → off D i ≠ x) :
+    WP isa powWin s fun t =>
+      ((wordsVal s.mem B (slot w 1) w = 2 ^ (64 * w) * 2 ^ (64 * w) % wordsVal s.mem B (slot w 0) w →
+          wordsVal t.mem B (slot w 4) w =
+            wordsVal s.mem B (slot w 4) w ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) %
+              wordsVal s.mem B (slot w 0) w) ∧
+        WinO B w s.mem t.mem) ∧ Keep powWRegs s t :=
+  WP.mono (powWin1_ok hs hw2 hw' hZ h7 h5 ht0 hinv hN hodd hRRlt h9 h10 hL hL' hrd hsep)
+    fun _ ⟨⟨hp, o, _⟩, k⟩ => ⟨⟨hp, o⟩, k⟩
 
 end VG.Proof.Bignum.RISCV64.Win
