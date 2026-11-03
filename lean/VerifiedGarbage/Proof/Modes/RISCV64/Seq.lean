@@ -100,6 +100,9 @@ theorem fb_toNat' {s₀ : State} (hfit : 8 * c.total ≤ s₀.sp.toNat) :
 theorem fb_toNat {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat = s₀.sp.toNat - 8 * c.total :=
   fb_toNat' hp.spFit
 
+theorem fb_al {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat % 4 = 0 := by
+  rw [fb_toNat hp]; have := hp.spAl; omega
+
 /-- The frame, from inside `bigFrame`, for any function in the modes' frame. -/
 theorem scrIn_of' {s₀ t : State} (hs : s₀.sp.toNat % 16 = 0) (hsp : 8 * c.total ≤ s₀.sp.toNat)
     (hL : Layout c) (ht : FrameAt (8 * c.total) s₀ t)
@@ -163,6 +166,13 @@ def ivAreas (c : Core) (P B : Addr) : Loc → Addr
   | .dat => P
   | .chn => slotA B Core.chnSlot
   | .buf => slotA B c.buf
+
+/-- The IV's copies access only the frame a word at a time. -/
+theorem ivAreas_al {s₀ : State} (hp : SeqPre c M s₀) (P : Addr) :
+    ∀ l, Core.wordAt false l = true → (ivAreas c P (Fb s₀ c) l).toNat % 4 = 0
+  | .dat, h => by cases h
+  | .chn, _ => al4 (fb_al hp) (by simp [Core.chnSlot])
+  | .buf, _ => al4 (fb_al hp) (by omega)
 
 theorem ivAreasOk {s₀ s : State} (hp : SeqPre c M s₀) (hS : ScrIn s (Fb s₀ c) c.total)
     (hb : s.gpr sb = Fb s₀ c) (h2 : s.gpr .s2 = P s₀) {ws : List Loc} (hws : ∀ l ∈ ws, l = .dat → ivR s₀ c ∈ s.wr)
@@ -334,8 +344,8 @@ theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.to
   simp only [Core.ivIn, mov]
   -- The IV to the chaining value.
   have hS₉ : ScrIn s₉ (Fb s₀ c) c.total := hS.congr h₉.wr
-  refine opsCode_wp c (ws := [.chn]) (copyBlk_ok (List.mem_singleton_self _) fun _ => rfl)
-    (ivAreasOk hp hS₉ h₉.b h₉.s2 (fun l hl e => by simp at hl; subst hl; cases e)
+  refine opsCode_wp c false (ws := [.chn]) (ivAreas_al hp _) (copyBlk_ok (List.mem_singleton_self _) fun _ => rfl)
+    (copyBlk_wordAl _ _ _) (ivAreasOk hp hS₉ h₉.b h₉.s2 (fun l hl e => by simp at hl; subst hl; cases e)
       (by rw [h₉.rd, h₉.wr]; obtain ⟨ws, hws⟩ := ht.wr; rw [hws]
           rcases List.mem_append.mp hp.ivRd with h | h
           · exact List.mem_append_left _ h
@@ -613,12 +623,12 @@ theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : Sta
       exact fr₄.trans (f.sub fun r hr => ⟨_, List.mem_cons_self, by
         simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
   · rw [show (if true = true then c.ivBack else []) ++ Core.restore =
-      mov .s2 .s1 :: (c.opsCode (copyBlk c.bw .dat .chn) ++ Core.restore) by simp [Core.ivBack]]
+      mov .s2 .s1 :: (c.opsCode false (copyBlk c.bw .dat .chn) ++ Core.restore) by simp [Core.ivBack]]
     refine wp_mv fun s₅ u₅ => ?_
     have b₅ : s₅.gpr sb = Fb s₀ c := by rw [u₅.other _ (by decide)]; exact h₄.b
     have ivW : ivR s₀ c ∈ s₅.wr := by rw [u₅.wr, wr₄, hws]; exact List.mem_append_right _ (hp.ivWr hiv)
-    refine opsCode_wp c (ws := [.dat]) (copyBlk_ok (List.mem_singleton_self _) fun _ => rfl)
-      (ivAreasOk hp (hS₄.congr u₅.wr) b₅ (by rw [u₅.gpr, s1₄]) (fun _ _ _ => ivW)
+    refine opsCode_wp c false (ws := [.dat]) (ivAreas_al hp _) (copyBlk_ok (List.mem_singleton_self _) fun _ => rfl)
+      (copyBlk_wordAl _ _ _) (ivAreasOk hp (hS₄.congr u₅.wr) b₅ (by rw [u₅.gpr, s1₄]) (fun _ _ _ => ivW)
         (List.mem_append_right _ ivW)) fun s₆ a₆ f₆ g₆ rd₆ wr₆ => ?_
     rw [u₅.mem] at a₆ f₆
     have ivOnly : ∀ {R : Region}, R.Disjoint (ivR s₀ c) → ∀ r ∈ areaRegions (fun _ => 4 * c.bw)
@@ -666,31 +676,72 @@ theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : Sta
       subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
 /-- One step at a time. -/
-theorem steps_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key}
+theorem steps_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {w : Bool}
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
-    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) : LoopsOk cs M F s₀ k (c.steps M) := fun _ hFx hI =>
-  WP.mono (loop_wp cs hFx rfl hpre hpost hcomp (chunksAt_length _ _ _ _) hI) fun _ h =>
-    h.done (chunksAt_length _ _ _ _)
+    (hpreA : ∀ o ∈ M.pre, WordAl o) (hpostA : ∀ o ∈ M.post, WordAl o)
+    (hD : w = true → (Dp s₀).toNat % 4 = 0 ∧ M.step % 4 = 0)
+    (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) : LoopsOk cs M F s₀ k (c.steps w M) := fun _ hFx hI =>
+  WP.mono (loop_wp cs hFx ⟨hpreA, hpostA, by have := hFx.scr.al; omega, hD⟩ rfl hpre hpost hcomp
+    (chunksAt_length _ _ _ _) hI) fun _ h => h.done (chunksAt_length _ _ _ _)
+
+theorem and3 (x : BitVec 64) : x &&& BitVec.ofInt 64 3 = BitVec.ofNat 64 (x.toNat % 4) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, show (BitVec.ofInt 64 3).toNat = 2 ^ 2 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
+  omega
+
+/-- The loops `L w`, `w` whether the data's address is a multiple of 4, as
+`Core.aligned` chooses them. -/
+theorem aligned_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {L : Bool → Prog isa}
+    (h : ∀ w, (w = true → (Dp s₀).toNat % 4 = 0 ∧ M.step % 4 = 0) → LoopsOk cs M F s₀ k (L w)) :
+    LoopsOk cs M F s₀ k (Core.aligned M.step L) := by
+  unfold Core.aligned
+  split
+  · rename_i hst
+    intro s₂ hFx hI
+    refine WP.seq (WP.of_syms (wp_andi (imm := 3) (by decide) fun s₃ u₃ => WP.block_nil fun sy₃ => ?_))
+    have o₃ : ∀ r, r ≠ .t0 → s₃.gpr r = s₂.gpr r := u₃.other
+    have hF₃ : Fixed c s₃ (Fb s₀ c) (Dp s₀) (N s₀) M.step (4 * c.bw) (wrs0 c M s₀) (N s₀) 1 :=
+      ⟨hFx.scr.congr u₃.wr, by rw [u₃.wr]; exact hFx.dataW, hFx.dataFit, hFx.dataScr, hFx.nFit, hFx.cnt,
+        hFx.dec, hFx.step, hFx.buf, hFx.dataIn, hFx.scrIn, hFx.layout⟩
+    have hI₃ : Inv cs s₃ (Fb s₀ c) (Dp s₀) (N s₀) M.step (wrs0 c M s₀) (N s₀) 1 k F (iv0 c s₀) (xs0 M s₀) 0 s₃ :=
+      ⟨by rw [o₃ _ (by decide)]; exact hI.b, fun _ _ _ _ => rfl, rfl, rfl,
+        by rw [o₃ _ (by decide)]; exact hI.dp, by rw [o₃ _ (by decide)]; exact hI.np,
+        cs.ready_frame (rs := []) hI.ready (fun r hr _ _ _ _ => o₃ r (kept_ne r hr).1) u₃.rd u₃.wr sy₃
+          (by rw [u₃.mem]; exact Frame.refl _ _) (fun _ h => nomatch h) (fun _ h => nomatch h),
+        by rw [u₃.mem]; exact hI.data, by rw [u₃.mem]; exact hI.chn, Frame.refl _ _⟩
+    have back : ∀ {t}, Done (c := c) s₃ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀) t →
+        Done (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀) t := fun d =>
+      ⟨d.b, fun r hr h3 h2 => by rw [d.keep r hr h3 h2, o₃ r (kept_ne r hr).1], by rw [d.rd, u₃.rd],
+        by rw [d.wr, u₃.wr], d.data, d.chn, by rw [← u₃.mem]; exact d.frame⟩
+    have ev : isa.eval (.zero .t0) s₃ = some (decide ((Dp s₀).toNat % 4 = 0)) := by
+      have e : s₂.gpr .s2 = Dp s₀ := by rw [hI.dp, Nat.mul_zero]; simp
+      rw [eval_zero, u₃.gpr, e, and3, ofNat_beq_zero (by omega)]
+    exact WP.ite _ ev (fun hd => WP.mono (h true (fun _ => ⟨by simpa using hd, hst⟩) s₃ hF₃ hI₃) fun _ d => back d)
+      (fun _ => WP.mono (h false (fun e => by cases e) s₃ hF₃ hI₃) fun _ d => back d)
+  · exact h false fun e => by cases e
 
 /-- `seq_wp`, and what the function changes (`Changes`). -/
 theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
+    (hpreA : ∀ o ∈ M.pre, WordAl o) (hpostA : ∀ o ∈ M.post, WordAl o)
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
       (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
       Changes c M s₀ s' :=
-  seqWith_changes_wp cs hp (steps_ok cs hpre hpost hcomp) hk
+  seqWith_changes_wp cs hp (aligned_ok cs fun _ hD => steps_ok cs hpre hpost hpreA hpostA hD hcomp) hk
 
 theorem seq_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c M.step (4 * c.bw)))
+    (hpreA : ∀ o ∈ M.pre, WordAl o) (hpostA : ∀ o ∈ M.post, WordAl o)
     (hcomp : Computes M (4 * c.bw) (cs.cipher k) F) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
       (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) :=
-  WP.mono (seq_changes_wp cs hp hpre hpost hcomp hk) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
+  WP.mono (seq_changes_wp cs hp hpre hpost hpreA hpostA hcomp hk) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
 end VG.Proof.Modes.RISCV64
