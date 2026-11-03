@@ -4,6 +4,7 @@
 //! random moduli of every length and top byte, valid or not.
 #![cfg(target_arch = "riscv64")]
 use verified_garbage_asm_riscv64::rsa_proto16::*;
+use verified_garbage_asm_riscv64::rsa_proto16b::vg_p16_precompute_proven;
 
 fn hex(s: &str) -> Vec<u8> {
     (0..s.len())
@@ -31,7 +32,8 @@ fn pre(f: Pre, n: &[u8]) -> (u32, Vec<u64>) {
     (r, p)
 }
 
-const FS: [(&str, Pre); 3] = [
+const FS: [(&str, Pre); 4] = [
+    ("proven", vg_p16_precompute_proven),
     ("top", vg_p16_precompute_top),
     ("sqr", vg_p16_precompute_sqr),
     ("both", vg_p16_precompute_both),
