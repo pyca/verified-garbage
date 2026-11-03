@@ -36,49 +36,56 @@ open VG.RISCV64 VG.Impl.Words.RISCV64
 /-- The scratch buffer to `a5`, the number of blocks to `a4`, the data to `a3`. -/
 def blocksSetup : List Instr := [movR sb .a4, movR .a4 .a3, movR .a3 .a2]
 
-/-- Load data block `b`: bytes 0–7 into `q b`, bytes 8–15 into `q (b + 4)`. -/
-def loadBlock (b : Nat) : List Instr :=
-  loadLE64 (q b) t0 t1 .a3 (16 * b) ++ loadLE64 (q (b + 4)) t0 t1 .a3 (16 * b + 8)
+/-- Load data block `b`: bytes 0–7 into `q b`, bytes 8–15 into `q (b + 4)`, by
+doublewords if `w` (the data aligned), else a byte at a time. -/
+def loadBlock (w : Bool) (b : Nat) : List Instr :=
+  loadLE64W w (q b) t0 t1 .a3 (16 * b) ++ loadLE64W w (q (b + 4)) t0 t1 .a3 (16 * b + 8)
 
 /-- Store `q b` and `q (b + 4)` to data block `b`. -/
-def storeBlock (b : Nat) : List Instr :=
-  storeLE64 (q b) t0 t1 .a3 (16 * b) ++ storeLE64 (q (b + 4)) t0 t1 .a3 (16 * b + 8)
+def storeBlock (w : Bool) (b : Nat) : List Instr :=
+  storeLE64W w (q b) t0 t1 .a3 (16 * b) ++ storeLE64W w (q (b + 4)) t0 t1 .a3 (16 * b + 8)
 
 /-- Four blocks. -/
-def loadFull : List Instr := (List.range 4).flatMap loadBlock
+def loadFull (w : Bool) : List Instr := (List.range 4).flatMap (loadBlock w)
 
 /-- The last one to three blocks. -/
-def loadTail : Prog isa :=
-  .seq (.block (loadBlock 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
-    (.ite (.nonzero t0) (.seq (.block (loadBlock 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
-        (.ite (.zero t0) (.block (loadBlock 2)) (.block [])))
+def loadTail (w : Bool) : Prog isa :=
+  .seq (.block (loadBlock w 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
+    (.ite (.nonzero t0) (.seq (.block (loadBlock w 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
+        (.ite (.zero t0) (.block (loadBlock w 2)) (.block [])))
       (.block []))
 
 /-- Four blocks, and on to the next four. -/
-def storeFull : List Instr :=
-  (List.range 4).flatMap storeBlock ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr)
+def storeFull (w : Bool) : List Instr :=
+  (List.range 4).flatMap (storeBlock w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr)
 
 /-- The last one to three blocks (and none left). -/
-def storeTail : Prog isa :=
-  .seq (.block (storeBlock 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
-    (.seq (.ite (.nonzero t0) (.seq (.block (storeBlock 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
-        (.ite (.zero t0) (.block (storeBlock 2)) (.block [])))
+def storeTail (w : Bool) : Prog isa :=
+  .seq (.block (storeBlock w 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
+    (.seq (.ite (.nonzero t0) (.seq (.block (storeBlock w 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
+        (.ite (.zero t0) (.block (storeBlock w 2)) (.block [])))
       (.block []))
     (.block [.li .a4 0]))
 
-/-- One group of (up to) four blocks, through `crypt4`. -/
-def blockGroup (crypt4 : Prog isa) : Prog isa :=
+/-- One group of (up to) four blocks, through `crypt4`, by doublewords if `w`. -/
+def blockGroup (w : Bool) (crypt4 : Prog isa) : Prog isa :=
   .seq (.block [shrI t0 .a4 2])
-    (.seq (.ite (.nonzero t0) (.block loadFull) loadTail)
+    (.seq (.ite (.nonzero t0) (.block (loadFull w)) (loadTail w))
       (.seq crypt4
-        (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block storeFull) storeTail))))
+        (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (storeFull w)) (storeTail w)))))
+
+/-- The groups: by doublewords if the data's address is a multiple of 8
+(`t0 = a3 ∧ 7`, of a public address), else a byte at a time. -/
+def groups (crypt4 : Prog isa) : Prog isa :=
+  .seq (.block [.logicImm .and t0 .a3 7])
+    (.ite (.zero t0) (.loop (blockGroup true crypt4) (.nonzero .a4)) (.loop (blockGroup false crypt4) (.nonzero .a4)))
 
 /-- The whole function, around `crypt4`. -/
 def blocks (crypt4 : Prog isa) : Prog isa :=
   .seq (.block (blocksSetup ++ roundSb ++ saveRegs ++ maskInit ++ keySetup))
     (.seq (.loop (.block keyBody) (.nonzero .a1))
       (.seq (.block keyDone)
-        (.seq (.ite (.zero .a4) (.block []) (.loop (blockGroup crypt4) (.nonzero .a4)))
+        (.seq (.ite (.zero .a4) (.block []) (groups crypt4))
           (.block restoreRegs))))
 
 /-- A middle round of the inverse cipher, with `kp` at the previous round

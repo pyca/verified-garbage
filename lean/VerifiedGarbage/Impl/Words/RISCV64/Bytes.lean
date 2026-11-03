@@ -44,4 +44,14 @@ into `hi`); `tmp` and `hi` are clobbered. `tmp` is neither `v`, `hi` nor
 def storeLE64 (v tmp hi n : Reg) (off : Nat) : List Instr :=
   storeLE32 v tmp n off ++ [.shift .srl .d hi v 32] ++ storeLE32 hi tmp n (off + 4)
 
+/-- `loadLE64`, or, when `w` (the address known to be a multiple of 8), one
+`ld`. -/
+def loadLE64W (w : Bool) (d tmp hi n : Reg) (off : Nat) : List Instr :=
+  if w then [.load .d d n off] else loadLE64 d tmp hi n off
+
+/-- `storeLE64`, or, when `w` (the address known to be a multiple of 8), one
+`sd`. -/
+def storeLE64W (w : Bool) (v tmp hi n : Reg) (off : Nat) : List Instr :=
+  if w then [.store .d v n off] else storeLE64 v tmp hi n off
+
 end VG.Impl.Words.RISCV64

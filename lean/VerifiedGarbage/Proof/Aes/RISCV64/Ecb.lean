@@ -156,16 +156,19 @@ theorem q_mem : ∀ c < 8, q c ∈ sboxWrites := by decide
 
 section Load
 
-variable {m₀ : Mem} {D : Addr} {n g : Nat} {F : Nat → Spec.Aes.State} {s₀ : State}
+variable {wd : Bool} {m₀ : Mem} {D : Addr} {n g : Nat} {F : Nat → Spec.Aes.State} {s₀ : State}
 
 /-- Before the load phase of group `g`. -/
-structure LPre (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₀ : State) : Prop where
+structure LPre (wd : Bool) (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₀ : State) :
+    Prop where
   hg : 4 * g < n
   hn : 16 * n < 2 ^ 64
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr
   a3 : s₀.gpr .a3 = D + BitVec.ofNat 64 (64 * g)
   a4 : s₀.gpr .a4 = BitVec.ofNat 64 (n - 4 * g)
   data : EcbInv m₀ s₀.mem D n (4 * g) F
+  /-- The data's address a multiple of 8, for loads by doublewords. -/
+  al : wd = true → D.toNat % 8 = 0
 
 /-- After `k` blocks of the group have been loaded, from `s₀`. -/
 structure LS (m₀ : Mem) (D : Addr) (g : Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -183,27 +186,28 @@ theorem ls_t0 {k : Nat} {s s' : State} {v : BitVec 64} (hs : LS m₀ D g s₀ k 
     fun r h => (u.other r (fun e => h (e ▸ by decide))).trans (hs.keep r h),
     fun c hc => by rw [hQ]; exact hs.blk c hc⟩
 
-theorem ls_step (hp : LPre m₀ D n g F s₀) {k : Nat} (hk : k < 4) (hkn : 4 * g + k < n) {s : State}
+theorem ls_step (hp : LPre wd m₀ D n g F s₀) {k : Nat} (hk : k < 4) (hkn : 4 * g + k < n) {s : State}
     (hs : LS m₀ D g s₀ k s) {P : State → Prop} (h : ∀ s', LS m₀ D g s₀ (k + 1) s' → P s') :
-    WP isa (.block (loadBlock k)) s P := by
+    WP isa (.block (loadBlock wd k)) s P := by
   have hn := hp.hn
   have hA : ∀ d, s.gpr .a3 + BitVec.ofNat 64 (16 * k + d) =
       D + BitVec.ofNat 64 (16 * (4 * g + k) + d) := fun d => by
     rw [hs.keep _ (by decide), hp.a3, Offset.add_add]; congr 2; omega_arith
   have hD : (⟨D, 16 * n⟩ : Region) ∈ s.rd ++ s.wr := List.mem_append_right _ (hs.wr ▸ hp.dat)
-  have hin : ∀ d, d + 4 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)) 4 :=
+  have hin : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)) 8 :=
     fun d hd => by rw [hA]; exact in_off hD (by omega_arith) hn
+  have hal : ∀ d, d % 8 = 0 → wd = true → (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)).toNat % 8 = 0 :=
+    fun d hd hw => by rw [hA]; exact VG.RISCV64.Align.al_add (hp.al hw) (k := 8) (by decide) (by omega_arith)
   obtain ⟨n1, n2, n3, -, -, -, -, n8, n9, n10, n11⟩ := q_c4 k hk
   unfold loadBlock
   rw [WP.block_append_iff]
-  refine WP.mono (Bytes.loadLE64_ok (d := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
+  refine WP.mono (loadLE64W_ok (d := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
     n1 (by decide) (by decide) n8 n9 (by decide) (by omega_arith) (by simpa using hin 0 (by omega))
-    (hin 4 (by omega))) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
+    (fun hw => by simpa using hal 0 (by omega) hw)) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
   have a₁ : s₁.gpr .a3 = s.gpr .a3 := g₁ _ (Ne.symm n1) (by decide) (by decide)
-  refine WP.mono (Bytes.loadLE64_ok (d := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
+  refine WP.mono (loadLE64W_ok (d := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
     (off := 16 * k + 8) n2 (by decide) (by decide) n10 n11 (by decide) (by omega_arith)
-    (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega))
-    (by rw [a₁, rd₁, wr₁, show 16 * k + 8 + 4 = 16 * k + 12 by omega]; exact hin 12 (by omega)))
+    (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega)) (fun hw => by rw [a₁]; exact hal 8 (by omega) hw))
     fun s₂ ⟨e₂, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have g1 : s₂.gpr (q k) = s.mem.readW (D + BitVec.ofNat 64 (16 * (4 * g + k))) 64 := by
     rw [g₂ _ n3 n8 n9, e₁]
@@ -237,15 +241,15 @@ theorem ls_zero {s : State} (hg : ∀ r, r ≠ t0 → s.gpr r = s₀.gpr r) (hm 
   ⟨hm, hrd, hwr, hsp, fun r hr => hg r (fun e => hr (e ▸ by decide)),
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
-theorem loadFull_eq : loadFull = loadBlock 0 ++ loadBlock 1 ++ loadBlock 2 ++ loadBlock 3 := by
+theorem loadFull_eq : loadFull wd = loadBlock wd 0 ++ loadBlock wd 1 ++ loadBlock wd 2 ++ loadBlock wd 3 := by
   simp only [loadFull, List.range_succ, List.range_zero, List.nil_append, List.flatMap_append,
     List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
 
 /-- The loads of a group, after `srli t0, a4, 2`. -/
-theorem loadIte_wp (hp : LPre m₀ D n g F s₀) {s : State}
+theorem loadIte_wp (hp : LPre wd m₀ D n g F s₀) {s : State}
     (hev : isa.eval (.nonzero t0) s = some (decide (4 ≤ n - 4 * g)))
     (hls : LS m₀ D g s₀ 0 s) :
-    WP isa (.ite (.nonzero t0) (.block loadFull) loadTail) s fun s' =>
+    WP isa (.ite (.nonzero t0) (.block (loadFull wd)) (loadTail wd)) s fun s' =>
       LS m₀ D g s₀ (min 4 (n - 4 * g)) s' := by
   have hg := hp.hg
   have hn := hp.hn
@@ -297,10 +301,11 @@ end Load
 
 section Store
 
-variable {m₀ : Mem} {D : Addr} {n g : Nat} {F : Nat → Spec.Aes.State} {s₃ : State}
+variable {wd : Bool} {m₀ : Mem} {D : Addr} {n g : Nat} {F : Nat → Spec.Aes.State} {s₃ : State}
 
 /-- Before the store phase of group `g`: the results are in the words. -/
-structure SPre (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₃ : State) : Prop where
+structure SPre (wd : Bool) (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₃ : State) :
+    Prop where
   hg : 4 * g < n
   hn : 16 * n < 2 ^ 64
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₃.wr
@@ -309,6 +314,8 @@ structure SPre (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) 
   data : EcbInv m₀ s₃.mem D n (4 * g) F
   out : ∀ c < 4, 4 * g + c < n → ∀ t < 16,
     (s₃.gpr (q (c + 4 * (t / 8)))).extractLsb' (8 * (t % 8)) 8 = (F (4 * g + c)).getD t 0
+  /-- The data's address a multiple of 8, for stores by doublewords. -/
+  al : wd = true → D.toNat % 8 = 0
 
 /-- After `k` blocks of the group have been stored, from `s₃`. -/
 structure SS (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₃ : State) (k : Nat)
@@ -329,30 +336,31 @@ def SDone (m₀ : Mem) (D : Addr) (n g : Nat) (F : Nat → Spec.Aes.State) (s₃
      (4 * g + 4 < n ∧ EcbInv m₀ s.mem D n (4 * (g + 1)) F ∧
       s.gpr .a3 = D + BitVec.ofNat 64 (64 * (g + 1)) ∧ s.gpr .a4 = BitVec.ofNat 64 (n - 4 * (g + 1))))
 
-theorem ss_step (hp : SPre m₀ D n g F s₃) {k : Nat} (hk : k < 4) (hkn : 4 * g + k < n) {s : State}
+theorem ss_step (hp : SPre wd m₀ D n g F s₃) {k : Nat} (hk : k < 4) (hkn : 4 * g + k < n) {s : State}
     (hs : SS m₀ D n g F s₃ k s) {P : State → Prop} (h : ∀ s', SS m₀ D n g F s₃ (k + 1) s' → P s') :
-    WP isa (.block (storeBlock k)) s P := by
+    WP isa (.block (storeBlock wd k)) s P := by
   have hn := hp.hn
   have hA : ∀ d, s.gpr .a3 + BitVec.ofNat 64 (16 * k + d) =
       D + BitVec.ofNat 64 (16 * (4 * g + k) + d) := fun d => by
     rw [hs.keep _ (by decide) (by decide), hp.a3, Offset.add_add]; congr 2; omega_arith
   have hD : (⟨D, 16 * n⟩ : Region) ∈ s.wr := hs.wr ▸ hp.dat
-  have hin : ∀ d, d + 4 ≤ 16 → InRegions s.wr (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)) 4 :=
+  have hin : ∀ d, d + 8 ≤ 16 → InRegions s.wr (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)) 8 :=
     fun d hd => by rw [hA]; exact in_off hD (by omega_arith) hn
+  have hal : ∀ d, d % 8 = 0 → wd = true → (s.gpr .a3 + BitVec.ofNat 64 (16 * k + d)).toNat % 8 = 0 :=
+    fun d hd hw => by rw [hA]; exact VG.RISCV64.Align.al_add (hp.al hw) (k := 8) (by decide) (by omega_arith)
   obtain ⟨-, -, -, -, -, -, -, n8, n9, n10, n11⟩ := q_c4 k hk
   have A0 : s.gpr .a3 + BitVec.ofNat 64 (16 * k) = D + BitVec.ofNat 64 (16 * (4 * g + k)) := by
     simpa using hA 0
   unfold storeBlock
   rw [WP.block_append_iff]
-  refine WP.mono (Bytes.storeLE64_ok (v := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
+  refine WP.mono (storeLE64W_ok (v := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
     (Ne.symm n8) (by decide) (by decide) (by decide) (by omega_arith) (by simpa using hin 0 (by omega))
-    (hin 4 (by omega))) fun s₁ ⟨m₁, g₁, rd₁, wr₁, sp₁⟩ => ?_
+    (fun hw => by simpa using hal 0 (by omega) hw)) fun s₁ ⟨m₁, g₁, rd₁, wr₁, sp₁⟩ => ?_
   have a₁ : s₁.gpr .a3 = s.gpr .a3 := g₁ _ (by decide) (by decide)
   have v₁ : s₁.gpr (q (k + 4)) = s.gpr (q (k + 4)) := g₁ _ n10 n11
-  refine WP.mono (Bytes.storeLE64_ok (v := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
+  refine WP.mono (storeLE64W_ok (v := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
     (off := 16 * k + 8) (Ne.symm n10) (by decide) (by decide) (by decide) (by omega_arith)
-    (by rw [a₁, wr₁]; exact hin 8 (by omega))
-    (by rw [a₁, wr₁, show 16 * k + 8 + 4 = 16 * k + 12 by omega]; exact hin 12 (by omega)))
+    (by rw [a₁, wr₁]; exact hin 8 (by omega)) (fun hw => by rw [a₁]; exact hal 8 (by omega) hw))
     fun s₂ ⟨m₂, g₂, rd₂, wr₂, sp₂⟩ => ?_
   have e1 : s.gpr .a3 + BitVec.ofNat 64 (16 * k + 4) =
       s.gpr .a3 + BitVec.ofNat 64 (16 * k) + BitVec.ofNat 64 4 := (Offset.add_add _ _ _).symm
@@ -377,19 +385,19 @@ theorem ss_t0 {k : Nat} {s s' : State} {v : BitVec 64} (hs : SS m₀ D n g F s�
   ⟨u.mem ▸ hs.data, u.mem ▸ hs.frame, fun r h h' => (u.other r h).trans (hs.keep r h h'),
     u.rd.trans hs.rd, u.wr.trans hs.wr, u.sp.trans hs.sp⟩
 
-theorem ss_zero (hp : SPre m₀ D n g F s₃) {s : State} (hg : ∀ r, r ≠ t0 → s.gpr r = s₃.gpr r)
+theorem ss_zero (hp : SPre wd m₀ D n g F s₃) {s : State} (hg : ∀ r, r ≠ t0 → s.gpr r = s₃.gpr r)
     (hm : s.mem = s₃.mem) (hrd : s.rd = s₃.rd) (hwr : s.wr = s₃.wr) (hsp : s.sp = s₃.sp) :
     SS m₀ D n g F s₃ 0 s :=
   ⟨by rw [hm, Nat.add_zero]; exact hp.data, by rw [hm]; exact Frame.refl _ _,
     fun r h _ => hg r h, hrd, hwr, hsp⟩
 
-theorem storeFull_eq : storeFull = storeBlock 0 ++ storeBlock 1 ++ storeBlock 2 ++ storeBlock 3 ++
+theorem storeFull_eq : storeFull wd = storeBlock wd 0 ++ storeBlock wd 1 ++ storeBlock wd 2 ++ storeBlock wd 3 ++
     ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr) := by
   simp only [storeFull, List.range_succ, List.range_zero, List.nil_append, List.flatMap_append,
     List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
 
-theorem storePhase_wp (hp : SPre m₀ D n g F s₃) :
-    WP isa (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block storeFull) storeTail)) s₃
+theorem storePhase_wp (hp : SPre wd m₀ D n g F s₃) :
+    WP isa (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (storeFull wd)) (storeTail wd))) s₃
       (SDone m₀ D n g F s₃) := by
   have hg := hp.hg
   have hn := hp.hn
@@ -546,19 +554,26 @@ section Group
 variable {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
   {m₀ : Mem} {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byte}
 
+theorem EInv.of_t0 {g : Nat} {s s' : State} {v : BitVec 64} (h : EInv f m₀ s₂ b D n R w g s)
+    (u : Upd s s' t0 v) : EInv f m₀ s₂ b D n R w g s' :=
+  ⟨h.hg, by rw [u.other _ (by decide)]; exact h.a3, by rw [u.other _ (by decide)]; exact h.a4,
+    by rw [u.other _ (by decide)]; exact h.base, by rw [u.other _ (by decide)]; exact h.a0,
+    by rw [u.other _ (by decide)]; exact h.ra, u.rd.trans h.rd, u.wr.trans h.wr, u.sp.trans h.sp,
+    u.mem ▸ h.frame, u.mem ▸ h.data⟩
+
 /-- One group: from before group `g`, to after the last group (`a4 = 0`) or
 before group `g + 1`. -/
-theorem ecbGroup_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {g : Nat} {s : State}
-    (hi : EInv f m₀ s₂ b D n R w g s) :
-    WP isa (blockGroup crypt4) s fun s' =>
+theorem ecbGroup_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {wd : Bool}
+    (hal : wd = true → D.toNat % 8 = 0) {g : Nat} {s : State} (hi : EInv f m₀ s₂ b D n R w g s) :
+    WP isa (blockGroup wd crypt4) s fun s' =>
       (isa.eval (.nonzero .a4) s' = some false ∧ EDone f m₀ s₂ b D n R w s') ∨
       (isa.eval (.nonzero .a4) s' = some true ∧ EInv f m₀ s₂ b D n R w (g + 1) s') := by
   have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
   have hn := hs.hn
   have hg := hi.hg
   unfold blockGroup
-  have lp : LPre m₀ D n g (ecbOut f m₀ D R w) s :=
-    ⟨hg, hn, hi.wr ▸ hs.dat, hi.a3, hi.a4, hi.data⟩
+  have lp : LPre wd m₀ D n g (ecbOut f m₀ D R w) s :=
+    ⟨hg, hn, hi.wr ▸ hs.dat, hi.a3, hi.a4, hi.data, hal⟩
   refine shr2_wp (k := n - 4 * g) (by omega_arith) hi.a4 fun s₁ u₁ ev₁ => ?_
   refine WP.seq (WP.mono (loadIte_wp lp ev₁
     (ls_zero (fun r h => u₁.other r h) u₁.mem u₁.rd u₁.wr u₁.sp)) fun s₃ l => ?_)
@@ -571,8 +586,8 @@ theorem ecbGroup_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {g :
   refine WP.seq (WP.mono (hcr hp (inRel_regBlock (Q s₃))) fun s₄ ⟨hc₄, hin₄⟩ => ?_)
   have fr₄ := hc₄.frame
   rw [hb₃] at fr₄
-  have sp : SPre m₀ D n g (ecbOut f m₀ D R w) s₄ :=
-    { hg := hg, hn := hn, dat := by rw [hc₄.wr, l.wr, hi.wr]; exact hs.dat
+  have sp : SPre wd m₀ D n g (ecbOut f m₀ D R w) s₄ :=
+    { hg := hg, hn := hn, al := hal, dat := by rw [hc₄.wr, l.wr, hi.wr]; exact hs.dat
       a3 := by rw [hc₄.keep .a3 (by decide) (by decide), l.keep .a3 (by decide), hi.a3]
       a4 := by rw [hc₄.keep .a4 (by decide) (by decide), l.keep .a4 (by decide), hi.a4]
       data := ecbInv_frame fr₄ (by simpa using hs.d320) hn (by rw [l.mem]; exact hi.data)
@@ -602,11 +617,11 @@ theorem ecbGroup_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {g :
     rw [keep .a0 (by decide) (by decide) (by decide) (by decide), hi.a0]
 
 /-- The loop over the groups. -/
-theorem ecbGroups_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {s : State}
-    (hi : EInv f m₀ s₂ b D n R w 0 s) :
-    WP isa (.loop (blockGroup crypt4) (.nonzero .a4)) s (EDone f m₀ s₂ b D n R w) := by
+theorem ecbGroups_ok (hcr : CryptOk crypt4 f) (hs : ESetup s₂ X b D n R w) {wd : Bool}
+    (hal : wd = true → D.toNat % 8 = 0) {s : State} (hi : EInv f m₀ s₂ b D n R w 0 s) :
+    WP isa (.loop (blockGroup wd crypt4) (.nonzero .a4)) s (EDone f m₀ s₂ b D n R w) := by
   refine WP.loop (M := isa) (fun k s => ∃ g, k = n - 4 * g ∧ EInv f m₀ s₂ b D n R w g s)
-    (fun k s ⟨g, hk, hg⟩ => WP.mono (ecbGroup_ok hcr hs hg) fun s' h => ?_) n s ⟨0, by omega_arith, hi⟩
+    (fun k s ⟨g, hk, hg⟩ => WP.mono (ecbGroup_ok hcr hs hal hg) fun s' h => ?_) n s ⟨0, by omega_arith, hi⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨z, d⟩
   · exact .inr ⟨z, n - 4 * (g + 1), by have := hg.hg; omega_arith, g + 1, rfl, d⟩

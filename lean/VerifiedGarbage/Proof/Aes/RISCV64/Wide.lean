@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
 import VerifiedGarbage.Proof.AesCbc.Spec
+import VerifiedGarbage.Proof.Aes.RISCV64.Common
 
 -- separate module: the generic proof of `wide`, which each mode's (`WideCbc.lean`, and CFB128
 -- decryption's and XTS's) imports, apart from them so that changing one rebuilds no other.
@@ -207,6 +208,42 @@ theorem data_st (ha : s.gpr .a3 = D + BitVec.ofNat 64 (64 * g))
   rw [m, hA0, show s.gpr .a3 + BitVec.ofNat 64 (off + 4) = D + BitVec.ofNat 64 (64 * g + off) + BitVec.ofNat 64 4 by
     simp only [ha, Offset.add_add, Nat.add_assoc], Words64.writeW64_split]
 
+/-- `data_ld` by `loadLE64W w`, `D` a multiple of 8 when `w`. -/
+theorem data_ldW {w : Bool} (hal : w = true → D.toNat % 8 = 0) (ho8 : off % 8 = 0)
+    (ha : s.gpr .a3 = D + BitVec.ofNat 64 (64 * g))
+    (hin : (⟨D, 16 * n⟩ : Region) ∈ s.rd ++ s.wr) (hn : 16 * n < 2 ^ 64) (ho : 64 * g + off + 8 ≤ 16 * n)
+    (ho' : off + 7 < 2048) {d : Reg} (hd : d ≠ .a3 ∧ d ≠ t0 ∧ d ≠ t1) :
+    WP isa (.block (loadLE64W w d t0 t1 .a3 off)) s fun s' =>
+      s'.gpr d = s.mem.readW (D + BitVec.ofNat 64 (64 * g + off)) 64 ∧
+      (∀ r, r ≠ d → r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have hA0 : s.gpr .a3 + BitVec.ofNat 64 off = D + BitVec.ofNat 64 (64 * g + off) := by
+    rw [ha, Offset.add_add]
+  refine WP.mono (loadLE64W_ok (d := d) (tmp := t0) (hi := t1) (n := .a3) (off := off)
+    hd.1 (by decide) (by decide) hd.2.1 hd.2.2 (by decide) ho'
+    (by rw [hA0]; exact in_off hin (by omega) hn)
+    (fun hw => by rw [hA0]; exact Align.al_add (hal hw) (k := 8) (by decide) (by omega)))
+    fun s' ⟨e, o, m, rd, wr, sp⟩ => ⟨?_, o, m, rd, wr, sp⟩
+  rw [e, hA0]
+
+/-- `data_st` by `storeLE64W w`, `D` a multiple of 8 when `w`. -/
+theorem data_stW {w : Bool} (hal : w = true → D.toNat % 8 = 0) (ho8 : off % 8 = 0)
+    (ha : s.gpr .a3 = D + BitVec.ofNat 64 (64 * g))
+    (hin : (⟨D, 16 * n⟩ : Region) ∈ s.wr) (hn : 16 * n < 2 ^ 64) (ho : 64 * g + off + 8 ≤ 16 * n)
+    (ho' : off + 7 < 2048) {v : Reg} (hv : t0 ≠ v) :
+    WP isa (.block (storeLE64W w v t0 t1 .a3 off)) s fun s' =>
+      s'.mem = s.mem.writeW (D + BitVec.ofNat 64 (64 * g + off)) (s.gpr v) ∧
+      (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have hA0 : s.gpr .a3 + BitVec.ofNat 64 off = D + BitVec.ofNat 64 (64 * g + off) := by
+    rw [ha, Offset.add_add]
+  refine WP.mono (storeLE64W_ok (v := v) (tmp := t0) (hi := t1) (n := .a3) (off := off)
+    hv (by decide) (by decide) (by decide) ho'
+    (by rw [hA0]; exact in_off hin (by omega) hn)
+    (fun hw => by rw [hA0]; exact Align.al_add (hal hw) (k := 8) (by decide) (by omega)))
+    fun s' ⟨m, o, rd, wr, sp⟩ => ⟨?_, o, rd, wr, sp⟩
+  rw [m, hA0, show s.gpr .a3 + BitVec.ofNat 64 (off + 4) = D + BitVec.ofNat 64 (64 * g + off) + BitVec.ofNat 64 4 by
+    simp only [ha, Offset.add_add, Nat.add_assoc], Words64.writeW64_split]
+
 end Data
 
 /-! ## What a group may change -/
@@ -396,6 +433,14 @@ structure WideOk (s₀ : State) (load store : Nat → List Instr)
   done : ∀ {s₉ X b}, FSetup true (16 * ·) s₀ s₉ X b → ∀ g m Q, 4 * g < (s₀.gpr .a4).toNat →
     (s₀.gpr .a4).toNat ≤ 4 * g + 4 → S b g ((s₀.gpr .a4).toNat - 4 * g) m Q →
     EcbInv s₀.mem m (s₀.gpr .a3) (s₀.gpr .a4).toNat (s₀.gpr .a4).toNat F ∧ slotBlk m b stLo = Fin
+
+/-- `WideOk` for both ways of a mode's loads and stores (`load w`,
+`store w`): by doublewords (`w`) when the data is aligned. -/
+def WideOkA (s₀ : State) (load store : Bool → Nat → List Instr)
+    (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State)
+    (L S : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop) (F : Nat → Spec.Aes.State)
+    (Fin : Spec.Aes.State) : Prop :=
+  ∀ w, (w = true → (s₀.gpr .a3).toNat % 8 = 0) → WideOk s₀ (load w) (store w) f L S F Fin
 
 /-- Before group `g`. -/
 def WI (s₀ s₉ : State) (b : Addr) (L : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop) (g : Nat)
@@ -625,22 +670,62 @@ theorem wideLoop_wp (hc : CryptOk crypt4 f) {s : State} (hi : WI s₀ s₉ b L 0
 
 end Group
 
+section GroupA
+
+variable {load store : Bool → Nat → List Instr} {crypt4 : Prog isa}
+  {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+  {L S : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop} {F : Nat → Spec.Aes.State}
+  {Fin : Spec.Aes.State} {s₀ s₉ : State} {X b : Addr}
+  (hw : WideOkA s₀ load store f L S F Fin) (hs : FSetup true (16 * ·) s₀ s₉ X b)
+include hw hs
+
+/-- A group of `wideA`: by doublewords if the data is aligned. -/
+theorem wideGroupA_wp (hc : CryptOk crypt4 f) {g : Nat} {s : State} (hi : WI s₀ s₉ b L g s) :
+    WP isa (wideGroupA load store crypt4) s fun s' =>
+      (isa.eval (.nonzero .a4) s' = some false ∧ WD s₀ s₉ b F Fin s') ∨
+        (isa.eval (.nonzero .a4) s' = some true ∧ WI s₀ s₉ b L (g + 1) s') := by
+  obtain ⟨hg, hb, hl⟩ := hi
+  unfold wideGroupA
+  refine WP.seq (wp_andi (imm := 7) (by decide) fun s₁ u₁ => WP.block_nil ?_)
+  have hi₁ : WI s₀ s₉ b L g s₁ :=
+    ⟨hg, hb.foot (Foot.upd u₁ (by decide)), by rw [u₁.mem, Q_upd u₁ fun i => (q_neW i).1]; exact hl⟩
+  have e : (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g)).toNat % 8 = (s₀.gpr .a3).toNat % 8 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  have ev : isa.eval (.zero t0) s₁ = some (decide ((s₀.gpr .a3).toNat % 8 = 0)) := by
+    rw [Steps.eval_zero, u₁.gpr, hb.a3, and7, Steps.ofNat_beq_zero (by omega), e]
+  exact WP.ite _ ev (fun h => wideGroup_wp (hw true fun _ => by simpa using h) hs hc hi₁)
+    (fun _ => wideGroup_wp (hw false fun h => Bool.noConfusion h) hs hc hi₁)
+
+/-- The loop over `wideA`'s groups. -/
+theorem wideLoopA_wp (hc : CryptOk crypt4 f) {s : State} (hi : WI s₀ s₉ b L 0 s) :
+    WP isa (.loop (wideGroupA load store crypt4) (.nonzero .a4)) s (WD s₀ s₉ b F Fin) := by
+  refine WP.loop (M := isa) (fun k s => ∃ g, k = (s₀.gpr .a4).toNat - 4 * g ∧ WI s₀ s₉ b L g s)
+    (fun k s ⟨g, hk, hg⟩ => WP.mono (wideGroupA_wp hw hs hc hg) fun s' h => ?_) (s₀.gpr .a4).toNat s
+    ⟨0, by omega, hi⟩
+  rcases h with ⟨z, d⟩ | ⟨z, d⟩
+  · exact .inl ⟨z, d⟩
+  · exact .inr ⟨z, (s₀.gpr .a4).toNat - 4 * (g + 1), by have := hg.1; omega, g + 1, rfl, d⟩
+
+end GroupA
+
 /-! ## The whole function -/
 
-/-- A mode with `WideOk` meets `blockKRISCV64 M`, when `M` of the blocks is
-`F`'s and its chaining value `Fin`. -/
-theorem wide_correct (M : AesCbc.Mode) {load store : Nat → List Instr} {crypt4 : Prog isa}
+/-- `chainFrame` around a loop of groups that `hloop` proves, for a mode with
+`WideOk` (whose `init` the frame's setup needs). -/
+theorem wideBody_correct (M : AesCbc.Mode) {load store : Nat → List Instr} {body : Prog isa}
     {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     {L S : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop} {F : Nat → Spec.Aes.State}
-    {Fin : Spec.Aes.State} (hc : CryptOk crypt4 f) {s₀ : State} (hp : (blockKRISCV64 M).pre s₀)
+    {Fin : Spec.Aes.State} {s₀ : State} (hp : (blockKRISCV64 M).pre s₀)
     (hw : WideOk s₀ load store f L S F Fin)
+    (hloop : ∀ {s₉ X b}, FSetup true (16 * ·) s₀ s₉ X b → ∀ {s}, WI s₀ s₉ b L 0 s →
+      WP isa (.loop body (.nonzero .a4)) s (WD s₀ s₉ b F Fin))
     (hout : M.out (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
       (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
         (List.range (s₀.gpr .a4).toNat).map fun j => (F j).toList)
     (hch : M.chain (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
       (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
         Fin.toList) :
-    WP isa (wide load store crypt4) s₀ fun s' =>
+    WP isa (chainFrame body wideIn wideOut) s₀ fun s' =>
       (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
         (blockKRISCV64 M).post s₀ s' := by
   let n := (s₀.gpr .a4).toNat
@@ -670,7 +755,7 @@ theorem wide_correct (M : AesCbc.Mode) {load store : Nat → List Instr} {crypt4
         refine hsF.f₀.trans ((slot2_frame _ _ (by decide) _ _).sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
         simp only [List.mem_singleton] at hr; subst hr; exact hsF.sub' (by decide)
       · rw [m₂, slot2_self _ _ (by decide)]; exact (regBlock_wBlk (Q s₉) 0).symm.trans hsF.st
-    refine WP.mono (wideLoop_wp hw hsF hc hi) fun s₃ d₃ => ?_
+    refine WP.mono (hloop hsF hi) fun s₃ d₃ => ?_
     -- The state from its slots.
     have hb₃ : s₃.gpr sb = b := (d₃.keep sb (by decide) (by decide) (by decide) (by decide)).trans hb₉
     have hscr₃ : Scr s₃ X 2048 := hsF.scr.congr d₃.wr (by rw [hb₃, hb₉])
@@ -713,6 +798,44 @@ theorem wide_correct (M : AesCbc.Mode) {load store : Nat → List Instr} {crypt4
     refine ⟨?_, ?_⟩
     · rw [hout, blocksAt_states, statesAt_of_ecbInv hd, List.map_map]; rfl
     · rw [hmem, bytesAt_writeW2 _ _ _ _ (regBlock_bytes hst), hch]
+
+/-- A mode with `WideOk` meets `blockKRISCV64 M`, when `M` of the blocks is
+`F`'s and its chaining value `Fin`. -/
+theorem wide_correct (M : AesCbc.Mode) {load store : Nat → List Instr} {crypt4 : Prog isa}
+    {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+    {L S : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop} {F : Nat → Spec.Aes.State}
+    {Fin : Spec.Aes.State} (hc : CryptOk crypt4 f) {s₀ : State} (hp : (blockKRISCV64 M).pre s₀)
+    (hw : WideOk s₀ load store f L S F Fin)
+    (hout : M.out (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+      (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
+        (List.range (s₀.gpr .a4).toNat).map fun j => (F j).toList)
+    (hch : M.chain (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+      (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
+        Fin.toList) :
+    WP isa (wide load store crypt4) s₀ fun s' =>
+      (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
+        (blockKRISCV64 M).post s₀ s' := by
+  unfold wide
+  exact wideBody_correct M hp hw (fun hsF _ hi => wideLoop_wp hw hsF hc hi) hout hch
+
+/-- A mode with `WideOkA` meets `blockKRISCV64 M` by `wideA`. -/
+theorem wideA_correct (M : AesCbc.Mode) {load store : Bool → Nat → List Instr} {crypt4 : Prog isa}
+    {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+    {L S : Addr → Nat → Nat → Mem → (Nat → BitVec 64) → Prop} {F : Nat → Spec.Aes.State}
+    {Fin : Spec.Aes.State} (hc : CryptOk crypt4 f) {s₀ : State} (hp : (blockKRISCV64 M).pre s₀)
+    (hw : WideOkA s₀ load store f L S F Fin)
+    (hout : M.out (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+      (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
+        (List.range (s₀.gpr .a4).toNat).map fun j => (F j).toList)
+    (hch : M.chain (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+      (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a2) 16) (Spec.Cbc.blocksAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat) =
+        Fin.toList) :
+    WP isa (wideA load store crypt4) s₀ fun s' =>
+      (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
+        (blockKRISCV64 M).post s₀ s' := by
+  unfold wideA
+  exact wideBody_correct M hp (hw false fun h => Bool.noConfusion h)
+    (fun hsF _ hi => wideLoopA_wp hw hsF hc hi) hout hch
 
 /-! ## Constant time, and the call -/
 
