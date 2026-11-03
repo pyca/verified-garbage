@@ -334,7 +334,7 @@ GROUPS = {
             "wycheproof::rsa_pss::rsa_pss_large_keys",
             "wycheproof::rsa_oaep::rsa_oaep_test",
             "wycheproof::rsa_oaep::rsa_oaep_every_pair",
-            "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
+            "wycheproof::rsa_oaep::shared_key::rsa_shared_key_leases_smoke",
         ],
     },
     # Extra SHA-256 implementations with the same RSA arithmetic: every

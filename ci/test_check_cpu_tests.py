@@ -126,7 +126,7 @@ class RsaEmulationTests(unittest.TestCase):
         expensive = {"wycheproof::rsa_keygen::rsa_keygen_primes",
                      "wycheproof::rsa_keygen::rsa_keygen_composites",
                      "wycheproof::rsa_pss::rsa_pss_sign_test",
-                     "wycheproof::rsa_oaep::rsa_shared_key_leases"}
+                     "wycheproof::rsa_oaep::shared_key::rsa_shared_key_leases"}
         listed["tests"] += list(expensive)
         selectors = {"rsa_pss::sha256::tests::backend_features",
                      "rsa_oaep::sha256::tests::backend_features"}
@@ -135,7 +135,7 @@ class RsaEmulationTests(unittest.TestCase):
         self.assertFalse(set.union(*runs) & expensive)
         for path in ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_pkcs1_enc::rsa_pkcs1_test",
                      "wycheproof::rsa_pss::rsa_pss_large_keys",
-                     "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke"]:
+                     "wycheproof::rsa_oaep::shared_key::rsa_shared_key_leases_smoke"]:
             listed["tests"].append(path)
             self.assertEqual(sum(path in r for r in self.selected("icx", "tests", listed, emulated=True)), 1, path)
         lib = set.union(*self.selected("icx", "lib", listed, emulated=True))
