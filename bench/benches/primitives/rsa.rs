@@ -318,6 +318,85 @@ fn keys(c: &mut Criterion) {
 
 #[cfg(target_arch = "riscv64")]
 pub fn bench(c: &mut Criterion) {
+    // Only Proto23 this run: main's vg_rsa_private_crt next to it without pieces, to time the split.
+    const ONLY_P23: bool = true;
+    if ONLY_P23 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto23 as p23;
+        type Crt = unsafe extern "C" fn(
+            *mut u8, usize, *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
+            *const u8, usize, *const u8, usize, *const u8, usize, *mut u64, usize,
+        ) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
+        let cs: [(&str, Crt); 6] = [
+            ("base", p23::vg_p23_base),
+            ("same", p23::vg_p23_same),
+            ("nor2re", p23::vg_p23_nor2re),
+            ("nored64", p23::vg_p23_nored64),
+            ("nobitserial", p23::vg_p23_nobitserial),
+            ("nosel", p23::vg_p23_nosel),
+        ];
+        for (v, f) in cs {
+            let mut g = c.benchmark_group(format!("rsa_p23_crt_{v}"));
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let n = key.n().to_vec();
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (dp, dq, qi) = (
+                    key.dmp1().unwrap().to_vec(),
+                    key.dmq1().unwrap().to_vec(),
+                    key.iqmp().unwrap().to_vec(),
+                );
+                let mut input = vec![0u8; k];
+                input[k - 1] = 2;
+                input[1] = 0x5a;
+                let mut out = vec![0u8; k];
+                let mut s = vec![0u64; 16 * k + 32];
+                if v == "base" || v == "same" {
+                    let mut want = vec![0u8; k];
+                    key.private_decrypt(&input, &mut want, openssl::rsa::Padding::NONE)
+                        .unwrap();
+                    let r = unsafe {
+                        f(
+                            out.as_mut_ptr(), k, n.as_ptr(), k, input.as_ptr(), k, p.as_ptr(), p.len(),
+                            q.as_ptr(), q.len(), dp.as_ptr(), dp.len(), dq.as_ptr(), dq.len(),
+                            qi.as_ptr(), qi.len(), s.as_mut_ptr(), s.len(),
+                        )
+                    };
+                    assert_eq!((r, &out), (1, &want), "{v} {bits}");
+                }
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        f(
+                            out.as_mut_ptr(),
+                            k,
+                            n.as_ptr(),
+                            k,
+                            input.as_ptr(),
+                            k,
+                            p.as_ptr(),
+                            p.len(),
+                            q.as_ptr(),
+                            q.len(),
+                            dp.as_ptr(),
+                            dp.len(),
+                            dq.as_ptr(),
+                            dq.len(),
+                            qi.as_ptr(),
+                            qi.len(),
+                            s.as_mut_ptr(),
+                            s.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Prototype (bench branch only): unproven Montgomery multiplication and
     // squaring of `w` words, next to OpenSSL's `BN_mod_mul`, `BN_mod_sqr`,
     // and `BN_mod_exp` of an exponent as long as the modulus (a CRT half), for

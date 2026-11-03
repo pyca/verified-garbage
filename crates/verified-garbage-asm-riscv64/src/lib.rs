@@ -69,6 +69,7 @@ pub mod rsa_proto18;
 pub mod rsa_proto19;
 pub mod rsa_proto20;
 pub mod rsa_proto21;
+pub mod rsa_proto23;
 pub mod rsa_proto8;
 pub mod rsa_proto9;
 
