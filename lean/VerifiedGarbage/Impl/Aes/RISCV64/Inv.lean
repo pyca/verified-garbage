@@ -1,6 +1,11 @@
 module
 
+public import VerifiedGarbage.Impl.Aes.InvCircuit
 public import VerifiedGarbage.Impl.Aes.RISCV64.Linear
+import VerifiedGarbage.Impl.Aes.RISCV64.Alloc
+meta import VerifiedGarbage.Impl.Aes.InvCircuit
+meta import VerifiedGarbage.Impl.Aes.RISCV64.Alloc
+meta import VerifiedGarbage.Impl.Aes.RISCV64.Linear
 
 /-!
 # The inverse round transformations of bitsliced AES on RISC-V
@@ -9,10 +14,9 @@ On the state of `Linear.lean` (four blocks in `q 0 … q 7`), as on x86-64
 (`Impl/Aes/X86_64/Inv.lean`), and as BearSSL's `aes_ct64` (Thomas Pornin,
 MIT licence) computes them for decryption:
 
-* InvSubBytes: the inverse S-box is the S-box between two applications of
-  the inverse of its affine transformation (`invAff`), since
-  `invSbox = inv ∘ aff⁻¹` and `sbox = aff ∘ inv`, so
-  `aff⁻¹ ∘ sbox ∘ aff⁻¹ = inv ∘ aff⁻¹ = invSbox`.
+* InvSubBytes: the circuit `Circuit.invSbox` (`Impl/Aes/InvCircuit.lean`),
+  allocated as the S-box is (`Sbox.lean`), in the same registers and
+  slots.
 * InvShiftRows: rows 1 and 3 rotate the other way within their 16 bits,
   then rows 2 and 3 by 8 (which is its own inverse).
 * InvMixColumns: MixColumns after multiplying each column by
@@ -29,7 +33,7 @@ namespace VG.Impl.Aes.RISCV64
 
 open VG.RISCV64
 
-/-- The register holding input word `k` during `invAff` and `invMcPre`. -/
+/-- The register holding input word `k` during `invMcPre`. -/
 def iv : Nat → Reg
   | 0 => .t0 | 1 => .t1 | 2 => .t2 | 3 => .t3
   | 4 => .t4 | 5 => .t5 | 6 => .t6 | _ => .a6
@@ -37,16 +41,40 @@ def iv : Nat → Reg
 /-- The temporary of `invMcPre`'s rotations. -/
 def ivt : Reg := .a7
 
-/-- The inverse of the S-box's affine transformation on every byte:
-`bᵢ ← b₍ᵢ₊₂₎ mod 8 ⊕ b₍ᵢ₊₅₎ mod 8 ⊕ b₍ᵢ₊₇₎ mod 8 ⊕ dᵢ`, `d = {05}`. -/
-def invAff : List Instr :=
-  (List.range 8).map (fun k => movR (iv k) (q k)) ++
-  (List.range 8).flatMap fun i =>
-    [xorR (q i) (iv ((i + 2) % 8)) (iv ((i + 5) % 8)), xorR (q i) (q i) (iv ((i + 7) % 8))] ++
-    (if i = 0 ∨ i = 2 then [notR (q i)] else [])
+/-- The inverse S-box on the state in `q 0 … q 7`, in place: the code
+that `compile` allocates for `Circuit.invSbox`, written out as `sboxCode`
+is. -/
+def invSboxCode : List Instr := [
+  xorR .t0 .s7 .s4, xorR .s6 .s6 .t0, notR .s6, xorR .t1 .s4 .s3, xorR .s5 .s5 .t1, notR .s5,
+  xorR .t2 .s4 .s6, xorR .t3 .s3 .s6, xorR .t4 .t0 .t2, xorR .s3 .s3 .s0, notR .s3,
+  xorR .s0 .t2 .s3, xorR .s4 .s4 .s3, xorR .s1 .s1 .s4, notR .s1, xorR .t5 .t3 .s1,
+  xorR .t6 .t0 .t5, xorR .a6 .t4 .s1, xorR .a7 .s5 .a6, xorR .s8 .s4 .a7, xorR .s9 .s1 .s8,
+  xorR .s7 .s7 .s2, xorR .s7 .t6 .s7, xorR .s2 .t1 .s7, xorR .s10 .a7 .s7, xorR .s11 .s0 .s7,
+  stS 0 .s5, xorR .s5 .s8 .s11, stS 1 .s9, andR .s9 .t5 .s5, stS 2 .t5, andR .t5 .t0 .s6,
+  xorR .t5 .t5 .s9, stS 3 .t0, andR .t0 .t6 .s10, xorR .t0 .t0 .s9, andR .s9 .s1 .s8, stS 4 .s1,
+  andR .s1 .t4 .s4, xorR .s1 .s1 .s9, stS 5 .t4, andR .t4 .a6 .a7, xorR .t4 .t4 .s9,
+  andR .s9 .t1 .s7, stS 6 .t1, andR .t1 .t3 .s11, xorR .t1 .t1 .s9, stS 7 .t3, andR .t3 .t2 .s0,
+  xorR .t3 .t3 .s9, xorR .t5 .t5 .t1, xorR .t0 .t0 .t3, xorR .s1 .s1 .t1, xorR .t4 .t4 .t3,
+  xorR .t5 .t5 .s2, xorR .t0 .t0 .s3, ldS .s3 1, xorR .s1 .s1 .s3, ldS .s3 0, xorR .t4 .t4 .s3,
+  xorR .s3 .t5 .t0, andR .t5 .t5 .s1, xorR .s2 .t4 .t5, andR .t3 .s3 .s2, xorR .t3 .t3 .t0,
+  xorR .t1 .s1 .t4, xorR .t0 .t0 .t5, andR .t0 .t0 .t1, xorR .t0 .t0 .t4, xorR .s1 .s1 .t0,
+  xorR .t1 .s2 .t0, andR .t4 .t4 .t1, xorR .s1 .t4 .s1, xorR .s2 .s2 .t4, andR .s2 .t3 .s2,
+  xorR .s3 .s3 .s2, xorR .s2 .s3 .s1, xorR .t4 .t3 .t0, xorR .t1 .t3 .s3, xorR .t5 .t0 .s1,
+  xorR .s9 .t4 .s2, andR .s5 .t5 .s5, andR .s6 .s1 .s6, andR .s10 .t0 .s10, andR .s8 .t1 .s8,
+  andR .s4 .s3 .s4, andR .a7 .t3 .a7, andR .s7 .t4 .s7, andR .s11 .s9 .s11, andR .s0 .s2 .s0,
+  stS 0 .s11, ldS .s11 2, andR .t5 .t5 .s11, ldS .s11 3, andR .s1 .s1 .s11, andR .t0 .t0 .t6,
+  ldS .t6 4, andR .t1 .t1 .t6, ldS .t6 5, andR .s3 .s3 .t6, andR .t3 .t3 .a6, ldS .a6 6,
+  andR .t4 .t4 .a6, ldS .a6 7, andR .s9 .s9 .a6, andR .s2 .s2 .t2, xorR .s7 .s7 .t4,
+  xorR .s7 .t1 .s7, xorR .s7 .s3 .s7, xorR .s7 .s9 .s7, xorR .s7 .s0 .s7, xorR .s8 .s8 .s7,
+  xorR .a7 .a7 .s8, xorR .s4 .s4 .s8, xorR .s6 .s6 .s4, xorR .s1 .s10 .s1, xorR .s5 .s5 .s7,
+  xorR .s10 .s10 .s5, xorR .s2 .t5 .s2, xorR .s7 .s6 .s1, xorR .t3 .t3 .s7, ldS .s7 0,
+  xorR .s7 .s7 .s4, xorR .s0 .s0 .s7, xorR .s5 .a7 .s5, xorR .s6 .s6 .s5, xorR .s2 .t0 .s2,
+  xorR .t4 .t4 .s2, xorR .t0 .t0 .t3, xorR .s3 .s3 .t0, xorR .s9 .s9 .s2, xorR .t1 .t1 .t0,
+  xorR .t1 .s9 .t1, xorR .t5 .t5 .s1, xorR .s9 .s0 .s9, xorR .s5 .s5 .s9, xorR .t5 .t5 .s5,
+  movR .s7 .a7, stS 0 .s6, movR .s6 .t1, movR .s5 .s3, movR .s4 .s10, movR .s3 .t5, ldS .s2 0,
+  movR .s1 .s0, movR .s0 .t4]
 
-/-- The inverse S-box on the state in `q 0 … q 7`, in place. -/
-def invSboxCode : List Instr := invAff ++ sboxCode ++ invAff
+#guard invSboxCode == compile sb Circuit.invSbox sboxIns sboxOuts sboxFree spillSlots
 
 /-- The masks of InvShiftRows, and their first slot. -/
 def invSrMasks : List (Nat × BitVec 64) :=
