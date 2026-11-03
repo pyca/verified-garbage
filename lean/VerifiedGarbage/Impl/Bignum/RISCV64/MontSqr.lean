@@ -26,14 +26,19 @@ squares of the words, with about half as many multiplications as `tail`'s
 * `reduce`: for `i = 0` to `w - 1`, `u = tᵢ (-m⁻¹) mod 2⁶⁴` and `T += u m
   2^(64 i)`, which clears word `i`; the row's carry, and the carry out of
   word `i + w` left by the row before (`a1`), are added into word `i + w`;
-* `finish`: the last carry stored at word `2 w`, then `T / R` (words `w` to
-  `2 w`, below `2 m`) reduced into `[o]` by `MontMul.lean`'s `subMod64` and
-  `selectAcc64`, with `a5` at word `w` meanwhile.
+* `finish`: `a7` back at `m` (`restoreA7`), the last carry stored at word
+  `2 w`, then `T / R` (words `w` to `2 w`, below `2 m`) reduced into `[o]` by
+  `MontMul.lean`'s `subMod64` and `selectAcc64`, with `a5` at word `w`
+  meanwhile.
 
 A step of a row (`sqrMac`) adds the product `x yⱼ`, the word `tⱼ` and the
 carry word `s1`, in that order: the sum is below `2¹²⁸`, its low word stored
-and its high word the next carry. The rows are unrolled by eight, the rest of
-a row one word at a time (`macRun`).
+and its high word the next carry. The operand's word `yⱼ` is in `a7`, loaded
+a step ahead, so that a step's multiplications need not wait for its load:
+the step loads `yⱼ₊₁` (a row reads one word past its operand, within the
+operand's array of `w + 2` words). The rows are unrolled by eight, the rest of
+a row one word at a time (`macRun`). `a7`, `m`'s base, is recomputed from
+`a5` before `finish`: `m` is the layout's array 0, `T` its array 2.
 
 Every multiplication is `mul` or `mulhu`, every loop counts a register down
 from a public count (`w`, `w - 1 - i`, `2 w + 2`), and every address is a
@@ -45,8 +50,9 @@ Registers: `t3` a row's pointer (into `a` in `cross`, into `T` in `diag` and
 the carry out of word `i + w` (`reduce`); in a row, `t4` and `a0` the
 pointers into `T` and the operand, `t5` and `t6` the groups of eight and the
 single words left, `s0` the multiplier, `s1` the carry, `s2`–`s4`
-temporaries. The code writes `a0`, `a1`, `t2`–`t6` and `s0`–`s4`, and `a5`,
-which it restores, and the memory of `T`, the temporary and `[o]`.
+temporaries, `a7` the operand's next word. The code writes `a0`, `a1`,
+`t2`–`t6` and `s0`–`s4`, and `a5` and `a7`, which it restores, and the
+memory of `T`, the temporary and `[o]`.
 -/
 
 @[expose] public section
@@ -65,12 +71,13 @@ def zeroT : Prog isa :=
     (countLoop .t5 [.store .d .s0 .t3 0, .addi .t3 .t3 8])
 
 /-- A step of a row, the pointers at its word less `k`: `x = tⱼ + s0 yⱼ + c`
-(`tⱼ` at `t4 + k`, `yⱼ` at `a0 + k`, `c` in `s1`), its low word stored at
-`t4 + k` and its high word the carry `s1`. `tⱼ` is added into the product's
-low word first and the carry `c` last, each addition's carry into the high
-word: three operations on each carry chain. -/
+(`tⱼ` at `t4 + k`, `yⱼ` in `a7`, `c` in `s1`), its low word stored at
+`t4 + k` and its high word the carry `s1`, and `yⱼ₊₁` (at `a0 + k + 8`)
+loaded into `a7`. `tⱼ` is added into the product's low word first and the
+carry `c` last, each addition's carry into the high word: three operations
+on each carry chain. -/
 def sqrMac (k : Nat) : List Instr :=
-  [.load .d .s4 .t4 k, .load .d .s2 .a0 k, .mul .s3 .s0 .s2, .mulhu .s2 .s0 .s2,
+  [.load .d .s4 .t4 k, .mul .s3 .s0 .a7, .mulhu .s2 .s0 .a7, .load .d .a7 .a0 (k + 8),
     .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
     .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4, .store .d .s3 .t4 k]
 
@@ -79,9 +86,10 @@ def macGroup (U : Nat) : List Instr :=
   (List.range U).flatMap (fun k => sqrMac (8 * k)) ++
     [.addi .t4 .t4 ((8 * U : Nat) : Int), .addi .a0 .a0 ((8 * U : Nat) : Int)]
 
-/-- A row of `t5` steps: groups of eight, then the rest one at a time. -/
+/-- A row of `t5` steps: the operand's first word into `a7`, groups of
+eight, then the rest one at a time. -/
 def macRun : Prog isa :=
-  .seq (.block [.logicImm .and .t6 .t5 7, .shift .srl .d .t5 .t5 3])
+  .seq (.block [.logicImm .and .t6 .t5 7, .shift .srl .d .t5 .t5 3, .load .d .a7 .a0 0])
     (.seq (countLoopR? .t5 (macGroup 8)) (countLoopR? .t6 (macGroup 1)))
 
 /-- The cross products: for each word `aᵢ` but the last (`t3`, advanced),
@@ -112,21 +120,27 @@ def diag : Prog isa :=
 
 /-- The end of a row of the reduction: the row's carry (`s1`) and the carry
 `a1` out of the word before added into word `i + w` (at `t4`), the carry
-out into `a1`; the row's pointer `t3` advanced and the rows left `t2`
-counted down. -/
+out into `a1`; the row's pointer `t3` advanced, the rows left `t2`
+counted down and `a0` moved back `w` words, to `m`. -/
 def redTop : List Instr :=
   [.load .d .s2 .t4 0, .add .s1 .s1 .s2, .sltu .s3 .s1 .s2, .add .s1 .s1 .a1, .sltu .s2 .s1 .a1,
-    .add .a1 .s3 .s2, .store .d .s1 .t4 0, .addi .t3 .t3 8, .addi .t2 .t2 (-1)]
+    .add .a1 .s3 .s2, .store .d .s1 .t4 0, .addi .t3 .t3 8, .addi .t2 .t2 (-1),
+    .shift .sll .d .s2 .t0 3, .sub .a0 .a0 .s2]
 
 /-- The Montgomery reduction of `T`: for each word `tᵢ` (`t3`, advanced),
-`u = tᵢ (-m⁻¹) mod 2⁶⁴` into `s0` and `T += u m 2^(64 i)` (`w` steps), then
-`redTop`; `w` rows (`t2`). -/
+`u = tᵢ (-m⁻¹) mod 2⁶⁴` into `s0` and `T += u m 2^(64 i)` (`w` steps, `m`
+at `a0`: `a5 - 16 (w + 2)`, array 0), then `redTop`; `w` rows (`t2`). -/
 def reduce : Prog isa :=
-  .seq (.block [.addi .t3 .a5 0, .addi .t2 .t0 0, .li .a1 0])
-    (.loop (.seq (.block [.load .d .s0 .t3 0, .mul .s0 .s0 .t1, .li .s1 0, .addi .a0 .a7 0,
+  .seq (.block [.addi .t3 .a5 0, .addi .t2 .t0 0, .li .a1 0, .shift .sll .d .s2 .t0 3,
+      .addi .s2 .s2 16, .shift .sll .d .s2 .s2 1, .sub .a0 .a5 .s2])
+    (.loop (.seq (.block [.load .d .s0 .t3 0, .mul .s0 .s0 .t1, .li .s1 0,
         .addi .t4 .t3 0, .addi .t5 .t0 0])
       (.seq macRun (.block redTop)))
       (.nonzero .t2))
+
+/-- `a7` back at `m`, `a5 - 16 (w + 2)`. -/
+def restoreA7 : List Instr :=
+  [.shift .sll .d .s2 .t0 3, .addi .s2 .s2 16, .shift .sll .d .s2 .s2 1, .sub .a7 .a5 .s2]
 
 /-- The last carry at word `2 w`, `a5` at word `w`. -/
 def finishPre : List Instr :=
@@ -139,6 +153,6 @@ def finishPost : List Instr := [.shift .sll .d .t3 .t0 3, .sub .a5 .a5 .t3]
 registers. -/
 def sqrTail : Prog isa :=
   .seq zeroT (.seq cross (.seq diag (.seq reduce
-    (.seq (.block finishPre) (.seq subMod64 (.seq selectAcc64 (.block finishPost)))))))
+    (.seq (.block (restoreA7 ++ finishPre)) (.seq subMod64 (.seq selectAcc64 (.block finishPost)))))))
 
 end VG.Impl.Bignum.RISCV64
