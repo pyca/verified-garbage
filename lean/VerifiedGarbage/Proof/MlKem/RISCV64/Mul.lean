@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Reduce
+public import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Reduce
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
@@ -34,11 +38,12 @@ namespace VG.Proof.MlKem.RISCV64.Mul
 
 open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
 open VG.Spec.MlKem
+open VG.Proof.MlKem.RISCV64.Lazy (barM barQ redM redM_toNat barM_lt barM_mod)
 
 /-! ## Values -/
 
 theorem red_mac (x y z w : Zq) :
-    (red (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val)).setWidth 32 =
+    (redM (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val)).setWidth 32 =
       BitVec.ofNat 32 (x * y + z * w).val := by
   have hx := val_lt x
   have hy := val_lt y
@@ -52,23 +57,104 @@ theorem red_mac (x y z w : Zq) :
       Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_arith), Nat.mod_eq_of_lt (a := z.val * w.val) (by omega_arith)]
     exact Nat.mod_eq_of_lt (by omega_arith)
   refine setWidth32_ofNat ?_ (by have := val_lt (x * y + z * w); omega_arith)
-  rw [red_toNat (by rw [hs]; omega_arith), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
+  rw [redM_toNat, hs, val_add', val_mul, val_mul, ← Nat.add_mod]
+
+/-- A residue that is congruent may replace another in a sum of products. -/
+theorem mod_lazy {y B x g : Nat} (h : B % q = x % q) : (y + B * g) % q = (y + x * g) % q := by
+  rw [Nat.add_mod, Nat.mul_mod, h, ← Nat.mul_mod, ← Nat.add_mod]
 
 theorem even_eq (a b c d γ : Zq) :
-    (red (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val +
-      red (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) * BitVec.ofNat 64 γ.val)).setWidth 32 =
+    (redM (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val +
+      barM (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) * BitVec.ofNat 64 γ.val)).setWidth 32 =
       BitVec.ofNat 32 (a * b + c * d * γ).val := by
-  have : red (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) = BitVec.ofNat 64 (c * d).val := by
-    apply BitVec.eq_of_toNat_eq; rw [red_mul, toNat_val64]
-  rw [this]; exact red_mac a b (c * d) γ
+  have ha := val_lt a
+  have hb := val_lt b
+  have hg := val_lt γ
+  have hcd : (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val).toNat = c.val * d.val := by
+    rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
+    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 (val_lt c) (val_lt d); omega_arith)
+  generalize hB : barM (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) = B
+  have hBl : B.toNat < 2 * q := hB ▸ barM_lt _
+  have hBm : B.toNat % q = (c * d).val % q := by
+    rw [← hB, barM_mod, hcd, val_mul, Nat.mod_mod]
+  have p1 := mul_lt_q2 ha hb
+  have hBg : B.toNat * γ.val < 2 ^ 32 := by
+    have := Nat.mul_le_mul (Nat.le_of_lt hBl) (Nat.le_of_lt hg)
+    have := q_eq; omega
+  have hs : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val + B * BitVec.ofNat 64 γ.val).toNat =
+      a.val * b.val + B.toNat * γ.val := by
+    rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64,
+      Nat.mod_eq_of_lt (a := a.val * b.val) (by omega_arith),
+      Nat.mod_eq_of_lt (a := B.toNat * γ.val) (by omega)]
+    exact Nat.mod_eq_of_lt (by omega)
+  refine setWidth32_ofNat ?_ (by have := val_lt (a * b + c * d * γ); omega_arith)
+  rw [redM_toNat, hs, mod_lazy hBm, val_add', val_mul a b, val_mul (c * d) γ, ← Nat.add_mod]
 
 /-! ## The loop body -/
 
 section
+variable {s : State} {is : List Instr} {Q : State → Prop}
+
+open Steps (Upd)
+
+private theorem wp_mul {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n * s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.mul d n m :: is)) s Q :=
+  Steps.WP.cons exec_mul (k _ (Upd.write _ _ _))
+
+private theorem wp_mulhu {d n m : Reg}
+    (k : ∀ s', Upd s s' d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.mulhu d n m :: is)) s Q :=
+  Steps.WP.cons exec_mulhu (k _ (Upd.write _ _ _))
+
+private theorem wp_srai63 {d n : Reg} (k : ∀ s', Upd s s' d ((s.gpr n).sshiftRight 63) → WP isa (.block is) s' Q) :
+    WP isa (.block (.shift .sra .d d n 63 :: is)) s Q :=
+  Steps.WP.cons (exec_shift_d (by decide)) (k _ (Upd.write _ _ _))
+
+private theorem wp_and {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .and d n m :: is)) s Q :=
+  Steps.WP.cons exec_logic (k _ (Upd.write _ _ _))
+
+/-- `barrettM .t0 .a7`: `t0 := barM t0`, through `a7`. -/
+private theorem bar_ok (h5 : s.gpr .a5 = 5541226816974932) (h6 : s.gpr .a6 = 3329)
+    (k : ∀ s', s'.gpr .t0 = barM (s.gpr .t0) → (∀ r, r ≠ .t0 → r ≠ .a7 → s'.gpr r = s.gpr r) →
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → WP isa (.block is) s' Q) :
+    WP isa (.block (barrettM .t0 .a7 ++ is)) s Q := by
+  simp only [barrettM, List.cons_append, List.nil_append]
+  refine wp_mulhu fun s₁ u₁ => wp_mul fun s₂ u₂ => Steps.wp_sub fun s₃ u₃ => k s₃ ?_ (fun r h0 h7 => ?_)
+    (by rw [u₃.mem, u₂.mem, u₁.mem]) (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+    (by rw [u₃.sp, u₂.sp, u₁.sp])
+  · rw [u₃.gpr, u₂.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), u₁.other _ (by decide),
+      h5, h6]
+    rfl
+  · rw [u₃.other r h0, u₂.other r h7, u₁.other r h7]
+
+/-- `reduceM .t0 .a7`: `t0 := redM t0`, through `a7`. -/
+private theorem red_ok (h5 : s.gpr .a5 = 5541226816974932) (h6 : s.gpr .a6 = 3329)
+    (k : ∀ s', s'.gpr .t0 = redM (s.gpr .t0) → (∀ r, r ≠ .t0 → r ≠ .a7 → s'.gpr r = s.gpr r) →
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → WP isa (.block is) s' Q) :
+    WP isa (.block (reduceM .t0 .a7 ++ is)) s Q := by
+  simp only [reduceM, fixup, List.append_assoc, List.cons_append, List.nil_append]
+  refine bar_ok h5 h6 fun s₁ b₁ o₁ m₁ rd₁ wr₁ sp₁ => Steps.wp_sub fun s₂ u₂ => wp_srai63 fun s₃ u₃ =>
+    wp_and fun s₄ u₄ => Steps.wp_add fun s₅ u₅ => k s₅ ?_ (fun r h0 h7 => ?_)
+    (by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]) (by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁])
+    (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁]) (by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, sp₁])
+  · have e6 : s₁.gpr .a6 = 3329 := by rw [o₁ _ (by decide) (by decide), h6]
+    have e2 : s₄.gpr .t0 = barM (s.gpr .t0) - 3329 := by
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, b₁, e6]
+    rw [u₅.gpr, e2, u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₂.other _ (by decide), b₁, e6]
+    rfl
+  · rw [u₅.other r h0, u₄.other r h7, u₃.other r h7, u₂.other r h0, o₁ r h0 h7]
+
+end
+
+section
 variable {s : State} {x3 x4 x5 x6 c : BitVec 64}
 
+open Steps (Upd)
+
 theorem body_ok (h3 : s.gpr .a0 = x3) (h4 : s.gpr .a1 = x4) (h5 : s.gpr .a2 = x5) (h6 : s.gpr .a3 = x6)
-    (h8 : s.gpr .a5 = C) (h9 : s.gpr .a6 = 3329) (h11 : s.gpr .t1 = c)
+    (h8 : s.gpr .a5 = 5541226816974932) (h9 : s.gpr .a6 = 3329) (h11 : s.gpr .t1 = c)
     (if0 : InRegions (s.rd ++ s.wr) x4 4) (if1 : InRegions (s.rd ++ s.wr) (x4 + BitVec.ofNat 64 4) 4)
     (ig0 : InRegions (s.rd ++ s.wr) x5 4) (ig1 : InRegions (s.rd ++ s.wr) (x5 + BitVec.ofNat 64 4) 4)
     (iγ : InRegions (s.rd ++ s.wr) x6 4)
@@ -78,18 +164,123 @@ theorem body_ok (h3 : s.gpr .a0 = x3) (h4 : s.gpr .a1 = x4) (h5 : s.gpr .a2 = x5
     (a5' : (x5 + BitVec.ofNat 64 4).toNat % 4 = 0) (a6 : x6.toNat % 4 = 0) :
     WP isa (.block mulBody) s fun s' =>
       s'.gpr .a0 = x3 + 8 ∧ s'.gpr .a1 = x4 + 8 ∧ s'.gpr .a2 = x5 + 8 ∧ s'.gpr .a3 = x6 + 4 ∧
-      s'.gpr .a5 = C ∧ s'.gpr .a6 = 3329 ∧ s'.gpr .t1 = c - 1 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      s'.gpr .a5 = 5541226816974932 ∧ s'.gpr .a6 = 3329 ∧ s'.gpr .t1 = c - 1 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = (s.mem.writeW x3
-          ((red ((s.mem.readW x4 32).setWidth 64 * (s.mem.readW x5 32).setWidth 64 +
-            red ((s.mem.readW (x4 + BitVec.ofNat 64 4) 32).setWidth 64 *
+          ((redM ((s.mem.readW x4 32).setWidth 64 * (s.mem.readW x5 32).setWidth 64 +
+            barM ((s.mem.readW (x4 + BitVec.ofNat 64 4) 32).setWidth 64 *
               (s.mem.readW (x5 + BitVec.ofNat 64 4) 32).setWidth 64) *
             (s.mem.readW x6 32).setWidth 64)).setWidth 32)).writeW (x3 + BitVec.ofNat 64 4)
-          ((red ((s.mem.readW x4 32).setWidth 64 * (s.mem.readW (x5 + BitVec.ofNat 64 4) 32).setWidth 64 +
+          ((redM ((s.mem.readW x4 32).setWidth 64 * (s.mem.readW (x5 + BitVec.ofNat 64 4) 32).setWidth 64 +
             (s.mem.readW (x4 + BitVec.ofNat 64 4) 32).setWidth 64 * (s.mem.readW x5 32).setWidth 64)).setWidth 32) := by
-  crun [mulBody, reduce, barrett, subMulQ, fixup, red, bar, quot, fixq, kept, h3, h4, h5, h6, h8, h9, h11,
-    if0, if1, ig0, ig1, iγ, o0, o1, a3, a3', a4, a4', a5, a5', a6, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
-  simp [Mem.writeW, Mem.readW, Mem.read]
+  generalize ef0 : (s.mem.readW x4 32).setWidth 64 = f0
+  generalize ef1 : (s.mem.readW (x4 + BitVec.ofNat 64 4) 32).setWidth 64 = f1
+  generalize eg0 : (s.mem.readW x5 32).setWidth 64 = g0
+  generalize eg1 : (s.mem.readW (x5 + BitVec.ofNat 64 4) 32).setWidth 64 = g1
+  generalize eγ : (s.mem.readW x6 32).setWidth 64 = γ
+  simp only [mulBody, List.append_assoc, List.cons_append, List.nil_append]
+  -- the loads and the first product
+  refine Steps.wp_lwu (a := x4) (by decide) (by rw [h4]; simp) a4 if0 fun s₁ u₁ => ?_
+  refine Steps.wp_lwu (a := x4 + BitVec.ofNat 64 4) (by decide)
+    (by rw [u₁.other _ (by decide), h4]) a4' (by rw [u₁.rd, u₁.wr]; exact if1) fun s₂ u₂ => ?_
+  refine Steps.wp_lwu (a := x5) (by decide) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h5]; simp) a5
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact ig0) fun s₃ u₃ => ?_
+  refine Steps.wp_lwu (a := x5 + BitVec.ofNat 64 4) (by decide)
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h5]) a5'
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact ig1) fun s₄ u₄ => ?_
+  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have v4 : s₄.gpr .a4 = f0 := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, ef0]
+  have v2 : s₄.gpr .t2 = f1 := by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.mem, ef1]
+  have v3 : s₄.gpr .t3 = g0 := by rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, eg0]
+  have v5 : s₄.gpr .t4 = g1 := by rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, eg1]
+  have g4 : ∀ r, r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+    rw [u₄.other r h4, u₃.other r h3, u₂.other r h2, u₁.other r h1]
+  refine wp_mul fun s₅ u₅ => ?_
+  have k5 : ∀ r, r ≠ .t0 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₅.gpr r = s.gpr r :=
+    fun r h0 h1 h2 h3 h4 => by rw [u₅.other r h0, g4 r h1 h2 h3 h4]
+  refine bar_ok (by rw [k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
+    (by rw [k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
+    fun s₆ b₆ o₆ m₆ rd₆ wr₆ sp₆ => ?_
+  have e6 : s₆.gpr .t0 = barM (f1 * g1) := by rw [b₆, u₅.gpr, v2, v5]
+  have k6 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₆.gpr r = s₅.gpr r := o₆
+  -- γ, its product, and the even coefficient
+  refine Steps.wp_lwu (a := x6) (by decide)
+    (by rw [k6 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h6]; simp)
+    a6 (by rw [rd₆, wr₆, u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact iγ)
+    fun s₇ u₇ => ?_
+  have v7 : s₇.gpr .a7 = γ := by rw [u₇.gpr, m₆, u₅.mem, m₄, eγ]
+  refine wp_mul fun s₈ u₈ => wp_mul fun s₉ u₉ => Steps.wp_add fun s₁₀ u₁₀ => ?_
+  have k10 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₀.gpr r = s₅.gpr r := fun r h0 h7 => by
+    rw [u₁₀.other r h0, u₉.other r h7, u₈.other r h0, u₇.other r h7, k6 r h0 h7]
+  have w4 : ∀ r, r = .a4 ∨ r = .t2 ∨ r = .t3 ∨ r = .t4 → s₁₀.gpr r = s₄.gpr r := fun r hr => by
+    have := k10 r (by rcases hr with rfl | rfl | rfl | rfl <;> decide) (by rcases hr with rfl | rfl | rfl | rfl <;> decide)
+    rw [this, u₅.other r (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
+  have e10 : s₁₀.gpr .t0 = f0 * g0 + barM (f1 * g1) * γ := by
+    rw [u₁₀.gpr, u₉.gpr, u₉.other _ (by decide), u₈.gpr, u₈.other _ (by decide), u₈.other _ (by decide),
+      u₇.other _ (by decide), u₇.other _ (by decide), u₇.other _ (by decide), e6, v7,
+      o₆ _ (by decide) (by decide), o₆ _ (by decide) (by decide), u₅.other _ (by decide),
+      u₅.other _ (by decide), v4, v3]
+  refine red_ok (by rw [k10 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
+    (by rw [k10 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
+    fun s₁₁ r₁₁ o₁₁ m₁₁ rd₁₁ wr₁₁ sp₁₁ => ?_
+  have k11 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₁.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₁ r h0 h7, k10 r h0 h7]
+  have hm11 : s₁₁.mem = s.mem := by rw [m₁₁, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, m₆, u₅.mem, m₄]
+  have hw11 : s₁₁.wr = s.wr := by
+    rw [wr₁₁, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, wr₆, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  refine Steps.wp_sw (a := x3) (by decide)
+    (by rw [k11 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h3]; simp)
+    a3 (by rw [hw11]; exact o0) fun s₁₂ g₁₂ => ?_
+  -- the odd coefficient
+  refine wp_mul fun s₁₃ u₁₃ => wp_mul fun s₁₄ u₁₄ => Steps.wp_add fun s₁₅ u₁₅ => ?_
+  have q12 : ∀ r, s₁₂.gpr r = s₁₁.gpr r := fun r => by rw [g₁₂.gpr]
+  have e15 : s₁₅.gpr .t0 = f0 * g1 + f1 * g0 := by
+    rw [u₁₅.gpr, u₁₄.other _ (by decide), u₁₃.gpr, u₁₄.gpr, u₁₃.other _ (by decide), u₁₃.other _ (by decide),
+      q12, q12, q12, q12, k11 _ (by decide) (by decide), k11 _ (by decide) (by decide),
+      k11 _ (by decide) (by decide), k11 _ (by decide) (by decide), u₅.other _ (by decide), u₅.other _ (by decide),
+      u₅.other _ (by decide), u₅.other _ (by decide), v4, v5, v2, v3]
+  have k15 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₅.gpr r = s₅.gpr r := fun r h0 h7 => by
+    rw [u₁₅.other r h0, u₁₄.other r h7, u₁₃.other r h0, q12, k11 r h0 h7]
+  refine red_ok (by rw [k15 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
+    (by rw [k15 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
+    fun s₁₆ r₁₆ o₁₆ m₁₆ rd₁₆ wr₁₆ sp₁₆ => ?_
+  have k16 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₆.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₆ r h0 h7, k15 r h0 h7]
+  refine Steps.wp_sw (a := x3 + BitVec.ofNat 64 4) (by decide)
+    (by rw [k16 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h3])
+    a3' (by rw [wr₁₆, u₁₅.wr, u₁₄.wr, u₁₃.wr, g₁₂.wr, hw11]; exact o1) fun s₁₇ g₁₇ => ?_
+  refine Steps.wp_addi (by decide) fun s₁₈ u₁₈ => Steps.wp_addi (by decide) fun s₁₉ u₁₉ =>
+    Steps.wp_addi (by decide) fun s₂₀ u₂₀ => Steps.wp_addi (by decide) fun s₂₁ u₂₁ =>
+    Steps.wp_subi (imm := 1) (by decide) fun s₂₂ u₂₂ => WP.block_nil ?_
+  have k17 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₇.gpr r = s₅.gpr r := fun r h0 h7 => by rw [g₁₇.gpr, k16 r h0 h7]
+  have kk : ∀ r, r ≠ .t0 → r ≠ .a7 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₁₇.gpr r = s.gpr r :=
+    fun r h0 h7 h1 h2 h3 h4 => by rw [k17 r h0 h7, k5 r h0 h1 h2 h3 h4]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
+  · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.other _ (by decide),
+      u₁₈.gpr, kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h3]; rfl
+  · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.gpr,
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h4]; rfl
+  · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.gpr, u₁₉.other _ (by decide),
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h5]; rfl
+  · rw [u₂₂.other _ (by decide), u₂₁.gpr, u₂₀.other _ (by decide), u₁₉.other _ (by decide),
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h6]; rfl
+  · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.other _ (by decide),
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h8]
+  · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.other _ (by decide),
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h9]
+  · rw [u₂₂.gpr, u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.other _ (by decide),
+      u₁₈.other _ (by decide), kk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h11]; rfl
+  · have : r ≠ .t0 ∧ r ≠ .a7 ∧ r ≠ .a4 ∧ r ≠ .t2 ∧ r ≠ .t3 ∧ r ≠ .t4 ∧ r ≠ .a0 ∧ r ≠ .a1 ∧ r ≠ .a2 ∧
+        r ≠ .a3 ∧ r ≠ .t1 := by revert r; decide
+    rw [u₂₂.other r this.2.2.2.2.2.2.2.2.2.2, u₂₁.other r this.2.2.2.2.2.2.2.2.2.1,
+      u₂₀.other r this.2.2.2.2.2.2.2.2.1, u₁₉.other r this.2.2.2.2.2.2.2.1, u₁₈.other r this.2.2.2.2.2.2.1,
+      kk r this.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2.1 this.2.2.2.2.2.1]
+  · rw [u₂₂.rd, u₂₁.rd, u₂₀.rd, u₁₉.rd, u₁₈.rd, g₁₇.rd, rd₁₆, u₁₅.rd, u₁₄.rd, u₁₃.rd, g₁₂.rd, rd₁₁, u₁₀.rd,
+      u₉.rd, u₈.rd, u₇.rd, rd₆, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₂₂.wr, u₂₁.wr, u₂₀.wr, u₁₉.wr, u₁₈.wr, g₁₇.wr, wr₁₆, u₁₅.wr, u₁₄.wr, u₁₃.wr, g₁₂.wr, hw11]
+  · rw [u₂₂.sp, u₂₁.sp, u₂₀.sp, u₁₉.sp, u₁₈.sp, g₁₇.sp, sp₁₆, u₁₅.sp, u₁₄.sp, u₁₃.sp, g₁₂.sp, sp₁₁, u₁₀.sp,
+      u₉.sp, u₈.sp, u₇.sp, sp₆, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+  · rw [u₂₂.mem, u₂₁.mem, u₂₀.mem, u₁₉.mem, u₁₈.mem, g₁₇.mem, m₁₆, u₁₅.mem, u₁₄.mem, u₁₃.mem, g₁₂.mem,
+      hm11, r₁₆, e15, r₁₁, e10]
 
 end
 
@@ -141,7 +332,7 @@ structure Inv (s₀ : State) (m₁ : Mem) (i : Nat) (s : State) : Prop where
   a1 : s.gpr .a1 = F s₀ + BitVec.ofNat 64 (8 * i)
   a2 : s.gpr .a2 = G s₀ + BitVec.ofNat 64 (8 * i)
   a3 : s.gpr .a3 = S s₀ + BitVec.ofNat 64 (4 * i)
-  a5 : s.gpr .a5 = C
+  a5 : s.gpr .a5 = 5541226816974932
   a6 : s.gpr .a6 = 3329
   t1 : s.gpr .t1 = BitVec.ofNat 64 (128 - i)
   kept : ∀ r ∈ kept, s.gpr r = s₀.gpr r
@@ -252,18 +443,18 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
       rw [List.mem_singleton] at hr; subst hr; exact hp.gs) (by decide)) (by rw [n_eq]; exact hj)
 
 theorem tail_ok {s : State} :
-    WP isa (.block (consts ++ ([.li .t1 128] : List Instr))) s
+    WP isa (.block (constsM ++ ([.li .t1 128] : List Instr))) s
       fun s' => s'.gpr .a0 = s.gpr .a0 ∧ s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a2 = s.gpr .a2 ∧
-        s'.gpr .a3 = s.gpr .a3 ∧ s'.gpr .a5 = C ∧ s'.gpr .a6 = 3329 ∧ s'.gpr .t1 = 128 ∧
+        s'.gpr .a3 = s.gpr .a3 ∧ s'.gpr .a5 = 5541226816974932 ∧ s'.gpr .a6 = 3329 ∧ s'.gpr .t1 = 128 ∧
         (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.sp = s.sp := by
-  simp only [consts, liq, Nat.reduceLT, ite_false, List.cons_append, List.nil_append,
+  simp only [constsM, loadM, liq, Nat.reduceLT, ite_false, List.cons_append, List.nil_append,
     Int.reduceSub, Int.reduceNeg, Int.cast_ofNat_Int]
   crun [kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
   all_goals decide
 
 theorem setup_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block (table gammaTable .a3 ++ consts ++ ([.li .t1 128] : List Instr))) s₀
+    WP isa (.block (table gammaTable .a3 ++ constsM ++ ([.li .t1 128] : List Instr))) s₀
       fun s => Setup s₀ s.mem ∧ Inv s₀ s.mem 0 s := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (setup_base hp) fun s₂ ⟨hm, e, rd, wr, sp⟩ => ?_

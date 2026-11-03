@@ -5,17 +5,6 @@ public import VerifiedGarbage.Impl.MlKem.RISCV64.Poly
 /-!
 # ML-KEM on RISC-V: the NTT, its inverse and `MultiplyNTTs`
 
-As on PPC64LE (`Impl/MlKem/PPC64LE/Ntt.lean`), in `MultiplyNTTs`: the
-products of two coefficients (less than `q² < 2²⁴`), and the sums of two of
-them (less than `2q² < 2²⁵`), are reduced by `reduce`: the Barrett reduction
-`barrett32` (`VG.Proof.MlKem.barrett32`), `x - ⌊(x >> 11) · 161270 / 2¹⁸⌋ · q`,
-leaves a value less than `2q` congruent to `x`, and a subtraction of `q` and
-a `fixup` finish it, with `a5 = 161270` and `a6 = q` (`consts`).
-
-Multiplications are what `MultiplyNTTs` counts: the product of the quotient
-by `q = 2¹¹ + 2¹⁰ + 2⁸ + 1` is four subtractions of shifts (`subMulQ`), and
-`fixup` needs none, so a pair multiplies eight times.
-
 The butterflies of the NTT and its inverse are lazy, as ML-DSA's on RISC-V
 (`Impl/MlDsa/RISCV64/Arith.lean`): each reduces only its product, by
 Barrett's method with `mulhu` and `m = ⌊2⁶⁴ / q⌋` in `a5` (`barrettM`, `x -
@@ -27,6 +16,12 @@ coefficients, which stay less than `15 q`, and a last loop reduces them
 product of the zeta and their difference plus `64 q` (in `t5`), so each
 layer at most doubles the bound, which stays less than `128 q`; the
 multiplication by 3303 reduces them (`reduceM`).
+
+`MultiplyNTTs` reduces the same way. The product `f[2i+1] g[2i+1]` is
+reduced lazily (`barrettM`, less than `2q`); its product by `γᵢ` plus
+`f[2i] g[2i]` (less than `3q²`), and the sum of the other two products (less
+than `2q²`), are reduced fully (`reduceM`): `barrettM`, then `- q`, fixed
+up.
 
 The tables of `ζ^BitRev7(k)` (`zetaTable`) and of the `γᵢ` of
 `MultiplyNTTs` (`gammaTable`) are stored in the first 512 bytes of
@@ -84,23 +79,6 @@ def gammaTable : List Nat := [
   3010, 2773, 556, 757, 2572, 2099, 1230, 561, 2768, 2466, 863, 2594, 735, 2804, 525, 1092, 2237,
   403, 2926, 1026, 2303, 1143, 2186, 2150, 1179, 2775, 554, 886, 2443, 1722, 1607, 1212, 2117,
   1874, 1455, 1029, 2300, 2110, 1219, 2935, 394, 885, 2444, 2154, 1175]
-
-/-- `d ← d - t · q`, as `q = 2¹¹ + 2¹⁰ + 2⁸ + 1`, with `u` a temporary. -/
-def subMulQ (d t u : Reg) : List Instr :=
-  [.sub d d t, .shift .sll .d u t 8, .sub d d u, .shift .sll .d u t 10, .sub d d u,
-    .shift .sll .d u t 11, .sub d d u]
-
-/-- `d ← d - ⌊(d >> 11) · 161270 / 2¹⁸⌋ · q`, with `161270` in `a5` and `t`
-and `u` temporaries. -/
-def barrett (d t u : Reg) : List Instr :=
-  [.shift .srl .d t d 11, .mul t t .a5, .shift .srl .d t t 18] ++ subMulQ d t u
-
-/-- `d ← d mod q` for `d < 2²⁵`, with `q` in `a6` and `t` and `u`
-temporaries. -/
-def reduce (d t u : Reg) : List Instr := barrett d t u ++ [.sub d d .a6] ++ fixup d t .a6
-
-/-- `a5 = 161270 = 0x27000 + 1526`, `a6 = q`. -/
-def consts : List Instr := [.lui .a5 0x27, .addi .a5 .a5 1526] ++ liq .a6 3329
 
 /-- `a5 = m = ⌊2⁶⁴ / q⌋ = ((330282856 · 2¹²) + 187) · 2¹² + 84`, the lazy
 butterflies' Barrett constant: `lui` and `addi` of `330282856`, then two
@@ -197,16 +175,16 @@ def nttInv : Prog isa :=
 `t4 = g[2i+1]`, the sums in `t0`, `γᵢ` and the products in `a7`. -/
 def mulBody : List Instr :=
   [.load .w .a4 .a1 0, .load .w .t2 .a1 4, .load .w .t3 .a2 0, .load .w .t4 .a2 4,
-   .mul .t0 .t2 .t4] ++ reduce .t0 .a7 .t5 ++
+   .mul .t0 .t2 .t4] ++ barrettM .t0 .a7 ++
   [.load .w .a7 .a3 0, .mul .t0 .t0 .a7, .mul .a7 .a4 .t3, .add .t0 .a7 .t0] ++
-  reduce .t0 .a7 .t5 ++
+  reduceM .t0 .a7 ++
   [.store .w .t0 .a0 0, .mul .t0 .a4 .t4, .mul .a7 .t2 .t3, .add .t0 .t0 .a7] ++
-  reduce .t0 .a7 .t5 ++
+  reduceM .t0 .a7 ++
   [.store .w .t0 .a0 4, .addi .a0 .a0 8, .addi .a1 .a1 8, .addi .a2 .a2 8, .addi .a3 .a3 4,
    .addi .t1 .t1 (-1)]
 
 def multiplyNTTs : Prog isa :=
-  .seq (.block (table gammaTable .a3 ++ consts ++ ([.li .t1 128] : List Instr)))
+  .seq (.block (table gammaTable .a3 ++ constsM ++ ([.li .t1 128] : List Instr)))
     (.loop (.block mulBody) (.nonzero .t1))
 
 end VG.Impl.MlKem.RISCV64
