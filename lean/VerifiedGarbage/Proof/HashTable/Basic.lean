@@ -11,7 +11,7 @@ name's, when distinct names are at distinct addresses (`find_name`,
 `pw_ne`), as an indirect call of a table's function finds it; and, for the
 contracts' satisfiability, addresses of functions distinct for distinct
 names (`symsOf`) and a table of five 64-bit words written to memory
-(`put5`).
+(`put5`), and the same for 32-bit targets (`symsOf32`, `put5w`).
 -/
 
 @[expose] public section
@@ -111,6 +111,61 @@ theorem put5_below {m : Mem} {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) (w₀ w�
   have h4 : (0x300000 + BitVec.ofNat 64 (8 * 4) : Addr).toNat = 0x300020 := by decide
   simp only [put5]
   rw [readW_sep64, readW_sep64, readW_sep64, readW_sep64, readW_sep64]
+  all_goals first | (simp only [h0, h1, h2, h3, h4]; omega) | omega
+
+/-! ## The same for 32-bit targets -/
+
+/-- Addresses of `ns`' names, 32 bits wide, distinct for distinct names. -/
+def symsOf32 (ns : List String) (n : String) : BitVec 32 := BitVec.ofNat 32 (0x400000 + 16 * ns.idxOf n)
+
+theorem symsOf32_distinct {ns : List String} (h : ns.length < 2 ^ 24) :
+    ns.Pairwise fun f g => f ≠ g → (symsOf32 ns f).setWidth 64 ≠ (symsOf32 ns g).setWidth 64 :=
+  (List.pairwise_of_forall (R := fun _ _ => True) fun _ _ => trivial).imp_of_mem fun {f g} hf hg _ hne e => by
+    have i1 := List.idxOf_lt_length_of_mem hf
+    have i2 := List.idxOf_lt_length_of_mem hg
+    have e' := congrArg BitVec.toNat e
+    simp only [symsOf32, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at e'
+    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega),
+      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega
+    exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
+
+/-- A 32-bit word apart from a write of one. -/
+theorem readW_sep32 {m : Mem} {a b : Addr} {v : BitVec 32} (h : a.toNat + 4 ≤ b.toNat ∨ b.toNat + 4 ≤ a.toNat)
+    (ha : a.toNat + 4 ≤ 2 ^ 64) (hb : b.toNat + 4 ≤ 2 ^ 64) : (m.writeW b v).readW a 32 = m.readW a 32 :=
+  Mem.readW_writeW_sep (fun x h1 h2 => by
+    simp only [Nat.reduceDiv] at h1 h2
+    rcases h with h | h <;> bv_omega) (by decide)
+
+/-- Five 32-bit words written at `p`. -/
+def put5w (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ w₄ : BitVec 32) : Mem :=
+  ((((m.writeW (p + BitVec.ofNat 64 (4 * 0)) w₀).writeW (p + BitVec.ofNat 64 (4 * 1)) w₁).writeW
+    (p + BitVec.ofNat 64 (4 * 2)) w₂).writeW (p + BitVec.ofNat 64 (4 * 3)) w₃).writeW (p + BitVec.ofNat 64 (4 * 4)) w₄
+
+/-- The table `put5w` writes at `0x300000`, of the low halves of `ws`. -/
+theorem put5w_held {m : Mem} {ws : List (BitVec 64)} (hl : ws.length = 5) :
+    Abi.tableHeld 32 (put5w m 0x300000 ((ws.getD 0 0).setWidth 32) ((ws.getD 1 0).setWidth 32)
+      ((ws.getD 2 0).setWidth 32) ((ws.getD 3 0).setWidth 32) ((ws.getD 4 0).setWidth 32)) 0x300000 ws := by
+  intro i hi
+  rw [hl] at hi
+  simp only [put5w, Nat.reduceDiv]
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+  · rw [readW_sep32, readW_sep32, readW_sep32, readW_sep32, Mem.readW_writeW_self32] <;> decide
+  · rw [readW_sep32, readW_sep32, readW_sep32, Mem.readW_writeW_self32] <;> decide
+  · rw [readW_sep32, readW_sep32, Mem.readW_writeW_self32] <;> decide
+  · rw [readW_sep32, Mem.readW_writeW_self32] <;> decide
+  · rw [Mem.readW_writeW_self32]
+
+/-- Below `0x300000`, `put5w` at `0x300000` changes no 32-bit word. -/
+theorem put5w_below {m : Mem} {a : Addr} (ha : a.toNat + 4 ≤ 0x300000) (w₀ w₁ w₂ w₃ w₄ : BitVec 32) :
+    (put5w m 0x300000 w₀ w₁ w₂ w₃ w₄).readW a 32 = m.readW a 32 := by
+  have h0 : (0x300000 + BitVec.ofNat 64 (4 * 0) : Addr).toNat = 0x300000 := by decide
+  have h1 : (0x300000 + BitVec.ofNat 64 (4 * 1) : Addr).toNat = 0x300004 := by decide
+  have h2 : (0x300000 + BitVec.ofNat 64 (4 * 2) : Addr).toNat = 0x300008 := by decide
+  have h3 : (0x300000 + BitVec.ofNat 64 (4 * 3) : Addr).toNat = 0x30000C := by decide
+  have h4 : (0x300000 + BitVec.ofNat 64 (4 * 4) : Addr).toNat = 0x300010 := by decide
+  simp only [put5w]
+  rw [readW_sep32, readW_sep32, readW_sep32, readW_sep32, readW_sep32]
   all_goals first | (simp only [h0, h1, h2, h3, h4]; omega) | omega
 
 end VG.Proof.HashTable
