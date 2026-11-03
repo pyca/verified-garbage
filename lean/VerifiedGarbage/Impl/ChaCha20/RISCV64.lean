@@ -16,16 +16,16 @@ rotates and faults on misaligned accesses:
   the byte stores ignore.
 * A rotation left by `k` is `slliw` by `k` into a temporary, `srliw` by
   `32 - k` and `or` (`rotl_shifts`). A round's four quarter rounds touch
-  disjoint words, so each of their four steps runs for all four at once,
-  operation by operation (`qstep4`), with a temporary each (`T`, `s5`–`s7`),
-  so that the four chains of dependent operations are side by side.
+  disjoint words, so each of their four steps runs for all four at once
+  (`qstep4`), so that the four chains of dependent operations are side by
+  side; the rotations share `T` (`s3`), which the core renames.
 * `state` and `buf` are argument buffers, whose alignment the contract does
   not state: the words are loaded and stored a byte at a time
   (`Impl/Words/RISCV64.lean`). The input state is re-read from `state` to
   add it at the end, into `T`, with `U` (`s4`) as a temporary.
-* `s0`–`s7` are callee-saved: they are saved first and restored last, as
+* `s0`–`s4` are callee-saved: they are saved first and restored last, as
   doublewords, at `buf + 64` rounded up to a multiple of 8 (`t0` holds that
-  address), within `buf[64..136)`, which is working space. Only the first
+  address), within `buf[64..112)`, which is working space. Only the first
   64 bytes of `buf` are written otherwise.
 * Every address is `a0`, `a1` or `t0` (computed from `a1`) plus a constant,
   and the only branch counts ten double rounds, so only the pointers can
@@ -47,40 +47,26 @@ def wreg (k : Nat) : Reg :=
 def T : Reg := .s3
 def U : Reg := .s4
 
-/-- The rotation temporaries of the four quarter rounds of a round. -/
-def tmp (i : Nat) : Reg := [T, .s5, .s6, .s7].getD i T
-
 /-- The callee-saved registers used, in the order they are saved. -/
-def saved (i : Nat) : Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7].getD i .s0
+def saved (i : Nat) : Reg := [.s0, .s1, .s2, .s3, .s4].getD i .s0
 
 /-- `t0 :=` `buf + 64` rounded up to a multiple of 8 (`(buf + 71) & -8`). -/
 def savePtr : List Instr := [.addi .t0 .a1 71, .logicImm .and .t0 .t0 (-8)]
 
 /-- Save them at `t0`. -/
 def save : List Instr :=
-  savePtr ++ (List.range 8).flatMap fun i => [.store .d (saved i) .t0 (8 * i)]
+  savePtr ++ (List.range 5).flatMap fun i => [.store .d (saved i) .t0 (8 * i)]
 
 /-- Restore them. -/
 def restore : List Instr :=
-  savePtr ++ (List.range 8).flatMap fun i => [.load .d (saved i) .t0 (8 * i)]
-
-/-- `a += b; d ^= a; d <<<= k` on the low words (`0 < k < 32`). -/
-def qstep (a b d : Reg) (k : Nat) : List Instr :=
-  [.add a a b, .logic .xor d d a, .shift .sll .w T d k, .shift .srl .w d d (32 - k),
-   .logic .or d d T]
-
-/-- The quarter round (RFC 8439 §2.1) on the low words of `a, b, c, d`. -/
-def qr (a b c d : Reg) : List Instr :=
-  qstep a b d 16 ++ qstep c d b 12 ++ qstep a b d 8 ++ qstep c d b 7
+  savePtr ++ (List.range 5).flatMap fun i => [.load .d (saved i) .t0 (8 * i)]
 
 /-- Step `k` of four quarter rounds at once: `a += b; d ^= a; d <<<= k` for
-each `(a, b, d)` of `ls`, operation by operation, the rotation of the `i`-th
-through `tmp i`. -/
+each `(a, b, d)` of `ls`, the additions and XORs operation by operation, then
+the rotations, each through `T`. -/
 def qstep4 (ls : List (Reg × Reg × Reg)) (k : Nat) : List Instr :=
   ls.map (fun (a, b, _) => .add a a b) ++ ls.map (fun (a, _, d) => .logic .xor d d a) ++
-  (List.range ls.length).map (fun i => .shift .sll .w (tmp i) (ls.getD i (T, T, T)).2.2 k) ++
-  ls.map (fun (_, _, d) => .shift .srl .w d d (32 - k)) ++
-  (List.range ls.length).map (fun i => .logic .or (ls.getD i (T, T, T)).2.2 (ls.getD i (T, T, T)).2.2 (tmp i))
+  ls.flatMap fun (_, _, d) => [.shift .sll .w T d k, .shift .srl .w d d (32 - k), .logic .or d d T]
 
 /-- The four quarter rounds `QUARTERROUND(x, y, z, w)` (RFC 8439 §2.2) of `qs`, at once. -/
 def round4 (qs : List (Nat × Nat × Nat × Nat)) : List Instr :=
