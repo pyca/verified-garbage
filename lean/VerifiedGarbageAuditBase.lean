@@ -94,6 +94,8 @@ import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Algebra.Order.Sub.Basic
+import Mathlib.Algebra.Polynomial.Div
+import Mathlib.Algebra.Polynomial.Expand
 import Mathlib.Algebra.Ring.Divisibility.Basic
 import Mathlib.Algebra.Ring.Int.Defs
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
