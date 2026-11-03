@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.Arm
+public import VerifiedGarbage.Impl.ICall
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on ARMv7
 
-`encryptPrecomputed` and `decrypt`, for a hash function `H` (the label's)
-and MGF1's hash function `G`, each a streaming hash function
-(`Impl.Pbkdf2.Stream.Arm.Hash`: its `init`, `update` and `finalize`), with
+`encryptPrecomputed` and `decrypt`, for a hash function `H` (the label's),
+a streaming hash function (`Impl.Pbkdf2.Stream.Arm.Hash`: its `init`,
+`update` and `finalize`), with MGF1 over the hash function of a table of the
+interface `Hash` (`Spec/HashTable.lean`) that is the last argument, with
 the steps of AArch64 (`Impl/RsaOaep/AArch64.lean`) and the frames, slots,
 byte loops and RSA calls of the ARMv7 RSASSA-PSS functions
 (`Impl/RsaPss/Arm.lean`), whose definitions this file reuses: the public-key
@@ -28,9 +30,16 @@ frame.
 
 ## MGF1
 
-`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with `G`, the addresses and lengths
-in the slots `sSrc`, `sSrcLen`, `sDst`, `sDstLen`, as on AArch64
-(`Impl/RsaOaep/AArch64/Mgf1.lean`): for each counter `c` from 0, while
+`mgfXor`: `dst ⊕= MGF1(src, dstLen)` with the hash function of the table
+that is our argument `j`, the addresses and lengths in the slots `sSrc`,
+`sSrcLen`, `sDst`, `sDstLen`, as on AArch64
+(`Impl/RsaOaep/AArch64/Mgf1/Table.lean`). The table's address is copied to
+the slot `sTab`, and its digest length `hLen` (its word 4) to `sHl`; the
+hash function's `init`, `update` and `finalize` are the table's functions
+0, 1 and 2, which it calls indirectly (`tcall`: their address, the table's
+word `j`, into `r4`, then `blx r4`, in the frame of their stack arguments,
+of whichever of the functions `Fns` lists is at that address). For each
+counter `c` from 0, while
 `done = c hLen` is below `dstLen`, the state at `scratch + oSt` is set by
 `init`, `update` absorbs `src` and `I2OSP(c, 4)` (at `scratch + oCtr`),
 `finalize` writes the digest to `scratch + oDig`, and its first
@@ -40,25 +49,26 @@ in the slots `sSrc`, `sSrcLen`, `sDst`, `sDstLen`, as on AArch64
 ## Encryption
 
 `encryptPrecomputed(out = r0, out_len = r1, n = r2, n_len = r3, e, e_len,
-label, label_len, msg, msg_len, seed, scratch, scratch_len, pre, pre_len)`,
-the last eleven on the stack. If `k < 2 hLen + 2` or
+label, label_len, msg, msg_len, seed, scratch, scratch_len, pre, pre_len,
+mgf1)`, the last twelve on the stack. If `k < 2 hLen + 2` or
 `msg_len > k - 2 hLen - 2` (public), it writes zeros to `out` and returns 0.
 Otherwise it writes `EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖
 0x01 ‖ M`, the label hashed with `H`), masks `DB` with MGF1 of the seed and
-then the seed with MGF1 of `maskedDB` (`G`), and returns the precomputed
-public operation of `EM` into `out`.
+then the seed with MGF1 of `maskedDB`, and returns the precomputed public
+operation of `EM` into `out`, MGF1's hash function being that of the table
+`mgf1`.
 
 ## Decryption
 
 `decrypt(out = r0, out_len = r1, msg_len = r2, n = r3, n_len, e, e_len, p,
 p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, label, label_len,
-ct, ct_len, scratch, scratch_len)`, the last nineteen on the stack.
+ct, ct_len, scratch, scratch_len, mgf1)`, the last twenty on the stack.
 `vg_rsa_private_checked` writes `EM` (or zeros) to `scratch` and returns `r`
 (1, 0 or 2), which only selects values without a branch. If
 `k < 2 hLen + 2` (public), the result is `r = 2 ? 2 : 0`, with zeros to
 `out` and `*msg_len`. Otherwise, without a branch on anything secret: the
 label is hashed (`H`) to `scratch + oLh`, the seed and `DB` unmasked in
-place (`G`); the accumulator `acc` ORs `EM`'s first byte into the
+place (MGF1 over the hash function of `mgf1`); the accumulator `acc` ORs `EM`'s first byte into the
 comparison of `lHash'` with `lHash` (`Bignum.Arm.compareBytes`); the scan of
 `T = DB[hLen..]` (`t = k - 2 hLen - 1` bytes, `Impl.RsaPss.Arm.scanBody`)
 finds the index `idx` and the value of its first byte that is not zero, if
@@ -101,6 +111,10 @@ def sDstLen : Nat := 80
 def sRes : Nat := 84
 /-- The mask `ok`. -/
 def sOk : Nat := 88
+/-- MGF1's slots of its hash function's table: the table's address, and its
+digest length. -/
+def sTab : Nat := 120
+def sHl : Nat := 124
 
 /-! ## Our part of `scratch` -/
 
@@ -132,11 +146,37 @@ def finCall (G : Hash) : Prog isa := .frame (.push [.r1, .r12]) (.call G.finN G.
 /-- `r12 := r10`, the working space for `finalize`. -/
 def toR12 : List Instr := [.mov .r12 (.reg .r10)]
 
+/-- The functions an indirect call of each of a table's functions may
+reach: for each of `init`, `update` and `finalize`, that function of every
+table of the interface, by name. -/
+structure Fns where
+  init : List (String × Prog isa)
+  upd : List (String × Prog isa)
+  fin : List (String × Prog isa)
+
+/-- The table's function `j`'s address (the table's word `j`) into `r4`. -/
+def tload (j : Nat) : List Instr := [ld .r4 sTab, .ldr .r4 .r4 (4 * j)]
+
+/-- The call of the table's function `j`, among `ts`: its address into
+`r4`, then `blx r4`. -/
+def tcall (j : Nat) (ts : List (String × Prog isa)) : Prog isa :=
+  .seq (.block (tload j)) (Code.icalls (.blx .r4) ts)
+
+/-- The same in a frame pushing `rs` (its stack arguments), popping `n`
+bytes. -/
+def tcallF (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) (n : Nat) : Prog isa :=
+  .seq (.block (tload j)) (.frame (.push rs) (Code.icalls (.blx .r4) ts) (.pop .r1 n))
+
 /-! ## MGF1 -/
 
 section Mgf
 
-variable (G : Hash)
+variable (f : Fns)
+
+/-- `init(state)`, `update` and `finalize` through the table. -/
+def callInit : Prog isa := tcall 0 f.init
+def callUpd : Prog isa := tcallF 1 f.upd [.r1, .r7, .r10, .r12] 16
+def callFin : Prog isa := tcallF 2 f.fin [.r1, .r12] 8
 
 /-- `init(state)`. -/
 def initArgs : List Instr := sp0 :: atS .r0 oSt
@@ -162,24 +202,29 @@ def finArgs : List Instr :=
 the difference, both below `2^31`. -/
 def xorSet : List Instr :=
   sp0 :: ([ld .r0 sDst, ld .r2 sDone, .dp .add .r0 .r0 (.reg .r2)] ++ atS .r1 oDig ++
-    [ld .r3 sDstLen, .dp .sub .r3 .r3 (.reg .r2), mw .r4 G.D, .dp .sub .r5 .r3 (.reg .r4),
+    [ld .r3 sDstLen, .dp .sub .r3 .r3 (.reg .r2), ld .r4 sHl, .dp .sub .r5 .r3 (.reg .r4),
       .mov .r5 (.shifted .r5 .lsr 31), mw .r6 0, .dp .sub .r5 .r6 (.reg .r5), .dp .eor .r6 .r3 (.reg .r4),
       .dp .and .r6 .r6 (.reg .r5), .dp .eor .lr .r4 (.reg .r6)])
 
 /-- The next counter, and the flags of `done ≥ dstLen`. -/
 def mgfNext : List Instr :=
-  [sp0, ld .r0 sCtr, .dp .add .r0 .r0 (.imm 1), st .r0 sCtr, ld .r0 sDone, mw .r1 G.D, .dp .add .r0 .r0 (.reg .r1),
+  [sp0, ld .r0 sCtr, .dp .add .r0 .r0 (.imm 1), st .r0 sCtr, ld .r0 sDone, ld .r1 sHl, .dp .add .r0 .r0 (.reg .r1),
     st .r0 sDone, ld .r1 sDstLen, .dp .sub .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .cmp .r0 (.imm 0)]
 
 /-- One block of the mask: the digest of `src ‖ I2OSP(c, 4)`, XORed into
 `dst`. -/
 def mgfRound : Prog isa :=
-  seqs [.block initArgs, .call G.initN G.initC, .block updSrcArgs, updCall G, .block ctrSet,
-    .block Impl.RsaPss.Arm.ctrPut, .block updCtrArgs, updCall G, .block finArgs, .block toR12, finCall G,
-    .block (xorSet G), countLoop Impl.RsaPss.Arm.xorBody, .block (mgfNext G)]
+  seqs [.block initArgs, callInit f, .block updSrcArgs, callUpd f, .block ctrSet,
+    .block Impl.RsaPss.Arm.ctrPut, .block updCtrArgs, callUpd f, .block finArgs, .block toR12, callFin f,
+    .block xorSet, countLoop Impl.RsaPss.Arm.xorBody, .block mgfNext]
 
-/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`. -/
-def mgfXor : Prog isa := .seq (.block Impl.RsaPss.Arm.mgfInit) (.loop (mgfRound G) .ne)
+/-- The table that is our argument `j` to `sTab`, and its digest length (its
+word 4) to `sHl`. -/
+def tabArgs (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab, .ldr .r0 .r0 16, st .r0 sHl]
+
+/-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
+the table that is our argument `j`. -/
+def mgfXor (j : Nat) : Prog isa := .seq (.block (tabArgs j ++ Impl.RsaPss.Arm.mgfInit)) (.loop (mgfRound f) .ne)
 
 end Mgf
 
@@ -222,7 +267,7 @@ end Common
 
 section Enc
 
-variable (H G : Hash)
+variable (H : Hash) (f : Fns)
 
 /-- `scratch` to its slot; the flags of `k < 2 hLen + 2` or
 `msg_len > k - 2 hLen - 2`: the top bit of `k - 2 hLen - 2`, `msg_len ≥ 1024`,
@@ -270,14 +315,16 @@ variable (pubN : String) (pubC : Prog isa)
 
 /-- After the checks. -/
 def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H 3), mgfXor G, .block (seedArgs H 3), mgfXor G, .block pubArgs, .call pubN pubC]
+  seqs [encEm H, .block (dbArgs H 3), mgfXor f 15, .block (seedArgs H 3), mgfXor f 15, .block pubArgs,
+    .call pubN pubC]
 
 /-- The inner frame's body. -/
-def encBody : Prog isa := seqs [.block (encChk H), .ite .ne (encFail) (encMain H G pubN pubC)]
+def encBody : Prog isa := seqs [.block (encChk H), .ite .ne (encFail) (encMain H f pubN pubC)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, calling a precomputed
-public operation by its name. -/
-def encryptPrecomputed : Prog isa := wrap frameBytes (encBody H G pubN pubC)
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, calling a precomputed public
+operation by its name, with MGF1's hash function the table that is its
+argument 15 (`mgf1`). -/
+def encryptPrecomputed : Prog isa := wrap frameBytes (encBody H f pubN pubC)
 
 end Enc
 
@@ -285,7 +332,7 @@ end Enc
 
 section Dec
 
-variable (H G : Hash)
+variable (H : Hash) (f : Fns)
 
 /-- `scratch` to its slot. -/
 def decStart : List Instr := [sp0, ld .r0 (arg 21), st .r0 sS]
@@ -387,7 +434,7 @@ def decRet : List Instr := sp0 :: (faultBit ++ [ld .r1 sOk, .dp .and .r1 .r1 (.i
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H 17 oLh, .block (seedArgs H 4), mgfXor G, .block (dbArgs H 4), mgfXor G, .block (cmpSet H),
+  seqs [hashLabel H 17 oLh, .block (seedArgs H 4), mgfXor f 23, .block (dbArgs H 4), mgfXor f 23, .block (cmpSet H),
     Bignum.Arm.compareBytes, .block accSet, .block accPut, .block accSave, .block (scanSet H), countLoop Impl.RsaPss.Arm.scanBody,
     .block scanEnd, .block clrBuf, Bignum.Arm.maskBytes, .block (tSet H), Bignum.Arm.copyBytes, shift,
     .block okMask, .block outSet, Bignum.Arm.copyBytes, .block outMask, Bignum.Arm.maskBytes, .block (mlSet H),
@@ -397,11 +444,12 @@ variable (privN : String) (privC : Prog isa)
 
 /-- The inner frame's body. -/
 def decBody : Prog isa :=
-  seqs [.block decStart, .block privArgs, .call privN privC, .block (decChk H), .ite .ne decFail (decMain H G)]
+  seqs [.block decStart, .block privArgs, .call privN privC, .block (decChk H), .ite .ne decFail (decMain H f)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`, calling a checked private operation
-by its name. -/
-def decrypt : Prog isa := wrap frameBytes (decBody H G privN privC)
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, calling a checked private operation by
+its name, with MGF1's hash function the table that is its argument 23
+(`mgf1`). -/
+def decrypt : Prog isa := wrap frameBytes (decBody H f privN privC)
 
 end Dec
 
