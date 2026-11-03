@@ -1,7 +1,7 @@
 module
 
--- separate module: it builds in parallel with the encoding's proofs (`Em`, `Enc`) and `CTBlocks`, which
--- `CTMain` also needs.
+-- separate module: it builds in parallel with the encoding (`Enc`) and `Correct`, which `Verified` also
+-- needs.
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Priv
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBase

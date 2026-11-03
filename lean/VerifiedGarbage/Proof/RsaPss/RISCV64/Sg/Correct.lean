@@ -1,5 +1,7 @@
 module
 
+-- separate module: it builds in parallel with `CTPriv` and `CTBlocks`, which `Verified` also needs.
+
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Enc
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Priv
 import VerifiedGarbage.Proof.Framework.Contract

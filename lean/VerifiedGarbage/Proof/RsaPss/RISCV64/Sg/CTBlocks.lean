@@ -56,20 +56,23 @@ theorem zeros8_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (clearY [.li .t5 8
   two_taint [.s0] h (by taint_decide)
 
 theorem digArgs_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ)
-    (.block ([argBase, .load .d .a4 .t6 64] ++ yBase .a1 ++ [.addi .a1 .a1 8, .li .a5 H.D])) fun _ _ => True :=
+    (.block (([argBase, .load .d .a4 .t6 64] : List Instr) ++ yBase .a1 ++
+      ([.addi .a1 .a1 8, .li .a5 H.D] : List Instr))) fun _ _ => True :=
   two_taint [.s0] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0])
-    (c := .block ([argBase, .load .d .a4 .t6 64] ++ yBase .a1 ++ [.addi .a1 .a1 8, .li .a5 H.D]))
-    (c' := .block ([argBase, .load .d .a4 .t6 64] ++ yBase .a1 ++ [.addi .a1 .a1 8, .li .a5 Hd.D])) (by rfl)
+    (c := .block (([argBase, .load .d .a4 .t6 64] : List Instr) ++ yBase .a1 ++
+      ([.addi .a1 .a1 8, .li .a5 H.D] : List Instr)))
+    (c' := .block (([argBase, .load .d .a4 .t6 64] : List Instr) ++ yBase .a1 ++
+      ([.addi .a1 .a1 8, .li .a5 Hd.D] : List Instr))) (by rfl)
     (by taint_decide))
 
 theorem copy_taint (h : Pins Φ [.a4, .a1, .a5]) : RelCT isa (Two Φ) copyLoop fun _ _ => True :=
   two_taint [.a4, .a1, .a5] h (by taint_decide)
 
 theorem saltDst_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ)
-    (.block (yBase .a1 ++ [.addi .a1 .a1 ((8 + H.D : Nat) : Int)])) fun _ _ => True :=
+    (.block (yBase .a1 ++ ([.addi .a1 .a1 ((8 + H.D : Nat) : Int)] : List Instr))) fun _ _ => True :=
   two_taint [.s0] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0])
-    (c := .block (yBase .a1 ++ [.addi .a1 .a1 ((8 + H.D : Nat) : Int)]))
-    (c' := .block (yBase .a1 ++ [.addi .a1 .a1 ((8 + Hd.D : Nat) : Int)])) (by rfl) (by taint_decide))
+    (c := .block (yBase .a1 ++ ([.addi .a1 .a1 ((8 + H.D : Nat) : Int)] : List Instr)))
+    (c' := .block (yBase .a1 ++ ([.addi .a1 .a1 ((8 + Hd.D : Nat) : Int)] : List Instr))) (by rfl) (by taint_decide))
 
 theorem saltArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block [argBase, .load .d .a4 .t6 72, mov .a5 .s4]) fun _ _ => True :=
