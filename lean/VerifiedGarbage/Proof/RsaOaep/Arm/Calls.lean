@@ -582,6 +582,8 @@ theorem sDst_lt : sDst < 4096 := by decide
 theorem sDstLen_lt : sDstLen < 4096 := by decide
 theorem sRes_lt : sRes < 4096 := by decide
 theorem sOk_lt : sOk < 4096 := by decide
+theorem sTab_lt : sTab < 4096 := by decide
+theorem sHl_lt : sHl < 4096 := by decide
 
 theorem offsO : oEm = 0 ∧ oBuf = 1024 ∧ oSt = 3072 ∧ oDig = 3328 ∧ oLh = 3392 ∧ oCtr = 3456 ∧ oW = 3520 ∧
     oRsa = 8192 ∧ frameBytes = 128 ∧ sS = 64 ∧ sSrc = 68 ∧ sSrcLen = 72 ∧ sDst = 76 ∧ sDstLen = 80 ∧ sRes = 84 ∧
@@ -646,16 +648,21 @@ end
 
 /-! ## `init` -/
 
-theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
+/-- `init`'s argument, the state. -/
+theorem initArgs_vp (hg : Geo L scr) {Inv : State → Mem → Prop} :
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.block initArgs)
+      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt) := by
+  refine VP.blk (by decide) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi⟩ => ?_
+  prun [initArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi,
+    movw_val (show oSt < 2 ^ 16 by decide)]
+
+/-- The call of `init`. -/
+theorem initCall_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
     (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
-    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem)
-      (.seq (.block initArgs) (.call G.initN G.initC))
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt)
+      (.call G.initN G.initC)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) := by
   have hS := hG.hSB
-  refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt)
-    (VP.blk (by decide) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi⟩ => ?_) ?_
-  · prun [initArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi,
-      movw_val (show oSt < 2 ^ 16 by decide)]
   have fitS : (scr + BitVec.ofNat 32 oSt).toNat + G.S ≤ 2 ^ 32 := fitS hg (by oomega)
   have cov : ∀ σ s, Ctx L scr σ s → Covers [⟨State.addr (scr + BitVec.ofNat 32 oSt), G.S⟩] s.wr :=
     fun σ s hc => covS hg hc.st (by oomega) (by oomega)
@@ -675,6 +682,13 @@ theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem
   rcases hr with rfl | rfl
   · exact .inl ⟨oSt, G.S, by oomega, rfl⟩
   · exact .inr rfl
+
+theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
+    (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
+    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem)
+      (.seq (.block initArgs) (.call G.initN G.initC))
+      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) :=
+  (initArgs_vp hg).seq (initCall_vp hg G hG hI)
 
 /-! ## `update`, in its frame -/
 
@@ -799,6 +813,28 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
   have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega_arith) (by rw [count_of hc32 f.r2 f.r3, hl])
   rw [aO] at this
   exact this
+
+/-! ## The table's words -/
+
+/-- The load of the table's word `k`, through `r4`, its address. -/
+theorem tword_cert {k : Nat} (hk : k < 3) :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4]) (.block [.ldr .r4 .r4 (4 * k)]) hc).isSome = true := by
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 by omega) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- The load of the table's digest length (its word 4), through `r0`, to its slot. -/
+theorem tabD_cert :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r12]) (.block [.ldr .r0 .r0 16, st .r0 sHl]) hc).isSome =
+      true := ⟨_, by taint_decide⟩
+
+theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
+    UArgs scr d len c (s.setReg .r4 v) := by
+  obtain ⟨a, b, e, f, g, i⟩ := h
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;> assumption
+
+theorem FArgs.r4 {o c : Nat} {s : State} (h : FArgs scr o c s) (v : BitVec 32) :
+    FArgs scr o c (s.setReg .r4 v) := by
+  obtain ⟨a, b, e, f, g⟩ := h
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte] <;> assumption
 
 /-! ## `r12 := r10` -/
 
