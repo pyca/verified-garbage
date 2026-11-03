@@ -13,8 +13,8 @@ pub struct Hash {
 unsafe impl Sync for Hash {}
 
 impl Hash {
-    /// The table's words, as the verified functions that take it read them.
-    pub const fn words(&'static self) -> *const [u64; 5] {
+    /// A pointer to the table's words, as the verified functions that take it read them.
+    pub const fn as_ptr(&'static self) -> *const [u64; 5] {
         core::ptr::from_ref(self).cast()
     }
 }

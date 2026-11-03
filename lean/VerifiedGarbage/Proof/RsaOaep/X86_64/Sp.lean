@@ -54,13 +54,13 @@ namespace Inst
 
 open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
 
-/-- Whether `vg_rsa_oaep_<H>_*` is emitted for `H`'s variant `v`: for every
+/-- Whether `vg_rsa_oaep_<H>_mgf1_*` is emitted for `H`'s variant `v`: for every
 hash function but MD5, which is not used. MGF1's hash function is any of
 the tables'. -/
 def emitted (v : MdHash) : Bool := v.mgf.G.rust != "md5"
 
 /-- The tags and suffixes of an instance's name (`Emit.qualifiedName`): `H`'s
-variant tagged with `H` (`vg_rsa_oaep_sha256_decrypt_sha256_shani_…`). -/
+variant tagged with `H` (`vg_rsa_oaep_sha256_mgf1_decrypt_sha256_shani_…`). -/
 def parts (v : MdHash) : List (String × String) := [(v.mgf.G.rust, v.suffix)]
 
 end Inst

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaOaep.X86_64
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64
 
-`vg_rsa_oaep_<H>_encrypt_precomputed(out, out_len, n, n_len, e, e_len,
+`vg_rsa_oaep_<H>_mgf1_encrypt_precomputed(out, out_len, n, n_len, e, e_len,
 label, label_len, msg, msg_len, seed, scratch, scratch_len, pre, pre_len,
 mgf1)`: encryption (`Impl/RsaOaep/X86_64.lean`), with MGF1's hash function
 the one of the table `mgf1` (the stack argument 9), and with the
@@ -35,7 +35,7 @@ def encMain : Prog isa :=
   seqs [encEm H, .block (dbArgs H), mgfT f 9, .block (seedArgs H), mgfT f 9, .block pubArgs,
     .call pubN pubC]
 
-/-- `vg_rsa_oaep_<H>_encrypt_precomputed`. -/
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`. -/
 def encrypt : Prog isa :=
   .frame (.alloc frameBytes) (encBodyWith H (encMain H f pubN pubC)) (.free frameBytes)
 

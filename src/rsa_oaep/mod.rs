@@ -2,12 +2,12 @@
 //!
 //! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`
 //! (contract `VG.Spec.RsaOaep.encryptPrecomputedContract`), or on x86-64
-//! `vg_rsa_oaep_<H>_encrypt_precomputed` (`encryptTableContract`), given the
+//! `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` (`encryptTableContract`), given the
 //! public key's precomputed modulus values and a seed from the operating
 //! system's generator.
 //!
 //! [`decrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` (contract
-//! `VG.Spec.RsaOaep.decryptContract`), or on x86-64 `vg_rsa_oaep_<H>_decrypt`
+//! `VG.Spec.RsaOaep.decryptContract`), or on x86-64 `vg_rsa_oaep_<H>_mgf1_decrypt`
 //! (`decryptTableContract`), which computes the encoded message
 //! as [`PrivateKey::private_op`] does, then decodes it in constant time:
 //! whether the decoding succeeds, where the message starts and its length do
@@ -156,7 +156,7 @@ macro_rules! verified_fn_types {
 verified_fn_types! {
     /// The type of the implementations of
     /// `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for `H` of `L` bytes
-    /// (on x86-64, `vg_rsa_oaep_<H>_encrypt_precomputed`, with MGF1's table
+    /// (on x86-64, `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, with MGF1's table
     /// last).
     type EncryptFn<const L: usize> = fn(
         *mut u8,
@@ -177,7 +177,7 @@ verified_fn_types! {
     ) -> u32;
 
     /// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`
-    /// (on x86-64, `vg_rsa_oaep_<H>_decrypt`, with MGF1's table last).
+    /// (on x86-64, `vg_rsa_oaep_<H>_mgf1_decrypt`, with MGF1's table last).
     type DecryptFn = fn(
         *mut u8,
         usize,

@@ -357,7 +357,7 @@ def decBody : Prog isa :=
     .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
     .ite .b decFail (decMain H f)]
 
-/-- `vg_rsa_oaep_<H>_decrypt`. -/
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`. -/
 def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H f privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

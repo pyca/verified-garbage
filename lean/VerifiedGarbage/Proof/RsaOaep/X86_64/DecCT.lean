@@ -463,7 +463,7 @@ theorem dec_constantTime (v : PrivImpl) :
   exact (key _ _ _ _ _ _ ⟨h₁, h₂, hpub, hheld⟩ e₁ e₂).1
 
 include hH KH mH hc in
-/-- `vg_rsa_oaep_<H>_decrypt` meets the shared contract, with the tables of
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt` meets the shared contract, with the tables of
 `vs`. -/
 theorem dec_verified (v : PrivImpl) (hsat : ∃ s, (decC mH.G (tables vs)).pre s) :
     Verified target (decrypt Hl.stream (fnsOf vs) v.name v.code) (decC mH.G (tables vs)) :=
