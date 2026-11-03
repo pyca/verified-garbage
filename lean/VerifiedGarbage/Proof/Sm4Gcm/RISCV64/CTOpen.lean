@@ -164,7 +164,7 @@ include L hTd t1 t16
 
 /-- `open` from `oneAad` on, once the tag length is allowed, with what the
 comparison of the tags gives (`Res b`). -/
-theorem openGood_ct : CT (fun s => (OneO c W sp Np n Ad A D Ln T TL s ∧ s.gpr .s4 = Np ∧
+theorem openGood_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => (OneO c W sp Np n Ad A D Ln T TL s ∧ s.gpr .s4 = Np ∧
     s.gpr .s5 = BitVec.ofNat 64 n) ∧ WP isa (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112)
       (.seq (.block [mov .s8 .a0]) (.block [])))))) s (Res b))
     (.seq oneAad (.seq (oneTag 112) (.seq recv (.seq (cmp 112) (.seq (.block [mov .s8 .a0])
@@ -282,7 +282,7 @@ theorem open_one {t₀ s : State} (h : openPre t₀) (h1 : SO1 (stackArg t₀ 1)
       (t₀.gpr .a4).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
   · rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
 
-theorem open_ct : ConstantTime isa openRISCV64.pre openRISCV64.pub «open» := by
+theorem open_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa openRISCV64.pre openRISCV64.pub «open» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩, qres⟩ := hq
   have h₁' : openPre σ₁ := h₁

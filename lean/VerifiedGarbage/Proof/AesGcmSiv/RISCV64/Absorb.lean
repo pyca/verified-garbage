@@ -364,7 +364,7 @@ structure ChunkPost (c : Cx) (Q : Addr) (m k : Nat) (t t' : State) : Prop where
     Spec.Gcm.ghashFrom (Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 64))
       (Spec.Gcm.blockAt t.mem (c.W + BitVec.ofNat 64 80)) (elemsAt t.mem Q k)
 
-theorem chunk_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
+theorem chunk_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
     (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ : Src c t Q (16 * (m / 16))) (h9 : t.gpr .s9 = Q)
     (h10 : t.gpr .s10 = BitVec.ofNat 64 m) :
     WP isa chunk t (ChunkPost c Q m (min (m / 16) 64) t) := by
@@ -502,7 +502,7 @@ theorem CInv.step {c : Cx} (L : Lay c) {σ t t' : State} {Q : Addr} {m d : Nat}
     by rw [C.s10]; congr 1; omega_arith⟩, by rw [C.a7]; congr 1; omega_arith⟩
 
 /-- The whole blocks: chunks until fewer than 16 bytes are left. -/
-theorem chunks_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
+theorem chunks_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
     (hm : m < 2 ^ 64) (h16 : 16 ≤ m) (hQ : Src c t Q (16 * (m / 16))) (h9 : t.gpr .s9 = Q)
     (h10 : t.gpr .s10 = BitVec.ofNat 64 m) :
     WP isa (.loop chunk (.nonzero .a7)) t fun t' =>
