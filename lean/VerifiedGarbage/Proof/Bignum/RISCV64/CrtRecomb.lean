@@ -346,44 +346,29 @@ def recPRegs : List Reg :=
   [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .s7, .s8, .s9,
     .s10]
 
-/-- `recombineP`, in `p`'s working space (`B`, of 24 arrays, `p` odd in
-array 0, `R² mod p` in array 1 and `m₁ < p` in array 4), with `X` at `s6`
-(`BX`) apart from it, `m₂` in the first `w n` words of `X`'s array 6 (`n`
-chunks of the `⌈k / 8⌉` words, `k` in `X`'s header) and `qInv < p` in its
-array 7: `h = (m₁ - m₂ mod p) qInv mod p` in array 4, changing only arrays
-1–23. -/
-theorem recombineP_ok {s : State} {B BX : Addr} {Z ZX w wX k Pv m1 M2 QI : Nat}
-    (hs : Scr s B Z) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
-    (hZ : slot w 24 ≤ Z) (hZX : slot wX 8 ≤ ZX) (hwX : w ≤ wX) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
-    (h7 : s.gpr .a7 = off B (slot w 0)) (hra : s.gpr .ra = off B (slot w 0))
-    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
-    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
-    (hkw : Mont.word s.mem BX oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
-    (hXZ : slot wX 6 + 8 * (w * Win.nChunks ((k + 7) / 8) w) ≤ ZX)
-    (hP : wordsVal s.mem B (slot w 0) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
-    (hR2 : wordsVal s.mem B (slot w 1) w = 2 ^ (128 * w) % Pv)
-    (hm1 : wordsVal s.mem B (slot w 4) w = m1) (hm1P : m1 < Pv)
-    (hM2 : wordsVal s.mem BX (slot wX 6) (w * Win.nChunks ((k + 7) / 8) w) = M2)
-    (hQ : wordsVal s.mem BX (slot wX 7) w = QI) (hQP : QI < Pv) :
-    WP isa recombineP s fun t =>
-      (wordsVal t.mem B (slot w 4) w = (m1 + Pv - M2 % Pv) % Pv * QI % Pv ∧
-        Win.WinO B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧ Keep recPRegs s t := by
+/-- `recombineP` up to `reduceIn`, then `c`. -/
+abbrev recPA (c : Prog isa) : Prog isa :=
+  .seq (.block (base .t3 9 ++ base .t4 4)) (.seq copyN
+  (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3)) c))
+
+/-- `recombineP` up to `reduceIn`: `m₁` copied into array 9, and the context
+of `p`'s Montgomery arithmetic. -/
+theorem recPA_ok {s : State} {B : Addr} {Z w Pv m1 : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s B Z) (hZ : slot w 24 ≤ Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h7 : s.gpr .a7 = off B (slot w 0)) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hP : wordsVal s.mem B (slot w 0) w = Pv) (hodd : Pv % 2 = 1)
+    (hm1 : wordsVal s.mem B (slot w 4) w = m1)
+    (hc : ∀ s₇, Win.WCtx s₇ B Z w Pv → Keep recPRegs s s₇ → Win.WinO B w s.mem s₇.mem →
+      wordsVal s₇.mem B (slot w 1) w = wordsVal s.mem B (slot w 1) w →
+      wordsVal s₇.mem B (slot w 9) w = m1 → WP isa c s₇ Q) :
+    WP isa (recPA c) s Q := by
   have hnw := hs.nowrap
-  have hnx := hx.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
-  have e0 := e w 0; have e1 := e w 1; have e4 := e w 4; have e7 := e w 7; have e8 := e w 8
-  have e9 := e w 9; have e10 := e w 10; have e24 := e w 24
-  have x7 := e wX 7; have x8 := e wX 8
+  have e0 := e w 0; have e1 := e w 1; have e4 := e w 4; have e9 := e w 9; have e10 := e w 10
+  have e24 := e w 24
   have hh : hdrBytes = 256 := rfl
   have hfit : ∀ j < 24, slot w j + 8 * w ≤ 2 ^ 64 := fun j hj => by
     have := Win.slot_lt (w := w) hj; omega_arith
-  -- What the arrays 1–23 of `P` leave alone in `X`.
-  have xo : ∀ {m m' : Mem}, Win.WinO B w m m' → ∀ x, ofs BX x < ZX → m' x = m x := fun o x hx' =>
-    o x (Or.inr (by have := hsep x hx'; omega_arith))
-  have xw : ∀ {m m' : Mem}, Win.WinO B w m m' → wordsVal m' BX (slot wX 7) w = wordsVal m BX (slot wX 7) w :=
-    fun o => wordsVal_of_words fun i hi => Mem.readW_congr fun j hj => xo o _ (by
-      rw [ofs_off BX (d := slot wX 7 + 8 * i) (i := j) (by omega_arith)]; omega_arith)
-  unfold recombineP
   -- `m₁` into array 9.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -425,20 +410,92 @@ theorem recombineP_ok {s : State} {B BX : Addr} {Z ZX w wX k Pv m1 M2 QI : Nat}
     (k17.gpr (by decide)).trans h5, (k17.gpr (by decide)).trans ht0,
     by rw [m37, ((k5.trans k6).trans k7).gpr (by decide)]; exact hinv, by rw [m37]; exact p3⟩
   have w07 : Win.WinO B w s.mem s₇.mem := by rw [m37]; exact w03
+  exact hc s₇ c7 (k17.mono (by decide)) w07 (by rw [m37]; exact v3 1 (by decide) (by decide)) (by rw [m37]; exact m9₃)
+
+/-- `recombineP` up to `reduceIn`'s chunks: the registers there. -/
+theorem recPC_ok {s : State} {B BX : Addr} {Z ZX w wX k Pv : Nat}
+    (hs : Scr s B Z) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (hZ : slot w 24 ≤ Z) (hZX : slot wX 8 ≤ ZX) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h7 : s.gpr .a7 = off B (slot w 0)) (hra : s.gpr .ra = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hkw : Mont.word s.mem BX oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * Win.nChunks ((k + 7) / 8) w) ≤ ZX)
+    (hP : wordsVal s.mem B (slot w 0) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hR2 : wordsVal s.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) :
+    WP isa (recPA (Win.reduceInP (.block []))) s fun u =>
+      u.gpr .a7 = off B (slot w 0) ∧ u.gpr .ra = off B (slot w 0) ∧ u.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+      u.gpr .t0 = BitVec.ofNat 64 w ∧ u.gpr .s6 = BX ∧ u.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)) ∧
+      u.gpr .s9 = off BX (slot wX 6 + 8 * (w * 0)) ∧
+      u.gpr .s10 = BitVec.ofNat 64 ((k + 7) / 8) - BitVec.ofNat 64 (w * 0) := by
+  have hnx := hx.nowrap
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have x8 := e wX 8; have e0 := e w 0; have e1 := e w 1; have e24 := e w 24
+  have hh : hdrBytes = 256 := rfl
+  refine recPA_ok (m1 := wordsVal s.mem B (slot w 4) w) hs hZ hw2 hw' h7 h5 ht0 hP hodd rfl
+    fun s₇ c7 k17 w07 R1 _ => ?_
+  refine Win.reduceInA_ok (k := k) c7 ((k17.gpr (by decide)).trans hra) (hx.congr k17.2.2) hsep
+    ((k17.gpr (by decide)).trans h6) ((k17.gpr (by decide)).trans h11)
+    (by rw [Outside.word_sep (Win.PFr.of_win w07) hsep (by omega_arith)
+      (show oNLen + 8 ≤ ZX by unfold oNLen; omega_arith) hnx]; exact hkw) hk hk' hXZ hP2 hodd
+    (by show wordsVal s₇.mem B (slot w 1) w = _; rw [R1, hR2]) fun u I => ⟨[], u, .block rfl, ?_⟩
+  have kk := k17.trans I.keep
+  exact ⟨I.ctx.a7, I.ra, I.ctx.s5, I.ctx.t0, (kk.gpr (by decide)).trans h6, (kk.gpr (by decide)).trans h11,
+    I.s9, I.s10⟩
+
+/-- `recombineP`, in `p`'s working space (`B`, of 24 arrays, `p` odd in
+array 0, `R² mod p` in array 1 and `m₁ < p` in array 4), with `X` at `s6`
+(`BX`) apart from it, `m₂` in the first `w n` words of `X`'s array 6 (`n`
+chunks of the `⌈k / 8⌉` words, `k` in `X`'s header) and `qInv < p` in its
+array 7: `h = (m₁ - m₂ mod p) qInv mod p` in array 4, changing only arrays
+1–23. -/
+theorem recombineP_ok {s : State} {B BX : Addr} {Z ZX w wX k Pv m1 M2 QI : Nat}
+    (hs : Scr s B Z) (hx : Scr s BX ZX) (hsep : ∀ x, ofs BX x < ZX → Z ≤ ofs B x)
+    (hZ : slot w 24 ≤ Z) (hZX : slot wX 8 ≤ ZX) (hwX : w ≤ wX) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (h7 : s.gpr .a7 = off B (slot w 0)) (hra : s.gpr .ra = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (h6 : s.gpr .s6 = BX) (h11 : s.gpr .s11 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hkw : Mont.word s.mem BX oNLen = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 40)
+    (hXZ : slot wX 6 + 8 * (w * Win.nChunks ((k + 7) / 8) w) ≤ ZX)
+    (hP : wordsVal s.mem B (slot w 0) w = Pv) (hP2 : 2 ≤ Pv) (hodd : Pv % 2 = 1)
+    (hR2 : wordsVal s.mem B (slot w 1) w = 2 ^ (128 * w) % Pv)
+    (hm1 : wordsVal s.mem B (slot w 4) w = m1) (hm1P : m1 < Pv)
+    (hM2 : wordsVal s.mem BX (slot wX 6) (w * Win.nChunks ((k + 7) / 8) w) = M2)
+    (hQ : wordsVal s.mem BX (slot wX 7) w = QI) (hQP : QI < Pv) :
+    WP isa recombineP s fun t =>
+      (wordsVal t.mem B (slot w 4) w = (m1 + Pv - M2 % Pv) % Pv * QI % Pv ∧
+        Win.WinO B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0)) ∧ Keep recPRegs s t := by
+  have hnw := hs.nowrap
+  have hnx := hx.nowrap
+  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  have e0 := e w 0; have e1 := e w 1; have e4 := e w 4; have e7 := e w 7; have e8 := e w 8
+  have e9 := e w 9; have e10 := e w 10; have e24 := e w 24
+  have x7 := e wX 7; have x8 := e wX 8
+  have hh : hdrBytes = 256 := rfl
+  have hfit : ∀ j < 24, slot w j + 8 * w ≤ 2 ^ 64 := fun j hj => by
+    have := Win.slot_lt (w := w) hj; omega_arith
+  -- What the arrays 1–23 of `P` leave alone in `X`.
+  have xo : ∀ {m m' : Mem}, Win.WinO B w m m' → ∀ x, ofs BX x < ZX → m' x = m x := fun o x hx' =>
+    o x (Or.inr (by have := hsep x hx'; omega_arith))
+  have xw : ∀ {m m' : Mem}, Win.WinO B w m m' → wordsVal m' BX (slot wX 7) w = wordsVal m BX (slot wX 7) w :=
+    fun o => wordsVal_of_words fun i hi => Mem.readW_congr fun j hj => xo o _ (by
+      rw [ofs_off BX (d := slot wX 7 + 8 * i) (i := j) (by omega_arith)]; omega_arith)
+  unfold recombineP
+  refine recPA_ok hs hZ hw2 hw' h7 h5 ht0 hP hodd hm1 fun s₇ c7 k17 w07 R1 m9₇ => ?_
   -- `m₂ mod p` into array 4.
   refine WP.seq (WP.mono (Win.reduceIn_ok (k := k) (Cv := M2) c7 ((k17.gpr (by decide)).trans hra)
     (hx.congr k17.2.2) hsep ((k17.gpr (by decide)).trans h6) ((k17.gpr (by decide)).trans h11)
     (by rw [Outside.word_sep (Win.PFr.of_win w07) hsep (by omega_arith)
       (show oNLen + 8 ≤ ZX by unfold oNLen; omega_arith) hnx]; exact hkw) hk hk' hXZ hP2 hodd
     (by show wordsVal s₇.mem B (slot w 1) w = _
-        rw [m37, v3 1 (by decide) (by decide), hR2])
+        rw [R1, hR2])
     (by rw [Win.x_wv' (Win.PFr.of_win w07) hsep (by omega_arith) hnx hXZ]; exact hM2))
     fun s₈ ⟨⟨c8, _, r8, p18, f8, o8⟩, k8⟩ => ?_)
   have k18 := k17.trans k8
   have w08 : Win.WinO B w s.mem s₈.mem := w07.trans o8
   have m9₈ : wordsVal s₈.mem B (slot w 9) w = m1 := by
     rw [show wordsVal s₈.mem B (slot w 9) w = Win.A s₈.mem B w 9 from rfl, f8 9 (by decide) (by decide),
-      show Win.A s₇.mem B w 9 = wordsVal s₇.mem B (slot w 9) w from rfl, m37, m9₃]
+      show Win.A s₇.mem B w 9 = wordsVal s₇.mem B (slot w 9) w from rfl, m9₇]
   -- `(m₁ + p - m₂ mod p) mod p` into array 3.
   refine seq4_then (recSub_ok (Pv := Pv) (m1 := m1) (r := M2 % Pv) c8.scr (by omega_arith) (by omega_arith) hw'
     c8.a7 ((k18.gpr (by decide)).trans hra) c8.s5 c8.t0 c8.n r8 m9₈
@@ -459,8 +516,8 @@ theorem recombineP_ok {s : State} {B BX : Addr} {Z ZX w wX k Pv m1 M2 QI : Nat}
       r9.word0_of_not_mem (by decide) (by decide) (by omega_arith) (by omega_arith), k9.gpr (by decide)]
     exact c8.inv
   · rw [u9 1 (by decide) (by decide) (by decide), show wordsVal s₈.mem B (slot w 1) w = Win.A s₈.mem B w 1 from rfl,
-      p18, show Win.A s₇.mem B w 1 = wordsVal s₇.mem B (slot w 1) w from rfl, m37, v3 1 (by decide) (by decide),
-      hR2, ← Nat.pow_add]
+      p18, show Win.A s₇.mem B w 1 = wordsVal s₇.mem B (slot w 1) w from rfl, R1, hR2,
+      ← Nat.pow_add]
     congr 2; omega_arith
   · rw [kt.gpr (by decide)]; exact h79
 
