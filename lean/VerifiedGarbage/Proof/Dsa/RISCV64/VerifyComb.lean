@@ -6,6 +6,7 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubE
+import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -463,6 +464,11 @@ theorem jointWindow_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N)
       show c2 + c2 + (c2 + c2) + (s.gpr .s7).toNat / 2 ^ 54 % 4 = 4 * c2 + (s.gpr .s7).toNat / 2 ^ 54 % 4 by omega]
   · exact ((((k12.trans k3).trans k4).trans k5).trans kt).mono (by decide)
 
+/-- A byte's four 2-bit digits, most significant first, after `c`. -/
+theorem byte_digits (c b : Nat) :
+    4 * (4 * (4 * (4 * c + b / 64) + b / 16 % 4) + b / 4 % 4) + b % 4 = 256 * c + b := by
+  omega
+
 /-- The first word of a byte pair: `b1` at the top, `b2` below it. -/
 theorem pair_eq {b1 b2 : Nat} (h1 : b1 < 256) (h2 : b2 < 256) :
     (BitVec.ofNat 64 b1 <<< 56 + (BitVec.ofNat 64 b2 <<< 56) >>> 8).toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48 := by
@@ -569,8 +575,7 @@ theorem jointByte_ok {s₀ t₀ u : State} {B D : Addr} {Z w N G Y RR c1 c2 i : 
     have p2 := e3 p1 (T (f1.trans f2))
     have p3 := e4 p2 (T ((f1.trans f2).trans f3))
     have p4 := e5 p3 (T (((f1.trans f2).trans f3).trans f4))
-    rw [p4, show 4 * (4 * (4 * (4 * c1 + b1 / 64) + b1 / 16 % 4) + b1 / 4 % 4) + b1 % 4 = 256 * c1 + b1 by omega,
-      show 4 * (4 * (4 * (4 * c2 + b2 / 64) + b2 / 16 % 4) + b2 / 4 % 4) + b2 % 4 = 256 * c2 + b2 by omega]
+    exact p4.trans (by rw [byte_digits, byte_digits])
   · exact Keep.within (Keep.within (Keep.within (Keep.within (Keep.within h.keep k1 (by decide)) k2
       fun _ => jw_jrun) k3 fun _ => jw_jrun) k4 fun _ => jw_jrun) k5 fun _ => jw_jrun
   · rw [m1] at o2; exact ((o2.trans o3).trans o4).trans o5
