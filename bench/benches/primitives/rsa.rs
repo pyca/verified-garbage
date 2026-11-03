@@ -344,6 +344,81 @@ pub fn bench(c: &mut Criterion) {
     // multiplication (`bymul`), and exponentiation proxies of each pairing.
     // Only Proto18 this run: the multiplier's throughput and latency, 64 instructions per
     // iteration, 1000 iterations per call.
+    // Only Proto19 this run: main's crt_values next to it without the divisions of d
+    // (nodiv), without the inverse (noinv), and with neither (checks), to time the split.
+    const ONLY_P19: bool = true;
+    if ONLY_P19 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto19 as p19;
+        type Crt = unsafe extern "C" fn(
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
+        ) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
+        let cs: [(&str, Crt); 4] = [
+            ("base", p19::vg_p19_crt_base),
+            ("nodiv", p19::vg_p19_crt_nodiv),
+            ("noinv", p19::vg_p19_crt_noinv),
+            ("checks", p19::vg_p19_crt_checks),
+        ];
+        let pad = |b: Vec<u8>, l: usize| {
+            let mut v = vec![0u8; l - b.len()];
+            v.extend(b);
+            v
+        };
+        for (v, f) in cs {
+            let mut g = c.benchmark_group(format!("rsa_p19_crt_{v}"));
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let (n, d) = (key.n().to_vec(), pad(key.d().to_vec(), k));
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let mut s = vec![0u64; 16 * k + 64];
+                let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        f(
+                            odp.as_mut_ptr(),
+                            pl,
+                            odq.as_mut_ptr(),
+                            ql,
+                            oqi.as_mut_ptr(),
+                            pl,
+                            n.as_ptr(),
+                            k,
+                            black_box(p.as_ptr()),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            d.as_ptr(),
+                            k,
+                            s.as_mut_ptr(),
+                            s.len(),
+                        )
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     const ONLY_P18: bool = true;
     if ONLY_P18 {
         use verified_garbage_asm_riscv64::rsa_proto18 as p18;
@@ -427,7 +502,10 @@ pub fn bench(c: &mut Criterion) {
         use openssl::rsa::Rsa;
         use verified_garbage_asm_riscv64::rsa_proto16 as p16;
         type Pre = unsafe extern "C" fn(*mut u64, usize, *const u8, usize, *mut u64, usize) -> u32;
-        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
         let fs: [(&str, Pre); 4] = [
             ("base", p16::vg_p16_precompute_base),
             ("top", p16::vg_p16_precompute_top),
@@ -444,7 +522,14 @@ pub fn bench(c: &mut Criterion) {
                 // The outputs are compared with main's under qemu (tests/p16.rs).
                 g.bench_function(BenchmarkId::new(VG, bits), |b| {
                     b.iter(|| unsafe {
-                        let r = f(p.as_mut_ptr(), p.len(), black_box(n.as_ptr()), n.len(), s.as_mut_ptr(), s.len());
+                        let r = f(
+                            p.as_mut_ptr(),
+                            p.len(),
+                            black_box(n.as_ptr()),
+                            n.len(),
+                            s.as_mut_ptr(),
+                            s.len(),
+                        );
                         assert_eq!(r, 1);
                     })
                 });
@@ -459,10 +544,27 @@ pub fn bench(c: &mut Criterion) {
         use openssl::rsa::Rsa;
         use verified_garbage_asm_riscv64::rsa_proto15 as p15;
         type Crt = unsafe extern "C" fn(
-            *mut u8, usize, *mut u8, usize, *mut u8, usize, *const u8, usize, *const u8, usize,
-            *const u8, usize, *const u8, usize, *mut u64, usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
         ) -> u32;
-        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
         let cs: [(&str, Crt); 2] = [
             ("base", p15::vg_p15_crt_values_base),
             ("f", p15::vg_p15_crt_values_f),
@@ -484,9 +586,24 @@ pub fn bench(c: &mut Criterion) {
                 // The outputs are compared with #4096's under qemu (tests/p15.rs).
                 g.bench_function(BenchmarkId::new(VG, bits), |b| {
                     b.iter(|| unsafe {
-                        let r = f(odp.as_mut_ptr(), pl, odq.as_mut_ptr(), ql, oqi.as_mut_ptr(), pl,
-                            n.as_ptr(), k, black_box(p.as_ptr()), pl, q.as_ptr(), ql, d.as_ptr(), k,
-                            s.as_mut_ptr(), s.len());
+                        let r = f(
+                            odp.as_mut_ptr(),
+                            pl,
+                            odq.as_mut_ptr(),
+                            ql,
+                            oqi.as_mut_ptr(),
+                            pl,
+                            n.as_ptr(),
+                            k,
+                            black_box(p.as_ptr()),
+                            pl,
+                            q.as_ptr(),
+                            ql,
+                            d.as_ptr(),
+                            k,
+                            s.as_mut_ptr(),
+                            s.len(),
+                        );
                         assert_eq!(r, 1);
                     })
                 });
@@ -502,15 +619,47 @@ pub fn bench(c: &mut Criterion) {
         use openssl::rsa::Rsa;
         use verified_garbage_asm_riscv64::rsa_proto14 as p14;
         type Key = unsafe extern "C" fn(
-            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-            *mut u64, usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
         ) -> u32;
         type Crt = unsafe extern "C" fn(
-            *mut u8, usize, *mut u8, usize, *mut u8, usize, *const u8, usize, *const u8, usize,
-            *const u8, usize, *const u8, usize, *mut u64, usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *mut u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
         ) -> u32;
-        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
         let ks: [(&str, Key); 4] = [
             ("base", p14::vg_p14_check_key_base),
             ("a", p14::vg_p14_check_key_a),
@@ -529,7 +678,11 @@ pub fn bench(c: &mut Criterion) {
             v
         };
         for which in 0..8 {
-            let (kind, v) = if which < 4 { ("check_key", ks[which].0) } else { ("crt_values", cs[which - 4].0) };
+            let (kind, v) = if which < 4 {
+                ("check_key", ks[which].0)
+            } else {
+                ("crt_values", cs[which - 4].0)
+            };
             let mut g = c.benchmark_group(format!("rsa_p14_{kind}_{v}"));
             for (bits, key) in &keys {
                 let k = key.size() as usize;
@@ -547,17 +700,49 @@ pub fn bench(c: &mut Criterion) {
                     if which < 4 {
                         let f = ks[which].1;
                         b.iter(|| unsafe {
-                            let r = f(n.as_ptr(), k, e.as_ptr(), e.len(), black_box(d.as_ptr()), k,
-                                p.as_ptr(), pl, q.as_ptr(), ql, dp.as_ptr(), pl, dq.as_ptr(), ql,
-                                qi.as_ptr(), pl, s.as_mut_ptr(), s.len());
+                            let r = f(
+                                n.as_ptr(),
+                                k,
+                                e.as_ptr(),
+                                e.len(),
+                                black_box(d.as_ptr()),
+                                k,
+                                p.as_ptr(),
+                                pl,
+                                q.as_ptr(),
+                                ql,
+                                dp.as_ptr(),
+                                pl,
+                                dq.as_ptr(),
+                                ql,
+                                qi.as_ptr(),
+                                pl,
+                                s.as_mut_ptr(),
+                                s.len(),
+                            );
                             assert_eq!(r, 1);
                         })
                     } else {
                         let f = cs[which - 4].1;
                         b.iter(|| unsafe {
-                            let r = f(odp.as_mut_ptr(), pl, odq.as_mut_ptr(), ql, oqi.as_mut_ptr(), pl,
-                                n.as_ptr(), k, black_box(p.as_ptr()), pl, q.as_ptr(), ql, d.as_ptr(), k,
-                                s.as_mut_ptr(), s.len());
+                            let r = f(
+                                odp.as_mut_ptr(),
+                                pl,
+                                odq.as_mut_ptr(),
+                                ql,
+                                oqi.as_mut_ptr(),
+                                pl,
+                                n.as_ptr(),
+                                k,
+                                black_box(p.as_ptr()),
+                                pl,
+                                q.as_ptr(),
+                                ql,
+                                d.as_ptr(),
+                                k,
+                                s.as_mut_ptr(),
+                                s.len(),
+                            );
                             assert_eq!(r, 1);
                         })
                     }
@@ -573,15 +758,47 @@ pub fn bench(c: &mut Criterion) {
         use openssl::rsa::Rsa;
         use verified_garbage_asm_riscv64::rsa_proto13 as p13;
         type Crt = unsafe extern "C" fn(
-            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-            *const u8, usize, *const u8, usize, *const u8, usize, *mut u64, usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
         ) -> u32;
         type Key = unsafe extern "C" fn(
-            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-            *const u8, usize, *const u8, usize, *const u8, usize, *const u8, usize,
-            *mut u64, usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *const u8,
+            usize,
+            *mut u64,
+            usize,
         ) -> u32;
-        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let keys: Vec<_> = [2048u32, 3072, 4096]
+            .iter()
+            .map(|&b| (b, Rsa::generate(b).unwrap()))
+            .collect();
         let crts: [(&str, Crt); 2] = [
             ("base", p13::vg_p13_check_crt_key_base),
             ("new", p13::vg_p13_check_crt_key_new),
@@ -596,7 +813,12 @@ pub fn bench(c: &mut Criterion) {
             v
         };
         for which in 0..4 {
-            let name = ["rsa_p13_check_crt_key_base", "rsa_p13_check_crt_key_new", "rsa_p13_check_key_base", "rsa_p13_check_key_new"][which];
+            let name = [
+                "rsa_p13_check_crt_key_base",
+                "rsa_p13_check_crt_key_new",
+                "rsa_p13_check_key_base",
+                "rsa_p13_check_key_new",
+            ][which];
             let mut g = c.benchmark_group(name);
             for (bits, key) in &keys {
                 let k = key.size() as usize;
@@ -611,17 +833,49 @@ pub fn bench(c: &mut Criterion) {
                     if which < 2 {
                         let f = crts[which].1;
                         b.iter(|| unsafe {
-                            let r = f(n.as_ptr(), k, e.as_ptr(), e.len(), black_box(p.as_ptr()), pl,
-                                q.as_ptr(), ql, dp.as_ptr(), pl, dq.as_ptr(), ql, qi.as_ptr(), pl,
-                                s.as_mut_ptr(), s.len());
+                            let r = f(
+                                n.as_ptr(),
+                                k,
+                                e.as_ptr(),
+                                e.len(),
+                                black_box(p.as_ptr()),
+                                pl,
+                                q.as_ptr(),
+                                ql,
+                                dp.as_ptr(),
+                                pl,
+                                dq.as_ptr(),
+                                ql,
+                                qi.as_ptr(),
+                                pl,
+                                s.as_mut_ptr(),
+                                s.len(),
+                            );
                             assert_eq!(r, 1);
                         })
                     } else {
                         let f = ks[which - 2].1;
                         b.iter(|| unsafe {
-                            let r = f(n.as_ptr(), k, e.as_ptr(), e.len(), black_box(d.as_ptr()), k,
-                                p.as_ptr(), pl, q.as_ptr(), ql, dp.as_ptr(), pl, dq.as_ptr(), ql,
-                                qi.as_ptr(), pl, s.as_mut_ptr(), s.len());
+                            let r = f(
+                                n.as_ptr(),
+                                k,
+                                e.as_ptr(),
+                                e.len(),
+                                black_box(d.as_ptr()),
+                                k,
+                                p.as_ptr(),
+                                pl,
+                                q.as_ptr(),
+                                ql,
+                                dp.as_ptr(),
+                                pl,
+                                dq.as_ptr(),
+                                ql,
+                                qi.as_ptr(),
+                                pl,
+                                s.as_mut_ptr(),
+                                s.len(),
+                            );
                             assert_eq!(r, 1);
                         })
                     }
