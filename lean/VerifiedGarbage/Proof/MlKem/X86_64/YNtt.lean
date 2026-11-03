@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.Blocks
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.Framework.Offset
@@ -23,55 +24,6 @@ open VG.Spec.MlKem
 
 /-! ## A layer, coefficient by coefficient -/
 
-section
-variable {α : Type} [Inhabited α] {op : α → α → Zq → α × α} {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n}
-  (hblk : BlkOk blk op)
-include hblk
-
-/-- Each coefficient after the first `b` blocks of the layer with `len`. -/
-theorem layF_get (F : Vector α n) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : Nat} (hb : 2 * len * b ≤ 256)
-    {j : Nat} (hj : j < 256) :
-    (layF blk F len zi b)[j]! = if j < 2 * len * b then
-      (if j % (2 * len) < len then (op F[j]! F[j + len]! (zeta (zi (j / (2 * len))))).1
-        else (op F[j - len]! F[j]! (zeta (zi (j / (2 * len))))).2) else F[j]! := by
-  induction b generalizing j with
-  | zero => rw [ite_eq_right (by bdd_omega)]; rfl
-  | succ b ih =>
-    have hb' : 2 * len * b + 2 * len ≤ 256 := by rw [Nat.mul_succ] at hb; exact hb
-    rw [layF, foldl_range_succ, ← layF,
-      hblk.get _ len _ _ len hl (Nat.le_refl _) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
-    have hd : ∀ i, 2 * len * b ≤ i → i < 2 * len * b + 2 * len → i / (2 * len) = b ∧
-        i % (2 * len) = i - 2 * len * b := fun i h1 h2 => by
-      have e1 : i / (2 * len) = b := by
-        apply Nat.div_eq_of_lt_le
-        · rw [Nat.mul_comm]; exact h1
-        · rw [Nat.succ_mul, Nat.mul_comm b]; exact h2
-      refine ⟨e1, ?_⟩
-      have := Nat.div_add_mod i (2 * len)
-      rw [e1] at this; omega
-    by_cases h1 : 2 * len * b ≤ j ∧ j < 2 * len * b + len
-    · obtain ⟨d1, d2⟩ := hd j h1.1 (by bdd_omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by bdd_omega) hj, ih (by bdd_omega) (by bdd_omega), d1,
-        ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by bdd_omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by bdd_omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by bdd_omega))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      by_cases h2 : 2 * len * b + len ≤ j ∧ j < 2 * len * b + len + len
-      · obtain ⟨d1, d2⟩ := hd j (by bdd_omega) (by bdd_omega)
-        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by bdd_omega) (by bdd_omega), ih (by bdd_omega) hj, d1,
-          ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by bdd_omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by bdd_omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by bdd_omega))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by bdd_omega) hj]
-        by_cases h3 : j < 2 * len * b
-        · rw [ite_eq_left_of_eq_true _ _ (eq_true h3),
-            ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega))]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h3),
-            ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega))]
-
-end
 
 /-! ## The table of zetas -/
 

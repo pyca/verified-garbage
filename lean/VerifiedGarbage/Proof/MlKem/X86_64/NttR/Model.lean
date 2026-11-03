@@ -22,7 +22,8 @@ namespace VG.Proof.MlKem.X86_64.NttR
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.NttR
 open VG.Spec.MlKem
-open VG.Proof.MlKem.X86_64 (WPoly fwdW wBlockN wBlk_ok zw PolyRep fwd_hop layF_rep layF_get nttBlk_ok red_rep cadd_rep rW)
+open VG.Proof.MlKem.X86_64 (WPoly fwdW zw PolyRep fwd_hop layF_rep red_rep cadd_rep rW)
+open VG.Proof.MlKem (wBlockN wBlk_ok layF_get nttBlk_ok)
 
 /-- The distance of the butterflies of layer `st` of `NTT`. -/
 def lenOf (st : Nat) : Nat := 128 >>> st

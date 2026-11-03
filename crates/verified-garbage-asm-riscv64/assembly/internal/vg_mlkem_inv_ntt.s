@@ -265,10 +265,16 @@ vg_mlkem_inv_ntt:
 	sw t2, 504(a1)
 	addi t2, t0, 106
 	sw t2, 508(a1)
-	lui a5, 39
-	addi a5, a5, 1526
+	lui a5, 80635
+	addi a5, a5, 1896
+	slli a5, a5, 12
+	addi a5, a5, 187
+	slli a5, a5, 12
+	addi a5, a5, 84
 	lui a6, 1
 	addi a6, a6, -767
+	lui t5, 52
+	addi t5, t5, 64
 	addi a0, a0, 1024
 	addi a1, a1, 508
 	addi a7, zero, 8
@@ -283,30 +289,13 @@ vg_mlkem_inv_ntt:
 	lwu t2, 0(a2)
 	lwu t0, 0(a3)
 	add t3, t2, t0
-	sub t3, t3, a6
-	srai t4, t3, 63
-	and t4, t4, a6
-	add t3, t3, t4
 	sw t3, 0(a2)
 	sub t0, t0, t2
-	srai t4, t0, 63
-	and t4, t4, a6
-	add t0, t0, t4
+	add t0, t0, t5
 	mul t0, a4, t0
-	srli t3, t0, 11
-	mul t3, t3, a5
-	srli t3, t3, 18
+	mulhu t3, t0, a5
+	mul t3, t3, a6
 	sub t0, t0, t3
-	slli t5, t3, 8
-	sub t0, t0, t5
-	slli t5, t3, 10
-	sub t0, t0, t5
-	slli t5, t3, 11
-	sub t0, t0, t5
-	sub t0, t0, a6
-	srai t3, t0, 63
-	and t3, t3, a6
-	add t0, t0, t3
 	sw t0, 0(a3)
 	addi a2, a2, 4
 	addi a3, a3, 4
@@ -325,16 +314,9 @@ vg_mlkem_inv_ntt:
 23:
 	lwu t2, 0(a2)
 	mul t2, t2, a4
-	srli t3, t2, 11
-	mul t3, t3, a5
-	srli t3, t3, 18
+	mulhu t3, t2, a5
+	mul t3, t3, a6
 	sub t2, t2, t3
-	slli t5, t3, 8
-	sub t2, t2, t5
-	slli t5, t3, 10
-	sub t2, t2, t5
-	slli t5, t3, 11
-	sub t2, t2, t5
 	sub t2, t2, a6
 	srai t3, t2, 63
 	and t3, t3, a6
