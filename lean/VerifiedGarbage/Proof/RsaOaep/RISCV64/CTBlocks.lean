@@ -44,6 +44,7 @@ def zImm : Prog isa → Prog isa
   | .loop b c => .loop (zImm b) c
   | .call n b => .call n (zImm b)
   | .frame p b q => .frame p (zImm b) q
+  | .icall i n b nx => .icall i n b nx
 
 theorem step_zImm (τ : VG.RISCV64.Taint.T) (i : Instr) :
     VG.RISCV64.Taint.step τ (Instr.zImm i) = VG.RISCV64.Taint.step τ i := by
@@ -74,6 +75,7 @@ theorem check_zImm (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
   | loop b c ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
   | call n b ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
   | frame p b q ih => cases h <;> first | rfl | simp only [zImm, VG.Taint.check, ih]
+  | icall => cases h <;> rfl
 
 /-- The analysis of `c` from that of `c'`, which has the same code without
 those immediates. -/
