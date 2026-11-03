@@ -101,7 +101,7 @@ theorem dec_correct (v : PrivImpl) (s : State) (h : (decK mH.G (tables vs)).pre 
   obtain ⟨hm, hidx, hDm⟩ := held_tableOf hheld
   have ok := tabOK_of hc hd hw
   obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
-  have hGa : Spec.HashTable.hashAt s.mem (stackArg s 17) = some w.mgf.G := hashAt_tableOf hidx
+  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some w.mgf.G := hashAt_tableOf hidx
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hD := hH.hD0; have hDN := hH.hDN; have hN := hH.N_le
   have hlen : mH.G.len = Hl.D := mH.len

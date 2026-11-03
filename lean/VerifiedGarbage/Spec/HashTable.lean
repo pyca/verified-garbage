@@ -8,7 +8,8 @@ public import VerifiedGarbage.TCB.Sig
 
 **Trusted** (as every file in `Spec/`). A function generic over a hash
 function takes it as a table of functions (`FnTable`, `Abi.withTables`) of
-the interface `Hash`: a read-only array of `wordCount` `u64`s (`param`),
+the interface `Hash`: a read-only array of `wordCount` pointer-sized words
+(`param`, a `*const [usize; wordCount]`),
 the `as_ptr()` of one of the statics of the type `Hash` that the generated
 crate declares (`fn_tables`), holding the addresses of `fns` functions (the
 hash function's streaming functions, which the function calls indirectly,
@@ -40,8 +41,8 @@ def fns : Nat := 3
 /-- The number of words of a table: its functions', then two of data. -/
 def wordCount : Nat := fns + 2
 
-/-- A parameter taking a table of `Hash`: a `*const [u64; wordCount]`. -/
-def param : Param := .array false .u64 wordCount
+/-- A parameter taking a table of `Hash`: a `*const [usize; wordCount]`. -/
+def param : Param := .table wordCount
 
 /-- The index of `G` in `Mgf1.hashes`, by its Rust name, which is distinct
 for each. -/
@@ -51,10 +52,12 @@ def index (G : Hash) : Nat := Mgf1.hashes.findIdx (·.rust == G.rust)
 length. -/
 def dataOf (G : Hash) : List (BitVec 64) := [BitVec.ofNat 64 (index G), BitVec.ofNat 64 G.len]
 
-/-- The hash function that the table at `p` in the memory `m` names: that of
-`Mgf1.hashes` at the index in its first word of data, if there is one. -/
-def hashAt (m : Mem) (p : Addr) : Option Hash :=
-  Mgf1.hashes[(m.readW (p + BitVec.ofNat 64 (8 * fns)) 64).toNat]?
+/-- The hash function that the table at `p` in the memory `m` names, on a
+target with `ptrBits`-bit pointers: that of `Mgf1.hashes` at the index in
+its first word of data (its word `fns`, `ptrBits` bits wide, as
+`Abi.tableHeld` lays the words out), if there is one. -/
+def hashAt (ptrBits : Nat) (m : Mem) (p : Addr) : Option Hash :=
+  Mgf1.hashes[(m.readW (p + BitVec.ofNat 64 (ptrBits / 8 * fns)) ptrBits).toNat]?
 
 /-- Each hash function's `index` is its position in `Mgf1.hashes` (their
 Rust names are distinct), so a table holding `dataOf G` names `G`. -/

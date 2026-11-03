@@ -61,7 +61,7 @@ theorem exec_mxcsr {i : Instr} {s s' : State} (h : exec i s = some s') : s'.mxcs
     split at h <;> [skip; cases h]
     simp only [State.store64] at h
     split at h <;> cases h; rfl
-  | symPush | push | pop | alloc | free | mmxEnter | emms | mcdtEnter | mcdtLeave =>
+  | symPush | push | pop | alloc | free | mmxEnter | emms | mcdtEnter | mcdtLeave | callr =>
     simp only [exec, reduceCtorEq] at h
   | pmuludq =>
     simp only [exec] at h
@@ -100,8 +100,12 @@ theorem execBlock_mxcsr : ∀ {is : List Instr} {s s' : State} {t : List Leak},
 theorem Exec.mxcsr {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
     s'.mxcsr = s.mxcsr := by
   induction h with
-  | icall hi => nomatch hi
-  | icallNext hi => nomatch hi
+  | icall _ e₁ _ e₂ ih =>
+    simp only [isa, call, Option.some.injEq] at e₁
+    simp only [isa, ret] at e₂
+    split at e₂ <;> [cases e₂; cases e₂]
+    subst e₁; exact ih
+  | icallNext _ _ _ ih => exact ih
   | block e => exact execBlock_mxcsr e
   | seq _ _ ih₁ ih₂ => exact ih₂.trans ih₁
   | iteT _ _ ih | iteF _ _ ih => exact ih

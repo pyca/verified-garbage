@@ -127,7 +127,7 @@ theorem fnsGood_of (vs : List MdHash) : Proof.RsaOaep.X86_64.Table.FnsGood (fnsO
 /-- What the table of `w` at `p` holds: its functions' addresses, its index
 and its digest length. -/
 theorem held_tableOf {m : Mem} {p : Addr} {s : State} {w : MdHash}
-    (h : Abi.tableHeld m p (FnTable.words isa s (tableOf w))) :
+    (h : Abi.tableHeld 64 m p (FnTable.words isa s (tableOf w))) :
     TabMem w.H.stream s.syms p m ∧ m.readW (off p 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G) ∧
       m.readW (off p 32) 64 = BitVec.ofNat 64 w.H.D := by
   have hw : FnTable.words isa s (tableOf w) = [s.syms w.H.initN, s.syms w.H.updN, s.syms w.H.finN,
@@ -139,7 +139,7 @@ theorem held_tableOf {m : Mem} {p : Addr} {s : State} {w : MdHash}
 /-- The hash function a table of `w` names. -/
 theorem hashAt_tableOf {m : Mem} {p : Addr} {w : MdHash}
     (h : m.readW (off p 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G)) :
-    Spec.HashTable.hashAt m p = some w.mgf.G := by
+    Spec.HashTable.hashAt 64 m p = some w.mgf.G := by
   have hm := w.mgf.mem
   simp only [Spec.HashTable.hashAt, Spec.HashTable.fns]
   rw [show p + BitVec.ofNat 64 (8 * 3) = off p 24 from rfl, h]
@@ -176,7 +176,7 @@ def put5 (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ w₄ : BitVec 64) : Mem :=
 
 /-- The table `put5` writes at `0x300000`. -/
 theorem put5_held {m : Mem} {ws : List (BitVec 64)} (hl : ws.length = 5) :
-    Abi.tableHeld (put5 m 0x300000 (ws.getD 0 0) (ws.getD 1 0) (ws.getD 2 0) (ws.getD 3 0) (ws.getD 4 0))
+    Abi.tableHeld 64 (put5 m 0x300000 (ws.getD 0 0) (ws.getD 1 0) (ws.getD 2 0) (ws.getD 3 0) (ws.getD 4 0))
       0x300000 ws := by
   intro i hi
   rw [hl] at hi

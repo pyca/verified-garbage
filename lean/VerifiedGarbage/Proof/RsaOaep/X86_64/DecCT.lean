@@ -109,7 +109,7 @@ end
 /-- The table of `T` at the entry state's stack argument 17, and the entry
 state's addresses of statics. -/
 def HS (T : FnTable) (s t : State) : Prop :=
-  Abi.tableHeld s.mem (stackArg s 17) (FnTable.words isa s T) ∧ t.syms = s.syms
+  Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T) ∧ t.syms = s.syms
 
 variable {H : Spec.Mgf1.Hash} {ts : List FnTable}
 
@@ -456,7 +456,7 @@ theorem dec_constantTime (v : PrivImpl) :
   obtain ⟨⟨T, hT, hheld⟩, -⟩ := DPre.tab _ _ h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   have key := relCT_alloc (P := fun x y => (decK mH.G (tables vs)).pre x ∧ (decK mH.G (tables vs)).pre y ∧
-      (decK mH.G (tables vs)).pub x y ∧ Abi.tableHeld x.mem (stackArg x 17) (FnTable.words isa x (tableOf w)))
+      (decK mH.G (tables vs)).pub x y ∧ Abi.tableHeld 64 x.mem (stackArg x 17) (FnTable.words isa x (tableOf w)))
     ((decBody_ct hH KH mH hc v hw).mono (fun _ _ ⟨x, y, ⟨hx, hy, hxy, hh⟩, ex, ey⟩ =>
       ⟨x, ⟨x, ⟨hx, decPub_refl _ _ x⟩, ex, hh, by rw [ex]; rfl⟩,
         ⟨y, ⟨hy, hxy⟩, ey, (hxy.2.2.2.2.2 _ (List.mem_map_of_mem hw)).mp hh, by rw [ey]; rfl⟩⟩) fun _ _ h => h)

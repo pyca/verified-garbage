@@ -88,6 +88,9 @@ memory on entry: its descriptors, and the slices they list (`Sig.lists`),
 which may overlap each other and the other read-only buffers, but no
 writable buffer (a `&[&[T]]` and a `&mut` are distinct Rust objects). What
 its descriptors say is public (`Sig.descs`): two runs agree on their bytes.
+A table of functions (`Param.table`) adds read-only memory too: its words,
+of the target's pointer width (`Sig.lists`); `Abi.withTables` says what they
+hold.
 
 `leak`, if given, declares what the function may leak beyond its public
 arguments: a list of numbers computed from the arguments and the memory on
@@ -155,17 +158,20 @@ def Sig.bufNames : List (String × Param) → List (String × Bool)
   | (n, .array w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
   | (n, .slice w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
   | (n, .slices ..) :: ps => (s!"`{n}`", false) :: (s!"the slices `{n}` lists", false) :: Sig.bufNames ps
+  | (n, .table _) :: ps => (s!"`{n}`", false) :: Sig.bufNames ps
 
 /-- The size in bytes of the buffer a parameter stands for, as the
 documentation states it: that of `Sig.bufs`, a number for an array and
 `` `len` `` or `` `k * len` `` for a slice of `len` elements of `k` bytes, and
-`` `2 * size_of::<usize>() * count` `` for the descriptors of a list of `count` slices;
+`` `2 * size_of::<usize>() * count` `` for the descriptors of a list of `count` slices,
+`` `n * size_of::<usize>()` `` for a table of `n` words;
 `none` for an integer. -/
 def Param.sizeDoc : Param → Option String
   | .int .. => none
   | .array _ e n => some s!"{n * e.size}"
   | .slice _ e len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
   | .slices _ count => some s!"`2 * size_of::<usize>() * {count}`"
+  | .table n => some s!"`{n} * size_of::<usize>()`"
 
 /-- The `# Safety` items stating the memory each buffer of `sig` must be
 valid for, in order: the region `Sig.contract` lets the function read

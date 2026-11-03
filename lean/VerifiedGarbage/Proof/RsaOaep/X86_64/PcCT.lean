@@ -47,7 +47,7 @@ def PP (H : Spec.Mgf1.Hash) (ts : List FnTable) (T : FnTable) (a s : State) : Pr
     (Spec.Rsa.wordsAt a.mem (stackArg a 7) (stackArg a 8).toNat =
       Spec.Rsa.wordsAt s.mem (stackArg s 7) (stackArg s 8).toNat ∧ stackArg a 9 = stackArg s 9 ∧
       (∀ f ∈ tabFnsE ts, a.syms f = s.syms f) ∧
-      Abi.tableHeld s.mem (stackArg s 9) (FnTable.words isa s T) ∧
+      Abi.tableHeld 64 s.mem (stackArg s 9) (FnTable.words isa s T) ∧
       (tabFnsE ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g))
 
 /-- Before the call, with its arguments. -/
@@ -238,7 +238,7 @@ theorem code_constantTime (v : PublicImpl) :
   obtain ⟨-, ⟨T, hT, hheld⟩, -⟩ := preT_of h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   have key := relCT_alloc (P := fun x y => (contract mH.G (tables vs)).pre x ∧ (contract mH.G (tables vs)).pre y ∧
-      (contract mH.G (tables vs)).pub x y ∧ Abi.tableHeld x.mem (stackArg x 9) (FnTable.words isa x (tableOf w)))
+      (contract mH.G (tables vs)).pub x y ∧ Abi.tableHeld 64 x.mem (stackArg x 9) (FnTable.words isa x (tableOf w)))
     ((encBodyWith_ct (P := PP mH.G (tables vs) (tableOf w)) (hH := hH) (hG := hH) (mH := mH) (mG := mH)
       (hmain := encMain_ct hH KH mH hc v hw)).mono (fun _ _ ⟨x, y, ⟨hx, hy, hxy, hh⟩, ex, ey⟩ => by
         obtain ⟨px, -, dx⟩ := preT_of hx

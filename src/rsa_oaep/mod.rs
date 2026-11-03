@@ -115,7 +115,7 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
 /// last argument; elsewhere, nothing (each pair of hash functions has
 /// functions of its own).
 #[cfg(target_arch = "x86_64")]
-type Mgf1 = *const [u64; 5];
+type Mgf1 = *const [usize; 5];
 #[cfg(not(target_arch = "x86_64"))]
 #[derive(Clone, Copy)]
 struct Mgf1;
