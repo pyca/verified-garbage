@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -153,13 +153,13 @@ theorem qinvBlkT_ct : RelCT isa (Two (KG fun I t => (KokM I t ∧ TopZ aU I t) �
     (by brun) (by decide) (by decide) (by decide +kernel)) fun _ ⟨hm, k⟩ => ⟨h.regs hm k, trivial⟩)
     (by taint_decide)
 
-/-- `qinvPart`, with no postcondition, from a mask in `kOk`. -/
-theorem qinvPartT_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG KokM)) (seqs qinvPart) fun _ _ => True := by
+/-- `qinvPre`, with no postcondition, from a mask in `kOk`. -/
+theorem qinvPreT_ct0 : RelCT isa (Two (KG KokM)) (seqs qinvPre) fun _ _ => True := by
   have sK : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kOk ∉ cs → Stab KokM cs rs :=
     fun _ rs hok hn => stab_kok rs hok hn
   have sT : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .arr aU ∉ cs → Stab (TopZ aU) cs rs :=
     fun _ rs hok hn => stab_top rs (by decide) hok hn
-  rw [qinvPart_eq]
+  unfold qinvPre
   -- `[aU] := q`, word `W` zero.
   refine rs_app (by simp) (by simp [constA]) (show RelCT isa _ (seqs [zeroA aU, copyA aU aQa]) _ from
     zc_ct (by decide) (by decide) (by decide) (sK _ _ (by decide) (by decide)) (by taint_decide)
@@ -181,29 +181,41 @@ theorem qinvPartT_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG KokM)) 
   refine rs_app (by simp [selC]) (by simp [invFrom]) (selC_ct (F := fun I t => KokM I t ∧ TopZ aU I t)
     (by decide) (by decide) (stab_and (sK _ _ (by decide) (by decide)) (sT _ _ (by decide) (by decide)))
     (by taint_decide)) ?_
-  -- The inverse, and its mask.
-  refine rs_app (R := Two (KG fun I t => (KokM I t ∧ TopZ aU I t) ∧ AvEq aV aM I t ∧ AvIs aX₁ 1 I t ∧
-    AvIs aX₂ 0 I t)) (by simp [invFrom]) (by simp [gcdIsOne, constA])
-    (show RelCT isa _ (seqs (([zeroA aV] : List (Prog isa)) ++ ([copyA aV aM, zeroA aX₁, .block (setOneA aX₁),
+  -- `[aV] := [aM]`.
+  exact (show RelCT isa _ (seqs (([zeroA aV] : List (Prog isa)) ++ ([copyA aV aM, zeroA aX₁, .block (setOneA aX₁),
       zeroA aX₂] : List (Prog isa)))) _ from
     rs_app (by simp) (by simp) (zeroA_ct (by decide)
       (stab_and (sK [.arr aV] _ (by decide) (by decide)) (sT [.arr aV] _ (by decide) (by decide)))
       (by taint_decide))
       (invStart_ct (o := aV) (a := aM) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (stab_and (sK [.arr aV, .arr aX₁, .arr aX₂] _ (by decide) (by decide))
-          (sT [.arr aV, .arr aX₁, .arr aX₂] _ (by decide) (by decide))) (by taint_decide))) ?_
+          (sT [.arr aV, .arr aX₁, .arr aX₂] _ (by decide) (by decide))) (by taint_decide))).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+
+/-- `qinvPart`, with no postcondition, from `TF`: the inverse at the
+primes' width, from `qinvPre_k`'s `[aU] = q` and `[aV] = [aM] = qMod p`. -/
+theorem qinvPartT_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG TF)) (seqs qinvPart) fun _ _ => True := by
+  have sK : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kOk ∉ cs → Stab KokM cs rs :=
+    fun _ rs hok hn => stab_kok rs hok hn
+  rw [qinvPart_eq]
+  refine rs_app (R := Two (KG fun I t => KokM I t ∧ AvEq aV aM I t ∧ Fits aU I t ∧ Fits aM I t))
+    (by simp [qinvPre]) (by simp)
+    (kg_ct (qinvPreT_ct0.mono (fun _ _ h => two_kg (fun _ _ h => h.2) h) fun _ _ h => h)
+      fun I _ s h L ⟨hf, c, hok⟩ => WP.mono (qinvPre_k h hf.1 hf.2.1) fun t ⟨ht, f, vU, vV, vM⟩ =>
+        ⟨ht, ⟨c, (f.word (by decide) (by decide) (by decide)).trans hok⟩, by dsimp only [AvEq]; rw [vV, vM],
+          by dsimp only [Fits]; rw [vU]; exact L.Q_lt,
+          by dsimp only [Fits]; rw [vM]; exact qMod_lt L.P_lt (by have := L.pl1; omega_arith)⟩) ?_
   refine rs_app (R := Two (KG KokM)) (by simp) (by simp [gcdIsOne, constA])
-    (show RelCT isa _ (seqs [inverse aU aV aX₁ aX₂ aM aT]) _ from
-    (inverse_ct (F := KokM) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (show RelCT isa _ (seqs [inverseAt halfW aU aV aX₁ aX₂ aM aT]) _ from
+    inverseHalf_ct (F := KokM) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (sK _ _ (by decide) (by decide))
-    (by taint_decide)).mono (fun _ _ h => two_kg (fun _ _ ⟨⟨hk, tU⟩, he, h1, h2⟩ => ⟨hk, tU, he, h1, h2⟩) h)
-    fun _ _ h => h) gcdIsOneT_ct0
+    (by taint_decide)) gcdIsOneT_ct0
 
 /-- `qinvPart` keeps `TF`. -/
 theorem qinvPart_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG TF)) (seqs qinvPart) (Two (KG TF)) :=
-  kg_ct (qinvPartT_ct0.mono (fun _ _ h => two_kg (fun _ _ h => h.2) h) fun _ _ h => h)
-    fun I _ s h _ ⟨hf, _, hok⟩ => WP.mono (qinvPart_k h hf.1 hf.2.1 hok) fun _ ⟨ht, f, ok, _⟩ =>
+  kg_ct qinvPartT_ct0
+    fun I _ s h L ⟨hf, _, hok⟩ => WP.mono (qinvPart_k h L hf.1 hf.2.1 L.P_lt L.Q_lt hok) fun _ ⟨ht, f, ok, _⟩ =>
       ⟨ht, PF.frame (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.hZ hf f, _, ok⟩
 
 /-! ## `dP`, `dQ` and `n` -/

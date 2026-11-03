@@ -384,4 +384,48 @@ theorem inverse_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : 
       · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
   exact ⟨h.step f (all_mut_arrs (js := [iU, iV, iX₁, iX₂, iT]) (by simp [hU, hV, hX₁, hX₂, hT])) k, f, hv⟩
 
+/-- `halfW`: `x12 := W / 2`, the primes' `w` words. -/
+theorem halfW_ok {s : State} {w : Nat} (h12 : s.gpr .x12 = BitVec.ofNat 64 (2 * w)) (hw : 2 * w < 2 ^ 64) :
+    WP isa (.block halfW) s fun t => (t.gpr .x12 = BitVec.ofNat 64 w ∧ t.mem = s.mem ∧ t.v = s.v) ∧
+      Keep [.x3, .x4, .x5, .x6, .x7, .x12] s t := by
+  refine WP.keep [.x3, .x4, .x5, .x6, .x7, .x12] ?_ (by decide) (by decide) (by decide +kernel)
+  unfold halfW
+  brun [h12, RegUpd.v_write]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- `inverseAt halfW u v x₁ x₂ m t`: `inverse_k` at the primes' `w = W / 2`
+words, at which `u` and `m` fit. -/
+theorem inverseHalf_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) (L : KLens I)
+    {iU iV iX₁ iX₂ iM iT : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hUn : av I s.mem iU < 2 ^ (64 * (I.pl / 8)))
+    (hMn : av I s.mem iM < 2 ^ (64 * (I.pl / 8))) (hVM : av I s.mem iV = av I s.mem iM) :
+    WP isa (inverseAt halfW iU iV iX₁ iX₂ iM iT) s fun t => KS I s₀ t ∧
+      KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] s.mem t.mem ∧
+      Keep (.x11 :: .x12 :: stepRegs) s t ∧
+      (av I s.mem iM % 2 = 1 → 1 < av I s.mem iM →
+        av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
+        ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
+        av I t.mem iX₂ < av I s.mem iM) := by
+  have hW := L.W
+  have hl1 := L.pl1
+  have hl2 := L.pl2
+  refine WP.mono (InvLaw.inverseAt_ok h.ws (n := I.pl / 8) hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM
+    dVT dX dX₁M dX₁T dX₂M dX₂T dMT (by omega) (by omega) (by omega)
+    (fun _ _ _ h12 _ _ => halfW_ok (by rw [h12, hW]) (by omega)) hUn hMn hVM) fun t ⟨_, hf, k, hv⟩ => ?_
+  have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] s.mem t.mem :=
+    KF.of_frm hf fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+  exact ⟨h.step f (all_mut_arrs (js := [iU, iV, iX₁, iX₂, iT]) (by simp [hU, hV, hX₁, hX₂, hT])) k, f, k, hv⟩
+
 end VG.Proof.RsaKeyGen.AArch64.Key
