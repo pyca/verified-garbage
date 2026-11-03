@@ -27,13 +27,7 @@ vg_triple_des_cfb8_encrypt:
 	lbu t2, 3(s2)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sb t0, 32(s4)
-	srli t2, t0, 8
-	sb t2, 33(s4)
-	srli t2, t0, 16
-	sb t2, 34(s4)
-	srli t2, t0, 24
-	sb t2, 35(s4)
+	sw t0, 32(s4)
 	lbu t0, 4(s2)
 	lbu t2, 5(s2)
 	slli t2, t2, 8
@@ -44,13 +38,7 @@ vg_triple_des_cfb8_encrypt:
 	lbu t2, 7(s2)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sb t0, 36(s4)
-	srli t2, t0, 8
-	sb t2, 37(s4)
-	srli t2, t0, 16
-	sb t2, 38(s4)
-	srli t2, t0, 24
-	sb t2, 39(s4)
+	sw t0, 36(s4)
 	addi s2, a2, 0
 	addi t0, s4, 560
 	addi t2, a0, 0
@@ -64,40 +52,10 @@ vg_triple_des_cfb8_encrypt:
 	bnez t4, 20b
 	beqz s3, 21f
 23:
-	lbu t0, 32(s4)
-	lbu t2, 33(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 34(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 35(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sb t0, 48(s4)
-	srli t2, t0, 8
-	sb t2, 49(s4)
-	srli t2, t0, 16
-	sb t2, 50(s4)
-	srli t2, t0, 24
-	sb t2, 51(s4)
-	lbu t0, 36(s4)
-	lbu t2, 37(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 38(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 39(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sb t0, 52(s4)
-	srli t2, t0, 8
-	sb t2, 53(s4)
-	srli t2, t0, 16
-	sb t2, 54(s4)
-	srli t2, t0, 24
-	sb t2, 55(s4)
+	lwu t0, 32(s4)
+	sw t0, 48(s4)
+	lwu t0, 36(s4)
+	sw t0, 52(s4)
 	sd s5, 56(s4)
 	sd s6, 64(s4)
 	sd s7, 72(s4)
@@ -1387,16 +1345,7 @@ vg_triple_des_cfb8_encrypt:
 21:
 22:
 	addi s2, s1, 0
-	lbu t0, 32(s4)
-	lbu t2, 33(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 34(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 35(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
+	lwu t0, 32(s4)
 	sb t0, 0(s2)
 	srli t2, t0, 8
 	sb t2, 1(s2)
@@ -1404,16 +1353,7 @@ vg_triple_des_cfb8_encrypt:
 	sb t2, 2(s2)
 	srli t2, t0, 24
 	sb t2, 3(s2)
-	lbu t0, 36(s4)
-	lbu t2, 37(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 38(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 39(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
+	lwu t0, 36(s4)
 	sb t0, 4(s2)
 	srli t2, t0, 8
 	sb t2, 5(s2)
@@ -1461,13 +1401,7 @@ vg_triple_des_cfb8_decrypt:
 	lbu t2, 3(s2)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sb t0, 32(s4)
-	srli t2, t0, 8
-	sb t2, 33(s4)
-	srli t2, t0, 16
-	sb t2, 34(s4)
-	srli t2, t0, 24
-	sb t2, 35(s4)
+	sw t0, 32(s4)
 	lbu t0, 4(s2)
 	lbu t2, 5(s2)
 	slli t2, t2, 8
@@ -1478,13 +1412,7 @@ vg_triple_des_cfb8_decrypt:
 	lbu t2, 7(s2)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sb t0, 36(s4)
-	srli t2, t0, 8
-	sb t2, 37(s4)
-	srli t2, t0, 16
-	sb t2, 38(s4)
-	srli t2, t0, 24
-	sb t2, 39(s4)
+	sw t0, 36(s4)
 	addi s2, a2, 0
 	addi t0, s4, 560
 	addi t2, a0, 0
@@ -1498,40 +1426,10 @@ vg_triple_des_cfb8_decrypt:
 	bnez t4, 20b
 	beqz s3, 21f
 23:
-	lbu t0, 32(s4)
-	lbu t2, 33(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 34(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 35(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sb t0, 48(s4)
-	srli t2, t0, 8
-	sb t2, 49(s4)
-	srli t2, t0, 16
-	sb t2, 50(s4)
-	srli t2, t0, 24
-	sb t2, 51(s4)
-	lbu t0, 36(s4)
-	lbu t2, 37(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 38(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 39(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sb t0, 52(s4)
-	srli t2, t0, 8
-	sb t2, 53(s4)
-	srli t2, t0, 16
-	sb t2, 54(s4)
-	srli t2, t0, 24
-	sb t2, 55(s4)
+	lwu t0, 32(s4)
+	sw t0, 48(s4)
+	lwu t0, 36(s4)
+	sw t0, 52(s4)
 	sd s5, 56(s4)
 	sd s6, 64(s4)
 	sd s7, 72(s4)
@@ -2821,16 +2719,7 @@ vg_triple_des_cfb8_decrypt:
 21:
 22:
 	addi s2, s1, 0
-	lbu t0, 32(s4)
-	lbu t2, 33(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 34(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 35(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
+	lwu t0, 32(s4)
 	sb t0, 0(s2)
 	srli t2, t0, 8
 	sb t2, 1(s2)
@@ -2838,16 +2727,7 @@ vg_triple_des_cfb8_decrypt:
 	sb t2, 2(s2)
 	srli t2, t0, 24
 	sb t2, 3(s2)
-	lbu t0, 36(s4)
-	lbu t2, 37(s4)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 38(s4)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 39(s4)
-	slli t2, t2, 24
-	or t0, t0, t2
+	lwu t0, 36(s4)
 	sb t0, 4(s2)
 	srli t2, t0, 8
 	sb t2, 5(s2)
