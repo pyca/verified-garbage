@@ -507,7 +507,7 @@ theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
     ⟨by rw [u₂.mem, uA.mem], by rw [u₂.rd, uA.rd], by rw [u₂.wr, uA.wr], by rw [u₂.sp, uA.sp]⟩,
     by rw [u₂.gpr, hv]⟩
 
-theorem open_wp {s₀ : State} (h : openRISCV64.pre s₀) :
+theorem open_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : openRISCV64.pre s₀) :
     WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openRISCV64.post s₀ s' := by
   have h' : openPre s₀ := h
   have wa := openWa h'
