@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Sign
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Exchange
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.JointJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.JointComb
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.CheckVerified
@@ -23,9 +26,11 @@ import VerifiedGarbage.Proof.EcKey.PublicKey
 the group law (`verify_rv`): the setup (`vsetup_ok`: the saves, the public
 key's point and first byte, the constants, `r`, `s` and `e`, and the
 ranges of `r` and `s`), the check of the key (`check_ok`), `u` and `v`
-(`uv_ok`), `[u]G + [v]Q` by the joint ladder (`JointJ.jointJ_ok`,
-`Proof/Ecdsa/RISCV64/P384/JointJ.lean`), `x` and the comparison, and the result; the specification's
-answer is `verify_eq`'s (`Proof/Ecdsa/Verify.lean`).
+(`uv_ok`), `[u]G + [v]Q` by the comb and windows (`JointComb.jointComb_ok`,
+`Proof/Ecdsa/RISCV64/P384/JointComb.lean`), with the comb's table, which the
+code before it leaves alone, `x` and the comparison, and the result, under
+`abi.withConsts` of the table (`verifyRVC`); the specification's answer is
+`verify_eq`'s (`Proof/Ecdsa/Verify.lean`).
 -/
 
 @[expose] public section
@@ -61,6 +66,14 @@ def verifyRV : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3
 
+/-- `verifyRV` with the comb's table (`abi.withConsts`): `verifyRV` for the
+state without it, and what the table adds. -/
+def verifyRVC : Contract isa where
+  pre s := verifyRV.pre (stripConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts s) ∧
+    ConstsOk Impl.Ecdsa.RISCV64.Comb.p384CombConsts 0 s
+  post := verifyRV.post
+  pub s₁ s₂ := verifyRV.pub s₁ s₂ ∧ s₁.syms Impl.Ecdsa.RISCV64.Comb.p384Sym = s₂.syms Impl.Ecdsa.RISCV64.Comb.p384Sym
+
 /-! ## The setup -/
 
 /-- What the setup leaves, from `s`, with `base` the working space. -/
@@ -93,9 +106,10 @@ theorem consts_apart : ∀ e ∈ consts p384, ∀ w ∈ [(p384.sl VR, 8 * 6)] ++
 theorem consts_lt100 : ∀ e ∈ consts p384, e.1 < 100 := by decide
 
 /-- `setup`. -/
-theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
+theorem vsetup_ok {s : State} (hs : verifyRV.pre (stripConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts s)) :
     WP isa (.block (Verify.Cfg.setup p384)) s (VSetup (s.gpr .a3) s) := by
   obtain ⟨hrd, hwr, hpd, hdd, hsd, hfp, hfd, hfg, hfs, hal⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpd hdd hsd hfp hfd hfg hfs hal
   generalize hb : s.gpr .a3 = base at hwr hpd hdd hsd hfs hal
   have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   rw [Verify.Cfg.setup]
@@ -107,9 +121,12 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
   have a0 : s₁.gpr .a0 = s.gpr .a0 := g₁ _ (by decide) (by decide) (by decide)
   have a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
   have a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)
-  have rdp : (⟨s.gpr .a0, 97⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  have rdd : (⟨s.gpr .a1, 48⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  have rds : (⟨s.gpr .a2, 96⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  have rdp : (⟨s.gpr .a0, 97⟩ : Region) ∈ s.rd ++ s.wr :=
+    List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
+  have rdd : (⟨s.gpr .a1, 48⟩ : Region) ∈ s.rd ++ s.wr :=
+    List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
+  have rds : (⟨s.gpr .a2, 96⟩ : Region) ∈ s.rd ++ s.wr :=
+    List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
   -- The key's point, its first byte and the constants.
   refine WP.block_append (WP.mono (peerLoad_ok hw₁ (q := .a0) (by decide) (by rw [a0, rd₁, wr₁]; exact rdp)
     (by rw [a0]; exact hpd) (by rw [a0]; exact hfp)) fun s₂ ⟨hw₂, r₂, U₂, x₂, y₂, f₂, c₂⟩ => ?_)
@@ -512,14 +529,18 @@ theorem verify_false {C : Curve} {bs sig : List Byte} {e : Nat}
   · rfl
 
 /-- `vg_ecdsa_p384_verify` by register. -/
-theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.pre s) :
-    WP isa verifyP384 s fun s' => abiPreserved s s' ∧ verifyRV.post s s' := by
-  have hs' := hs
+theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRVC.pre s) :
+    WP isa VerifyComb.verifyP384 s fun s' => abiPreserved s s' ∧ verifyRV.post s s' := by
+  obtain ⟨hs₀, hk⟩ := hs
+  have hs' := hs₀
   obtain ⟨hrd, hwr, hpd, hdd, hsd, hfp, hfd, hfg, hfs, hal⟩ := hs'
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpd hdd hsd hfp hfd hfg hfs hal
   have hp0 : 0 < W.p := by decide
-  rw [verifyP384, VerifyJ.Cfg.verify]
-  refine WP.seq (WP.mono (vsetup_ok hs) fun s₁ S => ?_)
+  rw [VerifyComb.verifyP384, VerifyComb.Cfg.verify]
+  refine WP.seq (Comb.wp_syms_frame (WP.mono (vsetup_ok hs₀) fun s₁ S sy₁ F₁ => ?_))
   generalize hb : s.gpr .a3 = base at S hwr hpd hdd hsd hfs hal
+  have hT₁ : Comb.TabAt base s₁ :=
+    (Comb.tabAt_of_consts hk (by rw [hwr]; simp)).of_frame sy₁ S.rd F₁ (Comb.tab_wr_of_consts hk)
   have Sx := S.x
   have Sy := S.y
   have Sflag := S.flag
@@ -527,11 +548,12 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
   -- The check.
   have hf₁ : word s₁.mem base FL = 0 ∨ word s₁.mem base FL = BitVec.allOnes 64 := by
     rw [S.flag]; unfold maskOf; split <;> simp
-  refine WP.seq (WP.mono (check_ok S.ws S.s3 S.consts hf₁) fun s₂ ⟨K₂, U₂, f₂, px₂, py₂⟩ => ?_)
+  refine WP.seq (WP.mono (JointComb.wp_tab (JointComb.wsCall_noFrames Impl.Ecdh.RISCV64.checkP384_noFrames) hT₁
+    (by rw [S.wr, hwr]) (check_ok S.ws S.s3 S.consts hf₁)) fun s₂ ⟨⟨K₂, U₂, f₂, px₂, py₂⟩, hT₂⟩ => ?_)
   have hw₂ := S.ws.of_kp K₂
   -- The constants modulo `n`.
   rw [show p384.n = 6 from rfl]
-  refine WP.seq (WP.mono (consts_ok _ hw₂ nconsts_slots nconsts_nodup) fun s₃ ⟨r₃, U₃, e₃⟩ => ?_)
+  refine WP.seq (Comb.WP.mono_syms (consts_ok _ hw₂ nconsts_slots nconsts_nodup) fun s₃ ⟨r₃, U₃, e₃⟩ sy₃ => ?_)
   have hw₃ := hw₂.of_rest r₃
   have cs₃ : ∀ e ∈ Cfg.nConsts p384, sv base s₃ e.1 = e.2 := fun e he => by
     rw [e₃ e he, Nat.mod_eq_of_lt (nconsts_lt e he)]
@@ -545,11 +567,11 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
   have tc₁ : TailConsts base s₁ := ⟨const_at S.consts 0, const_at S.consts 1, const_at S.consts 2,
     const_at S.consts 3, const_at S.consts 4, const_at S.consts 5, const_at S.consts 6, const_at S.consts 9⟩
   -- `u` and `v`.
-  refine WP.seq (WP.mono (uv_ok (r := ofBytes (bytesAt s.mem (s.gpr .a2) 48))
+  refine WP.seq (Comb.WP.mono_syms (uv_ok (r := ofBytes (bytesAt s.mem (s.gpr .a2) 48))
     (sg := ofBytes (bytesAt s.mem (s.gpr .a2 + BitVec.ofNat 64 48) 48)) (e := ofBytes (bytesAt s.mem (s.gpr .a1) 48))
     ⟨hw₃, (k₁₃ ONE (by simp)).trans tc₁.one, (k₁₃ VR (by simp)).trans S.rv, (k₁₃ VS (by simp)).trans S.svs,
       (k₁₃ VE (by simp)).trans S.ev, cs₃ (R2N, _) (by decide), cs₃ (ONEN, _) (by decide), cs₃ (EXPN, _) (by decide)⟩)
-    fun s₄ ⟨K₄, U₄, ult, uval, vlt, vval⟩ => ?_)
+    fun s₄ ⟨K₄, U₄, ult, uval, vlt, vval⟩ sy₄ => ?_)
   have hw₄ := hw₃.of_kc K₄
   -- The key's point, or `G`.
   have tc₄ := (tc₁.of_unch U₁₃ (by decide)).of_unch U₄ (by decide)
@@ -588,10 +610,15 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
       exact VG.Proof.P384.onCurve_G
     · rw [ite_eq_right h0, ite_eq_right h0, toM_mont unit, toM_mont unit]
       exact (hval h0).2.2
-  -- `[u]G + [v]Q`, by the joint ladder.
-  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.P384.JointJ.jointJ_ok hL ⟨hw₄, tc₄.ap, (e₁₄ BP (by simp)).trans bp₁,
-    tc₄.zero, tc₄.onep,
-    (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁, lt_qx, lt_qy, hQ, hon⟩)
+  -- `[u]G + [v]Q`, by the comb and windows, with the table.
+  have hT₄ : Comb.TabAt base s₄ :=
+    (hT₂.of_unch sy₃ r₃.rd (by decide) U₃).of_unch sy₄ K₄.rd (by decide) U₄
+  have h3₄ : s₄.gpr .s3 = base := by
+    rw [K₄.gpr _ (by decide) (by decide), r₃.gpr _ (by decide), K₂.gpr _ (by decide), S.s3]
+  have hwr₄ : s₄.wr = [⟨base, 8192⟩] := by rw [K₄.wr, r₃.wr, K₂.wr, S.wr, hwr]
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.P384.JointComb.jointComb_ok hL ⟨hw₄, tc₄.ap,
+    (e₁₄ BP (by simp)).trans bp₁, tc₄.zero, tc₄.onep,
+    (e₁₄ GX (by simp)).trans gx₁, (e₁₄ GY (by simp)).trans gy₁, lt_qx, lt_qy, hQ, hon⟩ h3₄ tc₄ hT₄ hwr₄ ult vlt)
     fun s₆ ⟨K₆, U₆, pR₆⟩ => ?_)
   have hw₆ := hw₄.of_kc K₆
   have tc₆ := tc₄.of_unch U₆ (by decide)
@@ -726,8 +753,8 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
       exact hrs ⟨by have := h.1.1.1.1.1.2; omega, h.1.1.1.1.1.1.2, by have := h.1.1.1.2; omega, h.1.1.1.1.2⟩
     rw [hB]
 
-theorem verify_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : verifyRV.pre s) :
-    ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyRV.post s s' := by
+theorem verify_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : verifyRVC.pre s) :
+    ∃ t s', Exec isa VerifyComb.verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyRVC.post s s' := by
   obtain ⟨t, s', he, h⟩ := verify_ok hL hs
   exact ⟨t, s', he, h⟩
 

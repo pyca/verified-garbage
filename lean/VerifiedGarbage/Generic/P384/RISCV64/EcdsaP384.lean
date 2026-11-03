@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Sign
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.P384
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignLit
@@ -20,7 +20,8 @@ namespace VG.Generic.P384.RISCV64.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.Ecdsa.P384.verifyApi.artifact RISCV64.target {
-    code := Impl.Ecdsa.RISCV64.Verify.verifyP384
+    code := Impl.Ecdsa.RISCV64.VerifyComb.verifyP384
+    consts := Impl.Ecdsa.RISCV64.Comb.p384CombConsts
     verified := Proof.Ecdsa.RISCV64.P384.verify_verified h.law }]
 
 end VG.Generic.P384.RISCV64.EcdsaP384
