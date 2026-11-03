@@ -23,57 +23,6 @@ open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop)
 open VG.Spec.MlDsa (q n Zq zetas)
 open VG.Proof.MlDsa (coeffAt)
 
-/-! ## A layer, coefficient by coefficient -/
-
-section
-variable {op : Word → Word → Zq → Word × Word} {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
-include hblk
-
-/-- Each coefficient after the first `b` blocks of the layer with `len`. -/
-theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : Nat} (hb : 2 * len * b ≤ 256)
-    {j : Nat} (hj : j < 256) :
-    (layF blk F len zi b)[j]! = if j < 2 * len * b then
-      (if j % (2 * len) < len then (op F[j]! F[j + len]! (zetas (zi (j / (2 * len))))).1
-        else (op F[j - len]! F[j]! (zetas (zi (j / (2 * len))))).2) else F[j]! := by
-  induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega_arith)]; rfl
-  | succ b ih =>
-    have hb' : 2 * len * b + 2 * len ≤ 256 := by rw [Nat.mul_succ] at hb; exact hb
-    rw [layF, foldl_range_succ, ← layF,
-      hblk.get _ len _ _ len hl (Nat.le_refl _) (by rw [n_eq]; omega_arith) j (by rw [n_eq]; exact hj)]
-    have hd : ∀ i, 2 * len * b ≤ i → i < 2 * len * b + 2 * len → i / (2 * len) = b ∧
-        i % (2 * len) = i - 2 * len * b := fun i h1 h2 => by
-      have e1 : i / (2 * len) = b := by
-        apply Nat.div_eq_of_lt_le
-        · rw [Nat.mul_comm]; exact h1
-        · rw [Nat.succ_mul, Nat.mul_comm b]; exact h2
-      refine ⟨e1, ?_⟩
-      have := Nat.div_add_mod i (2 * len)
-      rw [e1] at this; omega_arith
-    by_cases h1 : 2 * len * b ≤ j ∧ j < 2 * len * b + len
-    · obtain ⟨d1, d2⟩ := hd j h1.1 (by omega_arith)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by omega_arith) hj, ih (by omega_arith) (by omega_arith), d1,
-        ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by omega_arith)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega_arith)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by omega_arith))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      by_cases h2 : 2 * len * b + len ≤ j ∧ j < 2 * len * b + len + len
-      · obtain ⟨d1, d2⟩ := hd j (by omega_arith) (by omega_arith)
-        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by omega_arith) (by omega_arith), ih (by omega_arith) hj, d1,
-          ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by omega_arith)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by omega_arith)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega_arith))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by omega_arith) hj]
-        by_cases h3 : j < 2 * len * b
-        · rw [ite_eq_left_of_eq_true _ _ (eq_true h3),
-            ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith))]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h3),
-            ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith))]
-
-end
-
 /-! ## Coefficients in both lanes -/
 
 /-- Two registers stored into a polynomial at coefficients `j` and `j'`,
@@ -420,14 +369,14 @@ theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) 
       (if i % (2 * 4) < 4 then (op P[i]! P[i + 4]! (zetas (zi (i / (2 * 4))))).1
         else (op P[i - 4]! P[i]! (zetas (zi (i / (2 * 4))))).2) else P[i]! := fun i hi => by
     have hF : ∀ j, 16 * m ≤ j → j < 256 → P[j]! = F[j]! := fun j h1 h2 => by
-      rw [← hP, layF_get hblk F (by decide) zi (by omega_arith) h2, ite_eq_right (by omega_arith)]
-    rw [layF_get hblk F (by decide) zi (by omega_arith) hi]
+      rw [← hP, Arith.Lazy.layF_get hblk F (by decide) zi (by omega_arith) h2, ite_eq_right (by omega_arith)]
+    rw [Arith.Lazy.layF_get hblk F (by decide) zi (by omega_arith) hi]
     by_cases h1 : 16 * m ≤ i ∧ i < 16 * m + 16
     · rw [ite_eq_left (by omega_arith), ite_eq_left h1]
       by_cases h2 : i % (2 * 4) < 4
       · rw [ite_eq_left h2, ite_eq_left h2, hF _ h1.1 hi, hF _ (by omega_arith) (by omega_arith)]
       · rw [ite_eq_right h2, ite_eq_right h2, hF _ (by omega_arith) (by omega_arith), hF _ h1.1 hi]
-    · rw [ite_eq_right h1, ← hP, layF_get hblk F (by decide) zi (by omega_arith) hi]
+    · rw [ite_eq_right h1, ← hP, Arith.Lazy.layF_get hblk F (by decide) zi (by omega_arith) hi]
       by_cases h3 : i < 16 * m
       · rw [ite_eq_left (show i < 2 * 4 * (2 * (m + 1)) by omega_arith),
           ite_eq_left (show i < 2 * 4 * (2 * m) by omega_arith)]

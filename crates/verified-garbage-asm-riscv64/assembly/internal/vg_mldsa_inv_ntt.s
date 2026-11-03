@@ -781,6 +781,8 @@ vg_mldsa_inv_ntt:
 	addi a5, a5, 1537
 	lui a6, 2046
 	addi a6, a6, 1
+	lui t5, 261888
+	addi t5, t5, 128
 	addi a0, a0, 1024
 	addi a1, a1, 1020
 	addi a7, zero, 4
@@ -795,26 +797,13 @@ vg_mldsa_inv_ntt:
 	lwu t2, 0(a2)
 	lwu t0, 0(a3)
 	add t3, t2, t0
-	sub t3, t3, a6
-	srai t4, t3, 63
-	and t4, t4, a6
-	add t3, t3, t4
 	sw t3, 0(a2)
 	sub t0, t2, t0
-	srai t4, t0, 63
-	and t4, t4, a6
-	add t0, t0, t4
+	add t0, t0, t5
 	mul t0, a4, t0
 	mulhu t3, t0, a5
+	mul t3, t3, a6
 	sub t0, t0, t3
-	slli t3, t3, 13
-	add t0, t0, t3
-	slli t3, t3, 10
-	sub t0, t0, t3
-	sub t0, t0, a6
-	srai t3, t0, 63
-	and t3, t3, a6
-	add t0, t0, t3
 	sw t0, 0(a3)
 	addi a2, a2, 4
 	addi a3, a3, 4
@@ -834,10 +823,7 @@ vg_mldsa_inv_ntt:
 	lwu t2, 0(a2)
 	mul t2, t2, a4
 	mulhu t3, t2, a5
-	sub t2, t2, t3
-	slli t3, t3, 13
-	add t2, t2, t3
-	slli t3, t3, 10
+	mul t3, t3, a6
 	sub t2, t2, t3
 	sub t2, t2, a6
 	srai t3, t2, 63

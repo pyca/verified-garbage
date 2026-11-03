@@ -21,10 +21,7 @@ vg_mldsa_multiply_add_ntt:
 	lwu t2, 0(a0)
 	add t0, t0, t2
 	mulhu t2, t0, a5
-	sub t0, t0, t2
-	slli t2, t2, 13
-	add t0, t0, t2
-	slli t2, t2, 10
+	mul t2, t2, a6
 	sub t0, t0, t2
 	sub t0, t0, a6
 	srai t2, t0, 63

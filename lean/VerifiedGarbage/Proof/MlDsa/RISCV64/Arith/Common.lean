@@ -21,9 +21,10 @@ The values the pieces of `Impl/MlDsa/RISCV64/Arith.lean` compute:
   `m = ⌊2⁶⁴ / q⌋` in `a5` and `q` in `a6`;
 * `fixup` leaves `fixd u`: `u + q` if `u` is negative, `u` otherwise, which
   reduces a sum or a difference of reduced values (`fixd_add`, `fixd_sub`);
-* `reduce` leaves `red x = x mod q` for every `x` (`red_toNat`): the
-  quotient's estimate `bar x = ⌊x · m / 2⁶⁴⌋` is `⌊x / q⌋` or one less
-  (`bar_le`, `lt_bar`), so `x - bar x · q < 2q`;
+* `barrett` leaves `barv x = x - bar x · q`, less than `2q` and congruent
+  to `x` (`barv_lt`, `barv_mod`): the quotient's estimate
+  `bar x = ⌊x · m / 2⁶⁴⌋` is `⌊x / q⌋` or one less (`bar_spec`); and
+  `reduce` leaves `red x = x mod q` for every `x` (`red_toNat`);
 * `table T b` stores the 256 entries of `T`, each less than `2²³`
   (`table_ok`).
 -/
@@ -178,33 +179,50 @@ theorem bar_spec (x : Nat) (hx : x < 2 ^ 64) :
   rw [← Nat.add_mul] at h2
   exact ⟨hle, Nat.lt_of_mul_lt_mul_right h2⟩
 
-/-- What `reduce d t` leaves in `d`. -/
-def red (x : BitVec 64) : BitVec 64 :=
-  fixd (x - bar x + bar x <<< 13 - bar x <<< 13 <<< 10 - 8380417)
+/-- What `barrett d t` leaves in `d`: `x - bar x · q`. -/
+def barv (x : BitVec 64) : BitVec 64 := x - bar x * 8380417
 
-theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
-  obtain ⟨hle, hlt⟩ := bar_spec x.toNat x.isLt
+theorem bar_toNat (x : BitVec 64) : (bar x).toNat = x.toNat * 2201172575745 / 2 ^ 64 := by
+  have hle := (bar_spec x.toNat x.isLt).1
   have hx := x.isLt
-  have hT : (bar x).toNat = x.toNat * 2201172575745 / 2 ^ 64 := by
-    unfold bar; rw [BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega)
-  unfold red
+  unfold bar; rw [BitVec.toNat_ofNat]
+  exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega)
+
+theorem barv_toNat (x : BitVec 64) :
+    (barv x).toNat = x.toNat - x.toNat * 2201172575745 / 2 ^ 64 * q := by
+  obtain ⟨hle, -⟩ := bar_spec x.toNat x.isLt
+  have hx := x.isLt
+  have hT := bar_toNat x
+  unfold barv
   generalize bar x = B at hT ⊢
-  generalize x.toNat * 2201172575745 / 2 ^ 64 = T at hle hlt hT
+  generalize x.toNat * 2201172575745 / 2 ^ 64 = T at hle hT ⊢
   subst hT
-  rw [q_eq] at hle hlt ⊢
-  have s13 : (B <<< 13).toNat = B.toNat * 8192 := by
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
-  have s23 : (B <<< 13 <<< 10).toNat = B.toNat * 8388608 % 2 ^ 64 := by
-    rw [BitVec.toNat_shiftLeft, s13, Nat.shiftLeft_eq]; omega
-  have v : (x - B + B <<< 13 - B <<< 13 <<< 10).toNat = x.toNat - B.toNat * 8380417 := by
-    generalize B <<< 13 <<< 10 = U at *
-    generalize B <<< 13 = V at *
-    bv_omega
-  rw [fixd_subq (by rw [v, q_eq]; omega), v, q_eq]
-  have e : x.toNat = (x.toNat - B.toNat * 8380417) + 8380417 * B.toNat := by omega
+  rw [q_eq] at hle ⊢
+  have hm : (B * 8380417).toNat = B.toNat * 8380417 := by
+    rw [BitVec.toNat_mul, show (8380417 : BitVec 64).toNat = 8380417 from rfl]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm]; omega), hm]
+
+/-- `barrett` leaves a value less than `2q`. -/
+theorem barv_lt (x : BitVec 64) : (barv x).toNat < 2 * q := by
+  obtain ⟨hle, hlt⟩ := bar_spec x.toNat x.isLt
+  rw [barv_toNat]; omega
+
+/-- `barrett` leaves a value congruent to `x`. -/
+theorem barv_mod (x : BitVec 64) : (barv x).toNat % q = x.toNat % q := by
+  obtain ⟨hle, -⟩ := bar_spec x.toNat x.isLt
+  rw [barv_toNat]
+  generalize x.toNat * 2201172575745 / 2 ^ 64 = T at hle ⊢
+  have e : x.toNat = (x.toNat - T * q) + q * T := by rw [Nat.mul_comm q T]; omega
   conv => rhs; rw [e]
   rw [Nat.add_mul_mod_self_left]
+
+/-- What `reduce d t` leaves in `d`. -/
+def red (x : BitVec 64) : BitVec 64 := fixd (barv x - 8380417)
+
+theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
+  unfold red
+  rw [fixd_subq (barv_lt x), barv_mod]
 
 theorem red_lt (x : BitVec 64) : (red x).toNat < q := by
   rw [red_toNat]; exact Nat.mod_lt _ (by decide)
@@ -288,44 +306,45 @@ theorem fixup_ok {d t rq : Reg} (hdt : d ≠ t) (hrq : t ≠ rq)
   · rw [u₃.wr, u₂.wr, u₁.wr]
   · rw [u₃.sp, u₂.sp, u₁.sp]
 
-/-- `reduce d t`: `red` of `d`. -/
-theorem reduce_ok {d t : Reg} (hdt : d ≠ t) (h6d : d ≠ .a6) (h6t : t ≠ .a6)
+/-- `barrett d t`: `barv` of `d`. -/
+theorem barrett_ok {d t : Reg} (hdt : d ≠ t) (h6t : t ≠ .a6)
     (h5 : s.gpr .a5 = 2201172575745) (h6 : s.gpr .a6 = 8380417)
-    (k : ∀ s', Kept2 s s' d t (red (s.gpr d)) → WP isa (.block is) s' Q) :
-    WP isa (.block (reduce d t ++ is)) s Q := by
-  simp only [reduce, List.cons_append, List.nil_append]
-  refine Steps.WP.cons exec_mulhu (Steps.wp_sub fun s₂ u₂ => Steps.wp_sll (by decide) fun s₃ u₃ =>
-    Steps.wp_add fun s₄ u₄ => Steps.wp_sll (by decide) fun s₅ u₅ => Steps.wp_sub fun s₆ u₆ =>
-    Steps.wp_sub fun s₇ u₇ => fixup_ok hdt h6t fun s₈ k₈ => k s₈ ⟨?_, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_⟩)
+    (k : ∀ s', Kept2 s s' d t (barv (s.gpr d)) → WP isa (.block is) s' Q) :
+    WP isa (.block (Impl.MlDsa.RISCV64.Arith.barrett d t ++ is)) s Q := by
+  simp only [Impl.MlDsa.RISCV64.Arith.barrett, List.cons_append, List.nil_append]
+  refine Steps.WP.cons exec_mulhu (wp_mul fun s₂ u₂ => Steps.wp_sub fun s₃ u₃ =>
+    k s₃ ⟨?_, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_⟩)
   · let s₁ := s.write t (BitVec.ofNat 64 ((s.gpr d).toNat * (s.gpr .a5).toNat / 2 ^ 64))
     have e1t : s₁.gpr t = bar (s.gpr d) := by
       simp only [s₁, State.write, ite_true, h5, bar]; rfl
     have e1d : s₁.gpr d = s.gpr d := by simp only [s₁, State.write, hdt, ite_false]
     have e16 : s₁.gpr .a6 = 8380417 := by simp only [s₁, State.write, h6t.symm, ite_false, h6]
-    have e2t : s₂.gpr t = bar (s.gpr d) := by rw [u₂.other _ hdt.symm, e1t]
-    have e3d : s₃.gpr d = s.gpr d - bar (s.gpr d) := by rw [u₃.other _ hdt, u₂.gpr, e1d, e1t]
-    have e3t : s₃.gpr t = bar (s.gpr d) <<< 13 := by rw [u₃.gpr, e2t]
-    have e5t : s₅.gpr t = bar (s.gpr d) <<< 13 <<< 10 := by
-      rw [u₅.gpr, u₄.other _ hdt.symm, e3t]
-    have e5d : s₅.gpr d = s.gpr d - bar (s.gpr d) + bar (s.gpr d) <<< 13 := by
-      rw [u₅.other _ hdt, u₄.gpr, e3d, e3t]
-    have e66 : s₆.gpr .a6 = 8380417 := by
-      rw [u₆.other _ h6d.symm, u₅.other _ h6t.symm, u₄.other _ h6d.symm, u₃.other _ h6t.symm,
-        u₂.other _ h6d.symm, e16]
-    have e7 : s₇.gpr d = s.gpr d - bar (s.gpr d) + bar (s.gpr d) <<< 13 - bar (s.gpr d) <<< 13 <<< 10 -
-        8380417 := by
-      rw [u₇.gpr, u₆.other _ h6d.symm, u₆.gpr, e5d, e5t, u₅.other _ h6t.symm, u₄.other _ h6d.symm,
-        u₃.other _ h6t.symm, u₂.other _ h6d.symm, e16]
-    have e76 : s₇.gpr .a6 = 8380417 := by rw [u₇.other _ h6d.symm, e66]
-    rw [k₈.gpr, e7, e76]
+    rw [u₃.gpr, u₂.other _ hdt, u₂.gpr, e1d, e1t, e16]
     rfl
-  · rw [k₈.other _ h1 h2, u₇.other _ h1, u₆.other _ h1, u₅.other _ h2, u₄.other _ h1, u₃.other _ h2,
-      u₂.other _ h1]
+  · rw [u₃.other _ h1, u₂.other _ h2]
     simp only [State.write, h2, ite_false]
-  · rw [k₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; rfl
-  · rw [k₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd]; rfl
-  · rw [k₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; rfl
-  · rw [k₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp]; rfl
+  · rw [u₃.mem, u₂.mem]; rfl
+  · rw [u₃.rd, u₂.rd]; rfl
+  · rw [u₃.wr, u₂.wr]; rfl
+  · rw [u₃.sp, u₂.sp]; rfl
+
+/-- `reduce d t`: `red` of `d`. -/
+theorem reduce_ok {d t : Reg} (hdt : d ≠ t) (h6d : d ≠ .a6) (h6t : t ≠ .a6)
+    (h5 : s.gpr .a5 = 2201172575745) (h6 : s.gpr .a6 = 8380417)
+    (k : ∀ s', Kept2 s s' d t (red (s.gpr d)) → WP isa (.block is) s' Q) :
+    WP isa (.block (reduce d t ++ is)) s Q := by
+  simp only [reduce, List.append_assoc]
+  refine barrett_ok hdt h6t h5 h6 fun s₁ k₁ => ?_
+  simp only [List.cons_append, List.nil_append]
+  refine Steps.wp_sub fun s₂ u₂ => fixup_ok hdt h6t fun s₃ k₃ => k s₃ ⟨?_, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_⟩
+  · have e26 : s₂.gpr .a6 = 8380417 := by rw [u₂.other _ h6d.symm, k₁.other _ h6d.symm h6t.symm, h6]
+    rw [k₃.gpr, u₂.gpr, k₁.gpr, k₁.other _ h6d.symm h6t.symm, h6, e26]
+    rfl
+  · rw [k₃.other _ h1 h2, u₂.other _ h1, k₁.other _ h1 h2]
+  · rw [k₃.mem, u₂.mem, k₁.mem]
+  · rw [k₃.rd, u₂.rd, k₁.rd]
+  · rw [k₃.wr, u₂.wr, k₁.wr]
+  · rw [k₃.sp, u₂.sp, k₁.sp]
 
 end
 

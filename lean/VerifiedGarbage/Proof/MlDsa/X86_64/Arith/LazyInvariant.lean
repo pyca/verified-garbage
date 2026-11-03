@@ -42,7 +42,7 @@ theorem layer_rel {b : Nat} (hb : b ≤ 15) {F : Poly} {f : VG.Spec.MlDsa.Poly} 
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
     all_goals intro i hi; omega
   intro i hi
-  rw [layer, layF_get (block_ok op) F hl.1 _ (by omega) hi,
+  rw [layer, Arith.Lazy.layF_get (block_ok op) F hl.1 _ (by omega) hi,
     nttLayer_eq, Arith.layF_get nttBlk_ok f hl.1 _ (by omega) hi]
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len

@@ -64,7 +64,7 @@ theorem layerInv_rel {b : Nat} (hb1 : 1 ≤ b) (hb : b ≤ 128) {F : Poly} {f : 
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
     all_goals intro i hi; omega
   intro i hi
-  rw [layerInv, layF_get (block_ok opInv) F hl.1 _ (by omega) hi,
+  rw [layerInv, Arith.Lazy.layF_get (block_ok opInv) F hl.1 _ (by omega) hi,
     VG.Proof.MlDsa.X86_64.Arith.nttInvLayer_eq, Arith.layF_get nttInvBlk_ok f hl.1 _ (by omega) hi]
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len
@@ -174,7 +174,7 @@ theorem layerInv_get (F : Poly) {len : Nat} (hlen : len ∈ [1, 2, 4, 8, 16, 32,
   have hl : 0 < len ∧ 2 * len * (128 / len) = 256 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  rw [layerInv, layF_get (block_ok opInv) F hl.1 _ (by omega) hi, VG.Proof.MlKem.X86_64.ifp (by omega)]
+  rw [layerInv, Arith.Lazy.layF_get (block_ok opInv) F hl.1 _ (by omega) hi, VG.Proof.MlKem.X86_64.ifp (by omega)]
 
 /-- Between the lazy layers of `NTT⁻¹`, from `s₀`. -/
 structure LII (fP sP : Addr) (s₀ : State) (F : Poly) (s : State) : Prop where

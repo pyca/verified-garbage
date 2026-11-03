@@ -222,14 +222,14 @@ theorem layF2_next (F : Poly) (zi : Nat → Nat) {i : Nat} (hi : i < 16) {x : Na
       else (op (layF blk F 2 zi (4 * i))[x - 2]! (layF blk F 2 zi (4 * i))[x]! (zetas (zi (x / (2 * 2))))).2)
       else (layF blk F 2 zi (4 * i))[x]! := by
   have hF : ∀ y, 16 * i ≤ y → y < 256 → (layF blk F 2 zi (4 * i))[y]! = F[y]! := fun y h1 h2 => by
-    rw [layF_get hblk F (by decide) zi (by omega_using [h1, h2]) h2, ite_eq_right (by omega_using [h1])]
-  rw [layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
+    rw [Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [h1, h2]) h2, ite_eq_right (by omega_using [h1])]
+  rw [Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
   by_cases h1 : 16 * i ≤ x ∧ x < 16 * i + 16
   · rw [ite_eq_left (by omega_using [h1]), ite_eq_left h1]
     by_cases h2 : x % (2 * 2) < 2
     · rw [ite_eq_left h2, ite_eq_left h2, hF _ h1.1 hx, hF _ (by omega_using [h1]) (by omega_using [hx, h2])]
     · rw [ite_eq_right h2, ite_eq_right h2, hF _ (by omega_using [h1, h2]) (by omega_using [hx]), hF _ h1.1 hx]
-  · rw [ite_eq_right h1, layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
+  · rw [ite_eq_right h1, Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
     by_cases h3 : x < 16 * i
     · rw [ite_eq_left (show x < 2 * 2 * (4 * (i + 1)) by omega_using [h3]), ite_eq_left (show x < 2 * 2 * (4 * i) by omega_using [h3])]
     · rw [ite_eq_right (show ¬ x < 2 * 2 * (4 * (i + 1)) by omega_using [h1, h3]),
@@ -244,14 +244,14 @@ theorem layF1_next (F : Poly) (zi : Nat → Nat) {i : Nat} (hi : i < 16) {x : Na
       else (op (layF blk F 1 zi (8 * i))[x - 1]! (layF blk F 1 zi (8 * i))[x]! (zetas (zi (x / (2 * 1))))).2)
       else (layF blk F 1 zi (8 * i))[x]! := by
   have hF : ∀ y, 16 * i ≤ y → y < 256 → (layF blk F 1 zi (8 * i))[y]! = F[y]! := fun y h1 h2 => by
-    rw [layF_get hblk F (by decide) zi (by omega_using [h1, h2]) h2, ite_eq_right (by omega_using [h1])]
-  rw [layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
+    rw [Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [h1, h2]) h2, ite_eq_right (by omega_using [h1])]
+  rw [Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
   by_cases h1 : 16 * i ≤ x ∧ x < 16 * i + 16
   · rw [ite_eq_left (by omega_using [h1]), ite_eq_left h1]
     by_cases h2 : x % (2 * 1) < 1
     · rw [ite_eq_left h2, ite_eq_left h2, hF _ h1.1 hx, hF _ (by omega_using [h1]) (by omega_using [hx, h2])]
     · rw [ite_eq_right h2, ite_eq_right h2, hF _ (by omega_using [h1, h2]) (by omega_using [hx]), hF _ h1.1 hx]
-  · rw [ite_eq_right h1, layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
+  · rw [ite_eq_right h1, Arith.Lazy.layF_get hblk F (by decide) zi (by omega_using [hi]) hx]
     by_cases h3 : x < 16 * i
     · rw [ite_eq_left (show x < 2 * 1 * (8 * (i + 1)) by omega_using [h3]), ite_eq_left (show x < 2 * 1 * (8 * i) by omega_using [h3])]
     · rw [ite_eq_right (show ¬ x < 2 * 1 * (8 * (i + 1)) by omega_using [h1, h3]),

@@ -787,6 +787,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_ntt() {
 .insn 4, 0x60178793
 .insn 4, 0x007fe837
 .insn 2, 0x0805
+.insn 4, 0x01080f33
 .insn 4, 0x40050513
 .insn 2, 0x0591
 .insn 4, 0x20000893
@@ -802,25 +803,12 @@ pub(crate) unsafe extern "C" fn vg_mldsa_ntt() {
 .insn 4, 0x0006e283
 .insn 4, 0x025702b3
 .insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
 .insn 4, 0x41c282b3
-.insn 2, 0x0e36
-.insn 2, 0x92f2
-.insn 2, 0x0e2a
-.insn 4, 0x41c282b3
-.insn 4, 0x410282b3
-.insn 4, 0x43f2de13
-.insn 4, 0x010e7e33
-.insn 2, 0x92f2
 .insn 4, 0x40538e33
-.insn 4, 0x43fe5e93
-.insn 4, 0x010efeb3
-.insn 2, 0x9e76
+.insn 2, 0x9e7a
 .insn 4, 0x01c6a023
 .insn 2, 0x9396
-.insn 4, 0x410383b3
-.insn 4, 0x43f3de93
-.insn 4, 0x010efeb3
-.insn 2, 0x93f6
 .insn 4, 0x00762023
 .insn 2, 0x0611
 .insn 2, 0x0691
@@ -832,6 +820,21 @@ bnez t0, 21b
 .insn 4, 0x0018d893
 .insn 4, 0xffe88293
 bnez t0, 20b
+.insn 4, 0xc0050613
+.insn 4, 0x10000313
+23:
+.insn 4, 0x00066383
+.insn 4, 0x02f3be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c383b3
+.insn 4, 0x410383b3
+.insn 4, 0x43f3de13
+.insn 4, 0x010e7e33
+.insn 2, 0x93f2
+.insn 4, 0x00762023
+.insn 2, 0x0611
+.insn 2, 0x137d
+bnez t1, 23b
 .insn 2, 0x8082
 .option pop",
     )
