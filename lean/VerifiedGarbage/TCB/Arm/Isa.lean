@@ -74,13 +74,23 @@ Modelling choices:
   allows (operating systems that run on A-profile cores alone), and
   `src/cpu.rs` may report it only there, so no code with `umaal` reaches a
   Cortex-M core.
-* Calls are `bl` and returns `bx lr` (DDI 0406C, A8.8.25 "BL, BLX
-  (immediate)", A8.8.27 "BX"). The return addresses are the next of the
-  state's `unknowns`, which nothing constrains (see `TCB/Code.lean`); a
-  return address also says whether the caller is ARM or Thumb code, which
-  `bx` switches back to. A linker veneer between a `bl` and its target may
-  change `r12` and the condition flags (AAELF32 §5.6.1.4, "Call and Jump
-  relocations"), so a call leaves unknown values in them too.
+* Calls are `bl`, or indirect through a register, `blx rm` (`icall`, the
+  instruction of an indirect call, `Code.icall`), and returns `bx lr` (DDI
+  0406C, A8.8.25 "BL, BLX (immediate)", A8.8.26 "BLX (register)", A8.8.27
+  "BX"). The return addresses are the next of the state's `unknowns`, which
+  nothing constrains (see `TCB/Code.lean`); a return address also says
+  whether the caller is ARM or Thumb code, which `bx` switches back to. A
+  linker veneer between a `bl` and its target may change `r12` and the
+  condition flags (AAELF32 §5.6.1.4, "Call and Jump relocations"), so a call
+  leaves unknown values in them too (and the model's indirect call, which
+  takes no veneer, does as well: a superset of what it changes). The
+  function of each name is at the address of its symbol, `State.syms name`,
+  as a static is (`ISA.fnAddr`): for a function in Thumb code, the symbol's
+  value has bit 0 set (AAELF32 §5.5.3, "Symbol Values"), so `blx` of it
+  stays in Thumb state, as `blx` of an ARM function's (bit 0 clear) stays in
+  ARM state. Every function the emitter writes for a target is in the
+  target's one instruction set, so the model's indirect call never changes
+  it.
 * A `static` the code reads (`Artifact.consts`) is at the address
   `State.syms name`, where `name` is its name, which `adrSym` (`movw`,
   `movt` and an `add` of `pc`, resolved by the linker) puts in a register.
@@ -166,6 +176,10 @@ inductive Instr
   /-- `umaal lo, hi, n, m`: `hi:lo := n * m + hi + lo`, unsigned and 64 bits
   wide (no flags set; `lo` and `hi` distinct) -/
   | umaal (lo hi n m : Reg)
+  /-- `blx m` (BLX (register)): the indirect call of the function at the
+  address in `m` (see `icall`). It only occurs as the instruction of an
+  indirect call (`Code.icall`): as a straight-line instruction it faults. -/
+  | blx (m : Reg)
   /-- `ldr t, [n, #off]` (`0 ≤ off < 4096`) -/
   | ldr (t n : Reg) (off : Nat)
   /-- `str t, [n, #off]` (`0 ≤ off < 4096`) -/
@@ -403,8 +417,9 @@ def exec : Instr → State → Option State
     else none
   | .addSp d imm, s =>
     if imm < 256 then some (s.setReg d (s.sp + BitVec.ofNat 32 imm)) else none
-  -- Frame delimiters run only through `push` and `pop`.
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ => none
+  -- Frame delimiters run only through `push` and `pop`, and the
+  -- instruction of an indirect call only through `icall`.
+  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .blx _, _ => none
 
 /-- The addresses of `n` consecutive words from `a`. -/
 def words (a : BitVec 32) (n : Nat) : List Addr :=
@@ -524,6 +539,16 @@ def Instr.requires : Instr → List String
   | .umaal .. => ["umaal"]
   | _ => []
 
+/-- The address an indirect call instruction calls: DDI 0406C, A8.8.26
+"BLX (register)": `target = R[m]; if CurrentInstrSet() == InstrSet_ARM then
+next_instr_addr = PC - 4; LR = next_instr_addr; else next_instr_addr = PC -
+2; LR = next_instr_addr<31:1> : '1'; BXWritePC(target)`. Setting `lr` and
+the rest of the call are the direct call's (`call`), the return `ret`. The
+flags are not affected. -/
+def icall : Instr → State → Option Addr
+  | .blx m, s => some ((s.gpr m).setWidth 64)
+  | _, _ => none
+
 abbrev isa : ISA where
   State := State
   Instr := Instr
@@ -541,5 +566,8 @@ abbrev isa : ISA where
   push := push
   pop := pop
   requires := Instr.requires
+  icall := icall
+  -- A function's symbol, as a static's (`adrSym`).
+  fnAddr s name := (s.syms name).setWidth 64
 
 end VG.Arm
