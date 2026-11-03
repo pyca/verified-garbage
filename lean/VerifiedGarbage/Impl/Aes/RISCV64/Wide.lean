@@ -96,7 +96,7 @@ def wide (load store : Nat → List Instr) (crypt4 : Prog isa) : Prog isa :=
 
 /-- `Cⱼ` (block `b`) loaded, and copied to its slots. -/
 def cbcLoad (b : Nat) : List Instr :=
-  loadBlock b ++ [stS (blkLo b) (q b), stS (blkLo b + 1) (q (b + 4))]
+  loadBlock false b ++ [stS (blkLo b) (q b), stS (blkLo b + 1) (q (b + 4))]
 
 /-- The slots of `Cⱼ₋₁` for block `b`: the state for the first block. -/
 def cbcPrev (b : Nat) : Nat := if b = 0 then stLo else blkLo (b - 1)

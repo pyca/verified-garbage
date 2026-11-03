@@ -241,10 +241,18 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     · have hn0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨hb₅, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega_arith⟩
     · have hn0 : n ≠ 0 := by simpa using h0
-      refine ecbGroups_ok hcr hs ⟨by omega_arith, ?_, ?_, hb₅, hK0, rfl, rfl, rfl, rfl, Frame.refl _ _,
-        data₅⟩
-      · rw [a3₅]; simp
-      · rw [a4₅]; simp [n]
+      have hi₅ : EInv f s₀.mem s₅ b D n R w 0 s₅ :=
+        ⟨by omega_arith, by rw [a3₅]; simp, by rw [a4₅]; simp [n], hb₅, hK0, rfl, rfl, rfl, rfl,
+          Frame.refl _ _, data₅⟩
+      -- By doublewords if the data is aligned.
+      unfold groups
+      refine WP.seq (wp_andi (imm := 7) (by decide) fun s₆ u₆ => WP.block_nil ?_)
+      have hi₆ := hi₅.of_t0 u₆
+      have ev : isa.eval (.zero t0) s₆ = some (decide (D.toNat % 8 = 0)) := by
+        rw [Steps.eval_zero, u₆.gpr, a3₅, and7, Steps.ofNat_beq_zero (by omega)]
+      exact WP.ite (decide (D.toNat % 8 = 0)) ev
+        (fun h => ecbGroups_ok hcr hs (fun _ => by simpa using h) hi₆)
+        (fun _ => ecbGroups_ok hcr hs (fun h => Bool.noConfusion h) hi₆)
   -- The epilogue.
   have sv : Spill.Saved b s₂.gpr savedOffs s₆.mem := by
     have dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],

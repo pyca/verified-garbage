@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Aes.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.Framework.RISCV64.Align
+public import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 
 /-!
 # Facts the AES groups share, on RISC-V
@@ -24,6 +26,50 @@ namespace VG.Proof.Aes.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Straight VG.RISCV64.Align VG.RISCV64.Steps VG.Bitslice
   VG.Impl.Aes.RISCV64 VG.Proof.Aes
+
+/-! ## Doublewords of the data, a byte at a time or aligned -/
+
+open VG.Impl.Words.RISCV64 (loadLE64W storeLE64W) in
+/-- `loadLE64W w`: as `Bytes.loadLE64_ok`, the address a multiple of 8 when `w`. -/
+theorem loadLE64W_ok {s : State} {w : Bool} {d tmp hi n : Reg} {off : Nat} (hdn : d ≠ n) (htn : tmp ≠ n)
+    (hhn : hi ≠ n) (hdt : d ≠ tmp) (hdh : d ≠ hi) (hth : tmp ≠ hi) (ho : off + 7 < 2048)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8)
+    (hal : w = true → (s.gpr n + BitVec.ofNat 64 off).toNat % 8 = 0) :
+    WP isa (.block (loadLE64W w d tmp hi n off)) s fun s' =>
+      s'.gpr d = s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64 ∧
+      (∀ r, r ≠ d → r ≠ tmp → r ≠ hi → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  cases w with
+  | false =>
+    exact Bytes.loadLE64_ok hdn htn hhn hdt hdh hth ho (Words64.in_lo h8) (Words64.in_hi h8)
+  | true =>
+    exact wp_ld (by omega) rfl (hal rfl) h8 fun s' u =>
+      WP.block_nil ⟨u.gpr, fun r h₁ _ _ => u.other r h₁, u.mem, u.rd, u.wr, u.sp⟩
+
+open VG.Impl.Words.RISCV64 (loadLE64W storeLE64W) in
+/-- `storeLE64W w`: as `Bytes.storeLE64_ok`, the address a multiple of 8 when `w`. -/
+theorem storeLE64W_ok {s : State} {w : Bool} {v tmp hi n : Reg} {off : Nat} (htv : tmp ≠ v) (htn : tmp ≠ n)
+    (hhn : hi ≠ n) (hth : tmp ≠ hi) (ho : off + 7 < 2048)
+    (h8 : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8)
+    (hal : w = true → (s.gpr n + BitVec.ofNat 64 off).toNat % 8 = 0) :
+    WP isa (.block (storeLE64W w v tmp hi n off)) s fun s' =>
+      s'.mem = (s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) ((s.gpr v).setWidth 32)).writeW
+        (s.gpr n + BitVec.ofNat 64 (off + 4)) ((s.gpr v >>> 32).setWidth 32) ∧
+      (∀ r, r ≠ tmp → r ≠ hi → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  cases w with
+  | false =>
+    exact Bytes.storeLE64_ok htv htn hhn hth ho (Words64.in_lo h8) (Words64.in_hi h8)
+  | true =>
+    exact wp_sd (by omega) rfl (hal rfl) h8 fun s' u =>
+      WP.block_nil ⟨by rw [u.mem, ← Offset.add_add, Words64.writeW64_split], fun r _ _ => by rw [u.gpr],
+        u.rd, u.wr, u.sp⟩
+
+/-- `x &&& 7`, the address modulo 8. -/
+theorem and7 (x : BitVec 64) : x &&& BitVec.ofInt 64 7 = BitVec.ofNat 64 (x.toNat % 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, show (BitVec.ofInt 64 7).toNat = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
+  omega
 
 /-- An access at an offset of a region. -/
 theorem in_off {rs : List Region} {b : Addr} {len : Nat} (hr : (⟨b, len⟩ : Region) ∈ rs)
