@@ -138,6 +138,18 @@ theorem invU_ct [InvLaw] {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (h
     (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun _ ⟨hf, _⟩ => hf, h₂.imp fun _ ⟨hf, _⟩ => hf⟩) h)
     fun _ _ h => h
 
+/-- `invU_ct` at the width `kw` sets (`kHalf`, `kOne`). -/
+theorem invK_ct [InvLaw] {F : KIn → State → Prop} {kw : List Instr} {j : Nat}
+    (hK : ∀ {F : KIn → State → Prop} {hc : VG.Taint.Hint VG.X86_64.Taint.T}, Stab F csI allR →
+      (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kw) (inverseN aU aV aX₂ j)) hc).isSome = true →
+      RelCT isa (Two (KG F)) (inverseK kw aU aV aX₂ j) (Two (KG F)))
+    (hF : Stab F csI allR) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kw) (inverseN aU aV aX₂ j)) hc).isSome = true) :
+    RelCT isa (Two (KG fun I t => F I t ∧ TopZ aU I t)) (seqs [inverseK kw aU aV aX₂ j]) (Two (KG F)) :=
+  (hK hF ht).mono
+    (fun _ _ h => two_bind (fun p _ _ h₁ h₂ => ⟨p, h₁.imp fun _ ⟨hf, _⟩ => hf, h₂.imp fun _ ⟨hf, _⟩ => hf⟩) h)
+    fun _ _ h => h
+
 /-! ## `e = 0` and `e = 1` -/
 
 theorem dZero_ct : RelCT isa (Two (KG NF)) (.block dZero) (Two (KG NF)) :=
@@ -283,7 +295,7 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
     (k₁.trans kt).mono (by decide)⟩
 
 theorem dOdd_eq2 : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT] ++ ([zeroA aU, copyA aU aR] ++
-    ([inverse aU aV aX₂ aE] ++ (lGe2 ++ (gcdIsOne ++
+    ([inverseK kOne aU aV aX₂ aE] ++ (lGe2 ++ (gcdIsOne ++
     ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv), .block (ws ++ dBlk2), zeroA aDd, .block (ws ++ dBlk3),
       mulAddRow] : List (Prog isa))))))) := by
   simp only [dOdd, dBlk2, dBlk3, List.append_assoc, List.cons_append, List.nil_append]
@@ -302,8 +314,8 @@ theorem dOdd_ct [InvLaw] : RelCT isa (Two (KG fun I t => EvOK I t ∧ OddE I t))
           (by taint_decide)))) ?_
   refine rs_app (by simp) (by simp) (show RelCT isa _ (seqs [zeroA aU, copyA aU aR]) _ from
     zc_ct (by decide) (by decide) (by decide) (sF _ (by decide) (by decide)) (by taint_decide) (by taint_decide)) ?_
-  refine rs_app (by simp) (by simp [lGe2]) (invU_ct (by decide) (sF _ (by decide) (by decide))
-    (by taint_decide)) ?_
+  refine rs_app (by simp) (by simp [lGe2]) (invK_ct (fun hF ht => inverseOne_ct (by decide) (by decide) (by decide)
+    (by decide) (by decide) hF ht) (sF _ (by decide) (by decide)) (by taint_decide)) ?_
   refine rs_app (by simp [lGe2, constA]) (by simp [gcdIsOne, constA]) (lGe2_ct (sF _ (by decide) (by decide))) ?_
   refine rs_app (by simp [gcdIsOne, constA]) (by simp) (gcdIsOne_ct (sF _ (by decide) (by decide))) ?_
   simp only [seqs]

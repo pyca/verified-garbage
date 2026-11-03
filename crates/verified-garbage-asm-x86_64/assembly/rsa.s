@@ -42491,7 +42491,12 @@ vg_rsa_crt_values:
 	mov QWORD PTR [rdi+176], rdx
 	mov r12, QWORD PTR [rdi+48]
 	mov r9, QWORD PTR [rdi+224]
-	mov r13, r12
+	mov r13, QWORD PTR [rdi+168]
+	mov rax, QWORD PTR [rdi+184]
+	cmp r13, rax
+	cmovb r13, rax
+	add r13, 7
+	shr r13, 3
 	mov r12, r9
 	shr r12, 3
 	sub r12, 2
@@ -42638,9 +42643,7 @@ vg_rsa_crt_values:
 	jne 235b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rdi
 	add rsi, 256
@@ -42705,9 +42708,7 @@ vg_rsa_crt_values:
 	add r14, 1
 	cmp r14, r12
 	jne 237b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rsi
@@ -46641,9 +46642,7 @@ vg_rsa_recover_primes_det:
 	jne 241b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, r9
@@ -46712,9 +46711,7 @@ vg_rsa_recover_primes_det:
 	add r14, 1
 	cmp r14, r12
 	jne 243b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, r9

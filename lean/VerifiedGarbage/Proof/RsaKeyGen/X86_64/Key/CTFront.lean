@@ -517,6 +517,40 @@ theorem inverse_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
     rw [← inverse_eq]
     exact WP.mono (inverse_k h hU hV hX₂ hM dVX₂) fun t ⟨ht, f, k, _⟩ => ⟨ht, hF I s t h.hZ hf f (k.mono (by decide))⟩
 
+/-- `inverseK k`: the inverse at the width `n I` that `k` sets from `w`. -/
+theorem inverseK_ct [InvLaw] {F : KIn → State → Prop} {k : List Instr} {n : KIn → Nat}
+    (hk : ∀ (I : KIn) (t : State), t.gpr .r12 = BitVec.ofNat 64 I.W → I.W < 2 ^ 20 → WP isa (.block k) t fun t' =>
+      t'.gpr .r13 = BitVec.ofNat 64 (n I) ∧ t'.mem = t.mem ∧ Keep [.r13] t t')
+    (hn1 : ∀ I, KLens I → 1 ≤ n I) (hnw : ∀ I, KLens I → n I ≤ I.W) {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂)
+    (hF : Stab F [.arr iV, .arr iX₂, .priv] allR)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block k) (inverseN iU iV iX₂ iM)) hc).isSome = true) :
+    RelCT isa (Two (KG F)) (inverseK k iU iV iX₂ iM) (Two (KG F)) :=
+  kg_ws ht fun I _ s h L hf =>
+    WP.mono (inverseK_k h (hk I) (hn1 I L) (hnw I L) hU hV hX₂ hM dVX₂) fun t ⟨ht, f, k, _⟩ =>
+      ⟨ht, hF I s t h.hZ hf f (k.mono (by decide))⟩
+
+/-- `inverseK kHalf`: at the primes' width `w / 2`. -/
+theorem inverseHalf_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂)
+    (hF : Stab F [.arr iV, .arr iX₂, .priv] allR)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kHalf) (inverseN iU iV iX₂ iM)) hc).isSome = true) :
+    RelCT isa (Two (KG F)) (inverseK kHalf iU iV iX₂ iM) (Two (KG F)) :=
+  inverseK_ct (n := fun I => I.W / 2) (fun _ _ h12 hw => kHalf_ok h12 (by omega))
+    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega) (fun _ _ => Nat.div_le_self _ _) hU hV hX₂ hM dVX₂ hF ht
+
+/-- `inverseK kOne`: at one word. -/
+theorem inverseOne_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂)
+    (hF : Stab F [.arr iV, .arr iX₂, .priv] allR)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kOne) (inverseN iU iV iX₂ iM)) hc).isSome = true) :
+    RelCT isa (Two (KG F)) (inverseK kOne iU iV iX₂ iM) (Two (KG F)) :=
+  inverseK_ct (n := fun _ => 1) (fun _ _ _ _ => kOne_ok) (fun _ _ => Nat.le_refl _)
+    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega) hU hV hX₂ hM dVX₂ hF ht
+
 end VG.Proof.RsaKeyGen.X86_64.Key
 
 end

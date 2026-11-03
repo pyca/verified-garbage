@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Main
 namespace VG.Proof.Rsa.X86_64
 
 instance invLaw : InvLaw where
+  inverseN_ok := InvB.inverseN_ok
   inverse_ok := InvB.inverse_ok
 
 end VG.Proof.Rsa.X86_64

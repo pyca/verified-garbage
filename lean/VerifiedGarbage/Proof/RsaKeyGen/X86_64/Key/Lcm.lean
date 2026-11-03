@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.HalveBounds
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
@@ -76,7 +77,7 @@ theorem ite_not_odd {α : Sort _} (v : Nat) (a b : α) :
 theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++
       base aU .rbx ++ base aV .r10), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
     (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
-    ([zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
+    ([zeroA aM, copyA aM aV, inverseK kHalf aU aV aX₂ aM] ++
     (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, List.append_assoc]
@@ -84,6 +85,7 @@ theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu
 /-- `gcdUV`: `v` made odd by a swap, then `[aV] := gcd(u, v)`, or 1 for
 `v ≤ 1`, for an odd `v` unless `v ≤ 1`. -/
 theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop I s.mem aU = 0)
+    (hw : 1 ≤ I.W / 2) (hUb : av I s.mem aU < 2 ^ (64 * (I.W / 2))) (hVb : av I s.mem aV < 2 ^ (64 * (I.W / 2)))
     (hodd : let v := if av I s.mem aV % 2 = 0 then av I s.mem aU else av I s.mem aV; 2 ≤ v → v % 2 = 1) :
     WP isa (seqs gcdUV) s fun t => KS I m₀ t ∧
       KF I.B I.W [.arr aU, .arr aV, .arr aC, .arr aM, .arr aX₁, .arr aX₂, .arr aT, .hdr sMo, .hdr kOk, .priv]
@@ -99,8 +101,8 @@ theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (h
   have sU := h.ws.sl (j := aU) (by decide)
   have sV := h.ws.sl (j := aV) (by decide)
   have spUV := slot_far (w := I.W) (i := aU) (j := aV) (by decide)
-  generalize hu0 : av I s.mem aU = u0 at hodd
-  generalize hv0 : av I s.mem aV = v0 at hodd
+  generalize hu0 : av I s.mem aU = u0 at hodd hUb
+  generalize hv0 : av I s.mem aV = v0 at hodd hVb
   generalize hu1 : (if v0 % 2 = 0 then v0 else u0) = u1
   generalize hv1 : (if v0 % 2 = 0 then u0 else v0) = v1 at hodd
   dsimp only at hodd ⊢
@@ -193,10 +195,16 @@ theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (h
       f₇.av (by decide) (j := aU) (by decide) (by decide) hZ, f₆.av hokC (by decide) (by decide) hZ,
       f₅.av hokO (by decide) (by decide) hZ, m₄, f₃.av hokC (by decide) (by decide) hZ]
   have vM₈' : av I s₈.mem aM = M := by rw [vM₈, vV₇]
-  refine WP.mono (inverse_k h₈ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
+  have hu1b : u1 < 2 ^ (64 * (I.W / 2)) := by rw [← hu1]; split <;> with_reducible assumption
+  have hMb : M < 2 ^ (64 * (I.W / 2)) := by
+    rw [← hM]; split
+    · rw [← hv1]; split <;> with_reducible assumption
+    · exact Nat.lt_of_lt_of_le (by decide : 3 < 2 ^ 64) (Nat.pow_le_pow_right (by decide) (by omega_using [hw]))
+  refine WP.mono (inverseK_k h₈ (k := kHalf) (n := I.W / 2) (fun _ h12 hw20 => kHalf_ok h12 (by omega))
+    hw (by omega) (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁₂ ⟨h₁₂, f₁₂, _, hinv⟩ => ?_
   rw [vM₈', vU₈] at hinv
-  have hg := (hinv hMo.1).1
+  have hg := (hinv hu1b hMb hMo.1).1
   -- The result 1 for `v ≤ 1`.
   refine wp_seqs_append (by simp [constA]) (by simp) (WP.mono (constA_k h₁₂ 1) fun s₁₃ ⟨h₁₃, f₁₃, c₁₃, k₁₃⟩ => ?_)
   have c1 : av I s₁₃.mem aC = 1 := av_of_full c₁₃ (Nat.one_lt_two_pow (by omega_using [hw1]))
@@ -293,13 +301,17 @@ theorem lcm_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w :
       Nat.lt_of_lt_of_le hb' (Nat.pow_le_pow_right (by decide) (by omega_using []))⟩
   have hle := lcm_eq hK.1 hK.2
   dsimp only at hle
-  generalize halveIter (64 * I.W) (a, b, a * b) = st at hv₆ hle
+  have hB := halveIter_bounds (64 * I.W) (st := (a, b, a * b)) (a := 2 ^ (64 * w)) (b := 2 ^ (64 * w))
+    (f := 2 ^ (64 * I.W)) ⟨ha', hb', hab⟩
+  generalize halveIter (64 * I.W) (a, b, a * b) = st at hv₆ hle hB
   obtain ⟨x, y, f⟩ := st
   simp only [Prod.mk.injEq] at hv₆
   obtain ⟨hx, hy, hf⟩ := hv₆
-  dsimp only at hle
+  dsimp only at hle hB
+  have hW2 : I.W / 2 = w := by omega_using [hW]
   -- `gcd(u, v)`.
-  refine wp_seqs_append (by simp [gcdUV]) (by simp) (WP.mono (gcdUV_k h₆ tU₆ (by rw [hx, hy]; exact hle.1))
+  refine wp_seqs_append (by simp [gcdUV]) (by simp) (WP.mono (gcdUV_k h₆ tU₆ (by rw [hW2]; omega_using [hw1, hW]) (by rw [hx, hW2]; exact hB.1)
+    (by rw [hy, hW2]; exact hB.2.1) (by rw [hx, hy]; exact hle.1))
     fun s₇ ⟨h₇, f₇, vV₇⟩ => ?_)
   rw [hx, hy] at vV₇
   dsimp only at vV₇

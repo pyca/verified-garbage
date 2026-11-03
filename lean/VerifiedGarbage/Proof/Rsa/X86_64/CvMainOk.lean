@@ -63,7 +63,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   have hf : I.P * I.Q = I.N → I.P % 2 = 1 ∧ 1 < I.P ∧ I.Q % 2 = 1 ∧ 1 < I.Q :=
     factors_of hNo hlo hPl hQl L.pl2 L.ql2
   -- `qInv` and `gcd(q, p) = 1`.
-  refine wp_seqs_append (by simp [invPart]) (by simp [divisor]) (WP.mono (cvInv_ok h₃ L m₃ (fun hc => by
+  refine wp_seqs_append (by simp [invPart]) (by simp [divisor]) (WP.mono (cvInv_ok h₃ L m₃ (by rw [vP₃]; exact hPl) (by rw [vQ₃]; exact hQl) (fun hc => by
     rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
   rw [vP₃, vQ₃] at m₄ i₄
   have vP₄ : wv s₄.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₄ aP (.inl rfl), vP₃]

@@ -242,7 +242,7 @@ theorem gcdIsOneK_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kO
 
 theorem qinvPart_eq2 : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ qBlk))] : List (Prog isa)) ++
-    ([zeroA aM, copyA aM aPa] ++ (selC aM ++ ([inverse aU aV aX₂ aM] ++ gcdIsOne)))))) := by
+    ([zeroA aM, copyA aM aPa] ++ (selC aM ++ ([inverseK kHalf aU aV aX₂ aM] ++ gcdIsOne)))))) := by
   simp only [qinvPart, qBlk, oddMask, gcdIsOne, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `qinvPart`, keeping a mask in `kOk`. -/
@@ -278,8 +278,8 @@ theorem qinvPart_ct [InvLaw] : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t
         (by decide)).sub (stab_rbp (by decide))) (by taint_decide))) ?_
   refine rs_app (by simp [selC]) (by simp) (selC_ct (by decide) (by decide)
     (sKT [.arr aM] (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
-  refine rs_app (by simp) (by simp [gcdIsOne, constA]) (invU_ct (by decide) (sK _ (by decide) (by decide))
-    (by taint_decide)) ?_
+  refine rs_app (by simp) (by simp [gcdIsOne, constA]) (invK_ct (fun hF ht => inverseHalf_ct (by decide) (by decide)
+    (by decide) (by decide) (by decide) hF ht) (sK _ (by decide) (by decide)) (by taint_decide)) ?_
   exact gcdIsOneK_ct (stab_nf _ _)
 
 /-! ## `dP`, `dQ` and `n` -/

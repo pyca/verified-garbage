@@ -130,7 +130,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X
 theorem qinvPart_eq : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aPa ++
         ([.alu .and .rax (.reg .rcx), .mov .rbp (.reg .rax)] : List Instr)), zeroA aM, copyA aM aPa] : List (Prog isa)) ++
-    (selC aM ++ ([inverse aU aV aX₂ aM] ++ gcdIsOne))))) := by
+    (selC aM ++ ([inverseK kHalf aU aV aX₂ aM] ++ gcdIsOne))))) := by
   simp only [qinvPart, gcdIsOne, List.append_assoc]
 
 /-- The modulus of `qInv`: `p` if it is odd and at least 3, else 3. -/
@@ -142,7 +142,8 @@ abbrev csQ : List Rc :=
 
 /-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q`. -/
 theorem qinvPart_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {P Q : Nat} {ok : Bool}
-    (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hok : word s.mem I.B (8 * kOk) = mask ok) :
+    (hP : av I s.mem aPa = P) (hQ : av I s.mem aQa = Q) (hok : word s.mem I.B (8 * kOk) = mask ok)
+    (hw : 1 ≤ I.W / 2) (hPb : P < 2 ^ (64 * (I.W / 2))) (hQb : Q < 2 ^ (64 * (I.W / 2))) :
     WP isa (seqs qinvPart) s fun t => KS I m₀ t ∧ KF I.B I.W csQ s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd Q (qMod P) = 1) && ok) ∧
       ((qMod P : Nat) : Int) ∣ (av I t.mem aX₂ : Int) * Q - Nat.gcd Q (qMod P) ∧ av I t.mem aX₂ < qMod P := by
@@ -201,10 +202,15 @@ theorem qinvPart_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s)
       hK f₂ (by decide) (by decide), v₁]
   refine wp_seqs_append (by simp) (by simp [gcdIsOne, constA]) ?_
   simp only [seqs]
-  refine WP.mono (inverse_k h₉ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
+  have hMb : qMod P < 2 ^ (64 * (I.W / 2)) := by
+    unfold qMod; split
+    · exact hPb
+    · exact Nat.lt_of_lt_of_le (by decide : 3 < 2 ^ 64) (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  refine WP.mono (inverseK_k h₉ (k := kHalf) (n := I.W / 2) (fun _ h12 _ => kHalf_ok h12 (by omega_arith)) hw
+    (by omega_arith) (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aM) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁₁ ⟨h₁₁, f₁₁, _, hinv⟩ => ?_
   rw [v₉, pU] at hinv
-  obtain ⟨hg₁₁, hdv₁₁, hx₁₁⟩ := hinv hMo.1
+  obtain ⟨hg₁₁, hdv₁₁, hx₁₁⟩ := hinv hQb hMb hMo.1
   have hokI : [Rc.arr aV, Rc.arr aX₂, Rc.priv].all Rc.ok = true := by decide
   have ok₁₁ : word s₁₁.mem I.B (8 * kOk) = mask ok := by
     rw [f₁₁.word hokI (by decide) (by decide),

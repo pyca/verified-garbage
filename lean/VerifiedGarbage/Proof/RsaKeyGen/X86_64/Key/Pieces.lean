@@ -615,6 +615,64 @@ theorem inverse_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) 
   simp only [List.all_cons, List.all_nil, Rc.mut, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
   omega_arith
 
+/-- `kHalf`: `r13 := w / 2`. -/
+theorem kHalf_ok {t : State} {W : Nat} (h12 : t.gpr .r12 = BitVec.ofNat 64 W) (hW : W < 2 ^ 63) :
+    WP isa (.block kHalf) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 (W / 2) ∧ t'.mem = t.mem ∧ Keep [.r13] t t' := by
+  refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 (W / 2) ∧ t'.mem = t.mem) ?_ rfl)
+    fun t' ⟨⟨h, m⟩, k⟩ => ⟨h, m, k⟩
+  unfold kHalf
+  xrun [h12]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+
+/-- `kOne`: `r13 := 1`. -/
+theorem kOne_ok {t : State} :
+    WP isa (.block kOne) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 1 ∧ t'.mem = t.mem ∧ Keep [.r13] t t' := by
+  refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 1 ∧ t'.mem = t.mem) ?_ rfl)
+    fun t' ⟨⟨h, m⟩, k⟩ => ⟨h, m, k⟩
+  unfold kOne
+  xrun []
+
+/-- `inverseK k`, the inverse at the width `n` that `k` puts into `r13`: its
+frame for any arrays, and `inverse_k`'s result for `u` and `m` below
+`2^(64 n)`. -/
+theorem inverseK_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {k : List Instr} {n : Nat}
+    (hk : ∀ t : State, t.gpr .r12 = BitVec.ofNat 64 I.W → I.W < 2 ^ 20 → WP isa (.block k) t fun t' =>
+      t'.gpr .r13 = BitVec.ofNat 64 n ∧ t'.mem = t.mem ∧ Keep [.r13] t t')
+    (hn1 : 1 ≤ n) (hnw : n ≤ I.W) {iU iV iX₂ iM : Nat}
+    (hU : iU < 16) (hV : iV < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (dVX₂ : iV ≠ iX₂) :
+    WP isa (inverseK k iU iV iX₂ iM) s fun t => KS I m₀ t ∧
+      KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
+      (av I s.mem iU < 2 ^ (64 * n) → av I s.mem iM < 2 ^ (64 * n) → av I s.mem iM % 2 = 1 →
+        av I t.mem iV = Nat.gcd (av I s.mem iU) (av I s.mem iM) ∧
+        ((av I s.mem iM : Nat) : Int) ∣ (av I t.mem iX₂ : Int) * av I s.mem iU - av I t.mem iV ∧
+        av I t.mem iX₂ < av I s.mem iM) := by
+  unfold inverseK
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws.ws_ok fun s₁ ⟨h12, h9, m₁, k₁⟩ =>
+    WP.mono (hk s₁ h12 h.w20) fun s₂ ⟨h13, m₂, k₂⟩ => ?_))
+  have hm : s₂.mem = s.mem := by rw [m₂, m₁]
+  have h₂ : Ws s₂ I.B I.Z I.W :=
+    h.ws.congr (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k₁.trans k₂) (by decide)
+  refine WP.mono (InvLaw.inverseN_ok h₂ h.z26 ((k₂.gpr (by decide)).trans h9) h13 hn1 hnw
+    (by have := h.w20; omega) hU hV hX₂ hM dVX₂) fun t ⟨_, hf, kt, hv⟩ => ?_
+  rw [hm] at hf hv
+  have k : Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t :=
+    ((k₁.trans k₂).trans kt).mono (by decide)
+  have f : KF I.B I.W [.arr iV, .arr iX₂, .priv] s.mem t.mem :=
+    KF.of_frm hf fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.priv, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+  refine ⟨h.step f ?_ k (by decide), f, k, fun hu hmm => ?_⟩
+  · simp only [List.all_cons, List.all_nil, Rc.mut, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
+    omega_arith
+  · rw [wv_low_of_lt hnw hu, wv_low_of_lt hnw hmm] at hv
+    exact hv
+
 end VG.Proof.RsaKeyGen.X86_64.Key
 
 end
