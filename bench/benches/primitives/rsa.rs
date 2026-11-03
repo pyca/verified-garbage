@@ -339,6 +339,48 @@ pub fn bench(c: &mut Criterion) {
     const ONLY_PIECES: bool = true;
     // Only Proto12 this run: #4083's `tail` and three other orders of its step, and the
     // exponentiation proxy with #4083's `sqrTail`.
+    // Only Proto15 this run: #4096's crt_values next to the one with `p q = n` by `mulLow`.
+    const ONLY_P15: bool = true;
+    if ONLY_P15 {
+        use openssl::rsa::Rsa;
+        use verified_garbage_asm_riscv64::rsa_proto15 as p15;
+        type Crt = unsafe extern "C" fn(
+            *mut u8, usize, *mut u8, usize, *mut u8, usize, *const u8, usize, *const u8, usize,
+            *const u8, usize, *const u8, usize, *mut u64, usize,
+        ) -> u32;
+        let keys: Vec<_> = [2048u32, 3072, 4096].iter().map(|&b| (b, Rsa::generate(b).unwrap())).collect();
+        let cs: [(&str, Crt); 2] = [
+            ("base", p15::vg_p15_crt_values_base),
+            ("f", p15::vg_p15_crt_values_f),
+        ];
+        let pad = |b: Vec<u8>, l: usize| {
+            let mut v = vec![0u8; l - b.len()];
+            v.extend(b);
+            v
+        };
+        for (v, f) in cs {
+            let mut g = c.benchmark_group(format!("rsa_p15_crt_values_{v}"));
+            for (bits, key) in &keys {
+                let k = key.size() as usize;
+                let (n, d) = (key.n().to_vec(), pad(key.d().to_vec(), k));
+                let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
+                let (pl, ql) = (p.len(), q.len());
+                let mut s = vec![0u64; 16 * k + 64];
+                let (mut odp, mut odq, mut oqi) = (vec![0u8; pl], vec![0u8; ql], vec![0u8; pl]);
+                // The outputs are compared with #4096's under qemu (tests/p15.rs).
+                g.bench_function(BenchmarkId::new(VG, bits), |b| {
+                    b.iter(|| unsafe {
+                        let r = f(odp.as_mut_ptr(), pl, odq.as_mut_ptr(), ql, oqi.as_mut_ptr(), pl,
+                            n.as_ptr(), k, black_box(p.as_ptr()), pl, q.as_ptr(), ql, d.as_ptr(), k,
+                            s.as_mut_ptr(), s.len());
+                        assert_eq!(r, 1);
+                    })
+                });
+            }
+            g.finish();
+        }
+        return;
+    }
     // Only Proto14 this run: #4091's check_key and main's crt_values next to the ones with
     // the division on the divisor's words (a), with a shorter carry chain (b), and both (c).
     const ONLY_P14: bool = true;
