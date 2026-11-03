@@ -56,133 +56,6 @@ theorem addMul_value (a b : BitVec 64) :
   generalize (a &&& 0xffffffff) * (b &&& 0xffffffff) = p
   grind
 
-/-- GB's four registers and its two temporaries are distinct. -/
-structure Distinct (a b c d t u : Reg) : Prop where
-  ab : a ≠ b
-  ac : a ≠ c
-  ad : a ≠ d
-  a_t : a ≠ t
-  au : a ≠ u
-  bc : b ≠ c
-  bd : b ≠ d
-  b_t : b ≠ t
-  bu : b ≠ u
-  cd : c ≠ d
-  c_t : c ≠ t
-  cu : c ≠ u
-  d_t : d ≠ t
-  du : d ≠ u
-  tu : t ≠ u
-
-/-- The effect of a block on registers: every register outside `ws` keeps its
-value. -/
-structure Eff (s s' : State) (ws : List Reg) : Prop where
-  other : ∀ r, r ∉ ws → s'.gpr r = s.gpr r
-  mem : s'.mem = s.mem
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  sp : s'.sp = s.sp
-
-theorem Eff.of_upd {s s' : State} {d : Reg} {v : BitVec 64} (h : Upd s s' d v) {ws : List Reg}
-    (hd : d ∈ ws) : Eff s s' ws :=
-  ⟨fun r hr => h.other r fun e => hr (e ▸ hd), h.mem, h.rd, h.wr, h.sp⟩
-
-theorem Eff.trans {s s' s'' : State} {ws : List Reg} (h : Eff s s' ws) (h' : Eff s' s'' ws) :
-    Eff s s'' ws :=
-  ⟨fun r hr => (h'.other r hr).trans (h.other r hr), h'.mem.trans h.mem, h'.rd.trans h.rd,
-    h'.wr.trans h.wr, h'.sp.trans h.sp⟩
-
-theorem Eff.refl (s : State) (ws : List Reg) : Eff s s ws := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-
-theorem Eff.mono {s s' : State} {ws ws' : List Reg} (h : Eff s s' ws) (hw : ∀ r ∈ ws, r ∈ ws') :
-    Eff s s' ws' :=
-  ⟨fun r hr => h.other r fun h' => hr (hw r h'), h.mem, h.rd, h.wr, h.sp⟩
-
-theorem addMul_ok {a b t u : Reg} (hat : a ≠ t) (hau : a ≠ u) (hbt : b ≠ t) (hbu : b ≠ u)
-    (htu : t ≠ u) (s : State) {is : List Instr} {Q : State → Prop}
-    (k : ∀ s', s'.gpr a = Spec.Argon2.addMul (s.gpr a) (s.gpr b) → Eff s s' [a, t, u] →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (addMul a b t u ++ is)) s Q := by
-  simp only [addMul, List.cons_append, List.nil_append]
-  refine wp_sll (by decide) fun s₁ u₁ => wp_sll (by decide) fun s₂ u₂ => wp_mulhu fun s₃ u₃ =>
-    wp_add fun s₄ u₄ => wp_add fun s₅ u₅ => wp_add fun s₆ u₆ => k s₆ ?_ ?_
-  · rw [u₆.gpr, u₅.gpr, u₅.other t hat.symm, u₄.gpr, u₄.other t hat.symm, u₃.other a hat,
-      u₃.other b hbt, u₃.gpr, u₂.other a hau, u₂.other b hbu, u₂.other t htu, u₂.gpr,
-      u₁.other a hat, u₁.other b hbt, u₁.gpr, lo_mul]
-    exact addMul_value _ _
-  · exact (((((Eff.of_upd u₁ (by simp)).trans (.of_upd u₂ (by simp))).trans (.of_upd u₃ (by simp))).trans
-      (.of_upd u₄ (by simp))).trans (.of_upd u₅ (by simp))).trans (.of_upd u₆ (by simp))
-
-/-- A register XOR followed by one of GB's rotations, through `t`. -/
-theorem xorRotate_ok {a d t : Reg} (hdt : d ≠ t) {n : Nat} (h0 : 0 < n) (hn : n < 64) (s : State)
-    {is : List Instr} {Q : State → Prop}
-    (k : ∀ s', s'.gpr d = (s.gpr d ^^^ s.gpr a).rotateRight n → Eff s s' [d, t] →
-      WP isa (.block is) s' Q) :
-    WP isa (.block ((.logic .xor d d a :: rot d t n) ++ is)) s Q := by
-  simp only [rot, List.cons_append, List.nil_append]
-  refine wp_xor fun s₁ u₁ => wp_srl hn fun s₂ u₂ => wp_sll (by omega) fun s₃ u₃ =>
-    wp_or fun s₄ u₄ => k s₄ ?_ ?_
-  · rw [u₄.gpr, u₃.gpr, u₃.other t hdt.symm, u₂.gpr, u₂.other d hdt, u₁.gpr, BitVec.or_comm]
-    exact shr_or_shl _ hn
-  · exact (((Eff.of_upd u₁ (by simp)).trans (.of_upd u₂ (by simp))).trans (.of_upd u₃ (by simp))).trans
-      (.of_upd u₄ (by simp))
-
-/-- One half of GB. -/
-theorem halfGB_ok {a b c d t u : Reg} (h : Distinct a b c d t u) {r1 r2 : Nat}
-    (h01 : 0 < r1) (h1 : r1 < 64) (h02 : 0 < r2) (h2 : r2 < 64) (s : State) {is : List Instr} {Q : State → Prop}
-    (k : ∀ s',
-      let va := Spec.Argon2.addMul (s.gpr a) (s.gpr b)
-      let vd := (s.gpr d ^^^ va).rotateRight r1
-      let vc := Spec.Argon2.addMul (s.gpr c) vd
-      let vb := (s.gpr b ^^^ vc).rotateRight r2
-      s'.gpr a = va → s'.gpr b = vb → s'.gpr c = vc → s'.gpr d = vd → Eff s s' [a, b, c, d, t, u] →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (halfGB a b c d t u r1 r2 ++ is)) s Q := by
-  simp only [halfGB, List.append_assoc]
-  refine addMul_ok h.a_t h.au h.b_t h.bu h.tu s fun s₁ ha e₁ => ?_
-  refine xorRotate_ok (a := a) (d := d) (t := t) h.d_t h01 h1 s₁ fun s₂ hd e₂ => ?_
-  refine addMul_ok h.c_t h.cu h.d_t h.du h.tu s₂ fun s₃ hc e₃ => ?_
-  refine xorRotate_ok (a := c) (d := b) (t := t) h.b_t h02 h2 s₃ fun s₄ hb e₄ => ?_
-  have m : ∀ r, r ∉ [a, b, c, d, t, u] → r ∉ [a, t, u] ∧ r ∉ [d, t] ∧ r ∉ [c, t, u] ∧ r ∉ [b, t] :=
-    fun r hr => ⟨fun h' => hr ((by simp : [a, t, u] ⊆ [a, b, c, d, t, u]) h'),
-      fun h' => hr ((by simp : [d, t] ⊆ [a, b, c, d, t, u]) h'),
-      fun h' => hr ((by simp : [c, t, u] ⊆ [a, b, c, d, t, u]) h'),
-      fun h' => hr ((by simp : [b, t] ⊆ [a, b, c, d, t, u]) h')⟩
-  have hd' : s₂.gpr d = (s.gpr d ^^^ Spec.Argon2.addMul (s.gpr a) (s.gpr b)).rotateRight r1 := by
-    rw [hd, ha, e₁.other d (by simp [h.ad.symm, h.d_t, h.du])]
-  have hc' : s₃.gpr c = Spec.Argon2.addMul (s.gpr c) (s₂.gpr d) := by
-    rw [hc, e₂.other c (by simp [h.cd, h.c_t]), e₁.other c (by simp [h.ac.symm, h.c_t, h.cu])]
-  refine k s₄ ?_ ?_ ?_ ?_ ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
-  · rw [e₄.other a (by simp [h.ab, h.a_t]), e₃.other a (by simp [h.ac, h.a_t, h.au]),
-      e₂.other a (by simp [h.ad, h.a_t]), ha]
-  · rw [hb, hc', hd', e₃.other b (by simp [h.bc, h.b_t, h.bu]), e₂.other b (by simp [h.bd, h.b_t]),
-      e₁.other b (by simp [h.ab.symm, h.b_t, h.bu])]
-  · rw [e₄.other c (by simp [h.bc.symm, h.c_t]), hc', hd']
-  · rw [e₄.other d (by simp [h.bd.symm, h.d_t]), e₃.other d (by simp [h.cd.symm, h.d_t, h.du]), hd']
-  · obtain ⟨m1, m2, m3, m4⟩ := m r hr
-    rw [e₄.other r m4, e₃.other r m3, e₂.other r m2, e₁.other r m1]
-  · rw [e₄.mem, e₃.mem, e₂.mem, e₁.mem]
-  · rw [e₄.rd, e₃.rd, e₂.rd, e₁.rd]
-  · rw [e₄.wr, e₃.wr, e₂.wr, e₁.wr]
-  · rw [e₄.sp, e₃.sp, e₂.sp, e₁.sp]
-
-/-- The complete GB operation agrees with the four-word specification. -/
-theorem gb_ok {a b c d t u : Reg} (h : Distinct a b c d t u) (s : State) {is : List Instr}
-    {Q : State → Prop}
-    (k : ∀ s',
-      let v := Proof.Argon2.mix (s.gpr a) (s.gpr b) (s.gpr c) (s.gpr d)
-      s'.gpr a = v.1 → s'.gpr b = v.2.1 → s'.gpr c = v.2.2.1 → s'.gpr d = v.2.2.2 →
-      Eff s s' [a, b, c, d, t, u] → WP isa (.block is) s' Q) :
-    WP isa (.block (gb a b c d t u ++ is)) s Q := by
-  rw [gb, List.append_assoc]
-  refine halfGB_ok h (by decide) (by decide) (by decide) (by decide) s fun s₁ ha hb hc hd e₁ => ?_
-  refine halfGB_ok h (by decide) (by decide) (by decide) (by decide) s₁ fun s₂ ha' hb' hc' hd' e₂ => ?_
-  refine k s₂ ?_ ?_ ?_ ?_ (e₁.trans e₂)
-  · rw [ha', ha, hb]; rfl
-  · rw [hb', ha, hb, hc, hd]; rfl
-  · rw [hc', ha, hb, hc, hd]; rfl
-  · rw [hd', ha, hb, hd]; rfl
-
 end VG.Proof.Argon2.RISCV64
 
 namespace VG.Proof.Argon2.RISCV64
@@ -226,7 +99,7 @@ theorem lane_injective : Function.Injective lane := by
 
 /-- The registers the rounds write. -/
 abbrev roundRegs : List Reg :=
-  [.t0, .t1, .t2, .t3, .t4, .a0, .a1, .a4, .a5, .a6, .a7, .s0, .s1, .s2, .s3, .s4, .t5, .t6]
+  [.t0, .t1, .t2, .t3, .t4, .a0, .a1, .a4, .a5, .a6, .a7, .s0, .s1, .s2, .s3, .s4, .t5, .t6, .s5]
 
 theorem lane_mem (j : Fin 16) : lane j ∈ roundRegs := by revert j; decide
 
@@ -347,93 +220,419 @@ theorem Scratch.of_keeps {s t : State} {p : Addr} (hs : Scratch s p)
     (hk : Keeps s t) : Scratch t p :=
   ⟨(hk.1 .a3 (by decide)).trans hs.reg, hk.2.2.1 ▸ hs.wr, hs.al⟩
 
-/-- One GB on registers advances the row or column. -/
-theorem gbOn_ok (a b c d : Fin 16)
-    (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
-    (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val)
-    (s : State) (v : Vector Word 16) (hv : InRegs s v) :
-    WP isa (gbOn a b c d) s fun t =>
-      InRegs t (GB v a b c d) ∧ Keeps s t ∧ t.mem = s.mem := by
-  have ne {i j : Fin 16} (h : i.val ≠ j.val) : lane i ≠ lane j :=
-    fun e => h (congrArg Fin.val (lane_injective e))
-  have dist : Distinct (lane a) (lane b) (lane c) (lane d) .t5 .t6 :=
-    ⟨ne hab, ne hac, ne had, lane_ne_t5 a, lane_ne_t6 a, ne hbc, ne hbd, lane_ne_t5 b,
-      lane_ne_t6 b, ne hcd, lane_ne_t5 c, lane_ne_t6 c, lane_ne_t5 d, lane_ne_t6 d, by decide⟩
-  unfold gbOn
-  rw [← List.append_nil (gb _ _ _ _ _ _)]
-  refine gb_ok dist s fun t ha hb hc hd e => WP.block_nil ?_
-  refine ⟨?_, ⟨fun r hr => e.other r fun h => hr ?_, e.rd, e.wr, e.sp⟩, e.mem⟩
-  · intro j
-    rw [GB_eq_mixWords v hab hac had hbc hbd hcd]
-    simp only [mixWords, Fin.getElem_fin, Vector.getElem_set, ← hv a, ← hv b, ← hv c, ← hv d]
-    by_cases hdj : d.val = j.val
-    · obtain rfl := Fin.ext hdj
-      simpa only [↓reduceIte] using hd
-    simp only [hdj, ite_false]
-    by_cases hcj : c.val = j.val
-    · obtain rfl := Fin.ext hcj
-      simpa only [↓reduceIte] using hc
-    simp only [hcj, ite_false]
-    by_cases hbj : b.val = j.val
-    · obtain rfl := Fin.ext hbj
-      simpa only [↓reduceIte] using hb
-    simp only [hbj, ite_false]
-    by_cases haj : a.val = j.val
-    · obtain rfl := Fin.ext haj
-      simpa only [↓reduceIte] using ha
-    simp only [haj, ite_false]
-    rw [e.other _ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨ne (Ne.symm haj), ne (Ne.symm hbj), ne (Ne.symm hcj), ne (Ne.symm hdj),
-        lane_ne_t5 j, lane_ne_t6 j⟩), hv j, Fin.getElem_fin]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [lane_mem a, lane_mem b, lane_mem c, lane_mem d, t5_mem, t6_mem]
+/-! ## P as lines, and as operations on nineteen slots
+
+The code runs P's four column GBs side by side, then its four diagonal ones
+(`step4`). P is proven on *lines*, half a GB step each
+(`a ← addMul a b; d ← (d ⊕ a) ⋙ r`, `aline`): the spec's order of lines is
+the code's after moving lines only past lines on other words (`LSame`,
+decided); then on single operations (`Op`) on the sixteen words (slots 0–15),
+`t5` (16), `t6` (17) and `s5` (18), each proven once (`op_ok`), whose order in the code
+is that of the lines after moving operations only past operations on other
+slots (`OSame`, decided). -/
+
+/-- An index `i < 16` as a `Fin 16`. -/
+def fin16 (i : Nat) : Fin 16 := ⟨i % 16, Nat.mod_lt _ (by decide)⟩
+
+/-- A step of GB: `x[a] ← addMul x[a] x[b]; x[d] ← (x[d] ⊕ x[a]) ⋙ r`. -/
+def aline (x : Vector Word 16) (a b d r : Nat) : Vector Word 16 :=
+  let y := x.set (fin16 a) (addMul x[fin16 a] x[fin16 b])
+  y.set (fin16 d) ((y[fin16 d] ^^^ y[fin16 a]).rotateRight r)
+
+/-- The lines of a list in turn. -/
+abbrev alines (l : List (Nat × Nat × Nat × Nat)) (v : Vector Word 16) : Vector Word 16 :=
+  l.foldl (fun x (a, b, d, r) => aline x a b d r) v
+
+theorem aline_get (x : Vector Word 16) {a b d r : Nat} (ha : a < 16) (hb : b < 16) (hd : d < 16) (had : a ≠ d)
+    (m : Nat) (hm : m < 16) :
+    (aline x a b d r)[m] =
+      if d = m then (x[d] ^^^ addMul x[a] x[b]).rotateRight r else if a = m then addMul x[a] x[b] else x[m] := by
+  simp only [aline, fin16, Vector.getElem_set, Fin.getElem_fin, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb,
+    Nat.mod_eq_of_lt hd, had, ite_false, ite_true]
+
+/-- A GB's lines. -/
+def gbLines (a b c d : Nat) : List (Nat × Nat × Nat × Nat) :=
+  [(a, b, d, 32), (c, d, b, 24), (a, b, d, 16), (c, d, b, 63)]
+
+/-- P's lines in the spec's order. -/
+def specLines : List (Nat × Nat × Nat × Nat) :=
+  gbLines 0 4 8 12 ++ gbLines 1 5 9 13 ++ gbLines 2 6 10 14 ++ gbLines 3 7 11 15 ++
+  gbLines 0 5 10 15 ++ gbLines 1 6 11 12 ++ gbLines 2 7 8 13 ++ gbLines 3 4 9 14
+
+theorem permute_spec (v : Vector Word 16) : permute v = alines specLines v := rfl
+
+/-- Lines `l` and `l'` touch disjoint words. -/
+def LIndep : Nat × Nat × Nat × Nat → Nat × Nat × Nat × Nat → Bool
+  | (a, b, d, _), (a', b', d', _) =>
+    decide (a < 16 ∧ b < 16 ∧ d < 16 ∧ a' < 16 ∧ b' < 16 ∧ d' < 16 ∧ a ≠ d ∧ a' ≠ d' ∧
+      a ≠ a' ∧ a ≠ b' ∧ a ≠ d' ∧ b ≠ a' ∧ b ≠ d' ∧ d ≠ a' ∧ d ≠ b' ∧ d ≠ d')
+
+theorem aline_comm {x : Vector Word 16} {a b d r a' b' d' r' : Nat}
+    (h : LIndep (a, b, d, r) (a', b', d', r') = true) :
+    aline (aline x a b d r) a' b' d' r' = aline (aline x a' b' d' r') a b d r := by
+  simp only [LIndep, decide_eq_true_eq] at h
+  obtain ⟨ha, hb, hd, ha', hb', hd', h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
+  apply Vector.ext
+  intro m hm
+  have := Ne.symm h3; have := Ne.symm h4; have := Ne.symm h5; have := Ne.symm h6; have := Ne.symm h7
+  have := Ne.symm h8; have := Ne.symm h9; have := Ne.symm h10
+  simp only [aline_get, ha, hb, hd, ha', hb', hd', h1, h2, ne_eq, not_false_eq_true]
+  by_cases e1 : d = m
+  · subst e1; simp [*]
+  by_cases e2 : a = m
+  · subst e2; simp [*]
+  by_cases e3 : d' = m
+  · subst e3; simp [*]
+  by_cases e4 : a' = m
+  · subst e4; simp [*]
+  simp [*]
+
+/-- `l` without its first `p`, if every line before it touches other words. -/
+def lpull (p : Nat × Nat × Nat × Nat) : List (Nat × Nat × Nat × Nat) → Option (List (Nat × Nat × Nat × Nat))
+  | [] => none
+  | q :: l => if q = p then some l else if LIndep q p then (lpull p l).map (q :: ·) else none
+
+/-- `l'` runs the lines of `l`, each moved only past lines on other words. -/
+def LSame : List (Nat × Nat × Nat × Nat) → List (Nat × Nat × Nat × Nat) → Bool
+  | [], [] => true
+  | p :: l', l => match lpull p l with
+    | some r => LSame l' r
+    | none => false
+  | [], _ :: _ => false
+
+theorem alines_cons (p : Nat × Nat × Nat × Nat) (l : List (Nat × Nat × Nat × Nat)) (v : Vector Word 16) :
+    alines (p :: l) v = alines l (aline v p.1 p.2.1 p.2.2.1 p.2.2.2) := by
+  obtain ⟨a, b, d, r⟩ := p; rfl
+
+theorem lpull_ok {p : Nat × Nat × Nat × Nat} :
+    ∀ {l l₁ : List (Nat × Nat × Nat × Nat)}, lpull p l = some l₁ →
+      ∀ v, alines l v = alines l₁ (aline v p.1 p.2.1 p.2.2.1 p.2.2.2)
+  | [], _, h, _ => by simp [lpull] at h
+  | q :: l, l₁, h, v => by
+    unfold lpull at h
+    by_cases e : q = p
+    · subst e; simp only [ite_true, Option.some.injEq] at h; subst h; exact alines_cons _ _ _
+    · simp only [e, ite_false] at h
+      by_cases hq : LIndep q p = true
+      · simp only [hq, ite_true] at h
+        obtain ⟨l', hl', rfl⟩ := Option.map_eq_some_iff.mp h
+        rw [alines_cons, lpull_ok hl', alines_cons]
+        obtain ⟨a, b, d, r⟩ := q; obtain ⟨a', b', d', r'⟩ := p
+        exact congrArg _ (aline_comm hq)
+      · simp only [hq, Bool.false_eq_true, ite_false, reduceCtorEq] at h
+
+theorem lsame_ok : ∀ {l' l : List (Nat × Nat × Nat × Nat)}, LSame l' l = true → ∀ v, alines l' v = alines l v
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [LSame] at h
+  | p :: l', l, h, v => by
+    unfold LSame at h
+    split at h
+    · rename_i l₁ hl
+      rw [alines_cons, lpull_ok hl, lsame_ok h]
+    · simp at h
+
+/-- P's GBs, as numbers. -/
+def ncolumns : List (Nat × Nat × Nat × Nat) := [(0, 4, 8, 12), (1, 5, 9, 13), (2, 6, 10, 14), (3, 7, 11, 15)]
+def ndiagonals : List (Nat × Nat × Nat × Nat) := [(0, 5, 10, 15), (1, 6, 11, 12), (2, 7, 8, 13), (3, 4, 9, 14)]
+
+/-- The lines of four GBs as the code runs them: each step of the four in turn. -/
+def roundLines (qs : List (Nat × Nat × Nat × Nat)) : List (Nat × Nat × Nat × Nat) :=
+  qs.map (fun (a, b, _, d) => (a, b, d, 32)) ++ qs.map (fun (_, b, c, d) => (c, d, b, 24)) ++
+  qs.map (fun (a, b, _, d) => (a, b, d, 16)) ++ qs.map (fun (_, b, c, d) => (c, d, b, 63))
+
+theorem permute_lines (v : Vector Word 16) :
+    permute v = alines (roundLines ncolumns ++ roundLines ndiagonals) v := by
+  rw [permute_spec, lsame_ok (l := roundLines ncolumns ++ roundLines ndiagonals) (by decide) v]
+
+/-- The register of slot `i`: the sixteen words, `t5`, `t6` and `s5`. -/
+def sreg (i : Nat) : Reg :=
+  if h : i < 16 then lane ⟨i, h⟩ else if i = 16 then .t5 else if i = 17 then .t6 else .s5
+
+theorem sreg_inj {i j : Nat} (hi : i < 19) (hj : j < 19) (h : sreg i = sreg j) : i = j := by
+  have key : ∀ i < 19, ∀ j < 19, sreg i = sreg j → i = j := by decide
+  exact key i hi j hj h
+
+theorem sreg_lane (j : Fin 16) : sreg j.1 = lane j := by simp [sreg, j.2]
+
+theorem sreg_mem : ∀ i < 19, sreg i ∈ roundRegs := by decide
+
+/-- One instruction of P, on slots. -/
+inductive Op
+  | sll (d n k : Nat)
+  | srl (d n k : Nat)
+  | mulhu (d n m : Nat)
+  | add (d n m : Nat)
+  | xor (d n m : Nat)
+  | or (d n m : Nat)
+  deriving DecidableEq
+
+def Op.code : Op → Instr
+  | .sll d n k => .shift .sll .d (sreg d) (sreg n) k
+  | .srl d n k => .shift .srl .d (sreg d) (sreg n) k
+  | .mulhu d n m => .mulhu (sreg d) (sreg n) (sreg m)
+  | .add d n m => .add (sreg d) (sreg n) (sreg m)
+  | .xor d n m => .logic .xor (sreg d) (sreg n) (sreg m)
+  | .or d n m => .logic .or (sreg d) (sreg n) (sreg m)
+
+/-- The slot an operation writes, and those it reads. -/
+def Op.dst : Op → Nat
+  | .sll d _ _ | .srl d _ _ | .mulhu d _ _ | .add d _ _ | .xor d _ _ | .or d _ _ => d
+def Op.srcs : Op → List Nat
+  | .sll _ n _ | .srl _ n _ => [n]
+  | .mulhu _ n m | .add _ n m | .xor _ n m | .or _ n m => [n, m]
+
+/-- The value an operation writes. -/
+def Op.val (x : Nat → Word) : Op → Word
+  | .sll _ n k => x n <<< k
+  | .srl _ n k => x n >>> k
+  | .mulhu _ n m => BitVec.ofNat 64 ((x n).toNat * (x m).toNat / 2 ^ 64)
+  | .add _ n m => x n + x m
+  | .xor _ n m => x n ^^^ x m
+  | .or _ n m => x n ||| x m
+
+def Op.step (x : Nat → Word) (op : Op) : Nat → Word := fun j => if j = op.dst then op.val x else x j
+
+/-- The slots exist and the shifts are below 64. -/
+def Op.Valid : Op → Bool
+  | .sll d n k | .srl d n k => decide (d < 19 ∧ n < 19 ∧ k < 64)
+  | .mulhu d n m | .add d n m | .xor d n m | .or d n m => decide (d < 19 ∧ n < 19 ∧ m < 19)
+
+theorem Op.val_congr {x y : Nat → Word} (op : Op) (h : ∀ i ∈ op.srcs, x i = y i) : op.val x = op.val y := by
+  cases op <;> simp only [Op.srcs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h <;>
+    simp only [Op.val, h]
+
+/-- The slots hold `x`. -/
+def Holds19 (x : Nat → Word) (s : State) : Prop := ∀ i < 19, s.gpr (sreg i) = x i
+
+/-- What an operation leaves. -/
+structure OpPost (x : Nat → Word) (s s' : State) : Prop where
+  holds : Holds19 x s'
+  keep : ∀ r, (∀ i < 19, r ≠ sreg i) → s'.gpr r = s.gpr r
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+
+theorem op_ok (op : Op) (hv : op.Valid = true) {x : Nat → Word} {s : State} (h : Holds19 x s) :
+    WP isa (.block [op.code]) s (OpPost (op.step x) s) := by
+  have hd : op.dst < 19 := by cases op <;> simp_all [Op.Valid, Op.dst]
+  have hs : ∀ i ∈ op.srcs, i < 19 := by cases op <;> simp_all [Op.Valid, Op.srcs]
+  -- The instruction writes the value of `op` into its slot's register, and nothing else.
+  have hw : exec op.code s = some (s.write (sreg op.dst) (op.val x)) := by
+    cases op with
+    | sll d n k =>
+      have hk : k < 64 := by simp_all [Op.Valid]
+      rw [Op.code, exec_shift_d hk, Op.val, ← h n (hs n (by simp [Op.srcs]))]; rfl
+    | srl d n k =>
+      have hk : k < 64 := by simp_all [Op.Valid]
+      rw [Op.code, exec_shift_d hk, Op.val, ← h n (hs n (by simp [Op.srcs]))]; rfl
+    | mulhu d n m =>
+      rw [Op.code, exec_mulhu, Op.val, ← h n (hs n (by simp [Op.srcs])), ← h m (hs m (by simp [Op.srcs]))]; rfl
+    | add d n m =>
+      rw [Op.code, exec_add, Op.val, ← h n (hs n (by simp [Op.srcs])), ← h m (hs m (by simp [Op.srcs]))]; rfl
+    | xor d n m =>
+      rw [Op.code, exec_logic, Op.val, ← h n (hs n (by simp [Op.srcs])), ← h m (hs m (by simp [Op.srcs]))]; rfl
+    | or d n m =>
+      rw [Op.code, exec_logic, Op.val, ← h n (hs n (by simp [Op.srcs])), ← h m (hs m (by simp [Op.srcs]))]; rfl
+  have u := Upd.write s (sreg op.dst) (op.val x)
+  apply WP.of_runBlock
+  refine ⟨_, by rw [runBlock_cons, hw]; rfl, ⟨fun i hi => ?_, fun r hr => u.other r (hr _ hd), u.mem, u.rd,
+    u.wr, u.sp⟩⟩
+  by_cases e : i = op.dst
+  · subst e; rw [u.gpr]; simp only [Op.step, ↓reduceIte]
+  · rw [u.other _ (fun e' => e (sreg_inj hi hd e')), h i hi]
+    simp only [Op.step, e, ↓reduceIte]
+
+/-- The operations of `ops` in turn. -/
+def stepAll (x : Nat → Word) (ops : List Op) : Nat → Word := ops.foldl Op.step x
+
+theorem ops_ok : ∀ (ops : List Op), (ops.all Op.Valid) = true → ∀ {x : Nat → Word} {s : State}, Holds19 x s →
+    WP isa (.block (ops.map Op.code)) s (OpPost (stepAll x ops) s)
+  | [], _, _, s, h => WP.block_nil ⟨h, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | op :: ops, hv, x, s, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at hv
+    rw [List.map_cons, show op.code :: ops.map Op.code = [op.code] ++ ops.map Op.code from rfl, WP.block_append_iff]
+    refine WP.mono (op_ok op hv.1 h) fun s₁ h₁ => WP.mono (ops_ok ops hv.2 h₁.holds) fun s₂ h₂ =>
+      ⟨h₂.holds, fun r hr => (h₂.keep r hr).trans (h₁.keep r hr), h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd,
+        h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
+
+/-- Two operations on separate slots: neither writes what the other reads or writes. -/
+def OIndep (o o' : Op) : Bool :=
+  decide (o.dst ≠ o'.dst ∧ o.dst ∉ o'.srcs ∧ o'.dst ∉ o.srcs)
+
+theorem op_comm {x : Nat → Word} {o o' : Op} (h : OIndep o o' = true) :
+    Op.step (Op.step x o) o' = Op.step (Op.step x o') o := by
+  simp only [OIndep, decide_eq_true_eq] at h
+  obtain ⟨h1, h2, h3⟩ := h
+  have v1 : o'.val (Op.step x o) = o'.val x :=
+    o'.val_congr fun i hi => by
+      have : i ≠ o.dst := fun e => h2 (e ▸ hi)
+      simp only [Op.step, this, ↓reduceIte]
+  have v2 : o.val (Op.step x o') = o.val x :=
+    o.val_congr fun i hi => by
+      have : i ≠ o'.dst := fun e => h3 (e ▸ hi)
+      simp only [Op.step, this, ↓reduceIte]
+  funext j
+  show (if j = o'.dst then o'.val (Op.step x o) else Op.step x o j) =
+    (if j = o.dst then o.val (Op.step x o') else Op.step x o' j)
+  rw [v1, v2]
+  simp only [Op.step]
+  by_cases e1 : j = o'.dst <;> by_cases e2 : j = o.dst
+  · exact absurd (e2.symm.trans e1) h1
+  all_goals simp_all
+
+/-- `l` without its first `o`, if every operation before it is on other slots. -/
+def opull (o : Op) : List Op → Option (List Op)
+  | [] => none
+  | p :: l => if p = o then some l else if OIndep p o then (opull o l).map (p :: ·) else none
+
+/-- `l'` runs the operations of `l`, each moved only past operations on other slots. -/
+def OSame : List Op → List Op → Bool
+  | [], [] => true
+  | o :: l', l => match opull o l with
+    | some r => OSame l' r
+    | none => false
+  | [], _ :: _ => false
+
+theorem opull_ok {o : Op} : ∀ {l l₁ : List Op}, opull o l = some l₁ → ∀ x, stepAll x l = stepAll (Op.step x o) l₁
+  | [], _, h, _ => by simp [opull] at h
+  | p :: l, l₁, h, x => by
+    unfold opull at h
+    by_cases e : p = o
+    · subst e; simp only [ite_true, Option.some.injEq] at h; subst h; rfl
+    · simp only [e, ite_false] at h
+      by_cases hp : OIndep p o = true
+      · simp only [hp, ite_true] at h
+        obtain ⟨l', hl', rfl⟩ := Option.map_eq_some_iff.mp h
+        show stepAll (Op.step x p) l = stepAll (Op.step (Op.step x o) p) l'
+        rw [opull_ok hl', op_comm hp]
+      · simp only [hp, Bool.false_eq_true, ite_false, reduceCtorEq] at h
+
+theorem osame_ok : ∀ {l' l : List Op}, OSame l' l = true → ∀ x, stepAll x l' = stepAll x l
+  | [], [], _, _ => rfl
+  | [], _ :: _, h, _ => by simp [OSame] at h
+  | o :: l', l, h, x => by
+    unfold OSame at h
+    split at h
+    · rename_i l₁ hl
+      show stepAll (Op.step x o) l' = stepAll x l
+      rw [opull_ok hl, osame_ok h]
+    · simp at h
+
+/-- A line's operations. -/
+def lineOps : Nat × Nat × Nat × Nat → List Op
+  | (a, b, d, r) =>
+    [.sll 16 a 32, .sll 17 b 32, .mulhu 16 16 17, .add a a b, .add a a 16, .add a a 16,
+     .xor d d a, .srl 18 d r, .sll d d (64 - r), .or d d 18]
+
+/-- The words of the slots. -/
+def words (x : Nat → Word) : Vector Word 16 := Vector.ofFn fun i => x i.1
+
+theorem lineOps_words (x : Nat → Word) {a b d r : Nat} (ha : a < 16) (hb : b < 16) (hd : d < 16)
+    (had : a ≠ d) (hr : r < 64) :
+    words (stepAll x (lineOps (a, b, d, r))) = aline (words x) a b d r := by
+  apply Vector.ext
+  intro m hm
+  rw [aline_get _ ha hb hd had m hm]
+  have key : x a + x b + BitVec.ofNat 64 ((x a <<< 32).toNat * (x b <<< 32).toNat / 2 ^ 64) +
+      BitVec.ofNat 64 ((x a <<< 32).toNat * (x b <<< 32).toNat / 2 ^ 64) = addMul (x a) (x b) := by
+    rw [lo_mul]; exact addMul_value _ _
+  have h1617 : (16 : Nat) ≠ 17 := by decide
+  have h1618 : (16 : Nat) ≠ 18 := by decide
+  have h1718 : (17 : Nat) ≠ 18 := by decide
+  have h1716 : (17 : Nat) ≠ 16 := by decide
+  have h1816 : (18 : Nat) ≠ 16 := by decide
+  have h1817 : (18 : Nat) ≠ 17 := by decide
+  have hda : d ≠ a := Ne.symm had
+  have na16 : a ≠ 16 := by omega
+  have na17 : a ≠ 17 := by omega
+  have na18 : a ≠ 18 := by omega
+  have nb16 : b ≠ 16 := by omega
+  have nb17 : b ≠ 17 := by omega
+  have nb18 : b ≠ 18 := by omega
+  have nd16 : d ≠ 16 := by omega
+  have nd17 : d ≠ 17 := by omega
+  have nd18 : d ≠ 18 := by omega
+  have nm16 : m ≠ 16 := by omega
+  have nm17 : m ≠ 17 := by omega
+  have nm18 : m ≠ 18 := by omega
+  have sa16 := Ne.symm na16; have sa17 := Ne.symm na17; have sa18 := Ne.symm na18
+  have sb16 := Ne.symm nb16; have sb17 := Ne.symm nb17; have sb18 := Ne.symm nb18
+  have sd16 := Ne.symm nd16; have sd17 := Ne.symm nd17; have sd18 := Ne.symm nd18
+  simp only [words, stepAll, lineOps, List.foldl_cons, List.foldl_nil, Op.step, Op.dst, Op.val,
+    Vector.getElem_ofFn]
+  by_cases e1 : m = d
+  · subst e1
+    simp only [*, ↓reduceIte]
+    rw [BitVec.or_comm, shr_or_shl _ hr]
+  · have s1 := Ne.symm e1
+    by_cases e2 : m = a
+    · subst e2
+      simp only [*, ↓reduceIte]
+    · have s2 := Ne.symm e2
+      simp only [*, ↓reduceIte]
+
+/-- The lines in turn, as operations. -/
+def linesOps (l : List (Nat × Nat × Nat × Nat)) : List Op := l.flatMap lineOps
+
+theorem linesOps_words : ∀ (l : List (Nat × Nat × Nat × Nat)) (x : Nat → Word),
+    (l.all fun (a, b, d, r) => decide (a < 16 ∧ b < 16 ∧ d < 16 ∧ a ≠ d ∧ r < 64)) = true →
+    words (stepAll x (linesOps l)) = alines l (words x)
+  | [], _, _ => rfl
+  | (a, b, d, r) :: l, x, h => by
+    simp only [List.all_cons, Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨⟨ha, hb, hd, had, hr⟩, hl⟩ := h
+    rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
+      linesOps_words l _ hl, lineOps_words _ ha hb hd had hr]
+    rfl
+
+/-- Four GBs' operations as the code runs them. -/
+def roundOps (qs : List (Nat × Nat × Nat × Nat)) : List Op :=
+  let step (r : Nat) (ls : List (Nat × Nat × Nat)) : List Op :=
+    ls.flatMap (fun (a, b, _) => [.sll 16 a 32, .sll 17 b 32, .mulhu 16 16 17, .add a a b, .add a a 16, .add a a 16]) ++
+    ls.map (fun (a, _, d) => .xor d d a) ++
+    ls.flatMap (fun (_, _, d) => [.srl 18 d r, .sll d d (64 - r), .or d d 18])
+  step 32 (qs.map fun (a, b, _, d) => (a, b, d)) ++ step 24 (qs.map fun (_, b, c, d) => (c, d, b)) ++
+    step 16 (qs.map fun (a, b, _, d) => (a, b, d)) ++ step 63 (qs.map fun (_, b, c, d) => (c, d, b))
+
+/-- The code of P is its operations. -/
+theorem permute_code :
+    Impl.Argon2.RISCV64.permute = .block ((roundOps ncolumns ++ roundOps ndiagonals).map Op.code) := by
+  rw [Impl.Argon2.RISCV64.permute, List.map_append]
+  congr 2 <;> decide
+
+theorem roundOps_fold (x : Nat → Word) :
+    words (stepAll x (roundOps ncolumns ++ roundOps ndiagonals)) =
+      alines (roundLines ncolumns ++ roundLines ndiagonals) (words x) := by
+  rw [osame_ok (l := linesOps (roundLines ncolumns ++ roundLines ndiagonals)) (by decide) x]
+  exact linesOps_words _ x (by decide)
+
+theorem roundOps_valid : (roundOps ncolumns ++ roundOps ndiagonals).all Op.Valid = true := by
+  rw [List.all_append, Bool.and_eq_true]
+  exact ⟨by decide, by decide⟩
+
+/-- The slots of a state. -/
+def slots (s : State) (i : Nat) : Word := s.gpr (sreg i)
 
 /-- P on the sixteen registers. -/
 theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
     WP isa Impl.Argon2.RISCV64.permute s fun t =>
       InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
-  have advance (t : State) (v' : Vector Word 16)
-      (h : InRegs t v' ∧ Keeps s t ∧ t.mem = s.mem) (a b c d : Fin 16)
-      (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
-      (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val) :
-      WP isa (gbOn a b c d) t fun u =>
-        InRegs u (GB v' a b c d) ∧ Keeps s u ∧ u.mem = s.mem := by
-    refine (gbOn_ok a b c d hab hac had hbc hbd hcd t v' h.1).mono ?_
-    rintro u ⟨hu, hk, hm⟩
-    exact ⟨hu, h.2.1.trans hk, hm.trans h.2.2⟩
-  unfold Impl.Argon2.RISCV64.permute
-  apply WP.seq
-  refine (advance s _ ⟨hv, Keeps.refl s, rfl⟩ 0 4 8 12
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s1 h1
-  apply WP.seq
-  refine (advance s1 _ h1 1 5 9 13
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s2 h2
-  apply WP.seq
-  refine (advance s2 _ h2 2 6 10 14
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s3 h3
-  apply WP.seq
-  refine (advance s3 _ h3 3 7 11 15
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s4 h4
-  apply WP.seq
-  refine (advance s4 _ h4 0 5 10 15
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s5 h5
-  apply WP.seq
-  refine (advance s5 _ h5 1 6 11 12
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s6 h6
-  apply WP.seq
-  refine (advance s6 _ h6 2 7 8 13
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
-  intro s7 h7
-  exact advance s7 _ h7 3 4 9 14
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have hw : words (slots s) = v := by
+    apply Vector.ext; intro k hk
+    simp only [words, Vector.getElem_ofFn, slots]
+    have := hv ⟨k, hk⟩
+    rw [← sreg_lane] at this
+    exact this
+  rw [permute_code]
+  refine WP.mono (ops_ok _ roundOps_valid (x := slots s) fun i _ => rfl) fun t h' =>
+    ⟨fun j => ?_, ⟨fun r hr => h'.keep r fun i hi e => hr (e ▸ sreg_mem i hi), h'.rd, h'.wr, h'.sp⟩, h'.mem⟩
+  rw [Fin.getElem_fin, permute_lines, ← hw, ← sreg_lane]
+  have e' : stepAll (slots s) (roundOps ncolumns ++ roundOps ndiagonals) j.1 =
+      (alines (roundLines ncolumns ++ roundLines ndiagonals) (words (slots s)))[j.1] := by
+    simpa only [words, Vector.getElem_ofFn] using congrArg (·[j.1]'j.2) (roundOps_fold (slots s))
+  rw [← e']
+  exact h'.holds j.1 (by omega)
 
 /-- The row/column code meets the specification's gather, P, scatter definition. -/
 theorem permuteAt_ok (index : Fin 16 → Fin 128) (s : State) {p : Addr} (hs : Scratch s p) :
