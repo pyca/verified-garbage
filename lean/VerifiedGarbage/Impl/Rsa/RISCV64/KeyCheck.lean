@@ -46,7 +46,10 @@ base `16` arrays further), before `mulMod` uses them.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
 `p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
-more divisions) with `dP` and `dQ`.
+more divisions) with `dP` and `dQ`. Each division's steps pass over the
+divisor's `⌈p_len / 8⌉` or `⌈q_len / 8⌉` words (`Div.divL`), not `w`:
+`p_len` is copied to `s5` before the checks (`keepLen`), as `tail` writes
+`s4`, and `q_len` stays in `s6`.
 
 Addresses and branches depend only on the pointers, the lengths, `n` and `e`.
 -/
@@ -125,7 +128,7 @@ def ltA (a b : Nat) : List (Prog isa) := [sub3 aW a b, .block (stBorrow sF ++ ac
 def eqA (a b : Nat) : List (Prog isa) := [eqS sF a b, .block acc]
 
 /-- The division of `[a]` by `[d]`. -/
-def divA (a d : Nat) : List (Prog isa) := [copy aVQ a, copy aVD d, div aVQ aVR aVD aVT]
+def divA (a d : Nat) (len : Reg) : List (Prog isa) := [copy aVQ a, copy aVD d, divL aVQ aVR aVD len]
 
 /-- `[aA] := ([y] mod 2^s7) [x] mod [m]`, `s7` set by `cnt`. -/
 def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
@@ -184,7 +187,11 @@ def crtChecks : List (Prog isa) := pqChecks ++ qiChecks ++
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
-  ltA aD aN ++ divA aD aM1 ++ eqA aVR aDP ++ divA aD aM2 ++ eqA aVR aDQ
+  ltA aD aN ++ divA aD aM1 .s5 ++ eqA aVR aDP ++ divA aD aM2 .s6 ++ eqA aVR aDQ
+
+/-- `p_len` kept in `s5` (`q`'s pointer, which only the loads read) for the
+division by `p - 1`: `tail` writes `s4`. -/
+def keepLen : List Instr := [mov .s5 .s4]
 
 /-! ## Exit -/
 

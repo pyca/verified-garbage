@@ -237,11 +237,14 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
           (h.ws.fit64 (h.live_lt j hj)),
         h4.arrs.get (by simp [hj]), upd_ne (j := aA) _ _ e, upd_ne (j := aX) _ _ jX, upd_ne (j := aY) _ _ jY]
 
-/-- `divA a d`: `[a] / [d]` in `aVQ`, `[a] mod [d]` in `aVR`. -/
+/-- `divA a d len`: `[a] / [d]` in `aVQ`, `[a] mod [d]` in `aVR`, for `[d]`
+below `2^(8 L)`, `L` in `len` from the start. -/
 theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live)
-    (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) :
-    WP isa (seqs (divA a d)) s fun t => ∃ Xq Xr, (0 < A d → Xr = A a % A d ∧ Xq = A a / A d) ∧
+    (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) {len : Reg} {L : Nat}
+    (hl : s0.gpr len = BitVec.ofNat 64 L) (hlb : len ∉ bodyRegs) (hL1 : 1 ≤ L) (hLw : L ≤ 8 * g.w)
+    (hD : A d < 2 ^ (8 * L)) :
+    WP isa (seqs (divA a d len)) s fun t => ∃ Xq Xr, (0 < A d → Xr = A a % A d ∧ Xq = A a / A d) ∧
       Stg g s0 (upd (upd A aVQ Xq) aVR Xr) (aVR :: aVQ :: live) c t := by
   have aQ : a ≠ aVQ := fun e => hfree a ha (by simp [e])
   have dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
@@ -252,14 +255,15 @@ theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   rw [kc_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h1.copy_ok (o := aVD) (a := d) (by decide) (List.mem_cons_of_mem _ hd) (Ne.symm dD))
     fun t2 h2 => ?_
-  rw [show seqs [VG.Impl.Rsa.RISCV64.Div.div aVQ aVR aVD aVT] = VG.Impl.Rsa.RISCV64.Div.div aVQ aVR aVD aVT
+  rw [show seqs [VG.Impl.Rsa.RISCV64.Div.divL aVQ aVR aVD len] = VG.Impl.Rsa.RISCV64.Div.divL aVQ aVR aVD len
     from rfl]
   have fq : num t2.mem g.B g.w aVQ = A a := by
     rw [h2.arrs.get (by simp), upd_ne (j := aVD) _ _ (by decide), upd_self]
   have fd : num t2.mem g.B g.w aVD = A d := by
     rw [h2.arrs.get (by simp), upd_self, upd_ne _ _ dQ]
-  refine WP.mono (div_ok h2.ws (q := aVQ) (r := aVR) (d := aVD) (t := aVT) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h2.vdTop)
+  refine WP.mono (divL_ok h2.ws (q := aVQ) (r := aVR) (d := aVD) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) ((h2.regs.gpr hlb).trans hl) hL1 hLw h2.vdTop
+    (by rw [fd]; exact hD))
     fun t ⟨ht, k, r, _, v⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR, fun pos => ?_, ?_⟩
   · obtain ⟨vq, -, vr, -⟩ := v (by rw [fd]; exact pos)
     rw [fq, fd] at vq vr

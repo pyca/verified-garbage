@@ -34,7 +34,7 @@ namespace VG.Proof.Rsa.RISCV64.Keys
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Loops
   VG.Impl.Bignum.RISCV64
 open VG.Impl.Rsa.RISCV64.Keys (ptr ptrs subN selBody mov)
-open VG.Impl.Rsa.RISCV64.Div (shlBody qword passBody fixBody fixK stepK divK init div)
+open VG.Impl.Rsa.RISCV64.Div (shlBody qword passBody fixBody fixK stepK divK init div wordsOf divL)
 
 /-- The `w + 1` words of array `j` (the remainder of the division). -/
 abbrev num1 (m : Mem) (B : Addr) (w j : Nat) : Nat := wordsVal m B (arr w j) (w + 1)
@@ -1026,5 +1026,66 @@ theorem div_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     change num1 s.mem B w d = _
     rw [num1_eq, hdz]; rfl
   exact WP.mono (divK_ok h hq hr hd hN hqr hqd hrd h.s9 h.wpos (Nat.le_refl _) (by decide) hD (wordsVal_lt _ _ _ _)) fun u ⟨hu, f, k, u7, v⟩ => ⟨hu, f.mono, k, u7, v⟩
+
+/-! ## The division over the divisor's words -/
+
+/-- The `k + 1` low words of a number below `2^(64 k)` whose extra word is 0. -/
+theorem numk_of_lt {m : Mem} {B : Addr} {w d k : Nat} (hz : word m B (arr w d + 8 * w) = 0)
+    (hkw : k ≤ w) (hlt : num m B w d < 2 ^ (64 * k)) : numk m B w d k = num m B w d := by
+  rcases Nat.lt_or_ge k w with hk | hk
+  · have e := wordsVal_append m B (arr w d) (k + 1) (w - (k + 1))
+    rw [Nat.add_sub_cancel' (by omega)] at e
+    have hp : 2 ^ (64 * k) ≤ 2 ^ (64 * (k + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+    have h0 : wordsVal m B (arr w d + 8 * (k + 1)) (w - (k + 1)) = 0 := by
+      refine Nat.eq_zero_of_not_pos fun hpos => ?_
+      have := Nat.le_mul_of_pos_right (2 ^ (64 * (k + 1))) hpos
+      have : num m B w d = wordsVal m B (arr w d) w := rfl
+      omega
+    change wordsVal m B (arr w d) (k + 1) = wordsVal m B (arr w d) w
+    rw [e, h0, Nat.mul_zero]
+    exact (Nat.add_zero _).symm
+  · obtain rfl : k = w := by omega
+    change num1 m B k d = _
+    rw [num1_eq, hz]; rfl
+
+theorem add7_shr3_ofNat (k : Nat) (hk : k < 2 ^ 32) :
+    (BitVec.ofNat 64 k + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((k + 7) / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := 7) (by decide),
+    Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+
+/-- `wordsOf len`: `s8 := ⌈L / 8⌉`. -/
+theorem wordsOf_ok {s : State} {len : Reg} {L : Nat} (hl : s.gpr len = BitVec.ofNat 64 L) (hL : L < 2 ^ 32) :
+    WP isa (.block (wordsOf len)) s fun t =>
+      (t.gpr .s8 = BitVec.ofNat 64 ((L + 7) / 8) ∧ t.mem = s.mem) ∧ Keep [.s8] s t := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [wordsOf, hl, add7_shr3_ofNat L hL]
+
+/-- `divL q r d len`: `div`'s results for a divisor below `2^(8 L)`, `L` bytes
+in `len`, its steps over the divisor's `⌈L / 8⌉` words. -/
+theorem divL_ok {s : State} {B : Addr} {Z w N q r d : Nat} (h : Ws s B Z w N)
+    (hq : q < N) (hr : r < N) (hd : d < N) (hN : N ≤ 2048) (hqr : q ≠ r) (hqd : q ≠ d) (hrd : r ≠ d)
+    {len : Reg} {L : Nat} (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hLw : L ≤ 8 * w)
+    (hdz : word s.mem B (arr w d + 8 * w) = 0) (hD : num s.mem B w d < 2 ^ (8 * L)) :
+    WP isa (divL q r d len) s fun u => Ws u B Z w N ∧
+      Frame B w [q, r] [] s.mem u.mem ∧ Keep (.s8 :: divRegs) s u ∧ u.gpr .s7 = 0 ∧
+      (0 < num s.mem B w d →
+        num u.mem B w q = num s.mem B w q / num s.mem B w d ∧
+        num1 u.mem B w r = num s.mem B w q % num s.mem B w d ∧
+        num u.mem B w r = num s.mem B w q % num s.mem B w d ∧
+        word u.mem B (arr w r + 8 * w) = 0) := by
+  have := h.wle
+  rw [divL, WP.seq_iff]
+  refine WP.mono (wordsOf_ok hl (by omega)) fun t ⟨⟨t8, tm⟩, kt⟩ => ?_
+  have ht := h.of_keep kt
+  have hDk : num t.mem B w d < 2 ^ (64 * ((L + 7) / 8)) := by
+    rw [tm]; exact Nat.lt_of_lt_of_le hD (Nat.pow_le_pow_right (by decide) (by omega))
+  have hdk : numk t.mem B w d ((L + 7) / 8) = num t.mem B w d :=
+    numk_of_lt (by rw [tm]; exact hdz) (by omega) hDk
+  refine WP.mono (divK_ok ht hq hr hd hN hqr hqd hrd t8 (by omega) (by omega) (by decide) hdk hDk)
+    fun u ⟨hu, f, k, u7, v⟩ => ?_
+  rw [tm] at f v
+  exact ⟨hu, f, (kt.trans k).mono (by decide), u7, v⟩
 
 end VG.Proof.Rsa.RISCV64.Keys
