@@ -92,22 +92,33 @@ def wideGroup (load store : Nat → List Instr) (crypt4 : Prog isa) : Prog isa :
 def wide (load store : Nat → List Instr) (crypt4 : Prog isa) : Prog isa :=
   chainFrame (wideGroup load store crypt4) wideIn wideOut
 
+/-- A group by `load true` and `store true` (by doublewords) if the data's
+address is a multiple of 8 (`t0 = a3 ∧ 7`, of a public address, whose
+remainder no group changes), else by `load false` and `store false`. -/
+def wideGroupA (load store : Bool → Nat → List Instr) (crypt4 : Prog isa) : Prog isa :=
+  .seq (.block [.logicImm .and t0 .a3 7])
+    (.ite (.zero t0) (wideGroup (load true) (store true) crypt4) (wideGroup (load false) (store false) crypt4))
+
+/-- `wide`, with the data by doublewords when it is aligned. -/
+def wideA (load store : Bool → Nat → List Instr) (crypt4 : Prog isa) : Prog isa :=
+  chainFrame (wideGroupA load store crypt4) wideIn wideOut
+
 /-! ## AES-CBC decryption -/
 
 /-- `Cⱼ` (block `b`) loaded, and copied to its slots. -/
-def cbcLoad (b : Nat) : List Instr :=
-  loadBlock false b ++ [stS (blkLo b) (q b), stS (blkLo b + 1) (q (b + 4))]
+def cbcLoad (w : Bool) (b : Nat) : List Instr :=
+  loadBlock w b ++ [stS (blkLo b) (q b), stS (blkLo b + 1) (q (b + 4))]
 
 /-- The slots of `Cⱼ₋₁` for block `b`: the state for the first block. -/
 def cbcPrev (b : Nat) : Nat := if b = 0 then stLo else blkLo (b - 1)
 
 /-- `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁` stored; `Cⱼ` the state. -/
-def cbcStore (b : Nat) : List Instr :=
-  [ldS .t2 (cbcPrev b), xorR .t2 .t2 (q b)] ++ storeLE64 .t2 t0 t1 .a3 (16 * b) ++
-    [ldS .t2 (cbcPrev b + 1), xorR .t2 .t2 (q (b + 4))] ++ storeLE64 .t2 t0 t1 .a3 (16 * b + 8) ++
+def cbcStore (w : Bool) (b : Nat) : List Instr :=
+  [ldS .t2 (cbcPrev b), xorR .t2 .t2 (q b)] ++ storeLE64W w .t2 t0 t1 .a3 (16 * b) ++
+    [ldS .t2 (cbcPrev b + 1), xorR .t2 .t2 (q (b + 4))] ++ storeLE64W w .t2 t0 t1 .a3 (16 * b + 8) ++
     [ldS .t2 (blkLo b), stS stLo .t2, ldS .t2 (blkLo b + 1), stS (stLo + 1) .t2]
 
-def cbcDecWide : Prog isa := wide cbcLoad cbcStore decrypt4
+def cbcDecWide : Prog isa := wideA cbcLoad cbcStore decrypt4
 
 /-! ## AES-CFB128 decryption -/
 
@@ -138,18 +149,18 @@ def xtsMulA : List Instr :=
 
 /-- Block `b` loaded and XORed with its tweak `Tⱼ`, which is kept in its
 slots, and the tweak times `α`. -/
-def xtsLoad (b : Nat) : List Instr :=
-  [ldS .t2 stLo, stS (blkLo b) .t2] ++ loadLE64 (q b) t0 t1 .a3 (16 * b) ++ [xorR (q b) (q b) .t2,
-    ldS .t2 (stLo + 1), stS (blkLo b + 1) .t2] ++ loadLE64 (q (b + 4)) t0 t1 .a3 (16 * b + 8) ++
+def xtsLoad (w : Bool) (b : Nat) : List Instr :=
+  [ldS .t2 stLo, stS (blkLo b) .t2] ++ loadLE64W w (q b) t0 t1 .a3 (16 * b) ++ [xorR (q b) (q b) .t2,
+    ldS .t2 (stLo + 1), stS (blkLo b + 1) .t2] ++ loadLE64W w (q (b + 4)) t0 t1 .a3 (16 * b + 8) ++
     [xorR (q (b + 4)) (q (b + 4)) .t2] ++ xtsMulA
 
 /-- The result XORed with `Tⱼ`, stored. -/
-def xtsStore (b : Nat) : List Instr :=
-  [ldS .t2 (blkLo b), xorR .t2 .t2 (q b)] ++ storeLE64 .t2 t0 t1 .a3 (16 * b) ++
-    [ldS .t2 (blkLo b + 1), xorR .t2 .t2 (q (b + 4))] ++ storeLE64 .t2 t0 t1 .a3 (16 * b + 8)
+def xtsStore (w : Bool) (b : Nat) : List Instr :=
+  [ldS .t2 (blkLo b), xorR .t2 .t2 (q b)] ++ storeLE64W w .t2 t0 t1 .a3 (16 * b) ++
+    [ldS .t2 (blkLo b + 1), xorR .t2 .t2 (q (b + 4))] ++ storeLE64W w .t2 t0 t1 .a3 (16 * b + 8)
 
-def xtsEncWide : Prog isa := wide xtsLoad xtsStore encrypt4
-def xtsDecWide : Prog isa := wide xtsLoad xtsStore decrypt4
+def xtsEncWide : Prog isa := wideA xtsLoad xtsStore encrypt4
+def xtsDecWide : Prog isa := wideA xtsLoad xtsStore decrypt4
 
 def cbcDecWideCall : Prog isa := .call "vg_aes_cbc_dec_wide" cbcDecWide
 def cfbDecWideCall : Prog isa := .call "vg_aes_cfb_dec_wide" cfbDecWide

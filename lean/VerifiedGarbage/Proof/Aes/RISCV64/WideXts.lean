@@ -21,16 +21,16 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 # XTS-AES on RISC-V, four blocks at a time
 
 `xtsEncWide` and `xtsDecWide` (`Impl/Aes/RISCV64/Wide.lean`) are
-`wide xtsLoad xtsStore encrypt4` and `… decrypt4`: `xtsLoad k` copies the
+`wideA xtsLoad xtsStore encrypt4` and `… decrypt4`: `xtsLoad w k` copies the
 tweak `Tⱼ` (`xtsT`, `T ⊗ αʲ`) from the state's slots (`stLo`) to block
 `k`'s (`blkLo k`), puts `Pⱼ ⊕ Tⱼ` in the state registers, and multiplies the
 tweak by `α` (`xtsMulA_ok`: `mulAlpha_words64` on the tweak's two
 little-endian doublewords); `encrypt4` (`decrypt4`) enciphers (deciphers)
-the four, and `xtsStore k` stores `Tⱼ ⊕ CIPH_K(Pⱼ ⊕ Tⱼ)` (`xtsF`). Their
+the four, and `xtsStore w k` stores `Tⱼ ⊕ CIPH_K(Pⱼ ⊕ Tⱼ)` (`xtsF`). Their
 invariants (`xtsL`, `xtsS`): the data is `xtsF`'s up to the blocks stored,
 the state's slots hold the tweak of the next block to load, and the
 group's slots and registers its tweaks and inputs, enciphered once the
-cipher has run. `xts_ok` is its `WideOk`, `xts_out` and `xts_chain` that
+cipher has run. `xts_ok` is its `WideOkA`, `xts_out` and `xts_chain` that
 `xtsF` and `xtsT` are XTS's (`Spec.Xts.crypt`, and the tweak after the
 blocks), and `xtsEncWide_k`, `xtsDecWide_k` state them as chains to call
 (`AesCbc.RISCV64.ChainK`).
@@ -246,9 +246,9 @@ theorem data_slot {m : Mem} {j : Nat} (hj : j < 88) (v : BitVec 64) {x : Nat}
 
 /-- Block `k` XORed with its tweak, the tweak copied to the block's slots,
 and the tweak times `α`. -/
-theorem xtsLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).toNat) {s : State}
+theorem xtsLoad_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 0) {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).toNat) {s : State}
     (hb : WB s₀ s₉ b g s) (hl : xtsL f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g k s.mem (Q s)) :
-    WP isa (.block (xtsLoad k)) s fun s' =>
+    WP isa (.block (xtsLoad wd k)) s fun s' =>
       Foot s₀ b s s' ∧ xtsL f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
@@ -266,7 +266,7 @@ theorem xtsLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).to
   refine slot_st (hscr.congr u₁.wr (by rw [u₁.other _ (by decide)])) (by rw [u₁.other _ (by decide), hbase])
     (by omega) fun s₂ u₂ => WP.block_nil ?_
   -- The data's low doubleword, XORed with it.
-  refine WP.mono (data_ld (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k)
+  refine WP.mono (data_ldW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k) hal (by omega)
     (by rw [u₂.gpr, u₁.other _ (by decide)]; exact hb.a3)
     (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact List.mem_append_right _ hdat) hn (by omega) (by omega)
     ⟨n1, n8, n9⟩) fun s₃ ⟨e₃, o₃, m₃, rd₃, wr₃, sp₃⟩ => ?_
@@ -277,7 +277,7 @@ theorem xtsLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).to
   refine slot_ld scr₄ b₄ (by decide) fun s₅ u₅ => ?_
   refine slot_st (scr₄.congr u₅.wr (by rw [u₅.other _ (by decide)])) (by rw [u₅.other _ (by decide), b₄])
     (by omega) fun s₆ u₆ => WP.block_nil ?_
-  refine WP.mono (data_ld (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8)
+  refine WP.mono (data_ldW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8) hal (by omega)
     (by rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (Ne.symm n1), o₃ _ (Ne.symm n1) (by decide) (by decide),
       u₂.gpr, u₁.other _ (by decide)]; exact hb.a3)
     (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, rd₃, wr₃, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
@@ -352,9 +352,9 @@ theorem xtsLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).to
         g₁₀ _ d3 d4 (q_neW _).1 (q_neW _).2.1 (q_neW _).2.2.1 (q_neW _).2.2.2.1, ← (hblk c hc').2, regBlock_wBlk]
 
 /-- Block `k`'s result XORed with its tweak, stored. -/
-theorem xtsStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).toNat) {s : State}
+theorem xtsStore_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 0) {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).toNat) {s : State}
     (hb : WB s₀ s₉ b g s) (hl : xtsS f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g k s.mem (Q s)) :
-    WP isa (.block (xtsStore k)) s fun s' =>
+    WP isa (.block (xtsStore wd k)) s fun s' =>
       Foot s₀ b s s' ∧ xtsS f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
@@ -373,7 +373,7 @@ theorem xtsStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
   have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have x₂ : s₂.gpr .t2 = s.mem.readW (b + BitVec.ofNat 64 (8 * blkLo k)) 64 ^^^ s.gpr (q k) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (q_neW k).2.2.1]
-  refine WP.mono (data_st (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k)
+  refine WP.mono (data_stW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k) hal (by omega)
     (by rw [o₂ _ (by decide)]; exact hb.a3) (by rw [u₂.wr, u₁.wr]; exact hdat) hn (by omega) (by omega)
     (by decide)) fun s₃ ⟨m₃, o₃, rd₃, wr₃, sp₃⟩ => ?_
   obtain ⟨scr₃, b₃⟩ := sc (u := s₃) (by rw [wr₃, u₂.wr, u₁.wr]) (by
@@ -384,7 +384,7 @@ theorem xtsStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
   have m₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
   have x₅ : s₅.gpr .t2 = s₃.mem.readW (b + BitVec.ofNat 64 (8 * (blkLo k + 1))) 64 ^^^ s.gpr (q (k + 4)) := by
     rw [u₅.gpr, u₄.gpr, u₄.other _ (q_neW _).2.2.1, o₃ _ n10 n11, o₂ _ (q_neW _).2.2.1]
-  refine WP.mono (data_st (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8)
+  refine WP.mono (data_stW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8) hal (by omega)
     (by rw [o₅ _ (by decide) (by decide) (by decide)]; exact hb.a3)
     (by rw [u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr]; exact hdat) hn (by omega) (by omega) (by decide))
     fun s₆ ⟨m₆, o₆, rd₆, wr₆, sp₆⟩ => ?_
@@ -434,19 +434,19 @@ end Steps
 
 /-- XTS, by the block function `f`, as a mode of `wide`. -/
 theorem xts_ok (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s₀ : State) :
-    WideOk s₀ xtsLoad xtsStore f
+    WideOkA s₀ xtsLoad xtsStore f
       (xtsL f s₀.mem (s₀.gpr .a3) (Spec.Aes.stateAt s₀.mem (s₀.gpr .a2)) (s₀.gpr .a1).toNat
         (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1))) (s₀.gpr .a4).toNat)
       (xtsS f s₀.mem (s₀.gpr .a3) (Spec.Aes.stateAt s₀.mem (s₀.gpr .a2)) (s₀.gpr .a1).toNat
         (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1))) (s₀.gpr .a4).toNat)
       (xtsF f (s₀.gpr .a1).toNat (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
         s₀.mem (s₀.gpr .a3) (Spec.Aes.stateAt s₀.mem (s₀.gpr .a2)))
-      (xtsT (Spec.Aes.stateAt s₀.mem (s₀.gpr .a2)) (s₀.gpr .a4).toNat) where
+      (xtsT (Spec.Aes.stateAt s₀.mem (s₀.gpr .a2)) (s₀.gpr .a4).toNat) := fun _ hal => {
   init hs m Q hf hst :=
     ⟨ecbInv_frame (m := s₀.mem) hf (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hs.sep) hs.n16 fun i hi => by simp,
       hst, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  load hs _ _ hk hkn s hb hl := xtsLoad_ok hs hk hkn hb hl
+  load hs _ _ hk hkn s hb hl := xtsLoad_ok hs hal hk hkn hb hl
   crypt := fun {s₉ X b} hs g m m' Q Q' hg hl hf hin => by
     obtain ⟨hd, hst, hblk⟩ := hl
     refine ⟨by rw [Nat.add_zero]; exact ecbInv_frame hf (by simpa using hs.d320) hs.n16 hd,
@@ -458,7 +458,7 @@ theorem xts_ok (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s�
         exact Offset.disjoint_base b (by unfold blkLo; omega) (by unfold blkLo; omega)]
       exact (hblk c hc).1
     · rw [regBlock_of_inRel hin (by omega), (hblk c hc).2]
-  store hs _ _ hk hkn s hb hl := xtsStore_ok hs hk hkn hb hl
+  store hs _ _ hk hkn s hb hl := xtsStore_ok hs hal hk hkn hb hl
   next _ g m Q hg hl := by
     obtain ⟨hd, hst, -⟩ := hl
     exact ⟨by rw [show 4 * (g + 1) = 4 * g + 4 by omega]; exact hd,
@@ -468,7 +468,7 @@ theorem xts_ok (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s�
     obtain ⟨hd, hst, -⟩ := hl
     rw [show 4 * g + ((s₀.gpr .a4).toNat - 4 * g) = (s₀.gpr .a4).toNat by omega] at hd
     rw [show 4 * g + min 4 ((s₀.gpr .a4).toNat - 4 * g) = (s₀.gpr .a4).toNat by omega] at hst
-    exact ⟨hd, hst⟩
+    exact ⟨hd, hst⟩ }
 
 theorem aesWith_toList' (R : Nat) (w : List Byte) (x : Spec.Aes.State) :
     AesCbc.ciphOf true R w x.toList = (Spec.Aes.cipher R w x).toList := by
@@ -483,7 +483,7 @@ theorem xtsEncWide_correct {s₀ : State} (hp : (blockKRISCV64 (AesXts.xtsMode t
       (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
         (blockKRISCV64 (AesXts.xtsMode true)).post s₀ s' := by
   unfold xtsEncWide
-  exact wide_correct _ encrypt4_cryptOk hp (xts_ok _ s₀)
+  exact wideA_correct _ encrypt4_cryptOk hp (xts_ok _ s₀)
     (by rw [AesCbc.bytesAt_toList]; exact xts_out true _ _ _ (aesWith_toList' _ _) _ _ _ _)
     (by rw [AesCbc.bytesAt_toList]; exact xts_chain _ _ _ _ _ _ _)
 
@@ -492,7 +492,7 @@ theorem xtsDecWide_correct {s₀ : State} (hp : (blockKRISCV64 (AesXts.xtsMode f
       (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
         (blockKRISCV64 (AesXts.xtsMode false)).post s₀ s' := by
   unfold xtsDecWide
-  exact wide_correct _ decrypt4_cryptOk hp (xts_ok _ s₀)
+  exact wideA_correct _ decrypt4_cryptOk hp (xts_ok _ s₀)
     (by rw [AesCbc.bytesAt_toList]; exact xts_out false _ _ _ (aesInvWith_toList' _ _) _ _ _ _)
     (by rw [AesCbc.bytesAt_toList]; exact xts_chain _ _ _ _ _ _ _)
 
