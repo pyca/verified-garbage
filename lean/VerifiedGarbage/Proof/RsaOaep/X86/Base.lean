@@ -34,15 +34,13 @@ def dShape (D : Nat) : Hash := ⟨0, 0, D, 0, 0, "", .block [], "", .block [], "
 /-- The blocks whose immediates depend on the hash function: none writes
 `esp` (`OCerts.sp`). -/
 def spBlocks (H : Hash) : Prog isa :=
-  seqs [.block (xorSet H), .block (mgfNext H), .block (dbArgs H 3), .block (dbArgs H 4), .block (seedArgs H 3),
+  seqs [.block (dbArgs H 3), .block (dbArgs H 4), .block (seedArgs H 3),
     .block (seedArgs H 4), .block (encChk H), .block (seedSet H), .block (lhSet H), .block (decChk H),
     .block (cmpSet H), .block (scanSet H), .block (tSet H), .block (mlSet H)]
 
 /-- The taint checks of the blocks whose immediates depend on the hash
 function's digest length. -/
 structure OCerts (H : Hash) : Prop where
-  xorSet : TaintOk [.esp, .ebp] (.block (xorSet H))
-  mgfNext : TaintOk [.esp, .ebp] (.block (mgfNext H))
   dbArgs3 : TaintOk [.esp, .ebp] (.block (dbArgs H 3))
   dbArgs4 : TaintOk [.esp, .ebp] (.block (dbArgs H 4))
   seedArgs3 : TaintOk [.esp, .ebp] (.block (seedArgs H 3))
@@ -58,7 +56,7 @@ structure OCerts (H : Hash) : Prop where
   sp : NoSp (spBlocks H)
 
 theorem OCerts.of_shape {H : Hash} (h : OCerts (dShape H.D)) : OCerts H :=
-  ⟨h.xorSet, h.mgfNext, h.dbArgs3, h.dbArgs4, h.seedArgs3, h.seedArgs4, h.encChk, h.seedSet, h.lhSet, h.decChk,
+  ⟨h.dbArgs3, h.dbArgs4, h.seedArgs3, h.seedArgs4, h.encChk, h.seedSet, h.lhSet, h.decChk,
     h.cmpSet, h.scanSet, h.tSet, h.mlHead, h.sp⟩
 
 theorem noSp_seq_inv' {a b : Prog isa} (h : NoSp (.seq a b)) : NoSp a ∧ NoSp b :=
@@ -66,7 +64,6 @@ theorem noSp_seq_inv' {a b : Prog isa} (h : NoSp (.seq a b)) : NoSp a ∧ NoSp b
 
 /-- The blocks `OCerts.sp` checks, one by one. -/
 theorem OCerts.parts {H : Hash} (c : OCerts H) :
-    NoSp (.block (VG.Impl.RsaOaep.X86.xorSet H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.mgfNext H) : Prog isa) ∧
     NoSp (.block (VG.Impl.RsaOaep.X86.dbArgs H 3) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.dbArgs H 4) : Prog isa) ∧
     NoSp (.block (VG.Impl.RsaOaep.X86.seedArgs H 3) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.seedArgs H 4) : Prog isa) ∧
     NoSp (.block (VG.Impl.RsaOaep.X86.encChk H) : Prog isa) ∧ NoSp (.block (VG.Impl.RsaOaep.X86.seedSet H) : Prog isa) ∧
@@ -85,10 +82,8 @@ theorem OCerts.parts {H : Hash} (c : OCerts H) :
   obtain ⟨a8, s⟩ := noSp_seq_inv' s
   obtain ⟨a9, s⟩ := noSp_seq_inv' s
   obtain ⟨a10, s⟩ := noSp_seq_inv' s
-  obtain ⟨a11, s⟩ := noSp_seq_inv' s
-  obtain ⟨a12, s⟩ := noSp_seq_inv' s
-  obtain ⟨a13, a14⟩ := noSp_seq_inv' s
-  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩
+  obtain ⟨a11, a12⟩ := noSp_seq_inv' s
+  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩
 
 /-- A hash function, as RSAES-OAEP on x86 uses it. -/
 structure OHash where
