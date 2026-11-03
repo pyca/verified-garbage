@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -58,7 +59,8 @@ open VG.Proof.Mgf1 (ifp ifn)
 abbrev PrivReady : Inv := fun L g vv m₀ t =>
   Ctx L g vv m₀ t ∧ Ready L t ∧ ∃ V W, Rep t.mem L.Q L.scr V W ∧ Slots L W ∧ CallArgs L W
 
-theorem head_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec Hs Gs P).pre s) (hP : 16 ≤ P) :
+theorem head_ok {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec Hs ts P).pre s)
+    (hP : 16 ≤ P) :
     WP isa (.block (decPrologue ++ privArgs)) (entered s) (PrivReady (lay P s) s.gpr s.v s.mem) := by
   have hL := lay_ok h
   rw [WP.block_append_iff]
@@ -75,18 +77,23 @@ theorem head_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec Hs 
       by simp [privW, upd], by simp [privW, upd]⟩⟩
 
 /-- Two calls whose public data agree, in the inner frame. -/
-def Entered (Hs Gs : Spec.Mgf1.Hash) (S : Nat) (a b : State) : Prop :=
-  ∃ s₁ s₂, (decSpec Hs Gs (S + 1)).pre s₁ ∧ (decSpec Hs Gs (S + 1)).pre s₂ ∧ (decSpec Hs Gs (S + 1)).pub s₁ s₂ ∧
+def Entered (Hs : Spec.Mgf1.Hash) (ts : List FnTable) (S : Nat) (a b : State) : Prop :=
+  ∃ s₁ s₂, (decSpec Hs ts (S + 1)).pre s₁ ∧ (decSpec Hs ts (S + 1)).pre s₂ ∧ (decSpec Hs ts (S + 1)).pub s₁ s₂ ∧
     a = entered s₁ ∧ b = entered s₂
 
-theorem head_ct (Hs Gs : Spec.Mgf1.Hash) {S : Nat} (hS : 15 ≤ S) :
-    RelCT isa (Entered Hs Gs S) (.block (decPrologue ++ privArgs)) (Two S PrivReady) := by
+theorem head_ct (Hs : Spec.Mgf1.Hash) (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Entered Hs ts S) (.block (decPrologue ++ privArgs)) (Two S ts PrivReady) := by
   intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
   subst ea eb
-  sig_pub [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
-    _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
-  obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-    a14⟩ := hp
+  obtain ⟨hT₁, hd₁⟩ := spec_tab h₁
+  obtain ⟨hT₂, hd₂⟩ := spec_tab h₂
+  sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+      List.getD_cons_zero, Option.some.injEq] at hp
+  obtain ⟨hsp, hsy, htab, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+    a13, a14, a15⟩ := hp
   have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩) (by taint_decide)
     _ _ _ _ _ _ (by show (entered s₁).sp = (entered s₂).sp; rw [entered_sp (S + 1), entered_sp (S + 1)]; simp only [lay, hsp]) e₁ e₂).1
@@ -96,9 +103,13 @@ theorem head_ct (Hs Gs : Spec.Mgf1.Hash) {S : Nat} (hS : 15 ≤ S) :
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   have e : lay (S + 1) s₂ = lay (S + 1) s₁ := by
     simp only [lay, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-      a14, hsp]
+      a14, a15, hsp]
   obtain ⟨hn, he⟩ := leak_split hl (by rw [bytesAt_length, bytesAt_length, h4])
-  refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl, ⟨?_, ?_⟩, y₁, e ▸ y₂⟩
+  have hta : TabAgree ts (lay (S + 1) s₁) s₁.mem s₂.mem s₁ s₂ :=
+    ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 15 from a15]; exact hT₂, hd₂⟩, hsy,
+      fun T hT => htab _ _ rfl a15.symm T hT⟩
+  refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,
+    ⟨⟨?_, ?_⟩, hta.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl)⟩, y₁, e ▸ y₂⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat
     rw [hn, h3, h4]
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat
@@ -140,13 +151,14 @@ theorem priv_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v�
 /-- After the call. -/
 abbrev CalledI : Inv := fun L g vv m₀ t => ∃ W, Called L g vv m₀ W t ∧ Slots L W
 
-theorem priv_ct (v : PrivImpl) : RelCT isa (Two v.S PrivReady) (.call v.name v.code) (Two v.S CalledI) :=
+theorem priv_ct (v : PrivImpl) (ts : List FnTable) :
+    RelCT isa (Two v.S ts PrivReady) (.call v.name v.code) (Two v.S ts CalledI) :=
   two_wp (fun e => RelCT.call (n := v.name) v.correct v.ct (privRd e.L) (privWr e.L)
     fun _ _ ⟨hL, hP, hk, f₁, f₂⟩ => by
       obtain ⟨c₁, r₁, V₁, W₁, R₁, s₁, A₁⟩ := f₁
       obtain ⟨c₂, r₂, V₂, W₂, R₂, s₂, A₂⟩ := f₂
       exact ⟨priv_pre' hL hP c₁ r₁ R₁ A₁, priv_pre' hL hP c₂ r₂ R₂ A₂,
-        priv_pub' hL hk ⟨c₁, r₁, V₁, W₁, R₁, s₁, A₁⟩ ⟨c₂, r₂, V₂, W₂, R₂, s₂, A₂⟩,
+        priv_pub' hL hk.1 ⟨c₁, r₁, V₁, W₁, R₁, s₁, A₁⟩ ⟨c₂, r₂, V₂, W₂, R₂, s₂, A₂⟩,
         (covers_priv hL c₁).1, (covers_priv hL c₁).2, (covers_priv hL c₂).1, (covers_priv hL c₂).2⟩)
     fun _ _ _ _ _ hL hP ⟨hc, hr, V, W, R, hS, hA⟩ => WP.mono (priv_call v hL hP hc hr R hA) fun _ h => ⟨W, h, hS⟩
 
@@ -156,10 +168,10 @@ theorem priv_ct (v : PrivImpl) : RelCT isa (Two v.S PrivReady) (.call v.name v.c
 abbrev KReady (D : Nat) : Inv := fun L g vv m₀ t =>
   In L g vv m₀ (fun _ t => t.gpr .x11 = if 2 * D + 2 ≤ L.k.toNat then 0 else BitVec.allOnes 64) t
 
-theorem resK_ct {H : Hash} (hD : H.D ≤ 64) {S : Nat} (hS : 15 ≤ S) :
-    RelCT isa (Two S CalledI)
+theorem resK_ct {H : Hash} (hD : H.D ≤ 64) {S : Nat} (hS : 15 ≤ S) (ts : List FnTable) :
+    RelCT isa (Two S ts CalledI)
       (.block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK H))
-      (Two S (KReady H.D)) :=
+      (Two S ts (KReady H.D)) :=
   two (Φ := CalledI) [] (check_of_zImm (τ := Taint.ofRegs []) (c := .block (([.logic .orr .w .x0 .x0 .x0,
     .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK H)) (c' := .block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0,
     .str .x .x0 .x9 sR] : List Instr) ++ chkK gH)) rfl (by taint_decide))

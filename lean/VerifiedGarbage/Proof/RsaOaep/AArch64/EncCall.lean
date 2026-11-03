@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -139,10 +140,15 @@ abbrev prlW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNa
 /-- The region of `pre`. -/
 abbrev PRE (L : ELay) (m₀ : Mem) : Region := ⟨preW L m₀, (prlW L m₀).toNat * 8⟩
 
-/-- `pre` in a layout from the entry memory `m₀`. -/
+/-- MGF1's table, the word of the entry memory `m₀` at `Q + 344`, and its
+region. -/
+abbrev tabW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 344) 64
+abbrev TABR (L : ELay) (m₀ : Mem) : Region := Sig.tableRegion 64 (tabW L m₀) 5
+
+/-- `pre` and MGF1's table in a layout from the entry memory `m₀`. -/
 structure PreOk (L : ELay) (m₀ : Mem) : Prop where
-  hx : L.X = [PRE L m₀]
-  al : L.al = 56
+  hx : L.X = [PRE L m₀, TABR L m₀]
+  al : L.al = 64
   pl : (prlW L m₀).toNat = Spec.Rsa.precomputedWords L.k.toNat
 
 theorem pre_ok (hL : L.Ok) (hp : PreOk L m₀) :
@@ -346,6 +352,61 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
         · exact ⟨L.STK, by simp, fun x hx => (ELay.Ok.low_stk (L := L)) x (hs x hx)⟩)⟩, fun hq => ?_⟩
   rw [hr.x0, hr.x1, hr.x2, hr.x3, hr.x4, hr.x5, hr.x6, pre_words hL hc hp, hc.bytes_ro hL (ro_E L)] at hpost
   exact hpost _ (by simp [Spec.Rsa.bytesAt]) hq
+
+/-- MGF1's table, at the stack argument 7, from what the entry's memory
+holds there: the table and that argument are apart from everything the
+function writes. -/
+theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
+    {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
+    (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabW L m₀) m₀)
+    (hD : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    Table.Tab G f L.Q L.scr (tabW L m₀) (arg 7) t := by
+  have hA := hp.al
+  have hnQ := hL.nQa
+  have hpQ := hL.pQ
+  have hT : TABR L m₀ ∈ L.X := by rw [hp.hx]; simp
+  have cT : ∀ d, d + 8 ≤ 40 → (TABR L m₀).Contains (tabW L m₀ + BitVec.ofNat 64 d) 8 := fun d hd => by
+    show (⟨tabW L m₀, 40⟩ : Region).Contains _ _
+    exact Offset.contains_base _ hd (by omega)
+  have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 7)) 8 :=
+    Offset.contains _ (by decide) (by unfold arg frameBytes; omega) (by omega)
+  have mT : TABR L m₀ ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
+  have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
+  have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABR L m₀).Disjoint r := by
+    intro r hr
+    simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · have hf := ELay.Ok.sub_stk (L := L) (d := 0) (n := frameBytes) (by decide)
+      rw [BitVec.add_zero] at hf
+      exact (hL.xK _ hT).symm.sub_right hf
+    · exact (hL.xS _ hT).sub_right hL.ours_scr
+    · exact (hL.xK _ hT).symm.sub_right (sub_trans (ELay.Ok.ret_low (L := L) hP16) ELay.Ok.low_stk)
+  have dT0 : ∀ r ∈ [L.OUT, L.SCR, L.STK], (TABR L m₀).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hL.xO _ hT
+    · exact hL.xS _ hT
+    · exact (hL.xK _ hT).symm
+  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 32 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
+  have rt : ∀ d, d + 8 ≤ 40 →
+      m.readW (tabW L m₀ + BitVec.ofNat 64 d) 64 = m₀.readW (tabW L m₀ + BitVec.ofNat 64 d) 64 :=
+    fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
+  refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
+    (rt 32 (by decide)).trans hD, ?_⟩
+  have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 344, 8⟩ r := by
+    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 344, 8⟩ L.ARGS := Offset.sub _ (by decide) (by omega)
+    intro r hr
+    simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · have := Offset.disjoint L.Q (d := 344) (n := 8) (e := 0) (k := frameBytes) (.inr (by decide)) (by decide)
+        (by decide)
+      rwa [BitVec.add_zero] at this
+    · exact (hL.sA.symm.sub_left hs).sub_right hL.ours_scr
+    · exact Offset.disjoint_below _ (by decide)
+  show m.readW (L.Q + BitVec.ofNat 64 344) 64 = tabW L m₀
+  exact (hf.readW (Region.contains_self _ _) ka (by decide)).trans
+    (arg_keep hL hc (d := 344) (by decide) (by omega))
 
 end
 
