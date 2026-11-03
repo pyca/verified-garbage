@@ -1283,10 +1283,12 @@ abbrev Apart (x : Nat) : Prop := x + 32 ≤ 3840 ∨ 3968 ≤ x
 theorem P_pos : 0 < P := by unfold P; omega
 
 /-- `mulWith red sum`: `[t2] = [t4] [t5] 2⁻²⁵⁶ mod m`, for a reduction `red` of the
-product at `ACC` (as P-256's order's `reduce_ok`) and a `sum` as `csubWith_ok`'s. -/
-theorem mulWith_ok {red sum : List Instr} {M : Nat} (hM0 : 0 < M) (hM : M ≤ 2 ^ 256)
+product at `ACC` that may write the copies `MA` and `MB` (as Gen4's `reduceR`,
+which keeps registers there) and a `sum` as `csubWith_ok`'s. -/
+theorem mulWithF_ok {red sum : List Instr} {M : Nat} (hM0 : 0 < M) (hM : M ≤ 2 ^ 256)
     (hred : ∀ {b : Addr} {s : State}, Ctx b s → WP isa (.block red) s fun s' =>
-      Ctx b s' ∧ Rest clobM s s' ∧ s'.mem = s.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
+      Ctx b s' ∧ Rest clobM s s' ∧ Frame [⟨b + BitVec.ofNat 64 MA, 32⟩, ⟨b + BitVec.ofNat 64 MB, 32⟩] s.mem s'.mem ∧
+      (s'.gpr XC).toNat ≤ 1 ∧
       ∃ Q, Q < 2 ^ 256 ∧
         ((s'.gpr X0).toNat + 2 ^ 64 * (s'.gpr X1).toNat + 2 ^ 128 * (s'.gpr X2).toNat +
           2 ^ 192 * (s'.gpr X3).toNat + 2 ^ 256 * (s'.gpr XC).toNat) * 2 ^ 256 = prodV s.mem b + Q * M)
@@ -1359,9 +1361,9 @@ theorem mulWith_ok {red sum : List Instr} {M : Nat} (hM0 : 0 < M) (hM : M ≤ 2 
     exact Nat.lt_of_mul_lt_mul_right h2
   refine WP.mono (csubWith_ok hM (hs s2) (O := W + BitVec.ofNat 64 o) (by rw [((r1.mono (by decide) : Rest clobM _ _).trans r2).gpr _ (by decide), h2])
     (al8 hw.al ho8) (hw2.inW ho) x2 hx) fun s3 ⟨v3, f3, g3, rd3, wr3, sp3⟩ => ?_
-  have hm2 : s2.mem = s1.mem := m2
-  rw [hm2] at f3
-  refine ⟨by rw [v3]; exact Nat.mod_lt _ hM0, ?_, f1.trans (f3.mono (by simp)), fun r hr => ?_, ?_, ?_, ?_⟩
+  rw [eMA, eMB] at m2
+  refine ⟨by rw [v3]; exact Nat.mod_lt _ hM0, ?_, f1.trans ((m2.mono (by simp)).trans (f3.mono (by simp))),
+    fun r hr => ?_, ?_, ?_, ?_⟩
   · rw [v3, Nat.mod_mul_mod]
     simp only [v4] at hv2 ⊢
     rw [hv2, Nat.add_mul_mod_self_right, v1]
@@ -1371,6 +1373,31 @@ theorem mulWith_ok {red sum : List Instr} {M : Nat} (hM0 : 0 < M) (hM : M ≤ 2 
   · rw [rd3, r2.rd, r1.rd]
   · rw [wr3, r2.wr, r1.wr]
   · rw [sp3, r2.sp, r1.sp]
+
+/-- `mulWith red sum` for a reduction `red` that writes no memory (P-256's
+order's `reduce_ok`). -/
+theorem mulWith_ok {red sum : List Instr} {M : Nat} (hM0 : 0 < M) (hM : M ≤ 2 ^ 256)
+    (hred : ∀ {b : Addr} {s : State}, Ctx b s → WP isa (.block red) s fun s' =>
+      Ctx b s' ∧ Rest clobM s s' ∧ s'.mem = s.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
+      ∃ Q, Q < 2 ^ 256 ∧
+        ((s'.gpr X0).toNat + 2 ^ 64 * (s'.gpr X1).toNat + 2 ^ 128 * (s'.gpr X2).toNat +
+          2 ^ 192 * (s'.gpr X3).toNat + 2 ^ 256 * (s'.gpr XC).toNat) * 2 ^ 256 = prodV s.mem b + Q * M)
+    (hs : ∀ s : State, WP isa (.block sum) s fun s' =>
+      v4 s' .t6 .a4 .a5 .a6 + 2 ^ 256 * (s'.gpr .a7).toNat = v4 s X0 X1 X2 X3 + (2 ^ 256 - M) ∧
+      (s'.gpr .a7).toNat ≤ 1 ∧ Keeps clobC s s')
+    {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
+    (h4 : s.gpr .t4 = W + BitVec.ofNat 64 a) (h5 : s.gpr .t5 = W + BitVec.ofNat 64 bb)
+    (h2 : s.gpr .t2 = W + BitVec.ofNat 64 o) (ha8 : a % 8 = 0) (hb8 : bb % 8 = 0) (ho8 : o % 8 = 0)
+    (ha : a + 32 ≤ 8192) (hb : bb + 32 ≤ 8192) (ho : o + 32 ≤ 8192) (hdb : Apart bb)
+    (hB : d4 s.mem (W + BitVec.ofNat 64 bb) < M) :
+    WP isa (mulWith red sum) s fun s' =>
+      d4 s'.mem (W + BitVec.ofNat 64 o) < M ∧
+      d4 s'.mem (W + BitVec.ofNat 64 o) * 2 ^ 256 % M =
+        d4 s.mem (W + BitVec.ofNat 64 a) * d4 s.mem (W + BitVec.ofNat 64 bb) % M ∧
+      Frame (mulW W o) s.mem s'.mem ∧ (∀ r, r ∉ clobM → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  mulWithF_ok hM0 hM (fun hc => WP.mono (hred hc) fun s' ⟨c, r, m, x, v⟩ =>
+    ⟨c, r, by rw [m]; exact Frame.refl _ _, x, v⟩) hs hw h4 h5 h2 ha8 hb8 ho8 ha hb ho hdb hB
 
 /-- `mulCore`: `[t2] = [t4] [t5] 2⁻²⁵⁶ mod p`: `fused` (`fused_ok`), then `csub`. -/
 theorem mulCore_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
