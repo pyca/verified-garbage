@@ -27,6 +27,8 @@ import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
+import VerifiedGarbage.Proof.X25519.RISCV64.R64.Mul
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 
 /-!
 # Verification's windows on RISC-V
@@ -159,57 +161,59 @@ theorem tableAt_shift (m : Mem) (b : Addr) (o : Nat) : tableAt m (b + BitVec.ofN
 section
 variable {b : Addr}
 
-/-- After `j` coordinates of `pointFromTableQ` from `s0 = q`. -/
+open VG.Proof.X448.RISCV64.R64 (dw ew dw_write_self dw_write_other) in
+open VG.Proof.X25519.RISCV64.R64 (V_eq4 val4_congr) in
+/-- After `j` doublewords of `pointFromTableQ` from `s0 = q`. -/
 structure FromTableQInv (b q : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
-  rest : Rest [.a4, .a5] s0 s
-  frame : Frame [⟨b + BitVec.ofNat 64 192, 32 * j⟩] s0.mem s.mem
-  outs : ∀ i < j, V s.mem b (192 + 32 * i) = V s0.mem q (32 * i)
+  rest : Rest [.a4] s0 s
+  frame : Frame [⟨b + BitVec.ofNat 64 192, 8 * j⟩] s0.mem s.mem
+  outs : ∀ i < j, dw s.mem b (192 + 8 * i) = dw s0.mem q (8 * i)
 
+open VG.Proof.X448.RISCV64.R64 (dw ew dw_write_self dw_write_other) in
+open VG.Proof.X25519.RISCV64.R64 (V_eq4 val4_congr) in
 theorem pointFromTableQ_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h14 : s.gpr .s0 = q)
-    (hr : ∀ k, k + 4 ≤ 128 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 k) 4)
+    (hq8 : q.toNat % 8 = 0)
+    (hr : ∀ k, k + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 k) 8)
     (hd : (⟨q, 128⟩ : Region).Disjoint ⟨b + BitVec.ofNat 64 192, 128⟩) :
     WP isa (.block pointFromTableQ) s fun t =>
       Rest [.a4, .a5] s t ∧ Frame [⟨b + BitVec.ofNat 64 192, 128⟩] s.mem t.mem ∧
       point (env t.mem b) 4 5 6 7 = tableAt s.mem q 0 ∧
       ∀ i : Slot, (i.val < 4 ∨ 8 ≤ i.val) → env t.mem b i = env s.mem b i := by
-  refine WP.mono (wp_range_flatMap (M := isa) (FromTableQInv b q s) (fun j t hj h => ?_) 4 (Nat.le_refl _) s
-    ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => by omega⟩) fun t h => ⟨h.rest, h.frame, ?_, fun i hi => ?_⟩
+  refine WP.mono (wp_range_flatMap (M := isa) (FromTableQInv b q s) (fun j t hj h => ?_) 16 (Nat.le_refl _) s
+    ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => by omega⟩) fun t h => ⟨h.rest.mono (by decide), h.frame, ?_,
+      fun i hi => ?_⟩
   · have hct : Ctx8 b t := hc.of_rest h.rest (by decide)
-    refine WP.mono (unpackField_ok hct.ctx (p := .s0) (by decide) (q := q)
-      (o := 64 + 32 * (4 + j)) (src := 32 * j)
-      (by rw [h.rest.gpr _ (by decide), h14]) (by omega) (by omega) (by omega)
-      (fun k hk => by rw [h.rest.rd, h.rest.wr]; exact hr _ (by omega))
-      (hd.sub_left (Offset.sub_base q (by omega)) |>.sub_right (by
-        rw [show 64 + 32 * (4 + j) = 192 + 32 * j by omega, ← Offset.add_add]
-        exact Offset.sub_base _ (by omega))))
-      fun u ⟨ru, fu, lu⟩ => ?_
-    have hsrc : V t.mem q (32 * j) = V s.mem q (32 * j) := by
-      unfold V
-      refine val32_congr (limb_frame h.frame fun r hr k hk => ?_)
-      rw [List.mem_singleton.mp hr]
-      exact (hd.sub_left (Offset.sub_base q (d := 32 * j + 4 * k) (n := 4) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
-    refine ⟨h.rest.trans ru, ?_, fun i hi => ?_⟩
-    · refine (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
-        (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
-      · rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)
-      · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
-    · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [← h.outs i hi]
-        unfold V
-        exact val32_congr (limb_frame fu fun r hr k hk => by
-          rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
-      · rw [← hsrc, V, V]
-        refine val32_congr fun k hk => ?_
-        rw [show 192 + 32 * i = 64 + 32 * (4 + i) by omega, lu k hk, limb]
-  · have e0 := h.outs 0 (by decide)
-    have e1 := h.outs 1 (by decide)
-    have e2 := h.outs 2 (by decide)
-    have e3 := h.outs 3 (by decide)
-    simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at e0 e1 e2 e3
+    have hq : t.gpr .s0 = q := by rw [h.rest.gpr _ (by decide), h14]
+    -- The source's doubleword `j`, unchanged so far.
+    have hsrc : t.mem.readW (q + BitVec.ofNat 64 (8 * j)) 64 = s.mem.readW (q + BitVec.ofNat 64 (8 * j)) 64 :=
+      h.frame.readW (Region.contains_self _ _) (fun r hr' => by
+        rw [List.mem_singleton.mp hr']
+        exact (hd.sub_left (Offset.sub_base q (by omega))).sub_right (Region.sub_prefix (by omega))) (by decide)
+    refine wp_ld (a := q + BitVec.ofNat 64 (8 * j)) (by omega) (by rw [hq]) (VG.Proof.X448.RISCV64.R64.al8 hq8 (by omega))
+      (by rw [h.rest.rd, h.rest.wr]; exact hr _ (by omega)) fun t1 u1 => ?_
+    have hc1 : Ctx8 b t1 := hct.of_rest (u1.rest (ws := [.a4]) (by decide)) (by decide)
+    refine wp_sd (a := b + BitVec.ofNat 64 (192 + 8 * j)) (by omega) (by rw [hc1.a3])
+      (VG.Proof.X448.RISCV64.R64.al8 hc1.al (by omega)) (hc1.inW (by omega)) fun t2 u2 => WP.block_nil ?_
+    have hv : t1.gpr .a4 = s.mem.readW (q + BitVec.ofNat 64 (8 * j)) 64 := by rw [u1.gpr, hsrc]
+    have hm2 : t2.mem = t.mem.writeW (b + BitVec.ofNat 64 (192 + 8 * j)) (t1.gpr .a4) := by rw [u2.mem, u1.mem]
+    refine ⟨h.rest.trans ((u1.rest (ws := [.a4]) (by decide)).trans (u2.rest [.a4])), ?_, fun i hi => ?_⟩
+    · rw [hm2]
+      refine (h.frame.sub fun r hr' => ⟨_, List.mem_singleton_self _, ?_⟩).writeW (List.mem_singleton_self _) _ ?_
+      · rw [List.mem_singleton.mp hr']; exact Region.sub_prefix (by omega)
+      · exact Offset.contains b (by omega) (by omega) (by omega)
+    · rw [hm2]
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+      · rw [dw_write_other _ _ _ (by omega) (by omega) (by omega), h.outs i hi]
+      · rw [dw_write_self, hv]; rfl
+  · have e : ∀ j < 4, V t.mem b (192 + 32 * j) = V s.mem q (32 * j) := fun j hj => by
+      rw [V_eq4, V_eq4]
+      exact val4_congr fun i hi => by
+        simp only [ew]
+        rw [show 192 + 32 * j + 8 * i = 192 + 8 * (4 * j + i) by omega, h.outs _ (by omega),
+          show 32 * j + 8 * i = 8 * (4 * j + i) by omega]
     simp only [tableAt, point, env, FS]
     rw [show offset 4 = 192 from rfl, show offset 5 = 224 from rfl, show offset 6 = 256 from rfl,
-      show offset 7 = 288 from rfl, e0, e1, e2, e3]
+      show offset 7 = 288 from rfl, e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide)]
   · have hs := slot_range i
     unfold env FS V
     refine congrArg _ (val32_congr (limb_frame h.frame fun r hr k hk => ?_))
@@ -400,8 +404,8 @@ theorem aTable_ok {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 = Spec.Ed2551
   refine tableAddr_ok hc2 (n := 0) (by decide) (by decide)
     (by rw [r2.gpr _ (by decide), u1.gpr]) fun t1 r3 m3 e3 => ?_
   have hct1 : Ctx8 b t1 := hc2.of_rest r3 (by decide)
-  refine WP.append (pointFromTableQ_ok hct1 e3 (fun k hk => by
-      rw [Offset.add_add]; exact hct1.inR (by rw [TA_eq]; omega))
+  refine WP.append (pointFromTableQ_ok hct1 e3 (VG.Proof.X448.RISCV64.R64.al8 hct1.al (by rw [TA_eq]))
+    (fun k hk => by rw [Offset.add_add]; exact hct1.inR (by rw [TA_eq]; omega))
     (Offset.disjoint _ (.inr (by rw [TA_eq]; omega)) (by rw [TA_eq]; omega) (by omega)))
     fun t2 ⟨r4, f4, q4, k4⟩ => ?_
   refine wp_li (by decide) fun t3 u5 => WP.block_nil ?_
@@ -506,13 +510,40 @@ open Edwards
 theorem evalOps_append (l₁ l₂ : List FieldOp) (e : Env) : evalOps (l₁ ++ l₂) e = evalOps l₂ (evalOps l₁ e) :=
   List.foldl_append
 
-theorem dbl4_eval (e : Env) : point (evalOps (dblOps ++ dblOps ++ dblOps ++ dblOps) e) 0 1 2 3 =
-    dblPoint (dblPoint (dblPoint (dblPoint (point e 0 1 2 3)))) := by
-  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_eval, dblOps_eval, dblOps_eval, dblOps_eval]
+/-- `dblOpsXYZ` leaves `T` as it was and the double's `X`, `Y` and `Z`. -/
+theorem dblOpsXYZ_eval (e : Env) : point (evalOps dblOpsXYZ e) 0 1 2 3 =
+    { dblPoint (point e 0 1 2 3) with T := e 3 } := rfl
 
-theorem dbl4_keep (e : Env) : evalOps (dblOps ++ dblOps ++ dblOps ++ dblOps) e 16 = e 16 := by
-  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_keep _ 16 (by decide), dblOps_keep _ 16 (by decide),
-    dblOps_keep _ 16 (by decide), dblOps_keep _ 16 (by decide)]
+theorem dblOpsXYZ_keep (e : Env) (i : Slot) (hi : 4 ≤ i.val ∧ i.val < 8 ∨ 15 ≤ i.val) :
+    evalOps dblOpsXYZ e i = e i :=
+  evalOps_keep _ e i fun op hop => by
+    simp only [dblOpsXYZ, List.mem_cons, List.not_mem_nil, or_false] at hop
+    rcases hop with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      exact fun h => by subst h; revert hi; decide
+
+/-- A doubling reads only `X`, `Y` and `Z`. -/
+theorem dblPoint_T (p : Spec.Ed25519.Point) (t : Spec.X25519.Fe) : dblPoint { p with T := t } = dblPoint p := rfl
+
+/-- A doubling without `T`, then a doubling, is two doublings. -/
+theorem dblOps_dblOpsXYZ (e : Env) : point (evalOps dblOps (evalOps dblOpsXYZ e)) 0 1 2 3 =
+    dblPoint (dblPoint (point e 0 1 2 3)) := by
+  rw [dblOps_eval, dblOpsXYZ_eval, dblPoint_T]
+
+/-- A doubling without `T` after one: the same `X`, `Y` and `Z` as two doublings. -/
+theorem dblOpsXYZ_dblOpsXYZ (e : Env) : point (evalOps dblOpsXYZ (evalOps dblOpsXYZ e)) 0 1 2 3 =
+    { dblPoint (dblPoint (point e 0 1 2 3)) with T := e 3 } := by
+  rw [dblOpsXYZ_eval, dblOpsXYZ_eval, dblPoint_T]
+  rfl
+
+theorem dbl4_eval (e : Env) : point (evalOps (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps) e) 0 1 2 3 =
+    dblPoint (dblPoint (dblPoint (dblPoint (point e 0 1 2 3)))) := by
+  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_eval, dblOpsXYZ_eval, dblPoint_T,
+    dblOpsXYZ_dblOpsXYZ]
+  rfl
+
+theorem dbl4_keep (e : Env) : evalOps (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps) e 16 = e 16 := by
+  rw [evalOps_append, evalOps_append, evalOps_append, dblOps_keep _ 16 (by decide),
+    dblOpsXYZ_keep _ 16 (by decide), dblOpsXYZ_keep _ 16 (by decide), dblOpsXYZ_keep _ 16 (by decide)]
 
 theorem rep_repP {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : Rep p a) : RepP p a := ⟨h.z, h.x, h.y⟩
 
@@ -612,15 +643,15 @@ theorem digitS_ok {s : State} (h : WCtx b pk sig ch T A K S s) {c : Nat} (hc : c
 /-! ## A cached addition -/
 
 /-- The cached point at `s0` added to slots 0–3. -/
-theorem addCached_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h0 : s.gpr .s0 = q)
-    (hr : ∀ k, k + 4 ≤ 128 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 k) 4)
+theorem addCached_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h0 : s.gpr .s0 = q) (hq8 : q.toNat % 8 = 0)
+    (hr : ∀ k, k + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 k) 8)
     (hd : (⟨q, 128⟩ : Region).Disjoint ⟨b + BitVec.ofNat 64 192, 128⟩)
     {Q : Spec.Ed25519.Point} {qa a : EPoint dZ} (hQ : tableAt s.mem q 0 = cache Q) (hq : Rep Q qa)
     (hp : Rep (point (env s.mem b) 0 1 2 3) a) {R : State → Prop}
     (k : ∀ t, Rest fclob s t → Frame [FA b] s.mem t.mem →
       Rep (point (env t.mem b) 0 1 2 3) (a + qa) → env t.mem b 16 = env s.mem b 16 → R t) :
     WP isa (.block pointFromTableQ) s fun t => WP isa (fieldCode pointAddCachedOps) t R := by
-  refine WP.mono (pointFromTableQ_ok hc h0 hr hd) fun s1 ⟨r1, f1, q1, k1⟩ => ?_
+  refine WP.mono (pointFromTableQ_ok hc h0 hq8 hr hd) fun s1 ⟨r1, f1, q1, k1⟩ => ?_
   have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
   refine WP.mono (fieldCode_ok pointAddCachedOps hc1.ctx hc1.ws) fun t ⟨kt, et⟩ => k t ?_ ?_ ?_ ?_
   · exact (r1.mono (by decide)).trans kt.rest
@@ -653,7 +684,8 @@ theorem addA_ok {s : State} (h : WCtx b pk sig ch T A K S s) {Aa a : EPoint dZ} 
     have hq : Rep (aMult A (dg - 1)) (dg • Aa) := by
       have := aMult_rep hA (dg - 1)
       rwa [Nat.sub_add_cancel (by omega)] at this
-    refine addCached_ok hc2 e2 (fun k hk => by rw [Offset.add_add]; exact hc2.inR (by rw [TA_eq]; omega))
+    refine addCached_ok hc2 e2 (VG.Proof.X448.RISCV64.R64.al8 hc2.al (by rw [TA_eq]; omega))
+      (fun k hk => by rw [Offset.add_add]; exact hc2.inR (by rw [TA_eq]; omega))
       (Offset.disjoint _ (.inr (by rw [TA_eq]; omega)) (by rw [TA_eq]; omega) (by omega))
       (by rw [tableAt_shift, m2, u1.mem, h.tab (dg - 1) (by omega)]) hq (by rw [m2, u1.mem]; exact hp)
       fun t rt ft pt dt => ⟨?_, ?_, pt, ?_⟩
@@ -685,7 +717,7 @@ theorem addB_ok {s : State} (h : WCtx b pk sig ch T A K S s) {a : EPoint dZ}
     obtain ⟨q, eq, hq⟩ := Proof.Ed25519.negBaseCached_ok (dg - 1) (by omega)
     rw [Nat.sub_add_cancel (by omega)] at hq
     have hfit := h.bs.fit
-    refine addCached_ok hc3 e3 (fun k hk => by
+    refine addCached_ok hc3 e3 (VG.Proof.X448.RISCV64.R64.al8 h.bs.al (by omega)) (fun k hk => by
         rw [Offset.add_add, r3.rd, r3.wr]
         exact in_base (List.mem_append_left _ h.bs.rd) (by omega) (by omega))
       ((h.bs.ws.sub_left (Offset.sub_base T (by omega))).sub_right (Offset.sub_base b (by omega)))
@@ -876,7 +908,8 @@ theorem negR_ok {s : State} (hc : Ctx8 b s) :
   unfold negR
   refine WP.seq (scratchAddr_ok hc (o := 7904) (by decide) fun s1 r1 m1 e1 => ?_)
   have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  refine WP.mono (pointFromTableQ_ok hc1 e1 (fun k hk => by rw [Offset.add_add]; exact hc1.inR (by omega))
+  refine WP.mono (pointFromTableQ_ok hc1 e1 (VG.Proof.X448.RISCV64.R64.al8 hc1.al (by decide))
+    (fun k hk => by rw [Offset.add_add]; exact hc1.inR (by omega))
     (Offset.disjoint _ (.inr (by omega)) (by omega) (by omega))) fun s2 ⟨r2, f2, q2, k2⟩ => ?_
   have hc2 : Ctx8 b s2 := hc1.of_rest r2 (by decide)
   refine WP.mono (fieldCode_ok _ hc2.ctx hc2.ws) fun t ⟨kt, et⟩ => ⟨?_, ?_, hc2.of_keep kt, ?_, ?_⟩

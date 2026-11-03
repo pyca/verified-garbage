@@ -73,13 +73,13 @@ def verC : Contract isa where
 theorem verC_pre {s : State} (h : verC.pre s) : VerPre s := by
   obtain ⟨⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r⟩, hk⟩ := h
   simp only [stripConsts_gpr, stripConsts_wr, stripConsts_sp] at *
-  obtain ⟨-, tfit, words, twr, tres⟩ := bstat_of_consts hk
+  obtain ⟨-, tal, tfit, words, twr, tres⟩ := bstat_of_consts hk
   have hrd : s.rd = [⟨s.gpr .a0, 32⟩, vmsgR s, ⟨s.gpr .a3, 64⟩, vtbR s] := rd_of_bconsts hk a
   have hB : below s.sp 208 ∈ RISCV64.abi.reserved 208 s := by
     show _ ∈ stackBelow s.sp 208
     rw [stackBelow_pos _ (by decide)]; simp
   exact ⟨hrd, b, c, d, e, f, g, h', i, j, k, l, m, n, o, p, q, r, tfit, words, twr _ (by rw [b]; simp),
-    twr _ (by rw [b]; simp), tres _ hB⟩
+    twr _ (by rw [b]; simp), tres _ hB, tal⟩
 
 theorem ver_ok (hR : RhsOk) (s : State) (hs : verC.pre s) :
     ∃ t s', Exec isa verifyMessage s t s' ∧ abiPreserved s s' ∧ verC.post s s' := by

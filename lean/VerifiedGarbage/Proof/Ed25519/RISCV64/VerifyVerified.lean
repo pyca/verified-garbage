@@ -39,7 +39,8 @@ def verifyRV : Contract isa where
     let tb : Region := ⟨s.syms bSym, 1920⟩
     s.rd = [pk, sig, ch, tb] ∧ s.wr = [ws] ∧ (s.gpr .a3).toNat % 8 = 0 ∧ pk.Disjoint ws ∧ sig.Disjoint ws ∧
       ch.Disjoint ws ∧ (s.syms bSym).toNat + 1920 ≤ 2 ^ 64 ∧
-      (∀ q < 240, s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * q)) 64 = bWord q) ∧ tb.Disjoint ws
+      (∀ q < 240, s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * q)) 64 = bWord q) ∧ tb.Disjoint ws ∧
+      (s.syms bSym).toNat % 8 = 0
   post s s' := (s'.gpr .a0).setWidth 32 = if Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (s.gpr .a0) 32)
     (Spec.Ed25519.bytesAt s.mem (s.gpr .a1) 64) (Spec.Ed25519.bytesAt s.mem (s.gpr .a2) 64) then 1 else 0
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
@@ -50,8 +51,8 @@ def verifyRV : Contract isa where
       Spec.Ed25519.bytesAt s₂.mem (s₂.gpr .a2) 64).map (·.toNat) ∧ s₁.syms bSym = s₂.syms bSym
 
 theorem verifyRV_pre {s : State} (hs : verifyRV.pre s) : VerifyPre s :=
-  let ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hs
-  ⟨h1, h2, h3, h4, h5, h6, ⟨by rw [h1]; simp, h7, h8, h9⟩⟩
+  let ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hs
+  ⟨h1, h2, h3, h4, h5, h6, ⟨by rw [h1]; simp, h7, h8, h9, h10⟩⟩
 
 theorem verify_ok' (hR : RhsOk) (s : State) (hs : verifyRV.pre s) :
     ∃ t s', VG.Exec isa Impl.Ed25519.RISCV64.verifyEquation s t s' ∧ abiPreserved s s' ∧
@@ -93,22 +94,23 @@ theorem bWords_getD {q : Nat} (hq : q < 240) : bWords.getD q 0 = bWord q := by
 /-- What `abi.withConsts [(bSym, ws)]` says of the static, for words `ws` of `bWord`. -/
 theorem bstat_of_consts' {st : Nat} {s : State} {ws : List (BitVec 64)} (hl : ws.length = 240)
     (hg : ∀ q < 240, ws.getD q 0 = bWord q) (h : ConstsOk [(bSym, ws)] st s) :
-    (⟨s.syms bSym, 1920⟩ : Region) ∈ s.rd ∧ (s.syms bSym).toNat + 1920 ≤ 2 ^ 64 ∧
+    (⟨s.syms bSym, 1920⟩ : Region) ∈ s.rd ∧ (s.syms bSym).toNat % 8 = 0 ∧ (s.syms bSym).toNat + 1920 ≤ 2 ^ 64 ∧
       (∀ q < 240, s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * q)) 64 = bWord q) ∧
       (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 1920⟩ r) ∧
       ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms bSym, 1920⟩ r := by
   have hrd := h.rd1
   have hfit := h.fit List.mem_cons_self
+  have hal := h.aligned List.mem_cons_self
   have hd : (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 8 * ws.length⟩ r) ∧
       ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms bSym, 8 * ws.length⟩ r :=
     (h.2.2.1 _ List.mem_cons_self).2
   rw [hl] at hrd hfit hd
-  refine ⟨hrd, hfit, fun q hq => ?_, hd.1, hd.2⟩
+  refine ⟨hrd, by omega, hfit, fun q hq => ?_, hd.1, hd.2⟩
   rw [h.held1 q (by rw [hl]; exact hq), hg q hq]
 
 /-- What `abi.withConsts bConsts` says of the static. -/
 theorem bstat_of_consts {st : Nat} {s : State} (h : ConstsOk bConsts st s) :
-    (⟨s.syms bSym, 1920⟩ : Region) ∈ s.rd ∧ (s.syms bSym).toNat + 1920 ≤ 2 ^ 64 ∧
+    (⟨s.syms bSym, 1920⟩ : Region) ∈ s.rd ∧ (s.syms bSym).toNat % 8 = 0 ∧ (s.syms bSym).toNat + 1920 ≤ 2 ^ 64 ∧
       (∀ q < 240, s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * q)) 64 = bWord q) ∧
       (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 1920⟩ r) ∧
       ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms bSym, 1920⟩ r :=
