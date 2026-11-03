@@ -20,7 +20,11 @@ and faults on misaligned accesses:
   copied, a byte at a time, to `scratch` (`mOff`) before its rounds, whose
   `G`s load their message words from there.
 * The sixteen words of the work vector `v` live in registers throughout
-  (`wreg`); the rounds are fully unrolled. A rotation right by `r` is a
+  (`wreg`); the rounds are fully unrolled. A round's four column `G`s touch
+  disjoint words, and so do its four diagonal ones: each half of the four
+  runs for all four at once, operation by operation (`half`), so that the
+  four chains of dependent operations are side by side; the loads of message
+  words share `T` and the rotations `s6`, which the core renames. A rotation right by `r` is a
   right shift by `r` into `s6` and a left shift by `w - r`, combined by `or`
   (`rot`); for BLAKE2s, the 32-bit forms (`srliw`, `slliw`), which read the
   low words. `add` and `xor` act on all 64 bits: a 32-bit word of BLAKE2s
@@ -109,25 +113,31 @@ variable {w : Nat} (P : Spec.Blake2.Params w)
 def rot (d : Reg) (r : Nat) : List Instr :=
   [.shift .srl (sz w) RT d r, .shift .sll (sz w) d d (w - r), .logic .or d d RT]
 
-/-- `G` (RFC 7693 §3.1) on the words in `a, b, c, d`, with the message words
-`j` and `k` of the block. -/
-def g (a b c d : Reg) (j k : Nat) : List Instr :=
-  [.load (wd w) T SB (mOff + ws w * j), .add a a b, .add a a T, .logic .xor d d a] ++
-  rot (w := w) d P.R1 ++ [.add c c d, .logic .xor b b c] ++ rot (w := w) b P.R2 ++
-  [.load (wd w) T SB (mOff + ws w * k), .add a a b, .add a a T, .logic .xor d d a] ++
-  rot (w := w) d P.R3 ++ [.add c c d, .logic .xor b b c] ++ rot (w := w) b P.R4
+/-- Half of each of four `G`s of round `r` at once (`h = 0`, the first half, with the
+rotations `r1 = R1`, `r2 = R2`; `h = 1`, the second, with `R3`, `R4`), for the `G`s
+`(i, x, y, c, d)` of `qs` (the `i`-th of the round, on the words `x, y, c, d`):
+`a += b + m[s[2i + h]]; d ^= a; d ⋙= r1; c += d; b ^= c; b ⋙= r2`, operation by
+operation, so that the four chains of dependent operations are side by side. -/
+def half (qs : List (Nat × Nat × Nat × Nat × Nat)) (r h r1 r2 : Nat) : List Instr :=
+  qs.map (fun (_, x, y, _, _) => .add (wreg x) (wreg x) (wreg y)) ++
+  qs.flatMap (fun (i, x, _, _, _) =>
+    [.load (wd w) T SB (mOff + ws w * Spec.Blake2.sigmaAt r (2 * i + h)), .add (wreg x) (wreg x) T]) ++
+  qs.map (fun (_, x, _, _, d) => .logic .xor (wreg d) (wreg d) (wreg x)) ++
+  qs.flatMap (fun (_, _, _, _, d) => rot (w := w) (wreg d) r1) ++
+  qs.map (fun (_, _, _, c, d) => .add (wreg c) (wreg c) (wreg d)) ++
+  qs.map (fun (_, _, y, c, _) => .logic .xor (wreg y) (wreg y) (wreg c)) ++
+  qs.flatMap (fun (_, _, y, _, _) => rot (w := w) (wreg y) r2)
 
-/-- `G(v, x, y, z, u, m[s[2i]], m[s[2i+1]])` of round `r` (the `i`-th `G` of the
-round). -/
-def gAt (r i x y z u : Nat) : Prog isa :=
-  .block (g P (wreg x) (wreg y) (wreg z) (wreg u) (Spec.Blake2.sigmaAt r (2 * i))
-    (Spec.Blake2.sigmaAt r (2 * i + 1)))
+/-- The column `G`s of a round and the diagonal ones: `(i, x, y, c, d)`. -/
+def columns : List (Nat × Nat × Nat × Nat × Nat) :=
+  [(0, 0, 4, 8, 12), (1, 1, 5, 9, 13), (2, 2, 6, 10, 14), (3, 3, 7, 11, 15)]
+def diagonals : List (Nat × Nat × Nat × Nat × Nat) :=
+  [(4, 0, 5, 10, 15), (5, 1, 6, 11, 12), (6, 2, 7, 8, 13), (7, 3, 4, 9, 14)]
 
-/-- Round `r` (RFC 7693 §3.2). -/
+/-- Round `r` (RFC 7693 §3.2): its four column `G`s at once, then its four diagonal ones. -/
 def round (r : Nat) : Prog isa :=
-  .seq (gAt P r 0 0 4 8 12) <| .seq (gAt P r 1 1 5 9 13) <| .seq (gAt P r 2 2 6 10 14) <|
-  .seq (gAt P r 3 3 7 11 15) <| .seq (gAt P r 4 0 5 10 15) <| .seq (gAt P r 5 1 6 11 12) <|
-  .seq (gAt P r 6 2 7 8 13) (gAt P r 7 3 4 9 14)
+  .block (half (w := w) columns r 0 P.R1 P.R2 ++ half (w := w) columns r 1 P.R3 P.R4 ++
+    half (w := w) diagonals r 0 P.R1 P.R2 ++ half (w := w) diagonals r 1 P.R3 P.R4)
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
