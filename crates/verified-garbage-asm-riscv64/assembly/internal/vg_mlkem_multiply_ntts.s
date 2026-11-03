@@ -265,8 +265,12 @@ vg_mlkem_multiply_ntts:
 	sw t2, 504(a3)
 	addi t2, t0, -873
 	sw t2, 508(a3)
-	lui a5, 39
-	addi a5, a5, 1526
+	lui a5, 80635
+	addi a5, a5, 1896
+	slli a5, a5, 12
+	addi a5, a5, 187
+	slli a5, a5, 12
+	addi a5, a5, 84
 	lui a6, 1
 	addi a6, a6, -767
 	addi t1, zero, 128
@@ -276,34 +280,16 @@ vg_mlkem_multiply_ntts:
 	lwu t3, 0(a2)
 	lwu t4, 4(a2)
 	mul t0, t2, t4
-	srli a7, t0, 11
-	mul a7, a7, a5
-	srli a7, a7, 18
+	mulhu a7, t0, a5
+	mul a7, a7, a6
 	sub t0, t0, a7
-	slli t5, a7, 8
-	sub t0, t0, t5
-	slli t5, a7, 10
-	sub t0, t0, t5
-	slli t5, a7, 11
-	sub t0, t0, t5
-	sub t0, t0, a6
-	srai a7, t0, 63
-	and a7, a7, a6
-	add t0, t0, a7
 	lwu a7, 0(a3)
 	mul t0, t0, a7
 	mul a7, a4, t3
 	add t0, a7, t0
-	srli a7, t0, 11
-	mul a7, a7, a5
-	srli a7, a7, 18
+	mulhu a7, t0, a5
+	mul a7, a7, a6
 	sub t0, t0, a7
-	slli t5, a7, 8
-	sub t0, t0, t5
-	slli t5, a7, 10
-	sub t0, t0, t5
-	slli t5, a7, 11
-	sub t0, t0, t5
 	sub t0, t0, a6
 	srai a7, t0, 63
 	and a7, a7, a6
@@ -312,16 +298,9 @@ vg_mlkem_multiply_ntts:
 	mul t0, a4, t4
 	mul a7, t2, t3
 	add t0, t0, a7
-	srli a7, t0, 11
-	mul a7, a7, a5
-	srli a7, a7, 18
+	mulhu a7, t0, a5
+	mul a7, a7, a6
 	sub t0, t0, a7
-	slli t5, a7, 8
-	sub t0, t0, t5
-	slli t5, a7, 10
-	sub t0, t0, t5
-	slli t5, a7, 11
-	sub t0, t0, t5
 	sub t0, t0, a6
 	srai a7, t0, 63
 	and a7, a7, a6
