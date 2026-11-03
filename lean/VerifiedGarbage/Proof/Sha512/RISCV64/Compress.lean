@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Semantics
 public meta import VerifiedGarbage.Proof.Framework.Semantics
@@ -34,8 +36,10 @@ public meta import VerifiedGarbage.TCB.RISCV64.Target
 Untrusted: everything here is checked by Lean. The structure of the PPC64LE
 proof (`Proof/Sha512/PPC64LE/Compress.lean`) and of SHA-256's on RISC-V
 (`Proof/Sha256/RISCV64/Compress.lean`), with the hash value read and written
-a byte at a time (`Proof/Framework/RISCV64/ByteLoad64.lean`) and the scratch
-space rounded up to a multiple of 8 first.
+a doubleword at a time if `state` is a multiple of 8 (`loadA_ok`,
+`updA_step`), else a byte at a time (`Proof/Framework/RISCV64/ByteLoad64.lean`),
+the same words either way (`loadP_ok`, `updateP_ok`), and the scratch space
+rounded up to a multiple of 8 first.
 -/
 
 @[expose] public section
@@ -324,6 +328,64 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr0 : s.gpr .a0 = st
   exact ⟨v 0 (by decide), v 1 (by decide), v 2 (by decide), v 3 (by decide), v 4 (by decide),
     v 5 (by decide), v 6 (by decide), v 7 (by decide)⟩
 
+/-- `x + 8k` is a multiple of 8 for `x` one. -/
+theorem al_of {x : Addr} (h : x &&& BitVec.ofInt 64 7 = 0) (k : Nat) :
+    (x + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := by
+  have e : (x &&& BitVec.ofInt 64 7).toNat = x.toNat % 8 := by
+    rw [BitVec.toNat_and, show (BitVec.ofInt 64 7).toNat = 2 ^ 3 - 1 from rfl,
+      Nat.and_two_pow_sub_one_eq_mod]
+  rw [h, show (0 : BitVec 64).toNat = 0 from rfl] at e
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+theorem loadA_step {s₀ s₁ : State} (hp : Pre s₀) (hr0 : s₁.gpr .a0 = st s₀) (hrd : s₁.rd = s₀.rd)
+    (hwr : s₁.wr = s₀.wr) (hal : ∀ k < 8, (st s₀ + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0)
+    {k : Nat} (hk : k < 8) {s : State} (h : LdI s₁ k s) :
+    WP isa (.block [.load .d (var 0 k) .a0 (8 * k)]) s (LdI s₁ (k + 1)) := by
+  have h0 : s.gpr .a0 = st s₀ := (h.pub .a0 (by decide)).trans hr0
+  refine VG.RISCV64.Steps.wp_ld (off := 8 * k) (a := st s₀ + BitVec.ofNat 64 (8 * k)) (by omega)
+    (by rw [h0]) (hal k hk) (by rw [h.rd, h.wr, hrd, hwr]; exact hp.in_state hk) fun s' u => WP.block_nil ?_
+  refine ⟨fun j hj => ?_, fun r hr => ?_, u.mem.trans h.mem, u.rd.trans h.rd, u.wr.trans h.wr⟩
+  · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [u.other _ (fun e => absurd (var0_inj (by omega) hk e) (by omega))]
+      exact h.vars j hj
+    · rw [u.gpr, h.mem, ← hr0, getElem!_pos _ j hk, stateAt_get _ _ hk]
+  · rw [u.other _ (var0_pub hk r hr)]
+    exact h.pub r hr
+
+theorem loadA_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr0 : s.gpr .a0 = st s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    (hal : ∀ k < 8, (st s₀ + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0) :
+    WP isa (.block loadA) s fun s₁ =>
+      Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem := by
+  refine WP.mono (wp_range_flatMap (M := isa) (LdI s) (fun k s' hk h => loadA_step hp hr0 hrd hwr hal hk h)
+    8 (Nat.le_refl _) s ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, rfl, rfl⟩)
+    fun s₁ h => ⟨?_, h.pub, h.rd, h.wr, h.mem⟩
+  have v := h.vars
+  rw [hr0] at v
+  exact ⟨v 0 (by decide), v 1 (by decide), v 2 (by decide), v 3 (by decide), v 4 (by decide),
+    v 5 (by decide), v 6 (by decide), v 7 (by decide)⟩
+
+/-- `loadP`: by doublewords if `state` is a multiple of 8, else by bytes. -/
+theorem loadP_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr0 : s.gpr .a0 = st s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa loadP s fun s₁ =>
+      Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem := by
+  refine WP.seq (VG.RISCV64.Steps.wp_andi (by decide) fun s1 u => WP.block_nil ?_)
+  have g0 : s1.gpr .a0 = st s₀ := by rw [u.other _ (by decide), hr0]
+  have pb : ∀ r ∈ pubRegs, s1.gpr r = s.gpr r := fun r hr => u.other _ (pubRegs_ne hr).1
+  refine WP.ite (s1.gpr T0 == 0) (by simp [eval]) (fun h => ?_) (fun _ => ?_)
+  · have hz : st s₀ &&& BitVec.ofInt 64 7 = 0 := by
+      rw [← hr0, ← u.gpr]; simpa using h
+    refine WP.mono (loadA_ok hp g0 (by rw [u.rd, hrd]) (by rw [u.wr, hwr]) fun k _ => al_of hz k)
+      fun s2 ⟨v, p2, rd2, wr2, m2⟩ => ⟨by rw [← u.mem]; exact v, fun r hr => by rw [p2 r hr, pb r hr],
+        by rw [rd2, u.rd], by rw [wr2, u.wr], by rw [m2, u.mem]⟩
+  · refine WP.mono (load_ok hp g0 (by rw [u.rd, hrd]) (by rw [u.wr, hwr]))
+      fun s2 ⟨v, p2, rd2, wr2, m2⟩ => ⟨by rw [← u.mem]; exact v, fun r hr => by rw [p2 r hr, pb r hr],
+        by rw [rd2, u.rd], by rw [wr2, u.wr], by rw [m2, u.mem]⟩
+
 /-! ## Adding the hash value into the working variables -/
 
 /-- The first `k` of eight words `f` written at `p`. -/
@@ -429,6 +491,70 @@ theorem update_ok {s₀ s₂ : State} (hp : Pre s₀) (V H : HashValue) (hv : Va
   wp_range_flatMap (M := isa) (UInv s₀ s₂ V H) (fun _ _ hk h => update_step hp V H hr0 hrd hwr hH hk h)
     8 (Nat.le_refl _) s₂ ⟨fun j _ hj => vars_get hv j hj, fun _ _ => rfl, rfl, rfl, rfl⟩
 
+theorem updA_step {s₀ s₂ : State} (hp : Pre s₀) (V H : HashValue) (hr0 : s₂.gpr .a0 = st s₀)
+    (hrd : s₂.rd = s₀.rd) (hwr : s₂.wr = s₀.wr)
+    (hal : ∀ k < 8, (st s₀ + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0)
+    (hH : ∀ j < 8, s₂.mem.readW (st s₀ + BitVec.ofNat 64 (8 * j)) 64 = H[j]!)
+    {k : Nat} (hk : k < 8) {s : State} (h : UInv s₀ s₂ V H k s) :
+    WP isa (.block (updA k)) s (UInv s₀ s₂ V H (k + 1)) := by
+  have ne := var0_ne hk
+  have h0 : s.gpr .a0 = st s₀ := (h.pub .a0 (by decide)).trans hr0
+  unfold updA
+  refine VG.RISCV64.Steps.wp_ld (off := 8 * k) (a := st s₀ + BitVec.ofNat 64 (8 * k)) (by omega)
+    (by rw [h0]) (hal k hk) (by rw [h.rd, h.wr, hrd, hwr]; exact hp.in_state hk) fun s1 u1 => ?_
+  refine VG.RISCV64.Steps.wp_add fun s3 u3 => ?_
+  have g0 : s3.gpr .a0 = st s₀ := by rw [u3.other _ (Ne.symm ne.1), u1.other _ (by decide), h0]
+  have gv : s3.gpr (var 0 k) = V[k]! + H[k]! := by
+    rw [u3.gpr, u1.other _ ne.2.1, u1.gpr, h.vars k (Nat.le_refl _) hk, h.mem,
+      readW_writeUpTo _ _ _ (by omega) hk]
+    simp only [Nat.lt_irrefl, ite_false]
+    rw [hH k hk]
+  refine VG.RISCV64.Steps.wp_sd (off := 8 * k) (a := st s₀ + BitVec.ofNat 64 (8 * k)) (by omega)
+    (by rw [g0]) (hal k hk) (by rw [u3.wr, u1.wr, h.wr, hwr]; exact hp.out_state hk)
+    fun s4 m4 => WP.block_nil ?_
+  have gr : ∀ r, r ≠ var 0 k → r ≠ T0 → s4.gpr r = s.gpr r := fun r h1 h2 => by
+    rw [m4.gpr, u3.other _ h1, u1.other _ h2]
+  refine ⟨fun j hj hj' => ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+  · have hne : var 0 j ≠ var 0 k := fun e => absurd (var0_inj hj' hk e) (by omega)
+    rw [gr _ hne (var0_ne hj').2.1]
+    exact h.vars j (by omega) hj'
+  · rw [gr r (var0_pub hk r hr) (pubRegs_ne hr).1]
+    exact h.pub r hr
+  · rw [m4.mem, u3.mem, u1.mem, h.mem, writeUpTo_succ, gv]
+    congr 1
+    rw [getElem!_pos (Vector.zipWith _ V H) k hk, Vector.getElem_zipWith, getElem!_pos V k hk,
+      getElem!_pos H k hk]
+  · rw [m4.rd, u3.rd, u1.rd, h.rd]
+  · rw [m4.wr, u3.wr, u1.wr, h.wr]
+
+/-- `updateP`: by doublewords if `state` is a multiple of 8, else by bytes. -/
+theorem updateP_ok {s₀ s₂ : State} (hp : Pre s₀) (V H : HashValue) (hv : Vars 0 s₂ V)
+    (hr0 : s₂.gpr .a0 = st s₀) (hrd : s₂.rd = s₀.rd) (hwr : s₂.wr = s₀.wr)
+    (hH : ∀ j < 8, s₂.mem.readW (st s₀ + BitVec.ofNat 64 (8 * j)) 64 = H[j]!) :
+    WP isa updateP s₂ (UInv s₀ s₂ V H 8) := by
+  refine WP.seq (VG.RISCV64.Steps.wp_andi (by decide) fun s1 u => WP.block_nil ?_)
+  have g0 : s1.gpr .a0 = st s₀ := by rw [u.other _ (by decide), hr0]
+  have hv1 : Vars 0 s1 V := by
+    have e : ∀ j < 8, s1.gpr (var 0 j) = s₂.gpr (var 0 j) := fun j hj => u.other _ (var0_ne hj).2.2.1
+    obtain ⟨v0, v1, v2, v3, v4, v5, v6, v7⟩ := hv
+    exact ⟨(e 0 (by decide)).trans v0, (e 1 (by decide)).trans v1, (e 2 (by decide)).trans v2,
+      (e 3 (by decide)).trans v3, (e 4 (by decide)).trans v4, (e 5 (by decide)).trans v5,
+      (e 6 (by decide)).trans v6, (e 7 (by decide)).trans v7⟩
+  have hH1 : ∀ j < 8, s1.mem.readW (st s₀ + BitVec.ofNat 64 (8 * j)) 64 = H[j]! := by
+    rw [u.mem]; exact hH
+  -- From `s1`, which differs from `s₂` only in `T1`.
+  have back : ∀ s', UInv s₀ s1 V H 8 s' → UInv s₀ s₂ V H 8 s' := fun s' h =>
+    ⟨h.vars, fun r hr => by rw [h.pub r hr, u.other _ (pubRegs_ne hr).2.1],
+      by rw [h.mem, u.mem], by rw [h.rd, u.rd], by rw [h.wr, u.wr]⟩
+  refine WP.ite (s1.gpr T1 == 0) (by simp [eval]) (fun h => ?_) (fun _ => ?_)
+  · have hz : st s₀ &&& BitVec.ofInt 64 7 = 0 := by
+      rw [← hr0, ← u.gpr]; simpa using h
+    exact WP.mono (wp_range_flatMap (M := isa) (UInv s₀ s1 V H)
+      (fun _ _ hk h => updA_step hp V H g0 (by rw [u.rd, hrd]) (by rw [u.wr, hwr])
+        (fun k _ => al_of hz k) hH1 hk h)
+      8 (Nat.le_refl _) s1 ⟨fun j _ hj => vars_get hv1 j hj, fun _ _ => rfl, rfl, rfl, rfl⟩) back
+  · exact WP.mono (update_ok hp V H hv1 g0 (by rw [u.rd, hrd]) (by rw [u.wr, hwr]) hH1) back
+
 theorem compressBlocks_succ (H : HashValue) (m : Mem) (p : Addr) (i : Nat) :
     compressBlocks H m p (i + 1) =
       compress (compressBlocks H m p i) (blockAt m (p + BitVec.ofNat 64 (128 * i))) := by
@@ -461,7 +587,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     WP isa body s fun s' =>
       (eval (.nonzero .a2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
       (eval (.nonzero .a2) s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
-  refine WP.seq (WP.mono (load_ok hp hL.a0 hL.rd hL.wr) fun s₁ ⟨hv₁, hpub₁, hrd₁, hwr₁, hm₁⟩ => ?_)
+  refine WP.seq (WP.mono (loadP_ok hp hL.a0 hL.rd hL.wr) fun s₁ ⟨hv₁, hpub₁, hrd₁, hwr₁, hm₁⟩ => ?_)
   have hwin : ∀ r' ∈ [winRegion (scr s₀)], (blR s₀).Disjoint r' := by
     simpa using Region.Disjoint.sub_right hp.blk_scr (win_sub _)
   have hblk : ∀ m, Frame [winRegion (scr s₀)] s₁.mem m → ∀ t : Nat, t < 16 →
@@ -484,9 +610,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hr0₂ : s₂.gpr .a0 = st s₀ := by rw [pub₂ .a0 (by decide), hL.a0]
   have hrd₂ : s₂.rd = s₀.rd := by rw [hR.rd, hrd₁, hL.rd]
   have hwr₂ : s₂.wr = s₀.wr := by rw [hR.wr, hwr₁, hL.wr]
-  rw [WP.block_append_iff]
-  refine WP.mono (update_ok hp _ (stateAt s.mem (st s₀)) hR.vars hr0₂ hrd₂ hwr₂ fun k hk => ?_)
-    fun s₃ h₃ => ?_
+  refine WP.seq (WP.mono (updateP_ok hp _ (stateAt s.mem (st s₀)) hR.vars hr0₂ hrd₂ hwr₂ fun k hk => ?_)
+    fun s₃ h₃ => ?_)
   · rw [hR.frame.readW (Offset.contains_base _ (by omega) (by omega)) hst (by decide), hm₁,
       getElem!_pos _ k hk, stateAt_get _ _ hk]
   have hr1₃ : s₃.gpr .a1 = blkAddr s₀ i := by rw [h₃.pub .a1 (by decide), pub₂ .a1 (by decide), hL.a1]
