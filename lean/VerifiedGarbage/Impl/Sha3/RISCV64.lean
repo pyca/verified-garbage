@@ -35,7 +35,9 @@ which has no rotation and faults on misaligned accesses:
 
 The frame (`frameBytes`, 608 bytes) is laid out as:
 
-* `[0, 192)`: the 24 round constants, stored by the prologue (`movImm64`);
+* `[0, 192)`: the 24 round constants, stored by the prologue: each is its
+  low bits (an `li`), with its bits 15, 31 and 63 `or`ed in from registers
+  that hold them (`rcBuild`), as `Spec.Sha3.RC` builds it;
 * `[192, 392)`: the copy of the state;
 * `[392, 592)`: the second state;
 * `[592, 608)`: the saved `s0` and `s1`.
@@ -182,10 +184,29 @@ def cmplLane (r : Reg) (i : Nat) : List Instr := if complLanes.contains i then n
 def save : List Instr :=
   [.addSp .t6 0, .store .d .s0 .t6 592, .store .d .s1 .t6 600, .addi .s1 .a0 0]
 
+/-- Bit `2ʲ - 1` of the round constant of round `k` (`Spec.Sha3.RC`). -/
+def rcBit (k j : Nat) : Bool := Spec.Sha3.rc (j + 7 * k)
+
+/-- The bits `0`, `1`, `3` and `7` of the round constant of round `k`: below
+2048, an `li`. -/
+def rcLo (k : Nat) : Nat :=
+  (if rcBit k 0 then 1 else 0) + (if rcBit k 1 then 2 else 0) + (if rcBit k 2 then 8 else 0) +
+    (if rcBit k 3 then 128 else 0)
+
+/-- An `or` of `r` into `t0` if `b`. -/
+def orIf (b : Bool) (r : Reg) : List Instr := if b then [.logic .or .t0 .t0 r] else []
+
+/-- The round constant of round `k` in `t0`: its low bits, then its bits `15`,
+`31` and `63` from `t3`, `t4` and `t5`. -/
+def rcBuild (k : Nat) : List Instr :=
+  .li .t0 (rcLo k) :: (orIf (rcBit k 4) .t3 ++ orIf (rcBit k 5) .t4 ++ orIf (rcBit k 6) .t5)
+
+/-- `t3 = 2¹⁵`, `t4 = 2³¹`, `t5 = 2⁶³`. -/
+def rcHigh : List Instr := [.lui .t3 8, .li .t4 1, .shift .sll .d .t4 .t4 31, .shift .sll .d .t5 .t4 32]
+
 /-- The round constants. -/
 def rcStores : List Instr :=
-  (List.range 24).flatMap fun k =>
-    movImm64 .t0 .t1 (Spec.Sha3.RC k) ++ ([.store .d .t0 .t6 (8 * k)] : List Instr)
+  rcHigh ++ (List.range 24).flatMap fun k => rcBuild k ++ ([.store .d .t0 .t6 (8 * k)] : List Instr)
 
 /-- Lane `i` of the state into the copy, complemented if in `complLanes`. -/
 def copyIn (i : Nat) : List Instr :=
