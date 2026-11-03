@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyProd
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -178,6 +179,334 @@ theorem powP_ok {s : State} {L : Lay} {key sig N : Addr} {o p : Nat} (hL : L.Ok)
     rw [o5.word (by omega) (by omega_arith), W0, (k14.trans k5).gpr (by decide)]; exact hi
   · rw [← m4] at o23
     exact (o23.mono (by omega) (by omega)).trans o5
+
+/-! ## The joint power `g^u1 y^u2 mod p`
+
+`jointTable` builds `T_(i + 4 j) = g^i y^j R mod p` for `i, j < 4` in arrays
+8–23 (`jointTable_ok`), each entry the Montgomery product of two before it
+(`montStep`); a joint window is two squares and `a := a T_(d1 + 4 d2)` for
+two bits of each exponent (`jointWindow_ok`); a byte of each is four windows
+(`jointByte_ok`); and the power is the bytes in turn (`jointPow_ok`). -/
+
+section Joint
+open Win
+open VG.Impl.Bignum.RISCV64.PublicChecked (montOp)
+
+/-- A Montgomery product of products of powers of `G` and `Y` in Montgomery form. -/
+theorem mont_pow2 {o a b G Y i j k l R N : Nat} (hR : Nat.Coprime R N) (ha : a % N = G ^ i * Y ^ j * R % N)
+    (hb : b % N = G ^ k * Y ^ l * R % N) (h : o * R % N = a * b % N) :
+    o % N = G ^ (i + k) * Y ^ (j + l) * R % N := by
+  refine VG.Proof.Bignum.mont_cancel hR ?_
+  rw [h, Nat.mul_mod, ha, hb, ← Nat.mul_mod, Nat.pow_add, Nat.pow_add]
+  congr 1
+  ac_rfl
+
+/-- Entry `k` of the joint table is `G^e1 Y^e2 R mod N`, if `R² mod N` is right. -/
+def JGood (m : Mem) (B : Addr) (w N G Y RR k e1 e2 : Nat) : Prop :=
+  A m B w (8 + k) < N ∧ (RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N →
+    A m B w (8 + k) % N = G ^ e1 * Y ^ e2 * 2 ^ (64 * w) % N)
+
+/-- While the joint table is built: `R² mod N` in array 1, `G` and `Y` in
+arrays 4 and 5, 1 in array 7, and the entries `done`. -/
+structure JInv (m : Mem) (B : Addr) (w N G Y RR : Nat) (done : List (Nat × Nat × Nat)) : Prop where
+  rr : A m B w 1 = RR
+  g : A m B w 4 = G
+  y : A m B w 5 = Y
+  one : A m B w 7 = 1
+  good : ∀ q ∈ done, JGood m B w N G Y RR q.1 q.2.1 q.2.2
+
+/-- Every key of `done` is below 16 and none is `k`. -/
+def Fresh (done : List (Nat × Nat × Nat)) (k : Nat) : Bool :=
+  decide (k < 16) && done.all fun q => decide (q.1 < 16 ∧ q.1 ≠ k)
+
+theorem JInv.after {m m' : Mem} {B : Addr} {w N G Y RR : Nat} {done : List (Nat × Nat × Nat)} {o : Nat}
+    (h : JInv m B w N G Y RR done) (ho : o ≠ 1 ∧ o ≠ 4 ∧ o ≠ 5 ∧ o ≠ 7) (hf : ∀ q ∈ done, 8 + q.1 ≠ o ∧ q.1 < 16)
+    (hv : ∀ j < 24, j ≠ 2 → j ≠ 3 → j ≠ o → A m' B w j = A m B w j) :
+    JInv m' B w N G Y RR done := by
+  refine ⟨?_, ?_, ?_, ?_, fun q hq => ?_⟩
+  · rw [hv 1 (by decide) (by decide) (by decide) (by omega)]; exact h.rr
+  · rw [hv 4 (by decide) (by decide) (by decide) (by omega)]; exact h.g
+  · rw [hv 5 (by decide) (by decide) (by decide) (by omega)]; exact h.y
+  · rw [hv 7 (by decide) (by decide) (by decide) (by omega)]; exact h.one
+  · have := hf q hq
+    unfold JGood
+    rw [hv (8 + q.1) (by omega) (by omega) (by omega) this.1]
+    exact h.good q hq
+
+/-- `T_k := T_k1 T_k2`, for entries `(k1, i1, j1)` and `(k2, i2, j2)` of `done`. -/
+theorem montStep {s : State} {B : Addr} {Z w N G Y RR : Nat} {done : List (Nat × Nat × Nat)}
+    (h : WCtx s B Z w N) (hodd : N % 2 = 1) (hj : JInv s.mem B w N G Y RR done) {k k1 k2 i1 j1 i2 j2 : Nat}
+    (hk : Fresh done k = true) (h1 : (k1, i1, j1) ∈ done) (h2 : (k2, i2, j2) ∈ done) :
+    WP isa (montOp (8 + k) (8 + k1) (8 + k2)) s fun t =>
+      (WCtx t B Z w N ∧ WinO B w s.mem t.mem ∧
+        JInv t.mem B w N G Y RR ((k, i1 + i2, j1 + j2) :: done)) ∧ Keep Pub.montRegs s t := by
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  simp only [Fresh, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hk
+  obtain ⟨hk16, hall⟩ := hk
+  have f1 := hall _ h1; have f2 := hall _ h2
+  refine WP.mono (h.mont (o := 8 + k) (a := 8 + k1) (b := 8 + k2) (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (hj.good _ h2).1) fun t ⟨⟨ct, lt, e, v, o⟩, kt⟩ =>
+    ⟨⟨ct, o, ?_⟩, kt⟩
+  have hj' := hj.after (m' := t.mem) (o := 8 + k) (by omega)
+    (fun q hq => ⟨by have := (hall q hq).2; omega, (hall q hq).1⟩) v
+  refine ⟨hj'.rr, hj'.g, hj'.y, hj'.one, fun q hq => ?_⟩
+  rcases List.mem_cons.1 hq with rfl | hq
+  · refine ⟨lt, fun hE => mont_pow2 hR ((hj.good _ h1).2 hE) ((hj.good _ h2).2 hE) e⟩
+  · exact hj'.good q hq
+
+/-- The table's entries, from `jointTable`'s order. -/
+def jDone : List (Nat × Nat × Nat) :=
+  [(15, 3, 3), (14, 2, 3), (13, 1, 3), (12, 0, 3), (11, 3, 2), (10, 2, 2), (9, 1, 2), (8, 0, 2),
+   (7, 3, 1), (6, 2, 1), (5, 1, 1), (3, 3, 0), (2, 2, 0), (4, 0, 1), (1, 1, 0), (0, 0, 0)]
+
+/-- The registers the joint table writes. -/
+def jtRegs : List Reg := Pub.montRegs ++ copyRegs ++ [.s0, .t3, .t5]
+
+/-- `montStep`, with what the steps before it changed. -/
+theorem montStepAcc {s₀ s : State} {B : Addr} {Z w N G Y RR : Nat} {done : List (Nat × Nat × Nat)}
+    (h : WCtx s B Z w N) (hodd : N % 2 = 1) (O : WinO B w s₀.mem s.mem) (K : Keep jtRegs s₀ s)
+    (hj : JInv s.mem B w N G Y RR done) {k k1 k2 i1 j1 i2 j2 : Nat}
+    (hk : Fresh done k = true) (h1 : (k1, i1, j1) ∈ done) (h2 : (k2, i2, j2) ∈ done) :
+    WP isa (montOp (8 + k) (8 + k1) (8 + k2)) s fun t =>
+      WCtx t B Z w N ∧ WinO B w s₀.mem t.mem ∧ JInv t.mem B w N G Y RR ((k, i1 + i2, j1 + j2) :: done) ∧
+        Keep jtRegs s₀ t :=
+  WP.mono (montStep h hodd hj hk h1 h2) fun _ ⟨⟨c, o, J⟩, k⟩ => ⟨c, O.trans o, J, (K.trans k).mono (by decide)⟩
+
+/-- `jointTable`. -/
+theorem jointTable_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hN : 2 ≤ N) (hodd : N % 2 = 1)
+    (hRR : A s.mem B w 1 < N) :
+    WP isa jointTable s fun t =>
+      (WCtx t B Z w N ∧ WinO B w s.mem t.mem ∧ A t.mem B w 7 = 1 ∧ A t.mem B w 6 = A t.mem B w 8 ∧
+        JInv t.mem B w N (A s.mem B w 4) (A s.mem B w 5) (A s.mem B w 1) jDone) ∧ Keep jtRegs s t := by
+  have hn := h.nw
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  generalize hG : A s.mem B w 4 = G
+  generalize hY : A s.mem B w 5 = Y
+  generalize hRRd : A s.mem B w 1 = RR at hRR
+  unfold jointTable
+  -- 1 in array 7.
+  refine WP.seq (WP.mono (Pub.oneP_ok h.scr (by have := h.w2; omega_arith) h.w31
+    (Nat.le_trans (by unfold slot; omega_arith) h.hZ) h.a7 h.s5 h.t0) fun s₁ ⟨⟨h7, o1⟩, k1⟩ => ?_)
+  replace h7 : A s₁.mem B w 7 = 1 := h7
+  have c1 := h.of k1 (by decide) (arrO o1 (by decide) (by decide))
+  have R1 : A s₁.mem B w 1 = RR := by rw [arr_out o1 (by decide) (by decide) hn, hRRd]
+  have G1 : A s₁.mem B w 4 = G := by rw [arr_out o1 (by decide) (by decide) hn, hG]
+  have Y1 : A s₁.mem B w 5 = Y := by rw [arr_out o1 (by decide) (by decide) hn, hY]
+  -- `T_0 = R mod N`.
+  refine WP.seq (WP.mono (c1.mont (o := 8) (a := 1) (b := 7) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [h7]; omega_arith)) fun s₂ ⟨⟨c2, lt2, e2, v2, o2⟩, k2⟩ => ?_)
+  rw [h7, Nat.mul_one, R1] at e2
+  have J2 : JInv s₂.mem B w N G Y RR [(0, 0, 0)] :=
+    ⟨by rw [v2 1 (by decide) (by decide) (by decide) (by decide), R1],
+      by rw [v2 4 (by decide) (by decide) (by decide) (by decide), G1],
+      by rw [v2 5 (by decide) (by decide) (by decide) (by decide), Y1],
+      by rw [v2 7 (by decide) (by decide) (by decide) (by decide), h7],
+      fun q hq => by
+        rw [List.mem_singleton.1 hq]
+        show JGood s₂.mem B w N G Y RR 0 0 0
+        exact ⟨lt2, fun hE => by
+          simp only [Nat.add_zero, Nat.pow_zero, Nat.one_mul]
+          exact VG.Proof.Bignum.mont_cancel hR (by rw [e2, hE, Nat.mod_mod])⟩⟩
+  -- `T_1 = G R mod N` and `T_4 = Y R mod N`.
+  refine WP.seq (WP.mono (c2.mont (o := 9) (a := 4) (b := 1) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [J2.rr]; exact hRR))
+    fun s₃ ⟨⟨c3, lt3, e3, v3, o3⟩, k3⟩ => ?_)
+  rw [J2.g, J2.rr] at e3
+  have J3' := J2.after (m' := s₃.mem) (o := 9) (by decide) (by decide) v3
+  have J3 : JInv s₃.mem B w N G Y RR [(1, 1, 0), (0, 0, 0)] :=
+    ⟨J3'.rr, J3'.g, J3'.y, J3'.one, fun q hq => by
+      rcases List.mem_cons.1 hq with rfl | hq
+      · show JGood s₃.mem B w N G Y RR 1 1 0
+        exact ⟨lt3, fun hE => VG.Proof.Bignum.mont_cancel hR (by
+          rw [e3, hE, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.pow_one, Nat.pow_zero, Nat.mul_one,
+            Nat.mul_assoc])⟩
+      · exact J3'.good q hq⟩
+  refine WP.seq (WP.mono (c3.mont (o := 12) (a := 5) (b := 1) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [J3.rr]; exact hRR))
+    fun s₄ ⟨⟨c4, lt4, e4, v4, o4⟩, k4⟩ => ?_)
+  rw [J3.y, J3.rr] at e4
+  have J4' := J3.after (m' := s₄.mem) (o := 12) (by decide) (by decide) v4
+  have J4 : JInv s₄.mem B w N G Y RR [(4, 0, 1), (1, 1, 0), (0, 0, 0)] :=
+    ⟨J4'.rr, J4'.g, J4'.y, J4'.one, fun q hq => by
+      rcases List.mem_cons.1 hq with rfl | hq
+      · show JGood s₄.mem B w N G Y RR 4 0 1
+        exact ⟨lt4, fun hE => VG.Proof.Bignum.mont_cancel hR (by
+          rw [e4, hE, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.pow_one, Nat.pow_zero, Nat.one_mul,
+            Nat.mul_assoc])⟩
+      · exact J4'.good q hq⟩
+  have O4 : WinO B w s.mem s₄.mem := (((arrO o1 (by decide) (by decide)).trans o2).trans o3).trans o4
+  have K4 := (((k1.trans k2).trans k3).trans k4)
+  -- The other entries.
+  have K4' : Keep jtRegs s s₄ := K4.mono (by decide)
+  refine WP.seq (WP.mono (montStepAcc (k := 2) (k1 := 1) (i1 := 1) (j1 := 0) (k2 := 1) (i2 := 1)
+    (j2 := 0) c4 hodd O4 K4' J4 (by decide) (by decide) (by decide)) fun s5 ⟨c5, O5, J5, K5⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 3) (k1 := 2) (i1 := 2) (j1 := 0) (k2 := 1) (i2 := 1)
+    (j2 := 0) c5 hodd O5 K5 J5 (by decide) (by decide) (by decide)) fun s6 ⟨c6, O6, J6, K6⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 5) (k1 := 4) (i1 := 0) (j1 := 1) (k2 := 1) (i2 := 1)
+    (j2 := 0) c6 hodd O6 K6 J6 (by decide) (by decide) (by decide)) fun s7 ⟨c7, O7, J7, K7⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 6) (k1 := 4) (i1 := 0) (j1 := 1) (k2 := 2) (i2 := 2)
+    (j2 := 0) c7 hodd O7 K7 J7 (by decide) (by decide) (by decide)) fun s8 ⟨c8, O8, J8, K8⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 7) (k1 := 4) (i1 := 0) (j1 := 1) (k2 := 3) (i2 := 3)
+    (j2 := 0) c8 hodd O8 K8 J8 (by decide) (by decide) (by decide)) fun s9 ⟨c9, O9, J9, K9⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 8) (k1 := 4) (i1 := 0) (j1 := 1) (k2 := 4) (i2 := 0)
+    (j2 := 1) c9 hodd O9 K9 J9 (by decide) (by decide) (by decide)) fun s10 ⟨c10, O10, J10, K10⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 9) (k1 := 8) (i1 := 0) (j1 := 2) (k2 := 1) (i2 := 1)
+    (j2 := 0) c10 hodd O10 K10 J10 (by decide) (by decide) (by decide)) fun s11 ⟨c11, O11, J11, K11⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 10) (k1 := 8) (i1 := 0) (j1 := 2) (k2 := 2) (i2 := 2)
+    (j2 := 0) c11 hodd O11 K11 J11 (by decide) (by decide) (by decide)) fun s12 ⟨c12, O12, J12, K12⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 11) (k1 := 8) (i1 := 0) (j1 := 2) (k2 := 3) (i2 := 3)
+    (j2 := 0) c12 hodd O12 K12 J12 (by decide) (by decide) (by decide)) fun s13 ⟨c13, O13, J13, K13⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 12) (k1 := 8) (i1 := 0) (j1 := 2) (k2 := 4) (i2 := 0)
+    (j2 := 1) c13 hodd O13 K13 J13 (by decide) (by decide) (by decide)) fun s14 ⟨c14, O14, J14, K14⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 13) (k1 := 12) (i1 := 0) (j1 := 3) (k2 := 1) (i2 := 1)
+    (j2 := 0) c14 hodd O14 K14 J14 (by decide) (by decide) (by decide)) fun s15 ⟨c15, O15, J15, K15⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 14) (k1 := 12) (i1 := 0) (j1 := 3) (k2 := 2) (i2 := 2)
+    (j2 := 0) c15 hodd O15 K15 J15 (by decide) (by decide) (by decide)) fun s16 ⟨c16, O16, J16, K16⟩ => ?_)
+  refine WP.seq (WP.mono (montStepAcc (k := 15) (k1 := 12) (i1 := 0) (j1 := 3) (k2 := 3) (i2 := 3)
+    (j2 := 0) c16 hodd O16 K16 J16 (by decide) (by decide) (by decide)) fun s17 ⟨c17, O17, J17, K17⟩ => ?_)
+  -- `a := T_0`.
+  refine WP.mono (Win.copy_ok c17 (o := 6) (a := 8) (by decide) (by decide) (by decide)) fun t ⟨⟨ta, to⟩, kt⟩ => ?_
+  have hv : ∀ j < 24, j ≠ 2 → j ≠ 3 → j ≠ 6 → A t.mem B w j = A s17.mem B w j :=
+    fun j hj _ _ h6 => arr_out to hj h6 hn
+  have Jt := J17.after (m' := t.mem) (o := 6) (by decide) (by decide) hv
+  refine ⟨⟨c17.of kt (by decide) (arrO to (by decide) (by decide)), ?_, Jt.one, by rw [ta, hv 8 (by decide)
+    (by decide) (by decide) (by decide)], Jt⟩, ?_⟩
+  · exact O17.trans (arrO to (by decide) (by decide))
+  · exact (K17.trans kt).mono (by decide)
+
+theorem jDone_mem {i j : Nat} (hi : i < 4) (hj : j < 4) : (i + 4 * j, i, j) ∈ jDone := by
+  have key : ∀ i < 4, ∀ j < 4, (i + 4 * j, i, j) ∈ jDone := by decide
+  exact key i hi j hj
+
+theorem jDone_lt {m : Mem} {B : Addr} {w N G Y RR : Nat} (h : JInv m B w N G Y RR jDone) :
+    ∀ k < 16, A m B w (8 + k) < N := fun k hk => by
+  have := (h.good _ (jDone_mem (i := k % 4) (j := k / 4) (Nat.mod_lt _ (by decide)) (by omega))).1
+  rwa [show k % 4 + 4 * (k / 4) = k by omega] at this
+
+/-- The digit of a joint window: `s7`'s top two bits, and its bits 54–55 times 4. -/
+theorem digit_eq (x : BitVec 64) :
+    (x >>> 62) + (((x >>> 54) &&& 3#64) <<< 2) =
+      BitVec.ofNat 64 (x.toNat / 2 ^ 62 + 4 * (x.toNat / 2 ^ 54 % 4)) := by
+  apply BitVec.eq_of_toNat_eq
+  have hx := x.isLt
+  have e3 : (3#64).toNat = 2 ^ 2 - 1 := rfl
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_ushiftRight,
+    BitVec.toNat_ushiftRight, e3, Nat.and_two_pow_sub_one_eq_mod, Nat.shiftRight_eq_div_pow,
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  omega_arith
+
+/-- A square of `a` in the context, for powers of `G` and `Y`. -/
+theorem sq2_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hodd : N % 2 = 1)
+    (ha : A s.mem B w 6 < N) {G Y c1 c2 : Nat} :
+    WP isa (ModExp.sqrOp 6 6 5) s fun t =>
+      (WCtx t B Z w N ∧ WinO B w s.mem t.mem ∧ Fix B w s.mem t.mem ∧ A t.mem B w 6 < N ∧
+        (A s.mem B w 6 % N = G ^ c1 * Y ^ c2 * 2 ^ (64 * w) % N →
+          A t.mem B w 6 % N = G ^ (c1 + c1) * Y ^ (c2 + c2) * 2 ^ (64 * w) % N)) ∧ Keep sqRegs s t := by
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  exact WP.mono (h.sqr (o := 6) (a := 6) (p := 5) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) ha)
+    fun t ⟨⟨ct, lt, e, v, o⟩, k⟩ =>
+    ⟨⟨ct, o, fun j hj h2 h3 h5 h6 => v j hj h2 h3 h5 h6, lt, fun hA => mont_pow2 hR hA hA e⟩, k⟩
+
+/-- The registers a joint window writes. -/
+def jwRegs : List Reg := Pub.montRegs ++ sqRegs ++ selectRegs ++ [.a1, .t3, .s7]
+
+/-- `jointWindow`: two squares, then `a := a T_(d1 + 4 d2)`, for `d1` the top
+two bits of `s7` and `d2` its bits 54–55. -/
+theorem jointWindow_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hodd : N % 2 = 1)
+    (ha : A s.mem B w 6 < N) (htab : ∀ k < 16, A s.mem B w (8 + k) < N) {G Y c1 c2 : Nat} :
+    WP isa jointWindow s fun t =>
+      (WCtx t B Z w N ∧ WinO B w s.mem t.mem ∧ Fix B w s.mem t.mem ∧ A t.mem B w 6 < N ∧
+        t.gpr .s7 = s.gpr .s7 <<< 2 ∧
+        (A s.mem B w 6 % N = G ^ c1 * Y ^ c2 * 2 ^ (64 * w) % N →
+          (∀ i < 4, ∀ j < 4, A s.mem B w (8 + (i + 4 * j)) % N = G ^ i * Y ^ j * 2 ^ (64 * w) % N) →
+          A t.mem B w 6 % N = G ^ (4 * c1 + (s.gpr .s7).toNat / 2 ^ 62) *
+            Y ^ (4 * c2 + (s.gpr .s7).toNat / 2 ^ 54 % 4) * 2 ^ (64 * w) % N)) ∧ Keep jwRegs s t := by
+  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
+  unfold jointWindow
+  refine WP.seq (WP.mono (sq2_ok h hodd ha (G := G) (Y := Y) (c1 := c1) (c2 := c2))
+    fun s₁ ⟨⟨cs1, o1, f1, l1, e1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (sq2_ok cs1 hodd l1 (G := G) (Y := Y) (c1 := c1 + c1) (c2 := c2 + c2))
+    fun s₂ ⟨⟨cs2, o2, f2, l2, e2⟩, k2⟩ => ?_)
+  have k12 := k1.trans k2
+  have f12 := f1.trans f2
+  have hx := (s.gpr .s7).isLt
+  have hd1 : (s.gpr .s7).toNat / 2 ^ 62 < 4 := by omega_arith
+  have hd2 : (s.gpr .s7).toNat / 2 ^ 54 % 4 < 4 := Nat.mod_lt _ (by decide)
+  have hd : (s.gpr .s7).toNat / 2 ^ 62 + 4 * ((s.gpr .s7).toNat / 2 ^ 54 % 4) < 16 := by omega
+  refine WP.seq (WP.mono (WP.keep [.a1, .t3] (Q := fun t =>
+      t.gpr .a1 = BitVec.ofNat 64 ((s.gpr .s7).toNat / 2 ^ 62 + 4 * ((s.gpr .s7).toNat / 2 ^ 54 % 4)) ∧
+        t.mem = s₂.mem)
+    (by brun [digit_eq, k12.gpr (r := .s7) (by decide)]) (by rfl) (by rfl)) fun s₃ ⟨⟨a1, m3⟩, k3⟩ => ?_)
+  have cs3 := cs2.regs k3 (by decide) m3
+  refine WP.seq (WP.mono (select_ok cs3 a1 hd) fun s₄ ⟨⟨a5, v4, cs4, o4⟩, k4⟩ => ?_)
+  have A6 : A s₄.mem B w 6 = A s₂.mem B w 6 := by rw [v4 6 (by decide) (by decide) (by decide), m3]
+  rw [m3, f12 _ (by omega) (by omega) (by omega) (by omega) (by omega)] at a5
+  refine WP.seq (WP.mono (cs4.mont (o := 6) (a := 6) (b := 5) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [a5]; exact htab _ hd))
+    fun s₅ ⟨⟨cs5, l5, e5, v5, o5⟩, k5⟩ => ?_)
+  refine WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = s₅.gpr .s7 <<< 2 ∧ t.mem = s₅.mem)
+    (by brun) (by rfl) (by rfl)) fun t ⟨⟨a7, mt⟩, kt⟩ =>
+      ⟨⟨cs5.regs kt (by decide) mt, ?_, ?_, by rw [mt]; exact l5, ?_, ?_⟩, ?_⟩
+  · rw [mt]
+    exact ((o1.trans o2).trans (by rw [← m3]; exact o4)).trans o5
+  · intro j hj h2 h3 h5 h6
+    rw [mt, v5 j hj h2 h3 h6, v4 j hj h3 h5, m3]
+    exact f12 j hj h2 h3 h5 h6
+  · rw [a7, k5.gpr (by decide), k4.gpr (by decide), k3.gpr (by decide), k12.gpr (by decide)]
+  · intro hA hT
+    rw [mt]
+    rw [A6] at e5
+    have := mont_pow2 hR (e2 (e1 hA)) (by rw [a5]; exact hT _ hd1 _ hd2) e5
+    rw [this, show c1 + c1 + (c1 + c1) + (s.gpr .s7).toNat / 2 ^ 62 = 4 * c1 + (s.gpr .s7).toNat / 2 ^ 62 by omega,
+      show c2 + c2 + (c2 + c2) + (s.gpr .s7).toNat / 2 ^ 54 % 4 = 4 * c2 + (s.gpr .s7).toNat / 2 ^ 54 % 4 by omega]
+  · exact ((((k12.trans k3).trans k4).trans k5).trans kt).mono (by decide)
+
+/-- The first word of a byte pair: `b1` at the top, `b2` below it. -/
+theorem pair_eq {b1 b2 : Nat} (h1 : b1 < 256) (h2 : b2 < 256) :
+    (BitVec.ofNat 64 b1 <<< 56 + (BitVec.ofNat 64 b2 <<< 56) >>> 8).toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48 := by
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft,
+    Nat.shiftLeft_eq, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  omega_arith
+
+theorem digits0 {x b1 b2 : Nat} (hx : x = b1 * 2 ^ 56 + b2 * 2 ^ 48) (h2 : b2 < 256) :
+    x / 2 ^ 62 = b1 / 64 ∧ x / 2 ^ 54 % 4 = b2 / 64 := by subst hx; omega_arith
+
+theorem digits1 {v : BitVec 64} {b1 b2 : Nat} (hx : v.toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48)
+    (h2 : b2 < 256) : (v <<< 2).toNat / 2 ^ 62 = b1 / 16 % 4 ∧ (v <<< 2).toNat / 2 ^ 54 % 4 = b2 / 16 % 4 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hx]; omega_arith
+
+theorem digits2 {v : BitVec 64} {b1 b2 : Nat} (hx : v.toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48)
+    (h2 : b2 < 256) : (v <<< 2 <<< 2).toNat / 2 ^ 62 = b1 / 4 % 4 ∧ (v <<< 2 <<< 2).toNat / 2 ^ 54 % 4 = b2 / 4 % 4 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hx]; omega_arith
+
+theorem digits3 {v : BitVec 64} {b1 b2 : Nat} (hx : v.toNat = b1 * 2 ^ 56 + b2 * 2 ^ 48)
+    (h2 : b2 < 256) :
+    (v <<< 2 <<< 2 <<< 2).toNat / 2 ^ 62 = b1 % 4 ∧ (v <<< 2 <<< 2 <<< 2).toNat / 2 ^ 54 % 4 = b2 % 4 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_shiftLeft,
+    Nat.shiftLeft_eq, hx]; omega_arith
+
+/-- After the joint table (`t₀`), with `c1` and `c2` of the exponents scanned. -/
+structure JRun (s₀ t₀ u : State) (B : Addr) (Z w N G Y RR c1 c2 : Nat) : Prop where
+  ctx : WCtx u B Z w N
+  out : WinO B w s₀.mem u.mem
+  fix : Fix B w t₀.mem u.mem
+  lt : A u.mem B w 6 < N
+  pw : RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N → A u.mem B w 6 % N = G ^ c1 * Y ^ c2 * 2 ^ (64 * w) % N
+  keep : Keep (jtRegs ++ jwRegs ++ [.s9, .s10]) s₀ u
+
+/-- The two bytes of a joint step into `s7`. -/
+theorem lbu2_ok {u : State} {D : Addr} {i : Nat} (h9 : u.gpr .s9 = off D i)
+    (hrd1 : InRegions (u.rd ++ u.wr) (off D i) 1) (hrd2 : InRegions (u.rd ++ u.wr) (off D (i + 32)) 1) :
+    WP isa (.block [.load .b .s7 .s9 0, .shift .sll .d .s7 .s7 56, .load .b .t3 .s9 32,
+        .shift .sll .d .t3 .t3 56, .shift .srl .d .t3 .t3 8, .add .s7 .s7 .t3, .addi .s9 .s9 1]) u fun t =>
+      (t.gpr .s7 = BitVec.ofNat 64 (u.mem (off D i)).toNat <<< 56 +
+          (BitVec.ofNat 64 (u.mem (off D (i + 32))).toNat <<< 56) >>> 8 ∧
+        t.gpr .s9 = off D (i + 1) ∧ t.mem = u.mem) ∧ Keep [.s7, .t3, .s9] u t := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  brun [h9, hrd1, hrd2, read_byte64, add_ofNat_zero]
+
+end Joint
 
 /-- Two Montgomery multiplications: `[5] R ≡ y (R² mod p)` and `[7] R ≡ g [5]`
 give `[7] = g y mod p`. -/

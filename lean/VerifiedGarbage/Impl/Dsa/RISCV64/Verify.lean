@@ -16,9 +16,12 @@ which branches on the public key only:
   (`minus2`) to the buffer, `w = s^(q − 2) mod q` (`powWin` over its
   octets), then `u1 = z w mod q` and `u2 = r w mod q` (two Montgomery
   multiplications each, by w and by R²), for the digest's scalar `z` (its
-  first `min(digest_len, bitLength q / 8)` octets), to the buffer;
-* in the P space, `g^u1 mod p` (kept in array 25) and `y^u2 mod p`, and their
-  product `v` to the buffer;
+  first `min(digest_len, bitLength q / 8)` octets), to the buffer at 0 and
+  32 (the most octets q has);
+* in the P space, `v = g^u1 y^u2 mod p` by one joint power (`combine`): g
+  and y into arrays 4 and 5, the table `g^i y^j R mod p` for `i, j < 4`,
+  then for each pair of bits of u1 and u2, two squares and a multiplication
+  by the entry they select; `v` to the buffer;
 * in the Q space, `v mod q` (`reduce64`) compared with r (`eqMask`).
 
 The result is that comparison under the mask: nothing branches on the
@@ -145,12 +148,10 @@ def jointByte : Prog isa :=
 g into array 4 and y into array 5, the joint table, the joint windows of
 u1's and u2's `q_len` bytes, then out of Montgomery form. -/
 def combine : Prog isa :=
-  .seq (.block (enterP ++ Precompute.minv ++ ptrG ++ getP .s8)) (.seq (loadArr 4)
-    (.seq (.block (ptrY ++ getP .s8)) (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable
-    (.seq (.block (ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))
-    (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10))
-    (.seq (montOp 4 6 7)
-      (.seq (.block (bufBase .s7 .t2 ++ getP .s8)) (storeBE 4))))))))))
+  .seq (.block (enterP ++ Precompute.minv ++ ptrBuf ++ [.addi .s9 .s7 0] ++ ptrG)) (.seq (.block (getP .s8))
+    (.seq (loadArr 4) (.seq (.block ptrY) (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable
+    (.seq (.block (getQ .s10)) (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10))
+    (.seq (montOp 4 6 7) (.seq (.block (bufBase .s7 .t2 ++ getP .s8)) (storeBE 4)))))))))))
 
 /-- In the Q space, `v mod q` (`reduce64` of the buffer's `p_len` octets)
 into array 1, r into array 5, and `a0 :=` 1 if they are equal and the mask
