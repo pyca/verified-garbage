@@ -92,7 +92,19 @@ def absorbByte : List Instr :=
   [.load .b .t1 .s5 0, .add .t2 .s2 .s4, .load .b .t3 .t2 0, .logic .xor .t1 .t1 .t3,
     .store .b .t1 .t2 0, .addi .s5 .s5 1, .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
-def absorbBody : Prog isa := .seq (.block absorbByte) permuteIfFull
+/-- `t1 := 0` exactly when a lane can be taken: `t2 = state + pos` and the
+data pointer `s5` are multiples of 8 and at least 8 bytes are left. -/
+def laneCheck : List Instr :=
+  [.add .t2 .s2 .s4, .logic .or .t1 .t2 .s5, .logicImm .and .t1 .t1 7, .li .t4 8, .sltu .t3 .s6 .t4,
+    .logic .or .t1 .t1 .t3]
+
+/-- A lane of data XORed into the state at `t2`. -/
+def absorbLane : List Instr :=
+  [.load .d .t1 .s5 0, .load .d .t3 .t2 0, .logic .xor .t1 .t1 .t3, .store .d .t1 .t2 0,
+    .addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
+
+def absorbBody : Prog isa :=
+  .seq (.block laneCheck) (.seq (.ite (.zero .t1) (.block absorbLane) (.block absorbByte)) permuteIfFull)
 
 def absorb : Prog isa := withLoop absorbBody
 
@@ -122,7 +134,12 @@ def squeezeByte : List Instr :=
   [.add .t2 .s2 .s4, .load .b .t1 .t2 0, .store .b .t1 .s5 0, .addi .s5 .s5 1,
     .addi .s4 .s4 1, .addi .s6 .s6 (-1)]
 
-def squeezeBody : Prog isa := .seq permuteIfFull (.block squeezeByte)
+/-- A lane of the state at `t2` to `out`. -/
+def squeezeLane : List Instr :=
+  [.load .d .t1 .t2 0, .store .d .t1 .s5 0, .addi .s5 .s5 8, .addi .s4 .s4 8, .addi .s6 .s6 (-8)]
+
+def squeezeBody : Prog isa :=
+  .seq permuteIfFull (.seq (.block laneCheck) (.ite (.zero .t1) (.block squeezeLane) (.block squeezeByte)))
 
 def squeeze : Prog isa := withLoop squeezeBody
 
