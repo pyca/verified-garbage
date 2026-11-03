@@ -141,7 +141,7 @@ variable (L : Lay c (W + BitVec.ofNat 64 16) W) (hTW : (⟨T, 16⟩ : Region).Di
 include L hTW
 
 /-- `seal` after its entry. -/
-theorem sealBody_ct : CT (fun s => OneT c W sp Np n Ad A D Ln T s ∧ s.gpr .s4 = Np ∧
+theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp Np n Ad A D Ln T s ∧ s.gpr .s4 = Np ∧
     s.gpr .s5 = BitVec.ofNat 64 n)
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))))) := by
   -- `oneAad`
@@ -195,7 +195,7 @@ theorem sealBody_ct : CT (fun s => OneT c W sp Np n Ad A D Ln T s ∧ s.gpr .s4 
 
 end
 
-theorem seal_ct : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» := by
+theorem seal_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
   have h₁' : sealPre σ₁ := h₁

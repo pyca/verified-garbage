@@ -43,7 +43,7 @@ theorem streamAadPre_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) (.block streamAadPre) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem streamInit_ct : ConstantTime isa streamInitRISCV64.pre streamInitRISCV64.pub streamInit := by
+theorem streamInit_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa streamInitRISCV64.pre streamInitRISCV64.pub streamInit := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, qsp⟩ := hq
   have L : Lay (σ₁.gpr .a0) (σ₁.gpr .a3) (σ₁.gpr .a4) := by
@@ -70,7 +70,7 @@ theorem streamInit_ct : ConstantTime isa streamInitRISCV64.pre streamInitRISCV64
   obtain ⟨_, hc⟩ := restore_taint
   exact CT.taintEq _ (fun _ => σ₁.gpr .a4) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
-theorem streamAad_ct : ConstantTime isa streamAadRISCV64.pre streamAadRISCV64.pub streamAad := by
+theorem streamAad_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa streamAadRISCV64.pre streamAadRISCV64.pub streamAad := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, qsp⟩ := hq
   have L : Lay (σ₁.gpr .a0) (σ₁.gpr .a1) (σ₁.gpr .a5) := by

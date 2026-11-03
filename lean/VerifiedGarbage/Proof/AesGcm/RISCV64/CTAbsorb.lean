@@ -67,7 +67,7 @@ section
 variable {c st w sp : Addr} (L : Lay c st w)
 include L
 
-theorem ghash1_ct {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {b : Reg} {o : Nat}
+theorem ghash1_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {b : Reg} {o : Nat}
     (hbo : (b = .s1 ∧ o = 32) ∨ (b = .s0 ∧ o = 96)) {P : Addr}
     (hpy : (⟨st + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩)
     (hpw : (⟨P, 16⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 512, 256⟩) :
@@ -116,7 +116,7 @@ section
 variable {c st w sp : Addr} (L : Lay c st w) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
-theorem absorbHead_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
+theorem absorbHead_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
     CT (AbsI c st w sp yo D n q) (absorbHead yo) := by
   let J : State → Prop := fun s => ∃ V H x m₀ k, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧
     x.length % 16 = q ∧ HeadMid V sp yo H x D n m₀ k s
@@ -141,7 +141,7 @@ theorem absorbHead_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
     · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
     · rw [← h30]; exact covers_left (hm.env.perm.stC (by decide))
 
-theorem absorbFill_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (_hq : q < 16) :
+theorem absorbFill_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {D : Addr} {n q : Nat} (hn : n ≠ 0) (_hq : q < 16) :
     CT (AbsI c st w sp yo D n q) (absorbFill yo) :=
   CT.ite (decide (q = 0)) (fun s ⟨_, _, x, _, _, _, hx, hs⟩ => by
       have := eval_zero hs.s6 (by omega_arith); rw [hx] at this; exact this)
@@ -164,7 +164,7 @@ theorem wholeArgs_ok {V : Reg → BitVec 64} {s : State} (he : Env V sp s) :
     ⟨by rw [u₃.mem, u₂.mem, u₁.mem], by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr],
       by rw [u₃.sp, u₂.sp, u₁.sp]⟩⟩
 
-theorem absorbWhole_ct {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j) (absorbWhole yo) := by
+theorem absorbWhole_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j) (absorbWhole yo) := by
   let nb := (n - j) / 16
   let J₁ : State → Prop := fun s => ∃ V, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ Env V sp s ∧
     DataOk (V .s1) (V .s0) s D n ∧ j ≤ n ∧
@@ -228,7 +228,7 @@ theorem absorbTail_ct {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j) 
   · rw [h₁.s5, h₂.s5]
   · rw [h₁.env.s1, h₂.env.s1, b₁, b₂]
 
-theorem absorb_ct {D : Addr} {n q : Nat} (hq : q < 16) : CT (AbsI c st w sp yo D n q) (absorb yo) := by
+theorem absorb_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {D : Addr} {n q : Nat} (hq : q < 16) : CT (AbsI c st w sp yo D n q) (absorb yo) := by
   refine CT.ite (decide (n = 0)) (fun s ⟨_, _, _, _, _, _, _, hs⟩ => eval_zero hs.s5 hs.data.lt)
     (fun _ => CT.skip) fun hb => ?_
   have h0 : n ≠ 0 := by simpa using hb
@@ -242,7 +242,7 @@ theorem absorb_ct {D : Addr} {n q : Nat} (hq : q < 16) : CT (AbsI c st w sp yo D
     absorbTail_ct
 
 /-- `ghash1 yo .s0 96`, of `T`. -/
-theorem ghT_ct : CT (GhIn c st w sp .s0 96 (w + BitVec.ofNat 64 96)) (ghash1 yo .s0 tO) :=
+theorem ghT_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (GhIn c st w sp .s0 96 (w + BitVec.ofNat 64 96)) (ghash1 yo .s0 tO) :=
   ghash1_ct L hyo (.inr ⟨rfl, rfl⟩) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide))
 
@@ -253,7 +253,7 @@ theorem ghIn_T {s : State} (he : EnvC c st w sp s) : GhIn c st w sp .s0 96 (w + 
     by rw [← h31]; exact covers_left (he'.perm.wC (by decide))⟩
 
 /-- Before `flush yo`: `q` buffered bytes. -/
-theorem flush_ct {q : Nat} (hq : q < 16) :
+theorem flush_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {q : Nat} (hq : q < 16) :
     CT (fun s => EnvC c st w sp s ∧ s.gpr .s6 = BitVec.ofNat 64 q) (flush yo) := by
   refine CT.ite (decide (q = 0)) (fun s ⟨_, h26⟩ => eval_zero h26 (by omega_arith)) (fun _ => CT.skip) fun hb => ?_
   have h0 : q ≠ 0 := by simpa using hb
@@ -270,7 +270,7 @@ theorem flush_ct {q : Nat} (hq : q < 16) :
   · exact h₁.pin h₂ (by simp)
 
 /-- `lens yo`: the lengths are not needed, only `W`. -/
-theorem lens_ct : CT (EnvC c st w sp) (lens yo) := by
+theorem lens_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (EnvC c st w sp) (lens yo) := by
   refine CT.seq (J := GhIn c st w sp .s0 96 (w + BitVec.ofNat 64 96)) ?_ (fun s ⟨V, h29, h30, h31, he⟩ =>
     WP.mono (lensStore_ok he) fun s' ⟨_, hg, hk⟩ => ghIn_T ⟨V, h29, h30, h31,
       he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)

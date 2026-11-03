@@ -84,7 +84,7 @@ theorem saved_otFrame {sp : Addr} (hk : StkOk c st w sp) {o : Nat} (ho : o = 0 �
 
 end
 
-theorem seal_wp {s₀ : State} (h : sealRISCV64.pre s₀) :
+theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.pre s₀) :
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealRISCV64.post s₀ s' := by
   have h' : sealPre s₀ := h
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR, hstk,
