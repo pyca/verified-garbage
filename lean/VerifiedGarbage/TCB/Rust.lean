@@ -161,8 +161,8 @@ alignment): a `static` is a distinct immutable object, at a multiple of its
 type's alignment.
 
 An artifact may take tables of functions (`Artifact.tables`,
-`Abi.withTables`): read-only arrays of `u64`, each holding one of the
-tables of an interface, whose code calls their functions by indirect calls
+`Abi.withTables`): read-only arrays of pointer-sized words (`Param.table`,
+`*const [usize; k]`), each holding one of the tables of an interface, whose code calls their functions by indirect calls
 (`Code.icall`). `files` writes each table once per target, in a file of its
 own, `fn_tables/<name>.rs` (its name in lowercase), and `fn_tables/mod.rs`
 declares the type of each interface, which only these statics have (its
@@ -172,14 +172,14 @@ fields are private to the module), and re-exports each table's items:
 #[repr(C)]
 pub struct <Iface> {
     fns: [*const (); <the number of its functions>],
-    data: [u64; <the number of its words of data>],
+    data: [usize; <the number of its words of data>],
 }
 
 // SAFETY: …
 unsafe impl Sync for <Iface> {}
 
 impl <Iface> {
-    pub const fn as_ptr(&'static self) -> *const [u64; <k>] { … }
+    pub const fn as_ptr(&'static self) -> *const [usize; <k>] { … }
 }
 
 /// The CPU features `<NAME>` requires (`VG.FnTable`).
@@ -191,12 +191,14 @@ pub static <NAME>: super::<Iface> = super::<Iface> {
 };
 ```
 
-On a target with 64-bit pointers, which `checkFnTables` requires, its words
-(`repr(C)`: the pointer-sized addresses, then the data) are those
-`Abi.withTables` says the memory holds where the parameter points: word `i`
-at offset `8 i`, the address of each function, the linker's resolution of
-its symbol (`ISA.fnAddr`), then the data. `checkFnTables` checks that each
-parameter that takes tables is a read-only array of `u64` of their length,
+On a target with 32- or 64-bit pointers, which `checkFnTables` requires,
+its words (`repr(C)`: the pointer-sized addresses, then the data, each a
+`usize`) are those `Abi.withTables` says the memory holds where the
+parameter points: word `i`, of the target's pointer width, at offset `i *
+size_of::<usize>()`, the address of each function, the linker's resolution
+of its symbol (`ISA.fnAddr`), then the data, which `checkFnTables` checks
+fits in a word. `checkFnTables` checks that each parameter that takes
+tables is a table parameter (`Param.table`) of their length,
 that it lists every table of their interface on the target (the Rust caller
 may pass the `as_ptr()` of any static of the type), that tables of one name
 are one table and tables of one interface have one shape, and that every
@@ -1284,9 +1286,10 @@ def aliasKey (p : Prepared) : String := sameKey p.art (codeOf p.art p.lines fun 
 
 /-- The tables of functions `p`'s artifact takes (`Artifact.tables`), checked
 against those of the artifacts of `ps` and the internal functions `hs`:
-its target's code can name a `static` and has 64-bit pointers, as each
-table's words (`Abi.withTables`, `fnTableFile`) are; each names a distinct
-read-only array parameter of `u64` (`Param.array false .u64 k`), and tables
+its target's code can name a `static`, and has pointers of 32 or 64 bits,
+the width of each table's words (`Abi.withTables`, `fnTableFile`), every
+word of data of each table fitting in it; each names a distinct table
+parameter (`Param.table k`, a `*const [usize; k]`), and tables
 of one interface, each of `k` words, named as `tableName` and `ifaceName`
 require, distinct, and every table of that interface that any artifact of
 the target takes: the Rust caller may pass the words of any static of the
@@ -1304,16 +1307,17 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
   let a := p.art
   if a.tables.isEmpty then return
   let t := a.target.name
-  unless a.target.abi.sym.isSome && a.target.abi.ptrBits == 64 do
+  let w := a.target.abi.ptrBits
+  unless a.target.abi.sym.isSome && (w == 32 || w == 64) do
     throw s!"{t}: {a.name} takes tables of functions, which its target's code cannot name or \
-      whose words are not 64 bits"
+      whose pointers are neither 32 nor 64 bits"
   let params := a.tables.map (·.1)
   unless (dedup params).length == params.length do
     throw s!"{t}: {a.name} gives a parameter two lists of tables of functions"
   let others := (ps.filter (·.art.target.name == t)).flatMap fun q => q.art.tables.flatMap (·.2)
   for (x, ts) in a.tables do
-    let some (.array false .u64 k) := a.sig.params.lookup x
-      | throw s!"{t}: {a.name}'s table of functions `{x}` is not a read-only array of `u64`"
+    let some (.table k) := a.sig.params.lookup x
+      | throw s!"{t}: {a.name}'s table of functions `{x}` is not a table parameter (`Param.table`)"
     let some T₀ := ts.head?
       | throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
     let names := ts.map (·.name)
@@ -1327,6 +1331,9 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
         throw s!"{t}: {a.name}'s parameter `{x}` has tables of two interfaces"
       unless T.fns.length + T.data.length == k do
         throw s!"{t}: {a.name}'s table of functions {T.name} is not of the {k} words of `{x}`"
+      unless T.data.all (·.toNat < 2 ^ w) do
+        throw s!"{t}: {a.name}'s table of functions {T.name} has a word of data wider than \
+          its target's {w}-bit pointers"
       for f in T.fns do
         match ps.find? fun q => q.art.target.name == t && q.art.name == f with
         | some q =>
@@ -1354,9 +1361,9 @@ def fnTableModule (n : String) : String := n.toLower
 
 /-- The module of a target's tables of functions, `fn_tables/mod.rs`: the
 type of each interface of `ts`, holding the addresses of its functions (as
-the pointer-sized words `*const ()`, which the model's 64-bit words are on
-a target with 64-bit pointers) then its words of data, `repr(C)` so that
-word `i` is at offset `8 i`, as `Abi.tableHeld` says, with fields private
+the pointer-sized words `*const ()`) then its words of data (`usize`),
+`repr(C)` so that word `i`, of the target's pointer width, is at offset
+`i * size_of::<usize>()`, as `Abi.tableHeld` says, with fields private
 to this module, so that only the statics the emitter writes, in its
 submodules, are of the type; and each table's module, whose items it
 re-exports. -/
@@ -1370,12 +1377,12 @@ def fnTablesMod (t : String) (ts : List FnTable) : String :=
       {T.fns.length} functions, then its {T.data.length} words of data. Only the statics of \
       this module are of this type.\n" ++
     s!"#[repr(C)]\npub struct {i} \{\n    fns: [*const (); {T.fns.length}],\n    \
-      data: [u64; {T.data.length}],\n}\n" ++
+      data: [usize; {T.data.length}],\n}\n" ++
     s!"\n// SAFETY: a `{i}` is immutable, and the functions it holds the addresses of may be \
       called from any thread.\nunsafe impl Sync for {i} \{}\n" ++
     s!"\nimpl {i} \{\n    /// A pointer to the table's words, as the verified functions that take it read \
       them.\n    \
-      pub const fn as_ptr(&'static self) -> *const [u64; {k}] \{\n        \
+      pub const fn as_ptr(&'static self) -> *const [usize; {k}] \{\n        \
       core::ptr::from_ref(self).cast()\n    }\n}\n") ++
   String.join (ts.map fun T =>
     s!"\n#[rustfmt::skip]\nmod {fnTableModule T.name};\npub use {fnTableModule T.name}::*;\n")

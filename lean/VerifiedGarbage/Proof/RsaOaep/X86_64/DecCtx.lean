@@ -139,9 +139,9 @@ def decK : Contract isa where
       (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabR s) ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabR s) ∧
       (stackArg s 17).toNat + 40 ≤ 2 ^ 64 ∧
-      (∃ T ∈ ts, Abi.tableHeld s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
+      (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
       (tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  post s s' := ∀ G, Spec.HashTable.hashAt s.mem (stackArg s 17) = some G →
+  post s s' := ∀ G, Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G →
     Spec.RsaOaep.writtenDecrypt s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaOaep.decrypt H G (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
@@ -160,8 +160,8 @@ def decK : Contract isa where
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r9) (stackArg s₁ 0).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r9) (stackArg s₂ 0).toNat ∧
       (∀ f ∈ tabFns ts, s₁.syms f = s₂.syms f) ∧
-      ∀ T ∈ ts, (Abi.tableHeld s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
-        Abi.tableHeld s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))
+      ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))
 
 /-- `decK.pre`, by name. -/
 structure DPre (s : State) : Prop where
@@ -261,7 +261,7 @@ theorem DPre.of {s : State} (h : (decK H ts).pre s) : DPre s := by
 
 /-- The table: one of `ts`, at the stack argument 17. -/
 theorem DPre.tab {s : State} (h : (decK H ts).pre s) :
-    (∃ T ∈ ts, Abi.tableHeld s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
+    (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
       (tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
   simp only [decK] at h
   sig_split h

@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # Tables of functions (`Artifact.tables`) on x86-64
 
-A function `(t: &[u64; 2]) -> u64` that takes a table of the interface
+A function `(t: &[usize; 2]) -> u64` that takes a table of the interface
 `TestFns` (`Abi.withTables`), of one function and one word of data, and calls
 the function through it: its code, `mov r11, [rdi]` then `call r11`
 (`Code.icall`, of `vg_test_fn_a` or else `vg_test_fn_b`), returns what the
@@ -31,7 +31,7 @@ statics of the interface's type.
 namespace VG.Test.FnTablesX86_64
 open VG VG.X86_64
 
-def sig : Sig := { params := [("t", .array false .u64 2)], ret := some .u64 }
+def sig : Sig := { params := [("t", .table 2)], ret := some .u64 }
 
 def tA : FnTable := { name := "VG_TEST_FNS_A", iface := "TestFns", fns := ["vg_test_fn_a"], data := [1] }
 def tB : FnTable := { name := "VG_TEST_FNS_B", iface := "TestFns", fns := ["vg_test_fn_b"], data := [2] }
@@ -63,7 +63,7 @@ theorem pre_facts {s : State} (h : contract.pre s) :
         (s.mem.readW (s.gpr .rdi) 64 = s.syms "vg_test_fn_b" ∧
           s.mem.readW (s.gpr .rdi + 8) 64 = 2)) := by
   sig_pre [contract, sig, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
-    Abi.tableHeld, Sig.wordIndex] at h
+    Abi.tableHeld, Sig.wordIndex, Sig.lists, Sig.tableRegion, BitVec.setWidth_eq] at h
   obtain ⟨hsp, ⟨p, hp, T, hT, hh⟩, hd, hrd, hwr, -⟩ := h
   simp only [Option.map_some, List.getD_cons_zero, Option.some.injEq] at hp
   subst hp
@@ -199,7 +199,7 @@ theorem verified : Verified target code contract := by
     exact (Exec.det e e').1
   · refine ⟨sat, ?_⟩
     sig_pre [contract, sig, tables, Abi.withTables, abi, argRegs, stackBelow, tA, tB, FnTable.words,
-      Abi.tableHeld, Sig.wordIndex, sat]
+      Abi.tableHeld, Sig.wordIndex, Sig.lists, Sig.tableRegion, BitVec.setWidth_eq, sat]
     exact ⟨by decide, ⟨_, rfl, _, .inl rfl, by decide⟩, fun _ => by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩
 
@@ -225,14 +225,14 @@ def expected : String := "/// Returns the word of data of its table, which the t
 ///
 /// # Safety
 ///
-/// * `t` must be valid for reads of 16 bytes.
+/// * `t` must be valid for reads of `2 * size_of::<usize>()` bytes.
 /// * `t` must not overlap the return address on the stack or the 8 bytes of stack below it, \
 or wrap around the end of the address space (no Rust object does).
 /// * `t` must be the `as_ptr()` of one of the `TestFns` tables of functions of this crate \
 (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, \
 if it has one.
 #[unsafe(naked)]
-pub unsafe extern \"sysv64\" fn vg_test_fn_tables(t: *const [u64; 2]) -> u64 {
+pub unsafe extern \"sysv64\" fn vg_test_fn_tables(t: *const [usize; 2]) -> u64 {
     core::arch::naked_asm!(
         r#\".base64 \"TIsfQf/Tww==\"
 .p2align 6\"#,
@@ -259,7 +259,7 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
 
 #guard Rust.fnTableFile target tA [] (fun n => s!"test::{n}") == expectedA
 #guard ((Rust.fnTablesMod "x86_64" (Rust.fnTables [artifact])).splitOn
-  "pub struct TestFns {\n    fns: [*const (); 1],\n    data: [u64; 1],\n}").length == 2
+  "pub struct TestFns {\n    fns: [*const (); 1],\n    data: [usize; 1],\n}").length == 2
 
 -- Both functions the indirect call may reach are emitted, as internal functions.
 #guard internals.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]

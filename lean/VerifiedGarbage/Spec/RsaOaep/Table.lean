@@ -43,7 +43,7 @@ def mgf1Safety : String :=
 
 /-! ## `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` -/
 
-/-- `encryptPrecomputedSig` with a last parameter `mgf1: *const [u64; 5]`,
+/-- `encryptPrecomputedSig` with a last parameter `mgf1: *const [usize; 5]`,
 a table of `Hash`. -/
 def encryptTableSig : Sig where
   params := (encryptPrecomputedSig H).params ++ [("mgf1", HashTable.param)]
@@ -59,7 +59,7 @@ def encryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _scratch _scratchLen
         pre preLen mgf1 m m' r =>
-      ∀ G, HashTable.hashAt m mgf1 = some G →
+      ∀ G, HashTable.hashAt A.ptrBits m mgf1 = some G →
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
         written m' out nLen.toNat r
           (encrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
@@ -98,7 +98,7 @@ def encryptTableApi : Api where
 
 /-! ## `vg_rsa_oaep_<H>_mgf1_decrypt` -/
 
-/-- `decryptSig` with a last parameter `mgf1: *const [u64; 5]`, a table of
+/-- `decryptSig` with a last parameter `mgf1: *const [usize; 5]`, a table of
 `Hash`. -/
 def decryptTableSig : Sig where
   params := decryptSig.params ++ [("mgf1", HashTable.param)]
@@ -116,7 +116,7 @@ def decryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
         scratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
         _qinvLen label labelLen ct _ctLen _scratch _scratchLen mgf1 m m' r =>
-      ∀ G, HashTable.hashAt m mgf1 = some G →
+      ∀ G, HashTable.hashAt A.ptrBits m mgf1 = some G →
       writtenDecrypt m' out msgLen nLen.toNat r
         (decrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
           (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)

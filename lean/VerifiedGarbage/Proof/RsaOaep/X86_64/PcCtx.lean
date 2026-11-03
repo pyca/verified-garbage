@@ -93,7 +93,7 @@ structure PPreT (H : Spec.Mgf1.Hash) (s : State) : Prop extends PPre H s where
   tabWrap : (stackArg s 9).toNat + 40 ≤ 2 ^ 64
 
 theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC H ts).pre s) :
-    PPreT H s ∧ (∃ T ∈ ts, Abi.tableHeld s.mem (stackArg s 9) (FnTable.words isa s T)) ∧
+    PPreT H s ∧ (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 9) (FnTable.words isa s T)) ∧
       (tabFnsE ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
   sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,

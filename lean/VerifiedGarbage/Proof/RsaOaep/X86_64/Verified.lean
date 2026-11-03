@@ -56,7 +56,7 @@ theorem withTable_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
 
 /-- The table of `w`, at `0x300000`. -/
 theorem withTable_held (s : State) (vs : List MdHash) (w : MdHash) :
-    Abi.tableHeld (withTable s vs w).mem 0x300000 (FnTable.words isa (withTable s vs w) (tableOf w)) :=
+    Abi.tableHeld 64 (withTable s vs w).mem 0x300000 (FnTable.words isa (withTable s vs w) (tableOf w)) :=
   put5_held (ws := tw vs w) rfl
 
 /-! ## Decryption -/

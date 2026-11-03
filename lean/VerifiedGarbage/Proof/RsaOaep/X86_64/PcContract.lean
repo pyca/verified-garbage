@@ -30,8 +30,8 @@ def contract : Contract isa where
     Spec.Rsa.wordsAt a.mem (stackArg a 7) (stackArg a 8).toNat =
       Spec.Rsa.wordsAt s.mem (stackArg s 7) (stackArg s 8).toNat ∧ stackArg a 9 = stackArg s 9 ∧
     (∀ f ∈ tabFnsE ts, a.syms f = s.syms f) ∧
-    ∀ T ∈ ts, (Abi.tableHeld a.mem (stackArg a 9) (FnTable.words isa a T) ↔
-      Abi.tableHeld s.mem (stackArg s 9) (FnTable.words isa s T))
+    ∀ T ∈ ts, (Abi.tableHeld 64 a.mem (stackArg a 9) (FnTable.words isa a T) ↔
+      Abi.tableHeld 64 s.mem (stackArg s 9) (FnTable.words isa s T))
 
 theorem implies (hsat : ∃ s, (encC H ts).pre s) : (contract H ts).Implies (encC H ts) where
   pre := fun _ h => h

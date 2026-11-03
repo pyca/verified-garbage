@@ -72,6 +72,8 @@ def stepFn : Instr → Step
   | .str _ _ n _ | .strb _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .ldp t1 t2 n _ => ⟨fun τ => if pub τ n then some (set (set τ t1 false) t2 false) else none⟩
   | .stp _ _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  -- Only as the instruction of an indirect call (`Code.icall`).
+  | .blr _ => ⟨fun _ => none⟩
   | .vop _ => ⟨fun τ => some τ⟩
   | .ldrq _ n _ | .strq _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   -- Words of a table of constants, into a vector register, which this
@@ -116,7 +118,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, stepFn, reduceCtorEq] at hs
+  | push | pop | alloc | free | blr => simp only [step, stepFn, reduceCtorEq] at hs
   | add sz d n m =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂

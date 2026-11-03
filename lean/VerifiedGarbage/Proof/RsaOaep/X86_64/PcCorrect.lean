@@ -39,7 +39,7 @@ def post (H G : Spec.Mgf1.Hash) (s u : State) : Prop := Consistent s → (encK H
 
 /-- `post` for MGF1's hash function the table names. -/
 def postT (H : Spec.Mgf1.Hash) (s u : State) : Prop :=
-  ∀ G, Spec.HashTable.hashAt s.mem (stackArg s 9) = some G → post H G s u
+  ∀ G, Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some G → post H G s u
 
 /-- What the function's caller sees of the registers and the stack, from a
 state in the frame. -/
@@ -113,7 +113,7 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC mH.G (tables vs)).p
   obtain ⟨hm, hidx, hDm⟩ := held_tableOf hheld
   have ok := tabOK_of hc hd hw
   obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
-  have hGa : Spec.HashTable.hashAt s.mem (stackArg s 9) = some w.mgf.G := hashAt_tableOf hidx
+  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some w.mgf.G := hashAt_tableOf hidx
   have hk1 := hp.k1; have hk2 := hp.k2
   have hlen : mH.G.len = Hl.D := mH.len
   have hnl : (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length = (s.gpr .rcx).toNat := by

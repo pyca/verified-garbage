@@ -119,6 +119,11 @@ inductive Param
   slices are (their addresses and lengths) is public, as a slice's address
   and length are, and their contents are not. -/
   | slices (elem : Elem) (count : String)
+  /-- A `*const [usize; n]` standing for a `&[usize; n]`: a table of
+  functions (`Abi.withTables`), `n` pointer-sized words, read-only. Its
+  region, of `n` words of the target's pointer width, is among the read-only
+  memory `Sig.lists` gives, which knows that width. -/
+  | table (n : Nat)
   deriving DecidableEq, Repr
 
 structure Sig where
@@ -146,6 +151,7 @@ def Param.words (ptrBits : Nat) : Param → List ArgWord
   | .array .. => [.addr]
   | .slice .. => [.addr, .int ptrBits]
   | .slices .. => [.addr, .int ptrBits]
+  | .table _ => [.addr]
 
 def Sig.words (sig : Sig) (ptrBits : Nat) : List ArgWord :=
   sig.params.flatMap fun p => p.2.words ptrBits
@@ -268,8 +274,10 @@ def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))
 
 /-! ## Tables of functions
 
-A function may take a table of functions: a read-only array of `u64`
-(`Param.array false .u64 k`) that holds one of the `static`s the emitter
+A function may take a table of functions: a read-only array of `k`
+pointer-sized words (`Param.table k`, a `*const [usize; k]`: `u64`s on a
+target with 64-bit pointers, `u32`s on one with 32-bit pointers) that holds
+one of the `static`s the emitter
 writes for an interface (`FnTable`, `TCB/Rust.lean`), as a `&'static`
 reference to it: the addresses of its functions (`ISA.fnAddr`, each a
 pointer-sized word), then its words of data. Its code calls them by an
@@ -286,14 +294,16 @@ be used); and the addresses of
 the functions, and which of the tables each parameter points to, are public
 (where each function is, as where each static is, does not depend on the
 data a function works on, and the Rust caller chooses the table by the CPU's
-features, not by a secret). The array's own region, read-only and apart from
-every writable one, is the contract's (`Sig.contract`) as for any other
-array. With no tables, it is `A`. -/
+features, not by a secret). The table's own region, read-only and apart
+from every writable one, is the contract's (`Sig.contract`, from
+`Sig.lists`). With no tables, it is `A`. -/
 
 /-- A table of functions: the `static` `name` of the type `iface` (an
 interface, which every table of it shares), holding the addresses of the
-functions `fns`, then the words `data`, each 64 bits (on a target with
-64-bit pointers: `TCB/Rust.lean`). -/
+functions `fns`, then the words `data`, each a pointer-sized word
+(`TCB/Rust.lean`): here 64 bits, of which a target with narrower pointers
+holds the low ones (`Abi.tableHeld`); the emitter checks that each word of
+data fits. -/
 structure FnTable where
   name : String
   iface : String
@@ -306,10 +316,13 @@ its data. -/
 def FnTable.words (M : ISA) (s : M.State) (T : FnTable) : List (BitVec 64) :=
   T.fns.map (M.fnAddr s) ++ T.data
 
-/-- The memory `m` holds the words `ws` at `p`: word `i` (64 bits,
-little-endian) at `p + 8 i`. -/
-def Abi.tableHeld (m : Mem) (p : Addr) (ws : List (BitVec 64)) : Prop :=
-  ∀ i < ws.length, m.readW (p + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
+/-- The memory `m` holds the words `ws` at `p`, on a target with
+`ptrBits`-bit pointers: word `i` (`ptrBits` bits, little-endian, the low
+bits of the 64 of `ws`) at `p + (ptrBits / 8) i`. Every address on such a
+target, a function's included (`ISA.fnAddr`), is below `2 ^ ptrBits`. -/
+def Abi.tableHeld (ptrBits : Nat) (m : Mem) (p : Addr) (ws : List (BitVec 64)) : Prop :=
+  ∀ i < ws.length,
+    m.readW (p + BitVec.ofNat 64 (ptrBits / 8 * i)) ptrBits = (ws.getD i 0).setWidth ptrBits
 
 /-- The index among the machine-level arguments (`Sig.words`) of the first
 argument of the parameter named `x`, if there is one. -/
@@ -330,14 +343,14 @@ def Abi.withTables {M : ISA} (A : Abi M) (sig : Sig) (ts : List (String × List 
         (match A.args ws with
           | none => False
           | some vals => ∀ t ∈ ts, ∃ p, arg (vals s) t.1 = some p ∧
-              ∃ T ∈ t.2, Abi.tableHeld (A.mem s) p (T.words M s)) ∧
+              ∃ T ∈ t.2, Abi.tableHeld A.ptrBits (A.mem s) p (T.words M s)) ∧
         fns.Pairwise fun f g => f ≠ g → M.fnAddr s f ≠ M.fnAddr s g
       pub s₁ s₂ := A.pub s₁ s₂ ∧ (∀ f ∈ fns, M.fnAddr s₁ f = M.fnAddr s₂ f) ∧
         match A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
         | none => False
         | some vals => ∀ t ∈ ts, ∀ p₁ p₂, arg (vals s₁) t.1 = some p₁ → arg (vals s₂) t.1 = some p₂ →
-            ∀ T ∈ t.2, (Abi.tableHeld (A.mem s₁) p₁ (T.words M s₁) ↔
-              Abi.tableHeld (A.mem s₂) p₂ (T.words M s₂)) }
+            ∀ T ∈ t.2, (Abi.tableHeld A.ptrBits (A.mem s₁) p₁ (T.words M s₁) ↔
+              Abi.tableHeld A.ptrBits (A.mem s₂) p₂ (T.words M s₂)) }
 
 /-- The `n` bytes below the stack pointer `sp`, if any. -/
 def stackBelow (sp : Addr) : Nat → List Region
@@ -352,6 +365,7 @@ def Sig.bufs : List (String × Param) → List (BitVec 64) → List (Region × B
   | (_, .array m e n) :: ps, p :: vs => (⟨p, n * e.size⟩, m) :: Sig.bufs ps vs
   | (_, .slice m e _) :: ps, p :: l :: vs => (⟨p, l.toNat * e.size⟩, m) :: Sig.bufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.bufs ps vs
+  | (_, .table _) :: ps, _ :: vs => Sig.bufs ps vs
   | _, _ => []
 
 /-- The addresses of the buffers of `u16`, `u32` or `u64` (or of arrays of
@@ -366,6 +380,7 @@ def Sig.alignedBufs : List (String × Param) → List (BitVec 64) → List (Addr
   | (_, .slice _ e _) :: ps, p :: _ :: vs =>
     if 1 < e.align then (p, e.align) :: Sig.alignedBufs ps vs else Sig.alignedBufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.alignedBufs ps vs
+  | (_, .table _) :: ps, _ :: vs => Sig.alignedBufs ps vs
   | _, _ => []
 
 /-- The buffers of the arrays among the parameters, given the arguments'
@@ -376,6 +391,7 @@ def Sig.arrays : List (String × Param) → List (BitVec 64) → List (String ×
   | (n, .array _ e k) :: ps, p :: vs => (n, ⟨p, k * e.size⟩) :: Sig.arrays ps vs
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
+  | (_, .table _) :: ps, _ :: vs => Sig.arrays ps vs
   | _, _ => []
 
 /-- For each `(name, n)` of `written`, the function changes no byte at
@@ -405,9 +421,14 @@ def Sig.listed (ptrBits : Nat) (m : Mem) (e : Elem) (p : Addr) (n : Nat) : List 
     let d := p + BitVec.ofNat 64 (i * (2 * (ptrBits / 8)))
     ⟨(m.readW d ptrBits).setWidth 64, (m.readW (d + BitVec.ofNat 64 (ptrBits / 8)) ptrBits).toNat * e.size⟩
 
-/-- The read-only memory of the lists of slices among the parameters, given
-the arguments' values and the memory on entry: for each list, its
-descriptors, then the slices they list (`Sig.listed`). -/
+/-- The `n` pointer-sized words of a table of functions at `p`
+(`Param.table`), on a target with `ptrBits`-bit pointers. -/
+def Sig.tableRegion (ptrBits : Nat) (p : Addr) (n : Nat) : Region := ⟨p, n * (ptrBits / 8)⟩
+
+/-- The read-only memory of the lists of slices and the tables of functions
+among the parameters, given the arguments' values and the memory on entry:
+for each list, its descriptors, then the slices they list (`Sig.listed`);
+for each table, its words (`Sig.tableRegion`). -/
 def Sig.lists (ptrBits : Nat) (m : Mem) : List (String × Param) → List (BitVec 64) → List Region
   | [], _ => []
   | (_, .int ..) :: ps, _ :: vs => Sig.lists ptrBits m ps vs
@@ -415,6 +436,7 @@ def Sig.lists (ptrBits : Nat) (m : Mem) : List (String × Param) → List (BitVe
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.lists ptrBits m ps vs
   | (_, .slices e _) :: ps, p :: n :: vs =>
     Sig.descRegion ptrBits p n.toNat :: Sig.listed ptrBits m e p n.toNat ++ Sig.lists ptrBits m ps vs
+  | (_, .table n) :: ps, p :: vs => Sig.tableRegion ptrBits p n :: Sig.lists ptrBits m ps vs
   | _, _ => []
 
 /-- The descriptors of the lists of slices among the parameters, given the
@@ -425,6 +447,7 @@ def Sig.descs (ptrBits : Nat) : List (String × Param) → List (BitVec 64) → 
   | (_, .array ..) :: ps, _ :: vs => Sig.descs ptrBits ps vs
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.descs ptrBits ps vs
   | (_, .slices ..) :: ps, p :: n :: vs => Sig.descRegion ptrBits p n.toNat :: Sig.descs ptrBits ps vs
+  | (_, .table _) :: ps, _ :: vs => Sig.descs ptrBits ps vs
   | _, _ => []
 
 /-- Whether each machine-level argument is public: pointers and lengths are. -/
@@ -433,6 +456,7 @@ def Param.pubs : Param → List Bool
   | .array .. => [true]
   | .slice .. => [true, true]
   | .slices .. => [true, true]
+  | .table _ => [true]
 
 /-- The width of the return value (0 if there is none). -/
 def Sig.retBits (sig : Sig) (ptrBits : Nat) : Nat := match sig.ret with
@@ -451,6 +475,7 @@ def Param.rust (name : String) : Param → String
   | .array w e n => s!"{name}: *{if w then "mut" else "const"} [{e.rust}; {n}]"
   | .slice w e len => s!"{name}: *{if w then "mut" else "const"} {e.rust}, {len}: usize"
   | .slices _ count => s!"{name}: *const [usize; 2], {count}: usize"
+  | .table n => s!"{name}: *const [usize; {n}]"
 
 /-- The Rust parameter list and return type. -/
 def Sig.rust (sig : Sig) : String :=
