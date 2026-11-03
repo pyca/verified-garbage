@@ -75,7 +75,7 @@ theorem dbArgs_ok {H : Hash} (hD : H.D = D) (hD64 : D ≤ 64) {t : State}
   · rw [e₆, e₅, k₄.get .s1, k₄.get .s3, Base.sk h, Base.slo h, k_lo P h0, hD,
       Offset.ofNat_sub_ofNat (by omega), Nat.sub_add_eq]
 
-/-- `clearTop`: `DB`'s first byte ANDed with `c`. -/
+/-- `clearTop`: `DB`'s first byte ANDed with `c`, saved on entry. -/
 theorem clearTop_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem) (h0 : s.mem (s.gpr .a2) ≠ 0) :
     WP isa (.block clearTop) t fun t' => Base Ss vS s t' ∧
       t'.mem = t.mem.writeW (off (Ss s) (loN s)) (view t.mem (Ss s) (loN s) &&& cS s) := by
@@ -83,47 +83,23 @@ theorem clearTop_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem) (h0 
   have hl1 := loN_le s
   have hP : oP = 1352 := rfl
   have hR : oRsa = 8192 := rfl
-  have hn : (nR s).Contains (s.gpr .a2) 1 := by
-    have := Offset.contains_base (s.gpr .a2) (d := 0) (n := 1) (k := (s.gpr .a3).toNat) (by have := P.k1; omega)
-      (by decide)
-    simpa only [BitVec.add_zero] using this
-  have hb : t.mem (s.gpr .a2) = s.mem (s.gpr .a2) := h.mem _ fun r hr hc => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact (P.kn.sub_left kR_sub) _ hc hn
-    · exact (P.ns.sub_right (sc_sub P)).symm _ hc hn
   simp only [clearTop]
-  refine wp_ld (a := off (Ss s) oP) (by rw [h.s0]) (by simpa using oP_al P 0)
-    (by rw [h.wr]; exact sc_inR F (by omega) _) fun t₀ o₀ e₀ => ?_
-  refine wp_lbu (a := s.gpr .a2) (by rw [e₀, sp.n, BitVec.add_zero])
-    (by rw [o₀.rd, h.rd, P.hrd]; exact ⟨nR s, List.mem_append_left _ (by simp), hn⟩) fun t₁ o₁ e₁ => ?_
-  refine wp_srl fun t₂ o₂ e₂ => wp_srl fun t₃ o₃ e₃ => wp_or fun t₄ o₄ e₄ => wp_srl fun t₅ o₅ e₅ =>
-    wp_or fun t₆ o₆ e₆ => wp_srl fun t₇ o₇ e₇ => wp_or fun t₈ o₈ e₈ => wp_li (imm := 0) (by decide)
-    fun t₉ o₉ e₉ => wp_sub fun t₁₀ o₁₀ e₁₀ => wp_li (imm := 0xFF) (by decide) fun t₁₁ o₁₁ e₁₁ =>
-    wp_and fun t₁₂ o₁₂ e₁₂ => wp_or fun t₁₃ o₁₃ e₁₃ => wp_add fun t₁₄ o₁₄ e₁₄ => ?_
-  have x8 : t₈.gpr .t2 = smB (s.mem (s.gpr .a2)) := by
-    rw [e₈, o₇.get .t2, e₇, e₆, o₅.get .t2, e₅, e₄, o₃.get .t2, e₃, e₂, e₁, o₀.mem, hb]; rfl
-  have K₉ : Only [.t1, .t2, .t3] t t₉ :=
-    (o₀.trans (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))))))).mono
-  have x13 : t₁₃.gpr .t2 = cmB (s.mem (s.gpr .a2)) := by
-    rw [e₁₃, o₁₂.get .t2, o₁₁.get .t2, o₁₀.get .t2, o₉.get .t2, x8, e₁₂, o₁₁.get .t3, e₁₀, e₉, K₉.get .s3,
-      Base.slo h, e₁₁]; rfl
-  have K : Only [.t1, .t2, .t3, .t4] t t₁₃ := (K₉.trans (o₁₀.trans (o₁₁.trans (o₁₂.trans o₁₃)))).mono
-  have K₁₄ : Only [.t1, .t2, .t3, .t4, .a1] t t₁₄ := (K.trans o₁₄).mono
-  have x14 : t₁₄.gpr .a1 = off (Ss s) (loN s) := by
-    rw [e₁₄, K.get .s0, K.get .s3, lo_reg h h0, h.s0]
-  refine wp_lbu (a := off (Ss s) (loN s)) (by rw [x14, BitVec.add_zero])
-    (by rw [K₁₄.wr, h.wr]; exact sc_inR F (o := loN s) (n := 1) (by omega) _) fun t₁₅ o₁₅ e₁₅ =>
-    wp_and fun t₁₆ o₁₆ e₁₆ => ?_
-  have K₁₆ : Only [.t1, .t2, .t3, .t4, .a1, .a2] t t₁₆ := (K₁₄.trans (o₁₅.trans o₁₆)).mono
-  refine wp_sb (a := off (Ss s) (loN s)) (by rw [o₁₆.get .a1, o₁₅.get .a1, x14, BitVec.add_zero])
-    (by rw [K₁₆.wr, h.wr]; exact sc_inW F (by omega)) fun t' m' => wp_nil ?_
-  have hv : (t₁₆.gpr .a2).setWidth 8 = view t.mem (Ss s) (loN s) &&& cS s := by
-    rw [e₁₆, e₁₅, o₁₅.get .t2, o₁₄.get .t2, x13, K₁₄.mem, and_mask]; rfl
+  refine wp_ld (a := off (Ss s) (oP + 40)) (by rw [h.s0]) (oP_al P 5)
+    (by rw [h.wr]; exact sc_inR F (by omega) _) fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => ?_
+  have x2 : t₂.gpr .a1 = off (Ss s) (loN s) := by rw [e₂, o₁.get .s0, o₁.get .s3, lo_reg h h0, h.s0]
+  have K₂ : Only [.t2, .a1] t t₂ := (o₁.trans o₂).mono
+  refine wp_lbu (a := off (Ss s) (loN s)) (by rw [x2, BitVec.add_zero])
+    (by rw [K₂.wr, h.wr]; exact sc_inR F (o := loN s) (n := 1) (by omega) _) fun t₃ o₃ e₃ =>
+    wp_and fun t₄ o₄ e₄ => ?_
+  have K₄ : Only [.t2, .a1, .a2] t t₄ := (K₂.trans (o₃.trans o₄)).mono
+  refine wp_sb (a := off (Ss s) (loN s)) (by rw [o₄.get .a1, o₃.get .a1, x2, BitVec.add_zero])
+    (by rw [K₄.wr, h.wr]; exact sc_inW F (by omega)) fun t' m' => wp_nil ?_
+  have hv : (t₄.gpr .a2).setWidth 8 = view t.mem (Ss s) (loN s) &&& cS s := by
+    rw [e₄, e₃, o₃.get .t2, o₂.get .t2, e₁, sp.c, K₂.mem, and_mask]; rfl
   have hm : t'.mem = t.mem.writeW (off (Ss s) (loN s)) (view t.mem (Ss s) (loN s) &&& cS s) := by
-    rw [m'.mem, hv, K₁₆.mem]
-  refine ⟨(h.only F K₁₆).keep F m'.keep (R := [⟨off (Ss s) (loN s), 1⟩])
-    (by rw [hm, ← K₁₆.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
+    rw [m'.mem, hv, K₄.mem]
+  refine ⟨(h.only F K₄).keep F m'.keep (R := [⟨off (Ss s) (loN s), 1⟩])
+    (by rw [hm, ← K₄.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by omega))), hm⟩
 
 end

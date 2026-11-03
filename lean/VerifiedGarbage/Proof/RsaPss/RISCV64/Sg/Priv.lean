@@ -164,12 +164,12 @@ theorem pk_PB : (pkR s).Disjoint (PB s) := by
 
 /-- The saved arguments, kept by writes to the private operation's frame. -/
 theorem Spilled.pb {m m' : Mem} (sp : Spilled s m) (hf : Frame [PB s] m m') : Spilled s m' := by
-  have e : ∀ j < 5, m'.readW (off (Ss s) (oP + 8 * j)) 64 = m.readW (off (Ss s) (oP + 8 * j)) 64 := fun j hj =>
+  have e : ∀ j < 6, m'.readW (off (Ss s) (oP + 8 * j)) 64 = m.readW (off (Ss s) (oP + 8 * j)) 64 := fun j hj =>
     hf.readW (r := ⟨off (Ss s) (oP + 8 * j), 8⟩) (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ((P.ks.sub_left (PB_sub P)).sub_right (sc_scR P (by unfold oP oRsa; omega))).symm) (by decide)
   exact ⟨(e 0 (by decide)).trans sp.n, (e 1 (by decide)).trans sp.e, (e 2 (by decide)).trans sp.el,
-    (e 3 (by decide)).trans sp.p, (e 4 (by decide)).trans sp.pl⟩
+    (e 3 (by decide)).trans sp.p, (e 4 (by decide)).trans sp.pl, (e 5 (by decide)).trans sp.c⟩
 
 /-- A load of our stack argument `j` through `t6`, with memory changed only
 in the stack the function uses and our part of `scratch`. -/

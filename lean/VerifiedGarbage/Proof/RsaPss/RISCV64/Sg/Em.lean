@@ -54,15 +54,15 @@ theorem bytesAt_eq_view (m : Mem) (S : Addr) (d n : Nat) :
 
 /-- The saved arguments, kept by memory that is the same at `oP`. -/
 theorem Spilled.of_view {s : State} {m m' : Mem} (h : Spilled s m)
-    (hv : ∀ o, oP ≤ o → o < oP + 40 → view m' (Ss s) o = view m (Ss s) o) : Spilled s m' := by
-  have e : ∀ j < 5, m'.readW (off (Ss s) (oP + 8 * j)) 64 = m.readW (off (Ss s) (oP + 8 * j)) 64 := fun j hj =>
+    (hv : ∀ o, oP ≤ o → o < oP + 48 → view m' (Ss s) o = view m (Ss s) o) : Spilled s m' := by
+  have e : ∀ j < 6, m'.readW (off (Ss s) (oP + 8 * j)) 64 = m.readW (off (Ss s) (oP + 8 * j)) 64 := fun j hj =>
     Mem.readW_congr fun i hi => by
       have := hv (oP + 8 * j + i) (by omega) (by omega)
       unfold view at this
       show m' (off (off (Ss s) (oP + 8 * j)) i) = m (off (off (Ss s) (oP + 8 * j)) i)
       rw [off_off]; exact this
   exact ⟨(e 0 (by decide)).trans h.n, (e 1 (by decide)).trans h.e, (e 2 (by decide)).trans h.el,
-    (e 3 (by decide)).trans h.p, (e 4 (by decide)).trans h.pl⟩
+    (e 3 (by decide)).trans h.p, (e 4 (by decide)).trans h.pl, (e 5 (by decide)).trans h.c⟩
 
 /-- `M'` after `mPrime`. -/
 theorem mPrime_bytes (m : Mem) (S : Addr) {D : Nat} (dig salt : List Byte) (hd : dig.length = D)

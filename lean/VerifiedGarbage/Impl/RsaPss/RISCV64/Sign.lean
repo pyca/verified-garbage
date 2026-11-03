@@ -22,9 +22,10 @@ the calls are in `s0`–`s4`, all public: `s0` = `scratch`, `s1` = `k = n_len`,
 `s2` = `out`, `s3` = `lo` (1 if `emLen = k - 1`, else 0, from the modulus'
 first byte `n₀`, as verification computes it) and `s4` = `salt_len`. `n`,
 `e`, `e_len`, `p` and `p_len`, which arrive in registers and are only needed
-for the private operation and the mask of `DB`'s top bits, are saved in our
-part of `scratch` at `oP`, past what MGF1 and the hash calls write; the
-digest, the salt and the rest of the key are read from our stack arguments.
+for the private operation, are saved in our part of `scratch` at `oP`, past
+what MGF1 and the hash calls write, and so is the mask `c` of `DB`'s top
+bits, computed on entry from `n₀`; the digest, the salt and the rest of the
+key are read from our stack arguments.
 
 If `n₀ = 0`, `emLen < hLen + 2` or `salt_len > emLen - hLen - 2` (all public),
 it writes zeros to `out` and returns 0. Otherwise it writes `M'` and hashes it
@@ -51,7 +52,7 @@ open VG.Impl.RsaPss.RISCV64 (oY yBase clearY hashFixed)
 
 /-! ## The saved arguments -/
 
-/-- `n`, `e`, `e_len`, `p` and `p_len`, five words. -/
+/-- `n`, `e`, `e_len`, `p`, `p_len` and the mask `c`, six words. -/
 def oP : Nat := 1352
 
 /-! ## The entry -/
@@ -62,12 +63,19 @@ def smear : List Instr :=
     .logic .or .t2 .t2 .t3, .shift .srl .d .t3 .t2 4, .logic .or .t2 .t2 .t3, .addi .t3 .t2 (-1),
     .shift .srl .d .s3 .t3 63]
 
+/-- `c = smear(n₀ >> 1) ∨ (0xFF ∧ -lo)`, from `t2` and `lo`, to
+`scratch + oP + 40`. -/
+def cMask : List Instr :=
+  [.li .t3 0, .sub .t3 .t3 .s3, .li .t4 0xFF, .logic .and .t3 .t3 .t4, .logic .or .t2 .t2 .t3,
+    .store .d .t2 .s0 (oP + 40)]
+
 /-- The arguments into the registers that keep them, and `n`, `e`, `e_len`,
-`p` and `p_len` to `scratch + oP`; then `n₀` into `t1` and `lo` into `s3`. -/
+`p` and `p_len` to `scratch + oP`; then `n₀` into `t1`, `lo` into `s3` and
+`c` to `scratch + oP + 40`. -/
 def prologue : List Instr :=
   [argBase, .load .d .s0 .t6 88, mov .s1 .a3, mov .s2 .a0, .load .d .s4 .t6 80, .store .d .a2 .s0 oP,
     .store .d .a4 .s0 (oP + 8), .store .d .a5 .s0 (oP + 16), .store .d .a6 .s0 (oP + 24),
-    .store .d .a7 .s0 (oP + 32), .load .b .t1 .a2 0] ++ smear
+    .store .d .a7 .s0 (oP + 32), .load .b .t1 .a2 0] ++ smear ++ cMask
 
 variable (H : Hash)
 
@@ -119,13 +127,9 @@ def dbArgs : List Instr :=
   [.add .s6 .s0 .s1, .addi .s6 .s6 (-(H.D + 1 : Nat)), .li .s7 H.D, .add .s8 .s0 .s3, .sub .s9 .s1 .s3,
     .addi .s9 .s9 (-(H.D + 1 : Nat))]
 
-/-- `DB`'s first byte ANDed with `c = smear(n₀ >> 1) ∨ (0xFF ∧ -lo)`, from
-`n₀` again. -/
+/-- `DB`'s first byte ANDed with `c`, saved on entry. -/
 def clearTop : List Instr :=
-  [.load .d .t1 .s0 oP, .load .b .t1 .t1 0, .shift .srl .d .t2 .t1 1, .shift .srl .d .t3 .t2 1,
-    .logic .or .t2 .t2 .t3, .shift .srl .d .t3 .t2 2, .logic .or .t2 .t2 .t3, .shift .srl .d .t3 .t2 4,
-    .logic .or .t2 .t2 .t3, .li .t3 0, .sub .t3 .t3 .s3, .li .t4 0xFF, .logic .and .t3 .t3 .t4,
-    .logic .or .t2 .t2 .t3, .add .a1 .s0 .s3, .load .b .a2 .a1 0, .logic .and .a2 .a2 .t2,
+  [.load .d .t2 .s0 (oP + 40), .add .a1 .s0 .s3, .load .b .a2 .a1 0, .logic .and .a2 .a2 .t2,
     .store .b .a2 .a1 0]
 
 /-! ## The private operation -/
