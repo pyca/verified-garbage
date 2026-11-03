@@ -53,7 +53,10 @@ def line (i j k n : Nat) : List Instr :=
    .logic .or .t0 .t0 .t1, .logic .xor (wreg i) (wreg i) .t0]
 
 /-- The lines `(i, j, k, n)` of a double round (a column round and a row
-round), in the order of RFC 7914 §3. -/
+round). Each round's four quarter-rounds touch disjoint words: rather than
+RFC 7914 §3's order (each quarter-round's four lines in turn), a line of
+each quarter-round in turn, so that the four chains of dependent lines are
+side by side in the code. -/
 def lines : List (Nat × Nat × Nat × Nat) := [
   (4, 0, 12, 7), (9, 5, 1, 7), (14, 10, 6, 7), (3, 15, 11, 7),
   (8, 4, 0, 9), (13, 9, 5, 9), (2, 14, 10, 9), (7, 3, 15, 9),
