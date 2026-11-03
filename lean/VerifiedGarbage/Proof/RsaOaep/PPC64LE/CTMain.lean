@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTLabel
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Correct
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,7 +15,7 @@ Untrusted: everything here is checked by Lean. Two runs from entry states
 with the anchor's public data leak alike: the code between the calls by the
 taint analysis (`CTBlocks`), the hash functions' calls by their contracts
 (`CTCalls`), MGF1's loops on counters both runs agree on, with the table at
-the same address and its functions at the same addresses (`mgfXor_ct`), the
+the same address and its functions at the same addresses (`mgfXorT_ct`), the
 call of `vg_rsa_public_precomputed_checked` by its contract (`pdCallCT`),
 and the branches on the public lengths (`two_ite`); what each run satisfies
 between them follows from correctness.
@@ -85,13 +85,13 @@ variable {H G : Hash} (hH : HashOK H) (cH : HashCT hH) (hG : HashOK G) (cG : Has
   (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {f : Fns}
 
 include cG hGh hGl hGv in
-/-- `mgfXor`, with its lengths and offsets the anchor's. -/
+/-- `mgfXorT`, with its lengths and offsets the anchor's. -/
 theorem mgf_any (q : State → Nat × Nat × Nat × Nat) :
-    RelCT isa (Two fun a t => MgfA S vO (PreT H.D G f) (PubT G) (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2 a t ∧
-      MFit (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2) (mgfXor f 7) fun _ _ => True :=
+    RelCT isa (Two fun a t => MgfAT S vO (PreT H.D G f) (PubT G) (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2 a t ∧
+      MFit (q a).1 (q a).2.1 (q a).2.2.1 (q a).2.2.2) (mgfXorT f 7) fun _ _ => True :=
   (RelCT.exists_ (P := fun (x : {x : Nat × Nat × Nat × Nat // MFit x.1 x.2.1 x.2.2.1 x.2.2.2}) =>
-      Two (MgfA S vO (PreT H.D G f) (PubT G) x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
-    fun x => mgfXor_ct (okT H.D G f) hG cG x.2 hGh hGl hGv (tabT H.D G f)).mono
+      Two (MgfAT S vO (PreT H.D G f) (PubT G) x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2))
+    fun x => mgfXorT_ct (okT H.D G f) hG cG x.2 hGh hGl hGv (tabT H.D G f)).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨⟨q a, h₁.2⟩, a, h₁.1, h₂.1⟩) fun _ _ h => h
 
 /-- The checks passed, in terms of the anchor. -/
@@ -136,7 +136,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G f s ∧ PubT G 
       ⟨⟨s, P, p, b', y.trans sy⟩, hk⟩) ?_
   -- `DB` with MGF1 of the seed.
   let q₁ : State → Nat × Nat × Nat × Nat := fun a => (1, H.D, 1 + H.D, (a.gpr .r6).toNat - H.D - 1)
-  refine two_seq (Ψ := fun a t => (MgfA S vO (PreT H.D G f) (PubT G) (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2 a t ∧
+  refine two_seq (Ψ := fun a t => (MgfAT S vO (PreT H.D G f) (PubT G) (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2 a t ∧
       MFit (q₁ a).1 (q₁ a).2.1 (q₁ a).2.2.1 (q₁ a).2.2.2) ∧ HK H.D a)
     (dbArgs_taint H (bk_pins id fun _ _ h => h.1.bo)) (fun a t ⟨⟨s, P, p, b, sy⟩, hk⟩ => ?_) ?_
   · have k2 := P.1.k2
@@ -144,7 +144,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G f s ∧ PubT G 
     refine WP.of_syms (wp_addi (h := by omega_arith) fun t₁ o₁ e₁ => wp_li (by omega_arith) fun t₂ o₂ e₂ =>
       wp_addi (h := by omega_arith) fun t₃ o₃ e₃ => wp_subi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
     have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-    show (MgfA S vO (PreT H.D G f) (PubT G) 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) a t₄ ∧
+    show (MgfAT S vO (PreT H.D G f) (PubT G) 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) a t₄ ∧
       MFit 1 H.D (1 + H.D) ((a.gpr .r6).toNat - H.D - 1)) ∧ HK H.D a
     refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩, ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
     · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.1.S, hE]
@@ -153,11 +153,11 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G f s ∧ PubT G 
     · rw [e₄, o₃.get .r15, o₂.get .r15, o₁.get .r15, b.r15, sub_k (by omega)]; congr 1; omega
   refine two_seq (Ψ := Bk H.D G f) ((mgf_any hG cG hGh hGl hGv q₁).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨⟨s, P, p, b, sy, h24, h25, h26, h27⟩, hf⟩, hk⟩ =>
-    WP.mono (mgfXor_ok P.1.fits hG P.2 hGh hGl hGv hf b sy (by rw [h24, p.1.S]) h25 (by rw [h26, p.1.S]) h27)
+    WP.mono (mgfXorT_ok P.1.fits hG P.2 hGh hGl hGv hf b sy (by rw [h24, p.1.S]) h25 (by rw [h26, p.1.S]) h27)
       fun t' ⟨⟨b', _⟩, y⟩ => ⟨⟨s, P, p, b', y⟩, hk⟩) ?_
   -- The seed with MGF1 of `maskedDB`.
   let q₂ : State → Nat × Nat × Nat × Nat := fun a => (1 + H.D, (a.gpr .r6).toNat - H.D - 1, 1, H.D)
-  refine two_seq (Ψ := fun a t => (MgfA S vO (PreT H.D G f) (PubT G) (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2 a t ∧
+  refine two_seq (Ψ := fun a t => (MgfAT S vO (PreT H.D G f) (PubT G) (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2 a t ∧
       MFit (q₂ a).1 (q₂ a).2.1 (q₂ a).2.2.1 (q₂ a).2.2.2) ∧ HK H.D a)
     (seedArgs_taint H (bk_pins id fun _ _ h => h.1.bo)) (fun a t ⟨⟨s, P, p, b, sy⟩, hk⟩ => ?_) ?_
   · have k2 := P.1.k2
@@ -165,7 +165,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G f s ∧ PubT G 
     refine WP.of_syms (wp_addi (h := by omega_arith) fun t₁ o₁ e₁ => wp_subi (h := by omega_arith) fun t₂ o₂ e₂ =>
       wp_addi (h := by omega_arith) fun t₃ o₃ e₃ => wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
     have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-    show (MgfA S vO (PreT H.D G f) (PubT G) (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D a t₄ ∧
+    show (MgfAT S vO (PreT H.D G f) (PubT G) (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D a t₄ ∧
       MFit (1 + H.D) ((a.gpr .r6).toNat - H.D - 1) 1 H.D) ∧ HK H.D a
     refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩, ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩⟩, hk⟩
     · rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, b.r14, p.1.S, hE, Nat.zero_add]
@@ -174,7 +174,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G f s ∧ PubT G 
     · rw [e₄]
   refine two_seq (Ψ := Bk H.D G f) ((mgf_any hG cG hGh hGl hGv q₂).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩)
     fun _ _ h => h) (fun a t ⟨⟨⟨s, P, p, b, sy, h24, h25, h26, h27⟩, hf⟩, hk⟩ =>
-    WP.mono (mgfXor_ok P.1.fits hG P.2 hGh hGl hGv hf b sy (by rw [h24, p.1.S]) h25 (by rw [h26, p.1.S]) h27)
+    WP.mono (mgfXorT_ok P.1.fits hG P.2 hGh hGl hGv hf b sy (by rw [h24, p.1.S]) h25 (by rw [h26, p.1.S]) h27)
       fun t' ⟨⟨b', _⟩, y⟩ => ⟨⟨s, P, p, b', y⟩, hk⟩) ?_
   -- The public-key operation.
   exact two_seq (pubArgs_taint (bk_pins id fun _ _ h => h.1.bo)) (fun a t ⟨⟨s, P, p, b, _⟩, _⟩ =>

@@ -13,11 +13,11 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Calls
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Buf
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.PrivCall
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfSteps
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
 
 /-!
 # RSAES-OAEP decryption on PPC64LE: the decoding

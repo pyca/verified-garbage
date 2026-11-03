@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Hashes
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfSteps
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre
 public import VerifiedGarbage.Spec.HashTable
 public import VerifiedGarbage.Proof.HashTable.Basic

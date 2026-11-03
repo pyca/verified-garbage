@@ -1,8 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfSteps
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
 public import VerifiedGarbage.Proof.RsaOaep.Mask
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.PrivCall
 
 Untrusted: everything here is checked by Lean. `unmask_ok`: the seed
 unmasked with MGF1 of `maskedDB`, then `maskedDB` with MGF1 of the seed, in
-place (`seedArgs`, `mgfXor`, `dbArgs`, `mgfXor`, with MGF1's hash function
+place (`seedArgs`, `mgfXorT`, `dbArgs`, `mgfXorT`, with MGF1's hash function
 the table's), as `decode_eq` takes them.
 -/
 
@@ -74,7 +74,7 @@ theorem unmask_ok {H G : Hash} (hG : HashOK G) {f : Fns} (T : TabS G f 15 (SD s)
           (Spec.Mgf1.mgf1 Gs (srcB (mixV (view t.mem (Sd s))
             (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (Sd s)) (1 + D) (kk s - D - 1)) D) 1 D) 1 D) (kk s - D - 1))
           (1 + D) (kk s - D - 1) x) → WP isa rest t' Q) :
-    WP isa (.seq (.block (seedArgs H)) (.seq (mgfXor f 15) (.seq (.block (dbArgs H)) (.seq (mgfXor f 15) rest)))) t Q := by
+    WP isa (.seq (.block (seedArgs H)) (.seq (mgfXorT f 15) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 15) rest)))) t Q := by
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r7).toNat := rfl
@@ -85,7 +85,7 @@ theorem unmask_ok {H G : Hash} (hG : HashOK G) {f : Fns} (T : TabS G f 15 (SD s)
     wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_li (by omega) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have b₄ := h.only PF k₄
-  refine WP.seq (WP.mono (mgfXor_ok PF hG T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
+  refine WP.seq (WP.mono (mgfXorT_ok PF hG T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
     (dstLen := H.D) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₄ (y₄.trans hsy)
     (by rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, h.r14, hE, Nat.zero_add])
     (by rw [o₄.get .r25, o₃.get .r25, e₂, o₁.get .r15, Base.r15 h, sub_r15 (by omega)]; congr 1)
@@ -97,7 +97,7 @@ theorem unmask_ok {H G : Hash} (hG : HashOK G) {f : Fns} (T : TabS G f 15 (SD s)
     wp_addi (h := by omega) fun t₈ o₈ e₈ => wp_subi (h := by omega) fun t₉ o₉ e₉ => wp_nil fun y₉ => ?_))
   have k₉ : Only [.r24, .r25, .r26, .r27] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
   have b₉ := b₅.only PF k₉
-  refine WP.seq (WP.mono (mgfXor_ok PF hG T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
+  refine WP.seq (WP.mono (mgfXorT_ok PF hG T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
     (dstLen := kk s - H.D - 1) ⟨by omega, by omega, .inl (by omega), by omega⟩ b₉ (y₉.trans y₅)
     (by rw [o₉.get .r24, o₈.get .r24, o₇.get .r24, e₆, b₅.r14, hE])
     (by rw [o₉.get .r25, o₈.get .r25, e₇])
