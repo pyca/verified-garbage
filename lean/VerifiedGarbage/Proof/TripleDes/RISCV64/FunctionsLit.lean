@@ -22,6 +22,5 @@ materialize_value Impl.TripleDes.RISCV64.roundBody
 
 materialize_code Impl.TripleDes.RISCV64.Key.expandKey
 materialize_code Impl.TripleDes.RISCV64.Ecb.encrypt
-materialize_code Impl.TripleDes.RISCV64.Ecb.decrypt
 
 end VG
