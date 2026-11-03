@@ -1078,3 +1078,23 @@ class FreshCopies(unittest.TestCase):
             self.assertEqual(copy.read_bytes(), b'\x7fELF')
             self.assertNotEqual(os.stat(copy).st_ino, os.stat(binary).st_ino)
             self.assertTrue(os.access(copy, os.X_OK))
+
+
+class ReadTimesTest(unittest.TestCase):
+    """`read_times` and `bench_key`: benchmark IDs that are sizes or names."""
+
+    def test_numeric_and_named_ids(self):
+        with tempfile.TemporaryDirectory() as d:
+            home = pathlib.Path(d)
+            for group, ident, t in [("sha256", "1024", 3.0), ("sha256", "64", 1.0),
+                                    ("rsa_p18", "mul_acc4", 5.0), ("rsa_p18", "add8", 4.0),
+                                    ("mixed", "mul", 7.0), ("mixed", "16", 6.0)]:
+                new = home / group / "verified-garbage" / ident / "new"
+                new.mkdir(parents=True)
+                (new / "estimates.json").write_text(json.dumps({"median": {"point_estimate": t}}))
+            times = bench_compare.read_times(home, "verified-garbage")
+        self.assertEqual(times[("sha256", 64)], 1.0)
+        self.assertEqual(times[("rsa_p18", "mul_acc4")], 5.0)
+        self.assertEqual(sorted(times, key=bench_compare.bench_key), [
+            ("mixed", 16), ("mixed", "mul"), ("rsa_p18", "add8"), ("rsa_p18", "mul_acc4"),
+            ("sha256", 64), ("sha256", 1024)])
