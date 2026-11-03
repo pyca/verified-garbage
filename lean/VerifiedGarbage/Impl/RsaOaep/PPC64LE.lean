@@ -196,10 +196,10 @@ def updCtrArgs : List Instr :=
     .addi .r7 .r14 oW]
 
 /-- The digest in `r11`, `dst + done` in `r12`, and in `r9`
-`min(hLen, dstLen - done)`: `hLen + ((rem - hLen) ∧ -(rem < hLen))` for
-`rem = dstLen - done`. -/
+`min(hLen, dstLen - done)`: `hLen` (the table's word 4) `+ ((rem - hLen) ∧
+-(rem < hLen))` for `rem = dstLen - done`. -/
 def xorHead : List Instr :=
-  [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29] ++ tword .r9 j 4 ++ [.sub .r10 .r8 .r9,
+  tword .r9 j 4 ++ [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .sub .r10 .r8 .r9,
     .lsr .d .r6 .r10 63, .li .r7 0, .sub .r6 .r7 .r6, .logic .and .r10 .r10 .r6, .add .r9 .r9 .r10]
 
 /-- A byte of the digest XORed into `dst`. -/
