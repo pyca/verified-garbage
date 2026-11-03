@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: `EM` masked
@@ -16,7 +18,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 As on ARMv7 (`Proof/RsaOaep/Arm/EncMask.lean`): `DB` (after the seed)
 masked with MGF1 of the seed, then the seed with MGF1 of the masked `DB`
 (`mgf_vp`, with the slots that `dbArgs` and `seedArgs` set, `MgfSlots.lean`):
-`EM = Proof.RsaOaep.emOf …` (`mask_vp`).
+`EM = Proof.RsaOaep.emOf …` (`mask_vp`), with MGF1's hash function the
+table that is the argument 15 (`tbl_of`).
 -/
 
 @[expose] public section
@@ -231,30 +234,47 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
     · rw [ite_eq_left h1, ite_eq_left (by omega), Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
     · rw [ite_eq_right h1, ite_eq_right (by omega)]
 
-/-- `EM` masked, from `EM` before masking, then `k`. -/
-theorem mask_vp (P : EP) {c : Prog isa} {Q : State → State → Prop} (k : VP (E1 h g P) c Q) :
-    VP (fun σ s => E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
-        (msgB P σ) P.ml)
-      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor g.H) (.seq (.block (seedArgs h.H 3)) (.seq (mgfXor g.H) c))))
+/-- MGF1's table, the argument 15, in a buffer only read. -/
+theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 15 0) o) 4 := by
+  have hf := hi.ok.fits P.TAB (by simp)
+  simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
+  refine ⟨P.TAB, by simp, fun o ho => ?_⟩
+  show (⟨P.tab.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
+  rw [addr_eq (by omega)]
+  exact Offset.contains_base _ (by omega) (by omega)
+
+/-- `EM` masked, from `EM` before masking, then `k`, with MGF1's hash
+function `g`, whose functions the table reaches (`hT`). -/
+theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) {c : Prog isa} {Q : State → State → Prop}
+    (k : VP (fun σ s => E1 h g P σ s ∧ s.syms = σ.syms) c Q) :
+    VP (fun σ s => (E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
+        (msgB P σ) P.ml) ∧ s.syms = σ.syms)
+      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 15) (.seq (.block (seedArgs h.H 3)) (.seq (mgfXor f 15) c))))
       Q := by
   by_cases hP : ∃ σ, In h.H.D P σ ∧ fits h P
   swap
-  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.2.1, hs.1.2.2⟩
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.1.2.1, hs.1.1.2.2⟩
   obtain ⟨σ₀, hi₀, hf⟩ := hP
   have hg := hi₀.geo
   have hK := hi₀.k1024
   have hD := h.D_le
   have hD0 := h.D_pos
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
+  have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 15 0) P.ai P.au P.af σ :=
+    fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
     (by omega) (by oomega) (by oomega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P)
-    (seedB_length h P) (x0_keep h g hg (by oomega) (by oomega))
+    (seedB_length h P) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg15_taint tab fne
   have P2 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
     (by omega) hD0 (by oomega) (by oomega) (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P)
-    (mdbB_length h g hf) (x0_keep h g hg (by oomega) (by oomega))
-  refine VP.seq (db_vp h P) (VP.seq (mgf_vp g P1 (dstv := fun σ i => (dbB h P σ).getD i 0))
-    (VP.seq (seed_vp h g P) (VP.seq ((mgf_vp g P2 (dstv := fun σ i => (seedB h P σ).getD i 0)).mono
-      (fun _ _ hh => hh) fun σ s ⟨hc, ⟨⟨⟨hi, _⟩, z0⟩, _⟩, hsd, hdb⟩ => ⟨⟨hc, hi, hf⟩, fun i hi' => ?_⟩) k)))
+    (mdbB_length h g hf) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg15_taint tab fne
+  refine VP.seq (VP.syms (db_vp h P)) (VP.seq (mgf_vp g P1 (dstv := fun σ i => (dbB h P σ).getD i 0))
+    (VP.seq (VP.syms (seed_vp h g P)) (VP.seq ((mgf_vp g P2 (dstv := fun σ i => (seedB h P σ).getD i 0)).mono
+      (fun _ _ hh => hh) fun σ s ⟨⟨hc, ⟨⟨⟨hi, _⟩, z0⟩, _⟩, hsd, hdb⟩, sy⟩ => ⟨⟨⟨hc, hi, hf⟩, fun i hi' => ?_⟩, sy⟩)
+      k)))
   rw [emB_getD h g hf σ hi']
   by_cases h0 : i = 0
   · rw [ite_eq_left h0, h0]; exact z0
