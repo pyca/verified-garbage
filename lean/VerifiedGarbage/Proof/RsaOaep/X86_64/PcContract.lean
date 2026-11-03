@@ -51,7 +51,7 @@ theorem implies (hsat : ∃ s, (encC H ts).pre s) : (contract H ts).Implies (enc
     obtain ⟨hb, hq⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hcx, h9])
     have hq' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hq
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hb
-    refine ⟨⟨?_, by simp only [stackArgs_seven, a0, a1, a2, a3, a4, a5, a6], hn, he⟩, a7, a8, hq', a9, hsy,
+    refine ⟨⟨?_, by simp only [stackArgs_seven, a0, a1, a2, a3, a4, a5, a6], hn, he⟩, a7, a8, hq', a9.1, hsy,
       fun T hT => htab _ _ rfl rfl T hT⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
