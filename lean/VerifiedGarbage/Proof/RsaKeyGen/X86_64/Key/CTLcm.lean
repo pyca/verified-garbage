@@ -399,7 +399,7 @@ theorem gcdSwap_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
 
 theorem gcdUV_eq2 : gcdUV = ([.block (ws ++ gcdBlk), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
     (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
-    ([zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
+    ([zeroA aM, copyA aM aV, inverseK kHalf aU aV aX₂ aM] ++
     (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, gcdBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
@@ -442,12 +442,12 @@ theorem gcdUV_ct [InvLaw] {F : KIn → State → Prop} (hF : Stab F csG allR) :
     (sFTK [.arr aV] (by simp) (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
   refine rs_app (R := Two (KG fun I t => F I t ∧ KokM I t)) (by simp) (by simp [constA]) ?_ ?_
   · -- `inverse` modulo `[aM] = v`.
-    show RelCT isa _ (seqs ([zeroA aM] ++ ([copyA aM aV] ++ [inverse aU aV aX₂ aM]))) _
+    show RelCT isa _ (seqs ([zeroA aM] ++ ([copyA aM aV] ++ [inverseK kHalf aU aV aX₂ aM]))) _
     refine rs_app (by simp) (by simp) (zeroA_ct (by decide) (sFTK [.arr aM] (by simp) (by decide) (by decide)
       (by decide)).sub (by taint_decide)) ?_
     refine rs_app (by simp) (by simp) (copyA_ct (o := aM) (a := aV) (by decide) (by decide) (by decide)
       (sFTK [.arr aM] (by simp) (by decide) (by decide) (by decide)).sub (by taint_decide)) ?_
-    refine (inverse_ct (F := fun I t => F I t ∧ KokM I t) (by decide) (by decide) (by decide) (by decide)
+    refine (inverseHalf_ct (F := fun I t => F I t ∧ KokM I t) (by decide) (by decide) (by decide) (by decide)
       (by decide) (sFK _ (by simp) (by decide) (by decide)).sub (by taint_decide)).mono
       (fun s₁ s₂ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p, h₁.imp fun I ⟨⟨hf, _⟩, hk⟩ => ⟨hf, hk⟩,
         h₂.imp fun I ⟨⟨hf, _⟩, hk⟩ => ⟨hf, hk⟩⟩) h)

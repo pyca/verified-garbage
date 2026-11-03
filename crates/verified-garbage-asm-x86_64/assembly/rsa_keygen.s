@@ -1017,6 +1017,7 @@ vg_rsa_keygen_key:
 	mov r12, QWORD PTR [rdi+48]
 	mov r9, QWORD PTR [rdi+224]
 	mov r13, r12
+	shr r13, 1
 	mov r12, r9
 	shr r12, 3
 	sub r12, 2
@@ -1163,9 +1164,7 @@ vg_rsa_keygen_key:
 	jne 250b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rsi
@@ -1234,9 +1233,7 @@ vg_rsa_keygen_key:
 	add r14, 1
 	cmp r14, r12
 	jne 252b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rdi
@@ -4466,9 +4463,7 @@ vg_rsa_keygen_key:
 	jne 2127b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rsi
@@ -4537,9 +4532,7 @@ vg_rsa_keygen_key:
 	add r14, 1
 	cmp r14, r12
 	jne 2129b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rdi
@@ -7234,7 +7227,7 @@ vg_rsa_keygen_key:
 	jne 2177b
 	mov r12, QWORD PTR [rdi+48]
 	mov r9, QWORD PTR [rdi+224]
-	mov r13, r12
+	mov r13d, 1
 	mov r12, r9
 	shr r12, 3
 	sub r12, 2
@@ -7381,9 +7374,7 @@ vg_rsa_keygen_key:
 	jne 2184b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, r9
@@ -7454,9 +7445,7 @@ vg_rsa_keygen_key:
 	add r14, 1
 	cmp r14, r12
 	jne 2186b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rdi
@@ -10385,6 +10374,7 @@ vg_rsa_keygen_key:
 	mov r12, QWORD PTR [rdi+48]
 	mov r9, QWORD PTR [rdi+224]
 	mov r13, r12
+	shr r13, 1
 	mov r12, r9
 	shr r12, 3
 	sub r12, 2
@@ -10531,9 +10521,7 @@ vg_rsa_keygen_key:
 	jne 2246b
 	mov QWORD PTR [r8+r12*8], rax
 	mov QWORD PTR [r8+r12*8+8], rax
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rsi
@@ -10602,9 +10590,7 @@ vg_rsa_keygen_key:
 	add r14, 1
 	cmp r14, r12
 	jne 2248b
-	mov r12, r9
-	shr r12, 3
-	sub r12, 2
+	mov r12, r13
 	mov rsi, r9
 	add rsi, rsi
 	add rsi, rdi

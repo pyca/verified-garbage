@@ -3,6 +3,7 @@ module
 -- separate module: the inverse's constant time, whose proofs import algebra, and `CvCTMain` is imported by many modules
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvInv
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvInv
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -23,7 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time of the inverse and of `main`
 
-`inverse_ct`, `invPart_ct` and `cvMain_ct`.
+`invQ_ct`, `invPart_ct` and `cvMain_ct`.
 -/
 
 @[expose] public section
@@ -35,23 +37,40 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 open VG.Impl.Rsa.X86_64 (copyWords)
 
-theorem inverse_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
-      (inverseN aQ aV aX₂ aP)) hc).isSome = true) :
-    RelCT isa (Two GA) (inverse aQ aV aX₂ aP) (Two GA) := by
-  have e : inverse aQ aV aX₂ aP = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
-      (inverseN aQ aV aX₂ aP) := rfl
-  rw [e]
-  exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
-    rw [← e]
+/-- The registers the inverse at the primes' width needs pinned: `ws`'s and
+the width in `r13`. -/
+def nVal (B : Addr) (w n : Nat) : Reg → BitVec 64
+  | .rdi => B
+  | .r12 => BitVec.ofNat 64 w
+  | .r9 => BitVec.ofNat 64 (8 * (w + 2))
+  | .r13 => BitVec.ofNat 64 n
+  | _ => 0
+
+/-- The inverse at the primes' width, `⌈max(p_len, q_len) / 8⌉`, which the
+public lengths fix. -/
+theorem invQ_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9, .r13]) (inverseN aQ aV aX₂ aP) hc).isSome = true) :
+    RelCT isa (Two GA) (.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP)) (Two GA) :=
+  pin_ct [.rdi] [.rdi, .r12, .r9, .r13] (fun p => nVal p.B (wk p.k) (nOf p.pl p.ql)) pins_GA (by taint_decide)
+    (fun p s h => by
+      obtain ⟨I, m₀, c, rfl, h', L, -⟩ := h
+      exact WP.mono (nPQ_ok h'.ws h'.args.pl h'.args.ql (by have := L.pl2; have := L.k2; omega)
+        (by have := L.ql2; have := L.k2; omega)) fun t ⟨h12, h9, h13, hdi, _⟩ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact hdi
+        · exact h12
+        · exact h9
+        · exact h13)
+    ht fun _ _ h => by
     obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
     have hn := h'.ws.scr.nowrap
     have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
       have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
     have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
     have e16 := slot_lin (wk I.k) 16
-    exact WP.mono (InvLaw.inverse_ok h'.ws hZ26 hw20 (iU := aQ) (iV := aV) (iX₂ := aX₂) (iM := aP)
-      (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, f, k, _⟩ =>
+    exact WP.mono (invQ_gen h'.ws hZ26 hw20 h'.args.pl h'.args.ql L.pl1 (by have := L.pl2; unfold wk; omega)
+      (by have := L.ql2; unfold wk; omega)) fun t ⟨_, f, k, _⟩ =>
       ⟨I, m₀, c, rfl, h'.step f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
@@ -71,7 +90,7 @@ theorem inverse_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
 theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
   unfold invPart
   exact ct_app (by simp) (by simp [eqA])
-    (ct_cons (by simp) (inverse_ct (by taint_decide))
+    (ct_cons (by simp) (invQ_ct (by taint_decide))
       (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
         (ct_one (setOneA_ct (by decide) (by taint_decide)))))
     (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide)) (ct_one andZero_ct))

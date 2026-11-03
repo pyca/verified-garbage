@@ -28,21 +28,23 @@ lengths and the status returned.
    for the product); then `64 W` steps that halve `u`, `v` (copies of
    `p − 1` and `q − 1`) and `φ` while `u` and `v` are both even, so that
    `φ = 2^k u v` with `2^k` the power of two of `gcd(p − 1, q − 1)`; `v`
-   made odd by a swap (if only `u` is odd); `gcd(u, v)` by `inverse`
-   (modulo `v`, 3 for `v ≤ 1`, whose gcd is 1 or `v` itself); and `φ`
+   made odd by a swap (if only `u` is odd); `gcd(u, v)` by the inverse at
+   the primes' width `w` (modulo `v`, 3 for `v ≤ 1`, whose gcd is 1 or `v`
+   itself); and `φ`
    divided by it (1 for `v ≤ 1`).
 4. `d = e⁻¹ mod L`, and the mask `dOk` of its existence:
    * `e = 0`: none.
    * `e = 1`: `d = 1`, for `L ≠ 1`.
-   * `e` odd: `L = e Q + R` by `divmod`; `x = R⁻¹ mod e` by `inverse`, for
+   * `e` odd: `L = e Q + R` by `divmod`; `x = R⁻¹ mod e` by the inverse at
+     one word, for
      `gcd(R, e) = 1` and `L ≥ 2`; then with `t = e − x`,
      `d = Q t + (1 + R t) / e`, the last a word: `(1 + R t) e⁻¹ mod 2⁶⁴`
      (`minv`'s inverse of `e`).
    * `e` even: `d = (e mod L)⁻¹ mod L` by `inverse`, for an odd `L ≥ 3`
      (the modulus 3 otherwise).
 5. If `dOk` and `d ≤ 2^(64 w)`: zeros to all seven outputs, and 2.
-6. Otherwise `qInv` by `inverse` (modulo `p`, or 3 for a `p` not odd and at
-   least 3), `dP = d mod (p − 1)` and `dQ = d mod (q − 1)` by `divmod`, and
+6. Otherwise `qInv` by the inverse at the primes' width (modulo `p`, or 3
+   for a `p` not odd and at least 3), `dP = d mod (p − 1)` and `dQ = d mod (q − 1)` by `divmod`, and
    `n = p q`; the mask of `dOk`, `gcd(q, p) = 1`, `n`'s top bit, `p` and `q`
    odd and `e` valid (`Rsa.exponentValid`); the seven outputs stored under
    it, and its low bit returned.
@@ -202,7 +204,7 @@ def twoStep : Prog isa := seqs (([
 def twos : List (Prog isa) := [.block (divInit aT), .loop twoStep .ne]
 
 /-- `[aV] := gcd(u, v)`, or 1 for `v ≤ 1`, after the halving: `v` made odd
-by a swap, `inverse` modulo `v` (3 for `v ≤ 1`), and the result 1 for
+by a swap, the inverse modulo `v` (3 for `v ≤ 1`), and the result 1 for
 `v ≤ 1` (its mask kept in `kOk` across `inverse`). -/
 def gcdUV : List (Prog isa) :=
   ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++
@@ -212,7 +214,7 @@ def gcdUV : List (Prog isa) :=
   constA 2 ++ ltA aV aC ++ ([.block [.store (hdr kOk) .rbp,
       .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
   constA 3 ++ selC aV ++
-  [zeroA aM, copyA aM aV, inverse aU aV aX₂ aM] ++
+  [zeroA aM, copyA aM aV, inverseK kHalf aU aV aX₂ aM] ++
   constA 1 ++ ([.block [.mov .rbp (.mem (hdr kOk)),
       .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ selC aV
 
@@ -247,7 +249,7 @@ def gcdIsOne : List (Prog isa) :=
 `d = Q t + c` with `c = (1 + R t) e⁻¹ mod 2⁶⁴`. -/
 def dOdd : List (Prog isa) :=
   loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++
-  [inverse aU aV aX₂ aE] ++ lGe2 ++ gcdIsOne ++
+  [inverseK kOne aU aV aX₂ aE] ++ lGe2 ++ gcdIsOne ++
   ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv),
     .block (ws ++ base aX₂ .rbx ++ base aR .r10 ++
       ([.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
@@ -297,7 +299,7 @@ def qinvPart : List (Prog isa) :=
   [zeroA aU, copyA aU aQa] ++ constA 3 ++ ltA aPa aC ++
   ([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aPa ++
       ([.alu .and .rax (.reg .rcx), .mov .rbp (.reg .rax)] : List Instr)),
-    zeroA aM, copyA aM aPa] : List (Prog isa)) ++ selC aM ++ [inverse aU aV aX₂ aM] ++
+    zeroA aM, copyA aM aPa] : List (Prog isa)) ++ selC aM ++ [inverseK kHalf aU aV aX₂ aM] ++
   constA 1 ++ eqMask aV aC ++ ([.block [.alu .and .rbp (.mem (hdr kOk)), .store (hdr kOk) .rbp]] : List (Prog isa))
 
 /-- `[aM] := [j]`, or 1 for `[j] = 0`. -/

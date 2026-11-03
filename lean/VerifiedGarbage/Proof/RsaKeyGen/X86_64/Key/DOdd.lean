@@ -140,7 +140,7 @@ abbrev csD : List Rc :=
     .hdr kOk, .priv]
 
 theorem dOdd_eq : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++
-    ([inverse aU aV aX₂ aE] ++ (lGe2 ++ (gcdIsOne ++
+    ([inverseK kOne aU aV aX₂ aE] ++ (lGe2 ++ (gcdIsOne ++
     ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv),
       .block (ws ++ base aX₂ .rbx ++ base aR .r10 ++
         ([.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
@@ -206,10 +206,11 @@ theorem dOdd_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e 
   -- `x = R⁻¹ mod e`.
   refine wp_seqs_append (by simp) (by simp [lGe2]) ?_
   simp only [seqs]
-  refine WP.mono (inverse_k h₆ (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aE) (by decide) (by decide) (by decide)
+  refine WP.mono (inverseK_k h₆ (k := kOne) (n := 1) (fun _ _ _ => kOne_ok) (Nat.le_refl _) hw1
+    (iU := aU) (iV := aV) (iX₂ := aX₂) (iM := aE) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₈ ⟨h₈, f₈, _, hinv⟩ => ?_
   rw [vE₆, vU₆] at hinv
-  obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo
+  obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith)) he64 heo
   generalize hx : av I s₈.mem aX₂ = x at hdv₈ hx₈
   have hokI : [Rc.arr aV, Rc.arr aX₂, Rc.priv].all Rc.ok = true := by decide
   have vL₈ : av I s₈.mem aL = L := by

@@ -28,7 +28,8 @@ depend only on `rdi`, `w` and the stride, all public.
 p_len, q, q_len, d, d_len, scratch, scratch_len)`: the first six arguments
 in registers, the others on the stack. `n` is checked as `vg_rsa_public`
 checks it (it is public); then `p q = n` gives a mask, `qInv` is computed
-by `inverse` (and'ing `gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
+by `inverseN` at the primes' width `⌈max(p_len, q_len) / 8⌉` (and'ing
+`gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
 `divmod` (with the divisor `p` or `q` with its low bit cleared: `p - 1` for
 an odd `p`, which `p q = n` implies). Each result is written out masked.
 `p q = n` is checked by `divmod` too, as `n mod p = 0`, `n / p = q` and `p`
@@ -184,8 +185,9 @@ def decA (j : Nat) : List Instr :=
 
 /-! ## The inverse: batches of divsteps
 
-`inverse u v x₂ m` (`n` in `r13`, `w` and the stride from `ws`): from `a` in
-`[u]` and the odd `m` in `[m]`, both below `2^(64 n)`, `[v] = gcd(a, m)` and
+`inverse u v x₂ m` (`n` in `r13`, `w` and the stride from `ws`): from `a`,
+the low `n` words of `[u]`, and the odd `m`, those of `[m]` (it reads no
+others), `[v] = gcd(a, m)` and
 `[x₂] a ≡ [v] (mod m)`, `[x₂] < m`, by Bernstein–Yang divsteps in batches of
 59 on the low words (`pchunk`, as `Impl/Weierstrass/X86_64/Inv.lean`'s) at
 the width `n` read at run time: `f = m`, `g = a` or `a + m` if `a` is even
@@ -246,6 +248,11 @@ def zeroI (j : Nat) : Prog isa := .seq (.block (wsR ++ base j .r8)) zeroAccLoop
 /-- `copyA`, with `wsR`. -/
 def copyI (o a : Nat) : Prog isa := .seq (.block (wsR ++ base a .rsi ++ base o .rbx)) copyWords
 
+/-- `copyA` of the low `n` words (`r13`): the inputs, which the inverse
+reads at its width only, whatever their words above it. -/
+def copyN (o a : Nat) : Prog isa :=
+  .seq (.block (([.mov .r12 (.reg .r13)] : List Instr) ++ base a .rsi ++ base o .rbx)) copyWords
+
 /-- `setOneA`, with `wsR`. -/
 def setOneI (j : Nat) : List Instr :=
   wsR ++ base j .rbx ++ ([.mov32 .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
@@ -277,11 +284,11 @@ def setOdd : List Instr :=
   wsR ++ base aP .r8 ++ ([.mov .rax (.mem (at0 .r8)), .shift .shr .rax 1, .alu .add .rax (.reg .rax),
     .alu .add .rax (.imm 1), .store (at0 .r8) .rax] : List Instr)
 
-/-- The start: the arrays zeroed, `m` into `aP` (made odd) and `f`, `a` into
-`aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
+/-- The start: the arrays zeroed, `m`'s low `n` words into `aP` (made odd)
+and `f`, `a`'s into `aT`, `g`, `(a, b) = (0, 1)`, then `setup`. -/
 def start (iU iM : Nat) : List (Prog isa) :=
-  [zeroI aF, zeroI aG, zeroI aA, zeroI aB, zeroI aT, zeroI aS, zeroI aP, copyI aP iM, .block setOdd, copyI aF aP,
-    copyI aT iU] ++
+  [zeroI aF, zeroI aG, zeroI aA, zeroI aB, zeroI aT, zeroI aS, zeroI aP, copyN aP iM, .block setOdd, copyI aF aP,
+    copyN aT iU] ++
   gInit ++ [.block (setOneI aB), .block setup]
 
 /-! ### A batch (`rdi` the window, `r9` the stride, `r15` `n`) -/
@@ -425,6 +432,16 @@ def inverseN (iU iV iX₂ iM : Nat) : Prog isa :=
 def inverse (iU iV iX₂ iM : Nat) : Prog isa :=
   .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (inverseN iU iV iX₂ iM)
 
+/-- The inverse at the width that `k` puts into `r13` after `ws`. -/
+def inverseK (k : List Instr) (iU iV iX₂ iM : Nat) : Prog isa :=
+  .seq (.block (ws ++ k)) (inverseN iU iV iX₂ iM)
+
+/-- `r13 := w / 2`. -/
+def kHalf : List Instr := [.mov .r13 (.reg .r12), .shift .shr .r13 1]
+
+/-- `r13 := 1`. -/
+def kOne : List Instr := [.mov32 .r13 (.imm 1)]
+
 /-! ## Bytes -/
 
 /-- `[j] := ` the number of the bytes whose pointer and length are in the
@@ -524,8 +541,17 @@ def pqCheck : List (Prog isa) :=
   [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
     [.block andZero, .block (andOdd aP)]
 
+/-- `r13 := ⌈max(p_len, q_len) / 8⌉`, the primes' width in words, without a
+branch (`cmovb`). -/
+def nPQ : List Instr :=
+  [.mov .r13 (.mem (hdr sPl)), .mov .rax (.mem (hdr sQl)), .alu .cmp .r13 (.reg .rax), .cmov .b .r13 (.reg .rax),
+    .alu .add .r13 (.imm 7), .shift .shr .r13 3]
+
+/-- `qInv = q⁻¹ mod p` by the inverse at the primes' width, and the mask of
+`gcd(q, p) = 1`. -/
 def invPart : List (Prog isa) :=
-  ([inverse aQ aV aX₂ aP, zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero]))
+  ([.seq (.block (ws ++ nPQ)) (inverseN aQ aV aX₂ aP), zeroA aC, .block (setOneA aC)] ++
+    (eqA aV aC ++ [.block andZero]))
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
