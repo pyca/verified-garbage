@@ -86,11 +86,6 @@ def encSatState (H : Spec.Mgf1.Hash) : State where
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, H.len⟩, ⟨0x5000, 128⟩, ⟨0x10060, 56⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 16640⟩]
 
-/-- The hash functions the label is hashed with. -/
-def labelHashes : List Spec.Mgf1.Hash :=
-  [Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512, Spec.Mgf1.sha512_224,
-    Spec.Mgf1.sha512_256]
-
 theorem enc_sat {H : Spec.Mgf1.Hash} (G : Spec.Mgf1.Hash) (hH : H ∈ labelHashes) :
     ∃ s, (Spec.RsaOaep.encryptPrecomputedContract H G abi 304).pre s := by
   simp only [labelHashes, List.mem_cons, List.not_mem_nil, or_false] at hH

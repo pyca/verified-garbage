@@ -31,7 +31,7 @@ theorem freed_gpr (n : Nat) (s : State) : (freed n s).gpr = s.gpr := rfl
 theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 7) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
 /-- After the saves and the prologue. -/
@@ -46,7 +46,7 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 /-- A load of our stack argument `j` through `r12`, the frame's base. -/
-theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 7)
+theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 8)
     (h12 : t.gpr .r12 = fb s) (hrd : t.rd = s.rd) (hm : Frame [kR s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : arg j < 2 ^ 15 ∧ arg j % 4 = 0 := by decide) :
