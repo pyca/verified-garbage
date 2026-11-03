@@ -66,15 +66,6 @@ theorem DecX.step {F S : Addr} {k : Nat} {lab : Addr} {labLen : Nat} {o ml : Add
   ⟨h.1.congr hS.rd hS.wr (hW 25 (by omega_arith)) (hW 26 (by omega_arith)),
     h.2.1.congr hS.wr (hW 19 (by omega_arith)) (hW 27 (by omega_arith)), (hW 21 (by omega_arith)).trans h.2.2⟩
 
-/-- MGF1's table at `p`, from the stack argument 15 (`Table.Tab`), and the
-addresses of `G`'s functions, which both runs agree on. -/
-def TabX (G : Stream) (f : Fns) (F S p ai au af : Addr) (t : State) : Prop :=
-  Table.Tab G f F S p (arg 15) t ∧ t.syms G.initN = ai ∧ t.syms G.updN = au ∧ t.syms G.finN = af
-
-theorem TabX.step {G : Stream} {f : Fns} {F S p ai au af : Addr} {t u : State} (h : TabX G f F S p ai au af t)
-    (hS : Step F S [] t u) (sy : u.syms = t.syms) : TabX G f F S p ai au af u :=
-  ⟨h.1.step hS sy, by rw [sy]; exact h.2.1, by rw [sy]; exact h.2.2.1, by rw [sy]; exact h.2.2.2⟩
-
 /-! ## The loops' heads -/
 
 section
@@ -205,7 +196,7 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs)
     {F S : Addr} {k : Nat} {lab : Addr} {labLen : Nat} {o ml : Addr} (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024)
     (hlen : labLen < 2 ^ 64) {p ai au af : Addr} :
-    RelCT isa (LR F S fun W t => DecX F S k lab labLen o ml W t ∧ TabX Gm f F S p ai au af t) (decMain Hl f)
+    RelCT isa (LR F S fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) (decMain Hl f)
       fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
@@ -219,19 +210,19 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ TabX Gm f F S p ai au af t)
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
     (hashLabel_tr hH hlen (.inr rfl) fun _ _ h => h.1.1)
     fun t V W L R hx => WP.mono (Table.wp_sy (hashLabel_ok hH (Hs := Hs) hHh L R hx.1.1 (.inr rfl)))
       fun u ⟨⟨Lu, Su, V', Ru, _, _⟩, sy⟩ => ⟨V', W, Lu, Ru, hx.1.step Su fun _ _ => rfl, hx.2.step Su sy⟩).seq ?_
   -- The seed unmasked.
-  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ TabX Gm f F S p ai au af t) ∧
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
       MArgs W S (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D)
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (seedArgs gH)) (by rfl)
       (by taint_decide)) nopin)
     fun t V W L R hx => WP.mono (Table.wp_sy (seedArgs_ok L R hx.1.2.2 hD (by omega_arith) hk' []))
       fun u ⟨⟨Lu, Su, Ru⟩, sy⟩ => ⟨V, _, Lu, Ru, ⟨hx.1.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
         hx.2.step Su sy⟩, mW_args _ _ _ _ _ _⟩).seq ?_
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ TabX Gm f F S p ai au af t)
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
     (Table.mgfXorT_tr hG (by decide) f2 (fun _ _ h => ⟨h.2, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, h.1.2.2.2.2⟩)
       (by taint_decide))
     fun t V W L R hx => WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.1.2.1 L R f2 hx.2))
@@ -239,7 +230,7 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
         hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
           (by omega_arith), hx.1.2.step Su sy⟩).seq ?_
   -- `DB` unmasked.
-  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ TabX Gm f F S p ai au af t) ∧
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
       MArgs W S 1 Hl.D (1 + Hl.D) (k - Hl.D - 1))
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (dbArgs gH)) (by rfl)
       (by taint_decide)) nopin)

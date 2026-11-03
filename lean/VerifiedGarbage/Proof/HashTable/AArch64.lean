@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.HashTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Mgf1.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # Tables of the interface `Hash` on AArch64
@@ -105,6 +106,35 @@ theorem hashAt_tableOf {m : Mem} {p : Addr} {w : MdHash}
   rw [show p + BitVec.ofNat 64 (8 * 3) = off p 24 from rfl, h]
   simp only [Proof.Pbkdf2.Md.AArch64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with e | e | e | e | e | e | e | e <;> rw [e] <;> rfl
+
+/-! ## Two runs -/
+
+/-- The words of a table, in a state naming its functions' addresses as `t`
+does. -/
+theorem words_congr {s t : State} (h : s.syms = t.syms) (T : FnTable) :
+    FnTable.words isa s T = FnTable.words isa t T := by
+  simp only [FnTable.words, h]
+
+/-- The functions of the tables `ts`. -/
+def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
+
+/-- What the contract says of MGF1's table in two runs, with the memories
+`m₁` and `m₂` on entry: in each, one of `ts` at `p` with the functions'
+addresses distinct; and the same in both, with their functions at the same
+addresses. -/
+def TabAgree (ts : List FnTable) (p : Addr) (m₁ m₂ : Mem) (a b : State) : Prop :=
+  ((∃ T ∈ ts, Abi.tableHeld 64 m₁ p (T.words isa a)) ∧
+      (tabFns ts).Pairwise fun f g => f ≠ g → a.syms f ≠ a.syms g) ∧
+    ((∃ T ∈ ts, Abi.tableHeld 64 m₂ p (T.words isa b)) ∧
+      (tabFns ts).Pairwise fun f g => f ≠ g → b.syms f ≠ b.syms g) ∧
+    (∀ f ∈ tabFns ts, a.syms f = b.syms f) ∧
+    ∀ T ∈ ts, (Abi.tableHeld 64 m₁ p (T.words isa a) ↔ Abi.tableHeld 64 m₂ p (T.words isa b))
+
+theorem TabAgree.congr {ts : List FnTable} {p : Addr} {m₁ m₂ : Mem} {a b a' b' : State}
+    (h : TabAgree ts p m₁ m₂ a b) (ha : a'.syms = a.syms) (hb : b'.syms = b.syms) :
+    TabAgree ts p m₁ m₂ a' b' := by
+  simp only [TabAgree, words_congr ha, words_congr hb, ha, hb]
+  exact h
 
 end VG.Proof.HashTable.AArch64
 

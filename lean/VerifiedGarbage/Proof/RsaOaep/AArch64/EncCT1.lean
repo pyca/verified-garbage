@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
 import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
@@ -15,12 +16,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
 meta import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 meta import VerifiedGarbage.Proof.Mgf1.Basic
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
@@ -49,21 +52,23 @@ namespace VG.Proof.RsaOaep.AArch64.Enc
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash Stream)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked pdCallCT)
 
 /-- Two layouts' `pre` from the two entry memories are the same. -/
 theorem pre_eq {L : ELay} {m₁ m₂ : Mem} (q₁ : PreOk L m₁) (q₂ : PreOk L m₂) :
-    preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ := by
+    preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ ∧ tabW L m₁ = tabW L m₂ := by
   have h := q₁.hx.symm.trans q₂.hx
-  simp only [List.cons.injEq, Region.mk.injEq, and_true] at h
-  exact ⟨h.1, BitVec.eq_of_toNat_eq (by omega)⟩
+  simp only [List.cons.injEq, PRE, TABR, Sig.tableRegion, Region.mk.injEq, and_true] at h
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  exact ⟨h1, BitVec.eq_of_toNat_eq (by omega), h3⟩
 
 /-- The registers of the call, with the first run's `pre`. -/
 theorem readyP_of {L : ELay} {m m' : Mem} {t : State} (q : PreOk L m) (q' : PreOk L m') (h : PReadyP L m t) :
     PReadyP L m' t := by
-  obtain ⟨w, wl⟩ := pre_eq q q'
+  obtain ⟨w, wl, -⟩ := pre_eq q q'
   exact ⟨h.x0, h.x1, h.x2.trans w, h.x3.trans wl, h.x4, h.x5, h.x6, h.x7⟩
 
 theorem putMsg_eq : putMsg = .seq (.block ((([.ldrSp .x11 sMsg] : List Instr) ++ scr .x12 oEm ++
@@ -72,15 +77,16 @@ theorem putMsg_eq : putMsg = .seq (.block ((([.ldrSp .x11 sMsg] : List Instr) ++
     ([.movz .x .x10 1 0, .strb .x10 .x12 0, .addImm .x .x12 .x12 1] : List Instr)))
     (.ite (.nonzero .x .x13) copyLoop (.block [])) := rfl
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) {f : Fns}
 
 include hH hG in
 theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked)
     {P : Nat} {e : Env} (hL : e.L.Ok) (hP : c.stack ≤ e.L.P) (hP16 : 16 ≤ e.L.P) (hD : e.L.D = Hl.D)
-    (q₁ : PreOk e.L e.m₁) (q₂ : PreOk e.L e.m₂) (hk : 2 * Hl.D + 2 + e.L.ml.toNat ≤ e.L.k.toNat) :
-    RelCT isa (PW P e fun _ _ => True) (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code)
-      fun _ _ => True := by
+    (q₁ : PreOk e.L e.m₁) (q₂ : PreOk e.L e.m₂) (hk : 2 * Hl.D + 2 + e.L.ml.toNat ≤ e.L.k.toNat)
+    {p ai au af : Addr} :
+    RelCT isa (PW P e fun _ t => Table.TabX Gm f (arg 7) e.L.Q e.L.scr p ai au af t)
+      (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code) fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   replace hD0 : 0 < Hl.D := hD0
@@ -112,75 +118,85 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
       R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD] ++ e.L.X ++ [e.L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
+  let TX : (Nat → BitVec 64) → State → Prop := fun _ t => Table.TabX Gm f (arg 7) e.L.Q e.L.scr p ai au af t
   simp only [Impl.RsaOaep.AArch64.Precomputed.encMain, encEm, seqs]
   -- `EM`'s place cleared.
-  refine RelCT.seq (R := PW P e fun _ _ => True) (RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_seq_tr [.x11, .x12, .x13]
+  refine RelCT.seq (R := PW P e TX) (RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
       (fun r => ([(Reg.x11, off e.L.scr oEm), (.x12, BitVec.ofNat 64 128), (.x13, BitVec.ofNat 64 0)].lookup r).getD 0)
       (by taint_decide) (by taint_decide) fun _ _ _ _ _ _ _ _ hc R hS _ => clearE_pin (ly hc R hS))
-    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (clearEm_ok (ly hc R hS) R)
-      fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial) ?_) ?_
+    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (clearEm_ok (ly hc R hS) R))
+      fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_) ?_
   -- The seed.
-  · refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_seq_tr [.x11, .x12, .x13]
+  · refine RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
         (fun r => ([(Reg.x11, e.L.sd), (.x12, off e.L.scr (oEm + 1)), (.x13, BitVec.ofNat 64 Hl.D)].lookup r).getD 0)
         (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (([.ldrSp .x11 sSeed] : List Instr) ++
           scr .x12 (oEm + 1) ++ ([.movz .x .x13 (BitVec.ofNat 16 gH.D) 0] : List Instr))) (by rfl) (by taint_decide))
         (by taint_decide) fun _ _ _ _ _ _ _ _ hc R hS _ => seedE_pin (ly hc R hS) R hS.sd hD64)
-      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (copySeed_ok (ly hc R hS) R (H := Hl) hS.sd hD0 hD64
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (copySeed_ok (ly hc R hS) R (H := Hl) hS.sd hD0 hD64
         (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega_arith)
           (by have := hL.bR _ (ro_SD e.L); simp only at this; omega_arith)))
-        (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith)))
-        fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial) ?_
+        (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith))))
+        fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_
     -- The label's hash.
-    refine RelCT.seq (pw_wp (X' := fun _ _ => True)
+    refine RelCT.seq (pw_wp (X' := TX)
       (pw_lr hP16 (hashLabel_tr hH e.L.labl.isLt (.inl rfl)
         (X := fun W t => LabAt t e.L.Q e.L.scr W e.L.lab e.L.labl.toNat) fun _ _ h => h)
         fun _ _ _ _ _ _ hc hS _ => hc.labAt hL hP16 hS)
-      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (hashLabel_ok hH (Hs := Hs) hHh (ly hc R hS) R
-        (hc.labAt hL hP16 hS) (o := oDig) (.inl rfl))
-        fun _ ⟨_, Su, _, Ru, _, _⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial) ?_
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (hashLabel_ok hH (Hs := Hs) hHh (ly hc R hS) R
+        (hc.labAt hL hP16 hS) (o := oDig) (.inl rfl)))
+        fun _ ⟨⟨_, Su, _, Ru, _, _⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_
     -- `lHash` after the seed.
-    refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_seq_tr [.x11, .x12, .x13]
+    refine RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
         (fun r => ([(Reg.x11, off e.L.scr oDig), (.x12, off e.L.scr (oEm + 1 + Hl.D)),
           (.x13, BitVec.ofNat 64 Hl.D)].lookup r).getD 0)
         (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (scr .x11 oDig ++ scr .x12 (oEm + 1 + gH.D) ++
           ([.movz .x .x13 (BitVec.ofNat 16 gH.D) 0] : List Instr))) (by rfl) (by taint_decide))
         (by taint_decide) fun _ _ _ _ _ _ _ _ hc R hS _ => lhE_pin (ly hc R hS) hD64)
-      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (copyLh_ok (ly hc R hS) R (H := Hl) hD0 hD64)
-        fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial) ?_
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (copyLh_ok (ly hc R hS) R (H := Hl) hD0 hD64))
+        fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_
     -- `0x01` and the message.
-    refine pw_wp (X' := fun _ _ => True) (by
+    refine pw_wp (X' := TX) (by
         rw [putMsg_eq]
         exact RelCT.seq_block_append (pw_seq_tr [.x11, .x12, .x13]
           (fun r => ([(Reg.x11, e.L.msg), (.x12, off e.L.scr (e.L.k.toNat - e.L.ml.toNat - 1)),
             (.x13, BitVec.ofNat 64 e.L.ml.toNat)].lookup r).getD 0)
           (by taint_decide) (by taint_decide)
           fun _ _ _ _ _ _ _ _ hc R hS _ => msgE_pin (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega_arith)))
-      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (putMsg_ok (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega_arith)
-        hk1024 (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat)
-          (by omega_arith) (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega_arith))) hmsS)
-        fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (putMsg_ok (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg
+        (by omega_arith) hk1024 (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.msg (d := i) (n := 1)
+          (k := e.L.ml.toNat) (by omega_arith) (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega_arith)))
+        hmsS))
+        fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)
   -- `DB` masked.
-  refine RelCT.seq (pw_blk (X' := fun W _ => MArgs W e.L.scr 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1)) []
+  refine RelCT.seq (pw_blk (X' := fun W t => MArgs W e.L.scr 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) ∧ TX W t) []
     (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (dbArgs gH)) (by rfl) (by taint_decide)) nopin
-    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (dbArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith) (by omega_arith) hk1024 [])
-      fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) (mW_args _ _ _ _ _ _)) ?_
-  refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_lr hP16 (mgfXor_tr hG f4 fun _ _ h => h)
+    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (dbArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith)
+      (by omega_arith) hk1024 []))
+      fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru
+        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) ⟨mW_args _ _ _ _ _ _, hx.step Su sy⟩) ?_
+  refine RelCT.seq (pw_wp (X' := TX) (pw_lr hP16 (Table.mgfXorT_tr hG (by decide) f4
+      (fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩) (by taint_decide))
       fun _ _ _ _ _ _ _ _ x => x)
-    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (mgfXor_ok hG hGh hGl hGv (ly hc R hS) R f4 hx)
-      fun _ ⟨_, Su, _, W', Ru, hW', _⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)) trivial) ?_
+    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.2.1
+      (ly hc R hS) R f4 hx.1))
+      fun _ ⟨⟨_, Su, _, W', Ru, hW', _⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru
+        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith) (by omega_arith)) (hx.2.step Su sy)) ?_
   -- The seed masked.
-  refine RelCT.seq (pw_blk (X' := fun W _ => MArgs W e.L.scr (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D) []
+  refine RelCT.seq (pw_blk (X' := fun W t => MArgs W e.L.scr (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D ∧ TX W t) []
     (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (seedArgs gH)) (by rfl) (by taint_decide)) nopin
-    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (seedArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith) (by omega_arith) hk1024 [])
-      fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) (mW_args _ _ _ _ _ _)) ?_
-  refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_lr hP16 (mgfXor_tr hG f2 fun _ _ h => h)
+    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (seedArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith)
+      (by omega_arith) hk1024 []))
+      fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru
+        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) ⟨mW_args _ _ _ _ _ _, hx.step Su sy⟩) ?_
+  refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_lr hP16 (Table.mgfXorT_tr hG (by decide) f2
+      (fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩) (by taint_decide))
       fun _ _ _ _ _ _ _ _ x => x)
-    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (mgfXor_ok hG hGh hGl hGv (ly hc R hS) R f2 hx)
+    fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.2.1 (ly hc R hS) R f2
+      hx.1)
       fun _ ⟨_, Su, _, W', Ru, hW', _⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)) trivial) ?_
+        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith) (by omega_arith)) trivial) ?_
   -- The call.
   refine RelCT.seq (pw_wpQ (X' := fun W t => PReadyP e.L e.m₁ t ∧ CallArgs e.L W) (Q := PreOk e.L) q₁ q₂
     (pw_taint [] (by taint_decide) nopin) fun _ _ _ t V W hq _ _ hc R hS _ => ?_) ?_
@@ -193,7 +209,7 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
           ⟨hc12, V, _, hm12 ▸ hm11 ▸ R10, hS10, readyP_of hq q₁ hr12, ⟨by simp [pubW, upd], by simp [pubW, upd]⟩⟩
   refine pdCallCT c fun t₁ t₂ ⟨_, _, hl, ⟨c₁, _, _, R₁, _, r₁, A₁⟩, ⟨c₂, _, _, R₂, _, r₂, A₂⟩⟩ => ?_
   have r₂' := readyP_of q₁ q₂ r₂
-  obtain ⟨w, wl⟩ := pre_eq q₁ q₂
+  obtain ⟨w, wl, -⟩ := pre_eq q₁ q₂
   have sa : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → CallArgs e.L W →
       stackArg t 0 = e.L.scr + BitVec.ofNat 64 8192 ∧ stackArg t 1 = e.L.sl - BitVec.ofNat 64 1024 :=
     fun hc R hA => ⟨by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega_arith)).trans hA.s0,
@@ -207,7 +223,7 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   · rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
     · rw [(sa c₁ R₁ A₁).1, (sa c₂ R₂ A₂).1]
     · rw [(sa c₁ R₁ A₁).2, (sa c₂ R₂ A₂).2]
-  · have hx := hl.2.2 (PRE e.L e.m₁) (by rw [q₁.hx]; exact List.mem_singleton_self _)
+  · have hx := hl.2.2 (PRE e.L e.m₁) (by rw [q₁.hx]; simp)
     simp only [Nat.mul_div_cancel _ (by decide : 0 < 8)] at hx
     rw [r₁.x2, r₁.x3, r₂'.x2, r₂'.x3, pre_words hL c₁ q₁, pre_words hL c₂ q₂, ← w, ← wl, hx]
   · rw [r₁.x4, r₁.x5, r₂.x4, r₂.x5]

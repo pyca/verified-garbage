@@ -105,7 +105,7 @@ theorem head_ct (Hs : Spec.Mgf1.Hash) (ts : List FnTable) {S : Nat} (hS : 15 ≤
     simp only [lay, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
       a14, a15, hsp]
   obtain ⟨hn, he⟩ := leak_split hl (by rw [bytesAt_length, bytesAt_length, h4])
-  have hta : TabAgree ts (lay (S + 1) s₁) s₁.mem s₂.mem s₁ s₂ :=
+  have hta : Proof.HashTable.AArch64.TabAgree ts (lay (S + 1) s₁).tab s₁.mem s₂.mem s₁ s₂ :=
     ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 15 from a15]; exact hT₂, hd₂⟩, hsy,
       fun T hT => htab _ _ rfl a15.symm T hT⟩
   refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,

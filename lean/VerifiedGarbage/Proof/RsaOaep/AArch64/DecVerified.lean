@@ -73,9 +73,9 @@ theorem dec_ct {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) {
       obtain ⟨hm₁, -, hD₁⟩ := held_tableOf hh₁
       obtain ⟨hm₂, -, hD₂⟩ := held_tableOf ((hiff _ hT).mp hh₁)
       have hn := mem_names hw
-      have tx₁ : TabX w.H.stream (fnsOf vs) e.L.Q e.L.scr e.L.tab (s₁.syms w.H.initN) (s₁.syms w.H.updN)
+      have tx₁ : Table.TabX w.H.stream (fnsOf vs) (arg 15) e.L.Q e.L.scr e.L.tab (s₁.syms w.H.initN) (s₁.syms w.H.updN)
           (s₁.syms w.H.finN) s₁ := ⟨c₁.tab hL hP16 (tabOK_of hc hd₁ hw) hm₁ hD₁, rfl, rfl, rfl⟩
-      have tx₂ : TabX w.H.stream (fnsOf vs) e.L.Q e.L.scr e.L.tab (s₁.syms w.H.initN) (s₁.syms w.H.updN)
+      have tx₂ : Table.TabX w.H.stream (fnsOf vs) (arg 15) e.L.Q e.L.scr e.L.tab (s₁.syms w.H.initN) (s₁.syms w.H.updN)
           (s₁.syms w.H.finN) s₂ := ⟨c₂.tab hL hP16 (tabOK_of hc hd₂ hw) hm₂ hD₂, (hsy _ hn.1).symm,
             (hsy _ hn.2.1).symm, (hsy _ hn.2.2).symm⟩
       exact decMain_tr hH w.ok.stream hHh w.mgf.hash w.mgf.len (mgf_valid w.mgf) hkD hL.k1024 e.L.labl.isLt

@@ -93,6 +93,16 @@ theorem lr_tcall {F S p a : Addr} {X : (Nat → BitVec 64) → State → Prop} (
     exact ⟨a, by simp only [icall, a₁], by simp only [icall, a₂], (hv W₁ s₁ x₁).2.2.2,
       (hv W₂ s₂ x₂).2.2.2, rfl⟩
 
+/-- The table at `p`, from the stack argument at `sArg` (`Tab`), and the
+addresses of `G`'s functions, which both runs agree on. -/
+def TabX (G : Stream) (f : Fns) (sArg : Nat) (F S p ai au af : Addr) (t : State) : Prop :=
+  Tab G f F S p sArg t ∧ t.syms G.initN = ai ∧ t.syms G.updN = au ∧ t.syms G.finN = af
+
+theorem TabX.step {G : Stream} {f : Fns} {sArg : Nat} {F S p ai au af : Addr} {t u : State}
+    (h : TabX G f sArg F S p ai au af t) (hS : Step F S [] t u) (sy : u.syms = t.syms) :
+    TabX G f sArg F S p ai au af u :=
+  ⟨h.1.step hS sy, by rw [sy]; exact h.2.1, by rw [sy]; exact h.2.2.1, by rw [sy]; exact h.2.2.2⟩
+
 /-! ## The points of a round -/
 
 /-- The table, from MGF1's entry state, and the addresses of `G`'s `init`,
