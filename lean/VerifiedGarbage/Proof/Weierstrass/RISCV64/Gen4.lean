@@ -34,7 +34,7 @@ the carries into the top word (`top_ok`), and the sums, whose numbers add up
 
 The multiplication for aligned offsets, with the constants in registers
 (`mulCoreR`), meets the same (`mulCoreR_core`), by `mulWithF_ok`: its
-reduction (`reduceR_ok`) keeps `s2`–`s6` in the copies and loads them back.
+reduction (`reduceR_ok`) keeps `s7`–`s11` in the copies and loads them back.
 
 The functions then meet the shared contracts of
 `Proof/Weierstrass/MontContract.lean` for a modulus `S` of four words with
@@ -524,10 +524,10 @@ open VG.Proof.Ed25519.RISCV64 (mulAgreeLo)
 /-! ## The multiplication with the constants in registers
 
 `mulCoreR` (`mulCoreR_core`) as `mulCore`, by `mulWithF_ok`: its reduction
-(`reduceR_ok`) keeps `s2`–`s6` at `MA` (`save_step`), builds the constants
+(`reduceR_ok`) keeps `s7`–`s11` at `MA` (`save_step`), builds the constants
 there (`RegK`), runs the rounds as `reduce` does (`roundR_ok`, with
 `qwordR_ok` and `macR_ok` reading the constants from the registers), and
-loads `s2`–`s6` back (`restore_step`); it writes only the copies, which the
+loads `s7`–`s11` back (`restore_step`); it writes only the copies, which the
 product no longer needs. -/
 
 section Regs
@@ -547,15 +547,15 @@ theorem KR_notM : ∀ r ∈ KR, r ∉ clobM := by decide
 
 theorem MR_mem : ∀ j < 4, MR j ∈ KR := by decide
 
-theorem KR_inj : ∀ i < 5, ∀ j < 5, KR.getD i .s2 = KR.getD j .s2 → i = j := by decide
+theorem KR_inj : ∀ i < 5, ∀ j < 5, KR.getD i .s7 = KR.getD j .s7 → i = j := by decide
 
-theorem KR_idx : ∀ r ∈ KR, ∃ i < 5, KR.getD i .s2 = r := by decide
+theorem KR_idx : ∀ r ∈ KR, ∃ i < 5, KR.getD i .s7 = r := by decide
 
-theorem KR_mem : ∀ i < 5, KR.getD i .s2 ∈ KR := by decide
+theorem KR_mem : ∀ i < 5, KR.getD i .s7 ∈ KR := by decide
 
-/-- The constants in `s2`–`s6`. -/
+/-- The constants in `s7`–`s11`. -/
 def RegK (m : Nat) (s : State) : Prop :=
-  s.gpr .s2 = BitVec.ofNat 64 (negInv m) ∧ ∀ j < 4, s.gpr (MR j) = wordOf m j
+  s.gpr .s7 = BitVec.ofNat 64 (negInv m) ∧ ∀ j < 4, s.gpr (MR j) = wordOf m j
 
 theorem RegK.of_gpr {s s' : State} (h : RegK m s) (hg : ∀ r ∈ KR, s'.gpr r = s.gpr r) : RegK m s' :=
   ⟨by rw [hg _ (by decide)]; exact h.1, fun j hj => by rw [hg _ (MR_mem j hj)]; exact h.2 j hj⟩
@@ -579,12 +579,12 @@ theorem l6M (i : Nat) : ∀ x ∈ [rw i, Reg.a0, .a4, .a5, .a6, .a7], x ∈ clob
   all_goals decide
 
 /-- The quotient word with the constants in registers: `q = w m'` of `w` in
-`r` in place (`m'` in `s2`), and in `a4` the carry word of `w + q m₀` (`m₀`
+`r` in place (`m'` in `s7`), and in `a4` the carry word of `w + q m₀` (`m₀`
 in `mr`). -/
 theorem qwordR_ok {r mr : Reg} {ni m0 : BitVec 64} (hinv : (m0.toNat * ni.toNat + 1) % 2 ^ 64 = 0)
-    (hr : r ∉ [Reg.s2, .a0, .a4]) (hmr : mr ∉ [r, .a0, .a4]) {s : State} (hni : s.gpr .s2 = ni)
+    (hr : r ∉ [Reg.s7, .a0, .a4]) (hmr : mr ∉ [r, .a0, .a4]) {s : State} (hni : s.gpr .s7 = ni)
     (hm0 : s.gpr mr = m0) :
-    WP isa (.block [.mul r r .s2, .mulhu .a4 r mr, .li .a0 0, .sltu .a0 .a0 r, .add .a4 .a4 .a0]) s
+    WP isa (.block [.mul r r .s7, .mulhu .a4 r mr, .li .a0 0, .sltu .a0 .a0 r, .add .a4 .a4 .a0]) s
       fun s' =>
       (s'.gpr r).toNat = (s.gpr r).toNat * ni.toNat % 2 ^ 64 ∧
       (s.gpr r).toNat + (s'.gpr r).toNat * m0.toNat = 2 ^ 64 * (s'.gpr .a4).toNat ∧
@@ -664,7 +664,7 @@ theorem qwordR_m (hm : Ok m) (i : Nat) {s : State} (hk : RegK m s) :
       (s'.gpr (rw i)).toNat = (s.gpr (rw i)).toNat * (negInv m % 2 ^ 64) % 2 ^ 64 ∧
       (s.gpr (rw i)).toNat + (s'.gpr (rw i)).toNat * wd m 0 = 2 ^ 64 * (s'.gpr .a4).toNat ∧
       Keeps [rw i, .t0, .a0, .a4] s s' := by
-  have hr : rw i ∉ [Reg.s2, .a0, .a4] := by rcases rw_cases i with h | h | h | h | h <;> rw [h] <;> decide
+  have hr : rw i ∉ [Reg.s7, .a0, .a4] := by rcases rw_cases i with h | h | h | h | h <;> rw [h] <;> decide
   have hmr : MR 0 ∉ [rw i, .a0, .a4] := by rcases rw_cases i with h | h | h | h | h <;> rw [h] <;> decide
   have h := qwordR_ok (r := rw i) (mr := MR 0) (ni := BitVec.ofNat 64 (negInv m)) (m0 := wordOf m 0)
     (by rw [wordOf_toNat, BitVec.toNat_ofNat]; exact hm.inv) hr hmr hk.1 (hk.2 0 (by decide))
@@ -793,18 +793,18 @@ theorem roundsR_ok (hm : Ok m) {b : Addr} {s0 : State} (hk0 : RegK m s0) : ∀ n
 /-- The copies `MA` and `MB`, which `reduceR` writes. -/
 abbrev regsM (b : Addr) : List Region := [⟨b + BitVec.ofNat 64 MA, 32⟩, ⟨b + BitVec.ofNat 64 MB, 32⟩]
 
-/-- The first `n` of `s2`–`s6` are kept at `MA`. -/
+/-- The first `n` of `s7`–`s11` are kept at `MA`. -/
 structure SvI (b : Addr) (s₀ : State) (n : Nat) (s : State) : Prop where
   gpr : s.gpr = s₀.gpr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame (regsM b) s₀.mem s.mem
-  saved : ∀ i < n, s.mem.readW (b + BitVec.ofNat 64 (MA + 8 * i)) 64 = s₀.gpr (KR.getD i .s2)
+  saved : ∀ i < n, s.mem.readW (b + BitVec.ofNat 64 (MA + 8 * i)) 64 = s₀.gpr (KR.getD i .s7)
 
 theorem save_step {b : Addr} {s₀ : State} (hc : Ctx b s₀) {n : Nat} (hn : n < 5) {s : State}
     (h : SvI b s₀ n s) :
-    WP isa (.block [.store .d (KR.getD n .s2) .a3 (MA + 8 * n)]) s (SvI b s₀ (n + 1)) := by
+    WP isa (.block [.store .d (KR.getD n .s7) .a3 (MA + 8 * n)]) s (SvI b s₀ (n + 1)) := by
   have hc' : Ctx b s := ⟨by rw [h.gpr]; exact hc.a3, hc.al, by rw [h.wr]; exact hc.wr⟩
   refine sd_ok hc' (by simp only [MA]; omega) (by simp only [MA]; omega) fun s' u => WP.block_nil ?_
   refine ⟨by rw [u.gpr, h.gpr], by rw [u.rd, h.rd], by rw [u.wr, h.wr], by rw [u.sp, h.sp], ?_, fun i hi => ?_⟩
@@ -821,9 +821,9 @@ theorem save_step {b : Addr} {s₀ : State} (hc : Ctx b s₀) {n : Nat} (hn : n 
       exact h.saved i hi
     · rw [Mem.readW_writeW_self64, h.gpr]
 
-/-- The first `n` of `s2`–`s6` are loaded back, to `v`, from `sB`. -/
+/-- The first `n` of `s7`–`s11` are loaded back, to `v`, from `sB`. -/
 structure RsI (b : Addr) (sB : State) (v : Nat → BitVec 64) (n : Nat) (s : State) : Prop where
-  restored : ∀ i < n, s.gpr (KR.getD i .s2) = v i
+  restored : ∀ i < n, s.gpr (KR.getD i .s7) = v i
   others : ∀ r, r ∉ KR → s.gpr r = sB.gpr r
   mem : s.mem = sB.mem
   rd : s.rd = sB.rd
@@ -833,7 +833,7 @@ structure RsI (b : Addr) (sB : State) (v : Nat → BitVec 64) (n : Nat) (s : Sta
 theorem restore_step {b : Addr} {sB : State} {v : Nat → BitVec 64} (hc : Ctx b sB)
     (hsav : ∀ i < 5, sB.mem.readW (b + BitVec.ofNat 64 (MA + 8 * i)) 64 = v i)
     {n : Nat} (hn : n < 5) {s : State} (h : RsI b sB v n s) :
-    WP isa (.block [.load .d (KR.getD n .s2) .a3 (MA + 8 * n)]) s (RsI b sB v (n + 1)) := by
+    WP isa (.block [.load .d (KR.getD n .s7) .a3 (MA + 8 * n)]) s (RsI b sB v (n + 1)) := by
   have hc' : Ctx b s := ⟨by rw [h.others _ (by decide)]; exact hc.a3, hc.al, by rw [h.wr]; exact hc.wr⟩
   refine ld_ok hc' (by simp only [MA]; omega) (by simp only [MA]; omega) fun s' u => WP.block_nil ?_
   rw [h.mem, hsav n hn] at u
@@ -871,12 +871,12 @@ theorem reduceR_ok (hm : Ok m) {b : Addr} {s : State} (hc : Ctx b s) :
       (fun j => (.load .d (rw j) .a3 (ACC + 8 * j) : Instr)) ++ ([.li .a2 0] : List Instr)) ++
       ((List.range 4).flatMap roundR ++ Impl.Weierstrass.RISCV64.Gen4.restoreM))) := by
     simp only [reduceR, List.append_assoc]
-  have ek : constsR m = li64 .s2 .a0 (BitVec.ofNat 64 (negInv m)) ++ (li64 .s3 .a0 (wordOf m 0) ++
-      (li64 .s4 .a0 (wordOf m 1) ++ (li64 .s5 .a0 (wordOf m 2) ++ li64 .s6 .a0 (wordOf m 3)))) := by
+  have ek : constsR m = li64 .s7 .a0 (BitVec.ofNat 64 (negInv m)) ++ (li64 .s8 .a0 (wordOf m 0) ++
+      (li64 .s9 .a0 (wordOf m 1) ++ (li64 .s10 .a0 (wordOf m 2) ++ li64 .s11 .a0 (wordOf m 3)))) := by
     simp only [constsR, List.range_succ, List.range_zero, List.nil_append]
     rfl
   rw [e, ek]
-  -- `s2`–`s6` to `MA`.
+  -- `s7`–`s11` to `MA`.
   refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (SvI b s) (fun k s' hk h => save_step hc hk h) 5
     (Nat.le_refl _) s ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s1 h1 => ?_)
@@ -885,17 +885,17 @@ theorem reduceR_ok (hm : Ok m) {b : Addr} {s : State} (hc : Ctx b s) :
   simp only [List.append_assoc]
   refine wp_li64 (by decide) _ fun t1 e1 k1 => wp_li64 (by decide) _ fun t2 e2 k2 =>
     wp_li64 (by decide) _ fun t3 e3 k3 => wp_li64 (by decide) _ fun t4 e4 k4 => wp_li64 (by decide) _ fun sK e5 k5 => ?_
-  have kK : Keeps [.s2, .a0, .s3, .a0, .s4, .a0, .s5, .a0, .s6, .a0] s1 sK := (((k1.trans k2).trans k3).trans k4).trans k5
+  have kK : Keeps [.s7, .a0, .s8, .a0, .s9, .a0, .s10, .a0, .s11, .a0] s1 sK := (((k1.trans k2).trans k3).trans k4).trans k5
   have hkK : RegK m sK := by
     refine ⟨?_, fun j hj => ?_⟩
     · rw [k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), e1]
     · have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
       rcases this with rfl | rfl | rfl | rfl
-      · show sK.gpr .s3 = _
+      · show sK.gpr .s8 = _
         rw [k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), e2]
-      · show sK.gpr .s4 = _
+      · show sK.gpr .s9 = _
         rw [k5.1 _ (by decide), k4.1 _ (by decide), e3]
-      · show sK.gpr .s5 = _
+      · show sK.gpr .s10 = _
         rw [k5.1 _ (by decide), e4]
       · exact e5
   have hcK : Ctx b sK := hc1.of_rest (Keeps.rest kK) (by decide)
@@ -904,11 +904,11 @@ theorem reduceR_ok (hm : Ok m) {b : Addr} {s : State} (hc : Ctx b s) :
   refine WP.block_append (WP.mono (loads_ok (m := m) hcK) fun s2 h2 => ?_)
   rw [← List.append_assoc] at *
   refine WP.block_append (WP.mono (roundsR_ok hm hkK 4 (Nat.le_refl _) s2 h2) fun s3 h3 => ?_)
-  -- `s2`–`s6` back.
+  -- `s7`–`s11` back.
   have hm3 : s3.mem = s1.mem := by rw [h3.mem, kK.2.1]
-  have hsav : ∀ i < 5, s3.mem.readW (b + BitVec.ofNat 64 (MA + 8 * i)) 64 = s.gpr (KR.getD i .s2) :=
+  have hsav : ∀ i < 5, s3.mem.readW (b + BitVec.ofNat 64 (MA + 8 * i)) 64 = s.gpr (KR.getD i .s7) :=
     fun i hi => by rw [hm3]; exact h1.saved i hi
-  refine WP.mono (wp_range_flatMap (M := isa) (RsI b s3 fun i => s.gpr (KR.getD i .s2))
+  refine WP.mono (wp_range_flatMap (M := isa) (RsI b s3 fun i => s.gpr (KR.getD i .s7))
     (fun k s' hk h => restore_step h3.ctx hsav hk h) 5 (Nat.le_refl _) s3
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl, rfl, rfl, rfl, rfl⟩) fun s4 h4 => ?_
   have g4 : ∀ r, r ∉ KR → s4.gpr r = s3.gpr r := h4.others
@@ -918,7 +918,7 @@ theorem reduceR_ok (hm : Ok m) {b : Addr} {s : State} (hc : Ctx b s) :
     by_cases hK : r ∈ KR
     · obtain ⟨i, hi, rfl⟩ := KR_idx r hK
       exact h4.restored i hi
-    · have hx : r ∉ [Reg.s2, .a0, .s3, .a0, .s4, .a0, .s5, .a0, .s6, .a0] := fun hx => by
+    · have hx : r ∉ [Reg.s7, .a0, .s8, .a0, .s9, .a0, .s10, .a0, .s11, .a0] := fun hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
           first | exact hK (by decide) | exact hr (by decide)
