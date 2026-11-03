@@ -47,6 +47,7 @@ open VG.Proof.Ecdsa.RISCV64.Joint (PtOk addPt_ok JPre jSl addW mul_zero')
 open VG.Proof.Ecdh.RISCV64.P256 (TailConsts sv_unch sl_eq FL mulKW unch_of_mulKeeps coord_sv point_eq dq
   rep_of_represents wsCallR_ok)
 open VG.Proof.Ecdsa.RISCV64.Comb (TabAt)
+open VG.Proof.Ecdsa.RISCV64.Window (copyPt_ok)
 open VG.Proof.X25519.RISCV64 (Rest)
 open VG.Spec.Weierstrass (Point Fe mul onCurve)
 
@@ -55,11 +56,11 @@ abbrev c : Cfg := p256
 
 /-- Code without frames keeps the comb's table, apart from the regions it may write. -/
 theorem wp_tab {cd : Prog isa} (hn : cd.noFrames = true) {s : State} {base : Addr} {Q : State → Prop}
-    (hT : TabAt base s) (hwr : ∀ r ∈ s.wr, Region.Disjoint (Comb.tabRegion s) r) (h : WP isa cd s Q) :
+    (hT : TabAt base s) (hwr : s.wr = [⟨base, 8192⟩]) (h : WP isa cd s Q) :
     WP isa cd s fun s' => Q s' ∧ TabAt base s' := by
   obtain ⟨t, s', he, hq⟩ := h
   obtain ⟨r, -, -, f⟩ := Exec.regions he hn
-  exact ⟨t, s', he, hq, hT.of_frame (Exec.syms he) r f hwr⟩
+  exact ⟨t, s', he, hq, hT.of_frame (Exec.syms he) r f (by rw [hwr]; simpa using hT.disj)⟩
 
 /-- `b` in Montgomery's form, as `zeroR` sets it. -/
 theorem bp_val : Cfg.mont p256 p256.C.b % 2 ^ (64 * 4) = W.b * 2 ^ 256 % W.p := by decide
@@ -182,11 +183,11 @@ theorem ptOk_of_result (hL : Law W) {base : Addr} {m : Mem} {s' : State} {k : Na
 /-- `R = [k]Q` by the call of `vg_p256_mul`, for `k` at `K` and `Q` in `R`'s
 first two slots. -/
 theorem mulCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
-    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p)
-    (hon : onCurve W (.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY))) = true) :
+    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p) {P : Point W}
+    (hP : Point.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY)) = P)
+    (hon : onCurve W P = true) :
     WP isa (Cfg.wsCall "vg_p256_mul" Window.mulP256) s fun s' => Kp s s' ∧
-      MC.ResultInRange (sv base s K)
-        (.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY))) base s.mem s'.mem := by
+      MC.ResultInRange (sv base s K) P base s.mem s'.mem := by
   refine wsCallR_ok Impl.Ecdsa.RISCV64.Window.mulP256_noFrames (VG.Proof.Ecdsa.RISCV64.Window.mul_rv hL) hw h3
     (fun t r w a m => ?_) fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ⟨K₂, ?_⟩
   · refine ⟨r, by rw [w, a], by rw [a]; exact hw.nowrap, by rw [a]; exact hw.al, ?_, ?_⟩
@@ -199,13 +200,13 @@ theorem mulCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h
         rw [coord_sv _ _ RX]; exact hx
       · show MC.toPoint.coordAt s.mem base (p256.sl RY) < W.p
         rw [coord_sv _ _ RY]; exact hy
-      rw [point_eq hL]; exact hon
+      rw [point_eq hL]; exact hP ▸ hon
   · have := hp₂
     simp only [mulRVc, State.withRegions_mem] at this
     rw [a₂, m₂, ← mm₂] at this
     have hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
     rw [hk, point_eq hL] at this
-    exact this
+    exact hP ▸ this
 
 /-- `R = [k]G` by the call of `vg_p256_mul_g`, for `k` at `K`, with the
 table its readable region. -/
@@ -255,5 +256,142 @@ theorem combCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (
     rw [hk] at this
     rw [u₄.mem]
     exact this
+
+/-! ## `[u]G + [v]Q` -/
+
+/-- What `joint` writes. -/
+abbrev combW : List (Nat × Nat) :=
+  [(p256.sl K, 32), (p256.sl RX, 32), (p256.sl RY, 32)] ++ mulKW ++ zW ++
+    [(p256.sl GX, 32), (p256.sl CPX, 32), (p256.sl CPY, 32), (p256.sl K, 32)] ++ mulKW ++ zW ++
+    addW (p256.pt TX TY TZ) ++ [(p256.sl RX, 32), (p256.sl RY, 32), (p256.sl RZ, 32)]
+
+theorem wsCall_noFrames {f : String} {b : Prog isa} (h : b.noFrames = true) : (Cfg.wsCall f b).noFrames = true := by
+  simp only [Cfg.wsCall, Code.noFrames, h, Bool.and_self]
+
+/-- A copy of a number between slots below the flag's. -/
+theorem copySl_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho : o < 44) (ha : a < 44)
+    (hsep : p256.sl o ≤ p256.sl a ∨ p256.sl a + 8 * 4 ≤ p256.sl o) :
+    WP isa (.block (copy 4 (p256.sl o) (p256.sl a))) s fun s' =>
+      sv base s' o = sv base s a ∧ Rest [.t0] s s' ∧ Unch base [(p256.sl o, 32)] s.mem s'.mem := by
+  have h1 : p256.sl o % 8 = 0 ∧ p256.sl o + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega
+  have h2 : p256.sl a % 8 = 0 ∧ p256.sl a + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega
+  exact WP.mono (copy_ok 4 hw h1.1 h2.1 h1.2 h2.2 hsep) fun s' ⟨e, r, O⟩ => ⟨e, r, O.unch⟩
+
+theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q)
+    (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hT : TabAt base s) (hwr : s.wr = [⟨base, 8192⟩])
+    (hu : sv base s UU < W.n) (hv : sv base s VV < W.n) :
+    WP isa (VerifyComb.Cfg.joint p256 "vg_p256_mul" Window.mulP256 Comb.mulGP256Name Comb.mulGP256) s fun s' =>
+      Kc s s' ∧ Unch base combW s.mem s'.mem ∧
+      PtOk base s' (p256.pt RX RY RZ) (Spec.Weierstrass.add (mul (sv base s UU) (Spec.Weierstrass.G W))
+        (mul (sv base s VV) Q)) := by
+  have hw := hp.ws
+  have hp0 : 0 < W.p := by decide
+  rw [VerifyComb.Cfg.joint, show p256.n = 4 from rfl]
+  -- `K = v`, `Q` to `R`'s first two slots.
+  have B1 : WP isa (.block (copy 4 (p256.sl K) (p256.sl VV) ++ copy 4 (p256.sl RX) (p256.sl CPX) ++
+      copy 4 (p256.sl RY) (p256.sl CPY))) s fun s₁ =>
+      sv base s₁ K = sv base s VV ∧ sv base s₁ RX = sv base s CPX ∧ sv base s₁ RY = sv base s CPY ∧
+      Rest [.t0] s s₁ ∧ Unch base [(p256.sl K, 32), (p256.sl RX, 32), (p256.sl RY, 32)] s.mem s₁.mem := by
+    rw [List.append_assoc]
+    refine WP.block_append (WP.mono (copySl_ok hw (o := K) (a := VV) (by decide) (by decide) (by decide))
+      fun t₁ ⟨k₁, r₁, U₁⟩ => ?_)
+    refine WP.block_append (WP.mono (copySl_ok (hw.of_rest r₁) (o := RX) (a := CPX) (by decide) (by decide)
+      (by decide)) fun t₂ ⟨x₂, r₂, U₂⟩ => ?_)
+    refine WP.mono (copySl_ok ((hw.of_rest r₁).of_rest r₂) (o := RY) (a := CPY) (by decide) (by decide)
+      (by decide)) fun t₃ ⟨y₃, r₃, U₃⟩ => ⟨?_, ?_, ?_, r₁.trans (r₂.trans r₃), (U₁.trans U₂).trans U₃⟩
+    · exact (sv_unch (U₂.trans U₃) K (by decide)).trans k₁
+    · exact ((sv_unch U₃ RX (by decide)).trans x₂).trans (sv_unch U₁ CPX (by decide))
+    · exact y₃.trans (sv_unch (U₁.trans U₂) CPY (by decide))
+  refine WP.seq (WP.mono (wp_tab rfl hT hwr B1) fun s₁ ⟨⟨k₁, x₁, y₁, r₁, U₁⟩, T₁⟩ => ?_)
+  have hw₁ := hw.of_rest r₁
+  have hwr₁ : s₁.wr = [⟨base, 8192⟩] := r₁.wr.trans hwr
+  have hc₁ := hc.of_unch U₁ (by decide)
+  have eQ : Point.affine (toM W.p (2 ^ 256) (sv base s₁ RX)) (toM W.p (2 ^ 256) (sv base s₁ RY)) = Q := by
+    rw [x₁, y₁]; exact hp.q
+  -- `[v]Q`.
+  refine WP.seq (WP.mono (wp_tab (wsCall_noFrames Impl.Ecdsa.RISCV64.Window.mulP256_noFrames) T₁ hwr₁
+    (mulCall_ok hL hw₁ ((r₁.gpr .s3 (by decide)).trans h3) hc₁ (by rw [x₁]; exact hp.qx) (by rw [y₁]; exact hp.qy)
+      eQ hp.on)) fun s₂ ⟨⟨K₂, R₂⟩, T₂⟩ => ?_)
+  rw [k₁] at R₂
+  have U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps R₂.2
+  have hw₂ := hw₁.of_kp K₂
+  have hc₂ := hc₁.of_unch U₂ (by decide)
+  have v₂ : sv base s₂ VV = sv base s VV := (sv_unch U₂ VV (by decide)).trans (sv_unch U₁ VV (by decide))
+  -- `O` if `v = 0`, `P = R`, `K = u`.
+  simp only [List.append_assoc]
+  refine WP.seq (WP.block_append (Comb.WP.mono_syms (zeroR_ok hL hw₂ hc₂.zero hc₂.onep (a := VV) (.inr rfl) (P := mul (sv base s VV) Q)
+    (fun h0 => ptOk_of_result hL R₂ (by rw [v₂] at h0; omega) hv)) fun s₃ ⟨r₃, U₃, pR₃, bp₃⟩ sy₃ => ?_))
+  rw [v₂] at pR₃
+  have pR₃' : PtOk base s₃ (p256.pt RX RY RZ) (mul (sv base s VV) Q) := by
+    by_cases h0 : sv base s VV = 0
+    · rw [ite_eq_left h0] at pR₃; rw [h0, mul_zero']; exact pR₃
+    · rw [ite_eq_right h0] at pR₃; exact pR₃
+  have hw₃ := hw₂.of_rest r₃
+  rw [WindowA.Cfg.copyPt, show p256.n = 4 from rfl, List.append_assoc, List.append_assoc]
+  refine WP.block_append (Comb.WP.mono_syms (copySl_ok hw₃ (o := GX) (a := RX) (by decide) (by decide) (by decide))
+    fun t₁ ⟨cx, q₁, V₁⟩ sy₄a => ?_)
+  refine WP.block_append (Comb.WP.mono_syms (copySl_ok (hw₃.of_rest q₁) (o := CPX) (a := RY) (by decide) (by decide)
+    (by decide)) fun t₂ ⟨cy, q₂, V₂⟩ sy₄b => ?_)
+  refine WP.block_append (Comb.WP.mono_syms (copySl_ok ((hw₃.of_rest q₁).of_rest q₂) (o := CPY) (a := RZ) (by decide)
+    (by decide) (by decide)) fun s₄ ⟨cz, q₃, V₃⟩ sy₄c => ?_)
+  have r₄ : Rest [.t0] s₃ s₄ := q₁.trans (q₂.trans q₃)
+  have U₄ : Unch base [(p256.sl GX, 32), (p256.sl CPX, 32), (p256.sl CPY, 32)] s₃.mem s₄.mem :=
+    (V₁.trans V₂).trans V₃
+  have ex₄ : sv base s₄ GX = sv base s₃ RX :=
+    ((sv_unch (V₂.trans V₃) GX (by decide)).trans cx)
+  have ey₄ : sv base s₄ CPX = sv base s₃ RY :=
+    ((sv_unch V₃ CPX (by decide)).trans cy).trans (sv_unch V₁ RY (by decide))
+  have ez₄ : sv base s₄ CPY = sv base s₃ RZ := cz.trans (sv_unch (V₁.trans V₂) RZ (by decide))
+  have pP₄ : PtOk base s₄ (p256.pt GX CPX CPY) (mul (sv base s VV) Q) := pR₃'.move ex₄ ey₄ ez₄
+  have hw₄ := hw₃.of_rest r₄
+  refine Comb.WP.mono_syms (copySl_ok hw₄ (o := K) (a := UU) (by decide) (by decide) (by decide))
+    fun s₅ ⟨k₅, r₅, U₅⟩ sy₅ => ?_
+  have hw₅ := hw₄.of_rest r₅
+  have sy₂₅ : s₅.syms = s₂.syms := by rw [sy₅, sy₄c, sy₄b, sy₄a, sy₃]
+  have rd₂₅ : s₅.rd = s₂.rd := by rw [r₅.rd, r₄.rd, r₃.rd]
+  have U₃₅ := (U₃.trans U₄).trans U₅
+  have T₅ : TabAt base s₅ := T₂.of_unch sy₂₅ rd₂₅ (by decide) U₃₅
+  have hc₅ := hc₂.of_unch U₃₅ (by decide)
+  have bp₅ : sv base s₅ BP = W.b * 2 ^ 256 % W.p := (sv_unch (U₄.trans U₅) BP (by decide)).trans bp₃
+  have uU : sv base s₄ UU = sv base s UU :=
+    (sv_unch ((U₁.trans U₂).trans (U₃.trans U₄)) UU (by decide))
+  have u₅ : sv base s₅ K = sv base s UU := k₅.trans uU
+  have h3₅ : s₅.gpr .s3 = base := by
+    rw [r₅.gpr .s3 (by decide), r₄.gpr .s3 (by decide), r₃.gpr .s3 (by decide), K₂.gpr _ (by decide),
+      r₁.gpr .s3 (by decide), h3]
+  -- `[u]G`.
+  refine WP.seq (WP.mono (combCall_ok hL hw₅ h3₅ hc₅ bp₅ T₅) fun s₆ ⟨K₆, R₆⟩ => ?_)
+  rw [u₅] at R₆
+  have U₆ : Unch base mulKW s₅.mem s₆.mem := unch_of_mulKeeps R₆.2
+  have hw₆ := hw₅.of_kp K₆
+  have hc₆ := hc₅.of_unch U₆ (by decide)
+  have u₆ : sv base s₆ UU = sv base s UU :=
+    ((sv_unch (U₅.trans U₆) UU (by decide))).trans uU
+  -- `O` if `u = 0`.
+  refine WP.seq (WP.mono (zeroR_ok hL hw₆ hc₆.zero hc₆.onep (a := UU) (.inl rfl)
+    (P := mul (sv base s UU) (Spec.Weierstrass.G W))
+    (fun h0 => ptOk_of_result hL R₆ (by rw [u₆] at h0; omega) hu)) fun s₇ ⟨r₇, U₇, pR₇, bp₇⟩ => ?_)
+  rw [u₆] at pR₇
+  have pR₇' : PtOk base s₇ (p256.pt RX RY RZ) (mul (sv base s UU) (Spec.Weierstrass.G W)) := by
+    by_cases h0 : sv base s UU = 0
+    · rw [ite_eq_left h0] at pR₇; rw [h0, mul_zero']; exact pR₇
+    · rw [ite_eq_right h0] at pR₇; exact pR₇
+  have hw₇ := hw₆.of_rest r₇
+  have U₅₇ := (U₅.trans U₆).trans U₇
+  have pP₇ : PtOk base s₇ (p256.pt GX CPX CPY) (mul (sv base s VV) Q) :=
+    pP₄.of_eq (sv_unch U₅₇ GX (by decide)) (sv_unch U₅₇ CPX (by decide)) (sv_unch U₅₇ CPY (by decide))
+  have hc₇ := hc₆.of_unch U₇ (by decide)
+  -- `T = R + P`.
+  refine WP.seq (WP.mono (addPt_ok hL hw₇ hc₇.ap bp₇ (p := p256.pt RX RY RZ) (q := p256.pt GX CPX CPY)
+    (o := p256.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide)
+    (hL.onCurve_mul VG.Proof.P256.onCurve_G _) (hL.onCurve_mul hp.on _) pR₇' pP₇) fun s₈ ⟨K₈, U₈, pT₈⟩ => ?_)
+  have hw₈ := hw₇.of_kp K₈
+  -- `R = T`.
+  refine WP.mono (copyPt_ok hw₈ (o := p256.pt RX RY RZ) (p := p256.pt TX TY TZ) (by decide) (by decide)
+    (by decide) (by decide)) fun s₉ ⟨ex₉, ey₉, ez₉, r₉, U₉⟩ => ⟨?_, ?_, pT₈.move ex₉ ey₉ ez₉⟩
+  · exact (Kc.of_rest r₁).trans (K₂.kc.trans ((Kc.of_rest r₃).trans ((Kc.of_rest r₄).trans ((Kc.of_rest r₅).trans
+      (K₆.kc.trans ((Kc.of_rest r₇).trans (K₈.kc.trans (Kc.of_rest r₉))))))))
+  · exact (((((((U₁.trans U₂).trans U₃).trans U₄).trans U₅).trans U₆).trans U₇).trans U₈ |>.trans U₉).cover
+      (by decide)
 
 end VG.Proof.Ecdsa.RISCV64.P256.JointComb
