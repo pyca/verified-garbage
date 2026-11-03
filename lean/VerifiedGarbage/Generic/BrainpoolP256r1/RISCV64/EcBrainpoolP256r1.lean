@@ -17,6 +17,7 @@ namespace VG.Generic.BrainpoolP256r1.RISCV64.EcBrainpoolP256r1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.publicKeyBrainpoolP256r1
+    consts := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
     verified := Proof.Ecdh.RISCV64.BrainpoolP256r1.pk_verified h.law }]
 
 end VG.Generic.BrainpoolP256r1.RISCV64.EcBrainpoolP256r1
