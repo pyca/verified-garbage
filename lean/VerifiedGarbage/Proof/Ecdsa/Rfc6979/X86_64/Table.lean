@@ -9,6 +9,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.ByIdx
+meta import VerifiedGarbage.Proof.HashTable.X86_64
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: the hash function of a table
@@ -250,5 +259,181 @@ theorem entry_ok {w : MdHash} {s : State} (h : PreW R T vs w s) :
   refine ⟨fun r h₁ h₂ => ?_, ?_, hi, trivial, trivial, trivial, rfl⟩
   · simp [h₁, h₂]
   · simp
+
+
+theorem idx_mem {w : MdHash} (hw : WOk w) : Spec.HashTable.index w.mgf.G ∈ idxs := by
+  have := hw.2.1
+  simp only [idxs, List.mem_cons, List.not_mem_nil, or_false]
+  omega
+
+/-- The frame of the hash function's code fits the stack. -/
+theorem stack_le (P : RfcHash) : 248 + 8 * P.e ≤ stackT := by
+  have : P.e ≤ 34 := by nums
+  show _ ≤ 520; omega
+
+/-- After `entry` and the comparisons: the contract with `w`'s hash function fixed. -/
+theorem pre_at (hC : CurveT R T) {w : MdHash} (hw : WOk w) {s t : State} (hp : PreW R T vs w s)
+    (hg : ∀ r, r ≠ .rcx → r ≠ .r11 → t.gpr r = s.gpr r) (hcx : t.gpr .rcx = s.gpr .r8) (hm : t.mem = s.mem)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) (hsy : t.syms = s.syms) :
+    (rfcP (hashOf hC vs w hw) (names vs)).pre t :=
+  rfc_mono (stack_le _) (rfc_congr hp.1 (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hg _ (by decide) (by decide)
+    · exact hg _ (by decide) (by decide)
+    · exact hg _ (by decide) (by decide)
+    · exact hcx
+    · exact hg _ (by decide) (by decide)
+    · exact hg _ (by decide) (by decide)) hrd hwr hm hsy)
+
+/-- `vg_ecdsa_<curve>_sign` meets `tabK`, and keeps the callee-saved
+registers and its return address. -/
+theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
+    WP isa (signCode R T.tries vs) s fun s' => gprPreserved s s' ∧ (tabK R T vs).post s s' := by
+  obtain ⟨w, -, hw, hp⟩ := h
+  unfold signCode signT
+  refine WP.seq (WP.mono (entry_ok hp) fun t ⟨hg, hcx, h11, hm, hrd, hwr, hsy⟩ => ?_)
+  refine byIdx_wp (idx_mem hw) cmpOk_idxs h11 fun t' k' hm' sy' _ => ?_
+  rw [cfgT_eq hC vs hw]
+  have hg' : ∀ r, r ≠ .rcx → r ≠ .r11 → t'.gpr r = s.gpr r := fun r h₁ h₂ =>
+    (k'.gpr (by simp)).trans (hg r h₁ h₂)
+  have hpre := pre_at hC hw hp hg' ((k'.gpr (by simp)).trans hcx) (hm'.trans hm) (k'.2.1.trans hrd)
+    (k'.2.2.trans hwr) (sy'.trans hsy)
+  refine WP.mono (sign_ok hpre) fun s' ⟨⟨hcs, hret⟩, hpost⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · rw [hcs r hr, hg' r (ne_cs hr (by decide)) (ne_cs hr (by decide))]
+  · rw [hg' .rsp (by decide) (by decide), hm'.trans hm] at hret; exact hret
+  · intro w' _ hw' hp'
+    obtain ⟨hG, hH⟩ := same_hash hw hw' (hp'.2.symm.trans hp.2)
+    have e₁ := hg' .rsi (by decide) (by decide)
+    have e₂ := hg' .rdx (by decide) (by decide)
+    have e₃ := hg' .rdi (by decide) (by decide)
+    rw [hG, hH]
+    have hpost' : match ((instOf T w).result t'.mem (t'.gpr .rsi) (t'.gpr .rdx)).1 with
+      | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (t'.gpr .rdi)
+          (2 * T.ecdsa.curve.len) = Spec.Ecdsa.encode T.ecdsa.curve rs
+      | none => (s'.gpr .rax).setWidth 32 = 0 ∧ Spec.Ecdsa.bytesAt s'.mem (t'.gpr .rdi)
+          (2 * T.ecdsa.curve.len) = List.replicate (2 * T.ecdsa.curve.len) 0 := hpost
+    rw [tresult_eq, e₁, e₂, e₃, hm'.trans hm] at hpost'
+    exact hpost'
+
+
+/-! ## Constant time -/
+
+/-- Public data that agree. -/
+theorem pub_trans {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+    {F F' : State → Prop} {ns : List String} {a b c : State} (h₁ : (rfcX86_64 cs I S F ns).pub a b)
+    (h₂ : (rfcX86_64 cs I S F ns).pub a c) : (rfcX86_64 cs I S' F' ns).pub b c := by
+  obtain ⟨p₁, p₂, p₃, p₄, p₅, p₆, p₇, p₈, p₉⟩ := h₁
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, q₈, q₉⟩ := h₂
+  exact ⟨p₁.symm.trans q₁, p₂.symm.trans q₂, p₃.symm.trans q₃, p₄.symm.trans q₄, p₅.symm.trans q₅,
+    p₆.symm.trans q₆, p₇.symm.trans q₇, fun c hc => (p₈ c hc).symm.trans (q₈ c hc),
+    fun n hn => (p₉ n hn).symm.trans (q₉ n hn)⟩
+
+theorem pub_refl {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S : Nat}
+    {F : State → Prop} {ns : List String} (a : State) : (rfcX86_64 cs I S F ns).pub a a :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => rfl⟩
+
+/-- Public data of a state with the same arguments, memory and symbols. -/
+theorem pub_congr {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+    {F F' : State → Prop} {ns : List String} {a b c : State} (h : (rfcX86_64 cs I S F ns).pub a b)
+    (hg : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r9, .rsp], c.gpr r = b.gpr r) (hm : c.mem = b.mem)
+    (hsy : c.syms = b.syms) : (rfcX86_64 cs I S' F' ns).pub a c := by
+  have e₁ := hg .rdi (by simp); have e₂ := hg .rsi (by simp); have e₃ := hg .rdx (by simp)
+  have e₄ := hg .rcx (by simp); have e₅ := hg .r9 (by simp); have e₆ := hg .rsp (by simp)
+  simp only [rfcX86_64] at h ⊢
+  rw [e₁, e₂, e₃, e₄, e₅, e₆, hm, hsy]
+  exact h
+
+/-- The proof's hash function and the public data: the variant `w` (by its
+place in `vs`), and the state the other run agrees with. -/
+abbrev Anc (vs : List MdHash) := Fin vs.length × State
+
+/-- The variant of `a`. -/
+abbrev Anc.w (a : Anc vs) : MdHash := vs.get a.1
+
+theorem Anc.hv (a : Anc vs) : a.w ∈ vs := List.get_mem _ _
+
+/-- After `entry`: the contract with `a.w`'s hash function fixed, public
+data that agree with `a.2`'s, and the table's index in `r11`. -/
+def PhiT (hC : CurveT R T) (hO : ∀ w ∈ vs, WOk w) (a : Anc vs) (t : State) : Prop :=
+  (rfcP (hashOf hC vs a.w (hO _ a.hv)) (names vs)).pre t ∧
+    (rfcP (hashOf hC vs a.w (hO _ a.hv)) (names vs)).pub a.2 t ∧
+    t.gpr .r11 = BitVec.ofNat 64 (Spec.HashTable.index a.w.mgf.G)
+
+/-- `entry`'s effect, from the state on entry `σ`. -/
+def EntryF (σ u : State) : Prop :=
+  (∀ r, r ≠ .rcx → r ≠ .r11 → u.gpr r = σ.gpr r) ∧ u.gpr .rcx = σ.gpr .r8 ∧
+    u.gpr .r11 = σ.mem.readW (σ.gpr .r9 + BitVec.ofNat 64 24) 64 ∧ u.mem = σ.mem ∧ u.rd = σ.rd ∧ u.wr = σ.wr ∧
+    u.syms = σ.syms
+
+theorem entryF_ok {w : MdHash} {s : State} (h : PreW R T vs w s) : WP isa (.block entry) s (EntryF s) :=
+  WP.mono (entry_ok h) fun _ ⟨a, b, c, d, e, f, g⟩ => ⟨a, b, c.trans h.2.symm, d, e, f, g⟩
+
+theorem entry_taint : TaintOk [.r9] entry := ⟨_, by taint_decide⟩
+
+/-- Runs whose public data agree: the same table, read at the same address. -/
+theorem entry_ct :
+    RelCT isa (fun s₁ s₂ => (tabK R T vs).pre s₁ ∧ (tabK R T vs).pre s₂ ∧ (tabK R T vs).pub s₁ s₂) (.block entry)
+      fun u₁ u₂ => ∃ σ₁ σ₂, ((tabK R T vs).pre σ₁ ∧ (tabK R T vs).pre σ₂ ∧ (tabK R T vs).pub σ₁ σ₂) ∧
+        EntryF σ₁ u₁ ∧ EntryF σ₂ u₂ := by
+  obtain ⟨_, ht⟩ := entry_taint
+  refine (RelCT.wpDep (F := EntryF) (RelCT.taint (A := taint) (Taint.ofRegs [.r9])
+      (fun _ _ ⟨_, _, ⟨_, _, _, _, _, ⟨_, _, _, _, _, p₉, _⟩⟩⟩ => Taint.agree_ofRegs fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact p₉) ht)
+    fun _ _ ⟨⟨_, _, _, h₁⟩, ⟨_, _, _, h₂⟩, _⟩ => ⟨entryF_ok h₁, entryF_ok h₂⟩).mono (fun _ _ h => h)
+    fun _ _ h => h.2
+
+theorem cmp_taint (j : Nat) : TaintOk [] [.alu .cmp .r11 (.imm (BitVec.ofNat 32 j))] :=
+  taintOk_erase (is₀ := [.alu .cmp .r11 (.imm (BitVec.ofNat 32 0))]) ⟨_, by taint_decide⟩ rfl
+
+theorem phiT_keep (hC : CurveT R T) (hO : ∀ w ∈ vs, WOk w) (a : Anc vs) (t t' : State) (h : PhiT hC hO a t)
+    (k : VG.Proof.MlKem.X86_64.Keep [] t t') (hm : t'.mem = t.mem) (hsy : t'.syms = t.syms) : PhiT hC hO a t' :=
+  ⟨rfc_congr h.1 (fun r _ => k.gpr (by simp)) k.2.1 k.2.2 hm hsy,
+    pub_congr h.2.1 (fun r _ => k.gpr (by simp)) hm hsy, (k.gpr (by simp)).trans h.2.2⟩
+
+/-- `vg_ecdsa_<curve>_sign` is constant time: runs whose public data agree
+take the same table's branch, which is constant time for its hash function. -/
+theorem signT_ct (hC : CurveT R T) (hO : ∀ w ∈ vs, WOk w) : ConstantTime isa (tabK R T vs).pre (tabK R T vs).pub (signCode R T.tries vs) := by
+  refine VG.RelCT.constantTime (Q := fun _ _ => True) ?_
+  unfold signCode signT
+  refine entry_ct.seq ((byIdx_ct (α := Anc vs) (b := fun i => (cfgT R T.tries vs i).sign) (Q := fun _ _ => True)
+    (fun a : Anc vs => Spec.HashTable.index a.w.mgf.G) (Φ := PhiT hC hO) (phiT_keep hC hO)
+    (fun (a : Anc vs) _ h => ⟨idx_mem (hO _ a.hv), h.2.2⟩) cmpOk_idxs
+    (fun j _ => let ⟨_, ht⟩ := cmp_taint j; RelCT.taint (A := taint) (Taint.ofRegs [])
+      (fun _ _ _ => Taint.agree_ofRegs fun r hr => absurd hr (by simp)) ht)
+    fun j _ => ?_).mono ?_ fun _ _ h => h)
+  · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨a, ⟨h₁, e⟩, ⟨h₂, _⟩⟩ e₁ e₂
+    subst e
+    rw [cfgT_eq hC vs (hO _ a.hv)] at e₁ e₂
+    have hns : ∀ n ∈ [(hashOf hC vs a.w (hO _ a.hv)).H.stream.initN, (hashOf hC vs a.w (hO _ a.hv)).H.stream.updN,
+        (hashOf hC vs a.w (hO _ a.hv)).H.stream.finN], n ∈ names vs := by
+      have := mem_names a.hv
+      intro n hn
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+      rcases hn with rfl | rfl | rfl
+      · exact this.1
+      · exact this.2.1
+      · exact this.2.2
+    exact ⟨sign_ct hns s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 (pub_trans h₁.2.1 h₂.2.1) e₁ e₂, trivial⟩
+  · rintro u₁ u₂ ⟨σ₁, σ₂, ⟨_, _, w, hv, hw, p₁, p₂, hpub⟩, f₁, f₂⟩
+    have reg : ∀ {σ u : State}, EntryF σ u → ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r9, .rsp],
+        u.gpr r = (entryOf σ).gpr r := fun {σ u} f r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact f.1 _ (by decide) (by decide)
+      · exact f.1 _ (by decide) (by decide)
+      · exact f.1 _ (by decide) (by decide)
+      · exact f.2.1
+      · exact f.1 _ (by decide) (by decide)
+      · exact f.1 _ (by decide) (by decide)
+    have q₁ := pre_at hC hw p₁ f₁.1 f₁.2.1 f₁.2.2.2.1 f₁.2.2.2.2.1 f₁.2.2.2.2.2.1 f₁.2.2.2.2.2.2
+    have q₂ := pre_at hC hw p₂ f₂.1 f₂.2.1 f₂.2.2.2.1 f₂.2.2.2.2.1 f₂.2.2.2.2.2.1 f₂.2.2.2.2.2.2
+    obtain ⟨k, rfl⟩ := List.get_of_mem hv
+    have pu : (rfcP (hashOf hC vs (vs.get k) (hO _ (List.get_mem _ _))) (names vs)).pub u₁ u₂ :=
+      pub_trans (a := entryOf σ₁) (S := stackT) (F := tabFacts (vs.get k).H.stream (fnsOf vs))
+        (pub_congr (pub_refl (S := stackT) (F := tabFacts (vs.get k).H.stream (fnsOf vs)) _) (reg f₁)
+          f₁.2.2.2.1 f₁.2.2.2.2.2.2)
+        (pub_congr hpub (reg f₂) f₂.2.2.2.1 f₂.2.2.2.2.2.2)
+    exact ⟨(k, u₁), ⟨q₁, pub_refl _, f₁.2.2.1.trans p₁.2⟩, ⟨q₂, pu, f₂.2.2.1.trans p₂.2⟩⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
