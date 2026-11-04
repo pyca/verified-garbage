@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
-import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
@@ -28,6 +27,18 @@ open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.RsaPss (lastBlk padded)
+
+theorem startZero_ok {t : State} {F S : Addr} (L : Lay t F S)
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem F S V W) :
+    WP isa (.block [.mov32 .rax (.imm 0), .store (sp sB) .rax]) t fun u =>
+      Lay u F S ∧ Keep [.rax] t u ∧ Rep u.mem F S V (upd W 29 (BitVec.ofNat 64 0)) := by
+  refine WP.mono (WP.keep [.rax] (Q := fun u =>
+    u.mem = t.mem.writeW (off F sB) (BitVec.ofNat 64 0)) ?_ rfl) fun u ⟨hm, hk⟩ => ?_
+  · xrun [ea_sp, L.rsp, L.st (d := sB) (by decide)]
+    rfl
+  have R0 := R.wf L.geo (k := 29) (by decide) (BitVec.ofNat 64 0)
+  rw [show off F (8*29) = off F sB from rfl, ← hm] at R0
+  exact ⟨L.of_rep' R R0 (by simp [upd]) (hk.gpr (by decide)) hk.2.2, hk, R0⟩
 
 /-- `clearQ_ok`, with the count in `r10`. -/
 theorem clearQR_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}

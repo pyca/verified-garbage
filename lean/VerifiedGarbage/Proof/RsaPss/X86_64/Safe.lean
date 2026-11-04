@@ -8,7 +8,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 # RSASSA-PSS on x86-64: no writes to `rsp`, no loads of MXCSR
 
 Every instruction of `ctHash` (and of what it calls) neither writes `rsp`
-(`SpSafe`) nor loads MXCSR (`ctHash_safe`).
+(`SpSafe`) nor loads MXCSR (`ctHash_safe`), given that of every function its
+calls through the tables' slots may reach (`MdFnsSafe`, `FnsSafe`), and how
+much stack each piece uses (`ctHash_xd`, `mgfXor_xd`).
 -/
 
 @[expose] public section
@@ -16,7 +18,7 @@ Every instruction of `ctHash` (and of what it calls) neither writes `rsp`
 namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
-open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
+open VG.Proof.Pbkdf2.Md.X86_64 (HashOK)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-- Neither writes `rsp` nor loads MXCSR. -/
@@ -45,33 +47,75 @@ theorem safe_mx {c : Prog isa} (h : c.allInstrs safeI = true) : c.allInstrs (fun
   simp only [Bool.and_eq_true] at h
   exact h.2
 
-variable {H : Hash} (hH : HashOK H) (K : Callees H)
-
-include K in
-theorem comp_safe : H.compC.allInstrs safeI = true := by
-  rw [safeI_eq, allInstrs_and, K.cSp, K.cMx]; rfl
-
-include K in
-theorem init_safe : H.initC.allInstrs safeI = true := by
-  rw [safeI_eq, allInstrs_and, K.iSp, K.iMx]; rfl
-
 theorem rec_all (p : Instr → Bool) (l : List Instr) :
     List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) l = l.all p := by
   induction l with
   | nil => rfl
   | cons i is ih => simp only [List.all_cons, ← ih]
 
-include hH K in
+/-! ## The calls through the tables' slots -/
+
+/-- Every function of `ts` is `safeI` and uses at most `d` bytes of stack. -/
+def FSafe (ts : List (String × Prog isa)) (d : Nat) : Prop :=
+  ∀ q ∈ ts, q.2.allInstrs safeI = true ∧ q.2.x86_64Depth ≤ d
+
+theorem icalls_safe {d : Nat} : ∀ {ts : List (String × Prog isa)}, FSafe ts d →
+    (Code.icalls (.callr .r11) ts).allInstrs safeI = true ∧ (Code.icalls (.callr .r11) ts).x86_64Depth ≤ d + 8
+  | [], _ => ⟨rfl, Nat.zero_le _⟩
+  | q :: ts, h => by
+    have hq := h q (List.mem_cons_self ..)
+    have ih := icalls_safe (ts := ts) fun r hr => h r (List.mem_cons_of_mem _ hr)
+    refine ⟨?_, ?_⟩
+    · simp only [Code.icalls, Code.allInstrs, hq.1, ih.1, Bool.and_true]; rfl
+    · simp only [Code.icalls, Code.x86_64Depth, Nat.max_le]; omega
+
+theorem scall_safe {d s : Nat} {ts : List (String × Prog isa)} (h : FSafe ts d) :
+    (scall s ts).allInstrs safeI = true ∧ (scall s ts).x86_64Depth ≤ d + 8 := by
+  have := icalls_safe h
+  refine ⟨?_, ?_⟩
+  · simp only [scall, Code.allInstrs, this.1, Bool.and_true]; rfl
+  · simp only [scall, Code.x86_64Depth, Nat.max_le]; omega
+
+/-- The functions the calls through the slots of the table of `MdHash` reach
+use no stack. -/
+structure MdFnsSafe (f : MdFns) : Prop where
+  init : FSafe f.init 0
+  comp : FSafe f.comp 0
+  dig : FSafe f.dig 0
+
+/-- And those through the slots of the table of `Hash` at most 8 bytes. -/
+structure FnsSafe (g : Impl.Mgf1.X86_64.Table.Fns) : Prop where
+  init : FSafe g.init 8
+  upd : FSafe g.upd 8
+  fin : FSafe g.fin 8
+
+variable {H : Hash} (hH : HashOK H) {f : MdFns} (hf : MdFnsSafe f) {g : Impl.Mgf1.X86_64.Table.Fns}
+  (hg : FnsSafe g)
+
+include hH hf in
 theorem ctHashWith_safe {padding : Prog isa} (hp : padding.allInstrs safeI = true) :
-    (ctHashWith H padding).allInstrs safeI = true := by
+    (ctHashWith f H padding).allInstrs safeI = true := by
   have hl : H.P.len.all safeI = true := hH.taints.lenSafe
-  have ho : H.P.out.all safeI = true := hH.taints.outSafe
-  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, Code.allInstrs, comp_safe K, init_safe K,
-    rec_all, lenField, digestOut, digestAt, List.all_append, hl, ho, byteLoop, step, Bool.and_true, Bool.true_and]
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, Code.allInstrs, (scall_safe hf.init).1,
+    (scall_safe hf.comp).1, (scall_safe hf.dig).1, rec_all, lenField, digestOut, digestAt, List.all_append, hl,
+    byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
-include hH K in
-theorem ctHash_safe : (ctHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
+include hH hf in
+theorem ctHash_safe : (ctHash f H).allInstrs safeI = true := ctHashWith_safe hH hf rfl
+
+include hf in
+theorem ctHashWith_xd {padding : Prog isa} (hp : padding.x86_64Depth = 0) :
+    (ctHashWith f H padding).x86_64Depth ≤ 8 := by
+  have := (scall_safe (s := sIniH) hf.init).2
+  have := (scall_safe (s := sCmpH) hf.comp).2
+  have := (scall_safe (s := sDigH) hf.dig).2
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, digestOut, digestAt, byteLoop,
+    Code.x86_64Depth, Nat.max_le]
+  omega
+
+include hf in
+theorem ctHash_xd : (ctHash f H).x86_64Depth ≤ 8 := ctHashWith_xd hf rfl
 
 theorem copyWords64_safe (src dst : Reg) (so doff n : Nat) :
     (copyWords64 src dst so doff n).all safeI = true := by
@@ -102,105 +146,56 @@ theorem lenLast_xd : (lenLast H).x86_64Depth = 0 := by
   unfold lenLast
   split <;> rfl
 
-include hH K in
-theorem fixedHash_safe : (fixedHash H).allInstrs safeI = true := by
+include hH hf in
+theorem fixedHash_safe : (fixedHash f H).allInstrs safeI = true := by
   have hl : H.P.len.all safeI = true := hH.taints.lenSafe
-  have ho : H.P.out.all safeI = true := hH.taints.outSafe
-  simp only [fixedHash, seqs, ctInit, lenLast_safe (H := H), compAll, Code.allInstrs,
-    comp_safe K, init_safe K, rec_all, lenField, digestAt, List.all_append, hl, ho, Bool.and_true]
+  simp only [fixedHash, seqs, ctInit, lenLast_safe (H := H), compAll, Code.allInstrs, (scall_safe hf.init).1,
+    (scall_safe hf.comp).1, (scall_safe hf.dig).1, rec_all, lenField, digestAt, List.all_append, hl, Bool.and_true]
   rfl
 
-include K in
-theorem fixedHash_xd : (fixedHash H).x86_64Depth = 8 := by
-  simp only [fixedHash, seqs, ctInit, lenLast_xd (H := H), compAll, Code.x86_64Depth, K.cXD, K.iXD]
+include hf in
+theorem fixedHash_xd : (fixedHash f H).x86_64Depth ≤ 8 := by
+  have := (scall_safe (s := sIniH) hf.init).2
+  have := (scall_safe (s := sCmpH) hf.comp).2
+  have := (scall_safe (s := sDigH) hf.dig).2
+  simp only [fixedHash, seqs, ctInit, lenLast_xd (H := H), compAll, digestAt, Code.x86_64Depth, Nat.max_le]
+  omega
+
+include hg in
+theorem mgfXor_safe : (mgfXor H g).allInstrs safeI = true := by
+  simp only [mgfXor, mgfRound, mgfSeed, seqs, Code.allInstrs, (scall_safe hg.init).1, (scall_safe hg.upd).1,
+    (scall_safe hg.fin).1, Impl.Mgf1.X86_64.Table.xorOut, Impl.Mgf1.X86_64.seqs, Impl.Mgf1.X86_64.byteLoop,
+    rec_all, List.all_append, Bool.and_true, Bool.true_and]
   rfl
 
-include hH K in
-theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := by
-  unfold mgfHash
-  split
-  · have hl : H.P.len.all safeI = true := hH.taints.lenSafe
-    have ho : H.P.out.all safeI = true := hH.taints.outSafe
-    simp only [mgfDirectHash, seqs, ctInit, directLen_safe (H := H), fixedPad80, Code.allInstrs,
-      comp_safe K, init_safe K, rec_all, lenField, digestAt, List.all_append,
-      hl, ho, Bool.and_true]
-    rfl
-  · exact ctHashWith_safe hH K rfl
+include hg in
+theorem mgfXor_xd : (mgfXor H g).x86_64Depth ≤ 16 := by
+  have := (scall_safe (s := sIniG) hg.init).2
+  have := (scall_safe (s := sUpdG) hg.upd).2
+  have := (scall_safe (s := sFinG) hg.fin).2
+  simp only [mgfXor, mgfRound, seqs, Impl.Mgf1.X86_64.Table.xorOut, Impl.Mgf1.X86_64.seqs,
+    Impl.Mgf1.X86_64.byteLoop, Code.x86_64Depth, Nat.max_le]
+  omega
 
-theorem copyH_safe : (copyH H).allInstrs safeI = true := by
-  unfold copyH
-  split
-  · simp only [Code.allInstrs, rec_all, copyWords64_safe, Bool.and_true]
-    rfl
-  · rfl
-
-theorem copyH_xd : (copyH H).x86_64Depth = 0 := by
-  unfold copyH
-  split <;> rfl
-
-theorem xorWords64_safe (n : Nat) : (xorWords64 n).all safeI = true := by
-  simp only [xorWords64, List.all_flatMap]
-  apply List.all_eq_true.mpr
-  intro j _
+include hH hf hg in
+theorem signEnc_safe : (signEnc f H g).allInstrs safeI = true := by
+  simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, Code.allInstrs,
+    ctHash_safe hH hf, mgfXor_safe hg, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
-theorem xorOut_safe : (xorOut H).allInstrs safeI = true := by
-  unfold xorOut
-  split
-  · simp only [Code.allInstrs, rec_all, xorWords64_safe, Bool.and_true]
-    rfl
-  · rfl
-
-theorem xorOut_xd : (xorOut H).x86_64Depth = 0 := by
-  unfold xorOut
-  split <;> rfl
-
-include hH K in
-theorem mgfXor_safe : (mgfXor H).allInstrs safeI = true := by
-  simp only [mgfXor, seqs, clearBlock, copyH_safe (H := H), xorOut_safe (H := H), Code.allInstrs, mgfHash_safe hH K, rec_all, List.all_append,
-    Bool.and_true, Bool.true_and]
-  rfl
-
-include K in
-theorem ctHashWith_xd {padding : Prog isa} (hp : padding.x86_64Depth = 0) :
-    (ctHashWith H padding).x86_64Depth = 8 := by
-  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, byteLoop, Code.x86_64Depth, K.cXD, K.iXD]
-  rfl
-
-include K in
-theorem ctHash_xd : (ctHash H).x86_64Depth = 8 := ctHashWith_xd K rfl
-
-include K in
-theorem mgfHash_xd : (mgfHash H).x86_64Depth = 8 := by
-  unfold mgfHash
-  split
-  · simp only [mgfDirectHash, seqs, ctInit, directLen_xd (H := H), fixedPad80,
-      Code.x86_64Depth, K.cXD, K.iXD]
-    rfl
-  · exact ctHashWith_xd K rfl
-
-include K in
-theorem mgfXor_xd : (mgfXor H).x86_64Depth = 8 := by
-  simp only [mgfXor, seqs, clearBlock, copyH_xd, xorOut_xd (H := H), Code.x86_64Depth, mgfHash_xd K]
-  rfl
-
-include hH K in
-theorem signEnc_safe : (signEnc H).allInstrs safeI = true := by
-  simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, Code.allInstrs, ctHash_safe hH K,
-    mgfXor_safe hH K, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
-  rfl
-
-include K in
-theorem signEnc_xd : (signEnc H).x86_64Depth = 8 := by
+include hf hg in
+theorem signEnc_xd : (signEnc f H g).x86_64Depth ≤ 16 := by
+  have := ctHash_xd (H := H) hf
+  have := mgfXor_xd (H := H) hg
   simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, byteLoop, Code.x86_64Depth,
-    ctHash_xd K, mgfXor_xd K]
-  rfl
+    Nat.max_le]
+  omega
 
-/-- Code that is `safeI` and uses at most 8 bytes of stack keeps memory
-outside the writable regions and the 8 bytes below `rsp`. -/
-theorem WP.keepIn {c : Prog isa} (hc : c.allInstrs safeI = true) (hd : c.x86_64Depth ≤ 8) {u : State}
+/-- Code that is `safeI` and uses at most 16 bytes of stack keeps memory
+outside the writable regions and the 16 bytes below `rsp`. -/
+theorem WP.keepIn {c : Prog isa} (hc : c.allInstrs safeI = true) (hd : c.x86_64Depth ≤ 16) {u : State}
     {Q : State → Prop} (h : WP isa c u Q) :
-    WP isa c u fun v => Q v ∧ ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 8).Contains a 1 →
+    WP isa c u fun v => Q v ∧ ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 →
       v.mem a = u.mem a := by
   refine WP.mono (X86_64.WP.stackFrame (safe_sp hc) (by omega) h) fun v ⟨hq, hf⟩ => ⟨hq, fun a h1 h2 => ?_⟩
   refine Frame.below_mono hf hd (by decide) a fun r hr => ?_
