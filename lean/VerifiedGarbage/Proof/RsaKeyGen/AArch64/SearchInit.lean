@@ -85,7 +85,7 @@ def LeadInv (s : State) (P : Addr) (j : Nat) (u : State) : Prop :=
 theorem isThree_body {s u : State} {P : Addr} {len j : Nat} (hj : j < len - 1)
     (hrd : ∀ i < len, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 i) 1)
     (h : LeadInv s P j u) :
-    WP isa (.block ([.ldrb .x11 .x2 0, .logic .orr .x .x9 .x9 .x11, .addImm .x .x2 .x2 1] ++
+    WP isa (.block (([.ldrb .x11 .x2 0, .logic .orr .x .x9 .x9 .x11, .addImm .x .x2 .x2 1] : List Instr) ++
       ([.subImm .x .x10 .x10 1] : List Instr))) u fun v =>
       LeadInv s P (j + 1) v ∧ v.gpr .x10 = u.gpr .x10 - BitVec.ofNat 64 1 := by
   obtain ⟨hx2, hx9, hm, k⟩ := h

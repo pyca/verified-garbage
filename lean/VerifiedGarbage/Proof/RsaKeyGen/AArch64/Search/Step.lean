@@ -978,7 +978,8 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
   have htsp : t.sp = p.F := k.sp.trans (alloc_sp h)
   have hroom : 208 ≤ p.sp.toNat := h.room
   have hF := h.F_toNat
-  have hsp : 16 ≤ t.sp.toNat := by rw [htsp, hF]; omega
+  have hsp : 16 ≤ t.sp.toNat := by
+    rw [htsp, hF]; exact Nat.le_sub_of_add_le (Nat.le_trans (by decide) hroom)
   unfold search
   refine WP.frameReg hsp ?_ ?_ ?_
   · intro R hR
@@ -988,8 +989,8 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
     · rw [F_16]
       have hs := Offset.sep_below p.sp 208 (a := 176) (n := 16) (b := 160) (k := 160) (by decide) (by decide)
         (Or.inl (by decide)) (by decide) (by decide)
-      exact fun x hx hy => hs x (by simp only [Region.Contains] at hx; omega)
-        (by simp only [Region.Contains, SearchPublic.F] at hy; omega)
+      exact fun x hx hy => hs x (Nat.lt_of_succ_le (by simpa only [Region.Contains] using hx))
+        (Nat.lt_of_succ_le (by simpa only [Region.Contains, SearchPublic.F] using hy))
     · rw [h.1.2.2.2.1] at hR
       have hd := h.stack_disjoint (r := R) (List.mem_append_left _ hR)
       refine hd.sub_left ?_
