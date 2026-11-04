@@ -28,17 +28,20 @@
 //! operations that [`rsa`](crate::rsa) chooses, and each hash function's
 //! tables are those of the implementation its backend in
 //! [`hashes`](crate::hashes) chooses. Each architecture's file (`x86_64.rs`,
-//! …) names its tables and its verified functions (`pss_functions!`).
+//! `aarch64.rs`) names its tables and its verified functions (`pss_functions!`).
 //!
 //! This module only checks the lengths, draws the salt and allocates the
 //! memory the functions work in.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), feature = "alloc"))]
 
+mod aarch64;
 mod table;
 mod x86_64;
 
 // The verified functions and tables of the target's architecture.
+#[cfg(target_arch = "aarch64")]
+use aarch64 as arch;
 #[cfg(target_arch = "x86_64")]
 use x86_64 as arch;
 
