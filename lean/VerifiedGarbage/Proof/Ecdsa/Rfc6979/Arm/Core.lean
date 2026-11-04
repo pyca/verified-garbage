@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Framework.Offset
@@ -141,11 +141,12 @@ structure CoreRegs {dn : Nat} (L : Lay dn) (sh : Nat) (t : State) : Prop where
 shorter than the scalars, the digest has `Q` bytes; if it is, the frame has
 its top words; and `h` is where the code keeps it. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ (L.hHigh = P.R.hHigh ∧ L.cs = P.R.coreConsts)) ∧ L.wide = P.wide
+  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ (L.hHigh = P.R.hHigh ∧ L.cs = P.R.coreConsts)) ∧
+    L.wide = P.wide ∧ TabL P L
 
 /-- The words at the frame's top are the code's. -/
 theorem CoreOk.e_eq {L : Lay dn} (hk : CoreOk P L) : L.e = P.e := by
-  rw [L.ew, hk.2.2, hk.2.1.2.1]
+  rw [L.ew, hk.2.2.1, hk.2.1.2.1]
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the stack below the frame, and not wrapping. -/
@@ -156,7 +157,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {v : BitVec 32} {x : Addr}
   have nB := hL.nB
   have := L.sp.isLt
   cases hw : L.wide
-  · obtain ⟨hQ8, h6, -⟩ := P.sizesA (hk.2.2 ▸ hw)
+  · obtain ⟨hQ8, h6, -⟩ := P.sizesA (hk.2.2.1 ▸ hw)
     have hn := hk.2.1.1 hw
     simp only [dgArg, kArg, dgAddr, kAddr, hw, Bool.false_eq_true, ite_false] at hx
     rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
