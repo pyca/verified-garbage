@@ -1,8 +1,10 @@
 //! ECDSA over P-384: deterministic signatures with HMAC-SHA-384
-//! (`vg_ecdsa_p384_sha384_sign`), public
-//! keys (`vg_ec_p384_public_key`), and verification (`vg_ecdsa_p384_verify`),
-//! and their variants on CPUs with the features their `_FEATURES` constants
-//! name: `_adx` on x86-64, `_umaal` on ARMv7.
+//! (`vg_ecdsa_p384_sha384_sign`), or, on x86-64, with HMAC over any hash
+//! function with HMAC, taken as a table (`vg_ecdsa_p384_sign`,
+//! [`super::x86_64`]), public keys (`vg_ec_p384_public_key`), and
+//! verification (`vg_ecdsa_p384_verify`), and their variants on CPUs with the
+//! features their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on
+//! ARMv7.
 
 #![cfg(any(
     target_arch = "x86_64",

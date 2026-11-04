@@ -4,21 +4,28 @@
 //! [`P256`], [`P384`], `P521`, `P192`, `P224`, `BrainpoolP256r1`,
 //! `BrainpoolP384r1`, `BrainpoolP512r1` and `Secp256k1`), and
 //! signs with a hash
-//! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
-//! P-192, SHA-256; for P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
+//! function `H` that the curve has signatures with ([`SignatureHash<C>`]), as
+//! in `key.sign::<Sha256>(message)`. On x86-64, every curve signs with every
+//! hash function with HMAC: MD5, SHA-1 and the SHA-2 family. Each signature
+//! is one call of verified code for the curve, `vg_ecdsa_<curve>_sign`
+//! (contract `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which
+//! takes the hash function as a table of its functions (`x86_64`): the table
+//! of the implementation of the hash function that this CPU runs, and the
+//! variant of the curve's multiplications it runs (`_adx`, on CPUs with the
+//! features its `_FEATURES` constant names). Elsewhere, a curve signs with
+//! the hash functions it has verified code for, one function for the curve
+//! and the hash function (`vg_ecdsa_<curve>_<hash>_sign`, contract
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`): for P-192, SHA-256; for
+//! P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
 //! P-521, SHA-512; for secp256k1 and brainpoolP256r1, SHA-256; for
-//! brainpoolP384r1, SHA-384; for brainpoolP512r1, SHA-512), as in
-//! `key.sign::<Sha256>(message)`. Each signature is one call of
-//! verified code, for the curve and the hash function
-//! (`vg_ecdsa_<curve>_<hash>_sign`, contract
-//! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`). That code
-//! derives the per-message secret number `k` from the key and the hash with
-//! HMAC, as RFC 6979 does, and signs with it. It checks the key, and tries
-//! further candidates for `k` when one is unsuitable. Its variants, with the
-//! same contract, are one for each pair of the implementations of the hash
-//! function and of the curve's multiplications this CPU runs (e.g.
-//! `vg_ecdsa_p256_sha256_sign_shani_adx` on x86-64 CPUs with the features
-//! its `_FEATURES` constant names).
+//! brainpoolP384r1, SHA-384; for brainpoolP512r1, SHA-512; with a variant
+//! for each pair of the implementations of the hash function and of the
+//! curve's multiplications this CPU runs (e.g.
+//! `vg_ecdsa_p256_sha256_sign_sha2` on ARM64 CPUs with the features its
+//! `_FEATURES` constant names). Either way, the verified code derives the
+//! per-message secret number `k` from the key and the hash with HMAC, as RFC
+//! 6979 does, and signs with it. It checks the key, and tries further
+//! candidates for `k` when one is unsuitable.
 //!
 //! Signing is constant time except for the number of candidates for `k`
 //! that it tries, almost always one.
@@ -77,8 +84,10 @@ mod sealed {
 }
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over
-/// the curve `C`: for P-224, [`Sha224`](crate::hashes::sha224::Sha224); for
-/// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
+/// the curve `C`: on x86-64, every hash function with HMAC (MD5, SHA-1 and
+/// the SHA-2 family); elsewhere, for P-192,
+/// [`Sha256`](crate::hashes::sha256::Sha256); for P-224,
+/// [`Sha224`](crate::hashes::sha224::Sha224); for P-256, `Sha256` and
 /// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
 /// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1 and
 /// brainpoolP256r1, `Sha256`; for brainpoolP384r1, `Sha384`; for

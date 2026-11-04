@@ -9,6 +9,8 @@ pub const USES: &[&str] = &[
     "ec_brainpoolp512r1",
     "hmac_sha512",
     "sha512",
+    "fn_tables",
+    "sha256",
 ];
 
 /// For each hash function, signing a message: deterministically (RFC 6979),
@@ -38,6 +40,10 @@ pub fn bench(c: &mut Criterion) {
 
     let d = [0x42; 64];
     hash::<Sha512>(c, "sha512", MessageDigest::sha512(), &d);
+    // On x86-64, where the curve signs with every hash function with HMAC
+    // (by the hash function's table), also with SHA-256.
+    #[cfg(target_arch = "x86_64")]
+    hash::<verified_garbage::hashes::sha256::Sha256>(c, "sha256", MessageDigest::sha256(), &d);
 
     // The public key of a private key, uncompressed: in OpenSSL, `[d]G` and
     // its encoding. The ids' size is the bytes of the public key.
