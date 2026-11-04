@@ -27,6 +27,8 @@ same name have the same code (`Coh`). In the state a function's entry
 needs of it (`hFacts_entered`), and its index (`idx_entered`).
 -/
 
+-- separate module: the interface's tables, which signing, verification and their registrations all use
+
 @[expose] public section
 
 namespace VG.Proof.MdHashTable.X86

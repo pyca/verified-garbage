@@ -70,7 +70,7 @@ theorem digest_ct {out : List Instr}
     (fun a b h => agree_regs fun r hr => ?_) hc s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂).1
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   obtain ⟨h1, h2, h3⟩ := h
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 
 /-! ## The call, in a frame pushing `ebx` -/
@@ -144,7 +144,7 @@ theorem dig_frame (ho : Proof.Pbkdf2.Md.X86.OutOk H out) (hsp : NoSp (digest out
     WP isa (.frame (.push [.ebx]) (.call n (digest out)) (.pop .eax [Reg.ebx].length)) s Q := by
   have e := h.sp48
   refine WP.callWith (digest_ok ho) hsp (by simp) (by decide)
-    (by simp only [List.length_cons, List.length_nil, digest, stackUse]; omega) (h.callPre H)
+    (by simp only [List.length_cons, List.length_nil, digest, stackUse, Nat.max_le]; omega) (h.callPre H)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   have f'' : Frame ([⟨o.setWidth 64, N⟩] ++ [below (s.gpr .esp) 8]) s.mem s'.mem := by
     simpa [digest, stackUse] using f'

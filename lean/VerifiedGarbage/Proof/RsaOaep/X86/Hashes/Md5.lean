@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Md5
 
 /-! # RSAES-OAEP on x86: MD5, as RSASSA-PSS has it (`Proof/RsaPss/X86/Hashes/Md5.lean`) -/
 
+-- separate module: one file per hash function, as for the others
+
 @[expose] public section
 
 namespace VG.Proof.RsaOaep.X86
