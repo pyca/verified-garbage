@@ -71,8 +71,6 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
   blkT := blkT_of brainpoolp384r1_blk₀ brainpoolp384r1_blk₁ brainpoolp384r1_blk₂ brainpoolp384r1_blk₃ brainpoolp384r1_blk₄ brainpoolp384r1_blk₅ brainpoolp384r1_blk₆ brainpoolp384r1_blk₇
 
 
