@@ -220,7 +220,7 @@ def chkK : List Instr := [.mov .rax (.mem (sp sK)), .alu .cmp .rax (im (2 * H.D 
 def encPrologue : List Instr :=
   [.store (sp sOut) .rdi, .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8, .store (sp sEl) .r9] ++
   argSlot 0 sLab ++ argSlot 1 sLabLen ++ argSlot 2 sMsg ++ argSlot 3 sMsgLen ++ argSlot 4 sSeed ++
-  argSlot 5 sScr ++ argSlot 6 sScrLen
+  argSlot 6 sScr ++ argSlot 7 sScrLen
 
 /-- `msg_len ≤ k - 2 hLen - 2`, from `rax = k`: CF set if not. -/
 def chkMsg : List Instr := [.alu .sub .rax (im (2 * H.D + 2)), .alu .cmp .rax (.mem (sp sMsgLen))]
@@ -261,12 +261,20 @@ def pubArgs : List Instr :=
     .mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
     .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
 
-/-- `EM`, before masking. -/
-def encEm : Prog isa := seqs [clearEm, copySeed H, hashLabel H oDig, copyLh H, putMsg]
+/-- `EM`, before masking, with the label's hash function that of the table
+`hash` (the stack argument 10), whose address it stores to `sTab` first. -/
+def encEm : Prog isa := seqs [clearEm, copySeed H, .block (tabSlot 10), hashLabelT f oDig, copyLh H, putMsg]
 
-/-- The prologue and the checks, then `main`. -/
-def encBodyWith (main : Prog isa) : Prog isa :=
-  seqs [.block (encPrologue ++ chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
+/-- The checks for the label's hash function's digest length `H.D`, then
+`main`. -/
+def encChecks (main : Prog isa) : Prog isa :=
+  seqs [.block (chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
+
+/-- The prologue, the address of the table `hash` (the stack argument 10) to
+`sTab` and its digest length `d` to `r11`, then the checks and `main d`. -/
+def encBodyWith (main : Nat → Prog isa) : Prog isa :=
+  seqs [.block encPrologue, .block (tabSlot 10), .block lenLoad,
+    byLen (fun d => encChecks (ofLen d) (main d)) lens]
 
 /-! ## Decryption -/
 

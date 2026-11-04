@@ -37,9 +37,10 @@ open VG.Proof.HashTable.X86_64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_ta
 /-- `encK`'s postcondition, if `pre` holds the values for `n`. -/
 def post (H G : Spec.Mgf1.Hash) (s u : State) : Prop := Consistent s → (encK H G).post s u
 
-/-- `post` for MGF1's hash function the table names. -/
-def postT (H : Spec.Mgf1.Hash) (s u : State) : Prop :=
-  ∀ G, Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some G → post H G s u
+/-- `post` for the hash functions the tables name. -/
+def postT (s u : State) : Prop :=
+  ∀ H G, Spec.HashTable.hashAt 64 s.mem (stackArg s 10) = some H →
+    Spec.HashTable.hashAt 64 s.mem (stackArg s 11) = some G → post H G s u
 
 /-- What the function's caller sees of the registers and the stack, from a
 state in the frame. -/
@@ -65,13 +66,15 @@ theorem encEnd_abi {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : E
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-include hH KH hG mH mG in
+include hH hG mH mG in
 theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
     (hgf : Table.FnsGood f.fin) {s t : State} (hp : PPreT mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
-    (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 9) s.mem)
-    (hDm : s.mem.readW (off (stackArg s 9) 32) 64 = BitVec.ofNat 64 Gm.D)
-    (L : Lay t (fb s) (stackArg s 5)) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+    (okL : Table.TabOK Hl.stream f s.syms) (hmL : Table.TabMem Hl.stream s.syms (stackArg s 10) s.mem)
+    (hDmL : s.mem.readW (off (stackArg s 10) 32) 64 = BitVec.ofNat 64 Hl.D)
+    (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 11) s.mem)
+    (hDm : s.mem.readW (off (stackArg s 11) 32) 64 = BitVec.ofNat 64 Gm.D)
+    (L : Lay t (fb s) (stackArg s 6)) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
     WP isa (Impl.RsaOaep.X86_64.Precomputed.encMain Hl.stream f v.name v.code) t fun t' => EnvE s t' ∧
       (Consistent s → Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
@@ -81,8 +84,8 @@ theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu 
             (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
             (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)))) := by
   unfold Impl.RsaOaep.X86_64.Precomputed.encMain seqs seqs seqs seqs seqs seqs
-  refine encMask_ok hH KH hG mH mG hgi hgu hgf hp.toEPre he hsy (fun t he' sy => etab hp he' sy ok hm hDm) L R hW
-    hk fun t9 V9 W9 he9 L9 R9 W9e hlist => ?_
+  refine encMask_ok hH hG mH mG hgi hgu hgf hp.toEPre he hsy (fun t he' sy => etab hp he' sy ok hm hDm)
+    (fun t he' sy => etabL hp he' sy okL hmL hDmL) L R hW hk fun t9 V9 W9 he9 L9 R9 W9e hlist => ?_
   refine WP.seq ?_
   rw [Impl.RsaOaep.X86_64.Precomputed.pubArgs, WP.block_append_iff]
   refine WP.mono (wp_good pubArgs_good (pubArgs_ok L9 R9 W9e))
@@ -91,7 +94,7 @@ theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu 
   refine WP.mono (wp_good (block_good _ rfl) (load_pre hp.toPPre he10.rsp he10.rd he10.fr))
     fun t11 ⟨⟨k11, hm11, hdx, hcx⟩, sp11, mx11, f11⟩ => ?_
   have he11 : EnvE s t11 := he10.step k11.2.1 k11.2.2 sp11 (keep_cs3 k11 (by decide)) mx11 f11
-  have L11 : Lay t11 (fb s) (stackArg s 5) := L10.congr (k11.gpr (by decide)) k11.2.2 (by rw [hm11])
+  have L11 : Lay t11 (fb s) (stackArg s 6) := L10.congr (k11.gpr (by decide)) k11.2.2 (by rw [hm11])
   refine WP.mono (call_ok v hp.toPPre L11 (hm11 ▸ R10) he11.rd he11.wr he11.fr (by simp [upd]) (by simp [upd])
     (by simp [upd]) (by simp [upd]) ((k11.gpr (by decide)).trans hdi) ((k11.gpr (by decide)).trans hsi) hdx hcx
     ((k11.gpr (by decide)).trans h8) ((k11.gpr (by decide)).trans h9))
@@ -102,39 +105,57 @@ theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu 
   rw [hlist] at this
   exact this
 
+/-- The code after the checks, for a digest length, which is all it uses of
+the streaming functions' shape. -/
+theorem encMain_D {G G' : Impl.Pbkdf2.Md.X86_64.Stream} (h : G.D = G'.D) (f : Fns) (n : String) (c : Prog isa) :
+    Impl.RsaOaep.X86_64.Precomputed.encMain G f n c = Impl.RsaOaep.X86_64.Precomputed.encMain G' f n c := by
+  simp only [Impl.RsaOaep.X86_64.Precomputed.encMain, encEm, copySeed, copyLh, dbArgs, seedArgs, h]
+
 variable {vs : List MdHash} (hc : Coh vs)
 
-include hH KH mH hc in
-theorem code_correct (v : PublicImpl) (s : State) (h : (encC mH.G (tables vs)).pre s) :
-    ∃ t s', Exec isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code) s t s' ∧
-      abiPreserved s s' ∧ postT mH.G s s' := by
-  obtain ⟨hp, ⟨T, hT, hheld⟩, hd⟩ := preT_of h
+include hc in
+theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s) :
+    ∃ t s', Exec isa (Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) v.name v.code) s t s' ∧
+      abiPreserved s s' ∧ postT s s' := by
+  obtain ⟨⟨T₁, hT₁, hheld₁⟩, ⟨T, hT, hheld⟩, hd⟩ := tabs_of h
+  obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  obtain ⟨hmL, hidxL, hDmL⟩ := held_tableOf hheld₁
   obtain ⟨hm, hidx, hDm⟩ := held_tableOf hheld
+  have okL := tabOK_of hc hd hw₁
   have ok := tabOK_of hc hd hw
   obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
-  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some w.mgf.G := hashAt_tableOf hidx
+  have hHa : Spec.HashTable.hashAt 64 s.mem (stackArg s 10) = some w₁.mgf.G := hashAt_tableOf hidxL
+  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 11) = some w.mgf.G := hashAt_tableOf hidx
+  have hp : PPreT w₁.mgf.G s := preT_of h hHa
   have hk1 := hp.k1; have hk2 := hp.k2
-  have hlen : mH.G.len = Hl.D := mH.len
+  have hlen : w₁.mgf.G.len = w₁.H.D := w₁.mgf.len
   have hnl : (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length = (s.gpr .rcx).toNat := by
     simp [Spec.Rsa.bytesAt]
   have hml : (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat).length = (stackArg s 3).toNat := by
     simp [Spec.Rsa.bytesAt]
-  have hsl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len).length = mH.G.len := by simp [Spec.Rsa.bytesAt]
-  suffices hw : WP isa (Impl.RsaOaep.X86_64.Precomputed.encrypt Hl.stream (fnsOf vs) v.name v.code) s
-      fun s' => abiPreserved s s' ∧ post mH.G w.mgf.G s s' by
+  have hsl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) w₁.mgf.G.len).length = w₁.mgf.G.len := by
+    simp [Spec.Rsa.bytesAt]
+  suffices hw : WP isa (Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) v.name v.code) s
+      fun s' => abiPreserved s s' ∧ post w₁.mgf.G w.mgf.G s s' by
     obtain ⟨t, s', he, hq, hpo⟩ := hw
-    refine ⟨t, s', he, hq, fun G hG' => ?_⟩
+    refine ⟨t, s', he, hq, fun H G hH' hG' => ?_⟩
+    rw [hHa] at hH'
     rw [hGa] at hG'
+    obtain rfl := Option.some.inj hH'
     obtain rfl := Option.some.inj hG'
     exact hpo
   refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega) ?_
-  refine encBodyWith_ok hH hp.toEPre (fun t' he' hw' hb => ?_) fun t he hsy L R hk => ?_
+  refine encBodyWith_ok w₁.ok w₁.mgf hp.toEPre (fun t he sy => etabL hp he sy okL hmL hDmL)
+    (fun t' he' hw' hb => ?_) fun t he hsy L R hk => ?_
   · obtain ⟨h1, h2, h3, h4⟩ := encEnd_ok hp.toEPre he' hw'
     refine ⟨h1, h2, h3, fun _ => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
     rw [encrypt_none (by rw [hnl, hlen, hml]; omega)]; exact h4
-  · refine WP.mono (encMain_ok hH KH w.ok mH w.mgf v hgi hgu hgf hp he hsy ok hm hDm L R (fun _ _ => rfl) hk)
+  · dsimp only
+    rw [encMain_D (G := ofLen w₁.H.D) (G' := w₁.H.stream) rfl]
+    refine WP.mono (encMain_ok w₁.ok w.ok w₁.mgf w.mgf v hgi hgu hgf hp he hsy okL hmL hDmL ok hm hDm L R
+        ArgsW_35 hk)
       fun t' ⟨he', hw'⟩ => ?_
     obtain ⟨h1, h2, h3⟩ := encEnd_abi hp.toEPre he'
     refine ⟨h1, h2, h3, fun hq => ?_⟩

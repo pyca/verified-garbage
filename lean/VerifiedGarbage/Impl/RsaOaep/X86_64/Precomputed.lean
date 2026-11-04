@@ -5,11 +5,12 @@ public import VerifiedGarbage.Impl.RsaOaep.X86_64
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64
 
-`vg_rsa_oaep_<H>_mgf1_encrypt_precomputed(out, out_len, n, n_len, e, e_len,
-label, label_len, msg, msg_len, seed, scratch, scratch_len, pre, pre_len,
-mgf1)`: encryption (`Impl/RsaOaep/X86_64.lean`), with MGF1's hash function
-the one of the table `mgf1` (the stack argument 9), and with the
-precomputed modulus `pre` (the stack arguments 7 and 8) in place of `n` for
+`vg_rsa_oaep_encrypt_precomputed(out, out_len, n, n_len, e, e_len, label,
+label_len, msg, msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len,
+hash, mgf1)`: encryption (`Impl/RsaOaep/X86_64.lean`), with the label's
+hash function the one of the table `hash` (the stack argument 10) and
+MGF1's the one of the table `mgf1` (the stack argument 11), and with the
+precomputed modulus `pre` (the stack arguments 8 and 9) in place of `n` for
 the public operation, `vg_rsa_public_precomputed_checked` or one of its
 variants, whose result it returns.
 -/
@@ -26,17 +27,17 @@ open VG.Impl.Mgf1.X86_64.Table (Fns)
 /-- The original arguments of the public operation, then `pre` and
 `pre_len` in place of `n` and `n_len`. -/
 def pubArgs : List Instr := X86_64.pubArgs ++
-  ([.mov .rdx (.mem (arg 7)), .mov .rcx (.mem (arg 8))] : List Instr)
+  ([.mov .rdx (.mem (arg 8)), .mov .rcx (.mem (arg 9))] : List Instr)
 
 variable (H : Stream) (f : Fns) (pubN : String) (pubC : Prog isa)
 
 /-- After the checks. -/
 def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H), mgfT f 9, .block (seedArgs H), mgfT f 9, .block pubArgs,
+  seqs [encEm H f, .block (dbArgs H), mgfT f 11, .block (seedArgs H), mgfT f 11, .block pubArgs,
     .call pubN pubC]
 
-/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`. -/
+/-- `vg_rsa_oaep_encrypt_precomputed`. -/
 def encrypt : Prog isa :=
-  .frame (.alloc frameBytes) (encBodyWith H (encMain H f pubN pubC)) (.free frameBytes)
+  .frame (.alloc frameBytes) (encBodyWith (fun d => encMain (ofLen d) f pubN pubC)) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64.Precomputed

@@ -189,4 +189,10 @@ theorem byLen_ct {α : Type} {b : Nat → Prog isa} {Q : State → State → Pro
         simpa only [eval, z, Option.map_some, Option.some.injEq, Bool.not_eq_false', decide_eq_false_iff_not] using e
       exact ⟨(k.gpr (by simp)).trans h11, (List.mem_cons.mp hm).resolve_left hne, hd⟩
 
+theorem cmpLens_taint : ∀ x ∈ lens, x < 2 ^ 31 ∧
+    ∃ hc, (taint.check (Taint.ofRegs []) (.block [.alu .cmp .r11 (im x)]) hc).isSome = true := by
+  intro x hx
+  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
+
 end VG.Proof.RsaOaep.X86_64

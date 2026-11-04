@@ -45,21 +45,4 @@ theorem dec_spSafe (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (v : PrivImpl) :
     outLoop_good.all, v.spSafe]
   rfl
 
-/-! ## The instances emitted -/
-
-namespace Inst
-
-open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
-
-/-- Whether `vg_rsa_oaep_<H>_mgf1_*` is emitted for `H`'s variant `v`: for every
-hash function but MD5, which is not used. MGF1's hash function is any of
-the tables'. -/
-def emitted (v : MdHash) : Bool := v.mgf.G.rust != "md5"
-
-/-- The tags and suffixes of an instance's name (`Emit.qualifiedName`): `H`'s
-variant tagged with `H` (`vg_rsa_oaep_sha256_mgf1_decrypt_sha256_shani_…`). -/
-def parts (v : MdHash) : List (String × String) := [(v.mgf.G.rust, v.suffix)]
-
-end Inst
-
 end VG.Proof.RsaOaep.X86_64

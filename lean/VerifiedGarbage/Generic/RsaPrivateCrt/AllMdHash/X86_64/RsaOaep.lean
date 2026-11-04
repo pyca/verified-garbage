@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
@@ -61,28 +62,26 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
 public import VerifiedGarbage.Proof.HashTable.X86_64
 
-/-! # RSAES-OAEP decryption on x86-64, with MGF1's hash function as a table -/
+/-! # RSAES-OAEP decryption on x86-64, with both hash functions as tables -/
 
 @[expose] public section
 
-namespace VG.Generic.MdHash.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep
+namespace VG.Generic.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep
 
 open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe OK)
-open VG.Proof.RsaOaep.X86_64.Inst (emitted parts)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
 open VG.Proof.HashTable.X86_64 (tables fnsOf)
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl)
-    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
-  if h : emitted v = true ∧ OK vs then [
-    (Spec.RsaOaep.decryptTableApi v.mgf.G).artifact X86_64.target {
-      suffix := Emit.qualifiedName "" (parts v ++ [("crt", c.suffix)])
-      tables := [("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.decrypt v.H.stream (fnsOf vs) (privOf c).name (privOf c).code
+def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if h : OK vs then [
+    Spec.RsaOaep.decryptTablesApi.artifact X86_64.target {
+      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", tables vs), ("mgf1", tables vs)]
+      code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack
-      verified := dec_ok v.ok v.K v.mgf vs h.2 (privOf c)
-      spSafe := dec_spSafe v.ok v.K vs (privOf c)
-      features := v.features ++ c.features.filter (!v.features.contains ·) }]
+      verified := dec_ok vs h (privOf c)
+      spSafe := dec_spSafe vs (privOf c)
+      features := c.features }]
   else []
 
-end VG.Generic.MdHash.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep
+end VG.Generic.RsaPrivateCrt.AllMdHash.X86_64.RsaOaep

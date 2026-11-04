@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Spec.RsaOaep.Tables
 import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
@@ -150,27 +151,25 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
 public import VerifiedGarbage.Proof.HashTable.X86_64
 
-/-! # RSAES-OAEP encryption with a precomputed public key on x86-64, with MGF1's hash function as a table -/
+/-! # RSAES-OAEP encryption with a precomputed public key on x86-64, with both hash functions as tables -/
 
 @[expose] public section
 
-namespace VG.Generic.MdHash.RsaPublicPrecomputed.AllMdHash.X86_64.RsaOaep
+namespace VG.Generic.RsaPublicPrecomputed.AllMdHash.X86_64.RsaOaep
 
 open VG.Proof.RsaOaep.X86_64 (encStack enc_ok OK)
-open VG.Proof.RsaOaep.X86_64.Inst (emitted parts)
 open VG.Proof.HashTable.X86_64 (tables fnsOf)
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl)
-    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
-  if h : emitted v = true ∧ OK vs then [
-    (Spec.RsaOaep.encryptTableApi v.mgf.G).artifact X86_64.target {
-      suffix := Emit.qualifiedName "" (parts v ++ [("rsa", c.suffix)])
-      tables := [("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.Precomputed.encrypt v.H.stream (fnsOf vs) c.name c.code
+def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if h : OK vs then [
+    Spec.RsaOaep.encryptTablesApi.artifact X86_64.target {
+      suffix := Emit.qualifiedName "" [("rsa", c.suffix)]
+      tables := [("hash", tables vs), ("mgf1", tables vs)]
+      code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code
       stack := encStack
-      verified := enc_ok v.ok v.K v.mgf vs h.2 c
-      spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe v.ok v.K vs c
-      features := v.features ++ c.features.filter (!v.features.contains ·) }]
+      verified := enc_ok vs h c
+      spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe vs c
+      features := c.features }]
   else []
 
-end VG.Generic.MdHash.RsaPublicPrecomputed.AllMdHash.X86_64.RsaOaep
+end VG.Generic.RsaPublicPrecomputed.AllMdHash.X86_64.RsaOaep

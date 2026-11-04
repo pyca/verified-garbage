@@ -465,12 +465,6 @@ theorem dtabSlot_taint : ∃ hc, (taint.check (frT [] [] 3) (.block (tabSlot 17)
 theorem dlenLoad_taint : ∃ hc, (taint.check (frT [] [35] 3) (.block lenLoad) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem cmpLens_taint : ∀ x ∈ lens, x < 2 ^ 31 ∧
-    ∃ hc, (taint.check (Taint.ofRegs []) (.block [.alu .cmp .r11 (im x)]) hc).isSome = true := by
-  intro x hx
-  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
-
 include hc in
 theorem decBody_ct (v : PrivImpl) {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
     RelCT isa (Two (DAt (tables vs) fun s t => (JA s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s))

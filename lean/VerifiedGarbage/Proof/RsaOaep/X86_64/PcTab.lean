@@ -34,30 +34,46 @@ theorem FrE.readW' {s : State} {m : Mem} (h : FrE s m) {r : Region} {a : Addr}
     · exact ho
     · exact hs) (by decide)
 
-/-- MGF1's table, from the entry state's. -/
-theorem etab {H : Spec.Mgf1.Hash} {s t : State} (hp : PPreT H s) (he : EnvE s t) (hsy : t.syms = s.syms)
-    {G : Stream} {f : Fns} (ok : TabOK G f s.syms) (hm : TabMem G s.syms (stackArg s 9) s.mem)
-    (hD : s.mem.readW (off (stackArg s 9) 32) 64 = BitVec.ofNat 64 G.D) :
-    Tab G f (fb s) (stackArg s 9) (frameBytes + 8 + 8 * 9) t := by
-  have wT := hp.tabWrap
+/-- The table at the stack argument `j`, from the entry state's. -/
+theorem etabJ {H : Spec.Mgf1.Hash} {s t : State} (hp : PPreT H s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    {G : Stream} {f : Fns} {j : Nat} (hj : j < 12) (hT : InRegions s.rd (stackArg s j) 40)
+    (wT : (stackArg s j).toNat + 40 ≤ 2 ^ 64) (dK : (⟨stackArg s j, 40⟩ : Region).Disjoint (stkR s))
+    (dO : (⟨stackArg s j, 40⟩ : Region).Disjoint (outR s)) (dS : (⟨stackArg s j, 40⟩ : Region).Disjoint (scrR s))
+    (ok : TabOK G f s.syms) (hm : TabMem G s.syms (stackArg s j) s.mem)
+    (hD : s.mem.readW (off (stackArg s j) 32) 64 = BitVec.ofNat 64 G.D) :
+    Tab G f (fb s) (stackArg s j) (frameBytes + 8 + 8 * j) t := by
   have hsp := hp.sp4
-  have cT : ∀ d, d + 8 ≤ 40 → (tabE s).Contains (off (stackArg s 9) d) 8 := fun d hd =>
-    Offset.contains_base _ hd (by omega)
-  have cA : (argsT s).Contains (off (fb s) (frameBytes + 8 + 8 * 9)) 8 := by
-    rw [argAddr, stackArgAddr_j s 9]
+  have cT : ∀ d, d + 8 ≤ 40 → (⟨stackArg s j, 40⟩ : Region).Contains (off (stackArg s j) d) 8 := fun d hd =>
+    Offset.contains_base _ hd (by have := wT; omega)
+  have cA : (argsT s).Contains (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
+    rw [argAddr, stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
-  have rT : ∀ d, d + 8 ≤ 40 → InRegions (t.rd ++ t.wr) (off (stackArg s 9) d) 8 := fun d hd => by
-    rw [he.rd]; exact Covers.left (Covers.one hp.tab) _ _ ⟨_, List.mem_singleton_self _, cT d hd⟩
-  have rA : InRegions (t.rd ++ t.wr) (off (fb s) (frameBytes + 8 + 8 * 9)) 8 := by
+  have rT : ∀ d, d + 8 ≤ 40 → InRegions (t.rd ++ t.wr) (off (stackArg s j) d) 8 := fun d hd => by
+    rw [he.rd]; exact Covers.left (Covers.one hT) _ _ ⟨_, List.mem_singleton_self _, cT d hd⟩
+  have rA : InRegions (t.rd ++ t.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [he.rd]; exact Covers.left (Covers.one hp.argsT') _ _ ⟨_, List.mem_singleton_self _, cA⟩
-  refine ⟨by rw [hsy]; exact ok, fun j hj => rT _ (by omega), rT 32 (by omega), rA, fun m hf => ?_⟩
+  refine ⟨by rw [hsy]; exact ok, fun i hi => rT _ (by omega), rT 32 (by omega), rA, fun m hf => ?_⟩
   have hF : FrE s m := FrE.step he.fr he.wr hf
-  have rt : ∀ d, d + 8 ≤ 40 → m.readW (off (stackArg s 9) d) 64 = s.mem.readW (off (stackArg s 9) d) 64 :=
-    fun d hd => FrE.readW' hF (cT d hd) hp.tabStack hp.tabOut hp.tabScr
+  have rt : ∀ d, d + 8 ≤ 40 → m.readW (off (stackArg s j) d) 64 = s.mem.readW (off (stackArg s j) d) 64 :=
+    fun d hd => FrE.readW' hF (cT d hd) dK dO dS
   rw [hsy]
   refine ⟨⟨(rt _ (by omega)).trans hm.1, (rt _ (by omega)).trans hm.2.1, (rt _ (by omega)).trans hm.2.2⟩,
     (rt 32 (by omega)).trans hD, ?_⟩
   rw [FrE.readW' hF cA hp.argsTStack hp.argsTOut hp.argsTScr, argAddr]
   rfl
+
+/-- MGF1's table, from the entry state's. -/
+theorem etab {H : Spec.Mgf1.Hash} {s t : State} (hp : PPreT H s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    {G : Stream} {f : Fns} (ok : TabOK G f s.syms) (hm : TabMem G s.syms (stackArg s 11) s.mem)
+    (hD : s.mem.readW (off (stackArg s 11) 32) 64 = BitVec.ofNat 64 G.D) :
+    Tab G f (fb s) (stackArg s 11) (frameBytes + 8 + 8 * 11) t :=
+  etabJ hp he hsy (by decide) hp.tab hp.tabWrap hp.tabStack hp.tabOut hp.tabScr ok hm hD
+
+/-- The table of the label's hash function, from the entry state's. -/
+theorem etabL {H : Spec.Mgf1.Hash} {s t : State} (hp : PPreT H s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    {G : Stream} {f : Fns} (ok : TabOK G f s.syms) (hm : TabMem G s.syms (stackArg s 10) s.mem)
+    (hD : s.mem.readW (off (stackArg s 10) 32) 64 = BitVec.ofNat 64 G.D) :
+    Tab G f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t :=
+  etabJ hp he hsy (by decide) hp.tabL hp.tabLWrap hp.tabLStack hp.tabLOut hp.tabLScr ok hm hD
 
 end VG.Proof.RsaOaep.X86_64.Pc
