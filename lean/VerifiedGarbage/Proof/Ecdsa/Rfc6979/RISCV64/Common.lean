@@ -15,9 +15,8 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Call
+public import VerifiedGarbage.Proof.HashTable.RISCV64
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
@@ -27,26 +26,27 @@ import VerifiedGarbage.Proof.Sha256.Stream
 /-!
 # Deterministic ECDSA on RISC-V: the contract, the layout and the calls
 
-The contract the proof is written against (`rfcR`), which each instance's
-shared contract implies; what the proof needs of an instance (`Rfc`): the
-hash function's streaming functions with HMAC's over them, constant time,
-the code's configuration, the shared contract's instance, and the curve's
-(`Kit`: its scalars' words, the functions of its order, and the signature
-with a given `k` with its constant tables, if any). The proofs
-start from the state the frame's body starts in (`s₀`, with the stack
-pointer at the frame and `X` bytes of stack below it for the functions we
-call), whose precondition is `Pre`; `KR` is what holds from the end of the
-prologue on: the regions, the stack pointer, the registers holding the
-pointers, our caller's registers in the save area, and memory outside the
-frame, `out`, `scratch` and the stack below the frame (`wrs`).
+The contract the proof of the code for one hash function is written against
+(`rfcR`), with the table `hash` holding the addresses of that hash
+function's streaming functions (`TabMem`), which an indirect call of the
+functions `f` reaches (`TabOK`); what the proof needs of an instance
+(`Rfc`): the code's configuration, the hash function's streaming functions
+(`TVar`, whose sizes are the configuration's), the shared contract's
+instance, and the curve's (`Kit`: its scalars' words, the functions of its
+order, and the signature with a given `k` with its constant tables, if
+any). The proofs start from the state the frame's body starts in (`s₀`,
+with the stack pointer at the frame and `X` bytes of stack below it for the
+functions we call), whose precondition is `Pre`; `KR` is what holds from
+the end of the prologue on: the regions, the stack pointer, the registers
+holding the pointers and the table, our caller's registers in the save
+area, and memory outside the frame, `out`, `scratch` and the stack below the
+frame (`wrs`).
 
-The calls of HMAC's `init` and `finalize` (against the contracts of their
-generic proofs, `WP.callAny`, since they allocate their working space on the
-stack), of the streaming `update` (`HashOK.callUpd_ok`) and of the signature
-with a given `k` (the kit's `core_call`): what each needs of the state it is
-called from, and what holds when it returns; and, for HMAC's and the
+The calls of the streaming `update` (`HashOK.callUpd_ok`) and of the
+signature with a given `k` (the kit's `core_call`): what each needs of the
+state it is called from, and what holds when it returns; and, for the
 signature's, that two runs of the call with the same arguments leak the
-same trace (`RelCT.call`, the kit's `core_rel`).
+same trace (the kit's `core_rel`).
 -/
 
 @[expose] public section
@@ -56,7 +56,10 @@ namespace VG.Proof.Ecdsa.Rfc6979.RISCV64
 open VG.RISCV64
 open VG.Impl.Ecdsa.Rfc6979.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
-open VG.Proof.Hmac.Stream.RISCV64 (HashOK initG finG)
+open VG.Impl.RsaOaep.RISCV64 (Fns)
+open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
+open VG.Proof.RsaOaep.RISCV64 (TabMem TabOK)
+open VG.Proof.HashTable.RISCV64 (TVar)
 open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
 open Spec.Sha256 (bytesAt)
 
@@ -66,22 +69,28 @@ open Spec.Sha256 (bytesAt)
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-/-- `sign(out, d, digest, scratch)`, with `N` bytes of stack. -/
-def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
+/-- `sign(out, d, digest, digest_len, scratch, hash)`, with `N` bytes of
+stack, for the hash function `H` whose streaming functions an indirect call
+of `f` reaches. -/
+def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (H : Hash) (f : Fns) (N : Nat) : Contract isa where
   pre s :=
     let out : Region := ⟨s.gpr .a0, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨s.gpr .a1, I.ecdsa.curve.len⟩
     let digest : Region := ⟨s.gpr .a2, I.hashLen⟩
-    let scratch : Region := ⟨s.gpr .a3, 8192⟩
+    let scratch : Region := ⟨s.gpr .a4, 8192⟩
+    let tab : Region := ⟨s.gpr .a5, 40⟩
     let stk : Region := below s.sp N
-    s.rd = [d, digest] ∧ s.wr = [out, scratch] ∧
+    s.rd = [d, digest, tab] ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ s.sp.toNat % 16 = 0 ∧ N ≤ s.sp.toNat ∧
       stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
       (s.gpr .a0).toNat + 2 * I.ecdsa.curve.len ≤ 2 ^ 64 ∧
       (s.gpr .a1).toNat + I.ecdsa.curve.len ≤ 2 ^ 64 ∧
-      (s.gpr .a2).toNat + I.hashLen ≤ 2 ^ 64 ∧ (s.gpr .a3).toNat + 8192 ≤ 2 ^ 64 ∧
-      (s.gpr .a3).toNat % 8 = 0
+      (s.gpr .a2).toNat + I.hashLen ≤ 2 ^ 64 ∧ (s.gpr .a4).toNat + 8192 ≤ 2 ^ 64 ∧
+      (s.gpr .a4).toNat % 8 = 0 ∧
+      tab.Disjoint out ∧ tab.Disjoint scratch ∧ stk.Disjoint tab ∧
+      (s.gpr .a5).toNat % 8 = 0 ∧ (s.gpr .a5).toNat + 40 ≤ 2 ^ 64 ∧
+      TabMem H s.syms (s.gpr .a5) s.mem ∧ TabOK H f s.syms
   post s s' :=
     match (result I s.mem (s.gpr .a1) (s.gpr .a2)).1 with
     | some rs => (s'.gpr .a0).setWidth 32 = 1 ∧
@@ -90,33 +99,19 @@ def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
         Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * I.ecdsa.curve.len) =
           List.replicate (2 * I.ecdsa.curve.len) 0
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
-    s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧
+    s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
+    s₁.syms H.initN = s₂.syms H.initN ∧ s₁.syms H.updN = s₂.syms H.updN ∧ s₁.syms H.finN = s₂.syms H.finN ∧
     (result I s₁.mem (s₁.gpr .a1) (s₁.gpr .a2)).2 = (result I s₂.mem (s₂.gpr .a1) (s₂.gpr .a2)).2
 
 /-- `rfcR` with the tables `K` the signature with a given `k` reads
 (`abi.withConsts`): `rfcR` for the state without them, and what they add. -/
-def rfcRC (K : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa where
-  pre s := (rfcR I N).pre (stripConsts K s) ∧ ConstsOk K N s
-  post := (rfcR I N).post
-  pub s₁ s₂ := (rfcR I N).pub s₁ s₂ ∧ ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1
-
-/-- A state satisfying the precondition, for scalars of `Q` bytes and a
-digest of `D` bytes. -/
-def satState (Q D : Nat) : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x8000 | _ => 0
-  sp := 0x20000
-  mem _ := 0
-  rd := [⟨0x2000, Q⟩, ⟨0x3000, D⟩]
-  wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩]
+def rfcRC (K : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (H : Hash) (f : Fns)
+    (N : Nat) : Contract isa where
+  pre s := (rfcR I H f N).pre (stripConsts K s) ∧ ConstsOk K N s
+  post := (rfcR I H f N).post
+  pub s₁ s₂ := (rfcR I H f N).pub s₁ s₂ ∧ ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1
 
 /-! ## The instance -/
-
-/-- HMAC's `init`, with its frame and its callees' stack. -/
-abbrev hiK (H : Hash) (SH : Spec.Hmac.StreamingHash) : Contract isa := initG SH (H.ibytes + H.F)
-
-/-- HMAC's `finalize`, with its frame and its callees' stack. -/
-abbrev hfK (H : Hash) (SH : Spec.Hmac.StreamingHash) : Contract isa := finG SH (H.fbytes + H.F)
 
 /-- What a call leaves: the regions, the stack pointer, the callee-saved
 registers, and memory outside `ws`. -/
@@ -199,26 +194,27 @@ structure Kit where
       ∀ c ∈ K, s.syms c.1 = f c.1 ∧ s'.syms c.1 = f c.1) →
     RelCT isa R (.call nm coreC) fun _ _ => True
 
-/-- What the proof needs of an instance: a curve's kit with a hash function. -/
+/-- What the proof needs of an instance: a curve's kit with the code for a
+hash function's sizes, and that hash function's streaming functions (`w`). -/
 structure Rfc where
   c : Cfg
-  hH : HashOK c.H
-  hiCt : ConstantTime isa (hiK c.H hH.SH).pre (hiK c.H hH.SH).pub c.H.init
-  hfCt : ConstantTime isa (hfK c.H hH.SH).pre (hfK c.H hH.SH).pub c.H.finalize
+  w : TVar
+  hDw : c.D = w.H.D
+  hBw : c.B = w.H.B
   I : Spec.Ecdsa.Rfc6979.Instance
   kit : Kit
   hE : I.ecdsa = kit.E
-  hHash : I.hash = hH.SH.H
-  hD : I.hashLen = c.H.D
+  hHash : I.hash = w.l.ok.SH.H
+  hD : I.hashLen = c.D
   hnw : c.nw = kit.nw
   hQ : c.Q = kit.Q
   /-- The signature reads the digest's `D` bytes if the scalars are longer
   (`wide`), else their `Q` bytes, with their whole bytes as `k`. -/
-  hG : kit.G = if c.wide then c.H.D else kit.Q
+  hG : kit.G = if c.wide then c.D else kit.Q
   hsh : c.wide = false → kit.sh = 0
-  hQD : kit.Q ≤ c.H.D + 8
-  hD64 : c.H.D ≤ 64
-  hS : c.H.S ≤ 192
+  hQD : kit.Q ≤ c.D + 8
+  hD64 : c.D ≤ 64
+  hS : w.H.S ≤ 192
   hct : c.tries = I.tries
   hT : 1 ≤ c.tries
   hT' : c.tries < 2048
@@ -229,8 +225,13 @@ namespace Rfc
 
 variable (P : Rfc)
 
-/-- The bytes of stack the functions we call use below the frame. -/
-def X : Nat := max P.c.H.ibytes P.c.H.fbytes + P.c.H.F
+/-- The hash function's streaming functions, and what the proofs know of them. -/
+abbrev H : Hash := P.w.H
+abbrev hH : HashOK P.H := P.w.l.ok
+
+/-- The bytes of stack the functions we call use below the frame: the most
+the streaming functions' frames may take (`FitsF`). -/
+def X (_P : Rfc) : Nat := 208
 
 /-- The stack the function uses. -/
 def N : Nat := P.c.frB + P.X
@@ -245,7 +246,8 @@ variable (s₀ : State)
 abbrev out : Addr := s₀.gpr .a0
 abbrev dk : Addr := s₀.gpr .a1
 abbrev dg : Addr := s₀.gpr .a2
-abbrev scr : Addr := s₀.gpr .a3
+abbrev scr : Addr := s₀.gpr .a4
+abbrev tab : Addr := s₀.gpr .a5
 /-- An address in the frame, and a part of it. -/
 abbrev sA (o : Nat) : Addr := s₀.sp + BitVec.ofNat 64 o
 abbrev sR (o n : Nat) : Region := ⟨sA s₀ o, n⟩
@@ -266,8 +268,9 @@ abbrev outR (P : Rfc) (s₀ : State) : Region := ⟨out s₀, 2 * P.Q⟩
 abbrev dR (P : Rfc) (s₀ : State) : Region := ⟨dk s₀, P.Q⟩
 abbrev frR (P : Rfc) (s₀ : State) : Region := ⟨s₀.sp, P.c.frB⟩
 
-/-- The digest. -/
-abbrev dgR (P : Rfc) (s₀ : State) : Region := ⟨dg s₀, P.c.H.D⟩
+/-- The digest, and the table. -/
+abbrev dgR (P : Rfc) (s₀ : State) : Region := ⟨dg s₀, P.c.D⟩
+abbrev tabR (s₀ : State) : Region := ⟨tab s₀, 40⟩
 /-- The stack below the frame the functions we call use. -/
 abbrev stk (P : Rfc) (s₀ : State) : Region := below s₀.sp P.X
 /-- Everything the code writes. -/
@@ -275,7 +278,7 @@ abbrev wrs (P : Rfc) (s₀ : State) : List Region := [frR P s₀, outR P s₀, s
 
 /-- The state the frame's body starts in. -/
 structure Pre (P : Rfc) (s₀ : State) : Prop where
-  rd : s₀.rd = [dR P s₀, dgR P s₀] ++ constRegs P.kit.K s₀
+  rd : s₀.rd = [dR P s₀, dgR P s₀, tabR s₀] ++ constRegs P.kit.K s₀
   wr : s₀.wr = [frR P s₀, outR P s₀, scrR s₀]
   o_d : (outR P s₀).Disjoint (dR P s₀)
   o_g : (outR P s₀).Disjoint (dgR P s₀)
@@ -295,7 +298,7 @@ structure Pre (P : Rfc) (s₀ : State) : Prop where
   top : s₀.sp.toNat + P.c.frB ≤ 2 ^ 64
   no : (out s₀).toNat + 2 * P.Q ≤ 2 ^ 64
   nd : (dk s₀).toNat + P.Q ≤ 2 ^ 64
-  ng : (dg s₀).toNat + P.c.H.D ≤ 2 ^ 64
+  ng : (dg s₀).toNat + P.c.D ≤ 2 ^ 64
   nc : (scr s₀).toNat + 8192 ≤ 2 ^ 64
   ca : (scr s₀).toNat % 8 = 0
   /-- The tables: their words, where, apart from what the code writes. -/
@@ -303,29 +306,37 @@ structure Pre (P : Rfc) (s₀ : State) : Prop where
   tal : ∀ t ∈ constRegs P.kit.K s₀, t.base.toNat % 64 = 0
   tfit : ∀ t ∈ constRegs P.kit.K s₀, t.base.toNat + t.len ≤ 2 ^ 64
   t_w : ∀ t ∈ constRegs P.kit.K s₀, ∀ r ∈ wrs P s₀, t.Disjoint r
+  /-- The table: apart from what the code writes, aligned, holding the hash
+  function's streaming functions, which an indirect call of `f` reaches. -/
+  b_w : ∀ r ∈ wrs P s₀, (tabR s₀).Disjoint r
+  ba : (tab s₀).toNat % 8 = 0
+  bn : (tab s₀).toNat + 40 ≤ 2 ^ 64
+  bm : TabMem P.H s₀.syms (tab s₀) s₀.mem
+  bo : TabOK P.H P.c.f s₀.syms
 
 /-! ## The sizes -/
 
 /-- The sizes the proofs use. -/
 structure Sz (P : Rfc) : Prop where
-  N : 0 < P.c.H.N ∧ P.c.H.N ≤ 64
-  B : P.c.H.B = 64 ∨ P.c.H.B = 128
-  S : P.c.H.S = P.c.H.N + P.c.H.B
-  S192 : P.c.H.S ≤ 192
-  D : P.Q ≤ P.c.H.D + 8 ∧ P.c.H.D ≤ 64
+  N : 0 < P.H.N ∧ P.H.N ≤ 64
+  B : P.c.B = 64 ∨ P.c.B = 128
+  S : P.H.S = P.H.N + P.c.B
+  S192 : P.H.S ≤ 192
+  D : P.Q ≤ P.c.D + 8 ∧ P.c.D ≤ 64
   /-- The scalars are longer than the hash's output exactly if `wide`. -/
-  W : P.c.wide = false ↔ P.Q ≤ P.c.H.D
+  W : P.c.wide = false ↔ P.Q ≤ P.c.D
   Q : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
     (P.c.fH + 8 * P.kit.nw * P.c.nums ≤ P.c.frB ∧ P.c.fH + 8 * P.kit.nw ≤ P.c.frB ∧
       P.c.frB ≤ P.c.fH + 16 * P.kit.nw + 15 ∧ P.c.frB % 16 = 0) ∧
     P.Q ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ P.Q + 8 ∧ (32 ≤ 8 * P.kit.nw ∧ 8 * P.kit.nw ≤ 72)
   nums : P.c.nums = if P.c.wide then 2 else 1
-  H : 128 + P.c.H.D + 1 ≤ P.c.fH ∧ 192 ≤ P.c.fH ∧ P.c.fH ≤ 208 ∧ P.c.fH % 8 = 0
-  HF : P.c.H.F ≤ 1024
-  X : P.c.H.ibytes + P.c.H.F ≤ P.X ∧ P.c.H.fbytes + P.c.H.F ≤ P.X ∧ P.c.H.F ≤ P.X ∧ P.X ≤ 4096
+  H : 128 + P.c.D + 1 ≤ P.c.fH ∧ 192 ≤ P.c.fH ∧ P.c.fH ≤ 208 ∧ P.c.fH % 8 = 0
+  HF : P.H.F ≤ 208
+  X : P.H.F ≤ P.X ∧ P.X = 208
+  DB : P.H.D = P.c.D ∧ P.H.B = P.c.B ∧ 0 < P.c.D
 
 /-- The scalars are no longer than the hash's output exactly if not `wide`. -/
-theorem Rfc.wide_iff (P : Rfc) : P.c.wide = false ↔ P.kit.Q ≤ P.c.H.D := by
+theorem Rfc.wide_iff (P : Rfc) : P.c.wide = false ↔ P.kit.Q ≤ P.c.D := by
   simp only [Cfg.wide, P.hQ, decide_eq_false_iff_not, Nat.not_lt]
 
 /-- If not `wide`, the scalars' bytes are all their number's. -/
@@ -338,28 +349,28 @@ theorem Rfc.nbits0 (P : Rfc) (hw : P.c.wide = false) : Spec.Ecdsa.nBits P.kit.E.
 theorem Rfc.G0 (P : Rfc) (hw : P.c.wide = false) : P.kit.G = P.kit.Q := by
   rw [P.hG, hw]; rfl
 
-theorem Rfc.GW (P : Rfc) (hw : P.c.wide = true) : P.kit.G = P.c.H.D := by
+theorem Rfc.GW (P : Rfc) (hw : P.c.wide = true) : P.kit.G = P.c.D := by
   rw [P.hG, hw]; rfl
 
 theorem sizes (P : Rfc) : Sz P := by
-  have hl := P.hH.lay
   have hB := P.hH.hB64
   have := P.kit.nw9
   have := P.kit.Qw
   have hD := P.hD64
   have hDQ := P.hQD
   have hnw := P.hnw
-  have hfH : (P.c.fH = 192 ∧ P.c.H.D < 64) ∨ (P.c.fH = 208 ∧ ¬ P.c.H.D < 64) := by
+  have hDw := P.hDw
+  have hBw := P.hBw
+  have hD0 := P.hH.hD0
+  have hF : P.H.F ≤ 208 := P.w.l.fits
+  have hfH : (P.c.fH = 192 ∧ P.c.D < 64) ∨ (P.c.fH = 208 ∧ ¬ P.c.D < 64) := by
     unfold Cfg.fH; split <;> simp_all
   have hnu : P.c.nums = 1 ∨ P.c.nums = 2 := by unfold Cfg.nums; split <;> simp
-  refine ⟨P.hH.hN, hB, rfl, P.hS, ⟨hDQ, hD⟩, P.wide_iff, ⟨by simp only [Rfc.Q]; omega,
+  refine ⟨P.hH.hN, by rw [hBw]; exact hB, by rw [hBw], P.hS, ⟨hDQ, hD⟩, P.wide_iff, ⟨by simp only [Rfc.Q]; omega,
     by simp only [Rfc.Q]; omega, by simp only [Rfc.Q, P.hQ], ?_, by simp only [Rfc.Q]; omega,
-    by simp only [Rfc.Q]; omega, by omega⟩, rfl, by omega, P.hH.hF, ?_⟩
-  · simp only [Cfg.frB, hnw]
-    rcases hnu with h | h <;> rw [h] <;> omega
-  have := hl.ibytes; have := hl.fbytes; have := P.hH.hF
-  simp only [Rfc.X]
-  omega
+    by simp only [Rfc.Q]; omega, by omega⟩, rfl, by omega, hF, ⟨hF, rfl⟩, ⟨hDw.symm, hBw.symm, by omega⟩⟩
+  simp only [Cfg.frB, hnw]
+  rcases hnu with h | h <;> rw [h] <;> omega
 
 section
 variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
@@ -407,7 +418,7 @@ end
 /-! ## What every piece keeps -/
 
 /-- The callee-saved registers the code never writes. -/
-abbrev nvRegs : List Reg := [.s6, .s7, .s8, .s9, .s10, .s11]
+abbrev nvRegs : List Reg := [.s7, .s8, .s9, .s10, .s11]
 
 /-- The registers and memory kept from the end of the prologue on. -/
 structure KR (P : Rfc) (s₀ s : State) : Prop where
@@ -419,6 +430,7 @@ structure KR (P : Rfc) (s₀ s : State) : Prop where
   s2 : s.gpr .s2 = out s₀
   s3 : s.gpr .s3 = dk s₀
   s4 : s.gpr .s4 = dg s₀
+  s6 : s.gpr .s6 = tab s₀
   nv : ∀ r ∈ nvRegs, s.gpr r = s₀.gpr r
   saved : Spill.Saved s₀.sp s₀.gpr saved s.mem
   frame : Frame (wrs P s₀) s₀.mem s.mem
@@ -431,12 +443,12 @@ theorem kregs_pres : ∀ r ∈ kregs, r ∈ preserved := by decide
 theorem saved_fits : Spill.Fits saved := by
   refine ⟨fun q hq => ?_, by decide⟩
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem saved_in : ∀ q ∈ saved, 0 ≤ q.2 ∧ q.2 + 8 ≤ 0 + 64 := by
   intro q hq
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 section
 variable {P : Rfc} {s₀ : State}
@@ -447,7 +459,7 @@ theorem KR.keep {s s' : State} (h : KR P s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.
     (hsub : ∀ r ∈ rs, ∃ r' ∈ wrs P s₀, Region.Sub r r') : KR P s₀ s' :=
   ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, (hg _ (by simp)).trans h.s0, (hg _ (by simp)).trans h.s1,
     (hg _ (by simp)).trans h.s2, (hg _ (by simp)).trans h.s3, (hg _ (by simp)).trans h.s4,
-    fun r hr => (hg r (by revert r; decide)).trans (h.nv r hr),
+    (hg _ (by simp)).trans h.s6, fun r hr => (hg r (by revert r; decide)).trans (h.nv r hr),
     h.saved.frame_in saved_in hf hs, h.frame.trans (hf.sub hsub)⟩
 
 theorem KR.same {s s' : State} (h : KR P s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
@@ -498,7 +510,7 @@ theorem KR.dBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) :
     · exact hp.d_c
     · exact hp.b_d.symm) (by have := (sizes P).Q; have := (sizes P).H; omega)
 
-theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.c.H.D) :
+theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.c.D) :
     bytesAt s.mem (dg s₀) n = bytesAt s₀.mem (dg s₀) n :=
   hk.bytes (fun r hr => by
     have sub : Region.Sub ⟨dg s₀, n⟩ (dgR P s₀) := Region.sub_prefix hn
@@ -510,209 +522,5 @@ theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (h
     · exact (hp.b_g.sub_right sub).symm) (by have := (sizes P).D; omega)
 
 end
-
-/-! ## The calls -/
-
-section
-variable (P : Rfc)
-
-theorem hi_sdepth : sdepth P.c.H.init ≤ P.c.H.ibytes + P.c.H.F := by
-  have := P.hH.initSd; have := P.hH.updSd; have := P.hH.finSd
-  simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
-    Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
-  omega
-
-theorem hf_sdepth : sdepth P.c.H.finalize ≤ P.c.H.fbytes + P.c.H.F := by
-  have := P.hH.updSd; have := P.hH.finSd
-  simp only [Hash.finalize, Hash.finalizeMain, Hash.callUpd, Hash.callFin, sdepth, Instr.frameBytes]
-  omega
-
-theorem hi_ok : ∀ s, (hiK P.c.H P.hH.SH).pre s → ∃ t s', Exec isa P.c.H.init s t s' ∧
-    abiPreserved s s' ∧ (hiK P.c.H P.hH.SH).post s s' := fun _ hs => by
-  obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Hmac.Stream.RISCV64.Init.correct P.hH hs
-  exact ⟨t, s', he, h₁, h₂⟩
-
-theorem hf_ok : ∀ s, (hfK P.c.H P.hH.SH).pre s → ∃ t s', Exec isa P.c.H.finalize s t s' ∧
-    abiPreserved s s' ∧ (hfK P.c.H P.hH.SH).post s s' := fun _ hs => by
-  obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Hmac.Stream.RISCV64.Finalize.correct P.hH hs
-  exact ⟨t, s', he, h₁, h₂⟩
-
-end
-
-/-- What a call of HMAC's `init` needs of the state it is called from: the
-key's `kl` bytes at `k` and the states at `inn` and `ou`. -/
-structure HiArgs (P : Rfc) (s : State) (inn ou k : Addr) (kl : Nat) : Prop where
-  a0 : s.gpr .a0 = inn
-  a1 : s.gpr .a1 = ou
-  a2 : s.gpr .a2 = k
-  a3 : (s.gpr .a3).toNat = kl
-  al : s.sp.toNat % 16 = 0
-  sp : P.c.H.ibytes + P.c.H.F ≤ s.sp.toNat
-  d_io : Region.Disjoint ⟨inn, P.c.H.S⟩ ⟨ou, P.c.H.S⟩
-  d_ki : Region.Disjoint ⟨k, kl⟩ ⟨inn, P.c.H.S⟩
-  d_ko : Region.Disjoint ⟨k, kl⟩ ⟨ou, P.c.H.S⟩
-  b_i : (below s.sp (P.c.H.ibytes + P.c.H.F)).Disjoint ⟨inn, P.c.H.S⟩
-  b_o : (below s.sp (P.c.H.ibytes + P.c.H.F)).Disjoint ⟨ou, P.c.H.S⟩
-  b_k : (below s.sp (P.c.H.ibytes + P.c.H.F)).Disjoint ⟨k, kl⟩
-  hc : RISCV64.Covers ([⟨k, kl⟩] ++ [⟨inn, P.c.H.S⟩, ⟨ou, P.c.H.S⟩]) (s.rd ++ s.wr)
-  hw : RISCV64.Covers [⟨inn, P.c.H.S⟩, ⟨ou, P.c.H.S⟩] s.wr
-
-section
-variable {P : Rfc}
-
-theorem HiArgs.pre {s : State} {inn ou k : Addr} {kl : Nat} (h : HiArgs P s inn ou k kl) :
-    (hiK P.c.H P.hH.SH).pre (s.callEntry.withRegions [⟨k, kl⟩]
-      [⟨inn, P.hH.SH.stateBytes⟩, ⟨ou, P.hH.SH.stateBytes⟩]) := by
-  have hS := P.hH.hS
-  simp only [hiK, initG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_sp, State.callEntry_sp, State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), h.a0, h.a1, h.a2, h.a3, hS]
-  exact ⟨trivial, trivial, h.d_io, h.d_ki, h.d_ko, h.al, h.sp, h.b_i, h.b_o, h.b_k⟩
-
-/-- HMAC's `init` with the key's `kl` bytes at `k`, into the states at `inn` and `ou`. -/
-theorem hi_call {s : State} {inn ou k : Addr} {kl : Nat} (h : HiArgs P s inn ou k kl) {Q : State → Prop}
-    (hQ : ∀ s', After s ([⟨inn, P.c.H.S⟩, ⟨ou, P.c.H.S⟩] ++ [below s.sp (P.c.H.ibytes + P.c.H.F)]) s' →
-      P.hH.SH.Repr s'.mem inn (xorPad (blockKey P.hH.SH.H (bytesAt s.mem k kl)) ipad) →
-      P.hH.SH.Repr s'.mem ou (xorPad (blockKey P.hH.SH.H (bytesAt s.mem k kl)) opad) → Q s') :
-    WP isa (.call P.c.hiN P.c.H.init) s Q := by
-  have hS := P.hH.hS
-  have hl := P.hH.lay
-  have c0 : s.callEntry.gpr .a0 = inn := (State.callEntry_gpr _ (by decide)).trans h.a0
-  have c1 : s.callEntry.gpr .a1 = ou := (State.callEntry_gpr _ (by decide)).trans h.a1
-  have c2 : s.callEntry.gpr .a2 = k := (State.callEntry_gpr _ (by decide)).trans h.a2
-  have c3 : (s.callEntry.gpr .a3).toNat = kl := by rw [State.callEntry_gpr _ (by decide), h.a3]
-  refine WP.callAny (k := hiK P.c.H P.hH.SH) (hi_ok P) (rd := [⟨k, kl⟩])
-    (wr := [⟨inn, P.hH.SH.stateBytes⟩, ⟨ou, P.hH.SH.stateBytes⟩]) h.pre (by rw [hS]; exact h.hc)
-    (by rw [hS]; exact h.hw) ?_ (by have := hi_sdepth P; have := hl.ibytes; have := hl.F; omega)
-  intro s' hrd hwr hsp' hf hcs hpost
-  simp only [hiK, initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2,
-    c3] at hpost
-  refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost.1 hpost.2
-  rw [hS] at hf
-  exact Frame.below_mono hf (hi_sdepth P) (by have := hl.ibytes; have := hl.F; omega)
-
-/-- Two runs of a call of HMAC's `init` with the same arguments. -/
-theorem hi_rel {Q : State → State → Prop} {inn ou k : Addr} {kl : Nat}
-    (h : ∀ s s', Q s s' → HiArgs P s inn ou k kl ∧ HiArgs P s' inn ou k kl ∧ s.sp = s'.sp) :
-    RelCT isa Q (.call P.c.hiN P.c.H.init) fun _ _ => True := by
-  have hS := P.hH.hS
-  refine RelCT.call (hi_ok P) P.hiCt [⟨k, kl⟩] [⟨inn, P.hH.SH.stateBytes⟩, ⟨ou, P.hH.SH.stateBytes⟩]
-    fun s s' hp => ?_
-  obtain ⟨a, a', e⟩ := h s s' hp
-  refine ⟨a.pre, a'.pre, ?_, by rw [hS]; exact a.hc, by rw [hS]; exact a.hw, by rw [hS]; exact a'.hc,
-    by rw [hS]; exact a'.hw⟩
-  simp only [hiK, initG, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-    State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a0 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a1 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a2 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a3 ∉ linkRegs),
-    a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2]
-  simp only [true_and]
-  exact ⟨BitVec.eq_of_toNat_eq (a.a3.trans a'.a3.symm), e⟩
-
-end
-
-/-- What a call of HMAC's `finalize` needs: the inner state at `inn`, the
-outer state at `ou` and `out` at `o`. -/
-structure HfArgs (P : Rfc) (s : State) (inn ou o : Addr) : Prop where
-  a0 : s.gpr .a0 = inn
-  a1 : s.gpr .a1 = ou
-  a3 : s.gpr .a3 = o
-  al : s.sp.toNat % 16 = 0
-  sp : P.c.H.fbytes + P.c.H.F ≤ s.sp.toNat
-  d_iu : Region.Disjoint ⟨inn, P.c.H.S⟩ ⟨ou, P.c.H.S⟩
-  d_io : Region.Disjoint ⟨inn, P.c.H.S⟩ ⟨o, P.c.H.D⟩
-  d_uo : Region.Disjoint ⟨ou, P.c.H.S⟩ ⟨o, P.c.H.D⟩
-  b_i : (below s.sp (P.c.H.fbytes + P.c.H.F)).Disjoint ⟨inn, P.c.H.S⟩
-  b_u : (below s.sp (P.c.H.fbytes + P.c.H.F)).Disjoint ⟨ou, P.c.H.S⟩
-  b_o : (below s.sp (P.c.H.fbytes + P.c.H.F)).Disjoint ⟨o, P.c.H.D⟩
-  hc : RISCV64.Covers ([⟨ou, P.c.H.S⟩] ++ [⟨inn, P.c.H.S⟩, ⟨o, P.c.H.D⟩]) (s.rd ++ s.wr)
-  hw : RISCV64.Covers [⟨inn, P.c.H.S⟩, ⟨o, P.c.H.D⟩] s.wr
-
-section
-variable {P : Rfc}
-
-theorem HfArgs.pre {s : State} {inn ou o : Addr} (h : HfArgs P s inn ou o) :
-    (hfK P.c.H P.hH.SH).pre (s.callEntry.withRegions [⟨ou, P.hH.SH.stateBytes⟩]
-      [⟨inn, P.hH.SH.stateBytes⟩, ⟨o, P.hH.SH.digestBytes⟩]) := by
-  have hS := P.hH.hS; have hD := P.hH.hD
-  simp only [hfK, finG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_sp, State.callEntry_sp, State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
-    h.a0, h.a1, h.a3, hS, hD]
-  exact ⟨trivial, trivial, h.d_iu, h.d_io, h.d_uo, h.al, h.sp, h.b_i, h.b_u, h.b_o⟩
-
-/-- HMAC's `finalize` of the inner state at `inn` and the outer state at
-`ou`, with `count` in `a2`, into `o`. -/
-theorem hf_call {s : State} {inn ou o : Addr} (h : HfArgs P s inn ou o) {Q : State → Prop}
-    (hQ : ∀ s', After s ([⟨inn, P.c.H.S⟩, ⟨o, P.c.H.D⟩] ++ [below s.sp (P.c.H.fbytes + P.c.H.F)]) s' →
-      (∀ k0 text, k0.length = P.c.H.B → k0.length + text.length < 2 ^ 64 →
-        P.hH.SH.Repr s.mem inn (xorPad k0 ipad ++ text) →
-        s.gpr .a2 = BitVec.ofNat 64 (P.c.H.B + text.length) →
-        P.hH.SH.Repr s.mem ou (xorPad k0 opad) →
-        bytesAt s'.mem o P.c.H.D = hmacBlockKey P.hH.SH.H k0 text) → Q s') :
-    WP isa (.call P.c.hfN P.c.H.finalize) s Q := by
-  have hS := P.hH.hS; have hD := P.hH.hD; have hB := P.hH.hB
-  have hl := P.hH.lay
-  have c0 : s.callEntry.gpr .a0 = inn := (State.callEntry_gpr _ (by decide)).trans h.a0
-  have c1 : s.callEntry.gpr .a1 = ou := (State.callEntry_gpr _ (by decide)).trans h.a1
-  have c2 : s.callEntry.gpr .a2 = s.gpr .a2 := State.callEntry_gpr _ (by decide)
-  have c3 : s.callEntry.gpr .a3 = o := (State.callEntry_gpr _ (by decide)).trans h.a3
-  refine WP.callAny (k := hfK P.c.H P.hH.SH) (hf_ok P) (rd := [⟨ou, P.hH.SH.stateBytes⟩])
-    (wr := [⟨inn, P.hH.SH.stateBytes⟩, ⟨o, P.hH.SH.digestBytes⟩]) h.pre (by rw [hS, hD]; exact h.hc)
-    (by rw [hS, hD]; exact h.hw) ?_ (by have := hf_sdepth P; have := hl.fbytes; have := hl.F; omega)
-  intro s' hrd hwr hsp' hf hcs hpost
-  simp only [hfK, finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2, c3,
-    hD, hB] at hpost
-  refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost
-  rw [hS, hD] at hf
-  exact Frame.below_mono hf (hf_sdepth P) (by have := hl.fbytes; have := hl.F; omega)
-
-/-- Two runs of a call of HMAC's `finalize` with the same arguments. -/
-theorem hf_rel {Q : State → State → Prop} {inn ou o : Addr}
-    (h : ∀ s s', Q s s' → HfArgs P s inn ou o ∧ HfArgs P s' inn ou o ∧ s.sp = s'.sp ∧
-      s.gpr .a2 = s'.gpr .a2) :
-    RelCT isa Q (.call P.c.hfN P.c.H.finalize) fun _ _ => True := by
-  have hS := P.hH.hS; have hD := P.hH.hD
-  refine RelCT.call (hf_ok P) P.hfCt [⟨ou, P.hH.SH.stateBytes⟩]
-    [⟨inn, P.hH.SH.stateBytes⟩, ⟨o, P.hH.SH.digestBytes⟩] fun s s' hp => ?_
-  obtain ⟨a, a', e, e2⟩ := h s s' hp
-  refine ⟨a.pre, a'.pre, ?_, by rw [hS, hD]; exact a.hc, by rw [hS, hD]; exact a.hw,
-    by rw [hS, hD]; exact a'.hc, by rw [hS, hD]; exact a'.hw⟩
-  simp only [hfK, finG, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-    State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a0 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a1 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a2 ∉ linkRegs),
-    State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs), State.callEntry_gpr s' (by decide : Reg.a3 ∉ linkRegs),
-    a.a0, a'.a0, a.a1, a'.a1, a.a3, a'.a3, e2]
-  simp only [true_and]
-  exact e
-
-end
-
-/-- What a call of the streaming `update` needs: the state at `st` and the
-`len` bytes at `dat`. -/
-structure UpdArgs (P : Rfc) (s : State) (st dat : Addr) (len : Nat) : Prop where
-  a0 : s.gpr .a0 = st
-  a2 : s.gpr .a2 = dat
-  a3 : (s.gpr .a3).toNat = len
-  d : Region.Disjoint ⟨dat, len⟩ ⟨st, P.c.H.S⟩
-  al : s.sp.toNat % 16 = 0
-  sp : P.c.H.F ≤ s.sp.toNat
-  b_s : (below s.sp P.c.H.F).Disjoint ⟨st, P.c.H.S⟩
-  b_d : (below s.sp P.c.H.F).Disjoint ⟨dat, len⟩
-  hc : RISCV64.Covers ([⟨dat, len⟩] ++ [⟨st, P.c.H.S⟩]) (s.rd ++ s.wr)
-  hw : RISCV64.Covers [⟨st, P.c.H.S⟩] s.wr
-
-/-- The streaming `update`, as `HashOK.callUpd_ok` gives it. -/
-theorem upd_call {P : Rfc} {s : State} {st dat : Addr} {len : Nat} (h : UpdArgs P s st dat len)
-    {Q : State → Prop}
-    (hQ : ∀ s', After s ([⟨st, P.c.H.S⟩] ++ [below s.sp P.c.H.F]) s' →
-      (∀ m, P.hH.SH.Repr s.mem st m → s.gpr .a1 = BitVec.ofNat 64 m.length →
-        P.hH.SH.Repr s'.mem st (m ++ bytesAt s.mem dat len)) → Q s') :
-    WP isa P.c.H.callUpd s Q :=
-  P.hH.callUpd_ok h.a0 h.a2 h.a3 h.d h.al h.sp h.b_s h.b_d h.hc h.hw
-    fun s' a b c d e f => hQ s' ⟨a, b, c, e, d⟩ f
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
