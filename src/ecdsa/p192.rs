@@ -1,6 +1,8 @@
 //! ECDSA over p192: deterministic signatures with HMAC-SHA-256
-//! (`vg_ecdsa_p192_sha256_sign`), public
-//! keys (`vg_ec_p192_public_key`), and verification (`vg_ecdsa_p192_verify`).
+//! (`vg_ecdsa_p192_sha256_sign`), or, on x86-64, with HMAC over any hash
+//! function with HMAC, taken as a table (`vg_ecdsa_p192_sign`,
+//! [`super::x86_64`]), public keys (`vg_ec_p192_public_key`), and
+//! verification (`vg_ecdsa_p192_verify`).
 
 #![cfg(any(
     target_arch = "x86_64",

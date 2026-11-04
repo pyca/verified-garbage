@@ -1,8 +1,9 @@
 //! ECDSA over P-224: deterministic signatures with HMAC-SHA-224
-//! (`vg_ecdsa_p224_sha224_sign`), public
-//! keys (`vg_ec_p224_public_key`), and verification (`vg_ecdsa_p224_verify`),
-//! and their `_umaal` variants on ARMv7 CPUs with the features their
-//! `_FEATURES` constants name.
+//! (`vg_ecdsa_p224_sha224_sign`), or, on x86-64, with HMAC over any hash
+//! function with HMAC, taken as a table (`vg_ecdsa_p224_sign`,
+//! [`super::x86_64`]), public keys (`vg_ec_p224_public_key`), and
+//! verification (`vg_ecdsa_p224_verify`), and their `_umaal` variants on
+//! ARMv7 CPUs with the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",

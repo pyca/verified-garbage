@@ -9,6 +9,8 @@ pub const USES: &[&str] = &[
     "ec_p521",
     "hmac_sha512",
     "sha512",
+    "fn_tables",
+    "sha256",
 ];
 
 /// For each hash function, signing a message: deterministically (RFC 6979),
@@ -47,6 +49,17 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha512(),
         Some(&ECDSA_P521_SHA512_FIXED_SIGNING),
         &ECDSA_P521_SHA512_ASN1,
+        &d,
+    );
+    // On x86-64, where the curve signs with every hash function with HMAC
+    // (by the hash function's table), also with SHA-256.
+    #[cfg(target_arch = "x86_64")]
+    hash::<verified_garbage::hashes::sha256::Sha256>(
+        c,
+        "sha256",
+        MessageDigest::sha256(),
+        Some(&aws_lc_rs::signature::ECDSA_P521_SHA256_FIXED_SIGNING),
+        &aws_lc_rs::signature::ECDSA_P521_SHA256_ASN1,
         &d,
     );
 
