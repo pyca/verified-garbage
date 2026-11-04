@@ -15,11 +15,13 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 #[cfg(target_arch = "x86")]
 use super::x86::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "x86_64")]
+use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
+#[cfg(target_arch = "x86")]
+use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign;
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
@@ -27,8 +29,6 @@ use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::{vg_ecdsa_p384_sign, vg_ecdsa_p384_sign_adx};
-#[cfg(target_arch = "x86")]
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
 #[cfg(target_arch = "aarch64")]

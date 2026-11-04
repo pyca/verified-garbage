@@ -13,10 +13,10 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 #[cfg(target_arch = "x86")]
 use super::x86::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "x86_64")]
+use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{Error, P192, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
