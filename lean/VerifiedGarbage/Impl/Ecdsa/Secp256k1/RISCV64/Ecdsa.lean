@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 
 /-! # ECDSA over secp256k1 on RISC-V: `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
 
-Signing computes `[k]G` by the comb, `vg_secp256k1_mul_g`; verification's
-joint ladder adds by the complete addition for any `a` (`secp256k1.am3 =
-false`), and its `R = 4 R` is two Jacobian doublings by `dblJ0`, for `a = 0`
-(`Impl/Ecdsa/RISCV64/VerifyJ.lean`). -/
+Signing computes `[k]G` by the comb, `vg_secp256k1_mul_g`; verification
+computes `[u]G + [v]Q` as `Impl/Ecdsa/RISCV64/VerifyComb.lean` does: `[v]Q` by
+the windows of `vg_secp256k1_mul`, `[u]G` by the comb, and their sum by the
+complete addition for any `a` (`secp256k1.am3 = false`). -/
 
 @[expose] public section
 
@@ -23,6 +23,7 @@ def signSecp256k1 : Prog isa :=
 
 /-- `vg_ecdsa_secp256k1_verify`. -/
 def verifySecp256k1 : Prog isa :=
-  VerifyJ.Cfg.verify secp256k1 Impl.Weierstrass.dblJ0 secp256k1Order "vg_secp256k1_check_point" Ecdh.RISCV64.checkSecp256k1
+  VerifyComb.Cfg.verify secp256k1 secp256k1Order "vg_secp256k1_check_point" Ecdh.RISCV64.checkSecp256k1
+    "vg_secp256k1_mul" mulSecp256k1 Comb.mulGSecp256k1Name Comb.mulGSecp256k1
 
 end VG.Impl.Ecdsa.RISCV64
