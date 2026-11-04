@@ -31,7 +31,7 @@ theorem freed_gpr (n : Nat) (s : State) : (freed n s).gpr = s.gpr := rfl
 theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 10) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
 /-- After the saves and the prologue. -/
@@ -46,7 +46,7 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 /-- A load of our stack argument `j` through `r12`, the frame's base. -/
-theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 8)
+theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 10)
     (h12 : t.gpr .r12 = fb s) (hrd : t.rd = s.rd) (hm : Frame [kR s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : arg j < 2 ^ 15 ∧ arg j % 4 = 0 := by decide) :
@@ -65,7 +65,7 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (
     (allocated_lr _ _) fun v kv h12 hm hsv hls => ?_
   have hrd : v.rd = s.rd := kv.rd.trans (allocated_rd _ _)
   simp only [prologue]
-  refine wp_arg P (j := 3) (by decide) h12 hrd hm fun v₁ o₁ e₁ => ?_
+  refine wp_arg P (j := 4) (by decide) h12 hrd hm fun v₁ o₁ e₁ => ?_
   refine wp_mov fun v₂ o₂ e₂ => wp_mov fun v₃ o₃ e₃ => wp_mov fun v₄ o₄ e₄ => wp_mov fun v₅ o₅ e₅ =>
     wp_mov fun v₆ o₆ e₆ => wp_mov fun v₇ o₇ e₇ => ?_
   have k₇ : Only [.r14, .r15, .r16, .r17, .r18, .r19, .r20] v v₇ :=
@@ -73,15 +73,15 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (
   have g7 : v₇.gpr .r12 = fb s := by rw [k₇.get .r12]; exact h12
   have r7 : v₇.rd = s.rd := k₇.rd.trans hrd
   have m7 : Frame [kR s] s.mem v₇.mem := by rw [k₇.mem]; exact hm
-  refine wp_arg P (j := 5) (by decide) g7 r7 m7 fun v₈ o₈ e₈ => ?_
+  refine wp_arg P (j := 6) (by decide) g7 r7 m7 fun v₈ o₈ e₈ => ?_
   have g8 : v₈.gpr .r12 = fb s := by rw [o₈.get .r12]; exact g7
   have r8 : v₈.rd = s.rd := o₈.rd.trans r7
   have m8 : Frame [kR s] s.mem v₈.mem := by rw [o₈.mem]; exact m7
-  refine wp_arg P (j := 6) (by decide) g8 r8 m8 fun v₉ o₉ e₉ => ?_
+  refine wp_arg P (j := 7) (by decide) g8 r8 m8 fun v₉ o₉ e₉ => ?_
   have g9 : v₉.gpr .r12 = fb s := by rw [o₉.get .r12]; exact g8
   have r9 : v₉.rd = s.rd := o₉.rd.trans r8
   have m9 : Frame [kR s] s.mem v₉.mem := by rw [o₉.mem]; exact m8
-  refine wp_arg P (j := 4) (by decide) g9 r9 m9 fun v₁₀ o₁₀ e₁₀ => ?_
+  refine wp_arg P (j := 5) (by decide) g9 r9 m9 fun v₁₀ o₁₀ e₁₀ => ?_
   have g10 : v₁₀.gpr .r12 = fb s := by rw [o₁₀.get .r12]; exact g9
   have r10 : v₁₀.rd = s.rd := o₁₀.rd.trans r9
   have m10 : Frame [kR s] s.mem v₁₀.mem := by rw [o₁₀.mem]; exact m9

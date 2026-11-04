@@ -114,13 +114,13 @@ include X A in
 /-- The load of the table's word `k` into `d`, which is `v` of the anchor in
 every run. -/
 theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) {d : Reg}
-    (hd : d = .r9 ∨ d = .r12) {k : Nat} (hk : k < 5) {v : State → BitVec 64}
+    (hd : d = .r9 ∨ d = .r12 ∨ d = .r3) {k : Nat} (hk : k < 5) {v : State → BitVec 64}
     (hv : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * k)) 64 = v a) :
     RelCT isa (Two Φ) (.block (tword d j k))
       (Two fun ac u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = v ac.1) := by
-  have hd0 : d ≠ .r0 := by rcases hd with rfl | rfl <;> decide
+  have hd0 : d ≠ .r0 := by rcases hd with rfl | rfl | rfl <;> decide
   have hrs : ∀ r ∈ [d], r ∉ .r14 :: fx ++ hiRegs := by
-    intro r hr; rw [List.mem_singleton.mp hr]; rcases hd with rfl | rfl <;> decide
+    intro r hr; rw [List.mem_singleton.mp hr]; rcases hd with rfl | rfl | rfl <;> decide
   let Ψ₁ := fun (ac : State × Nat) u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = stackArg ac.1 j
   show RelCT isa _ (.block ([.addSp d 0, .load .d d d (arg j)] ++ [.load .d d d (8 * k)])) _
   refine RelCT.block_append (RelCT.seq (two_post (Ψ := Ψ₁) (twA_taint j hd fun ac t₁ t₂ h₁ h₂ =>
@@ -156,7 +156,7 @@ theorem tcall_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     (hcall : RelCT isa (Two fun ac u => ∃ t, Φ ac t ∧ Only [.r12] t u ∧ u.syms = t.syms) (.call n c)
       fun _ _ => True) :
     RelCT isa (Two Φ) (tcall j k ts) fun _ _ => True := by
-  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr rfl) (k := k) (by omega) (v := fun a => a.syms n)
+  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr (.inl rfl)) (k := k) (by omega) (v := fun a => a.syms n)
     fun P p => (hn P p).2.1.trans (hn P p).2.2) ?_
   cases ts with
   | nil =>
@@ -377,7 +377,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   have nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
       fun _ _ => True := by
     show RelCT isa _ (.block (tword .r12 j 4 ++ nextRest)) _
-    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .r12) (.inr rfl) (k := 4) (by decide)
+    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .r12) (.inr (.inl rfl)) (k := 4) (by decide)
       (v := fun _ => BitVec.ofNat 64 G.D) bD) (nextRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _⟩ := hu₂
@@ -457,5 +457,131 @@ theorem mgfXorT_ct {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre 
     (A : TabA G f j S Pre Pub) :
     RelCT isa (Two (MgfAT S vf Pre Pub src srcLen dst dstLen)) (mgfXorT f j) fun _ _ => True :=
   mgfXorT_ctS X.s hG cG hf hGh hGl hGv A
+
+/-! ## The label's hash through a table, in two runs -/
+
+section Label
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
+  (X : OkS S Pre Pub) {H : Hash} (hH : HashOK H) (cH : HashCT hH) {f : Fns} {j : Nat}
+  (A : TabA H f j S Pre Pub) {rl rn : Reg} {L : State → Addr} {N : State → Nat}
+
+include X cH A in
+/-- `hashLabelT`, the label `N s` bytes at `L s` in `rl` and `rn` (which
+`Base` keeps), in two runs with the hash function `H` of the table that is
+our stack argument `j`: its blocks by the taint analysis (`c2`, `c3`), its
+calls by `init_ct`, `upd_ct`, `fin_ct` through the table (`tcall_two`). -/
+theorem hashLabelT_ct (h3l : rl ≠ .r3) (h4l : rl ≠ .r4) (h3n : rn ≠ .r3) (h4n : rn ≠ .r4) (h5n : rn ≠ .r5)
+    (hreg : ∀ {s t}, Pre s → Base S vf s t → t.gpr rl = L s ∧ t.gpr rn = BitVec.ofNat 64 (N s))
+    (hpub : ∀ {a s}, Pre s → Pub a s → L s = L a ∧ N s = N a)
+    (hlab : ∀ {s}, Pre s → (⟨L s, N s⟩ : Region) ∈ s.rd ∧ Region.Disjoint ⟨L s, N s⟩ ⟨off (S s) oSt, H.S⟩ ∧
+      Region.Disjoint ⟨L s, N s⟩ ⟨off (S s) oW, H.W⟩ ∧ (cR s).Disjoint ⟨L s, N s⟩ ∧ N s < 2 ^ 64)
+    (c2 : ∀ {Φ : State × Nat → State → Prop}, Pins Φ [] → RelCT isa (Two Φ)
+      (.block [.addi .r3 .r14 oSt, .li .r4 0, Impl.AesGcm.PPC64LE.mov .r5 rl, Impl.AesGcm.PPC64LE.mov .r6 rn,
+        .addi .r7 .r14 oW]) fun _ _ => True)
+    (c3 : ∀ {Φ : State × Nat → State → Prop}, Pins Φ [] → RelCT isa (Two Φ)
+      (.block [.addi .r3 .r14 oSt, Impl.AesGcm.PPC64LE.mov .r4 rn, .addi .r5 .r14 oDig, .addi .r6 .r14 oW])
+      fun _ _ => True) :
+    RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (hashLabelT f j rl rn) fun _ _ => True := by
+  have F := hfits hH
+  obtain ⟨_, _, _, _, _, _⟩ := offs
+  let M : State × Nat → State → Prop := fun ac t => BT S vf Pre Pub ac.1 t
+  have p0 : ∀ {Φ : State × Nat → State → Prop}, (∀ ac t, Φ ac t → M ac t) → Pins Φ [] :=
+    fun h ac t₁ t₂ h₁ h₂ => ⟨((h ac t₁ h₁).b.spS X).trans ((h ac t₂ h₂).b.spS X).symm, fun _ h => nomatch h⟩
+  have bt12 : ∀ {ac t u}, M ac t → Only [.r12] t u → u.syms = t.syms → M ac u :=
+    fun {ac t u} h o y => let ⟨s, P, p, b, sy⟩ := h; ⟨s, P, p, b.only (X.fits P) o, y.trans sy⟩
+  have n1 : ∀ {r d : Reg}, r ≠ d → r ∉ [d] := fun h h' => h (List.mem_singleton.mp h')
+  -- `init`.
+  refine two_seq (Ψ := fun ac t => M ac t ∧ t.gpr .r3 = off (S ac.1) oSt) (st_taint (p0 fun _ _ h => h))
+    (fun ac t h => WP.of_syms (wp_addi fun t' o e => wp_nil fun sy =>
+      let ⟨s, P, p, b, y⟩ := h
+      ⟨⟨s, P, p, b.only (X.fits P) o, sy.trans y⟩, by rw [e, b.r14, (X.S p)]⟩)) ?_
+  refine two_seq (Ψ := M) (tcall_two X A (fun ac t h => h.1) (k := 0) (by decide)
+    (fun P p => ⟨(A.tab P).ok.i, by rw [Nat.mul_zero, BitVec.add_zero]; exact (A.tab P).mem.1, A.ai p⟩)
+    (init_ct (S := S) (vf := vf) cH fun u₁ u₂ hp => ?_)) (fun ac t h => ?_) ?_
+  · obtain ⟨ac, ⟨t₁, h₁, o₁, y₁⟩, ⟨t₂, h₂, o₂, y₂⟩⟩ := hp
+    obtain ⟨s₁, P₁, p₁, b₁, -⟩ := bt12 h₁.1 o₁ y₁
+    obtain ⟨s₂, P₂, p₂, b₂, -⟩ := bt12 h₂.1 o₂ y₂
+    exact ⟨s₁, s₂, X.fits P₁, b₁, by rw [o₁.get .r3, h₁.2, (X.S p₁)], X.fits P₂, b₂,
+      by rw [o₂.get .r3, h₂.2, (X.S p₂)], by rw [o₁.get .r3, o₂.get .r3, h₁.2, h₂.2],
+      (Base.spA X p₁ b₁).trans (Base.spA X p₂ b₂).symm⟩
+  · obtain ⟨⟨s, P, p, b, sy⟩, h3⟩ := h
+    exact WP.mono (initT_ok (X.fits P) (A.tab P) hH b sy (by rw [h3, (X.S p)])) fun t' ⟨⟨b', _, _⟩, sy'⟩ =>
+      ⟨s, P, p, b', sy'⟩
+  -- `update` with the label.
+  let U := fun (ac : State × Nat) (t : State) => M ac t ∧ t.gpr .r3 = off (S ac.1) oSt ∧
+    t.gpr .r4 = 0 ∧ t.gpr .r5 = L ac.1 ∧ t.gpr .r6 = BitVec.ofNat 64 (N ac.1) ∧ t.gpr .r7 = off (S ac.1) oW
+  refine two_seq (Ψ := U) (c2 (p0 fun _ _ h => h)) (fun ac t h => ?_) ?_
+  · refine WP.of_syms (wp_addi fun t₁ o₁ e₁ => wp_li (by decide) fun t₂ o₂ e₂ => wp_mov fun t₃ o₃ e₃ =>
+      wp_mov fun t₄ o₄ e₄ => wp_addi fun t₅ o₅ e₅ => wp_nil fun sy => ?_)
+    have k : Only [.r3, .r4, .r5, .r6, .r7] t t₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
+    obtain ⟨s, P, p, b, y⟩ := h
+    obtain ⟨gl, gn⟩ := hreg P b
+    obtain ⟨el, en⟩ := hpub P p
+    refine ⟨⟨s, P, p, b.only (X.fits P) k, sy.trans y⟩, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [o₅.get .r3, o₄.get .r3, o₃.get .r3, o₂.get .r3, e₁, b.r14, (X.S p)]
+    · rw [o₅.get .r4, o₄.get .r4, o₃.get .r4, e₂]; rfl
+    · rw [o₅.get .r5, o₄.get .r5, e₃, o₂.get rl (n1 h4l), o₁.get rl (n1 h3l), gl, el]
+    · rw [o₅.get .r6, e₄, o₃.get rn (n1 h5n), o₂.get rn (n1 h4n), o₁.get rn (n1 h3n), gn, en]
+    · rw [e₅, o₄.get .r14, o₃.get .r14, o₂.get .r14, o₁.get .r14, b.r14, (X.S p)]
+  have uargs : ∀ {ac : State × Nat} {t u : State}, U ac t → Only [.r12] t u → u.syms = t.syms →
+      ∃ s, Pre s ∧ UpdArgs S vf H s u (L s) (N s) ∧ Pub ac.1 s ∧ u.syms = s.syms := fun {ac t u} h o y => by
+    obtain ⟨hm, h3, -, h5, h6, h7⟩ := h
+    obtain ⟨s, P, p, b, sy⟩ := bt12 hm o y
+    obtain ⟨el, en⟩ := hpub P p
+    obtain ⟨hl, d₁, d₂, d₃, hN⟩ := hlab P
+    exact ⟨s, P, ⟨X.fits P, b, by rw [o.get .r3, h3, (X.S p)], by rw [o.get .r5, h5, el],
+      by rw [o.get .r6, h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [← en]; exact hN), en],
+      by rw [o.get .r7, h7, (X.S p)],
+      Covers.left (by rw [b.rd]; exact Covers.of_mem fun r hr => (List.mem_singleton.mp hr) ▸ hl), d₁, d₂, d₃⟩, p,
+      sy⟩
+  refine two_seq (Ψ := M) (tcall_two X A (fun ac t h => h.1) (k := 1) (by decide)
+    (fun P p => ⟨(A.tab P).ok.u, by rw [Nat.mul_one]; exact (A.tab P).mem.2.1, A.au p⟩)
+    (upd_ct (S := S) (vf := vf) cH fun u₁ u₂ ⟨ac, ⟨t₁, h₁, o₁, y₁⟩, ⟨t₂, h₂, o₂, y₂⟩⟩ => ?_)) (fun ac t h => ?_) ?_
+  · obtain ⟨s₁, -, A₁, p₁, -⟩ := uargs h₁ o₁ y₁
+    obtain ⟨s₂, -, A₂, p₂, -⟩ := uargs h₂ o₂ y₂
+    refine ⟨s₁, s₂, _, _, _, _, A₁, A₂, fun r hr => ?_, (Base.spA X p₁ A₁.b).trans (Base.spA X p₂ A₂.b).symm⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [o₁.gpr r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
+      o₂.gpr r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    exacts [h₁.2.1.trans h₂.2.1.symm, h₁.2.2.1.trans h₂.2.2.1.symm, h₁.2.2.2.1.trans h₂.2.2.2.1.symm,
+      h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm, h₁.2.2.2.2.2.trans h₂.2.2.2.2.2.symm]
+  · obtain ⟨s, P, A', p, y⟩ := uargs h (Only.refl _ t) rfl
+    exact WP.mono (updT_ok A'.P (A.tab P) hH A'.b y A'.h3 A'.h5 A'.h6 A'.h7 A'.hdc A'.hd₁ A'.hd₂ A'.hd₃)
+      fun t' ⟨⟨b', _, _⟩, y'⟩ => ⟨s, P, p, b', y'⟩
+  -- `finalize`.
+  let U₃ := fun (ac : State × Nat) (t : State) => M ac t ∧ t.gpr .r3 = off (S ac.1) oSt ∧
+    t.gpr .r4 = BitVec.ofNat 64 (N ac.1) ∧ t.gpr .r5 = off (S ac.1) oDig ∧ t.gpr .r6 = off (S ac.1) oW
+  refine two_seq (Ψ := U₃) (c3 (p0 fun _ _ h => h)) (fun ac t h => ?_) ?_
+  · refine WP.of_syms (wp_addi fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_addi fun t₃ o₃ e₃ =>
+      wp_addi fun t₄ o₄ e₄ => wp_nil fun sy => ?_)
+    have k : Only [.r3, .r4, .r5, .r6] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
+    obtain ⟨s, P, p, b, y⟩ := h
+    obtain ⟨_, gn⟩ := hreg P b
+    obtain ⟨_, en⟩ := hpub P p
+    refine ⟨⟨s, P, p, b.only (X.fits P) k, sy.trans y⟩, ?_, ?_, ?_, ?_⟩
+    · rw [o₄.get .r3, o₃.get .r3, o₂.get .r3, e₁, b.r14, (X.S p)]
+    · rw [o₄.get .r4, o₃.get .r4, e₂, o₁.get rn (n1 h3n), gn, en]
+    · rw [o₄.get .r5, e₃, o₂.get .r14, o₁.get .r14, b.r14, (X.S p)]
+    · rw [e₄, o₃.get .r14, o₂.get .r14, o₁.get .r14, b.r14, (X.S p)]
+  refine tcall_two X A (fun ac t h => h.1) (k := 2) (by decide)
+    (fun P p => ⟨(A.tab P).ok.f, by rw [show 8 * 2 = 16 from rfl]; exact (A.tab P).mem.2.2, A.af p⟩)
+    (fin_ct (S := S) (vf := vf) cH fun u₁ u₂ ⟨ac, ⟨t₁, h₁, o₁, y₁⟩, ⟨t₂, h₂, o₂, y₂⟩⟩ => ?_)
+  have ⟨_, x3, x4, x5, x6⟩ := h₁
+  have ⟨_, y3, y4, y5, y6⟩ := h₂
+  obtain ⟨s₁, P₁, p₁, b₁, -⟩ := bt12 h₁.1 o₁ y₁
+  obtain ⟨s₂, P₂, p₂, b₂, -⟩ := bt12 h₂.1 o₂ y₂
+  have g : ∀ {t u : State}, Only [.r12] t u → ∀ r ∈ [Reg.r3, .r4, .r5, .r6], u.gpr r = t.gpr r :=
+    fun o r hr => o.gpr r (by revert r; decide)
+  refine ⟨s₁, s₂, ⟨X.fits P₁, b₁, by rw [g o₁ _ (by decide), x3, (X.S p₁)], by rw [g o₁ _ (by decide), x5, (X.S p₁)],
+      by rw [g o₁ _ (by decide), x6, (X.S p₁)]⟩,
+    ⟨X.fits P₂, b₂, by rw [g o₂ _ (by decide), y3, (X.S p₂)], by rw [g o₂ _ (by decide), y5, (X.S p₂)],
+      by rw [g o₂ _ (by decide), y6, (X.S p₂)]⟩, fun r hr => ?_, (Base.spA X p₁ b₁).trans (Base.spA X p₂ b₂).symm⟩
+  rw [g o₁ r hr, g o₂ r hr]
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  exacts [x3.trans y3.symm, x4.trans y4.symm, x5.trans y5.symm, x6.trans y6.symm]
+
+end Label
 
 end VG.Proof.RsaOaep.PPC64LE
