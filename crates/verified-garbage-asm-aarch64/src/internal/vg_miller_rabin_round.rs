@@ -155,7 +155,7 @@ cbnz x14, 218b
 .inst 0x8a040063,0xd2800024,0xeb040063,0xd2800007,0xd10004e8,0x9a872106,0x8a0601ef,0xf9405c04
 .inst 0xaa0f0084,0xf9005c04,0xf9405c03,0xd2800024,0x8a040060,0xd65f03c0
 .p2align 6",
-        vg_rsa_mul_6_6_5 = sym crate::rsa::vg_rsa_mul_6_6_5::vg_rsa_mul_6_6_5,
-        vg_rsa_square_6_6 = sym crate::rsa::vg_rsa_square_6_6::vg_rsa_square_6_6,
+        vg_rsa_mul_6_6_5 = sym crate::ffdh::vg_rsa_mul_6_6_5::vg_rsa_mul_6_6_5,
+        vg_rsa_square_6_6 = sym crate::ffdh::vg_rsa_square_6_6::vg_rsa_square_6_6,
     )
 }
