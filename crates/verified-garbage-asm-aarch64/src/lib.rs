@@ -174,6 +174,7 @@ pub mod ct;
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
 pub mod dispatch;
+pub mod dit;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
