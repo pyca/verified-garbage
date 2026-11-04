@@ -248,7 +248,7 @@ structure SubInv (N k hb : Nat) (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem
   x : ∀ i < j, u.mem.readW (L.B + BitVec.ofNat 64 (hb + 4 * (k - 1 - i))) 32 = Xw k M (State.addr L.dg) i
   d : ∀ i < j, u.mem.readW (L.B + BitVec.ofNat 64 (24 + 4 * (k - 1 - i))) 32 = Dw N k M (State.addr L.dg) i
 
-theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 400) (hy : y + 4 ≤ 400) :
+theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 520) (hy : y + 4 ≤ 520) :
     Mem.Sep (B + BitVec.ofNat 64 x) (32 / 8) (B + BitVec.ofNat 64 y) (32 / 8) :=
   Offset.sep B h (by omega_arith) (by omega_arith)
 
@@ -258,8 +258,8 @@ theorem fpA' (hL : L.Ok) {o e : Nat} (ho : o < 216 + 4 * L.e) (he : 24 + o = e) 
 
 /-- Where `h`'s `4 k` bytes are: above `K` and `V`, in the frame, and below
 its saved registers or above them. -/
-theorem hb_facts (hA : P.R.wide = false) (hLe : L.e = P.e) :
-    152 ≤ P.hB ∧ P.hB + 4 * P.k ≤ 240 + 4 * L.e ∧ (P.hB + 4 * P.k ≤ 204 ∨ 240 ≤ P.hB) ∧ P.k ≤ 16 := by
+theorem hb_facts (hA : P.wide = false) (hLe : L.e = P.e) :
+    152 ≤ P.hB ∧ P.hB + 4 * P.k ≤ 240 + 4 * L.e ∧ (P.hB + 4 * P.k ≤ 200 ∨ 240 ≤ P.hB) ∧ P.k ≤ 16 := by
   obtain ⟨hQ, hk, -⟩ := P.sizesA hA
   have hF := P.hFits hA
   have hh := P.R.hHigh_eq
@@ -268,12 +268,12 @@ theorem hb_facts (hA : P.R.wide = false) (hLe : L.e = P.e) :
   · have hq := hF.1 hw
     simp only [hw, decide_true] at hh
     simp only [RfcHash.hB, RfcHash.e, Impl.Ecdsa.Rfc6979.Arm.extra, RfcHash.Q, hA, hh,
-      Bool.false_eq_true, ite_true, ite_false] at hq hQ ⊢
+      Bool.false_eq_true, Bool.or_true, ↓reduceIte] at hq hQ ⊢
     omega
   · have hq := hF.2 hw
     simp only [hw, decide_false] at hh
     simp only [RfcHash.hB, RfcHash.e, Impl.Ecdsa.Rfc6979.Arm.extra, RfcHash.Q, hA, hh,
-      Bool.false_eq_true, ite_false] at hq hQ ⊢
+      Bool.false_eq_true, ite_false, Bool.or_false] at hq hQ ⊢
     omega
 
 theorem hB_ge (P : RfcHash) : 152 ≤ P.hB := by simp only [RfcHash.hB]; split <;> omega
@@ -281,14 +281,14 @@ theorem hB_ge (P : RfcHash) : 152 ≤ P.hB := by simp only [RfcHash.hB]; split <
 theorem hB_le (P : RfcHash) : P.hB ≤ 240 := by simp only [RfcHash.hB]; split <;> omega
 
 /-- A word of `h`'s place is safe to write. -/
-theorem safe_h (hA : P.R.wide = false) (hLe : L.e = P.e) {o : Nat} (ho : o + 4 ≤ 4 * P.k) :
+theorem safe_h (hA : P.wide = false) (hLe : L.e = P.e) {o : Nat} (ho : o + 4 ≤ 4 * P.k) :
     Safe L ⟨L.B + BitVec.ofNat 64 (P.hB + o), 4⟩ := by
   obtain ⟨-, hb₂, hb₃, -⟩ := hb_facts hA hLe
   rcases hb₃ with h | h
   · exact safe_low L (by omega_arith)
   · exact safe_high L (by omega_arith) (by omega_arith)
 
-theorem subWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) (hn : 4 * P.k ≤ dn)
+theorem subWord_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) (hn : 4 * P.k ≤ dn)
     {M : Mem} {u : State} {j : Nat}
     (hj : j < P.k) (h : SubInv P.R.E.C.n P.k P.hB L g m₀ M j u) :
     WP isa (.block ((cfgOf P).subWord j)) u (SubInv P.R.E.C.n P.k P.hB L g m₀ M (j + 1)) := by
@@ -372,7 +372,7 @@ theorem subWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) (hn : 4
     · rw [show i = j by omega_arith, Mem.readW_writeW_self32]
 
 /-- The words before `k`. -/
-theorem subs_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) (hn : 4 * P.k ≤ dn) {M : Mem} :
+theorem subs_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) (hn : 4 * P.k ≤ dn) {M : Mem} :
     ∀ i ≤ P.k, ∀ u, SubInv P.R.E.C.n P.k P.hB L g m₀ M 0 u →
     WP isa (.block ((List.range i).flatMap (cfgOf P).subWord)) u (SubInv P.R.E.C.n P.k P.hB L g m₀ M i)
   | 0, _, u, h => WP.block_nil h
@@ -409,7 +409,7 @@ theorem sel_val (x d : BitVec 32) (p : Prop) [Decidable p] :
     rw [show (0 : BitVec 32) = 0#32 from rfl]
     simp only [BitVec.and_zero, BitVec.xor_zero]
 
-theorem selWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {M : Mem} {u : State} {j : Nat}
+theorem selWord_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {M : Mem} {u : State} {j : Nat}
     (hj : j < P.k) (h : SelInv P.R.E.C.n P.k P.hB L g m₀ M j u) :
     WP isa (.block ((cfgOf P).selWord j)) u (SelInv P.R.E.C.n P.k P.hB L g m₀ M (j + 1)) := by
   apply WP.of_syms
@@ -468,7 +468,7 @@ theorem selWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {M : Me
     exact h.d i hi
 
 /-- The words before `k`. -/
-theorem sels_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {M : Mem} :
+theorem sels_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {M : Mem} :
     ∀ i ≤ P.k, ∀ u, SelInv P.R.E.C.n P.k P.hB L g m₀ M 0 u →
     WP isa (.block ((List.range i).flatMap (cfgOf P).selWord)) u (SelInv P.R.E.C.n P.k P.hB L g m₀ M i)
   | 0, _, u, h => WP.block_nil h
@@ -490,7 +490,7 @@ theorem mask_val {c : BitVec 32} (h : c.toNat ≤ 1) :
   · rw [show c = 1 from BitVec.eq_of_toNat_eq (by rw [e]; rfl)]; decide
 
 /-- `h`: the digest modulo `n`, big-endian in the frame at `hB`. -/
-theorem reduce_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
+theorem reduce_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
     (hn : 4 * P.k ≤ dn) :
     WP isa (.block (cfgOf P).reduce) t fun t' => Ctx L g m₀ t' ∧
       Frame (HW L P.k P.hB) t.mem t'.mem ∧
@@ -522,6 +522,6 @@ theorem reduce_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : Sta
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX]
-  exact reduce_math _ _ _ _ (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega)) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
+  exact reduce_math _ _ _ _ (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA (P.curveA hA)).2.2.1]; unfold Spec.Ecdsa.nBits; omega)) (by rw [e32]; exact (P.R.sizesA (P.curveA hA)).2.2.2)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

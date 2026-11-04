@@ -102,12 +102,6 @@ theorem replicate_take (n k : Nat) (b : Byte) (h : n ≤ k) : (List.replicate k 
 theorem ones_word : ((0x0101 : BitVec 16) ++ ((0x0101 : BitVec 16).setWidth 32).extractLsb' 0 16 : BitVec 32) =
     0x01010101 := by decide
 
-theorem wp_movt' {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : BitVec 16}
-    (k : ∀ s', UpdS s s' d (imm ++ (s.gpr d).extractLsb' 0 16 : BitVec 32) → WP isa (.block is) s' Q) :
-    WP isa (.block (.movt d imm :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (imm ++ (s.gpr d).extractLsb' 0 16 : BitVec 32)) rfl
-    (k _ ⟨Upd.setReg _ _ _,rfl⟩)
-
 /-- `V = 0x01…` and `K = 0x00…`: their first `n` bytes, for any `n ≤ 64`. -/
 theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.initKV) t fun t' => Ctx L g m₀ t' ∧ Frame [⟨L.B + BitVec.ofNat 64 24, 128⟩] t.mem t'.mem ∧
@@ -210,10 +204,7 @@ theorem goOn_ok {t : State} (hc : Ctx L g m₀ t) :
       dpVal]
   have r9₆ : u₆.gpr .r9 = t.gpr .r9 - 1 := by rw [v₆.other _ (by decide), r9₅]
   have r0₁ : u₁.gpr .r0 = t.gpr .r0 := v₁.other _ (by decide)
-  refine ⟨⟨by rw [v₇.rd]; exact hc₆.rd, by rw [v₇.wr]; exact hc₆.wr, by rw [v₇.sp]; exact hc₆.sp,
-      by rw [v₇.gpr]; exact hc₆.r4, by rw [v₇.gpr]; exact hc₆.r5, by rw [v₇.gpr]; exact hc₆.r6,
-      by rw [v₇.gpr]; exact hc₆.r8, by rw [v₇.gpr]; exact hc₆.r11, fun p hp => by rw [v₇.mem]; exact hc₆.saved p hp,
-      by rw [v₇.mem]; exact hc₆.frame,fun c hmem => by rw [v₇.syms]; exact hc₆.sy c hmem,hc₆.held⟩,
+  refine ⟨hc₆.flags v₇,
     by rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem], by rw [v₇.gpr]; exact r9₆,
     by rw [v₇.gpr, K.gpr _ (by decide)], by rw [v₇.gpr, K.gpr _ (by decide)], ?_⟩
   show some (!u₇.z) = _
@@ -224,13 +215,7 @@ theorem flag_ok {t : State} (hc : Ctx L g m₀ t) {v : Nat} (hv : v < 2) :
       t'.mem = t.mem ∧ (∀ r, r ≠ .r7 → t'.gpr r = t.gpr r) ∧ isa.eval .ne t' = some (decide (v = 1)) :=
   wp_movS (op2_imm (by rcases (by omega_arith : v = 0 ∨ v = 1) with rfl | rfl <;> decide)) fun u₁ v₁ =>
     wp_cmpS (op2_imm (by decide)) fun u₂ v₂ z₂ => WP.block_nil
-      ⟨⟨by rw [v₂.rd]; exact (hc.upd v₁ (by decide)).rd, by rw [v₂.wr]; exact (hc.upd v₁ (by decide)).wr,
-        by rw [v₂.sp]; exact (hc.upd v₁ (by decide)).sp, by rw [v₂.gpr]; exact (hc.upd v₁ (by decide)).r4,
-        by rw [v₂.gpr]; exact (hc.upd v₁ (by decide)).r5, by rw [v₂.gpr]; exact (hc.upd v₁ (by decide)).r6,
-        by rw [v₂.gpr]; exact (hc.upd v₁ (by decide)).r8, by rw [v₂.gpr]; exact (hc.upd v₁ (by decide)).r11,
-        fun p hp => by rw [v₂.mem]; exact (hc.upd v₁ (by decide)).saved p hp,
-        by rw [v₂.mem]; exact (hc.upd v₁ (by decide)).frame,
-        fun c hc' => by rw [v₂.syms,v₁.syms]; exact hc.sy c hc',hc.held⟩,
+      ⟨(hc.upd v₁ (by decide)).flags v₂,
       by rw [v₂.mem, v₁.mem], fun r hr => by rw [v₂.gpr, v₁.other _ hr],
       by
         show some (!u₂.z) = _

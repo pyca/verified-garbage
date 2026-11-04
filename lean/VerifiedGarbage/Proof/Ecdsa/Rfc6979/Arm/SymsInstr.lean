@@ -54,6 +54,18 @@ theorem wp_strS {t n : Reg} {off : Nat} {a : Addr} (ho : off<4096)
     WP isa (.block (.str t n off::is)) s Q :=
   prefix_syms (wp_str ho ha hw (fun _ u => WP.block_nil u)) (fun _ u sy => k _ ⟨u,sy⟩)
 
+theorem wp_ldrS {t n : Reg} {off : Nat} {a : Addr} (ho : off<4096)
+    (ha : State.addr (s.gpr n+BitVec.ofNat 32 off)=a) (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ u,UpdS s u t (s.mem.readW a 32) → WP isa (.block is) u Q) :
+    WP isa (.block (.ldr t n off::is)) s Q :=
+  prefix_syms (wp_ldr ho ha hin (fun _ u => WP.block_nil u)) (fun _ u sy => k _ ⟨u,sy⟩)
+
+theorem wp_movt' {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : BitVec 16}
+    (k : ∀ s', UpdS s s' d (imm ++ (s.gpr d).extractLsb' 0 16 : BitVec 32) → WP isa (.block is) s' Q) :
+    WP isa (.block (.movt d imm :: is)) s Q :=
+  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (imm ++ (s.gpr d).extractLsb' 0 16 : BitVec 32)) rfl
+    (k _ ⟨Upd.setReg _ _ _,rfl⟩)
+
 theorem wp_cmpS {n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s=some y)
     (k : ∀ t,FupdS s t → t.z=(s.gpr n-y==0) → WP isa (.block is) t Q) :
     WP isa (.block (.cmp n o::is)) s Q := by

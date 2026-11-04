@@ -351,6 +351,19 @@ theorem upd (hc : Ctx L g m₀ t) {d : Reg} {v : BitVec 32} (u : UpdS t t' d v) 
     by rw [u.mem]; exact hc.pOut, by rw [u.mem]; exact hc.frame,fun c hc' => by rw [u.syms]; exact hc.sy c hc',hc.held,
     by rw [u.syms]; exact hc.tabOk, by rw [u.syms]; exact hc.tabMem, by rw [u.syms]; exact hc.fsy⟩
 
+/-- A state with the same registers, permissions, memory and symbols. -/
+theorem congr (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
+    (hg : ∀ r ∈ ptrRegs, t'.gpr r = t.gpr r) (hm : t'.mem = t.mem) (hsy : t'.syms = t.syms) : Ctx L g m₀ t' :=
+  ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hg _ (by decide)).trans hc.r4, (hg _ (by decide)).trans hc.r5,
+    (hg _ (by decide)).trans hc.r6, (hg _ (by decide)).trans hc.r8, (hg _ (by decide)).trans hc.r11,
+    fun p hp => by rw [hm]; exact hc.saved p hp, by rw [hm]; exact hc.pOut, by rw [hm]; exact hc.frame,
+    fun c hc' => by rw [hsy]; exact hc.sy c hc', hc.held, by rw [hsy]; exact hc.tabOk, by rw [hsy]; exact hc.tabMem,
+    by rw [hsy]; exact hc.fsy⟩
+
+/-- A change of the flags alone. -/
+theorem flags (hc : Ctx L g m₀ t) (v : FupdS t t') : Ctx L g m₀ t' :=
+  hc.congr v.rd v.wr v.sp (fun r _ => by rw [v.gpr]) v.mem v.syms
+
 /-- A byte of `d`, as on entry. -/
 theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
     t.mem (State.addr L.d + BitVec.ofNat 64 i) = m₀ (State.addr L.d + BitVec.ofNat 64 i) :=
