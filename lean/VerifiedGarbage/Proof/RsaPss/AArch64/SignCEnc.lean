@@ -263,6 +263,33 @@ theorem tabArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
       show u₅.mem.readW (u₅.sp + BitVec.ofNat 64 (8 * 1)) 64 = _
       rw [hm₅, sp₅, Mem.readW_writeW_self64] }
 
+/-- `AtEnc` after the comparisons of the index, which write only `x9`. -/
+theorem AtEnc.only9 {K : Nat} {s t t' : State} {eb el lo : Nat} (h : AtEnc K s eb el lo t) (o : Only [.x9] t t') :
+    AtEnc K s eb el lo t' where
+  sp := o.sp.trans h.sp
+  rd := o.rd.trans h.rd
+  wr := o.wr.trans h.wr
+  v := fun r hr => (o.vcs r hr).trans (h.v r hr)
+  mem := o.mem ▸ h.mem
+  fr := o.mem ▸ h.fr
+  x20 := (o.get .x20).trans h.x20
+  x23 := (o.get .x23).trans h.x23
+  x24 := (o.get .x24).trans h.x24
+  x25 := (o.get .x25).trans h.x25
+  x26 := (o.get .x26).trans h.x26
+  x27 := (o.get .x27).trans h.x27
+  x0 := (o.get .x0).trans h.x0
+  x1 := (o.get .x1).trans h.x1
+  x2 := (o.get .x2).trans h.x2
+  x3 := (o.get .x3).trans h.x3
+  x4 := (o.get .x4).trans h.x4
+  x5 := (o.get .x5).trans h.x5
+  x6 := (o.get .x6).trans h.x6
+  x7 := (o.get .x7).trans h.x7
+  z := o.mem ▸ h.z
+  a0 := by show t'.mem.readW _ 64 = _; rw [o.mem, stackArgAddr, o.sp]; exact h.a0
+  a1 := by show t'.mem.readW _ 64 = _; rw [o.mem, stackArgAddr, o.sp]; exact h.a1
+
 theorem encArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) {eb el lo : Nat}
     (ha : AtPar K s eb el lo t) : WP isa (.block encArgs) t (AtEnc K s eb el lo) := by
   rw [encArgs_eq, WP.block_append_iff]
