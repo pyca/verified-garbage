@@ -69,20 +69,28 @@ private theorem attempt_domain : Spec.Rsa.bytesAt attemptState.mem 0x3000 128 = 
     decide
   exact this
 
-theorem attempt_sat : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi).pre s := by
-  refine ⟨attemptState, ?_⟩
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig,
-    Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationContextAt, abi, argRegs, attempt_args]
-  simp only [a0, a1, a2, a3, a4, a5, a6]
-  repeat' apply And.intro
-  all_goals first
-    | rfl
-    | decide
-    | (apply Region.disjoint_of_sep; decide)
-    | (change Spec.Ffdh.domainValid 64 (Spec.Rsa.bytesAt attemptState.mem 0x3000 128) = true
-       rw [attempt_domain]; exact CachedSat.domain_valid)
-    | (change Spec.Ffdh.generationPrecompute 64 (Spec.Rsa.bytesAt attemptState.mem 0x3000 128) =
-          some (Spec.Rsa.wordsAt attemptState.mem 0x100000 275)
-       rw [attempt_domain]; exact (CachedSat.canonical attemptBase).2)
+private theorem attempt_sat_stack (n : Nat) (hn : n = 0 ∨ n = 8) :
+    (Spec.Ffdh.cachedGenerateKeyContract abi n).pre attemptState := by
+  rcases hn with rfl | rfl
+  all_goals
+    sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig,
+      Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationContextAt, abi, argRegs, attempt_args]
+    simp only [a0, a1, a2, a3, a4, a5, a6]
+    repeat' apply And.intro
+    all_goals first
+      | rfl
+      | decide
+      | (apply Region.disjoint_of_sep; decide)
+      | (change Spec.Ffdh.domainValid 64 (Spec.Rsa.bytesAt attemptState.mem 0x3000 128) = true
+         rw [attempt_domain]; exact CachedSat.domain_valid)
+      | (change Spec.Ffdh.generationPrecompute 64 (Spec.Rsa.bytesAt attemptState.mem 0x3000 128) =
+            some (Spec.Rsa.wordsAt attemptState.mem 0x100000 275)
+         rw [attempt_domain]; exact (CachedSat.canonical attemptBase).2)
+
+theorem attempt_sat : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi).pre s :=
+  ⟨attemptState, attempt_sat_stack 0 (.inl rfl)⟩
+
+theorem attempt_sat8 : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi 8).pre s :=
+  ⟨attemptState, attempt_sat_stack 8 (.inr rfl)⟩
 
 end VG.Proof.Ffdh.X86_64.Cached
