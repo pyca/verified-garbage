@@ -846,6 +846,34 @@ theorem copyHead_ok {t : State} {dst : Nat} (hdst : dst < 4096) :
       RegUpd.gpr_write_self, BitVec.setWidth_eq, BitVec.setWidth_eq]
   · rw [RegUpd.gpr_write_of_ne _ _ _ h₂, RegUpd.gpr_write_of_ne _ _ _ h₁, RegUpd.gpr_write_of_ne _ _ _ h₃]
 
+/-- The digest at `scratch + sTmp` copied to the frame at `dst`. -/
+theorem copyOut_ok (hL : L.Ok) {w₄ : State} (hc : Ctx L g m₀ w₄) {dst : Nat} (hdst : dst + P.H.D ≤ 168) :
+    WP isa (.block (Cfg.scrPtr ++ (cfgOf P).copyOut dst)) w₄ fun w₆ => Ctx L g m₀ w₆ ∧
+      Frame [⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩] w₄.mem w₆.mem ∧
+      Spec.Sha256.bytesAt w₆.mem (L.B + BitVec.ofNat 64 (16 + dst)) P.H.D =
+        Spec.Sha256.bytesAt w₄.mem (L.scr + BitVec.ofNat 64 1920) P.H.D := by
+  rw [WP.block_append_iff]
+  refine WP.mono (scrPtr_ok hL hc) fun w₄' h₄ => ?_
+  rw [Cfg.copyOut, WP.block_append_iff]
+  refine WP.mono (copyHead_ok (t := w₄') (dst := dst) (by omega))
+    fun w₅ ⟨hrd₅, hwr₅, hsp₅, hm₅, hsy₅, h13₅, h14₅, hg₅⟩ => ?_
+  have hc₅ : Ctx L g m₀ w₅ := h₄.ctx.regs hL hrd₅ hwr₅ hm₅ hsp₅
+    (fun r hr _ => hg₅ r (ne_cs hr (by decide)) (ne_cs hr (by decide)) (ne_cs hr (by decide))) hsy₅
+  have hS : w₅.gpr .x13 = L.scr + BitVec.ofNat 64 1920 := by rw [h13₅, h₄.val]
+  have hD : w₅.gpr .x14 = L.B + BitVec.ofNat 64 (16 + dst) := by rw [h14₅, h₄.ctx.sp, Offset.add_add]
+  have hsep : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 1920, P.H.D⟩ ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩ :=
+    (hL.stk_scr (by anums) (by anums)).symm
+  refine WP.mono_syms (copyBytes_ok (src := .x13) (dst := .x14) (Q := P.H.D) (by decide) (by decide) (by decide)
+    hsep (by anums) (by anums) hS hD
+    (fun j hj => by rw [Offset.add_add]; exact hc₅.inScr (by anums)) (fun j hj => by
+      rw [Offset.add_add]; exact hc₅.inFrW (by omega) (by have := L.he; omega)))
+    fun w₆ ⟨hrd₆, hwr₆, hsp₆, hg₆, hf₆, hb₆⟩ hsy₆ => ?_
+  refine ⟨hc₅.keep hL hrd₆ hwr₆ hsp₆ (fun r hr _ => hg₆ r (ne_cs hr (by decide)) (ne_cs hr (by decide))
+    (ne_cs hr (by decide))) hf₆
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)) hsy₆, ?_, ?_⟩
+  · rw [← h₄.mem, ← hm₅]; exact hf₆
+  · rw [hb₆, hm₅, h₄.mem]
+
 theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {da : Addr} {len dst : Nat}
     (hu : Updated P L g m₀ t da len u) (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa ((cfgOf P).hfin len dst) u (Done P L g m₀ t da len dst) := by
@@ -872,25 +900,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {da : Addr} {len dst 
   refine WP.seq (WP.mono (finCall_ok hL hT hc₂ (o := 192) (by decide) (cnt := P.H.P.B + P.H.D) (by anums) hr₂
     (by rw [List.length_append, xorPad_length, hkl, hash_length])) fun w₃ ⟨hc₃, hf₃, hd₃⟩ => ?_)
   have hd₃' := tmp_digest hd₃
-  rw [WP.block_append_iff]
-  refine WP.mono (scrPtr_ok hL hc₃) fun w₄ h₄ => ?_
-  rw [Cfg.copyOut, WP.block_append_iff]
-  refine WP.mono (copyHead_ok (t := w₄) (dst := dst) (by omega))
-    fun w₅ ⟨hrd₅, hwr₅, hsp₅, hm₅, hsy₅, h13₅, h14₅, hg₅⟩ => ?_
-  have hc₅ : Ctx L g m₀ w₅ := h₄.ctx.regs hL hrd₅ hwr₅ hm₅ hsp₅
-    (fun r hr _ => hg₅ r (ne_cs hr (by decide)) (ne_cs hr (by decide)) (ne_cs hr (by decide))) hsy₅
-  have hS : w₅.gpr .x13 = L.scr + BitVec.ofNat 64 1920 := by rw [h13₅, h₄.val]
-  have hD : w₅.gpr .x14 = L.B + BitVec.ofNat 64 (16 + dst) := by rw [h14₅, h₄.ctx.sp, Offset.add_add]
-  have hsep : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 1920, P.H.D⟩ ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩ :=
-    (hL.stk_scr (by anums) (by anums)).symm
-  refine WP.mono_syms (copyBytes_ok (src := .x13) (dst := .x14) (Q := P.H.D) (by decide) (by decide) (by decide)
-    hsep (by anums) (by anums) hS hD
-    (fun j hj => by rw [Offset.add_add]; exact hc₅.inScr (by anums)) (fun j hj => by
-      rw [Offset.add_add]; exact hc₅.inFrW (by omega) (by have := L.he; omega)))
-    fun w₆ ⟨hrd₆, hwr₆, hsp₆, hg₆, hf₆, hb₆⟩ hsy₆ => ?_
-  refine ⟨hc₅.keep hL hrd₆ hwr₆ hsp₆ (fun r hr _ => hg₆ r (ne_cs hr (by decide)) (ne_cs hr (by decide))
-    (ne_cs hr (by decide))) hf₆
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)) hsy₆, ?_, ?_⟩
+  refine WP.mono (copyOut_ok hL hc₃ hdst) fun w₆ ⟨hc₆, hf₆, hb₆⟩ => ⟨hc₆, ?_, ?_⟩
   · have e : ∀ {r : Region}, (∃ r' ∈ [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 16⟩], Region.Sub r r') →
         ∃ r' ∈ [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 16⟩, ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩], Region.Sub r r' :=
       fun ⟨r', hr', hs⟩ => ⟨r', by
@@ -902,8 +912,8 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {da : Addr} {len dst 
       · exact sub_hm (by anums)
       · exact sub_hm (by anums)
       · exact low_hm
-    · rw [← h₄.mem, ← hm₅]; exact hf₆.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩
-  · rw [hb₆, hm₅, h₄.mem, hd₃']
+    · exact hf₆.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩
+  · rw [hb₆, hd₃']
     rfl
 
 /-! ## The whole HMAC -/
