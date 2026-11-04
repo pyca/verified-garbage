@@ -227,6 +227,12 @@ argument `j`. -/
 def hashLabel (j o : Nat) : Prog isa :=
   seqs [.block initArgs, hInit H, .block (updLabArgs j), hUpd H, .block (finLabArgs j o), hFin H]
 
+/-- The label's hash to `scratch + o`, the label being argument `j`, with
+the hash function of the table whose address is in `sTab`: its `init`,
+`update` and `finalize`, each called indirectly (`tcall`). -/
+def hashLabelT (f : Fns) (j o : Nat) : Prog isa :=
+  seqs [.block initArgs, callInit f, .block (updLabArgs j), callUpd f, .block (finLabArgs j o), callFin f]
+
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`), `k` being argument `j`. -/
 def dbArgs (j : Nat) : List Instr :=
@@ -240,6 +246,31 @@ def seedArgs (j : Nat) : List Instr :=
 
 end Common
 
+/-! ## The label's hash function's digest length -/
+
+/-- The table that is our argument `j` to `sTab` (through `edx`). -/
+def tabSlot (j : Nat) : List Instr := [ld .edx (arg j), st .edx sTab]
+
+/-- The digest length of the table that is our argument `j` (its word 4),
+to `edx`. -/
+def lenLoad (j : Nat) : List Instr := [ld .edx (arg j), .mov .edx (.mem (at_ .edx 16))]
+
+/-- The digest lengths of the hash functions whose tables the functions take
+(SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
+SHA-512). -/
+def lens : List Nat := [20, 28, 32, 48, 64]
+
+/-- The shape of a hash function with only the digest length `d`, which is
+all the code with the hash function's calls through a table uses of it. -/
+def ofLen (d : Nat) : Hash := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "", .block []⟩
+
+/-- `b d` for the digest length `d` in `edx`, among `ds`: the last if it is
+none of the others. -/
+def byLen (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [d] => b d
+  | d :: ds => .seq (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 d))]) (.ite .e (b d) (byLen b ds))
+
 /-! ## Encryption -/
 
 section Enc
@@ -250,7 +281,7 @@ variable (H : Hash) (f : Fns)
 `k - 2 hLen - 2`) or `msg_len > k - 2 hLen - 2` (the borrow of their
 comparison), with the flags of `ebx = 0`. -/
 def encChk : List Instr :=
-  [ld .ebp (arg 11), ld .eax (arg 3), .alu .sub .eax (.imm (BitVec.ofNat 32 (2 * H.D + 2))),
+  [ld .ebp (arg 12), ld .eax (arg 3), .alu .sub .eax (.imm (BitVec.ofNat 32 (2 * H.D + 2))),
     .alu .sbb .ebx (.reg .ebx), .alu .cmp .eax (.mem (stk (arg 9))), .alu .sbb .edx (.reg .edx),
     .alu .or .ebx (.reg .edx), .alu .test .ebx (.reg .ebx)]
 
@@ -276,32 +307,40 @@ def msgPos : List Instr :=
 def put1 : List Instr :=
   [mi .eax 1, .store8 (at_ .ebx 0) .al, addi .ebx 1, ld .esi (arg 8), ld .ecx (arg 9), .alu .test .ecx (.reg .ecx)]
 
-/-- `EM`, before masking: zeros, the seed, `lHash`, `0x01` and the message. -/
+/-- `EM`, before masking: zeros, the seed, `lHash` (with the hash function
+of the table `hash`, our argument 16, whose address it stores to `sTab`
+first), `0x01` and the message. -/
 def encEm : Prog isa :=
-  seqs [.block clrEm, zeroLoop, .block (seedSet H), Impl.Bignum.X86.copyBytes, hashLabel H 6 oDig, .block (lhSet H),
-    Impl.Bignum.X86.copyBytes, .block msgPos, .block put1, .ite .e (.block []) Impl.Bignum.X86.copyBytes]
+  seqs [.block clrEm, zeroLoop, .block (seedSet H), Impl.Bignum.X86.copyBytes, .block (tabSlot 16),
+    hashLabelT f 6 oDig, .block (lhSet H), Impl.Bignum.X86.copyBytes, .block msgPos, .block put1,
+    .ite .e (.block []) Impl.Bignum.X86.copyBytes]
 
 /-- The arguments of the precomputed public operation: `out` (`k` bytes),
 `pre` (`pre_len` words), `e`, `EM` as the input (`k` bytes), and the rest
 of `scratch`. -/
 def pubArgs : List Instr :=
-  copyArg 0 0 ++ copyArg 3 1 ++ copyArg 13 2 ++ copyArg 14 3 ++ copyArg 4 4 ++ copyArg 5 5 ++ atS .eax oEm ++
-    [st .eax 24] ++ copyArg 3 7 ++ atS .eax oRsa ++ [st .eax 32, ld .eax (arg 12), .alu .sub .eax (.imm 1024), st .eax 36]
+  copyArg 0 0 ++ copyArg 3 1 ++ copyArg 14 2 ++ copyArg 15 3 ++ copyArg 4 4 ++ copyArg 5 5 ++ atS .eax oEm ++
+    [st .eax 24] ++ copyArg 3 7 ++ atS .eax oRsa ++ [st .eax 32, ld .eax (arg 13), .alu .sub .eax (.imm 1024), st .eax 36]
 
 variable (pubN : String) (pubC : Prog isa)
 
 /-- After the checks. -/
 def encMain : Prog isa :=
-  seqs [encEm H, .block (dbArgs H 3), mgfXor f 15, .block (seedArgs H 3), mgfXor f 15, .block pubArgs,
+  seqs [encEm H f, .block (dbArgs H 3), mgfXor f 17, .block (seedArgs H 3), mgfXor f 17, .block pubArgs,
     .call pubN pubC]
 
-/-- The inner frame's body. -/
-def encBody : Prog isa := seqs [.block (encChk H), .ite .ne encFail (encMain H f pubN pubC)]
+/-- The checks for the label's hash function's digest length `H.D`, then
+`encMain`. -/
+def encTail : Prog isa := seqs [.block (encChk H), .ite .ne encFail (encMain H f pubN pubC)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, calling a precomputed public
-operation by its name, with MGF1's hash function the table that is its
-argument 15 (`mgf1`). -/
-def encryptPrecomputed : Prog isa := wrap frameBytes (encBody H f pubN pubC)
+/-- The inner frame's body: the digest length `d` of the table `hash` (our
+argument 16) to `edx`, then the tail for `d`. -/
+def encBody : Prog isa := seqs [.block (lenLoad 16), byLen (fun d => encTail (ofLen d) f pubN pubC) lens]
+
+/-- `vg_rsa_oaep_encrypt_precomputed`, calling a precomputed public operation
+by its name, with the label's hash function the table that is its argument
+16 (`hash`) and MGF1's the table that is its argument 17 (`mgf1`). -/
+def encryptPrecomputed : Prog isa := wrap frameBytes (encBody f pubN pubC)
 
 end Enc
 
@@ -404,21 +443,28 @@ def decRet : List Instr := faultBit ++ [ld .edx sOk, .alu .and .edx (.imm 1), .a
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H 17 oLh, .block (seedArgs H 4), mgfXor f 23, .block (dbArgs H 4), mgfXor f 23, .block (cmpSet H),
+  seqs [.block (tabSlot 23), hashLabelT f 17 oLh, .block (seedArgs H 4), mgfXor f 24, .block (dbArgs H 4), mgfXor f 24,
+    .block (cmpSet H),
     countLoop Impl.RsaPss.X86.cmpBody, .block accPut, .block (scanSet H), countLoop Impl.RsaPss.X86.scanBody,
     .block scanEnd, .block (clrArgs oBuf 2048), zeroLoop, .block (tSet H), Impl.Bignum.X86.copyBytes, shift,
     .block okMask, .block outSet, countLoop outBody, .block (mlSet H), .block decRet]
 
 variable (privN : String) (privC : Prog isa)
 
-/-- The inner frame's body. -/
-def decBody : Prog isa :=
-  seqs [.block (decStart ++ privArgs), .call privN privC, .block (decChk H), .ite .b decFail (decMain H f)]
+/-- After the private operation, for the label's hash function's digest
+length `H.D`: the result to its slot, the check of `k`, and the decoding. -/
+def decTail : Prog isa := seqs [.block (decChk H), .ite .b decFail (decMain H f)]
 
-/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, calling a checked private operation by
-its name, with MGF1's hash function the table that is its argument 23
-(`mgf1`). -/
-def decrypt : Prog isa := wrap frameBytes (decBody H f privN privC)
+/-- The inner frame's body: the private operation, the digest length `d` of
+the table `hash` (our argument 23) to `edx`, then the tail for `d`. -/
+def decBody : Prog isa :=
+  seqs [.block (decStart ++ privArgs), .call privN privC, .block (lenLoad 23),
+    byLen (fun d => decTail (ofLen d) f) lens]
+
+/-- `vg_rsa_oaep_decrypt`, calling a checked private operation by its name,
+with the label's hash function the table that is its argument 23 (`hash`)
+and MGF1's the table that is its argument 24 (`mgf1`). -/
+def decrypt : Prog isa := wrap frameBytes (decBody f privN privC)
 
 end Dec
 

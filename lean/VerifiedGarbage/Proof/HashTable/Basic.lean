@@ -145,6 +145,22 @@ theorem symsOf32_distinct {ns : List String} (h : ns.length < 2 ^ 24) :
     have hi : ns.idxOf f = ns.idxOf g := by omega
     exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
+/-- The functions' addresses are distinct, in the list of the functions of
+two tables of the same functions. -/
+theorem symsOf32_distinct2 {ns : List String} (h : ns.length < 2 ^ 24) :
+    (ns ++ ns).Pairwise fun f g => f ≠ g → (symsOf32 ns f).setWidth 64 ≠ (symsOf32 ns g).setWidth 64 :=
+  (List.pairwise_of_forall (R := fun _ _ => True) fun _ _ => trivial).imp_of_mem fun {f g} hf hg _ hne e => by
+    have hf' : f ∈ ns := (List.mem_append.mp hf).elim id id
+    have hg' : g ∈ ns := (List.mem_append.mp hg).elim id id
+    have i1 := List.idxOf_lt_length_of_mem hf'
+    have i2 := List.idxOf_lt_length_of_mem hg'
+    have e' := congrArg BitVec.toNat e
+    simp only [symsOf32, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at e'
+    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega),
+      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega
+    exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
+
 /-- A 32-bit word apart from a write of one. -/
 theorem readW_sep32 {m : Mem} {a b : Addr} {v : BitVec 32} (h : a.toNat + 4 ≤ b.toNat ∨ b.toNat + 4 ≤ a.toNat)
     (ha : a.toNat + 4 ≤ 2 ^ 64) (hb : b.toNat + 4 ≤ 2 ^ 64) : (m.writeW b v).readW a 32 = m.readW a 32 :=

@@ -61,6 +61,34 @@ theorem mgfX_noSp {f : Fns} (hi : ∀ q ∈ f.init, NoSp q.2) (hu : ∀ q ∈ f.
     | exact i | exact u | exact f' | exact hj
     | exact NoSp.of_all (by decide +kernel))
 
+/-- The label's hash through its table, when each function the calls may
+reach writes `esp` only through its frames. -/
+theorem hashLabelT_noSp {f : Fns} (hi : ∀ q ∈ f.init, NoSp q.2) (hu : ∀ q ∈ f.upd, NoSp q.2)
+    (hf : ∀ q ∈ f.fin, NoSp q.2) {j o : Nat} (hj : NoSp (.block (updLabArgs j) : Prog isa))
+    (ho : NoSp (.block (finLabArgs j o) : Prog isa)) : NoSp (hashLabelT f j o) := by
+  have i : NoSp (callInit f) := tcall_noSp hi
+  have u : NoSp (callUpd f) := tcall_noSp hu
+  have f' : NoSp (callFin f) := tcall_noSp hf
+  simp only [hashLabelT, seqs]
+  repeat' (first
+    | with_reducible apply noSp_seq
+    | exact i | exact u | exact f' | exact hj | exact ho
+    | exact NoSp.of_all (by decide +kernel))
+
+/-- The branch on the digest length, when each branch writes `esp` only
+through its frames. -/
+theorem byLen_noSp {b : Nat → Prog isa} : ∀ {ds : List Nat}, (∀ d ∈ ds, NoSp (b d)) → NoSp (byLen b ds)
+  | [], _ => NoSp.of_all rfl
+  | [d], h => h d (List.mem_singleton_self _)
+  | d :: e :: ds, h => noSp_seq (fun x hx => by
+      simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hx
+      subst hx; rfl) (RsaPss.X86.noSp_ite (h d (List.mem_cons_self ..))
+        (byLen_noSp fun d' hd' => h d' (List.mem_cons_of_mem _ hd')))
+
+/-- The certificates of a digest length `byLen` branches on. -/
+theorem lens_certs {d : Nat} (hd : d ∈ lens) : OCerts (ofLen d) :=
+  certsOf (by simpa only [lens, List.mem_cons, List.not_mem_nil, or_false] using hd)
+
 theorem hashLabel_noSp {j o : Nat} (hj : NoSp (.block (updLabArgs j) : Prog isa))
     (ho : NoSp (.block (finLabArgs j o) : Prog isa)) : NoSp (hashLabel h.H j o) := by
   have i := hInit_noSp h.H h.ok
