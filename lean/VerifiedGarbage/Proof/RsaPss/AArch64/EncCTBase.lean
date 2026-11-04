@@ -24,24 +24,6 @@ open VG.Proof.RsaPss.AArch64.Sgn (fb)
 /-- The working space. -/
 abbrev scr (s : State) : Addr := s.gpr .x6
 
-/-- The functions the tables name: the hash function `H` (whose digest is
-`dn`) and MGF1's `G`, the calls' lists `f` and `g`, and the tables of the
-precondition. -/
-structure Tabs where
-  H : Impl.Pbkdf2.Md.AArch64.Hash
-  dn : String
-  f : MdFns
-  G : Impl.Pbkdf2.Md.AArch64.Stream
-  g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns
-  tsH : List FnTable
-  tsG : List FnTable
-
-/-- The tables at the stack arguments 0 and 1 of `s` name `T`'s functions. -/
-abbrev Tabs.At (T : Tabs) (s : State) : Prop := TabsAt T.H T.dn T.f T.G T.g (stackArg s 0) (stackArg s 1) s
-
-/-- The names of `T`'s functions the code calls. -/
-def Tabs.names (T : Tabs) : List String := [T.H.initN, T.H.compN, T.dn, T.G.initN, T.G.updN, T.G.finN]
-
 /-- The public data of an entry state `s` is the anchor `a`'s: the
 pointers and lengths, and the tables' addresses. -/
 structure PubE (a s : State) : Prop where

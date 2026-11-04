@@ -200,17 +200,18 @@ theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : 
     (hp.ktG.sub_left hR).symm
   have sG : ∀ {R : Region}, R.Sub (sR s) → Region.Disjoint ⟨stackArg s 1, 40⟩ R := fun hR =>
     (hp.stG.sub_left hR).symm
-  have hd : ∀ r ∈ mgfWr (fb s) (s.gpr .x6) ++ [⟨off (s.gpr .x6) mgfOff, 8192⟩],
+  have hd : ∀ r ∈ mgfWr (fb s) (s.gpr .x6) ++ [⟨off (s.gpr .x6) mgfOff, 8192⟩, slotR (fb s) sPos],
       Region.Disjoint ⟨stackArg s 1, 40⟩ r := by
     intro r hr
     simp only [mgfWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact sG (rsa_sub hp)
     · exact kG (below16_sub s)
     · exact kG (frame_sub 288 s (by decide))
     · exact kG (frame_sub 288 s (by decide))
     · rw [mgfFrame_eq]; exact (hp.ktG.sub_left (below_sub 288 s)).symm
     · exact sG hS
+    · exact kG (frame_sub 288 s (by decide))
   have hd0 : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region)], Region.Disjoint ⟨stackArg s 1, 40⟩ r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact kG (frame_sub0 288 s)
   have hin : ∀ d, d + 8 ≤ 40 → InRegions (w.rd ++ w.wr) (off (stackArg s 1) d) 8 := fun d hd' => by

@@ -84,7 +84,7 @@ structure Env (G : Impl.Pbkdf2.Md.AArch64.Stream) (g : Impl.RsaOaep.AArch64.Mgf1
   ok : Proof.RsaOaep.AArch64.Table.TabOK G g t.syms
   rd : ∀ j < 3, InRegions (t.rd ++ t.wr) (off p (8 * j)) 8
   rdD : InRegions (t.rd ++ t.wr) (off p 32) 8
-  mem : ∀ m, Frame (mgfWr F S ++ [⟨off S mgfOff, 8192⟩]) t.mem m →
+  mem : ∀ m, Frame (mgfWr F S ++ [⟨off S mgfOff, 8192⟩, slotR F sPos]) t.mem m →
     Proof.RsaOaep.AArch64.Table.TabMem G t.syms p m ∧ m.readW (off p 32) 64 = BitVec.ofNat 64 G.D
   sc : Covers [⟨off S mgfOff, 8192⟩] t.wr
   F288 : mgfFrame + 16 ≤ F.toNat
@@ -148,6 +148,45 @@ theorem Env.step {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.M
   dStk := E.dStk
   Sw := E.Sw
   dFw := E.dFw
+
+/-- The slots apart from `sPos`'s and MGF1's writes. -/
+theorem Lay.slotWP {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 ≤ frameBytes)
+    (h1 : d + 8 ≤ sNb ∨ sNb + 8 ≤ d) (h2 : d + 8 ≤ sDone ∨ sDone + 8 ≤ d) (h3 : d + 8 ≤ sPos ∨ sPos + 8 ≤ d) :
+    ∀ r ∈ mgfWr F S ++ [slotR F sPos], Region.Disjoint (slotR F d) r := by
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact L.slotW hd h1 h2 r hr
+  · rw [List.mem_singleton.mp hr]
+    exact Offset.disjoint F h3 (by unfold frameBytes at hd; omega) (by decide)
+
+/-- `Env` in a later state, after MGF1's writes and `sPos`'s. -/
+theorem Env.stepP {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t u : State}
+    {F S p : Addr} (E : Env G g t F S p) (L : Lay t F S) (hf : Frame (mgfWr F S ++ [slotR F sPos]) t.mem u.mem)
+    (hrd : u.rd = t.rd) (hwr : u.wr = t.wr) (hsy : u.syms = t.syms) : Env G g u F S p where
+  slot := by rw [slot_keep hf (L.slotWP (d := sMgfT) (by decide) (by decide) (by decide) (by decide))]; exact E.slot
+  ok := by rw [hsy]; exact E.ok
+  rd := by rw [hrd, hwr]; exact E.rd
+  rdD := by rw [hrd, hwr]; exact E.rdD
+  mem := fun m hm => by
+    rw [hsy]
+    exact E.mem m ((hf.mono fun r hr => by
+      rcases List.mem_append.mp hr with h | h
+      · exact List.mem_append_left _ h
+      · rw [List.mem_singleton.mp h]; simp).trans hm)
+  sc := by rw [hwr]; exact E.sc
+  F288 := E.F288
+  dStk := E.dStk
+  Sw := E.Sw
+  dFw := E.dFw
+
+/-- The slots of the table of `MdHash` after MGF1's writes and `sPos`'s. -/
+theorem HT.stepWP {H : Hash} {dn : String} {f : MdFns} {t : State} {F S : Addr} (L : Lay t F S) {m m' : Mem}
+    {sy : String → Addr} (h : HT H dn f F m sy) (hf : Frame (mgfWr F S ++ [slotR F sPos]) m m') :
+    HT H dn f F m' sy :=
+  ⟨by rw [slot_keep hf (L.slotWP (d := sIniH) (by decide) (by decide) (by decide) (by decide))]; exact h.wi,
+    by rw [slot_keep hf (L.slotWP (d := sCmpH) (by decide) (by decide) (by decide) (by decide))]; exact h.wc,
+    by rw [slot_keep hf (L.slotWP (d := sDigH) (by decide) (by decide) (by decide) (by decide))]; exact h.wd,
+    h.fi, h.fc, h.fd⟩
 
 /-- The slots of the table of `MdHash` in a later state. -/
 theorem HT.stepW {H : Hash} {dn : String} {f : MdFns} {t : State} {F S : Addr} (L : Lay t F S) {m m' : Mem}
@@ -426,5 +465,23 @@ theorem TabMem.keep {G : Impl.Pbkdf2.Md.AArch64.Stream} {sy : String → Addr} {
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m' :=
   ⟨(tabG_keep hf hd (d := 8 * 0) (by decide)).trans h.1, (tabG_keep hf hd (d := 8 * 1) (by decide)).trans h.2.1,
     (tabG_keep hf hd (d := 8 * 2) (by decide)).trans h.2.2⟩
+
+/-- The functions the tables name: the hash function `H` (whose digest is
+`dn`) and MGF1's `G`, the calls' lists `f` and `g`, and the tables of the
+precondition. -/
+structure Tabs where
+  H : Impl.Pbkdf2.Md.AArch64.Hash
+  dn : String
+  f : MdFns
+  G : Impl.Pbkdf2.Md.AArch64.Stream
+  g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns
+  tsH : List FnTable
+  tsG : List FnTable
+
+/-- The tables at the stack arguments 0 and 1 of `s` name `T`'s functions. -/
+abbrev Tabs.At (T : Tabs) (s : State) : Prop := TabsAt T.H T.dn T.f T.G T.g (stackArg s 0) (stackArg s 1) s
+
+/-- The names of `T`'s functions the code calls. -/
+def Tabs.names (T : Tabs) : List String := [T.H.initN, T.H.compN, T.dn, T.G.initN, T.G.updN, T.G.finN]
 
 end VG.Proof.RsaPss.AArch64
