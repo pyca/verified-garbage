@@ -28,10 +28,11 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.ByLen
 Untrusted: everything here is checked by Lean. Two runs from entry states
 with the anchor's public data leak alike: the code between the calls by the
 taint analysis (`Dc/CTBlocks`), the private operation by its constant time
-(`priv_ct`), the hash functions' calls by their contracts (`hashLabel_ct`,
-MGF1's `mgfXorT_ctS`, with the table at the same address and its functions
-at the same addresses: `DXT`), and the branch on the public `k` (`two_ite`); what
-each run satisfies between them follows from correctness. The scan's index,
+(`priv_ct`), the hash functions' calls through the tables by their
+contracts (`hashLabelT_ct`, MGF1's `mgfXorT_ctS`, with each table at the
+same address and its functions at the same addresses: `DXT`), the branch on
+the label's digest length (`byLen_ct`) and that on the public `k`
+(`two_ite`); what each run satisfies between them follows from correctness. The scan's index,
 the shift's count and the private operation's result differ between the
 runs, but only as data.
 -/

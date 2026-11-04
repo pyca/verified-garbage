@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # RSAES-OAEP decryption on x86: the contract is satisfiable
 
-A state that meets `decryptTableContract` (`dec_sat`), whatever the label's
-hash function, with MGF1's the table of any variant `w` of `vs`: a modulus of
+A state that meets `decryptTablesContract` (`dec_sat`), with both hash
+functions' tables that of any variant `w` of `vs`: a modulus of
 64 bytes, `e`, `p`, `q`, `dP`, `dQ` and `qInv` of one byte, an empty label,
 the working space it needs, the arguments above `esp = 0x20000`, and the
 table at `0x300000` (`withTable`).

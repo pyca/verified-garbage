@@ -22,14 +22,13 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 compared through an anchor `a`, a state with their public data (`PubO`):
 the pointers and lengths, `e`'s bytes and the precomputed values;
 `BO D a t`: `t` has `Base` from an entry state with `a`'s public data.
-`hashLabel_ct`: the label's hash (with the label's pointer and length in
-`s6` and `s7`, `LabB`). `code_ct`: the code between the calls by the taint
-analysis (`CTBlocks`), the hash functions' calls by their contracts
-(`init_ct`, `upd_ct`, `fin_ct`), MGF1's loops on counters both runs agree
-on, with the table at the same address and its functions at the same
+`code_ct`: the code between the calls by the taint analysis (`CTBlocks`),
+the label's hash through its table (`hashLabelT_ct`, with the label's
+pointer and length in `s6` and `s7`), MGF1's loops on counters both runs
+agree on, with each table at the same address and its functions at the same
 addresses (`mgfXorT_ct`), the call of `vg_rsa_public_precomputed_checked` by
-its contract (`pdCallCT`), and the branches on the public lengths
-(`two_ite`); what each run satisfies between them follows from correctness.
+its contract (`pdCallCT`), and the branches on the label's digest length
+(`byLen_ct`) and on the public lengths (`two_ite`); what each run satisfies between them follows from correctness.
 -/
 
 @[expose] public section

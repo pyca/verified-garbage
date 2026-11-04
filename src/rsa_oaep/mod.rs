@@ -1,12 +1,12 @@
 //! RSAES-OAEP encryption and decryption (RFC 8017 §7.1).
 //!
-//! [`encrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`
-//! (contract `VG.Spec.RsaOaep.encryptTableContract`), given the public
-//! key's precomputed modulus values and a seed from the operating system's
+//! [`encrypt`] is the verified `vg_rsa_oaep_encrypt_precomputed` (contract
+//! `VG.Spec.RsaOaep.encryptTablesContract`), given the public key's
+//! precomputed modulus values and a seed from the operating system's
 //! generator.
 //!
-//! [`decrypt`] is the verified `vg_rsa_oaep_<H>_mgf1_decrypt` (contract
-//! `VG.Spec.RsaOaep.decryptTableContract`), which computes the encoded
+//! [`decrypt`] is the verified `vg_rsa_oaep_decrypt` (contract
+//! `VG.Spec.RsaOaep.decryptTablesContract`), which computes the encoded
 //! message as [`PrivateKey::private_op`] does, then decodes it in constant
 //! time: whether the decoding succeeds, where the message starts and its
 //! length do not affect the timing of the verified function, and every
@@ -16,15 +16,14 @@
 //!
 //! The hash functions are any of SHA-1, SHA-224, SHA-256, SHA-384,
 //! SHA-512, SHA-512/224 and SHA-512/256, and MGF1 is over any of them: the
-//! verified functions of each hash function take MGF1's as a table of
-//! functions (`table.rs`). Other choices are refused
+//! verified functions take the label's hash function and MGF1's each as a
+//! table of functions (`table.rs`). Other choices are refused
 //! ([`Error::UnsupportedHash`]). The variants of each function, with the
 //! same contract, are one for each choice of the implementations of the
-//! hash function and of the RSA operations that [`hashes`](crate::hashes)
-//! and [`rsa`](crate::rsa) make, and MGF1's table is the one its hash
-//! function's backend chooses. Each architecture's file (`x86_64.rs`, …)
-//! names its tables and, for each hash function, its verified functions for
-//! each choice (`oaep_hash!`).
+//! RSA operations that [`rsa`](crate::rsa) makes, and each hash function's
+//! table is the one its backend in [`hashes`](crate::hashes) chooses. Each
+//! architecture's file (`x86_64.rs`, …) names its tables and its verified
+//! functions for each choice (`oaep_functions!`).
 //!
 //! This module only checks the lengths, draws the seed and allocates the
 //! memory the functions work in.
@@ -126,32 +125,32 @@ fn scratch_words(n_len: usize) -> usize {
     crate::rsa::scratch_words(n_len) + 1024
 }
 
-/// MGF1's hash function, as the verified functions take it, their last
-/// argument: the words of one of the tables of `Hash`
-/// (`crate::arch::fn_tables`).
-type Mgf1 = *const [usize; 5];
+/// A hash function, as the verified functions take it, their last two
+/// arguments (the label's hash function's, then MGF1's): the words of one of
+/// the tables of `Hash` (`crate::arch::fn_tables`).
+type Table = *const [usize; 5];
 
 /// Declares the types of verified functions, in the calling convention the
 /// emitter generates on each target: `sysv64` on x86-64 (on Windows too),
-/// and C's elsewhere; MGF1's table is their last argument.
+/// and C's elsewhere; the tables of the label's hash function and of MGF1's
+/// are their last arguments.
 macro_rules! verified_fn_types {
     ($(
         $(#[$doc:meta])*
-        type $name:ident $(<const $l:ident: usize>)? = fn($($arg:ty),* $(,)?) -> $ret:ty;
+        type $name:ident = fn($($arg:ty),* $(,)?) -> $ret:ty;
     )*) => {$(
         $(#[$doc])*
         #[cfg(target_arch = "x86_64")]
-        type $name $(<const $l: usize>)? = unsafe extern "sysv64" fn($($arg,)* Mgf1) -> $ret;
+        type $name = unsafe extern "sysv64" fn($($arg,)* Table, Table) -> $ret;
         $(#[$doc])*
         #[cfg(not(target_arch = "x86_64"))]
-        type $name $(<const $l: usize>)? = unsafe extern "C" fn($($arg,)* Mgf1) -> $ret;
+        type $name = unsafe extern "C" fn($($arg,)* Table, Table) -> $ret;
     )*};
 }
 
 verified_fn_types! {
-    /// The type of the implementations of
-    /// `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, for `H` of `L` bytes.
-    type EncryptFn<const L: usize> = fn(
+    /// The type of the implementations of `vg_rsa_oaep_encrypt_precomputed`.
+    type EncryptFn = fn(
         *mut u8,
         usize,
         *const u8,
@@ -162,14 +161,15 @@ verified_fn_types! {
         usize,
         *const u8,
         usize,
-        *const [u8; L],
+        *const u8,
+        usize,
         *mut u64,
         usize,
         *const u64,
         usize,
     ) -> u32;
 
-    /// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_decrypt`.
+    /// The type of the implementations of `vg_rsa_oaep_decrypt`.
     type DecryptFn = fn(
         *mut u8,
         usize,
@@ -197,33 +197,14 @@ verified_fn_types! {
     ) -> u32;
 }
 
-/// `Some($body)`, with `$fns` the verified functions (`(encrypt, decrypt,
-/// mgf1)`) of the hash function `$hash` for the implementations this CPU
-/// runs best and the table of MGF1's hash function `$mgf1`
-/// (`table::mgf1`), or `None` if this module does not support them.
-macro_rules! with_functions {
-    (@hashes $hash:expr, $mgf1:expr, |$fns:ident| $body:expr, {$($h:ident => $module:ident),* $(,)?}) => {{
-        let f = detected();
-        match (table::mgf1($mgf1, f), $hash) {
-            $((Some(m), Hash::$h) => {
-                let (encrypt, decrypt) = arch::$module::functions(f);
-                let $fns = (encrypt, decrypt, m);
-                Some($body)
-            })*
-            _ => None,
-        }
-    }};
-    ($hash:expr, $mgf1:expr, |$fns:ident| $body:expr) => {
-        with_functions!(@hashes $hash, $mgf1, |$fns| $body, {
-            Sha1 => sha1,
-            Sha224 => sha224,
-            Sha256 => sha256,
-            Sha384 => sha384,
-            Sha512 => sha512,
-            Sha512_224 => sha512_224,
-            Sha512_256 => sha512_256,
-        })
-    };
+/// The verified functions for the implementations this CPU runs best,
+/// `(encrypt, decrypt)`, with the tables of the label's hash function `hash`
+/// and of MGF1's `mgf1_hash` (`table::table`), or `None` if this module does
+/// not support them.
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(EncryptFn, DecryptFn, Table, Table)> {
+    let f = detected();
+    let (encrypt, decrypt) = arch::functions(f);
+    Some((encrypt, decrypt, table::table(hash, f)?, table::table(mgf1_hash, f)?))
 }
 
 /// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and
@@ -262,43 +243,45 @@ pub fn encrypt_with_rng(
     label: &[u8],
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
-    with_functions!(hash, mgf1_hash, |fns| encrypt_with(
-        key, plaintext, label, fns.0, fns.2, random
-    ))
-    .unwrap_or(Err(Error::UnsupportedHash))
+    let (f, _, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+    encrypt_with(key, plaintext, label, f, (h, hash.digest_len()), m, random)
 }
 
-/// `f`, a `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` that this CPU can run,
-/// with MGF1's hash function `mgf1`, and a seed from `random`.
-fn encrypt_with<const L: usize>(
+/// `f`, a `vg_rsa_oaep_encrypt_precomputed` that this CPU can run, with the
+/// label's hash function `hash` (its table and digest length) and MGF1's
+/// `mgf1`, and a seed from `random`.
+fn encrypt_with(
     key: &PublicKey,
     plaintext: &[u8],
     label: &[u8],
-    f: EncryptFn<L>,
-    mgf1: Mgf1,
+    f: EncryptFn,
+    (hash, len): (Table, usize),
+    mgf1: Table,
     mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
-    if plaintext.len() + 2 * L + 2 > k {
+    if plaintext.len() + 2 * len + 2 > k {
         return Err(Error::MessageTooLong);
     }
-    let mut seed = [0u8; L];
-    random(&mut seed)?;
+    // The hash functions' digests are at most 64 bytes.
+    let mut seed = [0u8; 64];
+    let seed = &mut seed[..len];
+    random(seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
-    // writes, `seed` for `L` bytes, the hash function's length), and none
-    // overlaps another or wraps around, as they are distinct Rust
-    // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
-    // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
-    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; `mgf1`
-    // is the words of one of the crate's tables of `Hash`; and
-    // the CPU has the features of `f` and of `mgf1`'s functions, which
-    // `functions` and `table::mgf1` chose for the features detected (their
-    // `backend_features` and `table_features` tests check that they need no
-    // others).
+    // writes), and none overlaps another or wraps around, as they are
+    // distinct Rust allocations; `PublicKey::new` gives
+    // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len`
+    // and `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
+    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; `hash`
+    // and `mgf1` are the words of tables of the crate's of `Hash`, and
+    // `seed_len` is the digest length of `hash`'s, its word 4
+    // (`table_features` checks it); and the CPU has the features of `f` and
+    // of the tables' functions, which `functions` and `table::table` chose
+    // for the features detected (their `backend_features` and
+    // `table_features` tests check that they need no others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -311,16 +294,18 @@ fn encrypt_with<const L: usize>(
             label.len(),
             plaintext.as_ptr(),
             plaintext.len(),
-            &seed,
+            seed.as_ptr(),
+            len,
             scratch.as_mut_ptr(),
             scratch.len(),
             pre.as_ptr(),
             pre.len(),
+            hash,
             mgf1,
         )
     };
     // ScratchLease wipes the encoded message and its powers before reuse.
-    zeroize(&mut seed);
+    zeroize(seed);
     // `PublicKey::new` checked `n`, and the message's length is checked
     // above.
     assert_eq!(r, 1, "OAEP encryption refused a valid key and message");
@@ -343,20 +328,19 @@ pub fn decrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    with_functions!(hash, mgf1_hash, |fns| decrypt_with(
-        key, ciphertext, label, fns.1, fns.2
-    ))
-    .unwrap_or(Err(Error::UnsupportedHash))
+    let (_, f, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+    decrypt_with(key, ciphertext, label, f, h, m)
 }
 
-/// `f`, a `vg_rsa_oaep_<H>_mgf1_decrypt` that this CPU can run, with MGF1's
-/// hash function `mgf1`.
+/// `f`, a `vg_rsa_oaep_decrypt` that this CPU can run, with the label's hash
+/// function `hash` and MGF1's `mgf1`.
 fn decrypt_with(
     key: &PrivateKey,
     ciphertext: &[u8],
     label: &[u8],
     f: DecryptFn,
-    mgf1: Mgf1,
+    hash: Table,
+    mgf1: Table,
 ) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
     if ciphertext.len() != k {
@@ -371,9 +355,9 @@ fn decrypt_with(
     // check above give `64 ≤ n_len ≤ 1024`, `out_len = ct_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
-    // `scratch_len = 16 n_len + 1056`; `mgf1` is the words of one of the
-    // crate's tables of `Hash`; and the CPU has the features of
-    // `f` and of `mgf1`'s functions, which `functions` and `table::mgf1`
+    // `scratch_len = 16 n_len + 1056`; `hash` and `mgf1` are the words of
+    // tables of the crate's of `Hash`; and the CPU has the features of `f`
+    // and of the tables' functions, which `functions` and `table::table`
     // chose for the features detected (their `backend_features` and
     // `table_features` tests check that they need no others).
     let r = unsafe {
@@ -401,6 +385,7 @@ fn decrypt_with(
             k,
             scratch.as_mut_ptr(),
             scratch.len(),
+            hash,
             mgf1,
         )
     };
@@ -447,9 +432,9 @@ mod tests {
                             Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
                         )
                 };
-                // MGF1 is over any of them (`table::mgf1`).
+                // Each is any of them (`table::table`).
                 let ok = supported(h) && supported(g);
-                assert_eq!(with_functions!(h, g, |_fns| ()).is_some(), ok);
+                assert_eq!(with_tables(h, g).is_some(), ok);
                 n += usize::from(ok);
             }
         }
