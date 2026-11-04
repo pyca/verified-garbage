@@ -76,6 +76,195 @@ vg_ed25519_public_key:
 	ret
 	.option pop
 
+vg_ed25519_public_key_expanded:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -144
+	addi a3, sp, 0
+	sd s7, 96(a3)
+	sd s8, 104(a3)
+	sd s9, 112(a3)
+	sd s10, 120(a3)
+	sd ra, 128(a3)
+	addi s7, a0, 0
+	addi s8, a1, 0
+	addi s9, a2, 0
+	addi s10, a3, 0
+	lbu a5, 0(s8)
+	sb a5, 0(s10)
+	lbu a5, 1(s8)
+	sb a5, 1(s10)
+	lbu a5, 2(s8)
+	sb a5, 2(s10)
+	lbu a5, 3(s8)
+	sb a5, 3(s10)
+	lbu a5, 4(s8)
+	sb a5, 4(s10)
+	lbu a5, 5(s8)
+	sb a5, 5(s10)
+	lbu a5, 6(s8)
+	sb a5, 6(s10)
+	lbu a5, 7(s8)
+	sb a5, 7(s10)
+	lbu a5, 8(s8)
+	sb a5, 8(s10)
+	lbu a5, 9(s8)
+	sb a5, 9(s10)
+	lbu a5, 10(s8)
+	sb a5, 10(s10)
+	lbu a5, 11(s8)
+	sb a5, 11(s10)
+	lbu a5, 12(s8)
+	sb a5, 12(s10)
+	lbu a5, 13(s8)
+	sb a5, 13(s10)
+	lbu a5, 14(s8)
+	sb a5, 14(s10)
+	lbu a5, 15(s8)
+	sb a5, 15(s10)
+	lbu a5, 16(s8)
+	sb a5, 16(s10)
+	lbu a5, 17(s8)
+	sb a5, 17(s10)
+	lbu a5, 18(s8)
+	sb a5, 18(s10)
+	lbu a5, 19(s8)
+	sb a5, 19(s10)
+	lbu a5, 20(s8)
+	sb a5, 20(s10)
+	lbu a5, 21(s8)
+	sb a5, 21(s10)
+	lbu a5, 22(s8)
+	sb a5, 22(s10)
+	lbu a5, 23(s8)
+	sb a5, 23(s10)
+	lbu a5, 24(s8)
+	sb a5, 24(s10)
+	lbu a5, 25(s8)
+	sb a5, 25(s10)
+	lbu a5, 26(s8)
+	sb a5, 26(s10)
+	lbu a5, 27(s8)
+	sb a5, 27(s10)
+	lbu a5, 28(s8)
+	sb a5, 28(s10)
+	lbu a5, 29(s8)
+	sb a5, 29(s10)
+	lbu a5, 30(s8)
+	sb a5, 30(s10)
+	lbu a5, 31(s8)
+	sb a5, 31(s10)
+	lbu a5, 32(s8)
+	sb a5, 32(s10)
+	lbu a5, 33(s8)
+	sb a5, 33(s10)
+	lbu a5, 34(s8)
+	sb a5, 34(s10)
+	lbu a5, 35(s8)
+	sb a5, 35(s10)
+	lbu a5, 36(s8)
+	sb a5, 36(s10)
+	lbu a5, 37(s8)
+	sb a5, 37(s10)
+	lbu a5, 38(s8)
+	sb a5, 38(s10)
+	lbu a5, 39(s8)
+	sb a5, 39(s10)
+	lbu a5, 40(s8)
+	sb a5, 40(s10)
+	lbu a5, 41(s8)
+	sb a5, 41(s10)
+	lbu a5, 42(s8)
+	sb a5, 42(s10)
+	lbu a5, 43(s8)
+	sb a5, 43(s10)
+	lbu a5, 44(s8)
+	sb a5, 44(s10)
+	lbu a5, 45(s8)
+	sb a5, 45(s10)
+	lbu a5, 46(s8)
+	sb a5, 46(s10)
+	lbu a5, 47(s8)
+	sb a5, 47(s10)
+	lbu a5, 48(s8)
+	sb a5, 48(s10)
+	lbu a5, 49(s8)
+	sb a5, 49(s10)
+	lbu a5, 50(s8)
+	sb a5, 50(s10)
+	lbu a5, 51(s8)
+	sb a5, 51(s10)
+	lbu a5, 52(s8)
+	sb a5, 52(s10)
+	lbu a5, 53(s8)
+	sb a5, 53(s10)
+	lbu a5, 54(s8)
+	sb a5, 54(s10)
+	lbu a5, 55(s8)
+	sb a5, 55(s10)
+	lbu a5, 56(s8)
+	sb a5, 56(s10)
+	lbu a5, 57(s8)
+	sb a5, 57(s10)
+	lbu a5, 58(s8)
+	sb a5, 58(s10)
+	lbu a5, 59(s8)
+	sb a5, 59(s10)
+	lbu a5, 60(s8)
+	sb a5, 60(s10)
+	lbu a5, 61(s8)
+	sb a5, 61(s10)
+	lbu a5, 62(s8)
+	sb a5, 62(s10)
+	lbu a5, 63(s8)
+	sb a5, 63(s10)
+	ld a5, 0(s10)
+	srli a5, a5, 3
+	slli a5, a5, 3
+	sd a5, 64(s10)
+	ld a5, 8(s10)
+	sd a5, 72(s10)
+	ld a5, 16(s10)
+	sd a5, 80(s10)
+	ld a5, 24(s10)
+	slli a5, a5, 2
+	srli a5, a5, 2
+	addi a6, zero, 1
+	slli a6, a6, 62
+	or a5, a5, a6
+	sd a5, 88(s10)
+	addi a0, s7, 0
+	addi a1, s10, 64
+	addi a2, s9, 0
+	call {vg_ed25519_scalar_base}
+	ld ra, 128(s10)
+	ld s7, 96(s10)
+	ld s8, 104(s10)
+	ld s9, 112(s10)
+	ld s10, 120(s10)
+	addi t5, sp, 0
+	addi t6, zero, 0
+	sd t6, 0(t5)
+	sd t6, 8(t5)
+	sd t6, 16(t5)
+	sd t6, 24(t5)
+	sd t6, 32(t5)
+	sd t6, 40(t5)
+	sd t6, 48(t5)
+	sd t6, 56(t5)
+	sd t6, 64(t5)
+	sd t6, 72(t5)
+	sd t6, 80(t5)
+	sd t6, 88(t5)
+	sd t6, 96(t5)
+	sd t6, 104(t5)
+	sd t6, 112(t5)
+	sd t6, 120(t5)
+	sd t6, 128(t5)
+	addi sp, sp, 144
+	ret
+	.option pop
+
 vg_ed25519_sign_cached:
 	.option push
 	.option arch, +m, +c
@@ -169,6 +358,335 @@ vg_ed25519_sign_cached:
 	addi a1, zero, 32
 	addi a2, s11, 128
 	call {vg_sha512_finalize}
+	ld a5, 128(s11)
+	srli a5, a5, 3
+	slli a5, a5, 3
+	sd a5, 0(s11)
+	ld a5, 136(s11)
+	sd a5, 8(s11)
+	ld a5, 144(s11)
+	sd a5, 16(s11)
+	ld a5, 152(s11)
+	slli a5, a5, 2
+	srli a5, a5, 2
+	addi a6, zero, 1
+	slli a6, a6, 62
+	or a5, a5, a6
+	sd a5, 24(s11)
+	ld a5, 160(s11)
+	sd a5, 32(s11)
+	ld a5, 168(s11)
+	sd a5, 40(s11)
+	ld a5, 176(s11)
+	sd a5, 48(s11)
+	ld a5, 184(s11)
+	sd a5, 56(s11)
+	addi a0, s10, 0
+	call {vg_sha512_init}
+	addi a0, s10, 0
+	addi a1, zero, 0
+	addi a2, s11, 32
+	addi a3, zero, 32
+	call {vg_sha512_update}
+	addi a0, s10, 0
+	addi a1, zero, 32
+	addi a2, s8, 0
+	addi a3, s9, 0
+	call {vg_sha512_update}
+	addi a0, s10, 0
+	addi a1, s9, 32
+	addi a2, s11, 128
+	call {vg_sha512_finalize}
+	addi a0, s11, 64
+	addi a1, s11, 128
+	addi a2, s10, 0
+	call {vg_ed25519_scalar_reduce}
+	addi a0, s7, 0
+	addi a1, s11, 64
+	addi a2, s10, 0
+	call {vg_ed25519_scalar_base}
+	addi a0, s10, 0
+	call {vg_sha512_init}
+	addi a0, s10, 0
+	addi a1, zero, 0
+	addi a2, s7, 0
+	addi a3, zero, 32
+	call {vg_sha512_update}
+	addi a0, s10, 0
+	addi a1, zero, 32
+	addi a2, s11, 192
+	addi a3, zero, 32
+	call {vg_sha512_update}
+	addi a0, s10, 0
+	addi a1, zero, 64
+	addi a2, s8, 0
+	addi a3, s9, 0
+	call {vg_sha512_update}
+	addi a0, s10, 0
+	addi a1, s9, 64
+	addi a2, s11, 128
+	call {vg_sha512_finalize}
+	addi a0, s11, 96
+	addi a1, s11, 128
+	addi a2, s10, 0
+	call {vg_ed25519_scalar_reduce}
+	addi a0, s7, 32
+	addi a1, s11, 64
+	addi a2, s11, 96
+	addi a3, s11, 0
+	addi a4, s10, 0
+	call {vg_ed25519_scalar_mul_add}
+	ld ra, 272(s11)
+	ld s1, 224(s11)
+	ld s7, 232(s11)
+	ld s8, 240(s11)
+	ld s9, 248(s11)
+	ld s10, 256(s11)
+	ld s11, 264(s11)
+	addi t5, sp, 0
+	addi t6, zero, 0
+	sd t6, 0(t5)
+	sd t6, 8(t5)
+	sd t6, 16(t5)
+	sd t6, 24(t5)
+	sd t6, 32(t5)
+	sd t6, 40(t5)
+	sd t6, 48(t5)
+	sd t6, 56(t5)
+	sd t6, 64(t5)
+	sd t6, 72(t5)
+	sd t6, 80(t5)
+	sd t6, 88(t5)
+	sd t6, 96(t5)
+	sd t6, 104(t5)
+	sd t6, 112(t5)
+	sd t6, 120(t5)
+	sd t6, 128(t5)
+	sd t6, 136(t5)
+	sd t6, 144(t5)
+	sd t6, 152(t5)
+	sd t6, 160(t5)
+	sd t6, 168(t5)
+	sd t6, 176(t5)
+	sd t6, 184(t5)
+	sd t6, 192(t5)
+	sd t6, 200(t5)
+	sd t6, 208(t5)
+	sd t6, 216(t5)
+	addi sp, sp, 288
+	ret
+	.option pop
+
+vg_ed25519_sign_expanded:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -288
+	addi a6, sp, 0
+	sd s1, 224(a6)
+	sd s7, 232(a6)
+	sd s8, 240(a6)
+	sd s9, 248(a6)
+	sd s10, 256(a6)
+	sd s11, 264(a6)
+	sd ra, 272(a6)
+	addi s7, a0, 0
+	addi s1, a1, 0
+	addi s8, a3, 0
+	addi s9, a4, 0
+	addi s10, a5, 0
+	addi s11, a6, 0
+	lbu a5, 0(a2)
+	sb a5, 192(s11)
+	lbu a5, 1(a2)
+	sb a5, 193(s11)
+	lbu a5, 2(a2)
+	sb a5, 194(s11)
+	lbu a5, 3(a2)
+	sb a5, 195(s11)
+	lbu a5, 4(a2)
+	sb a5, 196(s11)
+	lbu a5, 5(a2)
+	sb a5, 197(s11)
+	lbu a5, 6(a2)
+	sb a5, 198(s11)
+	lbu a5, 7(a2)
+	sb a5, 199(s11)
+	lbu a5, 8(a2)
+	sb a5, 200(s11)
+	lbu a5, 9(a2)
+	sb a5, 201(s11)
+	lbu a5, 10(a2)
+	sb a5, 202(s11)
+	lbu a5, 11(a2)
+	sb a5, 203(s11)
+	lbu a5, 12(a2)
+	sb a5, 204(s11)
+	lbu a5, 13(a2)
+	sb a5, 205(s11)
+	lbu a5, 14(a2)
+	sb a5, 206(s11)
+	lbu a5, 15(a2)
+	sb a5, 207(s11)
+	lbu a5, 16(a2)
+	sb a5, 208(s11)
+	lbu a5, 17(a2)
+	sb a5, 209(s11)
+	lbu a5, 18(a2)
+	sb a5, 210(s11)
+	lbu a5, 19(a2)
+	sb a5, 211(s11)
+	lbu a5, 20(a2)
+	sb a5, 212(s11)
+	lbu a5, 21(a2)
+	sb a5, 213(s11)
+	lbu a5, 22(a2)
+	sb a5, 214(s11)
+	lbu a5, 23(a2)
+	sb a5, 215(s11)
+	lbu a5, 24(a2)
+	sb a5, 216(s11)
+	lbu a5, 25(a2)
+	sb a5, 217(s11)
+	lbu a5, 26(a2)
+	sb a5, 218(s11)
+	lbu a5, 27(a2)
+	sb a5, 219(s11)
+	lbu a5, 28(a2)
+	sb a5, 220(s11)
+	lbu a5, 29(a2)
+	sb a5, 221(s11)
+	lbu a5, 30(a2)
+	sb a5, 222(s11)
+	lbu a5, 31(a2)
+	sb a5, 223(s11)
+	lbu a5, 0(s1)
+	sb a5, 128(s11)
+	lbu a5, 1(s1)
+	sb a5, 129(s11)
+	lbu a5, 2(s1)
+	sb a5, 130(s11)
+	lbu a5, 3(s1)
+	sb a5, 131(s11)
+	lbu a5, 4(s1)
+	sb a5, 132(s11)
+	lbu a5, 5(s1)
+	sb a5, 133(s11)
+	lbu a5, 6(s1)
+	sb a5, 134(s11)
+	lbu a5, 7(s1)
+	sb a5, 135(s11)
+	lbu a5, 8(s1)
+	sb a5, 136(s11)
+	lbu a5, 9(s1)
+	sb a5, 137(s11)
+	lbu a5, 10(s1)
+	sb a5, 138(s11)
+	lbu a5, 11(s1)
+	sb a5, 139(s11)
+	lbu a5, 12(s1)
+	sb a5, 140(s11)
+	lbu a5, 13(s1)
+	sb a5, 141(s11)
+	lbu a5, 14(s1)
+	sb a5, 142(s11)
+	lbu a5, 15(s1)
+	sb a5, 143(s11)
+	lbu a5, 16(s1)
+	sb a5, 144(s11)
+	lbu a5, 17(s1)
+	sb a5, 145(s11)
+	lbu a5, 18(s1)
+	sb a5, 146(s11)
+	lbu a5, 19(s1)
+	sb a5, 147(s11)
+	lbu a5, 20(s1)
+	sb a5, 148(s11)
+	lbu a5, 21(s1)
+	sb a5, 149(s11)
+	lbu a5, 22(s1)
+	sb a5, 150(s11)
+	lbu a5, 23(s1)
+	sb a5, 151(s11)
+	lbu a5, 24(s1)
+	sb a5, 152(s11)
+	lbu a5, 25(s1)
+	sb a5, 153(s11)
+	lbu a5, 26(s1)
+	sb a5, 154(s11)
+	lbu a5, 27(s1)
+	sb a5, 155(s11)
+	lbu a5, 28(s1)
+	sb a5, 156(s11)
+	lbu a5, 29(s1)
+	sb a5, 157(s11)
+	lbu a5, 30(s1)
+	sb a5, 158(s11)
+	lbu a5, 31(s1)
+	sb a5, 159(s11)
+	lbu a5, 32(s1)
+	sb a5, 160(s11)
+	lbu a5, 33(s1)
+	sb a5, 161(s11)
+	lbu a5, 34(s1)
+	sb a5, 162(s11)
+	lbu a5, 35(s1)
+	sb a5, 163(s11)
+	lbu a5, 36(s1)
+	sb a5, 164(s11)
+	lbu a5, 37(s1)
+	sb a5, 165(s11)
+	lbu a5, 38(s1)
+	sb a5, 166(s11)
+	lbu a5, 39(s1)
+	sb a5, 167(s11)
+	lbu a5, 40(s1)
+	sb a5, 168(s11)
+	lbu a5, 41(s1)
+	sb a5, 169(s11)
+	lbu a5, 42(s1)
+	sb a5, 170(s11)
+	lbu a5, 43(s1)
+	sb a5, 171(s11)
+	lbu a5, 44(s1)
+	sb a5, 172(s11)
+	lbu a5, 45(s1)
+	sb a5, 173(s11)
+	lbu a5, 46(s1)
+	sb a5, 174(s11)
+	lbu a5, 47(s1)
+	sb a5, 175(s11)
+	lbu a5, 48(s1)
+	sb a5, 176(s11)
+	lbu a5, 49(s1)
+	sb a5, 177(s11)
+	lbu a5, 50(s1)
+	sb a5, 178(s11)
+	lbu a5, 51(s1)
+	sb a5, 179(s11)
+	lbu a5, 52(s1)
+	sb a5, 180(s11)
+	lbu a5, 53(s1)
+	sb a5, 181(s11)
+	lbu a5, 54(s1)
+	sb a5, 182(s11)
+	lbu a5, 55(s1)
+	sb a5, 183(s11)
+	lbu a5, 56(s1)
+	sb a5, 184(s11)
+	lbu a5, 57(s1)
+	sb a5, 185(s11)
+	lbu a5, 58(s1)
+	sb a5, 186(s11)
+	lbu a5, 59(s1)
+	sb a5, 187(s11)
+	lbu a5, 60(s1)
+	sb a5, 188(s11)
+	lbu a5, 61(s1)
+	sb a5, 189(s11)
+	lbu a5, 62(s1)
+	sb a5, 190(s11)
+	lbu a5, 63(s1)
+	sb a5, 191(s11)
 	ld a5, 128(s11)
 	srli a5, a5, 3
 	slli a5, a5, 3

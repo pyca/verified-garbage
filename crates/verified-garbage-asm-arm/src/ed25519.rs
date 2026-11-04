@@ -277,6 +277,282 @@ bx lr",
     )
 }
 
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+ldr r1, [sp, #252]
+add r1, r1, #0
+add r2, sp, #184
+ldr r0, [r1, #0]
+str r0, [r2, #0]
+ldr r0, [r1, #4]
+str r0, [r2, #4]
+ldr r0, [r1, #8]
+str r0, [r2, #8]
+ldr r0, [r1, #12]
+str r0, [r2, #12]
+ldr r0, [r1, #16]
+str r0, [r2, #16]
+ldr r0, [r1, #20]
+str r0, [r2, #20]
+ldr r0, [r1, #24]
+str r0, [r2, #24]
+ldr r0, [r1, #28]
+str r0, [r2, #28]
+ldr r0, [r1, #32]
+str r0, [r2, #32]
+ldr r0, [r1, #36]
+str r0, [r2, #36]
+ldr r0, [r1, #40]
+str r0, [r2, #40]
+ldr r0, [r1, #44]
+str r0, [r2, #44]
+ldr r0, [r1, #48]
+str r0, [r2, #48]
+ldr r0, [r1, #52]
+str r0, [r2, #52]
+ldr r0, [r1, #56]
+str r0, [r2, #56]
+ldr r0, [r1, #60]
+str r0, [r2, #60]
+ldr r0, [sp, #184]
+movw r1, #65528
+movt r1, #65535
+and r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+add r12, sp, #24
+str r0, [r12, #4]
+ldr r0, [sp, #192]
+add r12, sp, #24
+str r0, [r12, #8]
+ldr r0, [sp, #196]
+add r12, sp, #24
+str r0, [r12, #12]
+ldr r0, [sp, #200]
+add r12, sp, #24
+str r0, [r12, #16]
+ldr r0, [sp, #204]
+add r12, sp, #24
+str r0, [r12, #20]
+ldr r0, [sp, #208]
+add r12, sp, #24
+str r0, [r12, #24]
+ldr r0, [sp, #212]
+movw r1, #65535
+movt r1, #16383
+and r0, r0, r1
+movw r1, #0
+movt r1, #16384
+orr r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #28]
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r1, sp, #24
+ldr r2, [sp, #256]
+add r2, r2, #0
+bl {vg_ed25519_scalar_base}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #24]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #28]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #32]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #36]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #40]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #44]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #48]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #52]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #56]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #60]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #64]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #68]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #76]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #80]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #84]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #88]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #96]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #100]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #104]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #108]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #112]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #116]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #120]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #124]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #128]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #132]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #136]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #140]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #144]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #148]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #184]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #188]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #192]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #196]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #200]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #204]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #208]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #212]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #216]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #220]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #224]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #228]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #232]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #236]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #240]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #244]
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+bx lr",
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+    )
+}
+
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
 /// # Safety
@@ -343,6 +619,454 @@ add r0, r0, #0
 movw r2, #32
 movw r3, #0
 bl {vg_sha512_finalize_scratch}
+ldr r0, [sp, #184]
+movw r1, #65528
+movt r1, #65535
+and r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+add r12, sp, #24
+str r0, [r12, #4]
+ldr r0, [sp, #192]
+add r12, sp, #24
+str r0, [r12, #8]
+ldr r0, [sp, #196]
+add r12, sp, #24
+str r0, [r12, #12]
+ldr r0, [sp, #200]
+add r12, sp, #24
+str r0, [r12, #16]
+ldr r0, [sp, #204]
+add r12, sp, #24
+str r0, [r12, #20]
+ldr r0, [sp, #208]
+add r12, sp, #24
+str r0, [r12, #24]
+ldr r0, [sp, #212]
+movw r1, #65535
+movt r1, #16383
+and r0, r0, r1
+movw r1, #0
+movt r1, #16384
+orr r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #28]
+ldr r0, [sp, #216]
+add r12, sp, #0
+str r0, [r12, #56]
+ldr r0, [sp, #220]
+add r12, sp, #0
+str r0, [r12, #60]
+ldr r0, [sp, #224]
+add r12, sp, #0
+str r0, [r12, #64]
+ldr r0, [sp, #228]
+add r12, sp, #0
+str r0, [r12, #68]
+ldr r0, [sp, #232]
+add r12, sp, #0
+str r0, [r12, #72]
+ldr r0, [sp, #236]
+add r12, sp, #0
+str r0, [r12, #76]
+ldr r0, [sp, #240]
+add r12, sp, #0
+str r0, [r12, #80]
+ldr r0, [sp, #244]
+add r12, sp, #0
+str r0, [r12, #84]
+ldr r0, [sp, #268]
+add r0, r0, #0
+bl {vg_sha512_init}
+add r0, sp, #56
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #0
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #260]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #32
+movw r3, #0
+bl {vg_sha512_update_scratch}
+add r0, sp, #184
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+ldr r2, [sp, #264]
+add r2, r2, #32
+movw r3, #0
+bl {vg_sha512_finalize_scratch}
+add r0, sp, #88
+add r1, sp, #184
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_reduce}
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r1, sp, #88
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_base}
+ldr r0, [sp, #268]
+add r0, r0, #0
+bl {vg_sha512_init}
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #0
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #256]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #32
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #260]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #64
+movw r3, #0
+bl {vg_sha512_update_scratch}
+add r0, sp, #184
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+ldr r2, [sp, #264]
+add r2, r2, #64
+movw r3, #0
+bl {vg_sha512_finalize_scratch}
+add r0, sp, #120
+add r1, sp, #184
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_reduce}
+ldr r0, [sp, #268]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #248]
+add r0, r0, #32
+add r1, sp, #88
+add r2, sp, #120
+add r3, sp, #24
+bl {vg_ed25519_scalar_mul_add}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #24]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #28]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #32]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #36]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #40]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #44]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #48]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #52]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #56]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #60]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #64]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #68]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #76]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #80]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #84]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #88]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #96]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #100]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #104]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #108]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #112]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #116]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #120]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #124]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #128]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #132]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #136]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #140]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #144]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #148]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #184]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #188]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #192]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #196]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #200]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #204]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #208]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #212]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #216]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #220]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #224]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #228]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #232]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #236]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #240]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #244]
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+bx lr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk`, `message` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+add r12, sp, #248
+str r3, [r12, #12]
+ldr lr, [sp, #280]
+add r12, sp, #248
+str lr, [r12, #16]
+ldr lr, [sp, #284]
+add r12, sp, #248
+str lr, [r12, #20]
+ldr r1, [sp, #252]
+add r1, r1, #0
+add r2, sp, #184
+ldr r0, [r1, #0]
+str r0, [r2, #0]
+ldr r0, [r1, #4]
+str r0, [r2, #4]
+ldr r0, [r1, #8]
+str r0, [r2, #8]
+ldr r0, [r1, #12]
+str r0, [r2, #12]
+ldr r0, [r1, #16]
+str r0, [r2, #16]
+ldr r0, [r1, #20]
+str r0, [r2, #20]
+ldr r0, [r1, #24]
+str r0, [r2, #24]
+ldr r0, [r1, #28]
+str r0, [r2, #28]
+ldr r0, [r1, #32]
+str r0, [r2, #32]
+ldr r0, [r1, #36]
+str r0, [r2, #36]
+ldr r0, [r1, #40]
+str r0, [r2, #40]
+ldr r0, [r1, #44]
+str r0, [r2, #44]
+ldr r0, [r1, #48]
+str r0, [r2, #48]
+ldr r0, [r1, #52]
+str r0, [r2, #52]
+ldr r0, [r1, #56]
+str r0, [r2, #56]
+ldr r0, [r1, #60]
+str r0, [r2, #60]
 ldr r0, [sp, #184]
 movw r1, #65528
 movt r1, #65535
