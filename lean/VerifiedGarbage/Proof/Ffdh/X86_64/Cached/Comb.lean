@@ -150,6 +150,20 @@ theorem shl_bit {b j : Nat} (hb : b < 2) (hj : j < 63) :
   rw [Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b * 2 ^ j < 2 ^ 64 by
     rcases (show b = 0 ∨ b = 1 by omega) with rfl | rfl <;> omega), Nat.mul_comm]
 
+/-- Tooth `j`'s bit index: `rax := i + j rows`, from `iI = i + 1` and `iRows`. -/
+theorem toothA_ok {s : State} {O : Addr} {Zs w : Nat} {mi : BitVec 64} (hg : Good s O Zs w mi)
+    (hZ : 8 * 32 ≤ Zs) {i rows j : Nat} (hj : j < 5)
+    (hI : word s.mem O (8 * iI) = BitVec.ofNat 64 (i + 1)) (hR : word s.mem O (8 * iRows) = BitVec.ofNat 64 rows) :
+    WP isa (.block [.mov .rax (.mem (hdr iI)), .alu .sub .rax (.imm 1), .mov .rdx (.mem (hdr iRows)),
+      .imul3 .rdx .rdx (BitVec.ofNat 32 j), .alu .add .rax (.reg .rdx)]) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (i + j * rows) ∧ t.mem = s.mem ∧ Keep [.rax, .rdx] s t := by
+  have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off O (8 * k)) 8 := fun k hk => hg.scr.ld (by omega)
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (i + j * rows) ∧
+      t.mem = s.mem) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl iI (by decide), hl iRows (by decide), hI, hR, ofNat_succ_sub_one,
+      execImul3, imul3_low', mul_imm (show j < 2 ^ 31 by omega), BitVec.ofNat_add_ofNat]
+    rw [Nat.mul_comm]) rfl) fun t ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
+
 /-- Tooth `j` of row `i`: `r13 := r13 + 2^j` bit `i + j rows` of `x`. -/
 theorem tooth_ok {s : State} {O : Addr} {Zs w : Nat} {mi : BitVec 64} (hg : Good s O Zs w mi)
     (hZ : 8 * 32 ≤ Zs) {xp : Addr} {xb : List Byte} {i rows j S : Nat} (hj : j < 5)
@@ -162,13 +176,8 @@ theorem tooth_ok {s : State} {O : Addr} {Zs w : Nat} {mi : BitVec 64} (hg : Good
     WP isa (tooth j) s fun t =>
       t.gpr .r13 = BitVec.ofNat 64 (S + Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2 * 2 ^ j) ∧ t.mem = s.mem ∧
       Keep [.rax, .rdx, .r8, .r10, .rcx, .r13] s t := by
-  have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off O (8 * k)) 8 := fun k hk => hg.scr.ld (by omega)
   unfold tooth
-  refine WP.seq (WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (i + j * rows) ∧
-      t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl iI (by decide), hl iRows (by decide), hI, hR, ofNat_succ_sub_one,
-      execImul3, imul3_low', mul_imm (show j < 2 ^ 31 by omega), BitVec.ofNat_add_ofNat]
-    rw [Nat.mul_comm]) rfl) fun s₁ ⟨⟨ha₁, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (toothA_ok hg hZ hj hI hR) fun s₁ ⟨ha₁, hm₁, k₁⟩ => ?_)
   have hk : i + j * rows < 2 ^ 32 := by have := Nat.mul_le_mul_right rows (show j ≤ 5 by omega); omega
   refine WP.seq (WP.mono (bit_ok ha₁ ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hsi)
     (fun i hi => by rw [k₁.2.1, k₁.2.2]; exact hrd i hi) (fun i hi => by rw [hm₁]; exact hval i hi) hk hL)
