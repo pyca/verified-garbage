@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sat
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 public import VerifiedGarbage.Spec.RsaPss.Table
 
 /-! # RSASSA-PSS on PPC64LE, with the hash functions as tables -/

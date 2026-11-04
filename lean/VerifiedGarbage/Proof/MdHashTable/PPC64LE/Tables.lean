@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Fams
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
+public import VerifiedGarbage.Proof.MdHashTable.PPC64LE
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.HashTable.PPC64LE
@@ -11,8 +13,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # Tables of the interface `MdHash` on PPC64LE
 
-As on x86-64 (`Proof/MdHashTable/X86_64/Tables.lean`): a hash function's
-variant (`MVar`): its streaming functions as RSAES-OAEP on PPC64LE has them
+A family of streaming code (`Fam`): its parameters, its `Md`, its
+compression function, what `ctHash` needs of its code (`CtOK`), the taint
+checks of its blocks (`CtTaint`), and the constant time of its compression
+function and of the digest of its hash value. As on x86-64
+(`Proof/MdHashTable/X86_64/Tables.lean`): a hash function's variant
+(`MVar`): its streaming functions as RSAES-OAEP on PPC64LE has them
 (`Link`), its family of streaming code (`Fam`) and the hash function of the
 specification that code computes from its initial hash value. The table of
 a variant (`tableOf`): the addresses of its streaming `init`, `update` and
@@ -38,6 +44,22 @@ open VG.Impl.MdHashTable.PPC64LE (digest)
 open VG.Proof.RsaOaep.PPC64LE (Link TabMem kR SC)
 open VG.Proof.RsaPss.PPC64LE (MdTabOK MdTabS Tabs)
 open VG.Proof.HashTable (pw_ne find_name)
+
+open VG.Proof.MdStream.PPC64LE (compressK)
+open VG.Impl.MdStream.PPC64LE (Params)
+open VG.Proof.RsaPss.PPC64LE (CtOK CtTaint)
+
+/-- A family of streaming code: its parameters, its `Md`, its compression
+function and what the proofs need of them. -/
+structure Fam where
+  P : Params
+  md : Md P.B P.N P.L
+  cn : String
+  cc : Prog isa
+  ok : CtOK P md cc (digest P)
+  ct : CtTaint P
+  hcc : ConstantTime isa (compressK md).pre (compressK md).pub cc
+  hdc : ConstantTime isa (digestK md).pre (digestK md).pub (digest P)
 
 /-- A hash function's variant. -/
 structure MVar where
