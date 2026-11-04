@@ -146,7 +146,8 @@ theorem AtC.keep {D : Nat} {tsH tsG : List FnTable} {s u u' : State} (hp : PreC 
 /-- The encoding copied to `EM`. -/
 theorem copyIn_okC {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreC D tsH tsG s) (hu : AtC s u) :
     WP isa copyIn u fun t => AtC s t ∧
-      ∀ i < (s.gpr .x2).toNat, t.mem (off (s.gpr .x6) (oEm + i)) = (emB s).getD i 0 := by
+      (∀ i < (s.gpr .x2).toNat, t.mem (off (s.gpr .x6) (oEm + i)) = (emB s).getD i 0) ∧
+      Frame [⟨s.gpr .x6, oRsa⟩] u.mem t.mem := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hwe := hp.we
   have L := lay_of hp hu.sp hu.x20 hu.wr
@@ -163,7 +164,7 @@ theorem copyIn_okC {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreC D
     (fun j hj => by
       rw [O.rd, O.wr, hu.rd, hp.hrd]
       exact ⟨emR s, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
-    (hp.es.sub_right (rsa_sub hp))) fun t ⟨K, F, R⟩ => ⟨hu₃.keep hp K F, fun i hi => ?_⟩
+    (hp.es.sub_right (rsa_sub hp))) fun t ⟨K, F, R⟩ => ⟨hu₃.keep hp K F, fun i hi => ?_, by rw [← O.mem]; exact F⟩
   have hb : Spec.Rsa.bytesAt u₃.mem (s.gpr .x1) (s.gpr .x2).toNat = emB s :=
     bytes_apartL hu₃.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
