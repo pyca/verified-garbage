@@ -23,10 +23,10 @@ of the frame (`FrE`), `scratch` in `x20`, `x19` and `x21` set, `emLen` in
 namespace VG.Proof.RsaPss.AArch64.Enc
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
-open VG.Proof.MlKem.AArch64 (Only Keep wp_nil wp_addImm)
-open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp wp_mov)
+open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_addImm wp_ldrx wp_strx)
+open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp wp_mov wp_ldrSp)
 open VG.Proof.RsaPss.AArch64 (off maskBits_ok)
-open VG.Proof.RsaPss.AArch64.Sgn (fb in_frame wr_frame)
+open VG.Proof.RsaPss.AArch64.Sgn (fb in_frame wr_frame kR frame_sub0)
 
 /-- The argument registers kept in slots of the frame. -/
 def encSlots : List (Reg × Nat) := [(.x0, sOut), (.x2, sDig), (.x3, sSalt), (.x4, sSaltLen)]
@@ -65,7 +65,7 @@ structure AtE (s u : State) : Prop where
   lo : u.mem.readW (fb s + BitVec.ofNat 64 sLo) 64 = BitVec.ofNat 64 0
   c : u.mem.readW (fb s + BitVec.ofNat 64 sC) 64 = BitVec.setWidth 64 (cE s)
 
-theorem prologue_ok {D : Nat} {s u : State} (hp : PreE D s) (hsp : u.sp = fb s) (hrd : u.rd = s.rd)
+theorem prologue_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE D tsH tsG s) (hsp : u.sp = fb s) (hrd : u.rd = s.rd)
     (hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : u.mem = s.mem) (hg : ∀ r, u.gpr r = s.gpr r)
     (hv : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
     WP isa (.block encPrologue) u (AtE s) := by
@@ -136,5 +136,60 @@ theorem prologue_ok {D : Nat} {s u : State} (hp : PreE D s) (hsp : u.sp = fb s) 
     c := by
       rw [hm₇', Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self64] }
+
+/-! ## The tables' words to their slots -/
+
+/-- After `tabSlots`: the prologue's facts, and the slots of the tables'
+words. -/
+structure AtT (s u : State) : Prop where
+  e : AtE s u
+  wm : u.mem.readW (fb s + BitVec.ofNat 64 sMgfT) 64 = stackArg s 1
+  wi : u.mem.readW (fb s + BitVec.ofNat 64 sIniH) 64 = s.mem.readW (stackArg s 0) 64
+  wc : u.mem.readW (fb s + BitVec.ofNat 64 sCmpH) 64 = s.mem.readW (stackArg s 0 + BitVec.ofNat 64 24) 64
+  wd : u.mem.readW (fb s + BitVec.ofNat 64 sDigH) 64 = s.mem.readW (stackArg s 0 + BitVec.ofNat 64 32) 64
+  sy : u.syms = s.syms
+
+/-- What `AtE` says, after writes to slots apart from its own. -/
+theorem AtE.writes {s u v : State} (h : AtE s u) {m : Mem} (hv : v.mem = m) (hsp : v.sp = u.sp) (hrd : v.rd = u.rd)
+    (hwr : v.wr = u.wr) (hg : ∀ r ∈ [Reg.x19, .x20, .x21, .x23], v.gpr r = u.gpr r)
+    (hvv : ∀ r ∈ preservedV, (v.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64)
+    {ds : List Nat} (hd : ∀ d ∈ ds, 248 ≤ d ∧ d + 8 ≤ frameBytes ∧ (d + 8 ≤ sLo ∨ sLo + 8 ≤ d) ∧
+      (d + 8 ≤ sC ∨ sC + 8 ≤ d)) (hf : Frame (ds.map fun d => (⟨fb s + BitVec.ofNat 64 d, 8⟩ : Region)) u.mem m) :
+    AtE s v where
+  sp := hsp.trans h.sp
+  rd := hrd.trans h.rd
+  wr := hwr.trans h.wr
+  x19 := (hg _ (by simp)).trans h.x19
+  x20 := (hg _ (by simp)).trans h.x20
+  x21 := (hg _ (by simp)).trans h.x21
+  x23 := (hg _ (by simp)).trans h.x23
+  v := fun r hr => (hvv r hr).trans (h.v r hr)
+  mem := by
+    rw [hv]
+    exact h.mem.trans (hf.sub fun r hr => by
+      obtain ⟨d, hd', rfl⟩ := List.mem_map.mp hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (hd d hd').2.1⟩)
+  fr := by
+    rw [hv]
+    exact h.fr.frame hf fun r hr => by
+      obtain ⟨d, hd', rfl⟩ := List.mem_map.mp hr
+      have := hd d hd'
+      exact Offset.disjoint _ (by omega) (by unfold frameBytes at this; omega) (by unfold frameBytes at this; omega)
+  lo := by
+    rw [hv, hf.readW (r := ⟨fb s + BitVec.ofNat 64 sLo, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      obtain ⟨d, hd', rfl⟩ := List.mem_map.mp hr
+      have := hd d hd'
+      exact Offset.disjoint _ this.2.2.1 (by decide) (by unfold frameBytes at this; omega)) (by decide)]
+    exact h.lo
+  c := by
+    rw [hv, hf.readW (r := ⟨fb s + BitVec.ofNat 64 sC, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      obtain ⟨d, hd', rfl⟩ := List.mem_map.mp hr
+      have := hd d hd'
+      exact Offset.disjoint _ this.2.2.2 (by decide) (by unfold frameBytes at this; omega)) (by decide)]
+    exact h.c
+
+theorem tabSlots_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE D tsH tsG s) (hu : AtE s u) :
+    WP isa (.block tabSlots) u (AtT s) := by
+  sorry
 
 end VG.Proof.RsaPss.AArch64.Enc

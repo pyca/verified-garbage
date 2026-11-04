@@ -295,8 +295,8 @@ theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State
         Fm.readW (r := slotR F sMgfT) (Region.contains_self _ _) (fun r hr => ?_) (by decide), E.slot]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_below F (n := 288) (d := 240) (k := 8) (by have := F.isLt; omega)
-      · exact E.dFw.sub_left (Offset.sub_base F (d := 240) (n := 8) (by decide)) }
+      · exact Offset.disjoint_below F (n := 288) (d := sMgfT) (k := 8) (by have := F.isLt; unfold sMgfT; omega)
+      · exact E.dFw.sub_left (Offset.sub_base F (d := sMgfT) (n := 8) (by decide)) }
   have hMF : Proof.RsaOaep.AArch64.MFit (e + db - mgfOff) H.D (e - mgfOff) db :=
     ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff; omega, by unfold Impl.RsaOaep.AArch64.oSt mgfOff; omega,
       .inr (by unfold mgfOff; omega), hdb1, by omega⟩

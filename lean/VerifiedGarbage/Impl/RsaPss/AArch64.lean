@@ -112,13 +112,13 @@ def sPre : Nat := 312
 def sPreLen : Nat := 320
 
 /-- The slots of the words of the tables, in `encode` and `checkEncoding`
-(which use neither `n`, `e` nor `scratch_len`): `init` (the table of
-`MdHash`'s word 0), its compression function (word 3), its digest (word 4),
-and the address of the table of `Hash`. -/
-def sIniH : Nat := 184
-def sCmpH : Nat := 192
-def sDigH : Nat := 200
-def sMgfT : Nat := 240
+(which use neither `p`, `p_len`, `pre` nor `pre_len`): the address of the
+table of `Hash`, and the table of `MdHash`'s `init` (its word 0),
+compression function (word 3) and digest (word 4). -/
+def sMgfT : Nat := 288
+def sIniH : Nat := 296
+def sCmpH : Nat := 312
+def sDigH : Nat := 320
 
 /-- The size of the frame. -/
 def frameBytes : Nat := 336

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.EncodingContract
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncContract
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # EMSA-PSS's encoding on AArch64: the precondition
 
-`PreE D s`: the shared contract's precondition (`encodeContract`, with the
-stack `stk 16` of the frame and the hash functions' calls), by name
-(`preE_of`). The frame is that of signing (`Sgn.fb`); every argument is in a
+`PreE D tsH tsG s`: the contract's precondition (`encodeTContract`, with
+the stack `stk 288` of the frame, MGF1's frame and the hash functions'
+calls), by name (`preE_of`). The frame is that of signing (`Sgn.fb`); every argument is in a
 register.
 -/
 
@@ -21,67 +21,98 @@ namespace VG.Proof.RsaPss.AArch64.Enc
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Proof.RsaPss.AArch64.Sgn (stk kR fb kb frame_sub0)
 
-/-- The stack `encode` uses: its frame, and the 16 bytes below it that the
-hash functions' calls use. -/
-abbrev encStack : Nat := stk 16
+/-- The stack `encode` uses: its frame, and the 288 bytes below it that MGF1's
+frame and the hash functions' calls use. -/
+abbrev encStack : Nat := stk 288
 
-/-- The buffers: `em`, the digest, the salt and the working space. -/
+/-- The buffers: `em`, the digest, the salt and the working space, the
+tables and the stack arguments. -/
 abbrev emR (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
 abbrev dgR (D : Nat) (s : State) : Region := ⟨s.gpr .x2, D⟩
 abbrev saR (s : State) : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
 abbrev sR (s : State) : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat * 8⟩
+abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 0) 11
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 5
+abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
 
-/-- What the code needs of `encodeContract.pre`, by name. -/
-structure PreE (D : Nat) (s : State) : Prop where
+/-- What the code needs of `encodeTContract.pre`, by name, for the tables
+`tsH` of `MdHash` and `tsG` of `Hash`. -/
+structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   sp1 : encStack ≤ s.sp.toNat
-  hrd : s.rd = [dgR D s, saR s]
+  sp2 : s.sp.toNat + 16 ≤ 2 ^ 64
+  tabH : ∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 0) (FnTable.words isa s T)
+  tabG : ∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 1) (FnTable.words isa s T)
+  hsy : ((tsH.map (·.fns)).flatten ++ (tsG.map (·.fns)).flatten).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g
+  hrd : s.rd = [dgR D s, saR s, tHR s, tGR s, aR s]
   hwr : s.wr = [emR s, sR s]
   ed : (emR s).Disjoint (dgR D s)
   esa : (emR s).Disjoint (saR s)
   es : (emR s).Disjoint (sR s)
+  etH : (emR s).Disjoint (tHR s)
+  etG : (emR s).Disjoint (tGR s)
+  eA : (emR s).Disjoint (aR s)
   ds : (dgR D s).Disjoint (sR s)
   sas : (saR s).Disjoint (sR s)
-  ke : (kR 16 s).Disjoint (emR s)
-  kd : (kR 16 s).Disjoint (dgR D s)
-  ksa : (kR 16 s).Disjoint (saR s)
-  ks : (kR 16 s).Disjoint (sR s)
+  stH : (sR s).Disjoint (tHR s)
+  stG : (sR s).Disjoint (tGR s)
+  sA : (sR s).Disjoint (aR s)
+  ke : (kR 288 s).Disjoint (emR s)
+  kd : (kR 288 s).Disjoint (dgR D s)
+  ksa : (kR 288 s).Disjoint (saR s)
+  ks : (kR 288 s).Disjoint (sR s)
+  ktH : (kR 288 s).Disjoint (tHR s)
+  ktG : (kR 288 s).Disjoint (tGR s)
+  kA : (kR 288 s).Disjoint (aR s)
   we : (s.gpr .x0).toNat + (s.gpr .x1).toNat ≤ 2 ^ 64
   wd : (s.gpr .x2).toNat + D ≤ 2 ^ 64
   wsa : (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64
   ws : (s.gpr .x6).toNat + (s.gpr .x7).toNat * 8 ≤ 2 ^ 64
+  wtH : (stackArg s 0).toNat + 88 ≤ 2 ^ 64
+  wtG : (stackArg s 1).toNat + 40 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .x5).toNat
   b2 : (s.gpr .x5).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .x1).toNat = Spec.RsaPss.emLength (s.gpr .x5).toNat
-  hs : 1024 ≤ (s.gpr .x7).toNat
+  hs : Proof.RsaPss.encScratch ≤ (s.gpr .x7).toNat
 
-theorem preE_of (G : Spec.Mgf1.Hash) {s : State} (h : (Proof.RsaPss.encodeContract G G abi encStack).pre s) :
-    PreE G.len s := by
-  have e : encStack = (frameBytes + 16 - 1) + 1 := by unfold encStack stk frameBytes; omega
+/-- The ABI the contract states, with the tables. -/
+abbrev encAbi (i : Nat) (tsH tsG : List FnTable) : Abi isa :=
+  abi.withTables (Proof.RsaPss.encodeTSig (Proof.RsaPss.hashLen i)) [("hash", tsH), ("mgf1", tsG)]
+
+theorem preE_of {i : Nat} {tsH tsG : List FnTable} {s : State}
+    (h : (Proof.RsaPss.encodeTContract i (encAbi i tsH tsG) encStack).pre s) :
+    PreE (Proof.RsaPss.hashLen i) tsH tsG s ∧ Proof.RsaPss.tabIdx s.mem (stackArg s 0) = i := by
+  have e : encStack = (frameBytes + 288 - 1) + 1 := by unfold encStack stk frameBytes; omega
   rw [e] at h
-  sig_pre [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
-  sig_pre [Proof.RsaPss.encodeContract, Proof.RsaPss.encodeSig, abi, argRegs, List.append_eq] at h
-  obtain ⟨sp1, hrd, hwr, ed, esa, es, ds, sas, ke, kd, ksa, ks, we, wd, wsa, ws, b1, b2, hel, hs⟩ := h
-  rw [← e] at sp1 ke kd ksa ks
-  exact ⟨sp1, hrd, hwr, ed, esa, es, ds, sas, ke, kd, ksa, ks, we, wd, wsa, ws, b1, b2, hel, hs⟩
+  sig_pre [Proof.RsaPss.encodeTContract, Proof.RsaPss.encodeTSig, Spec.MdHashTable.param, Spec.HashTable.param,
+    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    List.append_eq, _root_.List.range, _root_.List.range.loop] at h
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
+    Option.some.injEq, exists_eq_left'] at h
+  obtain ⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, ed, esa, es, etH, etG, eA, ds, sas, stH, stG, sA, ke, kd, ksa, ks,
+    ktH, ktG, kA, we, wd, wsa, ws, wtH, wtG, b1, b2, hel, hs, hidx⟩ := h
+  rw [← e] at sp1 ke kd ksa ks ktH ktG kA
+  exact ⟨⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, ed, esa, es, etH, etG, eA, ds, sas, stH, stG, sA, ke, kd, ksa, ks,
+    ktH, ktG, kA, we, wd, wsa, ws, wtH, wtG, b1, b2, hel, hs⟩, hidx⟩
 
-variable {D : Nat} {s : State}
+variable {D : Nat} {tsH tsG : List FnTable} {s : State}
 
-theorem PreE.k1 (hp : PreE D s) : 1 ≤ (s.gpr .x1).toNat := by
+theorem PreE.k1 (hp : PreE D tsH tsG s) : 1 ≤ (s.gpr .x1).toNat := by
   have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega
 
-theorem PreE.k2 (hp : PreE D s) : (s.gpr .x1).toNat ≤ 1024 := by
+theorem PreE.k2 (hp : PreE D tsH tsG s) : (s.gpr .x1).toNat ≤ 1024 := by
   have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
 
 /-- `z = 8 emLen - emBits`, the bits of `em` above `emBits`, is below 8. -/
-theorem PreE.z (hp : PreE D s) : (s.gpr .x5).toNat ≤ 8 * (s.gpr .x1).toNat ∧
+theorem PreE.z (hp : PreE D tsH tsG s) : (s.gpr .x5).toNat ≤ 8 * (s.gpr .x1).toNat ∧
     8 * (s.gpr .x1).toNat - (s.gpr .x5).toNat < 8 := by
   have := hp.hel; unfold Spec.RsaPss.emLength at *; omega
 
-theorem fb_toNat (hp : PreE D s) : (fb s).toNat + frameBytes = s.sp.toNat := by
+theorem fb_toNat (hp : PreE D tsH tsG s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack stk at this; omega
 
-theorem kb_toNat (hp : PreE D s) : (kb 16 s).toNat + encStack = s.sp.toNat := by
+theorem kb_toNat (hp : PreE D tsH tsG s) : (kb 288 s).toNat + encStack = s.sp.toNat := by
   have := hp.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
   unfold encStack stk frameBytes at *
