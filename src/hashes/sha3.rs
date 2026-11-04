@@ -1,10 +1,10 @@
 //! SHA3-224, SHA3-256, SHA3-384 and SHA3-512, and the extendable-output
 //! functions SHAKE128 and SHAKE256 (FIPS 202).
 //!
-//! `vg_keccak_absorb` (on AArch64 `vg_keccak_absorb_scratch`, with its
-//! working space on the Rust stack), `vg_keccak_pad` and `vg_keccak_squeeze`
-//! for the target architecture (contracts `VG.Spec.Sha3.absorbContract`,
-//! `absorbScratchContract`, `padContract` and `squeezeContract`) maintain a
+//! `vg_keccak_absorb_scratch` (with its working space on the Rust stack),
+//! `vg_keccak_pad` and `vg_keccak_squeeze` for the target architecture
+//! (contracts `VG.Spec.Sha3.absorbScratchContract`, `padContract` and
+//! `squeezeContract`) maintain a
 //! Keccak state that represents the message absorbed so far
 //! (`VG.Spec.Sha3.Repr`: the state after its whole blocks, with its
 //! remaining bytes XORed in), pad it and squeeze the output. The Rust types
@@ -25,15 +25,7 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(not(target_arch = "aarch64"))]
-use crate::arch::sha3::vg_keccak_absorb;
-use crate::arch::sha3::{vg_keccak_pad, vg_keccak_squeeze};
-
-// On AArch64 the sponge calls the absorbing function that takes its working
-// space as an argument, so no wrapper allocates it on each call.
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha3::vg_keccak_absorb_scratch;
-#[cfg(target_arch = "aarch64")]
+use crate::arch::sha3::{vg_keccak_absorb_scratch, vg_keccak_pad, vg_keccak_squeeze};
 use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "aarch64")]
@@ -146,24 +138,19 @@ impl<const RATE: usize> Sponge<RATE> {
         let backend = self.backend();
         // Uninitialized: the contract holds whatever the scratch holds, so
         // filling it first would only cost time.
-        #[cfg(target_arch = "aarch64")]
         let mut scratch = MaybeUninit::<[u64; 80]>::uninit();
         // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is
         // less than it, and is the length modulo `RATE` of the message that
         // `self.state` represents. `self.state` is valid for reads and
         // writes of 200 bytes, `data` for reads of `data.len()` bytes and
-        // `scratch` (on AArch64) for reads and writes of 640 bytes; they are
-        // distinct objects, so they do not overlap each other or the stack
+        // `scratch` for reads and writes of 640 bytes (the state and
+        // `scratch`, arrays of `u64`, are aligned for it); they are distinct
+        // objects, so they do not overlap each other or the stack
         // below the stack pointer. The result is the new length modulo
         // `RATE`. Backend selection checks every CPU feature required by the
         // hardware variant.
         self.pos = unsafe {
             match backend {
-                #[cfg(not(target_arch = "aarch64"))]
-                Backend::Scalar => {
-                    vg_keccak_absorb(&mut self.state, RATE, self.pos, data.as_ptr(), data.len())
-                }
-                #[cfg(target_arch = "aarch64")]
                 Backend::Scalar => vg_keccak_absorb_scratch(
                     &mut self.state,
                     RATE,
