@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 
 /-!
@@ -10,8 +10,10 @@ public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 (`Impl/Ecdsa/RISCV64/Sign.lean`, `Impl/Ecdsa/RISCV64/Verify.lean`) on
 P-224's slots and functions, with its numbers of 28 bytes read and written
 by `loadNum4` and `storeNum4` (`Impl/Ecdh/RISCV64/Num4.lean`), and `[k]G` by
-the comb, `vg_p224_mul_g`. The hash's integer `e` is the digest's 28 bytes,
-as `n` has 224 bits.
+the comb, `vg_p224_mul_g`; verification's `[u]G + [v]Q` is
+`Impl/Ecdsa/RISCV64/VerifyComb.lean`'s `joint`: `[v]Q` by the windows of
+`vg_p224_mul`, `[u]G` by the comb, and their sum by the complete addition.
+The hash's integer `e` is the digest's 28 bytes, as `n` has 224 bits.
 -/
 
 @[expose] public section
@@ -54,7 +56,7 @@ def verifyP224 : Prog isa :=
   .seq (Cfg.wsCall "vg_p224_check_point" checkP224) <|
   .seq (.block ((Sign.Cfg.nConsts p224).flatMap (fun (i, x) => setConst 4 (p224.sl i) x))) <|
   .seq (Verify.Cfg.uv p224 p224Order) <|
-  .seq (VerifyJ.Cfg.joint p224 Impl.Weierstrass.dblJ) <|
+  .seq (VerifyComb.Cfg.joint p224 "vg_p224_mul" mulP224 Comb.mulGP224Name Comb.mulGP224) <|
   .seq (chainPow (Cfg.chainP p224) (p224.sl ONEP) p224.FP) <|
   .seq (Cfg.affineCoord p224 XM XO RX) <|
   .seq (Verify.Cfg.compare p224 p224Order) (.block (Verify.Cfg.finish p224))

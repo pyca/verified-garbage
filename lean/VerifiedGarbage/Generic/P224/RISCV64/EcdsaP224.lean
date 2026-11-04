@@ -17,6 +17,7 @@ namespace VG.Generic.P224.RISCV64.EcdsaP224
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
   Spec.Ecdsa.P224.verifyApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.P224.verifyP224
+    consts := Impl.Ecdsa.RISCV64.Comb.p224CombConsts
     verified := Proof.Ecdsa.RISCV64.P224.verify_verified h.law }]
 
 end VG.Generic.P224.RISCV64.EcdsaP224
