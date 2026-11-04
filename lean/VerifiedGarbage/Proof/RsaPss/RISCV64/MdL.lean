@@ -70,6 +70,7 @@ structure MdL (H : Hash) (hH : HashOK H) where
   iv : md.HV
   be : Bool
   hL : L = H.B / 8 ∧ 8 ≤ L
+  hDN : H.D ≤ H.N
   init : ∀ m p, hH.SH.Repr m p [] → md.stateAt m p = iv
   hash : ∀ x, hH.SH.H.hash x = (md.hash iv x).take H.D
   len : ∀ n, n < 2 ^ 61 → md.lenBytes n = List.replicate (L - 8) 0 ++ bytes64 be (BitVec.ofNat 64 (8 * n))
@@ -156,6 +157,7 @@ def md5M : MdL Md5.hash Md5.ok where
   iv := Spec.Md5.H0
   be := false
   hL := by decide
+  hDN := by decide
   init _ _ h := h.1
   hash x := (List.take_of_length_le (Nat.le_of_eq (Proof.Md5.md.digest_length _))).symm
   len _ _ := rfl
@@ -177,6 +179,7 @@ def sha1M : MdL Sha1.hash Sha1.ok where
   iv := Spec.Sha1.H0
   be := true
   hL := by decide
+  hDN := by decide
   init _ _ h := h.1
   hash x := (List.take_of_length_le (Nat.le_of_eq (Proof.Sha1.md.digest_length _))).symm
   len _ _ := rfl
@@ -198,6 +201,7 @@ def sha256M : MdL Sha256Family.hash256 Sha256Family.ok256 where
   iv := Spec.Sha256.H0
   be := true
   hL := by decide
+  hDN := by decide
   init _ _ h := h.1
   hash x := (List.take_of_length_le (Nat.le_of_eq (Proof.Sha256.md.digest_length _))).symm
   len _ _ := rfl
@@ -219,6 +223,7 @@ def sha224M : MdL Sha256Family.hash224 Sha256Family.ok224 where
   iv := Spec.Sha256.H0_224
   be := true
   hL := by decide
+  hDN := by decide
   init _ _ h := h.1
   hash _ := rfl
   len _ _ := rfl
@@ -236,7 +241,7 @@ def sha224M : MdL Sha256Family.hash224 Sha256Family.ok224 where
 /-- The SHA-512 family's, from the initial hash value `iv`, for the streaming
 functions `Sha512Family.hash iv D …`. -/
 def sha512FamM (iv : Spec.Sha512.HashValue) (D : Nat) (initN finN : String) (finC : Prog isa)
-    (hH : HashOK (Hmac.Stream.RISCV64.Sha512Family.hash iv D initN finN finC))
+    (hH : HashOK (Hmac.Stream.RISCV64.Sha512Family.hash iv D initN finN finC)) (hD : D ≤ 64)
     (init : ∀ m p, hH.SH.Repr m p [] → Spec.Sha512.stateAt m p = iv)
     (hash : ∀ x, hH.SH.H.hash x = (Proof.Sha512.md.hash iv x).take D) :
     MdL (Hmac.Stream.RISCV64.Sha512Family.hash iv D initN finN finC) hH where
@@ -245,6 +250,7 @@ def sha512FamM (iv : Spec.Sha512.HashValue) (D : Nat) (initN finN : String) (fin
   iv := iv
   be := true
   hL := ⟨by simp [Hmac.Stream.RISCV64.Sha512Family.hash, Hash.B], by decide⟩
+  hDN := hD
   init := init
   hash := hash
   len := sha512_len
@@ -261,16 +267,16 @@ def sha512FamM (iv : Spec.Sha512.HashValue) (D : Nat) (initN finN : String) (fin
 
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha384M : MdL Sha384.hash Sha384.ok :=
-  sha512FamM _ _ _ _ _ Sha384.ok (fun _ _ h => h.1) fun _ => rfl
+  sha512FamM _ _ _ _ _ Sha384.ok (by decide) (fun _ _ h => h.1) fun _ => rfl
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512M : MdL Sha512.hash Sha512.ok :=
-  sha512FamM _ _ _ _ _ Sha512.ok (fun _ _ h => h.1)
+  sha512FamM _ _ _ _ _ Sha512.ok (by decide) (fun _ _ h => h.1)
     fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512_224M : MdL Sha512_224.hash Sha512_224.ok :=
-  sha512FamM _ _ _ _ _ Sha512_224.ok (fun _ _ h => h.1) fun _ => rfl
+  sha512FamM _ _ _ _ _ Sha512_224.ok (by decide) (fun _ _ h => h.1) fun _ => rfl
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512_256M : MdL Sha512_256.hash Sha512_256.ok :=
-  sha512FamM _ _ _ _ _ Sha512_256.ok (fun _ _ h => h.1) fun _ => rfl
+  sha512FamM _ _ _ _ _ Sha512_256.ok (by decide) (fun _ _ h => h.1) fun _ => rfl
 
 end VG.Proof.RsaPss.RISCV64

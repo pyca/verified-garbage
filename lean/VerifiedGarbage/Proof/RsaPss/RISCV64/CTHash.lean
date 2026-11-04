@@ -231,7 +231,7 @@ theorem Lay.canon {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c) :
 structure AgreeP (D : Nat) (a s : State) : Prop where
   ag : Agree Sp (vP D) a s
   cm : cm s = cm a
-  sl : s.gpr .a7 = a.gpr .a7
+  sl : stackArg s 0 = stackArg a 0
   any : anyL s = anyL a
 
 theorem lOk (D : Nat) : Ok Sp (vP D) (PreL D) (AgreeP D) := ⟨fun P => P.F, fun p => p.ag⟩
@@ -242,7 +242,7 @@ abbrev BL (D : Nat) : State → State → Prop := B Sp (vP D) (PreL D) (AgreeP D
 /-- `Xs`, from the anchor. -/
 structure Xa (a t : State) : Prop where
   s5 : t.gpr .s5 = cm a
-  s6 : t.gpr .s6 = a.gpr .a7
+  s6 : t.gpr .s6 = stackArg a 0
   s7 : t.gpr .s7 = anyL a
 
 theorem Xa.xs {D : Nat} {a s t : State} (g : AgreeP D a s) (x : Xa a t) : Xs s t :=
@@ -288,9 +288,9 @@ variable {D : Nat} {H : Hash} (hH : HashOK H) (cH : HashCT hH) (hF : H.F ≤ 208
 include hH cH hF hD in
 /-- `H' = Hash(M')` for a given salt length, in both runs. -/
 theorem hashFixed_ct :
-    RelCT isa (Two fun a t => BL D a t ∧ t.gpr .s6 = a.gpr .a7 ∧ (a.gpr .a7).toNat + 8 + D ≤ 2048)
+    RelCT isa (Two fun a t => BL D a t ∧ t.gpr .s6 = stackArg a 0 ∧ (stackArg a 0).toNat + 8 + D ≤ 2048)
       (hashFixed H) fun _ _ => True :=
-  hashFixedG_ct (lOk D) hH cH hF hD (fun a => a.gpr .a7)
+  hashFixedG_ct (lOk D) hH cH hF hD (fun a => stackArg a 0)
 
 /-- In the loop over the lengths, for the length `L`: `BL`, the counters and
 some salt length in `s11`. -/

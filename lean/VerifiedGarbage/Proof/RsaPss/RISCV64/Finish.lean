@@ -301,10 +301,10 @@ variable {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c) {H : Hash}
 include L hH hF
 
 theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State}
-    (h : Base Sp (vP D) s t) (x : Xs s t) (hsl : (s.gpr .a7).toNat + 1 ≤ dN) (ha : (t.gpr .s10).toNat < 2 ^ 63) :
+    (h : Base Sp (vP D) s t) (x : Xs s t) (hsl : (stackArg s 0).toNat + 1 ≤ dN) (ha : (t.gpr .s10).toNat < 2 ^ 63) :
     WP isa (.seq (mPrefix H [.li .t5 8]) (.seq (copySalt H) (.seq (hashFixed H) (cmpH H oDig)))) t fun t' =>
       Base Sp (vP D) s t' ∧ t'.gpr .a0 = if t.gpr .s10 = 0#64 ∧ ∀ i < D, view t.mem (Sp s) (lN + dN + i) =
-        (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN (s.gpr .a7).toNat)).getD i 0 then 1#64 else 0#64 := by
+        (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN (stackArg s 0).toNat)).getD i 0 then 1#64 else 0#64 := by
   have F := L.F
   have Fh := hfits hH
   obtain ⟨hE, hSt, hDg, hCt, hRs⟩ := offs
@@ -313,7 +313,7 @@ theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = 
   refine WP.seq (WP.mono (prefix_ok L hD (n := 8) (Nat.le_refl _) (by decide) nset8 h) fun t₁ ⟨b₁, g₁, v₁⟩ => ?_)
   have x₁ : Xs s t₁ := x.of fun r hr => g₁.gpr r (by revert r; decide)
   refine WP.seq (WP.mono (salt_ok L hD b₁ x₁ hsl) fun t₂ ⟨b₂, g₂, v₂⟩ => ?_)
-  generalize hS : (s.gpr .a7).toNat = sl at hsl v₂
+  generalize hS : (stackArg s 0).toNat = sl at hsl v₂
   have h6 : t₂.gpr .s6 = BitVec.ofNat 64 sl := by
     rw [g₂.get .s6, x₁.s6, ← hS, ofNat_toNat]
   refine WP.seq (WP.mono (hashFixedG_ok F hH hF hD h6 b₂ (by omega)) fun t₃ ⟨b₃, g₃, s₃, d₃⟩ => ?_)

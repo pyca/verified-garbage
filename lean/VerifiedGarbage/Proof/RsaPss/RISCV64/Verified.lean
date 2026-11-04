@@ -68,8 +68,8 @@ structure PubP (a s : State) : Prop where
   args : ∀ i, 1 ≤ i → i < 5 → stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .a0) (kk s) = Spec.Rsa.bytesAt a.mem (a.gpr .a0) (kk a)
   e : Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a2) (a.gpr .a3).toNat
-  w : Spec.Rsa.wordsAt s.mem (stackArg s 3) (stackArg s 4).toNat =
-    Spec.Rsa.wordsAt a.mem (stackArg a 3) (stackArg a 4).toNat
+  w : Spec.Rsa.wordsAt s.mem (stackArg s 4) (stackArg s 5).toNat =
+    Spec.Rsa.wordsAt a.mem (stackArg a 4) (stackArg a 5).toNat
 
 theorem pubP_refl (s : State) : PubP s s := ⟨rfl, fun _ _ => rfl, rfl, fun _ _ _ => rfl, rfl, rfl, rfl⟩
 
@@ -189,7 +189,7 @@ end
 structure Ck (D : Nat) (s : State) : Prop where
   h0 : s.mem (s.gpr .a0) ≠ 0
   em : D + 2 ≤ kk s - loN s
-  fit : anyL s = 0 → (s.gpr .a7).toNat + 1 ≤ kk s - loN s - D - 1
+  fit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - D - 1
 
 section
 variable {H : Hash} (hH : HashOK H) (cH : HashCT hH) (hF : H.F ≤ 208) {Gs : Spec.Mgf1.Hash}
@@ -256,7 +256,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     have : ¬ kk a - loN a < Gs.len + 2 := by simpa using hc
     exact ⟨s, P, p, E, h0, by rw [p.1.pKk, p.1.pLoN p.2]; omega⟩
   -- The salt length expected.
-  let E3 := fun (a t : State) => E2 a t ∧ t.gpr .a1 = if anyL a = 0 then a.gpr .a7 else 0
+  let E3 := fun (a t : State) => E2 a t ∧ t.gpr .a1 = if anyL a = 0 then stackArg a 0 else 0
   have pin7 : Pins (fun (a t : State) => (E1 a t ∧ (t.gpr .a0 != 0) = decide (kk a - loN a < Gs.len + 2)) ∧
       isa.eval (.nonzero .a0) t = some false) [.s7] := fun a t₁ t₂ h₁ h₂ => by
     obtain ⟨s₁, P₁, p₁, E₁, -⟩ := e2 h₁
@@ -268,7 +268,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     exact WP.mono (expLen_ok E.xs) fun t' ⟨o, e⟩ =>
       ⟨⟨s, P, p, E.only P o, h0, hem⟩, by rw [e, p.1.pAny, p.1.g .a7 (by decide)]⟩
   refine two_seq (Ψ := fun a t => E2 a t ∧ (t.gpr .a0 != 0) =
-      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .a7 else 0).toNat))
+      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat))
     (chkSalt_taint H (pin fun _ _ h => let ⟨s, P, p, E, _⟩ := h.1; ⟨s, P, p, E⟩))
     (fun a t ⟨⟨s, P, p, E, h0, hem⟩, h1⟩ => WP.mono (chkSalt_ok P hGl hD64 E h0 hem
       (by rw [h1, p.1.pAny, p.1.g .a7 (by decide)])) fun t' ⟨E', r3⟩ =>
@@ -276,12 +276,12 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
   refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.2, h₂.2])
     (fail_taint (pin fun _ _ h => let ⟨s, P, p, E, _⟩ := h.1.1; ⟨s, P, p, E⟩)) ?_
   have e4 : ∀ {a t : State}, (E2 a t ∧ (t.gpr .a0 != 0) =
-      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .a7 else 0).toNat)) ∧
+      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat)) ∧
       isa.eval (.nonzero .a0) t = some false →
       ∃ s, PreP Gs.len s ∧ PubK a s ∧ Before Gs.len s t ∧ Ck Gs.len s :=
     fun {a t} ⟨⟨⟨s, P, p, E, h0, hem⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
-    have hn : ¬ kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .a7 else 0).toNat := by simpa using hc
+    have hn : ¬ kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat := by simpa using hc
     refine ⟨s, P, p, E.before, h0, hem, fun ha => ?_⟩
     rw [← p.1.pAny, ifp ha, ← p.1.g .a7 (by decide), ← p.1.pKk, ← p.1.pLoN p.2] at hn
     omega

@@ -41,7 +41,7 @@ open VG.Proof.RsaOaep (mixV)
 open VG.Proof.Mgf1 (ifp ifn)
 
 /-- The salt length given fits in `DB`. -/
-abbrev Fit (D : Nat) (a : State) : Prop := anyL a = 0 → (a.gpr .a7).toNat + 1 ≤ (dbLen D a).toNat
+abbrev Fit (D : Nat) (a : State) : Prop := anyL a = 0 → (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat
 
 /-- MGF1's arguments for unmasking `DB`, from the anchor. -/
 abbrev qM (D : Nat) (a : State) : Nat × Nat × Nat × Nat :=
@@ -49,7 +49,7 @@ abbrev qM (D : Nat) (a : State) : Nat × Nat × Nat × Nat :=
 
 /-- `c`, `salt_len` and the mode at `oV`. -/
 abbrev Sv (a t : State) : Prop :=
-  t.mem.readW (off (Sp a) oV) 64 = cm a ∧ t.mem.readW (off (Sp a) (oV + 8)) 64 = a.gpr .a7 ∧
+  t.mem.readW (off (Sp a) oV) 64 = cm a ∧ t.mem.readW (off (Sp a) (oV + 8)) 64 = stackArg a 0 ∧
     t.mem.readW (off (Sp a) (oV + 16)) 64 = anyL a
 
 theorem readV {m m' : Mem} {S : Addr} (h : ∀ i < 24, view m' S (oV + i) = view m S (oV + i)) {d : Nat}
@@ -202,17 +202,17 @@ theorem prefix_wp {nset : List Instr} {n : Nat} (hn : 8 ≤ n) (hn' : n ≤ 2048
   exact WP.mono (prefix_ok (agree_lay P g) hD hn hn' hns b) fun t' ⟨b', g', _⟩ => ⟨⟨s, P, g, b'⟩, g'⟩
 
 include hD in
-theorem salt_wp {a t : State} (h : BL D a t) (x : Xa a t) (hsl : (a.gpr .a7).toNat + 1 ≤ (dbLen D a).toNat) :
+theorem salt_wp {a t : State} (h : BL D a t) (x : Xa a t) (hsl : (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat) :
     WP isa (copySalt H) t fun t' => BL D a t' ∧ Kept mpR t t' := by
   obtain ⟨s, P, g, b⟩ := h
   exact WP.mono (salt_ok (agree_lay P g) hD b (x.xs g) (by rw [g.sl]; exact hsl)) fun t' ⟨b', k', _⟩ =>
     ⟨⟨s, P, g, b'⟩, k'⟩
 
 include hH hF hD in
-theorem hashFixed_wp {a t : State} (h : BL D a t) (h6 : t.gpr .s6 = a.gpr .a7)
-    (hsl : (a.gpr .a7).toNat + 8 + D ≤ 2048) : WP isa (hashFixed H) t (BL D a) := by
+theorem hashFixed_wp {a t : State} (h : BL D a t) (h6 : t.gpr .s6 = stackArg a 0)
+    (hsl : (stackArg a 0).toNat + 8 + D ≤ 2048) : WP isa (hashFixed H) t (BL D a) := by
   obtain ⟨s, P, g, b⟩ := h
-  exact WP.mono (hashFixedG_ok P.F hH hF hD (sl := (a.gpr .a7).toNat) (by rw [h6, ofNat_toNat]) b hsl)
+  exact WP.mono (hashFixedG_ok P.F hH hF hD (sl := (stackArg a 0).toNat) (by rw [h6, ofNat_toNat]) b hsl)
     fun t' ⟨b', _⟩ => ⟨s, P, g, b'⟩
 
 include hD in
@@ -274,14 +274,14 @@ theorem post_ct : RelCT isa (Two fun a t => BL D a t ∧ Xa a t ∧ Fit D a)
   refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.1.2.1.s7, h₂.1.2.1.s7]) ?_ ?_
   · have ha : ∀ {a t : State}, (P0 a t ∧ Pos11 D a t) ∧ isa.eval (.zero .s7) t = some true → anyL a = 0 :=
       fun ⟨h, e⟩ => by rw [eval_zero, h.1.2.1.s7] at e; exact beq_iff_eq.mp (Option.some.inj e)
-    let F0 := fun (a t : State) => (BL D a t ∧ Xa a t) ∧ (a.gpr .a7).toNat + 1 ≤ (dbLen D a).toNat
+    let F0 := fun (a t : State) => (BL D a t ∧ Xa a t) ∧ (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat
     refine two_seq (Ψ := F0) (mPrefix8_taint H (bl_pins (an := id) (fun _ _ h => h.1.1.1) [.s0, .s2]))
       (fun a t h => WP.mono (prefix_wp hD (by decide) (by decide) nset8 h.1.1.1) fun t' ⟨b, k⟩ =>
         ⟨⟨b, h.1.1.2.1.of fun r hr => k.gpr r (by revert r; decide)⟩, h.1.1.2.2 (ha h)⟩) ?_
     refine two_seq (Ψ := F0) (copySalt_taint H (xa_pins (an := id) (fun _ _ h => h.1) [.s0, .s3, .s4, .s6]))
       (fun a t h => WP.mono (salt_wp hD h.1.1 h.1.2 h.2) fun t' ⟨b, k⟩ =>
         ⟨⟨b, h.1.2.of fun r hr => k.gpr r (by revert r; decide)⟩, h.2⟩) ?_
-    have hb : ∀ {a t : State}, F0 a t → (a.gpr .a7).toNat + 8 + D ≤ 2048 := fun h => by
+    have hb : ∀ {a t : State}, F0 a t → (stackArg a 0).toNat + 8 + D ≤ 2048 := fun h => by
       have := h.1.1.dn; have := h.2; omega
     refine two_seq (Ψ := BL D) ((hashFixed_ct hH cH hF hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1.1, h₁.1.2.s6, hb h₁⟩, ⟨h₂.1.1, h₂.1.2.s6, hb h₂⟩⟩) fun _ _ h => h)

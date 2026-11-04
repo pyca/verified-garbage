@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaOaep.RISCV64
 public import VerifiedGarbage.Impl.Words.RISCV64
+public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
 # RSASSA-PSS verification (RFC 8017 §8.1.2) with a precomputed public key on RISC-V
@@ -71,6 +72,7 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 open VG.Impl.Bignum.RISCV64 (countLoop)
 open VG.Impl.RsaPkcs1Sig.RISCV64 (copyLoop fillLoop)
 open VG.Impl.Words.RISCV64 (storeBE)
+open VG.Impl.Words64.RISCV64 (storeLE64)
 open VG.Impl.RsaOaep.RISCV64 (argBase oEm oSt oDig oCtr oRsa Fns tword tcall mgfXorT)
 
 /-! ## More of our part of `scratch` -/
@@ -137,11 +139,6 @@ def ofIdx (i : Nat) : Hash :=
 /-- Whether the hash function of index `i` has a big-endian length field
 (all but MD5). -/
 def beOf (i : Nat) : Bool := i != 0
-
-/-- Store the low `w` bytes of `v` at `off(n)`, little-endian, a byte at a
-time; `tmp` is clobbered. -/
-def storeLE (w : Nat) (v tmp n : Reg) (off : Nat) : List Instr :=
-  (List.range w).flatMap fun j => [.shift .srl .d tmp v (8 * j), .store .b tmp n (off + j)]
 
 variable (H : Hash)
 
@@ -318,7 +315,7 @@ big-endian if `be`, little-endian if not. -/
 def padEnd (be : Bool) : List Instr :=
   yBase .a1 ++ [.add .a1 .a1 .t2, .li .t1 0x80, .store .b .t1 .a1 0] ++ yBase .a1 ++
     [.add .a1 .a1 .t3, .addi .a1 .a1 (-8), .shift .sll .d .t1 .t2 3] ++
-    (if be then storeBE 8 .t1 .t4 .a1 0 else storeLE 8 .t1 .t4 .a1 0)
+    (if be then storeBE 8 .t1 .t4 .a1 0 else storeLE64 .t1 .t4 .t5 .a1 0)
 
 /-- The compression function's arguments: the hash value at `scratch + oSt`,
 the blocks at `scratch + oY`, their number, the working space. -/

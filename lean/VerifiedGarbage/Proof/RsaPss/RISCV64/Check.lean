@@ -69,7 +69,7 @@ length's difference from it. -/
 theorem lenCheck_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) {v : BitVec 64} {sl : Nat}
     (h24 : t.gpr .s10 = v) (h25 : t.gpr .s11 = BitVec.ofNat 64 sl) :
     WP isa lenCheck t fun t' => Base Sp (vP D) s t' ∧ Only [.t1, .s10] t t' ∧
-      t'.gpr .s10 = v ||| if anyL s = 0 then BitVec.ofNat 64 sl ^^^ s.gpr .a7 else 0#64 := by
+      t'.gpr .s10 = v ||| if anyL s = 0 then BitVec.ofNat 64 sl ^^^ stackArg s 0 else 0#64 := by
   have F := L.F
   refine WP.ite _ (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · have ha0 : anyL s = 0 := by rw [← x.s7]; simpa using hz
@@ -85,7 +85,7 @@ theorem check_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) {a : Byte} {p
     (ha : view t.mem (Sp s) ((s.gpr .a1).toNat - 1) = a) (h8 : t.gpr .a5 = BitVec.ofNat 64 pos) (hp : pos < dN)
     (h9 : t.gpr .a6 = val) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base Sp (vP D) s t' → Xs s t' → t'.mem = t.mem → Only [.t1, .s10, .t2, .a6, .s11, .s8] t t' →
-      t'.gpr .s10 = accW a val (dN - pos - 1) (anyL s) (s.gpr .a7) →
+      t'.gpr .s10 = accW a val (dN - pos - 1) (anyL s) (stackArg s 0) →
       t'.gpr .s11 = BitVec.ofNat 64 (dN - pos - 1) → t'.gpr .s8 = BitVec.ofNat 64 pos → WP isa rest t' Q) :
     WP isa (.seq (.block posCheck) (.seq lenCheck rest)) t Q :=
   WP.seq (WP.mono (posCheck_ok L h ha h8 hp h9) fun t₈ ⟨b₈, k₈, x24, x25, x8⟩ =>
