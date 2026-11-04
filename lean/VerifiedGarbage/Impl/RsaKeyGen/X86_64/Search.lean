@@ -130,15 +130,14 @@ def iteration : Prog isa := seqs [
   .block [.mov .rax (.mem (field 17)), .alu .cmp .rax (.imm 4)]]
 
 /-- The public words back to the state, the octets consumed to `used`, the
-status returned and r12 restored. -/
+status returned and r12 restored: every word loaded before any is stored. -/
 def finish : List Instr := [
-  .mov .rax (.mem (field 18)),
-  .mov .rcx (.mem (field 0)), .store { base := .rax } .rcx,
-  .mov .rcx (.mem (field 1)), .store { base := .rax, disp := 8 } .rcx,
-  .mov .rcx (.mem (field 2)), .store { base := .rax, disp := 16 } .rcx,
-  .mov .rcx (.mem (field 3)), .store { base := .rax, disp := 24 } .rcx,
-  .mov .rdx (.mem (field 7)), .mov .rcx (.mem (field 16)), .store { base := .rdx } .rcx,
-  .mov .rax (.mem (field 17)), .mov .r12 (.mem (field 4))]
+  .mov .rax (.mem (field 18)), .mov .rcx (.mem (field 0)), .mov .rdx (.mem (field 1)),
+  .mov .rsi (.mem (field 2)), .mov .rdi (.mem (field 3)), .mov .r8 (.mem (field 7)),
+  .mov .r9 (.mem (field 16)), .mov .r10 (.mem (field 17)), .mov .r11 (.mem (field 4)),
+  .store { base := .rax } .rcx, .store { base := .rax, disp := 8 } .rdx,
+  .store { base := .rax, disp := 16 } .rsi, .store { base := .rax, disp := 24 } .rdi,
+  .store { base := .r8 } .r9, .mov .rax (.reg .r10), .mov .r12 (.reg .r11)]
 
 def code : Prog isa := .frame (.alloc frameBytes)
   (seqs [.block entry, .loop (iteration candidate) .e, .block finish]) (.free frameBytes)
