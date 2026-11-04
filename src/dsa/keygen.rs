@@ -16,6 +16,7 @@ use alloc::{vec, vec::Vec};
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 use core::sync::atomic::AtomicU8;
@@ -94,6 +95,7 @@ impl PrivateKey {
                     target_arch = "aarch64",
                     target_arch = "powerpc64",
                     target_arch = "riscv64",
+                    target_arch = "x86",
                     target_arch = "x86_64"
                 ))]
                 validated: AtomicU8::new(0),
@@ -203,6 +205,7 @@ impl PrivateKey {
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
                 target_arch = "riscv64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             validated: AtomicU8::new(0),
