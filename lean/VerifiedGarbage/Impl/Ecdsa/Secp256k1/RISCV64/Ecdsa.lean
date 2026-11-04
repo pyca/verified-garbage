@@ -18,7 +18,8 @@ open VG.RISCV64
 
 /-- `vg_ecdsa_secp256k1_sign`, the signature for a nonce, which RFC 6979's
 function calls. -/
-def signSecp256k1 : Prog isa := Sign.Cfg.sign secp256k1 secp256k1Order "vg_secp256k1_mul" mulSecp256k1
+def signSecp256k1 : Prog isa :=
+  Sign.Cfg.sign secp256k1 secp256k1Order Comb.mulGSecp256k1Name Comb.mulGSecp256k1
 
 /-- `vg_ecdsa_secp256k1_verify`. -/
 def verifySecp256k1 : Prog isa :=

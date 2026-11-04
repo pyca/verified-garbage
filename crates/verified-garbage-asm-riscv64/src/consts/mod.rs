@@ -9,6 +9,8 @@ pub struct Table<const N: usize>(pub [u8; N]);
 #[rustfmt::skip]
 mod vg_brainpoolp256r1_comb;
 pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
+mod vg_secp256k1_comb;
+pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
 
 #[rustfmt::skip]
 mod vg_cast5_s1234;
