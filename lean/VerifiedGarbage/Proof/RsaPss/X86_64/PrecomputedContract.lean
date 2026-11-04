@@ -9,14 +9,14 @@ namespace VG.Proof.RsaPss.X86_64.Pc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-variable (G : Spec.Mgf1.Hash)
+variable (tsH tsG : List FnTable)
 
 def contract : Contract isa where
   pre := (Spec.RsaPss.verifyPrecomputedContract G G abi verifyStack).pre
-  post s t := validCache s → (verifyK G).post s t
-  pub a s := (verifyK G).pub a s ∧ stackArg a 5 = stackArg s 5 ∧ stackArg a 6 = stackArg s 6 ∧
-    Spec.Rsa.wordsAt a.mem (stackArg a 5) (stackArg a 6).toNat =
-      Spec.Rsa.wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat
+  post s t := validCache s → (verifyK tsH tsG).post s t
+  pub a s := (verifyK tsH tsG).pub a s ∧ stackArg a 6 = stackArg s 6 ∧ stackArg a 7 = stackArg s 7 ∧
+    Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat =
+      Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat
 
 def satState : State := { verifySatState G with
   mem := fun a => if a = 0x10031 then 0x50 else if a = 0x10038 then 16 else (verifySatState G).mem a

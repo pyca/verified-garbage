@@ -40,13 +40,13 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
 variable (G) in
 /-- Before the epilogue: the result in `rax` if the cache matches, the saved
 registers in their slots. -/
 structure CDone (s t : State) : Prop where
-  L : Lay t (fb s) (stackArg s 3)
+  L : Lay t (fb s) (stackArg s 4)
   wr : t.wr = frR s :: s.wr
   cs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r
   rbx : t.mem.readW (off (fb s) sRbx) 64 = s.gpr .rbx
@@ -56,7 +56,7 @@ structure CDone (s t : State) : Prop where
 
 theorem restoreC_ok {s t : State} (D : CDone G s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (validCache s → (verifyK G).post s (freedF t')) := by
+      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (validCache s → (verifyK tsH tsG).post s (freedF t')) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
@@ -110,23 +110,23 @@ def vW (W : Nat → BitVec 64) (s : State) (eb : Nat) : Nat → BitVec 64 :=
     (BitVec.ofNat 64 ((s.gpr .rsi).toNat - Spec.RsaPss.emLength eb))
 
 /-- `emBits`, then the public-key operation's arguments. -/
-theorem vprep_ok {s u : State} (hp : Pre G s) (L : Lay u (fb s) (stackArg s 3)) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem (fb s) (stackArg s 3) V W) (hw : u.wr = frR s :: s.wr) (hrd : u.rd = s.rd)
+theorem vprep_ok {s u : State} (hp : Pre tsH tsG s) (L : Lay u (fb s) (stackArg s 4)) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem (fb s) (stackArg s 4) V W) (hw : u.wr = frR s :: s.wr) (hrd : u.rd = s.rd)
     (hM : Frame (vwrR s) s.mem u.mem) (h17 : W 17 = s.gpr .rsi) (h19 : W 19 = s.gpr .rdx) (h20 : W 20 = s.gpr .rcx)
-    (h22 : W 22 = stackArg s 4) (h38 : W 38 = s.gpr .r9) {x : Nat} (hx : x < 256) (h0 : x ≠ 0) (hax : u.gpr .rax = BitVec.ofNat 64 x) :
-    WP isa (.block (emBitsB ++ pubArgsC)) u fun u' => Lay u' (fb s) (stackArg s 3) ∧
+    (h22 : W 22 = stackArg s 5) (h38 : W 38 = stackArg s 0) {x : Nat} (hx : x < 256) (h0 : x ≠ 0) (hax : u.gpr .rax = BitVec.ofNat 64 x) :
+    WP isa (.block (emBitsB ++ pubArgsC)) u fun u' => Lay u' (fb s) (stackArg s 4) ∧
       Keep [.rdx, .rax, .r8, .rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] u u' ∧
-      (∃ W', Rep u'.mem (fb s) (stackArg s 3) V W' ∧ (∀ i < 4, W' i = vArg s i) ∧
+      (∃ W', Rep u'.mem (fb s) (stackArg s 4) V W' ∧ (∀ i < 4, W' i = vArg s i) ∧
         (∀ i < nW, 4 ≤ i → W' i = vW W s (ebV (s.gpr .rsi).toNat x) i)) ∧
-      u'.gpr .rdi = stackArg s 3 ∧ u'.gpr .rsi = s.gpr .rsi ∧ u'.gpr .rdx = stackArg s 5 ∧
-      u'.gpr .rcx = stackArg s 6 ∧ u'.gpr .r8 = s.gpr .rdx ∧ u'.gpr .r9 = s.gpr .rcx ∧
+      u'.gpr .rdi = stackArg s 4 ∧ u'.gpr .rsi = s.gpr .rsi ∧ u'.gpr .rdx = stackArg s 6 ∧
+      u'.gpr .rcx = stackArg s 7 ∧ u'.gpr .r8 = s.gpr .rdx ∧ u'.gpr .r9 = s.gpr .rcx ∧
       Frame (vwrR s) s.mem u'.mem := by
   have hk1 := hp.k1; have hk2 := hp.k2
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8) (emBitsB_ok L R (k := (s.gpr .rsi).toNat)
+  refine WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 16) (emBitsB_ok L R (k := (s.gpr .rsi).toNat)
     (x := x) (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) hk2 hx h0 hax)) fun t ⟨⟨L3, k3, R3⟩, f3⟩ => ?_
   have hM3 := vframe_keep hp.toVPre hw L.rsp hM f3
-  exact WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8) (pubArgsC_ok hp L3 R3 (k3.2.2.trans hw)
+  exact WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 16) (pubArgsC_ok hp L3 R3 (k3.2.2.trans hw)
     (k3.2.1.trans hrd) hM3 (by simp [upd, h17]) (by simp [upd, h19]) (by simp [upd, h20])
     (by simp [upd, h22]) (by simp [upd, h38])))
     fun t' ⟨⟨k4, L4, hW, a, b, c, d, e, f⟩, f4⟩ =>
@@ -137,8 +137,8 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
     (hspK : SpSafe chkC) (hdK : chkC.x86_64Depth ≤ chkStack) (v : PublicImpl)
     {s : State} (h : (Spec.RsaPss.verifyPrecomputedContract G G abi verifyStack).pre s) :
     WP isa (verifyC chkN chkC v.name v.code) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-      (validCache s → (verifyK G).post s s') ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
-  have hp := pre_of G h
+      (validCache s → (verifyK tsH tsG).post s s') ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
+  have hp := pre_of tsH tsG h
   have hF := vfb_toNat hp.toVPre
   have hk1 := hp.k1; have hk2 := hp.k2
   refine wp_frame (by have := hp.sp1; unfold verifyStack frameBytes at *; omega_arith) ?_
@@ -153,8 +153,8 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
   refine WP.mono_mx (by decide) (vn0_ok hp.toVPre L1 R1 (by simp [vproW, upd]) k1.2.1 hM1)
     fun t2 ⟨k2, hm2, hax2, hz2⟩ hmx2 => ?_
   have e2 : t2.mxcsr = s.mxcsr := hmx2.trans e1
-  have L2 : Lay t2 (fb s) (stackArg s 3) := L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
-  have R2 : Rep t2.mem (fb s) (stackArg s 3) _ (vproW s) := hm2 ▸ R1
+  have L2 : Lay t2 (fb s) (stackArg s 4) := L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
+  have R2 : Rep t2.mem (fb s) (stackArg s 4) _ (vproW s) := hm2 ▸ R1
   have hM2 : Frame (vwrR s) s.mem t2.mem := hm2 ▸ hM1
   have hw2 : t2.wr = frR s :: s.wr := k2.2.2.trans k1.2.2
   have hrd2 : t2.rd = s.rd := k2.2.1.trans k1.2.1
@@ -216,9 +216,9 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
       intro p hp'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
       subst hp'; dsimp only; unfold oRsa; omega_arith)
-  set V5 := fun o => if inR [(0, k)] o then t5.mem (off (stackArg s 3) o)
-    else (fun o => s.mem (off (stackArg s 3) o)) o with hV5
-  have L5 : Lay t5 (fb s) (stackArg s 3) := L4.of_rep' R4 R5 rfl (cs5 .rsp (by decide)) wr5
+  set V5 := fun o => if inR [(0, k)] o then t5.mem (off (stackArg s 4) o)
+    else (fun o => s.mem (off (stackArg s 4) o)) o with hV5
+  have L5 : Lay t5 (fb s) (stackArg s 4) := L4.of_rep' R4 R5 rfl (cs5 .rsp (by decide)) wr5
   -- `sAcc` and `checkEncoding`'s arguments.
   refine WP.seq (WP.mono_mx (by decide) (chkArgs_ok hp L5 R5 (wr5.trans hw4) (rd5.trans hrd4) hM5
     (lo := lo) (el := el) (eb := eb)
@@ -234,7 +234,7 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
     (k6.2.2.trans (wr5.trans hw4)) hM6 R6 ((R6.fr 0 (by decide)).trans (by simp [chkW, upd]))
     ((R6.fr 1 (by decide)).trans (by simp [chkW, upd])) hdi6 hsi6 hdx6 hcx6 h86 h96 (by omega_arith) heb1 heb2 rfl)
     fun t7 ⟨rd7, wr7, cs7, mx7, hM7, R7, hax7⟩ => ?_)
-  have L7 : Lay t7 (fb s) (stackArg s 3) := L6.of_rep' R6 R7 rfl (cs7 .rsp (by decide)) wr7
+  have L7 : Lay t7 (fb s) (stackArg s 4) := L6.of_rep' R6 R7 rfl (cs7 .rsp (by decide)) wr7
   -- The result, if the first `lo` bytes are zero.
   refine WP.mono_mx (by decide) (WP.keep [.rax] (Q := fun y => y.mem = t7.mem ∧
       y.gpr .rax = t7.gpr .rax &&& accV lo (V5 0)) ?_ rfl) fun y ⟨⟨hm8, hax8⟩, k8⟩ hmx8 => ?_
@@ -255,7 +255,7 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
   · rw [R8.rd (d := sR12) 43 rfl (by decide), w 43 (by decide) (by decide)]; simp [vproW, upd]
   · have hbx := written_getD (hout5 hc)
     set x := (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) k)
-      (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r9) k)).getD
+      (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (stackArg s 0) k)).getD
         (Spec.RsaPss.zeros k) with hx
     have hxl : x.length = k := by rw [← hbx, bytesAt_length]
     have hin : ∀ o, o < k → inR [(0, k)] o := fun o ho =>
@@ -264,7 +264,7 @@ theorem codeC_ok {chkN : String} {chkC : Prog isa}
       rw [← hbx, hV5]; dsimp only; rw [ifp (hin 0 (by omega_arith))]
       rw [List.getD_eq_getElem?_getD, Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range (by omega_arith)]
       simp [off]
-    have hem : Spec.Rsa.bytesAt t6.mem (off (stackArg s 3) lo) el = x.drop lo := by
+    have hem : Spec.Rsa.bytesAt t6.mem (off (stackArg s 4) lo) el = x.drop lo := by
       rw [← hbx]
       apply List.ext_getElem (by simp [Spec.Rsa.bytesAt]; omega_arith)
       intro i h1 h2

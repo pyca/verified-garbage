@@ -43,13 +43,13 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (PublicImpl pdChkContract)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable {G : Spec.Mgf1.Hash} {H : Hash}
+variable {tsH tsG : List FnTable} {H : Hash}
 
 /-- The cache's place and words agree too. -/
 def extraC (G : Spec.Mgf1.Hash) (a s : State) : Prop :=
-  Pre G a ∧ Pre G s ∧ stackArg s 5 = stackArg a 5 ∧ stackArg s 6 = stackArg a 6 ∧
-    Spec.Rsa.wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat =
-      Spec.Rsa.wordsAt a.mem (stackArg a 5) (stackArg a 6).toNat
+  Pre tsH tsG a ∧ Pre tsH tsG s ∧ stackArg s 6 = stackArg a 6 ∧ stackArg s 7 = stackArg a 7 ∧
+    Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat =
+      Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat
 
 abbrev CSib := VSib (extra := extraC G) G
 abbrev CAt := VAt (extra := extraC G) G
@@ -81,9 +81,9 @@ theorem CSib.vclo {a s : State} (S : CSib (G := G) a s) : vclo s = vclo a := by
 theorem CSib.vex {a s : State} (S : CSib (G := G) a s) : vex s = vex a := by
   simp only [VG.Proof.RsaPss.X86_64.Pc.vex, S.veb, S.vel, S.vclo]
 
-theorem CSib.pre {a s : State} (S : CSib (G := G) a s) : Pre G s := S.2.2.2.2.1
+theorem CSib.pre {a s : State} (S : CSib (G := G) a s) : Pre tsH tsG s := S.2.2.2.2.1
 
-theorem veb_ok {s : State} (hp : VPre G s) :
+theorem veb_ok {s : State} (hp : VPre tsH tsG s) :
     vclo s ≤ 1 ∧ 1 ≤ veb s ∧ veb s ≤ Proof.RsaPss.maxEmBits ∧ vclo s + vel s = (s.gpr .rsi).toNat := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hl8 : Nat.log2 (n0v s) < 8 := RsaPss.log2_lt8 (s.mem (s.gpr .rdi))
@@ -116,7 +116,7 @@ theorem pro_ct : RelCT isa (Two (CAt (G := G) J0)) (.block (verifyPrologue ++ n0
     rw [allocState_gpr']; exact ifn hr _ _
   refine two_post (two_pub0 1 [.rdi, .rsi, .rdx, .rcx, .r8, .r9] fb State.wr
     (fun a => [(.rdi, a.gpr .rdi), (.rsi, a.gpr .rsi), (.rdx, a.gpr .rdx), (.rcx, a.gpr .rcx), (.r8, a.gpr .r8),
-      (.r9, a.gpr .r9)])
+      (.r9, stackArg a 0)])
     (fun a t ⟨s, S, ht⟩ => ⟨by rw [ht, allocState_gpr', ifp rfl, ← S.fb], by rw [ht, ← S.wr, ← S.fb]; rfl,
       fun p hp => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -161,8 +161,8 @@ variable (H) in
 /-- Before the public-key operation. -/
 def JP (s t : State) : Prop :=
   VS H s t K1 [] (EX s) ∧ t.rd = s.rd ∧ Frame (vwrR s) s.mem t.mem ∧
-    (∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) ∧ t.gpr .rdi = stackArg s 3 ∧
-    t.gpr .rsi = s.gpr .rsi ∧ t.gpr .rdx = stackArg s 5 ∧ t.gpr .rcx = stackArg s 6 ∧ t.gpr .r8 = s.gpr .rdx ∧
+    (∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) ∧ t.gpr .rdi = stackArg s 4 ∧
+    t.gpr .rsi = s.gpr .rsi ∧ t.gpr .rdx = stackArg s 6 ∧ t.gpr .rcx = stackArg s 7 ∧ t.gpr .r8 = s.gpr .rdx ∧
     t.gpr .r9 = s.gpr .rcx
 
 variable (H) in
@@ -208,8 +208,8 @@ theorem centry_bytes {s t : State} (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s
 
 theorem centry_pre {a s t : State} (S : CSib (G := G) a s) (hst : t.gpr .rsp = fb s)
     (hM : Frame (vwrR s) s.mem t.mem) :
-    Spec.Rsa.wordsAt t.callEntry.mem (stackArg s 5) (stackArg s 6).toNat =
-      Spec.Rsa.wordsAt a.mem (stackArg a 5) (stackArg a 6).toNat := by
+    Spec.Rsa.wordsAt t.callEntry.mem (stackArg s 6) (stackArg s 7).toNat =
+      Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat := by
   have fE : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
     rw [State.callEntry_mem, hst]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
@@ -301,10 +301,10 @@ theorem pcall_ct (impl : PublicImpl) :
 variable (H) in
 /-- Before `checkEncoding`. -/
 def JK (s t : State) : Prop :=
-  VS H s t [] [] (fun _ W => W 0 = off (stackArg s 3) (8 * kw (s.gpr .rsi).toNat) ∧
-    W 1 = stackArg s 4 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)) ∧ t.rd = s.rd ∧ Frame (vwrR s) s.mem t.mem ∧
-    t.gpr .rdi = s.gpr .r8 ∧ t.gpr .rsi = off (stackArg s 3) (vclo s) ∧ t.gpr .rdx = BitVec.ofNat 64 (vel s) ∧
-    t.gpr .rcx = BitVec.ofNat 64 (veb s) ∧ t.gpr .r8 = stackArg s 1 ∧ t.gpr .r9 = stackArg s 2
+  VS H s t [] [] (fun _ W => W 0 = off (stackArg s 4) (8 * kw (s.gpr .rsi).toNat) ∧
+    W 1 = stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)) ∧ t.rd = s.rd ∧ Frame (vwrR s) s.mem t.mem ∧
+    t.gpr .rdi = s.gpr .r8 ∧ t.gpr .rsi = off (stackArg s 4) (vclo s) ∧ t.gpr .rdx = BitVec.ofNat 64 (vel s) ∧
+    t.gpr .rcx = BitVec.ofNat 64 (veb s) ∧ t.gpr .r8 = stackArg s 2 ∧ t.gpr .r9 = stackArg s 3
 
 theorem cargs_ct : RelCT isa (Two (CAt (G := G) (JQ H))) (.block chkArgs) (Two (CAt (G := G) (JK H))) := by
   obtain ⟨_, hc⟩ := vcFixed.chkArgs
@@ -407,8 +407,8 @@ theorem codeC_ct (H : Hash) (impl : PublicImpl) : ConstantTime isa (contract G).
   apply valloc
   apply (cbody_ct hvK hctK hspK hdK H impl).mono
   · rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩
-    have p₁ := pre_of G h₁
-    have p₂ := pre_of G h₂
+    have p₁ := pre_of tsH tsG h₁
+    have p₂ := pre_of tsH tsG h₂
     exact ⟨s₁, ⟨s₁, ⟨p₁.toVPre, vpub_refl G s₁, p₁.toVPre, p₁, p₁, rfl, rfl, rfl⟩, e₁⟩,
       ⟨s₂, ⟨p₁.toVPre, hpub.1, p₂.toVPre, p₁, p₂, hpub.2.1.symm, hpub.2.2.1.symm, hpub.2.2.2.symm⟩, e₂⟩⟩
   · exact fun _ _ h => h

@@ -118,6 +118,10 @@ theorem vret_sub (s : State) : Region.Sub (below (fb s) 16) (vstkR s) := by
   simp only [below, fb, sub_sub']
   exact Offset.sub_below _ (by decide) (by decide)
 
+theorem vret8_sub (s : State) : Region.Sub (below (fb s) 8) (vstkR s) := by
+  simp only [below, fb, sub_sub']
+  exact Offset.sub_below _ (by decide) (by decide)
+
 /-- The region the function writes: its stack and `scratch`. -/
 def vscrR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
 

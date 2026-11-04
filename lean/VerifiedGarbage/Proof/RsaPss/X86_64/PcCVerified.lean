@@ -25,7 +25,7 @@ namespace VG.Proof.RsaPss.X86_64.Pc
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 
-variable {G : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog isa}
+variable {tsH tsG : List FnTable} {chkN : String} {chkC : Prog isa}
 
 theorem codeC_spAll (hK : SpSafe chkC) (v : PublicImpl) :
     (verifyC chkN chkC v.name v.code).allInstrs (fun i => !isa.writesSp i) = true := by
@@ -51,8 +51,8 @@ theorem codeC_correct
     (hK : SpSafe chkC) (hdK : chkC.x86_64Depth ≤ chkStack) (v : PublicImpl)
     (s : State) (h : (Spec.RsaPss.verifyPrecomputedContract G G abi verifyStack).pre s) :
     ∃ t s', Exec isa (verifyC chkN chkC v.name v.code) s t s' ∧ abiPreserved s s' ∧
-      (validCache s → (verifyK G).post s s') := by
-  have hp := pre_of G h
+      (validCache s → (verifyK tsH tsG).post s s') := by
+  have hp := pre_of tsH tsG h
   have hd := codeC_xd (chkN := chkN) hdK v
   have hW := X86_64.WP.stackFrame (codeC_sp hK v) (by unfold verifyStack at hd; omega)
     (codeC_ok (chkN := chkN) hvK hK hdK v h)
