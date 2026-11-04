@@ -34,7 +34,7 @@
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
 //!
-//! On x86-64 and AArch64, the verified `vg_rsa_prime_search` (contract
+//! On x86-64, AArch64 and PPC64LE, the verified `vg_rsa_prime_search` (contract
 //! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
 //! rejected ones and chooses how many random octets to ask for when they run
 //! out, from the state `vg_rsa_prime_search_init` makes
@@ -57,8 +57,9 @@
 //!
 //! This module only checks the lengths and the exponent, allocates the
 //! memory the candidates and the key are computed in, gives the search its
-//! random octets, counts the candidates (but on x86-64 and AArch64) and the
-//! generations, and compares the pairwise test's result with its message.
+//! random octets, counts the candidates (but on x86-64, AArch64 and
+//! PPC64LE) and the generations, and compares the pairwise test's result with
+//! its message.
 
 #![cfg(all(
     any(
@@ -75,7 +76,11 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+)))]
 use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
 #[cfg(all(
     target_arch = "arm",
@@ -91,7 +96,11 @@ use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_umaal;
 use crate::arch::rsa_keygen::vg_rsa_keygen_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
 use crate::rsa::PublicKey;
@@ -209,21 +218,33 @@ struct Random<F> {
     octets: Vec<u8>,
     read: usize,
     /// The first tape's length, where this module chooses it.
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64"
+    )))]
     initial: usize,
     fill: F,
 }
 
 impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     #[cfg_attr(
-        any(target_arch = "x86_64", target_arch = "aarch64"),
+        any(
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            target_arch = "powerpc64"
+        ),
         allow(unused_variables)
     )]
     fn new(len: usize, fill: F) -> Self {
         Self {
             octets: Vec::new(),
             read: 0,
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "powerpc64"
+            )))]
             initial: 16 * len,
             fill,
         }
@@ -231,7 +252,11 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
 
     /// The verified search over the stream, refilled to the length it asks
     /// for.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64"
+    ))]
     fn prime(
         &mut self,
         len: usize,
@@ -251,7 +276,11 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
         }
     }
 
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64"
+    )))]
     fn prime(
         &mut self,
         len: usize,
@@ -302,7 +331,11 @@ impl<F> Drop for Random<F> {
 }
 
 /// The verified prime search's buffers and state, for one prime.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 struct Search<'a> {
     e: &'a [u8],
     other: &'a [u8],
@@ -311,7 +344,11 @@ struct Search<'a> {
     state: [u64; 4],
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 impl<'a> Search<'a> {
     /// The search for a prime of `len` octets with the exponent `e`, which
     /// [`check`] accepted with the limit of rejected candidates `limit`.
@@ -384,7 +421,11 @@ impl<'a> Search<'a> {
     }
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 impl Drop for Search<'_> {
     fn drop(&mut self) {
         // The working space holds the prime.
@@ -409,7 +450,11 @@ pub fn generate_prime_from(
 /// [`generate_prime_from`] of arguments [`check`] accepted (the prime's
 /// length `len` in bytes, and the limit of rejected candidates), and the
 /// number of octets read, also when it fails.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+))]
 fn prime_from(
     len: usize,
     limit: usize,
@@ -433,7 +478,11 @@ fn prime_from(
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+)))]
 fn prime_from(
     len: usize,
     limit: usize,
@@ -444,7 +493,11 @@ fn prime_from(
     prime_from_counted(len, limit, public_exponent, other, rand, &mut 0)
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "powerpc64"
+)))]
 fn prime_from_counted(
     len: usize,
     limit: usize,
@@ -1021,11 +1074,19 @@ mod tests {
                 Ok(())
             });
             // Where the search chooses the tapes' lengths, each run is the same.
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "powerpc64"
+            )))]
             {
                 random.initial = initial;
             }
-            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+            #[cfg(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "powerpc64"
+            ))]
             let _ = initial;
             let key = generate_with(&[1, 0, 1], &mut |other| {
                 random.prime(32, 5 * 256, &[1, 0, 1], other)
@@ -1063,11 +1124,19 @@ mod tests {
                 }
                 Ok(())
             });
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "powerpc64"
+            )))]
             {
                 random.initial = initial;
             }
-            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+            #[cfg(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "powerpc64"
+            ))]
             let _ = initial;
             assert_eq!(
                 generate_with(&[1, 0, 1], &mut |other| {
