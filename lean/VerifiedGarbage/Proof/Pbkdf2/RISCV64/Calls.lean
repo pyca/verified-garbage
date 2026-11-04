@@ -16,8 +16,9 @@ Untrusted: the contracts the proof is written against.
 
 * `cmpK H CW` is the RISC-V contract of a compression function of the
   Merkle–Damgård hash function `H` (any `Md`, of 64- or 128-byte blocks),
-  with `CW` bytes of scratch space: SHA-256's, SHA-512's, MD5's and SHA-1's
-  contracts imply it (`CalleeOk`).
+  with `CW` bytes of scratch space, 8-byte aligned (the iteration aligns
+  its own): SHA-256's, SHA-512's, MD5's and SHA-1's contracts imply it
+  (`CalleeOk`).
 * `OutOk H D out` is what the iteration needs of the code writing the digest
   (`It.out`).
 * `iterK S Wi` is the iteration's: `Proof.Pbkdf2.iterateContract` of the
@@ -47,7 +48,8 @@ def cmpK (H : Md B N L) (CW : Nat) : Contract isa where
     let blocks : Region := ⟨s.gpr .a1, B * (s.gpr .a2).toNat⟩
     let scratch : Region := ⟨s.gpr .a3, CW⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch
+    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
+    (s.gpr .a3).toNat % 8 = 0
   post s s' :=
     H.stateAt s'.mem (s.gpr .a0) = H.compressBlocks (H.stateAt s.mem (s.gpr .a0)) s.mem (s.gpr .a1)
       (s.gpr .a2).toNat
@@ -97,7 +99,7 @@ theorem compressAt_ok {H : Md B N L} {CW : Nat} {P : It} (hf : CalleeOk H CW P.c
     {s : State} {st scr src : Addr}
     (h1 : s.gpr .s1 = st) (h2 : s.gpr .s2 = scr) (h3 : s.gpr .s3 = src)
     (d₁ : Region.Disjoint ⟨st, N⟩ ⟨scr, CW⟩) (d₂ : Region.Disjoint ⟨src, B⟩ ⟨st, N⟩)
-    (d₃ : Region.Disjoint ⟨src, B⟩ ⟨scr, CW⟩)
+    (d₃ : Region.Disjoint ⟨src, B⟩ ⟨scr, CW⟩) (hal : scr.toNat % 8 = 0)
     (hc : RISCV64.Covers [⟨src, B⟩, ⟨st, N⟩, ⟨scr, CW⟩] (s.rd ++ s.wr))
     (hw : RISCV64.Covers [⟨st, N⟩, ⟨scr, CW⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
@@ -133,7 +135,7 @@ theorem compressAt_ok {H : Md B N L} {CW : Nat} {P : It} (hf : CalleeOk H CW P.c
     (rd := [⟨src, B * 1⟩]) (wr := [⟨st, N⟩, ⟨scr, CW⟩]) ?_ ?_ ?_ ?_ hf.noFrames
   · simp only [cmpK, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1, c2, c3, one_toNat, Nat.mul_one]
-    exact ⟨trivial, trivial, d₁, d₂, d₃⟩
+    exact ⟨trivial, trivial, d₁, d₂, d₃, hal⟩
   · rw [rd₄, wr₄]; simpa using hc
   · rw [wr₄]; exact hw
   · intro s' hrd hwr hsp hf' hcs _ hpost

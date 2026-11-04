@@ -50,7 +50,8 @@ namespace VG.Proof.Sm3.RISCV64.Stream
 open VG VG.RISCV64 VG.Proof.MdStream VG.Proof.MdStream.RISCV64
 open VG.Impl.Sm3.RISCV64.Stream (params)
 
-theorem callee : CalleeOk md Impl.Sm3.RISCV64.compress := ⟨compress_verified.1, by decide +kernel⟩
+theorem callee : CalleeOk md Impl.Sm3.RISCV64.compress :=
+  ⟨fun s ⟨h₁, h₂, h₃, h₄, h₅, _⟩ => compress_verified.1 s ⟨h₁, h₂, h₃, h₄, h₅⟩, by decide +kernel⟩
 
 /-! ## The length field and the digest -/
 

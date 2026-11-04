@@ -352,7 +352,7 @@ theorem cmp_ok {H : Md P.B P.N L} (hf : CalleeOk H P.CW P.cmpC) {c : BitVec 64} 
     rcases hr with rfl | rfl
     · exact ⟨_, hv_eq P s₀, by dsimp only; omega⟩
     · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega⟩
-  refine compressAt_ok hf h.s1 h.s2 h.s3 (hv_sc hz) (hv_blk hz).symm (blk_sc hz)
+  refine compressAt_ok hf h.s1 h.s2 h.s3 (hv_sc hz) (hv_blk hz).symm (blk_sc hz) sc_al
     (by rw [h.rd, h.wr]; exact fun a n hi => (hcv a n hi).elim fun r ⟨hr, hc⟩ =>
       ⟨r, List.mem_append_right _ hr, hc⟩)
     (by rw [h.wr]; exact hcw)

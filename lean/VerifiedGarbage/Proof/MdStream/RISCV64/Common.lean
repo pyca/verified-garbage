@@ -47,14 +47,16 @@ section
 variable {N : Nat} (H : Md 64 N 8)
 
 /-- The contract of the compression function: updates the hash value at
-`a0` with the `a2` blocks at `a1`, with scratch space `a3` (80 bytes). -/
+`a0` with the `a2` blocks at `a1`, with scratch space `a3` (80 bytes,
+8-byte aligned: the frame's, `scr`, is 16-byte aligned). -/
 def compressK : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, N⟩
     let blocks : Region := ⟨s.gpr .a1, 64 * (s.gpr .a2).toNat⟩
     let scratch : Region := ⟨s.gpr .a3, 80⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch
+    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
+    (s.gpr .a3).toNat % 8 = 0
   post s s' :=
     H.stateAt s'.mem (s.gpr .a0) =
       H.compressBlocks (H.stateAt s.mem (s.gpr .a0)) s.mem (s.gpr .a1) (s.gpr .a2).toNat
@@ -135,7 +137,7 @@ theorem compressAt_ok {N : Nat} {H : Md 64 N 8} {name : String} {code : Prog isa
     {s : State} {st scr src : Addr}
     (h1 : s.gpr .s1 = st) (h2 : s.gpr .s2 = scr) (ha1 : s.gpr .a1 = src)
     (d₁ : Region.Disjoint ⟨st, N⟩ ⟨scr, 80⟩) (d₂ : Region.Disjoint ⟨src, 64⟩ ⟨st, N⟩)
-    (d₃ : Region.Disjoint ⟨src, 64⟩ ⟨scr, 80⟩)
+    (d₃ : Region.Disjoint ⟨src, 64⟩ ⟨scr, 80⟩) (hal : scr.toNat % 8 = 0)
     (hc : Covers [⟨src, 64⟩, ⟨st, N⟩, ⟨scr, 80⟩] (s.rd ++ s.wr))
     (hw : Covers [⟨st, N⟩, ⟨scr, 80⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
@@ -171,7 +173,7 @@ theorem compressAt_ok {N : Nat} {H : Md 64 N 8} {name : String} {code : Prog isa
     (rd := [⟨src, 64 * 1⟩]) (wr := [⟨st, N⟩, ⟨scr, 80⟩]) ?_ ?_ ?_ ?_ hf.noFrames
   · simp only [compressK, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1, c2, c3, one_toNat]
-    exact ⟨trivial, trivial, d₁, d₂, d₃⟩
+    exact ⟨trivial, trivial, d₁, d₂, d₃, hal⟩
   · rw [rd₃, wr₃]; simpa using hc
   · rw [wr₃]; exact hw
   · intro s' hrd hwr hsp hf' hcs _ hpost

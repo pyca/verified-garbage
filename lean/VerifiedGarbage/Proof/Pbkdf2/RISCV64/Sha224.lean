@@ -51,7 +51,8 @@ def it : It where
 abbrev code : Prog isa := it.iterate
 
 theorem callee : CalleeOk Proof.Sha256.md 80 Impl.Sha256.RISCV64.compress :=
-  ⟨Proof.Sha256.RISCV64.compress_verified.1, Proof.Sha256.RISCV64.Stream.compress_noFrames⟩
+  ⟨fun s ⟨h₁, h₂, h₃, h₄, h₅, _⟩ => Proof.Sha256.RISCV64.compress_verified.1 s ⟨h₁, h₂, h₃, h₄, h₅⟩,
+    Proof.Sha256.RISCV64.Stream.compress_noFrames⟩
 
 /-- What the proof needs of SHA-224, with `Wi` bytes of working space. -/
 theorem hashOkW (Wi : Nat) (h₁ : 239 ≤ Wi) (h₂ : Wi ≤ 8192) :
