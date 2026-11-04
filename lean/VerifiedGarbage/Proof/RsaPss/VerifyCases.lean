@@ -197,11 +197,15 @@ theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :
   · rfl
 
 /-- A modulus whose first octet is zero verifies nothing. -/
-theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
-    verify G G (0 :: rest) eB mHash sB sLen = false := by
+theorem verify_zero₂ (H : Hash) (rest eB mHash sB : List Byte) (sLen : Option Nat) :
+    verify H G (0 :: rest) eB mHash sB sLen = false := by
   unfold verify
   rw [publicOpChecked_zero]
   simp
+
+theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
+    verify G G (0 :: rest) eB mHash sB sLen = false :=
+  verify_zero₂ G G rest eB mHash sB sLen
 
 /-- Nor does an encoding too short for the digest and the salt. -/
 theorem verify_short {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
