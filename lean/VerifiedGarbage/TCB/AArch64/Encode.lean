@@ -372,13 +372,14 @@ def Instr.encode : Instr → Option (List Nat)
   -- (`Q = 1`).
   | .umov .w d n i => (imm5 .s4 i).map fun i => [0x0E003C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index]
   | .umov .x d n i => (imm5 .d2 i).map fun i => [0x4E003C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index]
-  -- "MRS": `1101010100 1 1 o0 op1 CRn CRm op2 Rt`, and "MSR (register)":
-  -- `1101010100 0 1 o0 op1 CRn CRm op2 Rt`, where `op0 = 0b1:o0`, with the
-  -- encoding of the system register DIT (DDI 0601 2026-03, "DIT, Data
-  -- Independent Timing", "Accessing DIT"): `op0 = 0b11`, `op1 = 0b011`,
-  -- `CRn = 0b0100`, `CRm = 0b0010`, `op2 = 0b101`.
+  -- "MRS": `1101010100 1 1 o0 op1 CRn CRm op2 Rt`, where `op0 = 0b1:o0`,
+  -- with the encoding of the system register DIT (DDI 0601 2026-03, "DIT,
+  -- Data Independent Timing", "Accessing DIT"): `op0 = 0b11`, `op1 =
+  -- 0b011`, `CRn = 0b0100`, `CRm = 0b0010`, `op2 = 0b101`.
   | .mrsDit t => some [0xD5300000 ||| sysDit ||| t.index]
-  | .msrDit t => some [0xD5100000 ||| sysDit ||| t.index]
+  -- "MSR (immediate)": `1101010100 0 00 op1 0100 CRm op2 11111`, with the
+  -- PSTATE field DIT, `op1 = 0b011`, `op2 = 0b010`, and `CRm` the immediate.
+  | .msrDitImm on => some [0xD500401F ||| 3 <<< 16 ||| on.toNat <<< 8 ||| 2 <<< 5]
   | .adrSym .. | .align _ => none
 where
   /-- The fields `o0 op1 CRn CRm op2` (19–5) of the system register DIT. -/

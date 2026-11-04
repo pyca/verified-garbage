@@ -84,7 +84,7 @@ def stepFn : Instr → Step
   -- PSTATE.DIT is not tracked, as the flags are not: a value read from it is
   -- secret, and writing it changes no register.
   | .mrsDit t => ⟨fun τ => some (set τ t false)⟩
-  | .msrDit _ => ⟨fun τ => some τ⟩
+  | .msrDitImm _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -397,7 +397,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.write .x t fun h => by cases h⟩
-  | msrDit t =>
+  | msrDitImm on =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.1, ha.2⟩

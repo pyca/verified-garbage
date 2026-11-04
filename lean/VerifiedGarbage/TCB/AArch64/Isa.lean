@@ -64,8 +64,8 @@ Modelling choices:
   0602, A64 ISA XML 2025-12, `umaddl.xml`). Arm guarantees their timing only
   while PSTATE.DIT is 1, which verified code does not ensure itself (see
   PSTATE.DIT below), for these as for the others.
-* PSTATE.DIT, `State.dit`: `mrsDit` (`mrs xt, DIT`) reads it and `msrDit`
-  (`msr DIT, xt`) writes it, both requiring FEAT_DIT; no other instruction
+* PSTATE.DIT, `State.dit`: `mrsDit` (`mrs xt, DIT`) reads it and `msrDitImm`
+  (`msr DIT, #imm`) writes it, both requiring FEAT_DIT; no other instruction
   reads or writes it, and the semantics and the leakage (the addresses
   accessed and the branch conditions) of every other instruction are the same
   whatever its value. When it is 0, "The architecture makes no statement about
@@ -224,7 +224,7 @@ structure State where
   /-- PSTATE.V: signed overflow. -/
   vf : Bool := false
   /-- PSTATE.DIT, data independent timing (FEAT_DIT): only `mrsDit` reads it
-  and only `msrDit` writes it. -/
+  and only `msrDitImm` writes it. -/
   dit : Bool := false
   /-- The SIMD and floating-point registers (`V[n]`, 128 bits). -/
   v : VReg → BitVec 128 := fun _ => 0
@@ -582,9 +582,9 @@ inductive Instr
   /-- `mrs xt, DIT` (MRS of the system register DIT): PSTATE.DIT, in bit 24
   of `t`, the other bits zero (see `exec`). -/
   | mrsDit (t : Reg)
-  /-- `msr DIT, xt` (MSR (register) of the system register DIT): PSTATE.DIT
-  becomes bit 24 of `t` (see `exec`). -/
-  | msrDit (t : Reg)
+  /-- `msr DIT, #imm` (MSR (immediate), the PSTATE field DIT, with `imm` 0 or
+  1): PSTATE.DIT becomes `on` (see `exec`). -/
+  | msrDitImm (on : Bool)
   /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (NOP, `HINT
   #0`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no effect,
   accesses no memory and requires no feature (DDI 0487 C6.2, "NOP"; see
@@ -1295,11 +1295,14 @@ def exec : Instr → State → Option State
   | .align _, s => some s
   -- The system register DIT (DDI 0601 2026-03, "DIT, Data Independent
   -- Timing"): bit 24 is PSTATE.DIT, bits 63:25 and 23:0 are RES0. Its
-  -- accessors are the same at every exception level, EL0 included: `MRS
-  -- <Xt>, DIT` is `X{64}(t) = Zeros{39} :: PSTATE.DIT :: Zeros{24}` and `MSR
-  -- DIT, <Xt>` is `PSTATE.DIT = X{64}(t)[24]`.
+  -- reader is the same at every exception level, EL0 included: `MRS <Xt>,
+  -- DIT` is `X{64}(t) = Zeros{39} :: PSTATE.DIT :: Zeros{24}`.
   | .mrsDit t, s => some (s.write .x t (if s.dit then 0x1000000#64 else 0#64))
-  | .msrDit t, s => some { s with dit := (s.gpr t).getLsbD 24 }
+  -- DDI 0602 2026-03, "MSR (immediate)" (A64 ISA XML, `msr_imm.xml`): for
+  -- `op1 = '011'`, `min_EL = EL0`, so EL0 may execute it; `operand = CRm`,
+  -- and for `op1::op2 = '011 010'`, `field = PSTATEField_DIT`, whose
+  -- execution is `PSTATE.DIT = operand[0]`. `imm` (`CRm`) is 0 or 1 here.
+  | .msrDitImm on, s => some { s with dit := on }
   -- Frame delimiters execute only through `push` and `pop`, and the
   -- instruction of an indirect call only through `icall`.
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .blr _, _ => none
@@ -1429,12 +1432,14 @@ SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
 (Rust's `sha3`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
-FEAT_SVE); FEAT_DIT for MRS and MSR of the system register DIT (DDI 0601
-2026-03, "DIT, Data Independent Timing": "This register is present only when
-FEAT_DIT is implemented and FEAT_AA64 is implemented. Otherwise, direct
-accesses to DIT are UNDEFINED", and both accessors begin `if
+FEAT_SVE); FEAT_DIT for MRS of the system register DIT (DDI 0601 2026-03,
+"DIT, Data Independent Timing": "This register is present only when FEAT_DIT
+is implemented and FEAT_AA64 is implemented. Otherwise, direct accesses to
+DIT are UNDEFINED", and its accessor begins `if
 !(IsFeatureImplemented(FEAT_DIT) && IsFeatureImplemented(FEAT_AA64)) then
-Undefined();`), Rust's `dit`. -/
+Undefined();`) and for MSR (immediate) of PSTATE.DIT (DDI 0602 2026-03,
+"MSR (immediate)": `when '011 010' => if !IsFeatureImplemented(FEAT_DIT) then
+EndOfDecode(Decode_UNDEF);`), Rust's `dit`. -/
 def Instr.requires : Instr → List String
   | .vop (.aese ..) | .vop (.aesd ..) | .vop (.aesmc ..) | .vop (.aesimc ..)
   | .vop (.pmull ..) => ["aes"]
@@ -1444,7 +1449,7 @@ def Instr.requires : Instr → List String
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
   | .vop (.xarS ..) => ["sve2"]
-  | .mrsDit _ | .msrDit _ => ["dit"]
+  | .mrsDit _ | .msrDitImm _ => ["dit"]
   | _ => []
 
 /-- The address an indirect call instruction calls: DDI 0487, C6.2 "BLR":
