@@ -70,6 +70,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Mont.Read
@@ -168,9 +170,11 @@ def variant : Backend where
   suffix := "_adx"
   features := ["bmi2", "adx"]
   signVerified := signing_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
-  verifyVerified := verifying_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
   signSp := Code.all_of_allInstrs (by decide +kernel)
-  verifySp := Code.all_of_allInstrs (by decide +kernel)
+  validateVerified := validating_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
+  prevalidatedVerified := prevalidated_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
+  validateSp := Code.all_of_allInstrs (by decide +kernel)
+  prevalidatedSp := Code.all_of_allInstrs (by decide +kernel)
   signDepth := by decide +kernel
   parametersVerified := parameters_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
   deriveVerified := derive_call_verified Mont.fnAdx MontS.fnLazyAdx (by decide +kernel) rfl (by decide +kernel)
