@@ -41,7 +41,7 @@ theorem lens_certs : ∀ x ∈ lens, x ≤ 2 ^ 15 ∧
     ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs [.r3]) (.block [.subi .r4 .r3 x]) hc).isSome = true := by
   intro x hx
   simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
 
 section
 variable {b : Nat → Prog isa} {D : Nat} (hD : D < 2 ^ 64)

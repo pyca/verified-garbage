@@ -24,12 +24,7 @@ namespace VG.Proof.RsaPss.PPC64LE
 open VG VG.PPC64LE
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE
-open VG.Proof.RsaOaep.PPC64LE (HashCT ct_mono sha1CT sha224CT sha256CT sha384CT sha512CT sha512_224CT sha512_256CT)
-
-theorem md5CT : HashCT Md5.ok where
-  init := ct_mono Proof.Md5.PPC64LE.Stream.init_verified.2.1 (fun _ hs => ⟨hs.1, hs.2.1⟩) fun _ _ h => h
-  upd := ct_mono Proof.Md5.PPC64LE.Stream.Update.update_verified.2.1 (fun _ hs => hs) fun _ _ h => h
-  fin := ct_mono Proof.Md5.PPC64LE.Stream.Finalize.finalize_verified.2.1 (fun _ hs => hs) fun _ _ h => h
+open VG.Proof.RsaOaep.PPC64LE (HashCT ct_mono md5CT sha1CT sha224CT sha256CT sha384CT sha512CT sha512_224CT sha512_256CT)
 
 /-- A hash function's streaming functions, with what the proofs need. -/
 structure Link (H : Hash) where

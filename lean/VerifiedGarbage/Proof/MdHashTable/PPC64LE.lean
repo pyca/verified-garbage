@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.MdHashTable.PPC64LE
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The digest of a hash value on PPC64LE
@@ -11,8 +13,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 `digestK H`: the contract of `digest P` (`Impl/MdHashTable/PPC64LE.lean`)
 for a Merkle–Damgård hash function `H` whose code has the parameters `P`:
 it writes `H.digest` of the hash value at `r3` to `r4` (`digest_correct`,
-from what `ShapeD` says of `P.out`), in constant time (`digest_ct`, by the
-taint analysis with `r3` and `r4` public).
+from what `ShapeD` says of `P.out`), in constant time (`digest_ct`, from
+the taint analysis with `r3` and `r4` public, which each instance decides).
 -/
 
 @[expose] public section
@@ -81,5 +83,20 @@ theorem digest_correct (hs : ShapeD H P.N) (hn : (digest P).noCalls = true)
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl | rfl | rfl <;> decide), hsp, Exec.lr he hn hl⟩, hm⟩
+
+theorem digest_agree : ∀ s₁ s₂, (digestK H).pre s₁ → (digestK H).pre s₂ → (digestK H).pub s₁ s₂ →
+    taint.Agree (Taint.ofRegs [.r3, .r4]) s₁ s₂ := by
+  intro s₁ s₂ _ _ h
+  refine ⟨h.2.2, fun r hr => ?_⟩
+  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.1
+  · exact h.2.1
+
+/-- `digest P` is constant time, given the taint analysis of its code. -/
+theorem digest_ct {hc : VG.Taint.Hint VG.PPC64LE.Taint.T}
+    (h : (VG.Taint.check taint (Taint.ofRegs [.r3, .r4]) (digest P) hc).isSome = true) :
+    ConstantTime isa (digestK H).pre (digestK H).pub (digest P) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) digest_agree h
 
 end VG.Proof.MdHashTable.PPC64LE
