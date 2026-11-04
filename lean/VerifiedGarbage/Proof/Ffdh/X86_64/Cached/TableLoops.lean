@@ -363,21 +363,23 @@ theorem Src.of_only {T : TabP} {s t : State} {p : Addr} {bs : List Byte} (h : Sr
   ⟨fun i hi => by rw [hrd, hwr]; exact h.rd i hi,
     fun i hi => by rw [hm _ (h.out i hi) (hsep i hi)]; exact h.val i hi, h.out⟩
 
-/-- The table: entries 0 and 1, then the four teeth's columns. -/
-theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63)
+/-- Entries 0 and 1, and the first tooth `d := 2`. -/
+theorem initial_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s)
     {gp : Addr} {gb : List Byte} (hG : Spec.Rsa.os2ip gb = T.G)
     (hsG : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sG) = gp)
     (hsK : word s.mem T.B (8 * sK) = BitVec.ofNat 64 gb.length)
     (hsrc : Src s T.B T.Z gp gb) (hgsep : ∀ i < gb.length, 8 * T.n ≤ ofs T.cp (gp + BitVec.ofNat 64 i))
     (hgl : 1 ≤ gb.length) (hgw : (gb.length + 7) / 8 ≤ T.w) :
-    WP isa (seqs (Precompute.table Mo.mm)) s fun t => Env T t ∧ Entries T 32 t.mem ∧
+    WP isa (seqs (Precompute.initial Mo.mm ++ [.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]])) s fun t =>
+      Env T t ∧ word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (0 + 1)) ∧
+      wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ 0) ∧ Entries T (2 ^ (0 + 1)) t.mem ∧
       (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t := by
   have hn := he.mc.sub.scr.nowrap
   have hP : 0 < T.P := by have := he.mc.x1; omega
   have hR : Nat.Coprime T.R T.P := VG.Proof.Bignum.coprime_pow2 he.mc.odd _
   have hio : ∀ i < 32, T.o + 8 * i + 8 ≤ T.Z := fun i hi => by
     have := hdr_lt_slot T.w 8 hi; have := he.mc.sub.lo; have := he.mc.sub.hi; omega
-  unfold Precompute.table Precompute.initial
+  unfold Precompute.initial
   simp only [List.cons_append, List.append_assoc]
   -- Entry 0.
   refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (mm_env Mo he (Or.inr (Or.inr rfl)) (by decide) (by decide)
@@ -446,11 +448,11 @@ theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T
     (by rw [hm₉]; exact hrow₇) (T.M_lt_R hP (Nat.le_of_lt he.P_lt) _))
     fun s₁₀ ⟨he₁₀, hY₁₀, _, hr₁₀, _, kp₁₀, k₁₀⟩ => ?_)
   have hg₇ := he₁₀.mc.sub.good
-  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t =>
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
       t.mem = s₁₀.mem.writeW (off (off T.B T.o) (8 * iD)) (BitVec.ofNat 64 2)) (by
     xrun [State.ea, hdr, hg₇.rdi, hdrOff, hg₇.scr.st (d := 8 * iD) (by have := hdr_lt_slot T.w 8 (show iD < 32 by decide); omega),
       show BitVec.setWidth 64 (2 : BitVec 32) = BitVec.ofNat 64 2 from rfl]) rfl)
-    fun s₈ ⟨hm₈, k₈⟩ => ?_)
+    fun s₈ ⟨hm₈, k₈⟩ => ?_
   obtain ⟨he₈, hD₈, _, ha₈, hr₈, kp₈⟩ := slot_env he₁₀ (i := iD) (by decide) (by decide) hm₈ k₈.2.1 k₈.2.2
     (k₈.gpr (by decide))
   have hXm₈ : wv s₈.mem (off T.B T.o) (slot T.w aY) T.w = T.entry 1 := by
@@ -471,12 +473,29 @@ theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T
     ((Kept.of_eq hm₉).trans kp₁₀)).trans kp₈
   have k₈' : Keep mmRegs s s₈ := ((((k₁.trans k₂).trans (k₃.trans k₄)).trans (k₅.trans k₆)).trans
     ((k₇.trans (k₉.trans k₁₀)).trans k₈)).mono (by decide)
+  exact ⟨he₈, hD₈, hXm₈, hE₈, hp₈, kp₈', k₈'⟩
+
+/-- The table: entries 0 and 1, then the four teeth's columns. -/
+theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63)
+    {gp : Addr} {gb : List Byte} (hG : Spec.Rsa.os2ip gb = T.G)
+    (hsG : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sG) = gp)
+    (hsK : word s.mem T.B (8 * sK) = BitVec.ofNat 64 gb.length)
+    (hsrc : Src s T.B T.Z gp gb) (hgsep : ∀ i < gb.length, 8 * T.n ≤ ofs T.cp (gp + BitVec.ofNat 64 i))
+    (hgl : 1 ≤ gb.length) (hgw : (gb.length + 7) / 8 ≤ T.w) :
+    WP isa (seqs (Precompute.table Mo.mm)) s fun t => Env T t ∧ Entries T 32 t.mem ∧
+      (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t := by
+  unfold Precompute.table
+  rw [show Precompute.initial Mo.mm ++ [.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax],
+      .loop (Precompute.column Mo.mm) .ne] = (Precompute.initial Mo.mm ++
+      [.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]]) ++ [.loop (Precompute.column Mo.mm) .ne] by simp]
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (initial_ok Mo he hG hsG hsK hsrc hgsep hgl hgw)
+    fun s₈ ⟨he₈, hD₈, hXm₈, hE₈, hp₈, kp₈', k₈'⟩ => ?_)
   -- The four teeth.
   let Inv : Nat → State → Prop := fun c t => Env T t ∧
     word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)) ∧
     wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ c) ∧ Entries T (2 ^ (c + 1)) t.mem ∧
     (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t
-  refine wp_upto (a := 0) (N := 4) (by decide) Inv
+  exact wp_upto (a := 0) (N := 4) (by decide) Inv
     (fun c _ hc t ⟨het, hDt, hxt, hEt, hpt, kpt, kt⟩ => WP.mono (column_ok Mo het hc hDt hxt hEt hr hr')
       fun u ⟨heu, hz, hDu, hxu, hEu, hpu, stu, ku⟩ =>
         ⟨hz, heu, hDu, by rw [hxu], hEu, fun j' hj' => (hpu j' hj').trans (hpt j' hj'), kpt.trans stu.kept,
