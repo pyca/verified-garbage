@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
 public import VerifiedGarbage.Proof.RsaOaep.Mask
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
-import VerifiedGarbage.Proof.RsaOaep.Arm.Label
+import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.RsaPss.Arm.Step
 /-!
 # RSAES-OAEP decryption on ARMv7: `EM` unmasked
 
-The label's hash to `scratch + oLh` (`label_vp`), then the seed unmasked
+The label's hash, through its table, to `scratch + oLh` (`labT_vp`), then the seed unmasked
 with MGF1 of `maskedDB` and `DB` with MGF1 of the seed, in place (`mgf_vp`,
 with the slots `seedArgs` and `dbArgs` set): `EM`'s place holds `V5`, `EM`
 unmasked as `Proof.RsaOaep.chain_eq` states it (`unmask_vp`).
@@ -85,11 +85,30 @@ end keep
 abbrev U1 (P : EP) (σ s : State) : Prop :=
   Ctx P.lay P.scr σ s ∧ (K0 h P σ s.mem ∧ ∀ x < P.K, s.mem (sa P.scr x) = V P σ x) ∧ LH h P σ s.mem
 
-theorem lab_vp (P : EP) :
-    VP (fun σ s => C2 h.H.D P σ s ∧ isa.eval .ne s = some false) (hashLabel h.H 17 oLh) (U1 h P) := by
+/-- The label's hash function's table, the argument 23, in a buffer only
+read. -/
+theorem tblL_of {P : EP} {σ : State} (hi : In P σ) :
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA P.tabL o) 4 := by
+  have hf := hi.ok.fits P.TABL (by simp)
+  simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
+  refine ⟨P.TABL, by simp, fun o ho => ?_⟩
+  show (⟨State.addr P.tabL, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tabL + BitVec.ofNat 32 o)) 4
+  rw [VG.Arm.addr_add (by omega)]
+  exact Offset.contains_base _ (by omega) (by omega)
+
+/-- What the label's hash keeps, with its table's address in its slot. -/
+abbrev L0 (P : EP) (σ : State) (m : Mem) : Prop :=
+  (K0 h P σ m ∧ ∀ x < P.K, m (sa P.scr x) = V P σ x) ∧ m.readW (P.lay.fr sTab) 32 = P.tabL
+
+/-- The label's hash function's table's address to its slot, and the label's
+hash, with that table's hash function `h`. -/
+theorem labT_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
+    VP (fun σ s => (C2 h.H.D P σ s ∧ isa.eval .ne s = some false) ∧ s.syms = σ.syms)
+      (.seq (.block (tabSlot 23)) (hashLabelT f 17 oLh)) (fun σ s => U1 h P σ s ∧ s.syms = σ.syms) := by
   by_cases hP : ∃ σ, In P σ
   swap
-  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.2.1⟩
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.1.2.1⟩
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
@@ -99,30 +118,50 @@ theorem lab_vp (P : EP) :
     have hf := ok.fits P.LAB (by simp)
     simp only [Proof.X25519.Arm.addr_toNat] at hf
     exact ⟨hf, hi₀.ll32, ⟨P.LAB, by simp, Region.contains_self _ _⟩⟩
-  refine (label_vp hg h (j := 17) (o := oLh) (ll := P.ll) (lab := P.lab) (by simp) (arg_lt (by decide))
+  -- The table's address to its slot.
+  refine VP.seq (G := fun σ s => (Ctx P.lay P.scr σ s ∧ L0 h P σ s.mem) ∧ s.syms = σ.syms)
+    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.1.st.sp.trans h₂.1.1.1.st.sp.symm)
+      fun σ s ⟨⟨⟨hc, hi, he, hres, hk, z⟩, e⟩, sy⟩ => ?_) ?_
+  · have hkD : 2 * h.H.D + 2 ≤ P.K := by
+      rw [VG.Proof.X25519.Arm.eval_ne] at e
+      have z' : s.z = true := by cases hz : s.z <;> simp_all
+      rw [z'] at z
+      exact of_decide_eq_true z.symm
+    refine WP.mono (tabA_wp hg hc (j := 23) (by simp) (arg_lt (by decide))) fun t ⟨m, rd, wr, sp, _, _, ty⟩ => ?_
+    have fr : Frame [slotR P.lay sTab] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
+    refine ⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp,
+      ⟨⟨hi, hkD, slot_keep fr (fun r hr => ?_) hres, hk⟩, em_keep fr (fun r hr => ?_) (by omega_arith) he⟩, ?_⟩,
+      ty.trans sy⟩
+    · rw [List.mem_singleton.mp hr]; exact slotW hg (by decide)
+    · rw [List.mem_singleton.mp hr]; exact slotSep (by decide) (by decide) (by decide)
+    · rw [List.mem_singleton.mp hr]; exact slotSep (by decide) (by decide) (by decide)
+    · rw [List.mem_singleton.mp hr]; exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+    · rw [m, Mem.readW_writeW_self32]; rfl
+  -- The label's hash.
+  refine (labelT_vp hg h (f := f) (p := P.tabL) (ai := P.aiL) (au := P.auL) (af := P.afL) (tblL_of hi₀) fne
+    (j := 17) (o := oLh) (ll := P.ll) (lab := P.lab) (by simp) (arg_lt (by decide))
     (arg_lt (by decide)) rfl rfl hb (hg.ro ok (by oomega) (R := P.LAB) (by simp)).symm
     (hg.ro ok (by oomega) (R := P.LAB) (by simp)).symm (ok.low_buf (R := P.LAB) (.inl (by simp))).symm
     (by oomega) (by oomega) (labB := labB P) (fun σ s hc => hc.st.ro (R := P.LAB) (by simp))
-    (Inv := fun σ m => K0 h P σ m ∧ ∀ x < P.K, m (sa P.scr x) = V P σ x) ?_).mono
-    (fun σ s ⟨⟨hc, hi, he, hr, hk, z⟩, e⟩ => ⟨hc, ⟨hi, ?_, hr, hk⟩, he⟩) fun σ s hh => hh
-  · intro σ m m' ⟨hk, he⟩ hf
-    refine ⟨hk.keep h hf fun r hr => ?_, em_keep hf (fun r hr => ?_) (by omega_arith) he⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
-      · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
-      · exact Lay.fr_low (by decide)
-      · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact Geo.sep (by oomega) (by oomega) (by oomega)
-      · exact Geo.sep (by oomega) (by oomega) (by oomega)
-      · exact hg.low ok (by oomega)
-      · exact Geo.sep (by oomega) (by oomega) (by oomega)
-  · rw [VG.Proof.X25519.Arm.eval_ne] at e
-    have z' : s.z = true := by cases hz : s.z <;> simp_all
-    rw [z'] at z
-    exact of_decide_eq_true z.symm
+    (Inv := L0 h P) ?_ (fun _ _ hm => hm.2) (fun σ _ hm => hTL σ hm.1.1.1.tabTL)).mono
+    (fun _ _ h => h) fun σ s ⟨⟨hc, ⟨hk, _⟩, hd⟩, sy⟩ => ⟨⟨hc, hk, hd⟩, sy⟩
+  intro σ m m' ⟨⟨hk, he⟩, hs⟩ hf
+  have dslot : ∀ d, d + 4 ≤ frameBytes → ∀ r ∈ [sR P.scr oSt h.H.S, sR P.scr oW h.ok.Wb, P.lay.LOW,
+      sR P.scr oLh h.H.F], (slotR P.lay d).Disjoint r := fun d hd r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; omega_arith)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; omega_arith)
+    · exact Lay.fr_low (by have : frameBytes ≤ 2 ^ 32 := (by decide); omega_arith)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; omega_arith)
+  refine ⟨⟨hk.keep h hf (dslot sRes (by decide)), em_keep hf (fun r hr => ?_) (by omega_arith) he⟩,
+    slot_keep hf (dslot sTab (by decide)) hs⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
+  · exact hg.low ok (by oomega)
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
 
 /-! ## The seed -/
 
@@ -286,9 +325,9 @@ theorem db_vp (P : EP) :
 abbrev U5 (P : EP) (σ s : State) : Prop :=
   Ctx P.lay P.scr σ s ∧ X1 h P σ s.mem ∧ ∀ x < P.K, s.mem (sa P.scr x) = V5 h g P σ x
 
-/-- MGF1's table, the argument 23, in a buffer only read. -/
+/-- MGF1's table, the argument 24, in a buffer only read. -/
 theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
-    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (P.lay.argv.getD 23 0) o) 4 := by
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (P.lay.argv.getD 24 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
@@ -299,7 +338,7 @@ theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
 theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
     VP (fun σ s => U1 h P σ s ∧ s.syms = σ.syms)
-      (.seq (.block (seedArgs h.H 4)) (.seq (mgfXor f 23) (.seq (.block (dbArgs h.H 4)) (mgfXor f 23))))
+      (.seq (.block (seedArgs h.H 4)) (.seq (mgfXor f 24) (.seq (.block (dbArgs h.H 4)) (mgfXor f 24))))
       (fun σ s => U5 h g P σ s ∧ s.syms = σ.syms) := by
   by_cases hP : ∃ σ, In P σ ∧ 2 * h.H.D + 2 ≤ P.K
   swap
@@ -309,7 +348,7 @@ theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.t
   have hK := hi₀.k1024
   have hD := h.D_le
   have hD0 := h.D_pos
-  have tab : ∀ σ m, X1 h P σ m → TabFacts g.H f (P.lay.argv.getD 23 0) P.ai P.au P.af σ :=
+  have tab : ∀ σ m, X1 h P σ m → TabFacts g.H f (P.lay.argv.getD 24 0) P.ai P.au P.af σ :=
     fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
     (by omega_arith) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _))

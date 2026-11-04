@@ -826,6 +826,19 @@ theorem tabD_cert :
     ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r12]) (.block [.ldr .r0 .r0 16, st .r0 sHl]) hc).isSome =
       true := ⟨_, by taint_decide⟩
 
+/-- The load of a table's digest length (its word 4), through `r1`. -/
+theorem lenWord_cert :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r1]) (.block [.ldr .r1 .r1 16]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- The comparisons of the digest length in `r1` with each of `lens`. -/
+theorem lens_certs : ∀ x ∈ Impl.RsaOaep.Arm.lens, x < 2 ^ 32 ∧ encodable (BitVec.ofNat 32 x) = true ∧
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.cmp .r1 (.imm (BitVec.ofNat 32 x))]) hc).isSome =
+      true := by
+  intro x hx
+  simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
+
 theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
     UArgs scr d len c (s.setReg .r4 v) := by
   obtain ⟨a, b, e, f, g, i⟩ := h
