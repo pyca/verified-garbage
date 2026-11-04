@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.CT
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 /-!
 # Deterministic ECDSA on RISC-V: the hash function of a table
@@ -369,5 +371,136 @@ theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
           (2 * T.ecdsa.curve.len) = List.replicate (2 * T.ecdsa.curve.len) 0 := hpost
     rw [tresult_eq, e₁, e₂, e₀, hm.trans u.mem] at hpost'
     exact hpost'
+
+/-! ## Constant time -/
+
+/-- `u` is `σ` but for `t2` and `t3`. -/
+structure Ag (σ u : State) : Prop where
+  gpr : ∀ r, r ≠ .t2 → r ≠ .t3 → u.gpr r = σ.gpr r
+  mem : u.mem = σ.mem
+  rd : u.rd = σ.rd
+  wr : u.wr = σ.wr
+  sp : u.sp = σ.sp
+  sy : u.syms = σ.syms
+
+/-- Public data, of states that agree but for `t2` and `t3`. -/
+theorem pub_congr {K : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance}
+    {H : Impl.Hmac.Stream.RISCV64.Hash} {f : Impl.RsaOaep.RISCV64.Fns} {N N' : Nat} {s₁ s₂ u₁ u₂ : State}
+    (h : (rfcRC K I H f N).pub s₁ s₂) (a₁ : Ag s₁ u₁) (a₂ : Ag s₂ u₂) : (rfcRC K I H f N').pub u₁ u₂ := by
+  obtain ⟨⟨p₁, p₂, p₃, p₄, p₅, p₆, p₇, p₈, p₉, p₁₀⟩, p₁₁⟩ := h
+  have g : ∀ {σ u : State}, Ag σ u → ∀ r ∈ [Reg.a0, .a1, .a2, .a4, .a5], u.gpr r = σ.gpr r := fun a r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact a.gpr _ (by decide) (by decide)
+  refine ⟨⟨by rw [a₁.sp, a₂.sp, p₁], ?_, ?_, ?_, ?_, ?_, by rw [a₁.sy, a₂.sy, p₇], by rw [a₁.sy, a₂.sy, p₈],
+    by rw [a₁.sy, a₂.sy, p₉], ?_⟩, fun c hc => by rw [a₁.sy, a₂.sy, p₁₁ c hc]⟩
+  · rw [g a₁ _ (by simp), g a₂ _ (by simp), p₂]
+  · rw [g a₁ _ (by simp), g a₂ _ (by simp), p₃]
+  · rw [g a₁ _ (by simp), g a₂ _ (by simp), p₄]
+  · rw [g a₁ _ (by simp), g a₂ _ (by simp), p₅]
+  · rw [g a₁ _ (by simp), g a₂ _ (by simp), p₆]
+  · rw [a₁.mem, a₂.mem, g a₁ .a1 (by simp), g a₂ .a1 (by simp), g a₁ .a2 (by simp), g a₂ .a2 (by simp)]
+    exact p₁₀
+
+/-- `byIdx b is` in two runs whose `t2` is the index `i`. -/
+theorem byIdx_rel {b : Nat → Prog isa} {i : Nat} {Φ : State → State → Prop}
+    (hΦ : ∀ t₁ t₂ u₁ u₂ v₁ v₂, Φ t₁ t₂ → Upd t₁ u₁ .t3 v₁ → Upd t₂ u₂ .t3 v₂ → u₁.syms = t₁.syms →
+      u₂.syms = t₂.syms → Φ u₁ u₂)
+    (h2 : ∀ t₁ t₂, Φ t₁ t₂ → t₁.gpr .t2 = BitVec.ofNat 64 i ∧ t₂.gpr .t2 = BitVec.ofNat 64 i)
+    (hb : RelCT isa Φ (b i) fun _ _ => True) :
+    ∀ {is : List Nat}, i ∈ is → (∀ j ∈ is, j < 8) → RelCT isa Φ (byIdx b is) fun _ _ => True
+  | [], hi, _ => absurd hi List.not_mem_nil
+  | [j], hi, _ => by obtain rfl := List.mem_singleton.mp hi; exact hb
+  | j :: k :: is, hi, hlt => by
+    have hil := hlt i hi
+    have hjl := hlt j (List.mem_cons_self ..)
+    simp only [byIdx]
+    have r₁ := (rel_noaddr (Q := Φ) (is := [.addi .t3 .t2 (-(j : Int))]) (fun _ hi' _ => by
+      simp only [List.mem_singleton] at hi'; subst hi'; rfl)).wpDep
+      (F := fun (σ u : State) => Upd σ u .t3 (σ.gpr .t2 - BitVec.ofNat 64 j) ∧ u.syms = σ.syms) fun s₁ s₂ _ =>
+        ⟨WP.of_syms (wp_subi (imm := j) (by omega) fun u up => WP.block_nil fun sy => ⟨up, sy⟩),
+         WP.of_syms (wp_subi (imm := j) (by omega) fun u up => WP.block_nil fun sy => ⟨up, sy⟩)⟩
+    refine (r₁.mono (fun _ _ h => h) (Q' := fun (u₁ u₂ : State) => Φ u₁ u₂ ∧
+        u₁.gpr .t3 = BitVec.ofNat 64 i - BitVec.ofNat 64 j ∧ u₂.gpr .t3 = BitVec.ofNat 64 i - BitVec.ofNat 64 j)
+      fun u₁ u₂ ⟨_, σ₁, σ₂, hσ, ⟨up₁, sy₁⟩, ⟨up₂, sy₂⟩⟩ =>
+        ⟨hΦ _ _ _ _ _ _ hσ up₁ up₂ sy₁ sy₂, by rw [up₁.gpr, (h2 _ _ hσ).1], by rw [up₂.gpr, (h2 _ _ hσ).2]⟩).seq ?_
+    refine RelCT.ite (fun u₁ u₂ h => by rw [VG.RISCV64.Steps.eval_zero, VG.RISCV64.Steps.eval_zero, h.2.1, h.2.2]) ?_ ?_
+    · by_cases hij : i = j
+      · subst hij; exact hb.mono (fun _ _ h => h.1.1) fun _ _ h => h
+      · exact RelCT.of_false fun u₁ u₂ ⟨⟨_, e, _⟩, hz⟩ => by
+          rw [VG.RISCV64.Steps.eval_zero, e, sub_beq_zero i hil j hjl, decide_eq_false hij] at hz; cases hz
+    · by_cases hij : i = j
+      · exact RelCT.of_false fun u₁ u₂ ⟨⟨_, e, _⟩, hz⟩ => by
+          rw [VG.RISCV64.Steps.eval_zero, e, sub_beq_zero i hil j hjl, decide_eq_true hij] at hz; cases hz
+      · exact (byIdx_rel hΦ h2 hb ((List.mem_cons.mp hi).resolve_left hij)
+          (fun x hx => hlt x (List.mem_cons_of_mem _ hx))).mono (fun _ _ h => h.1.1) fun _ _ h => h
+
+/-- The taint checks of the code for index `i`, from those of the code for
+its sizes, which calls no table's functions. -/
+theorem checks_cfgT {tries : Nat} (i : Nat) (h : Checks (cfgS R tries (shapeOf i).1 (shapeOf i).2)) :
+    Checks (cfgT R tries vs i) :=
+  ⟨h.pro, h.red, h.kv, h.sep0, h.sep1, ⟨h.h.tw0, h.h.tw1, h.h.tw2, h.h.pi, h.h.po⟩, h.cnt, h.ca, h.go, h.ag,
+    h.st, h.fin, h.caW, h.k0, h.k1, h.k2, h.k3, h.k4⟩
+
+/-- `entry`, in two runs from the same table. -/
+theorem entry_ck : Ck [.a5] (.block entry) := ⟨_, by taint_decide⟩
+
+/-- The public data of two runs with the table of `w`. -/
+def PubW (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List TVar) (w : TVar) (s₁ s₂ : State) : Prop :=
+  w ∈ vs ∧ WOk w ∧ PreW R T vs w s₁ ∧ PreW R T vs w s₂ ∧
+    (rfcRC R.kit.K (instOf T w) w.H (fnsOf vs) stackT).pub s₁ s₂
+
+/-- After `entry`: states agreeing with entry states with the table of `w`
+but for `t2` and `t3`, with the index in `t2`. -/
+def PhiT (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List TVar) (w : TVar) (u₁ u₂ : State) : Prop :=
+  ∃ σ₁ σ₂, PubW R T vs w σ₁ σ₂ ∧ Ag σ₁ u₁ ∧ Ag σ₂ u₂ ∧
+    u₁.gpr .t2 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G) ∧ u₂.gpr .t2 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G)
+
+theorem phiT_t3 {w : TVar} {t₁ t₂ u₁ u₂ : State} {v₁ v₂ : BitVec 64} (h : PhiT R T vs w t₁ t₂)
+    (up₁ : Upd t₁ u₁ .t3 v₁) (up₂ : Upd t₂ u₂ .t3 v₂) (sy₁ : u₁.syms = t₁.syms) (sy₂ : u₂.syms = t₂.syms) :
+    PhiT R T vs w u₁ u₂ := by
+  obtain ⟨σ₁, σ₂, hσ, a₁, a₂, e₁, e₂⟩ := h
+  exact ⟨σ₁, σ₂, hσ, ⟨fun r h₂ h₃ => (up₁.other r h₃).trans (a₁.gpr r h₂ h₃), up₁.mem.trans a₁.mem,
+    up₁.rd.trans a₁.rd, up₁.wr.trans a₁.wr, up₁.sp.trans a₁.sp, sy₁.trans a₁.sy⟩,
+    ⟨fun r h₂ h₃ => (up₂.other r h₃).trans (a₂.gpr r h₂ h₃), up₂.mem.trans a₂.mem,
+    up₂.rd.trans a₂.rd, up₂.wr.trans a₂.wr, up₂.sp.trans a₂.sp, sy₂.trans a₂.sy⟩,
+    by rw [up₁.other _ (by decide), e₁], by rw [up₂.other _ (by decide), e₂]⟩
+
+theorem entry_rel {w : TVar} : RelCT isa (PubW R T vs w) (.block entry) (PhiT R T vs w) := by
+  obtain ⟨_, ce⟩ := entry_ck
+  refine ((RelCT.taint (A := taint) (Taint.ofRegs [.a5]) (fun s₁ s₂ h => by
+      obtain ⟨-, -, -, -, ⟨⟨hsp, -, -, -, -, h5, -⟩, -⟩⟩ := h
+      exact ⟨hsp, fun r hr => by rw [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact h5⟩) ce).wpDep
+    (F := fun (σ u : State) => Upd σ u .t2 (BitVec.ofNat 64 (Spec.HashTable.index w.l.G)) ∧ u.syms = σ.syms)
+    fun s₁ s₂ h => ⟨entry_ok h.2.2.1, entry_ok h.2.2.2.1⟩).mono (fun _ _ h => h) ?_
+  rintro u₁ u₂ ⟨_, σ₁, σ₂, hσ, ⟨up₁, sy₁⟩, ⟨up₂, sy₂⟩⟩
+  exact ⟨σ₁, σ₂, hσ, ⟨fun r h₂ _ => up₁.other r h₂, up₁.mem, up₁.rd, up₁.wr, up₁.sp, sy₁⟩,
+    ⟨fun r h₂ _ => up₂.other r h₂, up₂.mem, up₂.rd, up₂.wr, up₂.sp, sy₂⟩, up₁.gpr, up₂.gpr⟩
+
+/-- `vg_ecdsa_<curve>_sign` is constant time: runs whose public data agree
+take the same table's branch, which is constant time for its hash function. -/
+theorem signT_ct (hC : CurveT R T)
+    (hck : ∀ i ∈ idxs, Checks (cfgS R T.tries (shapeOf i).1 (shapeOf i).2)) :
+    ConstantTime isa (tabK R T vs).pre (tabK R T vs).pub (signCode R T.tries vs) := by
+  refine VG.RelCT.constantTime (Q := fun _ _ => True) ?_
+  refine RelCT.mono (P := fun s₁ s₂ => ∃ w, PubW R T vs w s₁ s₂) ?_
+    (fun _ _ ⟨_, _, w, hv, hw, p₁, p₂, hp⟩ => ⟨w, hv, hw, p₁, p₂, hp⟩) fun _ _ h => h
+  refine RelCT.exists_ fun w => ?_
+  by_cases hw : WOk w
+  swap
+  · exact RelCT.of_false fun _ _ h => hw h.2.1
+  unfold signCode signT
+  refine entry_rel.seq (byIdx_rel (i := Spec.HashTable.index w.l.G) (Φ := PhiT R T vs w)
+    (fun _ _ _ _ _ _ h up₁ up₂ sy₁ sy₂ => phiT_t3 h up₁ up₂ sy₁ sy₂)
+    (fun _ _ ⟨_, _, _, _, _, e₁, e₂⟩ => ⟨e₁, e₂⟩) ?_ (idx_mem hw) idxs_lt)
+  intro t₁ t₂ v₁ v₂ u₁ u₂ ⟨σ₁, σ₂, ⟨_, _, p₁, p₂, hp⟩, a₁, a₂, _, _⟩ e₁ e₂
+  have hct := ct (P := rfcOf hC vs w hw) (checks_cfgT _ (hck _ (idx_mem hw)))
+  have q : ∀ {σ u : State}, PreW R T vs w σ → Ag σ u →
+      (rfcRC (rfcOf hC vs w hw).kit.K (rfcOf hC vs w hw).I (rfcOf hC vs w hw).H (rfcOf hC vs w hw).c.f
+        (rfcOf hC vs w hw).N).pre u := fun hσ a =>
+    rfc_mono (stack_le hC vs w hw) (rfc_congr hσ.1 (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact a.gpr _ (by decide) (by decide))
+      a.sp a.rd a.wr a.mem a.sy)
+  exact ⟨hct _ _ _ _ _ _ (q p₁ a₁) (q p₂ a₂) (pub_congr hp a₁ a₂) e₁ e₂, trivial⟩
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
