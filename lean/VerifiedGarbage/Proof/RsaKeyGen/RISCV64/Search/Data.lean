@@ -99,6 +99,11 @@ theorem tab_fit (h : SearchInput p s) : (tabR s).base.toNat + (tabR s).len ≤ 2
   rw [packed_length] at this
   exact this
 
+theorem tab_al (h : SearchInput p s) : (tabR s).base.toNat % 8 = 0 := by
+  have := h.consts.aligned tab_mem
+  show (s.syms _).toNat % 8 = 0
+  omega
+
 theorem tab_wr (h : SearchInput p s) {r : Region} (hr : r ∈ s.wr) : (tabR s).Disjoint r :=
   (h.consts.2.2.1 _ (tab_reg s)).2.1 r hr
 
