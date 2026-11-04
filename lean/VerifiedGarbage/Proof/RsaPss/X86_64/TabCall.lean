@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Impl.RsaPss.X86_64
 public import VerifiedGarbage.Impl.MdHashTable.X86_64
+public import VerifiedGarbage.Proof.MdHashTable.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
@@ -47,6 +48,12 @@ theorem scall_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W 
     show ts.find? (fun q => t'.syms q.1 == t.syms n) = _
     rw [hsy]; exact hf
 
+theorem lay_keep11 {t t' : State} {F S : Addr} (L : Lay t F S) (k : Keep [.r11] t t') (hm : t'.mem = t.mem) :
+    Lay t' F S := L.congr (k.gpr (by decide)) k.2.2 (by rw [hm])
+
+theorem cs_keep11 {t t' : State} (k : Keep [.r11] t t') : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r :=
+  fun r hr => k.gpr fun h => by simp only [List.mem_singleton] at h; subst h; exact absurd hr (by decide)
+
 theorem upd_ne' {α : Type} {f : Nat → α} {a x : Nat} (h : x ≠ a) (v : α) : upd f a v x = f x := by
   simp [upd, h]
 
@@ -61,6 +68,18 @@ structure HT (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (W : Nat
   fi : f.init.find? (fun q => sy q.1 == sy H.initN) = some (H.initN, H.initC)
   fc : f.comp.find? (fun q => sy q.1 == sy H.compN) = some (H.compN, H.compC)
   fd : f.dig.find? (fun q => sy q.1 == sy dn) = some (dn, Impl.MdHashTable.X86_64.digest H.P)
+
+/-- The calls of `f` reach `H`'s `init`, compression function and digest at
+the addresses `sy` gives them: what `HT` says but for the slots. -/
+structure HTF (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (sy : String → Addr) : Prop where
+  fi : f.init.find? (fun q => sy q.1 == sy H.initN) = some (H.initN, H.initC)
+  fc : f.comp.find? (fun q => sy q.1 == sy H.compN) = some (H.compN, H.compC)
+  fd : f.dig.find? (fun q => sy q.1 == sy dn) = some (dn, Impl.MdHashTable.X86_64.digest H.P)
+
+theorem HTF.ht {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {sy : String → Addr}
+    (h : HTF H dn f sy) {W : Nat → BitVec 64} (h8 : W 8 = sy H.initN) (h9 : W 9 = sy H.compN)
+    (h10 : W 10 = sy dn) : HT H dn f W sy :=
+  ⟨h8, h9, h10, h.fi, h.fc, h.fd⟩
 
 theorem HT.upd {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {W : Nat → BitVec 64}
     {sy : String → Addr} (h : HT H dn f W sy) {k : Nat} (hk : k ≠ 8 ∧ k ≠ 9 ∧ k ≠ 10) (v : BitVec 64) :
@@ -96,11 +115,14 @@ theorem GT.congr {G : Impl.Pbkdf2.Md.X86_64.Stream} {g : Impl.Mgf1.X86_64.Table.
 
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and
-writes only `r8`, `r9`, `rbx`, `rbp` (which it restores) and `rax`. -/
+writes only `r8`, `r9`, `rbx`, `rbp` (which it restores) and `rax`, and it
+is constant time. -/
 structure DigOK (H : Impl.Pbkdf2.Md.X86_64.Hash) : Prop where
   mx : (Impl.MdHashTable.X86_64.digest H.P).allInstrs (fun i => !loadsMxcsr i) = true
   sp : NoSp (Impl.MdHashTable.X86_64.digest H.P)
   cl : ∀ r, r ∉ [Reg.r8, .r9, .rbx, .rbp, .rax] →
     ∀ i ∈ instrs (Impl.MdHashTable.X86_64.digest H.P), Taint.clobbers i r = false
+  ct : ∀ md : MdStream.Md H.P.B H.P.N H.P.L, ConstantTime isa (Proof.MdHashTable.X86_64.digestK (P := H.P) md).pre
+    (Proof.MdHashTable.X86_64.digestK (P := H.P) md).pub (Impl.MdHashTable.X86_64.digest H.P)
 
 end VG.Proof.RsaPss.X86_64

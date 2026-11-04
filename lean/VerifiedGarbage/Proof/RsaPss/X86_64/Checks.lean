@@ -43,23 +43,20 @@ def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
 functions to call. -/
 def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", "", "", "", ""⟩
 
-/-- The pieces of `ctHash` and `mgfXor`, with `n` writable regions after the
+/-- The pieces of `ctHash` and `mgfXor` that depend on the hash function, with `n` writable regions after the
 frame. -/
 structure HashChecks (P : Params) (D : Nat) (n : Nat) : Prop where
-  pad80 : ∃ hc, (taint.check (pT n [21, 28] []) (pad80 (ckH P D)) hc).isSome = true
+  pad80 : ∃ hc, (taint.check (pT n [21, 28, 8, 9, 10] []) (pad80 (ckH P D)) hc).isSome = true
   lenField : ∃ hc, (taint.check (pT n [21] []) (.block (lenField (ckH P D))) hc).isSome = true
-  lenLoop : ∃ hc, (taint.check (pT n [21, 28] []) (lenLoop (ckH P D)) hc).isSome = true
+  lenLoop : ∃ hc, (taint.check (pT n [21, 28, 8, 9, 10] []) (lenLoop (ckH P D)) hc).isSome = true
   compArgs : ∃ hc, (taint.check (pT n [21, 29] []) (.block (compArgs (ckH P D))) hc).isSome = true
   select : ∃ hc, (taint.check (pT n [21, 29] []) (select (ckH P D)) hc).isSome = true
-  digestOut : ∃ hc, (taint.check (pT n [21] []) (.block (digestOut (ckH P D))) hc).isSome = true
-  clearCopyH : ∃ hc, (taint.check (pT n [21, 23, 24] []) (.seq (clearBlock (ckH P D)) (copyH (ckH P D))) hc).isSome
+  /-- `mgfXor`'s seed and counter. -/
+  mgfHead : ∃ hc, (taint.check (pT n [21, 23, 24] [])
+    (.block (mgfSeed (ckH P D) ++ [.mov32 .rax (.imm 0), .store (sp sCtr) .rax, .store (sp sDone) .rax])) hc).isSome
     = true
-  counter : ∃ hc, (taint.check (pT n [31] [.rcx]) (.block (counter (ckH P D))) hc).isSome = true
-  xorOut : ∃ hc, (taint.check (pT n [21, 23, 24, 32] []) (xorOut (ckH P D)) hc).isSome = true
-  nextCtr : ∃ hc, (taint.check (pT n [24, 31, 32] []) (.block (nextCtr (ckH P D))) hc).isSome = true
-  digestState : ∃ hc, (taint.check (pT n [21] []) (.block (digestAt (ckH P D) oSt)) hc).isSome = true
   directLen : ∃ hc, (taint.check (pT n [21] []) (directLen (ckH P D)) hc).isSome = true
-  fixedPad80 : ∃ hc, (taint.check (pT n [21, 28] []) (fixedPad80 (D + 4)) hc).isSome = true
+  fixedPad80 : ∃ hc, (taint.check (pT n [21, 28, 8, 9, 10] []) (fixedPad80 (D + 4)) hc).isSome = true
   /-- `encode`'s and `checkEncoding`'s check of `emLen`. -/
   fit : ∃ hc, (taint.check (pT n [17] []) (.block (fitH (ckH P D))) hc).isSome = true
 
@@ -74,7 +71,7 @@ structure VerifyChecks (P : Params) (D : Nat) : Prop where
   fixedHead : ∃ hc, (taint.check (pT 1 [21, 36, 37] [])
     (fixedHead (ckH P D)) hc).isSome = true
   padSalt : ∃ hc, (taint.check (pT 1 [21, 36] []) (.block (padSalt (ckH P D))) hc).isSome = true
-  lenLast : ∃ hc, (taint.check (pT 1 [21, 28] []) (lenLast (ckH P D)) hc).isSome = true
+  lenLast : ∃ hc, (taint.check (pT 1 [21, 28, 8, 9, 10] []) (lenLast (ckH P D)) hc).isSome = true
   copyDb : ∃ hc, (taint.check (pT 1 [23, 24] [.rcx]) (copyDb (ckH P D)) hc).isSome = true
   shiftPass : ∃ hc, (taint.check (pT 1 [21, 24, 46] []) (shiftPass (ckH P D)) hc).isSome = true
   verifyNb : ∃ hc, (taint.check (pT 1 [24] []) (.block (verifyNb (ckH P D))) hc).isSome = true

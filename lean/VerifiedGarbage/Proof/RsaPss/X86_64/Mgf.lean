@@ -191,12 +191,6 @@ theorem finA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
 
 variable {G : Stream} (hG : StreamOK G) {g : Fns}
 
-theorem lay_keep11 {t t' : State} {F S : Addr} (L : Lay t F S) (k : Keep [.r11] t t') (hm : t'.mem = t.mem) :
-    Lay t' F S := L.congr (k.gpr (by decide)) k.2.2 (by rw [hm])
-
-theorem cs_keep11 {t t' : State} (k : Keep [.r11] t t') : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r :=
-  fun r hr => k.gpr fun h => by simp only [List.mem_singleton] at h; subst h; exact absurd hr (by decide)
-
 include hG in
 theorem initS_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) (T : GT G g W t.syms) (hdi : t.gpr .rdi = off S oSt) :
