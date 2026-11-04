@@ -778,4 +778,181 @@ theorem padBlk_ok {s t : State} (h : St P s₀ s t) (hD : P.c.D % 4 = 0) {b : Na
 
 end
 
+/-! ## HMAC -/
+
+/-- After `hinit`: the states of the key. -/
+def HK (P : Rfc) (s₀ s t : State) : Prop :=
+  St P s₀ s t ∧ t.syms = s₀.syms ∧ P.hH.SH.Repr t.mem (cA s₀ sIn) (xorPad (k0Of P s₀ s.mem) ipad) ∧
+    P.hH.SH.Repr t.mem (cA s₀ sOut) (xorPad (k0Of P s₀ s.mem) opad)
+
+/-- After the parts `pre` were absorbed. -/
+def HU (P : Rfc) (s₀ s : State) (pre : List Byte) (t : State) : Prop :=
+  St P s₀ s t ∧ t.syms = s₀.syms ∧ P.hH.SH.Repr t.mem (cA s₀ sIn) (xorPad (k0Of P s₀ s.mem) ipad ++ pre) ∧
+    P.hH.SH.Repr t.mem (cA s₀ sOut) (xorPad (k0Of P s₀ s.mem) opad)
+
+/-- After an HMAC: the MAC at `dst`, and memory changed only in HMAC's
+working space, the MAC and the stack below the frame. -/
+def HD (P : Rfc) (s₀ s : State) (msg : List Byte) (dst : Nat) (t : State) : Prop :=
+  KR P s₀ t ∧ t.syms = s₀.syms ∧ bytesAt t.mem (sA s₀ dst) P.c.D = Spec.Hmac.hmac P.hH.SH.H (kOf P s₀ s.mem) msg ∧
+    Frame [stR s₀, sR s₀ dst P.c.D, stk P s₀] s.mem t.mem ∧ ∀ r ∈ preserved, t.gpr r = s.gpr r
+
+section
+variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
+include hp
+
+/-- The states are apart from what writes the other state, the padded key
+or the inner digest, and the stack below the frame. -/
+theorem st_apart {o o' n : Nat} (ho : o + P.H.S ≤ 384) (hd : o + P.H.S ≤ o' ∨ o' + n ≤ o) (hn : o' + n ≤ 576) :
+    ∀ r ∈ [cR s₀ o' n, below s₀.sp P.X], Region.Disjoint (cR s₀ o P.H.S) r := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact scr_disj hp hd (by omega) (by omega)
+  · exact (hp.b_c.sub_left (below_stk hp (Nat.le_refl _))).symm.sub_left (scr_sub (by omega))
+
+theorem hinit_ok {s : State} (h : KR P s₀ s) (hsy : s.syms = s₀.syms) (hD : P.c.D % 4 = 0) :
+    WP isa P.c.hinit s (HK P s₀ s) := by
+  have hz := sizes P
+  have hS := hz.S192
+  have hB := hz.B
+  have hl := blockKey_length P (kOf P s₀ s.mem)
+  unfold Cfg.hinit
+  refine WP.seq (WP.mono (initCall_ok hp (St.refl h) hsy (o := sIn) (by simp only [sIn]; omega))
+    fun t₁ ⟨S₁, y₁, r₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (initCall_ok hp S₁ y₁ (o := sOut) (by simp only [sOut]; omega))
+    fun t₂ ⟨S₂, y₂, r₂, f₂⟩ => ?_)
+  have r₁' := repr_keep f₂ (st_apart hp (o := sIn) (o' := sOut) (by simp only [sIn]; omega)
+    (.inl (by simp only [sIn, sOut]; omega)) (by simp only [sOut]; omega)) r₁
+  refine WP.seq (WP.of_syms (WP.mono (padBlk_ok hp S₂ hD (b := 0x36) (by decide) padVal_ipad)
+    fun t₃ ⟨S₃, f₃, p₃⟩ y₃ => ?_))
+  have d₃ : ∀ {o}, o + P.H.S ≤ 384 → ∀ r ∈ [cR s₀ sPad P.c.B], Region.Disjoint (cR s₀ o P.H.S) r :=
+    fun ho r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact scr_disj hp (.inl (by simp only [sPad]; omega)) (by omega) (by simp only [sPad]; omega)
+  have r₁₃ := repr_keep f₃ (d₃ (o := sIn) (by simp only [sIn]; omega)) r₁'
+  have r₂₃ := repr_keep f₃ (d₃ (o := sOut) (by simp only [sOut]; omega)) r₂
+  refine WP.seq (WP.mono (updCall_ok hp S₃ (y₃.trans y₂) (o := sIn) (cnt := 0) (by simp only [sIn]; omega)
+    (by decide) (base := .s0) (off := sPad) (len := P.c.B) (.inr ⟨rfl, Nat.le_refl _, by simp only [sPad]; omega⟩))
+    fun t₄ ⟨S₄, y₄, u₄, f₄⟩ => ?_)
+  have r₁₄ := u₄ [] r₁₃ rfl
+  rw [List.nil_append, show pA s₀ (.s0, sPad, P.c.B) = cA s₀ sPad from rfl, p₃] at r₁₄
+  have r₂₄ := repr_keep f₄ (st_apart hp (o := sOut) (o' := sIn) (by simp only [sOut]; omega)
+    (.inr (by simp only [sIn, sOut]; omega)) (by simp only [sIn]; omega)) r₂₃
+  refine WP.seq (WP.of_syms (WP.mono (padBlk_ok hp S₄ hD (b := 0x5c) (by decide) padVal_opad)
+    fun t₅ ⟨S₅, f₅, p₅⟩ y₅ => ?_))
+  have r₁₅ := repr_keep f₅ (d₃ (o := sIn) (by simp only [sIn]; omega)) r₁₄
+  have r₂₅ := repr_keep f₅ (d₃ (o := sOut) (by simp only [sOut]; omega)) r₂₄
+  refine WP.mono (updCall_ok hp S₅ (y₅.trans y₄) (o := sOut) (cnt := 0) (by simp only [sOut]; omega)
+    (by decide) (base := .s0) (off := sPad) (len := P.c.B) (.inr ⟨rfl, Nat.le_refl _, by simp only [sPad]; omega⟩))
+    fun t₆ ⟨S₆, y₆, u₆, f₆⟩ => ?_
+  have r₂₆ := u₆ [] r₂₅ rfl
+  rw [List.nil_append, show pA s₀ (.s0, sPad, P.c.B) = cA s₀ sPad from rfl, p₅] at r₂₆
+  have r₁₆ := repr_keep f₆ (st_apart hp (o := sIn) (o' := sOut) (by simp only [sIn]; omega)
+    (.inl (by simp only [sIn, sOut]; omega)) (by simp only [sOut]; omega)) r₁₅
+  exact ⟨S₆, y₆, r₁₆, r₂₆⟩
+
+omit hp in
+theorem HK.hu {s t : State} (h : HK P s₀ s t) : HU P s₀ s [] t := by
+  obtain ⟨a, y, b, c⟩ := h
+  exact ⟨a, y, by rw [List.append_nil]; exact b, c⟩
+
+/-- The parts absorbed, one `update` each. -/
+theorem upds_ok {s : State} : ∀ (ps : List Part) {t : State} {pre : List Byte}, HU P s₀ s pre t →
+    (∀ p ∈ ps, PartOk P p) → P.c.B + pre.length + total ps < 2048 →
+    WP isa (P.c.upds pre.length ps) t (HU P s₀ s (pre ++ msgOf s.mem s₀ ps))
+  | [], t, pre, h, _, _ => WP.block_nil (by rw [msgOf, List.append_nil]; exact h)
+  | p :: ps, t, pre, h, hps, hb => by
+    have hz := sizes P
+    have hS := hz.S192
+    have hpo : PartOk P p := hps p (by simp)
+    have hl : p.2.2 ≤ total (p :: ps) := by simp only [total]; omega
+    have hK := blockKey_length P (kOf P s₀ s.mem)
+    unfold Cfg.upds
+    obtain ⟨b, o, n⟩ := p
+    refine WP.seq (WP.mono (updCall_ok hp h.1 h.2.1 (o := sIn) (cnt := P.c.B + pre.length)
+      (by simp only [sIn]; omega) (by omega) (base := b) (off := o) (len := n) (.inl hpo))
+      fun t₂ ⟨S₂, y₂, u₂, f₂⟩ => ?_)
+    have e₁ := u₂ _ h.2.2.1 (by rw [List.length_append, xorPad_length, hK])
+    rw [List.append_assoc, h.1.part hp hpo] at e₁
+    have h₂ : HU P s₀ s (pre ++ bytesAt s.mem (pA s₀ (b, o, n)) n) t₂ :=
+      ⟨S₂, y₂, e₁, repr_keep f₂ (st_apart hp (o := sOut) (o' := sIn) (by simp only [sOut]; omega)
+        (.inr (by simp only [sIn, sOut]; omega)) (by simp only [sIn]; omega)) h.2.2.2⟩
+    have e : pre.length + n = (pre ++ bytesAt s.mem (pA s₀ (b, o, n)) n).length := by
+      rw [List.length_append, bytesAt_length]
+    rw [e]
+    refine WP.mono (upds_ok ps h₂ (fun q hq => hps q (by simp [hq])) (by
+      rw [List.length_append, bytesAt_length]; simp only [total] at hb; omega)) fun t₃ h₃ => ?_
+    rwa [List.append_assoc, ← msgOf.eq_2] at h₃
+
+omit hp in
+theorem hash_length (m : List Byte) : (P.hH.SH.H.hash m).length = P.c.D := by
+  rw [P.hH.hashLen, (sizes P).DB.1]
+
+/-- The MAC, for the message `msg`, to the frame at `dst`. -/
+theorem hfin_ok {s t : State} {msg : List Byte} (h : HU P s₀ s msg t) {dst : Nat}
+    (hdst : 64 ≤ dst ∧ dst + P.c.D ≤ P.c.frB) (hm : P.c.B + msg.length < 2048) :
+    WP isa (P.c.hfin msg.length dst) t (HD P s₀ s msg dst) := by
+  have hz := sizes P
+  have hS := hz.S192
+  have hB := hz.B
+  obtain ⟨hD1, hD2⟩ := hz.D
+  have hK := blockKey_length P (kOf P s₀ s.mem)
+  obtain ⟨S, y, ri, ro⟩ := h
+  unfold Cfg.hfin
+  refine WP.seq (WP.mono (finCall_ok hp S.kr y (o := sIn) (cnt := P.c.B + msg.length) (by simp only [sIn]; omega)
+    hm (base := .s0) (off := sTmp) (.inl ⟨rfl, rfl⟩)) fun t₁ ⟨k₁, y₁, p₁, d₁, f₁⟩ => ?_)
+  have hd₁ := d₁ _ ri (by rw [List.length_append, xorPad_length, hK]; omega)
+    (by rw [List.length_append, xorPad_length, hK])
+  have hw₁ : ∀ r ∈ [cR s₀ sIn P.H.S, ⟨pA s₀ (.s0, sTmp, P.c.D), P.c.D⟩, below s₀.sp P.X],
+      ∃ r' ∈ [stR s₀, stk P s₀], Region.Sub r r' := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by simp, st_sub (by simp only [sIn]; omega)⟩
+    · exact ⟨_, by simp, st_sub (o := sTmp) (n := P.c.D) (by simp only [sTmp]; omega)⟩
+    · exact ⟨_, by simp, fun x hx => hx⟩
+  have S₁ : St P s₀ s t₁ := ⟨k₁, S.fr.trans (f₁.sub hw₁), fun r hr => (p₁ r hr).trans (S.pr r hr)⟩
+  have ro₁ := repr_keep f₁ (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (in_out hp).symm
+    · exact scr_disj hp (a := sOut) (b := sTmp) (.inl (by simp only [sOut, sTmp]; omega)) (by simp only [sOut]; omega)
+        (by simp only [sTmp]; omega)
+    · exact ((st_apart hp (o := sOut) (o' := sIn) (n := 0) (by simp only [sOut]; omega)
+        (.inr (by simp only [sIn, sOut]; omega)) (by simp only [sIn]; omega)) _ (by simp))) ro
+  refine WP.seq (WP.mono (updCall_ok hp S₁ y₁ (o := sOut) (cnt := P.c.B) (by simp only [sOut]; omega)
+    (by omega) (base := .s0) (off := sTmp) (len := P.c.D) (.inr ⟨rfl, by simp only [sTmp]; omega,
+      by simp only [sTmp]; omega⟩)) fun t₂ ⟨S₂, y₂, u₂, f₂⟩ => ?_)
+  have ro₂ := u₂ _ ro₁ (by rw [xorPad_length, hK])
+  rw [hd₁] at ro₂
+  refine WP.mono (finCall_ok hp S₂.kr y₂ (o := sOut) (cnt := P.c.B + P.c.D) (by simp only [sOut]; omega)
+    (by omega) (base := .s1) (off := dst) (.inr ⟨rfl, hdst⟩)) fun t₃ ⟨k₃, y₃, p₃, d₃, f₃⟩ => ?_
+  have hd₃ := d₃ _ ro₂ (by rw [List.length_append, xorPad_length, hK, hash_length]; omega)
+    (by rw [List.length_append, xorPad_length, hK, hash_length])
+  refine ⟨k₃, y₃, ?_, ?_, fun r hr => (p₃ r hr).trans (S₂.pr r hr)⟩
+  · exact hd₃
+  · refine (S₂.fr.sub fun r hr => ?_).trans (f₃.sub fun r hr => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨stR s₀, by simp, fun x hx => hx⟩
+      · exact ⟨stk P s₀, by simp, fun x hx => hx⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨stR s₀, by simp, st_sub (by simp only [sOut]; omega)⟩
+      · exact ⟨sR s₀ dst P.c.D, by simp, fun x hx => hx⟩
+      · exact ⟨stk P s₀, by simp, fun x hx => hx⟩
+
+/-- `HMAC_K(parts)` to `dst`. -/
+theorem hmac_ok {s : State} (h : KR P s₀ s) (hsy : s.syms = s₀.syms) (hD : P.c.D % 4 = 0)
+    {ps : List Part} (hps : ∀ p ∈ ps, PartOk P p)
+    (hb : P.c.B + total ps < 2048) {dst : Nat} (hdst : 64 ≤ dst ∧ dst + P.c.D ≤ P.c.frB) :
+    WP isa (P.c.hmac ps dst) s (HD P s₀ s (msgOf s.mem s₀ ps) dst) := by
+  unfold Cfg.hmac
+  refine WP.seq (WP.mono (hinit_ok hp h hsy hD) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (upds_ok hp ps (pre := []) h₂.hu hps (by simpa using hb)) fun t₃ h₃ => ?_)
+  rw [List.nil_append] at h₃
+  have hl := msgOf_length s.mem s₀ ps
+  rw [← hl]
+  exact hfin_ok hp h₃ hdst (by omega)
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
