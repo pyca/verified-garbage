@@ -16,10 +16,11 @@
 //! `vg_sha512_update_shani` and `vg_sha512_finalize_shani`, then the `_avx2`
 //! ones; on AArch64, the `_sha3` ones.
 //!
-//! On AArch64, PPC64LE, RISC-V and x86-64, `digest` calls `vg_sha512_digest`,
-//! or its variant with the suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha512.digestContract`), which hashes the whole message in one
-//! call, as do SHA-384's, SHA-512/224's and SHA-512/256's.
+//! On AArch64, ARMv7, PPC64LE, RISC-V and x86-64, `digest` calls
+//! `vg_sha512_digest`, or its variant with the suffix of the streaming
+//! functions chosen (contract `VG.Spec.Sha512.digestContract`), which hashes
+//! the whole message in one call, as do SHA-384's, SHA-512/224's and
+//! SHA-512/256's.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -32,6 +33,7 @@
 
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "x86_64",
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
@@ -75,6 +77,7 @@ super::streaming_hash!(
         },
         digests: #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "x86_64",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "riscv64"

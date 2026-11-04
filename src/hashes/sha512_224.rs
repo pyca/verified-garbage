@@ -24,6 +24,7 @@
 
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "x86_64",
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
@@ -71,6 +72,7 @@ super::streaming_hash!(
         },
         digests: #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "x86_64",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "riscv64"
