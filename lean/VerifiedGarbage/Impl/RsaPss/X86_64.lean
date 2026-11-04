@@ -177,11 +177,13 @@ def oRsa : Nat := 8192
 `encode` and `checkEncoding` take the hash function as a table of the
 interface `MdHash` (`Spec/MdHashTable.lean`), their stack argument 2, and
 MGF1's as a table of `Hash` (`Spec/HashTable.lean`), their stack argument
-3. They call the former's `init` (word 0), compression function (word 3)
-and digest of a hash value (word 4) indirectly (`tcall`: the word into
-`r11`, then `call r11`, of whichever of the functions of `MdFns` is at that
-address), and MGF1 with the latter (`Impl.Mgf1.X86_64.Table.mgfXor`), which
-keeps the table's address in `sTabG` and its digest length in `sDG`. -/
+3. On entry they copy the words of the tables they use to slots (`tabSlots`,
+in the part of the frame that only their callers use for the RSA
+operation's arguments): the former's `init` (word 0), compression function
+(word 3) and digest of a hash value (word 4), and the latter's `init`,
+`update` and `finalize` and digest length (words 0, 1, 2 and 4). Each call
+of one of them is indirect (`scall`: the slot into `r11`, then `call r11`,
+of whichever of the functions the list names is at that address). -/
 
 /-- The functions an indirect call of each of the functions of a table of
 `MdHash` that the code calls may reach: for each of `init`, the compression
@@ -191,20 +193,30 @@ structure MdFns where
   comp : List (String × Prog isa)
   dig : List (String × Prog isa)
 
-/-- The `MdHash` table's address: our stack argument 2. -/
-def sTabH : Nat := frameBytes + 8 + 8 * 2
+/-- The slots of the tables' words. -/
+def sIniH : Nat := 64
+def sCmpH : Nat := 72
+def sDigH : Nat := 80
+def sIniG : Nat := 88
+def sUpdG : Nat := 96
+def sFinG : Nat := 104
+def sDG : Nat := 112
 
-/-- The `Hash` table's address, our stack argument 3. -/
-def sArgG : Nat := frameBytes + 8 + 8 * 3
+/-- The `MdHash` table's words 0, 3 and 4, from our stack argument `j`, and
+the `Hash` table's words 0, 1, 2 and 4, from our stack argument `j + 1`, to
+their slots. -/
+def tabSlots (j : Nat) : List Instr :=
+  [.mov .r11 (.mem (arg j)), .mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) .rax,
+    .mov .rax (.mem (at_ .r11 24)), .store (sp sCmpH) .rax, .mov .rax (.mem (at_ .r11 32)), .store (sp sDigH) .rax,
+    .mov .r11 (.mem (arg (j + 1))), .mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax,
+    .mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax, .mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax,
+    .mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax]
 
-/-- The slots of MGF1's table and its digest length. -/
-def sTabG : Nat := 112
-def sDG : Nat := 120
+/-- The call of the function whose address is in the slot `s`, among `ts`. -/
+def scall (s : Nat) (ts : List (String × Prog isa)) : Prog isa :=
+  .seq (.block [.mov .r11 (.mem (sp s))]) (Code.icalls (.callr .r11) ts)
 
 variable (f : MdFns)
-
-/-- The call of the `MdHash` table's function `j`, among `ts`. -/
-def tcallH (j : Nat) (ts : List (String × Prog isa)) : Prog isa := Impl.Mgf1.X86_64.Table.tcall sTabH j ts
 
 variable (H : Hash)
 
@@ -229,7 +241,7 @@ def byteLoop (body : List Instr) (n : Src) : Prog isa := .loop (.block (body ++ 
 /-! ## `ctHash`: hashing a message of secret length -/
 
 /-- `init` on the state at `scratch + oSt`. -/
-def ctInit : Prog isa := .seq (.block (scr .rdi oSt)) (tcallH 0 f.init)
+def ctInit : Prog isa := .seq (.block (scr .rdi oSt)) (scall sIniH f.init)
 
 /-- `0x80` ORed into byte `ℓ` of `Y`, a mask for each of its `nbm B` bytes. -/
 def pad80 : Prog isa :=
@@ -282,11 +294,11 @@ def nextBlock : List Instr :=
 /-- Every block compressed, the last one's hash value selected. -/
 def compLoop : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (sp sB) .rax])
-    (.loop (seqs [.block (compArgs H), tcallH 3 f.comp, select H, .block nextBlock]) .ne)
+    (.loop (seqs [.block (compArgs H), scall sCmpH f.comp, select H, .block nextBlock]) .ne)
 
 /-- The digest of the hash value at `scratch + o` to `scratch + oDig`, by the
 table's function 4 (`digest(value = rdi, out = rsi)`). -/
-def digestAt (o : Nat) : Prog isa := .seq (.block (scr .rdi o ++ scr .rsi oDig)) (tcallH 4 f.dig)
+def digestAt (o : Nat) : Prog isa := .seq (.block (scr .rdi o ++ scr .rsi oDig)) (scall sDigH f.dig)
 
 /-- The digest of the selected hash value. -/
 def digestOut : Prog isa := digestAt f oSel
@@ -314,13 +326,13 @@ def directLen : Prog isa :=
 
 /-! ## MGF1
 
-With the hash function `G` of the table of `Hash` that is our stack
-argument 3 (`Impl.Mgf1.X86_64.Table.mgfXor`): its seed `H`, `hLen` bytes at
-`DB + dbLen`, and its mask `DB` (`dbLen` bytes at `sEb`), in the slots
-`sB` and `sFb` (free while MGF1 runs) and `sEb` and `sDb`; its state at
-`scratch + oSt`, the counter's bytes at `scratch + oLen`, the digest at
-`scratch + oDig`, and the working space of `update` and `finalize` at
-`scratch + oCW`. -/
+`Impl.Mgf1.X86_64`'s, with the hash function `G` of the table of `Hash`
+whose words `tabSlots` copied: its seed `H`, `hLen` bytes at `DB + dbLen`,
+and its mask `DB` (`dbLen` bytes at `sEb`), in the slots `sB` and `sFb`
+(free while MGF1 runs) and `sEb` and `sDb`; its state at `scratch + oSt`,
+the counter's bytes at `scratch + oLen`, the digest at `scratch + oDig`,
+and the working space of `update` and `finalize` at `scratch + oCW`; its
+digest length in `sDG`. -/
 
 /-- MGF1's layout. -/
 def mgfLay : Impl.Mgf1.X86_64.Layout :=
@@ -333,9 +345,17 @@ def mgfSeed : List Instr :=
   [.mov .rax (.mem (sp sEb)), .alu .add .rax (.mem (sp sDb)), .store (sp sB) .rax,
     .mov32 .rax (.imm (BitVec.ofNat 32 H.D)), .store (sp sFb) .rax]
 
+/-- One block: the digest of `H ‖ I2OSP(c, 4)`, XORed into `DB`. -/
+def mgfRound : Prog isa :=
+  seqs [.block (Impl.Mgf1.X86_64.initArgs mgfLay), scall sIniG g.init, .block (Impl.Mgf1.X86_64.updSrcArgs mgfLay),
+    scall sUpdG g.upd, .block (Impl.Mgf1.X86_64.updCtrArgs mgfLay), scall sUpdG g.upd,
+    .block (Impl.Mgf1.X86_64.finArgs mgfLay), scall sFinG g.fin, Impl.Mgf1.X86_64.Table.xorOut mgfLay sDG,
+    .block (Impl.Mgf1.X86_64.Table.nextCtr mgfLay sDG)]
+
 /-- `DB ⊕= MGF1(H, dbLen)`. -/
 def mgfXor : Prog isa :=
-  .seq (.block (mgfSeed H)) (Impl.Mgf1.X86_64.Table.mgfXor mgfLay sArgG sTabG sDG g)
+  .seq (.block (mgfSeed H ++ [.mov32 .rax (.imm 0), .store (sp sCtr) .rax, .store (sp sDone) .rax]))
+    (.loop (mgfRound g) .b)
 
 /-- `DB`'s first byte ANDed with the mask `0xFF >> z` (`sC`). -/
 def clearTop : List Instr :=
@@ -610,7 +630,7 @@ def lenLast : Prog isa :=
 /-- Every block compressed; the last one's hash value is the digest's. -/
 def compAll : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (sp sB) .rax])
-    (.loop (seqs [.block (compArgs H), tcallH 3 f.comp, .block nextBlock]) .ne)
+    (.loop (seqs [.block (compArgs H), scall sCmpH f.comp, .block nextBlock]) .ne)
 
 /-- The digest of `Y`'s first `ℓ` bytes, padded in `nbm` blocks, for a public
 `ℓ` whose `0x80` is already in place: the length field written to the last

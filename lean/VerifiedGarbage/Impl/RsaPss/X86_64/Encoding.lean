@@ -68,7 +68,8 @@ MGF1's `G` that the table of `Hash` `mgf1` names. -/
 /-- The arguments into their slots, and the mask. -/
 def encPrologue : List Instr :=
   saveRegs ++ ([.store (sp sOut) .rdi, .store (sp sK) .rsi, .store (sp sDig) .rdx, .store (sp sSalt) .rcx,
-    .store (sp sSaltLen) .r8, .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .r9
+    .store (sp sSaltLen) .r8, .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .r9 ++
+    tabSlots 2
 
 /-- The encoding's `emLen` bytes copied from `scratch + oEm` to `em`. -/
 def copyOut : Prog isa :=
@@ -97,7 +98,7 @@ last four on the stack, the tables as `encode`'s. -/
 /-- The arguments into their slots, and the mask. -/
 def chkPrologue : List Instr :=
   saveRegs ++ ([.store (sp sDig) .rdi, .store (sp sSig) .rsi, .store (sp sK) .rdx, .store (sp sSlen) .r8,
-    .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .rcx
+    .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .rcx ++ tabSlots 2
 
 /-- The encoding's `emLen` bytes copied from `em` to `scratch + oEm`. -/
 def copyIn : Prog isa :=
@@ -184,9 +185,16 @@ def hashName : Nat → String
 def encName (i : Nat) : String := s!"vg_rsa_pss_encode_{hashName i}"
 def chkName (i : Nat) : String := s!"vg_rsa_pss_check_encoding_{hashName i}"
 
-/-- The index of the hash function of the table of `MdHash` that is our
-stack argument `j` (its word 5), to `r11`. -/
-def idxLoad (j : Nat) : List Instr := [.mov .r11 (.mem (arg j)), .mov .r11 (.mem (at_ .r11 40))]
+/-- The slot of the index of the hash function of the table of `MdHash`. -/
+def sIdx : Nat := 376
+
+/-- That index (the table's word 5), from our stack argument `j`, to its
+slot. -/
+def idxSlot (j : Nat) : List Instr :=
+  [.mov .r11 (.mem (arg j)), .mov .r11 (.mem (at_ .r11 40)), .store (sp sIdx) .r11]
+
+/-- And from there to `r11`. -/
+def idxLoad : List Instr := [.mov .r11 (.mem (sp sIdx))]
 
 /-- `b i` for the index `i` in `r11`, by comparisons with each of `is`: the
 last is taken for every other value. -/
@@ -200,8 +208,8 @@ variable (privN : String) (privC : Prog isa)
 /-- The checks on the modulus, the encoding, then the private-key
 operation. -/
 def signCBody : Prog isa :=
-  seqs [.block (signPrologue ++ n0),
-    .ite .e signFail (seqs [.block (emBitsB ++ encArgs ++ idxLoad 16),
+  seqs [.block (signPrologue ++ idxSlot 16 ++ n0),
+    .ite .e signFail (seqs [.block (emBitsB ++ encArgs ++ idxLoad),
       byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
       .block [.alu32 .test .rax (.reg .rax)],
       .ite .e signFail (.seq (.block privArgs) (.call privN privC))]),
@@ -238,8 +246,8 @@ def chkArgs : List Instr :=
 variable (pubN : String) (pubC : Prog isa)
 
 def verifyCBody : Prog isa :=
-  seqs [.block (verifyPrologue ++ n0),
-    .ite .e verifyFail (seqs [.block (emBitsB ++ pubArgsC), .call pubN pubC, .block (chkArgs ++ idxLoad 8),
+  seqs [.block (verifyPrologue ++ idxSlot 8 ++ n0),
+    .ite .e verifyFail (seqs [.block (emBitsB ++ pubArgsC), .call pubN pubC, .block (chkArgs ++ idxLoad),
       byIdx (fun i => .call (chkName i) (checkEncoding f (ofIdx i) g)) idxs,
       .block [.alu .and .rax (.mem (sp sAcc))]]),
     .block restoreRegs]
