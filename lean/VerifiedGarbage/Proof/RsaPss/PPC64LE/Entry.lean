@@ -31,6 +31,14 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_ld wp_mov wp_nil wp_lsrw w
 theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
+theorem in_aR_sub {s : State} {j : Nat} (hj : j < 8) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
+  rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega)
+
+/-- A word of a table of `n` words is in its region. -/
+theorem tab_sub {p : Addr} {n k : Nat} (hk : k < n) :
+    Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p n) :=
+  Offset.sub_base p (by show 8 * k + 8 ≤ n * (64 / 8); omega)
+
 /-- After the saves and the prologue. -/
 structure Entered (D : Nat) (s t : State) : Prop where
   base : Base Sp (vP D) s t
