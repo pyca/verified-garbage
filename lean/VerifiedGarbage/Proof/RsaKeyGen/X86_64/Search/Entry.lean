@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 namespace VG.Proof.RsaKeyGen.X86_64.Search
 
+open VG.Proof.RsaKeyGen.SearchFrame
+
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.X86_64.Generation (allocated allocated_rsp allocated_reg allocated_mem)
 open VG.Impl.RsaKeyGen.X86_64.Search
