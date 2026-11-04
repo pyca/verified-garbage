@@ -43,6 +43,21 @@ def x448X86_64 : Contract X86_64.isa where
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
 
+open VG VG.X86_64 in
+/-- `vg_x448_base(out = rdi, scalar = rsi, scratch = rdx)`. -/
+def x448BaseX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 56⟩
+    let scalar : Region := ⟨s.gpr .rsi, 56⟩
+    let scratch : Region := ⟨s.gpr .rdx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [scalar] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ scalar.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧ (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+  post s s' := Spec.X448.bytesAt s'.mem (s.gpr .rdi) 56 =
+    Spec.X448.x448 (Spec.X448.bytesAt s.mem (s.gpr .rsi) 56) Spec.X448.basePoint
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx
+
 end VG.Proof.X448
 
 namespace VG.Proof.X448.X86_64
@@ -72,6 +87,20 @@ structure Pre (s₀ : State) : Prop where
 theorem Pre.of (s₀ : State) (h : Proof.X448.x448X86_64.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
+
+/-- `vg_x448_base`'s precondition, by name. -/
+structure BasePre (s₀ : State) : Prop where
+  rd : s₀.rd = [scalarR s₀]
+  wr : s₀.wr = [outR s₀, ⟨s₀.gpr .rdx, 8192⟩]
+  out_sc : (outR s₀).Disjoint ⟨s₀.gpr .rdx, 8192⟩
+  scalar_sc : (scalarR s₀).Disjoint ⟨s₀.gpr .rdx, 8192⟩
+  ret_out : (retR s₀).Disjoint (outR s₀)
+  ret_sc : (retR s₀).Disjoint ⟨s₀.gpr .rdx, 8192⟩
+  sc_fit : (s₀.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+
+theorem BasePre.of (s₀ : State) (h : Proof.X448.x448BaseX86_64.pre s₀) : BasePre s₀ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
@@ -107,36 +136,50 @@ variable {fld : Field} (hf : FieldOk fld)
 theorem finish_eq : finish fld = fld.mul X2 X2 T7 ++ (freeze X2 ++ (storesR .rsi 0 W ++ restore)) := by
   simp only [finish, List.append_assoc, outStores_eq]
 
-theorem x448_eq' (lad inv : Prog isa) : x448Of fld lad inv = .seq (.block setup) (.seq bits (.seq
-    (.block ([.mov .rsi (.reg .r15)] : List Instr)) (.seq lad (.seq (.block lastSwap)
-    (.seq inv (.block (finish fld))))))) := rfl
+/-- What follows the setup in `x448Of` and `x448BaseOf`. -/
+def tailOf (F : Field) (lad inv : Prog isa) : Prog isa :=
+  .seq bits (.seq (.block ([.mov .rsi (.reg .r15)] : List Instr)) (.seq lad (.seq (.block lastSwap)
+    (.seq inv (.block (finish F))))))
+
+theorem x448_eq' (lad inv : Prog isa) : x448Of fld lad inv = .seq (.block setup) (tailOf fld lad inv) := rfl
+
+theorem x448Base_eq' (lad inv : Prog isa) :
+    x448BaseOf fld lad inv = .seq (.block setupBase) (tailOf fld lad inv) := rfl
+
+/-- The facts of the precondition the code after the setup uses, with the
+working space at `base`. -/
+structure TailPre (s₀ : State) (base : Addr) : Prop where
+  scalar_rd : scalarR s₀ ∈ s₀.rd
+  out_wr : outR s₀ ∈ s₀.wr
+  out_sc : (outR s₀).Disjoint ⟨base, 8192⟩
+  scalar_sc : (scalarR s₀).Disjoint ⟨base, 8192⟩
+  ret_out : (retR s₀).Disjoint (outR s₀)
+  ret_sc : (retR s₀).Disjoint ⟨base, 8192⟩
+  sc_fit : base.toNat + 8192 ≤ 2 ^ 64
 
 include hf in
-/-- X448 with any ladder `lad` that leaves the ladder's final state as
-`ladder` does (`LPost`), and any inversion `inv` that keeps and computes what
-`invert` does (`InvPost`). -/
-theorem correct_of {lad inv : Prog isa}
+/-- The code after the setup, from the ladder's initial state for the
+u-coordinate `pb` (`SetupPost`), with any ladder `lad` that leaves the
+ladder's final state as `ladder` does (`LPost`), and any inversion `inv` that
+keeps and computes what `invert` does (`InvPost`). -/
+theorem tail_ok {lad inv : Prog isa}
     (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}, LPre base k u s →
       WP isa lad s (LPost base k u s))
     (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
-    {s₀ : State} (hp : Pre s₀) :
-    WP isa (x448Of fld lad inv) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
-  obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
-  have hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
-  have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
-  have hwo : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
-  have hr : ∀ d, d + 8 ≤ 56 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
-    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
-  have hd : ∀ j < 56, 8192 ≤ ofs base (off (s₀.gpr .rdx) j) :=
-    fun j hj => far (hbase ▸ hp.point_sc) hj (by decide)
-  rw [x448_eq']
-  refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr hd)
-    fun s₁ ⟨hs₁, r15₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ => ?_)
+    {s₀ s₁ : State} {base : Addr} {pb : List Byte} (hp : TailPre s₀ base)
+    (h₁ : SetupPost s₀ base (toFe (Spec.X448.decodeUCoordinate pb)) s₁) :
+    WP isa (tailOf fld lad inv) s₁ fun s' => gprPreserved s₀ s' ∧
+      Spec.X448.bytesAt s'.mem (s₀.gpr .rdi) 56 =
+        Spec.X448.x448 (Spec.X448.bytesAt s₀.mem (s₀.gpr .rsi) 56) pb := by
+  obtain ⟨hs₁, r15₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
+  have hn := hp.sc_fit
+  have hwo := hp.out_wr
+  unfold tailOf
   have hkr : ∀ q < 56, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
-    fun q hq => ⟨scalarR s₀, by rw [rd₁, hp.rd]; simp,
+    fun q hq => ⟨scalarR s₀, by rw [rd₁]; exact List.mem_append_left _ hp.scalar_rd,
       Offset.contains_base _ (d := q) (n := 1) (k := 56) (by omega) (by omega)⟩
   have hkd : ∀ q < 56, 8192 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
-    fun q hq => far (hbase ▸ hp.scalar_sc) hq (by decide)
+    fun q hq => far hp.scalar_sc hq (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (g₁ _ (by decide)) hkr hkd)
     fun s₂ ⟨g₂, rd₂, wr₂, o₂, b₂⟩ => ?_)
   refine WP.seq (WP.mono (movRsi_ok s₂) fun s₃ ⟨rsi₃, k₃⟩ => ?_)
@@ -149,7 +192,7 @@ theorem correct_of {lad inv : Prog isa}
       rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by have := slot_lt i; simp only [BITS, ACC] at *; omega))
   refine WP.seq (WP.mono (hlad (s := s₃)
     (k := Spec.X448.decodeScalar448 (Spec.X448.bytesAt s₀.mem (s₀.gpr .rsi) 56))
-    (u := toFe (Spec.X448.decodeUCoordinate (Spec.X448.bytesAt s₀.mem (s₀.gpr .rdx) 56)))
+    (u := toFe (Spec.X448.decodeUCoordinate pb))
     ⟨hs₃, fun t ht => by rw [k₃.2.1, b₂ t ht, hkb],
       by rw [e₃ 0, x1₁], by rw [e₃ 1, x2₁], by rw [e₃ 2, z2₁],
       by rw [e₃ 3, x3₁], by rw [e₃ 4, z3₁],
@@ -157,7 +200,7 @@ theorem correct_of {lad inv : Prog isa}
   refine WP.seq (WP.mono (lastSwap_ok L.scr
     (by have := ladderAfter_swap_le
           (Spec.X448.decodeScalar448 (Spec.X448.bytesAt s₀.mem (s₀.gpr .rsi) 56))
-          (toFe (Spec.X448.decodeUCoordinate (Spec.X448.bytesAt s₀.mem (s₀.gpr .rdx) 56)))
+          (toFe (Spec.X448.decodeUCoordinate pb))
           (n := 0) (by omega)
         omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e1₅, e2₅⟩ => ?_)
   have hs₅ := K₅.scr L.scr
@@ -187,7 +230,7 @@ theorem correct_of {lad inv : Prog isa}
   have sv₉ : Saved base s₀.gpr s₉.mem := fun rd hrd => by
     have := saved_lt rd hrd
     rw [← sv₈ rd hrd]
-    exact word_frame F₉ (hbase ▸ hp.out_sc) (by omega)
+    exact word_frame F₉ hp.out_sc (by omega)
   have hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
   refine WP.mono (restore_ok hs₉ sv₉) fun s' ⟨r', g', m', rd', wr'⟩ => ?_
   have O₃ : Outside base 0 8192 s₀.mem s₃.mem := by
@@ -209,16 +252,15 @@ theorem correct_of {lad inv : Prog isa}
     · exact r' (.r13, 24) (by decide)
     · exact r' (.r14, 32) (by decide)
     · exact r' (.r15, 40) (by decide)
-  · have F₁ : Frame [scR s₀, outR s₀] s₀.mem s'.mem := by
+  · have F₁ : Frame [⟨base, 8192⟩, outR s₀] s₀.mem s'.mem := by
       rw [m']
-      exact ((hbase ▸ O.frame).mono (by simp)).trans (F₉.mono (by simp))
+      exact (O.frame.mono (by simp)).trans (F₉.mono (by simp))
     exact F₁.readW (r := retR s₀) (Region.contains_self _ _) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · exact hp.ret_sc
       · exact hp.ret_out) (by decide)
-  · show Spec.X448.bytesAt s'.mem (s₀.gpr .rdi) 56 = _
-    rw [m', bytesAt_mv, x448_eq]
+  · rw [m', bytesAt_mv, x448_eq]
     rw [W_len] at v₉
     rw [v₉, v₈]
     dsimp only
@@ -229,6 +271,41 @@ theorem correct_of {lad inv : Prog isa}
     rw [e₇]
     simp only [opMul, Function.update_self]
     rw [E_outside o₆ 1 (by decide), e1₅, e₆, e2₅]
+
+include hf in
+/-- X448 with any ladder `lad` and inversion `inv` as `tail_ok` takes. -/
+theorem correct_of {lad inv : Prog isa}
+    (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}, LPre base k u s →
+      WP isa lad s (LPost base k u s))
+    (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
+    {s₀ : State} (hp : Pre s₀) :
+    WP isa (x448Of fld lad inv) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
+  obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
+  have hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
+  have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
+  have hr : ∀ d, d + 8 ≤ 56 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
+    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
+  have hd : ∀ j < 56, 8192 ≤ ofs base (off (s₀.gpr .rdx) j) :=
+    fun j hj => far (hbase ▸ hp.point_sc) hj (by decide)
+  rw [x448_eq']
+  exact WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr hd) fun s₁ h₁ =>
+    tail_ok hf hlad hinv ⟨by rw [hp.rd]; simp, by rw [hp.wr]; simp, hbase ▸ hp.out_sc,
+      hbase ▸ hp.scalar_sc, hp.ret_out, hbase ▸ hp.ret_sc, hn⟩ h₁)
+
+include hf in
+/-- X448 of the base point with any ladder `lad` and inversion `inv` as
+`tail_ok` takes. -/
+theorem correctBase_of {lad inv : Prog isa}
+    (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}, LPre base k u s →
+      WP isa lad s (LPost base k u s))
+    (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
+    {s₀ : State} (hp : BasePre s₀) :
+    WP isa (x448BaseOf fld lad inv) s₀ fun s' =>
+      gprPreserved s₀ s' ∧ Proof.X448.x448BaseX86_64.post s₀ s' := by
+  rw [x448Base_eq']
+  exact WP.seq (WP.mono (setupBase_ok rfl (by rw [hp.wr]; simp) hp.sc_fit) fun s₁ h₁ =>
+    tail_ok hf hlad hinv ⟨by rw [hp.rd]; simp, by rw [hp.wr]; simp, hp.out_sc, hp.scalar_sc,
+      hp.ret_out, hp.ret_sc, hp.sc_fit⟩ h₁)
 
 include hf in
 theorem correct {s₀ : State} (hp : Pre s₀) :
@@ -244,5 +321,16 @@ theorem correct_inline {s₀ : State} (hp : Pre s₀) :
       gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
   rw [x448_inline]
   exact correct_of baseline_ok (fun h => ladder_post baseline_ok h) (fun hs => invertCall_post baseline_ok (keep := []) (by simp) hs) hp
+
+theorem x448Base_inline : Impl.X448.X86_64.x448Base.inline =
+    x448BaseOf baseline (ladder baseline) (invertCall baseline []).inline := rfl
+
+/-- `vg_x448_base`, its call of `vg_gf448_r64_pow223` inlined. -/
+theorem correctBase_inline {s₀ : State} (hp : BasePre s₀) :
+    WP isa Impl.X448.X86_64.x448Base.inline s₀ fun s' =>
+      gprPreserved s₀ s' ∧ Proof.X448.x448BaseX86_64.post s₀ s' := by
+  rw [x448Base_inline]
+  exact correctBase_of baseline_ok (fun h => ladder_post baseline_ok h)
+    (fun hs => invertCall_post baseline_ok (keep := []) (by simp) hs) hp
 
 end VG.Proof.X448.X86_64

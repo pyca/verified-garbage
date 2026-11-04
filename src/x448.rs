@@ -3,14 +3,14 @@
 //! The whole function is the verified `vg_x448` (contract
 //! `VG.Spec.X448.x448Contract`): `X448(k, u)` of RFC 7748 §5, the
 //! scalar decoded (clamped) and all 448 bits of the u-coordinate reduced
-//! modulo the field prime, in constant time. On x86-64 CPUs with the
-//! features `VG_X448_ADX_FEATURES` names, `Backend::select` chooses its
-//! variant `vg_x448_adx`, with the same contract. This module gives it
-//! working space, and destroys what it leaves there.
-//!
-//! On AArch64, [`public_key`](PrivateKey::public_key) is the verified
-//! `vg_x448_base` (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)`;
-//! elsewhere it is `vg_x448` of the base point.
+//! modulo the field prime, in constant time; and
+//! [`public_key`](PrivateKey::public_key) is the verified `vg_x448_base`
+//! (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)` (on x86, until it
+//! has `vg_x448_base`, `vg_x448` of the base point). On x86-64 CPUs
+//! with the features their `_FEATURES` constants name, `Backend::select`
+//! chooses their variants `vg_x448_adx` and `vg_x448_base_adx`, with the
+//! same contracts. This module gives them working space, and destroys what
+//! they leave there.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.2), in
@@ -26,15 +26,17 @@
 ))]
 
 use crate::arch::x448::vg_x448;
-#[cfg(target_arch = "aarch64")]
+#[cfg(not(target_arch = "x86"))]
 use crate::arch::x448::vg_x448_base;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::x448::{VG_X448_ADX_FEATURES, vg_x448_adx};
+use crate::arch::x448::{
+    VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES, vg_x448_adx, vg_x448_base_adx,
+};
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_x448`.
+/// The implementations of `vg_x448` and `vg_x448_base`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     /// The baseline implementation.
@@ -48,7 +50,7 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(VG_X448_ADX_FEATURES) {
+        if f.contains(const { Features::all(&[VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]) }) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -108,21 +110,28 @@ pub fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
 }
 
 /// `X448(scalar, 5)`, by `vg_x448_base`.
-#[cfg(target_arch = "aarch64")]
+#[cfg(not(target_arch = "x86"))]
 fn base(scalar: &[u8; 56]) -> [u8; 56] {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_x448_base,
+        // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
+        Backend::Adx => vg_x448_base_adx,
+    };
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
     // 8192 bytes, and `scalar` for reads of 56 bytes; the writable buffers are
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space.
-    unsafe { vg_x448_base(&mut out, scalar, &mut scratch) };
+    // The CPU has the features of the function `select` chose.
+    unsafe { f(&mut out, scalar, &mut scratch) };
     zeroize(&mut scratch);
     out
 }
 
-/// `X448(scalar, 5)`, by `x448`.
-#[cfg(not(target_arch = "aarch64"))]
+/// `X448(scalar, 5)`, by `x448` (x86 has no `vg_x448_base` yet).
+#[cfg(target_arch = "x86")]
 fn base(scalar: &[u8; 56]) -> [u8; 56] {
     x448(scalar, &BASE_POINT)
 }
@@ -226,7 +235,7 @@ mod tests {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
-            let adx = VG_X448_ADX_FEATURES;
+            let adx = Features::all(&[VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]);
             assert_eq!(Backend::select(adx), Backend::Adx);
             assert_eq!(
                 Backend::select(Features(verified_garbage_cpu::feature::BMI2)),

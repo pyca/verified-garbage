@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
-# X448 on x86-64: `Verified`
+# X448 on x86-64: `Verified`, of `vg_x448` and `vg_x448_base`
 
 Correct as its code with `vg_gf448_r64_pow223`'s inlined (`correct_inline`),
 constant time (by taint tracking, which follows the call: the only branches
@@ -102,5 +102,69 @@ theorem x448_verified :
     Verified X86_64.target Impl.X448.X86_64.x448 (Spec.X448.x448Contract X86_64.abi 8) :=
   Verified.of_inline_ct x448_inlineOk x448_ok x448_ct x448_implies8 (fun _ h => Sig.clear_of_pre h)
     x448_patch
+
+/-! ## `vg_x448_base` -/
+
+/-- A state satisfying `vg_x448_base`'s precondition. -/
+def satBaseState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x4000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 56⟩]
+  wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
+
+theorem x448Base_inlineOk : Impl.X448.X86_64.x448Base.InlineOk = true := by lit_decide
+
+theorem x448Base_ok (s : State) (hs : Proof.X448.x448BaseX86_64.pre s) :
+    ∃ t s', Exec isa Impl.X448.X86_64.x448Base.inline s t s' ∧ abiPreserved s s' ∧
+      Proof.X448.x448BaseX86_64.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correctBase_inline (BasePre.of s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he h.1, h.2⟩
+
+/-- `x448Erased` for `vg_x448_base`. -/
+def x448BaseErased : Prog isa := Code.erase Impl.X448.X86_64.x448Base
+
+materialize_shared x448BaseErased
+
+theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseX86_64.pre Proof.X448.x448BaseX86_64.pub
+    Impl.X448.X86_64.x448Base := by
+  refine VG.Taint.constantTime_mapBlocks (c' := x448BaseErased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem x448Base_implies : Proof.X448.x448BaseX86_64.Implies (Spec.X448.x448BaseContract X86_64.abi) := by
+  sig_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86_64.abi, X86_64.argRegs,
+    Proof.X448.x448BaseX86_64] [satBaseState] using satBaseState
+
+/-- The contract with 8 bytes of stack, for the call's return address. -/
+theorem x448Base_implies8 :
+    Proof.X448.x448BaseX86_64.Implies (Spec.X448.x448BaseContract X86_64.abi 8) :=
+  x448Base_implies.stack8_abi (by
+    sig_implies_sat [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, X86_64.abi, X86_64.argRegs,
+      satBaseState] [satBaseState] using satBaseState)
+
+/-- The output is apart from the call's return address. -/
+theorem x448Base_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.X448.x448BaseContract X86_64.abi 8).pre s) (hp : Proof.X448.x448BaseX86_64.post s b) :
+    Proof.X448.x448BaseX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := x448Base_implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 56)
+    (by rw [hwr]; simp) (by decide)
+  show Spec.X448.bytesAt (b.patch _ hv u).mem (s.gpr .rdi) 56 = _
+  rw [show Spec.X448.bytesAt (b.patch _ hv u).mem (s.gpr .rdi) 56 = Spec.X448.bytesAt b.mem (s.gpr .rdi) 56
+    from bytes_patch hb]
+  exact hp
+
+theorem x448Base_verified :
+    Verified X86_64.target Impl.X448.X86_64.x448Base (Spec.X448.x448BaseContract X86_64.abi 8) :=
+  Verified.of_inline_ct x448Base_inlineOk x448Base_ok x448Base_ct x448Base_implies8
+    (fun _ h => Sig.clear_of_pre h) x448Base_patch
 
 end VG.Proof.X448.X86_64

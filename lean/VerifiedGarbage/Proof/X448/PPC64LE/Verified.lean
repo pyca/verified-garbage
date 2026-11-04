@@ -57,4 +57,40 @@ theorem x448_verified :
     contract_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, Proof.X448.PPC64LE.x448PPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [Proof.X448.PPC64LE.x448Sat] using Proof.X448.PPC64LE.x448Sat)
 
+theorem x448Base_ok (s : State) (hs : x448BasePPC64LE.pre s) :
+    ∃ t s', Exec isa Impl.X448.PPC64LE.x448Base s t s' ∧ abiPreserved s s' ∧
+      x448BasePPC64LE.post s s' := by
+  obtain ⟨t, s', he, h⟩ := x448Base_correct (BPre.of hs)
+  have hd : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.X448.PPC64LE.x448Base, dstOf i ≠ some r := by
+    have h : ((instrs Impl.X448.PPC64LE.x448Base).all fun i =>
+        preserved.all fun r => dstOf i != some r) = true := by
+      rw [← Code.allInstrs_eq]; decide +kernel
+    intro r hr i hi
+    have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
+    simpa using this
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (hd r hr) he (.inl (by decide +kernel)), Exec.sp he,
+    Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+
+theorem x448Base_ct' : ConstantTime isa x448BasePPC64LE.pre x448BasePPC64LE.pub
+    Impl.X448.PPC64LE.x448Base :=
+  x448Base_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩
+
+/-- A state satisfying `vg_x448_base`'s precondition. -/
+def x448BaseSat : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x4000 | _ => 0
+  lr := 0
+  sp := 0x10000
+  mem _ := 0
+  rd := [⟨0x2000, 56⟩]
+  wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
+
+theorem x448Base_verified :
+    Verified PPC64LE.target Impl.X448.PPC64LE.x448Base (Spec.X448.x448BaseContract PPC64LE.abi) :=
+  Verified.of_correct x448Base_ok x448Base_ct' (by
+    contract_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, Proof.X448.PPC64LE.x448BasePPC64LE,
+      PPC64LE.abi, PPC64LE.argRegs] [Proof.X448.PPC64LE.x448BaseSat] using Proof.X448.PPC64LE.x448BaseSat)
+
 end VG.Proof.X448.PPC64LE

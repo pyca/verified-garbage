@@ -234,6 +234,15 @@ def consts : List Instr :=
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts
 
+/-- The base point's u-coordinate, 5, into `X1` and `X3`. -/
+def five : List Instr :=
+  [.li .r7 5, .li .r8 0, .store .w .r7 .r6 X1, .store .w .r7 .r6 X3] ++ storeN .r8 (X1 + 4) 13 ++
+    storeN .r8 (X3 + 4) 13
+
+/-- `setup` for the base point: its u-coordinate, 5, into `X1` and `X3`, and
+the constants. -/
+def setupBase : List Instr := five ++ consts
+
 /-- The bits of the byte at `r4` into `BITS` at `r9`, advancing both. -/
 def bitsBody : List Instr :=
   [.lbz .r7 .r4 0] ++
@@ -247,8 +256,15 @@ def bits : Prog isa :=
     (.seq (.loop (.block bitsBody) (.nonzero .d .r11))
       (.block [.li .r7 0, .stb .r7 .r6 BITS, .stb .r7 .r6 (BITS + 1), .li .r7 1, .stb .r7 .r6 (BITS + 447)]))
 
-def x448 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+/-- What follows the setup. -/
+def afterSetup : Prog isa :=
+  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+
+def x448 : Prog isa := .seq (.block setup) afterSetup
+
+/-- `vg_x448_base(out = r3, scalar = r4, scratch = r5)`: the working space into
+`r6`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
+written instead of read (`setupBase`). -/
+def x448Base : Prog isa := .seq (.block ([.addi .r6 .r5 0] ++ setupBase)) afterSetup
 
 end VG.Impl.X448.PPC64LE
