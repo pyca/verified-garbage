@@ -147,4 +147,36 @@ theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchRe
       by rw [hm]; exact hd.request, by rw [hm]; exact hd.used, by rw [hm]; exact hd.status,
       by rw [hm]; exact hd.output⟩
 
+theorem search_iteration (v : RoundImpl) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s) :
+    WP isa (iteration (candidateCall v)) s (LoopStep p original final used) := by
+  unfold iteration
+  change WP isa (.seq _ (.seq _ _)) s _
+  refine WP.seq (WP.mono (iter_guard h.1) fun u ⟨⟨he, hmu⟩, ku⟩ => ?_)
+  have hu := h.keep ku hmu (by decide)
+  refine WP.seq (WP.ite _ he (fun hz => ?_) (fun hz => ?_))
+  · have hz := of_decide_eq_true hz
+    subst hz
+    obtain ⟨hl, tr, hfinal⟩ := hu
+    unfold tailOf at hfinal
+    rw [VG.Proof.RsaKeyGen.Search.search_zero] at hfinal
+    exact WP.mono (search_exhausted hl (result := final) (by rw [hfinal]; rfl)) fun t hd =>
+      iter_test (.inr ⟨hd.status_ne, hd⟩)
+  · have hz := of_decide_eq_false hz
+    refine WP.seq (WP.mono (search_candidate_run v hu.1) fun t ⟨ht, hc⟩ => ?_)
+    exact WP.mono (search_classify ⟨ht, hu.2⟩ hc hz) fun _ hp => iter_test hp
+
+theorem search_loop (v : RoundImpl) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s) :
+    WP isa (.loop (iteration (candidateCall v)) .e) s (SearchDone p original final) := by
+  refine WP.loop (M := isa)
+    (fun n t => ∃ u k, n = p.randLen - u + 1 ∧ SearchIter p original final u k t) ?_
+    (p.randLen - used + 1) s ⟨used, remaining, rfl, h⟩
+  rintro n t ⟨u, k, rfl, ht⟩
+  refine WP.mono (search_iteration v ht) fun t' hs => ?_
+  rcases hs with ⟨he, u', k', hlt, ht'⟩ | ⟨he, hd⟩
+  · have hle := ht'.1.used_le
+    exact .inr ⟨he, _, by omega, u', k', rfl, ht'⟩
+  · exact .inl ⟨he, hd⟩
+
 end VG.Proof.RsaKeyGen.X86_64.Search
