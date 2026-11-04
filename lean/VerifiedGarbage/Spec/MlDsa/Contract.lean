@@ -25,9 +25,10 @@ are `vg_mldsa*_sign_message` and `vg_mldsa*_verify_message_cached`
 compute `μ` themselves: on the randomness `rnd` that the caller generates
 (Algorithm 2, line 5), and with the public key hash `tr` from the private
 key (bytes 64–127, as `ML-DSA.Sign_internal` takes it, Algorithm 7, line 1)
-or, computed from the public key (Algorithm 8, line 6), from the caller. A context string longer than 255 bytes
-makes them return 2, the error indication `⊥` of lines 1–3 of both
-algorithms: its length is public, as every slice length is. A private key
+or, computed from the public key (Algorithm 8, line 6), from the caller. A
+context string longer than 255 bytes makes them return 2, the error
+indication `⊥` of lines 1–3 of both algorithms: its length is public, as
+every slice length is. A private key
 is kept as the 32-byte seed `ξ` it is generated from (§3.6.3):
 `vg_mldsa*_keygen` expands it into the public key and the private key,
 which is only ever passed to `vg_mldsa*_sign` and `vg_mldsa*_sign_message`.
