@@ -100,4 +100,51 @@ theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSe
           refine search_reject hv hcv hr hres (.inr rfl) ?_
           rw [hrv, hra, hres]; rfl
 
+/-! ## An iteration -/
+
+/-- What an iteration leaves, with the loop's condition. -/
+def LoopStep (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used : Nat) (t : State) : Prop :=
+  (eval .e t = some true ∧ ∃ u k, used < u ∧ SearchIter p original final u k t) ∨
+    (eval .e t = some false ∧ SearchDone p original final t)
+
+theorem iter_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (.block [.mov .rax (.mem (field 0)), .alu .test .rax (.reg .rax)]) s fun t =>
+      (eval .e t = some (decide (remaining = 0)) ∧ t.mem = s.mem) ∧ Keep [.rax] s t := by
+  obtain ⟨hl, -, -⟩ := h.frame_in (t := s) rfl
+  have hl0 : InRegions (s.rd ++ s.wr) p.F 8 := by simpa only [BitVec.add_zero] using hl 0 (by decide)
+  have h0 := h.slot (j := 0) (v := BitVec.ofNat 64 remaining) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul, BitVec.add_zero] at h0
+  have hz : (BitVec.ofNat 64 remaining == 0) = decide (remaining = 0) :=
+    ofNat64_beq_zero (Nat.lt_of_le_of_lt h.remaining_le (by rw [← h.input.2]; exact BitVec.isLt _))
+  refine WP.keep [.rax] ?_ rfl
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, BitVec.add_zero, eval,
+    h.r12, hl0, h0, BitVec.and_self, hz]
+
+theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchResult} {used : Nat}
+    (h : IterPost p original final used s) :
+    WP isa (.block [.mov .rax (.mem (field 17)), .alu .cmp .rax (.imm 4)]) s (LoopStep p original final used) := by
+  have hregs : s.gpr .r12 = p.F ∧ ∃ o : State, SearchInput p o ∧ s.wr = p.frame :: o.wr := by
+    rcases h with ⟨-, _, _, -, hi, -⟩ | ⟨-, hd⟩
+    · exact ⟨hi.r12, _, hi.input, hi.wr⟩
+    · exact ⟨hd.r12, _, hd.input, hd.wr⟩
+  obtain ⟨hr12, o, hi, hw⟩ := hregs
+  have scr := hi.frame_scr hw
+  have hl : InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 136) 8 :=
+    let ⟨r, hr, hc⟩ := scr.st (d := 136) (by decide); ⟨r, List.mem_append_right _ hr, hc⟩
+  have h4 : BitVec.signExtend 64 (4 : BitVec 32) = (4 : BitVec 64) := by decide
+  refine WP.mono (WP.keep [.rax] (Q := fun t => eval .e t = some (word s.mem p.F (8 * 17) - 4 == 0) ∧
+    t.mem = s.mem) (by
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, hr12, hl, h4]) rfl) fun t ⟨⟨he, hm⟩, k⟩ => ?_
+  rw [sub_beq_zero] at he
+  rcases h with ⟨h17, u, k', hlt, hit⟩ | ⟨h17, hd⟩
+  · exact .inl ⟨by rw [he, h17]; rfl, u, k', hlt, hit.keep k hm (by decide)⟩
+  · refine .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], ?_⟩
+    exact ⟨hd.input, k.2.1.trans hd.rd, k.2.2.trans hd.wr, (k.gpr (by decide)).trans hd.rsp,
+      (k.gpr (by decide)).trans hd.r12, fun r hr hn hs => (k.gpr (by cases r <;> simp_all [calleeSaved])).trans
+        (hd.saved r hr hn hs), by rw [hm]; exact hd.savedR12, by rw [hm]; exact hd.usedPtr,
+      by rw [hm]; exact hd.stp, by rw [hm]; exact hd.len, by rw [hm]; exact hd.cap, by rw [hm]; exact hd.remaining,
+      by rw [hm]; exact hd.request, by rw [hm]; exact hd.used, by rw [hm]; exact hd.status,
+      by rw [hm]; exact hd.output⟩
+
 end VG.Proof.RsaKeyGen.X86_64.Search
