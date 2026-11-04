@@ -82,8 +82,8 @@ def ctHashT (j : Nat) : Prog isa :=
 /-- MGF1's slots: `H` (`hLen` bytes at `DB + dbLen`) its source, `DB`
 (`dbLen` bytes) its destination. -/
 def mgfArgsT : List Instr :=
-  atDb .eax ++ [st .eax sDst, addSlot .eax sDb, st .eax sSrc, mi .eax H.D, st .eax sSrcLen, ld .eax sDb,
-    st .eax sDstLen]
+  atDb .eax ++ [st .eax sDst, ld .ecx sDb, st .ecx sDstLen, .alu .add .eax (.reg .ecx), st .eax sSrc, mi .eax H.D,
+    st .eax sSrcLen]
 
 /-! ## The hash function of the table -/
 
