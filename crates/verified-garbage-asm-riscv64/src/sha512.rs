@@ -2181,3 +2181,7 @@ beqz s6, 20b
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_state_digest.rs"]
+pub(crate) mod vg_sha512_state_digest;

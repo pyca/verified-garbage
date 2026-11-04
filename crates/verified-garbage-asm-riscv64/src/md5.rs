@@ -358,3 +358,7 @@ beqz s6, 20b
 #[rustfmt::skip]
 #[path = "internal/vg_md5_compress.rs"]
 pub(crate) mod vg_md5_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_state_digest.rs"]
+pub(crate) mod vg_md5_state_digest;
