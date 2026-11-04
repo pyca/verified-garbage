@@ -397,4 +397,72 @@ theorem envBlock_post_ct :
   · exact Src.of_pcOnly ((hsrc.drop p.k).take p.k) (PcP.Only.of_inScr hin₁₃) hgsep
       (by rw [k13.2.1]) (by rw [k13.2.2])
 
+/-! ## The prefix, the table and the return -/
+
+theorem prefix_ct : RelCT isa (Two TbAt) (seqs Precompute.storePrefix) (Two TbAt) := by
+  unfold Precompute.storePrefix
+  simp only [seqs]
+  refine RelCT.seq (R := Two fun (q : TabP × Addr × Nat) t => TbAt q t ∧ t.gpr .rax = BitVec.ofNat 64 0)
+    (two_piece [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide) fun q s h =>
+      WP.mono (rax_imm_ok h.choose_spec.1 0 (by decide)) fun t ⟨hax, hm, het, k⟩ =>
+        ⟨h.kept het (Kept.of_eq hm) k.2.1 k.2.2, hax⟩) ?_
+  refine RelCT.seq (R := Two TbAt) (two_post (two_map (fun (q : TabP × Addr × Nat) => (q.1, 0))
+    (fun _ _ h => ⟨h.1.choose_spec.1, h.2⟩) (storeRow_ct₂ (Or.inl rfl))) fun q s h' => ?_) ?_
+  · obtain ⟨h, hax⟩ := h'
+    exact WP.mono (store_env h.choose_spec.1 hax (by decide) (by decide)) fun t ⟨het, _, _, _, kp, k⟩ =>
+      h.kept het kp k.2.1 k.2.2
+  refine RelCT.seq (R := Two fun (q : TabP × Addr × Nat) t => TbAt q t ∧ t.gpr .rax = BitVec.ofNat 64 1)
+    (two_piece [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide) fun q s h =>
+      WP.mono (rax_imm_ok h.choose_spec.1 1 (by decide)) fun t ⟨hax, hm, het, k⟩ =>
+        ⟨h.kept het (Kept.of_eq hm) k.2.1 k.2.2, hax⟩) ?_
+  refine two_post (two_map (fun (q : TabP × Addr × Nat) => (q.1, 1))
+    (fun _ _ h => ⟨h.1.choose_spec.1, h.2⟩) (storeRow_ct₂ (Or.inr rfl))) fun q s h' => ?_
+  obtain ⟨h, hax⟩ := h'
+  exact WP.mono (store_env h.choose_spec.1 hax (by decide) (by decide)) fun t ⟨het, _, _, _, kp, k⟩ =>
+    h.kept het kp k.2.1 k.2.2
+
+theorem tail_ct (Mo : Mont) : RelCT isa (Two TbAt)
+    (seqs (Precompute.storePrefix ++ (Precompute.table Mo.mm ++
+      [.block [VG.Impl.Rsa.X86_64.Crt.leave, .mov32 .rax (.imm 1)]]))) fun _ _ => True := by
+  refine RelCT.seqs_append (by simp [Precompute.storePrefix]) (by simp [Precompute.table, Precompute.initial])
+    (RelCT.seq prefix_ct ?_)
+  refine RelCT.seqs_append (by simp [Precompute.table, Precompute.initial]) (by simp)
+    (RelCT.seq (R := Two fun (q : TabP × Addr × Nat) t => Env q.1 t) (two_post (table_ct Mo) fun q s h => ?_) ?_)
+  · obtain ⟨gb, he, hr, hr', hG, hsG, hsK, hl, hsrc, hgsep, hgl, hgw⟩ := h
+    exact WP.mono (table_ok Mo he hr hr' hG hsG hsK hsrc hgsep hgl hgw) fun t ht => ht.1
+  exact two_taint [.rdi] (pins_env (fun (q : TabP × Addr × Nat) => q.1) fun _ _ h => h) (by taint_decide)
+
+/-- Both runs have the same `-p⁻¹ mod 2^64`. -/
+theorem pe_tb {s₁ s₂ : State} (h : Two PE s₁ s₂) : Two TbAt s₁ s₂ := by
+  refine two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h
+  obtain ⟨mi₁, h₁⟩ := h₁
+  obtain ⟨mi₂, h₂⟩ := h₂
+  have he₁ := h₁.choose_spec.1
+  have he₂ := h₂.choose_spec.1
+  obtain rfl := VG.Proof.Ffdh.X86_64.xvals_minv (Nat.le_trans (by decide) he₁.mc.w2) he₁.mc.odd
+    he₁.mc.xv he₂.mc.xv
+  exact ⟨_, h₁, h₂⟩
+
+theorem main_ct (Mo : Mont) (R : R2Impl Mo) :
+    RelCT isa (Two MainPre) (VG.Impl.Ffdh.X86_64.Cached.Precompute.main Mo.mm (.seq (.block r2Head) R.code))
+      fun _ _ => True := by
+  unfold VG.Impl.Ffdh.X86_64.Cached.Precompute.main
+  rw [show GenerateKey.bound ++ [Precompute.byteBits, .block (Precompute.width ++ Precompute.metadata),
+      .block VG.Impl.Rsa.X86_64.head] ++ pSetup ++
+      [.seq (.block r2Head) R.code, .block (fromOuter sCtx iCtx ++ fromOuter sRows iRows)] ++
+      Precompute.storePrefix ++ Precompute.table Mo.mm ++
+        [.block [VG.Impl.Rsa.X86_64.Crt.leave, .mov32 .rax (.imm 1)]] =
+    (GenerateKey.bound ++ [Precompute.byteBits, .block (Precompute.width ++ Precompute.metadata)]) ++
+      (([.block VG.Impl.Rsa.X86_64.head] ++ pSetup) ++
+        ([.seq (.block r2Head) R.code, .block (fromOuter sCtx iCtx ++ fromOuter sRows iRows)] ++
+          (Precompute.storePrefix ++ (Precompute.table Mo.mm ++
+            [.block [VG.Impl.Rsa.X86_64.Crt.leave, .mov32 .rax (.imm 1)]]))))
+    by simp only [List.append_assoc, List.cons_append, List.nil_append]]
+  refine RelCT.seqs_append (by simp [GenerateKey.bound]) (by simp) (RelCT.seq front_post_ct ?_)
+  refine RelCT.seqs_append (by simp [pSetup]) (by simp) (RelCT.seq setup_post_ct ?_)
+  simp only [List.cons_append]
+  refine seqs_cons_ct (by simp) (RelCT.seq (r2_stage_ct Mo R) ?_)
+  refine seqs_cons_ct (by simp [Precompute.storePrefix]) (RelCT.seq envBlock_post_ct ?_)
+  exact (tail_ct Mo).mono (fun _ _ h => pe_tb h) fun _ _ h => h
+
 end VG.Proof.Ffdh.X86_64.Cached

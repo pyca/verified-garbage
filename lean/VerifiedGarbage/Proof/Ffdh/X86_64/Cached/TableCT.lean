@@ -125,6 +125,11 @@ theorem storeRow_ct {a : Nat} (ha : a = aX ∨ a = aXm ∨ a = aY) :
     RelCT isa (Two RowAt) (storeRow a) fun _ _ => True := by
   rcases ha with rfl | rfl | rfl <;> exact storeRow_ct' (by decide) (by taint_decide)
 
+/-- `p` and `R² mod p` to their rows. -/
+theorem storeRow_ct₂ {a : Nat} (ha : a = aN ∨ a = aR2) :
+    RelCT isa (Two RowAt) (storeRow a) fun _ _ => True := by
+  rcases ha with rfl | rfl <;> exact storeRow_ct' (by decide) (by taint_decide)
+
 theorem loadRow_ct {a : Nat} (ha : a = aX ∨ a = aXm ∨ a = aY) :
     RelCT isa (Two RowAt) (loadRow a) fun _ _ => True := by
   rcases ha with rfl | rfl | rfl <;> exact loadRow_ct' (by decide) (by taint_decide)
