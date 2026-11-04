@@ -94,4 +94,113 @@ theorem search_finish {p : SearchPublic} {original s : State} {final : PrimeSear
     hsw0, hsw 8 (by decide), hsw 16 (by decide), hsw 24 (by decide), huw]
   rfl
 
+/-! ## The whole search -/
+
+open VG.Proof.Ffdh.X86_64.Generation (allocated allocated_rsp allocated_reg freed freed_rsp freed_reg frame_alloc)
+
+/-- The search's code, calling the backend's candidate. -/
+def searchCode (v : RoundImpl) : Prog isa := code (candidateCall v)
+
+theorem consume_zero (r : PrimeSearchResult) : r.consume 0 [] = r := by
+  cases r; simp [Spec.Entropy.Result.consume]
+
+theorem search_initial {p : SearchPublic} {s t : State} (h : SearchInput p s)
+    (hl : SearchLive p s 0 p.remaining t) : SearchIter p s (searchResult s) 0 p.remaining t := by
+  refine ⟨hl, [], ?_⟩
+  rw [consume_zero]
+  rw [← h.2]
+  simp only [searchResult, tailOf, searchOfState, List.drop_zero]
+
+theorem finished_bytes {p : SearchPublic} {original : State} (h : SearchInput p original) (m : Mem)
+    (r : PrimeSearchResult) : Spec.Rsa.bytesAt (finished p m r) p.op p.len = Spec.Rsa.bytesAt m p.op p.len := by
+  have hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
+  have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
+  have hot : inOut original = ⟨p.op, p.len⟩ := by rw [← h.2]; rfl
+  have hos := h.out_state
+  have hou := h.out_used
+  rw [hst, hot] at hos
+  rw [hus, hot] at hou
+  have hn := h.nowrap (r := inOut original) (by simp [inWrites])
+  rw [hot] at hn
+  have hf : Frame [⟨p.stp, 32⟩, ⟨p.up, 8⟩] m (finished p m r) := by
+    unfold finished SearchInit.written
+    refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
+      (List.mem_cons_self ..) _ ?_) (List.mem_cons_self ..) _ ?_) (List.mem_cons_self ..) _ ?_)
+      (List.mem_cons_self ..) _ ?_) (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ ?_
+    · simpa only [BitVec.add_zero] using Offset.contains_base p.stp (d := 0) (n := 8) (k := 32) (by decide) (by decide)
+    · exact Offset.contains_base p.stp (d := 8) (by decide) (by decide)
+    · exact Offset.contains_base p.stp (d := 16) (by decide) (by decide)
+    · exact Offset.contains_base p.stp (d := 24) (by decide) (by decide)
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; decide
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  exact hf.bytes (R := ⟨p.op, p.len⟩) (fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    exacts [hos, hou]) (by simp only at hn ⊢; omega) (List.mem_range.mp hi)
+
+theorem finished_used {p : SearchPublic} (m : Mem) (r : PrimeSearchResult) :
+    Spec.Rsa.wordsAt (finished p m r) p.up 1 = [BitVec.ofNat 64 r.used] := by
+  change [word (finished p m r) p.up 0] = _
+  simp only [Bignum.word, off, BitVec.add_zero, finished, Mem.readW_writeW_self64]
+
+theorem finished_state {p : SearchPublic} {original : State} (h : SearchInput p original) (m : Mem)
+    (r : PrimeSearchResult) :
+    Spec.Rsa.wordsAt (finished p m r) p.stp 4 = [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
+      BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 r.requested] := by
+  have hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
+  have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
+  have hsu := h.state_used
+  rw [hst, hus] at hsu
+  have hpast (d : Nat) (hd : d + 8 ≤ 32) : word (finished p m r) p.stp d =
+      word (SearchInit.written m p.stp [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
+        BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 r.requested]) p.stp d :=
+    read_past hsu (Offset.contains_base _ hd (by omega))
+      (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; decide)
+      (by show 8 ≤ 2 ^ 64; decide) _
+  change [word (finished p m r) p.stp 0, word (finished p m r) p.stp 8, word (finished p m r) p.stp 16,
+    word (finished p m r) p.stp 24] = _
+  rw [hpast 0 (by decide), hpast 8 (by decide), hpast 16 (by decide), hpast 24 (by decide)]
+  exact SearchInit.written_words _ _ _ _ _ _
+
+theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
+    WP isa (searchCode v) s fun t => searchPost s t ∧ ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
+  have hi : SearchInput (searchOfState s) s := ⟨h, rfl⟩
+  have hroom : 160 ≤ (s.gpr .rsp).toNat := by have := h.2.1; simp only [stackUse] at this; omega
+  unfold searchCode code
+  apply frame_alloc (by decide) (by decide) (by decide) hroom
+  change WP isa (.seq _ (.seq _ _)) _ _
+  refine WP.seq (WP.mono (search_start hi) fun u hu => ?_)
+  refine WP.seq (WP.mono (search_loop v (search_initial hi hu)) fun w hw => ?_)
+  refine WP.mono (search_finish hw) fun t ⟨⟨hra, hr12, hm⟩, kt⟩ => ?_
+  have hsp : t.gpr .rsp = (allocated 160 s).gpr .rsp := by
+    rw [kt.gpr (by decide), hw.rsp, alloc_rsp hi]
+  refine ⟨hsp, kt.2.2.trans (hw.wr.trans (alloc_wr hi).symm), ?_, ?_⟩
+  · -- The results.
+    have hlen : searchLen s = (searchOfState s).len := rfl
+    have hst : (searchResult s).status < 4 := by
+      unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [freed_reg _ _ _ (by decide), hra, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    · change Spec.Rsa.bytesAt t.mem (searchOfState s).op (searchOfState s).len = _
+      rw [hm, finished_bytes hi]
+      exact hw.output
+    · change Spec.Rsa.wordsAt t.mem (searchOfState s).up 1 = _
+      rw [hm, finished_used]
+    · change Spec.Rsa.wordsAt t.mem (searchOfState s).stp 4 = _
+      rw [hm, finished_state hi]
+      rfl
+  · -- The callee-saved registers.
+    intro r hr
+    by_cases hs : r = .rsp
+    · subst hs
+      rw [freed_rsp, hsp, allocated_rsp]
+      exact BitVec.sub_add_cancel _ _
+    · rw [freed_reg _ _ _ hs]
+      by_cases h12 : r = .r12
+      · subst h12; exact hr12
+      · rw [kt.gpr (by revert r; decide)]
+        exact hw.saved r hr h12 hs
+
 end VG.Proof.RsaKeyGen.X86_64.Search
