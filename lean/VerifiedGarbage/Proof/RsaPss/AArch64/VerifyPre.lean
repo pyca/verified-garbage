@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 `PreV tsH tsG K s`: what the code needs of the contract's precondition
 (`verifyPrecomputedTableContract`, with the stack `stk K` of the frame and a
 callee using `K` bytes), by name. The frame is that of signing (`Sgn.fb`).
-The precondition is unsatisfiable under the current model of AArch64's
-stack arguments (`pre_unsat`), so `preV_of` waits for that model to accept
-its layout.
+`preV_of` gives it from the contract's precondition.
 -/
 
 @[expose] public section
@@ -108,20 +106,24 @@ theorem arg_frame {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH 
   h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
     (keep_of_frame hp.ka) (by decide)
 
-/-- The contract's precondition is unsatisfiable on AArch64 as `TCB/AArch64/Target.lean`
-models its stack arguments: with `digest` a slice, `salt_len` (64 bits) is the first
-stack argument and `any_salt_len` (32 bits) the second, a layout `abi.args` does not
-accept (only a first 32-bit stack argument is: `firstNarrowStack`). Proving the
-verification needs that layout in the model first. -/
-theorem pre_unsat {tsH tsG : List FnTable} {K : Nat} {s : State} :
-    ¬ (Spec.RsaPss.verifyPrecomputedTableContract (verifyAbi tsH tsG) (stk K)).pre s := by
-  intro h
-  sig_iff at h
-  sig_reduce [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+theorem preV_of {tsH tsG : List FnTable} {K : Nat} {s : State}
+    (h : (Spec.RsaPss.verifyPrecomputedTableContract (verifyAbi tsH tsG) (stk K)).pre s) : PreV tsH tsG K s := by
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  rw [e] at h
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
     Spec.MdHashTable.param, Spec.HashTable.param,
     Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
     Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop] at h
-  exact h
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
+    Option.some.injEq, exists_eq_left'] at h
+  sig_split h
+  rename_i sp1 sp2 tabH tabG hsy hrd hwr ns es dgs sgs sP stH stG sa kn ke kdg ksg ks kP ktH ktG ka wn we wdg
+    wsg ws wP wtH wtG _ob1 e1 e2 sgl hs hl
+  obtain ⟨k1, k2⟩ := _ob1
+  rw [← e] at sp1 kn ke kdg ksg ks kP ktH ktG ka
+  exact ⟨sp1, sp2, tabH, tabG, hsy, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, hwr, ns, es, dgs, sgs, sP,
+    stH, stG, sa, kn, ke, kdg, ksg, ks, kP, ktH, ktG, ka, wn, we, wdg, wsg, ws, wP, wtH, wtG, k1, k2, e1, e2, sgl,
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hs; omega, hl, h⟩
 
 end VG.Proof.RsaPss.AArch64.Vfy
