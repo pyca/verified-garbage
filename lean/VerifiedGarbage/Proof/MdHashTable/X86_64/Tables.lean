@@ -51,7 +51,7 @@ def family : Nat → String
   | 0 => "md5" | 1 => "sha1" | 2 | 3 => "sha256" | _ => "sha512"
 
 /-- The name of `w`'s digest. -/
-def digName (w : MdHash) : String := s!"vg_{family (idx w)}_digest"
+def digName (w : MdHash) : String := s!"vg_{family (idx w)}_state_digest"
 
 /-- 1 if the hash function of index `i` is big-endian (all but MD5). -/
 def bigEndian (i : Nat) : Nat := if i = 0 then 0 else 1
