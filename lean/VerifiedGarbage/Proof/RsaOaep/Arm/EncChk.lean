@@ -67,23 +67,23 @@ abbrev Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
 /-- The end of the body. -/
 abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h g P σ s.mem (s.gpr .r0)
 
-theorem arg_lt {j : Nat} (hj : j < 16) : arg j < 4096 := by
+theorem arg_lt {j : Nat} (hj : j < 18) : arg j < 4096 := by
   unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith
 
 /-- An argument: its place, readable, and its value. -/
-theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) {j : Nat} (hj : j < 15) :
+theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) {j : Nat} (hj : j < 18) :
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = (P.lay D).fr (arg j) ∧
     InRegions (s.rd ++ s.wr) ((P.lay D).fr (arg j)) 4 ∧
     s.mem.readW ((P.lay D).fr (arg j)) 32 = P.argv.getD j 0 := by
   have hl : j < (P.lay D).argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega_arith
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 48; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith),
+      show arg j < frameBytes + 56 + 56; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {D : Nat} {P : EP} {σ : State} (hi : In D P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = (P.lay D).fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 48; unfold frameBytes at hd ⊢; omega_arith)
+  hi.ok.addrB (by show d < frameBytes + 56 + 56; unfold frameBytes at hd ⊢; omega_arith)
 
 /-- The flags of the checks: zero exactly when `c + ml ≤ K`. -/
 theorem chk_z {K c ml : Nat} (hK : K ≤ 1024) (hc1 : 1 ≤ c) (hc : c ≤ 1024) (hml : ml < 2 ^ 32) :
@@ -126,13 +126,13 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (encChk h.H)) (C0 h P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm) fun σ s ⟨hi, hs⟩ => ?_
   have hD := h.D_le
   have hK := hi.k1024
-  obtain ⟨a11, r11, v11⟩ := argAt hi hs (j := 11) (by decide)
+  obtain ⟨a12, r12, v12⟩ := argAt hi hs (j := 12) (by decide)
   obtain ⟨a3, r3, v3⟩ := argAt hi hs (j := 3) (by decide)
   obtain ⟨a9, r9, v9⟩ := argAt hi hs (j := 9) (by decide)
-  replace v11 : s.mem.readW ((P.lay h.H.D).fr (arg 11)) 32 = P.scr := v11
+  replace v12 : s.mem.readW ((P.lay h.H.D).fr (arg 12)) 32 = P.scr := v12
   replace v3 : s.mem.readW ((P.lay h.H.D).fr (arg 3)) 32 = BitVec.ofNat 32 P.K := v3
   replace v9 : s.mem.readW ((P.lay h.H.D).fr (arg 9)) 32 = BitVec.ofNat 32 P.ml := v9
-  have k : ∀ (j : Nat) (v : BitVec 32), j < 15 →
+  have k : ∀ (j : Nat) (v : BitVec 32), j < 18 →
       (s.mem.writeW ((P.lay h.H.D).fr sS) v).readW ((P.lay h.H.D).fr (arg j)) 32 =
         s.mem.readW ((P.lay h.H.D).fr (arg j)) 32 :=
     fun j v hj => Lay.readW_fr_other _ _ _ (by
@@ -140,7 +140,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (encChk h.H)) (C0 h P) := by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by decide)
   have hw : WP isa (.block (encChk h.H)) s fun t => t.mem = s.mem.writeW ((P.lay h.H.D).fr sS) P.scr ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.z = decide (fits h P) := by
-    prun [encChk, sp0, ld, st, mw, hs.sp, a11, r11, v11, a3, r3, v3, a9, r9, v9, k 3 _ (by decide),
+    prun [encChk, sp0, ld, st, mw, hs.sp, a12, r12, v12, a3, r3, v3, a9, r9, v9, k 3 _ (by decide),
       k 9 _ (by decide), slotAt hi (d := sS) (by decide), hs.inFr (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide),
       arg_lt, movw_val (show 2 * h.H.D + 2 < 2 ^ 16 by omega_arith), dpVal, chk_z hK (show 1 ≤ 2 * h.H.D + 2 by omega_arith) (show 2 * h.H.D + 2 ≤ 1024 by omega_arith) hi.ml32]
   refine WP.mono hw fun t ⟨m, rd, wr, sp, z⟩ => ⟨⟨?_, ?_⟩, hi, z⟩

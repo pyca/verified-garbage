@@ -32,7 +32,7 @@ open VG.Proof.RsaPss.Arm.Sg (wl wl_cons wl_nil wl_other wl_read wl_frame rdS)
 
 variable (h g : OHash)
 
-theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 15) :
+theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 18) :
     (m.writeW (L.fr d) v).readW (L.fr (arg j)) 32 = m.readW (L.fr (arg j)) 32 :=
   Lay.readW_fr_other L m v (by unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by
     unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by omega_arith)
@@ -53,27 +53,27 @@ theorem pa_wp (P : EP) {σ s : State} (hc : Ctx (P.lay h.H.D) P.scr σ s) (hi : 
   obtain ⟨a3, r3, v3⟩ := argAt hi hc.st (j := 3) (by decide)
   obtain ⟨a4, r4, v4⟩ := argAt hi hc.st (j := 4) (by decide)
   obtain ⟨a5, r5, v5⟩ := argAt hi hc.st (j := 5) (by decide)
-  obtain ⟨a12, r12, v12⟩ := argAt hi hc.st (j := 12) (by decide)
   obtain ⟨a13, r13, v13⟩ := argAt hi hc.st (j := 13) (by decide)
   obtain ⟨a14, r14, v14⟩ := argAt hi hc.st (j := 14) (by decide)
+  obtain ⟨a15, r15, v15⟩ := argAt hi hc.st (j := 15) (by decide)
   replace v0 : s.mem.readW ((P.lay h.H.D).fr (arg 0)) 32 = P.out := v0
   replace v3 : s.mem.readW ((P.lay h.H.D).fr (arg 3)) 32 = BitVec.ofNat 32 P.K := v3
   replace v4 : s.mem.readW ((P.lay h.H.D).fr (arg 4)) 32 = P.e := v4
   replace v5 : s.mem.readW ((P.lay h.H.D).fr (arg 5)) 32 = BitVec.ofNat 32 P.el := v5
-  replace v12 : s.mem.readW ((P.lay h.H.D).fr (arg 12)) 32 = BitVec.ofNat 32 P.scl := v12
-  replace v13 : s.mem.readW ((P.lay h.H.D).fr (arg 13)) 32 = P.pre := v13
-  replace v14 : s.mem.readW ((P.lay h.H.D).fr (arg 14)) 32 = BitVec.ofNat 32 P.rl := v14
+  replace v13 : s.mem.readW ((P.lay h.H.D).fr (arg 13)) 32 = BitVec.ofNat 32 P.scl := v13
+  replace v14 : s.mem.readW ((P.lay h.H.D).fr (arg 14)) 32 = P.pre := v14
+  replace v15 : s.mem.readW ((P.lay h.H.D).fr (arg 15)) 32 = BitVec.ofNat 32 P.rl := v15
   have wF : ∀ d, d + 4 ≤ frameBytes → InRegions s.wr ((P.lay h.H.D).fr d) 4 := fun d hd => hc.st.inFr hd
   have q0 : State.addr P.B = (P.lay h.H.D).fr 0 := by simp
   have w0 : InRegions s.wr (State.addr P.B) 4 := by rw [q0]; exact wF 0 (by decide)
-  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 15 →
+  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 18 →
       (m.writeW (State.addr P.B) v).readW ((P.lay h.H.D).fr (arg j)) 32 = m.readW ((P.lay h.H.D).fr (arg j)) 32 :=
     fun m v j hj => by rw [q0]; exact rdArg m v (by decide) hj
   have rdS0 : ∀ (m : Mem) (v : BitVec 32),
       (m.writeW (State.addr P.B) v).readW ((P.lay h.H.D).fr sS) 32 = m.readW ((P.lay h.H.D).fr sS) 32 :=
     fun m v => by rw [q0]; exact rdS m v (by decide)
   prun [pubArgs, copyArg, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, wF, hc.slotS, arg_lt,
-    a0, r0, v0, a3, r3, v3, a4, r4, v4, a5, r5, v5, a12, r12, v12, a13, r13, v13, a14, r14, v14, rdArg, rdS, w0,
+    a0, r0, v0, a3, r3, v3, a4, r4, v4, a5, r5, v5, a13, r13, v13, a14, r14, v14, a15, r15, v15, rdArg, rdS, w0,
     rdA0, rdS0, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oRsa < 2 ^ 16 by decide),
     movw_val (show 1024 < 2 ^ 16 by decide), Offset.ofNat_sub_ofNat (w := 32) (show 1024 ≤ P.scl by omega_arith),
     Nat.reduceMul, wl_cons, wl_nil, Nat.reduceAdd]

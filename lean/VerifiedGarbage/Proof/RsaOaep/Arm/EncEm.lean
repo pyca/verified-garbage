@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaOaep.Arm.Label
+import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -15,7 +17,9 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 meta import VerifiedGarbage.Proof.RsaOaep.Encode
 meta import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.RsaOaep.Arm.Label
+meta import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -30,9 +34,9 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: `EM` before masking
 
 When the message fits: `EM`'s `k` bytes at `scratch + oEm` cleared, the
-seed after its first byte, the label's hash (`label_vp`) after the seed,
-`0x01` before the message and the message at its end: `EM = 0x00 ‖ seed ‖
-lHash ‖ 0… ‖ 0x01 ‖ M` (`Proof.RsaOaep.EmAt`, `em_vp`).
+seed after its first byte, the label's hash, through its table (`em3_vp`),
+after the seed, `0x01` before the message and the message at its end:
+`EM = 0x00 ‖ seed ‖ lHash ‖ 0… ‖ 0x01 ‖ M` (`Proof.RsaOaep.EmAt`, `em_vp`).
 -/
 
 @[expose] public section
@@ -235,38 +239,80 @@ theorem emv_keep {P : EP} (hg : Geo (P.lay h.H.D) P.scr) (hK : P.K ≤ 1024) {m 
   · exact Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by oomega) (by oomega) h2 _ (Region.contains_self _ _)
   · exact hg.low ok (o := oEm + i) (n := 1) (by oomega) _ (Region.contains_self _ _)
 
-/-- The label's hash at `oDig`. -/
-theorem em3_vp (P : EP) :
-    VP (fun σ s => E0 h P σ s ∧ Z2 h P (seedB h P σ) s.mem) (hashLabel h.H 6 oDig)
-      (fun σ s => E0 h P σ s ∧ EMv P s.mem (e2 h P σ) ∧
-        ∀ i < h.H.D, s.mem (sa P.scr (oDig + i)) = (lhB h P σ).getD i 0) := by
+/-- The label's hash function's table, the argument 16, in a buffer only
+read. -/
+theorem tblL_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA P.tabL o) 4 := by
+  have hf := hi.ok.fits P.TABL (by simp)
+  simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
+  refine ⟨P.TABL, by simp, fun o ho => ?_⟩
+  show (⟨State.addr P.tabL, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tabL + BitVec.ofNat 32 o)) 4
+  rw [VG.Arm.addr_add (by omega)]
+  exact Offset.contains_base _ (by omega) (by omega)
+
+/-- What the label's hash keeps, with its table's address in its slot. -/
+abbrev L0 (P : EP) (σ : State) (m : Mem) : Prop :=
+  (K0 h P σ ∧ EMv P m (e2 h P σ)) ∧ m.readW ((P.lay h.H.D).fr sTab) 32 = P.tabL
+
+/-- The label's hash function's table's address to its slot, and the label's
+hash at `oDig`, with that table's hash function `h`. -/
+theorem em3_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
+    VP (fun σ s => (E0 h P σ s ∧ Z2 h P (seedB h P σ) s.mem) ∧ s.syms = σ.syms)
+      (.seq (.block (tabSlot 16)) (hashLabelT f 6 oDig))
+      (fun σ s => (E0 h P σ s ∧ EMv P s.mem (e2 h P σ) ∧
+        ∀ i < h.H.D, s.mem (sa P.scr (oDig + i)) = (lhB h P σ).getD i 0) ∧ s.syms = σ.syms) := by
   by_cases hP : ∃ σ, In h.H.D P σ
   swap
-  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.2.1⟩
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.1.2.1⟩
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   have hK := hi₀.k1024
-  have := h.S_le; have := h.Wb_le; have := h.F_le
+  have := h.S_le; have := h.Wb_le; have := h.F_le; have := h.D_le
   obtain ⟨σ', ok⟩ := hg.ok
   have hl := hi₀.ok.fits P.LAB (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hl
   have hlab : RBuf (P.lay h.H.D) P.lab P.ll := ⟨hl, hi₀.ll32, ⟨P.LAB, by simp, Region.contains_self _ _⟩⟩
   have dS : ∀ {o n : Nat}, o + n ≤ oRsa → Region.Disjoint ⟨State.addr P.lab, P.ll⟩ (sR P.scr o n) :=
     fun hon => (hg.ro ok hon (R := P.LAB) (by simp)).symm
-  refine (label_vp hg h (j := 6) (o := oDig) (ll := P.ll) (lab := P.lab) (by simp) (arg_lt (by decide))
+  -- The table's address to its slot.
+  refine VP.seq (G := fun σ s => (Ctx (P.lay h.H.D) P.scr σ s ∧ L0 h P σ s.mem) ∧ s.syms = σ.syms)
+    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.1.st.sp.trans h₂.1.1.1.st.sp.symm)
+      fun σ s ⟨⟨⟨hc, hi, hf⟩, hz⟩, sy⟩ => ?_) ?_
+  · refine WP.mono (tabA_wp hg hc (j := 16) (by simp) (arg_lt (by decide))) fun t ⟨m, rd, wr, sp, _, _, ty⟩ => ?_
+    have fr : Frame [slotR (P.lay h.H.D) sTab] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
+    refine ⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨⟨hi, hf⟩, fun i hi' => ?_⟩, ?_⟩,
+      ty.trans sy⟩
+    · rw [List.mem_singleton.mp hr]; exact slotW hg (by decide)
+    · rw [List.mem_singleton.mp hr]; exact slotSep (by decide) (by decide) (by decide)
+    · rw [emV, ← z2_emv h hz i hi']
+      refine fr _ fun r hr => ?_
+      rw [List.mem_singleton.mp hr]
+      exact (hg.slot ok (o := oEm + i) (n := 1) (by oomega) (by rw [hg.F]; decide)).symm _
+        (Region.contains_self _ _)
+    · rw [m, Mem.readW_writeW_self32]; rfl
+  -- The label's hash.
+  refine (labelT_vp hg h (f := f) (p := P.tabL) (ai := P.aiL) (au := P.auL) (af := P.afL) (tblL_of hi₀) fne
+    (j := 6) (o := oDig) (ll := P.ll) (lab := P.lab) (by simp) (arg_lt (by decide))
     (arg_lt (by decide)) rfl rfl hlab (dS (by oomega)) (dS (by oomega))
     (ok.low_buf (R := P.LAB) (.inl (by simp))).symm (by oomega) (by oomega) (labB := labB P)
     (fun σ s hc => hc.st.ro (R := P.LAB) (by simp))
-    (Inv := fun σ m => K0 h P σ ∧ EMv P m (e2 h P σ)) fun σ m m' ⟨k, he⟩ hf => ⟨k, emv_keep h hg hK hf ?_ he⟩).mono
-    (fun σ s ⟨⟨hc, hi, hf⟩, hz⟩ => ⟨hc, ⟨hi, hf⟩, z2_emv h hz⟩)
-    fun σ s ⟨hc, ⟨⟨hi, hf⟩, he⟩, hd⟩ => ⟨⟨hc, hi, hf⟩, he, hd⟩
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact .inl ⟨oSt, h.H.S, by oomega, by oomega, rfl⟩
-  · exact .inl ⟨oW, h.ok.Wb, by oomega, by oomega, rfl⟩
-  · exact .inr rfl
-  · exact .inl ⟨oDig, h.H.F, by oomega, by oomega, rfl⟩
+    (Inv := L0 h P) ?_ (fun _ _ hm => hm.2) (fun σ _ hm => hTL σ hm.1.1.1.tabTL)).mono
+    (fun _ _ h => h) fun σ s ⟨⟨hc, ⟨⟨⟨hi, hf⟩, he⟩, _⟩, hd⟩, sy⟩ => ⟨⟨⟨hc, hi, hf⟩, he, hd⟩, sy⟩
+  intro σ m m' ⟨⟨k, he⟩, hs⟩ hf
+  refine ⟨⟨k, emv_keep h hg hK hf (fun r hr => ?_) he⟩, slot_keep hf (fun r hr => ?_) hs⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact .inl ⟨oSt, h.H.S, by oomega, by oomega, rfl⟩
+    · exact .inl ⟨oW, h.ok.Wb, by oomega, by oomega, rfl⟩
+    · exact .inr rfl
+    · exact .inl ⟨oDig, h.H.F, by oomega, by oomega, rfl⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
+    · exact Lay.fr_low (by decide)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
 
 /-- `lHash` after the seed. -/
 theorem em4_vp (P : EP) :
@@ -466,17 +512,19 @@ theorem e5_emAt {P : EP} {σ : State} (hf : fits h P) {m : Mem} (he : EMv P m (e
     rw [ite_eq_left (by omega), show P.K - P.ml + i - (P.K - P.ml) = i by omega]
 
 /-- `EM` before masking, from the checks' state when the message fits. -/
-theorem em_vp (P : EP) :
-    VP (E0 h P) (encEm h.H)
-      (fun σ s => E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
-        (msgB P σ) P.ml) := by
+theorem em_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.tabL P.aiL P.auL P.afL σ)
+    (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
+    VP (fun σ s => E0 h P σ s ∧ s.syms = σ.syms) (encEm h.H f)
+      (fun σ s => (E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
+        (msgB P σ) P.ml) ∧ s.syms = σ.syms) := by
   show VP _ (.seq (.block clrEm) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (seedSet h.H))
-    (.seq Impl.Bignum.Arm.copyBytes (.seq (hashLabel h.H 6 oDig) (.seq (.block (lhSet h.H))
-      (.seq Impl.Bignum.Arm.copyBytes (.seq (.block msgPos) (.seq (.block put1)
-        (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes)))))))))) _
-  exact VP.assoc (VP.seq (em1_vp h P) (VP.assoc (VP.seq (em2_vp h P) (VP.seq (em3_vp h P)
-    (VP.assoc (VP.seq (em4_vp h P) (VP.assoc (VP.seq (em5_vp h P) ((em6_vp h P).mono (fun _ _ h => h)
-      fun σ s ⟨he0, he⟩ => ⟨he0, e5_emAt h he0.2.2 he⟩)))))))))
+    (.seq Impl.Bignum.Arm.copyBytes (.seq (.block (tabSlot 16)) (.seq (hashLabelT f 6 oDig)
+      (.seq (.block (lhSet h.H)) (.seq Impl.Bignum.Arm.copyBytes (.seq (.block msgPos) (.seq (.block put1)
+        (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes))))))))))) _
+  exact VP.assoc (VP.seq (VP.syms (em1_vp h P)) (VP.assoc (VP.seq (VP.syms (em2_vp h P))
+    (VP.assoc (VP.seq (em3_vp h P hTL fne)
+    (VP.assoc (VP.seq (VP.syms (em4_vp h P)) (VP.assoc (VP.seq (VP.syms (em5_vp h P)) ((VP.syms (em6_vp h P)).mono
+      (fun _ _ h => h) fun σ s ⟨⟨he0, he⟩, sy⟩ => ⟨⟨he0, e5_emAt h he0.2.2 he⟩, sy⟩))))))))))
 
 /-! ## `EM` masked -/
 
