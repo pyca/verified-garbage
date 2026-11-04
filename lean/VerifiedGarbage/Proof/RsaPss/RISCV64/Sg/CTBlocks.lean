@@ -75,7 +75,7 @@ theorem saltDst_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ)
     (c' := .block (yBase .a1 ++ ([.addi .a1 .a1 ((8 + Hd.D : Nat) : Int)] : List Instr))) (by rfl) (by taint_decide))
 
 theorem saltArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [argBase, .load .d .a4 .t6 72, mov .a5 .s4]) fun _ _ => True :=
+    (.block [argBase, .load .d .a4 .t6 80, mov .a5 .s4]) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
 theorem skip_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block []) fun _ _ => True :=

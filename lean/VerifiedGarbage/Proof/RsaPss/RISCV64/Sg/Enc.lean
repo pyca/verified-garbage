@@ -90,8 +90,9 @@ theorem Spilled.w8 {s : State} {m : Mem} (h : Spilled s m) {d : Nat} (hd : d < o
     rw [view_w8 _ _ (by unfold oP oRsa at *; omega) (by unfold oP oRsa at *; omega), ifn (by omega)]
 
 theorem Spilled.same {s t t' : State} (h : Spilled s t.mem) {rgs : List (Nat × Nat)}
-    (hs : VG.Proof.RsaOaep.RISCV64.Same (Ss s) t t' rgs) (hr : ∀ p ∈ rgs, p.1 + p.2 ≤ oP) : Spilled s t'.mem :=
-  h.of_view fun o h1 h2 => hs o (by unfold oP oRsa at *; omega) fun p hp => .inr (by have := hr p hp; omega)
+    (hs : VG.Proof.RsaOaep.RISCV64.Same (Ss s) t t' rgs) (hr : ∀ p ∈ rgs, p.1 + p.2 ≤ oP ∨ oP + 48 ≤ p.1) :
+    Spilled s t'.mem :=
+  h.of_view fun o h1 h2 => hs o (by unfold oP oRsa at *; omega) fun p hp => by have := hr p hp; omega
 
 theorem Spilled.mix {s : State} {m m' : Mem} (h : Spilled s m) {mk : List Byte} {dst len : Nat}
     (hv : ∀ o, VG.Proof.RsaOaep.RISCV64.Kp o → view m' (Ss s) o = mixV (view m (Ss s)) mk dst len o)
