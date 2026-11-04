@@ -12,7 +12,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `K.encaps` for any parameter set `K` (`KemLay.WF`).
 
-The buffers of the function (`lay`): `scratch` (the argument on the stack),
+The phases are stated of the state `s₀` from which `K.encapsBody` runs, once
+`scratch` (the argument on the stack) is loaded into `r12` (`ldrSp_loaded`):
+`encaps` from `withR12 s` for its entry state `s`, and `encapsH` from its
+arguments shifted (`args`). The buffers of the function (`lay`): `scratch`,
 the stack below the stack pointer, `ek`, `key` and `ct`; `m`, which may
 overlap `ek`, is only read by its copy into `scratch`, with a layout of its
 own (`layM`). What every phase keeps (`EnEnv`), and the phases: the setup, `m`
@@ -36,7 +39,8 @@ def pEk : BitVec 32 := s₀.gpr .r0
 def pM : BitVec 32 := s₀.gpr .r1
 def pKey : BitVec 32 := s₀.gpr .r2
 def pCt : BitVec 32 := s₀.gpr .r3
-def pScr : BitVec 32 := stackArg s₀ 0
+/-- `scratch`, which the function first loads into `r12`. -/
+def pScr : BitVec 32 := s₀.gpr .r12
 
 /-- The buffers: `scratch`, the 8 bytes below the stack pointer, `ek`, `key` and `ct`. -/
 def lay (K : KemLay) : Lay :=
@@ -62,8 +66,8 @@ structure Pre (K : KemLay) (s : State) : Prop where
   wf : K.WF
   calls : K.CallsOk
   sp8 : 8 ≤ s.sp.toNat
-  spf : s.sp.toNat + 4 ≤ 2 ^ 32
-  rd : s.rd = [⟨State.addr (pEk s), K.ekLen⟩, ⟨State.addr (pM s), 32⟩, ⟨stackArgAddr s 0, 4⟩]
+  rdEk : (⟨State.addr (pEk s), K.ekLen⟩ : Region) ∈ s.rd
+  rdM : (⟨State.addr (pM s), 32⟩ : Region) ∈ s.rd
   wr : s.wr = [⟨State.addr (pKey s), 32⟩, ⟨State.addr (pCt s), K.ctLen⟩, ⟨State.addr (pScr s), K.scratch⟩]
   d_ek_key : (⟨State.addr (pEk s), K.ekLen⟩ : Region).Disjoint ⟨State.addr (pKey s), 32⟩
   d_ek_ct : (⟨State.addr (pEk s), K.ekLen⟩ : Region).Disjoint ⟨State.addr (pCt s), K.ctLen⟩
@@ -73,16 +77,12 @@ structure Pre (K : KemLay) (s : State) : Prop where
   d_m_scr : (⟨State.addr (pM s), 32⟩ : Region).Disjoint ⟨State.addr (pScr s), K.scratch⟩
   d_key_ct : (⟨State.addr (pKey s), 32⟩ : Region).Disjoint ⟨State.addr (pCt s), K.ctLen⟩
   d_key_scr : (⟨State.addr (pKey s), 32⟩ : Region).Disjoint ⟨State.addr (pScr s), K.scratch⟩
-  d_key_arg : (⟨State.addr (pKey s), 32⟩ : Region).Disjoint ⟨stackArgAddr s 0, 4⟩
   d_ct_scr : (⟨State.addr (pCt s), K.ctLen⟩ : Region).Disjoint ⟨State.addr (pScr s), K.scratch⟩
-  d_ct_arg : (⟨State.addr (pCt s), K.ctLen⟩ : Region).Disjoint ⟨stackArgAddr s 0, 4⟩
-  d_scr_arg : (⟨State.addr (pScr s), K.scratch⟩ : Region).Disjoint ⟨stackArgAddr s 0, 4⟩
   b_ek : (below s 8).Disjoint ⟨State.addr (pEk s), K.ekLen⟩
   b_m : (below s 8).Disjoint ⟨State.addr (pM s), 32⟩
   b_key : (below s 8).Disjoint ⟨State.addr (pKey s), 32⟩
   b_ct : (below s 8).Disjoint ⟨State.addr (pCt s), K.ctLen⟩
   b_scr : (below s 8).Disjoint ⟨State.addr (pScr s), K.scratch⟩
-  b_arg : (below s 8).Disjoint ⟨stackArgAddr s 0, 4⟩
   f_ek : (pEk s).toNat + K.ekLen ≤ 2 ^ 32
   f_m : (pM s).toNat + 32 ≤ 2 ^ 32
   f_key : (pKey s).toNat + 32 ≤ 2 ^ 32
@@ -200,21 +200,38 @@ theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv
 theorem buf_wr {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     (lay s₀ K).buf 0 ∈ s₀.wr ∧ (lay s₀ K).buf 3 ∈ s₀.wr ∧ (lay s₀ K).buf 4 ∈ s₀.wr ∧
       (lay s₀ K).buf 2 ∈ s₀.rd ++ s₀.wr ∧ (layM s₀ K).buf 2 ∈ s₀.rd ++ s₀.wr ∧ (layM s₀ K).buf 0 ∈ s₀.wr := by
-  rw [hp.wr, hp.rd]; simp [Lay.buf, lay, layM]
+  rw [hp.wr]; simp [Lay.buf, lay, layM, hp.rdEk, hp.rdM]
 
 /-! ## The setup -/
 
-theorem ldrSp_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
-    WP isa (.block [.ldrSp .r12 0]) s₀ fun s => s.gpr .r12 = pScr s₀ ∧
+/-- `s` with `v` in `r12`. -/
+def withR12 (s : State) (v : BitVec 32) : State :=
+  { s with gpr := fun r => match r with | .r12 => v | r => s.gpr r }
+
+theorem withR12_ne {s : State} {v : BitVec 32} {r : Reg} (h : r ≠ .r12) : (withR12 s v).gpr r = s.gpr r := by
+  cases r <;> first | rfl | exact absurd rfl h
+
+/-- `s₁` has `s₀`'s `scratch` (`pScr s₀`) in `r12`, and `s₀`'s other registers, memory, regions and
+stack pointer. -/
+abbrev Loaded (s₀ s₁ : State) : Prop :=
+  s₁.gpr .r12 = pScr s₀ ∧ (∀ r, r ≠ .r12 → s₁.gpr r = s₀.gpr r) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧
+    s₁.wr = s₀.wr ∧ s₁.sp = s₀.sp
+
+theorem ldrSp_ok {s₀ : State} {off : Nat} (ho : off < 4096)
+    (hin : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 off)) 4) :
+    WP isa (.block [.ldrSp .r12 off]) s₀ fun s =>
+      s.gpr .r12 = s₀.mem.readW (State.addr (s₀.sp + BitVec.ofNat 32 off)) 32 ∧
       (∀ r, r ≠ .r12 → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧ s.sp = s₀.sp := by
-  have hin : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 0)) 4 := by
-    refine ⟨⟨stackArgAddr s₀ 0, 4⟩, by rw [hp.rd]; simp, ?_⟩
-    exact Region.contains_self _ _
-  have o0 : (0 : Nat) < 4096 := by decide
-  run_block [hin, o0]
-  refine ⟨rfl, fun r hr => ?_, trivial⟩
+  run_block [hin, ho]
+  refine ⟨trivial, fun r hr => ?_, trivial⟩
   show (if r = .r12 then _ else s₀.gpr r) = s₀.gpr r
   exact ite_eq_right hr
+
+/-- The load of the `n`-th argument on the stack into `r12`. -/
+theorem ldrSp_loaded {s : State} (n : Nat) (hn : 4 * n < 4096) (hin : InRegions (s.rd ++ s.wr) (stackArgAddr s n) 4) :
+    WP isa (.block [.ldrSp .r12 (4 * n)]) s (Loaded (withR12 s (stackArg s n))) :=
+  WP.mono (ldrSp_ok hn hin) fun _ ⟨a, b, c, d, e, f⟩ =>
+    ⟨a, fun r hr => (b r hr).trans (withR12_ne hr).symm, c, d, e, f⟩
 
 theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.gpr .r12 = pScr s₀)
     (hr : ∀ r, r ≠ .r12 → s₁.gpr r = s₀.gpr r) (hm : s₁.mem = s₀.mem) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr)
@@ -296,16 +313,17 @@ theorem layA0 (K : KemLay) (s₀ : State) (o : Nat) : (layM s₀ K).A 0 o = (lay
 theorem copyM_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s) (h5 : s.gpr .r5 = pM s₀)
     (hm : bytesAt s.mem ((layM s₀ K).A 2 0) 32 = M K s₀) :
     WP isa (copy .r5 0 .r7 oMsg 32) s fun s' =>
-      EnEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ := by
+      EnEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ ∧
+        Kept ((lay s₀ K).RL [(0, oMsg, 32)]) s s' := by
   have hK := hp.wf
   obtain ⟨-, -, -, -, wM, wM0⟩ := buf_wr hp
   refine WP.mono (copyL (layM_ok hp) (i := 2) (j := 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ h5
     (by rw [h.ctx.r7, lay_ptr0, layM_ptr0]) (by edecide) (by edecide) (by edecide) (by edecide) (by edecide)
-    (by edecide) (by rw [h.rd, h.wr]; exact wM) (by rw [h.wr]; exact wM0)) fun s' ⟨k, e⟩ => ⟨?_, ?_⟩
-  · have k' : Kept ((lay s₀ K).RL [(0, oMsg, 32)]) s s' := by
-      simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layM_ptr0] using k
-    exact h.keep hp (k'.x []) (by simp) (by edecide)
-  · rw [← layA0, e, hm]
+    (by edecide) (by rw [h.rd, h.wr]; exact wM) (by rw [h.wr]; exact wM0)) fun s' ⟨k, e⟩ => ?_
+  have k' : Kept ((lay s₀ K).RL [(0, oMsg, 32)]) s s' := by
+    simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layM_ptr0] using k
+  refine ⟨h.keep hp (k'.x []) (by simp) (by edecide), ?_, k'⟩
+  rw [← layA0, e, hm]
 
 theorem ptr5_ok {s : State} :
     WP isa (.block [ptrTo .r5 .r7 oMsg]) s fun s' =>
@@ -502,18 +520,25 @@ end
 
 /-! ## The whole function -/
 
-theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
-    WP isa K.encaps s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧
-      s.gpr .r0 = (if okEnc K.k (ekRho K.p (EK K s₀)) K.k then 1 else 0) ∧
-      bytesAt s.mem (State.addr (pKey s₀)) 32 = KK K s₀ ∧
-      bytesAt s.mem (State.addr (pCt s₀)) K.ctLen =
-        VG.Proof.MlKem.KPke.ct K.p (aEnc (ekRho K.p (EK K s₀)) (RR K s₀)) (EK K s₀) (M K s₀) (RR K s₀) := by
+/-- What follows `H(ek)` (in `encaps`; its copy from `h` in `encapsH`): `G(m ‖ H(ek))`, `K` into `key`,
+K-PKE.Encrypt and the end. -/
+abbrev tail (K : KemLay) : Prog isa :=
+  .seq (hash 72 0x06 [⟨.r7, oMsg, 32⟩, ⟨.r7, oHek, 32⟩] [⟨.r7, oG, 64⟩]) <|
+  .seq (copy .r7 oG .r6 0 32) <|
+  .seq K.encrypt (.block topEnd)
+
+/-- What the function ensures, of the arguments of `s₀`. -/
+abbrev Post (K : KemLay) (s₀ s : State) : Prop :=
+  (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧
+    s.gpr .r0 = (if okEnc K.k (ekRho K.p (EK K s₀)) K.k then 1 else 0) ∧
+    bytesAt s.mem (State.addr (pKey s₀)) 32 = KK K s₀ ∧
+    bytesAt s.mem (State.addr (pCt s₀)) K.ctLen =
+      VG.Proof.MlKem.KPke.ct K.p (aEnc (ekRho K.p (EK K s₀)) (RR K s₀)) (EK K s₀) (M K s₀) (RR K s₀)
+
+theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀)
+    (h₅ : F4 K s₀ s ∧ bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (tail K) s (Post K s₀) := by
   have hK := hp.wf
-  refine WP.seq (WP.mono (ldrSp_ok hp) fun s₁ ⟨a, b, c, d, e, f⟩ => ?_)
-  refine WP.seq (WP.mono (setup_ok hp a b c d e f) fun s₂ ⟨h₂, g5, m₂⟩ => ?_)
-  refine WP.seq (WP.mono (copyM_ok hp h₂ g5 m₂) fun s₃ ⟨h₃, m₃⟩ => ?_)
-  refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
-  refine WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => ?_)
   refine WP.seq (WP.mono (s6_ok hp h₅) fun s₆ h₆ => ?_)
   refine WP.seq (WP.mono (s7_ok hp h₆) fun s₇ h₇ => ?_)
   refine WP.seq (WP.mono (s8_ok hp h₇) fun s₈ ⟨h₈, key₈, r11₈, ct₈⟩ => ?_)
@@ -523,5 +548,15 @@ theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     exact key₈
   · rw [m', show State.addr (pCt s₀) = (lay s₀ K).A 4 0 by simp only [Lay.A, add_ofNat_zero]; rfl]
     exact ct₈
+
+/-- `K.encaps` once `scratch` is loaded. -/
+theorem correct {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (hl : Loaded s₀ s₁) :
+    WP isa K.encapsBody s₁ (Post K s₀) := by
+  have hK := hp.wf
+  obtain ⟨a, b, c, d, e, f⟩ := hl
+  refine WP.seq (WP.mono (setup_ok hp a b c d e f) fun s₂ ⟨h₂, g5, m₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyM_ok hp h₂ g5 m₂) fun s₃ ⟨h₃, m₃, _⟩ => ?_)
+  refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
+  exact WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => tail_ok hp h₅)
 
 end VG.Proof.MlKem.Arm.Encaps

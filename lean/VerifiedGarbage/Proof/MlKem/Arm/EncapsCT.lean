@@ -94,7 +94,7 @@ structure Two (K : KemLay) (s₁ s₂ : State) : Prop where
   r1 : s₁.gpr .r1 = s₂.gpr .r1
   r2 : s₁.gpr .r2 = s₂.gpr .r2
   r3 : s₁.gpr .r3 = s₂.gpr .r3
-  scr : stackArg s₁ 0 = stackArg s₂ 0
+  r12 : s₁.gpr .r12 = s₂.gpr .r12
   rho : ekRho K.p (EK K s₁) = ekRho K.p (EK K s₂)
 
 section
@@ -102,7 +102,7 @@ variable {K : KemLay} {s₁ s₂ : State} (two : Two K s₁ s₂)
 include two
 
 theorem Two.layEq : lay s₂ K = lay s₁ K := by
-  simp only [Encaps.lay, pScr, pEk, pKey, pCt, two.r0, two.r2, two.r3, two.sp, two.scr]
+  simp only [Encaps.lay, pScr, pEk, pKey, pCt, two.r0, two.r2, two.r3, two.sp, two.r12]
 
 theorem Two.regs {a b : State} (ha : EnEnv K s₁ a) (hb : EnEnv K s₂ b) :
     ∀ r ∈ [Reg.r4, .r6, .r7, .r8], a.gpr r = b.gpr r := by
@@ -125,61 +125,13 @@ theorem Two.hashOk {ins outs : List Piece} {a b : State} (ha : EnEnv K s₁ a) (
   ⟨⟨ha.ctx, hi two.hp₁ ha, ho two.hp₁ ha⟩, by rw [← two.layEq]; exact ⟨hb.ctx, hi two.hp₂ hb, ho two.hp₂ hb⟩,
     by rw [ha.sp, hb.sp, two.sp]⟩
 
-theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ => True := by
+/-- From `G(m ‖ H(ek))` on (`tail`), in both runs. -/
+theorem tail_ct :
+    RelCT isa (fun a b => (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
+      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂))) (tail K) fun _ _ => True := by
   have hp₁ := two.hp₁
   have hp₂ := two.hp₂
   have hK := hp₁.wf
-  -- `scratch` from the stack
-  refine RelCT.seq (R := fun (a b : State) =>
-      (a.gpr .r12 = pScr s₁ ∧ (∀ r, r ≠ .r12 → a.gpr r = s₁.gpr r) ∧ a.mem = s₁.mem ∧ a.rd = s₁.rd ∧
-        a.wr = s₁.wr ∧ a.sp = s₁.sp) ∧
-      (b.gpr .r12 = pScr s₂ ∧ (∀ r, r ≠ .r12 → b.gpr r = s₂.gpr r) ∧ b.mem = s₂.mem ∧ b.rd = s₂.rd ∧
-        b.wr = s₂.wr ∧ b.sp = s₂.sp))
-    (relct_wp (relct_ldrSp fun a b hab => by rw [hab.1, hab.2, two.sp]) fun a b hab =>
-      ⟨by rw [hab.1]; exact ldrSp_ok hp₁, by rw [hab.2]; exact ldrSp_ok hp₂⟩) ?_
-  -- the setup
-  refine RelCT.seq (R := fun (a b : State) =>
-      (EnEnv K s₁ a ∧ a.gpr .r5 = pM s₁ ∧ bytesAt a.mem ((layM s₁ K).A 2 0) 32 = M K s₁) ∧
-      (EnEnv K s₂ b ∧ b.gpr .r5 = pM s₂ ∧ bytesAt b.mem ((layM s₂ K).A 2 0) 32 = M K s₂))
-    (relct_wp (taint_block [.r0, .r1, .r2, .r3, .r12] (fun a b hab r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        obtain ⟨⟨a12, ar, -⟩, ⟨b12, br, -⟩⟩ := hab
-        rcases hr with rfl | rfl | rfl | rfl | rfl
-        · rw [ar _ (by decide), br _ (by decide)]; exact two.r0
-        · rw [ar _ (by decide), br _ (by decide)]; exact two.r1
-        · rw [ar _ (by decide), br _ (by decide)]; exact two.r2
-        · rw [ar _ (by decide), br _ (by decide)]; exact two.r3
-        · rw [a12, b12]; exact two.scr) (by taint_decide))
-      fun a b ⟨⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩⟩ =>
-        ⟨setup_ok hp₁ a1 a2 a3 a4 a5 a6, setup_ok hp₂ b1 b2 b3 b4 b5 b6⟩) ?_
-  -- `m` copied
-  refine RelCT.seq (R := fun (a b : State) =>
-      (EnEnv K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = M K s₁) ∧
-      (EnEnv K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oMsg) 32 = M K s₂))
-    (relct_wp (taint_prog [.r5, .r7] (fun a b hab r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · rw [hab.1.2.1, hab.2.2.1]; exact two.r1
-        · exact two.regs hab.1.1 hab.2.1 .r7 (by simp)) (by taint_decide))
-      fun a b hab => ⟨copyM_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, copyM_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
-  refine RelCT.seq (R := fun (a b : State) => F4 K s₁ a ∧ F4 K s₂ b)
-    (relct_wp (relct_noMem rfl) fun a b hab => ⟨s4_ok hp₁ hab.1.1 hab.1.2, s4_ok hp₂ hab.2.1 hab.2.2⟩) ?_
-  -- `H(ek)`
-  refine RelCT.seq (R := fun (a b : State) =>
-      (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
-      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂)))
-    (relct_wp (hash_ct (L := lay s₁ K) (idx := eidx) VG.Proof.MlKem.rate136 (by decide) (by decide)
-      (List.cons_ne_nil _ _) fun a b hab => two.hashOk (ins := [⟨.r4, 0, K.ekLen⟩]) (outs := [⟨.r7, oHek, 32⟩])
-        hab.1.1 hab.2.1
-        (fun hp h p hp' => by
-          have hK := hp.wf
-          rw [List.mem_singleton] at hp'; subst hp'
-          exact pieceE hp h (.inl rfl) (by simp) enc0 hK.encEk (by dsimp only; offs) (by dsimp only; offs) (by edecide))
-        (fun hp h p hp' => by
-          have hK := hp.wf
-          rw [List.mem_singleton] at hp'; subst hp'
-          exact pieceE hp h (.inr rfl) (fun _ => rfl) (by edecide) (by edecide) (by edecide) (by edecide) (by edecide)))
-      fun a b hab => ⟨s5_ok hp₁ hab.1, s5_ok hp₂ hab.2⟩) ?_
   -- `G(m ‖ H(ek))`
   refine RelCT.seq (R := fun (a b : State) =>
       (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oG) 32 = KK K s₁ ∧ bytesAt a.mem ((lay s₁ K).A 0 oSigma) 32 = RR K s₁) ∧
@@ -215,7 +167,78 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ =
   have e₂ : bytesAt y.mem ((lay s₁ K).A 2 0) K.ekLen = EK K s₂ := by rw [← two.layEq]; exact hxy.2.1.1.ek
   rw [hxy.1.1.1.ek, e₂]; exact two.rho
 
+
+theorem all_ct : RelCT isa (fun a b => Loaded s₁ a ∧ Loaded s₂ b) K.encapsBody fun _ _ => True := by
+  have hp₁ := two.hp₁
+  have hp₂ := two.hp₂
+  have hK := hp₁.wf
+  -- the setup
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K s₁ a ∧ a.gpr .r5 = pM s₁ ∧ bytesAt a.mem ((layM s₁ K).A 2 0) 32 = M K s₁) ∧
+      (EnEnv K s₂ b ∧ b.gpr .r5 = pM s₂ ∧ bytesAt b.mem ((layM s₂ K).A 2 0) 32 = M K s₂))
+    (relct_wp (taint_block [.r0, .r1, .r2, .r3, .r12] (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        obtain ⟨⟨a12, ar, -⟩, ⟨b12, br, -⟩⟩ := hab
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r0
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r1
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r2
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r3
+        · rw [a12, b12]; exact two.r12) (by taint_decide))
+      fun a b ⟨⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩⟩ =>
+        ⟨setup_ok hp₁ a1 a2 a3 a4 a5 a6, setup_ok hp₂ b1 b2 b3 b4 b5 b6⟩) ?_
+  -- `m` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = M K s₁) ∧
+      (EnEnv K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oMsg) 32 = M K s₂))
+    (relct_wp (taint_prog [.r5, .r7] (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.1, hab.2.2.1]; exact two.r1
+        · exact two.regs hab.1.1 hab.2.1 .r7 (by simp)) (by taint_decide))
+      fun a b hab => ⟨WP.mono (copyM_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2) fun _ h => ⟨h.1, h.2.1⟩,
+        WP.mono (copyM_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2) fun _ h => ⟨h.1, h.2.1⟩⟩) ?_
+  refine RelCT.seq (R := fun (a b : State) => F4 K s₁ a ∧ F4 K s₂ b)
+    (relct_wp (relct_noMem rfl) fun a b hab => ⟨s4_ok hp₁ hab.1.1 hab.1.2, s4_ok hp₂ hab.2.1 hab.2.2⟩) ?_
+  -- `H(ek)`
+  refine RelCT.seq (R := fun (a b : State) =>
+      (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
+      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂)))
+    (relct_wp (hash_ct (L := lay s₁ K) (idx := eidx) VG.Proof.MlKem.rate136 (by decide) (by decide)
+      (List.cons_ne_nil _ _) fun a b hab => two.hashOk (ins := [⟨.r4, 0, K.ekLen⟩]) (outs := [⟨.r7, oHek, 32⟩])
+        hab.1.1 hab.2.1
+        (fun hp h p hp' => by
+          have hK := hp.wf
+          rw [List.mem_singleton] at hp'; subst hp'
+          exact pieceE hp h (.inl rfl) (by simp) enc0 hK.encEk (by dsimp only; offs) (by dsimp only; offs) (by edecide))
+        (fun hp h p hp' => by
+          have hK := hp.wf
+          rw [List.mem_singleton] at hp'; subst hp'
+          exact pieceE hp h (.inr rfl) (fun _ => rfl) (by edecide) (by edecide) (by edecide) (by edecide) (by edecide)))
+      fun a b hab => ⟨s5_ok hp₁ hab.1, s5_ok hp₂ hab.2⟩) (tail_ct two)
+
 end
+
+/-! ## From the entry -/
+
+/-- `K.encaps` from its entry state `s`: `scratch` loaded, then `correct`. -/
+theorem entry_correct {K : KemLay} {s : State} (hp : Pre K (withR12 s (stackArg s 0)))
+    (hin : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4) :
+    WP isa K.encaps s (Post K (withR12 s (stackArg s 0))) :=
+  WP.seq (WP.mono (ldrSp_loaded 0 (by decide) hin) fun _ hl => correct hp hl)
+
+/-- `all_ct` from the entry states. -/
+theorem entry_ct {K : KemLay} {s₁ s₂ : State} (two : Two K (withR12 s₁ (stackArg s₁ 0)) (withR12 s₂ (stackArg s₂ 0)))
+    (i₁ : InRegions (s₁.rd ++ s₁.wr) (stackArgAddr s₁ 0) 4) (i₂ : InRegions (s₂.rd ++ s₂.wr) (stackArgAddr s₂ 0) 4) :
+    RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ => True :=
+  RelCT.seq (R := fun a b => Loaded (withR12 s₁ (stackArg s₁ 0)) a ∧ Loaded (withR12 s₂ (stackArg s₂ 0)) b)
+    (relct_wp (relct_ldrSp fun a b hab => by rw [hab.1, hab.2]; exact two.sp) fun a b hab =>
+      ⟨by rw [hab.1]; exact ldrSp_loaded 0 (by decide) i₁, by rw [hab.2]; exact ldrSp_loaded 0 (by decide) i₂⟩)
+    (all_ct two)
+
+theorem preserved_withR12 {s₀ s : State} {v : BitVec 32} (h : ∀ r ∈ preserved, s.gpr r = (withR12 s₀ v).gpr r) :
+    ∀ r ∈ preserved, s.gpr r = s₀.gpr r := fun r hr =>
+  (h r hr).trans (withR12_ne (by rintro rfl; simp [preserved] at hr))
 
 /-! ## The outcome -/
 
@@ -241,13 +264,16 @@ theorem M_eq (K : KemLay) (s₀ : State) : M K s₀ = bytesAt s₀.mem (BitVec.s
 
 /-! ## ML-KEM-768 -/
 
-theorem pre_of {s : State} (h : (Spec.MlKem.encapsContract Arm.abi 8).pre s) : Pre kl768 s := by
+theorem pre_of {s : State} (h : (Spec.MlKem.encapsContract Arm.abi 8).pre s) :
+    Pre kl768 (withR12 s (stackArg s 0)) ∧ InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4 := by
   sig_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
-  obtain ⟨h0, h1, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, b1, b2, b3, b4, b5, b6,
+  obtain ⟨h0, -, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, -, d10, -, -, b1, b2, b3, b4, b5, -,
     f1, f2, f3, f4, f5⟩ := h
-  exact ⟨kl768_wf, kl768_calls, h0, h1, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, b1, b2, b3,
-    b4, b5, b6, f1, f2, f3, f4, f5⟩
+  exact ⟨⟨kl768_wf, kl768_calls, h0, by show _ ∈ s.rd; rw [h2]; exact .head _,
+    by show _ ∈ s.rd; rw [h2]; exact .tail _ (.head _), h3, d1, d2, d3, d4, d5, d6, d7, d8, d10, b1, b2, b3, b4, b5,
+    f1, f2, f3, f4, f5⟩, ⟨_, List.mem_append_left _ (by rw [h2]; exact .tail _ (.tail _ (.head _))),
+      Region.contains_self _ _⟩⟩
 
 theorem post_of {s₀ s : State} (h0 : s.gpr .r0 = if okEnc kl768.k (ekRho kl768.p (EK kl768 s₀)) kl768.k then 1 else 0)
     (hkey : bytesAt s.mem (State.addr (pKey s₀)) 32 = KK kl768 s₀)
@@ -279,8 +305,8 @@ def satState : State where
 
 theorem verified : Verified Arm.target Impl.MlKem.Arm.encaps (Spec.MlKem.encapsContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := correct (pre_of hs)
-    exact ⟨t, s', he, ⟨hpres, hsp⟩, post_of h0 hkey hct⟩
+  · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := entry_correct (pre_of hs).1 (pre_of hs).2
+    exact ⟨t, s', he, ⟨preserved_withR12 hpres, hsp⟩, post_of h0 hkey hct⟩
   · sig_pub [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, h0, h1, h2, h3, hs⟩ := hpub
@@ -288,7 +314,8 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.encaps (Spec.MlKem.encapsC
       rw [EK_eq, EK_eq]
       unfold leakRho at hl
       exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
-    exact (all_ct ⟨pre_of h₁, pre_of h₂, hsp, h0, h1, h2, h3, hs, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+    exact (entry_ct ⟨(pre_of h₁).1, (pre_of h₂).1, hsp, h0, h1, h2, h3, hs, hr⟩ (pre_of h₁).2 (pre_of h₂).2
+      s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
     sig_sat_check [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]

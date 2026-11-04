@@ -26,13 +26,16 @@ open VG.Proof.MlKem VG.Proof.MlKem.Arm VG.Proof.MlKem1024.Arm
 open VG.Proof.MlKem.Arm.Enc
 open VG.Proof.MlKem.Arm.Encaps hiding pre_of post_of satState verified
 
-theorem pre_of {s : State} (h : (Spec.MlKem1024.encapsContract Arm.abi 8).pre s) : Pre kl1024 s := by
+theorem pre_of {s : State} (h : (Spec.MlKem1024.encapsContract Arm.abi 8).pre s) :
+    Pre kl1024 (withR12 s (stackArg s 0)) ∧ InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4 := by
   sig_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
-  obtain ⟨h0, h1, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, b1, b2, b3, b4, b5, b6,
+  obtain ⟨h0, -, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, -, d10, -, -, b1, b2, b3, b4, b5, -,
     f1, f2, f3, f4, f5⟩ := h
-  exact ⟨kl1024_wf, kl1024_calls, h0, h1, h2, h3, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, b1, b2, b3,
-    b4, b5, b6, f1, f2, f3, f4, f5⟩
+  exact ⟨⟨kl1024_wf, kl1024_calls, h0, by show _ ∈ s.rd; rw [h2]; exact .head _,
+    by show _ ∈ s.rd; rw [h2]; exact .tail _ (.head _), h3, d1, d2, d3, d4, d5, d6, d7, d8, d10, b1, b2, b3, b4, b5,
+    f1, f2, f3, f4, f5⟩, ⟨_, List.mem_append_left _ (by rw [h2]; exact .tail _ (.tail _ (.head _))),
+      Region.contains_self _ _⟩⟩
 
 theorem post_of {s₀ s : State}
     (h0 : s.gpr .r0 = if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 s₀)) kl1024.k then 1 else 0)
@@ -66,8 +69,8 @@ def satState : State where
 theorem verified :
     Verified Arm.target Impl.MlKem1024.Arm.encaps1024 (Spec.MlKem1024.encapsContract Arm.abi 8) := by
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := correct (pre_of hs)
-    exact ⟨t, s', he, ⟨hpres, hsp⟩, post_of h0 hkey hct⟩
+  · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := entry_correct (pre_of hs).1 (pre_of hs).2
+    exact ⟨t, s', he, ⟨preserved_withR12 hpres, hsp⟩, post_of h0 hkey hct⟩
   · sig_pub [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, h0, h1, h2, h3, hs⟩ := hpub
@@ -75,7 +78,8 @@ theorem verified :
       rw [EK_eq, EK_eq]
       unfold leakRho at hl
       exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
-    exact (all_ct ⟨pre_of h₁, pre_of h₂, hsp, h0, h1, h2, h3, hs, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+    exact (entry_ct ⟨(pre_of h₁).1, (pre_of h₂).1, hsp, h0, h1, h2, h3, hs, hr⟩ (pre_of h₁).2 (pre_of h₂).2
+      s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   · refine ⟨satState, ?_⟩
     sig_sat_check [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]

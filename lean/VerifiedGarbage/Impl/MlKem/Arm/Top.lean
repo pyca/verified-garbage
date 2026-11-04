@@ -359,8 +359,8 @@ def encapsSetup : List Instr :=
     ([.str .lr .r12 (oSave + 32), .mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
       .mov .r8 (.reg .r3), .mov .r7 (.reg .r12)] : List Instr)
 
-def KemLay.encaps (K : KemLay) : Prog isa :=
-  .seq (.block [.ldrSp .r12 0]) <|
+/-- After `scratch` loaded into `r12` from the stack. -/
+def KemLay.encapsBody (K : KemLay) : Prog isa :=
   .seq (.block encapsSetup) <|
   .seq (copy .r5 0 .r7 oMsg 32) <|
   .seq (.block [ptrTo .r5 .r7 oMsg]) <|
@@ -368,6 +368,32 @@ def KemLay.encaps (K : KemLay) : Prog isa :=
   .seq (hash 72 0x06 [⟨.r7, oMsg, 32⟩, ⟨.r7, oHek, 32⟩] [⟨.r7, oG, 64⟩]) <|
   .seq (copy .r7 oG .r6 0 32) <|
   .seq K.encrypt (.block topEnd)
+
+def KemLay.encaps (K : KemLay) : Prog isa := .seq (.block [.ldrSp .r12 0]) K.encapsBody
+
+/-! ## `vg_mlkem<n>_encaps_h(ek = r0, h = r1, m = r2, key = r3, ct = [sp], scratch = [sp + 4]) -> r0`
+
+`encaps` with `H(ek)` given: `h`, kept in `r9` (which the setup saves, and
+nothing uses before the copy), is copied to `960` in place of hashing `ek`,
+first. -/
+
+/-- After `scratch` loaded into `r12` from the stack. -/
+def encapsHSetup : List Instr :=
+  saveRegs .r12 oSave ++
+    ([.str .lr .r12 (oSave + 32), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3), .ldrSp .r8 0,
+      .mov .r7 (.reg .r12), .mov .r9 (.reg .r1)] : List Instr)
+
+/-- After `scratch` loaded into `r12` from the stack. -/
+def KemLay.encapsHBody (K : KemLay) : Prog isa :=
+  .seq (.block encapsHSetup) <|
+  .seq (copy .r9 0 .r7 oHek 32) <|
+  .seq (copy .r5 0 .r7 oMsg 32) <|
+  .seq (.block [ptrTo .r5 .r7 oMsg]) <|
+  .seq (hash 72 0x06 [⟨.r7, oMsg, 32⟩, ⟨.r7, oHek, 32⟩] [⟨.r7, oG, 64⟩]) <|
+  .seq (copy .r7 oG .r6 0 32) <|
+  .seq K.encrypt (.block topEnd)
+
+def KemLay.encapsH (K : KemLay) : Prog isa := .seq (.block [.ldrSp .r12 4]) K.encapsHBody
 
 /-! ## `vg_mlkem<n>_decaps(dk = r0, ct = r1, key = r2, scratch = r3) -> r0` -/
 
@@ -454,6 +480,7 @@ def kl768 : KemLay :=
 
 abbrev keygen : Prog isa := kl768.keygen
 abbrev encaps : Prog isa := kl768.encaps
+abbrev encapsH : Prog isa := kl768.encapsH
 abbrev decaps : Prog isa := kl768.decaps
 
 end VG.Impl.MlKem.Arm
