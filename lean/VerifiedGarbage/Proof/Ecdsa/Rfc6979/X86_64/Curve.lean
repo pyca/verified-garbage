@@ -129,6 +129,28 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
   /-- At most 8 `V`s make a candidate. -/
   m8 : c.m ≤ 8
 
+/-- `RfcT` of the code's blocks for literal sizes, by evaluating them. -/
+macro "rfcT_decide" : tactic => `(tactic| exact
+  { msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, prepW := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    coreArgs := ⟨_, by taint_decide⟩, keepV := ⟨_, by taint_decide⟩, candTop := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    wipe := ⟨_, by taint_decide⟩, digestPtr := ⟨_, by taint_decide⟩, pad := ⟨_, by taint_decide⟩,
+    hfinCopy := ⟨_, by taint_decide⟩, iMsgF₀ := by decide +kernel, iMsgF₁ := by decide +kernel,
+    iMsgN := by decide +kernel, iPrep := by decide +kernel, iCoreArgs := by decide +kernel,
+    iKeepV := by decide +kernel, iCandTop := by decide +kernel, iWipe := by decide +kernel,
+    iDigestPtr := by decide +kernel, iPadI := by decide +kernel, iPadO := by decide +kernel,
+    iCopyK := by decide +kernel, iCopyV := by decide +kernel, m8 := by decide +kernel })
+
+/-- `blkT` from `RfcT` for each of the shapes. -/
+theorem blkT_of {E : Impl.Ecdsa.X86_64.Cfg} {hHigh : Bool} {sh : Nat}
+    (h₀ : RfcT (cfgS E hHigh sh 16 64)) (h₁ : RfcT (cfgS E hHigh sh 20 64)) (h₂ : RfcT (cfgS E hHigh sh 28 64))
+    (h₃ : RfcT (cfgS E hHigh sh 32 64)) (h₄ : RfcT (cfgS E hHigh sh 48 128)) (h₅ : RfcT (cfgS E hHigh sh 64 128))
+    (h₆ : RfcT (cfgS E hHigh sh 28 128)) (h₇ : RfcT (cfgS E hHigh sh 32 128)) :
+    ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B) := by
+  intro D B h
+  simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  exacts [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇]
+
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
   /-- The curve, as the code of `vg_ecdsa_<curve>_sign` has it. -/
