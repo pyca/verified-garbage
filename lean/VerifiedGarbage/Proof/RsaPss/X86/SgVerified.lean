@@ -1,147 +1,167 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.SgCall
+public import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3
+public import VerifiedGarbage.Proof.MdHashTable.X86.Tables
+public import VerifiedGarbage.Proof.HashTable.X86
 import VerifiedGarbage.Proof.RsaPss.X86.NoSp
+import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
+import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
+import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
+import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Exec
 
 /-!
 # RSASSA-PSS signing on x86: verified
 
-As on ARMv7 (`Proof/RsaPss/Arm/SgVerified.lean`): the body (`body_vp`),
-which writes `esp` only through the frames of its calls (`body_noSp`), the
-frames around it (`wrap_ok`, `wrap_ct`) and the result as the shared
-contract states it: `vg_rsa_pss_<H>_mgf1_<H>_sign`, calling
-`vg_rsa_private_checked` over any implementation `v` of
-`vg_rsa_private_crt`, is verified for any hash function `h` it is given a
-satisfiable contract for (`sign_verified`).
+As on ARMv7 (`Proof/RsaPss/Arm/SgVerified.lean`), with the hash functions as
+tables: the checks, then zeros or the encoding and the private-key
+operation (`tail_vp`), for the hash function `h` of the table of `MdHash` at
+the argument 22 and MGF1's `g` of the table of `Hash` at 23; the index of
+`h` (the table's word 5, `idx_vp`) chooses that tail among those of `idxs`
+(`body_vp`, by `Proof.RsaOaep.X86.byLen_vp`), whose code for the index is
+that for `h`'s sizes (`Shape`). The body writes `esp` only through the frames
+of its calls (`body_noSp`); with the frames around it (`wrap_ok`, `wrap_ct`)
+and the result as the shared contract states it, for the variants `w` and
+`wg` whose tables the arguments are (`held_entered`, `tabFacts_entered`):
+`vg_rsa_pss_sign`, calling `vg_rsa_private_checked` over `v`, with the hash
+function any of the tables of `vs` and MGF1's any of those of `gs`, is
+verified (`sign_verified`), given a state that meets the contract
+(`SgSat.lean`). Every stage keeps the addresses of the statics (`VP.syms`),
+which the indirect calls need.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.RsaPss.X86.Sg
 
-open VG VG.Impl.RsaPss.X86 VG.Proof.RsaPkcs1Sig.X86 VG.Proof.RsaPss.X86
+open VG VG.X86.Wp VG.Impl.RsaPss.X86 VG.Proof.RsaPkcs1Sig.X86 VG.Proof.RsaPss.X86
 open VG.X86 hiding frameBytes
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode)
+open VG.Impl.RsaOaep.X86 (Fns byLen)
+open VG.Proof.RsaOaep.X86 (OHash TabFacts VP.syms byLen_vp byLen_noSp St_roW)
+open VG.Proof.MdHashTable.X86 (MVar)
+open VG.Proof.HashTable.X86 (TVar)
 
 variable (h : PssHash)
 
-theorem body_noSp (v : CrtImpl) : NoSp (signBody h.H (privName v) (privCode v)) := by
+/-- A stage, keeping the addresses of the statics. -/
+abbrev Sy (F : State → State → Prop) (σ s : State) : Prop := F σ s ∧ s.syms = σ.syms
+
+/-- The checks, then zeros or the encoding and the private-key operation,
+for the hash function `h` of the table at the argument 22 and MGF1's `g` of
+that at 23. -/
+theorem tail_vp (P : EP) {dn : String} {f : MdFns}
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
+    (fneH : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) (g : OHash) {fG : Fns}
+    (hT : ∀ σ, P.T σ → TabFacts g.H fG P.tab P.ai P.au P.af σ)
+    (fne : fG.init ≠ [] ∧ fG.upd ≠ [] ∧ fG.fin ≠ []) (v : CrtImpl) :
+    VP (Sy (S h P)) (signTail f h.H fG (privName v) (privCode v)) (Fin h g.G P) := by
+  by_cases hP : ∃ σ, In h.D P σ
+  swap
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.1⟩
+  show VP _ (.seq (.block (signChk ++ params h.H)) (.ite .ne signFail (.seq (signEncT f h.H fG)
+    (.seq (.block privArgs) (.call (privName v) (privCode v)))))) _
+  exact (VP.syms (chk_vp h P)).seq (VP.ite
+    (fun σ s hs => ⟨!decide (fits h P), by simp only [eval, hs.1.2.2.2.2.2, Option.map_some]⟩)
+    (fun _ _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2.2.2.2.2, h₂.1.2.2.2.2.2])
+    ((fail_vp h g.G P).mono (fun σ s ⟨⟨h1, _⟩, e⟩ => ⟨h1, e⟩) fun _ _ h => h)
+    (((enc_vp h P hP hTH fneH g hT fne).mono (fun σ s ⟨⟨h1, sy⟩, e⟩ => ⟨e0_of h h1 e, sy⟩)
+      fun _ _ h => h.1).seq ((pa_vp h g.G P).seq (call_vp h g.G g.valid P v))))
+
+/-- The index of the hash function of the table at the argument 22, to
+`edx`. -/
+theorem idx_vp (P : EP) {ix : Nat} (hix : ∀ σ, P.TH σ → σ.mem.readW (VG.X86.addr P.tabH 20) 32 = BitVec.ofNat 32 ix) :
+    VP (Sy (S h P)) (.block (idxLoad 22)) (fun σ s => Sy (S h P) σ s ∧ s.gpr .edx = BitVec.ofNat 32 ix) := by
+  by_cases hP : ∃ σ, In h.D P σ
+  swap
+  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1.1⟩
+  obtain ⟨σ₀, hi₀⟩ := hP
+  obtain ⟨tR, tRo, tC⟩ := hi₀.tblH5
+  show VP _ (.block ([ld .edx (arg 22)] ++ [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 20))])) _
+  refine VP.block_append (G := fun σ s => Sy (S h P) σ s ∧ s.gpr .edx = P.tabH)
+    (VP.taint [.esp] idxArg22_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s hs => ?_)
+    (VP.taint [.esp, .edx] idxWord_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s hs => ?_)
+  · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.2.sp, h₂.1.2.sp]
+  · obtain ⟨⟨hi, hs⟩, sy⟩ := hs
+    simp only [ld]
+    refine hs.wp_arg (sg_arg h (j := 22) (by decide)) (by decide) fun t1 s1 u1 => WP.block_nil
+      ⟨⟨⟨hi, s1⟩, u1.syms.trans sy⟩, by rw [u1.gpr]; rfl⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [h₁.1.1.2.sp, h₂.1.1.2.sp]
+    · rw [h₁.2, h₂.2]
+  · obtain ⟨⟨⟨hi, hs⟩, sy⟩, hdx⟩ := hs
+    have hin : InRegions (s.rd ++ s.wr) (VG.X86.addr P.tabH 20) 4 := ⟨tR, hs.inRo tRo, tC⟩
+    refine wp_ldm (B := P.tabH) hdx hin fun t2 u2 => WP.block_nil ⟨⟨⟨hi, hs.upd u2 (by decide)⟩, u2.syms.trans sy⟩, ?_⟩
+    rw [u2.gpr, St_roW hs tRo tC, hix σ hi.tabTH]
+
+/-- The tail for an index is that for the sizes of its hash function. -/
+theorem tail_eq {i : Nat} {f : MdFns} {fG : Fns} {pn : String} {pc : Prog isa}
+    (hs : sizes h.H = sizesOf i) : signTail f (ofIdx i) fG pn pc = signTail f h.H fG pn pc := by
+  rw [show ofIdx i = ofSizes (sizes h.H) by rw [hs]; rfl]
+  rfl
+
+/-- The body, for the hash function `h` of index `ix` and MGF1's `g`. -/
+theorem body_vp (P : EP) {dn : String} {f : MdFns} {ix : Nat} (hix₀ : ix ∈ idxs) (hs : sizes h.H = sizesOf ix)
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ ∧
+      σ.mem.readW (VG.X86.addr P.tabH 20) 32 = BitVec.ofNat 32 ix)
+    (fneH : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) (g : OHash) {fG : Fns}
+    (hT : ∀ σ, P.T σ → TabFacts g.H fG P.tab P.ai P.au P.af σ)
+    (fne : fG.init ≠ [] ∧ fG.upd ≠ [] ∧ fG.fin ≠ []) (v : CrtImpl) :
+    VP (Sy (S h P)) (signBodyT f fG (privName v) (privCode v)) (Fin h g.G P) := by
+  have hlt : ix < 2 ^ 32 := (cmpIdxs_taint ix hix₀).1
+  show VP _ (.seq (.block (idxLoad 22)) (byLen (fun i => signTail f (ofIdx i) fG (privName v) (privCode v)) idxs)) _
+  refine (idx_vp h P fun σ hσ => (hTH σ hσ).2).seq (byLen_vp (D := ix) hlt (fun _ _ hs => hs.2)
+    (fun σ s t ⟨⟨⟨hi, hs⟩, sy⟩, dx⟩ fu sy' => ⟨⟨⟨hi, hs.fupd fu⟩, sy'.trans sy⟩, by rw [fu.gpr]; exact dx⟩) ?_ hix₀
+    cmpIdxs_taint)
+  rw [tail_eq h hs]
+  exact (tail_vp h P (fun σ hσ => (hTH σ hσ).1) fneH g hT fne v).mono (fun _ _ hs => hs.1) fun _ _ h => h
+
+/-! ## The stack -/
+
+theorem tail_noSp {f : MdFns} (hi : ∀ q ∈ f.init, NoSp q.2) (hc : ∀ q ∈ f.comp, NoSp q.2)
+    (hd : ∀ q ∈ f.dig, NoSp q.2) {fG : Fns} (gi : ∀ q ∈ fG.init, NoSp q.2) (gu : ∀ q ∈ fG.upd, NoSp q.2)
+    (gf : ∀ q ∈ fG.fin, NoSp q.2) (v : CrtImpl) : NoSp (signTail f h.H fG (privName v) (privCode v)) := by
   have sp := spOk h
   have p1 := sp.params
   have p2 := sp.cpDig16
   have p3 := sp.cpSalt
-  have p4 := sp.lenArgs18
+  have p4 := sp.lenArgs19
   have p5 := sp.putH
-  have hct := ctHash_noSp h
-  have hm := mgfXor_noSp h
+  have p6 := sp.mgfArgs
+  have hct := ctHashT_noSp h hi hc hd (j := 22) (NoSp.of_all (by decide +kernel))
+  have hm := Proof.RsaOaep.X86.mgfX_noSp gi gu gf (j := 23) (NoSp.of_all (by decide +kernel))
   have hp := Proof.Rsa.X86.PrivChecked.privateCode_noSp v
-  simp only [signBody, seqs]
+  simp only [signTail, seqs]
   refine noSp_seq (noSp_append (NoSp.of_all (by decide +kernel)) p1) ?_
-  simp only [signEnc, yDig, signFail, seqs]
+  simp only [signEncT, yDig, signFail, seqs]
   repeat' (first
     | with_reducible apply noSp_seq | with_reducible apply noSp_ite | with_reducible apply noSp_loop
     | with_reducible apply noSp_call
     | with_reducible assumption
     | exact NoSp.of_all (by decide +kernel))
 
-theorem body_vp (P : EP) (v : CrtImpl) :
-    VP (S h P) (signBody h.H (privName v) (privCode v)) (Fin h P) := by
-  by_cases hP : ∃ σ, In h.D P σ
-  swap
-  · exact VP.empty fun σ s hs => hP ⟨σ, hs.1⟩
-  show VP _ (.seq (.block (signChk ++ params h.H)) (.ite .ne signFail (.seq (signEnc h.H) (.seq (.block privArgs)
-    (.call (privName v) (privCode v)))))) _
-  exact (chk_vp h P).seq (VP.ite (fun σ s hs => ⟨!decide (fits h P), by simp only [eval, hs.2.2.2.2.2, Option.map_some]⟩)
-    (fun _ _ _ _ h₁ h₂ => by simp only [eval, h₁.2.2.2.2.2, h₂.2.2.2.2.2])
-    (fail_vp h P) (((enc_vp h P hP).mono (fun σ s ⟨h1, e⟩ => e0_of h h1 e) fun _ _ h => h).seq
-      ((pa_vp h P).seq (call_vp h P v))))
+/-- `vs`' and `gs`' functions write `esp` only through their frames. -/
+structure FnsSp (f : MdFns) (fG : Fns) : Prop where
+  hi : ∀ q ∈ f.init, NoSp q.2
+  hc : ∀ q ∈ f.comp, NoSp q.2
+  hd : ∀ q ∈ f.dig, NoSp q.2
+  gi : ∀ q ∈ fG.init, NoSp q.2
+  gu : ∀ q ∈ fG.upd, NoSp q.2
+  gf : ∀ q ∈ fG.fin, NoSp q.2
 
-/-- The code, calling `vg_rsa_private_checked` over `v`. -/
-abbrev signCode (v : CrtImpl) : Prog isa := sign h.H (privName v) (privCode v)
-
-theorem spec_sp {s : State} (hs : (spec h.G).pre s) :
-    stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argSlots, argVal, argBytes, stackBelow] at hs
-  obtain ⟨hsp, hsa, -⟩ := hs
-  exact ⟨hsp, by omega⟩
-
-theorem entered_state {s : State} (hs : (spec h.G).pre s) :
-    S h (ep s) (entered frameBytes s) (entered frameBytes s) := by
-  have hi := in_of_pre hs
-  rw [h.glen] at hi
-  exact ⟨hi, ⟨hi.ok, hi.ok.sp, rfl, rfl, Frame.refl _ _⟩⟩
-
-theorem code_ok (v : CrtImpl) {s : State} (hs : (spec h.G).pre s) :
-    WP isa (signCode h v) s fun t => abiPreserved s t ∧ (spec h.G).post s t := by
-  have hin := in_of_pre hs
-  rw [h.glen] at hin
-  obtain ⟨hsp0, hfit⟩ := spec_sp h hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
-  have hb := (body_vp h (ep s) v).wp _ _ (entered_state h hs)
-  refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp h v) hsp hfit (W := ((ep s).lay h.D).W)
-    (Q := fun r m => Res h (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · have ok := hin.ok
-    rw [ep_lay] at ok hr
-    rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3448) hsp,
-      ret_eq (argv := (ep s).argv) (ro := (ep s).ro h.D) (rw := (ep s).rw) (C := 3448) hsp]
-    exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
-  · have ok := hin.ok
-    rw [ep_lay] at ok
-    have ro := fun {R : Region} (hR : R ∈ (ep s).ro h.D) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argSlots, argVal, argBytes]
-    unfold Res at res
-    rw [show pB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).PP) (by simp),
-      show qB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).QQ) (by simp),
-      show dpB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).DP) (by simp),
-      show dqB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).DQ) (by simp),
-      show qiB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).QI) (by simp),
-      show digB h (ep s) (entered frameBytes s) = _ from ro (R := (ep s).DIG h.D) (by simp),
-      show saltB (ep s) (entered frameBytes s) = _ from ro (R := (ep s).SALT) (by simp)] at res
-    rw [BitVec.setWidth_append_eq_right, h.glen]
-    exact res
-
-theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (hab : a.map (·.toNat) = b.map (·.toNat)) : a = b :=
-  (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hab
-
-/-- Two entry states with the same public data have the same public parameters. -/
-theorem ep_eq {s₁ s₂ : State} (hp : (spec h.G).pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argSlots, argVal, argBytes] at hp
-  obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19,
-    a20⟩ := hp
-  obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl) (by simp [Proof.RsaPkcs1Sig.bytesAt_len, a3])
-  simp only [ep]
-  rw [hsp, a0, a2, a3, a4, a5, a6, a7, a8, a9, a10, a12, a14, a16, a17, a18, a19, a20]
-  rw [a2, a3] at hn
-  rw [a4, a5] at he
-  rw [hn, he]
-
-theorem code_ct (v : CrtImpl) : ConstantTime isa (spec h.G).pre (spec h.G).pub (signCode h v) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
-  have hep := ep_eq h hp
-  have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argSlots, argVal, argBytes] at hp
-    exact hp.1
-  refine (wrap_ct (F := frameBytes) (body_noSp h v) (P := fun a b => a = s₁ ∧ b = s₂)
-    (fun a b h => by rw [h.1, h.2]; exact hsp) ?_ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
-  refine (body_vp h (ep s₁) v).ct.mono ?_ fun _ _ _ => trivial
-  rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩
-  exact ⟨_, _, entered_state h h₁, by rw [hep]; exact entered_state h h₂⟩
-
-theorem code_noSp (v : CrtImpl) : NoSp (signCode h v) :=
-  noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSp h v)) restore_noSp)
-
-theorem code_sp (v : CrtImpl) : (signCode h v).all (fun i => !isa.writesSp i) = true :=
-  Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp h v)
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`, calling `vg_rsa_private_checked` over `v`, meets the shared
-contract (satisfiable, `SgSat.lean`). -/
-theorem sign_verified (hsat : ∃ s, (spec h.G).pre s) (v : CrtImpl) :
-    Verified target (signCode h v) (spec h.G) :=
-  ⟨fun _ hs => let ⟨t, s', he, hq⟩ := code_ok h v hs; ⟨t, s', he, hq.1, hq.2⟩, code_ct h v, hsat⟩
+theorem body_noSp {f : MdFns} {fG : Fns} (hf : FnsSp f fG) (hall : ∀ i ∈ idxs, ∃ h : PssHash, sizes h.H = sizesOf i)
+    (v : CrtImpl) : NoSp (signBodyT f fG (privName v) (privCode v)) := by
+  refine noSp_seq (NoSp.of_all (by decide +kernel)) (byLen_noSp fun i hi => ?_)
+  obtain ⟨h', hs⟩ := hall i hi
+  rw [tail_eq h' hs]
+  exact tail_noSp h' hf.hi hf.hc hf.hd hf.gi hf.gu hf.gf v
 
 end VG.Proof.RsaPss.X86.Sg
