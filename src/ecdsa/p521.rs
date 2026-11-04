@@ -16,21 +16,25 @@
 
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, sign_with as sign_table};
+#[cfg(target_arch = "x86")]
+use super::x86::{SignFn as TableSignFn, TableHash, sign_with as sign_table};
 use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::{vg_ecdsa_p521_sign, vg_ecdsa_p521_sign_adx};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86")]
+use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign_sha3;
 use crate::cpu::detected;
 use crate::ec::p521::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 use crate::hashes::sha512::{Sha512, Sha512Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P521> {
@@ -81,7 +85,7 @@ fn verify_e(q: &[u8; 133], e: &[u8; 66], signature: &[u8; 132]) -> Result<(), Er
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 impl sealed::Functions<P521> for Sha512 {
     fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
         let f = detected();
@@ -113,15 +117,16 @@ impl sealed::Functions<P521> for Sha512 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
 impl SignatureHash<P521> for Sha512 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 impl<H: TableHash> sealed::Functions<P521> for H {
     fn sign(d: &[u8; 66], digest: &H::Output) -> Result<[u8; 132], Error> {
         let f = detected();
         let sign: TableSignFn<66, 132> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p521_sign,
+            #[cfg(target_arch = "x86_64")]
             Mul::Adx => vg_ecdsa_p521_sign_adx,
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
@@ -135,7 +140,7 @@ impl<H: TableHash> sealed::Functions<P521> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 impl<H: TableHash> SignatureHash<P521> for H {}
 
 #[cfg(all(test, target_arch = "x86_64"))]

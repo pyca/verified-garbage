@@ -113,7 +113,7 @@ fn section<const Q: usize, const U: usize, const S: usize>(
 /// the signatures with `H`, named `hash` in RFC 6979, of the section
 /// `title`, of the message and of its hash; they verify, of the message and
 /// of its hash, and not of another message.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
 where
     C: verified_garbage::ecdsa::Curve<
