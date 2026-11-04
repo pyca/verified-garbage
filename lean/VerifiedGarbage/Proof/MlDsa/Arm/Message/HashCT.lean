@@ -10,13 +10,13 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
-# ML-DSA on ARMv7, `sign_message`, `verify_message` and `verify_message_cached`: two runs of the hashing
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: two runs of the hashing
 
 Untrusted: everything here is checked by Lean. In two runs with the same
 layout (`Two`), zeroing the state and each call of a sponge function leak
 the same: their addresses and arguments are functions of the layout alone,
 and ML-KEM's lemmas on two runs of the sponge functions' calls need just that
-(`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); so do `muHash` and `trHash`
+(`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); so does `muHash`
 (`muHash_tr`, or `muHash_tr_of` when where `tr` is follows from what the
 runs satisfy, as for a cached `tr`).
 -/
@@ -288,39 +288,6 @@ theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
       L.STK.Disjoint ⟨State.addr (trp L), 64⟩) :
     RelCT isa (Two I Φ) (muHash tr) fun _ _ => True :=
   muHash_tr_of (G := fun _ => True) (fun _ _ _ _ => trivial) hok hret trp htr fun L hL _ => hs L hL
-
-theorem trHash_tr {p : Params} (hk : p.pkLen < 2 ^ 16)
-    {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → L.keyLen = p.pkLen) :
-    RelCT isa (Two I Φ) (trHash p) fun _ _ => True := by
-  have keySide : ∀ L : Lay, L.Ok → 0 < 136 ∧ L.keyLen < 2 ^ 32 ∧ L.key.toNat + L.keyLen ≤ 2 ^ 32 ∧
-      (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr L.key, L.keyLen⟩ R) ∧
-      Region.Disjoint ⟨State.addr L.key, L.keyLen⟩ ⟨L.ST, 200⟩ ∧
-      Region.Disjoint ⟨State.addr L.key, L.keyLen⟩ ⟨L.KS, 640⟩ ∧
-      L.STK.Disjoint ⟨State.addr L.key, L.keyLen⟩ := fun L hL =>
-    ⟨by decide, by have := hL.hKey.2; omega_arith, hL.nKey, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
-      by have := hL.x_r hL.xKey (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
-      (hL.x_r hL.xKey (e := 200) (k := 640) (by decide)).symm, hL.kKey⟩
-  have z := two_wp (I := I) (Φ := Φ) (Ψ := fun L _ _ => L.keyLen = p.pkLen) zeroSt_tr
-    fun L g m₀ t hL hc hφ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
-  have a1 := two_wp (I := I) (Φ := fun L _ _ => L.keyLen = p.pkLen) (Ψ := fun _ _ _ => True)
-    (kabs_tr (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-      (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith) rfl rfl rfl) (fun L => L.key) (fun L => L.keyLen)
-      (fun _ => 0) (fun L g m t hL hc hφ => ⟨by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega_arith)]; rfl,
-        by rw [hφ]; rfl, rfl⟩) keySide)
-    fun L g m₀ t hL hc hφ => by
-      obtain ⟨a, b, c, d, e, f, k⟩ := keySide L hL
-      exact WP.mono (kabs_ok hL hc (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-        (n := L.keyLen) (q := 0) (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith) rfl rfl rfl)
-        (by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega_arith)]; rfl) (by rw [hφ]; rfl) rfl a b c d e f k)
-        fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
-  have pd := kpad_tr (I := I) (Φ := fun _ _ _ => True) (pos := .imm (p.pkLen % 136))
-    (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith)) (fun _ => p.pkLen % 136)
-    (fun _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
-  have pd' := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) pd
-    fun L g m₀ t hL hc _ => WP.mono (kpad_ok hL hc (pos := .imm (p.pkLen % 136))
-      (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith)) rfl (Nat.mod_lt _ (by decide)))
-      fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
-  exact RelCT.seq z (a1.seq (pd'.seq ksqz_tr))
 
 end
 
