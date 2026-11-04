@@ -99,22 +99,20 @@ pointers (the taint analysis; the immediates of the others the analysis
 does not read, `Taint.check_eraseOff`), and how many `V`s make a candidate. -/
 structure RfcT (c : Impl.Ecdsa.Rfc6979.Arm.Cfg) : Prop where
   msgF : TaintOk (Cfg.msg c.len c.D 0 true c.fHo)
+  msgF₁ : TaintOk (Cfg.msg c.len c.D 1 true c.fHo)
   msgN : TaintOk (Cfg.msg c.len c.D 0 false)
   prepW : c.wide = true → TaintOk (c.prep ++ Cfg.initKV)
   coreArgs : TaintOk c.coreArgs
   keepV : TaintOk (c.keepV 0)
   candTop : TaintOk c.candTop
-  pad : TaintOk (c.padBlk ipad32)
-  hfinCopy : TaintOk (Cfg.copyN (c.D / 4) .r11 sTmp .r8 0)
   /-- The candidate's `V`s fit `T`. -/
   mD : c.m * c.D ≤ 128
 
 /-- `RfcT` of the code's blocks for literal sizes, by evaluating them. -/
 macro "rfcT_decide" : tactic => `(tactic| exact
-  { msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩,
+  { msgF := ⟨_, by taint_decide⟩, msgF₁ := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩,
     prepW := by exact (Function.const _ ⟨_, by taint_decide⟩), coreArgs := ⟨_, by taint_decide⟩,
-    keepV := ⟨_, by taint_decide⟩, candTop := ⟨_, by taint_decide⟩, pad := ⟨_, by taint_decide⟩,
-    hfinCopy := ⟨_, by taint_decide⟩, mD := by decide })
+    keepV := ⟨_, by taint_decide⟩, candTop := ⟨_, by taint_decide⟩, mD := by decide })
 
 /-- `blkT` from `RfcT` for each of the shapes. -/
 theorem blkT_of {E : Impl.Ecdsa.Arm.Cfg} {hHigh : Bool} {sh : Nat}
