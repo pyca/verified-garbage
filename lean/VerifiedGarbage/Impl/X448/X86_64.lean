@@ -424,18 +424,31 @@ def save : List Instr := saved.map fun (r, d) => .store (at_ .rcx d) r
 
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (sc d))
 
-/-- Reads the arguments (with the working space in `rcx`): the
-`out` into `r15`, the working space into `rdi`, the u-coordinate's seven
-words (all 448 bits are used) into `X1` and `X3`, and `x2 = 1`, `z2 = 0`,
-`z3 = 1`, `swap = 0`. The scalar stays at `rsi` for `bits`. -/
-def setup : List Instr :=
-  save ++ [.mov .r15 (.reg .rdi), .mov .rdi (.reg .rcx)] ++
-    (List.range 7).map (fun i => .mov (w i) (.mem (at_ .rdx (8 * i)))) ++
-    stores X1 W ++ stores X3 W ++
+/-- The ladder's initial values, with the u-coordinate's seven words in `W`:
+`x1 = x3 = u`, `x2 = 1`, `z2 = 0`, `z3 = 1`, `swap = 0`. -/
+def ladderInit : List Instr :=
+  stores X1 W ++ stores X3 W ++
     [.mov32 .rax (.imm 0), .mov32 .rdx (.imm 1)] ++
     stores X2 [.rdx, .rax, .rax, .rax, .rax, .rax, .rax] ++
     stores Z2 [.rax, .rax, .rax, .rax, .rax, .rax, .rax] ++
     stores Z3 [.rdx, .rax, .rax, .rax, .rax, .rax, .rax] ++ [.store (sc SWAP) .rax]
+
+/-- Reads the arguments (with the working space in `rcx`): the
+`out` into `r15`, the working space into `rdi`, the u-coordinate's seven
+words (all 448 bits are used) into `X1` and `X3`, and the other initial values
+(`ladderInit`). The scalar stays at `rsi` for `bits`. -/
+def setup : List Instr :=
+  save ++ [.mov .r15 (.reg .rdi), .mov .rdi (.reg .rcx)] ++
+    (List.range 7).map (fun i => .mov (w i) (.mem (at_ .rdx (8 * i)))) ++ ladderInit
+
+/-- The base point's u-coordinate, 5, as seven words in `W`. -/
+def five : List Instr := (List.range 7).map fun i => .mov32 (w i) (.imm (if i = 0 then 5 else 0))
+
+/-- `setup` for `vg_x448_base(out = rdi, scalar = rsi, scratch = rdx)`: the
+working space into `rcx`, as `setup` has it, and the base point's
+u-coordinate, 5, in place of the argument's. -/
+def setupBase : List Instr :=
+  [.mov .rcx (.reg .rdx)] ++ save ++ [.mov .r15 (.reg .rdi), .mov .rdi (.reg .rcx)] ++ five ++ ladderInit
 
 /-- `x2 · z2^(p-2)`, reduced fully, to `out`, and then the saved registers
 restored (the stores do not touch the working space). -/
@@ -455,9 +468,18 @@ def x448Of (F : Field) (lad : Prog isa) (inv : Prog isa := invert F) : Prog isa 
   .seq (.block setup) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r15)]) <| .seq lad <|
     .seq (.block lastSwap) <| .seq inv (.block (finish F))
 
+/-- `vg_x448_base(out = rdi, scalar = rsi, scratch = rdx)`: `x448Of` of the base
+point, whose setup writes its u-coordinate, 5, instead of reading one
+(`setupBase`). -/
+def x448BaseOf (F : Field) (lad : Prog isa) (inv : Prog isa := invert F) : Prog isa :=
+  .seq (.block setupBase) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r15)]) <| .seq lad <|
+    .seq (.block lastSwap) <| .seq inv (.block (finish F))
+
 /-- X448 with the field multiplications `F`. -/
 def x448With (F : Field) : Prog isa := x448Of F (ladder F)
 
 def x448 : Prog isa := x448Of baseline (ladder baseline) (invertCall baseline)
+
+def x448Base : Prog isa := x448BaseOf baseline (ladder baseline) (invertCall baseline)
 
 end VG.Impl.X448.X86_64

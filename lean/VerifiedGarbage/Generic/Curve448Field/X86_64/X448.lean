@@ -18,6 +18,12 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     features := v.features
     code := Proof.X448.X86_64.code v
     stack := 8
-    verified := Proof.X448.X86_64.code_verified v }]
+    verified := Proof.X448.X86_64.code_verified v },
+  Spec.X448.x448BaseApi.artifact X86_64.target {
+    suffix := v.suffix
+    features := v.features
+    code := Proof.X448.X86_64.codeBase v
+    stack := 8
+    verified := Proof.X448.X86_64.codeBase_verified v }]
 
 end VG.Generic.Curve448Field.X86_64.X448
