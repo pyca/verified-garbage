@@ -11,14 +11,12 @@ import VerifiedGarbage.Proof.MlKem.X86.Piece
 import VerifiedGarbage.Proof.MlKem.X86.Leaf
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the preconditions and the layouts
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: the preconditions and the layouts
 
 Untrusted: everything here is checked by Lean. The preconditions of
-`signMessageContract p X86.abi 136`, `verifyMessageContract p X86.abi
-132` and `verifyMessageCachedContract p X86.abi 132`, spelled out (`SPre`,
-`VPre`, `CPre`), the layouts of runs from states
-satisfying them (`slay`, `vlay`), and what the contracts' public data say of
-two runs (`spub_of`, `vpub_of`).
+`signMessageContract p X86.abi 136` and `verifyMessageCachedContract p X86.abi
+132`, spelled out (`SPre`, `CPre`, which extends `VPre`), and the layouts of
+runs from states satisfying them (`slay`, `vlay`).
 -/
 
 @[expose] public section
@@ -158,8 +156,7 @@ theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 
 
 /-! ## Verification -/
 
-/-- The precondition of `verifyMessageContract p X86.abi 132` (`n = 7`, no
-`T`), and most of that of `verifyMessageCachedContract p X86.abi 132`
+/-- Most of the precondition of `verifyMessageCachedContract p X86.abi 132`
 (`n = 8`, `T` the cached `tr`): `n` arguments, and the read-only regions
 `T s` after the others. -/
 structure VPre (p : Params) (n : Nat) (T : State → List Region) (s : State) : Prop where
@@ -195,12 +192,6 @@ structure VPre (p : Params) (n : Nat) (T : State → List Region) (s : State) : 
   nScr : (arg s 6).toNat + mScrLen p ≤ 2 ^ 32
   hn : n = 7 ∨ n = 8
 
-theorem vPre_of {p : Params} {s : State} (h : (verifyMessageContract p X86.abi 132).pre s) :
-    VPre p 7 (fun _ => []) s := by
-  sig_pre [verifyMessageContract, verifyMessageSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-  obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30⟩ := h
-  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, .inl rfl⟩
-
 /-- The cached `tr`. -/
 abbrev trRg (s : State) : List Region := [aR s 7 64]
 
@@ -221,8 +212,8 @@ theorem cPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86
   exact ⟨⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a14, a16, a17, a18, a19, a20, a22, a23, a24, a25,
     a26, a27, a29, a30, a31, a32, a33, a34, .inr rfl⟩, a13, a15, a21, a28, a35, a36⟩
 
-/-- The layout of a run of `verify_message` (`n = 7`) or `verify_message_cached`
-(`n = 8`) from `s` (`sig` in the place of `rnd` too). -/
+/-- The layout of a run of `verify_message_cached` (`n = 8`) from `s` (`sig`
+in the place of `rnd` too). -/
 def vlay (p : Params) (n : Nat) (s : State) : Lay where
   SP := s.gpr .esp
   N := 132

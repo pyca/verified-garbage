@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: entry and exit
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: entry and exit
 
 Untrusted: everything here is checked by Lean. Stores of registers at
 distinct offsets that are multiples of 4 from a base (`strs_ok`), and loads

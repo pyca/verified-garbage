@@ -10,15 +10,14 @@ import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Message
 
 /-!
-# ML-DSA on RISC-V, `sign_message`, `verify_message` and `verify_message_cached`: their contracts
+# ML-DSA on RISC-V, `sign_message` and `verify_message_cached`: their contracts
 
-`vg_mldsa*_sign_message`, `vg_mldsa*_verify_message` and
-`vg_mldsa*_verify_message_cached` meet their contracts with `S` bytes of
-stack, for any verified function on `μ` with at most `S` bytes of stack (at
-least the 1168 the sponge functions' frames take): by correctness
-(`signMessage_wp`, `verifyMessage_wp`, `verifyMessageCached_wp`) and constant
-time (`signMessage_ct`, `verifyMessage_ct`, `verifyMessageCached_ct`). The
-contracts' satisfiability (by `msSat`, `mvSat`, `mvcSat`) is evaluated once
+`vg_mldsa*_sign_message` and `vg_mldsa*_verify_message_cached` meet their
+contracts with `S` bytes of stack, for any verified function on `μ` with at
+most `S` bytes of stack (at least the 1168 the sponge functions' frames
+take): by correctness (`signMessage_wp`, `verifyMessageCached_wp`) and
+constant time (`signMessage_ct`, `verifyMessageCached_ct`). The contracts'
+satisfiability (by `msSat`, `mvcSat`) is evaluated once
 `S` is known.
 -/
 
@@ -41,15 +40,6 @@ def msSat (p : Params) : State where
   mem _ := 0
   rd := [⟨0x1000, p.skLen⟩, ⟨0x8000, 0⟩, ⟨0x9000, 0⟩, ⟨0xA000, 32⟩]
   wr := [⟨0xB000, p.sigLen⟩, ⟨0x20000, messageScratchWords p * 8⟩]
-
-/-- A state that satisfies `verifyMessageContract`'s precondition. -/
-def mvSat (p : Params) : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x8000 | .a3 => 0x9000 | .a5 => 0xA000 | .a6 => 0x20000 | _ => 0
-  sp := 0x100000
-  mem _ := 0
-  rd := [⟨0x1000, p.pkLen⟩, ⟨0x8000, 0⟩, ⟨0x9000, 0⟩, ⟨0xA000, p.sigLen⟩]
-  wr := [⟨0x20000, messageScratchWords p * 8⟩]
 
 /-- The memory of `mvcSat`: zeros, but `tr` at `0xC000`, which is `H` of a key of zeros. -/
 def mvcMem (p : Params) : Mem := fun a =>
@@ -108,25 +98,6 @@ theorem signMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨
   simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [h3, h4, h5, h6, h7, h8, h9, h10]
-
-/-- `vg_mldsa*_verify_message` of the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`, meets its contract with `S`
-bytes of stack. -/
-theorem verifyMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
-    (h48 : 1168 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (n : String)
-    (hsat : (verifyMessageContract p RISCV64.abi S).pre (mvSat p)) :
-    Verified RISCV64.target (verifyMessage n f p) (verifyMessageContract p RISCV64.abi S) := by
-  have hF := mfacts hp3
-  obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
-  refine ⟨fun s hs => verifyMessage_wp hF h48 hf (Nat.le_refl _) (mvpre_of hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨mvSat p, hsat⟩⟩
-  sig_pub [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9⟩ := hpub
-  refine verifyMessage_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mvpre_of h₁) (mvpre_of h₂)
-    ⟨hsp, hl, fun r hr => ?_⟩ e₁ e₂
-  simp only [vArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h3, h4, h5, h6, h7, h8, h9]
 
 /-- `vg_mldsa*_verify_message_cached` of the parameter set `p`, calling the
 verification function on `μ` `f`, named `n`, meets its contract with `S`

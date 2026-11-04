@@ -5,10 +5,9 @@ public import VerifiedGarbage.Impl.Sha3.X86.Stream
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_message`, `_verify_message` and `_verify_message_cached`
+# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_message` and `_verify_message_cached`
 
-`sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) -> eax`,
-`verify_message(pk, msg, msg_len, ctx, ctx_len, sig, scratch) -> eax` and
+`sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) -> eax` and
 `verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) -> eax`,
 all their arguments on the stack (cdecl): `ML-DSA.Sign` and `ML-DSA.Verify`
 (FIPS 204 Algorithms 2 and 3), as calls of the sponge functions and of the
@@ -25,8 +24,6 @@ functions' working space (640 bytes), `μ` (64 bytes), and the two bytes
 
 * Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
   bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
-* Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
-  `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
 * Verification with a cached `tr` computes `μ` likewise from the 64 bytes
   `tr` (argument 7) that its caller keeps equal to `H(pk, 64)`, and calls
   `vg_mldsa*_verify(pk, μ, sig, scratch)`.
@@ -119,11 +116,6 @@ def muHash (tr : Arg) : Prog isa :=
     (.seq (kabs (.arg 3) (.arg 4) (.imm 66)) (.seq (kabs (.arg 1) (.arg 2) .ret)
       (.seq (kpad .ret) ksqz)))))
 
-/-- `tr = H(pk, 64)` to the buffer of `μ`. -/
-def trHash (p : Params) : Prog isa :=
-  .seq (.block zeroSt) (.seq (kabs (.arg 0) (.imm p.pkLen) (.imm 0))
-    (.seq (kpad (.imm (p.pkLen % 136))) ksqz))
-
 /-! ## The functions -/
 
 /-- `esi ← scratch + oE p`, for `scratch` argument `si`; then `0 ‖ ctx_len`
@@ -146,17 +138,9 @@ def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
       (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6), (.edi, .arg 7)]))
         (callRet rs5 n f)))
 
-/-- `vg_mldsa*_verify_message` for the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`. -/
-def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top (enter 6 p)
-    (.seq (trHash p) (.seq (muHash (.off oMU))
-      (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6)]))
-        (callRet [.ebx, .edx, .ecx, .eax] n f))))
-
 /-- `vg_mldsa*_verify_message_cached` for the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`: `verify_message` with `μ` from
-the cached `tr` (argument 7) instead of from `H(pk, 64)`. -/
+verification function on `μ` `f`, named `n`, with `μ` from the cached `tr`
+(argument 7). -/
 def verifyMessageCached (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   top (enter 6 p)
     (.seq (muHash (.arg 7))

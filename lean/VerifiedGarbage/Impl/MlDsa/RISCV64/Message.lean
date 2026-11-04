@@ -6,12 +6,11 @@ public import VerifiedGarbage.Impl.MlDsa.RISCV64.Arith
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# ML-DSA on RISC-V: `vg_mldsa{44,65,87}_sign_message`, `_verify_message` and `_verify_message_cached`
+# ML-DSA on RISC-V: `vg_mldsa{44,65,87}_sign_message` and `_verify_message_cached`
 
 `sign_message(sk = a0, msg = a1, msg_len = a2, ctx = a3, ctx_len = a4,
-rnd = a5, sig = a6, scratch = a7) -> a0`, `verify_message(pk = a0,
-msg = a1, msg_len = a2, ctx = a3, ctx_len = a4, sig = a5, scratch = a6) -> a0`
-and `verify_message_cached(pk = a0, msg = a1, msg_len = a2, ctx = a3,
+rnd = a5, sig = a6, scratch = a7) -> a0` and
+`verify_message_cached(pk = a0, msg = a1, msg_len = a2, ctx = a3,
 ctx_len = a4, sig = a5, scratch = a6, tr = a7) -> a0`:
 `ML-DSA.Sign` and `ML-DSA.Verify` (FIPS 204 Algorithms 2 and 3), as calls of
 the sponge functions (`hash`, `Impl/Sha3/RISCV64/Pieces.lean`) and of the
@@ -32,10 +31,9 @@ pointer. The arguments stay in `s0`–`s7`, which the functions called keep
 
 * Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
   bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
-* Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
-  `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
 * Verification with a cached `tr` (the caller's `H(pk, 64)`) computes `μ`
-  as signing does, from the 64 bytes at `tr`, and calls the same function.
+  as signing does, from the 64 bytes at `tr`, and calls
+  `vg_mldsa*_verify(pk, μ, sig, scratch)`.
 
 Every address and branch depends only on the pointers and the lengths, and
 the calls' own leakage.
@@ -87,12 +85,6 @@ def fmtPieces : List Piece := [⟨.s8, oHdr, .imm 2⟩, ⟨.s3, 0, .reg .s4⟩, 
 /-- `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, for the 64 bytes `tr` at `tr`. -/
 def muHash (tr : Piece) : Prog isa := hash .s8 (tr :: fmtPieces) .s8 oMU 64
 
-/-- `tr = H(pk, 64)` (`pk` in `s0`) to the buffer of `μ`, absorbing `pk` in
-two pieces (its first 1024 bytes, then the rest), since a piece's length is
-an immediate of 12 bits (`Len.set`). -/
-def trHash (p : Params) : Prog isa :=
-  hash .s8 [⟨.s0, 0, .imm 1024⟩, ⟨.s0, 1024, .imm (p.pkLen - 1024)⟩] .s8 oMU 64
-
 /-- If `ctx_len < 256`, `body`; otherwise return 2. -/
 def top (body : Prog isa) : Prog isa :=
   .seq (.block [.shift .srl .d .t1 .a4 8]) (.ite (.zero .t1) body (.block [.li .a0 2]))
@@ -114,23 +106,9 @@ def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   .seq (.seq (.block [mov .a0 .s0, .addi .a1 .s8 oMU, mov .a2 .s5, mov .a3 .s6, mov .a4 .s7]) (.call n f))
     (.block (restoreRegs .s8 oSV signRegs))
 
-/-- The registers verification uses: `pk`, `msg`, `msg_len`, `ctx`,
-`ctx_len`, `sig`, `scratch` and `E`. -/
-def verifyRegs : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s7, .s8]
-
-def verifyMs : List (Reg × Reg) :=
-  [(.s0, .a0), (.s1, .a1), (.s2, .a2), (.s3, .a3), (.s4, .a4), (.s5, .a5), (.s7, .a6), (.s8, .t2)]
-
-/-- `vg_mldsa*_verify_message` for the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`. -/
-def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top <| .seq (.block (enter .a6 p verifyRegs verifyMs)) <| .seq (trHash p) <|
-  .seq (muHash ⟨.s8, oMU, .imm 64⟩) <|
-  .seq (.seq (.block [mov .a0 .s0, .addi .a1 .s8 oMU, mov .a2 .s5, mov .a3 .s7]) (.call n f))
-    (.block (restoreRegs .s8 oSV verifyRegs))
-
-/-- The moves of verification with a cached `tr`: verification's, and `tr`
-into `s6`. It keeps the registers signing uses (`signRegs`). -/
+/-- The moves of verification with a cached `tr`: `pk`, `msg`, `msg_len`,
+`ctx`, `ctx_len`, `sig`, `tr` into `s6`, `scratch` and `E`. It keeps the
+registers signing uses (`signRegs`). -/
 def cachedMs : List (Reg × Reg) :=
   [(.s0, .a0), (.s1, .a1), (.s2, .a2), (.s3, .a3), (.s4, .a4), (.s5, .a5), (.s6, .a7), (.s7, .a6),
     (.s8, .t2)]

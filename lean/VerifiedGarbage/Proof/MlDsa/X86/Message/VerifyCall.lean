@@ -21,15 +21,15 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# ML-DSA on x86 (32-bit), `verify_message` and `verify_message_cached`: the call of the verification function on `μ`
+# ML-DSA on x86 (32-bit), `verify_message_cached`: the call of the verification function on `μ`
 
 Untrusted: everything here is checked by Lean. With `μ` at `X + 840`, the
 call of `vg_mldsa*_verify(pk, μ, sig, scratch)` (`verifyCall_piece`): its
 arguments in `eax`, `ecx`, `edx` and `ebx`, pushed; its precondition
-(`verifyContract p X86.abi 96`), from `verify_message`'s; what it leaks, its
-inputs, which `verify_message`'s inputs determine; and its result, which is
-`verify_message`'s. For `na` arguments (7, or 8 with the cached `tr`), and
-the read-only regions `T` after the others (`VPre`).
+(`verifyContract p X86.abi 96`), from `verify_message_cached`'s; what it
+leaks, its inputs, which `verify_message_cached`'s inputs determine; and its
+result, which is `verify_message_cached`'s. For `na` arguments (8, with the
+cached `tr`), and the read-only regions `T` after the others (`VPre`).
 -/
 
 @[expose] public section
@@ -43,7 +43,7 @@ open VG.Proof.MlKem.X86.Top (entry_regions entry_self covers_of)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Spec.MlDsa
 
-/-- A verification function on `μ`, as `verify_message` calls it. -/
+/-- A verification function on `μ`, as `verify_message_cached` calls it. -/
 structure VerifyFn (p : Params) (c : Prog isa) : Prop where
   ver : Verified X86.target c (verifyContract p X86.abi 96)
   nosp : NoSp c
@@ -68,7 +68,7 @@ abbrev vRd : List Region :=
     ⟨(arg s₀ 5).setWidth 64, p.sigLen⟩]
 abbrev vWr : List Region := [⟨(arg s₀ 6).setWidth 64, sScr p⟩, below (vlay p na s₀).E1 16]
 
-/-- What `verify_message` changes: `scratch` and the stack. -/
+/-- What `verify_message_cached` changes: `scratch` and the stack. -/
 abbrev vW : List Region := [(vlay p na s₀).SC, (vlay p na s₀).STK]
 
 /-- The result. -/

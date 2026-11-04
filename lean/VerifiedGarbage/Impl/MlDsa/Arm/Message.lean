@@ -4,12 +4,10 @@ public import VerifiedGarbage.Impl.MlKem.Arm.Sample
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# ML-DSA on 32-bit ARM: `vg_mldsa{44,65,87}_sign_message`, `_verify_message` and `_verify_message_cached`
+# ML-DSA on 32-bit ARM: `vg_mldsa{44,65,87}_sign_message` and `_verify_message_cached`
 
 `sign_message(sk = r0, msg = r1, msg_len = r2, ctx = r3, ctx_len = [sp],
-rnd = [sp, #4], sig = [sp, #8], scratch = [sp, #12]) -> r0`,
-`verify_message(pk = r0, msg = r1, msg_len = r2, ctx = r3, ctx_len = [sp],
-sig = [sp, #4], scratch = [sp, #8]) -> r0` and
+rnd = [sp, #4], sig = [sp, #8], scratch = [sp, #12]) -> r0` and
 `verify_message_cached(pk = r0, msg = r1, msg_len = r2, ctx = r3,
 ctx_len = [sp], sig = [sp, #4], scratch = [sp, #8], tr = [sp, #12]) -> r0`:
 `ML-DSA.Sign` and `ML-DSA.Verify` (FIPS 204 Algorithms 2 and 3), as calls of the sponge
@@ -28,10 +26,9 @@ function on `μ` overwrites later anyway.
 * Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
   bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`,
   whose fifth argument it pushes in a frame around the call.
-* Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
-  `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
-* Verification with a cached `tr` computes `μ` from the 64 bytes at `tr`
-  (saved in the slot of `rnd`) and makes the same call.
+* Verification with a cached `tr` computes `μ` likewise from the 64 bytes at
+  `tr` (saved in the slot of `rnd`), and calls
+  `vg_mldsa*_verify(pk, μ, sig, scratch)`.
 
 Each call's arguments are moved into their registers from the saved
 arguments (a slot, or a slot plus an offset), as offsets from `r7` or
@@ -148,11 +145,6 @@ def muHash (tr : Arg) : Prog isa :=
     (.seq (kabs (.slot fCtx) (.slot fCtxLen) (.imm 66)) (.seq (kabs (.slot fMsg) (.slot fLen) .ret)
       (.seq (kpad .ret) ksqz)))))
 
-/-- `tr = H(pk, 64)` to the buffer of `μ`. -/
-def trHash (p : Params) : Prog isa :=
-  .seq (.block zeroSt) (.seq (kabs (.slot fKey) (.imm p.pkLen) (.imm 0))
-    (.seq (kpad (.imm (p.pkLen % 136))) ksqz))
-
 /-! ## The functions -/
 
 /-- If `ctx_len < 256`, `enter`, `body` and `leave`; otherwise return 2. -/
@@ -165,9 +157,6 @@ def top (ent : List Instr) (body : Prog isa) : Prog isa :=
 `sig`, `scratch`. -/
 def signLoads : List (Reg × Nat) := [(.r0, 0), (.r1, 4), (.r2, 8), (.r3, 12)]
 
-/-- Those for verification (`sig` in the slot of `rnd` too). -/
-def verifyLoads : List (Reg × Nat) := [(.r0, 0), (.r1, 4), (.r2, 4), (.r3, 8)]
-
 /-- Those for verification with a cached `tr` (`tr` in the slot of `rnd`). -/
 def cachedLoads : List (Reg × Nat) := [(.r0, 0), (.r1, 12), (.r2, 4), (.r3, 8)]
 
@@ -179,14 +168,6 @@ def signMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
       (.seq (.block (setArgs [(.r0, .slot fKey), (.r1, .off oMU), (.r2, .slot fRnd), (.r3, .slot fSig),
           (.r12, .slot fScr)]))
         (.frame (.push [.r12, .lr]) (.call n f) (.pop .r12 8))))
-
-/-- `vg_mldsa*_verify_message` for the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`. -/
-def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top (enter 8 p verifyLoads)
-    (.seq (trHash p) (.seq (muHash (.off oMU))
-      (.seq (.block (setArgs [(.r0, .slot fKey), (.r1, .off oMU), (.r2, .slot fSig), (.r3, .slot fScr)]))
-        (.call n f))))
 
 /-- `vg_mldsa*_verify_message_cached` for the parameter set `p`, calling the
 verification function on `μ` `f`, named `n`. -/

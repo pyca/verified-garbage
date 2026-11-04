@@ -7,11 +7,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the layouts' shapes
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: the layouts' shapes
 
 Untrusted: everything here is checked by Lean. The contracts' public data,
-spelled out (`SPub`, `VPub`), and the layouts of `sign_message`,
-`verify_message` and `verify_message_cached` (`slay`, `vlay`) meet what the
+spelled out (`SPub`, `VPub`), and the layouts of `sign_message` and
+`verify_message_cached` (`slay`, `vlay`) meet what the
 proofs of the check, the entry and the hashes need (`sShape`, `vShape`).
 -/
 
@@ -50,8 +50,8 @@ theorem spub_of {p : Params} {s s' : State} (h : (signMessageContract p X86.abi 
   | 6, _ => exact a6
   | 7, _ => exact a7
 
-/-- The public data of `verifyMessageContract p X86.abi 132` (`n = 7`) and
-`verifyMessageCachedContract p X86.abi 132` (`n = 8`). -/
+/-- The public data of `verifyMessageCachedContract p X86.abi 132` (`n = 8`,
+`cpub_of`). -/
 structure VPub (p : Params) (n : Nat) (s s' : State) : Prop where
   esp : s.gpr .esp = s'.gpr .esp
   leak : leakBytes (bytesAt s.mem ((arg s 0).setWidth 64) p.pkLen ++
@@ -61,19 +61,6 @@ structure VPub (p : Params) (n : Nat) (s s' : State) : Prop where
       bytesAt s'.mem ((arg s' 1).setWidth 64) (arg s' 2).toNat ++
       bytesAt s'.mem ((arg s' 3).setWidth 64) (arg s' 4).toNat ++ bytesAt s'.mem ((arg s' 5).setWidth 64) p.sigLen)
   args : ∀ i < n, arg s i = arg s' i
-
-theorem vpub_of {p : Params} {s s' : State} (h : (verifyMessageContract p X86.abi 132).pub s s') : VPub p 7 s s' := by
-  sig_pub [verifyMessageContract, verifyMessageSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-  obtain ⟨e₁, e₂, a0, a1, a2, a3, a4, a5, a6⟩ := h
-  refine ⟨e₁, e₂, fun i hi => ?_⟩
-  match i, hi with
-  | 0, _ => exact a0
-  | 1, _ => exact a1
-  | 2, _ => exact a2
-  | 3, _ => exact a3
-  | 4, _ => exact a4
-  | 5, _ => exact a5
-  | 6, _ => exact a6
 
 theorem cpub_of {p : Params} {s s' : State} (h : (verifyMessageCachedContract p X86.abi 132).pub s s') :
     VPub p 8 s s' := by

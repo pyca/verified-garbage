@@ -16,7 +16,7 @@ import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: where everything is
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The function's buffers, the
 36 bytes of stack below the stack pointer on entry (`STK`, which the calls'

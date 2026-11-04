@@ -6,10 +6,10 @@ public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Inst
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# ML-DSA on RISC-V, `sign_message`, `verify_message` and `verify_message_cached`, with this library's functions on `μ`
+# ML-DSA on RISC-V, `sign_message` and `verify_message_cached`, with this library's functions on `μ`
 
-`vg_mldsa*_sign_message`, `vg_mldsa*_verify_message` and
-`vg_mldsa*_verify_message_cached` calling the RISCV64 `vg_mldsa*_sign` and
+`vg_mldsa*_sign_message` and `vg_mldsa*_verify_message_cached` calling the
+RISCV64 `vg_mldsa*_sign` and
 `vg_mldsa*_verify` (`Sign/Inst.lean`, `Verify/Inst.lean`), verified with 1168
 bytes of stack, whose frames use no more (`sign44Fn`, …): so the functions on
 messages are verified with 1168 (`signMessage44_verified`,
@@ -34,20 +34,11 @@ theorem verify44Fn :
 theorem signMessage44_sat : (signMessageContract mlDsa44 RISCV64.abi 1168).pre (msSat mlDsa44) := by
   sig_sat_check [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs, msSat]
 
-theorem verifyMessage44_sat : (verifyMessageContract mlDsa44 RISCV64.abi 1168).pre (mvSat mlDsa44) := by
-  sig_sat_check [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs, mvSat]
-
 theorem signMessage44_verified :
     Verified RISCV64.target
       (Impl.MlDsa.RISCV64.Message.signMessage sign44Api.name Impl.MlDsa.RISCV64.Sign.sign44 mlDsa44)
       (signMessageContract mlDsa44 RISCV64.abi 1168) :=
   signMessage_verified (.inl rfl) (by decide) sign44Fn _ signMessage44_sat
-
-theorem verifyMessage44_verified :
-    Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessage verify44Api.name Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44)
-      (verifyMessageContract mlDsa44 RISCV64.abi 1168) :=
-  verifyMessage_verified (.inl rfl) (by decide) verify44Fn _ verifyMessage44_sat
 
 /-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
 theorem verifyMessageCached44_sat :
@@ -76,20 +67,11 @@ theorem verify65Fn :
 theorem signMessage65_sat : (signMessageContract mlDsa65 RISCV64.abi 1168).pre (msSat mlDsa65) := by
   sig_sat_check [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs, msSat]
 
-theorem verifyMessage65_sat : (verifyMessageContract mlDsa65 RISCV64.abi 1168).pre (mvSat mlDsa65) := by
-  sig_sat_check [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs, mvSat]
-
 theorem signMessage65_verified :
     Verified RISCV64.target
       (Impl.MlDsa.RISCV64.Message.signMessage sign65Api.name Impl.MlDsa.RISCV64.Sign.sign65 mlDsa65)
       (signMessageContract mlDsa65 RISCV64.abi 1168) :=
   signMessage_verified (.inr (.inl rfl)) (by decide) sign65Fn _ signMessage65_sat
-
-theorem verifyMessage65_verified :
-    Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessage verify65Api.name Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65)
-      (verifyMessageContract mlDsa65 RISCV64.abi 1168) :=
-  verifyMessage_verified (.inr (.inl rfl)) (by decide) verify65Fn _ verifyMessage65_sat
 
 /-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
 theorem verifyMessageCached65_sat :
@@ -118,20 +100,11 @@ theorem verify87Fn :
 theorem signMessage87_sat : (signMessageContract mlDsa87 RISCV64.abi 1168).pre (msSat mlDsa87) := by
   sig_sat_check [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs, msSat]
 
-theorem verifyMessage87_sat : (verifyMessageContract mlDsa87 RISCV64.abi 1168).pre (mvSat mlDsa87) := by
-  sig_sat_check [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs, mvSat]
-
 theorem signMessage87_verified :
     Verified RISCV64.target
       (Impl.MlDsa.RISCV64.Message.signMessage sign87Api.name Impl.MlDsa.RISCV64.Sign.sign87 mlDsa87)
       (signMessageContract mlDsa87 RISCV64.abi 1168) :=
   signMessage_verified (.inr (.inr rfl)) (by decide) sign87Fn _ signMessage87_sat
-
-theorem verifyMessage87_verified :
-    Verified RISCV64.target
-      (Impl.MlDsa.RISCV64.Message.verifyMessage verify87Api.name Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87)
-      (verifyMessageContract mlDsa87 RISCV64.abi 1168) :=
-  verifyMessage_verified (.inr (.inr rfl)) (by decide) verify87Fn _ verifyMessage87_sat
 
 /-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
 theorem verifyMessageCached87_sat :

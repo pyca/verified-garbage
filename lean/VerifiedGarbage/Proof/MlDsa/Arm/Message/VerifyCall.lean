@@ -10,14 +10,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on ARMv7, `verify_message` and `verify_message_cached`: the call of the verification function on `μ`
+# ML-DSA on ARMv7, `verify_message_cached`: the call of the verification function on `μ`
 
 Untrusted: everything here is checked by Lean. Any code verified against
 `verifyContract p Arm.abi 36` whose frames use at most 36 bytes of stack
 (`VerifyFn`): its call on the key, `μ` at `X + 840`, `sig` and the first
 `scratchWords p` words of `scratch` (`verifyCall_ok`), after which the saves
-are intact (`Fin`), for any layout with the facts `VFacts` (those of both
-functions, `VPre.vfacts` and `CPre.vfacts`).
+are intact (`Fin`), for any layout with the facts `VFacts` (those of
+`verify_message_cached`'s, `CPre.vfacts`).
 -/
 
 @[expose] public section
@@ -29,7 +29,7 @@ open VG.Proof.MlDsa.Message
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- A verification function on `μ` that `verify_message` can call. -/
+/-- A verification function on `μ` that `verify_message_cached` can call. -/
 structure VerifyFn (p : Params) (c : Prog isa) : Prop where
   ver : Verified Arm.target c (verifyContract p Arm.abi 36)
   su : stackUse c ≤ 36
@@ -58,7 +58,7 @@ abbrev verifyArgs : List (Reg × Arg) := [(.r0, .slot fKey), (.r1, .off oMU), (.
 section
 variable {p : Params} {L : Lay}
 
-/-- What a layout of `verify_message` (or `verify_message_cached`) says of
+/-- What a layout of `verify_message_cached` says of
 the key, `sig` and `scratch`, beyond `Lay.Ok`. -/
 structure VFacts (p : Params) (L : Lay) : Prop where
   key : L.keyLen = p.pkLen
@@ -68,9 +68,6 @@ structure VFacts (p : Params) (L : Lay) : Prop where
   kSig : L.STK.Disjoint ⟨State.addr L.sig, p.sigLen⟩
   nSig : L.sig.toNat + p.sigLen ≤ 2 ^ 32
   inSig : (⟨State.addr L.sig, p.sigLen⟩ : Region) ∈ L.rd
-
-theorem VPre.vfacts {s : State} (h : VPre p s) : VFacts p (vlay p s) :=
-  ⟨rfl, rfl, rfl, h.sigScr.symm, h.stkSig, h.nSig, by simp [vlay, h.rd]⟩
 
 theorem CPre.vfacts {s : State} (h : CPre p s) : VFacts p (clay p s) :=
   ⟨rfl, rfl, rfl, h.sigScr.symm, h.stkSig, h.nSig, by simp [clay, h.rd]⟩

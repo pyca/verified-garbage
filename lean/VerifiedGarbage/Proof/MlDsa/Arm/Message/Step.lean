@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: single instructions
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: single instructions
 
 Untrusted: everything here is checked by Lean. Each instruction the
 functions run, as a step of a block that leaves its result and changes

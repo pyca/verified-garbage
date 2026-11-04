@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86.Permute
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: calls, correct and constant time
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: calls, correct and constant time
 
 Untrusted: everything here is checked by Lean. The body is proven piece by
 piece (`Piece`, `Proof/MlKem/X86/Piece.lean`) from the entry state `s₀` of
