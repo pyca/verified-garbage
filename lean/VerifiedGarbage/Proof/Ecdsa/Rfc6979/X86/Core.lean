@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -62,52 +62,64 @@ theorem WP.callWithR {rs : List Reg} {r : Reg} {n : String} {c : Prog isa} {k : 
 abbrev core5 : List Reg := [.ebp, .ecx, .edx, .esi, .edi]
 
 /-- The digest and `k` `core` reads, as addresses. -/
-abbrev dgAddr {dn : Nat} (L : Lay dn) : Addr := if L.wide then L.B + BitVec.ofNat 64 272 else L.dg
+abbrev dgAddr (P : RfcHash) {dn : Nat} (L : Lay dn) : Addr :=
+  if L.wide then (if P.R.sh = 0 then L.B + BitVec.ofNat 64 272 else L.B + BitVec.ofNat 64 344) else L.dg
 abbrev kAddr {dn : Nat} (L : Lay dn) : Addr :=
-  if L.wide then L.B + BitVec.ofNat 64 344 else L.B + BitVec.ofNat 64 140
+  if L.wide then L.B + BitVec.ofNat 64 416 else L.B + BitVec.ofNat 64 140
 
-theorem dgArg_w (hL : L.Ok) : (dgArg L).setWidth 64 = dgAddr L := by
+theorem dgArg_w (hL : L.Ok) : (dgArg L (cfgOf P)).setWidth 64 = dgAddr P L := by
   simp only [dgArg, dgAddr]
   cases hw : L.wide
   · rfl
   · have := L.ew; rw [hw] at this
-    exact hL.frv (by simp only [extra, ite_true] at this; simp only [fX]; omega_arith)
+    simp only [extra, ite_true] at this
+    have hs : (cfgOf P).sh = P.R.sh := rfl
+    simp only [Cfg.fDg, hs, ite_true]
+    split
+    · exact hL.frv (by simp only [fX]; omega_arith)
+    · exact hL.frv (by simp only [fXc]; omega_arith)
 
 theorem kArg_w (hL : L.Ok) : (kArg L).setWidth 64 = kAddr L := by
   simp only [kArg, kAddr]
   cases hw : L.wide
   · exact hL.frv (by simp only [fV]; omega_arith)
   · have := L.ew; rw [hw] at this
-    exact hL.frv (by simp only [extra, ite_true] at this; simp only [fKb]; omega_arith)
+    exact hL.frv (by simp only [extra, ite_true] at this; simp only [fT]; omega_arith)
 
 /-- The signature `core` computes, or none. -/
 abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : Option (Nat × Nat) :=
-  coreSigOf P.R.E m L.d (dgAddr L) (kAddr L)
+  coreSigOf P.R.E m L.d (dgAddr P L) (kAddr L)
 
 /-- `core` reads the private key, the digest and `k`, `Q` bytes each, and
 its arguments, and writes `out` and `scratch`. -/
 abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region :=
-  [⟨L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩, ⟨L.B + BitVec.ofNat 64 56, 20⟩] ++ L.TBLs
+  [⟨L.d, P.Q⟩, ⟨dgAddr P L, P.Q⟩, ⟨kAddr L, P.Q⟩, ⟨L.B + BitVec.ofNat 64 56, 20⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
-/-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
-candidate, the digest has `Q` bytes; if they do, the frame has its top
-words; and `h` is where the code keeps it. -/
+/-- What `core`'s digest and `k` need of the layout: unless the hash is
+shorter than the scalars, the digest has `Q` bytes; the frame is the code's,
+with `h` where the code keeps it; the tables are the comb's; and the table
+of the hash function is of `P`'s. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.R.wide ∧ L.cs = P.R.E.combConsts
+  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.wide ∧ L.cs = P.R.E.combConsts ∧
+    L.G = P.H ∧ L.f = P.f
 
 /-- The words at the frame's top are the code's. -/
 theorem CoreOk.e_eq {L : Lay dn} (hk : CoreOk P L) : L.e = P.e := by
   rw [L.ew, hk.2.2.1, hk.2.1.2]
 
+/-- The layout's table and frame are `P`'s. -/
+theorem CoreOk.tabL {L : Lay dn} (hk : CoreOk P L) : TabL P L :=
+  ⟨hk.2.2.2.2.1, hk.2.2.2.2.2, hk.e_eq, hk.2.2.1, hk.2.1.2⟩
+
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the stack below the frame, and not wrapping. -/
 theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {v : BitVec 32} {x : Addr}
-    (hx : (v = dgArg L ∧ x = dgAddr L) ∨ (v = kArg L ∧ x = kAddr L)) :
+    (hx : (v = dgArg L (cfgOf P) ∧ x = dgAddr P L) ∨ (v = kArg L ∧ x = kAddr L)) :
     (∃ R ∈ [L.D, L.DG, L.FR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B, 76⟩ ∧ v.toNat + P.Q ≤ 2 ^ 32 := by
   have nB := hL.nB
-  have e20 := hL.e20
+  have e20 := hL.e28
   have e272 := hL.e272
   cases hw : L.wide
   · obtain ⟨hQ8, h6, -⟩ := P.sizesA (hk.2.2.1 ▸ hw)
@@ -120,22 +132,31 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {v : BitVec 32} {x : Addr}
         by have := hL.ng; omega_arith⟩
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩, hL.stk_OUT (by omega_arith), hL.stk_SCR (by omega_arith),
         (Offset.base_disjoint _ (by omega_arith) (by omega_arith)).symm, by rw [hL.frN (by simp only [fV]; omega_arith)]; simp only [fV]; omega_arith⟩
-  · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW (hk.2.2.1 ▸ hw)
-    have he : L.e = 36 := by rw [L.ew, hw]; rfl
-    simp only [dgArg, kArg, dgAddr, kAddr, hw, ite_true] at hx
+  · obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -, -⟩ := P.sizes
+    have he : L.e = 68 := by rw [L.ew, hw]; rfl
+    have key : ∀ o, 196 ≤ o → o + 66 ≤ 468 → (∃ R ∈ [L.D, L.DG, L.FR],
+        Within ⟨L.B + BitVec.ofNat 64 (76 + o), P.Q⟩ R) ∧ Region.Disjoint ⟨L.B + BitVec.ofNat 64 (76 + o), P.Q⟩ L.OUT ∧
+        Region.Disjoint ⟨L.B + BitVec.ofNat 64 (76 + o), P.Q⟩ L.SCR ∧
+        Region.Disjoint ⟨L.B + BitVec.ofNat 64 (76 + o), P.Q⟩ ⟨L.B, 76⟩ ∧
+        (L.F + BitVec.ofNat 32 o).toNat + P.Q ≤ 2 ^ 32 := fun o h₁ h₂ =>
+      ⟨⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩, hL.stk_OUT (by omega_arith),
+        hL.stk_SCR (by omega_arith), (Offset.base_disjoint _ (by omega_arith) (by omega_arith)).symm,
+        by rw [hL.frN (by omega_arith)]; omega_arith⟩
+    have hs : (cfgOf P).sh = P.R.sh := rfl
+    simp only [dgArg, kArg, dgAddr, kAddr, hw, ite_true, Cfg.fDg, hs] at hx
     rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩, hL.stk_OUT (by omega_arith), hL.stk_SCR (by omega_arith),
-        (Offset.base_disjoint _ (by omega_arith) (by omega_arith)).symm, by rw [hL.frN (by simp only [fX]; omega_arith)]; simp only [fX]; omega_arith⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩, hL.stk_OUT (by omega_arith), hL.stk_SCR (by omega_arith),
-        (Offset.base_disjoint _ (by omega_arith) (by omega_arith)).symm, by rw [hL.frN (by simp only [fKb]; omega_arith)]; simp only [fKb]; omega_arith⟩
+    · split
+      · exact key 196 (by decide) (by decide)
+      · exact key 268 (by decide) (by decide)
+    · exact key 340 (by decide) (by decide)
 
 /-- What a framed call of `core` needs of the registers. -/
-structure CoreRegs {dn : Nat} (L : Lay dn) (t : State) : Prop where
+structure CoreRegs (P : RfcHash) {dn : Nat} (L : Lay dn) (t : State) : Prop where
   edi : t.gpr .edi = L.a0
   esi : t.gpr .esi = L.a1
-  edx : t.gpr .edx = dgArg L
+  edx : t.gpr .edx = dgArg L (cfgOf P)
   ecx : t.gpr .ecx = kArg L
-  ebp : t.gpr .ebp = L.a3
+  ebp : t.gpr .ebp = L.a4
 
 theorem core_fit (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) : 4 * core5.length + 4 ≤ (t.gpr .esp).toNat := by
   rw [hc.esp, hL.FN]; have := hL.e272; simp only [List.length_cons, List.length_nil]; omega_arith
@@ -161,12 +182,12 @@ theorem core_ret (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   rw [core_esp hc, F_sub hL (by omega_arith)]
 
 /-- The arguments `core` is called with. -/
-theorem core_argv (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) {rd wr : List Region} :
+theorem core_argv (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs P L t) {rd wr : List Region} :
     arg ((pushed core5 t).callEntry.withRegions rd wr) 0 = L.a0 ∧
     arg ((pushed core5 t).callEntry.withRegions rd wr) 1 = L.a1 ∧
-    arg ((pushed core5 t).callEntry.withRegions rd wr) 2 = dgArg L ∧
+    arg ((pushed core5 t).callEntry.withRegions rd wr) 2 = dgArg L (cfgOf P) ∧
     arg ((pushed core5 t).callEntry.withRegions rd wr) 3 = kArg L ∧
-    arg ((pushed core5 t).callEntry.withRegions rd wr) 4 = L.a3 := by
+    arg ((pushed core5 t).callEntry.withRegions rd wr) 4 = L.a4 := by
   have fit := core_fit hL hc
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [arg_withRegions, callEntry_arg fit (by decide) (by simp)]; simpa using hr.edi
@@ -183,7 +204,7 @@ theorem core_syms {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region}
 theorem core_tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
     Abi.constRegions (fun n => (((pushed core5 t).callEntry.withRegions rd wr).syms n).setWidth 64)
       P.R.E.combConsts = L.TBLs := by
-  rw [← hk.2.2.2]
+  rw [← hk.2.2.2.1]
   apply List.map_congr_left
   intro c hc'
   simp only [core_syms hc hc']
@@ -208,7 +229,7 @@ theorem core_belowK (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {rd wr : List 
 theorem core_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
     Abi.constsHeld ((pushed core5 t).callEntry.withRegions rd wr).mem
       (fun n => (((pushed core5 t).callEntry.withRegions rd wr).syms n).setWidth 64) P.R.E.combConsts := by
-  rw [← hk.2.2.2]
+  rw [← hk.2.2.2.1]
   intro c hmem i hi
   simp only [core_syms hc hmem, State.withRegions_mem]
   have hT : (⟨(L.sy c.1).setWidth 64, 8 * c.2.length⟩ : Region) ∈ L.TBLs :=
@@ -234,7 +255,7 @@ theorem core_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
     · exact ht.2.2.2) (by decide)]
   exact hc.held c hmem i hi
 
-theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) :
+theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs P L t) :
     (coreK P.R.E).pre ((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)) := by
   have hst := VG.Proof.Ecdsa.X86.Cfg.stk_le P.R.E
   have fit := core_fit hL hc
@@ -252,7 +273,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     hL.stk_SCR (by omega_arith), hL.stk_OUT (by omega_arith), hL.stk_SCR (by omega_arith), by have := hL.no; rw [hq] at this; omega_arith,
     by have := hL.nd; rw [hq] at this; omega_arith, gN, kN, hL.nc, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [core_esp hc, Lay.F, BitVec.sub_sub, BitVec.ofNat_add_ofNat, sub_toNat (by have := hL.e272; omega_arith)]
-    have := hL.e20; omega_arith
+    have := hL.e28; omega_arith
   · rw [core_esp hc, Lay.F, BitVec.sub_sub, BitVec.ofNat_add_ofNat, sub_toNat (by have := hL.e272; omega_arith)]
     have := hL.e272; omega_arith
   · rw [Offset.add_ofNat_sub _ (by omega_arith)]; exact hL.stk_OUT (by omega_arith)
@@ -260,7 +281,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   · change L.D.Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
     rw [core_below hL hc]
     exact hL.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))
-  · change (⟨dgAddr L, P.Q⟩ : Region).Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
+  · change (⟨dgAddr P L, P.Q⟩ : Region).Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
     rw [core_below hL hc]
     exact (coreArg_ok hL hk (.inl ⟨rfl, rfl⟩)).2.2.2.1.sub_right (Offset.sub_base _ (by decide))
   · change (⟨kAddr L, P.Q⟩ : Region).Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
@@ -282,14 +303,14 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     · exact ht.2.2.1
 
 theorem core_callPre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
-    (hr : CoreRegs L t) : CallPre (coreK P.R.E) core5 (coreRd P L) (coreWr P L) t := by
+    (hr : CoreRegs P L t) : CallPre (coreK P.R.E) core5 (coreRd P L) (coreWr P L) t := by
   have nB := hL.nB
   have hq : L.q = P.Q := hk.1
   have hb : below (t.gpr .esp) (4 * core5.length) = ⟨L.B + BitVec.ofNat 64 56, 20⟩ := by
     show (⟨(t.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region) = _
     rw [hc.esp, F_sub hL (by omega_arith)]
   have hw : ∀ {x : Addr}, (∃ R ∈ [L.D, L.DG, L.FR], Within ⟨x, P.Q⟩ R) →
-      ∃ R ∈ ([L.D, L.DG, L.ARGS] ++ L.TBLs) ++ [⟨L.B + BitVec.ofNat 64 56, 20⟩, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
+      ∃ R ∈ ([L.D, L.DG, L.TAB, L.ARGS] ++ L.TBLs) ++ [⟨L.B + BitVec.ofNat 64 56, 20⟩, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
     fun ⟨R, hR, hW⟩ => ⟨R, by simp only [List.mem_cons, List.not_mem_nil, or_false] at hR; rcases hR with rfl | rfl | rfl <;> simp, hW⟩
   refine ⟨core_pre hL hk hc hr, covers_of fun q hq' => ?_, covers_of fun q hq' => ?_⟩
   · rw [hb, hc.rd, hc.wr]
@@ -321,7 +342,7 @@ theorem ce_bytesAt (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {p : Addr} {n :
   rw [hc.esp, hL.below_F]; exact sub_refl _
 
 /-- `core(out, d, digest, k, scratch)`, in a frame of its arguments. -/
-theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) :
+theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs P L t) :
     WP isa (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call (cfgOf P).coreN (cfgOf P).coreC) (.pop .ecx 5)) t
       fun t' => Ctx L g m₀ t' ∧ Frame [L.OUT, L.SCR, ⟨L.B, 76⟩] t.mem t'.mem ∧
       match coreSig P L t.mem with
@@ -359,7 +380,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     have hQe : P.Q = P.R.E.C.len := rfl
     have hQl : P.Q ≤ 72 := by have := P.R.len_words; have := P.R.n9; omega_arith
     have hs : coreSigOf P.R.E ((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).mem L.d
-        (dgAddr L) (kAddr L) = coreSig P L t.mem := by
+        (dgAddr P L) (kAddr L) = coreSig P L t.mem := by
       simp only [coreSigOf, coreSig, ecdsa_bytesAt]
       have h₁ : Region.Disjoint ⟨L.d, P.R.E.C.len⟩ ⟨L.B, 76⟩ :=
         (hL.kd.sub_left (Region.sub_prefix (by omega_arith))).symm.sub_left (Region.sub_prefix (by omega_arith))
