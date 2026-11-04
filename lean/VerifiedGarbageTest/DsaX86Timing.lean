@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
+meta import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 meta import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
@@ -91,4 +93,5 @@ meta import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
 #assert_standard_axioms VG.Proof.Dsa.X86.signingConstantTime
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyingConstantTime
 #assert_standard_axioms VG.Proof.Dsa.X86.signing_verified
-#assert_standard_axioms VG.Proof.Dsa.X86.verifying_verified
+#assert_standard_axioms VG.Proof.Dsa.X86.validating_verified
+#assert_standard_axioms VG.Proof.Dsa.X86.prevalidated_verified

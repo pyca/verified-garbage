@@ -65,10 +65,4 @@ theorem sign_verified : Verified Arm.target (Entry.operation true) (Spec.Dsa.sig
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
       [signSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using signSat)
 
-theorem verify_verified : Verified Arm.target (Entry.operation false) (Spec.Dsa.verifyContract Arm.abi 0) :=
-  Verified.of_correct (fun _ hs => verify_correct hs) verify_constantTime (by
-    sig_implies [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, verifyArm, verifyPre, verifyRes, verifyLeak, arg,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [verifySat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using verifySat)
-
 end VG.Proof.Dsa.Arm

@@ -141,17 +141,23 @@ def signDomainCheckedApi : Api where
     while they remain unchanged. A cached flag or old scratch contents alone do \
     not establish the precondition. Primality remains the caller's responsibility."]
 
-def verifyDomainCheckedApi : Api := { verifyApi with
+def verifyDomainCheckedApi : Api where
+  module := "dsa"
   name := "vg_dsa_verify_domain_checked"
+  sig := verifySig
+  writeArgs := true
   contracts := some fun A stack => verifyDomainCheckedContract A stack
   summary := "DSA verification with a previously checked domain; the public value and signature are still checked. \
     Returns exactly the fully checked API's result, with the same failure zeroing, \
     sampling and timing guarantees. Contract: `VG.Spec.Dsa.verifyDomainCheckedContract`."
-  safety := verifyApi.safety ++ ["The exact p||q||g bytes supplied to this operation must satisfy \
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
+    "key_len must be 3*p_len + q_len; signature_len must be 2*q_len.",
+    "scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return.",
+    "The exact p||q||g bytes supplied to this operation must satisfy \
     checkParametersBytes p_len q_len params = true. For a packed key these are its first \
     2*p_len+q_len bytes. A successful check of those bytes establishes this only \
     while they remain unchanged. A cached flag or old scratch contents alone do \
-    not establish the precondition. Primality remains the caller's responsibility."] }
+    not establish the precondition. Primality remains the caller's responsibility."]
 
 def randomSignDomainCheckedApi : Api := { randomSignApi with
   name := "vg_dsa_sign_random_domain_checked"

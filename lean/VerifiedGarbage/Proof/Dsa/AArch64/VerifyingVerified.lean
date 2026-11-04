@@ -31,8 +31,4 @@ theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi).pre s := by
   sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, dsaVerifyStackArgs]
     [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
 
-theorem verifying_verified (M : Mont) :
-    Verified target (SignVerify.verify M.mm) (Spec.Dsa.verifyContract abi) :=
-  ⟨verifyingCorrect M, verifyingConstantTime M, verifyingSatisfiable⟩
-
 end VG.Proof.Dsa.AArch64

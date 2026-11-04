@@ -30,7 +30,6 @@ structure Backend where
   suffix : String
   features : List String
   signVerified : Verified target (SignVerify.sign mul) (Spec.Dsa.signContract abi stack)
-  verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
   validateVerified : Verified target (Prevalidated.validate mul) (Spec.Dsa.validatePublicKeyContract abi stack)
   prevalidatedVerified : Verified target (Prevalidated.verify mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
   validateSp : (Prevalidated.validate mul).all (fun i => !isa.writesSp i) = true
@@ -44,6 +43,5 @@ structure Backend where
   signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
   signDepth : 16 * (SignVerify.sign mul).aarch64Depth ≤ stack
   stackBound : stack < 2 ^ 32
-  verifySp : (SignVerify.verify mul).all (fun i => !isa.writesSp i) = true
 
 end VG.Proof.Dsa.AArch64

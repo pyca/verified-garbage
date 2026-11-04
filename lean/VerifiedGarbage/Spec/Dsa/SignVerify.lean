@@ -20,7 +20,11 @@ caller assurance of domain validity, as in Spec/Dsa.lean.
 `signContract` is one signing attempt with a supplied nonce. The Rust API
 does not offer it: `vg_dsa_sign_random` (`RandomSign.lean`) runs it with
 nonces drawn from its tape, and the domain-checked contracts
-(`DomainChecked.lean`) are stated as it.
+(`DomainChecked.lean`) are stated as it. `verifyContract` likewise has no
+function of its own: the Rust API validates a key once
+(`vg_dsa_validate_public_key`) and then verifies with
+`vg_dsa_verify_prevalidated` (`Prevalidated.lean`), whose contract is
+stated as it.
 
 The domain and public key may affect timing. The digest, private scalar and
 nonce may not, except for the success/failure result of a signing attempt.
@@ -131,21 +135,5 @@ def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       publicBytesLeak pLen.toNat qLen.toNat kb ++
         [if verifyBytes pLen.toNat qLen.toNat kb (bytesAt m signature signatureLen.toNat)
           (bytesAt m digest digestLen.toNat) then 1 else 0])
-
-def verifyApi : Api where
-  module := "dsa"
-  name := "vg_dsa_verify"
-  sig := verifySig
-  writeArgs := true
-  contracts := some fun A stack => verifyContract A stack
-  summary := "DSA verification of a prehashed digest. The key is big-endian p||q||g||y \
-    with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. \
-    Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, \
-    not primality; caller must assure domain validity. Timing may depend on \
-    p,q,g,y and the result, not otherwise on signature or digest. \
-    Contract: `VG.Spec.Dsa.verifyContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
-    "key_len must be 3*p_len + q_len; signature_len must be 2*q_len.",
-    "scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return."]
 
 end VG.Spec.Dsa

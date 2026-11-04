@@ -4,6 +4,8 @@ public import Lean.Elab.Command
 public meta import Lean.Elab.Command
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public meta import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public meta import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Spec.Sha512
 public meta import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.TCB.Axioms
@@ -354,7 +356,7 @@ def checkPrimality : Except String Unit := do
 #assert_standard_axioms Spec.Dsa.sign
 #assert_standard_axioms Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.generateParameters Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.verifyApi
+#assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
 #assert_spec_origin
 
 run_cmd do

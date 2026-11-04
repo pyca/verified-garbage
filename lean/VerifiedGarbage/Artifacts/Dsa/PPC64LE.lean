@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
@@ -17,9 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Dsa.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Dsa.verifyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Verify.verify
-    verified := Proof.Dsa.PPC64LE.verify_verified },
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Derive.derive
     verified := Proof.Dsa.PPC64LE.deriveKey_verified },
