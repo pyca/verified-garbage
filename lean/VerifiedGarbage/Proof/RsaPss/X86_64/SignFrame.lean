@@ -120,7 +120,7 @@ theorem sub_sub' (p : Addr) (a b : Nat) : p - BitVec.ofNat 64 a - BitVec.ofNat 6
 theorem frame_sub (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (stkR s) :=
   Offset.sub_below _ (by decide) (by decide)
 
-theorem ret_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
+theorem ret_sub (s : State) : Region.Sub (below (fb s) 16) (stkR s) := by
   simp only [below, fb, sub_sub']
   exact Offset.sub_below _ (by decide) (by decide)
 
