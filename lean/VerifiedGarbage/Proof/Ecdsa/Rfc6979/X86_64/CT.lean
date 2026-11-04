@@ -33,7 +33,10 @@ candidate (`exitAt`, from the contract's leakage: the number of candidates
 RFC 6979 tries). Between the frame's push and pop they are related by `Two`:
 both satisfy `Ctx` with that layout (and `Φ`, what the next piece needs). The
 blocks address only the stack and the buffers, from registers that agree
-(the taint analysis, of the blocks for each size of hash function: `Blks`);
+(the taint analysis, of the blocks for each size of hash function: `RfcT`,
+each curve's `RfcCurve.blkT`); an indirect call reaches, through the
+table, whose address the frame holds, the same function in both runs
+(`tcall_piece`);
 each call is of constant-time code whose public data agree (`RelCT.callEx`);
 and the loop's branch agrees, since in both runs it goes on after candidate
 `i` iff `i` is before the candidate it stops at (`go_iff`).
