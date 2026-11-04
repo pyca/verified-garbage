@@ -295,4 +295,52 @@ theorem front_ok {p : PcP} {s : State} (h : MainPre p s) :
   · rw [co x (Or.inr (by omega))]
     exact hin x hx
 
+/-- The context's pointer and row count into the inner header. -/
+theorem envBlock_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {cp : Addr} {rows : Nat}
+    (hc : ModCtx s B Z o w mi P) (hCtx : word s.mem B (8 * sCtx) = cp)
+    (hRows : word s.mem B (8 * sRows) = BitVec.ofNat 64 rows) :
+    WP isa (.block (fromOuter sCtx iCtx ++ fromOuter sRows iRows)) s fun t => ModCtx t B Z o w mi P ∧
+      word t.mem (off B o) (8 * iCtx) = cp ∧ word t.mem (off B o) (8 * iRows) = BitVec.ofNat 64 rows ∧
+      Frm (off B o) [(8 * iCtx, 8), (8 * iRows, 8)] s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
+  have hg := hc.sub.good
+  have hn := hc.sub.scr.nowrap
+  have hL := hdr_lt_slot w 8 (show Crt.sLink < 32 by decide)
+  have hC := hdr_lt_slot w 8 (show iCtx < 32 by decide)
+  have hR := hdr_lt_slot w 8 (show iRows < 32 by decide)
+  have hoC : 8 * sCtx + 8 ≤ Z := by have := hc.sub.lo; have := hc.sub.hi; unfold sCtx sXe sFn; unfold slot hdrBytes at *; omega
+  have hoR : 8 * sRows + 8 ≤ Z := by
+    have := hc.sub.lo; have := hc.sub.hi; unfold sRows VG.Impl.Ffdh.X86_64.Domain.sOut sFn; unfold slot hdrBytes at *; omega
+  have hlo := hc.sub.lo
+  have hhi := hc.sub.hi
+  have o1 := writeW_outside s.mem (off B o) (d := 8 * iCtx) cp (by decide)
+  have f1 : Frm (off B o) [(8 * iCtx, 8)] s.mem (s.mem.writeW (off (off B o) (8 * iCtx)) cp) :=
+    Frm.of_outside o1 (by simp)
+  have hRows' : (s.mem.writeW (off (off B o) (8 * iCtx)) cp).readW (off B (8 * sRows)) 64 = BitVec.ofNat 64 rows := by
+    change word _ B (8 * sRows) = _
+    rw [f1.word_below (L := slot w 8) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hC) (by omega) (by omega)
+      (by have := hdr_lt_slot w 0 (show sRows < 32 by decide); unfold slot hdrBytes at *; omega)]
+    exact hRows
+  have hLink' : (s.mem.writeW (off (off B o) (8 * iCtx)) cp).readW (off (off B o) (8 * Crt.sLink)) 64 = B := by
+    change word _ (off B o) (8 * Crt.sLink) = _
+    rw [o1.word (by decide) (by omega)]; exact hc.sub.link
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t =>
+      t.mem = (s.mem.writeW (off (off B o) (8 * iCtx)) cp).writeW (off (off B o) (8 * iRows)) (BitVec.ofNat 64 rows)) (by
+    unfold fromOuter
+    simp only [List.cons_append, List.nil_append]
+    xrun [State.ea, hdr, Crt.ws, hg.rdi, hdrOff, hg.scr.ld (d := 8 * Crt.sLink) hL, hc.sub.link,
+      hc.sub.scr.ld (d := 8 * sCtx) hoC, hCtx, hg.scr.st (d := 8 * iCtx) hC, hLink',
+      hc.sub.scr.ld (d := 8 * sRows) hoR, hRows', hg.scr.st (d := 8 * iRows) hR]) rfl) fun t ⟨hm, k⟩ => ?_
+  have o2 := writeW_outside (s.mem.writeW (off (off B o) (8 * iCtx)) cp) (off B o) (d := 8 * iRows)
+    (BitVec.ofNat 64 rows) (by decide)
+  rw [← hm] at o2
+  have f : Frm (off B o) [(8 * iCtx, 8), (8 * iRows, 8)] s.mem t.mem :=
+    (f1.mono (by simp)).trans (Frm.of_outside o2 (by simp))
+  refine ⟨hc.of_inner (Frm.cover f (fun r hr => ⟨(8 * 17, 8 * 15), by simp [innerR], by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> decide, by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> decide⟩))
+    k.2.2 (k.gpr (by decide)), ?_, by rw [hm]; exact word_writeW_self _ _ _ _, f, k⟩
+  rw [hm, (writeW_outside (s.mem.writeW (off (off B o) (8 * iCtx)) cp) (off B o) (d := 8 * iRows)
+    (BitVec.ofNat 64 rows) (by decide)).word (by decide) (by omega)]
+  exact word_writeW_self _ _ _ _
+
 end VG.Proof.Ffdh.X86_64.Cached
