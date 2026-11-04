@@ -27,14 +27,10 @@ variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : M
 abbrev kOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := keyOf P L m
 abbrev vOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 88) P.H.D
-abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := hPart P.R.wide P.Q P.H.D P.hB L m
+abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := hPart P.Q P.hB L m
 
 /-- HMAC's output is the hash function's. -/
-theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D := by
-  have := P.ok.hDN
-  simp only [RfcHash.mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.ok.hash, List.length_take,
-    Proof.MdStream.Md.hash, P.ok.md.digest_length]
-  omega
+theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D := hash_length P _
 
 /-- What the steps change: `scratch`, the stack below the frame, `K` and `V`. -/
 abbrev KVW {dn : Nat} (L : Lay dn) : List Region := [L.SCR, ⟨L.B, 152⟩]
@@ -56,11 +52,11 @@ theorem done_kvw {w dst : Nat} (hw : w ≤ 8192) (h : dst + P.H.D ≤ 128) :
     · exact .inr (Offset.sub_base _ (by omega))
 
 /-- `K = HMAC_K(m)`, for the message `m` of `len` bytes at `scratch + 2256`. -/
-theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256) :
+theorem hmacK_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256) :
     WP isa ((cfgOf P).hmac (Cfg.scr .rdx sMsg) len fK) t fun t' => Ctx L g m₀ t' ∧
       Frame (KVW L) t.mem t'.mem ∧ vOf P L t'.mem = vOf P L t.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
-  refine WP.mono (hmac_ok (P := P) hL hc (da := L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 0)
+  refine WP.mono (hmac_ok (P := P) hL hT hc (da := L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 0)
     (fun u hu => scr_ok hL hu (d := .rdx) (by decide) (a := 2256) (by decide))
     (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by nums)) fun t' h =>
     ⟨h.ctx, h.frame.sub (done_kvw (by decide) (by nums)), bytesAt_frame h.frame (fun r hr => by
@@ -85,75 +81,82 @@ theorem kv_done {w dst : Nat} (hL : L.Ok) (hw : w ≤ 8192) {m m' : Mem}
     · exact Offset.disjoint _ hod (by omega) (by omega)) (by nums)
 
 /-- `V = HMAC_K(V)`, HMAC's states for `K` saved. -/
-theorem hmacVS_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+theorem hmacVS_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).hmacVS t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = kOf P L t.mem ∧ vOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem) ∧
       SavedK P L t'.mem (kOf P L t'.mem) := by
-  refine WP.mono (hmacS_ok (P := P) hL hc (da := L.B + BitVec.ofNat 64 (24 + 64)) (len := P.H.D) (dst := 64)
+  refine WP.mono (hmacS_ok (P := P) hL hT hc (da := L.B + BitVec.ofNat 64 (24 + 64)) (len := P.H.D) (dst := 64)
     (fun u hu => fr_ok hL hu (d := .rdx) (by decide) (o := 64) (by decide))
     (.inl ⟨88, rfl, by omega, by nums⟩) (hL.stk_scr (by nums) (by nums)) (by nums) (by nums)) fun t' h => ?_
   have hk : kOf P L t'.mem = kOf P L t.mem := kv_done hL (by decide) h.frame (o := 24) (by decide) (.inl (by nums)) (by nums) (by nums)
   exact ⟨h.ctx, h.frame.sub (done_kvw (by decide) (by nums)), hk, h.mac, by rw [hk]; exact h.saved⟩
 
 /-- `V = HMAC_K(V)`, from the saved states for `K`, which it keeps. -/
-theorem hmacVR_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (kOf P L t.mem)) :
+theorem hmacVR_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (kOf P L t.mem)) :
     WP isa (cfgOf P).hmacVR t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = kOf P L t.mem ∧ vOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem) ∧
       SavedK P L t'.mem (kOf P L t'.mem) := by
-  refine WP.mono (hmacR_ok (P := P) hL hc hS (da := L.B + BitVec.ofNat 64 (24 + 64)) (len := P.H.D) (dst := 64)
+  refine WP.mono (hmacR_ok (P := P) hL hT hc hS (da := L.B + BitVec.ofNat 64 (24 + 64)) (len := P.H.D) (dst := 64)
     (fun u hu => fr_ok hL hu (d := .rdx) (by decide) (o := 64) (by decide))
     (.inl ⟨88, rfl, by omega, by nums⟩) (by nums) (by nums)) fun t' ⟨h, hS'⟩ => ?_
   have hk : kOf P L t'.mem = kOf P L t.mem := kv_done hL (by decide) h.frame (o := 24) (by decide) (.inl (by nums)) (by nums) (by nums)
   exact ⟨h.ctx, h.frame.sub (done_kvw (by decide) (by nums)), hk, h.mac, by rw [hk]; exact hS'⟩
 
 /-- `K = HMAC_K(m)` as `hmacK_ok`, from the saved states for `K` if `rs`. -/
-theorem hmacKB_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256) (rs : Bool)
+theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256) (rs : Bool)
     (hS : rs = true → SavedK P L t.mem (kOf P L t.mem)) :
     WP isa ((if rs then (cfgOf P).hmacR else (cfgOf P).hmac) (Cfg.scr .rdx sMsg) len fK) t fun t' =>
       Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧ vOf P L t'.mem = vOf P L t.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
   cases rs
-  · exact hmacK_ok hL hc hlen
-  · refine WP.mono (hmacR_ok (P := P) hL hc (hS rfl) (da := L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 0)
+  · exact hmacK_ok hL hT hc hlen
+  · refine WP.mono (hmacR_ok (P := P) hL hT hc (hS rfl) (da := L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 0)
       (fun u hu => scr_ok hL hu (d := .rdx) (by decide) (a := 2256) (by decide))
       (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by nums)) fun t' ⟨h, _⟩ =>
       ⟨h.ctx, h.frame.sub (done_kvw (by decide) (by nums)),
         kv_done hL (by decide) h.frame (o := 88) (by decide) (.inr (by nums)) (by nums) (by nums), h.mac⟩
 
-/-- What the message's `h` needs of the layout: unless two `V`s make a
-candidate, `h` in the frame (above its pointers for 64-byte scalars, in the
-words `L.e` counts); if they do, the digest. -/
-def HOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  P.Q ≤ L.q ∧ (P.R.wide = true → P.H.D ≤ dn) ∧ L.e = P.e
+/-- What the steps need of the layout: the scalars' bytes, and the table
+and the words above the frame's pointers of `P`. -/
+def HOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop := P.Q ≤ L.q ∧ TabL P L
+
+/-- `h`'s place fits above `K` and `V`, in the frame. -/
+theorem hB_fit (hq : HOk P L) : 24 + (P.hB - 24) + P.Q ≤ 240 + 8 * L.e := by
+  rw [hq.2.2.2]
+  cases hw : P.wide
+  · have := P.sizesA hw
+    have hF := P.hFits hw
+    have hh := hHigh_q P hw
+    simp only [RfcHash.hB, RfcHash.e, hw, hh, Bool.false_or, Bool.false_eq_true, ite_false] at ⊢
+    by_cases h64 : P.Q = 64
+    · simp only [h64, decide_true, ite_true]; omega
+    · simp only [h64, decide_false, Bool.false_eq_true, ite_false]
+      have : P.w ≠ 8 := fun h => h64 (hF.1 h)
+      have := hF.2 this; omega
+  · simp only [RfcHash.hB, RfcHash.e, hw, Bool.true_or, ite_true]; nums
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
-theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full wd : Bool}
-    (hwd : full = true → wd = P.R.wide) {ho : Nat} (hho : full = true → ho = P.hB - 24) {len : Nat}
+theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full : Bool}
+    {ho : Nat} (hho : full = true → ho = P.hB - 24) {len : Nat}
     (hlen : len = if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1) (rs : Bool)
     (hS : rs = true → SavedK P L t.mem (kOf P L t.mem)) :
-    WP isa (.seq (.block (Cfg.msgPtrs wd)) (.seq (.block (Cfg.msg P.Q P.H.D b full wd ho))
+    WP isa (.seq (.block Cfg.msgPtrs) (.seq (.block (Cfg.msg P.Q P.H.D b full ho))
       (.seq ((if rs then (cfgOf P).hmacR else (cfgOf P).hmac) (Cfg.scr .rdx sMsg) len fK) (cfgOf P).hmacVS))) t
       fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
         kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [BitVec.ofNat 8 b] ++
           (if full then Spec.Sha256.bytesAt t.mem L.d P.Q ++ hOf P L t.mem else [])) ∧
         vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) ∧ SavedK P L t'.mem (kOf P L t'.mem) := by
-  refine WP.seq (WP.mono (ptrs_ok hL hc wd) fun p ⟨hcp, hmp, hdip, hsip, hdxp⟩ => ?_)
+  have hT := hq.2
+  refine WP.seq (WP.mono (ptrs_ok hL hc) fun p ⟨hcp, hmp, hdip, hsip⟩ => ?_)
   rw [← hmp] at hS ⊢
-  have hmsg := msg_ok hL hcp hdip hsip b full wd ho hdxp (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
-    (by nums) hq.1 (fun hf hw => by
-      have hA := (hw ▸ hwd hf).symm
-      have := P.sizesA hA
-      obtain ⟨-, -, hb₃, -, -, -⟩ := hb_facts hA hq.2.2
-      have := hB_ge P
-      rw [hho hf]; exact ⟨by omega, by omega⟩)
-    (fun hf hw => by
-      have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, hq.2.1 (hw ▸ hwd hf).symm, by omega⟩)
-  have hh : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart wd P.Q P.H.D (24 + ho) L p.mem else []) =
+  have hmsg := msg_ok hL hcp hdip hsip b full ho (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
+    (by nums) hq.1 (fun hf => by rw [hho hf]; exact hB_fit hq)
+  have hh : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart P.Q (24 + ho) L p.mem else []) =
       (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hOf P L p.mem else []) := by
     cases full
     · rfl
     · have := hB_ge P
-      rw [hwd rfl, hho rfl, show 24 + (P.hB - 24) = P.hB by omega]
+      rw [hho rfl, show 24 + (P.hB - 24) = P.hB by omega]
   rw [hh] at hmsg
   refine WP.seq (WP.mono hmsg fun u ⟨hcu, hfu, hbu⟩ => ?_)
   have hku : kOf P L u.mem = kOf P L p.mem := bytesAt_frame hfu (fun r hr => by
@@ -162,10 +165,10 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
   have hSu : rs = true → SavedK P L u.mem (kOf P L u.mem) := fun h => hku ▸ (hS h).frame hfu fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint _ (by nums) (by nums) (by nums)
-  refine WP.seq (WP.mono (hmacKB_ok (P := P) hL hcu (len := len)
+  refine WP.seq (WP.mono (hmacKB_ok (P := P) hL hT hcu (len := len)
     (by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> nums) rs hSu)
     fun w ⟨hcw, hfw, hvw, hkw⟩ => ?_)
-  refine WP.mono (hmacVS_ok hL hcw) fun t' ⟨hc', hf', hk', hv', hs'⟩ => ⟨hc', ?_, ?_, ?_, hs'⟩
+  refine WP.mono (hmacVS_ok hL hT hcw) fun t' ⟨hc', hf', hk', hv', hs'⟩ => ⟨hc', ?_, ?_, ?_, hs'⟩
   · exact ((hfu.sub (kvw_of fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact .inl (Offset.sub_base _ (by nums)))).trans hfw).trans hf'
@@ -185,9 +188,9 @@ theorem rekeyFull_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) ∧ SavedK P L t'.mem (kOf P L t'.mem) := by
   unfold Cfg.rekeyFull
   split
-  · exact rekey_gen (full := true) hL hq hc (fun _ => rfl) (ho := (cfgOf P).fHo) (fun _ => fHo_eq P) rfl false
+  · exact rekey_gen (full := true) hL hq hc (ho := (cfgOf P).fHo) (fun _ => fHo_eq P) rfl false
       (fun h => absurd h (by decide))
-  · exact rekey_gen (full := true) hL hq hc (fun _ => rfl) (ho := (cfgOf P).fHo) (fun _ => fHo_eq P) rfl true
+  · exact rekey_gen (full := true) hL hq hc (ho := (cfgOf P).fHo) (fun _ => fHo_eq P) rfl true
       fun _ => hS ‹_›
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
@@ -195,7 +198,7 @@ theorem rekey_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).rekey t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [0]) ∧
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) ∧ SavedK P L t'.mem (kOf P L t'.mem) :=
-  WP.mono (rekey_gen (b := 0) (full := false) (wd := false) hL hq hc (fun h => absurd h (by decide)) (ho := fH)
+  WP.mono (rekey_gen (b := 0) (full := false) hL hq hc (ho := fH)
     (fun h => absurd h (by decide)) rfl false (fun h => absurd h (by decide)))
     fun _ h => ⟨h.1, h.2.1, by rw [h.2.2.1]; simp, h.2.2.2⟩
 
