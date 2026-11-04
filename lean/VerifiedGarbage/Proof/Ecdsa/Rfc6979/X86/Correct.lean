@@ -457,30 +457,39 @@ theorem rfcT_of : RfcT (cfgOf P) :=
     m8 := h.m8,
     mD := h.mD }
 
+variable {c : Cfg}
+
+/-- What the code needs of the functions it may call through the table:
+none writes `esp` but through its frames. -/
+abbrev FnsNs (f : Impl.RsaOaep.X86.Fns) : Prop :=
+  (∀ q ∈ f.init, NoSp q.2) ∧ (∀ q ∈ f.upd, NoSp q.2) ∧ (∀ q ∈ f.fin, NoSp q.2)
+
 theorem okB_noSp {is : List Instr} (h : OkB is) : NoSp (.block is : Prog isa) := NoSp.of_all h
 
 theorem tcall_ns {j : Nat} {ts : List (String × Prog isa)} {rs : List Reg} (h : ∀ q ∈ ts, NoSp q.2) :
-    NoSp ((cfgOf P).tcall j ts rs) :=
+    NoSp (c.tcall j ts rs) :=
   noSp_seq (NoSp.of_all rfl) (noSp_seq (NoSp.of_all rfl) (noSp_frame rfl rfl (icalls_noSp rfl h)))
 
-theorem initCall_ns (o : Nat) : NoSp ((cfgOf P).initCall o) := noSp_seq (NoSp.of_all rfl) (tcall_ns P P.fInit)
+theorem initCall_ns (hf : FnsNs c.f) (o : Nat) : NoSp (c.initCall o) := noSp_seq (NoSp.of_all rfl) (tcall_ns hf.1)
 
-theorem updCall_ns (o cnt : Nat) {dataA : List Instr}
-    (hd : (∃ a, dataA = (cfgOf P).scr .edx a) ∨ (∃ a, dataA = Cfg.fr .edx a)) (len : Nat) :
-    NoSp ((cfgOf P).updCall o cnt dataA len) := by
-  refine noSp_seq (NoSp.of_all ?_) (tcall_ns P P.fUpd)
+theorem updCall_ns (hf : FnsNs c.f) (o cnt : Nat) {dataA : List Instr}
+    (hd : (∃ a, dataA = c.scr .edx a) ∨ (∃ a, dataA = Cfg.fr .edx a)) (len : Nat) :
+    NoSp (c.updCall o cnt dataA len) := by
+  refine noSp_seq (NoSp.of_all ?_) (tcall_ns hf.2.1)
   rcases hd with ⟨a, rfl⟩ | ⟨a, rfl⟩ <;> rfl
 
-theorem finCall_ns (o cnt : Nat) : NoSp ((cfgOf P).finCall o cnt) := noSp_seq (NoSp.of_all rfl) (tcall_ns P P.fFin)
+theorem finCall_ns (hf : FnsNs c.f) (o cnt : Nat) : NoSp (c.finCall o cnt) :=
+  noSp_seq (NoSp.of_all rfl) (tcall_ns hf.2.2)
 
-theorem hinit_ns : NoSp (cfgOf P).hinit :=
-  noSp_seq (initCall_ns P _) (noSp_seq (initCall_ns P _) (noSp_seq (okB_noSp (rfcT_of P).iPadI) (noSp_seq
-    (updCall_ns P _ _ (.inl ⟨_, rfl⟩) _) (noSp_seq (okB_noSp (rfcT_of P).iPadO) (updCall_ns P _ _ (.inl ⟨_, rfl⟩) _)))))
+theorem hinit_ns (hT : RfcT c) (hf : FnsNs c.f) : NoSp c.hinit :=
+  noSp_seq (initCall_ns hf _) (noSp_seq (initCall_ns hf _) (noSp_seq (okB_noSp hT.iPadI) (noSp_seq
+    (updCall_ns hf _ _ (.inl ⟨_, rfl⟩) _) (noSp_seq (okB_noSp hT.iPadO) (updCall_ns hf _ _ (.inl ⟨_, rfl⟩) _)))))
 
-theorem hfin_ns (len : Nat) {dst : Nat} (hd : dst = fK ∨ dst = fV) : NoSp ((cfgOf P).hfin len dst) :=
-  noSp_seq (finCall_ns P _ _) (noSp_seq (updCall_ns P _ _ (.inl ⟨_, rfl⟩) _)
-    (noSp_seq (finCall_ns P _ _) (hd.elim (fun h => by subst h; exact okB_noSp (rfcT_of P).iCopyK)
-      (fun h => by subst h; exact okB_noSp (rfcT_of P).iCopyV))))
+theorem hfin_ns (hT : RfcT c) (hf : FnsNs c.f) (len : Nat) {dst : Nat} (hd : dst = fK ∨ dst = fV) :
+    NoSp (c.hfin len dst) :=
+  noSp_seq (finCall_ns hf _ _) (noSp_seq (updCall_ns hf _ _ (.inl ⟨_, rfl⟩) _)
+    (noSp_seq (finCall_ns hf _ _) (hd.elim (fun h => by subst h; exact okB_noSp hT.iCopyK)
+      (fun h => by subst h; exact okB_noSp hT.iCopyV))))
 
 theorem blkApp_ns {a b : List Instr} (ha : NoSp (.block a : Prog isa)) (hb : NoSp (.block b : Prog isa)) :
     NoSp (.block (a ++ b) : Prog isa) := fun i hi => by
@@ -493,65 +502,76 @@ theorem copyN_ns (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) :
   simp only [instrs, Cfg.copyN, List.mem_flatMap, List.mem_range, List.mem_cons, List.not_mem_nil, or_false] at hi
   obtain ⟨j, -, rfl | rfl⟩ := hi <;> rfl
 
-theorem copyStates_ns (b : Bool) : NoSp (.block ((cfgOf P).scrPtr ++ Cfg.copyStates b) : Prog isa) :=
+theorem copyStates_ns (c : Cfg) (b : Bool) : NoSp (.block (c.scrPtr ++ Cfg.copyStates b) : Prog isa) :=
   blkApp_ns (NoSp.of_all rfl) (by cases b <;> exact copyN_ns _ _ _ _ _)
 
 section Mac
 
-variable {dataA : List Instr} (hd : (∃ a, dataA = (cfgOf P).scr .edx a) ∨ (∃ a, dataA = Cfg.fr .edx a))
-  (len : Nat) {dst : Nat} (hdst : dst = fK ∨ dst = fV)
-include hd hdst
+variable (hT : RfcT c) (hf : FnsNs c.f) {dataA : List Instr}
+  (hd : (∃ a, dataA = c.scr .edx a) ∨ (∃ a, dataA = Cfg.fr .edx a)) (len : Nat) {dst : Nat}
+  (hdst : dst = fK ∨ dst = fV)
+include hT hf hd hdst
 
-theorem hmac_ns : NoSp ((cfgOf P).hmac dataA len dst) :=
-  noSp_seq (hinit_ns P) (noSp_seq (updCall_ns P _ _ hd _) (hfin_ns P _ hdst))
+theorem hmac_ns : NoSp (c.hmac dataA len dst) :=
+  noSp_seq (hinit_ns hT hf) (noSp_seq (updCall_ns hf _ _ hd _) (hfin_ns hT hf _ hdst))
 
-theorem hmacS_ns : NoSp ((cfgOf P).hmacS dataA len dst) :=
-  noSp_seq (hinit_ns P) (noSp_seq (copyStates_ns P _) (noSp_seq (updCall_ns P _ _ hd _) (hfin_ns P _ hdst)))
+theorem hmacS_ns : NoSp (c.hmacS dataA len dst) :=
+  noSp_seq (hinit_ns hT hf) (noSp_seq (copyStates_ns c _) (noSp_seq (updCall_ns hf _ _ hd _) (hfin_ns hT hf _ hdst)))
 
-theorem hmacR_ns : NoSp ((cfgOf P).hmacR dataA len dst) :=
-  noSp_seq (copyStates_ns P _) (noSp_seq (updCall_ns P _ _ hd _) (hfin_ns P _ hdst))
+theorem hmacR_ns : NoSp (c.hmacR dataA len dst) :=
+  noSp_seq (copyStates_ns c _) (noSp_seq (updCall_ns hf _ _ hd _) (hfin_ns hT hf _ hdst))
 
 end Mac
 
-theorem hmacVS_ns : NoSp (cfgOf P).hmacVS := hmacS_ns P (.inr ⟨_, rfl⟩) _ (.inr rfl)
+section Body
 
-theorem hmacVR_ns : NoSp (cfgOf P).hmacVR := hmacR_ns P (.inr ⟨_, rfl⟩) _ (.inr rfl)
+variable (hT : RfcT c) (hf : FnsNs c.f)
+include hT hf
 
-theorem rekeyFull_ns (b : Nat) (hb : b < 2) : NoSp ((cfgOf P).rekeyFull b) := by
+theorem hmacVS_ns : NoSp c.hmacVS := hmacS_ns hT hf (.inr ⟨_, rfl⟩) _ (.inr rfl)
+
+theorem hmacVR_ns : NoSp c.hmacVR := hmacR_ns hT hf (.inr ⟨_, rfl⟩) _ (.inr rfl)
+
+theorem rekeyFull_ns (b : Nat) (hb : b < 2) : NoSp (c.rekeyFull b) := by
   unfold Cfg.rekeyFull
   obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
-  · exact noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp (rfcT_of P).iMsgF₀)
-      (noSp_seq (hmac_ns P (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns P)))
-  · exact noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp (rfcT_of P).iMsgF₁)
-      (noSp_seq (hmacR_ns P (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns P)))
+  · exact noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp hT.iMsgF₀)
+      (noSp_seq (hmac_ns hT hf (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns hT hf)))
+  · exact noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp hT.iMsgF₁)
+      (noSp_seq (hmacR_ns hT hf (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns hT hf)))
 
-theorem rekey_ns : NoSp (cfgOf P).rekey :=
-  noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp (rfcT_of P).iMsgN)
-    (noSp_seq (hmac_ns P (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns P)))
+theorem rekey_ns : NoSp c.rekey :=
+  noSp_seq (NoSp.of_all rfl) (noSp_seq (okB_noSp hT.iMsgN)
+    (noSp_seq (hmac_ns hT hf (.inl ⟨_, rfl⟩) _ (.inl rfl)) (hmacVS_ns hT hf)))
 
-theorem candW_ns : ∀ k, k ≤ 8 → NoSp ((cfgOf P).candW k)
+theorem candW_ns : ∀ k, k ≤ 8 → NoSp (c.candW k)
   | 0, _ => NoSp.of_all rfl
-  | k + 1, hk => noSp_seq (candW_ns k (by omega)) (noSp_seq (hmacVR_ns P)
-      (okB_noSp ((rfcT_of P).iKeepV k (by omega))))
+  | k + 1, hk => noSp_seq (candW_ns k (by omega)) (noSp_seq (hmacVR_ns hT hf)
+      (okB_noSp (hT.iKeepV k (by omega))))
 
-theorem cand_ns : NoSp (cfgOf P).cand := by
+theorem cand_ns : NoSp c.cand := by
   unfold Cfg.cand
   split
-  · exact noSp_seq (candW_ns P _ (rfcT_of P).m8) (okB_noSp (rfcT_of P).iCandTop)
-  · exact hmacVR_ns P
+  · exact noSp_seq (candW_ns hT hf _ hT.m8) (okB_noSp hT.iCandTop)
+  · exact hmacVR_ns hT hf
 
-theorem tryOne_ns : NoSp (cfgOf P).tryOne :=
-  noSp_seq (cand_ns P) (noSp_seq (okB_noSp (rfcT_of P).iCoreArgs) (noSp_seq
-    (noSp_frame rfl rfl (noSp_call P.R.coreNs)) (noSp_seq (NoSp.of_all rfl)
-    (noSp_ite (noSp_seq (rekey_ns P) (NoSp.of_all rfl)) (NoSp.of_all rfl)))))
+theorem tryOne_ns (hcore : NoSp c.coreC) : NoSp c.tryOne :=
+  noSp_seq (cand_ns hT hf) (noSp_seq (okB_noSp hT.iCoreArgs) (noSp_seq
+    (noSp_frame rfl rfl (noSp_call hcore)) (noSp_seq (NoSp.of_all rfl)
+    (noSp_ite (noSp_seq (rekey_ns hT hf) (NoSp.of_all rfl)) (NoSp.of_all rfl)))))
 
 /-- No instruction of the body writes `esp`: not those of the functions it
-calls, by what `P` knows of them, nor its own, which each curve's file
+calls, which `hf` and `hcore` say, nor its own, which each curve's file
 checks for each size of hash function (`RfcT`). -/
-theorem body_nosp : NoSp (cfgOf P).body :=
-  noSp_seq (okB_noSp (rfcT_of P).iDigestPtr) (noSp_seq (okB_noSp (rfcT_of P).iPrep)
-    (noSp_seq (rekeyFull_ns P 0 (by decide)) (noSp_seq (rekeyFull_ns P 1 (by decide))
-    (noSp_seq (NoSp.of_all rfl) (noSp_seq (noSp_loop (tryOne_ns P)) (okB_noSp (rfcT_of P).iWipe))))))
+theorem body_noSp' (hcore : NoSp c.coreC) : NoSp c.body :=
+  noSp_seq (okB_noSp hT.iDigestPtr) (noSp_seq (okB_noSp hT.iPrep)
+    (noSp_seq (rekeyFull_ns hT hf 0 (by decide)) (noSp_seq (rekeyFull_ns hT hf 1 (by decide))
+    (noSp_seq (NoSp.of_all rfl) (noSp_seq (noSp_loop (tryOne_ns hT hf hcore)) (okB_noSp hT.iWipe))))))
+
+end Body
+
+/-- No instruction of the body for `P` writes `esp`. -/
+theorem body_nosp : NoSp (cfgOf P).body := body_noSp' (rfcT_of P) ⟨P.fInit, P.fUpd, P.fFin⟩ P.R.coreNs
 
 end NoSp
 
