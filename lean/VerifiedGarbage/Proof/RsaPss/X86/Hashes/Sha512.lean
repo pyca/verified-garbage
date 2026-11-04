@@ -38,7 +38,7 @@ theorem len512 (n : Nat) (hn : n < 2 ^ 29) :
 
 theorem sha384Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.sha384M) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-384, as RSASSA-PSS on x86 uses it. -/
 def sha384 : PssHash where
@@ -56,7 +56,7 @@ def sha384 : PssHash where
 
 theorem sha512Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.sha512M') := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-512, as RSASSA-PSS on x86 uses it. -/
 def sha512 : PssHash where
@@ -74,7 +74,7 @@ def sha512 : PssHash where
 
 theorem sha512_224Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.sha512_224M) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-512/224, as RSASSA-PSS on x86 uses it. -/
 def sha512_224 : PssHash where
@@ -92,7 +92,7 @@ def sha512_224 : PssHash where
 
 theorem sha512_256Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.sha512_256M) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- SHA-512/256, as RSASSA-PSS on x86 uses it. -/
 def sha512_256 : PssHash where

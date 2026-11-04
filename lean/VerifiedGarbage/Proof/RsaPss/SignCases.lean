@@ -44,12 +44,29 @@ theorem sign_zero (rest eB pB qB dPB dQB qInvB mHash salt : List Byte) :
     sign G G (0 :: rest) eB pB qB dPB dQB qInvB mHash salt = .invalid :=
   sign_zero₂ G G ..
 
-theorem sign_long {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
-    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + salt.length + 2) :
-    sign G G nB eB pB qB dPB dQB qInvB mHash salt = .invalid := by
+theorem sign_long₂ (H : Hash) {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
+    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < H.len + salt.length + 2) :
+    sign H G nB eB pB qB dPB dQB qInvB mHash salt = .invalid := by
   simp only [sign, encodeK, encode]
   rw [ifp (Or.inr h)]
   rfl
+
+theorem sign_long {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
+    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + salt.length + 2) :
+    sign G G nB eB pB qB dPB dQB qInvB mHash salt = .invalid :=
+  sign_long₂ G G eB pB qB dPB dQB qInvB mHash salt h
+
+theorem sign_eq₂ (H : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest eB pB qB dPB dQB qInvB mHash salt : List Byte}
+    (h0 : n₀ ≠ 0) (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
+    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
+    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
+    (hfit : H.len + salt.length + 2 ≤ emLen) :
+    sign H G (n₀ :: rest) eB pB qB dPB dQB qInvB mHash salt =
+      Rsa.privateChecked (n₀ :: rest) eB ((List.range (n₀ :: rest).length).map
+        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
+          (Mgf1.mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits))))
+        pB qB dPB dQB qInvB := by
+  simp only [sign, encodeK_eq₂ G H hH hG h0 hm hb he hlo hdb hfit]
 
 theorem sign_eq (hG : Valid G) {n₀ : Byte} {rest eB pB qB dPB dQB qInvB mHash salt : List Byte} (h0 : n₀ ≠ 0)
     (hm : mHash.length = G.len) {emBits emLen lo db : Nat}
@@ -60,7 +77,7 @@ theorem sign_eq (hG : Valid G) {n₀ : Byte} {rest eB pB qB dPB dQB qInvB mHash 
       Rsa.privateChecked (n₀ :: rest) eB ((List.range (n₀ :: rest).length).map
         (emT lo db salt.length salt (G.hash (zeros 8 ++ mHash ++ salt))
           (Mgf1.mgf1 G (G.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits))))
-        pB qB dPB dQB qInvB := by
-  simp only [sign, encodeK_eq G hG h0 hm hb he hlo hdb hfit]
+        pB qB dPB dQB qInvB :=
+  sign_eq₂ G G hG hG h0 hm hb he hlo hdb hfit
 
 end VG.Proof.RsaPss
