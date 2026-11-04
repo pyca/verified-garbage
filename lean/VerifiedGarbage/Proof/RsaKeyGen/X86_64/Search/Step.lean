@@ -354,7 +354,7 @@ theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSear
   have hu : candUsed p original used = ((searchRand original).drop used).length - rest.length := by
     simp only [candUsed, hres, List.length_drop, h.rand_length]
   unfold tailOf at hfinal
-  rw [Search.search_prime hr hres, Spec.Entropy.Result.consume] at hfinal
+  rw [VG.Proof.RsaKeyGen.Search.search_prime hr hres, Spec.Entropy.Result.consume] at hfinal
   subst hfinal
   refine h.done_after _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -435,5 +435,64 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
         ta, t16, tc, sa, t2a, e1, e2]
       rw [hreq, Nat.max_eq_left (by omega), Nat.min_eq_right (by omega)]
       rfl
+
+/-- The short tape's guard: whether the octets left reach the budget. -/
+theorem short_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (.block [.mov .rax (.mem (field 13)), .alu .cmp .rax (.mem (field 2))]) s fun t =>
+      (t.gpr .rax = BitVec.ofNat 64 (p.randLen - used) ∧
+        eval .ae t = some (decide (primeEntropy p.len ≤ p.randLen - used)) ∧ t.mem = s.mem) ∧
+      Keep [.rax] s t := by
+  obtain ⟨hl, -, -⟩ := h.frame_in (t := s) rfl
+  have hf := h.callFacts
+  have hL : p.len ≤ 512 := hf.len.2.1
+  have h2 := h.slot (j := 2) (v := BitVec.ofNat 64 (primeEntropy p.len)) (by simp [SearchPublic.headers])
+  have h13 := h.slot (j := 13) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h2 h13
+  have ta := ofNat_toNat_lt (a := p.randLen - used) (by have := hf.rand64; omega)
+  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by unfold primeEntropy; omega)
+  refine WP.keep [.rax] ?_ rfl
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval,
+    h.r12, hl 104 (by decide), hl 16 (by decide), h2, h13, ta, tc]
+  by_cases hc : primeEntropy p.len ≤ p.randLen - used
+  · simp only [show ¬p.randLen - used < primeEntropy p.len by omega, decide_false, Bool.not_false, hc, decide_true]
+  · simp only [show p.randLen - used < primeEntropy p.len by omega, decide_true, Bool.not_true, hc, decide_false]
+
+theorem search_short {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat}
+    (h : SearchIter p original final used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s)
+    (hr : remaining ≠ 0)
+    (hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) = none) :
+    WP isa short s (SearchDone p original final) := by
+  obtain ⟨h, tr, hfinal⟩ := h
+  unfold tailOf at hfinal
+  rw [VG.Proof.RsaKeyGen.Search.search_short hr hres, List.length_drop, h.rand_length] at hfinal
+  unfold short
+  refine WP.seq (WP.mono (short_guard h) fun u ⟨⟨hra, hae, hmu⟩, ku⟩ => ?_)
+  have hu := h.keep ku hmu (by decide)
+  refine WP.ite _ hae (fun hb => ?_) (fun hb => ?_)
+  · have hb := of_decide_eq_true hb
+    rw [ite_eq_left_of_eq_true _ _ (eq_true hb)] at hfinal
+    exact search_exhausted hu (by rw [hfinal]; rfl)
+  · have hb := of_decide_eq_false hb
+    rw [ite_eq_right_of_eq_false _ _ (eq_false hb)] at hfinal
+    subst hfinal
+    refine WP.mono (request_ok hu hra) fun t ⟨ht, kt⟩ => ?_
+    refine hu.done_after _ (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro _ (rfl | rfl) <;> dsimp only <;> decide) (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro _ (rfl | rfl) <;> dsimp only <;> decide) ht kt
+      (by intro r hr; cases r <;> simp_all [calleeSaved]) ?_ rfl ?_ rfl ?_
+    · simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
+      rw [hu.slot (j := 0) (v := BitVec.ofNat 64 remaining) (by simp [SearchPublic.headers])]
+      rfl
+    · simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
+      rw [hu.slot (j := 16) (v := BitVec.ofNat 64 used) (by simp [SearchPublic.headers])]
+      rfl
+    · have ho := hc.2.1
+      rw [hres] at ho
+      rw [hmu]
+      exact ho
 
 end VG.Proof.RsaKeyGen.X86_64.Search
