@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Mid
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
@@ -83,12 +84,12 @@ theorem check_ok {t : State} (h : Base Sp (vP D) s t) {a : Byte} {pos : Nat} {va
     (k : ∀ t', Base Sp (vP D) s t' → t'.mem = t.mem →
       (∀ r ∈ Reg.r14 :: fx ++ hiRegs ++ ([.r8, .r26, .r27, .r28, .r29] : List Reg), t'.gpr r = t.gpr r) →
       t'.gpr .r24 = accW a val (dN - pos - 1) (anyL s) (stackArg s 0) →
-      t'.gpr .r25 = BitVec.ofNat 64 (dN - pos - 1) → WP isa rest t' Q) :
+      t'.gpr .r25 = BitVec.ofNat 64 (dN - pos - 1) → t'.syms = t.syms → WP isa rest t' Q) :
     WP isa (.seq (.block posCheck) (.seq lenCheck rest)) t Q :=
-  WP.seq (WP.mono (posCheck_ok L h ha h8 hp h9) fun t₈ ⟨b₈, k₈, x24, x25⟩ =>
-    WP.seq (WP.mono (lenCheck_ok L b₈ x24 x25) fun w ⟨b, q, x⟩ => k w b (by rw [q.mem, k₈.mem])
+  WP.seq (WP.mono_syms (posCheck_ok L h ha h8 hp h9) fun t₈ ⟨b₈, k₈, x24, x25⟩ y₈ =>
+    WP.seq (WP.mono_syms (lenCheck_ok L b₈ x24 x25) fun w ⟨b, q, x⟩ yw => k w b (by rw [q.mem, k₈.mem])
       (fun r hr => by rw [q.gpr r (by revert r; decide), k₈.gpr r (by revert r; decide)])
-      (by rw [x]; rfl) (by rw [q.get .r25, x25])))
+      (by rw [x]; rfl) (by rw [q.get .r25, x25]) (yw.trans y₈)))
 
 end
 
