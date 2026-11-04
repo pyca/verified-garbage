@@ -369,16 +369,13 @@ theorem repr_keep {m m' : Mem} {ws : List Region} (hf : Frame ws m m') {o : Nat}
   P.hH.congr m m' _ _ (fun i hi => hf.bytes (R := cR s₀ o P.H.S) hd (by show P.H.S ≤ 2 ^ 64; have := (sizes P).S192; omega) hi) h
 
 /-- The streaming `init` of the state at `scratch + o`. -/
-theorem initCall_ok {s t : State} (h : St P s₀ s t) (hsy : t.syms = s₀.syms) {o : Nat} (ho : o + P.H.S ≤ 384) :
-    WP isa (P.c.initCall o) t fun t' => St P s₀ s t' ∧ t'.syms = s₀.syms ∧
-      P.hH.SH.Repr t'.mem (cA s₀ o) [] ∧ Frame [cR s₀ o P.H.S, below s₀.sp P.X] t.mem t'.mem := by
+theorem initT_ok {s t₁ : State} (S₁ : St P s₀ s t₁) (sy₁ : t₁.syms = s₀.syms) {o : Nat} (ho : o + P.H.S ≤ 384)
+    (h0 : t₁.gpr .a0 = cA s₀ o) :
+    WP isa (tcall 0 P.c.f.init) t₁ fun t' => St P s₀ s t' ∧ t'.syms = s₀.syms ∧
+      P.hH.SH.Repr t'.mem (cA s₀ o) [] ∧ Frame [cR s₀ o P.H.S, below s₀.sp P.X] t₁.mem t'.mem := by
   have hz := sizes P
   have hX := hz.X
-  unfold Cfg.initCall
-  refine WP.seq (WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => WP.block_nil fun sy₁ => ?_))
-  have S₁ := h.upd (by decide) u₁
-  have h0 : t₁.gpr .a0 = cA s₀ o := by rw [u₁.gpr, h.kr.s0]
-  refine tcall_ok hp S₁.kr (sy₁.trans hsy) (k := 0) (by decide) hp.bo.i
+  refine tcall_ok hp S₁.kr sy₁ (k := 0) (by decide) hp.bo.i
     (by rw [Nat.mul_zero, BitVec.add_zero]; exact hp.bm.1) fun t₂ u₂ sy₂ => ?_
   have S₂ := S₁.upd (by decide) u₂
   refine WP.of_syms (P.hH.callInit_ok (s := t₂) (st := cA s₀ o) (by rw [u₂.other _ (by decide), h0])
@@ -395,13 +392,67 @@ theorem initCall_ok {s t : State} (h : St P s₀ s t) (hsy : t.syms = s₀.syms)
     · exact .inl (st_sub (by omega))
     · exact .inr ⟨_, by rw [hsp₂], hX.1⟩
   refine ⟨S₂.call hp hrd hwr hsp hcs hf hw, sy₃.trans sy₂, hr, ?_⟩
-  have e : t₂.mem = t.mem := by rw [u₂.mem, u₁.mem]
+  have e : t₂.mem = t₁.mem := by rw [u₂.mem]
   rw [← e]
   refine hf.sub fun r hr => ?_
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, by simp, fun x hx => hx⟩
   · exact ⟨below s₀.sp P.X, by simp, by rw [hsp₂]; exact below_sub hX.1 (by have := hp.spX; have := s₀.sp.isLt; omega)⟩
+
+/-- The streaming `init` of the state at `scratch + o`. -/
+theorem initCall_ok {s t : State} (h : St P s₀ s t) (hsy : t.syms = s₀.syms) {o : Nat} (ho : o + P.H.S ≤ 384) :
+    WP isa (P.c.initCall o) t fun t' => St P s₀ s t' ∧ t'.syms = s₀.syms ∧
+      P.hH.SH.Repr t'.mem (cA s₀ o) [] ∧ Frame [cR s₀ o P.H.S, below s₀.sp P.X] t.mem t'.mem := by
+  unfold Cfg.initCall
+  refine WP.seq (WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => WP.block_nil fun sy₁ => ?_))
+  have e : t₁.mem = t.mem := u₁.mem
+  rw [← e]
+  exact initT_ok hp (h.upd (by decide) u₁) (sy₁.trans hsy) ho (by rw [u₁.gpr, h.kr.s0])
+
+/-- The streaming `update` of the state at `scratch + o`, which holds `cnt`
+bytes, with the data `len` bytes at `off(base)`. -/
+theorem updT_ok {s t₄ : State} (S₄ : St P s₀ s t₄) (sy₄ : t₄.syms = s₀.syms) {o cnt : Nat} (ho : o + P.H.S ≤ 384)
+    {base : Reg} {off len : Nat} (hd : DatOk P base off len) (g0 : t₄.gpr .a0 = cA s₀ o)
+    (g1 : t₄.gpr .a1 = BitVec.ofNat 64 cnt) (g2 : t₄.gpr .a2 = pA s₀ (base, off, len)) (g3 : (t₄.gpr .a3).toNat = len) :
+    WP isa (tcall 1 P.c.f.upd) t₄ fun t' => St P s₀ s t' ∧ t'.syms = s₀.syms ∧
+      (∀ m, P.hH.SH.Repr t₄.mem (cA s₀ o) m → cnt = m.length →
+        P.hH.SH.Repr t'.mem (cA s₀ o) (m ++ bytesAt t₄.mem (pA s₀ (base, off, len)) len)) ∧
+      Frame [cR s₀ o P.H.S, below s₀.sp P.X] t₄.mem t'.mem := by
+  have hz := sizes P
+  have hX := hz.X
+  refine tcall_ok hp S₄.kr sy₄ (k := 1) (by decide) hp.bo.u hp.bm.2.1 fun t₅ u₅ sy₅ => ?_
+  have S₅ := S₄.upd (by decide) u₅
+  have hsp₅ : t₅.sp = s₀.sp := S₅.kr.sp
+  refine WP.of_syms (P.hH.callUpd_ok (s := t₅) (st := cA s₀ o) (dat := pA s₀ (base, off, len)) (len := len)
+    (by rw [u₅.other _ (by decide), g0]) (by rw [u₅.other _ (by decide), g2]) (by rw [u₅.other _ (by decide), g3])
+    (hd.st hp ho) (by rw [hsp₅]; exact hp.al) (by rw [hsp₅]; have := hp.spX; omega)
+    (below_st hp S₅.kr hX.1 (st_sub (by omega))) (hd.below hp S₅.kr hX.1)
+    (VG.Covers.of_sub fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hd.cov hp S₅.kr
+      · exact cov_scr hp S₅.kr (by omega))
+    (VG.Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact covW_scr hp S₅.kr (by omega))
+    fun t₆ hrd hwr hsp hf hcs hr sy₆ => ?_)
+  have hw : ∀ r ∈ [cR s₀ o P.H.S] ++ [below t₅.sp P.H.F],
+      Region.Sub r (stR s₀) ∨ ∃ n, r = below s₀.sp n ∧ n ≤ P.X := fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact .inl (st_sub (by omega))
+    · exact .inr ⟨_, by rw [hsp₅], hX.1⟩
+  have e : t₅.mem = t₄.mem := by rw [u₅.mem]
+  refine ⟨S₅.call hp hrd hwr hsp hcs hf hw, sy₆.trans sy₅, fun m hm hl => ?_, ?_⟩
+  · have := hr m (by rw [e]; exact hm) (by rw [u₅.other _ (by decide), g1, hl])
+    rwa [e] at this
+  · rw [← e]
+    refine hf.sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, by simp, fun x hx => hx⟩
+    · exact ⟨below s₀.sp P.X, by simp, by
+        rw [hsp₅]; exact below_sub hX.1 (by have := hp.spX; have := s₀.sp.isLt; omega)⟩
 
 /-- The streaming `update` of the state at `scratch + o`, which holds `cnt`
 bytes, with the data `len` bytes at `off(base)`. -/
@@ -424,46 +475,12 @@ theorem updCall_ok {s t : State} (h : St P s₀ s t) (hsy : t.syms = s₀.syms) 
     rcases hd with h' | ⟨rfl, -⟩
     · rcases h'.reg with e | e <;> (simp only at e; subst e; decide)
     · decide
-  have g0 : t₄.gpr .a0 = cA s₀ o := by
-    upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [h.kr.s0]
-  have g1 : t₄.gpr .a1 = BitVec.ofNat 64 cnt := by
-    upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-  have g2 : t₄.gpr .a2 = pA s₀ (base, off, len) := by
-    rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
-  have g3 : (t₄.gpr .a3).toNat = len := by
-    rw [u₄.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  refine tcall_ok hp S₄.kr (sy₄.trans hsy) (k := 1) (by decide) hp.bo.u hp.bm.2.1 fun t₅ u₅ sy₅ => ?_
-  have S₅ := S₄.upd (by decide) u₅
-  have hsp₅ : t₅.sp = s₀.sp := S₅.kr.sp
-  refine WP.of_syms (P.hH.callUpd_ok (s := t₅) (st := cA s₀ o) (dat := pA s₀ (base, off, len)) (len := len)
-    (by rw [u₅.other _ (by decide), g0]) (by rw [u₅.other _ (by decide), g2]) (by rw [u₅.other _ (by decide), g3])
-    (hd.st hp ho) (by rw [hsp₅]; exact hp.al) (by rw [hsp₅]; have := hp.spX; omega)
-    (below_st hp S₅.kr hX.1 (st_sub (by omega))) (hd.below hp S₅.kr hX.1)
-    (VG.Covers.of_sub fun r hr => by
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact hd.cov hp S₅.kr
-      · exact cov_scr hp S₅.kr (by omega))
-    (VG.Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact covW_scr hp S₅.kr (by omega))
-    fun t₆ hrd hwr hsp hf hcs hr sy₆ => ?_)
-  have hw : ∀ r ∈ [cR s₀ o P.H.S] ++ [below t₅.sp P.H.F],
-      Region.Sub r (stR s₀) ∨ ∃ n, r = below s₀.sp n ∧ n ≤ P.X := fun r hr => by
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact .inl (st_sub (by omega))
-    · exact .inr ⟨_, by rw [hsp₅], hX.1⟩
-  have e : t₅.mem = t.mem := by rw [u₅.mem, m₄]
-  refine ⟨S₅.call hp hrd hwr hsp hcs hf hw, sy₆.trans sy₅, fun m hm hl => ?_, ?_⟩
-  · have := hr m (by rw [e]; exact hm) (by rw [u₅.other _ (by decide), g1, hl])
-    rwa [e] at this
-  · rw [← e]
-    refine hf.sub fun r hr => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, by simp, fun x hx => hx⟩
-    · exact ⟨below s₀.sp P.X, by simp, by
-        rw [hsp₅]; exact below_sub hX.1 (by have := hp.spX; have := s₀.sp.isLt; omega)⟩
+  rw [← m₄]
+  refine updT_ok hp S₄ (sy₄.trans hsy) ho hd ?_ ?_ ?_ ?_
+  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [h.kr.s0]
+  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+  · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
+  · rw [u₄.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
 
 /-- Where `finalize` may write its digest: the inner digest's place in
 `scratch`, or the frame after the save area. -/
@@ -472,25 +489,20 @@ def OutOk (P : Rfc) (base : Reg) (off : Nat) : Prop :=
 
 /-- The streaming `finalize` of the state at `scratch + o`, which holds `cnt`
 bytes, with its digest to `off(base)`. -/
-theorem finCall_ok {t : State} (hk : KR P s₀ t) (hsy : t.syms = s₀.syms) {o cnt : Nat} (ho : o + P.H.S ≤ 384)
-    (hcnt : cnt < 2048) {base : Reg} {off : Nat} (hd : OutOk P base off) :
-    WP isa (P.c.finCall o cnt base off) t fun t' => KR P s₀ t' ∧ t'.syms = s₀.syms ∧
-      (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
-      (∀ m, P.hH.SH.Repr t.mem (cA s₀ o) m → m.length < 2 ^ 64 → cnt = m.length →
+theorem finT_ok {t₃ : State} (k₃ : KR P s₀ t₃) (sy₃ : t₃.syms = s₀.syms) {o cnt : Nat} (ho : o + P.H.S ≤ 384)
+    {base : Reg} {off : Nat} (hd : OutOk P base off) (g0 : t₃.gpr .a0 = cA s₀ o)
+    (g1 : t₃.gpr .a1 = BitVec.ofNat 64 cnt) (g2 : t₃.gpr .a2 = pA s₀ (base, off, P.c.D)) :
+    WP isa (tcall 2 P.c.f.fin) t₃ fun t' => KR P s₀ t' ∧ t'.syms = s₀.syms ∧
+      (∀ r ∈ preserved, t'.gpr r = t₃.gpr r) ∧
+      (∀ m, P.hH.SH.Repr t₃.mem (cA s₀ o) m → m.length < 2 ^ 64 → cnt = m.length →
         bytesAt t'.mem (pA s₀ (base, off, P.c.D)) P.c.D = P.hH.SH.H.hash m) ∧
-      Frame [cR s₀ o P.H.S, ⟨pA s₀ (base, off, P.c.D), P.c.D⟩, below s₀.sp P.X] t.mem t'.mem := by
+      Frame [cR s₀ o P.H.S, ⟨pA s₀ (base, off, P.c.D), P.c.D⟩, below s₀.sp P.X] t₃.mem t'.mem := by
   have hz := sizes P
   have hX := hz.X
   have hzH := hz.H
   have hzQ := hz.Q
   obtain ⟨hD1, hD2⟩ := hz.D
   have hDH : P.H.D = P.c.D := hz.DB.1
-  have hoff : off < 2048 := by rcases hd with ⟨-, rfl⟩ | ⟨-, -, h₂⟩ <;> (try simp only [sTmp]) <;> omega
-  have hb : t.gpr base = regV s₀ base := by
-    rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩
-    · exact hk.s0
-    · exact hk.s1
-  have hbne : base ≠ .a0 ∧ base ≠ .a1 := by rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
   -- The digest's region: in `scratch` or the frame.
   have hW : Region.Sub ⟨pA s₀ (base, off, P.c.D), P.c.D⟩ (stR s₀) ∨
       ((∃ o' n, (⟨pA s₀ (base, off, P.c.D), P.c.D⟩ : Region) = sR s₀ o' n ∧ 64 ≤ o' ∧ o' + n ≤ P.c.frB)) := by
@@ -507,18 +519,7 @@ theorem finCall_ok {t : State} (hk : KR P s₀ t) (hsy : t.syms = s₀.syms) {o 
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, h₁, h₂⟩
     · exact scr_disj hp (.inl (by simp only [sTmp]; omega)) (by omega) (by simp only [sTmp]; omega)
     · exact (fr_st hp h₂ (st_sub (by omega))).symm
-  unfold Cfg.finCall Cfg.finArgs
-  refine WP.seq (WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => wp_li (imm := cnt) hcnt fun t₂ u₂ =>
-    wp_addi (imm := off) hoff fun t₃ u₃ => WP.block_nil fun sy₃ => ?_))
-  have k₃ := ((hk.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃
-  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have g0 : t₃.gpr .a0 = cA s₀ o := by
-    upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [hk.s0]
-  have g1 : t₃.gpr .a1 = BitVec.ofNat 64 cnt := by
-    upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-  have g2 : t₃.gpr .a2 = pA s₀ (base, off, P.c.D) := by
-    rw [u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
-  refine tcall_ok hp k₃ (sy₃.trans hsy) (k := 2) (by decide) hp.bo.f hp.bm.2.2 fun t₄ u₄ sy₄ => ?_
+  refine tcall_ok hp k₃ sy₃ (k := 2) (by decide) hp.bo.f hp.bm.2.2 fun t₄ u₄ sy₄ => ?_
   have k₄ := k₃.upd (by decide) u₄
   have hsp₄ : t₄.sp = s₀.sp := k₄.sp
   have hbS : (below t₄.sp P.H.F).Disjoint ⟨pA s₀ (base, off, P.c.D), P.c.D⟩ := by
@@ -552,10 +553,8 @@ theorem finCall_ok {t : State} (hk : KR P s₀ t) (hsy : t.syms = s₀.syms) {o 
         · exact .inr (.inr (.inl fun x hx => scr_sub (by omega) x (h' x hx)))
         · exact .inl h'
       · exact .inr (.inr (.inr ⟨_, by rw [hsp₄], hX.1⟩))
-  have e : t₄.mem = t.mem := by rw [u₄.mem, m₃]
-  have pr₄ : ∀ r ∈ preserved, t₄.gpr r = t.gpr r := fun r hr => by
-    rw [u₄.other r (by revert r; decide), u₃.other r (by revert r hr; decide), u₂.other r (by revert r hr; decide),
-      u₁.other r (by revert r hr; decide)]
+  have e : t₄.mem = t₃.mem := u₄.mem
+  have pr₄ : ∀ r ∈ preserved, t₄.gpr r = t₃.gpr r := fun r hr => u₄.other r (by revert r; decide)
   refine ⟨k₄.call hp hrd hwr hsp hcs hf hwk, sy₅.trans sy₄, fun r hr => (hcs r hr).trans (pr₄ r hr), fun m hm hl hc => ?_, ?_⟩
   · exact hr m (by rw [e]; exact hm) hl (by rw [u₄.other _ (by decide), g1, hc])
   · rw [← e]
@@ -566,6 +565,38 @@ theorem finCall_ok {t : State} (hk : KR P s₀ t) (hsy : t.syms = s₀.syms) {o 
     · exact ⟨_, by simp, fun x hx => hx⟩
     · exact ⟨below s₀.sp P.X, by simp, by
         rw [hsp₄]; exact below_sub hX.1 (by have := hp.spX; have := s₀.sp.isLt; omega)⟩
+
+/-- The streaming `finalize` of the state at `scratch + o`, which holds `cnt`
+bytes, with its digest to `off(base)`. -/
+theorem finCall_ok {t : State} (hk : KR P s₀ t) (hsy : t.syms = s₀.syms) {o cnt : Nat} (ho : o + P.H.S ≤ 384)
+    (hcnt : cnt < 2048) {base : Reg} {off : Nat} (hd : OutOk P base off) :
+    WP isa (P.c.finCall o cnt base off) t fun t' => KR P s₀ t' ∧ t'.syms = s₀.syms ∧
+      (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      (∀ m, P.hH.SH.Repr t.mem (cA s₀ o) m → m.length < 2 ^ 64 → cnt = m.length →
+        bytesAt t'.mem (pA s₀ (base, off, P.c.D)) P.c.D = P.hH.SH.H.hash m) ∧
+      Frame [cR s₀ o P.H.S, ⟨pA s₀ (base, off, P.c.D), P.c.D⟩, below s₀.sp P.X] t.mem t'.mem := by
+  have hz := sizes P
+  have hzH := hz.H
+  have hzQ := hz.Q
+  have hoff : off < 2048 := by rcases hd with ⟨-, rfl⟩ | ⟨-, -, h₂⟩ <;> (try simp only [sTmp]) <;> omega
+  have hb : t.gpr base = regV s₀ base := by
+    rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩
+    · exact hk.s0
+    · exact hk.s1
+  have hbne : base ≠ .a0 ∧ base ≠ .a1 := by rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+  unfold Cfg.finCall Cfg.finArgs
+  refine WP.seq (WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => wp_li (imm := cnt) hcnt fun t₂ u₂ =>
+    wp_addi (imm := off) hoff fun t₃ u₃ => WP.block_nil fun sy₃ => ?_))
+  have k₃ := ((hk.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃
+  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  have pr₃ : ∀ r ∈ preserved, t₃.gpr r = t.gpr r := fun r hr => by
+    rw [u₃.other r (by revert r hr; decide), u₂.other r (by revert r hr; decide), u₁.other r (by revert r hr; decide)]
+  rw [← m₃]
+  refine WP.mono (finT_ok hp k₃ (sy₃.trans hsy) ho hd ?_ ?_ ?_) fun t' ⟨a, b, c, d, e⟩ =>
+    ⟨a, b, fun r hr => (c r hr).trans (pr₃ r hr), d, e⟩
+  · upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [hk.s0]
+  · upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+  · rw [u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
 
 end
 
