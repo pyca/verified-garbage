@@ -144,10 +144,9 @@ theorem dig_frame (ho : Proof.Pbkdf2.Md.X86.OutOk H out) (hsp : NoSp (digest out
     WP isa (.frame (.push [.ebx]) (.call n (digest out)) (.pop .eax [Reg.ebx].length)) s Q := by
   have e := h.sp48
   refine WP.callWith (digest_ok ho) hsp (by simp) (by decide)
-    (by simp only [List.length_cons, List.length_nil, digest, stackUse, Nat.max_le]; omega) (h.callPre H)
+    (by show 8 ≤ _; exact Nat.le_trans (by decide) e) (h.callPre H)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
-  have f'' : Frame ([⟨o.setWidth 64, N⟩] ++ [below (s.gpr .esp) 8]) s.mem s'.mem := by
-    simpa [digest, stackUse] using f'
+  have f'' : Frame ([⟨o.setWidth 64, N⟩] ++ [below (s.gpr .esp) 8]) s.mem s'.mem := f'
   refine hQ s' (after_of e (by decide) rd' wr' cs' f'') fun i hi => ?_
   have post' : s₂.mem = VG.WriteBytes.writeBytes (pushed [.ebx] s).callEntry.mem
       (((pushed [.ebx] s).callEntry.gpr .eax).setWidth 64)
