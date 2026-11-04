@@ -392,3 +392,39 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
     by_cases hin : e ≤ o ∧ o < e + db
     · rw [ite_eq_left (by unfold mgfOff; omega), ite_eq_left hin, show o - mgfOff - (e - mgfOff) = o - e by unfold mgfOff; omega]
     · rw [ite_eq_right (by unfold mgfOff; omega), ite_eq_right hin]
+
+end
+
+/-! ## The tables at the entry -/
+
+/-- What the code needs of the tables at `pH` (of `MdHash`) and `pG` (of
+`Hash`) in the entry state `s`: the table of `MdHash` holds the addresses
+of `H`'s `init`, compression function and digest (`dn`), which the calls of
+`f` reach, and the table of `Hash` those of `G`'s functions, which the
+calls of `g` reach, and `G`'s digest length. -/
+structure TabsAt (H : Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.AArch64.Stream)
+    (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (pH pG : Addr) (s : State) : Prop where
+  h0 : s.mem.readW pH 64 = s.syms H.initN
+  h3 : s.mem.readW (pH + BitVec.ofNat 64 24) 64 = s.syms H.compN
+  h4 : s.mem.readW (pH + BitVec.ofNat 64 32) 64 = s.syms dn
+  fi : Finds f.init s.syms (s.syms H.initN) H.initN H.initC
+  fc : Finds f.comp s.syms (s.syms H.compN) H.compN H.compC
+  fd : Finds f.dig s.syms (s.syms dn) dn (Impl.MdHashTable.AArch64.digest H.P)
+  gok : Proof.RsaOaep.AArch64.Table.TabOK G g s.syms
+  gm : Proof.RsaOaep.AArch64.Table.TabMem G s.syms pG s.mem
+  gD : s.mem.readW (off pG 32) 64 = BitVec.ofNat 64 G.D
+
+/-- A word of the table of `Hash`, after writes apart from it. -/
+theorem tabG_keep {pG : Addr} {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) {d : Nat} (hd8 : d + 8 ≤ 40) :
+    m'.readW (off pG d) 64 = m.readW (off pG d) 64 :=
+  hf.readW (r := ⟨pG, 40⟩) (Offset.contains_base _ hd8 (by omega)) hd (by decide)
+
+/-- The table of `Hash`, after writes apart from it. -/
+theorem TabMem.keep {G : Impl.Pbkdf2.Md.AArch64.Stream} {sy : String → Addr} {pG : Addr} {rs : List Region}
+    {m m' : Mem} (h : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m' :=
+  ⟨(tabG_keep hf hd (d := 8 * 0) (by decide)).trans h.1, (tabG_keep hf hd (d := 8 * 1) (by decide)).trans h.2.1,
+    (tabG_keep hf hd (d := 8 * 2) (by decide)).trans h.2.2⟩
+
+end VG.Proof.RsaPss.AArch64
