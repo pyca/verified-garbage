@@ -45,21 +45,6 @@ open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off fx hiRegs Agree Ok B BT 
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep Two Pins two_post wp_li wp_addi wp_subi wp_add wp_mov wp_nil
   eval_nonzero)
 
-/-- The tables' hash functions and their functions, which the proofs take:
-MGF1's `G` with the functions `g` of the tables of `Hash`, and the hash
-function `H`, whose compression function `cn` (of code `cc`) and digest `dn`
-(of code `dc`) its table names, with the functions `f` of the tables of
-`MdHash`. -/
-structure Tabs where
-  G : Hash
-  g : Fns
-  H : Hash
-  cn : String
-  cc : Prog isa
-  dn : String
-  dc : Prog isa
-  f : MdFns
-
 /-- The tables on entry. -/
 def TabsOn (Z : Tabs) (s : State) : Prop :=
   TabS Z.G Z.g gArg Sp s (stackArg s 7) ∧ MdTabS Z.H Z.cn Z.cc Z.dn Z.dc Z.f hArg Sp s (stackArg s 6)
