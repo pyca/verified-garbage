@@ -13,21 +13,16 @@ public import VerifiedGarbage.Impl.MlDsa.RISCV64.Message
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
-# ML-DSA on RISC-V, `verify_message` and `verify_message_cached`: correctness
+# ML-DSA on RISC-V, `verify_message_cached`: correctness
 
 As signing (`Sign.lean`), with `sig` in `a5` and `scratch` in `a6`: from a
-state satisfying `MVPre`, `verifyMessage n f p` returns 2 if the context
-string is longer than 255 bytes; otherwise it saves our caller's registers in
-the 1 KiB at `E` (`MV1`), computes `tr = H(pk, 64)` into `840(E)` (`MV2`),
-then `μ` of the formatted message from it in place (`MV3`), and calls the
-verification function on `μ` `f`, whose result is the result
-(`verifyMessage_wp`).
-
-`verifyMessageCached n f p`, from a state satisfying `MVCPre`, does the same
-but computes `μ` from the 64 bytes at `tr`, which are `H(pk, 64)`, keeping
-`tr` in `s6` too (`verifyMessageCached_wp`). The steps they share are proved
-once, for the registers `rs` that hold `V` (`VInvG`), of which `VL` says what
-they need.
+state satisfying `MVCPre`, `verifyMessageCached n f p` returns 2 if the
+context string is longer than 255 bytes; otherwise it saves our caller's
+registers in the 1 KiB at `E` (`MV1`), keeping `tr` in `s6` too, computes `μ`
+of the formatted message from the 64 bytes at `tr`, which are `H(pk, 64)`
+(`MV3`), and calls the verification function on `μ` `f`, whose result is the
+result (`verifyMessageCached_wp`). The steps are proved for the registers
+`rs` that hold `V` (`VInvG`), of which `VL` says what they need.
 -/
 
 @[expose] public section
@@ -51,6 +46,9 @@ def verifyV (p : Params) (s : State) : Reg → BitVec 64
   | .s0 => s.gpr .a0 | .s1 => s.gpr .a1 | .s2 => s.gpr .a2 | .s3 => s.gpr .a3 | .s4 => s.gpr .a4
   | .s5 => s.gpr .a5 | .s7 => s.gpr .a6 | .s8 => eAt p (s.gpr .a6) | _ => 0
 
+/-- The registers `verifyV` gives: the arguments but `tr`, and `E`. -/
+abbrev vRegs : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s7, .s8]
+
 /-- What the registers hold with a cached `tr`: as `verifyV`, and `tr` in `s6`. -/
 def cachedV (p : Params) (s : State) : Reg → BitVec 64
   | .s6 => s.gpr .a7 | r => verifyV p s r
@@ -62,23 +60,16 @@ abbrev vW (p : Params) (STK : Nat) (s : State) : List Region := [vscrR p s, belo
 abbrev VInvG (p : Params) (STK : Nat) (s : State) (rs : List Reg) (V : Reg → BitVec 64) : State → Prop :=
   Inv s (eAt p (s.gpr .a6)) oSV rs V (vW p STK s)
 
-abbrev VInv (p : Params) (STK : Nat) (s : State) : State → Prop := VInvG p STK s verifyRegs (verifyV p s)
-
-theorem verifyRegs_pres : ∀ r ∈ verifyRegs, r ∈ preserved := by decide
-
 /-- What the steps need of the registers `rs` that the body keeps, holding `V`: they are callee-saved, they
-and the link register fit in the 80 bytes at `oSV`, and they hold what `verifyV` says of `verifyRegs`. -/
+and the link register fit in the 80 bytes at `oSV`, and they hold what `verifyV` says of `vRegs`. -/
 structure VL (p : Params) (s : State) (rs : List Reg) (V : Reg → BitVec 64) : Prop where
   pres : ∀ r ∈ rs, r ∈ preserved
   len : rs.length ≤ 9
-  regs : ∀ r ∈ verifyRegs, r ∈ rs ∧ V r = verifyV p s r
-
-theorem vl_verify (p : Params) (s : State) : VL p s verifyRegs (verifyV p s) :=
-  ⟨verifyRegs_pres, by decide, fun _ h => ⟨h, rfl⟩⟩
+  regs : ∀ r ∈ vRegs, r ∈ rs ∧ V r = verifyV p s r
 
 theorem vl_cached (p : Params) (s : State) : VL p s signRegs (cachedV p s) := by
   refine ⟨signRegs_pres, by decide, fun r hr => ?_⟩
-  simp only [verifyRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [vRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, rfl⟩
 
 section
@@ -86,7 +77,7 @@ variable {p : Params} {STK : Nat} {X : List Region} {s : State} {rs : List Reg} 
   (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p STK X s) (h48 : 1168 ≤ STK)
 
 include hL in
-theorem v_reg {t : State} (h : VInvG p STK s rs V t) {r : Reg} (hr : r ∈ verifyRegs) :
+theorem v_reg {t : State} (h : VInvG p STK s rs V t) {r : Reg} (hr : r ∈ vRegs) :
     t.gpr r = verifyV p s r :=
   (h.regs r (hL.regs r hr).1).trans (hL.regs r hr).2
 
@@ -200,17 +191,6 @@ theorem vsetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} {rs :
   · rw [ht, g30, g26, show s.gpr .a4 = BitVec.ofNat 64 (s.gpr .a4).toNat by simp, hdrMem_bytes]
     simp
 
-theorem verifySetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} (hF : MFacts p)
-    (hp : MVPre p STK X s) (hu : ∀ r, r ≠ .t1 → u.gpr r = s.gpr r) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
-    (hsp : u.sp = s.sp) (hlr : u.gpr .ra = s.gpr .ra) (hm : u.mem = s.mem) :
-    WP isa (.block (enter .a6 p verifyRegs verifyMs)) u (MV1 p STK s verifyRegs (verifyV p s)) :=
-  vsetup_ok (vl_verify p s) hF hp (by decide) (by decide) (by decide) rfl (by decide) (by decide) (fun q hq => by
-      simp only [verifyMs, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      iterate 7 exact .inr ⟨by decide, by decide, rfl⟩
-      exact .inl ⟨rfl, rfl⟩)
-    hu hrd hwr hsp hlr hm
-
 theorem cachedSetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} (hF : MFacts p)
     (hp : MVPre p STK X s) (hu : ∀ r, r ≠ .t1 → u.gpr r = s.gpr r) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
     (hsp : u.sp = s.sp) (hlr : u.gpr .ra = s.gpr .ra) (hm : u.mem = s.mem) :
@@ -249,12 +229,6 @@ theorem vinv_hash {p : Params} {STK : Nat} {X : List Region} {s t t' : State} {r
     · exact vslot_e0 hL (by decide)
     · rw [hsp]; exact vslot_b hL hp h48
 
-/-- After `tr`: the invariant, the header, and `tr` at `oMU(E)`. -/
-structure MV2 (p : Params) (STK : Nat) (s t : State) : Prop where
-  inv : VInv p STK s t
-  hdr : bytesAt t.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oHdr) 2 = [0, BitVec.ofNat 8 (s.gpr .a4).toNat]
-  tr : bytesAt t.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU) 64 = pkTr (pkB p s)
-
 /-- After `μ`: the invariant, and `μ` at `oMU(E)`. -/
 structure MV3 (p : Params) (STK : Nat) (s : State) (rs : List Reg) (V : Reg → BitVec 64) (t : State) : Prop where
   inv : VInvG p STK s rs V t
@@ -270,62 +244,6 @@ theorem vke (hi : VInvG p STK s rs V t) : KEnv 840 (eAt p (s.gpr .a6)) t :=
   ⟨by decide, ve_cov0 hp hi.wr (by decide), e_al hp.alx hp.fx, by rw [hi.sp]; exact hp.al,
     by rw [hi.sp]; have := hp.stk; omega_arith,
     by rw [hi.sp]; exact (hp.bx.sub_left (vbelow48 hp h48)).sub_right (e_sub0 (by decide))⟩
-
-theorem trHash_ins (hi : VInv p STK s t) :
-    ∀ q ∈ [(⟨.s0, 0, .imm 1024⟩ : Piece), ⟨.s0, 1024, .imm (p.pkLen - 1024)⟩],
-      PieceOk 840 (eAt p (s.gpr .a6)) t q := by
-  have g22 : t.gpr .s0 = s.gpr .a0 := hi.regs _ (by decide)
-  have hsp : t.sp = s.sp := hi.sp
-  have b48 := vbelow48 hp h48
-  have eS := e_sub0 (p := p) (x := s.gpr .a6) (n := 840) (by decide)
-  have h1 := hF.pk1
-  have h2 := hF.pk
-  have s1 : Region.Sub ⟨s.gpr .a0, 1024⟩ (pkR p s) := Region.sub_prefix (by omega_arith)
-  have s2 : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 1024, p.pkLen - 1024⟩ (pkR p s) :=
-    Offset.sub_base _ (by omega_arith)
-  intro q hq
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl
-  · exact pieceOk_of (R := ⟨s.gpr .a0, 1024⟩) (by simp only [Piece.R, Piece.addr, Len.val, g22, BitVec.add_zero])
-      (show Reg.s0 ∈ preserved by decide) (show (0 : Nat) < 2048 by decide) (show 1024 < 2048 by decide)
-      (cov_rd (by rw [hi.rd, hp.rd]; exact cov_in0 (k := p.pkLen) (by simp) (by omega_arith)))
-      ((hp.kc.sub_left s1).sub_right eS) (by rw [hsp]; exact (hp.bk.sub_left b48).sub_right s1)
-  · exact pieceOk_of (R := ⟨s.gpr .a0 + BitVec.ofNat 64 1024, p.pkLen - 1024⟩)
-      (by simp only [Piece.R, Piece.addr, Len.val, g22])
-      (show Reg.s0 ∈ preserved by decide) (show (1024 : Nat) < 2048 by decide)
-      (show p.pkLen - 1024 < 2048 by omega_arith)
-      (cov_rd (by rw [hi.rd, hp.rd]; exact cov_in (k := p.pkLen) (by simp) (by omega_arith)))
-      ((hp.kc.sub_left s2).sub_right eS) (by rw [hsp]; exact (hp.bk.sub_left b48).sub_right s2)
-
-theorem trHash_ok (h : MV1 p STK s verifyRegs (verifyV p s) t) : WP isa (trHash p) t (MV2 p STK s) := by
-  have hi := h.inv
-  have g22 : t.gpr .s0 = s.gpr .a0 := hi.regs _ (by decide)
-  have g30 := v_e (vl_verify p s) hi
-  have hsp : t.sp = s.sp := hi.sp
-  have b48 := vbelow48 hp h48
-  have eS := e_sub0 (p := p) (x := s.gpr .a6) (n := 840) (by decide)
-  have hin := trHash_ins hF hp h48 hi
-  unfold trHash
-  refine WP.mono (hash_ok (N := 840) (n := 64) (o := oMU) (out := eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU)
-    (by decide) (by decide) (by decide) (by decide) g30 (by rw [g30]) (vke hp h48 hi) (by simp) hin
-    (ve_cov hp hi.wr (by decide)) (e_e0 (by decide) (by decide)).symm
-    (by rw [hsp]; exact (hp.bx.sub_left b48).sub_right (e_sub (by decide)))) fun t' ⟨k', d'⟩ => ⟨?_, ?_, ?_⟩
-  · exact vinv_hash (vl_verify p s) hp h48 hi k'
-  · rw [show bytesAt t'.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oHdr) 2 =
-      bytesAt t.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oHdr) 2 from
-      Proof.Sha3.RISCV64.Pieces.bytes_keep k'.frame (by decide) fun r hr => by
-        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact e_e (.inr (by decide)) (by decide) (by decide)
-        · exact (e_e0 (by decide) (by decide)).symm
-        · rw [hsp]; exact ((hp.bx.sub_left b48).sub_right (e_sub (by decide))).symm, h.hdr]
-  · rw [d']
-    have kp : bytesAt t.mem (s.gpr .a0) p.pkLen = pkB p s :=
-      v_keep hi (R := pkR p s) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_arith) hp.kc hp.bk
-    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Piece.bytes,
-      Piece.addr, Len.val, g22, BitVec.add_zero]
-    rw [← Proof.MlKem.bytesAt_add, Nat.add_sub_cancel' hF.pk1, kp]
-    rfl
 
 omit hF in
 /-- The pieces of the formatted message after the first, `q₀`. -/
@@ -358,14 +276,6 @@ theorem mu_ins (hL : VL p s rs V) (hi : VInvG p STK s rs V t) {q₀ : Piece} (h�
       (hp.mc.sub_right eS) (by rw [hsp]; exact hp.bm.sub_left b48)
 
 omit hF in
-/-- `verify_message`'s first piece of `μ`: `tr`, at `oMU(E)`. -/
-theorem muPiece_ok (hL : VL p s rs V) (hi : VInvG p STK s rs V t) :
-    PieceOk 840 (eAt p (s.gpr .a6)) t ⟨.s8, oMU, .imm 64⟩ :=
-  pieceOk_of (R := ⟨eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU, 64⟩)
-    (by simp only [Piece.R, Piece.addr, Len.val, v_e hL hi]) (by decide) (by decide) (show 64 < 2048 by decide)
-    (Proof.Sha3.RISCV64.Pieces.cov_right (ve_cov hp hi.wr (by decide))) (e_e0 (by decide) (by decide)).symm
-    (by rw [hi.sp]; exact (hp.bx.sub_left (vbelow48 hp h48)).sub_right (e_sub (by decide)))
-
 omit hF in
 /-- `μ` from the first piece `q₀`, which holds `tr`. -/
 theorem muHash_ok (hL : VL p s rs V) (hi : VInvG p STK s rs V t)
@@ -396,11 +306,6 @@ theorem muHash_ok (hL : VL p s rs V) (hi : VInvG p STK s rs V t)
     simp only [messageRep, H, List.append_assoc]
 
 omit hF in
-theorem verifyHash_ok (h : MV2 p STK s t) :
-    WP isa (muHash ⟨.s8, oMU, .imm 64⟩) t (MV3 p STK s verifyRegs (verifyV p s)) :=
-  muHash_ok hp h48 (vl_verify p s) h.inv h.hdr (muPiece_ok hp h48 (vl_verify p s) h.inv) (by
-    simp only [Piece.bytes, Piece.addr, Len.val, v_e (vl_verify p s) h.inv]; exact h.tr)
-
 end
 
 /-! ## `μ` from a cached `tr` -/
@@ -565,47 +470,6 @@ theorem verifyCall_ok {p : Params} {STK S : Nat} {X : List Region} {s t : State}
     rw [v_keep iu (R := pkR p s) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_arith) hp.kc hp.bk, hu.ms.mu,
       v_keep iu (R := vsigR p s) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_arith) hp.gc hp.bg] at q
     exact q
-
-/-! ## `verify_message` -/
-
-theorem verifyMessage_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} {s : State}
-    (hp : MVPre p STK [] s) :
-    WP isa (verifyMessage n f p) s fun t =>
-      abiPreserved s t ∧ (verifyMessageContract p RISCV64.abi STK).post s t := by
-  unfold verifyMessage top
-  refine WP.seq (Steps.WP.cons (exec_shift_d (by decide)) (WP.block_nil ?_))
-  have hu := Steps.Upd.write s .t1 (s.gpr .a4 >>> 8)
-  refine wp_ite (decide ((s.gpr .a4).toNat < 256)) (by rw [eval_zero, hu.gpr]; exact congrArg some (shr8_zero _))
-    (fun hcl => ?_) fun hcl => ?_
-  · have hcl' : (s.gpr .a4).toNat < 256 := of_decide_eq_true hcl
-    refine WP.seq (WP.mono (verifySetup_ok hF hp hu.other hu.rd hu.wr hu.sp rfl hu.mem) fun t₁ h₁ => ?_)
-    refine WP.seq (WP.mono (trHash_ok hF hp h48 h₁) fun t₂ h₂ => ?_)
-    refine WP.seq (WP.mono (verifyHash_ok hp h48 h₂) fun t₃ h₃ => ?_)
-    refine WP.seq (WP.mono (verifyCall_ok (vl_verify p s) hF hp hf hS h₃) fun t₄ ⟨h₄, r₄⟩ => ?_)
-    have hrl : ∀ q ∈ restoreList oSV verifyRegs, q.2 + 8 ≤ 1024 := by decide
-    refine restore_ok h₄ (e_al hp.alx hp.fx) (v_e (vl_verify p s) h₄) (by decide) (by decide) (by decide) (by decide)
-      (fun q hq => by
-        have := hrl q hq
-        have := e_len p (d := q.2) (n := 8) (by omega_arith)
-        have := hF.e
-        rw [h₄.rd, h₄.wr, hp.rd, hp.wr, e_add]
-        exact ⟨vscrR p s, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
-      fun t₅ g₅ sp₅ lr₅ m₅ o₅ => ⟨⟨g₅, sp₅, lr₅⟩, ?_⟩
-    sig_post [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs]
-    rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'), o₅ .a0 (by decide)
-      (by decide)]
-    simp only [verifyInternal, Proof.MlKem.bytesAt_length]
-    exact r₄
-  · have hcl' : ¬ (s.gpr .a4).toNat < 256 := of_decide_eq_false hcl
-    refine Steps.WP.cons (exec_li (d := .a0) (imm := 2) (by decide)) (WP.block_nil ⟨⟨fun r hr => ?_, rfl, rfl⟩, ?_⟩)
-    · rw [(Steps.Upd.write _ _ _).other _ (Proof.Sha3.RISCV64.Pieces.pres_ne hr).2.1,
-        hu.other _ (by revert hr; cases r <;> decide)]
-    · sig_post [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs]
-      rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_arith)]
-      rfl
-
-/-! ## `verify_message_cached` -/
 
 theorem verifyMessageCached_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
     (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} {s : State}

@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: SHAKE256 through the sponge functions
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: SHAKE256 through the sponge functions
 
 Untrusted: everything here is checked by Lean. In `Ctx`: zeroing the Keccak
 state at `X` (`zeroSt_ok`), and the calls of `vg_keccak_absorb` (keeping the

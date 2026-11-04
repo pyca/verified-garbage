@@ -20,12 +20,12 @@ fresh random bytes from an approved RBG, §3.6.1), with the message
 representative `μ` computed by the caller (which Algorithms 7 and 8 allow:
 "may optionally be computed in a different cryptographic module"). The
 external functions `ML-DSA.Sign` and `ML-DSA.Verify` (Algorithms 2 and 3)
-are `vg_mldsa*_sign_message` and `vg_mldsa*_verify_message`, which format
-the message with its context string and compute `μ` themselves: on the
-randomness `rnd` that the caller generates (Algorithm 2, line 5), and with
-the public key hash `tr` from the private key (bytes 64–127, as
-`ML-DSA.Sign_internal` takes it, Algorithm 7, line 1) or computed from the
-public key (Algorithm 8, line 6). A context string longer than 255 bytes
+are `vg_mldsa*_sign_message` and `vg_mldsa*_verify_message_cached`
+(`CachedVerify.lean`), which format the message with its context string and
+compute `μ` themselves: on the randomness `rnd` that the caller generates
+(Algorithm 2, line 5), and with the public key hash `tr` from the private
+key (bytes 64–127, as `ML-DSA.Sign_internal` takes it, Algorithm 7, line 1)
+or, computed from the public key (Algorithm 8, line 6), from the caller. A context string longer than 255 bytes
 makes them return 2, the error indication `⊥` of lines 1–3 of both
 algorithms: its length is public, as every slice length is. A private key
 is kept as the 32-byte seed `ξ` it is generated from (§3.6.3):
@@ -304,8 +304,9 @@ def signMessageContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : 
       signMessageLeak p (bytesAt m sk p.skLen) (bytesAt m msg msgLen.toNat)
         (bytesAt m ctx ctxLen.toNat) (bytesAt m rnd 32))
 
-/-- `vg_mldsa*_verify_message(pk: *const [u8; pkLen], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; sigLen], scratch: *mut [u64; messageScratchWords]) -> u32`.
-`scratch` is working space. -/
+/-- `ML-DSA.Verify`'s arguments, `(pk: *const [u8; pkLen], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; sigLen], scratch: *mut [u64; messageScratchWords]) -> u32`,
+which `vg_mldsa*_verify_message_cached` takes followed by `tr`
+(`verifyMessageCachedSig`). `scratch` is working space. -/
 def verifyMessageSig (p : Params) : Sig where
   params := [("pk", .array false .u8 p.pkLen), ("msg", .slice false .u8 "msg_len"),
     ("ctx", .slice false .u8 "ctx_len"), ("sig", .array false .u8 p.sigLen),
@@ -438,24 +439,6 @@ def signMessageApi (p : Params) (module name : String) : Api where
       signing.",
     keyScratchSafety]
 
-/-- `vg_<module>_verify_message` for the parameter set `p` named `name`. -/
-def verifyMessageApi (p : Params) (module name : String) : Api where
-  module := module
-  name := s!"vg_{module}_verify_message"
-  sig := verifyMessageSig p
-  writeArgs := true
-  contracts := some fun A stack => verifyMessageContract p A stack
-  summary := s!"{name} verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): \
-    with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` \
-    bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature \
-    of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, \
-    `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop \
-    reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this \
-    happens with probability about 2^-256 or less). " ++ contextDoc ++ ".\n\n\
-    Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on \
-    the public key, the message, the context string and the signature."
-  safety := [keyScratchSafety]
-
 /-- `vg_mldsa44_keygen` on every target. -/
 def keyGen44Api : Api := keyGenApi mlDsa44 "mldsa44" "ML-DSA-44"
 /-- `vg_mldsa44_sign` on every target. -/
@@ -476,15 +459,9 @@ def sign87Api : Api := signApi mlDsa87 "mldsa87" "ML-DSA-87"
 def verify87Api : Api := verifyApi mlDsa87 "mldsa87" "ML-DSA-87"
 /-- `vg_mldsa44_sign_message` on every target. -/
 def signMessage44Api : Api := signMessageApi mlDsa44 "mldsa44" "ML-DSA-44"
-/-- `vg_mldsa44_verify_message` on every target. -/
-def verifyMessage44Api : Api := verifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44"
 /-- `vg_mldsa65_sign_message` on every target. -/
 def signMessage65Api : Api := signMessageApi mlDsa65 "mldsa65" "ML-DSA-65"
-/-- `vg_mldsa65_verify_message` on every target. -/
-def verifyMessage65Api : Api := verifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65"
 /-- `vg_mldsa87_sign_message` on every target. -/
 def signMessage87Api : Api := signMessageApi mlDsa87 "mldsa87" "ML-DSA-87"
-/-- `vg_mldsa87_verify_message` on every target. -/
-def verifyMessage87Api : Api := verifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87"
 
 end VG.Spec.MlDsa
