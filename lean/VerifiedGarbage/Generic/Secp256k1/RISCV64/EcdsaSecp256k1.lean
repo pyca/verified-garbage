@@ -20,6 +20,7 @@ namespace VG.Generic.Secp256k1.RISCV64.EcdsaSecp256k1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.verifySecp256k1
+    consts := Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts
     verified := Proof.Ecdsa.RISCV64.Secp256k1.verify_verified h.law }]
 
 end VG.Generic.Secp256k1.RISCV64.EcdsaSecp256k1
