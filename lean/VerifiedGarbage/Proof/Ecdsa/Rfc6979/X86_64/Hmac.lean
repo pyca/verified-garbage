@@ -140,6 +140,28 @@ theorem safe_call {u : State} (hc : Ctx L g m₀ u) {ws : List Region} (hs : ∀
 theorem scr_work {e k : Nat} (h : e + k ≤ 2256) : Region.Sub ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr, 2256⟩ :=
   Offset.sub_base _ h
 
+/-- The call of `init` of the state at `scratch + o`, in `rdi`. -/
+theorem initRaw_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {o : Nat} (ho : o + 192 ≤ 384)
+    (hdi : u.gpr .rdi = L.scr + BitVec.ofNat 64 o) :
+    WP isa (.call P.H.stream.initN P.H.stream.initC) u fun u' => Ctx L g m₀ u' ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.B, 24⟩] u.mem u'.mem ∧
+      P.ok.SH.Repr u'.mem (L.scr + BitVec.ofNat 64 o) [] := by
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.init_call P.ok.stream hdi
+    (hc.coversW fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨L.SCR, by simp, within_off _ (by nums)⟩)
+    ((hL.low_scr (by nums)).sub_left (hc.below_sub (by omega))) fun u'' af hr hsy => ?_)
+  have hsafe : Region.Sub ⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ ⟨L.scr, 2256⟩ := scr_work (by nums)
+  refine ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
+      (safe_call hc (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact .inr (.inl (hsafe.trans (Region.sub_prefix (by omega))))) (by omega)) hsy, ?_, hr⟩
+  exact af.frame.sub fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sub_refl _⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨L.B, 24⟩, by simp, hc.below_sub (by omega)⟩
+
 /-- `init` of the state at `scratch + o`: it represents the empty message. -/
 theorem initCall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {o : Nat} (ho : o + 192 ≤ 384) :
     WP isa ((cfgOf P).initCall o) t fun u => Ctx L g m₀ u ∧
@@ -152,24 +174,9 @@ theorem initCall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t
   rw [hT.1] at htm
   refine tcall_ok hL hT h.ctx (j := 0) (by decide) (n := P.H.stream.initN) (c := P.H.stream.initC) htm.1 hok.1
     fun u' hc' hm' hk' _ => ?_
-  have hdi : u'.gpr .rdi = L.scr + BitVec.ofNat 64 o := (hk' _ (by decide)).trans h.val
-  have hsp : below (u'.gpr .rsp) 24 = ⟨L.B, 24⟩ := by rw [hc'.rsp, below24]
-  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.init_call P.ok.stream hdi
-    (hc'.coversW fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.SCR, by simp, within_off _ (by nums)⟩)
-    ((hL.low_scr (by nums)).sub_left (hc'.below_sub (by omega))) fun u'' af hr hsy => ?_)
-  have hsafe : Region.Sub ⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ ⟨L.scr, 2256⟩ := scr_work (by nums)
-  refine ⟨hc'.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hc' (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact .inr (.inl (hsafe.trans (Region.sub_prefix (by omega))))) (by omega)) hsy, ?_, hr⟩
-  rw [← h.mem, ← hm']
-  exact af.frame.sub fun r hr => by
-    rcases List.mem_append.mp hr with hr | hr
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sub_refl _⟩
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨L.B, 24⟩, by simp, hc'.below_sub (by omega)⟩
+  refine WP.mono (initRaw_ok hL hc' ho ((hk' _ (by decide)).trans h.val)) fun v ⟨hcv, hf, hr⟩ => ?_
+  rw [hm', h.mem] at hf
+  exact ⟨hcv, hf, hr⟩
 
 /-! ## The streaming `update` -/
 
@@ -203,6 +210,78 @@ structure UpdData (P : RfcHash) {dn : Nat} (L : Lay dn) (o : Nat) (da : Addr) (l
   wk : Region.Disjoint ⟨da, len⟩ ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩
   low : Region.Disjoint ⟨L.B, 24⟩ ⟨da, len⟩
 
+/-- The arguments of `update`, as the streaming proofs state them. -/
+theorem updArgsOf (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 192 ≤ 384) {da : Addr}
+    {len : Nat} (hd : UpdData P L o da len) (hlen : len < 2 ^ 32) (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 o)
+    (hdx : w.gpr .rdx = da) (hcx : w.gpr .rcx = BitVec.ofNat 64 len) (h8 : w.gpr .r8 = L.scr + BitVec.ofNat 64 384) :
+    Proof.Pbkdf2.Md.X86_64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 o) da
+      (L.scr + BitVec.ofNat 64 384) len := by
+  have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hc.below_sub (by omega)
+  exact { rdi := hdi, rdx := hdx
+          rcx := by rw [hcx, BitVec.toNat_ofNat]; omega
+          r8 := h8
+          cd := hc.covers fun r hr => by
+            simp only [List.mem_singleton] at hr; subst hr; exact hd.cov
+          cw := hc.coversW fun r hr => by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩
+          st_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
+          d_st := hd.st
+          d_sc := hd.wk
+          stk_st := (hL.low_scr (by nums)).sub_left hsp
+          stk_d := hd.low.sub_left hsp
+          stk_sc := (hL.low_scr (by nums)).sub_left hsp }
+
+/-- The call of `update`, with its arguments. -/
+theorem updRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 192 ≤ 384) {da : Addr}
+    {len : Nat} (a : Proof.Pbkdf2.Md.X86_64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 o) da
+      (L.scr + BitVec.ofNat 64 384) len) (hlen : len < 2 ^ 32) {cnt : Nat} (hsi : w.gpr .rsi = BitVec.ofNat 64 cnt) :
+    WP isa (.call P.H.stream.updN P.H.stream.updC) w fun u => Ctx L g m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩]
+        w.mem u.mem ∧ ∀ msg : List Byte, P.ok.SH.Repr w.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
+      P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt w.mem da len) := by
+  have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hc.below_sub (by omega)
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w'' af hrr hsy => ?_)
+  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ : Region),
+      ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> exact scr_work (by nums)
+  refine ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
+      (safe_call hc (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
+    ?_, fun msg hr hml => hrr msg hr (by rw [hsi, hml])⟩
+  exact af.frame.sub fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., sub_refl _⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_refl _⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨L.B, 24⟩, by simp, hsp⟩
+
+/-- `update` of the state at `scratch + o`, holding `cnt` bytes, with `len`
+bytes at `da`. -/
+theorem updCall_gen (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {o cnt : Nat} (ho : o + 192 ≤ 384)
+    {dataA : List Instr} {da : Addr} {len : Nat}
+    (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : UpdData P L o da len)
+    (hcnt : cnt < 2 ^ 32) (hlen : len < 2 ^ 32) :
+    WP isa ((cfgOf P).updCall o cnt dataA len) t fun u => Ctx L g m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩]
+        t.mem u.mem ∧ ∀ msg : List Byte, P.ok.SH.Repr t.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
+      P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt t.mem da len) := by
+  refine WP.seq (WP.mono (updArgs_ok hL hc (o := o) (by omega) hdA hcnt hlen)
+    fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
+  have hok := hcw.tabOk
+  have htm := hcw.tabMem
+  rw [hT.1, hT.2.1] at hok
+  rw [hT.1] at htm
+  refine tcall_ok hL hT hcw (j := 1) (by decide) (n := P.H.stream.updN) (c := P.H.stream.updC) htm.2.1 hok.2.1
+    fun w' hc' hm' hk' _ => ?_
+  have a := updArgsOf hL hc' ho hd hlen ((hk' _ (by decide)).trans hdi) ((hk' _ (by decide)).trans hdx)
+    ((hk' _ (by decide)).trans hcx) ((hk' _ (by decide)).trans h8)
+  refine WP.mono (updRaw_ok hL hc' ho a hlen ((hk' _ (by decide)).trans hsi)) fun u ⟨hcu, hf, hr⟩ => ?_
+  rw [hm', hmw] at hf hr
+  exact ⟨hcu, hf, hr⟩
+
 /-- `update` of the state at `scratch + o`, holding `cnt` bytes, with `len`
 bytes at `da`: the state represents them too. -/
 theorem updCall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {o cnt : Nat} (ho : o + 192 ≤ 384)
@@ -213,53 +292,97 @@ theorem updCall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
     WP isa ((cfgOf P).updCall o cnt dataA len) t fun u => Ctx L g m₀ u ∧
       Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩]
         t.mem u.mem ∧
-      P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt t.mem da len) := by
-  refine WP.seq (WP.mono (updArgs_ok hL hc (o := o) (by omega) hdA hcnt hlen)
-    fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
+      P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt t.mem da len) :=
+  WP.mono (updCall_gen hL hT hc ho hdA hd hcnt hlen) fun _ ⟨a, b, c⟩ => ⟨a, b, c msg hr hml⟩
+
+/-! ## The streaming `finalize` -/
+
+/-- The arguments of `finalize`, as the streaming proofs state them. -/
+theorem finArgsOf (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 192 ≤ 384)
+    (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 o) (hdx : w.gpr .rdx = L.scr + BitVec.ofNat 64 1920)
+    (hcx : w.gpr .rcx = L.scr + BitVec.ofNat 64 384) :
+    Proof.Pbkdf2.Md.X86_64.Calls.FinArgs P.ok.stream w (L.scr + BitVec.ofNat 64 o)
+      (L.scr + BitVec.ofNat 64 1920) (L.scr + BitVec.ofNat 64 384) := by
+  have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hc.below_sub (by omega)
+  exact { rdi := hdi, rdx := hdx, rcx := hcx
+          cw := hc.coversW fun r hr => by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩
+          st_o := Offset.disjoint _ (by nums) (by nums) (by nums)
+          st_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
+          o_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
+          stk_st := (hL.low_scr (by nums)).sub_left hsp
+          stk_o := (hL.low_scr (by nums)).sub_left hsp
+          stk_sc := (hL.low_scr (by nums)).sub_left hsp }
+
+/-- The call of `finalize`, with its arguments. -/
+theorem finRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 192 ≤ 384)
+    (a : Proof.Pbkdf2.Md.X86_64.Calls.FinArgs P.ok.stream w (L.scr + BitVec.ofNat 64 o)
+      (L.scr + BitVec.ofNat 64 1920) (L.scr + BitVec.ofNat 64 384)) {cnt : Nat} (hcnt : cnt < 2 ^ 32)
+    (hsi : w.gpr .rsi = BitVec.ofNat 64 cnt) :
+    WP isa (.call P.H.stream.finN P.H.stream.finC) w fun u => Ctx L g m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 1920, P.H.stream.F⟩,
+        ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩] w.mem u.mem ∧
+      ∀ msg : List Byte, P.ok.SH.Repr w.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
+      (Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 1920) P.H.stream.F).take P.H.D = P.ok.SH.H.hash msg := by
+  have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hc.below_sub (by omega)
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.fin_call P.ok.stream a fun w'' af hrr hsy => ?_)
+  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ : Region),
+      ⟨L.scr + BitVec.ofNat 64 1920, P.H.stream.F⟩, ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩],
+      Region.Sub r ⟨L.scr, 2256⟩ := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl) <;> exact scr_work (by nums)
+  refine ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
+      (safe_call hc (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
+    ?_, fun msg hr hml => hrr msg hr (by rw [hml]; omega) (by rw [hsi, hml])⟩
+  exact af.frame.sub fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., sub_refl _⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_refl _⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), sub_refl _⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨L.B, 24⟩, by simp, hsp⟩
+
+/-- The arguments of `finalize`: the state at `scratch + o` holding `cnt`
+bytes, the output and the working space. -/
+theorem finArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {o cnt : Nat} (ho : o + 192 ≤ 384)
+    (hcnt : cnt < 2 ^ 32) :
+    WP isa (.block (Cfg.finArgs o cnt)) t fun w => Ctx L g m₀ w ∧ w.mem = t.mem ∧
+      w.gpr .rdi = L.scr + BitVec.ofNat 64 o ∧ w.gpr .rsi = BitVec.ofNat 64 cnt ∧
+      w.gpr .rdx = L.scr + BitVec.ofNat 64 1920 ∧ w.gpr .rcx = L.scr + BitVec.ofNat 64 384 := by
+  rw [Cfg.finArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (scr_ok hL hc (d := .rdi) (by decide) (a := o) (by omega)) fun u₁ h₁ => ?_
+  refine WP.mono (mov32_ok hL h₁.ctx (d := .rsi) (by decide) hcnt) fun u₂ h₂ => ?_
+  refine WP.mono (scr_ok hL h₂.ctx (d := .rdx) (by decide) (a := 1920) (by decide)) fun u₃ h₃ => ?_
+  refine WP.mono (scr_ok hL h₃.ctx (d := .rcx) (by decide) (a := 384) (by decide)) fun u₄ h₄ => ?_
+  refine ⟨h₄.ctx, by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, h₄.val⟩
+  · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
+  · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]
+  · rw [h₄.keep _ (by decide), h₃.val]
+
+/-- `finalize` of the state at `scratch + o`, holding `cnt` bytes, into
+`scratch + sTmp`. -/
+theorem finCall_gen (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {o cnt : Nat} (ho : o + 192 ≤ 384)
+    (hcnt : cnt < 2 ^ 32) :
+    WP isa ((cfgOf P).finCall o cnt) t fun u => Ctx L g m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 1920, P.H.stream.F⟩,
+        ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩] t.mem u.mem ∧
+      ∀ msg : List Byte, P.ok.SH.Repr t.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
+      (Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 1920) P.H.stream.F).take P.H.D = P.ok.SH.H.hash msg := by
+  refine WP.seq (WP.mono (finArgs_ok hL hc ho hcnt) fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx⟩ => ?_)
   have hok := hcw.tabOk
   have htm := hcw.tabMem
   rw [hT.1, hT.2.1] at hok
   rw [hT.1] at htm
-  refine tcall_ok hL hT hcw (j := 1) (by decide) (n := P.H.stream.updN) (c := P.H.stream.updC) htm.2.1 hok.2.1
+  refine tcall_ok hL hT hcw (j := 2) (by decide) (n := P.H.stream.finN) (c := P.H.stream.finC) htm.2.2 hok.2.2
     fun w' hc' hm' hk' _ => ?_
-  have hsp : Region.Sub (below (w'.gpr .rsp) 16) ⟨L.B, 24⟩ := hc'.below_sub (by omega)
-  have a : Proof.Pbkdf2.Md.X86_64.Calls.UpdArgs P.ok.stream w' (L.scr + BitVec.ofNat 64 o) da
-      (L.scr + BitVec.ofNat 64 384) len :=
-    { rdi := (hk' _ (by decide)).trans hdi, rdx := (hk' _ (by decide)).trans hdx
-      rcx := by rw [hk' _ (by decide), hcx, BitVec.toNat_ofNat]; omega
-      r8 := (hk' _ (by decide)).trans h8
-      cd := hc'.covers fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hd.cov
-      cw := hc'.coversW fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩
-      st_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
-      d_st := hd.st
-      d_sc := hd.wk
-      stk_st := (hL.low_scr (by nums)).sub_left hsp
-      stk_d := hd.low.sub_left hsp
-      stk_sc := (hL.low_scr (by nums)).sub_left hsp }
-  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w'' af hrr hsy => ?_)
-  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ : Region),
-      ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> exact scr_work (by nums)
-  refine ⟨hc'.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hc' (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
-    ?_, ?_⟩
-  · rw [← hmw, ← hm']
-    exact af.frame.sub fun r hr => by
-      rcases List.mem_append.mp hr with hr | hr
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact ⟨_, List.mem_cons_self .., sub_refl _⟩
-        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_refl _⟩
-      · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨L.B, 24⟩, by simp, hsp⟩
-  · have := hrr msg (by rw [hm', hmw]; exact hr) (by rw [hk' _ (by decide), hsi, hml])
-    rwa [hm', hmw] at this
-
-/-! ## The streaming `finalize` -/
+  have a := finArgsOf (P := P) hL hc' ho ((hk' _ (by decide)).trans hdi) ((hk' _ (by decide)).trans hdx)
+    ((hk' _ (by decide)).trans hcx)
+  refine WP.mono (finRaw_ok hL hc' ho a hcnt ((hk' _ (by decide)).trans hsi)) fun u ⟨hcu, hf, hr⟩ => ?_
+  rw [hm', hmw] at hf hr
+  exact ⟨hcu, hf, hr⟩
 
 /-- `finalize` of the state at `scratch + o`, holding `cnt` bytes, into
 `scratch + sTmp`: its first `D` bytes are the digest. -/
@@ -269,60 +392,8 @@ theorem finCall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
     WP isa ((cfgOf P).finCall o cnt) t fun u => Ctx L g m₀ u ∧
       Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 1920, P.H.stream.F⟩,
         ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩, ⟨L.B, 24⟩] t.mem u.mem ∧
-      (Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 1920) P.H.stream.F).take P.H.D = P.ok.SH.H.hash msg := by
-  have hb : WP isa (.block (Cfg.finArgs o cnt)) t fun w => Ctx L g m₀ w ∧ w.mem = t.mem ∧
-      w.gpr .rdi = L.scr + BitVec.ofNat 64 o ∧ w.gpr .rsi = BitVec.ofNat 64 cnt ∧
-      w.gpr .rdx = L.scr + BitVec.ofNat 64 1920 ∧ w.gpr .rcx = L.scr + BitVec.ofNat 64 384 := by
-    rw [Cfg.finArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (scr_ok hL hc (d := .rdi) (by decide) (a := o) (by omega)) fun u₁ h₁ => ?_
-    refine WP.mono (mov32_ok hL h₁.ctx (d := .rsi) (by decide) hcnt) fun u₂ h₂ => ?_
-    refine WP.mono (scr_ok hL h₂.ctx (d := .rdx) (by decide) (a := 1920) (by decide)) fun u₃ h₃ => ?_
-    refine WP.mono (scr_ok hL h₃.ctx (d := .rcx) (by decide) (a := 384) (by decide)) fun u₄ h₄ => ?_
-    refine ⟨h₄.ctx, by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, h₄.val⟩
-    · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
-    · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]
-    · rw [h₄.keep _ (by decide), h₃.val]
-  refine WP.seq (WP.mono hb fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx⟩ => ?_)
-  have hok := hcw.tabOk
-  have htm := hcw.tabMem
-  rw [hT.1, hT.2.1] at hok
-  rw [hT.1] at htm
-  refine tcall_ok hL hT hcw (j := 2) (by decide) (n := P.H.stream.finN) (c := P.H.stream.finC) htm.2.2 hok.2.2
-    fun w' hc' hm' hk' _ => ?_
-  have hsp : Region.Sub (below (w'.gpr .rsp) 16) ⟨L.B, 24⟩ := hc'.below_sub (by omega)
-  have a : Proof.Pbkdf2.Md.X86_64.Calls.FinArgs P.ok.stream w' (L.scr + BitVec.ofNat 64 o)
-      (L.scr + BitVec.ofNat 64 1920) (L.scr + BitVec.ofNat 64 384) :=
-    { rdi := (hk' _ (by decide)).trans hdi, rdx := (hk' _ (by decide)).trans hdx
-      rcx := (hk' _ (by decide)).trans hcx
-      cw := hc'.coversW fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩
-      st_o := Offset.disjoint _ (by nums) (by nums) (by nums)
-      st_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
-      o_sc := Offset.disjoint _ (by nums) (by nums) (by nums)
-      stk_st := (hL.low_scr (by nums)).sub_left hsp
-      stk_o := (hL.low_scr (by nums)).sub_left hsp
-      stk_sc := (hL.low_scr (by nums)).sub_left hsp }
-  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.fin_call P.ok.stream a fun w'' af hrr hsy => ?_)
-  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, P.H.stream.S⟩ : Region),
-      ⟨L.scr + BitVec.ofNat 64 1920, P.H.stream.F⟩, ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩],
-      Region.Sub r ⟨L.scr, 2256⟩ := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> exact scr_work (by nums)
-  refine ⟨hc'.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hc' (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
-    ?_, ?_⟩
-  · rw [← hmw, ← hm']
-    exact af.frame.sub fun r hr => by
-      rcases List.mem_append.mp hr with hr | hr
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact ⟨_, List.mem_cons_self .., sub_refl _⟩
-        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_refl _⟩
-        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), sub_refl _⟩
-      · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨L.B, 24⟩, by simp, hsp⟩
-  · exact hrr msg (by rw [hm', hmw]; exact hr) (by rw [hml]; omega) (by rw [hk' _ (by decide), hsi, hml])
+      (Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 1920) P.H.stream.F).take P.H.D = P.ok.SH.H.hash msg :=
+  WP.mono (finCall_gen hL hT hc ho hcnt) fun _ ⟨a, b, c⟩ => ⟨a, b, c msg hr hml⟩
 
 /-- `scratch` in `rdi`. -/
 theorem scrPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
