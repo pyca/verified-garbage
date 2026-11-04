@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified

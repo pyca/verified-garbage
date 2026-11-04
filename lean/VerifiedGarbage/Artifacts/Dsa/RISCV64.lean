@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.GKVerified

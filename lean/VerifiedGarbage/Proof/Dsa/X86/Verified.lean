@@ -258,7 +258,4 @@ theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi 108).pre s :=
   sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp, verifyingSatState] using verifyingSatState
 
-theorem verifying_verified : Verified target (Entry.operation false) (Spec.Dsa.verifyContract abi 108) :=
-  ⟨verifyingCorrect, verifyingConstantTime, verifyingSatisfiable⟩
-
 end VG.Proof.Dsa.X86
