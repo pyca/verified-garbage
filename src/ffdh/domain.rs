@@ -341,7 +341,7 @@ impl Domain {
 ))]
 mod cache_tests {
     use super::Domain;
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
     use super::{Backend, detected, scratch};
 
     #[test]
