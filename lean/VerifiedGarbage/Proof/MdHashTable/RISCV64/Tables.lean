@@ -44,6 +44,18 @@ structure MVar where
   w : TVar
   M : MdL w.H w.l.ok
 
+def md5V : MVar := ⟨HashTable.RISCV64.md5V, Proof.RsaPss.RISCV64.md5M⟩
+def sha1V : MVar := ⟨HashTable.RISCV64.sha1V, Proof.RsaPss.RISCV64.sha1M⟩
+def sha224V : MVar := ⟨HashTable.RISCV64.sha224V, Proof.RsaPss.RISCV64.sha224M⟩
+def sha256V : MVar := ⟨HashTable.RISCV64.sha256V, Proof.RsaPss.RISCV64.sha256M⟩
+def sha384V : MVar := ⟨HashTable.RISCV64.sha384V, Proof.RsaPss.RISCV64.sha384M⟩
+def sha512V : MVar := ⟨HashTable.RISCV64.sha512V, Proof.RsaPss.RISCV64.sha512M⟩
+def sha512_224V : MVar := ⟨HashTable.RISCV64.sha512_224V, Proof.RsaPss.RISCV64.sha512_224M⟩
+def sha512_256V : MVar := ⟨HashTable.RISCV64.sha512_256V, Proof.RsaPss.RISCV64.sha512_256M⟩
+
+/-- Every hash function. -/
+def vars : List MVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
+
 /-- The index of `v`'s hash function in `Mgf1.hashes`. -/
 def idx (v : MVar) : Nat := Spec.HashTable.index v.w.l.G
 
