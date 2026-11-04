@@ -76,32 +76,32 @@ abbrev qiB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.a
 abbrev digB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.addr P.dig) h.D
 abbrev saltB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.addr P.salt) P.sl
 
-/-- The result. -/
-abbrev Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
+/-- The result, with MGF1's hash function `G`. -/
+abbrev Res (G : Spec.Mgf1.Hash) (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
   Spec.Rsa.writtenOutcome m (State.addr P.out) P.K r
-    (Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ))
+    (Spec.RsaPss.sign h.G G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ))
 
 /-- The end of the body. -/
-abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h P σ s.mem (s.gpr .r0)
+abbrev Fin (G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h G P σ s.mem (s.gpr .r0)
 
 /-- The arguments' places are immediates. -/
-theorem arg_lt {j : Nat} (hj : j < 21) : arg j < 4096 := by
+theorem arg_lt {j : Nat} (hj : j < 24) : arg j < 4096 := by
   unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith
 
 /-- An argument: its place, readable, and its value. -/
-theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) {j : Nat} (hj : j < 21) :
+theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) {j : Nat} (hj : j < 24) :
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = (P.lay D).fr (arg j) ∧
     InRegions (s.rd ++ s.wr) ((P.lay D).fr (arg j)) 4 ∧
-    s.mem.readW ((P.lay D).fr (arg j)) 32 = P.argv.getD j 0 := by
+    s.mem.readW ((P.lay D).fr (arg j)) 32 = (P.argv D).getD j 0 := by
   have hl : j < (P.lay D).argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega_arith
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 68; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith),
+      show arg j < frameBytes + 56 + 80; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {D : Nat} {P : EP} {σ : State} (hi : In D P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = (P.lay D).fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 68; unfold frameBytes at hd ⊢; omega_arith)
+  hi.ok.addrB (by show d < frameBytes + 56 + 80; unfold frameBytes at hd ⊢; omega_arith)
 
 /-- After `signChk`. -/
 abbrev C0 (P : EP) (σ s : State) : Prop :=
@@ -112,11 +112,11 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk h.sh)) (C0 h P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm) fun σ s ⟨hi, hs⟩ => ?_
   have hK := hi.k1024
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
-  obtain ⟨a19, r19, v19⟩ := argAt hi hs (j := 19) (by decide)
+  obtain ⟨a20, r20, v20⟩ := argAt hi hs (j := 20) (by decide)
   obtain ⟨a2, r2, v2⟩ := argAt hi hs (j := 2) (by decide)
   obtain ⟨a3, r3, v3⟩ := argAt hi hs (j := 3) (by decide)
-  obtain ⟨a18, r18, v18⟩ := argAt hi hs (j := 18) (by decide)
-  have k : ∀ (j : Nat) (v : BitVec 32), j < 21 → 4 ≤ arg j →
+  obtain ⟨a19, r19, v19⟩ := argAt hi hs (j := 19) (by decide)
+  have k : ∀ (j : Nat) (v : BitVec 32), j < 24 → 4 ≤ arg j →
       (s.mem.writeW ((P.lay h.D).fr sS) v).readW ((P.lay h.D).fr (arg j)) 32 = s.mem.readW ((P.lay h.D).fr (arg j)) 32 :=
     fun j v hj hj' => Lay.readW_fr_other _ _ _ (by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes sS; split <;> omega_arith) (by
@@ -124,8 +124,8 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk h.sh)) (C0 h P) := by
   have hw : WP isa (.block (signChk h.sh)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.gpr .r0 = P.n ∧ t.gpr .r1 = BitVec.ofNat 32 P.K ∧
       t.gpr .r2 = BitVec.ofNat 32 P.sl ∧ t.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧ t.gpr .r12 = P.B := by
-    prun [signChk, sp0, ld, st, mw, hs.sp, a19, r19, v19, a2, r2, v2, a3, r3, v3, a18, r18, v18,
-      k 2 _ (by decide) (by decide), k 3 _ (by decide) (by decide), k 18 _ (by decide) (by decide),
+    prun [signChk, sp0, ld, st, mw, hs.sp, a20, r20, v20, a2, r2, v2, a3, r3, v3, a19, r19, v19,
+      k 2 _ (by decide) (by decide), k 3 _ (by decide) (by decide), k 19 _ (by decide) (by decide),
       slotAt hi (d := sS) (by decide), hs.inFr (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide), arg_lt,
       movw_val (show dig h.sh + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
     exact ⟨rfl, rfl, rfl, rfl⟩
@@ -195,9 +195,17 @@ theorem par_vp (P : EP) : VP (C0 h P) (.block (params ++ saltFits)) (C1 h P) := 
 theorem nB_length {D : Nat} {P : EP} {σ : State} (hi : In D P σ) : P.nB.length = P.K := by
   rw [← hi.nB, RsaPkcs1Sig.Arm.bytesAt_length]
 
+/-- `sign_long`, with MGF1's hash function `G` another. -/
+theorem sign_long₂ (H G : Spec.Mgf1.Hash) {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
+    (h : Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip nB) - 1) < H.len + salt.length + 2) :
+    Spec.RsaPss.sign H G nB eB pB qB dPB dQB qInvB mHash salt = .invalid := by
+  simp only [Spec.RsaPss.sign, Spec.RsaPss.encodeK, Spec.RsaPss.encode]
+  rw [ite_eq_left (Or.inr h)]
+  rfl
+
 /-- The specification refuses what does not fit. -/
-theorem sign_invalid {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
-    Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ)
+theorem sign_invalid (G : Spec.Mgf1.Hash) {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
+    Spec.RsaPss.sign h.G G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ)
       (saltB P σ) = .invalid := by
   have hl := nB_length hi
   have hK := hi.k64
@@ -212,9 +220,9 @@ theorem sign_invalid {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
   by_cases hb : b.toNat = 0
   · have : b = 0 := BitVec.eq_of_toNat_eq hb
     subst this
-    exact RsaPss.sign_zero h.G ..
+    exact RsaPss.sign_zero₂ G h.G ..
   · have hb0 : b ≠ 0 := fun e => hb (by rw [e]; rfl)
-    refine RsaPss.sign_long h.G _ _ _ _ _ _ _ _ ?_
+    refine sign_long₂ h.G G _ _ _ _ _ _ _ _ ?_
     have e1 := lo_eq hb0 rest
     have e2 := RsaPss.emLength_eq rest hb0
     have gl : h.G.len = h.D := h.glen
@@ -233,7 +241,8 @@ abbrev F2 (P : EP) (σ s : State) : Prop :=
 theorem ret0_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [])
     (.block [mw .r0 0]) hc).isSome = true := ⟨_, by taint_decide⟩
 
-theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (signFail) (Fin h P) := by
+theorem fail_vp (G : Spec.Mgf1.Hash) (P : EP) :
+    VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (signFail) (Fin h G P) := by
   show VP _ (.seq (.block [sp0, ld .r0 (arg 0), ld .lr (arg 3), mw .r2 0]) (.seq Impl.Bignum.Arm.maskBytes
     (.block [mw .r0 0]))) _
   refine VP.seq (G := F1 h P) (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm)
@@ -269,7 +278,7 @@ theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some
         t.gpr .r0 = 0 := by
       prun [mw]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, t0⟩ => ⟨⟨hs.1, hs.2.regs rd wr sp m⟩, ?_⟩
-    rw [Res, sign_invalid h hs.1 hf, t0, m]
+    rw [Res, sign_invalid h G hs.1 hf, t0, m]
     exact ⟨rfl, hz⟩
 
 end VG.Proof.RsaPss.Arm.Sg
