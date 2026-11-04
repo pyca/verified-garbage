@@ -111,4 +111,48 @@ theorem search_exhausted_ct : RelCT isa (Two SearchAny) exhausted (fun _ _ => Tr
   unfold exhausted
   exact RelCT.seq (two_piece [.r12, .rsp] search_any_pins (by taint_decide) exhausted_prefix) search_zero_ct
 
+/-! ## After the candidate -/
+
+/-- A loop state at the point, before its candidate. -/
+def SearchAt (q : SearchPoint) (s : State) : Prop :=
+  ∃ original, SearchLive q.inputs original q.used q.remaining s
+
+theorem search_at_pins : Pins SearchAt [.r12, .rsp] := fun q _ _ ⟨o₁, h₁⟩ ⟨o₂, h₂⟩ =>
+  search_any_pins q.inputs _ _ ⟨o₁, _, _, h₁⟩ ⟨o₂, _, _, h₂⟩
+
+/-- A loop state at the point, after its candidate. -/
+def CandCT (q : SearchPoint) (s : State) : Prop :=
+  ∃ original, SearchLive q.inputs original q.used q.remaining s ∧
+    CandPost q.inputs (searchP original) (searchRand original) q.used s ∧
+    (tailOf q.inputs original q.used q.remaining).trace = q.trace ∧ q.remaining ≠ 0
+
+theorem CandCT.at {q : SearchPoint} {s : State} (h : CandCT q s) : SearchAt q s :=
+  let ⟨o, h, _⟩ := h; ⟨o, h⟩
+
+theorem cand_ct_pins : Pins CandCT [.r12, .rsp] := fun q _ _ h₁ h₂ => search_at_pins q _ _ h₁.at h₂.at
+
+/-- The candidate's status, from the point. -/
+abbrev SearchPoint.status (q : SearchPoint) : Nat := Search.statusOfLeak q.leak
+
+/-- The octets the candidate consumed, from the point. -/
+abbrev SearchPoint.cand (q : SearchPoint) : Nat := Search.usedOfLeak q.inputs.len q.leak
+
+theorem CandCT.status {q : SearchPoint} {s : State} (h : CandCT q s) :
+    ((s.gpr .rax).setWidth 32).toNat = q.status := by
+  obtain ⟨o, -, hc, ht, hr⟩ := h
+  rw [hc.1, VG.Proof.RsaKeyGen.Search.status_of_leak, SearchCTL.leak ht hr]
+
+theorem CandCT.used {q : SearchPoint} {original s : State} (hl : SearchLive q.inputs original q.used q.remaining s)
+    (ht : (tailOf q.inputs original q.used q.remaining).trace = q.trace) (hr : q.remaining ≠ 0) :
+    candUsed q.inputs original q.used = q.cand := by
+  have hu := VG.Proof.RsaKeyGen.Search.used_of_leak (L := q.inputs.len) (eB := q.inputs.eB)
+    (pB := searchP original) ((searchRand original).drop q.used)
+  rw [SearchCTL.leak ht hr, List.length_drop, hl.rand_length] at hu
+  exact hu
+
+theorem status_lt (q : SearchPoint) {s : State} (h : CandCT q s) : q.status < 4 := by
+  obtain ⟨o, -, -, ht, hr⟩ := h
+  rw [SearchPoint.status, ← SearchCTL.leak ht hr, ← VG.Proof.RsaKeyGen.Search.status_of_leak]
+  unfold Spec.RsaKeyGen.candidateStatus; split <;> decide
+
 end VG.Proof.RsaKeyGen.X86_64.Search
