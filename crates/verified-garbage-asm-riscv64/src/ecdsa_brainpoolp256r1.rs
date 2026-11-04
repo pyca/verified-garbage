@@ -3204,9 +3204,9 @@ call {vg_brainpoolp256r1_sub_mod_n}
 .insn 2, 0x8082
 .option pop",
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
+        vg_brainpoolp256r1_mul_mod_n = sym super::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_n::vg_brainpoolp256r1_mul_mod_n,
         vg_brainpoolp256r1_mul = sym super::ecdh_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
         vg_brainpoolp256r1_mul_g = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_g::vg_brainpoolp256r1_mul_g,
-        vg_brainpoolp256r1_mul_mod_n = sym super::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_n::vg_brainpoolp256r1_mul_mod_n,
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
         vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
