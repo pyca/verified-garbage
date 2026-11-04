@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Call
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -366,5 +367,73 @@ theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSear
   · have ho := hc.2.1
     rw [hres] at ho
     exact ho
+
+/-! ## Asking for more entropy -/
+
+theorem ofNat_toNat_lt {a : Nat} (h : a < 2 ^ 64) : (BitVec.ofNat 64 a).toNat = a := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
+/-- `request`, with the octets left in rax: the next tape's length. -/
+theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) (hra : s.gpr .rax = BitVec.ofNat 64 (p.randLen - used)) :
+    WP isa (.block request) s fun t =>
+      t.mem = writeFrame s.mem p.F [(3, BitVec.ofNat 64 (primeRequest p.len (p.randLen - used))),
+        (17, (BitVec.ofNat 32 0).setWidth 64)] ∧ Keep [.rax, .rcx] s t := by
+  obtain ⟨hl, hs, -⟩ := h.frame_in (t := s) rfl
+  have hf := h.callFacts
+  have hL : p.len ≤ 512 := hf.len.2.1
+  have hcap : p.randLen ≤ primeEntropy p.len := by
+    rw [← h.input.2]; exact h.input.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have h1 := h.slot (j := 1) (v := BitVec.ofNat 64 p.len) (by simp [SearchPublic.headers])
+  have h2 := h.slot (j := 2) (v := BitVec.ofNat 64 (primeEntropy p.len)) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h1 h2
+  have h16 : BitVec.ofNat 64 p.len <<< 4 = BitVec.ofNat 64 (16 * p.len) := by
+    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+  have hle : primeEntropy p.len < 2 ^ 63 := by unfold primeEntropy; omega
+  have hreq : primeRequest p.len (p.randLen - used) =
+      min (2 * max (p.randLen - used) (16 * p.len)) (primeEntropy p.len) := rfl
+  have ta := ofNat_toNat_lt (a := p.randLen - used) (by omega)
+  have t16 := ofNat_toNat_lt (a := 16 * p.len) (by omega)
+  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by omega)
+  have sa : BitVec.ofNat 64 (p.randLen - used) <<< 1 = BitVec.ofNat 64 (2 * (p.randLen - used)) := by
+    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+  have s16 : BitVec.ofNat 64 (16 * p.len) <<< 1 = BitVec.ofNat 64 (2 * (16 * p.len)) := by
+    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+  have t2a := ofNat_toNat_lt (a := 2 * (p.randLen - used)) (by omega)
+  have t216 := ofNat_toNat_lt (a := 2 * (16 * p.len)) (by omega)
+  refine WP.keep [.rax, .rcx] ?_ rfl
+  unfold request writeFrame
+  simp only [List.foldl_cons, List.foldl_nil]
+  rcases Nat.lt_or_ge (p.randLen - used) (16 * p.len) with c1 | c1
+  · rcases Nat.lt_or_ge (2 * (16 * p.len)) (primeEntropy p.len) with c2 | c2
+    · have e1 := decide_eq_true c1
+      have e2 := decide_eq_true c2
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
+        h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
+        ta, t16, tc, s16, t216, e1, e2]
+      rw [hreq, Nat.max_eq_right (by omega), Nat.min_eq_left (by omega)]
+      rfl
+    · have e1 := decide_eq_true c1
+      have e2 := decide_eq_false (Nat.not_lt.mpr c2)
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
+        h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
+        ta, t16, tc, s16, t216, e1, e2]
+      rw [hreq, Nat.max_eq_right (by omega), Nat.min_eq_right (by omega)]
+      rfl
+  · rcases Nat.lt_or_ge (2 * (p.randLen - used)) (primeEntropy p.len) with c2 | c2
+    · have e1 := decide_eq_false (Nat.not_lt.mpr c1)
+      have e2 := decide_eq_true c2
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
+        h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
+        ta, t16, tc, sa, t2a, e1, e2]
+      rw [hreq, Nat.max_eq_left (by omega), Nat.min_eq_left (by omega)]
+      rfl
+    · have e1 := decide_eq_false (Nat.not_lt.mpr c1)
+      have e2 := decide_eq_false (Nat.not_lt.mpr c2)
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
+        h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
+        ta, t16, tc, sa, t2a, e1, e2]
+      rw [hreq, Nat.max_eq_left (by omega), Nat.min_eq_right (by omega)]
+      rfl
 
 end VG.Proof.RsaKeyGen.X86_64.Search
