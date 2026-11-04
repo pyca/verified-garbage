@@ -105,16 +105,33 @@ def EncOk (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) : Prop :=
     G.hash (zeros 8 ++ mHash ++ (vDb G em (E - G.len - 1) z).drop (lz (vDb G em (E - G.len - 1) z) + 1)) =
       vH G em (E - G.len - 1)
 
-theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
-    (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
-    (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
-    verifyEncoding G G mHash em emBits sLen = true ↔
-      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen := by
-  unfold EncOk vDb vH
+/-- `DB` with MGF1's `G` and the digest of `H`. -/
+def vDb₂ (H : Hash) (em : List Byte) (L z : Nat) : List Byte :=
+  clearTop z (xorBytes (em.take L) (mgf1 G (vH H em L) L))
+
+/-- What `verifyEncoding H G` checks, a byte at a time, for `emLen = E`. -/
+def EncOk₂ (H : Hash) (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) : Prop :=
+  em.getD (E - 1) 0 = 0xbc ∧ em.getD 0 0 &&& ~~~((0xFF : Byte) >>> z) = 0 ∧
+    lz (vDb₂ G H em (E - H.len - 1) z) < E - H.len - 1 ∧
+    (vDb₂ G H em (E - H.len - 1) z).getD (lz (vDb₂ G H em (E - H.len - 1) z)) 0 = 1 ∧
+    (sLen = none ∨ sLen = some (E - H.len - 1 - 1 - lz (vDb₂ G H em (E - H.len - 1) z))) ∧
+    H.hash (zeros 8 ++ mHash ++ (vDb₂ G H em (E - H.len - 1) z).drop (lz (vDb₂ G H em (E - H.len - 1) z) + 1)) =
+      vH H em (E - H.len - 1)
+
+theorem vDb_eq : vDb G = vDb₂ G G := rfl
+
+theorem EncOk_eq : EncOk G = EncOk₂ G G := rfl
+
+theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
+    (hm : mHash.length = H.len) (hl : em.length = emLength emBits)
+    (hfit : H.len + sLen.getD 0 + 2 ≤ emLength emBits) :
+    verifyEncoding H G mHash em emBits sLen = true ↔
+      EncOk₂ G H mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen := by
+  unfold EncOk₂ vDb₂ vH
   generalize hE : emLength emBits = E at *
-  generalize hL : E - G.len - 1 = L
+  generalize hL : E - H.len - 1 = L
   generalize hz : 8 * E - emBits = z
-  generalize hh : (em.drop L).take G.len = h
+  generalize hh : (em.drop L).take H.len = h
   generalize hdb : clearTop z (xorBytes (em.take L) (mgf1 G h L)) = db
   have hdbl : db.length = L := by
     rw [← hdb, clearTop_length, xorBytes_length, mgf1_length hG]; simp; omega
@@ -161,6 +178,13 @@ theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat
       simp only [h2, false_and, and_false, Bool.false_eq_true]
   · rw [ifp (by rw [getLast?_eq hne, hl]; simpa using h1)]
     simp only [h1, false_and, Bool.false_eq_true]
+
+theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
+    (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
+    (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
+    verifyEncoding G G mHash em emBits sLen = true ↔
+      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen :=
+  verifyEncoding_bytes₂ G G hG hm hl hfit
 
 theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :: rest) eB sB = none := by
   have := os2ip_lt' rest
