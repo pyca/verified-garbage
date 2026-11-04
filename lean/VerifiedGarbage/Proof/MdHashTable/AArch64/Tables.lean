@@ -8,6 +8,8 @@ public import VerifiedGarbage.Impl.RsaPss.AArch64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
 public import VerifiedGarbage.Proof.Bignum.Words
 
+-- separate module: the tables of `MdHash`, apart from RSASSA-PSS's proofs, as `Proof/HashTable/AArch64.lean` is for `Hash`
+
 /-!
 # Tables of the interface `MdHash` on AArch64
 
