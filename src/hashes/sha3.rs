@@ -35,6 +35,11 @@ use crate::arch::sha3::{
     vg_keccak_squeeze_sha3,
 };
 
+/// The working space of `vg_keccak_absorb_scratch`, aligned to a cache
+/// line.
+#[repr(C, align(128))]
+struct Scratch(MaybeUninit<[u64; 80]>);
+
 /// The implementations of the sponge's functions, the same for every phase
 /// of a sponge.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -138,7 +143,7 @@ impl<const RATE: usize> Sponge<RATE> {
         let backend = self.backend();
         // Uninitialized: the contract holds whatever the scratch holds, so
         // filling it first would only cost time.
-        let mut scratch = MaybeUninit::<[u64; 80]>::uninit();
+        let mut scratch = Scratch(MaybeUninit::uninit());
         // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is
         // less than it, and is the length modulo `RATE` of the message that
         // `self.state` represents. `self.state` is valid for reads and
@@ -157,7 +162,7 @@ impl<const RATE: usize> Sponge<RATE> {
                     self.pos,
                     data.as_ptr(),
                     data.len(),
-                    scratch.as_mut_ptr(),
+                    scratch.0.as_mut_ptr(),
                 ),
                 #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_absorb_scratch_sha3(
@@ -166,7 +171,7 @@ impl<const RATE: usize> Sponge<RATE> {
                     self.pos,
                     data.as_ptr(),
                     data.len(),
-                    scratch.as_mut_ptr(),
+                    scratch.0.as_mut_ptr(),
                 ),
             }
         };
