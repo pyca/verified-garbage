@@ -3,39 +3,6 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuEJAwBAACDwACJBCQ="
-call {vg_sha512_init}
-.base64 "i4QkDAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIuEJAgBAACDwACJRCQMuCAAAACJRCQQi4QkDAEAAAXAAAAAiUQkFA=="
-call {vg_sha512_update_scratch}
-.base64 "i4QkDAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIngBcAAAACJRCQMi4QkDAEAAAXAAAAAiUQkEA=="
-call {vg_sha512_finalize_scratch}
-.base64 "i4QkwAAAAIPg+IlEJCCLhCTEAAAAiUQkJIuEJMgAAACJRCQoi4QkzAAAAIlEJCyLhCTQAAAAiUQkMIuEJNQAAACJRCQ0i4Qk2AAAAIlEJDiLhCTcAAAAJf///z8NAAAAQIlEJDyLhCQEAQAAg8AAiQQkieCDwCCJRCQEi4QkDAEAAIPAAIlEJAg="
-call {vg_ed25519_scalar_base}
-.base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-    )
-}
-
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
@@ -58,68 +25,6 @@ call {vg_ed25519_scalar_base}
 .base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-    )
-}
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 280 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuEJBgBAACDwACJBCQ="
-call {vg_sha512_init}
-.base64 "i4QkGAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIuEJAgBAACDwACJRCQMuCAAAACJRCQQi4QkGAEAAAXAAAAAiUQkFA=="
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIngBcAAAACJRCQMi4QkGAEAAAXAAAAAiUQkEA=="
-call {vg_sha512_finalize_scratch}
-.base64 "i4QkwAAAAIPg+IlEJCCLhCTEAAAAiUQkJIuEJMgAAACJRCQoi4QkzAAAAIlEJCyLhCTQAAAAiUQkMIuEJNQAAACJRCQ0i4Qk2AAAAIlEJDiLhCTcAAAAJf///z8NAAAAQIlEJDyLhCTgAAAAiUQkQIuEJOQAAACJRCREi4Qk6AAAAIlEJEiLhCTsAAAAiUQkTIuEJPAAAACJRCRQi4Qk9AAAAIlEJFSLhCT4AAAAiUQkWIuEJPwAAACJRCRci4QkGAEAAIPAAIkEJA=="
-call {vg_sha512_init}
-.base64 "i4QkGAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIngg8BAiUQkDLggAAAAiUQkEIuEJBgBAAAFwAAAAIlEJBQ="
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIuEJBABAACDwACJRCQMi4QkFAEAAIPAAIlEJBCLhCQYAQAABcAAAACJRCQU"
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIngBcAAAACJRCQMi4QkGAEAAAXAAAAAiUQkEIuEJBQBAAC6AAAAAIPAIIPSAIlEJASJVCQI"
-call {vg_sha512_finalize_scratch}
-.base64 "ieCDwGCJBCSJ4AXAAAAAiUQkBIuEJBgBAACDwACJRCQI"
-call {vg_ed25519_scalar_reduce}
-.base64 "i4QkBAEAAIPAAIkEJIngg8BgiUQkBIuEJBgBAACDwACJRCQI"
-call {vg_ed25519_scalar_base}
-.base64 "i4QkGAEAAIPAAIkEJA=="
-call {vg_sha512_init}
-.base64 "i4QkGAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIuEJAQBAACDwACJRCQMuCAAAACJRCQQi4QkGAEAAAXAAAAAiUQkFA=="
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIuEJAwBAACDwACJRCQMuCAAAACJRCQQi4QkGAEAAAXAAAAAiUQkFA=="
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLhAAAAAiUQkBLgAAAAAiUQkCIuEJBABAACDwACJRCQMi4QkFAEAAIPAAIlEJBCLhCQYAQAABcAAAACJRCQU"
-call {vg_sha512_update_scratch}
-.base64 "i4QkGAEAAIPAAIkEJLhAAAAAiUQkBLgAAAAAiUQkCIngBcAAAACJRCQMi4QkGAEAAAXAAAAAiUQkEIuEJBQBAAC6AAAAAIPAQIPSAIlEJASJVCQI"
-call {vg_sha512_finalize_scratch}
-.base64 "ieAFgAAAAIkEJIngBcAAAACJRCQEi4QkGAEAAIPAAIlEJAg="
-call {vg_ed25519_scalar_reduce}
-.base64 "i4QkBAEAAIPAIIkEJIngg8BgiUQkBIngBYAAAACJRCQIieCDwCCJRCQMi4QkGAEAAIPAAIlEJBA="
-call {vg_ed25519_scalar_mul_add}
-.base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
-.p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
     )
 }
 
