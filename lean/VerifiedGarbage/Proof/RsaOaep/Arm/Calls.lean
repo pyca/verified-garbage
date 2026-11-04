@@ -837,7 +837,7 @@ theorem lens_certs : ∀ x ∈ Impl.RsaOaep.Arm.lens, x < 2 ^ 32 ∧ encodable (
       true := by
   intro x hx
   simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
 
 theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
     UArgs scr d len c (s.setReg .r4 v) := by
