@@ -31,12 +31,12 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
 theorem psa_pub {a s : State} (p : PubS a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 13),
-      p.args _ (by decide : (1 : Nat) < 13), p.args _ (by decide : (2 : Nat) < 13),
-      p.args _ (by decide : (3 : Nat) < 13), p.args _ (by decide : (4 : Nat) < 13),
-      p.args _ (by decide : (5 : Nat) < 13), p.args _ (by decide : (6 : Nat) < 13),
-      p.args _ (by decide : (7 : Nat) < 13), p.args _ (by decide : (11 : Nat) < 13),
-      p.args _ (by decide : (12 : Nat) < 13)]
+    simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 16),
+      p.args _ (by decide : (1 : Nat) < 16), p.args _ (by decide : (2 : Nat) < 16),
+      p.args _ (by decide : (3 : Nat) < 16), p.args _ (by decide : (4 : Nat) < 16),
+      p.args _ (by decide : (5 : Nat) < 16), p.args _ (by decide : (6 : Nat) < 16),
+      p.args _ (by decide : (7 : Nat) < 16), p.args _ (by decide : (11 : Nat) < 16),
+      p.args _ (by decide : (12 : Nat) < 16)]
 
 /-- At the call, from an entry state with `a`'s public data. -/
 def APriv (D : Nat) (a u : State) : Prop := ∃ s em, PreS D s ∧ PubK a s ∧ AtPriv s em u

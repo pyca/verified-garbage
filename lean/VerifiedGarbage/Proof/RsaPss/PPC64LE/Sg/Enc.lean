@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Blocks
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.EnView
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
@@ -30,22 +32,26 @@ open VG.Impl.RsaOaep.PPC64LE (oEm oSt oDig oW oRsa)
 open VG.Impl.RsaPss.PPC64LE (oY)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
-open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off view view_wb view_w8 fx hiRegs offs mgfXor_ok MFit)
+open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off view view_wb view_w8 fx hiRegs offs mgfXorT_ok MFit TabS)
+open VG.Impl.RsaPss.PPC64LE (MdFns)
+open VG.Impl.RsaOaep.PPC64LE (Fns)
 open VG.Proof.RsaOaep (mixV srcB range_ext map_range_getD')
-open VG.Proof.RsaPss.PPC64LE (hashFixedG_ok)
+open VG.Proof.RsaPss.PPC64LE (hashFixedG_ok MdTabS)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 
 section
-variable {Gs : Spec.Mgf1.Hash} {s : State} (P : PreS Gs.len s) {H : Hash} (hH : HashOK H)
-  (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D) (hGv : Proof.Mgf1.Valid Gs)
-include P hH hGh hGl hGv
+variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreS Gs.len s) {H : Hash} (hH : HashOK H)
+  (hGl : Gs.len = H.D) {G : Hash} (hG : HashOK G) {g : Fns} (Tg : TabS G g gArg Ss s (stackArg s 15))
+  (hGmh : ∀ x, Gm.hash x = hG.SH.H.hash x) (hGml : Gm.len = G.D) (hGmv : Proof.Mgf1.Valid Gm)
+  {cn dn : String} {cc dc : Prog isa} {f : MdFns} (T : MdTabS H cn cc dn dc f hArg Ss s (stackArg s 14))
+include P hH hGl hG Tg hGmh hGml hGmv T
 
-theorem signEnc_ok {t : State} (E : Entered s t) (h0 : s.mem (s.gpr .r5) ≠ 0)
-    (hfit : Gs.len + (stackArg s 10).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
-    (k : ∀ t', Base Ss vS s t' → Spec.Rsa.bytesAt t'.mem (off (Ss s) oEm) (kk s) = encEm Gs s →
+theorem signEnc_ok (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State} (E : Entered s t) (sy : t.syms = s.syms)
+    (h0 : s.mem (s.gpr .r5) ≠ 0) (hfit : Gs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
+    (k : ∀ t', Base Ss vS s t' → t'.syms = s.syms → Spec.Rsa.bytesAt t'.mem (off (Ss s) oEm) (kk s) = encEm Gs Gm s →
       WP isa priv t' Q) :
-    WP isa (signMain H) t Q := by
+    WP isa (signMain H f g) t Q := by
   have F := fits P
   have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
   have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64
@@ -55,14 +61,15 @@ theorem signEnc_ok {t : State} (E : Entered s t) (h0 : s.mem (s.gpr .r5) ≠ 0)
   have hl1 := loN_le s
   obtain ⟨hE, hSt, hDg, _, _, hR⟩ := offs
   have hY : oY = 2560 := rfl
-  have hsalt : (saltB s).length = (stackArg s 10).toNat := bytesAt_length _ _ _
-  have hhl : (hS Gs s).length = Gs.len := hGv.2 _
+  have hsalt : (saltB s).length = (stackArg s 11).toNat := bytesAt_length _ _ _
+  have hhl : (hS Gs s).length = Gs.len := by
+    rw [hS, hGh, hH.hashLen, hGl]
   unfold signMain
   -- `M'` and `H`.
-  refine WP.seq (WP.mono (mPrime_ok P hGl.symm hD0 hD64 E.base (by omega)) fun t₁ ⟨b₁, _, m₁⟩ => ?_)
-  refine WP.seq (WP.mono (hashFixedG_ok F hH hGl.symm (sl := (stackArg s 10).toNat)
-    (by show stackArg s 10 = _; rw [ofNat_toNat]) b₁ (by omega)) fun t₂ ⟨b₂, _, _, d₂⟩ => ?_)
-  have hM : Spec.Sha256.bytesAt t₁.mem (off (Ss s) oY) (8 + Gs.len + (stackArg s 10).toNat) =
+  refine WP.seq (WP.mono_syms (mPrime_ok P hGl.symm hD0 hD64 E.base (by omega)) fun t₁ ⟨b₁, _, m₁⟩ y₁ => ?_)
+  refine WP.seq (WP.mono (hashFixedG_ok F hH T hGl.symm (sl := (stackArg s 11).toNat)
+    (by show stackArg s 11 = _; rw [ofNat_toNat]) b₁ (y₁.trans sy) (by omega)) fun t₂ ⟨⟨b₂, _, _, d₂⟩, y₂⟩ => ?_)
+  have hM : Spec.Sha256.bytesAt t₁.mem (off (Ss s) oY) (8 + Gs.len + (stackArg s 11).toNat) =
       Spec.RsaPss.zeros 8 ++ digB Gs.len s ++ saltB s := by
     have := mPrime_bytes t.mem (Ss s) (digB Gs.len s) (saltB s) (bytesAt_length _ _ _) (by rw [hsalt]; omega)
     rw [hsalt] at this
@@ -75,40 +82,41 @@ theorem signEnc_ok {t : State} (E : Entered s t) (h0 : s.mem (s.gpr .r5) ≠ 0)
     rw [this, hS, hGh, hH.hashTake]
     simp [List.getD_eq_getElem?_getD, show i < H.D by omega]
   -- `EM` before masking.
-  refine WP.seq (WP.mono (clearEm_ok P b₂) fun t₃ ⟨b₃, _, m₃⟩ => ?_)
-  refine WP.seq (WP.mono (putSalt_ok P hGl.symm hD64 b₃ (by omega)) fun t₄ ⟨b₄, _, m₄⟩ => ?_)
+  refine WP.seq (WP.mono_syms (clearEm_ok P b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ => ?_)
+  refine WP.seq (WP.mono_syms (putSalt_ok P hGl.symm hD64 b₃ (by omega)) fun t₄ ⟨b₄, _, m₄⟩ y₄ => ?_)
   have hdig : Spec.Rsa.bytesAt t₄.mem (off (Ss s) oDig) Gs.len = hS Gs s := by
     rw [bytesAt_eq_view]
     refine range_ext hhl fun i hi => ?_
     rw [m₄, view_wb _ _ (by rw [hsalt]; omega) (by omega), ifn (by omega), view_w8 _ _ (by omega) (by omega),
       ifn (by omega), m₃, view_wb _ _ (by simp; omega) (by omega), ifn (by simp only [List.length_replicate]; omega)]
     exact hh i (by omega)
-  refine WP.seq (WP.mono (putH_ok P hGl.symm hD0 hD64 b₄ (by omega)) fun t₅ ⟨b₅, _, m₅⟩ => ?_)
-  have hpre : ∀ o < kk s, view t₅.mem (Ss s) o = emPre (kk s) Gs.len (stackArg s 10).toNat (saltB s) (hS Gs s) o :=
+  refine WP.seq (WP.mono_syms (putH_ok P hGl.symm hD0 hD64 b₄ (by omega)) fun t₅ ⟨b₅, _, m₅⟩ y₅ => ?_)
+  have hpre : ∀ o < kk s, view t₅.mem (Ss s) o = emPre (kk s) Gs.len (stackArg s 11).toNat (saltB s) (hS Gs s) o :=
     fun o ho => emPre_of hsalt hhl hk2 (by omega) m₃ m₄ (by rw [m₅, hdig]) ho
   -- MGF1 and `clearTop`.
-  refine WP.seq (WP.mono (dbArgs_ok P hGl.symm hD64 b₅ h0 (by omega)) fun t₆ ⟨b₆, v₆, x24, x25, x26, x27⟩ => ?_)
+  refine WP.seq (WP.mono_syms (dbArgs_ok P hGl.symm hD64 b₅ h0 (by omega)) fun t₆ ⟨b₆, v₆, x24, x25, x26, x27⟩ y₆ =>
+    ?_)
   have hsrc : srcB (view t₆.mem (Ss s)) (oEm + (kk s - Gs.len - 1)) Gs.len = hS Gs s := by
     refine range_ext hhl fun i hi => ?_
     rw [v₆, hpre _ (by omega)]
     simp only [emPre, hE, Nat.zero_add]
     rw [ifn (by omega), ifp (by omega), show kk s - Gs.len - 1 + i - (kk s - Gs.len - 1) = i by omega]
-  refine WP.seq (WP.mono (mgfXor_ok F hH hGh hGl hGv (src := oEm + (kk s - Gs.len - 1)) (srcLen := Gs.len)
+  refine WP.seq (WP.mono (mgfXorT_ok F hG Tg hGmh hGml hGmv (src := oEm + (kk s - Gs.len - 1)) (srcLen := Gs.len)
     (dst := oEm + loN s) (dstLen := kk s - loN s - Gs.len - 1) ⟨by omega, by omega, .inr (by omega), by omega⟩
-    b₆ x24 (by rw [x25]) x26 x27) fun t₇ ⟨b₇, v₇⟩ => ?_)
-  refine WP.seq (WP.mono (clearTop_ok P b₇ h0) fun t₈ ⟨b₈, m₈⟩ => ?_)
-  refine k t₈ b₈ ?_
+    b₆ (y₆.trans (y₅.trans (y₄.trans (y₃.trans y₂)))) x24 (by rw [x25]) x26 x27) fun t₇ ⟨⟨b₇, v₇⟩, y₇⟩ => ?_)
+  refine WP.seq (WP.mono_syms (clearTop_ok P b₇ h0) fun t₈ ⟨b₈, m₈⟩ y₈ => ?_)
+  refine k t₈ b₈ (y₈.trans y₇) ?_
   rw [bytesAt_eq_view]
   unfold encEm
   refine List.map_congr_left fun o ho => ?_
   have ho := List.mem_range.mp ho
   rw [m₈, view_w8 _ _ (by omega) (by omega), hE, Nat.zero_add, Nat.zero_add]
-  have e7 : ∀ x < kk s, view t₇.mem (Ss s) x = mixV (view t₆.mem (Ss s)) (Spec.Mgf1.mgf1 Gs (hS Gs s)
+  have e7 : ∀ x < kk s, view t₇.mem (Ss s) x = mixV (view t₆.mem (Ss s)) (Spec.Mgf1.mgf1 Gm (hS Gs s)
       (kk s - loN s - Gs.len - 1)) (loN s) (kk s - loN s - Gs.len - 1) x := fun x hx => by
     rw [v₇ x (by omega), hsrc, hE, Nat.zero_add]
   rw [e7 o ho, e7 (loN s) (by omega)]
-  have := emT_of (saltB s) (hS Gs s) (Spec.Mgf1.mgf1 Gs (hS Gs s) (kk s - loN s - Gs.len - 1)) (cS s)
-    (k := kk s) (sl := (stackArg s 10).toNat) hhl hl1 rfl (by omega) (V := view t₆.mem (Ss s))
+  have := emT_of (saltB s) (hS Gs s) (Spec.Mgf1.mgf1 Gm (hS Gs s) (kk s - loN s - Gs.len - 1)) (cS s)
+    (k := kk s) (sl := (stackArg s 11).toNat) hhl hl1 rfl (by omega) (V := view t₆.mem (Ss s))
     (fun x hx => by rw [v₆]; exact hpre x hx) ho
   by_cases hl : o = loN s
   · subst hl; rw [ifp rfl]; rw [ifp rfl] at this; exact this

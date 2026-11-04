@@ -24,8 +24,11 @@ open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off fx kR fb fr frameR_eq save_ok Sa
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_ld wp_mov wp_nil wp_lbz wp_lsr wp_or wp_subi)
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 13) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+
+theorem in_aR_sub {s : State} {j : Nat} (hj : j < 16) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
+  rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega)
 
 /-- The modulus' first byte. -/
 abbrev n0 (s : State) : BitVec 64 := (s.mem (s.gpr .r5)).setWidth 64
@@ -40,7 +43,7 @@ variable {D : Nat} {s : State} (P : PreS D s)
 include P
 
 /-- A load of our stack argument `j` through `r12`, the frame's base. -/
-theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 13)
+theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
     (h12 : t.gpr .r12 = fb s) (hrd : t.rd = s.rd) (hm : Frame [kR s, SC Ss s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : arg j < 2 ^ 15 ∧ arg j % 4 = 0 := by decide) :
@@ -58,22 +61,26 @@ theorem n_contains : (nR s).Contains (s.gpr .r5) 1 := by
     (by decide)
   rwa [BitVec.add_zero] at this
 
-theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (Entered s) := by
-  have hm0 : Frame [kR s] s.mem (allocated frameBytes s).mem := by
-    rw [allocated_mem]
+/-- From the state after the frame's push and the choice of the code for
+the hash function (which writes only `r11` and `r12`). -/
+theorem entry_ok {u : State} (hu : Only [.r11, .r12] (allocated frameBytes s) u) :
+    WP isa (.block (save ++ prologue)) u (Entered s) := by
+  have hm0 : Frame [kR s] s.mem u.mem := by
+    rw [hu.mem, allocated_mem]
     exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (by
       have := frame_contains s (d := 0) (n := 8) (by decide); rwa [BitVec.add_zero] at this)
-  refine save_ok (allocated_sp _ _) (by rw [allocated_wr, frameR_eq]) hm0 (fun r _ => by rw [allocated_gpr])
-    (allocated_lr _ _) fun v kv h12 hm₀ hsv hls => ?_
+  refine save_ok (by rw [hu.sp, allocated_sp]) (by rw [hu.wr, allocated_wr, frameR_eq]) hm0
+    (fun r hr => by rw [hu.gpr r (by revert r hr; decide), allocated_gpr]) (by rw [hu.lr, allocated_lr])
+    fun v kv h12 hm₀ hsv hls => ?_
   have hm : Frame [kR s, SC Ss s] s.mem v.mem := hm₀.mono fun r hr => by simp at hr ⊢; exact .inl hr
-  have hrd : v.rd = s.rd := kv.rd.trans (allocated_rd _ _)
+  have hrd : v.rd = s.rd := kv.rd.trans (hu.rd.trans (allocated_rd _ _))
   have gs : ∀ r ∈ [Reg.r3, .r5, .r6, .r7, .r8, .r9, .r10], v.gpr r = s.gpr r := fun r hr => by
-    rw [kv.gpr r (by revert r; decide), allocated_gpr]
+    rw [kv.gpr r (by revert r; decide), hu.gpr r (by revert r hr; decide), allocated_gpr]
   simp only [prologue, smear, List.cons_append, List.nil_append]
-  refine wp_arg P (j := 11) (by decide) h12 hrd hm fun v₁ o₁ e₁ => ?_
+  refine wp_arg P (j := 12) (by decide) h12 hrd hm fun v₁ o₁ e₁ => ?_
   refine wp_mov fun v₂ o₂ e₂ => wp_mov fun v₃ o₃ e₃ => wp_mov fun v₄ o₄ e₄ => wp_mov fun v₅ o₅ e₅ => ?_
   have k₅ : Only [.r14, .r15, .r16, .r17, .r18] v v₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
-  refine wp_arg P (j := 10) (by decide) (by rw [k₅.get .r12]; exact h12) (k₅.rd.trans hrd) (by rw [k₅.mem]; exact hm)
+  refine wp_arg P (j := 11) (by decide) (by rw [k₅.get .r12]; exact h12) (k₅.rd.trans hrd) (by rw [k₅.mem]; exact hm)
     fun v₆ o₆ e₆ => ?_
   refine wp_mov fun v₇ o₇ e₇ => wp_mov fun v₈ o₈ e₈ => wp_mov fun v₉ o₉ e₉ => ?_
   have k₉ : Only [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22] v v₉ :=
@@ -101,10 +108,11 @@ theorem entry_ok : WP isa (.block (save ++ prologue)) (allocated frameBytes s) (
       (o₁₉.trans ow)))))))))).mono
   have kA : Only [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r9, .r10, .r11, .r23] v w :=
     (k₉.trans kL).mono
-  have sv : Saves s w := ⟨by rw [kA.sp, kv.sp, allocated_sp],
-    by rw [kA.wr, kv.wr, allocated_wr, frameR_eq],
+  have sv : Saves s w := ⟨by rw [kA.sp, kv.sp, hu.sp, allocated_sp],
+    by rw [kA.wr, kv.wr, hu.wr, allocated_wr, frameR_eq],
     fun r hr => by
-      rw [kA.gpr r (by revert r; decide), kv.gpr r (by revert r; decide), allocated_gpr],
+      rw [kA.gpr r (by revert r; decide), kv.gpr r (by revert r; decide), hu.gpr r (by revert r hr; decide),
+        allocated_gpr],
     by rw [kA.mem]; exact hsv,
     by rw [kA.mem]; exact hls⟩
   refine ⟨⟨sv, kA.rd.trans hrd, ?_, fun r hr => ?_, ?_⟩, ?_⟩

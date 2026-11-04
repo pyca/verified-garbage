@@ -28,7 +28,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 structure PubS (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10], s.gpr r = a.gpr r
-  args : ∀ i < 13, stackArg s i = stackArg a i
+  args : ∀ i < 16, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .r5) (a.gpr .r6).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .r7) (a.gpr .r8).toNat
 
