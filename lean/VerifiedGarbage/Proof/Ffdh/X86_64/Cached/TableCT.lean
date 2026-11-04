@@ -55,7 +55,7 @@ theorem rowPtr_env {T : TabP} {s : State} (he : Env T s) {j : Nat} (hax : s.gpr 
   rowPtr_ok he.mc.sub he.ctx hax
 
 private theorem storeRow_ct' {a : Nat} (ha : a < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block (rowPtr ++ [.mov .rsi (.mem (hdr (sArr a)))])) hc).isSome
+    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block (rowPtr ++ ([.mov .rsi (.mem (hdr (sArr a)))] : List Instr))) hc).isSome
       = true) : RelCT isa (Two RowAt) (storeRow a) fun _ _ => True := by
   unfold storeRow
   refine RelCT.seq (two_piece (Ψ := fun q t => t.gpr .rsi = off (off q.1.B q.1.o) (slot q.1.w a) ∧
@@ -89,7 +89,7 @@ private theorem storeRow_ct' {a : Nat} (ha : a < 8) {hc : VG.Taint.Hint VG.X86_6
 
 private theorem loadRow_ct' {a : Nat} (ha : a < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi, .rax])
-      (.block (rowPtr ++ [.mov .rsi (.reg .rbx), .mov .rbx (.mem (hdr (sArr a)))])) hc).isSome = true) :
+      (.block (rowPtr ++ ([.mov .rsi (.reg .rbx), .mov .rbx (.mem (hdr (sArr a)))] : List Instr))) hc).isSome = true) :
     RelCT isa (Two RowAt) (loadRow a) fun _ _ => True := by
   unfold loadRow
   refine RelCT.seq (two_piece (Ψ := fun q t => t.gpr .rbx = off (off q.1.B q.1.o) (slot q.1.w a) ∧
@@ -365,7 +365,7 @@ theorem rax_imm_ok {T : TabP} {s : State} (he : Env T s) (n : Nat) (hn : n < 2 ^
 
 /-- Entries 0 and 1, and the tooth `2`. -/
 theorem initial_ct (Mo : Mont) : RelCT isa (Two TbAt)
-    (seqs (Precompute.initial Mo.mm ++ [.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]])) fun _ _ => True := by
+    (seqs (Precompute.initial Mo.mm ++ ([.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]] : List (Prog isa)))) fun _ _ => True := by
   unfold Precompute.initial
   simp only [List.cons_append, List.append_assoc]
   -- Entry 0.

@@ -209,9 +209,9 @@ theorem coreWith_ok {tl : List (Prog isa)}
     (hm : p.mv = true) (hx : Src s p.B p.Z p.xp (p.cut rb))
     (hoX : OutOk s p.B p.Z p.xp p.k) (hoY : OutOk s p.B p.Z p.yp p.k)
     (ha : Apart p.xp p.k p.yp p.k) (hlen : (p.cut rb).length = p.k) (hld : p.ld < p.k) :
-    WP isa (seqs ([.block VG.Impl.Rsa.X86_64.head] ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl ++
-      VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ [.block [.alu .test .rax (.reg .rax)],
-        .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)])) s (AttemptPost p rb s) := by
+    WP isa (seqs (([.block VG.Impl.Rsa.X86_64.head] : List (Prog isa)) ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl ++
+      VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ ([.block [.alu .test .rax (.reg .rax)],
+        .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)] : List (Prog isa)))) s (AttemptPost p rb s) := by
   have hk : 64 ≤ p.k := h.k1
   have hodd := (valid_facts hm hk).1
   simp only [List.append_assoc]

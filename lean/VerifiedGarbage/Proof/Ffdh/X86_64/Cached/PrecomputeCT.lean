@@ -425,7 +425,7 @@ theorem prefix_ct : RelCT isa (Two TbAt) (seqs Precompute.storePrefix) (Two TbAt
 
 theorem tail_ct (Mo : Mont) : RelCT isa (Two TbAt)
     (seqs (Precompute.storePrefix ++ (Precompute.table Mo.mm ++
-      [.block [VG.Impl.Rsa.X86_64.Crt.leave, .mov32 .rax (.imm 1)]]))) fun _ _ => True := by
+      ([.block [VG.Impl.Rsa.X86_64.Crt.leave, .mov32 .rax (.imm 1)]] : List (Prog isa))))) fun _ _ => True := by
   refine RelCT.seqs_append (by simp [Precompute.storePrefix]) (by simp [Precompute.table, Precompute.initial])
     (RelCT.seq prefix_ct ?_)
   refine RelCT.seqs_append (by simp [Precompute.table, Precompute.initial]) (by simp)

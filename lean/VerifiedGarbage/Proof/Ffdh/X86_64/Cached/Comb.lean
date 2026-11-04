@@ -915,8 +915,8 @@ abbrev headA3 : List Instr := [.mov .rdx (.mem (Crt.ws .rax VG.Impl.Ffdh.X86_64.
   .mov .rax (.mem (hdr Crt.sLink))]
 abbrev headA4 : List Instr := [.mov .rdx (.mem (Crt.ws .rax VG.Impl.Ffdh.X86_64.Domain.sXl)), .store (hdr iXl) .rdx]
 
-theorem head_eq : [.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
-    .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
+theorem head_eq : ([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
+    .store (hdr iRows) .rdx, .store (hdr iI) .rdx] : List Instr) ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
     fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl = headA1 ++ (headA2 ++ (headA3 ++ headA4)) := rfl
 
 /-- What the header block keeps, from its start `s`. -/
@@ -1050,8 +1050,8 @@ theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : N
     (hCtx : word s.mem (s.gpr .rsp) (8 * 6) = cp) (hX : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
     (hXl : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = BitVec.ofNat 64 L)
     (hreg : CtxRd s B Z cp (3 + 34 * w)) (hrows : word s.mem cp 16 = BitVec.ofNat 64 rows) :
-    WP isa (.block ([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
-      .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
+    WP isa (.block (([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
+      .store (hdr iRows) .rdx, .store (hdr iI) .rdx] : List Instr) ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
       fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl)) s fun t => ModCtx t B Z o w mi P ∧
       word t.mem (off B o) (8 * iCtx) = cp ∧ word t.mem (off B o) (8 * iRows) = BitVec.ofNat 64 rows ∧
       word t.mem (off B o) (8 * iI) = BitVec.ofNat 64 rows ∧ word t.mem (off B o) (8 * iXp) = xp ∧

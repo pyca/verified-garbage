@@ -370,7 +370,7 @@ theorem initial_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s)
     (hsK : word s.mem T.B (8 * sK) = BitVec.ofNat 64 gb.length)
     (hsrc : Src s T.B T.Z gp gb) (hgsep : ∀ i < gb.length, 8 * T.n ≤ ofs T.cp (gp + BitVec.ofNat 64 i))
     (hgl : 1 ≤ gb.length) (hgw : (gb.length + 7) / 8 ≤ T.w) :
-    WP isa (seqs (Precompute.initial Mo.mm ++ [.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]])) s fun t =>
+    WP isa (seqs (Precompute.initial Mo.mm ++ ([.block [.mov32 .rax (.imm 2), .store (hdr iD) .rax]] : List (Prog isa)))) s fun t =>
       Env T t ∧ word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (0 + 1)) ∧
       wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ 0) ∧ Entries T (2 ^ (0 + 1)) t.mem ∧
       (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t := by

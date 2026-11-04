@@ -87,7 +87,7 @@ theorem tooth_ct {j : Nat} (hj : j < 5) {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.T
     (hA : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .rax (.mem (hdr iI)), .alu .sub .rax (.imm 1),
       .mov .rdx (.mem (hdr iRows)), .imul3 .rdx .rdx (BitVec.ofNat 32 j), .alu .add .rax (.reg .rdx)]) hc₁).isSome = true)
     (hB : (taint.check (Taint.ofRegs [.rdi, .rsi, .r9, .rax])
-      (.seq bit (.block ((if j = 0 then [] else [.shift .shl .rdx j]) ++ [.alu .or .r13 (.reg .rdx)]))) hc₂).isSome = true) :
+      (.seq bit (.block ((if j = 0 then [] else [.shift .shl .rdx j]) ++ ([.alu .or .r13 (.reg .rdx)] : List Instr)))) hc₂).isSome = true) :
     RelCT isa (Two (TP j)) (tooth j) (Two (TP (j + 1))) := by
   unfold tooth
   refine pin_ct [.rdi] [.rdi, .rsi, .r9, .rax] (toothVal j) (pins_ce (fun p => p.1) fun _ _ h => h.1.1) hA
@@ -362,8 +362,8 @@ def QH3 (q : CQ) (t : State) : Prop := ∃ xb s s₁, xb.length = q.2.2.1 ∧ Co
 def QL (q : CQ) (j : Nat) (t : State) : Prop := ∃ xb s₀, xb.length = q.2.2.1 ∧ CInv q.1 q.2.1 xb s₀ j t ∧
   5 * q.1.rows < 2 ^ 31 ∧ 8 * q.2.2.1 < 2 ^ 32 ∧ Spec.Rsa.os2ip xb < 2 ^ q.1.bits
 
-theorem head_ct : RelCT isa (Two Q1) (.block ([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx,
-    .mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++
+theorem head_ct : RelCT isa (Two Q1) (.block (([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx,
+    .mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx, .store (hdr iI) .rdx] : List Instr) ++
     fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl))
     (Two fun q t => 0 < q.1.rows ∧ QL q 0 t) := by
   rw [head_eq]
