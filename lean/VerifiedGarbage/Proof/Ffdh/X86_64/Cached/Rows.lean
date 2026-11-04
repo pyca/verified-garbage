@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Cached
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.CrtFrame
@@ -264,5 +265,47 @@ theorem loadRow_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : A
     fun t ⟨hv, _, ho, k₃⟩ => ?_
   rw [hm₂, hm₁] at hv ho
   refine ⟨hv.trans (wv_of_row hrow hV), ho, (k12.trans k₃).mono (by decide)⟩
+
+theorem flatMap_congr' {α β : Type} {f g : α → List β} : ∀ {l : List α}, (∀ a ∈ l, f a = g a) →
+    l.flatMap f = l.flatMap g
+  | [], _ => rfl
+  | a :: l, h => by
+    rw [List.flatMap_cons, List.flatMap_cons, h a (by simp), flatMap_congr' (fun x hx => h x (by simp [hx]))]
+
+theorem range_mul_map {α : Type} (g : Nat → α) (w : Nat) : ∀ n,
+    (List.range (w * n)).map g = (List.range n).flatMap fun j => (List.range w).map fun i => g (w * j + i)
+  | 0 => by simp
+  | n + 1 => by
+    rw [Nat.mul_succ, List.range_add, List.map_append, range_mul_map g w n, List.range_succ, List.flatMap_append,
+      List.flatMap_singleton, List.map_map]
+    rfl
+
+/-- The context's words: its three public words, then its 34 rows. -/
+theorem wordsAt_rows (m : Mem) (cp : Addr) (w : Nat) :
+    Spec.Rsa.wordsAt m cp (3 + 34 * w) =
+      [word m cp 0, word m cp 8, word m cp 16] ++ (List.range 34).flatMap (row m cp w) := by
+  unfold Spec.Rsa.wordsAt
+  rw [List.range_add, List.map_append, show 34 * w = w * 34 from Nat.mul_comm _ _, List.map_map,
+    range_mul_map _ w 34]
+  have h3 : (List.range 3).map (fun i => m.readW (cp + BitVec.ofNat 64 (8 * i)) 64) =
+      [word m cp 0, word m cp 8, word m cp 16] := rfl
+  rw [h3]
+  refine congrArg (_ ++ ·) (flatMap_congr' fun j _ => List.map_congr_left fun i _ => ?_)
+  simp only [Function.comp_apply, Bignum.word, off]
+  rw [rowOff, show 3 + (w * j + i) = 3 + w * j + i by omega]
+
+/-- The context's words from its parts. -/
+theorem ctx_words {m : Mem} {cp : Addr} {w : Nat} {h₀ h₁ h₂ : BitVec 64} {r₀ r₁ : List (BitVec 64)}
+    {ent : Nat → List (BitVec 64)} (e₀ : word m cp 0 = h₀) (e₁ : word m cp 8 = h₁) (e₂ : word m cp 16 = h₂)
+    (f₀ : row m cp w 0 = r₀) (f₁ : row m cp w 1 = r₁) (fe : ∀ a < 32, row m cp w (2 + a) = ent a) :
+    Spec.Rsa.wordsAt m cp (3 + 34 * w) = [h₀, h₁, h₂] ++ r₀ ++ r₁ ++ (List.range 32).flatMap ent := by
+  rw [wordsAt_rows, e₀, e₁, e₂, show 34 = 2 + 32 from rfl, List.range_add, List.flatMap_append,
+    show List.range 2 = [0, 1] from rfl, List.flatMap_cons, List.flatMap_cons, List.flatMap_nil, f₀, f₁,
+    List.flatMap_map]
+  simp only [List.append_nil, List.append_assoc]
+  congr 3
+  apply flatMap_congr'
+  intro a ha
+  exact fe a (List.mem_range.mp ha)
 
 end VG.Proof.Ffdh.X86_64.Cached
