@@ -138,6 +138,10 @@ theorem ret_sub (s : State) : Region.Sub (below (fb s) 16) (stkR s) := by
   simp only [below, fb, sub_sub']
   exact Offset.sub_below _ (by decide) (by decide)
 
+theorem ret8_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
+  simp only [below, fb, sub_sub']
+  exact Offset.sub_below _ (by decide) (by decide)
+
 /-- An address of an input: in no writable region of the frame's state, nor
 below the frame. -/
 theorem SPre.outside {s : State} (hp : SPre tsH tsG s) {R : Region} (hO : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint R)
