@@ -1372,6 +1372,63 @@ jne 2340b
     )
 }
 
+/// Start a search for a prime of an RSA key, of `prime_len` octets, for the public exponent `e` (`e_len` octets, most significant first). Returns 1 and writes the search's four public words to `state`: the rejected candidates it still allows, `prime_len`, its entropy budget, and the length of the first random tape to give `vg_rsa_prime_search`. Returns 0 and writes zeros if `prime_len` is not a multiple of 8 in 32..=512 or `e_len` is not in 1..=8.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeInitContract`. Timing may depend on `e`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `state` must not overlap `e` (distinct Rust objects never do).
+/// * Neither `state` nor `e` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_rsa_prime_search_init(state: *mut [u64; 4], prime_len: usize, e: *const u8, e_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIP+IA=="
+jb 20f
+.base64 "SIH+AQIAAA=="
+jae 22f
+.base64 "SInwSIPgBw=="
+jne 24f
+.base64 "SIXJ"
+je 26f
+.base64 "SIP5CQ=="
+jae 28f
+.base64 "QbkAAAAASYnLSYPrAU2F2w=="
+je 210f
+212:
+.base64 "D7YCSQnBSIPCAUmD6wE="
+jne 212b
+jmp 211f
+210:
+211:
+.base64 "D7YCSIPwA0wJyEmJwUiJ8EjB4ANIicFIweACSAHISInxSMHhBk2FyUgPRMFIiQdIiXcISInwSMHgD0gB8EiJRxBIifBIweAFSIlHGLgBAAAA"
+jmp 29f
+28:
+.base64 "uAAAAABIiQdIiUcISIlHEEiJRxg="
+29:
+jmp 27f
+26:
+.base64 "uAAAAABIiQdIiUcISIlHEEiJRxg="
+27:
+jmp 25f
+24:
+.base64 "uAAAAABIiQdIiUcISIlHEEiJRxg="
+25:
+jmp 23f
+22:
+.base64 "uAAAAABIiQdIiUcISIlHEEiJRxg="
+23:
+jmp 21f
+20:
+.base64 "uAAAAABIiQdIiUcISIlHEEiJRxg="
+21:
+.base64 "ww=="
+.p2align 6"#,
+    )
+}
+
 /// The CPU features `vg_rsa_keygen_candidate_adx` requires (`Artifact.features`).
 pub const VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -1688,6 +1745,92 @@ jmp 22f
 .p2align 6"#,
         vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         vg_miller_rabin_round_adx = sym super::dsa::vg_miller_rabin_round_adx::vg_miller_rabin_round_adx,
+    )
+}
+
+/// The CPU features `vg_rsa_prime_search_adx` requires (`Artifact.features`).
+pub const VG_RSA_PRIME_SEARCH_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Search for a prime of an RSA key, of `out_len` octets, for the public exponent `e`, not too close to the prime `p` if `p_len` is not 0, over the random tape `rand`: the candidates and their tests of `vg_rsa_keygen_candidate`, one after another, with the rejected candidates counted in `state` (those too close to `p` are not). Returns 1 and writes the prime to `out` once one is accepted; 3 if the search is exhausted, by too many rejected candidates or by one candidate needing more than the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape: keep the octets of `rand` after the first `used`, in order, and append fresh random octets up to that length. `out` is zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the pointers, the lengths, `e`, `state`, the status, consumption and request it returns, and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. Not on `p`, or on the prime it accepts.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, or from the last call of this function for the same `out_len`, `e` and `p` that returned 0.
+/// * `out_len` must be a multiple of 8 in 32..=512.
+/// * `e_len` must be in 1..=8.
+/// * `p_len` must be 0 or `out_len`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` holds secrets; the caller must destroy both after use.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `e`, `p`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_rsa_prime_search_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJGD///9MiWQkIEmJ5EmJfCQoSYl0JDBJiVQkOEmJTCRATYlEJEhNiUwkUEiLhCSoAAAASYlEJFhIi4QksAAAAEmJRCRgSIuEJLgAAABJiUQkaEiLhCTAAAAASYlEJHBIi4QkyAAAAEmJRCR4SIuEJNAAAABJiYQkkAAAAEiLCEmJDCRJiXQkCEiJ8UjB4Q9IAfFJiUwkELgAAAAASYlEJBhJiYQkgAAAAA=="
+20:
+.base64 "SYsEJEiFwA=="
+je 21f
+.base64 "SI1kJNhJi3wkKEmLdCQwSYtUJDhJi0wkQE2LRCRITYtMJFBJi0QkWEiJBCRJi0QkYEiJRCQISYtEJGhIiUQkEEmLRCRwSIlEJBhJi0QkeEiJRCQg"
+call {vg_rsa_keygen_candidate_adx}
+.base64 "SI1kJCiJwEiD+AE="
+je 23f
+.base64 "SIXA"
+je 25f
+.base64 "SInCSYtMJDhIiwlIhck="
+je 27f
+.base64 "SYtEJGBIAchJiUQkYEmLRCRoSCnISYlEJGhJi4QkgAAAAEgByEmJhCSAAAAAuAQAAABJiYQkiAAAAEiD+gI="
+je 29f
+.base64 "SYsEJEiD6AFJiQQk"
+jmp 210f
+29:
+210:
+jmp 28f
+27:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+211:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 211b
+28:
+jmp 26f
+25:
+.base64 "SYtEJGhJO0QkEA=="
+jae 212f
+.base64 "SYtMJAhIweEESDnISA9CwUjR4EmLTCQQSDnISA9DwUmJRCQYuAAAAABJiYQkiAAAAA=="
+jmp 213f
+212:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+214:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 214b
+213:
+26:
+jmp 24f
+23:
+.base64 "SYtMJDhIiwlJi4QkgAAAAEgByEmJhCSAAAAAuAAAAABJiQQkSYlEJBi4AQAAAEmJhCSIAAAA"
+24:
+jmp 22f
+21:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+215:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 215b
+22:
+.base64 "SYuEJIgAAABIg/gE"
+je 20b
+.base64 "SYuEJJAAAABJiwwkSYtUJAhJi3QkEEmLfCQYTYtEJDhNi4wkgAAAAE2LlCSIAAAATYtcJCBIiQhIiVAISIlwEEiJeBhNiQhMidBNidxIjaQkoAAAAMM="
+.p2align 6"#,
+        vg_rsa_keygen_candidate_adx = sym super::rsa_keygen::vg_rsa_keygen_candidate_adx,
     )
 }
 
@@ -2474,5 +2617,87 @@ jmp 22f
 .base64 "ww=="
 .p2align 6"#,
         vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
+    )
+}
+
+/// Search for a prime of an RSA key, of `out_len` octets, for the public exponent `e`, not too close to the prime `p` if `p_len` is not 0, over the random tape `rand`: the candidates and their tests of `vg_rsa_keygen_candidate`, one after another, with the rejected candidates counted in `state` (those too close to `p` are not). Returns 1 and writes the prime to `out` once one is accepted; 3 if the search is exhausted, by too many rejected candidates or by one candidate needing more than the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape: keep the octets of `rand` after the first `used`, in order, and append fresh random octets up to that length. `out` is zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the pointers, the lengths, `e`, `state`, the status, consumption and request it returns, and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. Not on `p`, or on the prime it accepts.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, or from the last call of this function for the same `out_len`, `e` and `p` that returned 0.
+/// * `out_len` must be a multiple of 8 in 32..=512.
+/// * `e_len` must be in 1..=8.
+/// * `p_len` must be 0 or `out_len`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` holds secrets; the caller must destroy both after use.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `e`, `p`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_rsa_prime_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJGD///9MiWQkIEmJ5EmJfCQoSYl0JDBJiVQkOEmJTCRATYlEJEhNiUwkUEiLhCSoAAAASYlEJFhIi4QksAAAAEmJRCRgSIuEJLgAAABJiUQkaEiLhCTAAAAASYlEJHBIi4QkyAAAAEmJRCR4SIuEJNAAAABJiYQkkAAAAEiLCEmJDCRJiXQkCEiJ8UjB4Q9IAfFJiUwkELgAAAAASYlEJBhJiYQkgAAAAA=="
+20:
+.base64 "SYsEJEiFwA=="
+je 21f
+.base64 "SI1kJNhJi3wkKEmLdCQwSYtUJDhJi0wkQE2LRCRITYtMJFBJi0QkWEiJBCRJi0QkYEiJRCQISYtEJGhIiUQkEEmLRCRwSIlEJBhJi0QkeEiJRCQg"
+call {vg_rsa_keygen_candidate}
+.base64 "SI1kJCiJwEiD+AE="
+je 23f
+.base64 "SIXA"
+je 25f
+.base64 "SInCSYtMJDhIiwlIhck="
+je 27f
+.base64 "SYtEJGBIAchJiUQkYEmLRCRoSCnISYlEJGhJi4QkgAAAAEgByEmJhCSAAAAAuAQAAABJiYQkiAAAAEiD+gI="
+je 29f
+.base64 "SYsEJEiD6AFJiQQk"
+jmp 210f
+29:
+210:
+jmp 28f
+27:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+211:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 211b
+28:
+jmp 26f
+25:
+.base64 "SYtEJGhJO0QkEA=="
+jae 212f
+.base64 "SYtMJAhIweEESDnISA9CwUjR4EmLTCQQSDnISA9DwUmJRCQYuAAAAABJiYQkiAAAAA=="
+jmp 213f
+212:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+214:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 214b
+213:
+26:
+jmp 24f
+23:
+.base64 "SYtMJDhIiwlJi4QkgAAAAEgByEmJhCSAAAAAuAAAAABJiQQkSYlEJBi4AQAAAEmJhCSIAAAA"
+24:
+jmp 22f
+21:
+.base64 "uAAAAABJiQQkSYlEJBi4AwAAAEmJhCSIAAAATInnSIt3KEiLTzC4AAAAAA=="
+215:
+.base64 "iAZIg8YBSIPpAQ=="
+jne 215b
+22:
+.base64 "SYuEJIgAAABIg/gE"
+je 20b
+.base64 "SYuEJJAAAABJiwwkSYtUJAhJi3QkEEmLfCQYTYtEJDhNi4wkgAAAAE2LlCSIAAAATYtcJCBIiQhIiVAISIlwEEiJeBhNiQhMidBNidxIjaQkoAAAAMM="
+.p2align 6"#,
+        vg_rsa_keygen_candidate = sym super::rsa_keygen::vg_rsa_keygen_candidate,
     )
 }

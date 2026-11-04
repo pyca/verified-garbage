@@ -34,6 +34,16 @@
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
 //!
+//! On x86-64, the verified `vg_rsa_prime_search` (contract
+//! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
+//! rejected ones and chooses how many random octets to ask for when they run
+//! out, from the state `vg_rsa_prime_search_init` makes
+//! (`VG.Spec.RsaKeyGen.primeInitContract`); `vg_rsa_prime_search_adx` is its
+//! variant for `Adx` and `Ifma`. A candidate may read at most the search's
+//! entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream, past which
+//! the generation fails as with too many rejected candidates. Elsewhere this
+//! module runs and counts the candidates itself.
+//!
 //! [`key_from_primes`] derives the private key from its two primes and the
 //! public exponent, as BoringSSL's `rsa_generate_key_impl` does after
 //! generating them (`VG.Spec.RsaKeyGen.keyFromPrimes`), with the verified
@@ -46,9 +56,9 @@
 //! primes or the key.
 //!
 //! This module only checks the lengths and the exponent, allocates the
-//! memory the candidates and the key are computed in, counts the candidates
-//! and the generations, and compares the pairwise test's result with its
-//! message.
+//! memory the candidates and the key are computed in, gives the search its
+//! random octets, counts the candidates (but on x86-64) and the generations,
+//! and compares the pairwise test's result with its message.
 
 #![cfg(all(
     any(
@@ -65,8 +75,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_adx;
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -78,7 +88,11 @@ use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_adx;
     )
 ))]
 use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_umaal;
-use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate, vg_rsa_keygen_key};
+use crate::arch::rsa_keygen::vg_rsa_keygen_key;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_keygen::{
+    vg_rsa_prime_search, vg_rsa_prime_search_adx, vg_rsa_prime_search_init,
+};
 use crate::cpu::detected;
 use crate::rsa::PublicKey;
 use crate::rsa::{Backend, PrivateKey};
@@ -194,20 +208,47 @@ fn fill_random(out: &mut [u8]) -> Result<(), Error> {
 struct Random<F> {
     octets: Vec<u8>,
     read: usize,
+    /// The first tape's length, where this module chooses it.
+    #[cfg(not(target_arch = "x86_64"))]
     initial: usize,
     fill: F,
 }
 
 impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
+    #[cfg_attr(target_arch = "x86_64", allow(unused_variables))]
     fn new(len: usize, fill: F) -> Self {
         Self {
             octets: Vec::new(),
             read: 0,
+            #[cfg(not(target_arch = "x86_64"))]
             initial: 16 * len,
             fill,
         }
     }
 
+    /// The verified search over the stream, refilled to the length it asks
+    /// for.
+    #[cfg(target_arch = "x86_64")]
+    fn prime(
+        &mut self,
+        len: usize,
+        limit: usize,
+        e: &[u8],
+        other: Option<&[u8]>,
+    ) -> Result<Vec<u8>, Error> {
+        let mut search = Search::new(len, limit, e, other);
+        loop {
+            let (status, used) = search.run(&self.octets[self.read..]);
+            self.read += used;
+            match status {
+                1 => return Ok(search.prime()),
+                0 => self.refill(search.requested())?,
+                _ => return Err(Error::TooManyIterations),
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
     fn prime(
         &mut self,
         len: usize,
@@ -227,19 +268,23 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
             );
             self.read += used;
             match r {
-                Err(Error::NotEnoughRandomness) => self.refill()?,
+                // Geometric growth limits how often an unfinished
+                // Miller–Rabin test is replayed.
+                Err(Error::NotEnoughRandomness) => {
+                    self.refill((2 * self.octets.len()).max(self.initial))?
+                }
                 r => return r,
             }
         }
     }
 
-    fn refill(&mut self) -> Result<(), Error> {
-        let size = (2 * self.octets.len()).max(self.initial);
+    /// The unread octets, then fresh ones, `size` in all (more than are
+    /// unread).
+    fn refill(&mut self, size: usize) -> Result<(), Error> {
         let remaining = self.octets.len() - self.read;
         let mut grown = vec![0; size];
         grown[..remaining].copy_from_slice(&self.octets[self.read..]);
-        // Wipe the old allocation before replacing it. Geometric growth
-        // limits how often an unfinished Miller–Rabin test is replayed.
+        // Wipe the old allocation before replacing it.
         crate::zeroize::zeroize(&mut self.octets);
         self.octets = grown;
         self.read = 0;
@@ -250,6 +295,96 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
 impl<F> Drop for Random<F> {
     fn drop(&mut self) {
         crate::zeroize::zeroize(&mut self.octets);
+    }
+}
+
+/// The verified prime search's buffers and state, for one prime.
+#[cfg(target_arch = "x86_64")]
+struct Search<'a> {
+    e: &'a [u8],
+    other: &'a [u8],
+    out: Vec<u8>,
+    scratch: Vec<u64>,
+    state: [u64; 4],
+}
+
+#[cfg(target_arch = "x86_64")]
+impl<'a> Search<'a> {
+    /// The search for a prime of `len` octets with the exponent `e`, which
+    /// [`check`] accepted with the limit of rejected candidates `limit`.
+    fn new(len: usize, limit: usize, e: &'a [u8], other: Option<&'a [u8]>) -> Self {
+        let mut state = [0u64; 4];
+        // SAFETY: `state` is valid for writes and `e` for reads of its length.
+        let ok = unsafe { vg_rsa_prime_search_init(&mut state, len, e.as_ptr(), e.len()) };
+        // The search accepts what `check` accepted, with the same limit.
+        assert_eq!((ok, state[0]), (1, limit as u64));
+        Self {
+            e,
+            other: other.unwrap_or(&[]),
+            out: vec![0; len],
+            scratch: vec![0; crate::rsa::scratch_words(len)],
+            state,
+        }
+    }
+
+    /// The most octets a tape may have.
+    fn budget(&self) -> usize {
+        self.state[2] as usize
+    }
+
+    /// The next tape's length, after the search returned 0.
+    fn requested(&self) -> usize {
+        self.state[3] as usize
+    }
+
+    /// The search over `tape` (at most [`Search::budget`] octets): 1 if it
+    /// accepted a prime, 0 if the tape ran out inside a candidate, 3 if it
+    /// is exhausted; and the octets it consumed, at most `tape.len()`.
+    fn run(&mut self, tape: &[u8]) -> (u32, usize) {
+        let f = match Backend::select(detected()) {
+            Backend::Baseline => vg_rsa_prime_search,
+            // `select` chose it because the CPU has the features it needs.
+            Backend::Adx | Backend::Ifma => vg_rsa_prime_search_adx,
+        };
+        let mut used = [0u64; 1];
+        // SAFETY: each pointer is valid for its length (`out`, `used`,
+        // `scratch` and `state` for writes), and none overlaps another or
+        // wraps around, as they are distinct Rust allocations; `check` gave
+        // `out_len`, `e_len` and `p_len`; `state` is from
+        // `vg_rsa_prime_search_init` or from the last call, which returned
+        // 0; `rand_len` is at most the budget, `state[2]`; `scratch_len` is
+        // `16 out_len + 32`; and the CPU has the features of the function
+        // `select` chose.
+        let status = unsafe {
+            f(
+                self.out.as_mut_ptr(),
+                self.out.len(),
+                &mut used,
+                self.e.as_ptr(),
+                self.e.len(),
+                self.other.as_ptr(),
+                self.other.len(),
+                tape.as_ptr(),
+                tape.len(),
+                self.scratch.as_mut_ptr(),
+                self.scratch.len(),
+                &mut self.state,
+            )
+        };
+        (status, used[0] as usize)
+    }
+
+    /// The prime the search accepted.
+    fn prime(mut self) -> Vec<u8> {
+        core::mem::take(&mut self.out)
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Drop for Search<'_> {
+    fn drop(&mut self) {
+        // The working space holds the prime.
+        crate::zeroize::zeroize(&mut self.scratch);
     }
 }
 
@@ -270,6 +405,31 @@ pub fn generate_prime_from(
 /// [`generate_prime_from`] of arguments [`check`] accepted (the prime's
 /// length `len` in bytes, and the limit of rejected candidates), and the
 /// number of octets read, also when it fails.
+#[cfg(target_arch = "x86_64")]
+fn prime_from(
+    len: usize,
+    limit: usize,
+    public_exponent: &[u8],
+    other: Option<&[u8]>,
+    rand: &[u8],
+) -> (Result<Vec<u8>, Error>, usize) {
+    let mut search = Search::new(len, limit, public_exponent, other);
+    let mut read = 0;
+    loop {
+        // The stream cut into tapes of the budget, which no request exceeds.
+        let end = rand.len().min(read + search.budget());
+        let (status, used) = search.run(&rand[read..end]);
+        read += used;
+        match status {
+            1 => return (Ok(search.prime()), read),
+            0 if end < rand.len() => {}
+            0 => return (Err(Error::NotEnoughRandomness), read),
+            _ => return (Err(Error::TooManyIterations), read),
+        }
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
 fn prime_from(
     len: usize,
     limit: usize,
@@ -280,6 +440,7 @@ fn prime_from(
     prime_from_counted(len, limit, public_exponent, other, rand, &mut 0)
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 fn prime_from_counted(
     len: usize,
     limit: usize,
@@ -294,8 +455,6 @@ fn prime_from_counted(
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_keygen_candidate,
         // `select` chose it because the CPU has the features it needs.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_keygen_candidate_adx,
         #[cfg(all(
             target_arch = "arm",
             any(
@@ -651,6 +810,20 @@ mod tests {
         );
     }
 
+    /// A stream longer than the search's entropy budget, of candidates
+    /// too close to the other prime: read in tapes of the budget, to its end.
+    #[test]
+    fn longer_than_budget() {
+        let mut other = [0u8; 32];
+        other[0] = 0xc0;
+        other[31] = 1;
+        let zeros = vec![0u8; 32 * 32769 + 64];
+        assert_eq!(
+            prime_from(32, 5 * 256, &[1, 0, 1], Some(&other), &zeros),
+            (Err(Error::NotEnoughRandomness), zeros.len())
+        );
+    }
+
     #[test]
     fn primes() {
         for bits in [256, 512, 1024] {
@@ -843,7 +1016,13 @@ mod tests {
                 }
                 Ok(())
             });
-            random.initial = initial;
+            // Where the search chooses the tapes' lengths, each run is the same.
+            #[cfg(not(target_arch = "x86_64"))]
+            {
+                random.initial = initial;
+            }
+            #[cfg(target_arch = "x86_64")]
+            let _ = initial;
             let key = generate_with(&[1, 0, 1], &mut |other| {
                 random.prime(32, 5 * 256, &[1, 0, 1], other)
             })
@@ -862,7 +1041,7 @@ mod tests {
             Ok(())
         });
         assert_eq!(
-            random.prime(32, 20, &[1, 0, 1], None),
+            random.prime(32, 5 * 256, &[1, 0, 1], None),
             Err(Error::TooManyIterations)
         );
         for initial in [1, 32, 512, 896] {
@@ -874,14 +1053,21 @@ mod tests {
                 if fills == 2 {
                     return Err(Error::Randomness);
                 }
-                out.copy_from_slice(&rand[position..position + out.len()]);
-                position += out.len();
+                for b in out {
+                    *b = rand.get(position).copied().unwrap_or(0);
+                    position += 1;
+                }
                 Ok(())
             });
-            random.initial = initial;
+            #[cfg(not(target_arch = "x86_64"))]
+            {
+                random.initial = initial;
+            }
+            #[cfg(target_arch = "x86_64")]
+            let _ = initial;
             assert_eq!(
                 generate_with(&[1, 0, 1], &mut |other| {
-                    random.prime(32, 20, &[1, 0, 1], other)
+                    random.prime(32, 5 * 256, &[1, 0, 1], other)
                 })
                 .unwrap_err(),
                 Error::Randomness
@@ -898,7 +1084,7 @@ mod tests {
         });
         // Equal to the other prime: too close, never counted as rejected.
         assert_eq!(
-            random.prime(32, 1, &[1, 0, 1], Some(&[0xff; 32])),
+            random.prime(32, 5 * 256, &[1, 0, 1], Some(&[0xff; 32])),
             Err(Error::Randomness)
         );
     }
