@@ -257,9 +257,9 @@ theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toN
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : Addr} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
-    (hR : R = 18 ∨ R = 24) (h : Spec.Camellia.Prepared.Holds layout m B R w d)
-    (hk : Spec.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
-    Spec.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
+    (hR : R = 18 ∨ R = 24) (h : Proof.Camellia.Prepared.Holds layout m B R w d)
+    (hk : Proof.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
+    Proof.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
   have hg : R / 6 ≤ 4 := by omega
   have hr' := hr
   rw [layout_table] at hr'
@@ -290,7 +290,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hR, hrd, h28⟩ := hr
   have hfB : B.toNat + 8 * (dirCore d).total ≤ 2 ^ 64 := hS.fit
-  have hH : Spec.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
+  have hH : Proof.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
     holds_of_words (by rw [ofSpecDir_specDir]; exact words_of_readyAt hrd)
   show WP isa cryptCall s _
   refine WP.seq (wp_mr fun s₁ u₁ => wp_mr fun s₂ u₂ => wp_mr fun s₃ u₃ => wp_mr fun s₄ u₄ =>

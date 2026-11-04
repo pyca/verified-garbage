@@ -75,7 +75,7 @@ def prepareCore (d : Dir) : Prog isa :=
 and `sb` in `r6`, which the function does not write. -/
 def cryptCall : Prog isa :=
   .seq (.block [mov .r10 .r3, mov .r6 .r5, mov .r3 .r28, mov .r4 .r5, .li .r5 slots])
-    (.seq (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared) (.block [mov .r5 .r6, mov .r3 .r10]))
+    (.seq (.call "vg_camellia_crypt_prepared" cryptPrepared) (.block [mov .r5 .r6, mov .r3 .r10]))
 
 /-- Camellia's core for the modes, in the direction `d`. -/
 def dirCore (d : Dir) : Modes.PPC64LE.Core where

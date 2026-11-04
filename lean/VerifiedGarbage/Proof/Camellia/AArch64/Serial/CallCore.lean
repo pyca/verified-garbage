@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
@@ -44,7 +44,7 @@ open VG VG.AArch64 VG.Impl.Camellia.AArch64.Serial
 open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Proof.Camellia (schedWords)
 open VG.Proof.Modes.AArch64 (ScrIn coreRegion bufRegion bufAddr CoreSpec BlockSpec KeepsReg runBlock_app modeRegs WrIn)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 /-- The table ready in the slots at `B`, the number of rounds in `x26` and
 `B` in `x22`. -/

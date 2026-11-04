@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.X86.Keys
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Impl.Camellia.X86.Prepared
@@ -11,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # Camellia's batches under prepared subkeys on x86 (32-bit): the code
 
 What `vg_camellia_crypt_prepared` reads (`layout`,
-`Spec.Camellia.Prepared.Holds`) is the table that ECB's rounds read
+`Proof.Camellia.Prepared.Holds`) is the table that ECB's rounds read
 (`EntryOk`), word for word (`TableWordsAt`, `holds_of_words`,
 `readyAt_of_words` and back): each of the table's words is the plane of its
 subkey (`keyPlane32`, the only words related to it by `W32.HalfRel`,
@@ -25,6 +26,17 @@ namespace VG.Proof.Camellia.X86
 open VG VG.X86 VG.X86.Straight VG.Impl.Camellia.X86
 open VG.Impl.Camellia (keyPlane32)
 open VG.Proof.Camellia (sigma_rel)
+
+/-- The table's slots, as a byte range; the function writes the slots below
+the table, the group's end's and its saved registers'. -/
+def layout : Prepared.Layout where
+  table rounds := [(4 * keySlot, 64 * (8 * (rounds / 6) + 2))]
+  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 4)).extractLsb' (8 * (i % 4)) 8
+  buf := 4 * tailSlot
+  blocks := 8
+  prepScratch := [(0, 4 * slots)]
+  cryptScratch := [(0, 4 * keySlot), (4 * grpSlot, 4 * 5)]
+  size := 4 * slots
 
 /-- The specification's direction. -/
 def specDir : Dir → Spec.Camellia.Direction
@@ -74,7 +86,7 @@ theorem byte_word {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 
 
 theorem holds_of_words {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24) (h : TableWordsAt R m B w (ofSpecDir d)) :
-    Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d := by
+    Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d := by
   intro r hr i hi
   rw [layout_table] at hr
   simp only [List.mem_singleton] at hr; subst hr
@@ -85,7 +97,7 @@ theorem holds_of_words {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)
 
 theorem words_of_holds {R : Nat} {m : Mem} {B : BitVec 32} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
-    (h : Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d) : TableWordsAt R m B w (ofSpecDir d) := by
+    (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d) : TableWordsAt R m B w (ofSpecDir d) := by
   intro k hk1 hk2
   have hg : R / 6 ≤ 4 := by omega
   rw [keySlot_eq] at hk1 hk2

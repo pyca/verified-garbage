@@ -233,13 +233,13 @@ theorem dirCipher_blockFn (d : Dir) (K : Spec.Camellia.Subkeys) (m : Mem) (p : A
 theorem holds_of_ready {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List (BitVec 64)}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
     (he : ∀ i < 8 * (R / 6) + 2, EntryOk m B i (ws.getD (permOf d (R / 6) i) 0)) :
-    Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d) :=
+    Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d) :=
   holds_of_words hfit hR (words_of_entries fun e he' => by
     rw [ofSpecDir_specDir, keyEntry_eq]; exact he e he')
 
 theorem ready_of_holds {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List (BitVec 64)}
     (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) (hR : R = 18 ∨ R = 24)
-    (h : Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d)) :
+    (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R ws (specDir d)) :
     ∀ i < 8 * (R / 6) + 2, EntryOk m B i (ws.getD (permOf d (R / 6) i) 0) := fun i hi => by
   have := entries_of_words (words_of_holds hfit hR h) hi
   rwa [ofSpecDir_specDir, keyEntry_eq] at this
@@ -247,9 +247,9 @@ theorem ready_of_holds {d : Dir} {m : Mem} {B : BitVec 32} {R : Nat} {ws : List 
 /-- The table survives what keeps the bytes outside a batch's ranges. -/
 theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : BitVec 32} {w : List (BitVec 64)}
     {d : Spec.Camellia.Direction} (hR : R = 18 ∨ R = 24)
-    (h : Spec.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d)
-    (hk : Spec.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch m m') :
-    Spec.Camellia.Prepared.Holds layout m' (B.setWidth 64) R w d := fun r hr i hi => by
+    (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d)
+    (hk : Proof.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch m m') :
+    Proof.Camellia.Prepared.Holds layout m' (B.setWidth 64) R w d := fun r hr i hi => by
   have hg : R / 6 ≤ 4 := by omega
   have hr' := hr
   rw [layout_table] at hr'

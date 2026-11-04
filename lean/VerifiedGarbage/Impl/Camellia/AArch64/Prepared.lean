@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
-public import VerifiedGarbage.Spec.Camellia.Prepared
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # Camellia's subkeys prepared once, and batches under them, on AArch64
 
 `vg_camellia_prepare_keys` and `vg_camellia_crypt_prepared`
-(`Spec/Camellia/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions
+(`Proof/Camellia/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions
 of the working space, for the modes, which call them (`Ctr.lean`).
 
 * `prepareKeys(schedule = x0, rounds = x1, decrypt = x2, ws = x3, ws_len = x4)`
@@ -65,17 +65,6 @@ def preparedWord (rounds : Nat) (w : List (BitVec 64)) (d : Dir) (k : Nat) : Bit
   if k < keySlot then (layerMasks.find? (·.1 = k)).elim 0 (·.2)
   else keyPlane (keyEntry w (rounds / 6) d ((k - keySlot) / 8)) ((k - keySlot) % 8)
 
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Camellia.Prepared.Layout where
-  table rounds := [(8 * evenSlot, 40), (8 * keySlot, 64 * (8 * (rounds / 6) + 2))]
-  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * (m3Slot + 1), 8 * (keySlot - m3Slot - 1)),
-    (8 * savedSlot, 8 * (tailSlot + 16 - savedSlot))]
-  size := 8 * slots
-
 /-! ## The calls -/
 
 /-- Before a call: the return address, `sb`, the two registers the modes
@@ -104,12 +93,12 @@ the working space at `sb`, of `slots` words. -/
 def prepareCall (d : Dir) : Prog isa :=
   .seq (.block (keepHeadWith .x1 ++ [.movz .x .x2 (BitVec.ofNat 16 (dirFlagOf d)) 0, movR .x3 sb,
       .movz .x .x4 (BitVec.ofNat 16 slots) 0]))
-    (.seq (.call (Spec.Camellia.Prepared.prepareApi layout).name prepareKeys) (.block keepTail))
+    (.seq (.call "vg_camellia_prepare_keys" prepareKeys) (.block keepTail))
 
 /-- A call of `vg_camellia_crypt_prepared` on the working space at `sb`, for
 the number of rounds in `x4`. -/
 def cryptCall : Prog isa :=
   .seq (.block (keepHead ++ [movR .x0 .x4, movR .x1 sb, .movz .x .x2 (BitVec.ofNat 16 slots) 0]))
-    (.seq (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared) (.block keepTail))
+    (.seq (.call "vg_camellia_crypt_prepared" cryptPrepared) (.block keepTail))
 
 end VG.Impl.Camellia.AArch64
