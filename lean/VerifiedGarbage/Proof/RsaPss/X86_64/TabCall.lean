@@ -142,21 +142,21 @@ structure Tabs where
 length, which the calls of `f` and `g` reach. -/
 structure TabsAt (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.X86_64.Stream)
     (g : Impl.Mgf1.X86_64.Table.Fns) (pH pG : Addr) (s : State) : Prop where
-  h0 : s.mem.readW pH 64 = s.syms H.initN
-  h3 : s.mem.readW (pH + 24) 64 = s.syms H.compN
-  h4 : s.mem.readW (pH + 32) 64 = s.syms dn
-  g0 : s.mem.readW pG 64 = s.syms G.initN
-  g1 : s.mem.readW (pG + 8) 64 = s.syms G.updN
-  g2 : s.mem.readW (pG + 16) 64 = s.syms G.finN
-  g4 : s.mem.readW (pG + 32) 64 = BitVec.ofNat 64 G.D
+  h0 : s.mem.readW (off pH 0) 64 = s.syms H.initN
+  h3 : s.mem.readW (off pH 24) 64 = s.syms H.compN
+  h4 : s.mem.readW (off pH 32) 64 = s.syms dn
+  g0 : s.mem.readW (off pG 0) 64 = s.syms G.initN
+  g1 : s.mem.readW (off pG 8) 64 = s.syms G.updN
+  g2 : s.mem.readW (off pG 16) 64 = s.syms G.finN
+  g4 : s.mem.readW (off pG 32) 64 = BitVec.ofNat 64 G.D
   hf : HTF H dn f s.syms
   gf : GTF G g s.syms
 
 /-- The words of the tables that `hSlots` and `gSlots` copy, which two runs
 agree on. -/
 def tabWords (m : Mem) (pH pG : Addr) : List (BitVec 64) :=
-  [m.readW pH 64, m.readW (pH + 24) 64, m.readW (pH + 32) 64, m.readW pG 64, m.readW (pG + 8) 64,
-    m.readW (pG + 16) 64, m.readW (pG + 32) 64]
+  [m.readW (off pH 0) 64, m.readW (off pH 24) 64, m.readW (off pH 32) 64, m.readW (off pG 0) 64,
+    m.readW (off pG 8) 64, m.readW (off pG 16) 64, m.readW (off pG 32) 64]
 
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and

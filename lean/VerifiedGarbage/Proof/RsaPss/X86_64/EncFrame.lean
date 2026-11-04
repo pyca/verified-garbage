@@ -275,4 +275,125 @@ theorem encPro_ok {s : State} (hp : Pre T s) :
   rw [hm3]
   exact frame_w hp (frame_w hp f2 (d := sC) (by decide) _) (d := sLo) (by decide) _
 
+/-! ## The tables' words -/
+
+theorem tab_sub {s : State} (hp : Pre T s) {i : Nat} (hi : i = 2 ∨ i = 3) :
+    (⟨stackArg s i, 40⟩ : Region) ∈ s.rd ∧ (stkR s).Disjoint ⟨stackArg s i, 40⟩ ∧
+      (stackArg s i).toNat + 40 ≤ 2 ^ 64 := by
+  rcases hi with rfl | rfl
+  · exact ⟨by rw [hp.hrd]; simp, hp.dKtH, hp.wTH⟩
+  · exact ⟨by rw [hp.hrd]; simp, hp.dKtG, hp.wTG⟩
+
+/-- A word of a table, read from memory changed only in the frame. -/
+theorem tab_rd {s : State} (hp : Pre T s) {m : Mem} (hf : Frame [frR s] s.mem m) {i j : Nat} (hi : i = 2 ∨ i = 3)
+    (hj : j + 8 ≤ 40) : m.readW (off (stackArg s i) j) 64 = s.mem.readW (off (stackArg s i) j) 64 := by
+  obtain ⟨-, hK, hw⟩ := tab_sub hp hi
+  refine hf.readW (r := ⟨stackArg s i, 40⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r' hr' => ?_)
+    (by decide)
+  simp only [List.mem_singleton] at hr'; subst hr'
+  exact (hK.sub_left (frame_sub s)).symm
+
+/-- One word of the table at `r11` copied to a slot. -/
+theorem tabCopy_ok {s : State} (hp : Pre T s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
+    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {i j d : Nat} (hi : i = 2 ∨ i = 3)
+    (h11 : u.gpr .r11 = stackArg s i) (hj : j + 8 ≤ 40) (hd : d + 8 ≤ frameBytes) :
+    WP isa (.block [.mov .rax (.mem (at_ .r11 j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
+      u'.mem = u.mem.writeW (off (fb s) d) (s.mem.readW (off (stackArg s i) j) 64) ∧ Frame [frR s] s.mem u'.mem := by
+  have hF := fb_toNat hp
+  have := hp.sp2
+  obtain ⟨hm, -, hw⟩ := tab_sub hp hi
+  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
+  have hin : InRegions (u.rd ++ u.wr) (off (stackArg s i) j) 8 :=
+    ⟨_, List.mem_append_left _ (by rw [hrd]; exact hm), Offset.contains_base _ (by omega) (by omega)⟩
+  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d)
+      (s.mem.readW (off (stackArg s i) j) 64)) ?_ rfl)
+    fun u' ⟨hm', k⟩ => ⟨k, hm', hm' ▸ frame_w hp hf hd _⟩
+  xrun [ea_at, ea_sp, hsp, h11, hin, tab_rd hp hf hi hj, hsc.st (d := d) hd]
+
+/-- Stack argument `j` to `r11`. -/
+theorem argR11_ok {s : State} (hp : Pre T s) {u : State} (hsp : u.gpr .rsp = fb s) (hrd : u.rd = s.rd)
+    (hf : Frame [frR s] s.mem u.mem) {j : Nat} (hj : j < 4) :
+    WP isa (.block [.mov .r11 (.mem (arg j))]) u fun u' => Keep [.r11] u u' ∧ u'.mem = u.mem ∧
+      u'.gpr .r11 = stackArg s j := by
+  have hF := fb_toNat hp
+  have := hp.sp2
+  have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
+    refine ⟨⟨stackArgAddr s 0, 32⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
+    exact Offset.contains_base _ (by omega) (by omega)
+  refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem ∧ u'.gpr .r11 = stackArg s j) ?_ rfl)
+    fun u' ⟨⟨hm, h⟩, k⟩ => ⟨k, hm, h⟩
+  xrun [arg, ea_sp, hsp, hin, arg_read hp hf hj]
+
+theorem hSlots_eq : hSlots = ([.mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) .rax] : List Instr) ++
+    ([.mov .rax (.mem (at_ .r11 24)), .store (sp sCmpH) .rax] : List Instr) ++
+    ([.mov .rax (.mem (at_ .r11 32)), .store (sp sDigH) .rax] : List Instr) := rfl
+
+theorem gSlots_eq : gSlots = ([.mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax] : List Instr) ++
+    ([.mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax] : List Instr) ++
+    ([.mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax] : List Instr) ++
+    ([.mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax] : List Instr) := rfl
+
+/-- The `MdHash` table's words to their slots, and `mgf1` to `r11`. -/
+theorem hSl_ok {s : State} (hp : Pre T s) {u : State} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay u (fb s) (stackArg s 0)) (R : Rep u.mem (fb s) (stackArg s 0) V W) (hrd : u.rd = s.rd)
+    (hf : Frame [frR s] s.mem u.mem) (h11 : u.gpr .r11 = stackArg s 2) :
+    WP isa (.block (hSlots ++ [.mov .r11 (.mem (arg 3))])) u fun u' => Keep [.rax, .r11] u u' ∧
+      Lay u' (fb s) (stackArg s 0) ∧ u'.gpr .r11 = stackArg s 3 ∧ Frame [frR s] s.mem u'.mem ∧
+      Rep u'.mem (fb s) (stackArg s 0) V (upd (upd (upd W 8 (s.mem.readW (off (stackArg s 2) 0) 64))
+        9 (s.mem.readW (off (stackArg s 2) 24) 64)) 10 (s.mem.readW (off (stackArg s 2) 32) 64)) := by
+  have G' := hp.geo
+  have hsp := L.rsp
+  have hfr := L.fr
+  rw [hSlots_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (tabCopy_ok hp hsp hfr hrd hf (.inl rfl) h11 (j := 0) (d := sIniH) (by decide) (by decide))
+    fun u1 ⟨k1, hm1, f1⟩ => ?_
+  refine WP.mono (tabCopy_ok hp ((k1.gpr (by decide)).trans hsp) (k1.2.2 ▸ hfr) (k1.2.1.trans hrd) f1 (.inl rfl)
+    ((k1.gpr (by decide)).trans h11) (j := 24) (d := sCmpH) (by decide) (by decide)) fun u2 ⟨k2, hm2, f2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.mono (tabCopy_ok hp ((k12.gpr (by decide)).trans hsp) (k12.2.2 ▸ hfr) (k12.2.1.trans hrd) f2 (.inl rfl)
+    ((k12.gpr (by decide)).trans h11) (j := 32) (d := sDigH) (by decide) (by decide)) fun u3 ⟨k3, hm3, f3⟩ => ?_
+  have k13 := k12.trans k3
+  refine WP.mono (argR11_ok hp ((k13.gpr (by decide)).trans hsp) (k13.2.1.trans hrd) f3 (j := 3) (by decide))
+    fun u4 ⟨k4, hm4, h4⟩ => ?_
+  have R4 : Rep u4.mem (fb s) (stackArg s 0) V (upd (upd (upd W 8 (s.mem.readW (off (stackArg s 2) 0) 64))
+      9 (s.mem.readW (off (stackArg s 2) 24) 64)) 10 (s.mem.readW (off (stackArg s 2) 32) 64)) := by
+    rw [hm4, hm3, hm2, hm1]
+    exact ((R.wf G' (k := 8) (by decide) _).wf G' (k := 9) (by decide) _).wf G' (k := 10) (by decide) _
+  have k14 : Keep [.rax, .r11] u u4 := (k13.trans k4).mono (by decide)
+  refine ⟨k14, L.of_rep' R R4 (by simp [upd]) (k14.gpr (by decide)) k14.2.2, h4, hm4 ▸ f3, R4⟩
+
+/-- The `Hash` table's words to their slots. -/
+theorem gSl_ok {s : State} (hp : Pre T s) {u : State} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay u (fb s) (stackArg s 0)) (R : Rep u.mem (fb s) (stackArg s 0) V W) (hrd : u.rd = s.rd)
+    (hf : Frame [frR s] s.mem u.mem) (h11 : u.gpr .r11 = stackArg s 3) :
+    WP isa (.block gSlots) u fun u' => Keep [.rax] u u' ∧ Lay u' (fb s) (stackArg s 0) ∧
+      Frame [frR s] s.mem u'.mem ∧
+      Rep u'.mem (fb s) (stackArg s 0) V (upd (upd (upd (upd W 11 (s.mem.readW (off (stackArg s 3) 0) 64))
+        12 (s.mem.readW (off (stackArg s 3) 8) 64)) 13 (s.mem.readW (off (stackArg s 3) 16) 64))
+        14 (s.mem.readW (off (stackArg s 3) 32) 64)) := by
+  have G' := hp.geo
+  have hsp := L.rsp
+  have hfr := L.fr
+  rw [gSlots_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (tabCopy_ok hp hsp hfr hrd hf (.inr rfl) h11 (j := 0) (d := sIniG) (by decide) (by decide))
+    fun u1 ⟨k1, hm1, f1⟩ => ?_
+  refine WP.mono (tabCopy_ok hp ((k1.gpr (by decide)).trans hsp) (k1.2.2 ▸ hfr) (k1.2.1.trans hrd) f1 (.inr rfl)
+    ((k1.gpr (by decide)).trans h11) (j := 8) (d := sUpdG) (by decide) (by decide)) fun u2 ⟨k2, hm2, f2⟩ => ?_
+  have k12 := k1.trans k2
+  refine WP.mono (tabCopy_ok hp ((k12.gpr (by decide)).trans hsp) (k12.2.2 ▸ hfr) (k12.2.1.trans hrd) f2 (.inr rfl)
+    ((k12.gpr (by decide)).trans h11) (j := 16) (d := sFinG) (by decide) (by decide)) fun u3 ⟨k3, hm3, f3⟩ => ?_
+  have k13 := k12.trans k3
+  refine WP.mono (tabCopy_ok hp ((k13.gpr (by decide)).trans hsp) (k13.2.2 ▸ hfr) (k13.2.1.trans hrd) f3 (.inr rfl)
+    ((k13.gpr (by decide)).trans h11) (j := 32) (d := sDG) (by decide) (by decide)) fun u4 ⟨k4, hm4, f4⟩ => ?_
+  have R4 : Rep u4.mem (fb s) (stackArg s 0) V (upd (upd (upd (upd W 11 (s.mem.readW (off (stackArg s 3) 0) 64))
+      12 (s.mem.readW (off (stackArg s 3) 8) 64)) 13 (s.mem.readW (off (stackArg s 3) 16) 64))
+      14 (s.mem.readW (off (stackArg s 3) 32) 64)) := by
+    rw [hm4, hm3, hm2, hm1]
+    exact (((R.wf G' (k := 11) (by decide) _).wf G' (k := 12) (by decide) _).wf G' (k := 13) (by decide) _).wf G'
+      (k := 14) (by decide) _
+  have k14 : Keep [.rax] u u4 := (k13.trans k4).mono (by decide)
+  exact ⟨k14, L.of_rep' R R4 (by simp [upd]) (k14.gpr (by decide)) k14.2.2, f4, R4⟩
+
 end VG.Proof.RsaPss.X86_64.Enc
