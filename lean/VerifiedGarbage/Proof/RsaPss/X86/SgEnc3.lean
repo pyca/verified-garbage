@@ -27,10 +27,6 @@ open VG.X86 hiding frameBytes
 
 variable (h : PssHash)
 
-theorem vpAssoc {F G : State → State → Prop} {a b c : Prog isa} (h : VP F (.seq (.seq a b) c) G) :
-    VP F (.seq a (.seq b c)) G :=
-  ⟨fun σ s hs => WP.assoc (h.wp σ s hs), RelCT.assoc h.ct⟩
-
 /-- `EM`'s bytes outside `DB` and `H`: the leading zero and `0xbc`. -/
 abbrev Ko (P : EP) (σ : State) (m : Mem) : Prop :=
   Kp h P σ m ∧ (∀ i < lo P, m (sa P.scr (oEm + i)) = 0) ∧ m (sa P.scr (oEm + (P.K - 1))) = 0xbc
