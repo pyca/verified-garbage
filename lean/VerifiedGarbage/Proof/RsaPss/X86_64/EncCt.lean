@@ -38,7 +38,6 @@ def KS0 : List Nat := [16, 17, 21, 25, 26, 37, 39, 40]
 /-- And the slots of the table of `MdHash`. -/
 def KS1 : List Nat := [8, 9, 10, 16, 17, 21, 25, 26, 37, 39, 40]
 
-variable (H) in
 /-- After the prologue: `r11` is the table `hash`. -/
 def EJa (H : Hash) (s t : State) : Prop :=
   SS H s t KS0 [(.r11, stackArg s 2)] (fun _ _ => True) ∧ t.rd = s.rd ∧ Frame [frR s] s.mem t.mem

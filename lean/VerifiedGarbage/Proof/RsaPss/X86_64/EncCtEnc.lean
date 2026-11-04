@@ -50,16 +50,14 @@ theorem ksm_ne {k j : Nat} (h : k ∈ KSM) (hj : j ∉ KSM) : k ≠ j := fun e =
 theorem ksm_lt {k : Nat} (h : k ∈ KSM) : k < nW := by
   simp only [KSM, List.mem_cons, List.not_mem_nil, or_false] at h; unfold nW frameBytes; omega_arith
 
-variable (H) in
 /-- After the checks: the salt fits, `rax = emLen - hLen - 2`. -/
-def SJ6 (s t : State) : Prop :=
+def SJ6 (H : Hash) (s t : State) : Prop :=
   SS H s t KS6 [] (fun _ _ => True) ∧ t.rd = s.rd ∧ Frame (wrR s) s.mem t.mem ∧
     t.gpr .rax = BitVec.ofNat 64 (seml s - (H.D + 2)) ∧ t.cf = some (decide (seml s - (H.D + 2) < ssl s)) ∧
     H.D + 2 ≤ seml s
 
-variable (H) in
 /-- In the encoding: the public words `ks`. -/
-def SE (ks : List Nat) (X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop) (s t : State) : Prop :=
+def SE (H : Hash) (ks : List Nat) (X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop) (s t : State) : Prop :=
   SS H s t ks [] (X s) ∧ t.rd = s.rd ∧ Frame (wrR s) s.mem t.mem ∧ H.D + ssl s + 2 ≤ seml s
 
 /-- `SE` as a public piece's start. -/
@@ -94,9 +92,8 @@ theorem sdb_ct : RelCT isa (Two fun a t => At T (SJ6 T.H) a t ∧ isa.eval .b t 
   simp only [upd]; rw [ifn h23, ifn h24]
   exact hw k (by simp only [KSM, KS6, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega_arith)
 
-variable (H) in
 /-- After `mHash`: `rcx` is `Y`. -/
-def SC2 (s t : State) : Prop := SE H KSM (fun _ _ _ => True) s t ∧ t.gpr .rcx = off (stackArg s 0) oY
+def SC2 (H : Hash) (s t : State) : Prop := SE H KSM (fun _ _ _ => True) s t ∧ t.gpr .rcx = off (stackArg s 0) oY
 
 variable (hH : HashOK T.H) (K : Callees T.H)
 
