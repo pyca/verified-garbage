@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_ecdsa_p521_sign.rs` of `verified-garbage-asm-riscv64`, as text: generated from
+// The functions of `src/internal/vg_ecdsa_p521_sign_k.rs` of `verified-garbage-asm-riscv64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ecdsa_p521_sign:
+vg_ecdsa_p521_sign_k:
 	.option push
 	.option arch, +m, +c
 	sd s0, 0(a4)
