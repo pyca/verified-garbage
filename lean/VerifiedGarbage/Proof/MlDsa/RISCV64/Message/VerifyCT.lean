@@ -215,7 +215,96 @@ theorem verifyMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 
       (ct_prog [.s8] (fun a b hab => hab.1.sp.trans (psp.trans hab.2.sp.symm))
         (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact vinv_regs pr hab.1 hab.2 _ (by decide))
         (by taint_decide))
-    exact verifyCall_ct (n := n) hF hf hS (vl_verify p s₁) (vl_verify p s₂) hp₁ hp₂ psp pr (verifyV_eq pr) ek em ec eg
+    exact verifyCall_ct (n := n) hF hf hS (vl_verify p s₁) (vl_verify p s₂) hp₁ hp₂ psp pr (verifyV_eq pr)
+      ek em ec eg
+  · -- `ctx_len ≥ 256`.
+    exact ct_prog [] (fun a b hab => by rw [hab.1.1, hab.1.2, (Upd.write _ _ _).sp, (Upd.write _ _ _).sp, psp])
+      (fun _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide)
+
+/-! ## `verify_message_cached` -/
+
+/-- The argument registers of `verify_message_cached`. -/
+abbrev vcArgs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
+
+theorem cachedEnter_taint (p : Params) : (VG.RISCV64.taint.check (Taint.ofRegs vcArgs)
+    (.block (enter .a6 p signRegs cachedMs))
+    (VG.Taint.hintOf VG.RISCV64.taint (Taint.ofRegs vcArgs) (.block (enter .a6 mlDsa44 signRegs cachedMs)))).isSome =
+    true := rfl
+
+/-- What two runs agree on: `verifyMessageCachedContract`'s public part. -/
+def MVCPub (p : Params) (s₁ s₂ : State) : Prop :=
+  s₁.sp = s₂.sp ∧
+    leakBytes (pkB p s₁ ++ msgB s₁ ++ ctxB s₁ ++ vsigB p s₁) = leakBytes (pkB p s₂ ++ msgB s₂ ++ ctxB s₂ ++ vsigB p s₂) ∧
+    ∀ r ∈ vcArgs, s₁.gpr r = s₂.gpr r
+
+theorem cachedV_eq {p : Params} {s₁ s₂ : State} (h : ∀ r ∈ vcArgs, s₁.gpr r = s₂.gpr r) :
+    ∀ r ∈ signRegs, cachedV p s₁ r = cachedV p s₂ r := by
+  intro r hr
+  simp only [signRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  iterate 8 exact h _ (by decide)
+  show eAt p (s₁.gpr .a6) = eAt p (s₂.gpr .a6)
+  rw [h .a6 (by decide)]
+
+theorem verifyMessageCached_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} :
+    ConstantTime isa (MVCPre p STK) (MVCPub p) (verifyMessageCached n f p) := by
+  refine RelCT.constantTime (Q := fun _ _ => True) ?_
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MVCPre p STK x.1 ∧
+    MVCPre p STK x.2 ∧ MVCPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩)
+    (fun _ _ h => h)
+  by_cases hH : MVCPre p STK s₁ ∧ MVCPre p STK s₂ ∧ MVCPub p s₁ s₂
+  swap
+  · exact RelCT.of_false fun a b h => hH h.2.2
+  obtain ⟨hc₁, hc₂, psp, pl, pr⟩ := hH
+  have hp₁ := hc₁.mv
+  have hp₂ := hc₂.mv
+  have pv : ∀ r ∈ vArgs, s₁.gpr r = s₂.gpr r := fun r hr => pr r (by revert r hr; decide)
+  have hV := cachedV_eq (p := p) pr
+  refine RelCT.mono (P := fun a b => a = s₁ ∧ b = s₂) ?_ (fun a b h => ⟨h.1, h.2.1⟩) (fun _ _ h => h)
+  have p7 : s₁.gpr .a4 = s₂.gpr .a4 := pr _ (by decide)
+  obtain ⟨ek, em, ec, eg⟩ := Proof.MlDsa.Message.leak4 (by simp [Proof.MlKem.bytesAt_length])
+    (by simp [Proof.MlKem.bytesAt_length, pr .a2 (by decide)]) (by simp [Proof.MlKem.bytesAt_length, p7]) pl
+  unfold verifyMessageCached top
+  -- The length check.
+  refine RelCT.seq (R := fun a b => a = s₁.write .t1 (s₁.gpr .a4 >>> 8) ∧ b = s₂.write .t1 (s₂.gpr .a4 >>> 8))
+    (RelCT.mono (relct_wp (ct_prog [.a4] (fun a b hab => by rw [hab.1, hab.2, psp])
+      (fun a b hab r hr => by rw [List.mem_singleton.mp hr, hab.1, hab.2, p7]) (by taint_decide)) fun a b hab =>
+      ⟨by rw [hab.1]; exact Steps.WP.cons (exec_shift_d (by decide)) (WP.block_nil rfl),
+       by rw [hab.2]; exact Steps.WP.cons (exec_shift_d (by decide)) (WP.block_nil rfl)⟩) (fun _ _ h => h)
+      fun _ _ h => h) ?_
+  refine RelCT.ite (fun a b hab => by
+    rw [hab.1, hab.2, eval_zero, eval_zero, (Upd.write _ _ _).gpr, (Upd.write _ _ _).gpr, p7]) ?_ ?_
+  · have hu₁ := Upd.write s₁ .t1 (s₁.gpr .a4 >>> 8)
+    have hu₂ := Upd.write s₂ .t1 (s₂.gpr .a4 >>> 8)
+    -- The setup.
+    refine RelCT.seq (R := fun a b => MV1 p STK s₁ signRegs (cachedV p s₁) a ∧
+        MV1 p STK s₂ signRegs (cachedV p s₂) b)
+      (RelCT.mono (relct_wp (ct_prog vcArgs (fun a b hab => by
+          rw [hab.1.1, hab.1.2, hu₁.sp, hu₂.sp, psp]) (fun a b hab r hr => by
+          rw [hab.1.1, hab.1.2, hu₁.other _ (by revert r; decide), hu₂.other _ (by revert r; decide)]
+          exact pr r hr) (cachedEnter_taint p)) fun a b hab => by
+          rw [hab.1.1, hab.1.2]
+          exact ⟨cachedSetup_ok hF hp₁ hu₁.other hu₁.rd hu₁.wr hu₁.sp rfl hu₁.mem,
+            cachedSetup_ok hF hp₂ hu₂.other hu₂.rd hu₂.wr hu₂.sp rfl hu₂.mem⟩) (fun _ _ h => h) fun _ _ h => h) ?_
+    -- `μ`.
+    refine RelCT.seq (R := fun a b => MV3 p STK s₁ signRegs (cachedV p s₁) a ∧
+        MV3 p STK s₂ signRegs (cachedV p s₂) b)
+      (relct_wp (hash_ct (by taint_decide) fun a b h =>
+          ⟨mu_hashOk hp₁ h48 (vl_cached p s₁) h.1.inv (trPiece_ok hc₁ h48 h.1.inv),
+            mu_hashOk hp₂ h48 (vl_cached p s₂) h.2.inv (trPiece_ok hc₂ h48 h.2.inv),
+            h.1.inv.sp.trans (psp.trans h.2.inv.sp.symm), fun r hr => vinvG_regs hV h.1.inv h.2.inv r
+              (by revert r hr; decide)⟩)
+        fun a b hab => ⟨cachedHash_ok hc₁ h48 hab.1, cachedHash_ok hc₂ h48 hab.2⟩) ?_
+    -- The call.
+    refine RelCT.seq (R := fun a b => VInvG p STK s₁ signRegs (cachedV p s₁) a ∧
+        VInvG p STK s₂ signRegs (cachedV p s₂) b)
+      (relct_wp ?_ fun a b hab => ⟨WP.mono (verifyCall_ok (vl_cached p s₁) hF hp₁ hf hS hab.1) fun _ h => h.1,
+        WP.mono (verifyCall_ok (vl_cached p s₂) hF hp₂ hf hS hab.2) fun _ h => h.1⟩)
+      (ct_prog [.s8] (fun a b hab => hab.1.sp.trans (psp.trans hab.2.sp.symm))
+        (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact vinvG_regs hV hab.1 hab.2 _ (by decide))
+        (by taint_decide))
+    exact verifyCall_ct (n := n) hF hf hS (vl_cached p s₁) (vl_cached p s₂) hp₁ hp₂ psp pv hV ek em ec eg
   · -- `ctx_len ≥ 256`.
     exact ct_prog [] (fun a b hab => by rw [hab.1.1, hab.1.2, (Upd.write _ _ _).sp, (Upd.write _ _ _).sp, psp])
       (fun _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide)

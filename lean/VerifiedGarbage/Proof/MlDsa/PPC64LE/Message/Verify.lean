@@ -13,7 +13,7 @@ public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 
 /-!
-# ML-DSA on PPC64LE, `verify_message`: correctness
+# ML-DSA on PPC64LE, `verify_message` and `verify_message_cached`: correctness
 
 As signing (`Sign.lean`), with `sig` in `r8` and `scratch` in `r9`: from a
 state satisfying `MVPre`, `verifyMessage n f p` returns 2 if the context
@@ -22,6 +22,13 @@ the 1 KiB at `E` (`MV1`), computes `tr = H(pk, 64)` into `840(E)` (`MV2`),
 then `μ` of the formatted message from it in place (`MV3`), and calls the
 verification function on `μ` `f`, whose result is the result
 (`verifyMessage_wp`).
+
+`verifyMessageCached n f p`, from a state satisfying `MCPre` (`MVPre`, and
+`tr = H(pk, 64)` at `tr`, in `r10`), does the same but computes `μ` from the
+cached `tr`, kept in `r28` (`cachedHash_ok`), as signing does from `sk`
+(`verifyMessageCached_wp`). The steps they share are proven for both, the
+registers each keeps (`vRegs c`, `c` for the cached `tr`) a parameter of the
+invariant `VInv c`.
 -/
 
 @[expose] public section
