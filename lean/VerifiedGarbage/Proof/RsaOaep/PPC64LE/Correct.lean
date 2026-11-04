@@ -189,12 +189,6 @@ theorem tab_of {vs : List TVar} (hc : Coh vs) {s : State} (h : (encSpec (tables 
     Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh).2.1,
     fun P => ⟨tabS_entryL hc P hpw' hw₁ hh₁, tabS_entry hc P hpw' hw hh⟩⟩
 
-/-- The digest length of a hash function the label may be hashed with is
-one `byLen` takes. -/
-theorem Link.lens_mem {H : Hash} (l : Link H) : H.D ∈ Impl.RsaOaep.PPC64LE.lens := by
-  rw [← l.len]
-  exact (show ∀ G ∈ labelHashes, G.len ∈ Impl.RsaOaep.PPC64LE.lens by decide) _ l.mem
-
 /-- The correctness of `vg_rsa_oaep_encrypt_precomputed`, against its
 contract, for the tables of `vs`. -/
 theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (encSpec (tables vs)).pre s) :

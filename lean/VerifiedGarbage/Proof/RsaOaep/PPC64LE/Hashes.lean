@@ -75,6 +75,12 @@ structure Link (H : Impl.Hmac.Stream.PPC64LE.Hash) where
   len : G.len = H.D
   mem : G ∈ labelHashes
 
+/-- The digest length of a hash function the label may be hashed with is
+one `byLen` takes. -/
+theorem Link.lens_mem {H : Impl.Hmac.Stream.PPC64LE.Hash} (l : Link H) : H.D ∈ Impl.RsaOaep.PPC64LE.lens := by
+  rw [← l.len]
+  exact (show ∀ G ∈ labelHashes, G.len ∈ Impl.RsaOaep.PPC64LE.lens by decide) _ l.mem
+
 theorem Link.valid {H : Impl.Hmac.Stream.PPC64LE.Hash} (l : Link H) : Proof.Mgf1.Valid l.G :=
   ⟨by rw [l.len]; exact l.ok.hD0, fun x => by rw [l.hash, l.ok.hashLen, l.len]⟩
 
