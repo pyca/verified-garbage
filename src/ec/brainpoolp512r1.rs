@@ -85,7 +85,7 @@ pub(crate) fn public_key(d: &[u8; 64]) -> Option<[u8; 129]> {
 
 #[cfg(all(test, target_arch = "arm"))]
 mod tests {
-    use super::*;
+    use super::{Features, Mul};
     use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.

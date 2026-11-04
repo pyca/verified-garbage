@@ -121,7 +121,7 @@ pub(crate) fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::*;
+    use super::{Features, Mul};
     use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which
@@ -154,7 +154,7 @@ mod tests {
 
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
-    use super::*;
+    use super::{Features, Mul};
     use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.

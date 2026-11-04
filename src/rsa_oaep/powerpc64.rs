@@ -8,8 +8,11 @@
 
 #![cfg(all(target_arch = "powerpc64", feature = "alloc"))]
 
-use crate::arch::fn_tables::{self, *};
-use crate::arch::rsa_oaep::*;
+use crate::arch::fn_tables::{
+    self, VG_HASH_SHA1, VG_HASH_SHA224, VG_HASH_SHA256, VG_HASH_SHA384, VG_HASH_SHA512,
+    VG_HASH_SHA512_224, VG_HASH_SHA512_256,
+};
+use crate::arch::rsa_oaep::{vg_rsa_oaep_decrypt, vg_rsa_oaep_encrypt_precomputed};
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
 use crate::hashes::sha256::Sha256Backend;

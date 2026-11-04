@@ -490,17 +490,17 @@ macro_rules! pss_hash {
         $n:literal, $backend:ident {
             $(
                 $(#[$attr:meta])* $variant:ident => {
-                    verify: $verify:path [$($vreq:path),*],
-                    sign: $sign:path [$($sreq:path),*]
+                    verify: $verify:path [$($vreq:ident),*],
+                    sign: $sign:path [$($sreq:ident),*]
                     $(,
-                        verify_adx: $verify_adx:path [$($vareq:path),*],
-                        verify_ifma: $verify_ifma:path [$($vireq:path),*],
-                        adx: $adx:path [$($areq:path),*],
-                        ifma: $ifma:path [$($ireq:path),*]
+                        verify_adx: $verify_adx:path [$($vareq:ident),*],
+                        verify_ifma: $verify_ifma:path [$($vireq:ident),*],
+                        adx: $adx:path [$($areq:ident),*],
+                        ifma: $ifma:path [$($ireq:ident),*]
                     )?
                     $(,
-                        umaal: $umaal:path [$($ureq:path),*],
-                        verify_umaal: $verify_umaal:path [$($vureq:path),*]
+                        umaal: $umaal:path [$($ureq:ident),*],
+                        verify_umaal: $verify_umaal:path [$($vureq:ident),*]
                     )? $(,)?
                 }
             ),* $(,)?
@@ -591,9 +591,6 @@ macro_rules! pss_hash {
 
         #[cfg(test)]
         mod tests {
-            #[allow(unused_imports)]
-            use super::*;
-
             /// Each function needs no CPU feature that the implementations
             /// it calls are not selected for: on every set of features.
             #[test]
@@ -605,14 +602,14 @@ macro_rules! pss_hash {
                     $(
                         $(#[$attr])*
                         {
-                            let selected = $backend::select(f) == $backend::$variant;
+                            let selected = super::$backend::select(f) == super::$backend::$variant;
                             let v: Features = match crt {
-                                $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
+                                $crate::rsa::Backend::Baseline => Features::all(&[$(super::$vreq),*]),
                                 $(
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Adx => Features::all(&[$($vareq),*]),
+                                    $crate::rsa::Backend::Adx => Features::all(&[$(super::$vareq),*]),
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
+                                    $crate::rsa::Backend::Ifma => Features::all(&[$(super::$vireq),*]),
                                 )?
                                 $(
                                     #[cfg(all(
@@ -625,16 +622,16 @@ macro_rules! pss_hash {
                                             target_os = "openbsd"
                                         )
                                     ))]
-                                    $crate::rsa::Backend::Umaal => Features::all(&[$($vureq),*]),
+                                    $crate::rsa::Backend::Umaal => Features::all(&[$(super::$vureq),*]),
                                 )?
                             };
                             let s: Features = match crt {
-                                $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
+                                $crate::rsa::Backend::Baseline => Features::all(&[$(super::$sreq),*]),
                                 $(
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Adx => Features::all(&[$($areq),*]),
+                                    $crate::rsa::Backend::Adx => Features::all(&[$(super::$areq),*]),
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
+                                    $crate::rsa::Backend::Ifma => Features::all(&[$(super::$ireq),*]),
                                 )?
                                 $(
                                     #[cfg(all(
@@ -647,7 +644,7 @@ macro_rules! pss_hash {
                                             target_os = "openbsd"
                                         )
                                     ))]
-                                    $crate::rsa::Backend::Umaal => Features::all(&[$($ureq),*]),
+                                    $crate::rsa::Backend::Umaal => Features::all(&[$(super::$ureq),*]),
                                 )?
                             };
                             // An assertion, not an `if`: on ARMv7 every hash has
@@ -666,7 +663,7 @@ use pss_hash;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Hash, SaltLength, sign, verify};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 

@@ -476,7 +476,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, PrivateKey, Vec, vec};
     use crate::rsa::tests::{be, composite};
 
     /// `a b`, big-endian, in `a.len() + b.len()` bytes.

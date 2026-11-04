@@ -177,7 +177,7 @@ impl Drop for Precomputed {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use super::*;
+    use super::{Ordering, Precomputed, Vec, modulus_valid, precompute, public_scratch_words, vec};
 
     /// An odd `k`-byte number with the first byte `first`.
     fn number(k: usize, first: u8) -> Vec<u8> {

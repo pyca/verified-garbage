@@ -148,7 +148,7 @@ fn parameters_limit<E>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Controller, Error, Scratch, parameters_limit, vec};
     use alloc::vec::Vec;
     #[test]
     fn parameter_failure_is_bounded() {

@@ -407,7 +407,7 @@ fn decrypt_with(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Hash, decrypt, encrypt, encrypt_with_rng, vec, with_tables};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 

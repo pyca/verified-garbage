@@ -1,6 +1,6 @@
 //! Published RFC 3526/7919 domains exercise public policy selection. The
 //! deterministic scalars below are algebraic fixtures, not external key vectors.
-use super::*;
+use super::{Error, Parameters, PrivateKey, canonical};
 use alloc::{vec, vec::Vec};
 
 fn unhex(text: &str) -> Vec<u8> {

@@ -414,7 +414,26 @@ pub use privatekey::PrivateKey;
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
+    use super::{
+        Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey, Vec,
+        exponent, public_scratch_words, scratch_words, trim, vec,
+    };
+    #[cfg(target_arch = "x86_64")]
+    use super::{
+        VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+        VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+    };
     use alloc::string::ToString;
 
     #[test]

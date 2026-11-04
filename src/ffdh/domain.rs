@@ -331,7 +331,9 @@ impl Domain {
 
 #[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64")))]
 mod cache_tests {
-    use super::*;
+    use super::Domain;
+    #[cfg(target_arch = "arm")]
+    use super::{Backend, detected, scratch};
 
     #[test]
     fn clones_share_immutable_context_and_keep_it_alive() {

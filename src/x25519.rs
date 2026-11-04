@@ -239,7 +239,14 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    #[cfg(target_arch = "arm")]
+    use super::VG_X25519_UMAAL_FEATURES;
+    use super::{BASE_POINT, Backend, Error, Features, PrivateKey, x25519};
+    #[cfg(target_arch = "x86_64")]
+    use super::{
+        VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
+        VG_X25519_IFMA_FEATURES,
+    };
 
     /// A generated key agrees with itself: both sides compute the same
     /// secret.

@@ -135,7 +135,7 @@ macro_rules! streaming_hmac {
     (
         $hash:ident ($backend:ident) {
             $base:ident => ($init:path, $finalize:path)
-            $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vinit:path, $vfinalize:path))*
+            $(, $(#[$attr:meta])* $variant:ident if [$($req:ident),*] => ($vinit:path, $vfinalize:path))*
             $(,)?
         },
         state: $state:literal,
@@ -234,8 +234,7 @@ macro_rules! streaming_hmac {
 
         #[cfg(test)]
         mod tests {
-            #[allow(unused_imports)]
-            use super::*;
+            use super::$hash;
 
             /// Each implementation's `init` and `finalize` need no CPU
             /// feature that the hash's implementation is not selected for:
@@ -246,8 +245,8 @@ macro_rules! streaming_hmac {
                     $(#[$attr])*
                     for bits in 0..1u32 << $crate::cpu::NAMES.len() {
                         let f = verified_garbage_cpu::Features(bits);
-                        if $backend::select(f) == $backend::$variant {
-                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$($req),*])));
+                        if super::$backend::select(f) == super::$backend::$variant {
+                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$(super::$req),*])));
                         }
                     }
                 )*

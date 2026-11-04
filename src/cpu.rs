@@ -358,7 +358,11 @@ fn runtime() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    use super::decode;
+    use super::{Features, NAMES, allowed, detected, feature, runtime};
+    #[cfg(feature = "cpu-features-env")]
+    use super::{allowed_by, parse};
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]

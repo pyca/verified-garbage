@@ -32,9 +32,20 @@ pub(super) fn table(hash: Hash, f: Features) -> Option<super::Table> {
 /// (none for the baseline ISA's).
 macro_rules! oaep_functions {
     (
-        encrypt: {$($(#[$eattr:meta])* $eb:ident => $enc:path [$($ereq:path),*]),* $(,)?},
-        decrypt: {$($(#[$dattr:meta])* $db:ident => $dec:path [$($dreq:path),*]),* $(,)?} $(,)?
+        encrypt: {$($(#[$eattr:meta])* $eb:ident => $enc:path [$($ereq:ident),*]),* $(,)?},
+        decrypt: {$($(#[$dattr:meta])* $db:ident => $dec:path [$($dreq:ident),*]),* $(,)?} $(,)?
     ) => {
+        // The CPU features of each implementation, which `function_tests`
+        // checks.
+        $(
+            $(#[$eattr])*
+            const _: &[verified_garbage_cpu::Features] = &[$($ereq),*];
+        )*
+        $(
+            $(#[$dattr])*
+            const _: &[verified_garbage_cpu::Features] = &[$($dreq),*];
+        )*
+
         /// The functions, `(encrypt, decrypt)`, for the implementation that a
         /// CPU with the features `f` runs best.
         pub(in crate::rsa_oaep) fn functions(
@@ -53,9 +64,6 @@ macro_rules! oaep_functions {
 
         #[cfg(test)]
         mod function_tests {
-            #[allow(unused_imports)]
-            use super::*;
-
             /// Each function needs no CPU feature that the implementations
             /// it calls were not chosen for: on every set of features.
             #[test]
@@ -65,11 +73,11 @@ macro_rules! oaep_functions {
                     let rsa = crate::rsa::Backend::select(f);
                     let encrypt = match rsa {
                         $($(#[$eattr])* crate::rsa::Backend::$eb =>
-                            verified_garbage_cpu::Features::all(&[$($ereq),*]),)*
+                            verified_garbage_cpu::Features::all(&[$(super::$ereq),*]),)*
                     };
                     let decrypt = match rsa {
                         $($(#[$dattr])* crate::rsa::Backend::$db =>
-                            verified_garbage_cpu::Features::all(&[$($dreq),*]),)*
+                            verified_garbage_cpu::Features::all(&[$(super::$dreq),*]),)*
                     };
                     assert!(f.contains(encrypt) && f.contains(decrypt), "{bits:#b}");
                 }
@@ -82,7 +90,7 @@ pub(super) use oaep_functions;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Features, Hash, hash_table, table};
 
     /// Each table's functions need no CPU feature that was not required to
     /// choose it, on every set of features; its word 4 is the hash

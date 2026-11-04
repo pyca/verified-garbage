@@ -327,7 +327,7 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Hash, recover, sign, vec, verify};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 

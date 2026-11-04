@@ -205,7 +205,14 @@ impl Poly1305 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    use super::Features;
+    use super::{Backend, InvalidMac, Poly1305, detected};
+    #[cfg(target_arch = "x86_64")]
+    use super::{
+        VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES,
+        VG_POLY1305_UPDATE_IFMA_FEATURES,
+    };
 
     /// Every message, absorbed in two pieces split at every position, and
     /// with the second piece a byte at a time, has the tag of the whole.

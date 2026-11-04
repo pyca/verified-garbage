@@ -172,7 +172,7 @@ impl Drop for ScratchLease<'_> {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use super::*;
+    use super::{Ordering, Scratch, VerifyScratch};
 
     #[test]
     fn scratch_is_aligned_and_zeroed() {

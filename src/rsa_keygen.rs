@@ -784,7 +784,10 @@ fn generate_with(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        Error, Random, Vec, generate, generate_from, generate_prime, generate_prime_from,
+        generate_with, key_from_primes, pairwise_ok, prime_from, vec,
+    };
 
     #[test]
     fn errors_display() {
