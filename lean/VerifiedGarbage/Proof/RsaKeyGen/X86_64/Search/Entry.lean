@@ -99,13 +99,6 @@ theorem entry_head_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
     hs 32 (by decide), hs 40 (by decide), hs 48 (by decide), hs 56 (by decide), hs 64 (by decide),
     hs 72 (by decide), hs 80 (by decide)]
 
-/-- A read above a store of the frame sees what was there. -/
-theorem read_above_store (m : Mem) (B : Addr) (v : BitVec 64) {d e : Nat} (h : d + 8 ≤ e)
-    (he : e + 8 ≤ 2 ^ 64) :
-    (m.writeW (B + BitVec.ofNat 64 d) v).readW (B + BitVec.ofNat 64 e) 64 = m.readW (B + BitVec.ofNat 64 e) 64 :=
-  Mem.readW_writeW_sep (Offset.sep B (d := e) (n := 8) (e := d) (k := 8) (Or.inr h) he (by omega))
-    (by decide)
-
 theorem arg_addr {p : SearchPublic} {s : State} (h : SearchInput p s) (k : Nat) :
     p.F + BitVec.ofNat 64 (168 + 8 * k) = stackArgAddr s k := by
   rw [show 168 + 8 * k = 160 + 8 + 8 * k by omega, callerArg_addr, h.sp_eq]

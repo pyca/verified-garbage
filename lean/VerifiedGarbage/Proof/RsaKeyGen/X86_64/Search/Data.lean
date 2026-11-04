@@ -153,6 +153,13 @@ theorem writeFrame_frame (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
         (Offset.contains_base _ (by omega) (by omega))
     exact hstore.trans (ih _ (fun x hx => hvalues x (List.mem_cons_of_mem _ hx)))
 
+/-- A read above a store of the frame sees what was there. -/
+theorem read_above_store (m : Mem) (B : Addr) (v : BitVec 64) {d e : Nat} (h : d + 8 ≤ e)
+    (he : e + 8 ≤ 2 ^ 64) :
+    (m.writeW (B + BitVec.ofNat 64 d) v).readW (B + BitVec.ofNat 64 e) 64 = m.readW (B + BitVec.ofNat 64 e) 64 :=
+  Mem.readW_writeW_sep (Offset.sep B (d := e) (n := 8) (e := d) (k := 8) (Or.inr h) he (by omega))
+    (by decide)
+
 /-! ## Where the buffers are -/
 
 namespace SearchInput
