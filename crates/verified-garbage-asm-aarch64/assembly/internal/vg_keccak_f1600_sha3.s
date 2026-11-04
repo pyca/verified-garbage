@@ -5,7 +5,6 @@
 // gives.
 
 vg_keccak_f1600_sha3:
-	.arch_extension sha3
 	str q8, [x1, #0]
 	str q9, [x1, #16]
 	str q10, [x1, #32]
@@ -1730,5 +1729,4 @@ vg_keccak_f1600_sha3:
 	ldr q14, [x1, #96]
 	ldr q15, [x1, #112]
 	ret
-	.arch_extension nosha3
 	.p2align 6

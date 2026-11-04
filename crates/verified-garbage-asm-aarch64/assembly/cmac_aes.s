@@ -5,7 +5,6 @@
 // gives.
 
 vg_cmac_aes_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2304
 	add x3, sp, #0
 	str x19, [x3, #2176]
@@ -34,11 +33,9 @@ vg_cmac_aes_init_aes:
 	ldr x20, [x20, #2184]
 	add sp, sp, #2304
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_cmac_aes_finish_aes:
-	.arch_extension aes
 	sub sp, sp, #2304
 	add x4, sp, #0
 	ldr x9, [x0, #272]
@@ -65,7 +62,6 @@ vg_cmac_aes_finish_aes:
 	ldr x19, [x19, #2176]
 	add sp, sp, #2304
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_cmac_aes_init:
@@ -129,7 +125,6 @@ vg_cmac_aes_finish:
 	.p2align 6
 
 vg_cmac_aes_absorb_aes:
-	.arch_extension aes
 	sub sp, sp, #2304
 	add x5, sp, #0
 	str x19, [x5, #2176]
@@ -239,11 +234,9 @@ vg_cmac_aes_absorb_aes:
 	ldr x23, [x23, #2224]
 	add sp, sp, #2304
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_cmac_aes_absorb_aes_cbc:
-	.arch_extension aes
 	sub sp, sp, #2304
 	add x5, sp, #0
 	str x19, [x5, #2176]
@@ -353,7 +346,6 @@ vg_cmac_aes_absorb_aes_cbc:
 	ldr x23, [x23, #2224]
 	add sp, sp, #2304
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_cmac_aes_absorb:

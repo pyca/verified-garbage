@@ -14,8 +14,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_aes() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x9100004b,0x91000062,0x91000083,0xf940016e,0xf940056f,0x3dc00010,0x3dc00411,0x3dc00812
+        r".inst 0x9100004b,0x91000062,0x91000083,0xf940016e,0xf940056f,0x3dc00010,0x3dc00411,0x3dc00812
 .inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
 .inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
 .inst 0xd1004129,0x3dc0013d
@@ -108,7 +107,6 @@ b 28f
 27:
 28:
 .inst 0xf900016e,0xf900056f,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

@@ -180,8 +180,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES: verified_garbage_cpu::Features
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ed25519_sign_expanded_sha3(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf94087e1,0x91000021
 .inst 0x910303ef,0xf9400029,0xf90001e9,0xf9400429,0xf90005e9,0xf9400829,0xf90009e9,0xf9400c29
 .inst 0xf9000de9,0xf9401029,0xf90011e9,0xf9401429,0xf90015e9,0xf9401829,0xf90019e9,0xf9401c29
@@ -228,7 +227,6 @@ bl {vg_ed25519_scalar_mul_add}
 .inst 0xd280000e,0xf90065ee,0x910003ef,0xd280000e,0xf90069ee,0x910003ef,0xd280000e,0xf9006dee
 .inst 0x910003ef,0xd280000e,0xf90071ee,0x910003ef,0xd280000e,0xf90075ee,0x910003ef,0xd280000e
 .inst 0xf90079ee,0x910003ef,0xd280000e,0xf9007dee,0x910503ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,
@@ -257,8 +255,7 @@ pub const VG_ED25519_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ed25519_verify_sha3(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf94093e0,0x91000000
 bl {vg_sha512_init}
 .inst 0xf94093e0,0x91000000,0xd2800001,0xf9408fe2,0x91000042,0xd2800403,0xf94093e4,0x91030084
@@ -277,7 +274,6 @@ bl {vg_ed25519_scalar_reduce}
 .inst 0x910203e2,0xf94093e3,0x91000063
 bl {vg_ed25519_verify_equation}
 .inst 0x910503ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,

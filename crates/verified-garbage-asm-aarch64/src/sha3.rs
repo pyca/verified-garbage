@@ -525,8 +525,7 @@ pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-cbz x2, 20f
+        r"cbz x2, 20f
 b 21f
 20:
 .inst 0x91000026,0xcb060087,0xd37ffce7
@@ -823,7 +822,6 @@ b 214f
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -845,12 +843,10 @@ pub const VG_KECCAK_PAD_SHA3_FEATURES: verified_garbage_cpu::Features = verified
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10a03ff,0x910003e4,0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009
+        r".inst 0xd10a03ff,0x910003e4,0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009
 .inst 0xd1000529,0x3940012a,0xd280100b,0xca0b014a,0x3900012a,0x91000081
 bl {vg_keccak_f1600_sha3}
 .inst 0xf84107fe,0x910a03ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -874,8 +870,7 @@ pub const VG_KECCAK_SQUEEZE_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10a03ff,0x910003e5,0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7
+        r".inst 0xd10a03ff,0x910003e5,0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7
 .inst 0xf90114b8,0x91000013,0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
 cbz x24, 20f
 22:
@@ -899,7 +894,6 @@ b 21f
 21:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
 .inst 0x910a03ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )

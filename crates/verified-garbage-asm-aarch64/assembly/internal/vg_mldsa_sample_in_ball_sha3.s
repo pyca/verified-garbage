@@ -5,7 +5,6 @@
 // gives.
 
 vg_mldsa_sample_in_ball_sha3:
-	.arch_extension sha3
 	str x25, [x4, #2016]
 	str x26, [x4, #2024]
 	str x27, [x4, #2032]
@@ -228,5 +227,4 @@ vg_mldsa_sample_in_ball_sha3:
 	ldr x27, [x25, #2032]
 	ldr x25, [x25, #2016]
 	ret
-	.arch_extension nosha3
 	.p2align 6

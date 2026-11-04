@@ -112,8 +112,7 @@ pub const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
+        r".inst 0xd11903ff,0x910003e7,0x9100008a,0x910000e4,0xf901a093,0xf901a494,0xf901a895,0xf901ac96
 .inst 0xf901b098,0xf901b49e,0xf901b897,0x91000097,0xf901bee5,0x51000549,0xf901c2e9,0xf901c6e6
 .inst 0x91000013,0x91000034,0x91000055,0x91000076,0xd346fe89
 cbz x9, 20f
@@ -178,7 +177,6 @@ b 25f
 25:
 .inst 0xf941a2f3,0xf941a6f4,0xf941aaf5,0xf941aef6,0xf941b2f8,0xf941b6fe,0xf941baf7,0x911903ff
 .inst 0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,

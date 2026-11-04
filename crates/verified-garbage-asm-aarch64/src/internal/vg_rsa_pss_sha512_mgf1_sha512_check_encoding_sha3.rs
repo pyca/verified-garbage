@@ -14,8 +14,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHA3_FEATURES: ver
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10543ff,0x110000a5,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217
+        r".inst 0xd10543ff,0x110000a5,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217
 .inst 0xf9004618,0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9006a00,0xf9007604
 .inst 0xf9008605,0x91000057,0x910000d4,0x91200293,0x91240295,0xd37df2e9,0xcb030129,0xd280000b
 .inst 0xd100212c,0xd37ffd8c,0xd340fd8c,0xaa0c016b,0xd1001d2c,0xd37ffd8c,0xd37ff98c,0xaa0c016b
@@ -228,7 +227,6 @@ b 22f
 22:
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym crate::sha512::vg_sha512_init,
         vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,

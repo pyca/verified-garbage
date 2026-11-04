@@ -5656,8 +5656,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension sve2
-.inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
+        r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
 cbz x9, 20f
 .inst 0xd280000a,0xd280000a,0xd280000a,0xd280000a,0xd10b04a9,0xd37ffd29,0xd10804aa,0xd37ffd4a
 .inst 0xcb09014a,0x9100054a,0xd34920a9,0xd377fd29,0xd1040529,0xd349fd29
@@ -7459,7 +7458,6 @@ bl {vg_poly1305_blocks}
 .inst 0x3d811ea0,0x3d8122a0,0x3d8126a0,0x3d812aa0,0x3d812ea0,0x3d8132a0,0x3d8136a0,0x3d813aa0
 .inst 0x3d813ea0
 b 25b
-.arch_extension nosve2
 .p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -7489,8 +7487,7 @@ pub const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sve2
-.inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
+        r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
 cbz x9, 20f
 .inst 0xd280000a,0xd280000a,0xd280000a,0xd280000a,0xd10b04a9,0xd37ffd29,0xd10804aa,0xd37ffd4a
 .inst 0xcb09014a,0x9100054a,0xd34920a9,0xd377fd29,0xd1040129,0xd349fd29
@@ -9425,7 +9422,6 @@ bl {vg_poly1305_blocks}
 .inst 0x3d813ea0,0x910702a0,0xd2800001,0x9100c2a2,0x9109e2a3
 bl {vg_poly1305_finalize_scratch}
 b 25b
-.arch_extension nosve2
 .p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -9458,8 +9454,7 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension sve2
-.inst 0xd10043ff,0x910003f0,0xf900061e,0xf9400bea,0x910000c8,0x910000e9,0x910000cb,0x91000086
+        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf9400bea,0x910000c8,0x910000e9,0x910000cb,0x91000086
 .inst 0x910000a7
 cbz x7, 20f
 22:
@@ -9505,7 +9500,6 @@ b 21f
 .inst 0x91000104,0x91000125,0x91000146
 bl {vg_chacha20_poly1305_seal_sve2}
 .inst 0xf94007fe,0x910043ff,0xd65f03c0
-.arch_extension nosve2
 .p2align 6",
         vg_chacha20_poly1305_seal_sve2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_sve2,
     )

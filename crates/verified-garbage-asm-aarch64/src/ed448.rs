@@ -239,8 +239,7 @@ pub const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: verified_garbage_cpu::Features = ve
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf9408bef,0x910001ef
 .inst 0xd280000e,0xf90001ee,0xf90005ee,0xf90009ee,0xf9000dee,0xf90011ee,0xf90015ee,0xf90019ee
 .inst 0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee,0xf9002dee,0xf90031ee,0xf90035ee,0xf90039ee
@@ -271,7 +270,6 @@ bl {vg_ed448_scalar_base}
 .inst 0xf90069ee,0x910003ef,0xd280000e,0xf9006dee,0x910003ef,0xd280000e,0xf90071ee,0x910003ef
 .inst 0xd280000e,0xf90075ee,0x910003ef,0xd280000e,0xf90079ee,0x910003ef,0xd280000e,0xf9007dee
 .inst 0x910503ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
@@ -303,8 +301,7 @@ pub const VG_ED448_SIGN_CACHED_SHA3_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ed448_sign_cached_sha3(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
 .inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0x910323ef,0xf90001e6
 .inst 0x910343ef,0xf90001e7,0xd28d2a69,0xf2a8ace9,0xf2c68c89,0xf2e70689,0x910003ef,0xf90001e9
 .inst 0xf94093e9,0x91000129,0xd378dd29,0xf90005e9,0xf9406bef,0x910001ef,0xd280000e,0xf90001ee
@@ -379,7 +376,6 @@ bl {vg_ed448_scalar_mul_add}
 .inst 0x910003ef,0xd280000e,0xf90049ee,0x910003ef,0xd280000e,0xf9004dee,0x910003ef,0xd280000e
 .inst 0xf90051ee,0x910003ef,0xd280000e,0xf90055ee,0x910003ef,0xd280000e,0xf90059ee,0x910003ef
 .inst 0xd280000e,0xf9005dee,0x910003ef,0xd280000e,0xf90061ee,0x910503ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
@@ -409,8 +405,7 @@ pub const VG_ED448_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ed448_verify_sha3(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd348fc49
+        r".inst 0xd348fc49
 cbz x9, 20f
 .inst 0xd2800000
 b 21f
@@ -447,7 +442,6 @@ bl {vg_ed448_verify_equation}
 .inst 0x910503ff,0xf84107fe
 21:
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,

@@ -5,7 +5,6 @@
 // gives.
 
 vg_rsa_pss_sha1_mgf1_sha1_check_encoding_sha2:
-	.arch_extension sha2
 	sub sp, sp, #336
 	add w5, w5, #0
 	add x16, sp, #0
@@ -689,5 +688,4 @@ vg_rsa_pss_sha1_mgf1_sha1_check_encoding_sha2:
 	ldr x30, [x16, #176]
 	add sp, sp, #336
 	ret
-	.arch_extension nosha2
 	.p2align 6

@@ -454,7 +454,6 @@ vg_rsa_oaep_sha384_mgf1_decrypt:
 	.p2align 6
 
 vg_rsa_oaep_sha384_mgf1_decrypt_sha384_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0
@@ -901,7 +900,6 @@ vg_rsa_oaep_sha384_mgf1_decrypt_sha384_sha3:
 	add sp, sp, #272
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_rsa_oaep_sha384_mgf1_encrypt_precomputed:
@@ -1255,7 +1253,6 @@ vg_rsa_oaep_sha384_mgf1_encrypt_precomputed:
 	.p2align 6
 
 vg_rsa_oaep_sha384_mgf1_encrypt_precomputed_sha384_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0
@@ -1603,5 +1600,4 @@ vg_rsa_oaep_sha384_mgf1_encrypt_precomputed_sha384_sha3:
 	add sp, sp, #272
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6

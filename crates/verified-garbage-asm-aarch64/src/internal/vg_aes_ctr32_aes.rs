@@ -14,8 +14,7 @@ pub(crate) const VG_AES_CTR32_AES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32_aes() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+        r".inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
 .inst 0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e
 .inst 0xd1004129,0x3dc0013d,0xd1002826,0xd1003027,0xb9400c4a,0x5ac0094a,0xd343fc8d
 cbz x13, 20f
@@ -89,7 +88,6 @@ b 28f
 27:
 28:
 .inst 0x5ac0094c,0xb9000c4c,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

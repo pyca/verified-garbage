@@ -5,7 +5,6 @@
 // gives.
 
 vg_sha1_compress_sha2:
-	.arch_extension sha2
 	cbz x2, 20f
 	movz w4, #31129, lsl #0
 	movk w4, #23170, lsl #16
@@ -158,5 +157,4 @@ vg_sha1_compress_sha2:
 20:
 21:
 	ret
-	.arch_extension nosha2
 	.p2align 6

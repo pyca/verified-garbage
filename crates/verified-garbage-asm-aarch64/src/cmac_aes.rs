@@ -21,15 +21,13 @@ pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
+        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
 .inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
 bl {vg_aes_expand_key_scratch_aes}
 .inst 0x91000260,0x910002a1,0x9103c262,0x91000283
 bl {vg_cmac_aes_subkeys_aes}
 .inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
@@ -55,8 +53,7 @@ pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
+        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
 .inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
 cbz x4, 20f
 .inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
@@ -65,7 +62,6 @@ b 21f
 21:
 bl {vg_cmac_aes_finalize_aes}
 .inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
     )
@@ -145,8 +141,7 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
+        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
@@ -201,7 +196,6 @@ b 214f
 214:
 .inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
     )
@@ -225,8 +219,7 @@ pub const VG_CMAC_AES_ABSORB_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
+        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
 .inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
@@ -281,7 +274,6 @@ b 214f
 214:
 .inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
     )

@@ -5,7 +5,6 @@
 // gives.
 
 vg_ghash_aes:
-	.arch_extension aes
 	ldr q6, [x0, #0]
 	rev64 v6.16b, v6.16b
 	movz x5, #49664, lsl #48
@@ -378,5 +377,4 @@ vg_ghash_aes:
 	rev64 v0.16b, v0.16b
 	str q0, [x1, #0]
 	ret
-	.arch_extension noaes
 	.p2align 6

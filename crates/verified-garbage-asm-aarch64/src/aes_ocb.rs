@@ -21,8 +21,7 @@ pub const VG_AES_OCB_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
+        r".inst 0xd12803ff,0x910003e3,0xf9005474,0xf9005875,0xf9005c76,0xf9006077,0xf9006478,0xf9006879
 .inst 0xf9006c7a,0xf900707b,0xf900747c,0xf900787e,0xf9005073,0x91000073,0x91000054,0xd342fc36
 .inst 0x91001ad6,0x91080263
 bl {vg_aes_expand_key_scratch_aes}
@@ -30,7 +29,6 @@ bl {vg_aes_expand_key_scratch_aes}
 bl {vg_aes_encrypt_blocks_aes}
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
@@ -59,8 +57,7 @@ pub const VG_AES_OCB_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
 .inst 0x910000fc,0xf9008a62,0xf9008e63,0xf9008264,0xf9008665,0xf94007ea,0xf9007e6a,0xf9407a89
@@ -310,7 +307,6 @@ bl {vg_aes_encrypt_blocks_aes}
 cbnz x13, 248b
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
@@ -338,8 +334,7 @@ pub const VG_AES_OCB_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9005534,0xf9005935,0xf9005d36,0xf9006137,0xf9006538,0xf9006939,0xf9006d3a
 .inst 0xf900713b,0xf900753c,0xf900793e,0xf9005133,0x91000133,0x91000014,0x910000d5,0x91000036
 .inst 0x910000fc,0xf9008a62,0xf9008e63,0xf9008264,0xf9008665,0xf94007ea,0xf9007e6a,0xf9407a89
@@ -616,7 +611,6 @@ b 251f
 251:
 .inst 0xf9400260,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a
 .inst 0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
         vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,

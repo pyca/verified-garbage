@@ -14,8 +14,7 @@ pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: verified_garbage_cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf903f099,0xf903f49a,0xf903f89b,0xf903fc9e,0x91000099,0x9100007a,0x1100005b,0x91000003
+        r".inst 0xf903f099,0xf903f49a,0xf903f89b,0xf903fc9e,0x91000099,0x9100007a,0x1100005b,0x91000003
 .inst 0x91000024,0xd2800009,0xf9000329,0xf9000729,0xf9000b29,0xf9000f29,0xf9001329,0xf9001729
 .inst 0xf9001b29,0xf9001f29,0xf9002329,0xf9002729,0xf9002b29,0xf9002f29,0xf9003329,0xf9003729
 .inst 0xf9003b29,0xf9003f29,0xf9004329,0xf9004729,0xf9004b29,0xf9004f29,0xf9005329,0xf9005729
@@ -83,7 +82,6 @@ b 28f
 27:
 28:
 .inst 0xd348fd40,0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym crate::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym crate::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,

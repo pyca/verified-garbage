@@ -442,7 +442,6 @@ vg_ecdsa_p224_sha224_sign:
 	.p2align 6
 
 vg_ecdsa_p224_sha224_sign_sha2:
-	.arch_extension sha2
 	str x30, [sp, #-16]!
 	sub sp, sp, #224
 	add x15, sp, #0
@@ -877,5 +876,4 @@ vg_ecdsa_p224_sha224_sign_sha2:
 	add sp, sp, #224
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha2
 	.p2align 6

@@ -128,8 +128,7 @@ pub const VG_ECDSA_P256_SHA256_SIGN_SHA2_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ecdsa_p256_sha256_sign_sha2(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xd10383ff,0x910003ef,0xf90069e0,0xf90065e1,0xf90061e2,0xf9005de3,0xf94063e1
+        r".inst 0xf81f0ffe,0xd10383ff,0x910003ef,0xf90069e0,0xf90065e1,0xf90061e2,0xf9005de3,0xf94063e1
 .inst 0xd2800007,0x910003ef,0xf9400c28,0xdac00d08,0xf90021e8,0xd284aa2c,0xf2bf8c6c,0xf2d9584c
 .inst 0xf2fe772c,0xeb0c0102,0xf90001e2,0xf9400828,0xdac00d08,0xf90025e8,0xd293d08c,0xf2b4e2ec
 .inst 0xf2df55ac,0xf2f79ccc,0xfa0c0102,0xf90005e2,0xf9400428,0xdac00d08,0xf90029e8,0xd29fffec
@@ -210,7 +209,6 @@ cbnz x12, 20b
 .inst 0xf90019ee,0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee,0xf9002dee,0xf90031ee,0xf90035ee
 .inst 0xf90039ee,0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee,0xf9004dee,0xf90051ee,0xf90055ee
 .inst 0x910383ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_hmac_sha256_init_scratch_sha2 = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_sha2::vg_hmac_sha256_init_scratch_sha2,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,

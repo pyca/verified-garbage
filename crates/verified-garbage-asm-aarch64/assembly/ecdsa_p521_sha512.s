@@ -746,7 +746,6 @@ vg_ecdsa_p521_sha512_sign:
 	.p2align 6
 
 vg_ecdsa_p521_sha512_sign_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	sub sp, sp, #368
 	add x15, sp, #0
@@ -1485,5 +1484,4 @@ vg_ecdsa_p521_sha512_sign_sha3:
 	add sp, sp, #368
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6

@@ -14,8 +14,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AES_CBC_FEATURES: verified_garbage_cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aes_cbc() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-cbz x4, 20f
+        r"cbz x4, 20f
 .inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
 .inst 0x3dc02018,0x3dc02419,0x3dc0281a,0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e
 .inst 0xd1004129,0x3dc0013d,0xd1002826,0xd1003027,0x3dc00040,0x6e3e1e1f,0x6e3e1c00
@@ -49,7 +48,6 @@ b 21f
 20:
 21:
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

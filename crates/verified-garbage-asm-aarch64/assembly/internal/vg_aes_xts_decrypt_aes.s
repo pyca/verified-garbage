@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_xts_decrypt_aes:
-	.arch_extension aes
 	add x11, x2, #0
 	add x2, x3, #0
 	add x3, x4, #0
@@ -529,5 +528,4 @@ vg_aes_xts_decrypt_aes:
 	str x14, [x11, #0]
 	str x15, [x11, #8]
 	ret
-	.arch_extension noaes
 	.p2align 6

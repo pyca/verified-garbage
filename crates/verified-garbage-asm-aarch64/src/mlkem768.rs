@@ -819,8 +819,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf9261078,0xf9261479,0xf926187a,0xf9261c7b,0xf926207c,0xf926247e,0x91000019,0x9100003a
+        r".inst 0xf9261078,0xf9261479,0xf926187a,0xf9261c7b,0xf926207c,0xf926247e,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0xd2800069,0x390e6389,0x91000380,0xd2800009,0xf9000009
 .inst 0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009
 .inst 0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009
@@ -2354,7 +2353,6 @@ bl {vg_keccak_f1600}
 .inst 0xf9400389,0xf9049369,0xf9400789,0xf9049769,0xf9400b89,0xf9049b69,0xf9400f89,0xf9049f69
 .inst 0xf9401329,0xf904a369,0xf9401729,0xf904a769,0xf9401b29,0xf904ab69,0xf9401f29,0xf904af69
 .inst 0x91000300,0xf966279e,0xf9661398,0xf9661799,0xf9661b9a,0xf9661f9b,0xf966239c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
@@ -2389,8 +2387,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf92a6c98,0xf92a709e,0xf92a7499,0xf92a789a,0xf92a7c9b,0xf92a809c,0x91000019,0x9100005a
+        r".inst 0xf92a6c98,0xf92a709e,0xf92a7499,0xf92a789a,0xf92a7c9b,0xf92a809c,0x91000019,0x9100005a
 .inst 0x9100007b,0x9100009c,0xd2800038,0xf9400029,0xf901cb89,0xf9400429,0xf901cf89,0xf9400829
 .inst 0xf901d389,0xf9400c29,0xf901d789,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
 .inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
@@ -3976,7 +3973,6 @@ bl {vg_mlkem_add}
 .inst 0xd2891300,0x8b000380,0xd2800081,0x910f0362,0xd2801003
 bl {vg_mlkem_compress_encode}
 .inst 0x91000300,0xf96a6f98,0xf96a739e,0xf96a7799,0xf96a7b9a,0xf96a7f9b,0xf96a839c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
@@ -4013,8 +4009,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf92a6c78,0xf92a707e,0xf92a7479,0xf92a787a,0xf92a7c7b,0xf92a807c,0x91000019,0x9100003a
+        r".inst 0xf92a6c78,0xf92a707e,0xf92a7479,0xf92a787a,0xf92a7c7b,0xf92a807c,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0x91000340,0xd2802801,0xd2800142,0xd2891303,0x8b030383
 bl {vg_mlkem_decode_decompress}
 .inst 0xd2891300,0x8b000380,0xd2869301,0x8b010381,0xd280040a
@@ -5717,7 +5712,6 @@ cbnz x2, 2311b
 .inst 0xf900076c,0xf941f78c,0xf942078d,0xca0d018c,0x8a0a018c,0xca0d018c,0xf9000b6c,0xf941fb8c
 .inst 0xf9420b8d,0xca0d018c,0x8a0a018c,0xca0d018c,0xf9000f6c,0x91000300,0xf96a6f98,0xf96a739e
 .inst 0xf96a7799,0xf96a7b9a,0xf96a7f9b,0xf96a839c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
         vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,
@@ -5755,8 +5749,7 @@ pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_keygen_x2_sha3_keccak_sha3(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf9261078,0xf9261479,0xf926187a,0xf9261c7b,0xf926207c,0xf926247e,0x91000019,0x9100003a
+        r".inst 0xf9261078,0xf9261479,0xf926187a,0xf9261c7b,0xf926207c,0xf926247e,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0xd2800069,0x390e6389,0x91000380,0xd2800009,0xf9000009
 .inst 0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009
 .inst 0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009
@@ -7290,7 +7283,6 @@ bl {vg_keccak_f1600_sha3}
 .inst 0xf9400389,0xf9049369,0xf9400789,0xf9049769,0xf9400b89,0xf9049b69,0xf9400f89,0xf9049f69
 .inst 0xf9401329,0xf904a369,0xf9401729,0xf904a769,0xf9401b29,0xf904ab69,0xf9401f29,0xf904af69
 .inst 0x91000300,0xf966279e,0xf9661398,0xf9661799,0xf9661b9a,0xf9661f9b,0xf966239c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
@@ -7325,8 +7317,7 @@ pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_encaps_x2_sha3_keccak_sha3(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf92a6c98,0xf92a709e,0xf92a7499,0xf92a789a,0xf92a7c9b,0xf92a809c,0x91000019,0x9100005a
+        r".inst 0xf92a6c98,0xf92a709e,0xf92a7499,0xf92a789a,0xf92a7c9b,0xf92a809c,0x91000019,0x9100005a
 .inst 0x9100007b,0x9100009c,0xd2800038,0xf9400029,0xf901cb89,0xf9400429,0xf901cf89,0xf9400829
 .inst 0xf901d389,0xf9400c29,0xf901d789,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
 .inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
@@ -8912,7 +8903,6 @@ bl {vg_mlkem_add}
 .inst 0xd2891300,0x8b000380,0xd2800081,0x910f0362,0xd2801003
 bl {vg_mlkem_compress_encode}
 .inst 0x91000300,0xf96a6f98,0xf96a739e,0xf96a7799,0xf96a7b9a,0xf96a7f9b,0xf96a839c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_x3_sha3 = sym super::mlkem1024::vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3,
         vg_keccak_f1600_x2_sha3 = sym super::mldsa44::vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3,
@@ -8949,8 +8939,7 @@ pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem768_decaps_x2_sha3_keccak_sha3(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf92a6c78,0xf92a707e,0xf92a7479,0xf92a787a,0xf92a7c7b,0xf92a807c,0x91000019,0x9100003a
+        r".inst 0xf92a6c78,0xf92a707e,0xf92a7479,0xf92a787a,0xf92a7c7b,0xf92a807c,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0x91000340,0xd2802801,0xd2800142,0xd2891303,0x8b030383
 bl {vg_mlkem_decode_decompress}
 .inst 0xd2891300,0x8b000380,0xd2869301,0x8b010381,0xd280040a
@@ -10653,7 +10642,6 @@ cbnz x2, 2311b
 .inst 0xf900076c,0xf941f78c,0xf942078d,0xca0d018c,0x8a0a018c,0xca0d018c,0xf9000b6c,0xf941fb8c
 .inst 0xf9420b8d,0xca0d018c,0x8a0a018c,0xca0d018c,0xf9000f6c,0x91000300,0xf96a6f98,0xf96a739e
 .inst 0xf96a7799,0xf96a7b9a,0xf96a7f9b,0xf96a839c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
         vg_mlkem16_ntt = sym super::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt,

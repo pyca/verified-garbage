@@ -5,7 +5,6 @@
 // gives.
 
 vg_ghash_store_powers_aes:
-	.arch_extension aes
 	add x8, x5, #0
 	ldr q6, [x0, #0]
 	rev64 v6.16b, v6.16b
@@ -487,11 +486,9 @@ vg_ghash_store_powers_aes:
 	str q22, [x8, #112]
 	str q23, [x8, #96]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x3, sp, #0
 	str x20, [x3, #136]
@@ -536,11 +533,9 @@ vg_aes_gcm_init_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_seal_aes:
-	.arch_extension aes
 	sub sp, sp, #2576
 	add x16, sp, #0
 	ldr x17, [sp, #2576]
@@ -1679,11 +1674,9 @@ vg_aes_gcm_seal_aes:
 27:
 	add sp, sp, #2576
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_open_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -2974,11 +2967,9 @@ vg_aes_gcm_open_aes:
 27:
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x4, sp, #0
 	str x20, [x4, #136]
@@ -3131,11 +3122,9 @@ vg_aes_gcm_stream_init_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_aad_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x5, sp, #0
 	str x20, [x5, #136]
@@ -3277,11 +3266,9 @@ vg_aes_gcm_stream_aad_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_encrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x7, sp, #0
 	str x20, [x7, #136]
@@ -3638,11 +3625,9 @@ vg_aes_gcm_stream_encrypt_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_decrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x7, sp, #0
 	str x20, [x7, #136]
@@ -3999,11 +3984,9 @@ vg_aes_gcm_stream_decrypt_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_finish_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x6, sp, #0
 	str x20, [x6, #136]
@@ -4139,11 +4122,9 @@ vg_aes_gcm_stream_finish_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_stream_verify_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x7, sp, #0
 	str x20, [x7, #136]
@@ -4369,11 +4350,9 @@ vg_aes_gcm_stream_verify_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_seal_gather_aes:
-	.arch_extension aes
 	sub sp, sp, #16
 	add x16, sp, #0
 	str x30, [x16, #8]
@@ -4448,11 +4427,9 @@ vg_aes_gcm_seal_gather_aes:
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_seal_with_powers_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -5600,11 +5577,9 @@ vg_aes_gcm_seal_with_powers_aes:
 27:
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_open_with_powers_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -6904,7 +6879,6 @@ vg_aes_gcm_open_with_powers_aes:
 27:
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 // vg_aes_gcm_init_aes_sha3: the function `vg_aes_gcm_init_aes`
@@ -6926,7 +6900,6 @@ vg_aes_gcm_open_with_powers_aes:
 // vg_aes_gcm_stream_verify_aes_sha3: the function `vg_aes_gcm_stream_verify_aes`
 
 vg_aes_gcm_seal_gather_aes_sha3:
-	.arch_extension aes
 	sub sp, sp, #16
 	add x16, sp, #0
 	str x30, [x16, #8]
@@ -7001,12 +6974,9 @@ vg_aes_gcm_seal_gather_aes_sha3:
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_seal_with_powers_aes_sha3:
-	.arch_extension aes
-	.arch_extension sha3
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -12425,13 +12395,9 @@ vg_aes_gcm_seal_with_powers_aes_sha3:
 27:
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
-	.arch_extension nosha3
 	.p2align 6
 
 vg_aes_gcm_open_with_powers_aes_sha3:
-	.arch_extension aes
-	.arch_extension sha3
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -17368,8 +17334,6 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 27:
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
-	.arch_extension nosha3
 	.p2align 6
 
 vg_aes_gcm_init:

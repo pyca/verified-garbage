@@ -14,8 +14,7 @@ pub(crate) const VG_SHA256_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_scratch_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877,0xf9004c78,0x91000013
+        r".inst 0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877,0xf9004c78,0x91000013
 .inst 0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009,0x8b17026c,0x39008189
 .inst 0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -51,7 +50,6 @@ bl {vg_sha256_compress_sha2}
 cbz x24, 20b
 .inst 0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf9403a93,0xf9404295
 .inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )

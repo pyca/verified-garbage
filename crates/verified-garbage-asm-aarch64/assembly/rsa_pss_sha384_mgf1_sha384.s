@@ -136,7 +136,6 @@ vg_rsa_pss_sha384_mgf1_sha384_sign:
 	.p2align 6
 
 vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_sha3:
-	.arch_extension sha3
 	sub sp, sp, #336
 	add x16, sp, #0
 	str x19, [x16, #96]
@@ -265,7 +264,6 @@ vg_rsa_pss_sha384_mgf1_sha384_sign_sha384_sha3:
 	ldr x30, [x16, #176]
 	add sp, sp, #336
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed:
@@ -367,7 +365,6 @@ vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed:
 	.p2align 6
 
 vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed_sha384_sha3:
-	.arch_extension sha3
 	sub sp, sp, #336
 	add x16, sp, #0
 	str x19, [x16, #96]
@@ -463,5 +460,4 @@ vg_rsa_pss_sha384_mgf1_sha384_verify_precomputed_sha384_sha3:
 	ldr x30, [x16, #176]
 	add sp, sp, #336
 	ret
-	.arch_extension nosha3
 	.p2align 6

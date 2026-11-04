@@ -241,8 +241,7 @@ pub const VG_SHA384_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha384_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -280,7 +279,6 @@ cbz x24, 20b
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
 .inst 0xf84107fe,0x911583ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -303,8 +301,7 @@ pub const VG_SHA384_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha384_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd293db09,0xf2b820a9,0xf2d3aba9,0xf2f97769,0xd29aa0ea,0xf2a6cf8a
 .inst 0xf2c5254a,0xf2ec534a,0xa9002809,0xd29ba2e9,0xf2a60e09,0xf2c02b49,0xf2f22b29,0xd28b272a
 .inst 0xf2bee1ca,0xf2dd9b0a,0xf2e2a5ea,0xa9012809,0xd2816629,0xf2bff809,0xf2c4cce9,0xf2ece669
@@ -363,7 +360,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -631,8 +627,7 @@ pub const VG_SHA512_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
+        r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
 cbz x22, 20f
 22:
@@ -723,7 +718,6 @@ b 21f
 21:
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -748,8 +742,7 @@ pub const VG_SHA512_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -788,7 +781,6 @@ cbz x24, 20b
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -811,8 +803,7 @@ pub const VG_SHA512_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd2992109,0xf2be7789,0xf2dccce9,0xf2ed4129,0xd294e76a,0xf2b0994a
 .inst 0xf2d5d0aa,0xf2f76cea,0xa9002809,0xd29f0569,0xf2bfd289,0xf2de6e49,0xf2e78dc9,0xd286de2a
 .inst 0xf2abe3aa,0xf2dea74a,0xf2f4a9ea,0xa9012809,0xd2905a29,0xf2b5bcc9,0xf2ca4fe9,0xf2ea21c9
@@ -871,7 +862,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xdac00d29,0xf9001ea9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910e03ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -1029,8 +1019,7 @@ pub const VG_SHA512_224_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_224_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1067,7 +1056,6 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -1090,8 +1078,7 @@ pub const VG_SHA512_224_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_224_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd289b449,0xf2a32a89,0xf2c6f909,0xf2f187a9,0xd29a9aca,0xf2b13b8a
 .inst 0xf2d32cca,0xf2ee7c2a,0xa9002809,0xd2939049,0xf2a65fe9,0xf2d6f5c9,0xf2e3bf49,0xd293f9ea
 .inst 0xf2ab05ea,0xf2daa28a,0xf2ecf3aa,0xa9012809,0xd289b509,0xf2af7a89,0xf2c56d29,0xf2e1eda9
@@ -1149,7 +1136,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -1307,8 +1293,7 @@ pub const VG_SHA512_256_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_256_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1345,7 +1330,6 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
 .inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
@@ -1368,8 +1352,7 @@ pub const VG_SHA512_256_DIGEST_SHA3_FEATURES: verified_garbage_cpu::Features = v
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha512_256_digest_sha3(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10e03ff,0x910d03ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0xd29ee589,0xf2bf8569,0xf2c43289,0xf2e44629,0xd28c984a,0xf2b9098a
 .inst 0xf2cbf46a,0xf2f3eaaa,0xa9002809,0xd2962a29,0xf2adea69,0xf2d70d69,0xf2e47269,0xd29d57aa
 .inst 0xf2ab280a,0xf2cee32a,0xf2f2c70a,0xa9012809,0xd29ffc69,0xf2b511c9,0xf2c7dc49,0xf2f2c509
@@ -1427,7 +1410,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x910d03f0,0xa9405613,0xa9416616,0xa9426e1a
 .inst 0xa9437a1c,0x910e03ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )

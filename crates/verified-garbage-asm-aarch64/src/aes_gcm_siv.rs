@@ -26,8 +26,7 @@ pub const VG_AES_GCM_SIV_SEAL_AES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
 .inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
 .inst 0xf9006e67,0xd280001b
@@ -341,7 +340,6 @@ b 244f
 .inst 0xf9406e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9404674,0xf9404a75,0xf9404e76
 .inst 0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
 .inst 0x913bc3ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
@@ -372,8 +370,7 @@ pub const VG_AES_GCM_SIV_OPEN_AES_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
 .inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
 .inst 0xf9006e67,0xf9406e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xd280001b
@@ -867,7 +864,6 @@ b 253f
 253:
 .inst 0x91000360,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a
 .inst 0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x913bc3ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
@@ -898,9 +894,7 @@ pub const VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_seal_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.arch_extension sha3
-.inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
 .inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
 .inst 0xf9006e67,0xd280001b
@@ -1209,8 +1203,6 @@ b 244f
 .inst 0xf9406e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9404674,0xf9404a75,0xf9404e76
 .inst 0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
 .inst 0x913bc3ff,0xd65f03c0
-.arch_extension noaes
-.arch_extension nosha3
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
@@ -1241,9 +1233,7 @@ pub const VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_siv_open_aes_sha3(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.arch_extension sha3
-.inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
 .inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
 .inst 0xf9006e67,0xf9406e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xd280001b
@@ -1720,8 +1710,6 @@ b 253f
 253:
 .inst 0x91000360,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a
 .inst 0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x913bc3ff,0xd65f03c0
-.arch_extension noaes
-.arch_extension nosha3
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,

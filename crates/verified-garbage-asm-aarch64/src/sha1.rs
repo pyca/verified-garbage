@@ -273,8 +273,7 @@ pub const VG_SHA1_UPDATE_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
+        r".inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
 cbz x22, 20f
 22:
@@ -365,7 +364,6 @@ b 21f
 21:
 .inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff
 .inst 0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
@@ -389,8 +387,7 @@ pub const VG_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39005189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -427,7 +424,6 @@ cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xf9403a93
 .inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
@@ -450,8 +446,7 @@ pub const VG_SHA1_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0,0x52846029,0x72ace8a9,0xb9000009,0x52957129,0x72bdf9a9,0xb9000409
 .inst 0x529b9fc9,0x72b31749,0xb9000809,0x528a8ec9,0x72a20649,0xb9000c09,0x529c3e09,0x72b87a49
 .inst 0xb9001009,0xd346ff3c
@@ -504,7 +499,6 @@ bl {vg_sha1_compress_sha2}
 .inst 0xb9400a69,0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929
 .inst 0xb90012a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
 .inst 0xa9054611,0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )

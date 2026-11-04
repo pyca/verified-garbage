@@ -14,8 +14,7 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage_c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_scratch_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
+        r".inst 0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e,0xf9006897,0x91000013
 .inst 0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
 bl {vg_sha1_finalize_scratch_sha2}
 .inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
@@ -28,7 +27,6 @@ bl {vg_sha1_compress_sha2}
 .inst 0x91000315,0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69
 .inst 0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_finalize_scratch_sha2 = sym crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_sha1_compress_sha2 = sym crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,

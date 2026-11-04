@@ -2604,7 +2604,6 @@ vg_mlkem768_decaps:
 	.p2align 6
 
 vg_mlkem768_keygen_x2_sha3:
-	.arch_extension sha3
 	str x24, [x3, #19488]
 	str x25, [x3, #19496]
 	str x26, [x3, #19504]
@@ -9068,11 +9067,9 @@ vg_mlkem768_keygen_x2_sha3:
 	ldr x27, [x28, #19512]
 	ldr x28, [x28, #19520]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mlkem768_encaps_x2_sha3:
-	.arch_extension sha3
 	str x24, [x4, #21720]
 	str x30, [x4, #21728]
 	str x25, [x4, #21736]
@@ -15798,11 +15795,9 @@ vg_mlkem768_encaps_x2_sha3:
 	ldr x27, [x28, #21752]
 	ldr x28, [x28, #21760]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mlkem768_decaps_x2_sha3:
-	.arch_extension sha3
 	str x24, [x3, #21720]
 	str x30, [x3, #21728]
 	str x25, [x3, #21736]
@@ -23159,11 +23154,9 @@ vg_mlkem768_decaps_x2_sha3:
 	ldr x27, [x28, #21752]
 	ldr x28, [x28, #21760]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mlkem768_keygen_x2_sha3_keccak_sha3:
-	.arch_extension sha3
 	str x24, [x3, #19488]
 	str x25, [x3, #19496]
 	str x26, [x3, #19504]
@@ -29627,11 +29620,9 @@ vg_mlkem768_keygen_x2_sha3_keccak_sha3:
 	ldr x27, [x28, #19512]
 	ldr x28, [x28, #19520]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mlkem768_encaps_x2_sha3_keccak_sha3:
-	.arch_extension sha3
 	str x24, [x4, #21720]
 	str x30, [x4, #21728]
 	str x25, [x4, #21736]
@@ -36357,11 +36348,9 @@ vg_mlkem768_encaps_x2_sha3_keccak_sha3:
 	ldr x27, [x28, #21752]
 	ldr x28, [x28, #21760]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mlkem768_decaps_x2_sha3_keccak_sha3:
-	.arch_extension sha3
 	str x24, [x3, #21720]
 	str x30, [x3, #21728]
 	str x25, [x3, #21736]
@@ -43718,5 +43707,4 @@ vg_mlkem768_decaps_x2_sha3_keccak_sha3:
 	ldr x27, [x28, #21752]
 	ldr x28, [x28, #21760]
 	ret
-	.arch_extension nosha3
 	.p2align 6

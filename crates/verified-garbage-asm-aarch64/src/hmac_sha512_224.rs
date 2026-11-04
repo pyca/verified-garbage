@@ -170,8 +170,7 @@ pub const VG_HMAC_SHA512_224_INIT_SHA3_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha512_224_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
+        r".inst 0xd280100a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
 .inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
@@ -262,7 +261,6 @@ bl {vg_hmac_sha512_224_init_scratch_sha3}
 .inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0x913543ff
 b 21b
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
@@ -291,8 +289,7 @@ pub const VG_HMAC_SHA512_224_FINALIZE_SHA3_FEATURES: verified_garbage_cpu::Featu
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
+        r".inst 0xd11d43ff,0x910003e4,0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e
 .inst 0xf9017097,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910ba2e2,0x910002e3
 bl {vg_sha512_finalize_scratch_sha3}
 .inst 0xa9402a89,0xa9002a69,0xa9412a89,0xa9012a69,0xa9422a89,0xa9022a69,0xa9432a89,0xa9032a69
@@ -306,7 +303,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
 .inst 0xa9402aa9,0xa9002b09,0xf9400aa9,0xf9000b09,0xb9401aa9,0xb9001b09,0xf9415af3,0xf9415ef4
 .inst 0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0x911d43ff,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3::vg_sha512_finalize_scratch_sha3,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,

@@ -5,7 +5,6 @@
 // gives.
 
 vg_sha512_update_scratch_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	str x19, [x4, #640]
 	str x20, [x4, #648]
@@ -154,5 +153,4 @@ vg_sha512_update_scratch_sha3:
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6

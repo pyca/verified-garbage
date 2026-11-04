@@ -5,7 +5,6 @@
 // gives.
 
 vg_sha512_compress_sha3:
-	.arch_extension sha3
 	cbz x2, 20f
 	adrp x4, {VG_SHA512_K}
 	add x4, x4, {VG_SHA512_K}
@@ -588,5 +587,4 @@ vg_sha512_compress_sha3:
 20:
 21:
 	ret
-	.arch_extension nosha3
 	.p2align 6

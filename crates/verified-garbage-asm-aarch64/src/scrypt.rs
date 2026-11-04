@@ -65,8 +65,7 @@ pub const VG_SCRYPT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_gar
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
+        r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
 .inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
 bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 .inst 0xf94013e9,0x910003ef,0xf90001e9
@@ -80,7 +79,6 @@ cbnz x11, 20b
 .inst 0xf9402fe7
 bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 .inst 0x910103ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,

@@ -5,7 +5,6 @@
 // gives.
 
 vg_keccak_pad_scratch_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	add x9, x0, x2
 	ldrb w10, [x9, #0]
@@ -21,5 +20,4 @@ vg_keccak_pad_scratch_sha3:
 	bl {vg_keccak_f1600_sha3}
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6

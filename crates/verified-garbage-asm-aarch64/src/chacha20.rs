@@ -194,8 +194,7 @@ pub const VG_CHACHA20_APPLY_SVE2_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_apply_sve2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sve2
-.inst 0xf9404009,0xeb02012d,0xd280000b,0xba0b016b,0xd346152a,0xd37afd4a,0xeb02014d,0xd280000c
+        r".inst 0xf9404009,0xeb02012d,0xd280000b,0xba0b016b,0xd346152a,0xd37afd4a,0xeb02014d,0xd280000c
 .inst 0xba0c018c
 cbz x11, 20f
 .inst 0xf9012015,0xf9012416,0xf9012817,0xf9012c1e,0x91000015,0x91000036,0x91000057,0xcb020129
@@ -242,7 +241,6 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0xd65f03c0
-.arch_extension nosve2
 .p2align 6",
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2::vg_chacha20_xor_sve2,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,

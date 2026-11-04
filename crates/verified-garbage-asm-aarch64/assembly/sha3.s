@@ -3040,7 +3040,6 @@ vg_keccak_squeeze:
 	.p2align 6
 
 vg_keccak_absorb_scratch_sha3:
-	.arch_extension sha3
 	cbz x2, 20f
 	b 21f
 20:
@@ -5026,11 +5025,9 @@ vg_keccak_absorb_scratch_sha3:
 	ldr x20, [x20, #520]
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_keccak_pad_sha3:
-	.arch_extension sha3
 	sub sp, sp, #640
 	add x4, sp, #0
 	str x30, [sp, #-16]!
@@ -5049,11 +5046,9 @@ vg_keccak_pad_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #640
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_keccak_squeeze_sha3:
-	.arch_extension sha3
 	sub sp, sp, #640
 	add x5, sp, #0
 	str x30, [sp, #-16]!
@@ -5115,5 +5110,4 @@ vg_keccak_squeeze_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #640
 	ret
-	.arch_extension nosha3
 	.p2align 6

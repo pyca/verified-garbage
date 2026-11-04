@@ -14,12 +14,10 @@ pub(crate) const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a
+        r".inst 0xf81f0ffe,0x8b020009,0x3940012a,0xca03014a,0x3900012a,0x8b010009,0xd1000529,0x3940012a
 .inst 0xd280100b,0xca0b014a,0x3900012a,0x91000081
 bl {vg_keccak_f1600_sha3}
 .inst 0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym crate::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )

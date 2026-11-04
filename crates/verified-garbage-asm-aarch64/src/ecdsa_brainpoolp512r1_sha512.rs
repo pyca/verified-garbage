@@ -144,8 +144,7 @@ pub const VG_ECDSA_BRAINPOOLP512R1_SHA512_SIGN_SHA3_FEATURES: verified_garbage_c
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sha512_sign_sha3(out: *mut [u8; 128], d: *const [u8; 64], digest: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xd10483ff,0x910003ef,0xf90069e0,0xf90065e1,0xf90061e2,0xf9005de3,0xf94063e1
+        r".inst 0xf81f0ffe,0xd10483ff,0x910003ef,0xf90069e0,0xf90065e1,0xf90061e2,0xf9005de3,0xf94063e1
 .inst 0xd2800007,0x910003ef,0xf9401c28,0xdac00d08,0xf90021e8,0xd2800d2c,0xf2b3952c,0xf2d2d04c
 .inst 0xf2f6b0ec,0xeb0c0102,0xf90001e2,0xf9401828,0xdac00d08,0xf90025e8,0xd29b5bac,0xf2a10bac
 .inst 0xf2da702c,0xf2e3b62c,0xfa0c0102,0xf90005e2,0xf9401428,0xdac00d08,0xf90029e8,0xd28208ec
@@ -242,7 +241,6 @@ cbnz x12, 20b
 .inst 0xf90039ee,0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee,0xf9004dee,0xf90051ee,0xf90055ee
 .inst 0xf90071ee,0xf90075ee,0xf90079ee,0xf9007dee,0xf90081ee,0xf90085ee,0xf90089ee,0xf9008dee
 .inst 0x910483ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_hmac_sha512_init_scratch_sha3 = sym super::hmac_sha512::vg_hmac_sha512_init_scratch_sha3::vg_hmac_sha512_init_scratch_sha3,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,

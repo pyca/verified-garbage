@@ -5,7 +5,6 @@
 // gives.
 
 vg_pbkdf2_hmac_sha512_224_iterate_sha3:
-	.arch_extension sha3
 	add w2, w2, #0
 	str x19, [x4, #640]
 	str x20, [x4, #648]
@@ -253,5 +252,4 @@ vg_pbkdf2_hmac_sha512_224_iterate_sha3:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ret
-	.arch_extension nosha3
 	.p2align 6

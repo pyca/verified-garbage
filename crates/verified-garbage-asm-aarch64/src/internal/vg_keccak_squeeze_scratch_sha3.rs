@@ -14,8 +14,7 @@ pub(crate) const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
+        r".inst 0xf81f0ffe,0xf90100b3,0xf90104b4,0xf90108b5,0xf9010cb6,0xf90110b7,0xf90114b8,0x91000013
 .inst 0x910000b4,0x91000035,0x91000056,0x91000077,0x91000098
 cbz x24, 20f
 22:
@@ -39,7 +38,6 @@ b 21f
 21:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_f1600_sha3 = sym crate::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )

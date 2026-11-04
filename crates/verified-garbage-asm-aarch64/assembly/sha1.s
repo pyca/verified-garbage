@@ -447,7 +447,6 @@ vg_sha1_digest:
 	.p2align 6
 
 vg_sha1_update_sha2:
-	.arch_extension sha2
 	sub sp, sp, #160
 	add x4, sp, #0
 	str x30, [sp, #-16]!
@@ -601,11 +600,9 @@ vg_sha1_update_sha2:
 	ldr x30, [sp], #16
 	add sp, sp, #160
 	ret
-	.arch_extension nosha2
 	.p2align 6
 
 vg_sha1_finalize_sha2:
-	.arch_extension sha2
 	sub sp, sp, #160
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -701,11 +698,9 @@ vg_sha1_finalize_sha2:
 	ldr x30, [sp], #16
 	add sp, sp, #160
 	ret
-	.arch_extension nosha2
 	.p2align 6
 
 vg_sha1_digest_sha2:
-	.arch_extension sha2
 	sub sp, sp, #272
 	add x10, sp, #208
 	stp x19, x21, [x10, #0]
@@ -872,5 +867,4 @@ vg_sha1_digest_sha2:
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #272
 	ret
-	.arch_extension nosha2
 	.p2align 6

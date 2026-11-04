@@ -14,8 +14,7 @@ pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: verified_garbage_cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877,0xf9004c78,0x91000013
+        r".inst 0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877,0xf9004c78,0x91000013
 .inst 0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009,0x8b17026c,0x39005189
 .inst 0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -52,7 +51,6 @@ cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xf9403a93
 .inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_compress_sha2 = sym crate::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )

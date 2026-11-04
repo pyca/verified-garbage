@@ -757,7 +757,6 @@ vg_ed448_verify:
 	.p2align 6
 
 vg_ed448_public_key_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
 	add x15, sp, #256
@@ -963,11 +962,9 @@ vg_ed448_public_key_sha3:
 	add sp, sp, #320
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_ed448_sign_cached_sha3:
-	.arch_extension sha3
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
 	add x15, sp, #256
@@ -1362,11 +1359,9 @@ vg_ed448_sign_cached_sha3:
 	add sp, sp, #320
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_ed448_verify_sha3:
-	.arch_extension sha3
 	lsr x9, x2, #8
 	cbz x9, 20f
 	movz x0, #0, lsl #0
@@ -1511,5 +1506,4 @@ vg_ed448_verify_sha3:
 	ldr x30, [sp], #16
 21:
 	ret
-	.arch_extension nosha3
 	.p2align 6
