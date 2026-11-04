@@ -51,7 +51,7 @@ variable (f : MdFns) (g : Impl.RsaOaep.Arm.Fns) (H : Sh)
 
 /-- The table that is our argument `j` to `sTab`, and the hash value set to
 the initial one. -/
-def initPart (j : Nat) : Prog isa := .seq (.block (tabSlot j ++ initArgs)) (tcall 0 f.init)
+def initPart (j : Nat) : Prog isa := .seq (.block (tabSlot j)) (.seq (.block initArgs) (tcall 0 f.init))
 
 /-- One compression of the block at `r6` into the hash value at `r0`, with
 the working space `r3`. -/
