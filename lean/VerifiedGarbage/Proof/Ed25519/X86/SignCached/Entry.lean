@@ -44,7 +44,7 @@ def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → P
       (arg s 0).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 1).toNat + n ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧
       (arg s 5).toNat + 8192 ≤ 2 ^ 32 ∧
-      280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ 32 ≤ n ∧ key s ∧
+      280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ key s ∧
       CombHeld s [out, scr, stk, ret]
   post := post
   pub := signPub
@@ -68,13 +68,13 @@ theorem entry_bounds {s : State} (h : (signLocalWith n key post).pre s) :
   exact ⟨hb, ht⟩
 
 theorem entry_key {s : State} (h : (signLocalWith n key post).pre s) : key s := by
-  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
   exact hk
 
 theorem entry_held {s : State} (h : (signLocalWith n key post).pre s) :
     CombHeld s [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 5).setWidth 64, 8192⟩,
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩, ⟨(s.gpr .esp).setWidth 64, 4⟩] := by
-  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ht⟩ := h
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ht⟩ := h
   exact ht
 
 theorem lay_base {s : State} (h : (signLocalWith n key post).pre s) :
@@ -102,11 +102,17 @@ theorem lay_stack {s : State} (h : (signLocalWith n key post).pre s) :
   rw [Lay.STK, Whole.STK, lay_base h, BitVec.sub_sub]
   rfl
 
-theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).Ok := by
+theorem lay_top {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).E.toNat + 284 ≤ 2 ^ 32 := by
+  have hb := entry_bounds h
+  change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
+  rw [sub_toNat (by omega_arith)]
+  omega_arith
+
+theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) (sl : 32 ≤ n) : (lay n s).Ok := by
   have held := entry_held h
   have h₀ := h
   obtain ⟨_, _, os, op, om, oa, oc, ko, ro, sc, pc, mc, ac, rs, rp, rm, rc,
-    ks, kp, km, kc, no, ns, np, nm, nc, nb, na, sl, _⟩ := h₀
+    ks, kp, km, kc, no, ns, np, nm, nc, nb, na, _⟩ := h₀
   have top : (lay n s).E.toNat + 284 ≤ 2 ^ 32 := by
     change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
     rw [sub_toNat (by omega_arith)]
@@ -168,9 +174,9 @@ theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).Ok
 
 theorem lay_arguments {s : State} (h : (signLocalWith n key post).pre s) : Arguments (lay n s) s.mem := by
   refine ⟨fun j hj => ?_, (entry_held h).1⟩
-  have hb := lay_ok h
+  have hb := lay_top h
   have e : (lay n s).E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j) = argAddr s j := by
-    rw [← addr_eq (by have := hb.top; omega_arith)]
+    rw [← addr_eq (by have := hb; omega_arith)]
     simp only [addr, lay, argAddr]
     rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_arith, BitVec.ofNat_add,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]

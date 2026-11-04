@@ -911,14 +911,15 @@ theorem hashSeed_nosp : NoSp hashSeed :=
 
 variable {n : Nat} {key : State → Prop} {post : State → State → Prop} in
 /-- The frame around `bodyFrom first`, from the signature it leaves in `out`. -/
-theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).pre s) (hn : NoSp first)
+theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).pre s) (sl : 32 ≤ n)
+    (hn : NoSp first)
     {sig : List Byte}
     (hb : WP isa (bodyFrom first) (pushed (List.replicate 64 .eax) s) fun u => Ctx (lay n s) s.gpr s.mem u ∧
       Spec.Ed25519.bytesAt u.mem ((lay n s).out.setWidth 64) 64 = sig)
     (hp : ∀ t, Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 64 = sig → post s t) :
     WP isa (.frame (.push (List.replicate 64 .eax)) (bodyFrom first) (.pop .eax 64)) s
       fun t => abiPreserved s t ∧ post s t := by
-  have hL := lay_ok h
+  have hL := lay_ok h sl
   have hb' := entry_bounds h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega) (bodyFrom_nosp hn)
@@ -944,8 +945,8 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
 
 theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
     WP isa code s fun t => abiPreserved s t ∧ signCachedLocal.post s t :=
-  frame_ok h hashSeed_nosp
-    (body_ok (push_ctx h) (lay_ok h) (lay_arguments h) rfl (entry_key h) rfl) fun _ h => h
+  frame_ok h (Nat.le_refl _) hashSeed_nosp
+    (body_ok (push_ctx h) (lay_ok h (Nat.le_refl _)) (lay_arguments h) rfl (entry_key h) rfl) fun _ h => h
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -960,7 +961,7 @@ theorem lay_eq {s t : State} (h : signPub s t) : lay n s = lay n t := by
   simp only [lay, sp, a0, a1, a2, a3, a4, a5, sy]
 
 /-- The frame around `bodyFrom first`, for any `first` whose runs are related. -/
-theorem frame_ct {first : Prog isa}
+theorem frame_ct {first : Prog isa} (sl : 32 ≤ n)
     (hh : ∀ {L : Lay} {g₁ g₂ m₁ m₂}, L.Ok → L.seedLen = n → Arguments L m₁ → Arguments L m₂ →
       RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True)) :
     ConstantTime isa (signLocalWith n key post).pre signPub
@@ -974,11 +975,11 @@ theorem frame_ct {first : Prog isa}
   have ha₂ : Arguments (lay n s₁) s₂.mem := by rw [he]; exact lay_arguments p₂
   have y₂ : Named (lay n s₁) (pushed (List.replicate 64 .eax) s₂) := by
     rw [he]; rfl
-  exact ⟨(bodyFrom_ct (lay_ok p₁) (lay_arguments p₁) ha₂ (hh (lay_ok p₁) rfl (lay_arguments p₁) ha₂)
+  exact ⟨(bodyFrom_ct (lay_ok p₁ sl) (lay_arguments p₁) ha₂ (hh (lay_ok p₁ sl) rfl (lay_arguments p₁) ha₂)
     _ _ _ _ _ _ ⟨push_ctx p₁, h₂, ⟨trivial, rfl⟩, ⟨trivial, y₂⟩⟩ ea eb).1, trivial⟩
 
 theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code :=
-  frame_ct fun hL _ ha hb => hashSeed_ct hL ha hb
+  frame_ct (Nat.le_refl _) fun hL _ ha hb => hashSeed_ct hL ha hb
 
 end VG.Proof.Ed25519.X86.SignCached
 
