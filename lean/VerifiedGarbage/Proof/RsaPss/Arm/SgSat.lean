@@ -238,6 +238,10 @@ theorem sign_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
     | decide
     | exact Region.disjoint_of_sep (by decide)
     | with_reducible assumption
+    | exact hH
+    | exact hG
+    | exact hsy
+    | exact hd
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hD']; rfl)
     | (rw [hD']; exact dig_disj hD (Region.disjoint_of_sep (by decide)))

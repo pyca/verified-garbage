@@ -8,10 +8,7 @@
 //! an `invalid` one must not verify with the group's. MGF1 over another hash
 //! function is not supported, so nothing verifies with it.
 
-#![cfg(all(
-    any(target_arch = "x86_64", target_arch = "arm"),
-    feature = "alloc"
-))]
+#![cfg(all(any(target_arch = "x86_64", target_arch = "arm"), feature = "alloc"))]
 
 use crate::json_struct;
 use verified_garbage::hashes::{

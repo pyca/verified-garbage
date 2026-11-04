@@ -23,10 +23,7 @@ use crate::arch::rsa_pss::{vg_rsa_pss_sign, vg_rsa_pss_verify_precomputed};
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-use crate::arch::rsa_pss::{
-    VG_RSA_PSS_SIGN_UMAAL_FEATURES, VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES,
-    vg_rsa_pss_sign_umaal, vg_rsa_pss_verify_precomputed_umaal,
-};
+use crate::arch::rsa_pss::{vg_rsa_pss_sign_umaal, vg_rsa_pss_verify_precomputed_umaal};
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
 use crate::hashes::sha256::Sha256Backend;
@@ -108,7 +105,7 @@ super::table::pss_functions! {
             target_os = "netbsd",
             target_os = "openbsd"
         ))]
-        Umaal => vg_rsa_pss_sign_umaal [VG_RSA_PSS_SIGN_UMAAL_FEATURES],
+        Umaal => vg_rsa_pss_sign_umaal [crate::arch::rsa_pss::VG_RSA_PSS_SIGN_UMAAL_FEATURES],
     },
     verify: {
         Baseline => vg_rsa_pss_verify_precomputed [],
@@ -119,6 +116,6 @@ super::table::pss_functions! {
             target_os = "netbsd",
             target_os = "openbsd"
         ))]
-        Umaal => vg_rsa_pss_verify_precomputed_umaal [VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES],
+        Umaal => vg_rsa_pss_verify_precomputed_umaal [crate::arch::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES],
     },
 }
