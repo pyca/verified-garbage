@@ -6,6 +6,20 @@ public import VerifiedGarbage.Spec.Ecdsa.P192
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P192
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: P-192's kit
@@ -89,5 +103,36 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) : Kit where
   K := []
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL fun s s' hp => let ⟨a, a', e, _⟩ := h s s' hp; ⟨a, a', e⟩
+
+/-! ## `vg_ecdsa_p192_sign`, with the hash function as a table -/
+
+/-- P-192, for its group law `hL`. -/
+def p192 (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) : RfcCurve where
+  kit := kit hL
+  coreN := "vg_ecdsa_p192_sign_k"
+  hsh := .inl rfl
+  hGQ := (by decide : (24 : Nat) ≤ 24)
+  hG8 := hG8_of _ (by decide : 8 * 24 + 0 ≤ 8 * 24)
+  hGD := .inl rfl
+
+/-- The code for the digest length `D` and the block size `B`. -/
+abbrev cfgP (D B : Nat) : Impl.Ecdsa.Rfc6979.RISCV64.Cfg :=
+  cfgK Impl.Ecdsa.RISCV64.p192Order "vg_ecdsa_p192_sign_k" Impl.Ecdsa.RISCV64.P192.signP192 4 24 0 24 Spec.Ecdsa.Rfc6979.Curves.p192.tries D B
+
+theorem checks₀ : Checks (cfgP 16 64) := by checks_decide
+theorem checks₁ : Checks (cfgP 20 64) := by checks_decide
+theorem checks₂ : Checks (cfgP 28 64) := by checks_decide
+theorem checks₃ : Checks (cfgP 32 64) := by checks_decide
+theorem checks₄ : Checks (cfgP 48 128) := by checks_decide
+theorem checks₅ : Checks (cfgP 64 128) := by checks_decide
+theorem checks₆ : Checks (cfgP 28 128) := by checks_decide
+theorem checks₇ : Checks (cfgP 32 128) := by checks_decide
+
+/-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
+theorem p192T_verified (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) (vs : List Proof.HashTable.RISCV64.TVar)
+    (h : OK vs) :
+    Verified RISCV64.target (signCode (p192 hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs) (specK Spec.Ecdsa.Rfc6979.Curves.p192 (kit hL).K vs) := by
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h (checks_of checks₀ checks₁ checks₂ checks₃ checks₄ checks₅ checks₆ checks₇)
+    (sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p192) h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P192

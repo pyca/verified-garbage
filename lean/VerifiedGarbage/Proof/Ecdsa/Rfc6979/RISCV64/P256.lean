@@ -7,6 +7,23 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 
 /-!
 # Deterministic ECDSA on RISC-V: P-256's kit
@@ -119,5 +136,37 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : Kit where
   K := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL h
+
+/-! ## `vg_ecdsa_p256_sign`, with the hash function as a table -/
+
+/-- P-256, for its group law `hL`. -/
+def p256 (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) : RfcCurve where
+  kit := kit hL
+  coreN := "vg_ecdsa_p256_sign_k"
+  hsh := .inl rfl
+  hGQ := (by decide : (32 : Nat) ≤ 32)
+  hG8 := hG8_of _ (by decide : 8 * 32 + 0 ≤ 8 * 32)
+  hGD := .inl rfl
+
+/-- The code for the digest length `D` and the block size `B`. -/
+abbrev cfgP (D B : Nat) : Impl.Ecdsa.Rfc6979.RISCV64.Cfg :=
+  cfgK Impl.Ecdsa.RISCV64.p256Order "vg_ecdsa_p256_sign_k" Impl.Ecdsa.RISCV64.Sign.signP256 4 32 0 32 Spec.Ecdsa.Rfc6979.Curves.p256.tries D B
+
+theorem checks₀ : Checks (cfgP 16 64) := by checks_decide
+theorem checks₁ : Checks (cfgP 20 64) := by checks_decide
+theorem checks₂ : Checks (cfgP 28 64) := by checks_decide
+theorem checks₃ : Checks (cfgP 32 64) := by checks_decide
+theorem checks₄ : Checks (cfgP 48 128) := by checks_decide
+theorem checks₅ : Checks (cfgP 64 128) := by checks_decide
+theorem checks₆ : Checks (cfgP 28 128) := by checks_decide
+theorem checks₇ : Checks (cfgP 32 128) := by checks_decide
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`. -/
+theorem p256T_verified (hL : VG.Proof.Weierstrass.Law Spec.P256.curve) (vs : List Proof.HashTable.RISCV64.TVar)
+    (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HashTable.RISCV64.names vs) :
+    Verified RISCV64.target (signCode (p256 hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs) (specK Spec.Ecdsa.Rfc6979.Curves.p256 (kit hL).K vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p256) h.1 VG.Proof.Ecdsa.RISCV64.Comb.combSatMem h.2
+    (by rw [VG.Proof.Ecdsa.RISCV64.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.Comb.combSatMem_held (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 (checks_of checks₀ checks₁ checks₂ checks₃ checks₄ checks₅ checks₆ checks₇) hsat
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P256

@@ -6,6 +6,20 @@ public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P521
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: P-521's kit
@@ -94,5 +108,36 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) : Kit where
     rwa [show VG.Proof.Ecdsa.RISCV64.P521.sg s.mem d g k = sgOf Spec.Ecdsa.P521.inst 66 64 7 s.mem d g k by
       simp only [VG.Proof.Ecdsa.RISCV64.P521.sg, sgOf, VG.Proof.Ecdsa.RISCV64.P521.hash_eq]; rfl] at hp)
   core_rel h := core_rel hL fun s s' hp => let ⟨a, a', e, _⟩ := h s s' hp; ⟨a, a', e⟩
+
+/-! ## `vg_ecdsa_p521_sign`, with the hash function as a table -/
+
+/-- P-521, for its group law `hL`. -/
+def p521 (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) : RfcCurve where
+  kit := kit hL
+  coreN := "vg_ecdsa_p521_sign_k"
+  hsh := .inr (by decide : 64 < 66)
+  hGQ := (by decide : (64 : Nat) ≤ 66)
+  hG8 := hG8_of _ (by decide : 8 * 64 + 7 ≤ 8 * 66)
+  hGD := .inr ⟨(by decide : 64 ≤ 64), (by decide : 64 < 66)⟩
+
+/-- The code for the digest length `D` and the block size `B`. -/
+abbrev cfgP (D B : Nat) : Impl.Ecdsa.Rfc6979.RISCV64.Cfg :=
+  cfgK Impl.Ecdsa.RISCV64.p521Order "vg_ecdsa_p521_sign_k" Impl.Ecdsa.RISCV64.P521.signP521 9 66 7 64 Spec.Ecdsa.Rfc6979.Curves.p521.tries D B
+
+theorem checks₀ : Checks (cfgP 16 64) := by checks_decide
+theorem checks₁ : Checks (cfgP 20 64) := by checks_decide
+theorem checks₂ : Checks (cfgP 28 64) := by checks_decide
+theorem checks₃ : Checks (cfgP 32 64) := by checks_decide
+theorem checks₄ : Checks (cfgP 48 128) := by checks_decide
+theorem checks₅ : Checks (cfgP 64 128) := by checks_decide
+theorem checks₆ : Checks (cfgP 28 128) := by checks_decide
+theorem checks₇ : Checks (cfgP 32 128) := by checks_decide
+
+/-- `vg_ecdsa_p521_sign`, with the tables of `vs`. -/
+theorem p521T_verified (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) (vs : List Proof.HashTable.RISCV64.TVar)
+    (h : OK vs) :
+    Verified RISCV64.target (signCode (p521 hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs) (specK Spec.Ecdsa.Rfc6979.Curves.p521 (kit hL).K vs) := by
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h (checks_of checks₀ checks₁ checks₂ checks₃ checks₄ checks₅ checks₆ checks₇)
+    (sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p521) h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P521

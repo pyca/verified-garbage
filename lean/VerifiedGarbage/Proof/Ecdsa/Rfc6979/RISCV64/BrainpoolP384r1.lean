@@ -6,6 +6,20 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP384r1Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP384r1Order.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: brainpoolp384r1's kit
@@ -99,5 +113,36 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve) : Kit where
   K := []
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL fun s s' hp => let ⟨a, a', e, _⟩ := h s s' hp; ⟨a, a', e⟩
+
+/-! ## `vg_ecdsa_brainpoolp384r1_sign`, with the hash function as a table -/
+
+/-- brainpoolP384r1, for its group law `hL`. -/
+def brainpoolp384r1 (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve where
+  kit := kit hL
+  coreN := "vg_ecdsa_brainpoolp384r1_sign_k"
+  hsh := .inl rfl
+  hGQ := (by decide : (48 : Nat) ≤ 48)
+  hG8 := hG8_of _ (by decide : 8 * 48 + 0 ≤ 8 * 48)
+  hGD := .inl rfl
+
+/-- The code for the digest length `D` and the block size `B`. -/
+abbrev cfgP (D B : Nat) : Impl.Ecdsa.Rfc6979.RISCV64.Cfg :=
+  cfgK Impl.Ecdsa.RISCV64.brainpoolp384r1Order "vg_ecdsa_brainpoolp384r1_sign_k" Impl.Ecdsa.RISCV64.signBrainpoolP384r1 6 48 0 48 Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries D B
+
+theorem checks₀ : Checks (cfgP 16 64) := by checks_decide
+theorem checks₁ : Checks (cfgP 20 64) := by checks_decide
+theorem checks₂ : Checks (cfgP 28 64) := by checks_decide
+theorem checks₃ : Checks (cfgP 32 64) := by checks_decide
+theorem checks₄ : Checks (cfgP 48 128) := by checks_decide
+theorem checks₅ : Checks (cfgP 64 128) := by checks_decide
+theorem checks₆ : Checks (cfgP 28 128) := by checks_decide
+theorem checks₇ : Checks (cfgP 32 128) := by checks_decide
+
+/-- `vg_ecdsa_brainpoolp384r1_sign`, with the tables of `vs`. -/
+theorem brainpoolp384r1T_verified (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve) (vs : List Proof.HashTable.RISCV64.TVar)
+    (h : OK vs) :
+    Verified RISCV64.target (signCode (brainpoolp384r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs) (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 (kit hL).K vs) := by
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h (checks_of checks₀ checks₁ checks₂ checks₃ checks₄ checks₅ checks₆ checks₇)
+    (sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1) h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP384r1

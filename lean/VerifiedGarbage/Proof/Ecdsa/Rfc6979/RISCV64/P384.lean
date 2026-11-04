@@ -6,6 +6,22 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Order.Lit
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P384
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSpec
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
 
 /-!
 # Deterministic ECDSA on RISC-V: P-384's kit
@@ -127,5 +143,37 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : Kit where
   K := Impl.Ecdsa.RISCV64.Comb.p384CombConsts
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL h
+
+/-! ## `vg_ecdsa_p384_sign`, with the hash function as a table -/
+
+/-- P-384, for its group law `hL`. -/
+def p384 (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) : RfcCurve where
+  kit := kit hL
+  coreN := "vg_ecdsa_p384_sign_k"
+  hsh := .inl rfl
+  hGQ := (by decide : (48 : Nat) ≤ 48)
+  hG8 := hG8_of _ (by decide : 8 * 48 + 0 ≤ 8 * 48)
+  hGD := .inl rfl
+
+/-- The code for the digest length `D` and the block size `B`. -/
+abbrev cfgP (D B : Nat) : Impl.Ecdsa.Rfc6979.RISCV64.Cfg :=
+  cfgK Impl.Ecdsa.RISCV64.p384Order "vg_ecdsa_p384_sign_k" Impl.Ecdsa.RISCV64.Sign.signP384 6 48 0 48 Spec.Ecdsa.Rfc6979.Curves.p384.tries D B
+
+theorem checks₀ : Checks (cfgP 16 64) := by checks_decide
+theorem checks₁ : Checks (cfgP 20 64) := by checks_decide
+theorem checks₂ : Checks (cfgP 28 64) := by checks_decide
+theorem checks₃ : Checks (cfgP 32 64) := by checks_decide
+theorem checks₄ : Checks (cfgP 48 128) := by checks_decide
+theorem checks₅ : Checks (cfgP 64 128) := by checks_decide
+theorem checks₆ : Checks (cfgP 28 128) := by checks_decide
+theorem checks₇ : Checks (cfgP 32 128) := by checks_decide
+
+/-- `vg_ecdsa_p384_sign`, with the tables of `vs`. -/
+theorem p384T_verified (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) (vs : List Proof.HashTable.RISCV64.TVar)
+    (h : OK vs ∧ "VG_P384_COMB" ∉ Proof.HashTable.RISCV64.names vs) :
+    Verified RISCV64.target (signCode (p384 hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs) (specK Spec.Ecdsa.Rfc6979.Curves.p384 (kit hL).K vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p384) h.1 VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem h.2
+    (by rw [VG.Proof.Ecdsa.RISCV64.P384.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem_held (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 (checks_of checks₀ checks₁ checks₂ checks₃ checks₄ checks₅ checks₆ checks₇) hsat
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P384

@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.CT
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+public import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.CT
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 /-!
@@ -502,5 +504,48 @@ theorem signT_ct (hC : CurveT R T)
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact a.gpr _ (by decide) (by decide))
       a.sp a.rd a.wr a.mem a.sy)
   exact ⟨hct _ _ _ _ _ _ (q p₁ a₁) (q p₂ a₂) (pub_congr hp a₁ a₂) e₁ e₂, trivial⟩
+
+/-! ## The taint checks of each index's code -/
+
+/-- `cfgS` from its curve's data alone, without the kit's proofs, so that
+the kernel can evaluate the taint checks of its code (`checks_decide`). -/
+def cfgK (FN : Impl.Weierstrass.RISCV64.Field) (coreN : String) (coreC : Prog isa)
+    (nw Q sh G tries D B : Nat) : Cfg where
+  D := D
+  B := B
+  f := ⟨[], [], []⟩
+  FN := FN
+  coreN := coreN
+  coreC := coreC
+  tries := tries
+  nw := nw
+  Q := Q
+  sh := sh
+  G := G
+
+/-- The checks of every index's code, from those of each shape. -/
+theorem checks_of {FN : Impl.Weierstrass.RISCV64.Field} {coreN : String} {coreC : Prog isa}
+    {nw Q sh G tries : Nat}
+    (h₀ : Checks (cfgK FN coreN coreC nw Q sh G tries 16 64)) (h₁ : Checks (cfgK FN coreN coreC nw Q sh G tries 20 64))
+    (h₂ : Checks (cfgK FN coreN coreC nw Q sh G tries 28 64)) (h₃ : Checks (cfgK FN coreN coreC nw Q sh G tries 32 64))
+    (h₄ : Checks (cfgK FN coreN coreC nw Q sh G tries 48 128))
+    (h₅ : Checks (cfgK FN coreN coreC nw Q sh G tries 64 128))
+    (h₆ : Checks (cfgK FN coreN coreC nw Q sh G tries 28 128))
+    (h₇ : Checks (cfgK FN coreN coreC nw Q sh G tries 32 128)) :
+    ∀ i ∈ idxs, Checks (cfgK FN coreN coreC nw Q sh G tries (shapeOf i).1 (shapeOf i).2) := by
+  intro i hi
+  simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇]
+
+/-- `Checks` of a code for literal sizes, by evaluating its blocks' taint. -/
+macro "checks_decide" : tactic => `(tactic| (
+  refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    refine ⟨?_, ?_⟩
+  taint_decide_all))
+
+/-- 8 `G` bits, from the kit's sizes. -/
+theorem hG8_of (K : Kit) (h : 8 * K.G + K.sh ≤ 8 * K.Q) : 8 * K.G ≤ Spec.Ecdsa.nBits K.E.curve := by
+  have := K.nbits; omega
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
