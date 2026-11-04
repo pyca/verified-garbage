@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
 
 /-!
@@ -20,8 +20,10 @@ scalars of 66 bytes and the order of 521 bits; and what is proven of the
 code: that it meets the contract the proof of each curve is written against
 (`coreK`: P-256's `signAArch64`, P-384's and P-521's at the curve's sizes), in
 constant time, that it pushes no frame and writes no callee-saved SIMD
-register, and, unless `wide`, the taint check of the block computing
-`bits2octets`, which holds `n`'s words as immediates. Each curve's file builds one, so that the heavy algebra of its
+register, unless `wide`, the taint check of the block computing
+`bits2octets`, which holds `n`'s words as immediates, and the checks of the
+blocks that depend on both the scalars' and each hash function's sizes
+(`RfcT`, for each of `shapes`). Each curve's file builds one, so that the heavy algebra of its
 proof stays out of the modules generic over the curve and the hash function.
 -/
 
@@ -63,8 +65,9 @@ def coreK (E : Impl.Ecdsa.AArch64.Cfg) : Contract AArch64.isa where
 compression function, for scalars of `E` (with `h` at the frame's top if
 `hHigh`). -/
 def cfgC (E : Impl.Ecdsa.AArch64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.AArch64.Cfg where
-  H := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 32, 104, "", .block [], "", .block [], "",
-    .block [], "", .block [], "", "", ""⟩
+  D := 64
+  B := 128
+  f := ⟨[], [], []⟩
   w := E.n
   len := E.C.len
   n := E.C.n
@@ -73,6 +76,74 @@ def cfgC (E : Impl.Ecdsa.AArch64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc69
   coreC := .block []
   hHigh := hHigh
 
+/-- The digest lengths and block sizes of the hash functions whose tables
+the code takes (`Impl.Ecdsa.Rfc6979.AArch64.shapeOf`). -/
+def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 128), (64, 128), (28, 128), (32, 128)]
+
+/-- The taint check of a block whose addresses depend only on `sp` and `rs`. -/
+abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
+  ∃ hc, (taint.check (Taint.ofRegs rs) (.block is) hc).isSome = true
+
+/-- None of the instructions of the block `is` writes a callee-saved SIMD register. -/
+abbrev OkB (is : List Instr) : Prop := (Code.block is : Prog isa).allInstrs keepsV = true
+
+/-- The code's blocks for scalars of `E` (with `h` at the frame's top if
+`hHigh`, and digests shifted by `sh` bits) and a hash function of output
+length `D` and block size `B`. -/
+def cfgS (E : Impl.Ecdsa.AArch64.Cfg) (hHigh : Bool) (sh D B : Nat) : Impl.Ecdsa.Rfc6979.AArch64.Cfg :=
+  { cfgC E hHigh with D := D, B := B, sh := sh }
+
+open Impl.Ecdsa.Rfc6979.AArch64 in
+/-- The blocks that depend on both the scalars' and the hash function's
+sizes, each addressing memory only from `sp` and the registers that hold
+the pointers the code put there (the taint analysis). The blocks that
+differ only in immediates and offsets (`Instr.eraseOff`) are checked once. -/
+structure RfcT (c : Impl.Ecdsa.Rfc6979.AArch64.Cfg) : Prop where
+  msgF : TaintOk [.x9, .x10, .x15] (Cfg.msg c.w c.len c.D 0 true c.fHo)
+  msgN : TaintOk [.x9, .x10, .x15] (Cfg.msg c.w c.len c.D 0 false)
+  prepW : c.wide = true → TaintOk [.x0, .x1] c.prep
+  coreArgs : TaintOk [] c.coreArgs
+  keepV : TaintOk [] (c.keepV 0)
+  candTop : c.sh ≠ 0 → TaintOk [.x0] (c.convB fT c.sh)
+  wipe : TaintOk [] c.wipe
+  digestPtr : TaintOk [] c.digestPtr
+  pad : TaintOk [.x9] (c.padBody 0)
+  hfinCopy : TaintOk [.x9] (c.copyOut 0)
+  /-- None of their instructions writes a callee-saved SIMD register. -/
+  iMsgF : OkB (Cfg.msg c.w c.len c.D 0 true c.fHo)
+  iMsgN : OkB (Cfg.msg c.w c.len c.D 0 false)
+  iPrep : OkB c.prep
+  iCoreArgs : OkB c.coreArgs
+  iKeepV : OkB (c.keepV 0)
+  iCandTop : OkB (c.convB fT c.sh)
+  iWipe : OkB c.wipe
+  iDigestPtr : OkB c.digestPtr
+  iPad : OkB (c.padBody 0)
+  iCopy : OkB (c.copyOut 0)
+  /-- At most 8 `V`s make a candidate. -/
+  m8 : c.m ≤ 8
+
+/-- `RfcT` of the code's blocks for literal sizes, by evaluating them. -/
+macro "rfcT_decide" : tactic => `(tactic| exact
+  { msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, prepW := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    coreArgs := ⟨_, by taint_decide⟩, keepV := ⟨_, by taint_decide⟩, candTop := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    wipe := ⟨_, by taint_decide⟩, digestPtr := ⟨_, by taint_decide⟩, pad := ⟨_, by taint_decide⟩,
+    hfinCopy := ⟨_, by taint_decide⟩, iMsgF := by decide +kernel, iMsgN := by decide +kernel,
+    iPrep := by decide +kernel, iCoreArgs := by decide +kernel, iKeepV := by decide +kernel,
+    iCandTop := by decide +kernel, iWipe := by decide +kernel, iDigestPtr := by decide +kernel,
+    iPad := by decide +kernel, iCopy := by decide +kernel, m8 := by decide +kernel })
+
+/-- `blkT` from `RfcT` for each of the shapes. -/
+theorem blkT_of {E : Impl.Ecdsa.AArch64.Cfg} {hHigh : Bool} {sh : Nat}
+    (h₀ : RfcT (cfgS E hHigh sh 16 64)) (h₁ : RfcT (cfgS E hHigh sh 20 64)) (h₂ : RfcT (cfgS E hHigh sh 28 64))
+    (h₃ : RfcT (cfgS E hHigh sh 32 64)) (h₄ : RfcT (cfgS E hHigh sh 48 128)) (h₅ : RfcT (cfgS E hHigh sh 64 128))
+    (h₆ : RfcT (cfgS E hHigh sh 28 128)) (h₇ : RfcT (cfgS E hHigh sh 32 128)) :
+    ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B) := by
+  intro D B h
+  simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  exacts [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇]
+
 /-- A curve, for RFC 6979 on AArch64. -/
 structure RfcCurve where
   /-- The curve, as the code of `vg_ecdsa_<curve>_sign` has it. -/
@@ -80,8 +151,9 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.AArch64.Cfg.wide`). -/
+  /-- Whether the scalars are longer than any hash function's output
+  (P-521's), so that several `V`s make a candidate whatever the hash
+  function (`Impl.Ecdsa.Rfc6979.AArch64.Cfg.wide`). -/
   wide : Bool
   /-- Scalars of 4, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
@@ -97,7 +169,7 @@ structure RfcCurve where
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
-  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct and constant time. -/
+  /-- `vg_ecdsa_<curve>_sign_k`, its name, and that it is correct and constant time. -/
   coreN : String
   coreC : Prog isa
   coreX : ∀ s, (coreK E).pre s → ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
@@ -107,11 +179,11 @@ structure RfcCurve where
   coreKeepsV : coreC.allInstrs keepsV = true
   /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
   memory only from `sp` and `x1` (the taint analysis, of the block for `n`'s
-  words), and write no callee-saved SIMD register. -/
+  words). -/
   reduceT : wide = false → ∃ hc, (taint.check (Taint.ofRegs [.x1])
     (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.AArch64.Cfg.initKV)) hc).isSome = true
-  reduceKeepsV : wide = false →
-    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.AArch64.Cfg.initKV) : Prog isa).allInstrs keepsV = true
+  /-- The blocks for each hash function's sizes. -/
+  blkT : ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B)
 
 namespace RfcCurve
 
