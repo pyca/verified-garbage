@@ -53,6 +53,7 @@ mod p256;
 mod p384;
 mod p521;
 mod secp256k1;
+mod x86_64;
 
 pub use crate::ec::{
     BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, P192, P224, P256, P384, P521,
