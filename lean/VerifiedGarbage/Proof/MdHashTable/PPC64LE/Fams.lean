@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
+public import VerifiedGarbage.Proof.MdHashTable.PPC64LE
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
@@ -12,6 +13,7 @@ public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
+meta import VerifiedGarbage.Proof.MdHashTable.PPC64LE
 meta import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
 meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 meta import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md

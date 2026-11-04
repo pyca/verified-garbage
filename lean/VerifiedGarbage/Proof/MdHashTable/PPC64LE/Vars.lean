@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Proof.Sha512.Md
 
+-- separate module: the variants, with the hash functions' own modules, which only the instances import
+
 /-!
 # The variants of the tables of `MdHash` on PPC64LE
 

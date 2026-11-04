@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTFixed
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.MPad
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Hash
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTCalls
