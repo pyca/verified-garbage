@@ -57,7 +57,7 @@ theorem m0_of {P : EP} {σ s : State} (hc : C1 h P σ s) (e : isa.eval .ne s = s
   rw [Offset.ofNat_sub_ofNat (show lo P ≤ P.K by omega_arith), Offset.ofNat_sub_ofNat (by omega_arith)]
   congr 1
 
-theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 13) :
+theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 16) :
     (m.writeW (L.fr d) v).readW (L.fr (arg j)) 32 = m.readW (L.fr (arg j)) 32 :=
   Lay.readW_fr_other L m v (by unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by
     unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by omega_arith)
@@ -76,21 +76,21 @@ theorem pa_wp (P : EP) {σ s : State} (hc : Ctx (P.lay h.D) P.scr σ s) (hi : In
   obtain ⟨a1, r1, v1⟩ := argAt hi hc.st (j := 1) (by decide)
   obtain ⟨a2, r2, v2⟩ := argAt hi hc.st (j := 2) (by decide)
   obtain ⟨a3, r3, v3⟩ := argAt hi hc.st (j := 3) (by decide)
-  obtain ⟨a5, r5, v5⟩ := argAt hi hc.st (j := 5) (by decide)
-  obtain ⟨a10, r10, v10⟩ := argAt hi hc.st (j := 10) (by decide)
-  obtain ⟨a11, r11, v11⟩ := argAt hi hc.st (j := 11) (by decide)
-  obtain ⟨a12, r12, v12⟩ := argAt hi hc.st (j := 12) (by decide)
+  obtain ⟨a5, r5, v5⟩ := argAt hi hc.st (j := 6) (by decide)
+  obtain ⟨a10, r10, v10⟩ := argAt hi hc.st (j := 11) (by decide)
+  obtain ⟨a11, r11, v11⟩ := argAt hi hc.st (j := 12) (by decide)
+  obtain ⟨a12, r12, v12⟩ := argAt hi hc.st (j := 13) (by decide)
   replace v1 : s.mem.readW ((P.lay h.D).fr (arg 1)) 32 = BitVec.ofNat 32 P.K := v1
   replace v2 : s.mem.readW ((P.lay h.D).fr (arg 2)) 32 = P.e := v2
   replace v3 : s.mem.readW ((P.lay h.D).fr (arg 3)) 32 = BitVec.ofNat 32 P.el := v3
-  replace v5 : s.mem.readW ((P.lay h.D).fr (arg 5)) 32 = P.sig := v5
-  replace v10 : s.mem.readW ((P.lay h.D).fr (arg 10)) 32 = BitVec.ofNat 32 P.scl := v10
-  replace v11 : s.mem.readW ((P.lay h.D).fr (arg 11)) 32 = P.pre := v11
-  replace v12 : s.mem.readW ((P.lay h.D).fr (arg 12)) 32 = BitVec.ofNat 32 P.rl := v12
+  replace v5 : s.mem.readW ((P.lay h.D).fr (arg 6)) 32 = P.sig := v5
+  replace v10 : s.mem.readW ((P.lay h.D).fr (arg 11)) 32 = BitVec.ofNat 32 P.scl := v10
+  replace v11 : s.mem.readW ((P.lay h.D).fr (arg 12)) 32 = P.pre := v11
+  replace v12 : s.mem.readW ((P.lay h.D).fr (arg 13)) 32 = BitVec.ofNat 32 P.rl := v12
   have wF : ∀ d, d + 4 ≤ frameBytes → InRegions s.wr ((P.lay h.D).fr d) 4 := fun d hd => hc.st.inFr hd
   have q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
   have w0 : InRegions s.wr (State.addr P.B) 4 := by rw [q0]; exact wF 0 (by decide)
-  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 13 →
+  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 16 →
       (m.writeW (State.addr P.B) v).readW ((P.lay h.D).fr (arg j)) 32 = m.readW ((P.lay h.D).fr (arg j)) 32 :=
     fun m v j hj => by rw [q0]; exact rdArg m v (by decide) hj
   have rdS0 : ∀ (m : Mem) (v : BitVec 32),
