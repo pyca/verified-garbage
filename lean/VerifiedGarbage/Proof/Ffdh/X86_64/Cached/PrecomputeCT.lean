@@ -6,7 +6,13 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -157,5 +163,238 @@ theorem front_ct :
     unfold sCtx sXe sFn; omega)
   exact WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = p.cp) (by xrun [State.ea, hdr, hd, hdrOff, hC8, hC]) rfl)
     fun t ⟨hsi, k⟩ => ⟨(k.gpr (by decide)).trans hd, hsi⟩
+
+/-! ## The workspace for `p` and `R² mod p` -/
+
+/-- After the front. -/
+def G0 (p : PcP) (t : State) : Prop := ∃ s₀, MainPre p s₀ ∧ FrontPost p s₀ t
+
+theorem front_post_ct :
+    RelCT isa (Two MainPre) (seqs (GenerateKey.bound ++ [Precompute.byteBits,
+      .block (Precompute.width ++ Precompute.metadata)])) (Two G0) :=
+  two_post front_ct fun _ s h => WP.mono (front_ok h) fun _ ht => ⟨s, h, ht⟩
+
+/-- `p`'s bytes, at `dp`, from the front's state. -/
+theorem G0.src {p : PcP} {s₀ s : State} (h : MainPre p s₀) (hf : FrontPost p s₀ s) :
+    Src s p.B p.Z p.dp p.dom :=
+  Src.of_pcOnly h.dom hf.only (fun i hi => h.dsep i (by rw [← h.doml]; exact hi)) hf.keep.2.1 hf.keep.2.2
+
+theorem G0.setup {p : PcP} {s : State} (h : G0 p s) : VG.Proof.Ffdh.X86_64.SetupP ⟨p.B, p.Z, p.k, p.dp⟩ s := by
+  obtain ⟨s₀, h, hf⟩ := h
+  have hk1 := h.k1
+  obtain ⟨hodd, _, _⟩ := valid_facts h.modValid hk1
+  obtain ⟨hDom, _, hK, _⟩ := slots_of hf.hdr
+  have hpl : (p.dom.take p.k).length = p.k := by
+    simp only [List.length_take, h.doml]; rcases h.dl with e | e <;> omega
+  exact ⟨p.dom.take p.k, h.scr.congr hf.keep.2.2, (hf.keep.gpr (by decide)).trans h.rdi, hk1, h.k2, h.hZ,
+    hDom, hK, (G0.src h hf).take p.k, hpl, hodd⟩
+
+/-- After the setup: `p`'s workspace. -/
+def PS (p : PcP) (s₁ : State) : Prop := ∃ (mi : BitVec 64) (s₀ s : State), MainPre p s₀ ∧ FrontPost p s₀ s ∧
+  SubCtx s₁ p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi ∧
+  XVals s₁ p.B (VG.Proof.Ffdh.X86_64.inner p.w) p.w mi (Spec.Rsa.os2ip (p.dom.take p.k)) ∧
+  Frm p.B (VG.Proof.Ffdh.X86_64.setupR p.w) s.mem s₁.mem ∧ Keep (.rdi :: mmRegs) s s₁
+
+theorem setup_post_ct :
+    RelCT isa (Two G0) (seqs (([.block VG.Impl.Rsa.X86_64.head] : List (Prog isa)) ++ pSetup)) (Two PS) := by
+  refine two_post (two_map (fun p => (⟨p.B, p.Z, p.k, p.dp⟩ : VG.Proof.Ffdh.X86_64.DPub)) (fun _ _ h => h.setup)
+    VG.Proof.Ffdh.X86_64.setup_ct) fun p s h => ?_
+  obtain ⟨s₀, h₀, hf⟩ := h
+  have hk1 := h₀.k1
+  obtain ⟨hodd, _, _⟩ := valid_facts h₀.modValid hk1
+  obtain ⟨hDom, _, hK, _⟩ := slots_of hf.hdr
+  have hpl : (p.dom.take p.k).length = p.k := by
+    simp only [List.length_take, h₀.doml]; rcases h₀.dl with e | e <;> omega
+  exact WP.mono (VG.Proof.Ffdh.X86_64.setup_ok (h₀.scr.congr hf.keep.2.2) ((hf.keep.gpr (by decide)).trans h₀.rdi)
+    hk1 h₀.k2 h₀.hZ hDom hK ((G0.src h₀ hf).take p.k) hpl hodd)
+    fun t ⟨mi, hc, hv, _, hfr, k⟩ => ⟨mi, s₀, s, h₀, hf, hc, hv, hfr, k⟩
+
+theorem pins_ps : Pins PS [.rdi] :=
+  VG.Proof.Ffdh.X86_64.pins_rdiB (fun p => off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) fun _ _ h => by
+    obtain ⟨_, _, _, _, _, hc, _⟩ := h; exact hc.rdi
+
+/-- After `r2Head`. -/
+def PH (p : PcP) (t : State) : Prop := PS p t ∧ t.gpr .r12 = BitVec.ofNat 64 p.w ∧
+  t.gpr .r10 = off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (slot p.w aN)
+
+/-- After `R² mod p`. -/
+def PR (p : PcP) (s₂ : State) : Prop := ∃ (mi : BitVec 64) (s₀ s s₁ : State), MainPre p s₀ ∧ FrontPost p s₀ s ∧
+  SubCtx s₁ p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi ∧
+  Frm p.B (VG.Proof.Ffdh.X86_64.setupR p.w) s.mem s₁.mem ∧ Keep (.rdi :: mmRegs) s s₁ ∧
+  ModCtx s₂ p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w mi (Spec.Rsa.os2ip (p.dom.take p.k)) ∧
+  Frm (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (r2Ranges p.w) s₁.mem s₂.mem ∧ Keep mmRegs s₁ s₂
+
+private theorem ph_r2 {s₁ s₂ : State} (h : Two PH s₁ s₂) : Two R2Pre s₁ s₂ := by
+  refine two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h
+  obtain ⟨⟨mi₁, s₀, _, hm, _, hc₁, hv₁, _⟩, h12₁, h10₁⟩ := h₁
+  obtain ⟨⟨mi₂, _, _, _, _, hc₂, hv₂, _⟩, h12₂, h10₂⟩ := h₂
+  have hk := hm.k1
+  have hk' := hm.k2
+  have ew : p.w = (p.k + 7) / 8 := rfl
+  obtain ⟨ho, _, hlo⟩ := valid_facts hm.modValid hk
+  obtain rfl := VG.Proof.Ffdh.X86_64.xvals_minv (show 1 ≤ p.w by omega) ho hv₁ hv₂
+  refine ⟨⟨⟨off p.B (VG.Proof.Ffdh.X86_64.inner p.w), slot p.w 8, p.w, mi₁⟩,
+    Spec.Rsa.os2ip (p.dom.take p.k)⟩, ?_, ?_⟩
+  · exact ⟨⟨hc₁.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega,
+      hv₁.n, hv₁.inv, h12₁, h10₁, ho, hlo⟩
+  · exact ⟨⟨hc₂.good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega,
+      hv₂.n, hv₂.inv, h12₂, h10₂, ho, hlo⟩
+
+theorem r2_stage_ct (Mo : Mont) (R : R2Impl Mo) :
+    RelCT isa (Two PS) (.seq (.block r2Head) R.code) (Two PR) := by
+  refine two_post (RelCT.seq (R := Two PH) (two_piece [.rdi] pins_ps (by taint_decide) fun p s h => ?_)
+    (R.ct.mono (fun _ _ h => ph_r2 h) fun _ _ h => h)) fun p s h => ?_
+  · obtain ⟨mi, s₀, s', hm, hf, hc, hv, hfr, k⟩ := h
+    exact WP.mono (r2Head_ok hc.good (Nat.le_refl _)) fun t ⟨h12, h10, hmt, kt⟩ =>
+      ⟨⟨mi, s₀, s', hm, hf, hc.mem hmt kt (by decide),
+        ⟨by rw [hmt]; exact hv.n, by rw [hmt]; exact hv.inv, by rw [hmt]; exact hv.one⟩, hmt ▸ hfr, (k.trans kt).mono (by decide)⟩,
+        h12, h10⟩
+  · obtain ⟨mi, s₀, s', hm, hf, hc, hv, hfr, k⟩ := h
+    exact WP.mono (VG.Proof.Ffdh.X86_64.r2_ctx Mo R hc hv hm.modValid hm.k1 hm.k2 hm.hZ)
+      fun t ⟨hmc, hf₂, k₂⟩ => ⟨mi, s₀, s', s, hm, hf, hc, hfr, k, hmc, hf₂, k₂⟩
+
+/-! ## The context's pointer and rows in the inner header -/
+
+/-- Before the inner header's stores: the link in `rax`. -/
+def E1 (p : PcP) (t : State) : Prop := ∃ mi, SubCtx t p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi ∧
+  t.gpr .rax = p.B
+
+theorem pins_E1 : Pins E1 [.rdi, .rax] :=
+  pins_of (fun (p : PcP) r => if r = .rdi then off p.B (VG.Proof.Ffdh.X86_64.inner p.w) else p.B)
+    fun p s h r hr => by
+      obtain ⟨_, hc, hax⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hc.rdi
+      · exact hax
+
+theorem link_ok {p : PcP} {s : State} {mi : BitVec 64}
+    (hc : SubCtx s p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi) :
+    WP isa (.block [.mov .rax (.mem (hdr Crt.sLink))]) s fun t => E1 p t := by
+  have hg := hc.good
+  have hl : InRegions (s.rd ++ s.wr) (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * Crt.sLink)) 8 :=
+    hg.scr.ld (hdr_lt_slot _ 8 (by decide))
+  exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = p.B ∧ t.mem = s.mem)
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hc.link]) rfl)
+    fun t ⟨⟨hax, hm⟩, k⟩ => ⟨mi, hc.mem hm k (by decide), hax⟩
+
+theorem fromOuter_link_ok {p : PcP} {t : State} (h : E1 p t) {o i : Nat} (ho : o < 32) (hi : 17 ≤ i) (hi' : i < 32) :
+    WP isa (.block [.mov .rdx (.mem (Crt.ws .rax o)), .store (hdr i) .rdx, .mov .rax (.mem (hdr Crt.sLink))]) t
+      (E1 p) := by
+  obtain ⟨mi, hc, hax⟩ := h
+  have hg := hc.good
+  have hn := hc.scr.nowrap
+  have hlo := hc.lo
+  have hhi := hc.hi
+  have hO : InRegions (t.rd ++ t.wr) (off p.B (8 * o)) 8 := hc.scr.ld (by
+    have := hdr_lt_slot p.w 8 ho; omega)
+  have hI : InRegions t.wr (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i)) 8 :=
+    hg.scr.st (hdr_lt_slot _ 8 hi')
+  have hl : InRegions (t.rd ++ t.wr) (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * Crt.sLink)) 8 :=
+    hg.scr.ld (hdr_lt_slot _ 8 (by decide))
+  have hL : ∀ v : BitVec 64, (t.mem.writeW (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i)) v).readW
+      (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * Crt.sLink)) 64 = p.B := fun v => by
+    change word _ _ (8 * Crt.sLink) = _
+    rw [(writeW_outside t.mem _ (d := 8 * i) v (by omega)).word (by unfold Crt.sLink sFn; omega)
+      (by unfold Crt.sLink sFn; omega)]
+    exact hc.link
+  refine WP.mono (WP.keep [.rdx, .rax] (Q := fun u => u.gpr .rax = p.B ∧
+      u.mem = t.mem.writeW (off (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) (8 * i))
+        (t.mem.readW (off p.B (8 * o)) 64))
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, Crt.ws, hax, hO, hI, hl, hL]) rfl) fun u ⟨⟨hau, hmu⟩, ku⟩ => ?_
+  have hf : Frm (off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) [(8 * i, 8)] t.mem u.mem := by
+    rw [hmu]; exact Frm.of_outside (writeW_outside t.mem _ (d := 8 * i) _ (by omega)) (by simp)
+  exact ⟨mi, hc.of_frm hf (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨by simp only; omega, hdr_lt_slot _ 8 hi'⟩) ku.2.2 (ku.gpr (by decide)), hau⟩
+
+theorem envBlock_ct :
+    RelCT isa (Two fun (p : PcP) t => ∃ mi, SubCtx t p.B p.Z (VG.Proof.Ffdh.X86_64.inner p.w) p.w p.w mi)
+      (.block (fromOuter sCtx iCtx ++ fromOuter sRows iRows)) fun _ _ => True := by
+  show RelCT isa _ (.block ([.mov .rax (.mem (hdr Crt.sLink))] ++
+    ([.mov .rdx (.mem (Crt.ws .rax sCtx)), .store (hdr iCtx) .rdx, .mov .rax (.mem (hdr Crt.sLink))] ++
+      [.mov .rdx (.mem (Crt.ws .rax sRows)), .store (hdr iRows) .rdx]))) _
+  refine RelCT.block_append (RelCT.seq (R := Two E1) (two_piece [.rdi]
+    (VG.Proof.Ffdh.X86_64.pins_rdiB (fun p => off p.B (VG.Proof.Ffdh.X86_64.inner p.w)) fun _ _ h => by
+      obtain ⟨_, hc⟩ := h; exact hc.rdi) (by taint_decide) fun p s h => ?_) ?_)
+  · obtain ⟨mi, hc⟩ := h; exact link_ok hc
+  refine RelCT.block_append (RelCT.seq (R := Two E1) (two_piece [.rdi, .rax] pins_E1 (by taint_decide)
+    fun p s h => fromOuter_link_ok h (by decide) (by decide) (by decide)) ?_)
+  exact two_taint [.rdi, .rax] pins_E1 (by taint_decide)
+
+/-- `g`'s bytes. -/
+abbrev PcP.gb (p : PcP) : List Byte := (p.dom.drop p.k).take p.k
+
+/-- The table's data, once the inner header holds the context's pointer and rows. -/
+def PE (p : PcP) (t : State) : Prop := ∃ mi, TbAt (p.T mi, p.dp + BitVec.ofNat 64 p.k, p.k) t
+
+theorem envBlock_post_ct :
+    RelCT isa (Two PR) (.block (fromOuter sCtx iCtx ++ fromOuter sRows iRows)) (Two PE) := by
+  refine two_post (two_map id (fun _ _ h => by
+    obtain ⟨mi, _, _, _, _, _, _, _, _, hm₂, _⟩ := h; exact ⟨mi, hm₂.sub⟩) envBlock_ct) fun p s₂ h => ?_
+  obtain ⟨mi, s₀, s, s₁, h, hf, hc₁, hf₁, k₁, hm₂, hf₂, k₂⟩ := h
+  have hk1 := h.k1
+  have hk2 := h.k2
+  have hZ := h.hZ
+  have hn := h.scr.nowrap
+  have hroom := VG.Proof.Ffdh.X86_64.room_k hk1 hZ
+  obtain ⟨hDom, hDl, hK, hG, hQ, hCtx, hRec⟩ := slots_of hf.hdr
+  have hsrc := G0.src h hf
+  have hsR : ∀ r ∈ VG.Proof.Ffdh.X86_64.setupR p.w, r.1 + r.2 ≤ p.Z := by
+    intro r hr
+    simp only [VG.Proof.Ffdh.X86_64.setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · show 8 * 6 + 8 ≤ p.Z; omega
+    · show 8 * 8 + 64 ≤ p.Z; omega
+    · show 8 * 29 + 8 ≤ p.Z; omega
+    · show VG.Proof.Ffdh.X86_64.inner ((p.k + 7) / 8) + slot ((p.k + 7) / 8) 8 ≤ p.Z
+      have := Nat.le_add_right (VG.Proof.Ffdh.X86_64.inner ((p.k + 7) / 8) + slot ((p.k + 7) / 8) 8)
+        (tabBytes ((p.k + 7) / 8) 32)
+      omega
+  have hin₁ : InScr p.B p.Z s.mem s₁.mem := InScr.of_frm hf₁ hsR
+  have hb₁ : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
+      word s₁.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 =>
+    hf₁.word_eq (fun r hr => by
+      simp only [VG.Proof.Ffdh.X86_64.setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;>
+        unfold sW sWs sArr sFn VG.Proof.Ffdh.X86_64.inner slot hdrBytes at * <;> omega) (by omega)
+  obtain ⟨hb₂, hin₂⟩ := VG.Proof.Ffdh.X86_64.child_frm hc₁ hm₂.wide hf₂
+    (fun r hr => Nat.le_trans (r2Ranges_le p.w r hr) (Nat.le_add_right _ _))
+  have hCtx₂ : word s₂.mem p.B (8 * sCtx) = p.cp := by
+    rw [hb₂ _ (by decide), hb₁ _ (by decide) (by decide) (by decide) (by decide)]; exact hCtx
+  have hRows₂ : word s₂.mem p.B (8 * sRows) = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.bits) := by
+    rw [hb₂ _ (by decide), hb₁ _ (by decide) (by decide) (by decide) (by decide)]; exact hf.rowsH
+  refine WP.mono (envBlock_ok hm₂ hCtx₂ hRows₂) fun s₃ ⟨hm₃, hC₃, hR₃, hf₃, k₃⟩ => ?_
+  obtain ⟨hb₃, hin₃⟩ := VG.Proof.Ffdh.X86_64.child_frm hm₂.sub hm₂.wide hf₃
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Nat.le_trans (hdr_lt_slot p.w 8 (show iCtx < 32 by decide)) (Nat.le_add_right _ _)
+      · exact Nat.le_trans (hdr_lt_slot p.w 8 (show iRows < 32 by decide)) (Nat.le_add_right _ _))
+  have k13 := (k₁.trans k₂).trans k₃
+  have hrd : s₃.rd = s₀.rd := by rw [k13.2.1, hf.keep.2.1]
+  have hwr : s₃.wr = s₀.wr := by rw [k13.2.2, hf.keep.2.2]
+  have he₃ : Env (p.T mi) s₃ := ⟨hm₃, hC₃, hR₃, h.ctx.congr hrd hwr⟩
+  have hin₁₃ : InScr p.B p.Z s.mem s₃.mem := (hin₁.trans hin₂).trans hin₃
+  have hout₁₃ : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
+      word s₃.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 => by
+    rw [hb₃ i hi, hb₂ i hi, hb₁ i hi h1 h2 h3]
+  have hgl : p.gb.length = p.k := by
+    simp only [List.length_take, List.length_drop, h.doml]; rcases h.dl with e | e <;> omega
+  have hgsep : ∀ i < p.gb.length, 8 * (p.T mi).n ≤ ofs p.cp (p.dp + BitVec.ofNat 64 p.k + BitVec.ofNat 64 i) :=
+    fun i hi => by
+      rw [hgl] at hi
+      have := h.dsep (p.k + i) (by rcases h.dl with e | e <;> omega)
+      rwa [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  refine ⟨mi, p.gb, he₃, ?_, ?_, rfl, ?_, ?_, hgl, ?_, hgsep, by omega, by rw [hgl]⟩
+  · have := h.bits_pos
+    show 1 ≤ Spec.Rsa.FixedBaseComb.rows p.bits
+    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega
+  · have := h.bits_le
+    show Spec.Rsa.FixedBaseComb.rows p.bits < 2 ^ 63
+    unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth; omega
+  · exact (hout₁₃ _ (by decide) (by decide) (by decide) (by decide)).trans hG
+  · rw [hout₁₃ _ (by decide) (by decide) (by decide) (by decide), hgl]; exact hK
+  · exact Src.of_pcOnly ((hsrc.drop p.k).take p.k) (PcP.Only.of_inScr hin₁₃) hgsep
+      (by rw [k13.2.1]) (by rw [k13.2.2])
 
 end VG.Proof.Ffdh.X86_64.Cached
