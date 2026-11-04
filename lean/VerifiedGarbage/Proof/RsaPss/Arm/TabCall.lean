@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 public import VerifiedGarbage.Impl.RsaPss.Arm.Table
 public import VerifiedGarbage.Impl.MdHashTable.Arm
+public import VerifiedGarbage.Spec.HashTable
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
@@ -16,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 `σ`: its words 0, 3 and 4 hold the addresses `ai`, `ac` and `ad` (the same in
 every run) of the hash function's streaming `init`, compression function and
 digest (`dn`), which an indirect call of `f`'s functions to that address
-reaches. `htcall_vp`: from a stage whose slot `sTab` holds `p`, the call of
+reaches, and its word 5 the index of `h` in `Spec.Mgf1.hashes`. `htcall_vp`: from a stage whose slot `sTab` holds `p`, the call of
 the table's function `k` (`Impl.RsaOaep.Arm.tcall`) is the call of the
 function it reaches, as RSAES-OAEP's MGF1 calls the functions of a table of
 `Hash` (`Proof/RsaOaep/Arm/Mgf.lean`).
@@ -41,6 +42,7 @@ structure HTab (h : PssHash) (dn : String) (f : MdFns) (p ai ac ad : BitVec 32) 
   m0 : σ.mem.readW (tA p 0) 32 = ai
   m3 : σ.mem.readW (tA p 12) 32 = ac
   m4 : σ.mem.readW (tA p 16) 32 = ad
+  ix : σ.mem.readW (tA p 20) 32 = BitVec.ofNat 32 (Spec.HashTable.index h.G)
 
 /-- The loads of the table's words 0, 3 and 4. -/
 theorem hword_cert {k : Nat} (hk : k = 0 ∨ k = 3 ∨ k = 4) :

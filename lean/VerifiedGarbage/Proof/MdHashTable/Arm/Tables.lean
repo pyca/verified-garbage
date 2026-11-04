@@ -53,15 +53,16 @@ structure MVar where
   h : PssHash
   idx : Spec.Mgf1.hashes[Spec.HashTable.index h.G]? = some h.G
   shape : h.sh = ofIdx (Spec.HashTable.index h.G)
+  mem : Spec.HashTable.index h.G ∈ idxs
 
-def md5M : MVar := ⟨Proof.RsaPss.Arm.md5, rfl, rfl⟩
-def sha1M : MVar := ⟨Proof.RsaPss.Arm.sha1, rfl, rfl⟩
-def sha224M : MVar := ⟨Proof.RsaPss.Arm.sha224, rfl, rfl⟩
-def sha256M : MVar := ⟨Proof.RsaPss.Arm.sha256, rfl, rfl⟩
-def sha384M : MVar := ⟨Proof.RsaPss.Arm.sha384, rfl, rfl⟩
-def sha512M : MVar := ⟨Proof.RsaPss.Arm.sha512, rfl, rfl⟩
-def sha512_224M : MVar := ⟨Proof.RsaPss.Arm.sha512_224, rfl, rfl⟩
-def sha512_256M : MVar := ⟨Proof.RsaPss.Arm.sha512_256, rfl, rfl⟩
+def md5M : MVar := ⟨Proof.RsaPss.Arm.md5, rfl, rfl, by decide⟩
+def sha1M : MVar := ⟨Proof.RsaPss.Arm.sha1, rfl, rfl, by decide⟩
+def sha224M : MVar := ⟨Proof.RsaPss.Arm.sha224, rfl, rfl, by decide⟩
+def sha256M : MVar := ⟨Proof.RsaPss.Arm.sha256, rfl, rfl, by decide⟩
+def sha384M : MVar := ⟨Proof.RsaPss.Arm.sha384, rfl, rfl, by decide⟩
+def sha512M : MVar := ⟨Proof.RsaPss.Arm.sha512, rfl, rfl, by decide⟩
+def sha512_224M : MVar := ⟨Proof.RsaPss.Arm.sha512_224, rfl, rfl, by decide⟩
+def sha512_256M : MVar := ⟨Proof.RsaPss.Arm.sha512_256, rfl, rfl, by decide⟩
 
 /-- Every hash function. -/
 def vars : List MVar := [md5M, sha1M, sha224M, sha256M, sha384M, sha512M, sha512_224M, sha512_256M]
@@ -171,14 +172,14 @@ theorem htab_entered (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56
       show (⟨State.addr p, 11 * (32 / 8)⟩ : Region).Contains (State.addr (p + BitVec.ofNat 32 o)) 4
       rw [VG.Arm.addr_add (by omega)]
       exact Offset.contains_base _ (by omega) (by omega))
-  obtain ⟨m0, m3, m4, -⟩ := held_tableOf hp hh
+  obtain ⟨m0, m3, m4, m5⟩ := held_tableOf hp hh
   have hn := mem_names hw
   have fn : ∀ {β : Type} {ts : List (String × β)} {n : String} {c : β}, (n, c) ∈ ts → (∀ q ∈ ts, q.1 ∈ names vs) →
       (∀ q ∈ ts, q.1 = n → q.2 = c) → n ∈ names vs →
       ts.find? (fun q => (s.syms q.1).setWidth 64 == (s.syms n).setWidth 64) = some (n, c) :=
     fun hm hin hcc hnn => find_name (sy := fun n => (s.syms n).setWidth 64) hm
       (fun q hq hne => pw_ne hd64 _ (hin q hq) _ hnn hne) hcc
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [sy]
     refine fn (List.mem_map_of_mem (f := fun w => (w.h.H.md.st.initN, w.h.H.md.st.initC)) hw) (fun q hq => ?_)
       (fun q hq he => ?_) hn.1
@@ -197,6 +198,7 @@ theorem htab_entered (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56
   · rw [e 0 (by decide), m0]
   · rw [e 12 (by decide), m3]
   · rw [e 16 (by decide), m4]
+  · rw [e 20 (by decide), m5]
 
 end
 
