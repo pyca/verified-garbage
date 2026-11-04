@@ -7,9 +7,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # EMSA-PSS's encoding on AArch64: the prologue
@@ -189,9 +190,10 @@ theorem AtE.writes {s u v : State} (h : AtE s u) {m : Mem} (hv : v.mem = m) (hsp
       exact Offset.disjoint _ this.2.2.2.symm (by decide) (by unfold frameBytes at this; omega)) (by decide)]
     exact h.c
 
-theorem tabSlots_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE D tsH tsG s) (hu : AtE s u)
-    (hsy : u.syms = s.syms) :
-    WP isa (.block tabSlots) u (AtT s) := by
+/-- `tabSlots` after its first load, of the table's address into `x9`. -/
+theorem tabSlotsT_ok {D : Nat} {tsH tsG : List FnTable} {s u u₁ : State} (hp : PreE D tsH tsG s) (hu : AtE s u)
+    (o₁ : Only [.x9] u u₁) (e₁ : u₁.gpr .x9 = stackArg s 0) (hsy : u₁.syms = s.syms) :
+    WP isa (.block tabSlots.tail) u₁ (AtT s) := by
   have rA : ∀ d, d + 8 ≤ 16 → InRegions (u.rd ++ u.wr) (stackArgAddr s 0 + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [hu.rd, hp.hrd]
     exact ⟨aR s, by simp, Offset.contains_base _ hd (by have := hp.sp2; simp; omega)⟩
@@ -209,13 +211,8 @@ theorem tabSlots_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE 
       rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by simp [stackArgAddr]]
       exact Offset.contains_base _ (by omega) (by have := hp.sp2; simp; omega)) (kF hp.kA) (by decide)
   unfold tabSlots arg st
-  simp only [List.cons_append, List.nil_append]
+  simp only [List.cons_append, List.nil_append, List.tail_cons]
   refine WP.of_syms ?_
-  have r0 : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (frameBytes + 8 * 0)) 8 := by
-    have := rA 0 (by decide)
-    rwa [BitVec.add_zero, stackArgAddr_fb, ← hu.sp] at this
-  refine wp_ldrSp (by decide) r0 fun u₁ o₁ e₁ => ?_
-  rw [hu.sp, ← stackArgAddr_fb, mA hu.mem 0 (by decide)] at e₁
   refine wp_ldrx (by decide) (by rw [e₁]) (by rw [o₁.rd, o₁.wr]; exact rT 0 (by decide)) fun u₂ o₂ e₂ => ?_
   refine wp_addSp (by decide) fun u₃ o₃ e₃ => ?_
   refine wp_strx (by decide) (by rw [e₃, o₂.sp, o₁.sp, hu.sp, BitVec.add_zero])
@@ -290,3 +287,29 @@ theorem tabSlots_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE 
   · rw [hm, sep _ _ (by decide) (by decide) (by decide), sep _ _ (by decide) (by decide) (by decide),
       Mem.readW_writeW_self64]
   · rw [hm, sep _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
+
+/-- `tabSlots`' first load: the table's address into `x9`. -/
+theorem arg0_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE D tsH tsG s) (hu : AtE s u) :
+    WP isa (.block [arg .x9 0]) u fun u₁ => Only [.x9] u u₁ ∧ u₁.gpr .x9 = stackArg s 0 := by
+  have rA : ∀ d, d + 8 ≤ 16 → InRegions (u.rd ++ u.wr) (stackArgAddr s 0 + BitVec.ofNat 64 d) 8 := fun d hd => by
+    rw [hu.rd, hp.hrd]
+    exact ⟨aR s, by simp, Offset.contains_base _ hd (by have := hp.sp2; simp; omega)⟩
+  have kF : ∀ {R : Region}, (kR 288 s).Disjoint R → ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region)], R.Disjoint r :=
+    fun hR r hr => by rw [List.mem_singleton.mp hr]; exact (hR.sub_left (frame_sub0 288 s)).symm
+  have mA : ∀ {m : Mem}, Frame [⟨fb s, frameBytes⟩] s.mem m →
+      m.readW (stackArgAddr s 0) 64 = stackArg s 0 := fun hf =>
+    hf.readW (r := aR s) (by
+      rw [show stackArgAddr s 0 = stackArgAddr s 0 + BitVec.ofNat 64 0 by simp]
+      exact Offset.contains_base _ (by omega) (by omega)) (kF hp.kA) (by decide)
+  have r0 : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (frameBytes + 8 * 0)) 8 := by
+    have := rA 0 (by decide)
+    rwa [BitVec.add_zero, stackArgAddr_fb, ← hu.sp] at this
+  refine wp_ldrSp (by decide) r0 fun u₁ o₁ e₁ => wp_nil ⟨o₁, ?_⟩
+  rw [e₁, hu.sp, ← stackArgAddr_fb, mA hu.mem]
+
+theorem tabSlots_ok {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreE D tsH tsG s) (hu : AtE s u)
+    (hsy : u.syms = s.syms) :
+    WP isa (.block tabSlots) u (AtT s) := by
+  have e : tabSlots = [arg .x9 0] ++ tabSlots.tail := rfl
+  rw [e, WP.block_append_iff]
+  exact WP.mono_syms (arg0_ok hp hu) fun u₁ ⟨o₁, e₁⟩ sy₁ => tabSlotsT_ok hp hu o₁ e₁ (sy₁.trans hsy)
