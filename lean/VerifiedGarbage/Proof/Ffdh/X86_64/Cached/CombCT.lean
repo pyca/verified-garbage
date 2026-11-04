@@ -229,4 +229,110 @@ theorem select_ct : RelCT isa (Two SelStart) select (Two fun (T : TabP) t => ∃
   refine WP.mono (selectStep_ok hb he hI) fun u ⟨hz, hu⟩ =>
     ⟨eval_ne_step he hz, fun _ => ⟨E, d, s, hb, hu⟩, fun h => ⟨E, d, s, hb, h ▸ hu⟩⟩
 
+/-! ## A row -/
+
+/-- Before the square of row `i`, and after it and the product. -/
+def D0 (p : (TabP × Addr × Nat) × Nat) (t : State) : Prop :=
+  DgP p t ∧ wv t.mem (off p.1.1.B p.1.1.o) (slot p.1.1.w aY) p.1.1.w < p.1.1.P
+
+/-- After `aXm := 0`. -/
+def D2 (p : (TabP × Addr × Nat) × Nat) (t : State) : Prop :=
+  D0 p t ∧ ∀ i < p.1.1.w, word t.mem (off p.1.1.B p.1.1.o) (slot p.1.1.w aXm + 8 * i) = 0#64
+
+/-- After the digit. -/
+def D3 (p : (TabP × Addr × Nat) × Nat) (t : State) : Prop := D2 p t ∧ ∃ d < 32, t.gpr .r13 = BitVec.ofNat 64 d
+
+/-- After the selection. -/
+def D4 (p : (TabP × Addr × Nat) × Nat) (t : State) : Prop :=
+  D0 p t ∧ wv t.mem (off p.1.1.B p.1.1.o) (slot p.1.1.w aXm) p.1.1.w < p.1.1.P
+
+theorem mm_d0 (Mo : Mont) {p : (TabP × Addr × Nat) × Nat} {t : State} {b : Nat} (hb : b = aY ∨ b = aXm)
+    (h : DgP p t) (hbl : wv t.mem (off p.1.1.B p.1.1.o) (slot p.1.1.w b) p.1.1.w < p.1.1.P) :
+    WP isa (Mo.mm aY aY b) t (D0 p) := by
+  obtain ⟨⟨xb, hl, he⟩, hI, hrest⟩ := h
+  have hb8 : b < 8 := by rcases hb with rfl | rfl <;> decide
+  have hb1 : b ≠ aAcc := by rcases hb with rfl | rfl <;> decide
+  have hb2 : b ≠ aTmp := by rcases hb with rfl | rfl <;> decide
+  refine WP.mono (mm_cenv Mo he (Or.inr (Or.inr rfl)) (by decide) hb8 (by decide) (by decide) hb1 hb2 hbl)
+    fun u ⟨heu, hlu, _, hau, _, _⟩ => ⟨⟨⟨xb, hl, heu⟩, by rw [arrays3_hdr hau (by decide) (by decide), hI], hrest⟩, hlu⟩
+
+theorem zero_d2 {p : (TabP × Addr × Nat) × Nat} {t : State} (h : D0 p t) :
+    WP isa (Crt.zeroArr aXm) t (D2 p) := by
+  obtain ⟨⟨⟨xb, hl, he⟩, hI, hrest⟩, hy⟩ := h
+  have hw2 := he.mc.w2
+  have hw28 := he.mc.w28
+  have hn := he.mc.sub.scr.nowrap
+  refine WP.mono (zeroArr_ok he.good (Nat.le_refl _) (by omega) (by omega) (show aXm < 8 by decide))
+    fun u ⟨hz, ho, k⟩ => ?_
+  have hf : Frm (off p.1.1.B p.1.1.o) (combR p.1.1.w) t.mem u.mem :=
+    Frm.of_outside (ho.mono (o' := slot p.1.1.w aXm) (n' := 2 * (8 * (p.1.1.w + 2))) (Nat.le_refl _) (by omega))
+      (by simp [combR])
+  obtain ⟨heu, _, _⟩ := he.of_frm hf k.2.1 k.2.2 (k.gpr (by decide))
+  have hsx := slot_le (w := p.1.1.w) (show aXm < 8 by decide)
+  refine ⟨⟨⟨⟨xb, hl, heu⟩, ?_, hrest⟩, ?_⟩, fun i hi => (wv_eq_zero_iff _ _ _ _).mp hz i (by omega)⟩
+  · rw [ho.word (Or.inl (hdr_lt_slot p.1.1.w aXm (show iI < 32 by decide))) (by unfold iI sFn; omega), hI]
+  · rw [ho.wv (Or.inr (by simp only [slot, aXm, aY]; omega)) (by simp only [slot, hdrBytes, aY]; omega)]
+    exact hy
+
+theorem digit_d3 {p : (TabP × Addr × Nat) × Nat} {t : State} (h : D2 p t) : WP isa digit t (D3 p) := by
+  have h' := h
+  obtain ⟨⟨⟨⟨xb, hl, he⟩, hI, hi, hr, hL⟩, hy⟩, hz⟩ := h'
+  have hL' : 8 * xb.length < 2 ^ 32 := by rw [hl]; exact hL
+  refine WP.mono (digit_ok he.good (slot8_ge _) hI he.rows he.xpw he.xlw he.x.rd he.x.val hi hr hL')
+    fun u ⟨h13, hm, k⟩ => ⟨⟨⟨h.1.1.keep hm k (by decide), by rw [hm]; exact hy⟩, fun i hi => by rw [hm]; exact hz i hi⟩,
+      _, Rsa.FixedBaseComb.digit_lt _ _ _, h13⟩
+
+theorem d3_start {p : (TabP × Addr × Nat) × Nat} {t : State} (h : D3 p t) : SelStart p.1.1 t := by
+  obtain ⟨⟨⟨⟨⟨xb, hl, he⟩, _⟩, _⟩, hz⟩, d, hd, h13⟩ := h
+  exact ⟨fun a i => word t.mem p.1.1.cp (24 + 8 * p.1.1.w * (a + 2) + 8 * i), d,
+    ⟨he.mc.sub, he.mc.wide, he.ctx, he.reg, by have := he.mc.w2; omega, he.mc.w28, fun _ _ _ _ => rfl, h13, hd⟩, hz⟩
+
+theorem select_d4 {p : (TabP × Addr × Nat) × Nat} {t : State} (h : D3 p t) : WP isa select t (D4 p) := by
+  obtain ⟨⟨⟨⟨⟨xb, hl, he⟩, hI, hrest⟩, hy⟩, hz⟩, d, hd, h13⟩ := h
+  have hP : 0 < p.1.1.P := by have := he.mc.x1; omega
+  refine WP.mono (select_ok he.mc.sub he.mc.wide he.ctx he.reg (by have := he.mc.w2; omega) he.mc.w28
+    (E := fun a i => word t.mem p.1.1.cp (24 + 8 * p.1.1.w * (a + 2) + 8 * i)) (fun _ _ _ _ => rfl) h13 hd hz)
+    fun u ⟨hx, hf, k⟩ => ?_
+  have hf' : Frm (off p.1.1.B p.1.1.o) (combR p.1.1.w) t.mem u.mem := Frm.widen hf fun r hr => by
+    simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨(8 * iI, 16), by simp [combR], by simp only [iI, iE, sFn]; omega, by simp only [iI, iE, sFn]; omega⟩
+    · exact ⟨(slot p.1.1.w aXm, 2 * (8 * (p.1.1.w + 2))), by simp [combR], Nat.le_refl _, by omega⟩
+  obtain ⟨heu, _, _⟩ := he.of_frm hf' k.2.1 k.2.2 (k.gpr (by decide))
+  have hn := he.mc.sub.scr.nowrap
+  have hw28 := he.mc.w28
+  refine ⟨⟨⟨⟨xb, hl, heu⟩, ?_, hrest⟩, ?_⟩, ?_⟩
+  · rw [hf.word_eq (fun r hr => by
+      simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Or.inl (by simp only [iI, iE, sFn]; omega)
+      · exact Or.inl (by have := hdr_lt_slot p.1.1.w aXm (show iI < 32 by decide); omega))
+      (by unfold iI sFn; omega), hI]
+  · rw [hf.wv_eq (fun r hr => by
+      simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Or.inr (by have := hdr_lt_slot p.1.1.w aY (show iE < 32 by decide); simp only; omega)
+      · exact Or.inr (by simp only [slot, aXm, aY]; omega))
+      (by simp only [slot, hdrBytes, aY]; omega)]
+    exact hy
+  · rw [wv_congr2 (p := p.1.1.cp) (d := 24 + 8 * p.1.1.w * (2 + d)) (m := t.mem)
+      fun i' hi' => (hx i' hi').trans (by rw [Nat.add_comm 2]),
+      wv_of_row (he.ent d hd) (p.1.1.M_lt_R hP (Nat.le_of_lt he.P_lt) _)]
+    exact p.1.1.M_lt hP _
+
+theorem step_ct (Mo : Mont) : RelCT isa (Two D0) (step Mo.mm) fun _ _ => True := by
+  unfold step
+  simp only [seqs]
+  refine RelCT.seq (R := Two D0) (two_post (mmc_ct Mo (.inr (.inl ⟨rfl, rfl, rfl⟩)) (fun p => p.1)
+    fun _ _ h => h.1.1) fun p t h => mm_d0 Mo (.inl rfl) h.1 h.2) ?_
+  refine RelCT.seq (R := Two D2) (two_post (two_map (fun p => ceWs p.1) (fun _ _ h => h.1.1.goodW)
+    (zeroArr_ct (by decide) (by taint_decide))) fun _ _ h => zero_d2 h) ?_
+  refine RelCT.seq (R := Two D3) (two_post (two_map id (fun _ _ h => h.1.1) digit_ct) fun _ _ h => digit_d3 h) ?_
+  refine RelCT.seq (R := Two D4) (two_post (two_map (Φ := D3) (fun (p : (TabP × Addr × Nat) × Nat) => p.1.1)
+    (fun _ _ h => d3_start h)
+    (select_ct.mono (fun _ _ h => h) fun _ _ _ => trivial)) fun _ _ h => select_d4 h) ?_
+  refine RelCT.seq (R := Two D0) (two_post (mmc_ct Mo (Φ := D4) (.inr (.inr (.inl ⟨rfl, rfl, rfl⟩))) (fun p => p.1)
+    fun _ _ h => h.1.1.1) fun p t h => mm_d0 Mo (.inr rfl) h.1.1 h.2) ?_
+  exact two_taint [.rdi] (pins_ce (fun p => p.1) fun _ _ h => h.1.1) (by taint_decide)
+
 end VG.Proof.Ffdh.X86_64.Cached
