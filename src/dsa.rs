@@ -55,6 +55,7 @@ use crate::arch::dsa::{
 ))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
 use crate::cpu::detected;
+use crate::entropy::{self, Step, Stop};
 use crate::zeroize::{Int, zeroize};
 use verified_garbage_cpu::Features;
 
@@ -345,12 +346,13 @@ impl PrivateKey {
     pub fn sign_with_rng(
         &self,
         digest: &[u8],
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
-        let mut tape = Secret(Vec::with_capacity(8 * 128 * self.public.q_len));
+        let q_len = self.public.q_len;
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
-        let mut output = vec![0u8; 2 * self.public.q_len];
-        loop {
+        let mut output = vec![0u8; 2 * q_len];
+        // The first call needs no random bytes: it checks the key first.
+        let signed = entropy::serve(0, random, |tape| {
             let mut used = [0u64; 1];
             macro_rules! sign {
                 ($function:path) => {
@@ -366,11 +368,11 @@ impl PrivateKey {
                             self.packed.0.as_ptr(),
                             self.packed.0.len(),
                             self.public.p_len,
-                            self.public.q_len,
+                            q_len,
                             digest.as_ptr(),
                             digest.len(),
-                            tape.0.as_ptr(),
-                            tape.0.len(),
+                            tape.as_ptr(),
+                            tape.len(),
                             scratch.0.as_mut_ptr(),
                             scratch.0.len(),
                         )
@@ -383,17 +385,21 @@ impl PrivateKey {
                 Backend::Adx => sign!(vg_dsa_sign_random_adx),
             };
             match status {
-                1 => return Ok(output),
-                2 => {
-                    // The contract permits extending an exhausted tape and
-                    // replaying this same signing operation. Preserve its
-                    // prefix; never reuse the tape for another signing.
-                    let start = tape.0.len();
-                    tape.0.resize(start + self.public.q_len, 0);
-                    random(&mut tape.0[start..])?;
-                }
-                _ => return Err(Error::InvalidKeyOrNonce),
+                1 => Step::Done,
+                // The contract permits extending an exhausted tape and
+                // replaying this same signing operation, so the whole tape
+                // is kept; it is never reused for another signing.
+                2 => Step::More {
+                    used: 0,
+                    requested: tape.len() + q_len,
+                },
+                _ => Step::Failed,
             }
+        });
+        match signed {
+            Ok(()) => Ok(output),
+            Err(Stop::Failed) => Err(Error::InvalidKeyOrNonce),
+            Err(Stop::Fill(e)) => Err(e),
         }
     }
 }

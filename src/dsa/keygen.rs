@@ -24,6 +24,7 @@ use crate::arch::dsa::vg_dsa_generate_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
+use crate::entropy::{self, Step, Stop};
 
 // On x86, give one call of the verified sampler eight draws, so that a
 // common rejection does not repeat its check of the domain. Eight draws use
@@ -124,7 +125,7 @@ impl PrivateKey {
         p: &[u8],
         q: &[u8],
         g: &[u8],
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
         if !matches!(
             (p.len(), q.len()),
@@ -140,11 +141,10 @@ impl PrivateKey {
         }
         let backend = Backend::select(detected());
         // A draw never takes more than q_len bytes.
-        let mut tape = Secret(vec![0u8; DRAW_BATCH * q_len]);
-        random(&mut tape.0)?;
+        let batch = DRAW_BATCH * q_len;
         let mut scratch = Secret(vec![0u64; 64 * p_len + 1024]);
         let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
-        loop {
+        let generated = entropy::serve(batch, random, |tape| {
             let mut used = [0u64; 1];
             macro_rules! generate {
                 ($function:path) => {
@@ -163,8 +163,8 @@ impl PrivateKey {
                             params.len(),
                             p_len,
                             q_len,
-                            tape.0.as_ptr(),
-                            tape.0.len(),
+                            tape.as_ptr(),
+                            tape.len(),
                             scratch.0.as_mut_ptr(),
                             scratch.0.len(),
                         )
@@ -177,17 +177,21 @@ impl PrivateKey {
                 Backend::Adx => generate!(vg_dsa_generate_key_adx),
             };
             match status {
-                1 => break,
-                2 => {
-                    // The contract permits extending an exhausted tape and
-                    // replaying the same generation; never reuse it for another.
-                    let start = tape.0.len();
-                    tape.0.resize(start + DRAW_BATCH * q_len, 0);
-                    random(&mut tape.0[start..])?;
-                }
-                _ => return Err(Error::InvalidKeyOrNonce),
+                1 => Step::Done,
+                // The contract permits extending an exhausted tape and
+                // replaying the same generation, so the whole tape is kept;
+                // it is never reused for another.
+                2 => Step::More {
+                    used: 0,
+                    requested: tape.len() + batch,
+                },
+                _ => Step::Failed,
             }
-        }
+        });
+        generated.map_err(|stop| match stop {
+            Stop::Failed => Error::InvalidKeyOrNonce,
+            Stop::Fill(e) => e,
+        })?;
         let public = PublicKey {
             packed: output.0[..3 * p_len + q_len].to_vec(),
             p_len,
