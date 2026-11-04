@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # Camellia's batches under prepared subkeys on x86 (32-bit) meet their contract
 
 `crypt_verified`: `vg_camellia_crypt_prepared` against
-`Spec.Camellia.Prepared.cryptContract` with `layout`. The function saves
+`Proof.Camellia.Prepared.cryptContract` with `layout`. The function saves
 the callee-saved registers in its slots (`saveAt_ok`), runs the eight blocks
 of the tail buffer for 18 or 24 rounds (`crypt8_ok`) under the table its
 working space holds, and restores the registers (`restoreAt_ok`): it writes
@@ -49,7 +49,7 @@ namespace VG.Proof.Camellia.X86
 
 open VG VG.X86 VG.X86.Straight VG.Impl.Camellia.X86
 open VG.Impl.Aes.X86 (sb argOp)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 open VG.Proof.Camellia (blockFn ecb_eq encryptWith_eq decryptWith_eq dirPerm dirPerm_lt)
 
 theorem size_eq : layout.size = 4 * slots := rfl
@@ -340,19 +340,19 @@ def cryptSat : State where
   rd := [⟨0x8004, 12⟩]
   wr := [⟨0x2000, 336 * 8⟩]
 
-theorem crypt_implies : cryptX86.Implies (Spec.Camellia.Prepared.cryptContract layout X86.abi) where
+theorem crypt_implies : cryptX86.Implies (Proof.Camellia.Prepared.cryptContract layout X86.abi) where
   pre := by
-    sig_implies_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86,
+    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   post := by
-    sig_implies_post [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86,
+    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   pub := by
-    sig_implies_pub [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86,
+    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, X86.abi, X86.argSlots,
+    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
     sig_and_intros
     all_goals first
@@ -361,7 +361,7 @@ theorem crypt_implies : cryptX86.Implies (Spec.Camellia.Prepared.cryptContract l
       | exact ⟨_, _, cryptSat_holds⟩
       | (rw [size_eq, slots_eq]; decide)
 
-theorem crypt_verified : Verified X86.target cryptPrepared (Spec.Camellia.Prepared.cryptContract layout X86.abi) :=
+theorem crypt_verified : Verified X86.target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout X86.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.X86

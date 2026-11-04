@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # Camellia's prepared subkeys and batches on AArch64 meet their contracts
 
 `prepare_verified` and `crypt_verified`: `vg_camellia_prepare_keys` and
-`vg_camellia_crypt_prepared` against `Spec.Camellia.Prepared`, with
+`vg_camellia_crypt_prepared` against `Proof.Camellia.Prepared`, with
 `layout`. Each body runs from the state narrowed to ECB's scratch buffer
 (`prepareBody_wp`, `cryptBody_wp`) and then from the whole working space
 (`Exec.widen`), which it changes only where the narrowed run may. A batch's
@@ -37,7 +37,7 @@ namespace VG.Proof.Camellia.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Camellia.AArch64
 open VG.Proof.Camellia (blockFn)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
 
@@ -105,8 +105,8 @@ def prepAArch64 : Contract AArch64.isa where
       layout.size ≤ 8 * (s.gpr .x4).toNat
   post s s' :=
     Holds layout s'.mem (s.gpr .x3) (s.gpr .x1).toNat
-        (Spec.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
-        (Spec.Camellia.Prepared.directionOf (s.gpr .x2).toNat) ∧
+        (Proof.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
+        (Proof.Camellia.Prepared.directionOf (s.gpr .x2).toNat) ∧
       Keeps (s.gpr .x3) (s.gpr .x4).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -150,9 +150,9 @@ def prepSat : State where
   wr := [⟨0x2000, 406 * 8⟩]
 
 theorem prepare_verified :
-    Verified AArch64.target prepareKeys (Spec.Camellia.Prepared.prepareContract layout AArch64.abi) :=
+    Verified AArch64.target prepareKeys (Proof.Camellia.Prepared.prepareContract layout AArch64.abi) :=
   Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Spec.Camellia.Prepared.prepareContract, Spec.Camellia.Prepared.prepareSig, prepAArch64,
+    sig_implies [Proof.Camellia.Prepared.prepareContract, Proof.Camellia.Prepared.prepareSig, prepAArch64,
       AArch64.abi, AArch64.argRegs, size_eq, slots] [prepSat] using prepSat)
 
 /-! ## A batch -/
@@ -264,19 +264,19 @@ def cryptSat : State where
   rd := []
   wr := [⟨0x2000, 406 * 8⟩]
 
-theorem crypt_implies : cryptAArch64.Implies (Spec.Camellia.Prepared.cryptContract layout AArch64.abi) where
+theorem crypt_implies : cryptAArch64.Implies (Proof.Camellia.Prepared.cryptContract layout AArch64.abi) where
   pre := by
-    sig_implies_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptAArch64,
+    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptAArch64,
       AArch64.abi, AArch64.argRegs]
   post := by
-    sig_implies_post [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptAArch64,
+    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptAArch64,
       AArch64.abi, AArch64.argRegs]
   pub := by
-    sig_implies_pub [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptAArch64,
+    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptAArch64,
       AArch64.abi, AArch64.argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, AArch64.abi, AArch64.argRegs]
+    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, AArch64.abi, AArch64.argRegs]
     sig_and_intros
     all_goals first
       | decide
@@ -284,7 +284,7 @@ theorem crypt_implies : cryptAArch64.Implies (Spec.Camellia.Prepared.cryptContra
       | (rw [size_eq, slots_eq]; decide)
 
 theorem crypt_verified :
-    Verified AArch64.target cryptPrepared (Spec.Camellia.Prepared.cryptContract layout AArch64.abi) :=
+    Verified AArch64.target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout AArch64.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.AArch64

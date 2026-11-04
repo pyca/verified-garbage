@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
-public import VerifiedGarbage.Spec.Camellia.Prepared
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # Camellia's batches under prepared subkeys, on x86-64
 
-`vg_camellia_crypt_prepared` (`Spec/Camellia/Prepared.lean`): ECB's eight
+`vg_camellia_crypt_prepared` (`Proof/Camellia/Prepared.lean`): ECB's eight
 blocks (`Ecb.lean`) as a function of the working space, for the modes,
 which call it (`Ctr.lean`).
 
@@ -62,17 +62,6 @@ def preparedWord (rounds : Nat) (w : List (BitVec 64)) (d : Dir) (k : Nat) : Bit
   if k < keySlot then (layerMasks.find? (·.1 = k)).elim 0 (·.2)
   else keyPlane (keyEntry w (rounds / 6) d ((k - keySlot) / 8)) ((k - keySlot) % 8)
 
-/-- The masks' slots and the table's, as byte ranges. -/
-def layout : Spec.Camellia.Prepared.Layout where
-  table rounds := [(8 * evenSlot, 40), (8 * keySlot, 64 * (8 * (rounds / 6) + 2))]
-  encode rounds w d i := (preparedWord rounds w (ofSpecDir d) (i / 8)).extractLsb' (8 * (i % 8)) 8
-  buf := 8 * tailSlot
-  blocks := 8
-  prepScratch := [(0, 8 * slots)]
-  cryptScratch := [(0, 8 * evenSlot), (8 * (m3Slot + 1), 8 * (keySlot - m3Slot - 1)),
-    (8 * endSlot, 8), (8 * savedSlot, 8 * (tailSlot + 16 - savedSlot))]
-  size := 8 * slots
-
 /-! ## The call -/
 
 /-- A call of `vg_camellia_crypt_prepared` on the working space at `sb`, of
@@ -83,7 +72,7 @@ address in `sb`. -/
 def cryptCall : Prog isa :=
   .seq (.block [movR .r12 .rdx, movR .r13 .r8, movR .r14 .rdi, movR .rsi sb,
       .movImm64 .rdx (BitVec.ofNat 64 slots)])
-    (.seq (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared)
+    (.seq (.call "vg_camellia_crypt_prepared" cryptPrepared)
       (.block [movR .rdx .r12, movR .r8 .r13, movR .rdi .r14]))
 
 end VG.Impl.Camellia.X86_64
