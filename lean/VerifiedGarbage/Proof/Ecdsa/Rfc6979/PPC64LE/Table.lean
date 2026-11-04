@@ -442,6 +442,18 @@ theorem signT_ok (hC : CurveT C T) {s : State} (h : (tabK T vs).pre s) :
       rw [tresult_eq, e₁, e₂, e₃, hu.2.2.1] at hpost'
       exact hpost'
 
+/-! ## What each curve's file decides -/
+
+/-- Decides `SizeOk` of a curve's sizes for one index. -/
+macro "size_ok" : tactic => `(tactic| exact ⟨by decide +kernel, by decide +kernel, by decide +kernel,
+  by decide +kernel, by decide +kernel, by decide +kernel⟩)
+
+/-- Decides `CBlks` of a curve's sizes for one index: the taint checks of the
+blocks the sizes have, the others absurd. -/
+macro "cblk_ok" : tactic => `(tactic| (refine ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, fun h => ?_, fun h => ?_,
+  fun h hs => ?_, fun h hs => ?_, fun h hs => ?_⟩ <;>
+  first | exact absurd h (by decide) | exact absurd hs (by decide +kernel) | exact ⟨_, by taint_decide⟩))
+
 /-! ## Constant time -/
 
 /-- Public data that agree. -/
