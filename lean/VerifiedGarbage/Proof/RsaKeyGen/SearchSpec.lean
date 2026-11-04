@@ -134,7 +134,7 @@ theorem candidateOp_close {L : Nat} {eB pB r : Rand} {rest : Rand}
 abbrev entry (L : Nat) (eB pB r : Rand) : List Nat :=
   (candidateLeak L eB pB r).length :: candidateLeak L eB pB r
 
-variable {L : Nat} {eB pB : Rand}
+variable {L : Nat} {eB pB : Rand} {remaining : Nat}
 
 theorem search_zero (r : Rand) : primeSearch L eB pB 0 r = ⟨.exhausted, 0, []⟩ := by
   rw [primeSearch]; rfl
@@ -176,5 +176,69 @@ theorem search_rejected {remaining : Nat} {r rest : Rand} (hr : remaining ≠ 0)
 theorem consume_consume (r : PrimeSearchResult) (a b : Nat) (x y : List Nat) :
     (r.consume b y).consume a x = r.consume (a + b) (x ++ y) := by
   simp only [Spec.Entropy.Result.consume, Nat.add_assoc, List.append_assoc]
+
+/-! ## What the trace says -/
+
+/-- With candidates left, the trace starts with the next candidate's entry. -/
+theorem search_trace (hr : remaining ≠ 0) (r : Rand) :
+    ∃ rest, (primeSearch L eB pB remaining r).trace = entry L eB pB r ++ rest := by
+  rw [primeSearch, ite_eq_right_of_eq_false _ _ (eq_false hr)]
+  simp only
+  split
+  · split <;> exact ⟨[], by simp⟩
+  · exact ⟨[], by simp⟩
+  · split
+    · exact ⟨_, rfl⟩
+    · exact ⟨[], by simp⟩
+  · split
+    · exact ⟨_, rfl⟩
+    · exact ⟨[], by simp⟩
+
+/-- A candidate's status, from its leak. -/
+def statusOfLeak : List Nat → Nat
+  | s :: _ => s
+  | [] => 0
+
+/-- The octets a candidate consumed, from its leak and the prime's width. -/
+def usedOfLeak (L : Nat) : List Nat → Nat
+  | [1, n] => n
+  | [2] => L
+  | 3 :: bs => bs.length
+  | _ => 0
+
+theorem status_of_leak (r : Rand) :
+    candidateStatus (candidateOp L eB pB r) = statusOfLeak (candidateLeak L eB pB r) := by
+  cases hc : candidateOp L eB pB r with
+  | none => simp [candidateLeak, candidateStatus, hc, statusOfLeak]
+  | some pr =>
+    obtain ⟨x, rest⟩ := pr
+    cases x <;> simp [candidateLeak, candidateStatus, hc, statusOfLeak]
+
+theorem used_of_leak (r : Rand) :
+    (match candidateOp L eB pB r with
+      | some (_, rest) => r.length - rest.length
+      | none => 0) = usedOfLeak L (candidateLeak L eB pB r) := by
+  cases hc : candidateOp L eB pB r with
+  | none => simp [candidateLeak, hc, usedOfLeak]
+  | some pr =>
+    obtain ⟨x, rest⟩ := pr
+    cases x with
+    | prime c => simp [candidateLeak, hc, usedOfLeak]
+    | close =>
+      obtain ⟨hd, hL⟩ := candidateOp_close hc
+      simp only [candidateLeak, hc, usedOfLeak, hd, List.length_drop]
+      omega
+    | rejected =>
+      obtain ⟨n, hn, -, hd⟩ := candidateOp_suffix hc
+      simp only [candidateLeak, hc, usedOfLeak, List.length_map, List.length_take, hd, List.length_drop]
+      omega
+
+/-- Two traces that agree start with the same entry. -/
+theorem entry_eq {l₁ l₂ r₁ r₂ : List Nat} (h : (l₁.length :: l₁) ++ r₁ = (l₂.length :: l₂) ++ r₂) :
+    l₁ = l₂ := by
+  simp only [List.cons_append, List.cons.injEq] at h
+  obtain ⟨hl, h⟩ := h
+  have := congrArg (List.take l₁.length) h
+  rwa [List.take_left' rfl, hl, List.take_left' rfl] at this
 
 end VG.Proof.RsaKeyGen.Search
