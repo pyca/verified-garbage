@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Fams
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.HashTable.PPC64LE
 public import VerifiedGarbage.Spec.MdHashTable
 public import VerifiedGarbage.Proof.HashTable.Basic
@@ -35,7 +36,7 @@ open VG.Impl.RsaPss.PPC64LE (MdFns shapeOf idxs)
 open VG.Impl.RsaOaep.PPC64LE (arg)
 open VG.Impl.MdHashTable.PPC64LE (digest)
 open VG.Proof.RsaOaep.PPC64LE (Link TabMem kR SC)
-open VG.Proof.RsaPss.PPC64LE (MdTabOK MdTabS)
+open VG.Proof.RsaPss.PPC64LE (MdTabOK MdTabS Tabs)
 open VG.Proof.HashTable (pw_ne find_name)
 
 /-- A hash function's variant. -/
@@ -173,5 +174,10 @@ theorem mdTabS_of {S : State → Addr} {s : State} {j : Nat} (hj : arg j < 2 ^ 1
     fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega) (by omega)⟩,
     fun k hk' => (hkT.sub_right (hk k hk')).symm, fun k hk' => (hST.sub_right (hk k hk')).symm, hm, hc3, hd4,
     mdTabOK_of hc hd hw⟩
+
+/-- The tables' functions for the variants `w` (of the table of `MdHash`) and
+`w'` (of the table of `Hash`). -/
+def tabsOf (vs : List MVar) (gs : List HashTable.PPC64LE.TVar) (w : MVar) (w' : HashTable.PPC64LE.TVar) : Tabs :=
+  ⟨w'.H, HashTable.PPC64LE.fnsOf gs, w.H, w.F.cn, w.F.cc, digName w, digest w.F.P, fnsOf vs⟩
 
 end VG.Proof.MdHashTable.PPC64LE

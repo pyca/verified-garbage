@@ -28,16 +28,10 @@ namespace VG.Proof.RsaPss.PPC64LE
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE
 open VG.Proof.RsaOaep.PPC64LE (TabS)
 open VG.Proof.HashTable.PPC64LE (TVar)
-open VG.Proof.MdHashTable.PPC64LE (MVar digName)
+open VG.Proof.MdHashTable.PPC64LE (MVar digName tabsOf)
 
 section
 variable {vs : List MVar} {gs : List TVar}
-
-/-- The tables' functions for the variants `w` (of the table `hash`) and `w'`
-(of the table `mgf1`). -/
-def tabsOf (vs : List MVar) (gs : List TVar) (w : MVar) (w' : TVar) : Tabs :=
-  ⟨w'.H, HashTable.PPC64LE.fnsOf gs, w.H, w.F.cn, w.F.cc, digName w, Impl.MdHashTable.PPC64LE.digest w.F.P,
-    MdHashTable.PPC64LE.fnsOf vs⟩
 
 /-- The tables of a state meeting the precondition: one of `vs`' and one of
 `gs`', with what the proofs need of them. -/
