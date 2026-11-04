@@ -6,13 +6,15 @@
 //! signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]), as
 //! in `key.sign::<Sha256>(message)`. On x86-64, every curve signs with every
-//! hash function with HMAC: MD5, SHA-1 and the SHA-2 family. Each signature
+//! hash function with HMAC: MD5, SHA-1 and the SHA-2 family; on 64-bit
+//! RISC-V, with SHA-1 and the SHA-2 family. Each signature
 //! is one call of verified code for the curve, `vg_ecdsa_<curve>_sign`
 //! (contract `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which
-//! takes the hash function as a table of its functions (`x86_64`): the table
+//! takes the hash function as a table of its functions (`x86_64`,
+//! `riscv64`): the table
 //! of the implementation of the hash function that this CPU runs, and the
-//! variant of the curve's multiplications it runs (`_adx`, on CPUs with the
-//! features its `_FEATURES` constant names). Elsewhere, a curve signs with
+//! variant of the curve's multiplications it runs (`_adx`, on x86-64 CPUs
+//! with the features its `_FEATURES` constant names). Elsewhere, a curve signs with
 //! the hash functions it has verified code for, one function for the curve
 //! and the hash function (`vg_ecdsa_<curve>_<hash>_sign`, contract
 //! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`): for P-192, SHA-256; for
@@ -59,6 +61,7 @@ mod p224;
 mod p256;
 mod p384;
 mod p521;
+mod riscv64;
 mod secp256k1;
 mod x86_64;
 
@@ -85,7 +88,8 @@ mod sealed {
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over
 /// the curve `C`: on x86-64, every hash function with HMAC (MD5, SHA-1 and
-/// the SHA-2 family); elsewhere, for P-192,
+/// the SHA-2 family); on 64-bit RISC-V, SHA-1 and the SHA-2 family;
+/// elsewhere, for P-192,
 /// [`Sha256`](crate::hashes::sha256::Sha256); for P-224,
 /// [`Sha224`](crate::hashes::sha224::Sha224); for P-256, `Sha256` and
 /// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for

@@ -13,13 +13,13 @@
 use verified_garbage::ecdsa::{Error, P521, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha512::Sha512;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use verified_garbage::hashes::sha1::Sha1;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use verified_garbage::hashes::sha224::Sha224;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use verified_garbage::hashes::sha256::Sha256;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use verified_garbage::hashes::sha384::Sha384;
 
 use super::{Signatures, add};
@@ -106,7 +106,7 @@ fn p521_keys() {
 }
 
 /// The signatures with SHA-1, which the curve signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 #[test]
 fn p521_sha1() {
     super::sign_with::<P521, Sha1, 66, 133, 132>(
@@ -116,7 +116,7 @@ fn p521_sha1() {
 }
 
 /// The signatures with SHA-224, which the curve signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 #[test]
 fn p521_sha224() {
     super::sign_with::<P521, Sha224, 66, 133, 132>(
@@ -126,7 +126,7 @@ fn p521_sha224() {
 }
 
 /// The signatures with SHA-256, which the curve signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 #[test]
 fn p521_sha256() {
     super::sign_with::<P521, Sha256, 66, 133, 132>(
@@ -136,7 +136,7 @@ fn p521_sha256() {
 }
 
 /// The signatures with SHA-384, which the curve signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 #[test]
 fn p521_sha384() {
     super::sign_with::<P521, Sha384, 66, 133, 132>(

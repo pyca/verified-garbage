@@ -1,7 +1,8 @@
 //! ECDSA over secp256k1: deterministic signatures with HMAC-SHA-256
-//! (`vg_ecdsa_secp256k1_sha256_sign`), or, on x86-64, with HMAC over any hash
-//! function with HMAC, taken as a table (`vg_ecdsa_secp256k1_sign`,
-//! [`super::x86_64`]), public keys (`vg_ec_secp256k1_public_key`), and
+//! (`vg_ecdsa_secp256k1_sha256_sign`), or, on x86-64 and 64-bit RISC-V, with
+//! HMAC over any hash function with HMAC that the target has a table of,
+//! taken as a table (`vg_ecdsa_secp256k1_sign`, [`super::x86_64`],
+//! [`super::riscv64`]), public keys (`vg_ec_secp256k1_public_key`), and
 //! verification (`vg_ecdsa_secp256k1_verify`), and their `_umaal` variants on
 //! ARMv7 CPUs with the features their `_FEATURES` constants name.
 
@@ -14,15 +15,17 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "riscv64")]
+use super::riscv64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{Error, Secp256k1, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign;
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_sha2;
@@ -32,9 +35,9 @@ use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_shani;
 use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::secp256k1::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::hashes::sha256::{Sha256, Sha256Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<Secp256k1> {
@@ -72,7 +75,7 @@ fn verify_e(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), Erro
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 impl sealed::Functions<Secp256k1> for Sha256 {
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let f = detected();
@@ -108,10 +111,10 @@ impl sealed::Functions<Secp256k1> for Sha256 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 impl SignatureHash<Secp256k1> for Sha256 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 impl<H: TableHash> sealed::Functions<Secp256k1> for H {
     fn sign(d: &[u8; 32], digest: &H::Output) -> Result<[u8; 64], Error> {
         let f = detected();
@@ -130,5 +133,5 @@ impl<H: TableHash> sealed::Functions<Secp256k1> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 impl<H: TableHash> SignatureHash<Secp256k1> for H {}

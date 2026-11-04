@@ -1,10 +1,10 @@
 //! ECDSA over brainpoolP512r1: deterministic signatures with HMAC-SHA-512
-//! (`vg_ecdsa_brainpoolp512r1_sha512_sign`), or, on x86-64, with HMAC over
-//! any hash function with HMAC, taken as a table
-//! (`vg_ecdsa_brainpoolp512r1_sign`, [`super::x86_64`]), public keys
-//! (`vg_ec_brainpoolp512r1_public_key`), and verification
-//! (`vg_ecdsa_brainpoolp512r1_verify`), and their `_umaal` variants on ARMv7
-//! CPUs with the features their `_FEATURES` constants name.
+//! (`vg_ecdsa_brainpoolp512r1_sha512_sign`), or, on x86-64 and 64-bit RISC-V,
+//! with HMAC over any hash function with HMAC that the target has a table of,
+//! taken as a table (`vg_ecdsa_brainpoolp512r1_sign`, [`super::x86_64`],
+//! [`super::riscv64`]), public keys (`vg_ec_brainpoolp512r1_public_key`), and
+//! verification (`vg_ecdsa_brainpoolp512r1_verify`), and their `_umaal`
+//! variants on ARMv7 CPUs with the features their `_FEATURES` constants name.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,15 +15,17 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "riscv64")]
+use super::riscv64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_sha3;
@@ -31,9 +33,9 @@ use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_s
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::brainpoolp512r1::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::hashes::sha512::{Sha512, Sha512Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP512r1> {
@@ -73,7 +75,7 @@ fn verify_e(q: &[u8; 129], e: &[u8; 64], signature: &[u8; 128]) -> Result<(), Er
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         let f = detected();
@@ -107,10 +109,10 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 impl SignatureHash<BrainpoolP512r1> for Sha512 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 impl<H: TableHash> sealed::Functions<BrainpoolP512r1> for H {
     fn sign(d: &[u8; 64], digest: &H::Output) -> Result<[u8; 128], Error> {
         let f = detected();
@@ -129,5 +131,5 @@ impl<H: TableHash> sealed::Functions<BrainpoolP512r1> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 impl<H: TableHash> SignatureHash<BrainpoolP512r1> for H {}

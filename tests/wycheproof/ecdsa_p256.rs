@@ -17,7 +17,7 @@
 
 use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation};
@@ -30,7 +30,7 @@ fn ecdsa_secp256r1_sha256_p1363_test() {
     check::<Sha256>("ecdsa_secp256r1_sha256_p1363_test.json", "SHA-256");
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 #[test]
 fn ecdsa_secp256r1_sha512_p1363_test() {
     require_vectors!();
