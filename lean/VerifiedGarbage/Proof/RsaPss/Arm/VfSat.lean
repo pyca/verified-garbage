@@ -100,7 +100,7 @@ theorem verify_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Stat
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | assumption
+    | with_reducible assumption
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (simp only [Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords,
         Spec.Rsa.modulusWords]; decide)

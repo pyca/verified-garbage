@@ -1,5 +1,7 @@
 module
 
+-- separate module: the contract of the tables' own function, for any caller of a table of `MdHash`, not RSASSA-PSS's alone
+
 public import VerifiedGarbage.Impl.MdHashTable.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
 public import VerifiedGarbage.TCB.Arm.Target

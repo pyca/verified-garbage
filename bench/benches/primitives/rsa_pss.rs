@@ -50,14 +50,7 @@ pub const USES: &[&str] = &[
 /// takes its salt from a fixed tape (`sign` but for `getrandom`); OpenSSL and
 /// aws-lc-rs draw a fresh one per signature. Signatures are randomized, so
 /// aws-lc-rs and verified-garbage verify each other's.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -276,12 +269,5 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-)))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 pub fn bench(_: &mut Criterion) {}
