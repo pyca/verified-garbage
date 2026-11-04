@@ -60,7 +60,7 @@ structure Rfc where
   hn₁ : c.wide = false → c.n < 2 ^ (32 * k)
   hn₂ : c.wide = false → 2 ^ (32 * k) < 2 * c.n
   /-- If `wide`: P-521's sizes, with SHA-512's. -/
-  hW : c.wide = true → c.H.D = 64 ∧ c.len = 66 ∧ Spec.Ecdsa.nBits R.E.curve = 521
+  hW : c.wide = true → c.D = 64 ∧ c.len = 66 ∧ Spec.Ecdsa.nBits R.E.curve = 521
   hT : 1 ≤ c.tries
   hT' : c.tries < 2 ^ 15
 
@@ -72,11 +72,11 @@ abbrev Hf (P : Rfc) : Spec.Hmac.HashFunction := P.K.hH.SH.H
 /-- The number of `V`s in a candidate. -/
 abbrev nb (P : Rfc) : Nat := if P.c.wide then 2 else 1
 
-theorem hcD (P : Rfc) : P.c.H.D = P.I.hashLen := by rw [P.hcH, P.hD]; rfl
+theorem hcD (P : Rfc) : P.c.D = P.I.hashLen := by rw [P.hcH, P.hD]; rfl
 
 /-- Unless `wide`, the scalars are no longer than the hash. -/
 theorem hQD (P : Rfc) (hw : P.c.wide = false) : P.c.len ≤ P.I.hashLen := by
-  have h : ¬ P.c.H.D < P.c.len := of_decide_eq_false hw
+  have h : ¬ P.c.D < P.c.len := of_decide_eq_false hw
   rw [← P.hcD]; omega
 
 theorem hsh (P : Rfc) (hw : P.c.wide = true) : P.c.sh = 7 := by

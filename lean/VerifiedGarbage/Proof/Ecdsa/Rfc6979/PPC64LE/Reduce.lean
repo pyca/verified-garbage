@@ -292,7 +292,7 @@ theorem sel_val (x d : BitVec 32) (p : Prop) [Decidable p] :
     rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.and_zero, BitVec.xor_zero, lo32_ext]
 
 theorem selDigit_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16)
-    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk)
+    (hql : c.len = L.q) (hcD : c.D = dn) (hq : L.HOk)
     {M : Mem} {j : Nat} (hj : j < k) {u : State} (h : SelInv c.n k L g lr m₀ M j u) :
     WP isa (.block (c.selDigit j)) u (SelInv c.n k L g lr m₀ M (j + 1)) := by
   have hnB := hL.nB
@@ -341,7 +341,7 @@ theorem selDigit_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 :
   · rw [hm, Mem.readW_writeW_sep (fr_sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]; exact h.d i hi
 
 theorem sels_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16)
-    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk) {M : Mem} :
+    (hql : c.len = L.q) (hcD : c.D = dn) (hq : L.HOk) {M : Mem} :
     ∀ i ≤ k, ∀ u, SelInv c.n k L g lr m₀ M 0 u →
       WP isa (.block ((List.range i).flatMap c.selDigit)) u (SelInv c.n k L g lr m₀ M i)
   | 0, _, u, h => wp_nil h
@@ -358,7 +358,7 @@ theorem mask_val {c : BitVec 64} (h : c.toNat ≤ 1) :
 
 /-- `h`: the digest modulo `n`, big-endian in the frame at `h`'s place. -/
 theorem reduce_ok (hL : L.Ok) {c : Cfg} {k : Nat} (hk : c.len = 4 * k) (hk16 : k ≤ 16) (hdn : 4 * k ≤ dn)
-    (hql : c.len = L.q) (hcD : c.H.D = dn) (hq : L.HOk)
+    (hql : c.len = L.q) (hcD : c.D = dn) (hq : L.HOk)
     (hn₁ : c.n < 2 ^ (32 * k)) (hn₂ : 2 ^ (32 * k) < 2 * c.n) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa (.block c.reduce) t fun t' => Ctx L g lr m₀ t' ∧ Frame (HW L) t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 (96 + L.ho)) (4 * k)) =

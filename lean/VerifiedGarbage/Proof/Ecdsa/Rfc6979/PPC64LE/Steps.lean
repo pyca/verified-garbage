@@ -158,7 +158,7 @@ theorem msgFull_ok (P : Kit) (hL : L.Ok) (hcD : P.H.D = dn) (hn : L.wide = false
     rw [hmu]; simp only [List.append_assoc]
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
-theorem rekeyFull_ok (P : Kit) {c : Cfg} (hcH : c.H = P.hm) (hcl : c.len = L.q) (hcD : c.H.D = dn) (hL : L.Ok)
+theorem rekeyFull_ok (P : Kit) {c : Cfg} (hcH : c.H = P.hm) (hcl : c.len = L.q) (hcD : c.D = dn) (hL : L.Ok)
     (hq : L.HFar) (hn : L.wide = false → L.HOk ∧ L.q % 4 = 0) (hw : L.wide = true → L.q ≤ 66) {t : State}
     (hc : Ctx L g lr m₀ t) {b : Nat} (hb : b < 2) :
     WP isa (c.rekeyFull b) t (Rekeyed P L g lr m₀ t

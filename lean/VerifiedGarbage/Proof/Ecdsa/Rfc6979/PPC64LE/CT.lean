@@ -362,11 +362,11 @@ abbrev msgRegs (wide : Bool) : List Reg := if wide then [.r7, .r9, .r10, .r11] e
 `V` kept, and the candidate's next eight bytes; and the conversions, from
 `scratch` in `r3`. -/
 structure WideBlks (c : Cfg) : Prop where
-  dig : TaintOk [.r9, .r11] (([.li .r8 0, .store .d .r8 .r11 (fX + c.H.D)] : List Instr) ++
-    Cfg.copyW (c.H.D / 4) .r9 0 .r11 fX)
-  conv₁ : TaintOk [.r3] (c.convBody fX (8 * (c.len - c.H.D) - c.sh))
+  dig : TaintOk [.r9, .r11] (([.li .r8 0, .store .d .r8 .r11 (fX + c.D)] : List Instr) ++
+    Cfg.copyW (c.D / 4) .r9 0 .r11 fX)
+  conv₁ : TaintOk [.r3] (c.convBody fX (8 * (c.len - c.D) - c.sh))
   keep : TaintOk [] c.keepV
-  top : TaintOk [] [.addSp .r11 0, .load .d .r8 .r11 fV, .store .d .r8 .r11 (fKb + c.H.D)]
+  top : TaintOk [] [.addSp .r11 0, .load .d .r8 .r11 fV, .store .d .r8 .r11 (fKb + c.D)]
   conv₂ : TaintOk [.r3] (c.convBody fKb c.sh)
 
 /-- The blocks that depend on the instance's sizes, each of which addresses
@@ -711,10 +711,10 @@ theorem reduce_split (c : Cfg) :
   congr 1
 
 theorem coreDigest_split (c : Cfg) :
-    (([.addSp .r11 0, .load .d .r9 .r11 fDigest, .li .r8 0, .store .d .r8 .r11 (fX + c.H.D)] : List Instr) ++
-      Cfg.copyW (c.H.D / 4) .r9 0 .r11 fX) =
+    (([.addSp .r11 0, .load .d .r9 .r11 fDigest, .li .r8 0, .store .d .r8 .r11 (fX + c.D)] : List Instr) ++
+      Cfg.copyW (c.D / 4) .r9 0 .r11 fX) =
     ([.addSp .r11 0, .load .d .r9 .r11 fDigest] : List Instr) ++
-      (([.li .r8 0, .store .d .r8 .r11 (fX + c.H.D)] : List Instr) ++ Cfg.copyW (c.H.D / 4) .r9 0 .r11 fX) := rfl
+      (([.li .r8 0, .store .d .r8 .r11 (fX + c.D)] : List Instr) ++ Cfg.copyW (c.D / 4) .r9 0 .r11 fX) := rfl
 
 /-- `h`, or the digest for `core`, and `K` and `V`. -/
 theorem start_ct (B : Blks P.K P.c) {Φ : Pred P} : RelCT isa (Two P Φ) P.c.start fun _ _ => True := by

@@ -160,10 +160,10 @@ theorem shift_mul (e : Nat) : (e * 2 ^ (8 * 2)) >>> 9 = e * 2 ^ 7 := by
 
 /-- The digest (from `digest`, loaded into `r9`) and a zero word after it, in
 the frame's top bytes. -/
-theorem dig_ok (hL : L.Ok) {c : Cfg} (hcD : c.H.D = 64) (he : L.e = 144) (hdn : 64 ≤ dn) {t : State}
+theorem dig_ok (hL : L.Ok) {c : Cfg} (hcD : c.D = 64) (he : L.e = 144) (hdn : 64 ≤ dn) {t : State}
     (hc : Ctx L g lr m₀ t) :
-    WP isa (.block (([.addSp .r11 0, .load .d .r9 .r11 fDigest, .li .r8 0, .store .d .r8 .r11 (fX + c.H.D)] :
-      List Instr) ++ Cfg.copyW (c.H.D / 4) .r9 0 .r11 fX)) t fun u => Ctx L g lr m₀ u ∧
+    WP isa (.block (([.addSp .r11 0, .load .d .r9 .r11 fDigest, .li .r8 0, .store .d .r8 .r11 (fX + c.D)] :
+      List Instr) ++ Cfg.copyW (c.D / 4) .r9 0 .r11 fX)) t fun u => Ctx L g lr m₀ u ∧
       Frame [⟨L.B + BitVec.ofNat 64 352, 72⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 352) 66 =
         Spec.Sha256.bytesAt t.mem L.dg 64 ++ List.replicate 2 0 := by
@@ -222,7 +222,7 @@ theorem dig_ok (hL : L.Ok) {c : Cfg} (hcD : c.H.D = 64) (he : L.e = 144) (hdn : 
 
 /-- The digest for `core`: the digest's number shifted left by `sh` bits, in
 `Q` bytes in the frame's top bytes. -/
-theorem coreDigest_ok (hL : L.Ok) {c : Cfg} (hcl : c.len = 66) (hcD : c.H.D = 64) (hcw : c.w = 9) (hsh : c.sh = 7)
+theorem coreDigest_ok (hL : L.Ok) {c : Cfg} (hcl : c.len = 66) (hcD : c.D = 64) (hcw : c.w = 9) (hsh : c.sh = 7)
     (he : L.e = 144) (hdn : 64 ≤ dn) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa c.coreDigest t fun t' => Ctx L g lr m₀ t' ∧
       Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 352, 72⟩] t.mem t'.mem ∧
@@ -259,7 +259,7 @@ theorem ldScr_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
 /-! ## The candidate -/
 
 /-- `V`'s `D` bytes to the candidate's place. -/
-theorem keepV_ok (hL : L.Ok) {c : Cfg} (hcD : c.H.D = 64) (he : L.e = 144) {t : State} (hc : Ctx L g lr m₀ t) :
+theorem keepV_ok (hL : L.Ok) {c : Cfg} (hcD : c.D = 64) (he : L.e = 144) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa (.block c.keepV) t fun u => Ctx L g lr m₀ u ∧ Kp wideRegs t u ∧
       Frame [⟨L.B + BitVec.ofNat 64 424, 64⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 424) 64 =
@@ -283,8 +283,8 @@ theorem keepV_ok (hL : L.Ok) {c : Cfg} (hcD : c.H.D = 64) (he : L.e = 144) {t : 
     (k₁.mono).trans (k₂.mono), f₂, v₂⟩
 
 /-- The candidate's next eight bytes, from `V`. -/
-theorem top_ok (hL : L.Ok) {c : Cfg} (hcD : c.H.D = 64) (he : L.e = 144) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block [.addSp .r11 0, .load .d .r8 .r11 fV, .store .d .r8 .r11 (fKb + c.H.D)]) t fun u =>
+theorem top_ok (hL : L.Ok) {c : Cfg} (hcD : c.D = 64) (he : L.e = 144) {t : State} (hc : Ctx L g lr m₀ t) :
+    WP isa (.block [.addSp .r11 0, .load .d .r8 .r11 fV, .store .d .r8 .r11 (fKb + c.D)]) t fun u =>
       Ctx L g lr m₀ u ∧ Kp wideRegs t u ∧ Frame [⟨L.B + BitVec.ofNat 64 488, 8⟩] t.mem u.mem ∧
       u.mem = t.mem.writeW (L.B + BitVec.ofNat 64 488) (t.mem.readW (L.B + BitVec.ofNat 64 192) 64) := by
   have nB := hL.nB
@@ -316,7 +316,7 @@ theorem kvw_cww : ∀ r ∈ kvW L, ∃ r' ∈ CWW L, Region.Sub r r' := fun r hr
 /-- Two `V`s to a candidate: `V = HMAC_K(V)`, kept in the frame's top
 bytes, then `V = HMAC_K(V)` again, its first word after it, and the
 candidate's `Q` bytes shifted right by `sh` bits. -/
-theorem candW_ok (P : Kit) {c : Cfg} (hcH : c.H = P.hm) (hW : c.wide = true) (hcl : c.len = 66) (hcD : c.H.D = 64)
+theorem candW_ok (P : Kit) {c : Cfg} (hcH : c.H = P.hm) (hW : c.wide = true) (hcl : c.len = 66) (hcD : c.D = 64)
     (hcw : c.w = 9) (hsh : c.sh = 7) (he : L.e = 144) (hq : L.HFar) (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa c.cand t fun u => Ctx L g lr m₀ u ∧ Frame (CWW L) t.mem u.mem ∧
       keyOf P L u.mem = keyOf P L t.mem ∧
