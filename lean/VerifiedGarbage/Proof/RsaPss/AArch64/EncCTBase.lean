@@ -49,6 +49,8 @@ structure PubE (a s : State) : Prop where
   g : ∀ r ∈ argRegs, s.gpr r = a.gpr r
   sa : ∀ j < 2, stackArg s j = stackArg a j
 
+theorem PubE.refl (s : State) : PubE s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl⟩
+
 /-- An entry state with the anchor's public data, whose tables name `T`'s
 functions at the anchor's addresses. -/
 def E (T : Tabs) (a s : State) : Prop :=

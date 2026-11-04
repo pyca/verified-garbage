@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.EncContract
+public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # EMSA-PSS's encoding on AArch64: the precondition
 
-`PreE D tsH tsG s`: the contract's precondition (`encodeTContract`, with
-the stack `stk 288` of the frame, MGF1's frame and the hash functions'
-calls), by name (`preE_of`). The frame is that of signing (`Sgn.fb`); every argument is in a
-register.
+`PreE D tsH tsG s`: the precondition of `encode` (`encK`), with the stack
+`stk 288` of the frame, MGF1's frame and the hash functions' calls, and the
+tables `tsH` and `tsG` at the stack arguments. The frame is that of signing
+(`Sgn.fb`).
 -/
 
 @[expose] public section
@@ -35,7 +35,7 @@ abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 0) 11
 abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 5
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
 
-/-- What the code needs of `encodeTContract.pre`, by name, for the tables
+/-- What the code needs at the entry, for the tables
 `tsH` of `MdHash` and `tsG` of `Hash`. -/
 structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   sp1 : encStack ≤ s.sp.toNat
@@ -73,27 +73,6 @@ structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   b2 : (s.gpr .x5).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .x1).toNat = Spec.RsaPss.emLength (s.gpr .x5).toNat
   hs : Proof.RsaPss.encScratch ≤ (s.gpr .x7).toNat
-
-/-- The ABI the contract states, with the tables. -/
-abbrev encAbi (i : Nat) (tsH tsG : List FnTable) : Abi isa :=
-  abi.withTables (Proof.RsaPss.encodeTSig (Proof.RsaPss.hashLen i)) [("hash", tsH), ("mgf1", tsG)]
-
-theorem preE_of {i : Nat} {tsH tsG : List FnTable} {s : State}
-    (h : (Proof.RsaPss.encodeTContract i (encAbi i tsH tsG) encStack).pre s) :
-    PreE (Proof.RsaPss.hashLen i) tsH tsG s ∧ Proof.RsaPss.tabIdx s.mem (stackArg s 0) = i := by
-  have e : encStack = (frameBytes + 288 - 1) + 1 := by unfold encStack stk frameBytes; omega
-  rw [e] at h
-  sig_pre [Proof.RsaPss.encodeTContract, Proof.RsaPss.encodeTSig, Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    List.append_eq, _root_.List.range, _root_.List.range.loop] at h
-  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
-    Option.some.injEq, exists_eq_left'] at h
-  obtain ⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, ed, esa, es, etH, etG, eA, ds, sas, stH, stG, sA, ke, kd, ksa, ks,
-    ktH, ktG, kA, we, wd, wsa, ws, wtH, wtG, b1, b2, hel, hs, hidx⟩ := h
-  rw [← e] at sp1 ke kd ksa ks ktH ktG kA
-  exact ⟨⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, ed, esa, es, etH, etG, eA, ds, sas, stH, stG, sA, ke, kd, ksa, ks,
-    ktH, ktG, kA, we, wd, wsa, ws, wtH, wtG, b1, b2, hel, hs⟩, hidx⟩
 
 variable {D : Nat} {tsH tsG : List FnTable} {s : State}
 
