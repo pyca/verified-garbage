@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Sha3.X86.Permute
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the check, the entry and the leaf
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: the check, the entry and the leaf
 
 Untrusted: everything here is checked by Lean. What both functions' proofs
 need of their layouts (`Shape`): where the arguments are, and the facts

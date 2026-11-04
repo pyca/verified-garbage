@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ed25519_public_key:
+vg_ed25519_public_key_expanded:
 	push eax
 	push eax
 	push eax
@@ -69,40 +69,39 @@ vg_ed25519_public_key:
 	push eax
 	push eax
 	push eax
-	mov eax, DWORD PTR [esp+268]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	call {vg_sha512_init}
-	mov eax, DWORD PTR [esp+268]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	mov eax, 0
-	mov DWORD PTR [esp+4], eax
-	mov eax, 0
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+264]
-	add eax, 0
-	mov DWORD PTR [esp+12], eax
-	mov eax, 32
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+268]
-	add eax, 192
-	mov DWORD PTR [esp+20], eax
-	call {vg_sha512_update_scratch}
-	mov eax, DWORD PTR [esp+268]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	mov eax, 32
-	mov DWORD PTR [esp+4], eax
-	mov eax, 0
-	mov DWORD PTR [esp+8], eax
-	mov eax, esp
-	add eax, 192
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+268]
-	add eax, 192
-	mov DWORD PTR [esp+16], eax
-	call {vg_sha512_finalize_scratch}
+	mov ecx, DWORD PTR [esp+264]
+	mov eax, DWORD PTR [ecx]
+	mov DWORD PTR [esp+192], eax
+	mov eax, DWORD PTR [ecx+4]
+	mov DWORD PTR [esp+196], eax
+	mov eax, DWORD PTR [ecx+8]
+	mov DWORD PTR [esp+200], eax
+	mov eax, DWORD PTR [ecx+12]
+	mov DWORD PTR [esp+204], eax
+	mov eax, DWORD PTR [ecx+16]
+	mov DWORD PTR [esp+208], eax
+	mov eax, DWORD PTR [ecx+20]
+	mov DWORD PTR [esp+212], eax
+	mov eax, DWORD PTR [ecx+24]
+	mov DWORD PTR [esp+216], eax
+	mov eax, DWORD PTR [ecx+28]
+	mov DWORD PTR [esp+220], eax
+	mov eax, DWORD PTR [ecx+32]
+	mov DWORD PTR [esp+224], eax
+	mov eax, DWORD PTR [ecx+36]
+	mov DWORD PTR [esp+228], eax
+	mov eax, DWORD PTR [ecx+40]
+	mov DWORD PTR [esp+232], eax
+	mov eax, DWORD PTR [ecx+44]
+	mov DWORD PTR [esp+236], eax
+	mov eax, DWORD PTR [ecx+48]
+	mov DWORD PTR [esp+240], eax
+	mov eax, DWORD PTR [ecx+52]
+	mov DWORD PTR [esp+244], eax
+	mov eax, DWORD PTR [ecx+56]
+	mov DWORD PTR [esp+248], eax
+	mov eax, DWORD PTR [ecx+60]
+	mov DWORD PTR [esp+252], eax
 	mov eax, DWORD PTR [esp+192]
 	and eax, -8
 	mov DWORD PTR [esp+32], eax
@@ -311,7 +310,7 @@ vg_ed25519_public_key:
 	ret
 	.p2align 6
 
-vg_ed25519_sign_cached:
+vg_ed25519_sign_expanded:
 	push eax
 	push eax
 	push eax
@@ -376,40 +375,39 @@ vg_ed25519_sign_cached:
 	push eax
 	push eax
 	push eax
-	mov eax, DWORD PTR [esp+280]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	call {vg_sha512_init}
-	mov eax, DWORD PTR [esp+280]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	mov eax, 0
-	mov DWORD PTR [esp+4], eax
-	mov eax, 0
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+264]
-	add eax, 0
-	mov DWORD PTR [esp+12], eax
-	mov eax, 32
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+280]
-	add eax, 192
-	mov DWORD PTR [esp+20], eax
-	call {vg_sha512_update_scratch}
-	mov eax, DWORD PTR [esp+280]
-	add eax, 0
-	mov DWORD PTR [esp], eax
-	mov eax, 32
-	mov DWORD PTR [esp+4], eax
-	mov eax, 0
-	mov DWORD PTR [esp+8], eax
-	mov eax, esp
-	add eax, 192
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+280]
-	add eax, 192
-	mov DWORD PTR [esp+16], eax
-	call {vg_sha512_finalize_scratch}
+	mov ecx, DWORD PTR [esp+264]
+	mov eax, DWORD PTR [ecx]
+	mov DWORD PTR [esp+192], eax
+	mov eax, DWORD PTR [ecx+4]
+	mov DWORD PTR [esp+196], eax
+	mov eax, DWORD PTR [ecx+8]
+	mov DWORD PTR [esp+200], eax
+	mov eax, DWORD PTR [ecx+12]
+	mov DWORD PTR [esp+204], eax
+	mov eax, DWORD PTR [ecx+16]
+	mov DWORD PTR [esp+208], eax
+	mov eax, DWORD PTR [ecx+20]
+	mov DWORD PTR [esp+212], eax
+	mov eax, DWORD PTR [ecx+24]
+	mov DWORD PTR [esp+216], eax
+	mov eax, DWORD PTR [ecx+28]
+	mov DWORD PTR [esp+220], eax
+	mov eax, DWORD PTR [ecx+32]
+	mov DWORD PTR [esp+224], eax
+	mov eax, DWORD PTR [ecx+36]
+	mov DWORD PTR [esp+228], eax
+	mov eax, DWORD PTR [ecx+40]
+	mov DWORD PTR [esp+232], eax
+	mov eax, DWORD PTR [ecx+44]
+	mov DWORD PTR [esp+236], eax
+	mov eax, DWORD PTR [ecx+48]
+	mov DWORD PTR [esp+240], eax
+	mov eax, DWORD PTR [ecx+52]
+	mov DWORD PTR [esp+244], eax
+	mov eax, DWORD PTR [ecx+56]
+	mov DWORD PTR [esp+248], eax
+	mov eax, DWORD PTR [ecx+60]
+	mov DWORD PTR [esp+252], eax
 	mov eax, DWORD PTR [esp+192]
 	and eax, -8
 	mov DWORD PTR [esp+32], eax

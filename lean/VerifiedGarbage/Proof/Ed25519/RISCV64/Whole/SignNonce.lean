@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignSetup
 
 /-!
-# `vg_ed25519_sign_cached` on RISCV64: the nonce, and `R`
+# `vg_ed25519_sign_expanded` on RISCV64: the nonce, and `R`
 
 The prefix at `32(F)` and the message hashed into `128(F)`, the digest
 reduced into the nonce at `64(F)` by a call of `vg_ed25519_scalar_reduce`,
@@ -24,26 +24,28 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X2551
 open VG.Spec.Ed25519 (bytesAt)
 open VG.Impl.Ed25519.RISCV64 (combSym)
 
+variable {sl : Nat}
+
 /-- The message's bytes. -/
 abbrev msgB (s : State) : List Byte := bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat
 
 theorem msgB_length (s : State) : (msgB s).length = (s.gpr .a4).toNat := by simp [bytesAt]
 
-theorem sign_msg {s t : State} (hp : SignPre s) (h : SignInv s t) :
+theorem sign_msg {s t : State} (hp : SignPre sl s) (h : SignInv s t) :
     bytesAt t.mem (s.gpr .a3) (s.gpr .a4).toNat = msgB s :=
   sign_input h (s.gpr .a4).isLt hp.oM.symm hp.mC hp.mF hp.bM.symm
 
-theorem sign_msg_cov {s t : State} (hp : SignPre s) (h : SignInv s t) : Covers [msgR s] (t.rd ++ t.wr) :=
+theorem sign_msg_cov {s t : State} (hp : SignPre sl s) (h : SignInv s t) : Covers [msgR s] (t.rd ++ t.wr) :=
   fun a n hi => by
     obtain ⟨r, hr, hc⟩ := hi
     rw [h.rd, hp.rd]
     exact ⟨r, List.mem_append_left _ (by rw [List.mem_singleton.mp hr]; simp), hc⟩
 
 /-- The message fits beside the scratch space. -/
-theorem sign_len {s : State} (hp : SignPre s) : (s.gpr .a4).toNat + 8192 ≤ 2 ^ 64 :=
+theorem sign_len {s : State} (hp : SignPre sl s) : (s.gpr .a4).toNat + 8192 ≤ 2 ^ 64 :=
   len_add_le (Nat.le_of_lt (s.gpr .a4).isLt) (by decide) hp.mC
 
-theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre s) (h : SignInv s t) {P : List Byte}
+theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre sl s) (h : SignInv s t) {P : List Byte}
     (hP : bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 32) 32 = P) (hsy : t.syms combSym = s.syms combSym) :
     WP isa signNonce t fun t' => SignInv s t' ∧
       Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩]

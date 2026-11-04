@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# `vg_ed25519_sign_cached` on PPC64LE: the setup
+# `vg_ed25519_sign_expanded` on PPC64LE: the setup
 
-`out` in `r3`, `seed` in `r4`, `pk` in `r5`, the message in `r6` (`len` in
+`out` in `r3`, `expanded` (the seed's digest) in `r4`, `pk` in `r5`, the message in `r6` (`len` in
 `r7`), `scratch` in `r8` and the frame `F` (288 bytes) in `r9`. The setup
 saves the registers at `224(F)`, moves what lives across calls to `r20`–`r25`
 and copies `pk` to `192(F)` (`signSetup_ok`).
@@ -30,17 +30,18 @@ abbrev msgR (s : State) : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
 /-- What the body may write. -/
 abbrev signW (s : State) : List Region := [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩, below s.sp 48]
 
-/-- The precondition, by register. -/
-structure SignPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 32⟩, ⟨s.gpr .r5, 32⟩, msgR s, TBL (s.syms combSym)]
+/-- The precondition, by register, with `sn` bytes (64 here) at `r4` (the seed's digest), and
+without the public key's relation to it. -/
+structure SignPre (sn : Nat) (s : State) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, sn⟩, ⟨s.gpr .r5, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩]
-  oS : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r4, 32⟩
+  oS : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r4, sn⟩
   oP : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r5, 32⟩
   oM : Region.Disjoint ⟨s.gpr .r3, 64⟩ (msgR s)
   oC : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r8, 8192⟩
   oF : Region.Disjoint ⟨s.gpr .r3, 64⟩ ⟨s.gpr .r9, 288⟩
-  sC : Region.Disjoint ⟨s.gpr .r4, 32⟩ ⟨s.gpr .r8, 8192⟩
-  sF : Region.Disjoint ⟨s.gpr .r4, 32⟩ ⟨s.gpr .r9, 288⟩
+  sC : Region.Disjoint ⟨s.gpr .r4, sn⟩ ⟨s.gpr .r8, 8192⟩
+  sF : Region.Disjoint ⟨s.gpr .r4, sn⟩ ⟨s.gpr .r9, 288⟩
   pC : Region.Disjoint ⟨s.gpr .r5, 32⟩ ⟨s.gpr .r8, 8192⟩
   pF : Region.Disjoint ⟨s.gpr .r5, 32⟩ ⟨s.gpr .r9, 288⟩
   mC : Region.Disjoint (msgR s) ⟨s.gpr .r8, 8192⟩
@@ -48,12 +49,11 @@ structure SignPre (s : State) : Prop where
   cF : Region.Disjoint ⟨s.gpr .r8, 8192⟩ ⟨s.gpr .r9, 288⟩
   sp : 48 ≤ s.sp.toNat
   bO : (below s.sp 48).Disjoint ⟨s.gpr .r3, 64⟩
-  bS : (below s.sp 48).Disjoint ⟨s.gpr .r4, 32⟩
+  bS : (below s.sp 48).Disjoint ⟨s.gpr .r4, sn⟩
   bP : (below s.sp 48).Disjoint ⟨s.gpr .r5, 32⟩
   bM : (below s.sp 48).Disjoint (msgR s)
   bC : (below s.sp 48).Disjoint ⟨s.gpr .r8, 8192⟩
   bF : (below s.sp 48).Disjoint ⟨s.gpr .r9, 288⟩
-  pk : bytesAt s.mem (s.gpr .r5) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .r4) 32)
   tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
   words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
   tW : ∀ r ∈ signW s, (TBL (s.syms combSym)).Disjoint r
@@ -68,7 +68,7 @@ abbrev SignInv (s : State) : State → Prop := Inv s (s.gpr .r9) 224 signRegs (s
 theorem signRegs_pres : ∀ r ∈ signRegs, r ∈ preserved := by decide
 
 /-- The slots are apart from everything but the frame's first 224 bytes. -/
-theorem sign_slot {s : State} (hp : SignPre s) :
+theorem sign_slot {sn : Nat} {s : State} (hp : SignPre sn s) :
     (slotArea (s.gpr .r9) 224 signRegs).Disjoint ⟨s.gpr .r3, 64⟩ ∧
     (slotArea (s.gpr .r9) 224 signRegs).Disjoint ⟨s.gpr .r8, 8192⟩ ∧
     (slotArea (s.gpr .r9) 224 signRegs).Disjoint (below s.sp 48) ∧
@@ -85,7 +85,7 @@ theorem signV_r24 (s : State) : signV s .r24 = s.gpr .r8 := rfl
 theorem signV_r25 (s : State) : signV s .r25 = s.gpr .r9 := rfl
 
 /-- The setup: the registers saved, the pointers moved to `r20`–`r25`, `pk` copied to `192(F)`. -/
-theorem signSetup_ok {s : State} (hp : SignPre s) :
+theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
     WP isa (.block signSetup) s fun t => SignInv s t ∧
       bytesAt t.mem (s.gpr .r9 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .r5) 32 := by
   have hF : (⟨s.gpr .r9, 288⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
@@ -165,7 +165,7 @@ def SignWr (s : State) (r : Region) : Prop :=
   r = ⟨s.gpr .r8, 8192⟩ ∨ r = below s.sp 48 ∨ r = ⟨s.gpr .r3, 64⟩ ∨ r = ⟨s.gpr .r3 + BitVec.ofNat 64 32, 32⟩ ∨
     r = ⟨s.gpr .r3, 32⟩ ∨ ∃ d n, d + n ≤ 224 ∧ r = ⟨s.gpr .r9 + BitVec.ofNat 64 d, n⟩
 
-theorem signStep {s t t' : State} (hp : SignPre s) (h : SignInv s t) (hrd : t'.rd = t.rd)
+theorem signStep {sn : Nat} {s t t' : State} (hp : SignPre sn s) (h : SignInv s t) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {Wc : List Region}
     (hf : Frame Wc t.mem t'.mem) (hW : ∀ r ∈ Wc, SignWr s r) : SignInv s t' := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := sign_slot hp

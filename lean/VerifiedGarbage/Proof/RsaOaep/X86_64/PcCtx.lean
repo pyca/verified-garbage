@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Tables
-public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -11,8 +11,9 @@ parameter/public-key algebraic check made by `verifyBytes`; it does not
 establish primality. The prevalidated verifier still returns exactly
 `verifyBytes`, including signature rejection and digest handling.
 
-These contracts do not change the existing fully checked verification API.
-A caller of the new verifier must establish validation for the exact bytes
+There is no fully checked verification function: `verifyContract`
+(`SignVerify.lean`) is what the prevalidated verifier returns. A caller of
+the prevalidated verifier must establish validation for the exact bytes
 it passes, and keep those bytes unchanged. Signature and digest bytes retain
 the existing leakage policy; only the public key and result are declassified.
 -/
@@ -85,9 +86,12 @@ def verifyPrevalidatedApi : Api where
   sig := verifySig
   writeArgs := true
   contracts := some fun A stack => verifyPrevalidatedContract A stack
-  summary := "DSA verification with the same result as vg_dsa_verify, for an already validated \
-    packed public key. Signature scalars and digest handling retain the fully checked API's \
-    behavior. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. \
+  summary := "DSA verification of a prehashed digest, for an already validated packed public \
+    key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key \
+    validates it). The signature is r||s with q_len bytes each. Returns 1 if verification \
+    succeeds, otherwise 0: the result of fully checked verification (\
+    `VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling \
+    it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. \
     Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`."
   safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "key_len must be 3*p_len + q_len; signature_len must be 2*q_len.",

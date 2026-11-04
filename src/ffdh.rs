@@ -331,7 +331,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Parameters, PrivateKey, PublicKey, zeroize};
     use alloc::{format, vec};
     fn composite_domain() -> Parameters {
         // Modulus 2^512-1, generator 2^128: g^4=1 and g^2!=1.

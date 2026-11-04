@@ -300,6 +300,16 @@ def setup : List Instr :=
   [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535] ++
   (List.range 28).flatMap decodeLimb ++ initSlots
 
+/-- Limb `i` of the base point's u-coordinate, 5, into `X1` and `X3`. -/
+def fiveLimb (i : Nat) : List Instr :=
+  [.mov .r3 (.imm (if i = 0 then 5 else 0)), st .r3 (X1 + 4 * i), st .r3 (X3 + 4 * i)]
+
+/-- `setup` for the base point: its u-coordinate, 5, written instead of read. -/
+def setupBase : List Instr :=
+  (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
+  [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535] ++
+  (List.range 28).flatMap fiveLimb ++ initSlots
+
 /-- Add `1 + 2^224`, then select the carried result when the carry is one. -/
 def freeze : List Instr :=
   copy TMP X2 ++ [0, 14].flatMap (fun i =>
@@ -317,7 +327,14 @@ def finish : Prog isa :=
   .seq (Op.code (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++
     .mov .lr (.reg .r10) :: (List.range 8).map fun i => ld (saved[i]!) (4 * i)))
 
-def x448 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert finish
+/-- What follows the setup. -/
+def afterSetup : Prog isa := .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert finish
+
+def x448 : Prog isa := .seq (.block setup) afterSetup
+
+/-- `vg_x448_base(out = r0, scalar = r1, scratch = r2)`: the working space into
+`r3`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
+written instead of read (`setupBase`). -/
+def x448Base : Prog isa := .seq (.block ([.mov .r3 (.reg .r2)] ++ setupBase)) afterSetup
 
 end VG.Impl.X448.Arm

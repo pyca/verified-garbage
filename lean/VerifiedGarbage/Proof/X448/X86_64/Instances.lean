@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Verified
 /-!
 # X448 on x86-64, with each Curve448 field backend
 
-`vg_x448`'s code and its proof for each backend of the field
+`vg_x448`'s and `vg_x448_base`'s code and their proofs for each backend of the field
 (`FieldVariant`), which `Generic/Curve448Field/X86_64/X448.lean` registers.
 -/
 
@@ -25,5 +25,16 @@ theorem code_verified (v : Impl.Ed448.X86_64.FieldVariant) :
   cases v
   · exact x448_verified
   · exact x448Adx_verified
+
+/-- `vg_x448_base`'s code with the field backend `v`. -/
+def codeBase : Impl.Ed448.X86_64.FieldVariant → Prog X86_64.isa
+  | .scalar => Impl.X448.X86_64.x448Base
+  | .adx => Impl.X448.X86_64.x448BaseAdx
+
+theorem codeBase_verified (v : Impl.Ed448.X86_64.FieldVariant) :
+    Verified X86_64.target (codeBase v) (Spec.X448.x448BaseContract X86_64.abi 8) := by
+  cases v
+  · exact x448Base_verified
+  · exact x448BaseAdx_verified
 
 end VG.Proof.X448.X86_64

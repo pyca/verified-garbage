@@ -22,6 +22,7 @@ contain the permutation's (`Proof/Sha3/RISCV64/Lit.lean`).
 namespace VG.Proof.Sha3.RISCV64.Stream
 
 materialize_code absorb := Impl.Sha3.RISCV64.Stream.absorb
+materialize_code absorbWs := Impl.Sha3.RISCV64.Stream.absorbWs
 materialize_code pad := Impl.Sha3.RISCV64.Stream.pad
 materialize_code squeeze := Impl.Sha3.RISCV64.Stream.squeeze
 

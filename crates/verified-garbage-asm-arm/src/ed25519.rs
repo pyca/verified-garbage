@@ -3,19 +3,20 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push {{lr}}
 push {{r12}}
@@ -27,37 +28,41 @@ add r12, sp, #248
 str r1, [r12, #4]
 add r12, sp, #248
 str r2, [r12, #8]
-ldr r0, [sp, #256]
-add r0, r0, #0
-bl {vg_sha512_init}
-ldr r0, [sp, #252]
-add r0, r0, #0
-add r12, sp, #0
-str r0, [r12, #0]
-movw r0, #32
-add r12, sp, #4
-str r0, [r12, #0]
-ldr r0, [sp, #256]
-add r0, r0, #192
-add r12, sp, #8
-str r0, [r12, #0]
-ldr r0, [sp, #256]
-add r0, r0, #0
-movw r2, #0
-movw r3, #0
-bl {vg_sha512_update_scratch}
-add r0, sp, #184
-add r12, sp, #0
-str r0, [r12, #0]
-ldr r0, [sp, #256]
-add r0, r0, #192
-add r12, sp, #4
-str r0, [r12, #0]
-ldr r0, [sp, #256]
-add r0, r0, #0
-movw r2, #32
-movw r3, #0
-bl {vg_sha512_finalize_scratch}
+ldr r1, [sp, #252]
+add r1, r1, #0
+add r2, sp, #184
+ldr r0, [r1, #0]
+str r0, [r2, #0]
+ldr r0, [r1, #4]
+str r0, [r2, #4]
+ldr r0, [r1, #8]
+str r0, [r2, #8]
+ldr r0, [r1, #12]
+str r0, [r2, #12]
+ldr r0, [r1, #16]
+str r0, [r2, #16]
+ldr r0, [r1, #20]
+str r0, [r2, #20]
+ldr r0, [r1, #24]
+str r0, [r2, #24]
+ldr r0, [r1, #28]
+str r0, [r2, #28]
+ldr r0, [r1, #32]
+str r0, [r2, #32]
+ldr r0, [r1, #36]
+str r0, [r2, #36]
+ldr r0, [r1, #40]
+str r0, [r2, #40]
+ldr r0, [r1, #44]
+str r0, [r2, #44]
+ldr r0, [r1, #48]
+str r0, [r2, #48]
+ldr r0, [r1, #52]
+str r0, [r2, #52]
+ldr r0, [r1, #56]
+str r0, [r2, #56]
+ldr r0, [r1, #60]
+str r0, [r2, #60]
 ldr r0, [sp, #184]
 movw r1, #65528
 movt r1, #65535
@@ -270,29 +275,26 @@ add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
     )
 }
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `message` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk`, `message` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push {{lr}}
 push {{r12}}
@@ -312,37 +314,41 @@ str lr, [r12, #16]
 ldr lr, [sp, #284]
 add r12, sp, #248
 str lr, [r12, #20]
-ldr r0, [sp, #268]
-add r0, r0, #0
-bl {vg_sha512_init}
-ldr r0, [sp, #252]
-add r0, r0, #0
-add r12, sp, #0
-str r0, [r12, #0]
-movw r0, #32
-add r12, sp, #4
-str r0, [r12, #0]
-ldr r0, [sp, #268]
-add r0, r0, #192
-add r12, sp, #8
-str r0, [r12, #0]
-ldr r0, [sp, #268]
-add r0, r0, #0
-movw r2, #0
-movw r3, #0
-bl {vg_sha512_update_scratch}
-add r0, sp, #184
-add r12, sp, #0
-str r0, [r12, #0]
-ldr r0, [sp, #268]
-add r0, r0, #192
-add r12, sp, #4
-str r0, [r12, #0]
-ldr r0, [sp, #268]
-add r0, r0, #0
-movw r2, #32
-movw r3, #0
-bl {vg_sha512_finalize_scratch}
+ldr r1, [sp, #252]
+add r1, r1, #0
+add r2, sp, #184
+ldr r0, [r1, #0]
+str r0, [r2, #0]
+ldr r0, [r1, #4]
+str r0, [r2, #4]
+ldr r0, [r1, #8]
+str r0, [r2, #8]
+ldr r0, [r1, #12]
+str r0, [r2, #12]
+ldr r0, [r1, #16]
+str r0, [r2, #16]
+ldr r0, [r1, #20]
+str r0, [r2, #20]
+ldr r0, [r1, #24]
+str r0, [r2, #24]
+ldr r0, [r1, #28]
+str r0, [r2, #28]
+ldr r0, [r1, #32]
+str r0, [r2, #32]
+ldr r0, [r1, #36]
+str r0, [r2, #36]
+ldr r0, [r1, #40]
+str r0, [r2, #40]
+ldr r0, [r1, #44]
+str r0, [r2, #44]
+ldr r0, [r1, #48]
+str r0, [r2, #48]
+ldr r0, [r1, #52]
+str r0, [r2, #52]
+ldr r0, [r1, #56]
+str r0, [r2, #56]
+ldr r0, [r1, #60]
+str r0, [r2, #60]
 ldr r0, [sp, #184]
 movw r1, #65528
 movt r1, #65535

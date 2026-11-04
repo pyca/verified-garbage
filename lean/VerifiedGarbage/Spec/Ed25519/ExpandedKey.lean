@@ -12,8 +12,8 @@ for `signExpandedContract` (`ExpandedSign.lean`), can derive the public key
 from it with this contract rather than hashing the seed a second time.
 
 As in `signExpandedContract`, some seed must have the digest at `expanded`,
-and the postcondition is `publicKeyContract`'s, `publicKey seed`, for every
-such seed. It does not specify a public key for 64 bytes that are not the
+and the postcondition is the public key of RFC 8032 §5.1.5, `publicKey seed`,
+for every such seed. It does not specify a public key for 64 bytes that are not the
 digest of a seed. The seed itself is not a parameter: the public key depends
 on the seed only through its digest. No buffer contents may affect timing.
 -/

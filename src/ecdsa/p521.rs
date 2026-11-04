@@ -118,7 +118,7 @@ impl SignatureHash<P521> for Sha512 {}
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::*;
+    use super::{Mul, Sha512Backend};
     use crate::arch::ecdsa_p521_sha512::{
         VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES, VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES,
         VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES, VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES,

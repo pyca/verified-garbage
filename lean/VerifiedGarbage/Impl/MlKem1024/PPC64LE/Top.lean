@@ -34,6 +34,7 @@ def kl1024 : KemLay :=
 
 abbrev keygen1024 : Prog isa := kl1024.keygen
 abbrev encaps1024 : Prog isa := kl1024.encaps
+abbrev encapsH1024 : Prog isa := kl1024.encapsH
 abbrev decaps1024 : Prog isa := kl1024.decaps
 
 end VG.Impl.MlKem1024.PPC64LE

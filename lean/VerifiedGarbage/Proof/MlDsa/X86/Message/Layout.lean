@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.TCB.X86.State
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The stack pointer on entry,
 the function's arguments, the `N` bytes of stack below it its contract gives

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.RsaPss.Contract
 **Trusted** (as every file in `Spec/`). The parameters of decryption
 (`decryptSig`), what it writes and returns (`writtenDecrypt`), and the
 `# Safety` items of encryption but for what the signature gives
-(`encryptSafety`), which the contracts of `Spec/RsaOaep/Table.lean` share.
+(`encryptSafety`), which the contracts of `Spec/RsaOaep/Tables.lean` share.
 -/
 
 @[expose] public section

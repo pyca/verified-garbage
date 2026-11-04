@@ -52,7 +52,7 @@ plus a constant or a counter, so only the pointers can affect timing.
 namespace VG.Impl.X448.RISCV64.R64
 
 open VG.RISCV64 VG.Impl.Words.RISCV64
-open VG.Impl.X448.RISCV64 (X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB A24 R ACC BITS align setup bits freeze one)
+open VG.Impl.X448.RISCV64 (X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB A24 R ACC BITS align setup setupBase bits freeze one)
 
 /-! ## Registers -/
 
@@ -347,8 +347,15 @@ def invTail : Prog isa :=
 /-- `[R] = [Z2]^(p-2)`. -/
 def invert : Prog isa := .seq (chain223 Z2) invTail
 
-def x448 : Prog isa :=
-  .seq (.block (align ++ setup)) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+/-- What follows the setup. -/
+def tail : Prog isa :=
+  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+
+def x448 : Prog isa := .seq (.block (align ++ setup)) tail
+
+/-- `vg_x448_base(out = a0, scalar = a1, scratch = a2)`: the working space into
+`a3`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
+written instead of read (`setupBase`). -/
+def x448Base : Prog isa := .seq (.block ([.addi .a3 .a2 0] ++ align ++ setupBase)) tail
 
 end VG.Impl.X448.RISCV64.R64

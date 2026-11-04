@@ -17,12 +17,11 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: `μ` and `tr`
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: `μ`
 
 Untrusted: everything here is checked by Lean. In the body, `muHash` leaves
-`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_piece`), and
-`trHash` leaves `H(pk, 64)` there (`trHash_piece`): from the zeroed state,
-each absorb continues the message from the position the previous one
+`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_piece`): from
+the zeroed state, each absorb continues the message from the position the previous one
 returned, which is public, as the lengths are.
 -/
 
@@ -72,7 +71,6 @@ variable (lay : State → Lay) (s₀ : State)
 /-- The context string and the message, as on entry. -/
 abbrev ctxB : List Byte := bytesAt (P0 s₀).mem ((lay s₀).ctx.setWidth 64) (lay s₀).ctxLen.toNat
 abbrev msgB : List Byte := bytesAt (P0 s₀).mem ((lay s₀).msg.setWidth 64) (lay s₀).len.toNat
-abbrev keyB : List Byte := bytesAt (P0 s₀).mem ((lay s₀).key.setWidth 64) (lay s₀).keyLen
 
 end
 
@@ -191,44 +189,6 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     fun s₀ s s' h₀ h hc' _ hS => ⟨hc', hS _ h.2.1 ?_⟩) ?_
   · simp only [List.length_append, hv' s₀ h₀, List.length_cons, List.length_nil, Proof.MlKem.bytesAt_length]
     omega
-  exact ksqz_piece hpub (fun _ _ _ h => h.1) (fun _ _ => sqzOk) fun s₀ s s' h₀ h hc' _ hm =>
-    ⟨hc', by rw [hm, h.2, Spec.MlDsa.H, Proof.MlKem.shake256_eq]⟩
-
-/-! ## `tr = H(pk, 64)` -/
-
-theorem trHash_piece {p : Params} (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s₀' → PubL (lay s₀) (lay s₀'))
-    (hA : ∀ s₀ s, Pre s₀ → A s₀ s → CtxO lay s₀ s) (hnA : ∀ s₀, Pre s₀ → 5 ≤ (lay s₀).nA)
-    (hk : ∀ s₀, Pre s₀ → (lay s₀).keyLen = p.pkLen) {ht₁ ht₂ : Taint.Hint VG.X86.Taint.T}
-    (tt₁ : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs (absArgs (.arg 0) (.imm p.pkLen) (.imm 0)))) ht₁).isSome =
-      true)
-    (tt₂ : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs (padArgs (.imm (p.pkLen % 136))))) ht₂).isSome =
-      true) :
-    Piece Pre Pub A (fun s₀ s => CtxO lay s₀ s ∧ bytesAt s.mem (lay s₀).MU 64 = Spec.MlDsa.H (keyB lay s₀) 64)
-      (trHash p) := by
-  refine Piece.seq (zeroSt_piece hpub hA (B := fun s₀ s => CtxO lay s₀ s ∧ stateAt s.mem (lay s₀).ST =
-      Spec.Sha3.zero) fun s₀ s s' h₀ ha hc' _ hz => ⟨hc', hz⟩) ?_
-  refine Piece.seq (kabs_piece (.arg 0) (.imm p.pkLen) (.imm 0) (fun s₀ => (lay s₀).key)
-    (fun s₀ => (lay s₀).keyLen) (fun _ => 0) tt₁ hpub (fun _ _ _ h => h.1)
-    (fun s₀ h₀ => absOk (by have := hnA s₀ h₀; simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl rfl)
-    (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a0], by rw [hk s₀ h₀]; rfl, rfl⟩)
-    (fun s₀ s₀' h₀ h₀' hq => ⟨(hpub s₀ s₀' h₀ h₀' hq).key, by rw [hk s₀ h₀, hk s₀' h₀'], rfl⟩)
-    (fun s₀ s h₀ h => ?_)
-    (B := fun s₀ s => CtxO lay s₀ s ∧ Repr s.mem (lay s₀).ST 136 (keyB lay s₀))
-    fun s₀ s s' h₀ h hc' _ hR _ => ⟨hc', ?_⟩) ?_
-  · have hL := h.1.ok
-    have := hL.hKey
-    exact ⟨by decide, by omega, hL.nKey, ⟨(lay s₀).KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
-      by have := hL.x_r hL.xKey (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm,
-      (hL.x_r hL.xKey (e := 200) (k := 640) (by omega)).symm, hL.kKey⟩
-  · have hL := h.1.ok
-    have := hR [] (Proof.MlKem.repr_nil h.2) rfl
-    rwa [List.nil_append, h.1.ctx.bytesAt_eq hL.xKey hL.kKey (by have := hL.nKey; omega)] at this
-  refine Piece.seq (kpad_piece (.imm (p.pkLen % 136)) (fun _ => p.pkLen % 136) tt₂ hpub
-    (fun _ _ _ h => h.1) (fun _ _ => padOk rfl) (fun _ _ _ _ => rfl) (fun _ _ _ _ _ => rfl)
-    (fun _ _ _ _ => Nat.mod_lt _ (by decide))
-    (B := fun s₀ s => CtxO lay s₀ s ∧ stateAt s.mem (lay s₀).ST = Spec.Sha3.absorb 136
-      (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix (keyB lay s₀)))
-    fun s₀ s s' h₀ h hc' _ hS => ⟨hc', hS _ h.2 (by rw [Proof.MlKem.bytesAt_length, hk s₀ h₀])⟩) ?_
   exact ksqz_piece hpub (fun _ _ _ h => h.1) (fun _ _ => sqzOk) fun s₀ s s' h₀ h hc' _ hm =>
     ⟨hc', by rw [hm, h.2, Spec.MlDsa.H, Proof.MlKem.shake256_eq]⟩
 

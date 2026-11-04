@@ -20,11 +20,13 @@ structure Lay where
   E : BitVec 32
   /-- The address of the comb's tables (`VG_ED25519_COMB`). -/
   T : BitVec 32
+  /-- The bytes read at `seed`: the seed's cached SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 variable (L : Lay)
 abbrev OUT : Region := ⟨State.addr L.out, 64⟩
-abbrev SEED : Region := ⟨State.addr L.seed, 32⟩
+abbrev SEED : Region := ⟨State.addr L.seed, L.seedLen⟩
 abbrev PK : Region := ⟨State.addr L.pk, 32⟩
 abbrev MSG : Region := ⟨State.addr L.msg, L.len.toNat⟩
 abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
@@ -49,7 +51,7 @@ structure Ok : Prop where
   kc : L.FR.Disjoint L.SCR
   np : L.pk.toNat + 32 ≤ 2 ^ 32
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
-  ns : L.seed.toNat + 32 ≤ 2 ^ 32
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   tfit : L.T.toNat + 98304 ≤ 2 ^ 32
 end Lay

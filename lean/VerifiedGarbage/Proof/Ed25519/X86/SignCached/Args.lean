@@ -23,11 +23,13 @@ structure Lay where
   E : BitVec 32
   /-- The address of the comb's tables (the static `combSym`). -/
   T : BitVec 32
+  /-- The bytes read at `seed`: the seed's SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 variable (L : Lay)
 abbrev OUT : Region := ⟨L.out.setWidth 64, 64⟩
-abbrev SEED : Region := ⟨L.seed.setWidth 64, 32⟩
+abbrev SEED : Region := ⟨L.seed.setWidth 64, L.seedLen⟩
 abbrev PK : Region := ⟨L.pk.setWidth 64, 32⟩
 abbrev MSG : Region := ⟨L.msg.setWidth 64, L.len.toNat⟩
 abbrev SCR : Region := ⟨L.scr.setWidth 64, 8192⟩
@@ -56,9 +58,10 @@ structure Ok : Prop where
   rc : L.RET.Disjoint L.SCR
   np : L.pk.toNat + 32 ≤ 2 ^ 32
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
-  ns : L.seed.toNat + 32 ≤ 2 ^ 32
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   nt : L.T.toNat + 8 * Impl.Ed25519.X86.combWords.length ≤ 2 ^ 32
+  sl : 32 ≤ L.seedLen
 end Lay
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target

@@ -90,7 +90,7 @@ impl Backend {
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::*;
+    use super::{Backend, Features};
     use verified_garbage_cpu::feature;
 
     #[test]
@@ -145,7 +145,7 @@ mod tests {
 
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
-    use super::*;
+    use super::{Backend, Features};
     use verified_garbage_cpu::feature;
     #[test]
     fn backend_feature_requirements() {

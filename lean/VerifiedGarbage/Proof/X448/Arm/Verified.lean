@@ -68,4 +68,42 @@ theorem x448_verified :
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.X448.x448Arm]
       [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)
 
+/-! ## `vg_x448_base` -/
+
+/-- A state satisfying `vg_x448_base`'s precondition. -/
+def satBaseState : State where
+  gpr r := match r with
+    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x4000 | _ => 0
+  sp := 0x8000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem _ := 0
+  rd := [⟨0x2000, 56⟩]
+  wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
+
+theorem x448Base_ok (s : State) (hs : Proof.X448.x448BaseArm.pre s) :
+    ∃ t s', Exec isa Impl.X448.Arm.x448Base s t s' ∧ abiPreserved s s' ∧
+      Proof.X448.x448BaseArm.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correctBase (BasePre.of s hs)
+  exact ⟨t, s', he, ⟨h.1, Exec.sp he⟩, h.2⟩
+
+theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseArm.pre Proof.X448.x448BaseArm.pub
+    Impl.X448.Arm.x448Base := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2]) ?_
+    (by native_taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
+  apply Taint.agree_ofRegs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+
+theorem x448Base_verified :
+    Verified Arm.target Impl.X448.Arm.x448Base (Spec.X448.x448BaseContract Arm.abi) :=
+  Verified.of_correct x448Base_ok x448Base_ct (by
+    sig_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, Arm.abi, Arm.argRegs,
+      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.X448.x448BaseArm]
+      [satBaseState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satBaseState)
+
 end VG.Proof.X448.Arm

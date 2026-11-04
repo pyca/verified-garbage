@@ -4770,7 +4770,7 @@ vg_mldsa44_verify:
 	ldr lr, [r3, #872]
 	bx lr
 
-vg_mldsa44_verify_message:
+vg_mldsa44_verify_message_cached:
 	ldr r12, [sp, #0]
 	lsr r12, r12, #8
 	cmp r12, #0
@@ -4788,7 +4788,7 @@ vg_mldsa44_verify_message:
 	str r2, [r7, #920]
 	str r3, [r7, #924]
 	ldr r0, [sp, #0]
-	ldr r1, [sp, #4]
+	ldr r1, [sp, #12]
 	ldr r2, [sp, #4]
 	ldr r3, [sp, #8]
 	str r0, [r7, #928]
@@ -4853,92 +4853,7 @@ vg_mldsa44_verify_message:
 	movw r0, #0
 	add r0, r7, r0
 	movw r1, #136
-	ldr r3, [r7, #912]
-	movw r12, #1312
-	movw lr, #200
-	add lr, r7, lr
-	push {r12, lr}
-	bl {vg_keccak_absorb_scratch}
-	ldr r12, [sp], #8
-	movw r2, #88
-	movw r0, #0
-	add r0, r7, r0
-	movw r1, #136
-	movw r3, #31
-	movw lr, #200
-	add lr, r7, lr
-	push {lr}
-	bl {vg_keccak_pad_scratch}
-	ldr r12, [sp], #4
-	movw r0, #0
-	add r0, r7, r0
-	movw r1, #136
-	movw r2, #0
-	movw r3, #840
-	add r3, r7, r3
-	movw r12, #64
-	movw lr, #200
-	add lr, r7, lr
-	push {r12, lr}
-	bl {vg_keccak_squeeze_scratch}
-	ldr r12, [sp], #8
-	mov r12, #0
-	str r12, [r7, #0]
-	str r12, [r7, #4]
-	str r12, [r7, #8]
-	str r12, [r7, #12]
-	str r12, [r7, #16]
-	str r12, [r7, #20]
-	str r12, [r7, #24]
-	str r12, [r7, #28]
-	str r12, [r7, #32]
-	str r12, [r7, #36]
-	str r12, [r7, #40]
-	str r12, [r7, #44]
-	str r12, [r7, #48]
-	str r12, [r7, #52]
-	str r12, [r7, #56]
-	str r12, [r7, #60]
-	str r12, [r7, #64]
-	str r12, [r7, #68]
-	str r12, [r7, #72]
-	str r12, [r7, #76]
-	str r12, [r7, #80]
-	str r12, [r7, #84]
-	str r12, [r7, #88]
-	str r12, [r7, #92]
-	str r12, [r7, #96]
-	str r12, [r7, #100]
-	str r12, [r7, #104]
-	str r12, [r7, #108]
-	str r12, [r7, #112]
-	str r12, [r7, #116]
-	str r12, [r7, #120]
-	str r12, [r7, #124]
-	str r12, [r7, #128]
-	str r12, [r7, #132]
-	str r12, [r7, #136]
-	str r12, [r7, #140]
-	str r12, [r7, #144]
-	str r12, [r7, #148]
-	str r12, [r7, #152]
-	str r12, [r7, #156]
-	str r12, [r7, #160]
-	str r12, [r7, #164]
-	str r12, [r7, #168]
-	str r12, [r7, #172]
-	str r12, [r7, #176]
-	str r12, [r7, #180]
-	str r12, [r7, #184]
-	str r12, [r7, #188]
-	str r12, [r7, #192]
-	str r12, [r7, #196]
-	movw r2, #0
-	movw r0, #0
-	add r0, r7, r0
-	movw r1, #136
-	movw r3, #840
-	add r3, r7, r3
+	ldr r3, [r7, #932]
 	movw r12, #64
 	movw lr, #200
 	add lr, r7, lr

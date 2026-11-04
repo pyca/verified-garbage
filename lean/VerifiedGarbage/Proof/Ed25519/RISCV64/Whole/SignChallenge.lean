@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignExpand
 
 /-!
-# `vg_ed25519_sign_cached` on RISCV64: the challenge, and `S`
+# `vg_ed25519_sign_expanded` on RISCV64: the challenge, and `S`
 
 `R` (in `out`), the copy of `pk` at `192(F)` and the message hashed into
 `128(F)`, the digest reduced into the challenge at `96(F)` by a call of
@@ -20,11 +20,13 @@ namespace VG.Proof.Ed25519.RISCV64.Whole
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
 open VG.Spec.Ed25519 (bytesAt)
 
+variable {sl : Nat}
+
 /-- What the challenge's steps write. -/
 abbrev chW (s : State) : List Region :=
   [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 96, 96⟩, below s.sp 208, ⟨s.gpr .a0 + BitVec.ofNat 64 32, 32⟩]
 
-theorem signChallenge_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t) {Rb Nb Sb Kb : List Byte}
+theorem signChallenge_ok (C : ShaOK) {s t : State} (hp : SignPre sl s) (h : SignInv s t) {Rb Nb Sb Kb : List Byte}
     (hR : bytesAt t.mem (s.gpr .a0) 32 = Rb) (hN : bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 64) 32 = Nb)
     (hS : bytesAt t.mem (s.gpr .a6) 32 = Sb) (hK : bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 192) 32 = Kb) :
     WP isa signChallenge t fun t' => SignInv s t' ∧ bytesAt t'.mem (s.gpr .a0) 32 = Rb ∧

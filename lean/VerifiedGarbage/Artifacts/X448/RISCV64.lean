@@ -13,6 +13,9 @@ namespace VG.Artifacts.X448.RISCV64
 def artifacts : List Artifact := [
   Spec.X448.x448Api.artifact RISCV64.target {
     code := Impl.X448.RISCV64.R64.x448
-    verified := Proof.X448.RISCV64.R64.x448_verified }]
+    verified := Proof.X448.RISCV64.R64.x448_verified },
+  Spec.X448.x448BaseApi.artifact RISCV64.target {
+    code := Impl.X448.RISCV64.R64.x448Base
+    verified := Proof.X448.RISCV64.R64.x448Base_verified }]
 
 end VG.Artifacts.X448.RISCV64

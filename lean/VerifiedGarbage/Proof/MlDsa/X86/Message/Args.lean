@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the moves of a call's arguments
+# ML-DSA on x86 (32-bit), `sign_message` and `verify_message_cached`: the moves of a call's arguments
 
 Untrusted: everything here is checked by Lean. Each argument's value
 (`Arg.val`): an argument of the function (at `[esp + 20 + 4i]`), plus an

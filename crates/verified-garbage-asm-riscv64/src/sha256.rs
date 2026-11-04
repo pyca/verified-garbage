@@ -317,6 +317,72 @@ beqz s6, 20b
     )
 }
 
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7175
+.insn 2, 0x828a
+.insn 4, 0x0612b023
+.insn 4, 0x0772b423
+.insn 4, 0x0782b823
+.insn 4, 0x0792bc23
+.insn 4, 0x09a2b023
+.insn 4, 0x09b2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha224_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha256_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha224_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x060c3083
+.insn 4, 0x068c3b83
+.insn 4, 0x078c3c83
+.insn 4, 0x080c3d03
+.insn 4, 0x088c3d83
+.insn 4, 0x070c3c03
+.insn 2, 0x6149
+.insn 2, 0x8082
+.option pop",
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_update = sym super::sha256::vg_sha256_update,
+        vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
+    )
+}
+
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
@@ -779,6 +845,72 @@ beqz s6, 20b
 .insn 2, 0x8082
 .option pop",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+    )
+}
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7175
+.insn 2, 0x828a
+.insn 4, 0x0612b023
+.insn 4, 0x0772b423
+.insn 4, 0x0782b823
+.insn 4, 0x0792bc23
+.insn 4, 0x09a2b023
+.insn 4, 0x09b2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha256_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha256_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha256_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x060c3083
+.insn 4, 0x068c3b83
+.insn 4, 0x078c3c83
+.insn 4, 0x080c3d03
+.insn 4, 0x088c3d83
+.insn 4, 0x070c3c03
+.insn 2, 0x6149
+.insn 2, 0x8082
+.option pop",
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update = sym super::sha256::vg_sha256_update,
+        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
     )
 }
 

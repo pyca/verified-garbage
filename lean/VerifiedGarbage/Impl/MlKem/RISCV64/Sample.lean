@@ -90,7 +90,7 @@ def sampleEnd : List Instr :=
 
 def sampleNTT : Prog isa :=
   .seq (.block sampleSetup)
-  (.seq (.seq (.block absorbSeedArgs) (.call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb))
+  (.seq (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb))
   (.seq (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad))
   (.seq (.seq (.block squeezeArgs) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
   (.seq (.block ([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] ++ liq .t3 3329))

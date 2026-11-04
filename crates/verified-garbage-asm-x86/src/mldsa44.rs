@@ -1145,9 +1145,9 @@ jne 223b
     )
 }
 
-/// ML-DSA-44 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
+/// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1158,21 +1158,17 @@ jne 223b
 /// * `ctx` must be valid for reads of `ctx_len` bytes.
 /// * `sig` must be valid for reads of 2420 bytes.
 /// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the arguments on the stack, overlap the return address on the stack or the 132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa44_verify_message(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
 jae 20f
-.base64 "i3QkLIHGADABALgAAAAAiIawAwAAi0QkJIiGsQMAALgAAAAAiQaJRgSJRgiJRgyJRhCJRhSJRhiJRhyJRiCJRiSJRiiJRiyJRjCJRjSJRjiJRjyJRkCJRkSJRkiJRkyJRlCJRlSJRliJRlyJRmCJRmSJRmiJRmyJRnCJRnSJRniJRnyJhoAAAACJhoQAAACJhogAAACJhowAAACJhpAAAACJhpQAAACJhpgAAACJhpwAAACJhqAAAACJhqQAAACJhqgAAACJhqwAAACJhrAAAACJhrQAAACJhrgAAACJhrwAAACJhsAAAACJhsQAAAC6AAAAAInwg8AAuYgAAACLXCQUvSAFAACJ94HHyAAAAFdVU1JRUA=="
-call {vg_keccak_absorb_scratch}
-.base64 "WVlZWVlZulgAAACJ8IPAALmIAAAAux8AAACJ94HHyAAAAFdTUlFQ"
-call {vg_keccak_pad_scratch}
-.base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
-call {vg_keccak_squeeze_scratch}
-.base64 "WFhYWFhYuAAAAACJBolGBIlGCIlGDIlGEIlGFIlGGIlGHIlGIIlGJIlGKIlGLIlGMIlGNIlGOIlGPIlGQIlGRIlGSIlGTIlGUIlGVIlGWIlGXIlGYIlGZIlGaIlGbIlGcIlGdIlGeIlGfImGgAAAAImGhAAAAImGiAAAAImGjAAAAImGkAAAAImGlAAAAImGmAAAAImGnAAAAImGoAAAAImGpAAAAImGqAAAAImGrAAAAImGsAAAAImGtAAAAImGuAAAAImGvAAAAImGwAAAAImGxAAAALoAAAAAifCDwAC5iAAAAInzgcNIAwAAvUAAAACJ94HHyAAAAFdVU1JRUA=="
+.base64 "i3QkLIHGADABALgAAAAAiIawAwAAi0QkJIiGsQMAALgAAAAAiQaJRgSJRgiJRgyJRhCJRhSJRhiJRhyJRiCJRiSJRiiJRiyJRjCJRjSJRjiJRjyJRkCJRkSJRkiJRkyJRlCJRlSJRliJRlyJRmCJRmSJRmiJRmyJRnCJRnSJRniJRnyJhoAAAACJhoQAAACJhogAAACJhowAAACJhpAAAACJhpQAAACJhpgAAACJhpwAAACJhqAAAACJhqQAAACJhqgAAACJhqwAAACJhrAAAACJhrQAAACJhrgAAACJhrwAAACJhsAAAACJhsQAAAC6AAAAAInwg8AAuYgAAACLXCQwvUAAAACJ94HHyAAAAFdVU1JRUA=="
 call {vg_keccak_absorb_scratch}
 .base64 "WVlZWVlZukAAAACJ8IPAALmIAAAAifOBw7ADAAC9AgAAAIn3gcfIAAAAV1VTUlFQ"
 call {vg_keccak_absorb_scratch}

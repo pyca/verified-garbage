@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # Camellia's batches under prepared subkeys on x86-64 meet their contract
 
 `crypt_verified`: `vg_camellia_crypt_prepared` against
-`Spec.Camellia.Prepared.cryptContract` with `layout`. The body runs from
+`Proof.Camellia.Prepared.cryptContract` with `layout`. The body runs from
 the state narrowed to ECB's scratch buffer (`cryptBody_wp`) and then from
 the whole working space (`Exec.widen`), which it changes only where the
 narrowed run may. A batch's blocks are ECB in the direction and under the
@@ -40,7 +40,7 @@ namespace VG.Proof.Camellia.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Proof.Camellia (specDir)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 theorem size_eq : layout.size = 8 * slots := rfl
 
@@ -274,19 +274,19 @@ def cryptSat : State where
   wr := [⟨0x2000, 401 * 8⟩]
 
 theorem crypt_implies :
-    cryptX86_64.Implies (Spec.Camellia.Prepared.cryptContract layout X86_64.abi) where
+    cryptX86_64.Implies (Proof.Camellia.Prepared.cryptContract layout X86_64.abi) where
   pre := by
-    sig_implies_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86_64,
+    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
       X86_64.abi, X86_64.argRegs]
   post := by
-    sig_implies_post [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86_64,
+    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
       X86_64.abi, X86_64.argRegs]
   pub := by
-    sig_implies_pub [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, cryptX86_64,
+    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
       X86_64.abi, X86_64.argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Spec.Camellia.Prepared.cryptContract, Spec.Camellia.Prepared.cryptSig, X86_64.abi,
+    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, X86_64.abi,
       X86_64.argRegs]
     sig_and_intros
     all_goals first
@@ -296,7 +296,7 @@ theorem crypt_implies :
       | (rw [size_eq, slots_eq]; decide)
 
 theorem crypt_verified :
-    Verified X86_64.target cryptPrepared (Spec.Camellia.Prepared.cryptContract layout X86_64.abi) :=
+    Verified X86_64.target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout X86_64.abi) :=
   Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.X86_64

@@ -10863,9 +10863,9 @@ bx lr",
     )
 }
 
-/// ML-DSA-87 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
+/// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// # Safety
 ///
@@ -10874,11 +10874,13 @@ bx lr",
 /// * `ctx` must be valid for reads of `ctx_len` bytes.
 /// * `sig` must be valid for reads of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa87_verify_message(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #0]
 lsr r12, r12, #8
@@ -10897,7 +10899,7 @@ str r1, [r7, #916]
 str r2, [r7, #920]
 str r3, [r7, #924]
 ldr r0, [sp, #0]
-ldr r1, [sp, #4]
+ldr r1, [sp, #12]
 ldr r2, [sp, #4]
 ldr r3, [sp, #8]
 str r0, [r7, #928]
@@ -10962,92 +10964,7 @@ movw r2, #0
 movw r0, #0
 add r0, r7, r0
 movw r1, #136
-ldr r3, [r7, #912]
-movw r12, #2592
-movw lr, #200
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
-ldr r12, [sp], #8
-movw r2, #8
-movw r0, #0
-add r0, r7, r0
-movw r1, #136
-movw r3, #31
-movw lr, #200
-add lr, r7, lr
-push {{lr}}
-bl {vg_keccak_pad_scratch}
-ldr r12, [sp], #4
-movw r0, #0
-add r0, r7, r0
-movw r1, #136
-movw r2, #0
-movw r3, #840
-add r3, r7, r3
-movw r12, #64
-movw lr, #200
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_squeeze_scratch}
-ldr r12, [sp], #8
-mov r12, #0
-str r12, [r7, #0]
-str r12, [r7, #4]
-str r12, [r7, #8]
-str r12, [r7, #12]
-str r12, [r7, #16]
-str r12, [r7, #20]
-str r12, [r7, #24]
-str r12, [r7, #28]
-str r12, [r7, #32]
-str r12, [r7, #36]
-str r12, [r7, #40]
-str r12, [r7, #44]
-str r12, [r7, #48]
-str r12, [r7, #52]
-str r12, [r7, #56]
-str r12, [r7, #60]
-str r12, [r7, #64]
-str r12, [r7, #68]
-str r12, [r7, #72]
-str r12, [r7, #76]
-str r12, [r7, #80]
-str r12, [r7, #84]
-str r12, [r7, #88]
-str r12, [r7, #92]
-str r12, [r7, #96]
-str r12, [r7, #100]
-str r12, [r7, #104]
-str r12, [r7, #108]
-str r12, [r7, #112]
-str r12, [r7, #116]
-str r12, [r7, #120]
-str r12, [r7, #124]
-str r12, [r7, #128]
-str r12, [r7, #132]
-str r12, [r7, #136]
-str r12, [r7, #140]
-str r12, [r7, #144]
-str r12, [r7, #148]
-str r12, [r7, #152]
-str r12, [r7, #156]
-str r12, [r7, #160]
-str r12, [r7, #164]
-str r12, [r7, #168]
-str r12, [r7, #172]
-str r12, [r7, #176]
-str r12, [r7, #180]
-str r12, [r7, #184]
-str r12, [r7, #188]
-str r12, [r7, #192]
-str r12, [r7, #196]
-movw r2, #0
-movw r0, #0
-add r0, r7, r0
-movw r1, #136
-movw r3, #840
-add r3, r7, r3
+ldr r3, [r7, #932]
 movw r12, #64
 movw lr, #200
 add lr, r7, lr

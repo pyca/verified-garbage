@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
+public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Camellia.PreparedEncrypt
+meta import VerifiedGarbage.Proof.Camellia.Prepared
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -37,7 +37,6 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 public import VerifiedGarbage.Spec.Camellia.Ctr
-public import VerifiedGarbage.Spec.Camellia.Prepared
 
 /-!
 # The serial core's two functions meet their contracts
@@ -64,7 +63,7 @@ open VG VG.AArch64 VG.Impl.Camellia.AArch64.Serial
 open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Proof.Camellia (schedWords)
 open VG.Proof.Modes.AArch64 (ScrIn runBlock_app)
-open VG.Spec.Camellia.Prepared (Holds Keeps)
+open VG.Proof.Camellia.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
 
@@ -105,7 +104,7 @@ def prepAArch64 : Contract AArch64.isa where
       ((s.gpr .x1).toNat = 18 ∨ (s.gpr .x1).toNat = 24) ∧ layout.size ≤ 8 * (s.gpr .x3).toNat
   post s s' :=
     Holds layout s'.mem (s.gpr .x2) (s.gpr .x1).toNat
-        (Spec.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat) .encrypt ∧
+        (Proof.Camellia.Prepared.wordsAt s.mem (s.gpr .x0) (s.gpr .x1).toNat) .encrypt ∧
       Keeps (s.gpr .x2) (s.gpr .x3).toNat layout.prepScratch s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -324,17 +323,17 @@ def cryptSat : State where
 theorem crypt_implies :
     cryptAArch64.Implies (Proof.Camellia.Prepared.encryptPreparedContract layout AArch64.abi) where
   pre := by
-    sig_implies_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_pre [Proof.Camellia.Prepared.encryptPreparedContract, Proof.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   post := by
-    sig_implies_post [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_post [Proof.Camellia.Prepared.encryptPreparedContract, Proof.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   pub := by
-    sig_implies_pub [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig,
+    sig_implies_pub [Proof.Camellia.Prepared.encryptPreparedContract, Proof.Camellia.Prepared.cryptSig,
       cryptAArch64, AArch64.abi, AArch64.argRegs]
   sat := by
     refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Camellia.Prepared.encryptPreparedContract, Spec.Camellia.Prepared.cryptSig, AArch64.abi,
+    sig_pre [Proof.Camellia.Prepared.encryptPreparedContract, Proof.Camellia.Prepared.cryptSig, AArch64.abi,
       AArch64.argRegs]
     sig_and_intros
     all_goals first

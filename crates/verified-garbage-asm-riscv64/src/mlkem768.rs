@@ -333,7 +333,7 @@ bnez a2, 210b
 .insn 4, 0x548dbd83
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
@@ -796,7 +796,442 @@ call {vg_mlkem_compress_encode}
 .insn 4, 0x548dbd83
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
+        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+    )
+}
+
+/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes, and aligned for `u64`.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x5137b423
+.insn 4, 0x5147b823
+.insn 4, 0x5157bc23
+.insn 4, 0x5367b023
+.insn 4, 0x5377b423
+.insn 4, 0x5387b823
+.insn 4, 0x5397bc23
+.insn 4, 0x55a7b023
+.insn 4, 0x55b7b423
+.insn 4, 0x5417b823
+.insn 2, 0x8d2a
+.insn 2, 0x8cb2
+.insn 2, 0x8c36
+.insn 2, 0x8bba
+.insn 2, 0x8dbe
+.insn 2, 0x852e
+.insn 4, 0x3e0d8593
+.insn 4, 0x02000613
+20:
+.insn 4, 0x00054683
+.insn 4, 0x00d58023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 20b
+.insn 2, 0x8566
+.insn 4, 0x400d8593
+.insn 4, 0x02000613
+21:
+.insn 4, 0x00054683
+.insn 4, 0x00d58023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 21b
+.insn 4, 0x400d8c93
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x04800593
+.insn 4, 0x400d8693
+.insn 4, 0x02000713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x04800593
+.insn 4, 0x3e0d8693
+.insn 4, 0x02000713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x04800593
+.insn 2, 0x4699
+call {vg_keccak_pad}
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x04800593
+.insn 4, 0x398d8693
+.insn 4, 0x04000713
+call {vg_keccak_squeeze}
+.insn 4, 0x398d8513
+.insn 2, 0x85e2
+.insn 4, 0x02000613
+22:
+.insn 4, 0x00054683
+.insn 4, 0x00d58023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 22b
+.insn 4, 0x480d0513
+.insn 4, 0x4e0d8593
+.insn 4, 0x02000613
+23:
+.insn 4, 0x00054683
+.insn 4, 0x00d58023
+.insn 2, 0x0505
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 23b
+.insn 2, 0x4b01
+24:
+.insn 4, 0x18000293
+.insn 4, 0x025b02b3
+.insn 4, 0x005d0533
+.insn 4, 0x002b0593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_decode12}
+.insn 2, 0x0b05
+.insn 4, 0xffdb0293
+bnez t0, 24b
+.insn 2, 0x4b01
+25:
+.insn 4, 0x3d6d8c23
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 4, 0x3b8d8693
+.insn 4, 0x02100713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 4, 0x420d8693
+.insn 4, 0x08000713
+call {vg_keccak_squeeze}
+.insn 4, 0x420d8513
+.insn 4, 0x005b0593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_cbd2}
+.insn 4, 0x005b0513
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45c9
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_ntt}
+.insn 2, 0x0b05
+.insn 4, 0xffdb0293
+bnez t0, 25b
+.insn 2, 0x4b0d
+26:
+.insn 4, 0x3d6d8c23
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 4, 0x3b8d8693
+.insn 4, 0x02100713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 4, 0x420d8693
+.insn 4, 0x08000713
+call {vg_keccak_squeeze}
+.insn 4, 0x420d8513
+.insn 4, 0x005b0593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_cbd2}
+.insn 2, 0x0b05
+.insn 4, 0xff9b0293
+bnez t0, 26b
+.insn 2, 0x8566
+.insn 4, 0x02000593
+.insn 2, 0x4605
+.insn 2, 0x46b1
+.insn 2, 0x06aa
+.insn 2, 0x96ee
+call {vg_mlkem_decode_decompress}
+.insn 2, 0x4a05
+.insn 2, 0x4b01
+27:
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x4581
+.insn 4, 0x10000613
+28:
+.insn 2, 0xc10c
+.insn 2, 0x0511
+.insn 2, 0x167d
+bnez a2, 28b
+.insn 2, 0x4a81
+29:
+.insn 4, 0x516d8023
+.insn 4, 0x515d80a3
+.insn 4, 0x4e0d8513
+.insn 2, 0x45bd
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+.insn 2, 0x4641
+.insn 2, 0x062a
+.insn 2, 0x966e
+call {vg_mlkem_sample_ntt}
+.insn 4, 0x00aa7a33
+beqz a0, 210f
+.insn 2, 0x45bd
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+j 211f
+210:
+.insn 4, 0x005a8593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+211:
+.insn 2, 0x4539
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 4, 0x005a8613
+.insn 2, 0x062a
+.insn 2, 0x966e
+.insn 2, 0x46c9
+.insn 2, 0x06aa
+.insn 2, 0x96ee
+call {vg_mlkem_multiply_ntts}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45b9
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_add}
+.insn 2, 0x0a85
+.insn 4, 0xffda8293
+bnez t0, 29b
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45c9
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_inv_ntt}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 4, 0x008b0593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_add}
+.insn 4, 0x14000293
+.insn 4, 0x025b02b3
+.insn 4, 0x005b8633
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45a9
+.insn 4, 0x14000693
+call {vg_mlkem_compress_encode}
+.insn 2, 0x0b05
+.insn 4, 0xffdb0293
+bnez t0, 27b
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x4581
+.insn 4, 0x10000613
+212:
+.insn 2, 0xc10c
+.insn 2, 0x0511
+.insn 2, 0x167d
+bnez a2, 212b
+.insn 2, 0x4a81
+213:
+.insn 2, 0x4539
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 4, 0x002a8593
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+.insn 4, 0x005a8613
+.insn 2, 0x062a
+.insn 2, 0x966e
+.insn 2, 0x46c9
+.insn 2, 0x06aa
+.insn 2, 0x96ee
+call {vg_mlkem_multiply_ntts}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45b9
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_add}
+.insn 2, 0x0a85
+.insn 4, 0xffda8293
+bnez t0, 213b
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45c9
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_inv_ntt}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45ad
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_add}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x45b1
+.insn 2, 0x05aa
+.insn 2, 0x95ee
+call {vg_mlkem_add}
+.insn 2, 0x4535
+.insn 2, 0x052a
+.insn 2, 0x956e
+.insn 2, 0x4591
+.insn 4, 0x3c0b8613
+.insn 4, 0x08000693
+call {vg_mlkem_compress_encode}
+.insn 2, 0x8552
+.insn 4, 0x550db083
+.insn 4, 0x508db983
+.insn 4, 0x510dba03
+.insn 4, 0x518dba83
+.insn 4, 0x520dbb03
+.insn 4, 0x528dbb83
+.insn 4, 0x530dbc03
+.insn 4, 0x538dbc83
+.insn 4, 0x540dbd03
+.insn 4, 0x548dbd83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
@@ -1407,7 +1842,7 @@ bnez s6, 217b
         vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
         vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
         vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,

@@ -1,26 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 public-key derivation on x86-64
 
-`publicKey f suffix (out = rdi, seed = rsi, scratch = rdx)` computes
-`SHA-512(seed)` with the streaming SHA-512 functions (`vg_sha512_init`, and
-`update` and `finalize` made with the compression function `f`, named with
-`suffix`), prunes the first half of the digest (RFC 8032 §5.1.5) and encodes
-`[s]B` with `vg_ed25519_scalar_base`.
+`publicKeyExpanded bs fs (out = rdi, digest = rsi, scratch = rdx)` copies the
+seed's SHA-512 digest to `scratch + 1568`, prunes its first half (RFC 8032
+§5.1.5) and encodes `[s]B` with `vg_ed25519_scalar_base` (`bs`, named with
+the suffix `fs`).
 
 Everything runs in one stack frame of seven words, pushed from `rdi`, `rsi`,
 `rdx` and four copies of `rax`: from `rsp`, the pruned scalar (32 bytes),
-then `scratch`, `seed` and `out`, which the calls cannot change. The
+then `scratch`, `digest` and `out`, which the calls cannot change. The
 pruned scalar must lie outside `scratch` and `out`, which
 `vg_ed25519_scalar_base` writes; it is cleared before the frame
-is popped. In `scratch`: the SHA-512 streaming state (192 bytes), the
-working space of `update` and `finalize` (1376 bytes), and the digest (64
-bytes, at 1568).
+is popped. Signing and verification use `scrPtr` and `callWith` too, with the
+SHA-512 streaming state (192 bytes) and the working space of `update` and
+`finalize` (1376 bytes) at the start of `scratch`.
 -/
 
 @[expose] public section
@@ -28,7 +26,6 @@ bytes, at 1568).
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
-open VG.Impl.Sha512.X86_64.Stream (Callee)
 
 /-- `[rsp + d]`, in the frame. -/
 def stk (d : Nat) : MemOp := { base := .rsp, disp := d }
@@ -45,19 +42,6 @@ def digestAt : Nat := 1568
 /-- `d ← scratch + o`. -/
 def scrPtr (d : Reg) (o : Nat) : List Instr :=
   [.mov d (.mem (stk fScratch)), .alu .add d (.imm (BitVec.ofNat 32 o))]
-
-/-- `init(state = scratch)`. -/
-def pkInitArgs : List Instr := [.mov .rdi (.mem (stk fScratch))]
-
-/-- `update(state = scratch, count = 0, data = seed, len = 32, scratch + 192)`. -/
-def pkUpdateArgs : List Instr :=
-  [.mov .rdi (.mem (stk fScratch)), .mov32 .rsi (.imm 0), .mov .rdx (.mem (stk fSeed)),
-    .mov32 .rcx (.imm 32)] ++ scrPtr .r8 shaScratch
-
-/-- `finalize(state = scratch, count = 32, out = scratch + 1568, scratch + 192)`. -/
-def pkFinalizeArgs : List Instr :=
-  [.mov .rdi (.mem (stk fScratch)), .mov32 .rsi (.imm 32)] ++ scrPtr .rdx digestAt ++
-    scrPtr .rcx shaScratch
 
 /-- `scalar_base(out, scalar = rsp, scratch)`. -/
 def pkBaseArgs : List Instr :=
@@ -94,12 +78,6 @@ def pkWipe : List Instr := pkZero ++ pkPruneStores
 def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block args) (.call name code)
 
-/-- The hash of the seed, into `scratch + 1568`. -/
-def pkHash (f : Callee) (suffix : String) : Prog isa :=
-  .seq (callWith pkInitArgs Spec.Sha512.init512Api.name (Sha512.X86_64.Stream.init Spec.Sha512.H0_512))
-    (.seq (callWith pkUpdateArgs ("vg_sha512_update_scratch" ++ suffix) (Sha512.X86_64.Stream.update f))
-      (callWith pkFinalizeArgs ("vg_sha512_finalize_scratch" ++ suffix) (Sha512.X86_64.Stream.finalize f)))
-
 /-- The name of the base-point multiplication called, with its suffix `fs` (`_adx`,
 `_ifma`, or none). -/
 def scalarBaseName (fs : String) : String := "vg_ed25519_scalar_base" ++ fs
@@ -111,20 +89,11 @@ def pkBodyFrom (hash : Prog isa) (bs : Prog isa) (fs : String) : Prog isa :=
     (.seq (.block pkBaseArgs) (.seq (.block pkPrune)
     (.seq (.call (scalarBaseName fs) bs) (.block pkWipe))))
 
-/-- The frame's body, calling the base-point multiplication `bs`. -/
-def pkBody (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  pkBodyFrom (pkHash f suffix) bs fs
-
-/-- `vg_ed25519_public_key` (with `suffix`), calling the base-point multiplication `bs`,
-`vg_ed25519_scalar_base` with the suffix `fs`. -/
-def publicKey (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBody bs fs f suffix) (.pop .rax 7)
-
 /-- The pointers of `vg_ed25519_public_key_expanded`'s copy: the digest (its second
 argument, saved at `fSeed`) in `rax`, `scratch` in `rcx`. -/
 def pkCopyPtrs : List Instr := [.mov .rax (.mem (stk fSeed)), .mov .rcx (.mem (stk fScratch))]
 
-/-- The eight words at `rax` copied to `rcx + 1568`, where `pkHash` leaves the digest. -/
+/-- The eight words at `rax` copied to `rcx + 1568`, where `pkBodyFrom` reads the digest. -/
 def pkCopyWords : List Instr :=
   (List.range 8).flatMap fun i =>
     [.mov .rdx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }),
@@ -133,8 +102,9 @@ def pkCopyWords : List Instr :=
 /-- The seed's cached digest copied to `scratch + 1568`. -/
 def pkCopyExpanded : Prog isa := .seq (.block pkCopyPtrs) (.block pkCopyWords)
 
-/-- `vg_ed25519_public_key_expanded`: `publicKey` from the seed's SHA-512 digest
-(`publicKeyExpandedContract`), copied rather than computed. -/
+/-- `vg_ed25519_public_key_expanded`: the public key from the seed's SHA-512 digest
+(`publicKeyExpandedContract`), calling the base-point multiplication `bs`,
+`vg_ed25519_scalar_base` with the suffix `fs`. -/
 def publicKeyExpanded (bs : Prog isa) (fs : String) : Prog isa :=
   .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBodyFrom pkCopyExpanded bs fs) (.pop .rax 7)
 

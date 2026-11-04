@@ -21,84 +21,84 @@ impl Hash {
 
 #[rustfmt::skip]
 mod vg_hash_md5;
-pub use vg_hash_md5::*;
+pub use vg_hash_md5::VG_HASH_MD5;
 
 #[rustfmt::skip]
 mod vg_hash_sha1;
-pub use vg_hash_sha1::*;
+pub use vg_hash_sha1::VG_HASH_SHA1;
 
 #[rustfmt::skip]
 mod vg_hash_sha1_shani;
-pub use vg_hash_sha1_shani::*;
+pub use vg_hash_sha1_shani::{VG_HASH_SHA1_SHANI, VG_HASH_SHA1_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha224;
-pub use vg_hash_sha224::*;
+pub use vg_hash_sha224::VG_HASH_SHA224;
 
 #[rustfmt::skip]
 mod vg_hash_sha224_avx2;
-pub use vg_hash_sha224_avx2::*;
+pub use vg_hash_sha224_avx2::{VG_HASH_SHA224_AVX2, VG_HASH_SHA224_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha224_shani;
-pub use vg_hash_sha224_shani::*;
+pub use vg_hash_sha224_shani::{VG_HASH_SHA224_SHANI, VG_HASH_SHA224_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha256;
-pub use vg_hash_sha256::*;
+pub use vg_hash_sha256::VG_HASH_SHA256;
 
 #[rustfmt::skip]
 mod vg_hash_sha256_avx2;
-pub use vg_hash_sha256_avx2::*;
+pub use vg_hash_sha256_avx2::{VG_HASH_SHA256_AVX2, VG_HASH_SHA256_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha256_shani;
-pub use vg_hash_sha256_shani::*;
+pub use vg_hash_sha256_shani::{VG_HASH_SHA256_SHANI, VG_HASH_SHA256_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha384;
-pub use vg_hash_sha384::*;
+pub use vg_hash_sha384::VG_HASH_SHA384;
 
 #[rustfmt::skip]
 mod vg_hash_sha384_avx2;
-pub use vg_hash_sha384_avx2::*;
+pub use vg_hash_sha384_avx2::{VG_HASH_SHA384_AVX2, VG_HASH_SHA384_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha384_shani;
-pub use vg_hash_sha384_shani::*;
+pub use vg_hash_sha384_shani::{VG_HASH_SHA384_SHANI, VG_HASH_SHA384_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512;
-pub use vg_hash_sha512::*;
+pub use vg_hash_sha512::VG_HASH_SHA512;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224;
-pub use vg_hash_sha512_224::*;
+pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224_avx2;
-pub use vg_hash_sha512_224_avx2::*;
+pub use vg_hash_sha512_224_avx2::{VG_HASH_SHA512_224_AVX2, VG_HASH_SHA512_224_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224_shani;
-pub use vg_hash_sha512_224_shani::*;
+pub use vg_hash_sha512_224_shani::{VG_HASH_SHA512_224_SHANI, VG_HASH_SHA512_224_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256;
-pub use vg_hash_sha512_256::*;
+pub use vg_hash_sha512_256::VG_HASH_SHA512_256;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256_avx2;
-pub use vg_hash_sha512_256_avx2::*;
+pub use vg_hash_sha512_256_avx2::{VG_HASH_SHA512_256_AVX2, VG_HASH_SHA512_256_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256_shani;
-pub use vg_hash_sha512_256_shani::*;
+pub use vg_hash_sha512_256_shani::{VG_HASH_SHA512_256_SHANI, VG_HASH_SHA512_256_SHANI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_avx2;
-pub use vg_hash_sha512_avx2::*;
+pub use vg_hash_sha512_avx2::{VG_HASH_SHA512_AVX2, VG_HASH_SHA512_AVX2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_shani;
-pub use vg_hash_sha512_shani::*;
+pub use vg_hash_sha512_shani::{VG_HASH_SHA512_SHANI, VG_HASH_SHA512_SHANI_FEATURES};

@@ -12,11 +12,6 @@
 ))]
 
 use alloc::{vec, vec::Vec};
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 use core::sync::atomic::AtomicU8;
 
 use super::{Backend, Error, PrivateKey, PublicKey, Secret};
@@ -89,11 +84,6 @@ impl PrivateKey {
                 p_len,
                 q_len,
                 backend,
-                #[cfg(any(
-                    target_arch = "aarch64",
-                    target_arch = "powerpc64",
-                    target_arch = "riscv64"
-                ))]
                 validated: AtomicU8::new(0),
             },
             packed: output,
@@ -197,11 +187,6 @@ impl PrivateKey {
             p_len,
             q_len,
             backend,
-            #[cfg(any(
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
             validated: AtomicU8::new(0),
         };
         // The packed private key p || q || g || y || x is the output itself.

@@ -125,7 +125,7 @@ use verified_garbage_cpu::Features;
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, and of
 /// the functions built on them
 /// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_keygen_candidate` and,
-/// on x86-64, `vg_rsa_prime_search`, `crate::rsa_keygen`).
+/// on x86-64, AArch64 and PPC64LE, `vg_rsa_prime_search`, `crate::rsa_keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -414,7 +414,26 @@ pub use privatekey::PrivateKey;
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
+    use super::{
+        Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey, Vec,
+        exponent, public_scratch_words, scratch_words, trim, vec,
+    };
+    #[cfg(target_arch = "x86_64")]
+    use super::{
+        VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+        VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+    };
     use alloc::string::ToString;
 
     #[test]

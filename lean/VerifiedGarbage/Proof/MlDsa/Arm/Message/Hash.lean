@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: SHAKE256 through the sponge functions
+# ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: SHAKE256 through the sponge functions
 
 Untrusted: everything here is checked by Lean. In `Ctx`: zeroing the Keccak
 state at `X` (`zeroSt_ok`), and the calls of `vg_keccak_absorb`,

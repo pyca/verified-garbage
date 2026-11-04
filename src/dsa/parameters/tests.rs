@@ -1,4 +1,4 @@
-use super::*;
+use super::{Error, Features, Generate, Parameters, Vec, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
 
@@ -164,6 +164,28 @@ fn generated_parameters_with_os_randomness() {
 #[test]
 #[cfg(target_arch = "x86_64")]
 fn backend_combinations() {
+    use super::select_backends;
+    use crate::arch::dsa::{
+        VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES,
+        vg_dsa_generate_parameters_1024, vg_dsa_generate_parameters_1024_mr_adx,
+        vg_dsa_generate_parameters_1024_sha1_shani,
+        vg_dsa_generate_parameters_1024_sha1_shani_mr_adx, vg_dsa_generate_parameters_2048,
+        vg_dsa_generate_parameters_2048_mr_adx, vg_dsa_generate_parameters_2048_sha256_avx2,
+        vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_2048_sha256_shani,
+        vg_dsa_generate_parameters_2048_sha256_shani_mr_adx, vg_dsa_generate_parameters_3072,
+        vg_dsa_generate_parameters_3072_mr_adx, vg_dsa_generate_parameters_3072_sha256_avx2,
+        vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_3072_sha256_shani,
+        vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+    };
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     let sha1_cases: &[(H1, bool, Generate, Features)] = &[
         (
@@ -276,6 +298,14 @@ fn backend_combinations() {
 #[test]
 #[cfg(target_arch = "x86")]
 fn backend_combinations() {
+    use super::select_backends;
+    use crate::arch::dsa::{
+        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES, vg_dsa_generate_parameters,
+        vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
+        vg_dsa_generate_parameters_sha256_shani,
+    };
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     // The mixed SHA pairs cannot be selected by a real CPU today because
     // the hash instructions share feature requirements. Check the complete
@@ -402,6 +432,14 @@ fn exhausted_tapes_after_prime_search_zero_output() {
 #[test]
 #[cfg(target_arch = "aarch64")]
 fn backend_combinations() {
+    use super::select_backends;
+    use crate::arch::dsa::{
+        VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES,
+        VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES, vg_dsa_generate_parameters,
+        vg_dsa_generate_parameters_sha1_sha2, vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
+        vg_dsa_generate_parameters_sha256_sha2,
+    };
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     let cases: &[(H1, H256, Generate, Features)] = &[
         (
@@ -472,6 +510,11 @@ fn backend_combinations() {
     )
 ))]
 fn backend_combinations() {
+    use super::select_backends;
+    use crate::arch::dsa::{
+        VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES, vg_dsa_generate_parameters,
+        vg_dsa_generate_parameters_umaal,
+    };
     let cases: &[(bool, Generate, Features)] = &[
         (false, vg_dsa_generate_parameters, Features(0)),
         (
@@ -493,6 +536,7 @@ fn backend_combinations() {
 #[test]
 #[cfg(target_arch = "powerpc64")]
 fn backend_combinations() {
+    use crate::arch::dsa::vg_dsa_generate_parameters;
     // Neither hash has a variant on PPC64LE: every CPU takes the baseline.
     for features in [Features(0), detected()] {
         assert!(core::ptr::fn_addr_eq(

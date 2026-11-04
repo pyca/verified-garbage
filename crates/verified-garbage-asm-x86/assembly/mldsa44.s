@@ -5661,7 +5661,7 @@ vg_mldsa44_verify:
 	ret
 	.p2align 6
 
-vg_mldsa44_verify_message:
+vg_mldsa44_verify_message_cached:
 	push ebx
 	push esi
 	push edi
@@ -5730,120 +5730,7 @@ vg_mldsa44_verify_message:
 	mov eax, esi
 	add eax, 0
 	mov ecx, 136
-	mov ebx, DWORD PTR [esp+20]
-	mov ebp, 1312
-	mov edi, esi
-	add edi, 200
-	push edi
-	push ebp
-	push ebx
-	push edx
-	push ecx
-	push eax
-	call {vg_keccak_absorb_scratch}
-	pop ecx
-	pop ecx
-	pop ecx
-	pop ecx
-	pop ecx
-	pop ecx
-	mov edx, 88
-	mov eax, esi
-	add eax, 0
-	mov ecx, 136
-	mov ebx, 31
-	mov edi, esi
-	add edi, 200
-	push edi
-	push ebx
-	push edx
-	push ecx
-	push eax
-	call {vg_keccak_pad_scratch}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, esi
-	add eax, 0
-	mov ecx, 136
-	mov edx, 0
-	mov ebx, esi
-	add ebx, 840
-	mov ebp, 64
-	mov edi, esi
-	add edi, 200
-	push edi
-	push ebp
-	push ebx
-	push edx
-	push ecx
-	push eax
-	call {vg_keccak_squeeze_scratch}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov eax, 0
-	mov DWORD PTR [esi], eax
-	mov DWORD PTR [esi+4], eax
-	mov DWORD PTR [esi+8], eax
-	mov DWORD PTR [esi+12], eax
-	mov DWORD PTR [esi+16], eax
-	mov DWORD PTR [esi+20], eax
-	mov DWORD PTR [esi+24], eax
-	mov DWORD PTR [esi+28], eax
-	mov DWORD PTR [esi+32], eax
-	mov DWORD PTR [esi+36], eax
-	mov DWORD PTR [esi+40], eax
-	mov DWORD PTR [esi+44], eax
-	mov DWORD PTR [esi+48], eax
-	mov DWORD PTR [esi+52], eax
-	mov DWORD PTR [esi+56], eax
-	mov DWORD PTR [esi+60], eax
-	mov DWORD PTR [esi+64], eax
-	mov DWORD PTR [esi+68], eax
-	mov DWORD PTR [esi+72], eax
-	mov DWORD PTR [esi+76], eax
-	mov DWORD PTR [esi+80], eax
-	mov DWORD PTR [esi+84], eax
-	mov DWORD PTR [esi+88], eax
-	mov DWORD PTR [esi+92], eax
-	mov DWORD PTR [esi+96], eax
-	mov DWORD PTR [esi+100], eax
-	mov DWORD PTR [esi+104], eax
-	mov DWORD PTR [esi+108], eax
-	mov DWORD PTR [esi+112], eax
-	mov DWORD PTR [esi+116], eax
-	mov DWORD PTR [esi+120], eax
-	mov DWORD PTR [esi+124], eax
-	mov DWORD PTR [esi+128], eax
-	mov DWORD PTR [esi+132], eax
-	mov DWORD PTR [esi+136], eax
-	mov DWORD PTR [esi+140], eax
-	mov DWORD PTR [esi+144], eax
-	mov DWORD PTR [esi+148], eax
-	mov DWORD PTR [esi+152], eax
-	mov DWORD PTR [esi+156], eax
-	mov DWORD PTR [esi+160], eax
-	mov DWORD PTR [esi+164], eax
-	mov DWORD PTR [esi+168], eax
-	mov DWORD PTR [esi+172], eax
-	mov DWORD PTR [esi+176], eax
-	mov DWORD PTR [esi+180], eax
-	mov DWORD PTR [esi+184], eax
-	mov DWORD PTR [esi+188], eax
-	mov DWORD PTR [esi+192], eax
-	mov DWORD PTR [esi+196], eax
-	mov edx, 0
-	mov eax, esi
-	add eax, 0
-	mov ecx, 136
-	mov ebx, esi
-	add ebx, 840
+	mov ebx, DWORD PTR [esp+48]
 	mov ebp, 64
 	mov edi, esi
 	add edi, 200

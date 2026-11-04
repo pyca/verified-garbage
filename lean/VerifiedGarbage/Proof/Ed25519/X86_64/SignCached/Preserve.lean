@@ -779,14 +779,6 @@ theorem stable_input (hL : L.Ok) {r : Region} (hr : r ∈ L.inputs) : Stable L r
     by simpa using hL.stk_input hr (d := 0) (n := 16) (by omega_arith)⟩,
     (hL.stk_input hr (d := 144) (n := 64) (by omega_arith)).symm⟩
 
-/-- The first 32 bytes at `seed` (all of the seed, or the scalar half of its digest). -/
-theorem stable_seed (hL : L.Ok) : Stable L ⟨L.seed, 32⟩ := by
-  have hi := stable_input hL (r := L.SEED) (by simp [Lay.inputs])
-  have hs : Region.Sub ⟨L.seed, 32⟩ L.SEED := by
-    simpa using Offset.sub_base L.seed (d := 0) (n := 32) (k := L.seedLen) (by have := hL.sl; omega_arith)
-  exact ⟨⟨⟨L.SEED, List.mem_append_left _ (by simp [Lay.inputs]), within_base _ hL.sl⟩,
-    hi.scratch.sub_left hs, hi.below.sub_right hs⟩, hi.digest.sub_left hs⟩
-
 theorem stable_out (hL : L.Ok) : Stable L ⟨L.out, 32⟩ := by
   have hs : Within (⟨L.out, 32⟩ : Region) L.OUT := within_base _ (by decide)
   exact ⟨⟨⟨L.OUT, by simp, hs⟩, hL.oc.sub_left hs.sub,
@@ -845,31 +837,12 @@ theorem finalize_step (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m�
 end VG.Proof.Ed25519.X86_64.SignCached
 end
 
-/-! The signer's three hashes, using any verified SHA-512 backend. -/
+/-! The signer's two hashes, using any verified SHA-512 backend. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
-
-theorem hashSeed_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (hashSeed v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧
-      Spec.Sha512.bytesAt t'.mem (L.B + BitVec.ofNat 64 144) 64 =
-        Spec.Sha512.sha512 (Spec.Ed25519.bytesAt t.mem L.seed 32) ∧ HashFrame L t.mem t'.mem := by
-  have hi : Stable L ⟨L.seed, 32⟩ := stable_seed hL
-  refine WP.seq (WP.mono (init_step hL hc) fun t₁ ⟨hc₁, hr₁, hf₁⟩ => ?_)
-  refine WP.seq (WP.mono (update_step v hL hc₁ (prev := []) (n := 32) hi.toInput
-    (inputArgs_ok hc₁ fSeed 0 (by decide) (by decide) L.seed hc₁.pSeed) hr₁)
-    fun t₂ ⟨hc₂, hr₂, hf₂⟩ => ?_)
-  have he := hi.bytes hf₁ (by decide : 32 ≤ 2 ^ 64)
-  simp only [List.nil_append] at hr₂
-  change Spec.Sha512.Repr Spec.Sha512.H0_512 t₂.mem L.scr (Spec.Ed25519.bytesAt t₁.mem L.seed 32) at hr₂
-  change Spec.Ed25519.bytesAt t₁.mem L.seed 32 = Spec.Ed25519.bytesAt t.mem L.seed 32 at he
-  rw [he] at hr₂
-  refine WP.mono (finalize_step v hL hc₂ 32 (by decide) false ?_ ?_ hr₂)
-    fun t₃ ⟨hc₃, hd₃, hf₃⟩ => ⟨hc₃, hd₃, hf₁.trans (hf₂.trans hf₃)⟩
-  · rw [PublicKey.bytesAt_length]; decide
-  · rw [PublicKey.bytesAt_length]; rfl
 
 theorem hashNonce_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hlen : 32 + L.len.toNat < 2 ^ 64) :

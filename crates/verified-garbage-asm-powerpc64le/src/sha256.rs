@@ -63,6 +63,32 @@ beq %cr0, 20b
     )
 }
 
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r#".base64 "Yf4h+CAAwTimAgh80f8h+CAAAfhQAYb6WAGm+mABxvpoAeb6cAEG+3gBJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
+bl {vg_sha224_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha256_update_scratch}
+.base64 "AAB0OAAAmDgwAbU4AADVOA=="
+bl {vg_sha256_finalize_scratch}
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFQAZXqYAHV6mgB9epwARXreAE161gBteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+aABITggAIBO""#,
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+    )
+}
+
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
@@ -206,6 +232,32 @@ bl {vg_sha256_compress}
 beq %cr0, 20b
 .base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOCAAgE4=""#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+    )
+}
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "Yf4h+CAAwTimAgh80f8h+CAAAfhQAYb6WAGm+mABxvpoAeb6cAEG+3gBJvsAAKY6AADFOgAA4zoAAAQ70ACGOgAAdDg="
+bl {vg_sha256_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha256_update_scratch}
+.base64 "AAB0OAAAmDgwAbU4AADVOA=="
+bl {vg_sha256_finalize_scratch}
+.base64 "MAEVgQAAFpE0ARWBBAAWkTgBFYEIABaRPAEVgQwAFpFAARWBEAAWkUQBFYEUABaRSAEVgRgAFpFMARWBHAAWkVABlepgAdXqaAH16nABFet4ATXrWAG16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5oAEhOCAAgE4=""#,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
 }
 

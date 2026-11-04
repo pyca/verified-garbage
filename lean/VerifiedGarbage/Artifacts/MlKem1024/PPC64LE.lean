@@ -26,6 +26,10 @@ def artifacts : List Artifact := [
     code := Impl.MlKem1024.PPC64LE.encaps1024
     stack := 48
     verified := Proof.MlKem1024.PPC64LE.Encaps.verified },
+  Spec.MlKem1024.encapsHApi.artifact PPC64LE.target {
+    code := Impl.MlKem1024.PPC64LE.encapsH1024
+    stack := 48
+    verified := Proof.MlKem1024.PPC64LE.Encaps.verifiedH },
   Spec.MlKem1024.decapsApi.artifact PPC64LE.target {
     code := Impl.MlKem1024.PPC64LE.decaps1024
     stack := 48

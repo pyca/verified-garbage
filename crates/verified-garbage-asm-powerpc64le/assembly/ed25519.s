@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ed25519_public_key:
+vg_ed25519_public_key_expanded:
 	stdu %r1, -176(%r1)
 	addi %r6, %r1, 32
 	mflr %r0
@@ -17,19 +17,22 @@ vg_ed25519_public_key:
 	addi %r21, %r4, 0
 	addi %r22, %r5, 0
 	addi %r23, %r6, 0
-	addi %r3, %r22, 0
-	bl {vg_sha512_init}
-	addi %r3, %r22, 0
-	li %r4, 0
-	addi %r5, %r21, 0
-	li %r6, 32
-	addi %r7, %r22, 192
-	bl {vg_sha512_update_scratch}
-	addi %r3, %r22, 0
-	li %r4, 32
-	addi %r5, %r23, 0
-	addi %r6, %r22, 192
-	bl {vg_sha512_finalize_scratch}
+	ld %r8, 0(%r21)
+	std %r8, 0(%r23)
+	ld %r8, 8(%r21)
+	std %r8, 8(%r23)
+	ld %r8, 16(%r21)
+	std %r8, 16(%r23)
+	ld %r8, 24(%r21)
+	std %r8, 24(%r23)
+	ld %r8, 32(%r21)
+	std %r8, 32(%r23)
+	ld %r8, 40(%r21)
+	std %r8, 40(%r23)
+	ld %r8, 48(%r21)
+	std %r8, 48(%r23)
+	ld %r8, 56(%r21)
+	std %r8, 56(%r23)
 	ld %r8, 0(%r23)
 	rldicl %r8, %r8, 61, 3
 	rldicr %r8, %r8, 3, 60
@@ -77,7 +80,7 @@ vg_ed25519_public_key:
 	addi %r1, %r1, 176
 	blr
 
-vg_ed25519_sign_cached:
+vg_ed25519_sign_expanded:
 	stdu %r1, -320(%r1)
 	addi %r9, %r1, 32
 	mflr %r0
@@ -102,19 +105,22 @@ vg_ed25519_sign_cached:
 	std %r8, 208(%r25)
 	ld %r8, 24(%r5)
 	std %r8, 216(%r25)
-	addi %r3, %r24, 0
-	bl {vg_sha512_init}
-	addi %r3, %r24, 0
-	li %r4, 0
-	addi %r5, %r21, 0
-	li %r6, 32
-	addi %r7, %r24, 192
-	bl {vg_sha512_update_scratch}
-	addi %r3, %r24, 0
-	li %r4, 32
-	addi %r5, %r25, 128
-	addi %r6, %r24, 192
-	bl {vg_sha512_finalize_scratch}
+	ld %r8, 0(%r21)
+	std %r8, 128(%r25)
+	ld %r8, 8(%r21)
+	std %r8, 136(%r25)
+	ld %r8, 16(%r21)
+	std %r8, 144(%r25)
+	ld %r8, 24(%r21)
+	std %r8, 152(%r25)
+	ld %r8, 32(%r21)
+	std %r8, 160(%r25)
+	ld %r8, 40(%r21)
+	std %r8, 168(%r25)
+	ld %r8, 48(%r21)
+	std %r8, 176(%r25)
+	ld %r8, 56(%r21)
+	std %r8, 184(%r25)
 	ld %r8, 128(%r25)
 	rldicl %r8, %r8, 61, 3
 	rldicr %r8, %r8, 3, 60

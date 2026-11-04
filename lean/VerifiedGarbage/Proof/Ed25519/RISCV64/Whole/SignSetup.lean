@@ -7,12 +7,12 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# `vg_ed25519_sign_cached` on RISC-V: the setup
+# `vg_ed25519_sign_expanded` on RISC-V: the setup
 
-`out` in `a0`, `seed` in `a1`, `pk` in `a2`, the message in `a3` (`len` in
+`out` in `a0`, `expanded` in `a1`, `pk` in `a2`, the message in `a3` (`len` in
 `a4`), `scratch` in `a5` and the frame `F` (288 bytes) in `a6`. The setup
 saves the registers at `224(F)`, moves what lives across calls to `s7`–`s11`
-and `seed` to `s1`, and copies `pk` to `192(F)` (`signSetup_ok`).
+and `expanded` to `s1`, and copies `pk` to `192(F)` (`signSetup_ok`).
 -/
 
 @[expose] public section
@@ -23,25 +23,28 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X2551
 open VG.Spec.Ed25519 (bytesAt)
 open VG.Impl.Ed25519.RISCV64 (combSym combWord)
 
+variable {sl : Nat}
+
 /-- The message. -/
 abbrev msgR (s : State) : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
 
 /-- What the body may write. -/
 abbrev signW (s : State) : List Region := [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩, below s.sp 208]
 
-/-- The precondition, by register. -/
-structure SignPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .a1, 32⟩, ⟨s.gpr .a2, 32⟩, msgR s, TBL (s.syms combSym)]
+/-- The precondition, by register, for `sl` bytes at `a1` (the seed's digest, so 64). That `pk` is
+the seed's public key is a hypothesis of its own (`signExpanded_wp`). -/
+structure SignPre (sl : Nat) (s : State) : Prop where
+  rd : s.rd = [⟨s.gpr .a1, sl⟩, ⟨s.gpr .a2, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩]
   alC : (s.gpr .a5).toNat % 8 = 0
   alF : (s.gpr .a6).toNat % 8 = 0
-  oS : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a1, 32⟩
+  oS : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a1, sl⟩
   oP : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a2, 32⟩
   oM : Region.Disjoint ⟨s.gpr .a0, 64⟩ (msgR s)
   oC : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a5, 8192⟩
   oF : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a6, 288⟩
-  sC : Region.Disjoint ⟨s.gpr .a1, 32⟩ ⟨s.gpr .a5, 8192⟩
-  sF : Region.Disjoint ⟨s.gpr .a1, 32⟩ ⟨s.gpr .a6, 288⟩
+  sC : Region.Disjoint ⟨s.gpr .a1, sl⟩ ⟨s.gpr .a5, 8192⟩
+  sF : Region.Disjoint ⟨s.gpr .a1, sl⟩ ⟨s.gpr .a6, 288⟩
   pC : Region.Disjoint ⟨s.gpr .a2, 32⟩ ⟨s.gpr .a5, 8192⟩
   pF : Region.Disjoint ⟨s.gpr .a2, 32⟩ ⟨s.gpr .a6, 288⟩
   mC : Region.Disjoint (msgR s) ⟨s.gpr .a5, 8192⟩
@@ -50,12 +53,11 @@ structure SignPre (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
   sp : 208 ≤ s.sp.toNat
   bO : (below s.sp 208).Disjoint ⟨s.gpr .a0, 64⟩
-  bS : (below s.sp 208).Disjoint ⟨s.gpr .a1, 32⟩
+  bS : (below s.sp 208).Disjoint ⟨s.gpr .a1, sl⟩
   bP : (below s.sp 208).Disjoint ⟨s.gpr .a2, 32⟩
   bM : (below s.sp 208).Disjoint (msgR s)
   bC : (below s.sp 208).Disjoint ⟨s.gpr .a5, 8192⟩
   bF : (below s.sp 208).Disjoint ⟨s.gpr .a6, 288⟩
-  pk : bytesAt s.mem (s.gpr .a2) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .a1) 32)
   tal : (s.syms combSym).toNat % 8 = 0
   tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
   words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
@@ -71,7 +73,7 @@ abbrev SignInv (s : State) : State → Prop := Inv s (s.gpr .a6) 224 signRegs (s
 theorem signRegs_pres : ∀ r ∈ signRegs, r ∈ preserved := by decide
 
 /-- The slots are apart from everything but the frame's first 224 bytes. -/
-theorem sign_slot {s : State} (hp : SignPre s) :
+theorem sign_slot {s : State} (hp : SignPre sl s) :
     (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a0, 64⟩ ∧
     (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a5, 8192⟩ ∧
     (slotArea (s.gpr .a6) 224 signRegs).Disjoint (below s.sp 208) ∧
@@ -88,7 +90,7 @@ theorem signV_s10 (s : State) : signV s .s10 = s.gpr .a5 := rfl
 theorem signV_s11 (s : State) : signV s .s11 = s.gpr .a6 := rfl
 
 /-- The setup: the registers saved, the pointers moved, `pk` copied to `192(F)`. -/
-theorem signSetup_ok {s : State} (hp : SignPre s) :
+theorem signSetup_ok {s : State} (hp : SignPre sl s) :
     WP isa (.block signSetup) s fun t => SignInv s t ∧
       bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .a2) 32 := by
   have hF : (⟨s.gpr .a6, 288⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
@@ -158,7 +160,7 @@ def SignWr (s : State) (r : Region) : Prop :=
   r = ⟨s.gpr .a5, 8192⟩ ∨ r = below s.sp 208 ∨ r = ⟨s.gpr .a0, 64⟩ ∨ r = ⟨s.gpr .a0 + BitVec.ofNat 64 32, 32⟩ ∨
     r = ⟨s.gpr .a0, 32⟩ ∨ ∃ d n, d + n ≤ 224 ∧ r = ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩
 
-theorem signStep {s t t' : State} (hp : SignPre s) (h : SignInv s t) (hrd : t'.rd = t.rd)
+theorem signStep {s t t' : State} (hp : SignPre sl s) (h : SignInv s t) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {Wc : List Region}
     (hf : Frame Wc t.mem t'.mem) (hW : ∀ r ∈ Wc, SignWr s r) : SignInv s t' := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := sign_slot hp

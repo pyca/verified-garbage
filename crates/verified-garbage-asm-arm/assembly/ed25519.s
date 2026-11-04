@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ed25519_public_key:
+vg_ed25519_public_key_expanded:
 	push {lr}
 	push {r12}
 	sub sp, sp, #24
@@ -15,37 +15,41 @@ vg_ed25519_public_key:
 	str r1, [r12, #4]
 	add r12, sp, #248
 	str r2, [r12, #8]
-	ldr r0, [sp, #256]
-	add r0, r0, #0
-	bl {vg_sha512_init}
-	ldr r0, [sp, #252]
-	add r0, r0, #0
-	add r12, sp, #0
-	str r0, [r12, #0]
-	movw r0, #32
-	add r12, sp, #4
-	str r0, [r12, #0]
-	ldr r0, [sp, #256]
-	add r0, r0, #192
-	add r12, sp, #8
-	str r0, [r12, #0]
-	ldr r0, [sp, #256]
-	add r0, r0, #0
-	movw r2, #0
-	movw r3, #0
-	bl {vg_sha512_update_scratch}
-	add r0, sp, #184
-	add r12, sp, #0
-	str r0, [r12, #0]
-	ldr r0, [sp, #256]
-	add r0, r0, #192
-	add r12, sp, #4
-	str r0, [r12, #0]
-	ldr r0, [sp, #256]
-	add r0, r0, #0
-	movw r2, #32
-	movw r3, #0
-	bl {vg_sha512_finalize_scratch}
+	ldr r1, [sp, #252]
+	add r1, r1, #0
+	add r2, sp, #184
+	ldr r0, [r1, #0]
+	str r0, [r2, #0]
+	ldr r0, [r1, #4]
+	str r0, [r2, #4]
+	ldr r0, [r1, #8]
+	str r0, [r2, #8]
+	ldr r0, [r1, #12]
+	str r0, [r2, #12]
+	ldr r0, [r1, #16]
+	str r0, [r2, #16]
+	ldr r0, [r1, #20]
+	str r0, [r2, #20]
+	ldr r0, [r1, #24]
+	str r0, [r2, #24]
+	ldr r0, [r1, #28]
+	str r0, [r2, #28]
+	ldr r0, [r1, #32]
+	str r0, [r2, #32]
+	ldr r0, [r1, #36]
+	str r0, [r2, #36]
+	ldr r0, [r1, #40]
+	str r0, [r2, #40]
+	ldr r0, [r1, #44]
+	str r0, [r2, #44]
+	ldr r0, [r1, #48]
+	str r0, [r2, #48]
+	ldr r0, [r1, #52]
+	str r0, [r2, #52]
+	ldr r0, [r1, #56]
+	str r0, [r2, #56]
+	ldr r0, [r1, #60]
+	str r0, [r2, #60]
 	ldr r0, [sp, #184]
 	movw r1, #65528
 	movt r1, #65535
@@ -259,7 +263,7 @@ vg_ed25519_public_key:
 	ldr lr, [sp], #4
 	bx lr
 
-vg_ed25519_sign_cached:
+vg_ed25519_sign_expanded:
 	push {lr}
 	push {r12}
 	sub sp, sp, #24
@@ -278,37 +282,41 @@ vg_ed25519_sign_cached:
 	ldr lr, [sp, #284]
 	add r12, sp, #248
 	str lr, [r12, #20]
-	ldr r0, [sp, #268]
-	add r0, r0, #0
-	bl {vg_sha512_init}
-	ldr r0, [sp, #252]
-	add r0, r0, #0
-	add r12, sp, #0
-	str r0, [r12, #0]
-	movw r0, #32
-	add r12, sp, #4
-	str r0, [r12, #0]
-	ldr r0, [sp, #268]
-	add r0, r0, #192
-	add r12, sp, #8
-	str r0, [r12, #0]
-	ldr r0, [sp, #268]
-	add r0, r0, #0
-	movw r2, #0
-	movw r3, #0
-	bl {vg_sha512_update_scratch}
-	add r0, sp, #184
-	add r12, sp, #0
-	str r0, [r12, #0]
-	ldr r0, [sp, #268]
-	add r0, r0, #192
-	add r12, sp, #4
-	str r0, [r12, #0]
-	ldr r0, [sp, #268]
-	add r0, r0, #0
-	movw r2, #32
-	movw r3, #0
-	bl {vg_sha512_finalize_scratch}
+	ldr r1, [sp, #252]
+	add r1, r1, #0
+	add r2, sp, #184
+	ldr r0, [r1, #0]
+	str r0, [r2, #0]
+	ldr r0, [r1, #4]
+	str r0, [r2, #4]
+	ldr r0, [r1, #8]
+	str r0, [r2, #8]
+	ldr r0, [r1, #12]
+	str r0, [r2, #12]
+	ldr r0, [r1, #16]
+	str r0, [r2, #16]
+	ldr r0, [r1, #20]
+	str r0, [r2, #20]
+	ldr r0, [r1, #24]
+	str r0, [r2, #24]
+	ldr r0, [r1, #28]
+	str r0, [r2, #28]
+	ldr r0, [r1, #32]
+	str r0, [r2, #32]
+	ldr r0, [r1, #36]
+	str r0, [r2, #36]
+	ldr r0, [r1, #40]
+	str r0, [r2, #40]
+	ldr r0, [r1, #44]
+	str r0, [r2, #44]
+	ldr r0, [r1, #48]
+	str r0, [r2, #48]
+	ldr r0, [r1, #52]
+	str r0, [r2, #52]
+	ldr r0, [r1, #56]
+	str r0, [r2, #56]
+	ldr r0, [r1, #60]
+	str r0, [r2, #60]
 	ldr r0, [sp, #184]
 	movw r1, #65528
 	movt r1, #65535

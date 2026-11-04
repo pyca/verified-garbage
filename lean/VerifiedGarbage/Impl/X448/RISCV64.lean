@@ -245,6 +245,15 @@ def consts : List Instr :=
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts
 
+/-- The base point's u-coordinate, 5, into `X1` and `X3`. -/
+def five : List Instr :=
+  [.li .a4 5, .li .a5 0, .store .w .a4 .a3 X1, .store .w .a4 .a3 X3] ++ storeN .a5 (X1 + 4) 13 ++
+    storeN .a5 (X3 + 4) 13
+
+/-- `setup` for the base point: its u-coordinate, 5, into `X1` and `X3`, and
+the constants. -/
+def setupBase : List Instr := five ++ consts
+
 /-- The bits of the byte at `a1` into `BITS` at `a6`, advancing both. -/
 def bitsBody : List Instr :=
   [.load .b .a4 .a1 0] ++

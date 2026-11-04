@@ -6921,7 +6921,7 @@ vg_mldsa65_verify:
 	ret
 	.option pop
 
-vg_mldsa65_verify_message:
+vg_mldsa65_verify_message_cached:
 	.option push
 	.option arch, +m, +c
 	srli t1, a4, 8
@@ -6938,15 +6938,17 @@ vg_mldsa65_verify_message:
 	sd s3, 928(t2)
 	sd s4, 936(t2)
 	sd s5, 944(t2)
-	sd s7, 952(t2)
-	sd s8, 960(t2)
-	sd ra, 968(t2)
+	sd s6, 952(t2)
+	sd s7, 960(t2)
+	sd s8, 968(t2)
+	sd ra, 976(t2)
 	addi s0, a0, 0
 	addi s1, a1, 0
 	addi s2, a2, 0
 	addi s3, a3, 0
 	addi s4, a4, 0
 	addi s5, a5, 0
+	addi s6, a7, 0
 	addi s7, a6, 0
 	addi s8, t2, 0
 	addi t0, zero, 0
@@ -6978,56 +6980,7 @@ vg_mldsa65_verify_message:
 	sd t0, 176(s8)
 	sd t0, 184(s8)
 	sd t0, 192(s8)
-	addi a3, s0, 0
-	addi a2, zero, 0
-	addi a0, s8, 0
-	addi a1, zero, 136
-	addi a4, zero, 1024
-	call {vg_keccak_absorb}
-	addi a3, s0, 1024
-	addi a2, a0, 0
-	addi a0, s8, 0
-	addi a1, zero, 136
-	addi a4, zero, 928
-	call {vg_keccak_absorb}
-	addi a2, a0, 0
-	addi a0, s8, 0
-	addi a1, zero, 136
-	addi a3, zero, 31
-	call {vg_keccak_pad}
-	addi a0, s8, 0
-	addi a1, zero, 136
-	addi a2, zero, 0
-	addi a3, s8, 840
-	addi a4, zero, 64
-	call {vg_keccak_squeeze}
-	addi t0, zero, 0
-	sd t0, 0(s8)
-	sd t0, 8(s8)
-	sd t0, 16(s8)
-	sd t0, 24(s8)
-	sd t0, 32(s8)
-	sd t0, 40(s8)
-	sd t0, 48(s8)
-	sd t0, 56(s8)
-	sd t0, 64(s8)
-	sd t0, 72(s8)
-	sd t0, 80(s8)
-	sd t0, 88(s8)
-	sd t0, 96(s8)
-	sd t0, 104(s8)
-	sd t0, 112(s8)
-	sd t0, 120(s8)
-	sd t0, 128(s8)
-	sd t0, 136(s8)
-	sd t0, 144(s8)
-	sd t0, 152(s8)
-	sd t0, 160(s8)
-	sd t0, 168(s8)
-	sd t0, 176(s8)
-	sd t0, 184(s8)
-	sd t0, 192(s8)
-	addi a3, s8, 840
+	addi a3, s6, 0
 	addi a2, zero, 0
 	addi a0, s8, 0
 	addi a1, zero, 136
@@ -7067,15 +7020,16 @@ vg_mldsa65_verify_message:
 	addi a2, s5, 0
 	addi a3, s7, 0
 	call {vg_mldsa65_verify}
-	ld ra, 968(s8)
+	ld ra, 976(s8)
 	ld s0, 904(s8)
 	ld s1, 912(s8)
 	ld s2, 920(s8)
 	ld s3, 928(s8)
 	ld s4, 936(s8)
 	ld s5, 944(s8)
-	ld s7, 952(s8)
-	ld s8, 960(s8)
+	ld s6, 952(s8)
+	ld s7, 960(s8)
+	ld s8, 968(s8)
 21:
 	ret
 	.option pop

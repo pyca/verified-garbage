@@ -438,7 +438,9 @@ fn allocate<T: Clone>(len: usize, zero: T) -> Result<Vec<T>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Blake2bBackend, CompressBackend, Error, Features, allocate, valid};
+    #[cfg(target_arch = "x86_64")]
+    use super::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
 
     #[test]
     fn length_limits() {

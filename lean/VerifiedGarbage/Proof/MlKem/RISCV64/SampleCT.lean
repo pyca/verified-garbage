@@ -194,7 +194,7 @@ theorem eSEED : SEED s₂ = SEED s₁ := h.seed.symm
 theorem absorbPhase_ct :
     RelCT isa (fun a b => (SEnv s₁ a ∧ stateAt a.mem (S s₁) = Spec.Sha3.zero) ∧
       (SEnv s₂ b ∧ stateAt b.mem (S s₂) = Spec.Sha3.zero))
-      (.seq (.block absorbSeedArgs) (.call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb))
+      (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb))
       fun _ _ => True := by
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block absorbSeedArgs) s (FA s₀) := fun s₀ s hp hs =>
     WP.mono (absorbArgs_ok hp hs) fun _ ⟨ht, _, ha⟩ => ⟨ht, ha⟩

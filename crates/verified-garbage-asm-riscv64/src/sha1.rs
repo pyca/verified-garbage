@@ -387,6 +387,71 @@ beqz s6, 20b
     )
 }
 
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7175
+.insn 2, 0x828a
+.insn 4, 0x0412bc23
+.insn 4, 0x0772b023
+.insn 4, 0x0782b423
+.insn 4, 0x0792b823
+.insn 4, 0x07a2bc23
+.insn 4, 0x09b2b023
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha1_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha1_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha1_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x058c3083
+.insn 4, 0x060c3b83
+.insn 4, 0x070c3c83
+.insn 4, 0x078c3d03
+.insn 4, 0x080c3d83
+.insn 4, 0x068c3c03
+.insn 2, 0x6149
+.insn 2, 0x8082
+.option pop",
+        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_update = sym super::sha1::vg_sha1_update,
+        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_compress.rs"]
 pub(crate) mod vg_sha1_compress;

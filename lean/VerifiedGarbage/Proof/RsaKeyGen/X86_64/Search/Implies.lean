@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 
 namespace VG.Proof.RsaKeyGen.X86_64.Search
 
+
 open VG VG.X86_64 VG.Spec.RsaKeyGen
 
 theorem stackArgs_six (s : State) : List.map (stackArg s) (List.range 6) =

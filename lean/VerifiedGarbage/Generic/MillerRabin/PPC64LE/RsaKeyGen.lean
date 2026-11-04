@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Instances
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Verified
 
 /-! # RSA candidates on PPC64LE call each shared Miller–Rabin implementation -/
 
@@ -20,6 +21,13 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     stack := 400
     consts := Impl.RsaKeyGen.TrialTable32.consts
     verified := Proof.RsaKeyGen.PPC64LE.Cand.candidate_verified v
+    features := v.features },
+  Spec.RsaKeyGen.primeSearchApi.artifact PPC64LE.target {
+    suffix := v.suffix
+    stack := 768
+    consts := Impl.RsaKeyGen.TrialTable32.consts
+    code := Proof.RsaKeyGen.PPC64LE.Search.searchCode v
+    verified := Proof.RsaKeyGen.PPC64LE.Search.search_verified v
     features := v.features }]
 
 end VG.Generic.MillerRabin.PPC64LE.RsaKeyGen

@@ -1,16 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
+public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 
 /-!
-# Complete Ed25519 signing with the matching cached public key
+# Complete Ed25519 signing with the seed's cached SHA-512 digest and public key
 
-All three SHA-512 computations, pruning, nonce reduction, base-point
-multiplication and scalar multiply-add execute inside this operation.
-The caller supplies the key derived from the seed, as required by the
-reviewed `signCachedContract`.
+The nonce's and the challenge's SHA-512 computations, pruning, nonce reduction,
+base-point multiplication and scalar multiply-add execute inside this operation.
+The caller supplies the seed's digest and the key derived from the seed, as
+`signExpandedContract` requires.
 
 The 248-byte frame holds the scalar (0), nonce prefix (32), nonce (64),
 challenge (96), hash digest (128), an unused alignment word (192), and six
@@ -69,9 +71,6 @@ def finalize (f : Callee) (suffix : String) (prefixLen : Nat) (withMessage : Boo
   callWith (finalizeArgs prefixLen withMessage) ("vg_sha512_finalize_scratch" ++ suffix)
     (Sha512.X86_64.Stream.finalize f)
 
-def hashSeed (f : Callee) (suffix : String) : Prog isa :=
-  .seq init (.seq (update f suffix (inputArgs fSeed 0)) (finalize f suffix 32 false))
-
 def pruneRegs : List Instr :=
   [.mov .r8 (.mem (stk 128)), .mov .r9 (.mem (stk 136)),
     .mov .r10 (.mem (stk 144)), .mov .r11 (.mem (stk 152)),
@@ -122,26 +121,18 @@ def bodyFrom (secret : Prog isa) (bs : Prog isa) (fs : String) (f : Callee) (suf
     (.seq (hashChallenge f suffix) (.seq (reduce 96)
     (.seq (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd) (.block wipe))))))))
 
-def body (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  bodyFrom (hashSeed f suffix) bs fs f suffix
-
-/-- Signing, calling the base-point multiplication `bs`, `vg_ed25519_scalar_base` with the
-suffix `fs`. -/
-def code (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  .frame (.push ([.rdi, .rsi, .rdx, .rcx, .r8, .r9] ++ List.replicate 25 .rax))
-    (body bs fs f suffix) (.pop .rax 31)
-
 /-- The eight words at `rax` copied to `stk 128`. -/
 def copyWords : List Instr :=
   (List.range 8).flatMap fun i =>
     [.mov .rcx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }), .store (stk (128 + 8 * i)) .rcx]
 
 /-- `vg_ed25519_sign_expanded`'s first step: the seed's cached SHA-512 digest (its second
-argument, saved at `fSeed`) copied to `stk 128`, where `hashSeed` leaves it. -/
+argument, saved at `fSeed`) copied to `stk 128`, where `bodyFrom` reads it. -/
 def copyExpanded : Prog isa := .seq (.block [.mov .rax (.mem (stk fSeed))]) (.block copyWords)
 
-/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
-digest copied rather than computed. -/
+/-- `vg_ed25519_sign_expanded`: signing with the seed's cached SHA-512 digest
+(`signExpandedContract`), calling the base-point multiplication `bs`, `vg_ed25519_scalar_base`
+with the suffix `fs`. -/
 def codeExpanded (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
   .frame (.push ([.rdi, .rsi, .rdx, .rcx, .r8, .r9] ++ List.replicate 25 .rax))
     (bodyFrom copyExpanded bs fs f suffix) (.pop .rax 31)
