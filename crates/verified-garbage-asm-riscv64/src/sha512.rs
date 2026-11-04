@@ -2178,6 +2178,318 @@ beqz s6, 20b
     )
 }
 
+/// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7151
+.insn 2, 0x828a
+.insn 4, 0x0c12b023
+.insn 4, 0x0d72b423
+.insn 4, 0x0d82b823
+.insn 4, 0x0d92bc23
+.insn 4, 0x0fa2b023
+.insn 4, 0x0fb2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha384_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha512_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha384_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x066c3023
+.insn 4, 0x066c3423
+.insn 4, 0x066c3823
+.insn 4, 0x066c3c23
+.insn 4, 0x086c3023
+.insn 4, 0x086c3423
+.insn 4, 0x086c3823
+.insn 4, 0x086c3c23
+.insn 4, 0x0a6c3023
+.insn 4, 0x0a6c3423
+.insn 4, 0x0a6c3823
+.insn 4, 0x0a6c3c23
+.insn 4, 0x0c0c3083
+.insn 4, 0x0c8c3b83
+.insn 4, 0x0d8c3c83
+.insn 4, 0x0e0c3d03
+.insn 4, 0x0e8c3d83
+.insn 4, 0x0d0c3c03
+.insn 2, 0x616d
+.insn 2, 0x8082
+.option pop",
+        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha384_finalize = sym super::sha512::vg_sha384_finalize,
+    )
+}
+
+/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7151
+.insn 2, 0x828a
+.insn 4, 0x0c12b023
+.insn 4, 0x0d72b423
+.insn 4, 0x0d82b823
+.insn 4, 0x0d92bc23
+.insn 4, 0x0fa2b023
+.insn 4, 0x0fb2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha512_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha512_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha512_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x066c3023
+.insn 4, 0x066c3423
+.insn 4, 0x066c3823
+.insn 4, 0x066c3c23
+.insn 4, 0x086c3023
+.insn 4, 0x086c3423
+.insn 4, 0x086c3823
+.insn 4, 0x086c3c23
+.insn 4, 0x0a6c3023
+.insn 4, 0x0a6c3423
+.insn 4, 0x0a6c3823
+.insn 4, 0x0a6c3c23
+.insn 4, 0x0c0c3083
+.insn 4, 0x0c8c3b83
+.insn 4, 0x0d8c3c83
+.insn 4, 0x0e0c3d03
+.insn 4, 0x0e8c3d83
+.insn 4, 0x0d0c3c03
+.insn 2, 0x616d
+.insn 2, 0x8082
+.option pop",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+    )
+}
+
+/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7151
+.insn 2, 0x828a
+.insn 4, 0x0c12b023
+.insn 4, 0x0d72b423
+.insn 4, 0x0d82b823
+.insn 4, 0x0d92bc23
+.insn 4, 0x0fa2b023
+.insn 4, 0x0fb2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha512_224_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha512_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha512_224_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x066c3023
+.insn 4, 0x066c3423
+.insn 4, 0x066c3823
+.insn 4, 0x066c3c23
+.insn 4, 0x086c3023
+.insn 4, 0x086c3423
+.insn 4, 0x086c3823
+.insn 4, 0x086c3c23
+.insn 4, 0x0a6c3023
+.insn 4, 0x0a6c3423
+.insn 4, 0x0a6c3823
+.insn 4, 0x0a6c3c23
+.insn 4, 0x0c0c3083
+.insn 4, 0x0c8c3b83
+.insn 4, 0x0d8c3c83
+.insn 4, 0x0e0c3d03
+.insn 4, 0x0e8c3d83
+.insn 4, 0x0d0c3c03
+.insn 2, 0x616d
+.insn 2, 0x8082
+.option pop",
+        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
+        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_224_finalize = sym super::sha512::vg_sha512_224_finalize,
+    )
+}
+
+/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 448 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7151
+.insn 2, 0x828a
+.insn 4, 0x0c12b023
+.insn 4, 0x0d72b423
+.insn 4, 0x0d82b823
+.insn 4, 0x0d92bc23
+.insn 4, 0x0fa2b023
+.insn 4, 0x0fb2b423
+.insn 2, 0x8c16
+.insn 2, 0x8cb2
+.insn 2, 0x8d2a
+.insn 2, 0x8dae
+.insn 2, 0x8562
+call {vg_sha512_256_init}
+.insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
+call {vg_sha512_update}
+.insn 2, 0x8562
+.insn 2, 0x85ee
+.insn 2, 0x8666
+call {vg_sha512_256_finalize}
+.insn 2, 0x4301
+.insn 4, 0x006c3023
+.insn 4, 0x006c3423
+.insn 4, 0x006c3823
+.insn 4, 0x006c3c23
+.insn 4, 0x026c3023
+.insn 4, 0x026c3423
+.insn 4, 0x026c3823
+.insn 4, 0x026c3c23
+.insn 4, 0x046c3023
+.insn 4, 0x046c3423
+.insn 4, 0x046c3823
+.insn 4, 0x046c3c23
+.insn 4, 0x066c3023
+.insn 4, 0x066c3423
+.insn 4, 0x066c3823
+.insn 4, 0x066c3c23
+.insn 4, 0x086c3023
+.insn 4, 0x086c3423
+.insn 4, 0x086c3823
+.insn 4, 0x086c3c23
+.insn 4, 0x0a6c3023
+.insn 4, 0x0a6c3423
+.insn 4, 0x0a6c3823
+.insn 4, 0x0a6c3c23
+.insn 4, 0x0c0c3083
+.insn 4, 0x0c8c3b83
+.insn 4, 0x0d8c3c83
+.insn 4, 0x0e0c3d03
+.insn 4, 0x0e8c3d83
+.insn 4, 0x0d0c3c03
+.insn 2, 0x616d
+.insn 2, 0x8082
+.option pop",
+        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
+        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_256_finalize = sym super::sha512::vg_sha512_256_finalize,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
