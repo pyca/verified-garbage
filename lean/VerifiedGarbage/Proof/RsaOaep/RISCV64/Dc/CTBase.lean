@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/CTBase.lean`). Two runs are compared through an
 anchor `a`, the first run's entry state: `PubD a s` says the entry state `s`
-has `a`'s public data (`pubD_of`, from the shared contract's). After the
+has `a`'s public data (`pubD_of`, from the contract's). After the
 private operation, `DX a t` says `t` has `Base` for the decoding from such an
 entry state, whose working space and `k`, `out` and `msg_len` in `s0`–`s3`
 are then `a`'s (`DX.pins`), while `s4` holds that run's own result. The
@@ -36,32 +36,40 @@ open VG.Proof.RsaOaep.RISCV64 (Base Fits SC B OkS fx fixed)
 structure PubD (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], s.gpr r = a.gpr r
-  args : ∀ i < 15, stackArg s i = stackArg a i
+  args : ∀ i < 16, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a3) (a.gpr .a4).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a5) (a.gpr .a6).toNat
 
-theorem pubD_of {H G : Spec.Mgf1.Hash} {s₁ s₂ : State}
-    (h : (Spec.RsaOaep.decryptContract H G abi stackBytes).pub s₁ s₂) : PubD s₁ s₂ := by
+/-- The contract's public data: `PubD`, the tables' functions at the same
+addresses, and the same tables held at MGF1's table's address. -/
+theorem pubD_of {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec Hs ts).pub s₁ s₂) :
+    PubD s₁ s₂ ∧ (∀ f ∈ (ts.map (fun T : FnTable => T.fns)).flatten, s₁.syms f = s₂.syms f) ∧
+      ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
   have e : stackBytes = 3471 + 1 := rfl
+  unfold decSpec at h
   rw [e] at h
-  sig_pub [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs, stackArgs_fifteen,
-    List.append_eq] at h
-  simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-  obtain ⟨hsp, hl, g0, g1, g2, g3, g4, g5, g6, g7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-    a14⟩ := h
-  rw [List.map_append, List.map_append] at hl
+  sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    stackArgs_sixteen, List.append_eq, List.range, List.range.loop] at h
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq] at h
+  obtain ⟨hsp, hsy, htab, hl, g0, g1, g2, g3, g4, g5, g6, g7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+    a13, a14, a15⟩ := h
+  simp only [List.map_append] at hl
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [bytesAt_length, g4])
   have inj := fun {x y : List Byte} (h : x.map (·.toNat) = y.map (·.toNat)) =>
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
-  refine ⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩
+  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩, hsy,
+    fun T hT => htab _ _ rfl rfl T hT⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [g0.symm, g1.symm, g2.symm, g3.symm, g4.symm, g5.symm, g6.symm, g7.symm]
   · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
-      i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
-      a11.symm, a12.symm, a13.symm, a14.symm]
+      a11.symm, a12.symm, a13.symm, a14.symm, a15.symm]
 
 theorem pubD_refl (s : State) : PubD s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
 
@@ -90,7 +98,7 @@ variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (
 include P hm
 
 /-- The stack arguments, in the base state. -/
-theorem stackArg_bx {i : Nat} (hi : i < 15) : stackArg (bx s m rc) i = stackArg s i := by
+theorem stackArg_bx {i : Nat} (hi : i < 16) : stackArg (bx s m rc) i = stackArg s i := by
   show m.readW (stackArgAddr s i) 64 = s.mem.readW (stackArgAddr s i) 64
   exact hm.readW (in_aR hi) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

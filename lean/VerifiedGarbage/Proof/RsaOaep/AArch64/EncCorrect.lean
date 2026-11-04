@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
 public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
+public import VerifiedGarbage.Proof.HashTable.AArch64
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
@@ -30,14 +31,17 @@ namespace VG.Proof.RsaOaep.AArch64.Enc
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash Stream)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
+open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
+open VG.Proof.HashTable.AArch64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_tableOf)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked)
 open VG.Proof.RsaOaep.AArch64.Dec (entered)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (popped_mem popped_sp popped_v popped_gpr_self popped_gpr_ne freed_mem freed_sp
   freed_v freed_gpr add_add)
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) {f : Fns}
 
 include hH hG in
 theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
@@ -45,8 +49,10 @@ theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked) {L : ELay} (hL : L.Ok) (hP : c.stack ≤ L.P) (hP16 : 16 ≤ L.P)
     (hD : L.D = Hl.D) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} (hp : PreOk L m₀) {t : State}
     (hc : Ctx L g vv m₀ t) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem L.Q L.scr V W) (hS : Slots L W)
-    (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) :
-    WP isa (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code) t fun t' => Ctx L g vv m₀ t' ∧
+    (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) (ok : Table.TabOK Gm f t.syms)
+    (hm : Table.TabMem Gm t.syms (tabW L m₀) m₀)
+    (hDm : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
+    WP isa (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code) t fun t' => Ctx L g vv m₀ t' ∧
       (Consistent L m₀ → Spec.Rsa.written t'.mem L.out L.k.toNat ((t'.gpr .x0).setWidth 32)
         (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
           (emOf Gs Hl.D L.k.toNat L.ml.toNat (Spec.Rsa.bytesAt m₀ L.sd Hl.D)
@@ -64,27 +70,36 @@ theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   unfold Impl.RsaOaep.AArch64.Precomputed.encMain seqs seqs seqs seqs seqs seqs
   -- `EM` before masking.
-  refine WP.seq (WP.mono (encEm_ok hH hHh hL hP16 hD hc R hS hk) fun t5 ⟨hc5, V5, R5, E⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (encEm_ok hH hHh hL hP16 hD hc R hS hk)) fun t5 ⟨⟨hc5, V5, R5, E⟩, sy5⟩ => ?_)
   -- `DB` masked.
-  refine WP.seq (WP.mono (dbArgs_ok (hc5.lay hL hP16 R5 hS.scr) R5 hk3 (by omega_arith) (by omega_arith) hk1024 [])
-    fun t6 ⟨_, S6, R6⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (dbArgs_ok (hc5.lay hL hP16 R5 hS.scr) R5 hk3 (by omega_arith) (by omega_arith)
+      hk1024 []))
+    fun t6 ⟨⟨_, S6, R6⟩, sy6⟩ => ?_)
   have hc6 := hc5.step hL hP16 S6 nil_ws
   have hS6 : Slots L (mW W L.scr 1 Hl.D (1 + Hl.D) (L.k.toNat - Hl.D - 1)) :=
     hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv (hc6.lay hL hP16 R6 hS6.scr) R6 f4 (mW_args _ _ _ _ _ _))
-    fun t7 ⟨_, S7, V7, W7, R7, hW7, hV7⟩ => ?_)
+  have sy6' : t6.syms = t.syms := sy6.trans sy5
+  have T6 := tab_of hL hP16 hc6 hp (sy6' ▸ ok) (sy6' ▸ hm) hDm
+  refine WP.seq (WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) T6 (hc6.lay hL hP16 R6 hS6.scr) R6
+      f4 (mW_args _ _ _ _ _ _)))
+    fun t7 ⟨⟨_, S7, V7, W7, R7, hW7, hV7⟩, sy7⟩ => ?_)
   have hc7 := hc6.step hL hP16 S7 nil_ws
-  have hS7 : Slots L W7 := hS6.of fun j _ h2 h3 => hW7 j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
+  have hS7 : Slots L W7 := hS6.of fun j _ h2 h3 => hW7 j (by unfold nW frameBytes; omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith)
   -- The seed masked.
-  refine WP.seq (WP.mono (seedArgs_ok (hc7.lay hL hP16 R7 hS7.scr) R7 (by rw [hS7.k, BitVec.ofNat_toNat,
-    BitVec.setWidth_eq]) (by omega_arith) (by omega_arith) hk1024 []) fun t8 ⟨_, S8, R8⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (seedArgs_ok (hc7.lay hL hP16 R7 hS7.scr) R7 (by rw [hS7.k, BitVec.ofNat_toNat,
+    BitVec.setWidth_eq]) (by omega_arith) (by omega_arith) hk1024 [])) fun t8 ⟨⟨_, S8, R8⟩, sy8⟩ => ?_)
   have hc8 := hc7.step hL hP16 S8 nil_ws
   have hS8 : Slots L (mW W7 L.scr (1 + Hl.D) (L.k.toNat - Hl.D - 1) 1 Hl.D) :=
     hS7.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv (hc8.lay hL hP16 R8 hS8.scr) R8 f2 (mW_args _ _ _ _ _ _))
+  have sy8' : t8.syms = t.syms := sy8.trans (sy7.trans sy6')
+  have T8 := tab_of hL hP16 hc8 hp (sy8' ▸ ok) (sy8' ▸ hm) hDm
+  refine WP.seq (WP.mono (Table.mgfXorT_ok hG hGh hGl hGv (by decide) T8 (hc8.lay hL hP16 R8 hS8.scr) R8 f2
+      (mW_args _ _ _ _ _ _))
     fun t9 ⟨_, S9, V9, W9, R9, hW9, hV9⟩ => ?_)
   have hc9 := hc8.step hL hP16 S9 nil_ws
-  have hS9 : Slots L W9 := hS8.of fun j _ h2 h3 => hW9 j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
+  have hS9 : Slots L W9 := hS8.of fun j _ h2 h3 => hW9 j (by unfold nW frameBytes; omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith)
   -- The call.
   refine WP.seq ?_
   rw [Impl.RsaOaep.AArch64.Precomputed.pubArgs, pubArgs_eq, WP.block_append_iff, WP.block_append_iff]
@@ -204,11 +219,13 @@ theorem arg_mem (D P : Nat) (s : State) (j : Nat) :
     s.mem.readW ((lay D P s).Q + BitVec.ofNat 64 (288 + 8 * j)) 64 = stackArg s j := by
   rw [stackArg, stackArgAddr, ← lay_Q D P s, add_add]
 
-theorem preOk_lay {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec Hs Gs P).pre s) :
+theorem tabW_lay (D P : Nat) (s : State) : tabW (lay D P s) s.mem = stackArg s 7 := arg_mem D P s 7
+
+theorem preOk_lay {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec Hs ts P).pre s) :
     PreOk (lay Hs.len P s) s.mem := by
   have e5 : preW (lay Hs.len P s) s.mem = stackArg s 5 := arg_mem Hs.len P s 5
   have e6 : prlW (lay Hs.len P s) s.mem = stackArg s 6 := arg_mem Hs.len P s 6
-  exact ⟨by rw [PRE, e5, e6]; rfl, rfl, by rw [e6]; exact (lay_pre h).2.2.2.1⟩
+  exact ⟨by rw [PRE, TABR, e5, e6, tabW_lay]; rfl, rfl, by rw [e6]; exact (lay_pre h).2.2.2.1⟩
 
 theorem consistent_iff (D P : Nat) (s : State) :
     Consistent (lay D P s) s.mem ↔ Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) =
@@ -237,9 +254,11 @@ theorem fail_ok {L : ELay} (hL : L.Ok) (hP : 16 ≤ L.P) {g : Reg → BitVec 64}
 include hH hG in
 theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked) {P : Nat} (hP : c.stack ≤ P) (hP16 : 16 ≤ P) {s : State}
-    (h : (encSpec Hs Gs P).pre s) :
-    WP isa (encBodyWith Hl (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code)) (entered s) fun u =>
+    (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked) {P : Nat} (hP : c.stack ≤ P) (hP16 : 16 ≤ P) {ts : List FnTable}
+    {s : State} (h : (encSpec Hs ts P).pre s) (ok : Table.TabOK Gm f s.syms)
+    (hm : Table.TabMem Gm s.syms (stackArg s 7) s.mem)
+    (hDm : s.mem.readW (stackArg s 7 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
+    WP isa (encBodyWith Hl (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code)) (entered s) fun u =>
       Ctx (lay Hs.len P s) s.gpr s.v s.mem u ∧ (Consistent (lay Hs.len P s) s.mem →
       Spec.Rsa.written u.mem (lay Hs.len P s).out (lay Hs.len P s).k.toNat ((u.gpr .x0).setWidth 32)
         (Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).n (lay Hs.len P s).k.toNat)
@@ -254,7 +273,10 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   have hk1024 := hL.k1024
   have hk64 := hL.k64
   have hp := prologue_ok h
+  have e7 := tabW_lay Hs.len P s
   obtain ⟨L, hLL⟩ : ∃ L, lay Hs.len P s = L := ⟨_, rfl⟩
+  rw [hLL] at e7
+  rw [← e7] at hm hDm
   rw [hLL] at hL hp hk1024 hk64 hpo ⊢
   have hLP : L.P = P := by rw [← hLL]; rfl
   have hLD : L.D = Hl.D := by rw [← hLL]; exact hHl
@@ -270,13 +292,13 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   rw [encBody_eq]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono hp fun t ⟨hc, _, hS⟩ => ?_
+  refine WP.mono (Table.wp_sy hp) fun t ⟨⟨hc, _, hS⟩, sy⟩ => ?_
   have R : Rep t.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) :=
     ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   have hk3 : (fun j => word t.mem L.Q (8 * j)) 21 = BitVec.ofNat 64 L.k.toNat :=
     hS.k.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
-  refine WP.mono (chkK_ok (H := Hl) (hc.lay hL hP16 R hS.scr) R hk3 hk1024 (by omega_arith))
-    fun t1 ⟨_, S1, hm1, x11⟩ => ?_
+  refine WP.mono (Table.wp_sy (chkK_ok (H := Hl) (hc.lay hL hP16 R hS.scr) R hk3 hk1024 (by omega_arith)))
+    fun t1 ⟨⟨_, S1, hm1, x11⟩, sy1⟩ => ?_
   have hc1 := hc.step hL hP16 S1 nil_ws
   have R1 : Rep t1.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) := hm1 ▸ R
   refine WP.ite _ (eval_nonzero t1 .x11) (fun hb => ?_) (fun hb => ?_)
@@ -286,8 +308,9 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     rw [enone (by omega_arith)]; exact hw
   · have hkD : 2 * Hl.D + 2 ≤ L.k.toNat := by
       by_contra hc'; rw [x11, ifn (by omega_arith)] at hb; exact absurd hb (by decide)
-    refine WP.seq (WP.mono (chkMsg_ok (H := Hl) (hc1.lay hL hP16 R1 hS.scr) R1 hk3
-      (hS.ml.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])) hk1024 L.ml.isLt hkD) fun t2 ⟨_, S2, hm2, x11'⟩ => ?_)
+    refine WP.seq (WP.mono (Table.wp_sy (chkMsg_ok (H := Hl) (hc1.lay hL hP16 R1 hS.scr) R1 hk3
+      (hS.ml.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])) hk1024 L.ml.isLt hkD))
+      fun t2 ⟨⟨_, S2, hm2, x11'⟩, sy2⟩ => ?_)
     have hc2 := hc1.step hL hP16 S2 nil_ws
     have R2 : Rep t2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) := hm2 ▸ R1
     refine WP.ite _ (eval_nonzero t2 .x11) (fun hb' => ?_) (fun hb' => ?_)
@@ -297,7 +320,9 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
       rw [enone (by omega_arith)]; exact hw
     · have hmk : L.ml.toNat ≤ L.k.toNat - (2 * Hl.D + 2) := by
         by_contra hc'; rw [x11', ifn (by omega_arith)] at hb'; exact absurd hb' (by decide)
-      refine WP.mono (encMain_ok hH hG hHh hHl hHv hGh hGl hGv c hL hP hP16 hLD hpo hc2 R2 hS (by omega_arith))
+      have sy' : t2.syms = s.syms := sy2.trans (sy1.trans sy)
+      refine WP.mono (encMain_ok hH hG hHh hHl hHv hGh hGl hGv c hL hP hP16 hLD hpo hc2 R2 hS (by omega_arith)
+          (sy' ▸ ok) (sy' ▸ hm) hDm)
         fun u ⟨hcu, hw⟩ => ⟨hcu, fun hq => ?_⟩
       rw [encrypt_some hsB (by rw [hnB, hmB]; omega_arith), hnB, hmB, hHl]
       exact hw hq
@@ -305,12 +330,14 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
 /-! ## The whole function -/
 
 /-- The stack the contract gives. -/
-theorem spec_sp {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec Hs Gs P).pre s) :
+theorem spec_sp {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec Hs ts P).pre s) :
     P + 288 ≤ s.sp.toNat :=
   (lay_pre h).2.2.2.2
 
-/-- The postcondition, from what the body wrote. -/
-theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} {t : State}
+/-- The postcondition, from what the body wrote with `Gs`, the hash function
+the table names. -/
+theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} {t : State}
+    (hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 7) = some Gs)
     (hw : Consistent (lay Hs.len P s) s.mem →
       Spec.Rsa.written t.mem (lay Hs.len P s).out (lay Hs.len P s).k.toNat ((t.gpr .x0).setWidth 32)
       (Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).n (lay Hs.len P s).k.toNat)
@@ -318,28 +345,36 @@ theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} {t : State}
         (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).lab (lay Hs.len P s).labl.toNat)
         (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).msg (lay Hs.len P s).ml.toNat)
         (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).sd Hs.len))) :
-    (encSpec Hs Gs P).post s t := by
-  sig_post [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
-    AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
-  intro hq
+    (encSpec Hs ts P).post s t := by
+  sig_post [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
+  intro G' hG' hq
+  obtain rfl : Gs = G' := Option.some.inj (hG.symm.trans hG')
   exact hw ((consistent_iff Hs.len P s).2 hq)
 
-include hH hG in
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` meets the shared contract and the calling convention. -/
-theorem enc_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
-    (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked) {P : Nat} (hP : c.stack ≤ P) (hP16 : 16 ≤ P) {s : State}
-    (h : (encSpec Hs Gs P).pre s) :
-    WP isa (Impl.RsaOaep.AArch64.Precomputed.encrypt Hl Gm c.name c.code) s fun s' =>
-      abiPreserved s s' ∧ (encSpec Hs Gs P).post s s' := by
+include hH in
+/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` meets the shared contract and
+the calling convention, with MGF1's hash function the table of one of `vs`. -/
+theorem enc_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
+    (hHv : Proof.Mgf1.Valid Hs) {vs : List MdHash} (hc : Coh vs) (c : PdChecked) {P : Nat} (hP : c.stack ≤ P)
+    (hP16 : 16 ≤ P) {s : State} (h : (encSpec Hs (tables vs) P).pre s) :
+    WP isa (Impl.RsaOaep.AArch64.Precomputed.encrypt Hl (fnsOf vs) c.name c.code) s fun s' =>
+      abiPreserved s s' ∧ (encSpec Hs (tables vs) P).post s s' := by
   have hsp := spec_sp h
+  obtain ⟨⟨T, hT, hheld⟩, hpw⟩ := spec_tab h
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  obtain ⟨hm, hix, hDm⟩ := held_tableOf hheld
+  have ok := tabOK_of hc hpw hw
+  have hGa := hashAt_tableOf hix
   refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
     omega_arith
-  · show WP isa (encBodyWith Hl (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code)) (entered s) _
-    refine WP.mono (body_ok hH hG hHh hHl hHv hGh hGl hGv c hP hP16 h) fun u' ⟨hc', hw'⟩ => ?_
+  · show WP isa (encBodyWith Hl (Impl.RsaOaep.AArch64.Precomputed.encMain Hl (fnsOf vs) c.name c.code)) (entered s) _
+    refine WP.mono (body_ok hH w.ok.stream hHh hHl hHv w.mgf.hash w.mgf.len (mgf_valid w.mgf) c hP hP16 h ok hm hDm)
+      fun u' ⟨hc', hw'⟩ => ?_
     have hsp' : (freed frameBytes u').sp = (lay Hs.len P s).Q + BitVec.ofNat 64 272 := by
       rw [freed_sp, hc'.sp]; rfl
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
@@ -353,7 +388,7 @@ theorem enc_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
       rw [add_add]; exact lay_Q _ _ s
     · rw [popped_v, freed_v]
       exact hc'.vs r hr
-    · refine result_ok fun hq => ?_
+    · refine result_ok hGa fun hq => ?_
       rw [popped_mem, freed_mem, popped_gpr_ne _ (by decide), freed_gpr]
       exact hw' hq
 

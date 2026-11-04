@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
-public import VerifiedGarbage.Spec.RsaOaep.Precomputed
+public import VerifiedGarbage.Spec.RsaOaep.Table
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -25,19 +25,33 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Enc (q_add add_add read8 write8 toNat_sub_k pr
 open VG.Proof.RsaOaep.AArch64.Dec (moveMem MoveOk moveMem_frame moveMem_read moveMem_moved moves_ok sub_trans
   entered entered_rd entered_gpr entered_v)
 
-/-- The shared contract, with `P + 288` bytes of stack. -/
-abbrev encSpec (H G : Spec.Mgf1.Hash) (P : Nat) : Contract isa :=
-  Spec.RsaOaep.encryptPrecomputedContract H G AArch64.abi (P + 288)
+/-- The shared contract, with MGF1's hash function one of the tables `ts`
+and `P + 288` bytes of stack. -/
+abbrev encSpec (H : Spec.Mgf1.Hash) (ts : List FnTable) (P : Nat) : Contract isa :=
+  Spec.RsaOaep.encryptTableContract H (AArch64.abi.withTables (Spec.RsaOaep.encryptTableSig H) [("mgf1", ts)])
+    (P + 288)
 
-/-- `pre`, the only buffer the function reads beyond its other arguments. -/
-def preX (s : State) : List Region := [⟨stackArg s 5, (stackArg s 6).toNat * 8⟩]
+/-- Unfolds the contract's precondition at `h`. -/
+macro "enc_pre" " at " h:ident : tactic => `(tactic| (
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
+  simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left'] at $h:ident))
+
+/-- `pre` and MGF1's table, the only buffers the function reads beyond its
+other arguments. -/
+def preX (s : State) : List Region := [⟨stackArg s 5, (stackArg s 6).toNat * 8⟩, Sig.tableRegion 64 (stackArg s 7) 5]
 
 /-- The layout of a call from `s`, with `D` bytes of seed and `P` bytes of
-stack for the calls: 56 bytes of stack arguments. -/
+stack for the calls: 64 bytes of stack arguments. -/
 def lay (D P : Nat) (s : State) : ELay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
     stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, D, s.sp - BitVec.ofNat 64 288, P,
-    preX s, 56⟩
+    preX s, 64⟩
 
 theorem lay_Q (D P : Nat) (s : State) : (lay D P s).Q + BitVec.ofNat 64 288 = s.sp := BitVec.sub_add_cancel _ _
 
@@ -58,22 +72,21 @@ theorem forall_ro {L : ELay} {F : Region → Prop} (h : F L.N ∧ F L.E ∧ F L.
 
 /-- What the shared contract says of the layout, the regions, `pre_len` and
 the stack. -/
-theorem lay_pre {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+theorem lay_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec H ts P).pre s) :
     (lay H.len P s).Ok ∧
       s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG,
         (lay H.len P s).SD] ++ preX s ++ [(lay H.len P s).ARGS] ∧
       s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] ∧
       (stackArg s 6).toNat = Spec.Rsa.precomputedWords (s.gpr .x3).toNat ∧ P + 288 ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
-    AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
-  obtain ⟨hsp, hsp2, hrd, hwr,
-    oN, oE, oL, oM, oSd, oS, oQ, oA,
-    nS, eS, lS, mS, sdS, sQ, sA,
-    kO, kN, kE, kL, kM, kSd, kS, kQ, -,
-    bO, bN, bE, bL, bM, bSd, bS, bQ,
+  enc_pre at h
+  obtain ⟨hsp, hsp2, -, -, hrd, hwr,
+    oN, oE, oL, oM, oSd, oS, oQ, oT, oA,
+    nS, eS, lS, mS, sdS, sQ, sT, sA,
+    kO, kN, kE, kL, kM, kSd, kS, kQ, kT, -,
+    bO, bN, bE, bL, bM, bSd, bS, bQ, bT,
     kv, hk1, el1, elk, slk, pl⟩ := h
-  simp only [hk1] at oA oN oE oL oM oSd oS oQ kO bO hwr
-  have eA : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 56⟩ := by simp only [ELay.ARGS, lay_args]; rfl
+  simp only [hk1] at oA oN oE oL oM oSd oS oQ oT kO bO hwr
+  have eA : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 64⟩ := by simp only [ELay.ARGS, lay_args]; rfl
   have eK : (lay H.len P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 287 + 1), P + 287 + 1⟩ := by
     show (⟨(lay H.len P s).Q - BitVec.ofNat 64 P, P + 288⟩ : Region) = _
     rw [lay_stk]
@@ -82,16 +95,20 @@ theorem lay_pre {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P
     eA ▸ oA, eA ▸ sA, eK ▸ kO, eK ▸ kS, forall_ro ⟨eK ▸ kN, eK ▸ kE, eK ▸ kL, eK ▸ kM, eK ▸ kSd⟩, bO, bS,
     forall_ro ⟨bN, bE, bL, bM, bSd⟩, by omega_arith, by simp only [lay] at hQ ⊢; omega_arith, kv, hk1, el1, elk, slk,
     by simp [lay], by simp [lay], by simp only [lay] at hQ ⊢; omega_arith, ?_, ?_, ?_, ?_⟩, ?_, ?_, pl, hsp⟩
-  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact oQ.symm
-  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact sQ.symm
-  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; rw [eK]; exact kQ
-  · intro R hR; simp only [lay, preX, List.mem_singleton] at hR; subst hR; exact bQ
+  · intro R hR; simp only [lay, preX, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl; exacts [oQ.symm, oT.symm]
+  · intro R hR; simp only [lay, preX, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl; exacts [sQ.symm, sT.symm]
+  · intro R hR; simp only [lay, preX, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl <;> rw [eK]; exacts [kQ, kT]
+  · intro R hR; simp only [lay, preX, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl; exacts [bQ, bT]
   · rw [hrd, eA]
     rfl
   · rw [hwr]
     rfl
 
-theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+theorem lay_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec H ts P).pre s) :
     (lay H.len P s).Ok :=
   (lay_pre h).1
 
@@ -140,7 +157,15 @@ theorem argMoves_apart {a : Nat} (ha : a ∈ saveList.map Prod.snd) :
   simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at ha
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem spec_rdwr {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+/-- MGF1's table, as the contract gives it: one of `ts`, at the stack
+argument 7, with the functions of distinct names at distinct addresses. -/
+theorem spec_tab {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec H ts P).pre s) :
+    (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s T)) ∧
+      ((ts.map (·.fns)).flatten).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
+  enc_pre at h
+  exact ⟨h.2.2.1, h.2.2.2.1⟩
+
+theorem spec_rdwr {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec H ts P).pre s) :
     s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG, (lay H.len P s).SD] ++
       (lay H.len P s).X ++ [(lay H.len P s).ARGS] ∧ s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] :=
   ⟨(lay_pre h).2.1, (lay_pre h).2.2.1⟩
@@ -148,7 +173,7 @@ theorem spec_rdwr {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G
 /-- The frame's words as the prologue leaves them. -/
 abbrev Prologued (L : ELay) (W : Nat → BitVec 64) : Prop := Slots L W
 
-theorem prologue_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec H G P).pre s) :
+theorem prologue_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec H ts P).pre s) :
     WP isa (.block encPrologue) (entered s) fun t => Ctx (lay H.len P s) s.gpr s.v s.mem t ∧
       t.gpr .x9 = (lay H.len P s).Q ∧ Slots (lay H.len P s) (fun j => word t.mem (lay H.len P s).Q (8 * j)) := by
   have hL := lay_ok h

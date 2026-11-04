@@ -66,7 +66,7 @@ theorem rsa_sub : Region.Sub (rsaR s) (scR s) := by
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 with memory changed only in the stack and our part of the working space. -/
-theorem wp_arg' {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 7)
+theorem wp_arg' {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 8)
     (h6 : t.gpr .t6 = s.sp) (hrd : t.rd = s.rd) (hm : Frame [kR s, SC S s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
+public import VerifiedGarbage.Proof.HashTable.PPC64LE
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # RSAES-OAEP encryption on PPC64LE: correctness
@@ -13,9 +15,10 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 Untrusted: everything here is checked by Lean. The checks of the lengths
 (`chkK`, `chkMsg`: `k < 2 hLen + 2` and `msg_len > k - 2 hLen - 2`, from the
 top bits of differences), then either zeros and 0 (`fail_ok`) or `EM`
-(`em_ok`, `mask_ok`) and RSAEP of it (`call_ok`): if `pre` holds the
-modulus' values, RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1). `code_correct`: the
-function against its shared contract.
+(`em_ok`, `mask_ok`, with MGF1's hash function the table's) and RSAEP of it
+(`call_ok`): if `pre` holds the modulus' values, RSAES-OAEP-ENCRYPT (RFC 8017
+§7.1.1). `code_correct`: the function against its contract, for tables of
+`vs` (`tab_of`: the table is one of them, whose hash function it names).
 -/
 
 @[expose] public section
@@ -28,6 +31,7 @@ open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_li wp_sub wp_lsr wp_or wp_nil eval_nonzero)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.Mgf1 (ifp ifn)
+open VG.Proof.HashTable.PPC64LE (TVar tables fnsOf Coh)
 
 theorem ofNat_toNat (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
@@ -50,23 +54,23 @@ section
 variable {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
   (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D)
   (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
-  {s : State} (P : PreO H.D s)
-include hH hG hHh hHl hGh hGl hGv P
+  {f : Fns} {s : State} (P : PreO H.D s) (T : TabS G f 7 S s (stackArg s 7))
+include hH hG hHh hHl hGh hGl hGv P T
 
-omit hH hG hHh hGh hGl hGv in
+omit hH hG hHh hGh hGl hGv T in
 theorem fail_done {t : State} (h : Base S vO s t) (hl : kk s < 2 * H.D + 2 + mLen s) :
     WP isa encFail t (Done Hs Gs s) :=
   WP.mono (fail_ok P h) fun t' ⟨sv, h3, hb⟩ => ⟨sv, fun _ => by
     rw [Proof.RsaOaep.encrypt_none (by rw [bytesAt_length, bytesAt_length, hHl]; exact hl), h3]
     exact ⟨rfl, hb⟩⟩
 
-theorem main_done {t : State} (E : Entered s t) (hk : 2 * H.D + 2 + mLen s ≤ kk s) :
-    WP isa (encMain H G) t (Done Hs Gs s) := by
+theorem main_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) (hk : 2 * H.D + 2 + mLen s ≤ kk s) :
+    WP isa (encMain H f) t (Done Hs Gs s) := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
-  refine em_ok P hH hHh rfl E hk fun t₁ b₁ he => ?_
-  refine mask_ok P hG hGh hGl hGv rfl hD0 hD64 (bytesAt_length _ _ _)
-    (by rw [hHh, hH.hashLen]) (bytesAt_length _ _ _) hk b₁ he fun t₂ b₂ hem => ?_
+  refine em_ok P hH hHh rfl E hk fun t₁ b₁ y₁ he => ?_
+  refine mask_ok P hG T hGh hGl hGv rfl hD0 hD64 (bytesAt_length _ _ _)
+    (by rw [hHh, hH.hashLen]) (bytesAt_length _ _ _) hk b₁ (y₁.trans hsy) he fun t₂ b₂ hem => ?_
   refine WP.seq (WP.mono (pubArgs_ok P b₂ hem) fun t₃ a₃ => WP.mono (call_ok P a₃) fun t₄ ⟨sv, res⟩ =>
     ⟨sv, fun hc => ?_⟩)
   have hs : (seedB Hs.len s).length = Hs.len := bytesAt_length _ _ _
@@ -74,12 +78,13 @@ theorem main_done {t : State} (E : Entered s t) (hk : 2 * H.D + 2 + mLen s ≤ k
     bytesAt_length, hHl]
   exact res hc
 
-theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done Hs Gs s) := by
+theorem checks_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) : WP isa (checks H f) t (Done Hs Gs s) := by
   have hD64 := hH.hD64
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r6).toNat := rfl
   have b := E.base
-  refine WP.seq (wp_li (by omega_arith) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_lsr fun t₃ o₃ e₃ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_li (by omega_arith) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_lsr fun t₃ o₃ e₃ =>
+    wp_nil fun y₃ => ?_))
   have k₃ : Only [.r3] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   have b₃ := b.only P.fits k₃
   have r3 : (t₃.gpr .r3 != 0) = decide (kk s < 2 * H.D + 2) := by
@@ -88,8 +93,8 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₃
     (by rw [r3] at hc; simp at hc; omega_arith)) (fun hc => ?_)
   have hk : 2 * H.D + 2 ≤ kk s := by rw [r3] at hc; simp at hc; omega_arith
-  refine WP.seq (wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ =>
-    wp_lsr fun t₇ o₇ e₇ => wp_lsr fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ =>
+    wp_lsr fun t₇ o₇ e₇ => wp_lsr fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ => wp_nil fun y₉ => ?_))
   have k₉ : Only [.r3, .r4] t₃ t₉ := (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))).mono
   have b₉ := b₃.only P.fits k₉
   have r3' : (t₉.gpr .r3 != 0) = decide (kk s - (2 * H.D + 2) < mLen s) := by
@@ -100,34 +105,62 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
   have E₉ : Entered s t₉ := ⟨b₉, by rw [k₉.get .r9, k₃.get .r9]; exact E.r9,
     by rw [k₉.get .r10, k₃.get .r10]; exact E.r10, by rw [k₉.get .r11, k₃.get .r11]; exact E.r11⟩
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₉
-    (by rw [r3'] at hc; simp at hc; omega_arith)) (fun hc => main_done hH hG hHh hHl hGh hGl hGv P E₉
-    (by rw [r3'] at hc; simp at hc; omega_arith))
+    (by rw [r3'] at hc; simp at hc; omega_arith)) (fun hc => main_done hH hG hHh hHl hGh hGl hGv P T E₉
+    (y₉.trans (y₃.trans hsy)) (by rw [r3'] at hc; simp at hc; omega_arith))
 
-theorem code_ok : WP isa (encrypt H G) s (Post Hs Gs s) := by
+theorem code_ok : WP isa (encrypt H f) s (Post Hs Gs s) := by
   refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
-  refine WP.seq (WP.mono (entry_ok P) fun t E => WP.seq (WP.mono (checks_done hH hG hHh hHl hGh hGl hGv P E)
+  refine WP.seq (WP.mono_syms (entry_ok P) fun t E sy => WP.seq (WP.mono (checks_done hH hG hHh hHl hGh hGl hGv P T E sy)
     fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ => ⟨habi, fun hc => ?_⟩))
   rw [freed_mem, freed_gpr, hm, h3]
   exact res hc
 
 end
 
-section
-variable {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
-  (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D)
-  (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
-include hH hG hHh hHl hGh hGl hGv
+/-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
+theorem tabS_entry {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
+    (h : (encSpec Hs (tables vs)).pre s) {w : TVar} (hw : w ∈ vs)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (Proof.HashTable.PPC64LE.tableOf w))) :
+    TabS w.H (fnsOf vs) 7 S s (stackArg s 7) := by
+  have P := preO_of h
+  refine Proof.HashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
+    (in_aR (by decide)) ?_ P.ka (P.sa.sub_left (sc_sub P))
+    (by rw [P.hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))))) P.kt
+    (P.st.sub_left (sc_sub P)) hc (spec_tab h).2 hw hh
+  rw [stackArgAddr_eq]
+  exact Offset.sub_base _ (by omega)
 
-/-- The correctness of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, against
-its shared contract. -/
-theorem code_correct (s : State) (h : (Spec.RsaOaep.encryptPrecomputedContract Hs Gs abi 304).pre s) :
-    ∃ t s', Exec isa (encrypt H G) s t s' ∧ abiPreserved s s' ∧
-      (Spec.RsaOaep.encryptPrecomputedContract Hs Gs abi 304).post s s' := by
+/-- MGF1's table, on entry: one of the tables of `vs`, which holds what MGF1
+needs of it and names its hash function. -/
+theorem tab_of {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
+    (h : (encSpec Hs (tables vs)).pre s) :
+    ∃ w ∈ vs, TabS w.H (fnsOf vs) 7 S s (stackArg s 7) ∧
+      Spec.HashTable.hashAt 64 s.mem (stackArg s 7) = some w.l.G := by
+  obtain ⟨⟨T, hT, hh⟩, -⟩ := spec_tab h
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
+  exact ⟨w, hw, tabS_entry hc h hw hh,
+    Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh).2.1⟩
+
+section
+variable {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash}
+  (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D)
+include hH hHh hHl
+
+/-- The correctness of `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, against
+its contract, for the tables of `vs`. -/
+theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (encSpec Hs (tables vs)).pre s) :
+    ∃ t s', Exec isa (encrypt H (fnsOf vs)) s t s' ∧ abiPreserved s s' ∧ (encSpec Hs (tables vs)).post s s' := by
+  obtain ⟨w, -, T, hT⟩ := tab_of hc h
   have P : PreO H.D s := hHl ▸ preO_of h
-  obtain ⟨t, s', he, habi, hr⟩ := code_ok hH hG hHh hHl hGh hGl hGv P
+  obtain ⟨t, s', he, habi, hr⟩ := code_ok hH w.l.ok hHh hHl w.l.hash w.l.len w.l.valid P T
   refine ⟨t, s', he, habi, ?_⟩
-  sig_post [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs,
-    stackArgs_seven, List.append_eq]
+  unfold encSpec
+  sig_post [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+    Spec.HashTable.param, Abi.withTables, abi, argRegs, stackArgs_eight, List.append_eq]
+  intro G hG
+  rw [hT] at hG
+  cases hG
   exact hr
 
 end

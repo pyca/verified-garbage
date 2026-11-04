@@ -44,8 +44,8 @@ theorem label_vp (hg : Geo L scr) (h : OHash) {j o ll : Nat} {lab : BitVec 32} (
   have ofr : ∀ m m', Frame [sR scr oSt h.H.S, sR scr oCW h.ok.Wb, L.LOW] m m' →
       Frame [sR scr oSt h.H.S, sR scr oCW h.ok.Wb, L.LOW, sR scr o h.H.F] m m' :=
     fun _ _ f => f.mono (by simp)
-  show VP _ (.seq (.block initArgs) (.seq (callInit h.H) (.seq (.block (updLabArgs j)) (.seq (callUpd h.H)
-    (.seq (.block (finLabArgs j o)) (callFin h.H)))))) _
+  show VP _ (.seq (.block initArgs) (.seq (hInit h.H) (.seq (.block (updLabArgs j)) (.seq (hUpd h.H)
+    (.seq (.block (finLabArgs j o)) (hFin h.H)))))) _
   refine vpAssoc (VP.seq (init_vp hg h.H h.ok (Inv := Inv) fun σ m m' hm hf => hI σ m m' hm (hf.mono (by simp))) ?_)
   -- `update`'s arguments.
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ h.ok.SH.Repr s.mem (sa scr oSt) [] ∧

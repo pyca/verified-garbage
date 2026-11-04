@@ -6,16 +6,17 @@ public import VerifiedGarbage.Impl.Rsa.RISCV64.Priv
 /-!
 # RSAES-OAEP decryption (RFC 8017 §7.1.2) on RISC-V
 
-`vg_rsa_oaep_<H>_mgf1_<G>_decrypt(out = a0, out_len = a1, msg_len = a2,
-n = a3, n_len = a4, e = a5, e_len = a6, p = a7, p_len, q, q_len, dp,
-dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch,
-scratch_len)`, the last fifteen on the stack, for a hash function `H` (the
-label's) and MGF1's hash function `G`, each an `Impl.Hmac.Stream.RISCV64.Hash`
-(its streaming functions), which it calls, with `vg_rsa_private_checked`.
+`vg_rsa_oaep_<H>_mgf1_decrypt(out = a0, out_len = a1, msg_len = a2, n = a3,
+n_len = a4, e = a5, e_len = a6, p = a7, p_len, q, q_len, dp, dp_len, dq,
+dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len,
+mgf1)`, the last sixteen on the stack, for a hash function `H` (the label's),
+an `Impl.Hmac.Stream.RISCV64.Hash` (its streaming functions), and MGF1 over
+the hash function of the table `mgf1` of the interface `Hash`, which it
+calls, with `vg_rsa_private_checked`.
 The steps are those of PPC64LE (`Impl/RsaOaep/PPC64LE/Decrypt.lean`).
 
 It runs in the frame of encryption (`Impl/RsaOaep/RISCV64.lean`, `save` and
-`restore`), with the same part of `scratch` and its MGF1 (`mgfXor`,
+`restore`), with the same part of `scratch` and its MGF1 (`mgfXorT`,
 `seedArgs`, `dbArgs`). The values the code keeps across the calls are in
 `s0`–`s4`: `s0` = `scratch`, `s1` = `k = n_len`, `s2` = `out`, `s3` =
 `msg_len`, and, after the private operation, `s4` its result `r` (1, 0 or
@@ -57,7 +58,7 @@ open VG VG.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 open VG.Impl.Bignum.RISCV64 (countLoop)
 open VG.Impl.RsaPkcs1Sig.RISCV64 (copyLoop fillLoop)
-open VG.Impl.RsaOaep.RISCV64 (frameBytes argBase save restore zeroOut oEm oSt oDig oRsa mgfXor seedArgs dbArgs
+open VG.Impl.RsaOaep.RISCV64 (frameBytes argBase save restore zeroOut oEm oSt oDig oRsa mgfXorT seedArgs dbArgs Fns
   chkK)
 
 /-! ## More of our part of `scratch` -/
@@ -112,7 +113,7 @@ def faultBit : List Instr :=
 /-- Zeros to `out` and `*msg_len`, and the result `(r = 2) ? 2 : 0`. -/
 def decFail : Prog isa := .seq zeroOut (.block ([.li .t1 0, .store .d .t1 .s3 0] ++ faultBit))
 
-variable (H G : Hash)
+variable (H : Hash)
 
 /-! ## The decoding -/
 
@@ -201,9 +202,12 @@ def decRet : List Instr :=
   [.addi .a1 .s1 (-(2 * H.D + 2 : Nat)), .sub .a1 .a1 .s6, .logic .and .a1 .a1 .s7, .store .d .a1 .s3 0] ++
     faultBit ++ [.li .a1 1, .logic .and .a1 .s7 .a1, .logic .or .a0 .a0 .a1]
 
-/-- After the private operation and the check of `k`: the decoding. -/
+variable (f : Fns)
+
+/-- After the private operation and the check of `k`: the decoding, with
+MGF1's hash function the table that is our stack argument 15. -/
 def decMain : Prog isa :=
-  .seq (.block (seedArgs H)) (.seq (mgfXor G) (.seq (.block (dbArgs H)) (.seq (mgfXor G) (.seq (hashLabel H)
+  .seq (.block (seedArgs H)) (.seq (mgfXorT f 15) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 15) (.seq (hashLabel H)
   (.seq (accLh H) (.seq (scan H) (.seq clearBuf (.seq (copyT H) (.seq shift (.seq (.block okMask) (.seq outLoop
   (.block (decRet H)))))))))))))
 
@@ -212,9 +216,10 @@ def decMain : Prog isa :=
 /-- The frame's body. -/
 def body : Prog isa :=
   .seq (.block (save ++ prologue)) (.seq priv (.seq (.block (chkK H))
-    (.seq (.ite (.nonzero .a0) decFail (decMain H G)) (.block restore))))
+    (.seq (.ite (.nonzero .a0) decFail (decMain H f)) (.block restore))))
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (body H G) (.free frameBytes)
+/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, with MGF1's hash function the table that
+is its stack argument 15 (`mgf1`). -/
+def decrypt : Prog isa := .frame (.alloc frameBytes) (body H f) (.free frameBytes)
 
 end VG.Impl.RsaOaep.RISCV64.Dec

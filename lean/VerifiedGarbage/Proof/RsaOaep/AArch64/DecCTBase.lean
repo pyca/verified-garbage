@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.HashTable.AArch64
 
 /-!
 # RSAES-OAEP decryption on AArch64: two runs
@@ -11,7 +13,9 @@ As for RSAES-PKCS1-v1_5 (`Proof/RsaPkcs1Enc/AArch64/DecCTBase.lean`): two
 runs whose public data agree (the pointers and lengths, `n` and `e`) have
 the same layout, so between the frames' pushes and pops they are related by
 `Two`: both satisfy what correctness says of that point (`Φ`), with the same
-layout, whatever their secrets.
+layout, whatever their secrets, and what the contract says of MGF1's table,
+one of `ts` (`TabAgree`), which holds at every point as no code changes the
+addresses of the functions.
 
 Inside the decoding, two runs in a layout are related by `PW`: each is `In`
 the frames (`Ctx`, the pieces' `Rep` with our arguments in their slots) and
@@ -27,6 +31,7 @@ part dereferences fixed by its first part.
 namespace VG.Proof.RsaOaep.AArch64.Dec
 
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
+open VG.Proof.HashTable.AArch64 (TabAgree)
 
 /-- `n` and `e` agree in the two runs' memories. -/
 def LeakEq (L : DLay) (m₁ m₂ : Mem) : Prop :=
@@ -46,18 +51,21 @@ structure Env where
 /-- What correctness says of a point of the code. -/
 abbrev Inv := DLay → (Reg → BitVec 64) → (VReg → BitVec 128) → Mem → State → Prop
 
-/-- Two runs in the layout of `e`, each satisfying `Φ`. -/
-def TwoE (S : Nat) (Φ : Inv) (e : Env) (a b : State) : Prop :=
-  e.L.Ok ∧ e.L.P = S + 1 ∧ LeakEq e.L e.m₁ e.m₂ ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧ Φ e.L e.g₂ e.v₂ e.m₂ b
+/-- Two runs in the layout of `e`, each satisfying `Φ`, with MGF1's table one
+of `ts`. -/
+def TwoE (S : Nat) (ts : List FnTable) (Φ : Inv) (e : Env) (a b : State) : Prop :=
+  e.L.Ok ∧ e.L.P = S + 1 ∧ (LeakEq e.L e.m₁ e.m₂ ∧ TabAgree ts e.L.tab e.m₁ e.m₂ a b) ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧
+    Φ e.L e.g₂ e.v₂ e.m₂ b
 
 /-- Two runs with the same layout, each satisfying `Φ`. -/
-def Two (S : Nat) (Φ : Inv) (a b : State) : Prop := ∃ e : Env, TwoE S Φ e a b
+def Two (S : Nat) (ts : List FnTable) (Φ : Inv) (a b : State) : Prop := ∃ e : Env, TwoE S ts Φ e a b
 
 /-- A piece of code, from two runs each satisfying `Φ`: constant time for a
 fixed layout, and establishing `Ψ` by correctness. -/
-theorem two_wp {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (hct : ∀ e, RelCT isa (TwoE S Φ e) c fun _ _ => True)
+theorem two_wp {S : Nat} {ts : List FnTable} {c : Prog isa} {Φ Ψ : Inv}
+    (hct : ∀ e, RelCT isa (TwoE S ts Φ e) c fun _ _ => True)
     (hw : ∀ (L : DLay) g vv m₀ (t : State), L.Ok → L.P = S + 1 → Φ L g vv m₀ t → WP isa c t (Ψ L g vv m₀)) :
-    RelCT isa (Two S Φ) c (Two S Ψ) := by
+    RelCT isa (Two S ts Φ) c (Two S ts Ψ) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨e, hp⟩ e₁ e₂
   obtain ⟨ht, -⟩ := hct e _ _ _ _ _ _ hp e₁ e₂
   obtain ⟨hL, hP, hk, f₁, f₂⟩ := hp
@@ -65,16 +73,16 @@ theorem two_wp {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (hct : ∀ e, RelCT isa (T
   obtain ⟨_, u₂, x₂, y₂⟩ := hw _ _ _ _ s₂ hL hP f₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, e, hL, hP, hk, y₁, y₂⟩
+  exact ⟨ht, e, hL, hP, ⟨hk.1, hk.2.congr (Exec.syms e₁) (Exec.syms e₂)⟩, y₁, y₂⟩
 
 /-- Code checked by the taint analysis from the registers `rs`, which `Φ`
 fixes as functions of the layout, with `sp`. -/
-theorem two {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (rs : List Reg) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem two {S : Nat} {ts : List FnTable} {c : Prog isa} {Φ Ψ : Inv} (rs : List Reg) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
     (hag : ∀ (L : DLay) g₁ g₂ v₁ v₂ m₁ m₂ (a b : State), L.Ok → Φ L g₁ v₁ m₁ a → Φ L g₂ v₂ m₂ b →
       a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r)
     (hw : ∀ (L : DLay) g vv m₀ (t : State), L.Ok → L.P = S + 1 → Φ L g vv m₀ t → WP isa c t (Ψ L g vv m₀)) :
-    RelCT isa (Two S Φ) c (Two S Ψ) :=
+    RelCT isa (Two S ts Φ) c (Two S ts Ψ) :=
   two_wp (fun _ => RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨hL, _, _, f₁, f₂⟩ => by
     obtain ⟨hsp, hr⟩ := hag _ _ _ _ _ _ _ _ _ hL f₁ f₂
     exact ⟨hsp, fun r hr' => hr r (Taint.mem_ofRegs.mp hr')⟩) h) hw

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Decode
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLoops
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -29,6 +30,8 @@ open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
+open VG.Impl.Pbkdf2.Md.AArch64 (Stream)
 
 theorem andB_ones (b : Byte) : andB b (BitVec.allOnes 64) = b := by
   simp only [andB, BitVec.and_allOnes]; exact byte_rt64 b
@@ -63,16 +66,17 @@ theorem OutAt.congr {u u' : State} {F S : Addr} {W W' : Nat → BitVec 64} {o ml
 theorem Step.nil {F S : Addr} {ws : List Region} {t t' : State} (h : Step F S [] t t') : Step F S ws t t' :=
   h.weaken fun _ h => absurd h List.not_mem_nil
 
-variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
+variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) {f : Fns}
 
 include hH hG in
 theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
+    (hGv : Proof.Mgf1.Valid Gs) {u : State} {F S p : Addr} (T : Table.Tab Gm f F S p (arg 15) u) (L : Lay u F S)
+    {V : Nat → Byte}
     {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k : Nat} (hk : W 21 = BitVec.ofNat 64 k)
     (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024) {lab : Addr} {labLen : Nat} (A : LabAt u F S W lab labLen)
     {o ml : Addr} (O : OutAt u F S W o ml k) {res : Spec.Rsa.Outcome} (hres : ResD V W k res) :
-    WP isa (decMain Hl Gm) u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
+    WP isa (decMain Hl f) u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
       Spec.RsaOaep.writtenDecrypt u'.mem o ml k ((u'.gpr .x0).setWidth 32)
         (decOut Hs Gs (Spec.Rsa.bytesAt u.mem lab labLen) res) := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
@@ -82,24 +86,30 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have cR : oRsa = 8192 := rfl
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok hH hHh L R A (Or.inr rfl)) fun u1 ⟨L1, S1, V1, R1, hV1, hV1'⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (hashLabel_ok hH hHh L R A (Or.inr rfl)))
+    fun u1 ⟨⟨L1, S1, V1, R1, hV1, hV1'⟩, sy1⟩ => ?_)
   -- The seed unmasked.
-  refine WP.seq (WP.mono (seedArgs_ok L1 R1 hk hD (by omega_using [hD64]) hk' []) fun u2 ⟨L2, S2, R2⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (seedArgs_ok L1 R1 hk hD (by omega_using [hD64]) hk' [])) fun u2 ⟨⟨L2, S2, R2⟩, sy2⟩ => ?_)
   have f2 : MFit (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D :=
     ⟨by rw [cSt]; omega_using [hk', hD64], by rw [cSt]; omega_using [hD64], by omega_using [], by omega_using [hD0], by omega_using [hD64]⟩
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv L2 R2 f2 (mW_args _ _ _ _ _ _))
-    fun u3 ⟨L3, S3, V3, W3, R3, hW3, hV3⟩ => ?_)
-  have W3e : ∀ j < nW, (j < 13 ∨ 18 < j) → W3 j = W j := fun j hj h =>
-    (hW3 j hj (by omega_using [h]) (by omega_using [h])).trans (mW_eq _ _ _ _ _ _ (by omega_using [h]))
+  have T2 := (T.step S1 sy1).step S2 sy2
+  refine WP.seq (WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) T2 L2 R2 f2 (mW_args _ _ _ _ _ _)))
+    fun u3 ⟨⟨L3, S3, V3, W3, R3, hW3, hV3⟩, sy3⟩ => ?_)
+  have W3e : ∀ j < 32, (j < 13 ∨ 18 < j) → W3 j = W j := fun j hj h =>
+    (hW3 j (by unfold nW frameBytes; omega_using [hj]) (by omega_using [h]) (by omega_using [h]) (by omega_using [hj])
+      (by omega_using [hj])).trans (mW_eq _ _ _ _ _ _ (by omega_using [h]))
   -- `DB` unmasked.
-  refine WP.seq (WP.mono (dbArgs_ok L3 R3 ((W3e 21 (by decide) (by omega_using [])).trans hk) hD (by omega_using [hD64]) hk' [])
-    fun u4 ⟨L4, S4, R4⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (dbArgs_ok L3 R3 ((W3e 21 (by decide) (by omega_using [])).trans hk) hD
+      (by omega_using [hD64]) hk' []))
+    fun u4 ⟨⟨L4, S4, R4⟩, sy4⟩ => ?_)
   have f4 : MFit 1 Hl.D (1 + Hl.D) (k - Hl.D - 1) :=
     ⟨by rw [cSt]; omega_using [hD64], by rw [cSt]; omega_using [hk', hD64], by omega_using [], by omega_using [hD], by omega_using [hk']⟩
-  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv L4 R4 f4 (mW_args _ _ _ _ _ _))
+  have T4 := (T2.step S3 sy3).step S4 sy4
+  refine WP.seq (WP.mono (Table.mgfXorT_ok hG hGh hGl hGv (by decide) T4 L4 R4 f4 (mW_args _ _ _ _ _ _))
     fun u5 ⟨L5, S5, V5, W5, R5, hW5, hV5⟩ => ?_)
-  have W5e : ∀ j < nW, (j < 13 ∨ 18 < j) → W5 j = W j := fun j hj h =>
-    (hW5 j hj (by omega_using [h]) (by omega_using [h])).trans ((mW_eq _ _ _ _ _ _ (by omega_using [h])).trans (W3e j hj h))
+  have W5e : ∀ j < 32, (j < 13 ∨ 18 < j) → W5 j = W j := fun j hj h =>
+    (hW5 j (by unfold nW frameBytes; omega_using [hj]) (by omega_using [h]) (by omega_using [h]) (by omega_using [hj])
+      (by omega_using [hj])).trans ((mW_eq _ _ _ _ _ _ (by omega_using [h])).trans (W3e j hj h))
   -- `lHash'` against `lHash`, and the scan.
   refine WP.seq (WP.mono (accLh_ok L5 R5 (by omega_using [hD64]) hD0) fun u6 ⟨L6, S6, R6⟩ => ?_)
   have w6k : upd W5 29 (accL V5 Hl.D Hl.D) 21 = BitVec.ofNat 64 k := by
@@ -109,7 +119,7 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   obtain ⟨W7, R7, w7e, w729, w730⟩ : ∃ W7, Rep u7.mem F S V5 W7 ∧ (∀ j, j ≠ 29 → j ≠ 30 → W7 j = W5 j) ∧
       W7 29 = sc.2.2 ||| sc.1 ∧ W7 30 = sc.2.1 :=
     ⟨_, R7, fun j h1 h2 => by simp only [upd, ifn h1, ifn h2], by simp [upd], by simp [upd]⟩
-  have W7e : ∀ j < nW, (j < 13 ∨ 18 < j) → j ≠ 29 → j ≠ 30 → W7 j = W j := fun j hj h h1 h2 =>
+  have W7e : ∀ j < 32, (j < 13 ∨ 18 < j) → j ≠ 29 → j ≠ 30 → W7 j = W j := fun j hj h h1 h2 =>
     (w7e j h1 h2).trans (W5e j hj h)
   have w7k : W7 21 = BitVec.ofNat 64 k := (W7e 21 (by decide) (by omega_using []) (by omega_using []) (by omega_using [])).trans hk
   -- The buffer.
@@ -124,7 +134,7 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     fun u10 ⟨L10, S10, V10, R10, hB10, _⟩ => ?_)
   -- `ok`.
   refine WP.seq (WP.mono (okMask_ok L10 R10) fun u11 ⟨L11, S11, R11⟩ => ?_)
-  have W11e : ∀ j < nW, (j < 13 ∨ 18 < j) → j ≠ 29 → j ≠ 30 → j ≠ 31 → upd W7 31 (okW W7) j = W j :=
+  have W11e : ∀ j < 32, (j < 13 ∨ 18 < j) → j ≠ 29 → j ≠ 30 → j ≠ 31 → upd W7 31 (okW W7) j = W j :=
     fun j hj h h1 h2 h3 => by simp only [upd, ifn h3]; exact W7e j hj h h1 h2
   have S11 : Step F S [] u u11 := S1.trans (S2.trans (S3.trans (S4.trans (S5.trans (S6.trans (S7.trans
     (S8.trans (S9.trans (S10.trans S11)))))))))

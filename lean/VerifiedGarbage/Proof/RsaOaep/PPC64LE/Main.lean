@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Label
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 
 /-!
@@ -15,7 +16,9 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 Untrusted: everything here is checked by Lean. `em_ok`: `EM` before masking
 (`encEm`, the label's hash and `copyLh`, as `RsaOaep.EmAt`); `mask_ok`: `DB`
 masked with MGF1 of the seed and the seed with MGF1 of `maskedDB`, which
-leaves EME-OAEP's encoding at `S` (`RsaOaep.emOf`, by `RsaOaep.em_mask`).
+leaves EME-OAEP's encoding at `S` (`RsaOaep.emOf`, by `RsaOaep.em_mask`),
+MGF1's hash function being that of the table that is our stack argument `j`
+(`TabS`).
 -/
 
 @[expose] public section
@@ -52,17 +55,17 @@ include P
 theorem em_ok {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hD : H.D = D) {t : State} (E : Entered s t) (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa}
     {Q : State → Prop}
-    (k : ∀ t', Base S vO s t' → EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) →
-      WP isa rest t' Q) :
+    (k : ∀ t', Base S vO s t' → t'.syms = t.syms →
+      EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) → WP isa rest t' Q) :
     WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
   have hDF := hH.hDF
   have F := hfits hH
   obtain ⟨_, hSt, hDg, hCt, hW, hRs⟩ := offs
-  refine WP.seq (WP.mono (encEm_ok P hD (by omega_arith) (by omega_arith) E hk) fun t₁ ⟨b₁, hp⟩ => ?_)
-  refine WP.seq (WP.mono (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, d₂⟩ => ?_)
-  refine WP.seq (WP.mono (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ => k t₃ b₃ ?_)
+  refine WP.seq (WP.mono_syms (encEm_ok P hD (by omega_arith) (by omega_arith) E hk) fun t₁ ⟨b₁, hp⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, d₂⟩ y₂ => ?_)
+  refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ => k t₃ b₃ (y₃.trans (y₂.trans y₁)) ?_)
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, hH.hashTake, ← d₂, ← hD]
     simp only [Spec.Rsa.bytesAt]
@@ -79,42 +82,44 @@ theorem bytesAt_S (m : Mem) (S : Addr) (n : Nat) :
 
 /-- `DB` masked with MGF1 of the seed, then the seed with MGF1 of `maskedDB`:
 EME-OAEP's encoding at `S`. -/
-theorem mask_ok {H G : Hash} (hG : HashOK G) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
+theorem mask_ok {H G : Hash} (hG : HashOK G) {f : Impl.RsaOaep.PPC64LE.Fns} {j : Nat}
+    (T : TabS G f j S s (stackArg s j)) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64)
     {sd lh m : List Byte} (hsd : sd.length = D) (hlh : lh.length = D) (hm : m.length = mLen s)
-    (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base S vO s t)
+    (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base S vO s t) (hsy : t.syms = s.syms)
     (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
       WP isa rest t' Q) :
-    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXor G) (.seq (.block (seedArgs H)) (.seq (mgfXor G) rest)))) t Q := by
+    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT f j) (.seq (.block (seedArgs H)) (.seq (mgfXorT f j) rest)))) t Q := by
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r6).toNat := rfl
   subst hD
   -- `DB` with MGF1 of the seed.
-  refine WP.seq (wp_addi (h := by omega_arith) fun t₁ o₁ e₁ => wp_li (by omega_arith) fun t₂ o₂ e₂ =>
-    wp_addi (h := by omega_arith) fun t₃ o₃ e₃ => wp_subi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_addi (h := by omega_arith) fun t₁ o₁ e₁ => wp_li (by omega_arith) fun t₂ o₂ e₂ =>
+    wp_addi (h := by omega_arith) fun t₃ o₃ e₃ => wp_subi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil fun sy₄ => ?_))
   have k₄ : Only [.r24, .r25, .r26, .r27] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have b₄ := h.only P.fits k₄
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
     (dstLen := kk s - H.D - 1) ⟨by omega_arith, by omega_arith, .inl (by omega_arith), by omega_arith⟩ b₄
+    (sy₄.trans hsy)
     (by rw [o₄.get .r24, o₃.get .r24, o₂.get .r24, e₁, h.r14, hE])
     (by rw [o₄.get .r25, o₃.get .r25, e₂])
     (by rw [o₄.get .r26, e₃, o₂.get .r14, o₁.get .r14, h.r14, hE, Nat.zero_add])
     (by rw [e₄, o₃.get .r15, o₂.get .r15, o₁.get .r15, h.r15, sub_k (by omega_arith)]; congr 1))
-    fun t₅ ⟨b₅, v₅⟩ => ?_)
+    fun t₅ ⟨⟨b₅, v₅⟩, sy₅⟩ => ?_)
   -- The seed with MGF1 of `maskedDB`.
-  refine WP.seq (wp_addi (h := by omega_arith) fun t₆ o₆ e₆ => wp_subi (h := by omega_arith) fun t₇ o₇ e₇ =>
-    wp_addi (h := by omega_arith) fun t₈ o₈ e₈ => wp_li (by omega_arith) fun t₉ o₉ e₉ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_addi (h := by omega_arith) fun t₆ o₆ e₆ => wp_subi (h := by omega_arith) fun t₇ o₇ e₇ =>
+    wp_addi (h := by omega_arith) fun t₈ o₈ e₈ => wp_li (by omega_arith) fun t₉ o₉ e₉ => wp_nil fun sy₉ => ?_))
   have k₉ : Only [.r24, .r25, .r26, .r27] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
   have b₉ := b₅.only P.fits k₉
-  refine WP.seq (WP.mono (mgfXor_ok P.fits hG hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
-    (dstLen := H.D) ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₉
+  refine WP.seq (WP.mono (mgfXorT_ok P.fits hG T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1) (dst := 1)
+    (dstLen := H.D) ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₉ (sy₉.trans sy₅)
     (by rw [o₉.get .r24, o₈.get .r24, o₇.get .r24, e₆, b₅.r14, hE, Nat.zero_add])
     (by rw [o₉.get .r25, o₈.get .r25, e₇, o₆.get .r15, b₅.r15, sub_k (by omega_arith)]; congr 1)
     (by rw [o₉.get .r26, e₈, o₇.get .r14, o₆.get .r14, b₅.r14, hE])
     (by rw [e₉]))
-    fun t₁₀ ⟨b₁₀, v₁₀⟩ => k t₁₀ b₁₀ ?_)
+    fun t₁₀ ⟨⟨b₁₀, v₁₀⟩, _⟩ => k t₁₀ b₁₀ ?_)
   -- `EM`.
   have hdb := he.db hlh hm hk
   generalize hDB : lh ++ Spec.RsaOaep.zeros (kk s - mLen s - 2 * H.D - 2) ++ 0x01 :: m = db at hdb

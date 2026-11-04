@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
+public import VerifiedGarbage.Spec.RsaOaep.Table
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -12,10 +13,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-OAEP encryption on PPC64LE: the precondition
 
-Untrusted: everything here is checked by Lean. `PreO Hs s`: the shared
-contract's precondition (`Spec.RsaOaep.encryptPrecomputedContract`, with the
-stack of the frame and of the streaming hash functions, 304 bytes), by name
-(`preO_of`).
+Untrusted: everything here is checked by Lean. `PreO Hs s`: the contract's
+precondition (`Spec.RsaOaep.encryptTableContract`, with the stack of the
+frame and of the streaming hash functions, 304 bytes), by name (`preO_of`),
+and what it says of MGF1's table (`spec_tab`).
 -/
 
 @[expose] public section
@@ -28,8 +29,13 @@ theorem stackArgs_seven (s : State) :
     List.map (stackArg s) (List.range 7) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6] := rfl
 
+theorem stackArgs_eight (s : State) :
+    List.map (stackArg s) (List.range 8) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7] := rfl
+
 /-- The buffers: `out`, `n`, `e`, the label, the message, the seed, the
-working space, the precomputed values and the arguments on the stack. -/
+working space, the precomputed values, MGF1's table and the arguments on the
+stack. -/
 abbrev oR (s : State) : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat⟩
 abbrev nR (s : State) : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
 abbrev eR (s : State) : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
@@ -38,14 +44,15 @@ abbrev mR (s : State) : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
 abbrev sdR (D : Nat) (s : State) : Region := ⟨stackArg s 2, D⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
 abbrev pR (s : State) : Region := ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 56⟩
+abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 5
+abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 64⟩
 
 /-- What the code needs of `encryptPrecomputedContract.pre`, by name, for a
 hash function of `D`-byte digests. -/
 structure PreO (D : Nat) (s : State) : Prop where
   sp1 : 304 ≤ s.sp.toNat
   sp2 : s.sp.toNat + 152 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, lR s, mR s, sdR D s, pR s, aR s]
+  hrd : s.rd = [nR s, eR s, lR s, mR s, sdR D s, pR s, tR s, aR s]
   hwr : s.wr = [oR s, scR s]
   on : (oR s).Disjoint (nR s)
   oe : (oR s).Disjoint (eR s)
@@ -54,6 +61,7 @@ structure PreO (D : Nat) (s : State) : Prop where
   osd : (oR s).Disjoint (sdR D s)
   osc : (oR s).Disjoint (scR s)
   op : (oR s).Disjoint (pR s)
+  ot : (oR s).Disjoint (tR s)
   oa : (oR s).Disjoint (aR s)
   ns : (nR s).Disjoint (scR s)
   es : (eR s).Disjoint (scR s)
@@ -61,6 +69,7 @@ structure PreO (D : Nat) (s : State) : Prop where
   ms : (mR s).Disjoint (scR s)
   sds : (sdR D s).Disjoint (scR s)
   sp : (scR s).Disjoint (pR s)
+  st : (scR s).Disjoint (tR s)
   sa : (scR s).Disjoint (aR s)
   ko : (kR s).Disjoint (oR s)
   kn : (kR s).Disjoint (nR s)
@@ -70,6 +79,7 @@ structure PreO (D : Nat) (s : State) : Prop where
   ksd : (kR s).Disjoint (sdR D s)
   ksc : (kR s).Disjoint (scR s)
   kp : (kR s).Disjoint (pR s)
+  kt : (kR s).Disjoint (tR s)
   ka : (kR s).Disjoint (aR s)
   wo : (s.gpr .r3).toNat + (s.gpr .r4).toNat ≤ 2 ^ 64
   wn : (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64
@@ -79,6 +89,7 @@ structure PreO (D : Nat) (s : State) : Prop where
   wsd : (stackArg s 2).toNat + D ≤ 2 ^ 64
   wsc : (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64
   wp : (stackArg s 5).toNat + (stackArg s 6).toNat * 8 ≤ 2 ^ 64
+  wt : (stackArg s 7).toNat + 40 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .r6).toNat
   k2 : (s.gpr .r6).toNat ≤ 1024
   ok : (s.gpr .r4).toNat = (s.gpr .r6).toNat
@@ -87,16 +98,39 @@ structure PreO (D : Nat) (s : State) : Prop where
   hs : Spec.RsaPss.publicScratchWords (s.gpr .r6).toNat ≤ (stackArg s 4).toNat
   hp : (stackArg s 6).toNat = Spec.Rsa.precomputedWords (s.gpr .r6).toNat
 
-theorem preO_of {H G : Spec.Mgf1.Hash} {s : State}
-    (h : (Spec.RsaOaep.encryptPrecomputedContract H G abi 304).pre s) : PreO H.len s := by
+/-- The shared contract, with MGF1's hash function one of the tables `ts`, and
+the stack of the frame and of the streaming hash functions. -/
+abbrev encSpec (H : Spec.Mgf1.Hash) (ts : List FnTable) : Contract isa :=
+  Spec.RsaOaep.encryptTableContract H (abi.withTables (Spec.RsaOaep.encryptTableSig H) [("mgf1", ts)]) 304
+
+/-- Unfolds the precondition at `h`. -/
+macro "enc_pre" " at " h:ident : tactic => `(tactic| (
   have e : (304 : Nat) = 303 + 1 := rfl
-  rw [e] at h
-  sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs,
-    stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa, ko, kn, ke, kl, km,
-    ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, hs, hp⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa, ko, kn, ke, kl, km,
-    ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, k1, k2, ok, e1, e2, hs, hp⟩
+  unfold encSpec at $h:ident
+  rw [e] at $h:ident
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    stackArgs_eight, List.append_eq, List.range, List.range.loop] at $h:ident
+  sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    stackArgs_eight, List.append_eq, List.range, List.range.loop] at $h:ident
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at $h:ident))
+
+theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSpec H ts).pre s) : PreO H.len s := by
+  enc_pre at h
+  obtain ⟨sp1, sp2, -, -, hrd, hwr, on, oe, ol, om, osd, osc, op, ot, oa, ns, es, ls, ms, sds, sp, st, sa, ko, kn,
+    ke, kl, km, ksd, ksc, kp, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wt, ⟨k1, k2⟩, ok, e1, e2, hs, hp⟩ := h
+  exact ⟨sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, ot, oa, ns, es, ls, ms, sds, sp, st, sa, ko, kn, ke,
+    kl, km, ksd, ksc, kp, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wt, k1, k2, ok, e1, e2, hs, hp⟩
+
+/-- MGF1's table, as the contract gives it: one of `ts`, at the stack
+argument 7, with the functions of distinct names at distinct addresses. -/
+theorem spec_tab {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSpec H ts).pre s) :
+    (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s T)) ∧
+      (ts.map (fun T : FnTable => T.fns)).flatten.Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
+  enc_pre at h
+  exact ⟨h.2.2.1, h.2.2.2.1⟩
 
 /-- The working space. -/
 abbrev S (s : State) : Addr := stackArg s 3
