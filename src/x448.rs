@@ -5,8 +5,7 @@
 //! scalar decoded (clamped) and all 448 bits of the u-coordinate reduced
 //! modulo the field prime, in constant time; and
 //! [`public_key`](PrivateKey::public_key) is the verified `vg_x448_base`
-//! (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)` (on x86, until it
-//! has `vg_x448_base`, `vg_x448` of the base point). On x86-64 CPUs
+//! (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)`. On x86-64 CPUs
 //! with the features their `_FEATURES` constants name, `Backend::select`
 //! chooses their variants `vg_x448_adx` and `vg_x448_base_adx`, with the
 //! same contracts. This module gives them working space, and destroys what
@@ -26,7 +25,6 @@
 ))]
 
 use crate::arch::x448::vg_x448;
-#[cfg(not(target_arch = "x86"))]
 use crate::arch::x448::vg_x448_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x448::{
@@ -110,7 +108,6 @@ pub fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
 }
 
 /// `X448(scalar, 5)`, by `vg_x448_base`.
-#[cfg(not(target_arch = "x86"))]
 fn base(scalar: &[u8; 56]) -> [u8; 56] {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
@@ -128,12 +125,6 @@ fn base(scalar: &[u8; 56]) -> [u8; 56] {
     unsafe { f(&mut out, scalar, &mut scratch) };
     zeroize(&mut scratch);
     out
-}
-
-/// `X448(scalar, 5)`, by `x448` (x86 has no `vg_x448_base` yet).
-#[cfg(target_arch = "x86")]
-fn base(scalar: &[u8; 56]) -> [u8; 56] {
-    x448(scalar, &BASE_POINT)
 }
 
 /// An X448 private key: 56 bytes, which X448 decodes into a scalar.
