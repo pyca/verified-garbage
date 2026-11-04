@@ -135,7 +135,7 @@ theorem withTabs_heldG (s : State) :
 end
 
 /-- The functions of the tables. -/
-def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
+abbrev tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
 
 /-! ## Verification with a precomputed key -/
 

@@ -9,14 +9,7 @@
 //! function is not supported, so nothing verifies with it.
 
 #![cfg(all(
-    any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    ),
+    any(target_arch = "x86_64", target_arch = "riscv64"),
     feature = "alloc"
 ))]
 
