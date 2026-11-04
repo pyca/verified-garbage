@@ -153,7 +153,7 @@ def privOut (s : State) (em : List Byte) : Spec.Rsa.Outcome :=
     (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 6) (s.gpr .a7).toNat)
 
-/-- The outcome `signContract.post` asks for. -/
+/-- The outcome `signTableContract.post` asks for. -/
 def signOut (s : State) : Spec.Rsa.Outcome :=
   Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)

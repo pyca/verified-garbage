@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 
 /-!

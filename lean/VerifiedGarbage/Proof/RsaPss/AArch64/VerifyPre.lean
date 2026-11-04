@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 import VerifiedGarbage.Proof.Framework.Offset
