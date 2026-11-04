@@ -328,4 +328,120 @@ theorem search_arguments_ok {p : SearchPublic} {original s : State} {used remain
     hl 112 (by decide), hl 120 (by decide), read_past_call, read_past_call0, hv5, hv6, hv7, hv8, hv9, hv10, hv11, hv12, hv13, hv14, hv15,
     hs0, hs 8 (by decide), hs 16 (by decide), hs 24 (by decide), hs 32 (by decide)]
 
+/-! ## The candidate's entry -/
+
+/-- The regions the candidate reads, and those it writes. -/
+def callReads (p : SearchPublic) (used : Nat) : List Region := [rE p, rP p, rR p used, rA p]
+def callWrites (p : SearchPublic) : List Region := [rO p, rU p, rS p]
+
+/-- The callee's entry, as the call makes it. -/
+abbrev callState (p : SearchPublic) (used : Nat) (u : State) : State :=
+  u.callEntry.withRegions (callReads p used) (callWrites p)
+
+theorem F_40 (p : SearchPublic) : p.F - BitVec.ofNat 64 40 = p.sp - BitVec.ofNat 64 200 := by
+  rw [SearchPublic.F, BitVec.sub_sub]; rfl
+
+theorem call_rsp {p : SearchPublic} {used : Nat} {u : State} (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) :
+    (callState p used u).gpr .rsp = p.sp - BitVec.ofNat 64 208 := by
+  simp only [State.withRegions_gpr, State.callEntry_rsp, hu, BitVec.sub_sub]
+  rfl
+
+theorem call_gpr {p : SearchPublic} {used : Nat} {u : State} {r : Reg} (hr : r ≠ .rsp) :
+    (callState p used u).gpr r = u.gpr r := by
+  simp only [State.withRegions_gpr, State.callEntry_gpr _ hr]
+
+theorem call_argAddr {p : SearchPublic} {used : Nat} {u : State} (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200)
+    (j : Nat) : stackArgAddr (callState p used u) j = p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j) := by
+  simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hu]
+  rw [show 8 * (j + 1) = 8 + 8 * j by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+    show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
+
+theorem call_arg {p : SearchPublic} {used : Nat} {s u : State} (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200)
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) (j : Nat) (hj : j < 5) :
+    stackArg (callState p used u) j = frameValue (callValues p used) j
+      (word s.mem (p.sp - BitVec.ofNat 64 200) (8 * j)) := by
+  have e1 : p.sp - BitVec.ofNat 64 200 - 8 + BitVec.ofNat 64 (8 + 8 * j) =
+      p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j) := by
+    rw [BitVec.ofNat_add, ← BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
+      BitVec.sub_add_cancel]
+  have sep : Mem.Sep (p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j)) (64 / 8)
+      (p.sp - BitVec.ofNat 64 200 - 8) (64 / 8) := by
+    have := Offset.sep (p.sp - BitVec.ofNat 64 200 - 8) (d := 8 + 8 * j) (n := 8) (e := 0) (k := 8)
+      (.inr (by omega)) (by omega) (by decide)
+    rw [e1, BitVec.add_zero] at this
+    exact this
+  unfold stackArg
+  rw [call_argAddr hu, State.withRegions_mem, State.callEntry_mem, hu, Mem.readW_writeW_sep sep (by decide),
+    hm, F_40]
+  exact writeFrame_word _ _ _ (callValues_bound p used) j (by omega)
+
+/-- The candidate's precondition at its entry. -/
+theorem call_cand_pre {p : SearchPublic} {used : Nat} {s u : State} (hf : CallFacts p used)
+    (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) (ha : CallRegs p u)
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) :
+    sharedCandContract.pre (callState p used u) := by
+  have a0 : arg (callState p used u) 0 = BitVec.ofNat 64 p.plen := by
+    show stackArg _ 0 = _
+    rw [call_arg hu hm 0 (by decide)]; rfl
+  have a1 : arg (callState p used u) 1 = p.rp + BitVec.ofNat 64 used := by
+    show stackArg _ 1 = _
+    rw [call_arg hu hm 1 (by decide)]; rfl
+  have a2 : arg (callState p used u) 2 = BitVec.ofNat 64 (p.randLen - used) := by
+    show stackArg _ 2 = _
+    rw [call_arg hu hm 2 (by decide)]; rfl
+  have a3 : arg (callState p used u) 3 = p.B := by
+    show stackArg _ 3 = _
+    rw [call_arg hu hm 3 (by decide)]; rfl
+  have a4 : arg (callState p used u) 4 = BitVec.ofNat 64 (p.Z / 8) := by
+    show stackArg _ 4 = _
+    rw [call_arg hu hm 4 (by decide)]; rfl
+  obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha
+  have t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega)]
+  have tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
+  have tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
+  have tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega)]
+  have tz : (BitVec.ofNat 64 (p.Z / 8)).toNat * 8 = p.Z := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nS; omega)]; exact hf.z8
+  have tz' : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nS; omega)]
+  have hsp := call_rsp (used := used) hu
+  have h208 : (p.sp - BitVec.ofNat 64 208).toNat = p.sp.toNat - 208 := by
+    have := hf.room
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, show (BitVec.ofNat 64 208).toNat = 208 from rfl]; omega),
+      show (BitVec.ofNat 64 208).toNat = 208 from rfl]
+  have hargs : stackArgAddr (callState p used u) 0 = p.sp - BitVec.ofNat 64 200 := by
+    rw [call_argAddr hu, Nat.mul_zero, BitVec.add_zero]
+  have hlow : below (p.sp - BitVec.ofNat 64 208) 128 = rLow p := by
+    simp only [below, rLow, BitVec.sub_sub]; rfl
+  have hret := hf.ret
+  have hlo := hf.low
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hret hlo
+  obtain ⟨rO', rU', rE', rP', rR', rS', rA'⟩ := hret
+  obtain ⟨lO, lU, lE, lP, lR, lS, lA⟩ := hlo
+  refine ⟨?_, ?_⟩
+  · simp only [candPre, args, ret, State.withRegions_rd, State.withRegions_wr, hsp, hargs,
+      call_gpr (show Reg.rdi ≠ .rsp by decide), call_gpr (show Reg.rsi ≠ .rsp by decide),
+      call_gpr (show Reg.rdx ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
+      call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
+      hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, t8, tl, tp, tr, tz', hf.z8, callReads, callWrites]
+    have hsp' : (p.sp - BitVec.ofNat 64 208).toNat + 48 ≤ 2 ^ 64 := by
+      rw [h208]; have := hf.top; omega
+    exact ⟨hsp', by trivial, by trivial, hf.oU, hf.oE, hf.oP, hf.oR, hf.oS, hf.oA, hf.uE, hf.uP, hf.uR, hf.uS, hf.uA,
+      hf.eS, hf.pS, hf.rS', hf.sA, rO', rU', rE', rP', rR', rS', rA', hf.nO, hf.nU, hf.nE, hf.nP, hf.nR,
+      hf.nS, hf.len, hf.e1, hf.e8, hf.plen, hf.scratch⟩
+  · refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
+    · rw [hsp, h208]; have := hf.room; omega
+    · rw [hsp, hlow, a3, a4, tz]; exact lS
+    · rfl
+    · intro r hr
+      rw [hsp, hlow]
+      simp only [State.withRegions_rd, State.withRegions_wr, callReads, callWrites, List.cons_append,
+        List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [lE, lP, lR, lA, lO, lU, lS]
+
 end VG.Proof.RsaKeyGen.X86_64.Search
