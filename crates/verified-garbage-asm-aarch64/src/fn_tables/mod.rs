@@ -19,6 +19,23 @@ impl Hash {
     }
 }
 
+/// A table of functions of the interface `MdHash` (`VG.FnTable`): the addresses of its 5 functions, then its 6 words of data. Only the statics of this module are of this type.
+#[repr(C)]
+pub struct MdHash {
+    fns: [*const (); 5],
+    data: [usize; 6],
+}
+
+// SAFETY: a `MdHash` is immutable, and the functions it holds the addresses of may be called from any thread.
+unsafe impl Sync for MdHash {}
+
+impl MdHash {
+    /// A pointer to the table's words, as the verified functions that take it read them.
+    pub const fn as_ptr(&'static self) -> *const [usize; 11] {
+        core::ptr::from_ref(self).cast()
+    }
+}
+
 #[rustfmt::skip]
 mod vg_hash_md5;
 pub use vg_hash_md5::VG_HASH_MD5;
@@ -78,3 +95,63 @@ pub use vg_hash_sha512_256_sha3::{VG_HASH_SHA512_256_SHA3, VG_HASH_SHA512_256_SH
 #[rustfmt::skip]
 mod vg_hash_sha512_sha3;
 pub use vg_hash_sha512_sha3::{VG_HASH_SHA512_SHA3, VG_HASH_SHA512_SHA3_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_md5;
+pub use vg_md_hash_md5::VG_MD_HASH_MD5;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha1;
+pub use vg_md_hash_sha1::VG_MD_HASH_SHA1;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha1_sha2;
+pub use vg_md_hash_sha1_sha2::{VG_MD_HASH_SHA1_SHA2, VG_MD_HASH_SHA1_SHA2_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha224;
+pub use vg_md_hash_sha224::VG_MD_HASH_SHA224;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha224_sha2;
+pub use vg_md_hash_sha224_sha2::{VG_MD_HASH_SHA224_SHA2, VG_MD_HASH_SHA224_SHA2_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha256;
+pub use vg_md_hash_sha256::VG_MD_HASH_SHA256;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha256_sha2;
+pub use vg_md_hash_sha256_sha2::{VG_MD_HASH_SHA256_SHA2, VG_MD_HASH_SHA256_SHA2_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha384;
+pub use vg_md_hash_sha384::VG_MD_HASH_SHA384;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha384_sha3;
+pub use vg_md_hash_sha384_sha3::{VG_MD_HASH_SHA384_SHA3, VG_MD_HASH_SHA384_SHA3_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512;
+pub use vg_md_hash_sha512::VG_MD_HASH_SHA512;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512_224;
+pub use vg_md_hash_sha512_224::VG_MD_HASH_SHA512_224;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512_224_sha3;
+pub use vg_md_hash_sha512_224_sha3::{VG_MD_HASH_SHA512_224_SHA3, VG_MD_HASH_SHA512_224_SHA3_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512_256;
+pub use vg_md_hash_sha512_256::VG_MD_HASH_SHA512_256;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512_256_sha3;
+pub use vg_md_hash_sha512_256_sha3::{VG_MD_HASH_SHA512_256_SHA3, VG_MD_HASH_SHA512_256_SHA3_FEATURES};
+
+#[rustfmt::skip]
+mod vg_md_hash_sha512_sha3;
+pub use vg_md_hash_sha512_sha3::{VG_MD_HASH_SHA512_SHA3, VG_MD_HASH_SHA512_SHA3_FEATURES};

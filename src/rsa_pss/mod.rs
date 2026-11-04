@@ -414,7 +414,7 @@ pub fn verify(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Hash, SaltLength, sign, verify};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
