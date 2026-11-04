@@ -51,9 +51,9 @@ pub fn bench(c: &mut Criterion) {
         &ECDSA_P521_SHA512_ASN1,
         &d,
     );
-    // On x86-64, where the curve signs with every hash function with HMAC
-    // (by the hash function's table), also with SHA-256.
-    #[cfg(target_arch = "x86_64")]
+    // On x86-64 and ARMv7, where the curve signs with every hash function with
+    // a table (by the hash function's table), also with SHA-256.
+    #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
     hash::<verified_garbage::hashes::sha256::Sha256>(
         c,
         "sha256",

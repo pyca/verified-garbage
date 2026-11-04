@@ -1,8 +1,8 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
 //! §A.2.3 (P-192), §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
-//! hash functions the curve signs with here: on x86-64, every hash function
-//! the RFC signs with (SHA-1 and the SHA-2 family), elsewhere those of the
+//! hash functions the curve signs with here: on x86-64 and ARMv7, every hash
+//! function the RFC signs with (SHA-1 and the SHA-2 family), elsewhere those of the
 //! curve's verified functions.
 
 #![cfg(any(
@@ -109,11 +109,12 @@ fn section<const Q: usize, const U: usize, const S: usize>(
     (q, x, u, signatures)
 }
 
-/// On x86-64, where every curve signs with each hash function with HMAC:
+/// On x86-64 and ARMv7, where every curve signs with each hash function the
+/// RFC signs with:
 /// the signatures with `H`, named `hash` in RFC 6979, of the section
 /// `title`, of the message and of its hash; they verify, of the message and
 /// of its hash, and not of another message.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
 where
     C: verified_garbage::ecdsa::Curve<
