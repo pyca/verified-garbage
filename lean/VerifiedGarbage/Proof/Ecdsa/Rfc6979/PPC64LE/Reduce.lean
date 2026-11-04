@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
@@ -143,7 +144,7 @@ structure SubInv (N k : Nat) (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m
 
 /-- A word written in the frame, within `HW`. -/
 theorem hw_frame {m : Mem} {o : Nat} (ho : 128 ≤ o ∧ o + 4 ≤ 304 ∨ 352 ≤ o ∧ o + 4 ≤ 352 + L.e)
-    (hne : L.e ≤ 144) (v : BitVec 32) : Frame (HW L) m (m.writeW (L.B + BitVec.ofNat 64 o) v) := by
+    (hne : L.e ≤ 272) (v : BitVec 32) : Frame (HW L) m (m.writeW (L.B + BitVec.ofNat 64 o) v) := by
   rcases ho with ⟨ho₁, ho₂⟩ | ⟨ho₁, ho₂⟩
   · exact (Frame.refl _ _).writeW (r := ⟨L.B + BitVec.ofNat 64 128, 176⟩) (by simp) _
       (Offset.contains _ ho₁ (by omega_arith) (by omega_arith))
@@ -163,7 +164,7 @@ theorem ctx_word (hL : L.Ok) {u u' : State} (hc : Ctx L g lr m₀ u) (k : Kp [] 
       · exact safe_ext L ho₁ ho₂)
 
 /-- Words apart in the frame. -/
-theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 544) (hy : y + 4 ≤ 544) :
+theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x + 4 ≤ 672) (hy : y + 4 ≤ 672) :
     Mem.Sep (B + BitVec.ofNat 64 x) (32 / 8) (B + BitVec.ofNat 64 y) (32 / 8) :=
   Offset.sep B h (by omega_arith) (by omega_arith)
 

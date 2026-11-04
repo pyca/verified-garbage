@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 
 /-!
 # Deterministic ECDSA on PPC64LE: the blocks between the calls
@@ -102,8 +103,6 @@ theorem kv_pairs (hL : L.Ok) (K : Nat) (hK : K ≤ 16) :
         ← List.replicate_append_replicate]
       rfl
 
-/-- The first `n` of `k` bytes. -/
-
 /-- `V = 0x01…` and `K = 0x00…`, all 64 bytes of each. -/
 theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
     WP isa (.block Cfg.initKV) t fun u => Ctx L g lr m₀ u ∧ Frame [⟨L.B + BitVec.ofNat 64 128, 128⟩] t.mem u.mem ∧
@@ -142,12 +141,13 @@ theorem initCnt_ok (hL : L.Ok) {c : Cfg} (ht : c.tries < 2 ^ 15) {t : State} (hc
 
 /-- The arguments of `core`: `out`, `d`, the digest, `k` (the frame's `V`)
 and `scratch`; or, if `wide`, the digest and `k` at the frame's top. -/
-theorem coreArgs_ok (hL : L.Ok) (wide : Bool) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block (Cfg.coreArgs wide)) t fun u => Ctx L g lr m₀ u ∧ u.mem = t.mem ∧
+theorem coreArgs_ok (hL : L.Ok) (c : Cfg) {t : State} (hc : Ctx L g lr m₀ t) :
+    WP isa (.block c.coreArgs) t fun u => Ctx L g lr m₀ u ∧ u.mem = t.mem ∧
       Kp [.r11, .r3, .r4, .r5, .r6, .r7] t u ∧ u.gpr .r3 = L.out ∧ u.gpr .r4 = L.d ∧
-      u.gpr .r5 = (if wide then L.B + BitVec.ofNat 64 352 else L.dg) ∧
-      u.gpr .r6 = (if wide then L.B + BitVec.ofNat 64 424 else L.B + BitVec.ofNat 64 192) ∧ u.gpr .r7 = L.scr := by
+      u.gpr .r5 = (if c.wide then L.B + BitVec.ofNat 64 (96 + c.fDg) else L.dg) ∧
+      u.gpr .r6 = (if c.wide then L.B + BitVec.ofNat 64 496 else L.B + BitVec.ofNat 64 192) ∧ u.gpr .r7 = L.scr := by
   have hnB := hL.nB
+  have hfd : c.fDg < 2 ^ 15 := by unfold Cfg.fDg; split <;> decide
   simp only [Cfg.coreArgs, List.cons_append, List.nil_append]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
   have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
@@ -162,8 +162,8 @@ theorem coreArgs_ok (hL : L.Ok) (wide : Bool) {t : State} (hc : Ctx L g lr m₀ 
   have h4 : t₃.gpr .r4 = L.d := by rw [v₃, m₂, m₁, hc.pD]
   have hm₃ : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
   have K₃ : Kp [.r11, .r3, .r4, .r5, .r6, .r7] t t₃ := (k₁.mono.trans k₂.mono).trans k₃.mono
-  cases wide
-  · simp only [Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
+  cases hw : c.wide
+  · simp only [Bool.false_eq_true, ite_false, List.cons_append]
     refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide)
       (by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc₃.inFr (by omega) (by omega))
       fun t₄ k₄ m₄ v₄ => ?_
@@ -180,8 +180,8 @@ theorem coreArgs_ok (hL : L.Ok) (wide : Bool) {t : State} (hc : Ctx L g lr m₀ 
     · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, hm₃, hc.pDg]
     · rw [k₆.gpr _ (by decide), v₅, k₄.sp, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
     · rw [v₆, m₅, m₄, hm₃, hc.pScr]
-  · simp only [ite_true, List.cons_append, List.nil_append]
-    refine stepAddSp (by decide) fun t₄ k₄ m₄ v₄ => ?_
+  · simp only [ite_true, List.cons_append]
+    refine stepAddSp hfd fun t₄ k₄ m₄ v₄ => ?_
     have hc₄ := hc₃.kp hL k₄ m₄
     refine stepAddSp (by decide) fun t₅ k₅ m₅ v₅ => ?_
     have hc₅ := hc₄.kp hL k₅ m₅
@@ -192,7 +192,7 @@ theorem coreArgs_ok (hL : L.Ok) (wide : Bool) {t : State} (hc : Ctx L g lr m₀ 
     refine ⟨hc₅.kp hL k₆ m₆, by rw [m₆, m₅, m₄, hm₃], K, ?_, ?_, ?_, ?_, ?_⟩
     · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h3]
     · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), h4]
-    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
+    · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]
     · rw [k₆.gpr _ (by decide), v₅, k₄.sp, k₃.sp, k₂.sp, k₁.sp, hc.sp, fr_add]; rfl
     · rw [v₆, m₅, m₄, hm₃, hc.pScr]
 
