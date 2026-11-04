@@ -290,6 +290,96 @@ theorem finCall_ok (P : Kit) {c : Cfg} (hK : KOk P c L) (hL : L.Ok) {t : State} 
       rw [bytesAt_take _ _ hDF, this, ← P.hH.hashTake]
   exact WP.mono_syms hcall fun v ⟨hcv, hf, hr'⟩ hsv => ⟨hcv, hf, hr', by rw [hsv, hs', hsu]⟩
 
+/-! ## The streaming calls themselves -/
+
+/-- The call of `init` of the state at `scratch + o`, in `r3`. -/
+theorem initRaw_ok (P : Kit) (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {o : Nat} (ho : o + 192 ≤ 384)
+    (h3 : u.gpr .r3 = L.scr + BitVec.ofNat 64 o) :
+    WP isa (.call P.H.initN P.H.initC) u fun v => Ctx L g lr m₀ v ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.B + BitVec.ofNat 64 48, 48⟩] u.mem v.mem := by
+  have hnc := hL.nc
+  have hS := P.hS
+  have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hc.sp
+  exact P.hH.callInit_ok (st := L.scr + BitVec.ofNat 64 o) h3
+    ⟨by rw [hsp, hL.sp_toNat]; omega, by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega)⟩
+    (hc.covers fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    (hc.coversW fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    fun s' h₁ h₂ h₃ h₄ hcs _ => by
+      rw [hsp, L.below48] at h₄
+      exact ⟨hc.keep hL h₁ h₂ h₃ hcs h₄ (safe_call fun r hr => by
+        simp only [List.mem_singleton] at hr; exact ⟨o, P.H.S, hr, by omega⟩), h₄⟩
+
+/-- The call of `update` of the state at `scratch + o`, with its arguments. -/
+theorem updRaw_ok (P : Kit) (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {o : Nat} (ho : o + 192 ≤ 384)
+    {da : Addr} {len : Nat} (hd : UpdData P L o da len) (hlen : len < 2 ^ 15)
+    (h3 : u.gpr .r3 = L.scr + BitVec.ofNat 64 o) (h5 : u.gpr .r5 = da) (h6 : u.gpr .r6 = BitVec.ofNat 64 len)
+    (h7 : u.gpr .r7 = L.scr + BitVec.ofNat 64 384) :
+    WP isa (.call P.H.updN P.H.updC) u fun v => Ctx L g lr m₀ v := by
+  have hnc := hL.nc
+  have hnB := hL.nB
+  have hS := P.hS
+  have hW := P.hW
+  simp only [sWork, sPad] at hW
+  have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hc.sp
+  exact P.hH.callUpd_ok (st := L.scr + BitVec.ofNat 64 o) (dat := da)
+    (scr := L.scr + BitVec.ofNat 64 384) (len := len) h3 h5
+    (by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) h7
+    (Offset.disjoint _ (by omega) (by omega) (by omega)) hd.st hd.wk
+    (by rw [hsp, hL.sp_toNat]; omega) (by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega))
+    (by rw [hsp, L.below48]; exact hd.low) (by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega))
+    (hc.covers fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hd.cov
+      all_goals exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    (hc.coversW fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    fun s' h₁ h₂ h₃ h₄ hcs _ => by
+      rw [hsp, L.below48] at h₄
+      exact hc.keep hL h₁ h₂ h₃ hcs h₄ (safe_call fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨o, P.H.S, rfl, by omega⟩
+        · exact ⟨384, P.H.W, rfl, by omega⟩)
+
+/-- The call of `finalize` of the state at `scratch + o`, with its arguments. -/
+theorem finRaw_ok (P : Kit) (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {o : Nat} (ho : o + 192 ≤ 384)
+    (h3 : u.gpr .r3 = L.scr + BitVec.ofNat 64 o) (h5 : u.gpr .r5 = L.scr + BitVec.ofNat 64 1920)
+    (h6 : u.gpr .r6 = L.scr + BitVec.ofNat 64 384) :
+    WP isa (.call P.H.finN P.H.finC) u fun v => Ctx L g lr m₀ v := by
+  have hnc := hL.nc
+  have hnB := hL.nB
+  have hS := P.hS
+  have hW := P.hW
+  have hFD := P.hH.hFD64
+  simp only [sWork, sPad] at hW
+  have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hc.sp
+  exact P.hH.callFin_ok (st := L.scr + BitVec.ofNat 64 o) (o := L.scr + BitVec.ofNat 64 1920)
+    (scr := L.scr + BitVec.ofNat 64 384) h3 h5 h6 (Offset.disjoint _ (by omega) (by omega) (by omega))
+    (Offset.disjoint _ (by omega) (by omega) (by omega)) (Offset.disjoint _ (by omega) (by omega) (by omega))
+    (by rw [hsp, hL.sp_toNat]; omega) (by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega))
+    (by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega))
+    (by rw [hsp, L.below48]; exact hL.stk_scr (by omega) (by omega))
+    (hc.covers fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    (hc.coversW fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega)⟩)
+    fun s' h₁ h₂ h₃ h₄ hcs _ => by
+      rw [hsp, L.below48] at h₄
+      exact hc.keep hL h₁ h₂ h₃ hcs h₄ (safe_call fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨o, P.H.S, rfl, by omega⟩
+        · exact ⟨1920, P.H.FD, rfl, by omega⟩
+        · exact ⟨384, P.H.W, rfl, by omega⟩)
+
 /-! ## The padded key -/
 
 /-- The first `n` bytes of the key of `D` bytes at `K` (in `m`), padded with
