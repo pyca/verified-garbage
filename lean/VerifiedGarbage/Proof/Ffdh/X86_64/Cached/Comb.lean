@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Table
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.CombBitBytes
@@ -528,5 +529,252 @@ theorem select_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : Ad
   refine wp_upto (a := 0) (N := 32) (by decide) (SelO B o w E d s)
     (fun e _ he t hI => selectStep_ok hc hwide hctx hreg hw hw' hE h13 hd he hI) (fun t ⟨hf, _, hsel, k⟩ => ?_) hI0
   exact ⟨fun i hi' => (hsel i hi').trans (by unfold sel; rw [ite_eq_left hd]), hf, k⟩
+
+/-! ## The comb's environment -/
+
+/-- What the comb keeps: the inner workspace for `p`, the context and the
+scalar's bytes, and their pointers and lengths in the inner header. -/
+structure CEnv (T : TabP) (xp : Addr) (xb : List Byte) (s : State) : Prop where
+  mc : ModCtx s T.B T.Z T.o T.w T.mi T.P
+  ctx : word s.mem (off T.B T.o) (8 * iCtx) = T.cp
+  rows : word s.mem (off T.B T.o) (8 * iRows) = BitVec.ofNat 64 T.rows
+  xpw : word s.mem (off T.B T.o) (8 * iXp) = xp
+  xlw : word s.mem (off T.B T.o) (8 * iXl) = BitVec.ofNat 64 xb.length
+  reg : CtxRd s T.B T.Z T.cp T.n
+  ent : ∀ a < 32, row s.mem T.cp T.w (2 + a) = Spec.Rsa.toWords (T.entry a) T.w
+  x : Src s T.B T.Z xp xb
+
+/-- What the comb changes in the inner workspace: `iI`, `iE` and the arrays
+but `aN`, `aR2` and `aOne`. -/
+def combR (w : Nat) : List (Nat × Nat) :=
+  [(8 * iI, 16), (slot w aX, 3 * (8 * (w + 2))), (slot w aXm, 2 * (8 * (w + 2)))]
+
+theorem combR_inner (w : Nat) : ∀ r ∈ combR w, ∃ r' ∈ innerR w, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := by
+  have := hdr_lt_slot w aX (show 31 < 32 by decide)
+  simp only [combR, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact ⟨(8 * 17, 8 * 15), by simp [innerR], by simp only [iI, sFn]; omega, by simp only [iI, sFn]; omega⟩
+  · exact ⟨_, by simp [innerR], Nat.le_refl _, Nat.le_refl _⟩
+  · exact ⟨_, by simp [innerR], Nat.le_refl _, Nat.le_refl _⟩
+
+theorem combR_le (w : Nat) : ∀ r ∈ combR w, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8 := fun r hr => by
+  obtain ⟨r', hr', h1, h2⟩ := combR_inner w r hr
+  have := innerR_ok w r' hr'
+  omega
+
+/-- The inner header's pointers and counts the comb only reads. -/
+theorem combR_hdr (w : Nat) {i : Nat} (hi : i = iCtx ∨ i = iRows ∨ i = iXp ∨ i = iXl) :
+    ∀ r ∈ combR w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  have h0 := hdr_lt_slot w aX (show i < 32 by rcases hi with rfl | rfl | rfl | rfl <;> decide)
+  simp only [combR, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl) <;> rcases hi with rfl | rfl | rfl | rfl <;> simp only [iI, iCtx, iRows, iXp, iXl, sFn] at * <;>
+    simp only [slot, hdrBytes, aX, aXm] at * <;> omega
+
+theorem CEnv.of_frm {T : TabP} {xp : Addr} {xb : List Byte} {s t : State} (h : CEnv T xp xb s)
+    (hf : Frm (off T.B T.o) (combR T.w) s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hdi : t.gpr .rdi = s.gpr .rdi) :
+    CEnv T xp xb t ∧ InScr T.B T.Z s.mem t.mem ∧ (∀ i < 32, word t.mem T.B (8 * i) = word s.mem T.B (8 * i)) := by
+  obtain ⟨hh, hin⟩ := VG.Proof.Ffdh.X86_64.child_frm h.mc.sub h.mc.wide hf fun r hr => by
+    have := (combR_le T.w r hr).2; omega
+  have hw : ∀ i, (i = iCtx ∨ i = iRows ∨ i = iXp ∨ i = iXl) →
+      word t.mem (off T.B T.o) (8 * i) = word s.mem (off T.B T.o) (8 * i) := fun i hi =>
+    hf.word_eq (combR_hdr T.w hi) (by
+      have := h.mc.sub.scr.nowrap; have := h.mc.sub.hi
+      rcases hi with rfl | rfl | rfl | rfl <;> simp only [iCtx, iRows, iXp, iXl, sFn] <;> omega)
+  refine ⟨⟨h.mc.of_inner (Frm.widen hf (combR_inner T.w)) hwr hdi, (hw _ (.inl rfl)).trans h.ctx,
+    (hw _ (.inr (.inl rfl))).trans h.rows, (hw _ (.inr (.inr (.inl rfl)))).trans h.xpw,
+    (hw _ (.inr (.inr (.inr rfl)))).trans h.xlw, h.reg.congr hrd hwr, fun a ha => ?_, h.x.congr hin hrd hwr⟩,
+    hin, hh⟩
+  rw [← h.ent a ha]
+  refine row_congr fun i hi => h.reg.word hin ?_
+  have : T.w * (2 + a) + T.w ≤ 34 * T.w := by
+    have h := Nat.mul_le_mul_left T.w (show 2 + a + 1 ≤ 34 by omega); rw [Nat.mul_succ] at h; omega
+  unfold TabP.n
+  rw [Nat.mul_assoc]; omega
+
+/-- A frame of fewer bytes than `combR`. -/
+theorem Frm.toCombR {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
+    (hc : ∀ r ∈ rs, ∃ r' ∈ combR w, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2) : Frm B (combR w) m m' :=
+  Frm.widen h hc
+
+/-- The ranges of `mm`'s writes are in `combR`. -/
+theorem mm_combR (w : Nat) {out : Nat} (ho : out = aX ∨ out = aXm ∨ out = aY) :
+    ∀ r ∈ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w out, 8 * (w + 2))],
+      ∃ r' ∈ combR w, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := fun r hr => by
+  obtain ⟨r', hr', h1, h2⟩ := mm_cover w ho r hr
+  simp only [innerR, List.mem_cons, List.not_mem_nil, or_false] at hr'
+  rcases hr' with rfl | rfl | rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    exfalso
+    rcases hr with rfl | rfl | rfl
+    · simp only [slot, hdrBytes, aAcc] at h1 h2; omega
+    · simp only [slot, hdrBytes, aTmp] at h1 h2; omega
+    · rcases ho with rfl | rfl | rfl <;> simp only [slot, hdrBytes, aX, aXm, aY] at h1 h2 <;> omega
+  · exact ⟨_, by simp [combR], h1, h2⟩
+  · exact ⟨_, by simp [combR], h1, h2⟩
+
+/-- Montgomery multiplication in the comb's environment. -/
+theorem mm_cenv (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s : State} (he : CEnv T xp xb s)
+    {out a b : Nat} (ho : out = aX ∨ out = aXm ∨ out = aY) (ha : a < 8) (hb : b < 8) (ha₁ : a ≠ aAcc)
+    (ha₂ : a ≠ aTmp) (hb₁ : b ≠ aAcc) (hb₂ : b ≠ aTmp)
+    (hbl : wv s.mem (off T.B T.o) (slot T.w b) T.w < T.P) :
+    WP isa (Mo.mm out a b) s fun t => CEnv T xp xb t ∧
+      wv t.mem (off T.B T.o) (slot T.w out) T.w < T.P ∧
+      wv t.mem (off T.B T.o) (slot T.w out) T.w * T.R % T.P =
+        wv s.mem (off T.B T.o) (slot T.w a) T.w * wv s.mem (off T.B T.o) (slot T.w b) T.w % T.P ∧
+      Arrays (off T.B T.o) T.w [aAcc, aTmp, out] s.mem t.mem ∧
+      Frm (off T.B T.o) (combR T.w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hc := he.mc
+  have hout : out < 8 := by rcases ho with rfl | rfl | rfl <;> decide
+  have ho₁ : out ≠ aAcc := by rcases ho with rfl | rfl | rfl <;> decide
+  have ho₂ : out ≠ aTmp := by rcases ho with rfl | rfl | rfl <;> decide
+  refine WP.mono (Mo.mm_ok hc.sub.good (Nat.le_refl _) (by have := hc.w2; omega) (by have := hc.w28; omega) hout
+    ha hb ho₁ ho₂ ha₁ hb₁ hc.xv.inv (by rw [hc.xv.n]; exact hbl) ha₂ hb₂) fun t ⟨_, hl, hv, ha', k⟩ => ?_
+  rw [hc.xv.n] at hl hv
+  have hf : Frm (off T.B T.o) (combR T.w) s.mem t.mem := Frm.toCombR (Frm.of_arrays ha' (by simp)) (mm_combR T.w ho)
+  exact ⟨(he.of_frm hf k.2.1 k.2.2 (k.gpr (by decide))).1, hl, hv, ha', hf, k⟩
+
+theorem Frm.combR_trans {B : Addr} {w : Nat} {m₁ m₂ m₃ : Mem} (h₁ : Frm B (combR w) m₁ m₂)
+    (h₂ : Frm B (combR w) m₂ m₃) : Frm B (combR w) m₁ m₃ :=
+  Frm.widen (h₁.append h₂) fun r hr => ⟨r, by simpa using hr, Nat.le_refl _, Nat.le_refl _⟩
+
+/-- `[iI] := [iI] - 1`, and whether it is now zero. -/
+theorem decI_ok {s : State} {O : Addr} {Zs w : Nat} {mi : BitVec 64} (hg : Good s O Zs w mi) (hZ : 8 * 32 ≤ Zs)
+    {k : Nat} (hv : word s.mem O (8 * iI) = BitVec.ofNat 64 (k + 1)) (hk : k + 1 < 2 ^ 64) :
+    WP isa (.block [.mov .rax (.mem (hdr iI)), .alu .sub .rax (.imm 1), .store (hdr iI) .rax]) s fun t =>
+      t.zf = some (decide (k = 0)) ∧ t.mem = s.mem.writeW (off O (8 * iI)) (BitVec.ofNat 64 k) ∧
+      Keep [.rax] s t := by
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (k = 0)) ∧
+      t.mem = s.mem.writeW (off O (8 * iI)) (BitVec.ofNat 64 k)) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iI) (by unfold iI sFn; omega),
+      hg.scr.st (d := 8 * iI) (by unfold iI sFn; omega), hv, ofNat_succ_sub_one k,
+      ofNat_beq_zero (show k < 2 ^ 64 by omega)]) rfl) fun t ⟨h, k'⟩ => ⟨h.1, h.2, k'⟩
+
+/-- `mm`'s writes keep the inner header. -/
+theorem arrays3_hdr {O : Addr} {w out : Nat} {m m' : Mem} (h : Arrays O w [aAcc, aTmp, out] m m') (_hout : out < 8)
+    {i : Nat} (hi : i < 32) : word m' O (8 * i) = word m O (8 * i) :=
+  (Frm.of_arrays (rs := [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w out, 8 * (w + 2))]) h
+    (by simp)).word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact Or.inl (hdr_lt_slot w aAcc hi)
+      · exact Or.inl (hdr_lt_slot w aTmp hi)
+      · exact Or.inl (hdr_lt_slot w out hi)) (by omega)
+
+/-! ## A row of the comb -/
+
+/-- After `j` rows from the top, from `s₀`. -/
+def CInv (T : TabP) (xp : Addr) (xb : List Byte) (s₀ : State) (j : Nat) (t : State) : Prop :=
+  CEnv T xp xb t ∧ word t.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (T.rows - j) ∧
+    wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.M (Rsa.FixedBaseComb.high T.bits (Spec.Rsa.os2ip xb) (T.rows - j)) ∧
+    Frm (off T.B T.o) (combR T.w) s₀.mem t.mem ∧ Keep mmRegs s₀ t
+
+theorem CEnv.good {T : TabP} {xp : Addr} {xb : List Byte} {s : State} (h : CEnv T xp xb s) :
+    Good s (off T.B T.o) (slot T.w 8) T.w T.mi := h.mc.sub.good
+
+theorem slot8_ge (w : Nat) : 8 * 32 ≤ slot w 8 := by unfold slot hdrBytes; omega
+
+theorem CEnv.P_lt {T : TabP} {xp : Addr} {xb : List Byte} {s : State} (he : CEnv T xp xb s) :
+    T.P < 2 ^ (64 * T.w) := by
+  rw [← he.mc.xv.n]; exact wv_lt _ _ _ _
+
+/-- Row `i = rows - j - 1`: the square, the digit's entry and the product. -/
+theorem combStep_ok (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s₀ : State}
+    (hr : 5 * T.rows < 2 ^ 31) (hL : 8 * xb.length < 2 ^ 32) {j : Nat} (hj : j < T.rows) {t : State}
+    (hI : CInv T xp xb s₀ j t) :
+    WP isa (step Mo.mm) t fun u => u.zf = some (decide (j + 1 = T.rows)) ∧ CInv T xp xb s₀ (j + 1) u := by
+  obtain ⟨he, hiI, hy, hf, k⟩ := hI
+  have hP : 0 < T.P := by have := he.mc.x1; omega
+  have hw2 := he.mc.w2
+  have hw28 := he.mc.w28
+  have hn := he.mc.sub.scr.nowrap
+  obtain ⟨i, hi_def⟩ : ∃ i, i = T.rows - j - 1 := ⟨_, rfl⟩
+  have hri : T.rows - j = i + 1 := by omega
+  have hilt : i < T.rows := by omega
+  have hrj : T.rows - (j + 1) = i := by omega
+  rw [hri] at hiI hy
+  unfold step
+  simp only [seqs]
+  -- The square.
+  refine WP.seq (WP.mono (mm_cenv Mo he (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [hy]; exact T.M_lt hP _)) fun t₁ ⟨he₁, hl₁, hv₁, ha₁, hf₁, k₁⟩ => ?_)
+  rw [hy] at hv₁
+  have hy₁ := T.M_mul he.mc.odd hl₁ hv₁
+  have hiI₁ : word t₁.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (i + 1) := by
+    rw [arrays3_hdr ha₁ (by decide) (by decide), hiI]
+  -- `aXm := 0`.
+  have hg₁ := he₁.good
+  refine WP.seq (WP.mono (zeroArr_ok hg₁ (Nat.le_refl _) (by omega) (by omega) (show aXm < 8 by decide))
+    fun t₂ ⟨hz₂, ho₂, k₂⟩ => ?_)
+  have hf₂ : Frm (off T.B T.o) (combR T.w) t₁.mem t₂.mem :=
+    Frm.of_outside (ho₂.mono (o' := slot T.w aXm) (n' := 2 * (8 * (T.w + 2))) (Nat.le_refl _) (by omega))
+      (by simp [combR])
+  obtain ⟨he₂, hin₂, _⟩ := he₁.of_frm hf₂ k₂.2.1 k₂.2.2 (k₂.gpr (by decide))
+  have hsx := slot_le (w := T.w) (show aXm < 8 by decide)
+  have hiI₂ : word t₂.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (i + 1) := by
+    rw [ho₂.word (Or.inl (hdr_lt_slot T.w aXm (show iI < 32 by decide))) (by unfold iI sFn; omega), hiI₁]
+  have hy₂ : wv t₂.mem (off T.B T.o) (slot T.w aY) T.w = T.M (Rsa.FixedBaseComb.high T.bits (Spec.Rsa.os2ip xb) (i + 1) +
+      Rsa.FixedBaseComb.high T.bits (Spec.Rsa.os2ip xb) (i + 1)) := by
+    rw [ho₂.wv (Or.inr (by simp only [slot, aXm, aY]; omega)) (by simp only [slot, hdrBytes, aY]; omega), hy₁]
+  -- The digit.
+  have hg₂ := he₂.good
+  refine WP.seq (WP.mono (digit_ok hg₂ (slot8_ge _) hiI₂ he₂.rows he₂.xpw he₂.xlw he₂.x.rd he₂.x.val
+    hilt hr hL) fun t₃ ⟨h13, hm₃, k₃⟩ => ?_)
+  have he₃ : CEnv T xp xb t₃ := (he₂.of_frm (fun x _ => by rw [hm₃]) k₃.2.1 k₃.2.2 (k₃.gpr (by decide))).1
+  -- The selection.
+  have hd := Rsa.FixedBaseComb.digit_lt T.bits (Spec.Rsa.os2ip xb) i
+  refine WP.seq (WP.mono (select_ok he₃.mc.sub he₃.mc.wide he₃.ctx he₃.reg (by omega) hw28
+    (E := fun a i => word t₃.mem T.cp (24 + 8 * T.w * (a + 2) + 8 * i)) (fun _ _ _ _ => rfl) h13 hd
+    (fun i' hi' => by
+      rw [hm₃]; exact (wv_eq_zero_iff _ _ _ _).mp hz₂ i' (by omega)))
+    fun t₄ ⟨hx₄, hf₄, k₄⟩ => ?_)
+  have hf₄' : Frm (off T.B T.o) (combR T.w) t₃.mem t₄.mem := Frm.widen hf₄ fun r hr => by
+    simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨(8 * iI, 16), by simp [combR], by simp only [iI, iE, sFn]; omega, by simp only [iI, iE, sFn]; omega⟩
+    · exact ⟨(slot T.w aXm, 2 * (8 * (T.w + 2))), by simp [combR], Nat.le_refl _, by omega⟩
+  obtain ⟨he₄, hin₄, _⟩ := he₃.of_frm hf₄' k₄.2.1 k₄.2.2 (k₄.gpr (by decide))
+  have hent := he₃.ent _ hd
+  have hxm : wv t₄.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (Rsa.FixedBaseComb.digit T.bits (Spec.Rsa.os2ip xb) i) := by
+    rw [wv_congr2 (p := T.cp) (d := 24 + 8 * T.w * (2 + Rsa.FixedBaseComb.digit T.bits (Spec.Rsa.os2ip xb) i))
+      (m := t₃.mem) fun i' hi' => (hx₄ i' hi').trans (by rw [Nat.add_comm 2]),
+      wv_of_row hent (T.M_lt_R hP (Nat.le_of_lt he.P_lt) _)]
+  have hy₄ : wv t₄.mem (off T.B T.o) (slot T.w aY) T.w = wv t₂.mem (off T.B T.o) (slot T.w aY) T.w := by
+    rw [hf₄.wv_eq (fun r hr => by
+      simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Or.inr (by have := hdr_lt_slot T.w aY (show iE < 32 by decide); simp only; omega)
+      · exact Or.inr (by simp only [slot, aXm, aY]; omega))
+      (by simp only [slot, hdrBytes, aY]; omega), hm₃]
+  have hiI₄ : word t₄.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (i + 1) := by
+    rw [hf₄.word_eq (fun r hr => by
+      simp only [selR, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Or.inl (by simp only [iI, iE, sFn]; omega)
+      · exact Or.inl (by have := hdr_lt_slot T.w aXm (show iI < 32 by decide); omega))
+      (by unfold iI sFn; omega), hm₃, hiI₂]
+  -- The product.
+  refine WP.seq (WP.mono (mm_cenv Mo he₄ (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [hxm]; exact T.M_lt hP _)) fun t₅ ⟨he₅, hl₅, hv₅, ha₅, hf₅, k₅⟩ => ?_)
+  rw [hy₄, hy₂, hxm] at hv₅
+  have hy₅ := T.M_mul he.mc.odd hl₅ hv₅
+  have hiI₅ : word t₅.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (i + 1) := by
+    rw [arrays3_hdr ha₅ (by decide) (by decide), hiI₄]
+  -- `iI := i`.
+  refine WP.mono (decI_ok he₅.good (slot8_ge _) hiI₅ (by omega)) fun u ⟨hz, hmu, ku⟩ => ?_
+  have hou := writeW_outside t₅.mem (off T.B T.o) (d := 8 * iI) (BitVec.ofNat 64 i) (by unfold iI sFn; omega)
+  rw [← hmu] at hou
+  have hfu : Frm (off T.B T.o) (combR T.w) t₅.mem u.mem :=
+    Frm.of_outside (hou.mono (o' := 8 * iI) (n' := 16) (Nat.le_refl _) (by omega)) (by simp [combR])
+  obtain ⟨heu, _, _⟩ := he₅.of_frm hfu ku.2.1 ku.2.2 (ku.gpr (by decide))
+  refine ⟨by rw [hz]; congr 1; apply Bool.eq_iff_iff.mpr; simp only [decide_eq_true_iff]; omega, heu,
+    by rw [hmu, word_writeW_self, hrj], ?_, ?_, ?_⟩
+  · rw [hou.wv (Or.inr (by have := hdr_lt_slot T.w aY (show iI < 32 by decide); omega))
+      (by simp only [slot, hdrBytes, aY]; omega), hy₅, hrj, Rsa.FixedBaseComb.high_step _ _ _ hilt]
+    congr 1; omega
+  · have hf₃ : Frm (off T.B T.o) (combR T.w) t₂.mem t₃.mem := fun x _ => by rw [hm₃]
+    exact Frm.combR_trans (Frm.combR_trans (Frm.combR_trans (Frm.combR_trans (Frm.combR_trans
+      (Frm.combR_trans hf hf₁) hf₂) hf₃) hf₄') hf₅) hfu
+  · exact (((((k.trans k₁).trans k₂).trans k₃).trans k₄).trans (k₅.trans ku)).mono (by decide)
 
 end VG.Proof.Ffdh.X86_64.Cached
