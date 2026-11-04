@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfParts
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
+public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
@@ -83,7 +84,7 @@ structure Env (G : Impl.Pbkdf2.Md.AArch64.Stream) (g : Impl.RsaOaep.AArch64.Mgf1
   ok : Proof.RsaOaep.AArch64.Table.TabOK G g t.syms
   rd : ∀ j < 3, InRegions (t.rd ++ t.wr) (off p (8 * j)) 8
   rdD : InRegions (t.rd ++ t.wr) (off p 32) 8
-  mem : ∀ m, Frame [below F (mgfFrame + 16), ⟨off S mgfOff, 8192⟩] t.mem m →
+  mem : ∀ m, Frame (mgfWr F S ++ [⟨off S mgfOff, 8192⟩]) t.mem m →
     Proof.RsaOaep.AArch64.Table.TabMem G t.syms p m ∧ m.readW (off p 32) 64 = BitVec.ofNat 64 G.D
   sc : Covers [⟨off S mgfOff, 8192⟩] t.wr
   F288 : mgfFrame + 16 ≤ F.toNat
@@ -119,6 +120,41 @@ theorem Env.geo {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mg
     have h := Offset.disjoint (mF F - BitVec.ofNat 64 16) (d := 0) (n := 16) (e := 16) (k := 272) (by omega)
       (by omega) (by omega)
     rwa [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero, BitVec.sub_add_cancel] at h
+
+/-- A slot apart from what `mgfWr` writes. -/
+theorem Lay.slotW {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 ≤ frameBytes)
+    (h1 : d + 8 ≤ sNb ∨ sNb + 8 ≤ d) (h2 : d + 8 ≤ sDone ∨ sDone + 8 ≤ d) :
+    ∀ r ∈ mgfWr F S, Region.Disjoint (slotR F d) r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact L.dFS.sub_left (Offset.sub_base F hd)
+  · exact slot_not_below F hd
+  · exact Offset.disjoint F h1 (by unfold frameBytes at hd; omega_using [hd]) (by decide)
+  · exact Offset.disjoint F h2 (by unfold frameBytes at hd; omega_using [hd]) (by decide)
+  · exact Offset.disjoint_below F (by have := L.Fw; unfold frameBytes at hd; rw [mgfFrame_eq]; omega)
+
+/-- `Env` in a later state, after writes `mgfWr` allows. -/
+theorem Env.step {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t u : State}
+    {F S p : Addr} (E : Env G g t F S p) (L : Lay t F S) (hf : Frame (mgfWr F S) t.mem u.mem) (hrd : u.rd = t.rd)
+    (hwr : u.wr = t.wr) (hsy : u.syms = t.syms) : Env G g u F S p where
+  slot := by rw [slot_keep hf (L.slotW (d := sMgfT) (by decide) (by decide) (by decide))]; exact E.slot
+  ok := by rw [hsy]; exact E.ok
+  rd := by rw [hrd, hwr]; exact E.rd
+  rdD := by rw [hrd, hwr]; exact E.rdD
+  mem := fun m hm => by rw [hsy]; exact E.mem m ((hf.mono (by simp)).trans hm)
+  sc := by rw [hwr]; exact E.sc
+  F288 := E.F288
+  dStk := E.dStk
+  Sw := E.Sw
+  dFw := E.dFw
+
+/-- The slots of the table of `MdHash` in a later state. -/
+theorem HT.stepW {H : Hash} {dn : String} {f : MdFns} {t : State} {F S : Addr} (L : Lay t F S) {m m' : Mem}
+    {sy : String → Addr} (h : HT H dn f F m sy) (hf : Frame (mgfWr F S) m m') : HT H dn f F m' sy :=
+  ⟨by rw [slot_keep hf (L.slotW (d := sIniH) (by decide) (by decide) (by decide))]; exact h.wi,
+    by rw [slot_keep hf (L.slotW (d := sCmpH) (by decide) (by decide) (by decide))]; exact h.wc,
+    by rw [slot_keep hf (L.slotW (d := sDigH) (by decide) (by decide) (by decide))]; exact h.wd, h.fi, h.fc, h.fd⟩
 
 /-! ## MGF1's arguments -/
 
@@ -253,7 +289,7 @@ theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State
           · exact ⟨_, List.mem_cons_self, sub_mF F⟩
           · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
           · exact ⟨_, List.mem_cons_self, sub_retR F⟩
-      obtain ⟨tm, hdl⟩ := E.mem m Fm
+      obtain ⟨tm, hdl⟩ := E.mem m (Fm.mono (by simp [mgfWr]))
       refine ⟨by rw [hsy]; exact tm, hdl, ?_⟩
       rw [show Proof.RsaOaep.AArch64.off (mF F) (mgfFrame + sMgfT) = off F sMgfT from hArg,
         Fm.readW (r := slotR F sMgfT) (Region.contains_self _ _) (fun r hr => ?_) (by decide), E.slot]
