@@ -103,10 +103,6 @@ theorem kv_pairs (hL : L.Ok) (K : Nat) (hK : K ≤ 16) :
       rfl
 
 /-- The first `n` of `k` bytes. -/
-theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
-    Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
-  rw [show k = n + (k - n) by omega, bytesAt_add, List.take_left']
-  simp [Spec.Sha256.bytesAt]
 
 /-- `V = 0x01…` and `K = 0x00…`, all 64 bytes of each. -/
 theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :

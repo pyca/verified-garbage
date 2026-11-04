@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -28,6 +27,20 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 open VG.Proof.Mont.PPC64LE (Kp)
+
+/-- The bytes of a region apart from what changed are unchanged. -/
+theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
+    Spec.Sha256.bytesAt m' p n = Spec.Sha256.bytesAt m p n := by
+  simp only [Spec.Sha256.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  rw [List.mem_range] at hi
+  exact Frame.bytes (R := ⟨p, n⟩) hf hd hn hi
+
+theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
+    Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
+  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
+  simp [Spec.Sha256.bytesAt]
 
 /-- One word copied through `r8`. -/
 theorem cpw_ok {u : State} {src dst : Reg} {S D : Addr} (hs : u.gpr src = S) (hd : u.gpr dst = D)
