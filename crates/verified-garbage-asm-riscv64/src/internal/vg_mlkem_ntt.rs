@@ -282,39 +282,156 @@ pub(crate) unsafe extern "C" fn vg_mlkem_ntt() {
 .insn 4, 0x01080f33
 .insn 4, 0x40050513
 .insn 2, 0x0591
-.insn 4, 0x20000893
-20:
 .insn 4, 0xc0050613
-21:
+20:
 .insn 4, 0x0005e703
 .insn 2, 0x0591
-.insn 4, 0x011606b3
-.insn 4, 0x0028d313
-22:
+.insn 4, 0x20060693
+21:
 .insn 4, 0x00066383
-.insn 4, 0x0006e283
+.insn 4, 0x20066283
 .insn 4, 0x025702b3
 .insn 4, 0x02f2be33
 .insn 4, 0x030e0e33
 .insn 4, 0x41c282b3
 .insn 4, 0x40538e33
 .insn 2, 0x9e7a
-.insn 4, 0x01c6a023
+.insn 4, 0x21c62023
 .insn 2, 0x9396
 .insn 4, 0x00762023
 .insn 2, 0x0611
-.insn 2, 0x0691
-.insn 2, 0x137d
-bnez t1, 22b
-.insn 2, 0x8636
-.insn 4, 0x40a602b3
-bnez t0, 21b
-.insn 4, 0x0018d893
-.insn 4, 0xffc88293
-bnez t0, 20b
+bne a2, a3, 21b
+.insn 4, 0x20060613
+bne a2, a0, 20b
+.insn 4, 0xc0050613
+22:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x10060693
+23:
+.insn 4, 0x00066383
+.insn 4, 0x10066283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x11c62023
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 23b
+.insn 4, 0x10060613
+bne a2, a0, 22b
+.insn 4, 0xc0050613
+24:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x08060693
+25:
+.insn 4, 0x00066383
+.insn 4, 0x08066283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x09c62023
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 25b
+.insn 4, 0x08060613
+bne a2, a0, 24b
+.insn 4, 0xc0050613
+26:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x04060693
+27:
+.insn 4, 0x00066383
+.insn 4, 0x04066283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x05c62023
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 27b
+.insn 4, 0x04060613
+bne a2, a0, 26b
+.insn 4, 0xc0050613
+28:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x02060693
+29:
+.insn 4, 0x00066383
+.insn 4, 0x02066283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x03c62023
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 29b
+.insn 4, 0x02060613
+bne a2, a0, 28b
+.insn 4, 0xc0050613
+210:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x01060693
+211:
+.insn 4, 0x00066383
+.insn 4, 0x01066283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x01c62823
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 211b
+.insn 2, 0x0641
+bne a2, a0, 210b
+.insn 4, 0xc0050613
+212:
+.insn 4, 0x0005e703
+.insn 2, 0x0591
+.insn 4, 0x00860693
+213:
+.insn 4, 0x00066383
+.insn 4, 0x00866283
+.insn 4, 0x025702b3
+.insn 4, 0x02f2be33
+.insn 4, 0x030e0e33
+.insn 4, 0x41c282b3
+.insn 4, 0x40538e33
+.insn 2, 0x9e7a
+.insn 4, 0x01c62423
+.insn 2, 0x9396
+.insn 4, 0x00762023
+.insn 2, 0x0611
+bne a2, a3, 213b
+.insn 2, 0x0621
+bne a2, a0, 212b
 .insn 4, 0xc0050613
 .insn 4, 0x10000313
-23:
+214:
 .insn 4, 0x00066383
 .insn 4, 0x02f3be33
 .insn 4, 0x030e0e33
@@ -326,7 +443,7 @@ bnez t0, 20b
 .insn 4, 0x00762023
 .insn 2, 0x0611
 .insn 2, 0x137d
-bnez t1, 23b
+bnez t1, 214b
 .insn 2, 0x8082
 .option pop",
     )

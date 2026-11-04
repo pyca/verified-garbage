@@ -277,17 +277,14 @@ vg_mlkem_inv_ntt:
 	addi t5, t5, 64
 	addi a0, a0, 1024
 	addi a1, a1, 508
-	addi a7, zero, 8
-20:
 	addi a2, a0, -1024
-21:
+20:
 	lwu a4, 0(a1)
 	addi a1, a1, -4
-	add a3, a2, a7
-	srli t1, a7, 2
-22:
+	addi a3, a2, 8
+21:
 	lwu t2, 0(a2)
-	lwu t0, 0(a3)
+	lwu t0, 8(a2)
 	add t3, t2, t0
 	sw t3, 0(a2)
 	sub t0, t0, t2
@@ -296,22 +293,142 @@ vg_mlkem_inv_ntt:
 	mulhu t3, t0, a5
 	mul t3, t3, a6
 	sub t0, t0, t3
-	sw t0, 0(a3)
+	sw t0, 8(a2)
 	addi a2, a2, 4
-	addi a3, a3, 4
-	addi t1, t1, -1
-	bnez t1, 22b
-	addi a2, a3, 0
-	sub t0, a2, a0
-	bnez t0, 21b
-	slli a7, a7, 1
-	addi t0, a7, -1024
-	bnez t0, 20b
+	bne a2, a3, 21b
+	addi a2, a2, 8
+	bne a2, a0, 20b
+	addi a2, a0, -1024
+22:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 16
+23:
+	lwu t2, 0(a2)
+	lwu t0, 16(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 16(a2)
+	addi a2, a2, 4
+	bne a2, a3, 23b
+	addi a2, a2, 16
+	bne a2, a0, 22b
+	addi a2, a0, -1024
+24:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 32
+25:
+	lwu t2, 0(a2)
+	lwu t0, 32(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 32(a2)
+	addi a2, a2, 4
+	bne a2, a3, 25b
+	addi a2, a2, 32
+	bne a2, a0, 24b
+	addi a2, a0, -1024
+26:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 64
+27:
+	lwu t2, 0(a2)
+	lwu t0, 64(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 64(a2)
+	addi a2, a2, 4
+	bne a2, a3, 27b
+	addi a2, a2, 64
+	bne a2, a0, 26b
+	addi a2, a0, -1024
+28:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 128
+29:
+	lwu t2, 0(a2)
+	lwu t0, 128(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 128(a2)
+	addi a2, a2, 4
+	bne a2, a3, 29b
+	addi a2, a2, 128
+	bne a2, a0, 28b
+	addi a2, a0, -1024
+210:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 256
+211:
+	lwu t2, 0(a2)
+	lwu t0, 256(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 256(a2)
+	addi a2, a2, 4
+	bne a2, a3, 211b
+	addi a2, a2, 256
+	bne a2, a0, 210b
+	addi a2, a0, -1024
+212:
+	lwu a4, 0(a1)
+	addi a1, a1, -4
+	addi a3, a2, 512
+213:
+	lwu t2, 0(a2)
+	lwu t0, 512(a2)
+	add t3, t2, t0
+	sw t3, 0(a2)
+	sub t0, t0, t2
+	add t0, t0, t5
+	mul t0, a4, t0
+	mulhu t3, t0, a5
+	mul t3, t3, a6
+	sub t0, t0, t3
+	sw t0, 512(a2)
+	addi a2, a2, 4
+	bne a2, a3, 213b
+	addi a2, a2, 512
+	bne a2, a0, 212b
 	lui a4, 1
 	addi a4, a4, -793
 	addi a2, a0, -1024
 	addi t1, zero, 256
-23:
+214:
 	lwu t2, 0(a2)
 	mul t2, t2, a4
 	mulhu t3, t2, a5
@@ -324,6 +441,6 @@ vg_mlkem_inv_ntt:
 	sw t2, 0(a2)
 	addi a2, a2, 4
 	addi t1, t1, -1
-	bnez t1, 23b
+	bnez t1, 214b
 	ret
 	.option pop
