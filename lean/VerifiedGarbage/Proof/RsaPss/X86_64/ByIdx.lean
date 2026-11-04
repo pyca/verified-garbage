@@ -33,6 +33,13 @@ def CmpOk (is : List Nat) : Prop :=
 
 theorem cmpOk_idxs : CmpOk idxs := by unfold CmpOk idxs; decide
 
+/-- `WP.mono` that also keeps the symbols and MXCSR. -/
+theorem WP.mono_mxs {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) {s : State}
+    {Q R : State → Prop} (h : WP isa c s Q) (hq : ∀ s', Q s' → s'.syms = s.syms → s'.mxcsr = s.mxcsr → R s') :
+    WP isa c s R :=
+  WP.mono_mx hc (X86_64.WP.mono_syms h fun s' q sy => (⟨q, sy⟩ : Q s' ∧ s'.syms = s.syms))
+    fun s' ⟨q, sy⟩ hx => hq s' q sy hx
+
 /-- A comparison of `r11` with `j`: the state kept but for the flags. -/
 theorem cmpIdx_ok {t : State} {i j : Nat} (hi : i < 2 ^ 31) (hj : j < 2 ^ 31)
     (hw : VG.Proof.MlKem.X86_64.writesOnly [.r11] (cmpIdx j) = true) (h11 : t.gpr .r11 = BitVec.ofNat 64 i) :

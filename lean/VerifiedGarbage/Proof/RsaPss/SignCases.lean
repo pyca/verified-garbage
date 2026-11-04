@@ -33,12 +33,16 @@ theorem privateChecked_zero (rest eB xB pB qB dPB dQB qInvB : List Byte) :
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
   intro ⟨⟨_, h⟩, _⟩; omega
 
-theorem sign_zero (rest eB pB qB dPB dQB qInvB mHash salt : List Byte) :
-    sign G G (0 :: rest) eB pB qB dPB dQB qInvB mHash salt = .invalid := by
+theorem sign_zero₂ (H : Hash) (rest eB pB qB dPB dQB qInvB mHash salt : List Byte) :
+    sign H G (0 :: rest) eB pB qB dPB dQB qInvB mHash salt = .invalid := by
   unfold sign
   split
   · exact privateChecked_zero ..
   · rfl
+
+theorem sign_zero (rest eB pB qB dPB dQB qInvB mHash salt : List Byte) :
+    sign G G (0 :: rest) eB pB qB dPB dQB qInvB mHash salt = .invalid :=
+  sign_zero₂ G G ..
 
 theorem sign_long {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
     (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + salt.length + 2) :
