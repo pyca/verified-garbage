@@ -33,6 +33,7 @@ use core::fmt;
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 use core::sync::atomic::{AtomicU8, Ordering};
@@ -42,6 +43,7 @@ use crate::arch::dsa::vg_dsa_sign_random;
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 )))]
 use crate::arch::dsa::vg_dsa_verify;
@@ -55,6 +57,7 @@ use crate::arch::dsa::{
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
@@ -123,6 +126,7 @@ impl core::error::Error for Error {}
         target_arch = "aarch64",
         target_arch = "powerpc64",
         target_arch = "riscv64",
+        target_arch = "x86",
         target_arch = "x86_64"
     )),
     derive(Clone)
@@ -137,6 +141,7 @@ pub struct PublicKey {
         target_arch = "aarch64",
         target_arch = "powerpc64",
         target_arch = "riscv64",
+        target_arch = "x86",
         target_arch = "x86_64"
     ))]
     validated: AtomicU8,
@@ -146,6 +151,7 @@ pub struct PublicKey {
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 impl Clone for PublicKey {
@@ -159,6 +165,7 @@ impl Clone for PublicKey {
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
                 target_arch = "riscv64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
@@ -191,6 +198,7 @@ impl PublicKey {
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
                 target_arch = "riscv64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             validated: AtomicU8::new(0),
@@ -199,7 +207,7 @@ impl PublicKey {
 
     /// Verify a prehashed digest and a fixed-width big-endian `r || s`
     /// signature. Invalid keys, signatures and signature lengths return false.
-    /// On AArch64, PPC64LE, RISC-V and x86-64, the first verification validates the immutable public key;
+    /// On every target but 32-bit ARM, the first verification validates the immutable public key;
     /// later calls reuse that result while checking every signature independently.
     pub fn verify(&self, digest: &[u8], signature: &[u8]) -> bool {
         if signature.len() != 2 * self.q_len {
@@ -209,6 +217,7 @@ impl PublicKey {
             target_arch = "aarch64",
             target_arch = "powerpc64",
             target_arch = "riscv64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         let validation = self.validated.load(Ordering::Relaxed);
@@ -216,6 +225,7 @@ impl PublicKey {
             target_arch = "aarch64",
             target_arch = "powerpc64",
             target_arch = "riscv64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         if validation == 2 {
@@ -226,6 +236,7 @@ impl PublicKey {
             target_arch = "aarch64",
             target_arch = "powerpc64",
             target_arch = "riscv64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         if validation == 0 {
@@ -283,6 +294,7 @@ impl PublicKey {
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
                 target_arch = "riscv64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             // SAFETY: successful validation above, or a cached result for the
@@ -292,6 +304,7 @@ impl PublicKey {
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
                 target_arch = "riscv64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             )))]
             Backend::Baseline => verify!(vg_dsa_verify),

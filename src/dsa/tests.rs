@@ -4,6 +4,7 @@ use verified_garbage_cpu::feature;
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 extern crate std;
@@ -387,6 +388,7 @@ fn legacy_2048_160_signatures() {
     target_arch = "aarch64",
     target_arch = "powerpc64",
     target_arch = "riscv64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 #[test]

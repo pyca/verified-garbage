@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Registration
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
+public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.Registration
 
@@ -34,6 +35,14 @@ def artifacts : List Artifact := [
   Spec.Dsa.verifyApi.artifact X86.target {
     code := Impl.Dsa.X86.Entry.operation false
     verified := Proof.Dsa.X86.verifying_verified
+    stack := 108 },
+  Spec.Dsa.validatePublicKeyApi.artifact X86.target {
+    code := Impl.Dsa.X86.Prevalidated.validate
+    verified := Proof.Dsa.X86.validating_verified
+    stack := 108 },
+  Spec.Dsa.verifyPrevalidatedApi.artifact X86.target {
+    code := Impl.Dsa.X86.Prevalidated.verify
+    verified := Proof.Dsa.X86.prevalidated_verified
     stack := 108 }]
 
 end VG.Artifacts.Dsa.X86
