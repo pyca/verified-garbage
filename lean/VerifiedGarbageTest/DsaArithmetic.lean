@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
@@ -733,4 +735,5 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.verifyBody_ct
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.signing_verified
-#assert_standard_axioms VG.Proof.Dsa.X86_64.verifying_verified
+#assert_standard_axioms VG.Proof.Dsa.X86_64.validating_verified
+#assert_standard_axioms VG.Proof.Dsa.X86_64.prevalidated_verified
