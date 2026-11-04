@@ -74,10 +74,10 @@ def secp256k1CombCurve (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
     coreCT := comb_core_ct
     coreStack := by lit_decide }
 
-/-- `secp256k1CombCurve`, calling `vg_ecdsa_secp256k1_sign_umaal`. -/
+/-- `secp256k1CombCurve`, calling `vg_ecdsa_secp256k1_sign_k_umaal`. -/
 def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
   {secp256k1CombCurve hL with
-    coreN := "vg_ecdsa_secp256k1_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_secp256k1_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signSecp256k1CombU
     coreX := by
       intro s hs

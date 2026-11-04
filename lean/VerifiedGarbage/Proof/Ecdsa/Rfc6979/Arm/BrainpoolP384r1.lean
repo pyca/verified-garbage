@@ -81,7 +81,7 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
   blkT := blkT_of brainpoolp384r1_blk₀ brainpoolp384r1_blk₁ brainpoolp384r1_blk₂ brainpoolp384r1_blk₃ brainpoolp384r1_blk₄ brainpoolp384r1_blk₅ brainpoolp384r1_blk₆ brainpoolp384r1_blk₇
 
 
-/-- `brainpoolp384r1`, calling `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
+/-- `brainpoolp384r1`, calling `vg_ecdsa_brainpoolp384r1_sign_k_umaal`. -/
 def brainpoolp384r1U (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.brainpoolp384r1
   inst := Spec.Ecdsa.BrainpoolP384r1.inst

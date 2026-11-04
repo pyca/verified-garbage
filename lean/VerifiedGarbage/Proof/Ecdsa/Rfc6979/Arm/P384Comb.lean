@@ -74,10 +74,10 @@ def p384CombCurve (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve :=
     coreCT := p384_comb_core_ct
     coreStack := by lit_decide }
 
-/-- `p384CombCurve`, calling `vg_ecdsa_p384_sign_umaal`. -/
+/-- `p384CombCurve`, calling `vg_ecdsa_p384_sign_k_umaal`. -/
 def p384CombCurveU (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve :=
   {p384CombCurve hL with
-    coreN := "vg_ecdsa_p384_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_p384_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signP384CombU
     coreX := by
       intro s hs

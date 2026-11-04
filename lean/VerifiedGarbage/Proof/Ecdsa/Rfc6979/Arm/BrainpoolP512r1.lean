@@ -83,7 +83,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   blkT := blkT_of brainpoolp512r1_blk₀ brainpoolp512r1_blk₁ brainpoolp512r1_blk₂ brainpoolp512r1_blk₃ brainpoolp512r1_blk₄ brainpoolp512r1_blk₅ brainpoolp512r1_blk₆ brainpoolp512r1_blk₇
 
-/-- `brainpoolp512r1`, calling `vg_ecdsa_brainpoolp512r1_sign_umaal`. -/
+/-- `brainpoolp512r1`, calling `vg_ecdsa_brainpoolp512r1_sign_k_umaal`. -/
 def brainpoolp512r1U (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.brainpoolp512r1
   inst := Spec.Ecdsa.BrainpoolP512r1.inst

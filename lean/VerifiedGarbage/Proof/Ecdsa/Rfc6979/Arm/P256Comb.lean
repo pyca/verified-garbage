@@ -73,10 +73,10 @@ def p256CombCurve (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve :=
     coreCT := p256_comb_core_ct
     coreStack := by lit_decide }
 
-/-- `p256CombCurve`, calling `vg_ecdsa_p256_sign_umaal`. -/
+/-- `p256CombCurve`, calling `vg_ecdsa_p256_sign_k_umaal`. -/
 def p256CombCurveU (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve :=
   {p256CombCurve hL with
-    coreN := "vg_ecdsa_p256_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_p256_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signP256CombU
     coreX := by
       intro s hs

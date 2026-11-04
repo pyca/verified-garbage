@@ -74,10 +74,10 @@ def brainpoolp256r1CombCurve (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     coreCT := brainpoolp256r1_comb_core_ct
     coreStack := by lit_decide }
 
-/-- `brainpoolp256r1CombCurve`, calling `vg_ecdsa_brainpoolp256r1_sign_umaal`. -/
+/-- `brainpoolp256r1CombCurve`, calling `vg_ecdsa_brainpoolp256r1_sign_k_umaal`. -/
 def brainpoolp256r1CombCurveU (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve :=
   {brainpoolp256r1CombCurve hL with
-    coreN := "vg_ecdsa_brainpoolp256r1_sign" ++ "_umaal"
+    coreN := "vg_ecdsa_brainpoolp256r1_sign_k" ++ "_umaal"
     coreC := Impl.Ecdsa.Arm.signBrainpoolP256r1CombU
     coreX := by
       intro s hs
