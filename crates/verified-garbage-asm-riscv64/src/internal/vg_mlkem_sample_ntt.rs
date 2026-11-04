@@ -13,105 +13,194 @@ pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt() {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0x69763823
-.insn 4, 0x69863c23
-.insn 4, 0x6b963023
-.insn 4, 0x6a163423
-.insn 2, 0x8baa
-.insn 2, 0x8c2e
-.insn 2, 0x8cb2
-.insn 2, 0x4281
-.insn 4, 0x005cb023
-.insn 4, 0x005cb423
-.insn 4, 0x005cb823
-.insn 4, 0x005cbc23
-.insn 4, 0x025cb023
-.insn 4, 0x025cb423
-.insn 4, 0x025cb823
-.insn 4, 0x025cbc23
-.insn 4, 0x045cb023
-.insn 4, 0x045cb423
-.insn 4, 0x045cb823
-.insn 4, 0x045cbc23
-.insn 4, 0x065cb023
-.insn 4, 0x065cb423
-.insn 4, 0x065cb823
-.insn 4, 0x065cbc23
-.insn 4, 0x085cb023
-.insn 4, 0x085cb423
-.insn 4, 0x085cb823
-.insn 4, 0x085cbc23
-.insn 4, 0x0a5cb023
-.insn 4, 0x0a5cb423
-.insn 4, 0x0a5cb823
-.insn 4, 0x0a5cbc23
-.insn 4, 0x0c5cb023
-.insn 2, 0x8566
-.insn 4, 0x0a800593
-.insn 2, 0x4601
-.insn 2, 0x86de
-.insn 4, 0x02200713
+sd s7, 1680(a2)
+sd s8, 1688(a2)
+sd s9, 1696(a2)
+sd ra, 1704(a2)
+addi s7, a0, 0
+addi s8, a1, 0
+addi s9, a2, 0
+addi t0, zero, 0
+sd t0, 0(s9)
+sd t0, 8(s9)
+sd t0, 16(s9)
+sd t0, 24(s9)
+sd t0, 32(s9)
+sd t0, 40(s9)
+sd t0, 48(s9)
+sd t0, 56(s9)
+sd t0, 64(s9)
+sd t0, 72(s9)
+sd t0, 80(s9)
+sd t0, 88(s9)
+sd t0, 96(s9)
+sd t0, 104(s9)
+sd t0, 112(s9)
+sd t0, 120(s9)
+sd t0, 128(s9)
+sd t0, 136(s9)
+sd t0, 144(s9)
+sd t0, 152(s9)
+sd t0, 160(s9)
+sd t0, 168(s9)
+sd t0, 176(s9)
+sd t0, 184(s9)
+sd t0, 192(s9)
+addi a0, s9, 0
+addi a1, zero, 168
+addi a2, zero, 0
+addi a3, s7, 0
+addi a4, zero, 34
 call {vg_keccak_absorb}
-.insn 2, 0x862a
-.insn 2, 0x8566
-.insn 4, 0x0a800593
-.insn 2, 0x46fd
+addi a2, a0, 0
+addi a0, s9, 0
+addi a1, zero, 168
+addi a3, zero, 31
 call {vg_keccak_pad}
-.insn 2, 0x8566
-.insn 4, 0x0a800593
-.insn 2, 0x4601
-.insn 4, 0x348c8693
-.insn 4, 0x34800713
+addi a0, s9, 0
+addi a1, zero, 168
+addi a2, zero, 0
+addi a3, s9, 840
+addi a4, zero, 504
 call {vg_keccak_squeeze}
-.insn 4, 0x348c8513
-.insn 2, 0x85e2
-.insn 2, 0x4601
-.insn 4, 0x11800693
-.insn 2, 0x6e05
-.insn 4, 0xd01e0e13
+addi a0, s9, 840
+addi a1, s8, 0
+addi a2, zero, 0
+addi a3, zero, 168
+lui t3, 1
+addi t3, t3, -767
 20:
-.insn 4, 0x00054703
-.insn 4, 0x00154783
-.insn 4, 0x00254803
-.insn 4, 0x03c79893
-.insn 4, 0x0348d893
-.insn 2, 0x98ba
-.insn 4, 0x0047d313
-.insn 4, 0x00481393
-.insn 2, 0x931e
-.insn 4, 0x41c883b3
-.insn 4, 0x03f3d393
-.insn 4, 0xf0060713
-.insn 2, 0x937d
-.insn 4, 0x00e3f3b3
+lbu a4, 0(a0)
+lbu a5, 1(a0)
+lbu a6, 2(a0)
+slli a7, a5, 60
+srli a7, a7, 52
+add a7, a4, a7
+srli t1, a5, 4
+slli t2, a6, 4
+add t1, t1, t2
+sub t2, a7, t3
+srli t2, t2, 63
+addi a4, a2, -256
+srli a4, a4, 63
+and t2, t2, a4
 beqz t2, 21f
-.insn 4, 0x0115a023
-.insn 2, 0x0591
-.insn 2, 0x0605
+sw a7, 0(a1)
+addi a1, a1, 4
+addi a2, a2, 1
 j 22f
 21:
 22:
-.insn 4, 0x41c303b3
-.insn 4, 0x03f3d393
-.insn 4, 0xf0060713
-.insn 2, 0x937d
-.insn 4, 0x00e3f3b3
+sub t2, t1, t3
+srli t2, t2, 63
+addi a4, a2, -256
+srli a4, a4, 63
+and t2, t2, a4
 beqz t2, 23f
-.insn 4, 0x0065a023
-.insn 2, 0x0591
-.insn 2, 0x0605
+sw t1, 0(a1)
+addi a1, a1, 4
+addi a2, a2, 1
 j 24f
 23:
 24:
-.insn 2, 0x050d
-.insn 2, 0x16fd
+addi a0, a0, 3
+addi a3, a3, -1
 bnez a3, 20b
-.insn 4, 0x00865513
-.insn 4, 0x6a8cb083
-.insn 4, 0x690cbb83
-.insn 4, 0x698cbc03
-.insn 4, 0x6a0cbc83
-.insn 2, 0x8082
+srli t0, a2, 8
+bnez t0, 60f
+addi t0, zero, 0
+sd t0, 0(s9)
+sd t0, 8(s9)
+sd t0, 16(s9)
+sd t0, 24(s9)
+sd t0, 32(s9)
+sd t0, 40(s9)
+sd t0, 48(s9)
+sd t0, 56(s9)
+sd t0, 64(s9)
+sd t0, 72(s9)
+sd t0, 80(s9)
+sd t0, 88(s9)
+sd t0, 96(s9)
+sd t0, 104(s9)
+sd t0, 112(s9)
+sd t0, 120(s9)
+sd t0, 128(s9)
+sd t0, 136(s9)
+sd t0, 144(s9)
+sd t0, 152(s9)
+sd t0, 160(s9)
+sd t0, 168(s9)
+sd t0, 176(s9)
+sd t0, 184(s9)
+sd t0, 192(s9)
+addi a0, s9, 0
+addi a1, zero, 168
+addi a2, zero, 0
+addi a3, s7, 0
+addi a4, zero, 34
+call {vg_keccak_absorb}
+addi a2, a0, 0
+addi a0, s9, 0
+addi a1, zero, 168
+addi a3, zero, 31
+call {vg_keccak_pad}
+addi a0, s9, 0
+addi a1, zero, 168
+addi a2, zero, 0
+addi a3, s9, 840
+addi a4, zero, 840
+call {vg_keccak_squeeze}
+addi a0, s9, 840
+addi a1, s8, 0
+addi a2, zero, 0
+addi a3, zero, 280
+lui t3, 1
+addi t3, t3, -767
+40:
+lbu a4, 0(a0)
+lbu a5, 1(a0)
+lbu a6, 2(a0)
+slli a7, a5, 60
+srli a7, a7, 52
+add a7, a4, a7
+srli t1, a5, 4
+slli t2, a6, 4
+add t1, t1, t2
+sub t2, a7, t3
+srli t2, t2, 63
+addi a4, a2, -256
+srli a4, a4, 63
+and t2, t2, a4
+beqz t2, 41f
+sw a7, 0(a1)
+addi a1, a1, 4
+addi a2, a2, 1
+j 42f
+41:
+42:
+sub t2, t1, t3
+srli t2, t2, 63
+addi a4, a2, -256
+srli a4, a4, 63
+and t2, t2, a4
+beqz t2, 43f
+sw t1, 0(a1)
+addi a1, a1, 4
+addi a2, a2, 1
+j 44f
+43:
+44:
+addi a0, a0, 3
+addi a3, a3, -1
+bnez a3, 40b
+60:
+srli a0, a2, 8
+ld ra, 1704(s9)
+ld s7, 1680(s9)
+ld s8, 1688(s9)
+ld s9, 1696(s9)
+ret
 .option pop",
         vg_keccak_absorb = sym crate::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym crate::sha3::vg_keccak_pad,
