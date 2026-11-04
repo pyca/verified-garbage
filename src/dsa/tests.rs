@@ -3,7 +3,8 @@ use verified_garbage_cpu::feature;
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 ))]
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
@@ -385,7 +386,8 @@ fn legacy_2048_160_signatures() {
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 ))]
 #[test]
 fn immutable_public_validation_cache() {

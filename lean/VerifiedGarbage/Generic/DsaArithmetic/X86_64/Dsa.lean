@@ -22,12 +22,19 @@ def artifacts (v : Backend) : List Artifact := [
     verified := random_sign_verified v
     spSafe := random_sign_sp v
     features := v.features },
-  Spec.Dsa.verifyApi.artifact X86_64.target {
+  Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.Dsa.X86_64.SignVerify.verify v.sq v.mul
+    code := Impl.Dsa.X86_64.Prevalidated.validate v.sq v.mul
     stack := v.stack
-    verified := v.verifyVerified
-    spSafe := v.verifySp
+    verified := v.validateVerified
+    spSafe := v.validateSp
+    features := v.features },
+  Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Impl.Dsa.X86_64.Prevalidated.verify v.sq v.mul
+    stack := v.stack
+    verified := v.prevalidatedVerified
+    spSafe := v.prevalidatedSp
     features := v.features },
   Spec.Dsa.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix

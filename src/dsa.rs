@@ -32,7 +32,8 @@ use core::fmt;
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 ))]
 use core::sync::atomic::{AtomicU8, Ordering};
 
@@ -40,18 +41,21 @@ use crate::arch::dsa::vg_dsa_sign_random;
 #[cfg(not(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 )))]
 use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
-    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
+    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES,
+    VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES, VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES,
+    vg_dsa_sign_random_adx, vg_dsa_validate_public_key_adx, vg_dsa_verify_prevalidated_adx,
 };
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 ))]
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
 use crate::cpu::detected;
@@ -70,7 +74,8 @@ impl Backend {
     fn select(_features: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
         if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
-            && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
+            && _features.contains(VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES)
+            && _features.contains(VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES)
             && _features.contains(VG_DSA_GENERATE_KEY_ADX_FEATURES)
         {
             return Self::Adx;
@@ -117,7 +122,8 @@ impl core::error::Error for Error {}
     not(any(
         target_arch = "aarch64",
         target_arch = "powerpc64",
-        target_arch = "riscv64"
+        target_arch = "riscv64",
+        target_arch = "x86_64"
     )),
     derive(Clone)
 )]
@@ -130,7 +136,8 @@ pub struct PublicKey {
     #[cfg(any(
         target_arch = "aarch64",
         target_arch = "powerpc64",
-        target_arch = "riscv64"
+        target_arch = "riscv64",
+        target_arch = "x86_64"
     ))]
     validated: AtomicU8,
 }
@@ -138,7 +145,8 @@ pub struct PublicKey {
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86_64"
 ))]
 impl Clone for PublicKey {
     fn clone(&self) -> Self {
@@ -150,7 +158,8 @@ impl Clone for PublicKey {
             #[cfg(any(
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "x86_64"
             ))]
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
         }
@@ -181,7 +190,8 @@ impl PublicKey {
             #[cfg(any(
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "x86_64"
             ))]
             validated: AtomicU8::new(0),
         })
@@ -189,7 +199,7 @@ impl PublicKey {
 
     /// Verify a prehashed digest and a fixed-width big-endian `r || s`
     /// signature. Invalid keys, signatures and signature lengths return false.
-    /// On AArch64 and PPC64LE, the first verification validates the immutable public key;
+    /// On AArch64, PPC64LE, RISC-V and x86-64, the first verification validates the immutable public key;
     /// later calls reuse that result while checking every signature independently.
     pub fn verify(&self, digest: &[u8], signature: &[u8]) -> bool {
         if signature.len() != 2 * self.q_len {
@@ -198,13 +208,15 @@ impl PublicKey {
         #[cfg(any(
             target_arch = "aarch64",
             target_arch = "powerpc64",
-            target_arch = "riscv64"
+            target_arch = "riscv64",
+            target_arch = "x86_64"
         ))]
         let validation = self.validated.load(Ordering::Relaxed);
         #[cfg(any(
             target_arch = "aarch64",
             target_arch = "powerpc64",
-            target_arch = "riscv64"
+            target_arch = "riscv64",
+            target_arch = "x86_64"
         ))]
         if validation == 2 {
             return false;
@@ -213,13 +225,20 @@ impl PublicKey {
         #[cfg(any(
             target_arch = "aarch64",
             target_arch = "powerpc64",
-            target_arch = "riscv64"
+            target_arch = "riscv64",
+            target_arch = "x86_64"
         ))]
         if validation == 0 {
+            let validate = match self.backend {
+                Backend::Baseline => vg_dsa_validate_public_key,
+                #[cfg(target_arch = "x86_64")]
+                Backend::Adx => vg_dsa_validate_public_key_adx,
+            };
             // SAFETY: import establishes widths, the key owns its immutable
             // bytes, and scratch is a separate allocation of 16*p_len words.
+            // CPU features select the backend.
             let valid = unsafe {
-                vg_dsa_validate_public_key(
+                validate(
                     self.packed.as_ptr(),
                     self.packed.len(),
                     self.p_len,
@@ -263,7 +282,8 @@ impl PublicKey {
             #[cfg(any(
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "x86_64"
             ))]
             // SAFETY: successful validation above, or a cached result for the
             // exact same immutable owned bytes, establishes the new precondition.
@@ -271,11 +291,12 @@ impl PublicKey {
             #[cfg(not(any(
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "x86_64"
             )))]
             Backend::Baseline => verify!(vg_dsa_verify),
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => verify!(vg_dsa_verify_adx),
+            Backend::Adx => verify!(vg_dsa_verify_prevalidated_adx),
         };
         result == 1
     }
