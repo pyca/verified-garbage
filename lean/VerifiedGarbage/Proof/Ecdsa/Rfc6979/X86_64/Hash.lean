@@ -37,10 +37,6 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK)
 open VG.Impl.Mgf1.X86_64.Table (Fns)
 open VG.Proof.RsaOaep.X86_64.Table (FnsGood)
 
-/-- The digest lengths and block sizes of the hash functions whose tables
-the code takes (`Impl.Ecdsa.Rfc6979.X86_64.shapeOf`). -/
-def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 128), (64, 128), (28, 128), (32, 128)]
-
 /-- A curve and a hash function, for RFC 6979 on x86-64. -/
 structure RfcHash where
   /-- The curve. -/
