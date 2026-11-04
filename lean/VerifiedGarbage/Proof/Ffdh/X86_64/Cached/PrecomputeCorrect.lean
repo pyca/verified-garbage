@@ -7,11 +7,12 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Scan
+public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Scan
 import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Table
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -206,15 +207,23 @@ structure StartPost (s v : State) : Prop where
   scr : InScr (pcOf s).B (pcOf s).Z s.mem v.mem
   keep : Keep (.rdi :: mmRegs) s v
 
-theorem start_then {s : State} (g : PcG s) {c : Prog isa} {Q : State → Prop}
-    (h : ∀ v, StartPost s v → WP isa c v Q) :
-    WP isa (.seq (.block Precompute.entry) (.seq (VG.Impl.Ffdh.X86_64.VettedValidation.scan
-      VG.Impl.Ffdh.VettedGroups.groups 0) (.seq (.block (Precompute.afterScan ++ domHead)) c))) s Q := by
+/-- What the entry leaves. -/
+def EntryDone (s u : State) : Prop :=
+  u.gpr .rdi = s.gpr .rdx ∧ u.mem = pcEntryMem s ∧ Keep [.rdi] s u ∧ u.syms = s.syms
+
+theorem entry_done {s : State} (g : PcG s) : WP isa (.block Precompute.entry) s (EntryDone s) :=
+  WP.mono_syms (pcEntry_ok g) fun _ ⟨hd, hm, k⟩ sy => ⟨hd, hm, k, sy⟩
+
+/-- The scan's arguments and table after the entry. -/
+theorem EntryDone.scan {s u : State} (g : PcG s) (hu : EntryDone s u) :
+    VG.Proof.Ffdh.X86_64.VettedValidation.Context (pcOf s).B (pcOf s).dp (pcOf s).k (pcOf s).dom u ∧
+    VG.Proof.Ffdh.X86_64.VettedValidation.TableAt (u.syms VG.Impl.Ffdh.X86_64.VettedValidation.tableSym +
+      BitVec.ofNat 64 0) VG.Impl.Ffdh.VettedGroups.groups u := by
   have hZ := g.hZ
   have hk := g.k1
   have hk2 := g.k2
   have hdl := g.dl
-  refine WP.seq (WP.mono_syms (pcEntry_ok g) fun u ⟨hdU, hmU, kU⟩ symU => ?_)
+  obtain ⟨hdU, hmU, kU, symU⟩ := hu
   obtain ⟨e0, e1, e2, e3, e4, e5, eC, eD, eL, eO⟩ := pcEntryMem_facts s
   rw [← hmU] at e0 e1 e2 e3 e4 e5 eC eD eL eO
   have iU : InScr (pcOf s).B (pcOf s).Z s.mem u.mem := InScr.of_outside eO (by dsimp only [pcOf] at hZ ⊢; omega)
@@ -229,14 +238,43 @@ theorem start_then {s : State} (g : PcG s) {c : Prog isa} {Q : State → Prop}
       by rw [pcDom_length]; exact hdl, hk, hk2⟩
   have tableU := VG.Proof.Ffdh.X86_64.VettedValidation.consts_table_after g.consts (frame_of_inScr iU) kU g.scrWr
   rw [← symU, ← BitVec.add_zero (u.syms _)] at tableU
-  refine WP.seq (WP.mono (VG.Proof.Ffdh.X86_64.VettedValidation.scan_ok _ 0 u ctxU rfl tableU
+  exact ⟨ctxU, tableU⟩
+
+/-- What the scan leaves. -/
+def ScanDone (s u t : State) : Prop :=
+  t.gpr .rax = BitVec.ofNat 64 (pcOf s).recog ∧ t.mem = u.mem ∧ Keep VG.Proof.Ffdh.X86_64.VettedValidation.clobbers u t
+
+theorem scan_done {s u : State} (g : PcG s) (hu : EntryDone s u) :
+    WP isa (VG.Impl.Ffdh.X86_64.VettedValidation.scan VG.Impl.Ffdh.VettedGroups.groups 0) u (ScanDone s u) :=
+  WP.mono (VG.Proof.Ffdh.X86_64.VettedValidation.scan_ok (k := (pcOf s).k) (dom := (pcOf s).dom) _ 0 u
+    (hu.scan g).1 rfl (hu.scan g).2
     (by simpa only [Nat.zero_add, VG.Impl.Ffdh.VettedGroups.tableBytes] using
-      (Nat.le_of_eq VG.Proof.Ffdh.VettedTableFacts.tableBytes_length))) fun t ⟨vT, mT, kT⟩ => ?_)
+      (Nat.le_of_eq VG.Proof.Ffdh.VettedTableFacts.tableBytes_length))) fun _ h => h
+
+theorem after_done {s u t : State} (g : PcG s) (hu : EntryDone s u) (ht : ScanDone s u t) :
+    WP isa (.block (Precompute.afterScan ++ domHead)) t (StartPost s) := by
+  have hZ := g.hZ
+  have hk := g.k1
+  have hk2 := g.k2
+  have hdl := g.dl
+  obtain ⟨hdU, hmU, kU, _⟩ := hu
+  obtain ⟨vT, mT, kT⟩ := ht
+  obtain ⟨e0, e1, e2, e3, e4, e5, eC, eD, eL, eO⟩ := pcEntryMem_facts s
+  rw [← hmU] at e0 e1 e2 e3 e4 e5 eC eD eL eO
+  have iU : InScr (pcOf s).B (pcOf s).Z s.mem u.mem := InScr.of_outside eO (by dsimp only [pcOf] at hZ ⊢; omega)
+  have bU : u.gpr .r9 = (pcOf s).B := kU.gpr (by decide)
+  have scrU : Scr u (pcOf s).B (pcOf s).Z := g.scr.congr kU.2.2
+  have domU : Src u (pcOf s).B (pcOf s).Z (pcOf s).dp (pcOf s).dom := g.dom.congrK iU kU
+  have ctxU : VG.Proof.Ffdh.X86_64.VettedValidation.Context (pcOf s).B (pcOf s).dp (pcOf s).k (pcOf s).dom u :=
+    ⟨bU, hdU, by rw [pcDom_length]; exact eD.trans (ofNat_toNat' _).symm,
+      eL.trans (ofNat_toNat' _).symm, scrU.ld (d := 8 * sDom) (by unfold sDom sFn; dsimp only [pcOf] at hZ ⊢; omega),
+      scrU.ld (d := 8 * sDomLen) (by unfold sDomLen sFn; dsimp only [pcOf] at hZ ⊢; omega),
+      by rw [kU.2.1, kU.2.2, pcDom_length]; exact g.domRd, Src.bytes domU,
+      by rw [pcDom_length]; exact hdl, hk, hk2⟩
   have bT : t.gpr .r9 = (pcOf s).B := (kT.gpr (by decide)).trans bU
   have dT : t.gpr .rdi = s.gpr .rdx := (kT.gpr (by decide)).trans hdU
   have r8T : t.gpr .r8 = s.gpr .r8 := (kT.gpr (by decide)).trans (kU.gpr (by decide))
   have scrT : Scr t (pcOf s).B (pcOf s).Z := scrU.congr kT.2.2
-  refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (afterScan_ok scrT (by dsimp only [pcOf] at hZ ⊢; omega) bT (L := s.gpr .rcx)
     (by rw [mT]; exact eD)) fun w ⟨dW, mW, kW⟩ => ?_
@@ -249,7 +287,7 @@ theorem start_then {s : State} (g : PcG s) {c : Prog isa} {Q : State → Prop}
     rw [List.length_take, pcDom_length]; omega
   refine WP.mono (domHead_ok (scrT.congr kW.2.2) dW (by dsimp only [pcOf] at hZ ⊢; omega) hk hk2
     (aD.trans dT) (aK.trans (r8T.trans (ofNat_toNat' _).symm)) (domW.take _) plen)
-    fun v ⟨zV, gV, qV, fV, dV, kV⟩ => h v ?_
+    fun v ⟨zV, gV, qV, fV, dV, kV⟩ => ?_
   have other : ∀ i < 32, i ≠ sG → i ≠ sQ → word v.mem (pcOf s).B (8 * i) = word w.mem (pcOf s).B (8 * i) :=
     fun i hi hg hq => fV.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -279,6 +317,33 @@ theorem start_then {s : State} (g : PcG s) {c : Prog isa} {Q : State → Prop}
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [e0, e1, e2, e3, e4, e5]
   · exact (iU.trans (by rw [mT]; exact InScr.refl _ _ _)).trans (iW.trans iV)
+
+/-- After `afterScan`: the modulus check's hypotheses. -/
+theorem afterScan_dhp {s u t : State} (g : PcG s) (hu : EntryDone s u) (ht : ScanDone s u t) :
+    WP isa (.block Precompute.afterScan) t
+      (VG.Proof.Ffdh.X86_64.DHP ⟨(pcOf s).B, (pcOf s).Z, (pcOf s).k, (pcOf s).dp⟩) := by
+  have hZ := g.hZ
+  obtain ⟨hdU, hmU, kU, _⟩ := hu
+  obtain ⟨_, mT, kT⟩ := ht
+  obtain ⟨_, _, _, _, _, _, _, eD, _, _⟩ := pcEntryMem_facts s
+  rw [← hmU] at eD
+  have bT : t.gpr .r9 = (pcOf s).B := (kT.gpr (by decide)).trans (kU.gpr (by decide))
+  have dT : t.gpr .rdi = s.gpr .rdx := (kT.gpr (by decide)).trans hdU
+  have r8T : t.gpr .r8 = s.gpr .r8 := (kT.gpr (by decide)).trans (kU.gpr (by decide))
+  have scrT : Scr t (pcOf s).B (pcOf s).Z := (g.scr.congr kU.2.2).congr kT.2.2
+  refine WP.mono (afterScan_ok scrT (by dsimp only [pcOf] at hZ ⊢; omega) bT (L := s.gpr .rcx)
+    (by rw [mT]; exact eD)) fun w ⟨dW, mW, kW⟩ => ?_
+  obtain ⟨_, aD, _, aK, _, _⟩ := afterMem_facts t.mem (pcOf s).B (t.gpr .rax) (t.gpr .rdi) (s.gpr .rcx) (t.gpr .r8)
+  rw [← mW] at aD aK
+  exact ⟨scrT.congr kW.2.2, dW, by dsimp only [pcOf] at hZ ⊢; omega, aD.trans dT,
+    aK.trans (r8T.trans (ofNat_toNat' _).symm)⟩
+
+theorem start_then {s : State} (g : PcG s) {c : Prog isa} {Q : State → Prop}
+    (h : ∀ v, StartPost s v → WP isa c v Q) :
+    WP isa (.seq (.block Precompute.entry) (.seq (VG.Impl.Ffdh.X86_64.VettedValidation.scan
+      VG.Impl.Ffdh.VettedGroups.groups 0) (.seq (.block (Precompute.afterScan ++ domHead)) c))) s Q :=
+  WP.seq (WP.mono (entry_done g) fun _ hu => WP.seq (WP.mono (scan_done g hu) fun _ ht =>
+    WP.seq (WP.mono (after_done g hu ht) h)))
 
 /-! ## The computation, the branch and the exit -/
 

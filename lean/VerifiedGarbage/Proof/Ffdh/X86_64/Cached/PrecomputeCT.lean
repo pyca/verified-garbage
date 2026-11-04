@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.ScanTiming
+import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -464,5 +466,90 @@ theorem main_ct (Mo : Mont) (R : R2Impl Mo) :
   refine seqs_cons_ct (by simp) (RelCT.seq (r2_stage_ct Mo R) ?_)
   refine seqs_cons_ct (by simp [Precompute.storePrefix]) (RelCT.seq envBlock_post_ct ?_)
   exact (tail_ct Mo).mono (fun _ _ h => pe_tb h) fun _ _ h => h
+
+/-! ## The recognition, the modulus check and the exit -/
+
+/-- On entry, with the public data `(pcOf s, table)`. -/
+def CR (q : PcP × Addr) (s : State) : Prop :=
+  pcContract.pre s ∧ pcOf s = q.1 ∧ s.syms VG.Impl.Ffdh.X86_64.VettedValidation.tableSym = q.2
+
+def S1 (q : PcP × Addr) (u : State) : Prop := ∃ s, CR q s ∧ EntryDone s u
+def S2 (q : PcP × Addr) (t : State) : Prop := ∃ s u, CR q s ∧ EntryDone s u ∧ ScanDone s u t
+def S3 (q : PcP × Addr) (v : State) : Prop := ∃ s, CR q s ∧ StartPost s v
+
+theorem scan_stage_ct : RelCT isa (Two S1)
+    (VG.Impl.Ffdh.X86_64.VettedValidation.scan VG.Impl.Ffdh.VettedGroups.groups 0) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, ⟨a₁, h₁, hu₁⟩, ⟨a₂, h₂, hu₂⟩⟩ e₁ e₂
+  have g₁ := pcG_of h₁.1
+  have g₂ := pcG_of h₂.1
+  obtain ⟨c₁, t₁'⟩ := hu₁.scan g₁
+  obtain ⟨c₂, t₂'⟩ := hu₂.scan g₂
+  rw [h₁.2.1] at c₁
+  rw [h₂.2.1] at c₂
+  rw [hu₁.2.2.2, h₁.2.2] at t₁'
+  rw [hu₂.2.2.2, h₂.2.2] at t₂'
+  exact VG.Proof.Ffdh.X86_64.VettedValidation.scan_ct (table := q.2) _ 0
+    (by simpa only [Nat.zero_add, VG.Impl.Ffdh.VettedGroups.tableBytes] using
+      (Nat.le_of_eq VG.Proof.Ffdh.VettedTableFacts.tableBytes_length))
+    (fun g hg => by
+      simp only [VG.Impl.Ffdh.VettedGroups.groups, List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+    _ _ _ _ _ _ ⟨⟨c₁, by rw [hu₁.2.2.2, h₁.2.2], t₁'⟩, ⟨c₂, by rw [hu₂.2.2.2, h₂.2.2], t₂'⟩⟩ e₁ e₂
+
+theorem body_ct (Mo : Mont) (R : R2Impl Mo) :
+    RelCT isa (Two CR) (Precompute.body Mo.mm (.seq (.block r2Head) R.code)) fun _ _ => True := by
+  unfold Precompute.body
+  refine RelCT.seq (R := Two S1) (two_piece [.r9] (pins_of (fun (q : PcP × Addr) _ => q.1.B)
+    fun q s h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [← h.2.1]; rfl) (by taint_decide)
+    fun q s h => WP.mono (entry_done (pcG_of h.1)) fun u hu => ⟨s, h, hu⟩) ?_
+  refine RelCT.seq (R := Two S2) (two_post scan_stage_ct fun q u h => ?_) ?_
+  · obtain ⟨s, h, hu⟩ := h
+    exact WP.mono (scan_done (pcG_of h.1) hu) fun t ht => ⟨s, u, h, hu, ht⟩
+  refine RelCT.seq (R := Two S3) (two_post (RelCT.block_append (RelCT.seq
+    (R := Two fun (q : PcP × Addr) w => VG.Proof.Ffdh.X86_64.DHP ⟨q.1.B, q.1.Z, q.1.k, q.1.dp⟩ w)
+    (two_piece [.r9] (pins_of (fun (q : PcP × Addr) _ => q.1.B) fun q t h r hr => by
+      obtain ⟨s, u, h, hu, ht⟩ := h
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [← h.2.1]
+      exact (ht.2.2.gpr (by decide)).trans (hu.2.2.1.gpr (by decide))) (by taint_decide) fun q t h => ?_)
+    (two_map (fun (q : PcP × Addr) => (⟨q.1.B, q.1.Z, q.1.k, q.1.dp⟩ : VG.Proof.Ffdh.X86_64.DPub)) (fun _ _ h => h)
+      VG.Proof.Ffdh.X86_64.domHead_ct))) fun q t h => ?_) ?_
+  · obtain ⟨s, u, h, hu, ht⟩ := h
+    have := afterScan_dhp (pcG_of h.1) hu ht
+    rw [h.2.1] at this
+    exact this
+  · obtain ⟨s, u, h, hu, ht⟩ := h
+    exact WP.mono (after_done (pcG_of h.1) hu ht) fun v hv => ⟨s, h, hv⟩
+  refine two_ite (fun q v₁ v₂ h₁ h₂ => ?_) (two_taint [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil)
+    (by taint_decide)) (two_map (fun q => q.1) (fun q v h => ?_) (main_ct Mo R))
+  · obtain ⟨s₁, c₁, hv₁⟩ := h₁
+    obtain ⟨s₂, c₂, hv₂⟩ := h₂
+    simp only [eval, hv₁.zf, hv₂.zf, c₁.2.1, c₂.2.1]
+  · obtain ⟨⟨s, c, hv⟩, _⟩ := h
+    rw [← c.2.1]
+    exact hv.main
+
+theorem code_ct (Mo : Mont) (R : R2Impl Mo) :
+    RelCT isa (Two CR) (VG.Impl.Ffdh.X86_64.Cached.Precompute.code Mo.mm (.seq (.block r2Head) R.code)) fun _ _ => True := by
+  unfold VG.Impl.Ffdh.X86_64.Cached.Precompute.code
+  refine RelCT.seq (R := Two fun (q : PcP × Addr) t => t.gpr .rdi = q.1.B)
+    (two_post (body_ct Mo R) fun q s h => WP.mono (body_ok Mo R (pcG_of h.1)) fun t ht => by
+      rw [← h.2.1]; exact ht.2.1) ?_
+  exact two_taint [.rdi] (VG.Proof.Ffdh.X86_64.pins_rdiB (fun (q : PcP × Addr) => q.1.B) fun _ _ h => h)
+    (by taint_decide)
+
+theorem pcOf_pub {s₁ s₂ : State} (hp : pcPub s₁ s₂) : pcOf s₁ = pcOf s₂ := by
+  obtain ⟨_, hd, h0, _, h2, h3, h4, h5, h6⟩ := hp
+  have hdom : pcDom s₁ = pcDom s₂ := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hd
+  unfold pcOf
+  rw [h0, h2, h3, h4, h5, h6, hdom]
+
+theorem pc_constantTime (Mo : Mont) (R : R2Impl Mo) :
+    ConstantTime isa pcContract.pre pcContract.pub (VG.Impl.Ffdh.X86_64.Cached.Precompute.code Mo.mm (.seq (.block r2Head) R.code)) :=
+  RelCT.constantTime ((code_ct Mo R).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
+    ⟨(pcOf s₁, s₁.syms VG.Impl.Ffdh.X86_64.VettedValidation.tableSym), ⟨h₁, rfl, rfl⟩, h₂,
+      (pcOf_pub hp.1).symm, hp.2.symm⟩) fun _ _ h => h)
 
 end VG.Proof.Ffdh.X86_64.Cached

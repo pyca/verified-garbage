@@ -53,7 +53,7 @@ def pcPub (s₁ s₂ : State) : Prop :=
 def pcContract : Contract isa where
   pre s := pcPre (stripConsts tableConsts s) ∧ ConstsOk tableConsts 0 s
   post := pcPost
-  pub := pcPub
+  pub s₁ s₂ := pcPub s₁ s₂ ∧ s₁.syms tableSym = s₂.syms tableSym
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
@@ -85,7 +85,7 @@ theorem pc_implies : pcContract.Implies (generationPrecomputeContract (abi.withC
     obtain ⟨hp, hc⟩ := pre_consts.mp (Sig.pre_stack0 h)
     exact ⟨pc_pre0 hp, hc⟩
   post _ _ _ h := post_consts.mpr (pc_post0 h)
-  pub _ _ _ _ h := pc_pub0 (pub_consts.mp h).1
+  pub _ _ _ _ h := ⟨pc_pub0 (pub_consts.mp h).1, (pub_consts.mp h).2 _ List.mem_cons_self⟩
   sat := precompute_sat
 
 end VG.Proof.Ffdh.X86_64.Cached
