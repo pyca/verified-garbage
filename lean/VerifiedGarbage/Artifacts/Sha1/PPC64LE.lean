@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Sha1.PPC64LE.Digest
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
 
 /-! # SHA-1 (FIPS 180-4) on PPC64LE -/
 
@@ -25,6 +25,6 @@ def artifacts : List Artifact := [
   Spec.Sha1.digestApi.artifact PPC64LE.target {
     code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha1.hash
     stack := 96 + Impl.MdStream.PPC64LE.Digest.frameBytes Proof.Hmac.Stream.PPC64LE.Sha1.hash
-    verified := Proof.Sha1.PPC64LE.Digest.verified }]
+    verified := Proof.Hmac.Stream.PPC64LE.Sha1.digest }]
 
 end VG.Artifacts.Sha1.PPC64LE

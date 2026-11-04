@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Sha256.Stream
 
+-- separate module: target-independent, for every target whose digest keeps its working space in a wiped frame
+
 /-!
 # The one-shot digests' postcondition reads memory only within the buffers
 

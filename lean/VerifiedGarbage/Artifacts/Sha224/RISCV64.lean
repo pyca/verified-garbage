@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Sha256.RISCV64.Digest
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
 
 /-! # SHA-224 (FIPS 180-4) on RISC-V -/
 
@@ -22,6 +22,6 @@ def artifacts : List Artifact := [
   Spec.Sha256.digest224Api.artifact RISCV64.target {
     code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha256Family.hash224
     stack := Impl.MdStream.RISCV64.Digest.dbytes Proof.Hmac.Stream.RISCV64.Sha256Family.hash224 + Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.F
-    verified := Proof.Sha256.RISCV64.Digest.Sha224.verified }]
+    verified := Proof.Hmac.Stream.RISCV64.Sha224.digest }]
 
 end VG.Artifacts.Sha224.RISCV64
