@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignSetup
 
 /-!
-# `vg_ed25519_sign_cached` on RISCV64: the nonce, and `R`
+# `vg_ed25519_sign_expanded` on RISCV64: the nonce, and `R`
 
 The prefix at `32(F)` and the message hashed into `128(F)`, the digest
 reduced into the nonce at `64(F)` by a call of `vg_ed25519_scalar_reduce`,

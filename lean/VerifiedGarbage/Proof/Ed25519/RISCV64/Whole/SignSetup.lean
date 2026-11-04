@@ -7,12 +7,12 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# `vg_ed25519_sign_cached` on RISC-V: the setup
+# `vg_ed25519_sign_expanded` on RISC-V: the setup
 
-`out` in `a0`, `seed` in `a1`, `pk` in `a2`, the message in `a3` (`len` in
+`out` in `a0`, `expanded` in `a1`, `pk` in `a2`, the message in `a3` (`len` in
 `a4`), `scratch` in `a5` and the frame `F` (288 bytes) in `a6`. The setup
 saves the registers at `224(F)`, moves what lives across calls to `s7`–`s11`
-and `seed` to `s1`, and copies `pk` to `192(F)` (`signSetup_ok`).
+and `expanded` to `s1`, and copies `pk` to `192(F)` (`signSetup_ok`).
 -/
 
 @[expose] public section
@@ -31,8 +31,8 @@ abbrev msgR (s : State) : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
 /-- What the body may write. -/
 abbrev signW (s : State) : List Region := [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩, below s.sp 208]
 
-/-- The precondition, by register, for `sl` bytes at `a1` (the seed, or its digest). That `pk` is
-the seed's public key is a hypothesis of its own (`signCached_wp`, `signExpanded_wp`). -/
+/-- The precondition, by register, for `sl` bytes at `a1` (the seed's digest, so 64). That `pk` is
+the seed's public key is a hypothesis of its own (`signExpanded_wp`). -/
 structure SignPre (sl : Nat) (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .a1, sl⟩, ⟨s.gpr .a2, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩]
