@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPos
-public import VerifiedGarbage.Proof.RsaPss.X86.CtHash
-import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
+public import VerifiedGarbage.Proof.RsaPss.X86.CtTab
 public import VerifiedGarbage.Proof.RsaPss.X86.CmpLoop
 import VerifiedGarbage.Proof.RsaPss.X86.CtLoop
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
@@ -76,6 +75,12 @@ theorem away2_slot {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {d : Nat} (hd : 
     slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
     (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega)).symm⟩
 
+theorem away2_ctWT {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
+    ∀ r ∈ ctWT h L scr T, Away2 L scr r := fun r hr => by
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact away2_slot hg (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  · exact away2_ctW h hg hT r hr
+
 /-- What `ctHash` keeps, with `M'`'s length and blocks in their slots. -/
 abbrev Kt (P : EP) (msg : State → List Byte) (nbm : Nat) (τ : State) (m : Mem) : Prop :=
   K2 h P τ m ∧ m.readW ((P.lay h.D).fr sL) 32 = BitVec.ofNat 32 (msg τ).length ∧
@@ -96,29 +101,37 @@ theorem res_eq (x : BitVec 32) :
     rw [ite_eq_right e, ite_eq_right (by simp only [decide_eq_true_eq]; show ¬ x.toNat < 1; omega)]
     rfl
 
-/-- The hash of `M'` compared with `H`, and the result. -/
-theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
+/-- The hash of `M'`, with the hash function of the table at the argument
+14, compared with `H`, and the result. -/
+theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
+    (fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
     {msg : State → List Byte} (hfit : ∀ τ, (msg τ).length + 1 + h.L ≤ nbm * h.B) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
-        ∀ i < nbm * h.B, s.mem (sa P.scr (oY + i)) = (msg τ).getD i 0)
-      (.seq (ctHash h.H) (cmpH h.H))
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
-        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (msg τ) then 1 else 0) := by
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
+        ∀ i < nbm * h.B, s.mem (sa P.scr (oY + i)) = (msg τ).getD i 0) ∧ s.syms = τ.syms)
+      (.seq (ctHashT f h.H 14) (cmpH h.H))
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
+        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (msg τ) then 1 else 0) ∧ s.syms = τ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have e3 : oDig = 832 := rfl
-  refine (ctHash_vp h hg hnb hnb0 hfit (Inv := Kt h P msg nbm)
-    (fun τ m m' hk hf' => ⟨K2.keep h hk.1 hf' (away2_ctW h hg hnb),
-      slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide) (by decide)) hk.2.1,
-      slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide) (by decide)) hk.2.2⟩)
-    (fun τ m hk => hk.2.1) (fun τ m hk => hk.2.2)).seq ?_
+  have dT : ∀ d, d = sL ∨ d = sNb → ∀ r ∈ ctWT h (P.lay h.D) P.scr (nbm * h.B), (slotR (P.lay h.D) d).Disjoint r := by
+    intro d hd r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · rcases hd with rfl | rfl <;> exact Lay.fr_sep (by decide) (by decide) (by decide)
+    · rcases hd with rfl | rfl <;> exact ctW_slot h hg hnb (by decide) (by decide) (by decide) r hr
+  refine (ctHashT_vp h hg hnb hnb0 hfit (Inv := Kt h P msg nbm)
+    (fun τ m m' hk hf' => ⟨K2.keep h hk.1 hf' (away2_ctWT h hg hnb),
+      slot_keep hf' (dT sL (.inl rfl)) hk.2.1, slot_keep hf' (dT sNb (.inr rfl)) hk.2.2⟩)
+    (fun τ m hk => hk.2.1) (fun τ m hk => hk.2.2) ⟨h.certs.digSp, h.certs.digCt⟩ (vf_arg h (j := 14) (by decide))
+    hTab14_taint (fun τ m hk => hTH τ hk.1.1.tabTH) hi₀.tblH fne).seq (Proof.RsaOaep.X86.VP.syms ?_)
   show VP _ (.seq (.block (cmpArgs h.H)) (.seq (countLoop cmpBody) (.block result))) _
   let X : State → Mem → Prop := fun τ m => Kt h P msg nbm τ m ∧
     ∀ i < h.D, m (sa P.scr (oDig + i)) = (h.ok.hH.SH.H.hash (msg τ)).getD i 0

@@ -113,7 +113,7 @@ encoding is valid. -/
 theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : List Byte} (hsB : sB.length = P.K)
     (hx : ∀ i < P.K, ((Spec.Rsa.publicOpChecked P.nB P.eB sB).getD (Spec.RsaPss.zeros P.K)).getD i 0 = emv P τ i) :
     (acc2 h P τ = 0 ∧ HOk h P τ (if P.any = 0 then Mf h P τ else Ma h P τ)) ↔
-      Spec.RsaPss.verify h.G h.G P.nB P.eB (digB h P τ) sB (sLenO P) = true := by
+      Spec.RsaPss.verify h.G P.g.G P.nB P.eB (digB h P τ) sB (sLenO P) = true := by
   have hl := nB_length hi
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
   obtain ⟨b, rest, hbr⟩ : ∃ b rest, P.nB = b :: rest := by
@@ -125,13 +125,13 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
   have hb0 : b ≠ 0 := fun e => hbt (by rw [e]; rfl)
   rw [hbr, List.length_cons] at hl
   have hem := emLen_eq hbr hl hbt
-  have hG := PssHash.valid h
+  have hG := P.g.valid
   have gl : h.G.len = h.D := h.glen
   have hcz := cW_byte hb0 rest
   rw [hem] at hcz
   have hs0 : (sLenO P).getD 0 = eLen P := by unfold sLenO eLen; split <;> rfl
-  rw [show Spec.RsaPss.verify h.G h.G P.nB = Spec.RsaPss.verify h.G h.G (b :: rest) by rw [hbr],
-    RsaPss.verify_bytes h.G hG (emLen := P.K - lo P) (lo := lo P)
+  rw [show Spec.RsaPss.verify h.G P.g.G P.nB = Spec.RsaPss.verify h.G P.g.G (b :: rest) by rw [hbr],
+    RsaPss.verify_bytes₂ P.g.G h.G hG (emLen := P.K - lo P) (lo := lo P)
       (by unfold digB; rw [RsaPkcs1Sig.bytesAt_len, gl]) (by rw [hsB, List.length_cons]; omega_arith) rfl hem
       (by rw [List.length_cons]; omega_arith) hlo (by rw [gl, hs0]; omega_arith)]
   generalize hz : 8 * (P.K - lo P) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (b :: rest)) - 1) = z at hcz ⊢
@@ -156,11 +156,11 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
       ← List.getD_eq_getElem?_getD, hdrop _ (by omega_arith), Nat.add_assoc]
   have ht : ∀ j < dbN h P, ((x.drop (lo P)).take (dbN h P)).getD j 0 = emv P τ (lo P + j) := fun j hj => by
     rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hj, ← List.getD_eq_getElem?_getD, hdrop _ (by omega_arith)]
-  have hmk : (Spec.Mgf1.mgf1 h.G (seedV h P τ) (dbN h P)).length = dbN h P := Mgf1.mgf1_length hG _ _
+  have hmk : (Spec.Mgf1.mgf1 P.g.G (seedV h P τ) (dbN h P)).length = dbN h P := Mgf1.mgf1_length hG _ _
   have htl : ((x.drop (lo P)).take (dbN h P)).length = dbN h P := by
     simp only [List.length_take, List.length_drop, hxl]; omega_arith
-  have hvDb : RsaPss.vDb h.G (x.drop (lo P)) (dbN h P) z = dbL h P τ := by
-    unfold RsaPss.vDb
+  have hvDb : RsaPss.vDb₂ P.g.G h.G (x.drop (lo P)) (dbN h P) z = dbL h P τ := by
+    unfold RsaPss.vDb₂
     rw [hvH]
     refine RsaPss.eq_range_map (by rw [RsaPss.clearTop_length, Mgf1.xorBytes_length, hmk, htl]; omega_arith)
       fun i hi' => ?_
@@ -172,7 +172,7 @@ theorem good_iff (P : EP) (τ : State) (hi : In h.D P τ) (hf : fits h P) {sB : 
     · rw [ite_eq_right e, RsaPss.xorBytes_getD (by omega_arith) (by omega_arith), ht i hi']
       simp only [dbF, e, ite_false]
   have hlz : RsaPss.lz (dbL h P τ) = lzF h P τ := rfl
-  unfold RsaPss.EncOk
+  unfold RsaPss.EncOk₂
   rw [hL, hvDb, hvH, hlz, hdrop _ (by omega_arith), hdrop 0 (by omega_arith), show lo P + (P.K - lo P - 1) = P.K - 1 by omega_arith,
     Nat.add_zero, hx' 0 (by omega_arith), ← hcz, acc2_iff h P τ hlo (fun e => hf.1 (BitVec.eq_of_toNat_eq e)) (by omega_arith) hi.slt32, HOk_iff]
   constructor
