@@ -559,4 +559,226 @@ theorem correct {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (hl : Loaded 
   refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
   exact WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => tail_ok hp h₅)
 
+
+/-! ## `encapsH`: `H(ek)` given at `h`
+
+`encapsH` takes `encaps`'s arguments with `h` after `ek`, so `key` is in
+`r3`, and `ct` and `scratch` are the arguments on the stack. Once `scratch`
+is loaded into `r12`, its phases are `encaps`'s, of the arguments `args e`
+(`ek`, `m`, `key`, `ct` and `scratch` in `r0`–`r3` and `r12`): its setup
+(`setupH_ok`, which also loads `ct`), the copy of `h` into `H(ek)`'s place
+(`copyH_ok`), and then `encaps`'s phases from the copy of `m` on, but the
+hash of `ek`. Its own buffer `h`, which it only reads, has a layout of its
+own (`layH`), as `m`. -/
+
+/-- The arguments of `encaps` from those of `encapsH` in its entry state `e`:
+`ek` in `r0`; `m` and `key`, in `r2` and `r3`, in `r1` and `r2`; `ct`, the first
+argument on the stack, in `r3`; and `scratch`, the second, in `r12`. -/
+def args (e : State) : State :=
+  { e with gpr := fun r => match r with
+    | .r1 => e.gpr .r2 | .r2 => e.gpr .r3 | .r3 => stackArg e 0 | .r12 => stackArg e 1 | r => e.gpr r }
+
+theorem args_ne {e : State} {r : Reg} (h1 : r ≠ .r1) (h2 : r ≠ .r2) (h3 : r ≠ .r3) (h12 : r ≠ .r12) :
+    (args e).gpr r = e.gpr r := by
+  cases r <;> first | rfl | exact absurd rfl h1 | exact absurd rfl h2 | exact absurd rfl h3 | exact absurd rfl h12
+
+theorem args_preserved (e : State) : ∀ r ∈ preserved, (args e).gpr r = e.gpr r := fun r hr =>
+  args_ne (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
+    (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
+
+def pH (e : State) : BitVec 32 := e.gpr .r1
+
+/-- The buffers of the copy of `h`: `scratch`, the stack and `h`. -/
+def layH (K : KemLay) (e : State) : Lay :=
+  ⟨fun i => [pScr (args e), e.sp - BitVec.ofNat 32 8, pH e].getD i 0, [K.scratch, 8, 32]⟩
+
+theorem layH_sizes (K : KemLay) (e : State) : (layH K e).sizes = [K.scratch, 8, 32] := rfl
+theorem layH_ptr0 (K : KemLay) (e : State) : (layH K e).ptr 0 = pScr (args e) := rfl
+
+/-- The precondition of `encapsH`'s contract: `encaps`'s, of `args e`, the
+arguments on the stack, and `h`, which holds `H(ek)`. -/
+structure PreH (K : KemLay) (e : State) : Prop where
+  pre : Pre K (args e)
+  rdH : (⟨State.addr (pH e), 32⟩ : Region) ∈ e.rd
+  d_h_scr : (⟨State.addr (pH e), 32⟩ : Region).Disjoint ⟨State.addr (pScr (args e)), K.scratch⟩
+  b_h : (below e 8).Disjoint ⟨State.addr (pH e), 32⟩
+  f_h : (pH e).toNat + 32 ≤ 2 ^ 32
+  hh : bytesAt e.mem (State.addr (pH e)) 32 = H (EK K (args e))
+  argCt : InRegions (e.rd ++ e.wr) (stackArgAddr e 0) 4
+  argScr : InRegions (e.rd ++ e.wr) (stackArgAddr e 1) 4
+  d_ct_scr : (⟨stackArgAddr e 0, 4⟩ : Region).Disjoint ⟨State.addr (pScr (args e)), K.scratch⟩
+
+section
+variable {K : KemLay} {e : State} (hq : PreH K e)
+include hq
+
+theorem layH_ok : (layH K e).Ok := by
+  have hp := hq.pre
+  have es : (⟨State.addr (e.sp - BitVec.ofNat 32 8), 8⟩ : Region) = below e 8 := stack_eq (s₀ := args e) hp
+  refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
+  · simp only [layH, List.length_cons, List.length_nil] at hi
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    · exact hp.f_scr
+    · exact stack_fit (s₀ := args e) hp
+    · exact hq.f_h
+  · simp only [layH, List.length_cons, List.length_nil] at hi hj
+    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    simp only [layH, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
+    first | omega | skip
+    · rw [es]; exact hp.b_scr.symm
+    · exact hq.d_h_scr.symm
+    · rw [es]; exact hq.b_h
+
+/-- What the setup and the load of `ct` leave. -/
+abbrev SetH (K : KemLay) (e s : State) : Prop :=
+  EnEnv K (args e) s ∧ s.gpr .r5 = pM (args e) ∧ s.gpr .r9 = pH e ∧
+    bytesAt s.mem ((layM (args e) K).A 2 0) 32 = M K (args e) ∧
+    bytesAt s.mem ((layH K e).A 2 0) 32 = bytesAt e.mem ((layH K e).A 2 0) 32
+
+/-- The setup; then, from the stack pointer it keeps, the load of `ct`. -/
+theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀ r, r ≠ .r12 → s₁.gpr r = e.gpr r)
+    (hm : s₁.mem = e.mem) (hrd : s₁.rd = e.rd) (hwr : s₁.wr = e.wr) (hsp : s₁.sp = e.sp) :
+    WP isa (.block encapsHSetup) s₁ fun s => s.sp = e.sp ∧ WP isa (.block [.ldrSp .r8 0]) s (SetH K e) := by
+  have hp := hq.pre
+  have hL := lay_ok hp
+  have hK := hp.wf
+  have scr := hK.scr
+  have fc := hp.f_scr
+  obtain ⟨w0, -, -, -, -, -⟩ := buf_wr hp
+  have wS : ∀ {o n : Nat}, o + n ≤ K.scratch → InRegions s₁.wr ((lay (args e) K).A 0 o) n := fun h => by
+    rw [hwr]; exact Lay.covers w0 h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  rw [encapsHSetup, WP.block_append_iff]
+  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; exact fit_le (by omega) fc) fun i hi => by
+    rw [h12, add_ofNat_add]; exact wS (by omega)) fun s₂ h₂ => ?_
+  have g12 : s₂.gpr .r12 = pScr (args e) := by rw [h₂.gpr, h12]
+  have e872 : State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32)) = (lay (args e) K).A 0 872 := by
+    rw [g12]; exact addr_add (by offs)
+  have i872 : InRegions s₂.wr (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32))) 4 := by
+    rw [e872, h₂.wr]; exact wS (by omega)
+  have o1 : oSave + 32 < 4096 := by decide
+  have o0 : (0 : Nat) < 4096 := by decide
+  have iCt : InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.sp + BitVec.ofNat 32 0)) 4 := by
+    rw [h₂.rd, h₂.wr, h₂.sp, hrd, hwr, hsp]; exact hq.argCt
+  run_block [i872, o1]
+  refine ⟨h₂.sp.trans hsp, ?_⟩
+  run_block [iCt, o0]
+  have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay (args e) K).A 0 872) v).readW
+      ((lay (args e) K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 =
+        m.readW ((lay (args e) K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  have g : ∀ r, r ≠ .r12 → s₂.gpr r = e.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
+  have hne : ∀ i < 8, savedRegs.getD i Reg.r4 ≠ Reg.r12 ∧ savedRegs.getD i Reg.r4 ≠ Reg.r1 ∧
+      savedRegs.getD i Reg.r4 ≠ Reg.r2 ∧ savedRegs.getD i Reg.r4 ≠ Reg.r3 := by decide
+  have fr₀ : Frame ((lay (args e) K).RL [(0, 840, 36)]) e.mem s₂.mem := by
+    rw [← hm]
+    refine h₂.frame.sub fun r hr' => ⟨Lay.R (lay (args e) K) 0 840 36, by simp, ?_⟩
+    rw [List.mem_singleton] at hr'; subst hr'
+    show Region.Sub ⟨State.addr (s₁.gpr .r12) + BitVec.ofNat 64 840, 32⟩ _
+    rw [h12, ← lay_ptr0]
+    exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
+  have c872 : ((lay (args e) K).R 0 840 36).Contains ((lay (args e) K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
+  have fr₁ := fr₀.writeW (List.mem_singleton_self _) (s₂.gpr .lr) c872
+  refine ⟨⟨⟨hL, scr, rfl, by simp [lay], ?_, by show 8 ≤ s₂.sp.toNat; rw [h₂.sp, hsp]; exact hp.sp8, ?_, ?_⟩,
+    ?_, ?_, ?_, h₂.rd.trans hrd, h₂.wr.trans hwr, h₂.sp.trans hsp, fun i hi => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  · simp [h₂.gpr, h12]; rfl
+  · show e.sp - BitVec.ofNat 32 8 = s₂.sp - BitVec.ofNat 32 8
+    rw [h₂.sp, hsp]
+  · show (⟨State.addr (pScr (args e)), K.scratch⟩ : Region) ∈ s₂.wr
+    have hw : e.wr = (args e).wr := rfl
+    rw [h₂.wr, hwr, hw, hp.wr]; simp
+  · simp [g .r0 (by decide)]; rfl
+  · simp [g .r3 (by decide)]; rfl
+  · simp only [↓reduceIte]
+    rw [e872, h₂.sp, hsp, fr₁.readW (r := ⟨stackArgAddr e 0, 4⟩) (Region.contains_self _ _) (fun r' hr' => by
+      simp only [Lay.RL, List.map_cons, List.map_nil, List.mem_singleton] at hr'
+      subst hr'
+      exact hq.d_ct_scr.sub_right (Lay.R_sub (by simp [lay]; omega))) (by decide)]
+    rfl
+  · show (s₂.mem.writeW _ _).readW _ _ = _
+    rw [e872, ne1 i hi]
+    have := h₂.saved i hi
+    rw [h12] at this
+    obtain ⟨n12, n1, n2, n3⟩ := hne i hi
+    exact this.trans ((hr _ n12).trans (args_ne n1 n2 n3 n12).symm)
+  · show (s₂.mem.writeW _ _).readW _ _ = _
+    rw [e872, Mem.readW_writeW_self32, h₂.gpr, hr .lr (by decide)]; rfl
+  · show bytesAt (s₂.mem.writeW _ _) _ _ = _
+    rw [e872]
+    exact Lay.bytes_keep hL fr₁ (by edecide) (by offs)
+  · rw [g .r2 (by decide)]; rfl
+  · rw [g .r1 (by decide)]; rfl
+  · rw [e872]
+    have fM : Frame ((layM (args e) K).RL [(0, 840, 36)]) e.mem
+        (s₂.mem.writeW ((lay (args e) K).A 0 872) (s₂.gpr .lr)) := by
+      simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layM_ptr0] using fr₁
+    exact Lay.bytes_keep (layM_ok hp) fM (by edecide) (by decide)
+  · rw [e872]
+    have fH : Frame ((layH K e).RL [(0, 840, 36)]) e.mem
+        (s₂.mem.writeW ((lay (args e) K).A 0 872) (s₂.gpr .lr)) := by
+      simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layH_ptr0] using fr₁
+    exact Lay.bytes_keep (layH_ok hq) fH (by rw [layH_sizes]; edecide) (by decide)
+
+
+theorem copyH_ok {s : State} (h : EnEnv K (args e) s) (h9 : s.gpr .r9 = pH e)
+    (hh : bytesAt s.mem ((layH K e).A 2 0) 32 = bytesAt e.mem ((layH K e).A 2 0) 32)
+    (hm : bytesAt s.mem ((layM (args e) K).A 2 0) 32 = M K (args e)) :
+    WP isa (copy .r9 0 .r7 oHek 32) s fun s' => EnEnv K (args e) s' ∧ s'.gpr .r5 = s.gpr .r5 ∧
+      bytesAt s'.mem ((layM (args e) K).A 2 0) 32 = M K (args e) ∧
+      bytesAt s'.mem ((lay (args e) K).A 0 oHek) 32 = H (EK K (args e)) := by
+  have hp := hq.pre
+  have hK := hp.wf
+  obtain ⟨-, -, -, -, -, wM0⟩ := buf_wr hp
+  have wH : (layH K e).buf 2 ∈ s.rd ++ s.wr := by rw [h.rd]; exact List.mem_append_left _ hq.rdH
+  refine WP.mono (copyL (layH_ok hq) (i := 2) (j := 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ h9
+    (by rw [h.ctx.r7, lay_ptr0, layH_ptr0]) (by edecide) (by edecide) (by edecide) (by edecide) (by edecide)
+    (by rw [layH_sizes]; edecide) wH (by rw [h.wr]; exact wM0)) fun s' ⟨k, e'⟩ => ?_
+  have k' : Kept ((lay (args e) K).RL [(0, oHek, 32)]) s s' := by
+    simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layH_ptr0] using k
+  refine ⟨h.keep hp (k'.x []) (by simp) (by edecide), k'.cs .r5 (by decide) (by decide), ?_, ?_⟩
+  · have fM : Frame ((layM (args e) K).RL [(0, oHek, 32)]) s.mem s'.mem := by
+      simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, layH_ptr0, layM_ptr0] using k.frame
+    rw [Lay.bytes_keep (layM_ok hp) fM (by edecide) (by decide)]; exact hm
+  · have ea : (lay (args e) K).A 0 oHek = (layH K e).A 0 oHek := rfl
+    rw [ea, e', hh, show (layH K e).A 2 0 = State.addr (pH e) by simp only [Lay.A, add_ofNat_zero]; rfl]
+    exact hq.hh
+
+end
+
+/-- The copy of `m`, keeping `H(ek)`. -/
+theorem copyMh_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s) (h5 : s.gpr .r5 = pM s₀)
+    (hm : bytesAt s.mem ((layM s₀ K).A 2 0) 32 = M K s₀)
+    (hh : bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (copy .r5 0 .r7 oMsg 32) s fun s' => EnEnv K s₀ s' ∧
+      bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ ∧ bytesAt s'.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀) :=
+  have hK := hp.wf
+  WP.mono (copyM_ok hp h h5 hm) fun _ ⟨e, m, k⟩ =>
+    ⟨e, m, by rw [Lay.bytes_keep (lay_ok hp) k.frame (by edecide) (by decide)]; exact hh⟩
+
+/-- `s4_ok`, keeping `H(ek)`. -/
+theorem s4h_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s)
+    (hm : bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀)
+    (hh : bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (.block [ptrTo .r5 .r7 oMsg]) s fun s' =>
+      F4 K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀) :=
+  WP.mono ptr5_ok fun _ ⟨k, g5, m⟩ =>
+    ⟨⟨h.keep hp (W := []) k (by simp) rfl, by rw [g5, h.ctx.r7], by rw [m]; exact hm⟩, by rw [m]; exact hh⟩
+
+/-- `K.encapsH` once `scratch`, its second argument on the stack, is loaded. -/
+theorem correctH {K : KemLay} {e s₁ : State} (hq : PreH K e) (hl : Loaded (withR12 e (stackArg e 1)) s₁) :
+    WP isa K.encapsHBody s₁ (Post K (args e)) := by
+  have hp := hq.pre
+  obtain ⟨a, b, c, d, e', f⟩ := hl
+  refine WP.seq (WP.mono (setupH_ok hq a (fun r hr => (b r hr).trans (withR12_ne hr)) c d e' f) fun _ h => ?_)
+  refine WP.seq (WP.mono h.2 fun s₂ ⟨h₂, g5, g9, m₂, hh₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyH_ok hq h₂ g9 hh₂ m₂) fun s₃ ⟨h₃, g5₃, m₃, hh₃⟩ => ?_)
+  refine WP.seq (WP.mono (copyMh_ok hp h₃ (g5₃.trans g5) m₃ hh₃) fun s₄ ⟨h₄, m₄, hh₄⟩ => ?_)
+  exact WP.seq (WP.mono (s4h_ok hp h₄ m₄ hh₄) fun _ h₅ => tail_ok hp h₅)
+
+/-- `K.encapsH` from its entry state `e`: `scratch` loaded, then `correctH`. -/
+theorem entryH_correct {K : KemLay} {e : State} (hq : PreH K e) : WP isa K.encapsH e (Post K (args e)) :=
+  WP.seq (WP.mono (ldrSp_loaded 1 (by decide) hq.argScr) fun _ hl => correctH hq hl)
+
 end VG.Proof.MlKem.Arm.Encaps

@@ -47,4 +47,23 @@ theorem hMem_h {n : Nat} (hk : n ≤ 0x1000) : bytesAt (hMem n) 0x2000 32 = H (b
   · rw [Nat.add_sub_cancel_left]; simp [List.getD_eq_getElem?_getD, h₂]
   · omega
 
+
+/-- `hMem_h` for memory that is `hMem n` below `0x2020`, such as one that also holds arguments on the
+stack. -/
+theorem hMem_h_of {n : Nat} (hk : n ≤ 0x1000) {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x2020 → m a = hMem n a) :
+    bytesAt m 0x2000 32 = H (bytesAt m 0x1000 n) := by
+  have e₁ : bytesAt m 0x2000 32 = bytesAt (hMem n) 0x2000 32 := by
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => hm _ ?_
+    simp only [List.mem_range] at hi
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]
+    omega
+  have e₂ : bytesAt m 0x1000 n = bytesAt (hMem n) 0x1000 n := by
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => hm _ ?_
+    simp only [List.mem_range] at hi
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (4096 : BitVec 64).toNat = 4096 from rfl]
+    omega
+  rw [e₁, e₂]; exact hMem_h hk
+
 end VG.Proof.MlKem

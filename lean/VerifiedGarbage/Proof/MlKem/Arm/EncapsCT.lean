@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Encaps
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+meta import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.EncapsHSat
+meta import VerifiedGarbage.Proof.MlKem.EncapsHSat
 public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.Encaps
 import VerifiedGarbage.Proof.MlKem.Arm.EncryptCT
@@ -319,5 +323,187 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.encaps (Spec.MlKem.encapsC
   · refine ⟨satState, ?_⟩
     sig_sat_check [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
+
+
+/-! ## `encapsH` -/
+
+/-- Two runs of `encapsH`, from entry states that agree on the public data. -/
+structure TwoH (K : KemLay) (s₁ s₂ : State) : Prop where
+  hq₁ : PreH K s₁
+  hq₂ : PreH K s₂
+  sp : s₁.sp = s₂.sp
+  r0 : s₁.gpr .r0 = s₂.gpr .r0
+  r1 : s₁.gpr .r1 = s₂.gpr .r1
+  r2 : s₁.gpr .r2 = s₂.gpr .r2
+  r3 : s₁.gpr .r3 = s₂.gpr .r3
+  ct : stackArg s₁ 0 = stackArg s₂ 0
+  scr : stackArg s₁ 1 = stackArg s₂ 1
+  rho : ekRho K.p (EK K (args s₁)) = ekRho K.p (EK K (args s₂))
+
+/-- What `encaps`'s runs of their arguments are. -/
+theorem TwoH.two {K : KemLay} {s₁ s₂ : State} (t : TwoH K s₁ s₂) : Two K (args s₁) (args s₂) :=
+  ⟨t.hq₁.pre, t.hq₂.pre, t.sp, t.r0, t.r2, t.r3, t.ct, t.scr, t.rho⟩
+
+theorem all_ctH {K : KemLay} {s₁ s₂ : State} (two : TwoH K s₁ s₂) :
+    RelCT isa (fun a b => Loaded (withR12 s₁ (stackArg s₁ 1)) a ∧ Loaded (withR12 s₂ (stackArg s₂ 1)) b)
+      K.encapsHBody fun _ _ => True := by
+  have hq₁ := two.hq₁
+  have hq₂ := two.hq₂
+  have hp₁ := hq₁.pre
+  have hp₂ := hq₂.pre
+  have tw := two.two
+  -- the setup
+  refine RelCT.seq (R := fun (a b : State) =>
+      (a.sp = s₁.sp ∧ WP isa (.block [.ldrSp .r8 0]) a (SetH K s₁)) ∧
+      (b.sp = s₂.sp ∧ WP isa (.block [.ldrSp .r8 0]) b (SetH K s₂)))
+    (relct_wp (taint_block [.r0, .r1, .r2, .r3, .r12] (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        obtain ⟨⟨a12, ar, -⟩, ⟨b12, br, -⟩⟩ := hab
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r0
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r1
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r2
+        · rw [ar _ (by decide), br _ (by decide)]; exact two.r3
+        · rw [a12, b12]; exact two.scr) (by taint_decide))
+      fun a b ⟨⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩⟩ =>
+        ⟨setupH_ok hq₁ a1 (fun r hr => (a2 r hr).trans (withR12_ne hr)) a3 a4 a5 a6,
+          setupH_ok hq₂ b1 (fun r hr => (b2 r hr).trans (withR12_ne hr)) b3 b4 b5 b6⟩) ?_
+  -- `ct` from the stack
+  refine RelCT.seq (R := fun (a b : State) => SetH K s₁ a ∧ SetH K s₂ b)
+    (relct_wp (relct_ldrSp fun a b hab => by rw [hab.1.1, hab.2.1]; exact two.sp) fun a b hab =>
+      ⟨hab.1.2, hab.2.2⟩) ?_
+  -- `h` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K (args s₁) a ∧ a.gpr .r5 = pM (args s₁) ∧
+        bytesAt a.mem ((layM (args s₁) K).A 2 0) 32 = M K (args s₁) ∧
+        bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (EnEnv K (args s₂) b ∧ b.gpr .r5 = pM (args s₂) ∧
+        bytesAt b.mem ((layM (args s₂) K).A 2 0) 32 = M K (args s₂) ∧
+        bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (taint_prog [.r9, .r7] (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.2.1, hab.2.2.2.1]; exact two.r1
+        · exact tw.regs hab.1.1 hab.2.1 .r7 (by simp)) (by taint_decide))
+      fun a b hab =>
+        ⟨WP.mono (copyH_ok hq₁ hab.1.1 hab.1.2.2.1 hab.1.2.2.2.2 hab.1.2.2.2.1) fun _ h =>
+          ⟨h.1, h.2.1.trans hab.1.2.1, h.2.2⟩,
+        WP.mono (copyH_ok hq₂ hab.2.1 hab.2.2.2.1 hab.2.2.2.2.2 hab.2.2.2.2.1) fun _ h =>
+          ⟨h.1, h.2.1.trans hab.2.2.1, h.2.2⟩⟩) ?_
+  -- `m` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K (args s₁) a ∧ bytesAt a.mem ((lay (args s₁) K).A 0 oMsg) 32 = M K (args s₁) ∧
+        bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (EnEnv K (args s₂) b ∧ bytesAt b.mem ((lay (args s₂) K).A 0 oMsg) 32 = M K (args s₂) ∧
+        bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (taint_prog [.r5, .r7] (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.1, hab.2.2.1]; exact two.r2
+        · exact tw.regs hab.1.1 hab.2.1 .r7 (by simp)) (by taint_decide))
+      fun a b hab => ⟨copyMh_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2.1 hab.1.2.2.2,
+        copyMh_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2.1 hab.2.2.2.2⟩) ?_
+  refine RelCT.seq (R := fun (a b : State) =>
+      (F4 K (args s₁) a ∧ bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (F4 K (args s₂) b ∧ bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (relct_noMem rfl) fun a b hab =>
+      ⟨s4h_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, s4h_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
+  exact tail_ct tw
+
+/-- `all_ctH` from the entry states. -/
+theorem entryH_ct {K : KemLay} {s₁ s₂ : State} (two : TwoH K s₁ s₂) :
+    RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encapsH fun _ _ => True :=
+  RelCT.seq (R := fun a b => Loaded (withR12 s₁ (stackArg s₁ 1)) a ∧ Loaded (withR12 s₂ (stackArg s₂ 1)) b)
+    (relct_wp (relct_ldrSp fun a b hab => by rw [hab.1, hab.2]; exact two.sp) fun a b hab =>
+      ⟨by rw [hab.1]; exact ldrSp_loaded 1 (by decide) two.hq₁.argScr,
+        by rw [hab.2]; exact ldrSp_loaded 1 (by decide) two.hq₂.argScr⟩)
+    (all_ctH two)
+
+/-! ## ML-KEM-768's `encapsH` -/
+
+theorem pre_ofH {s : State} (h : (Spec.MlKem.encapsHContract Arm.abi 8).pre s) : PreH kl768 s := by
+  sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val] at h
+  obtain ⟨h0, h1, h2, h3, d1, d2, d3, -, -, dh3, d4, d5, d6, d7, d8, -, d10, -, d12, b1, bh, b2, b3, b4, b5, -,
+    f1, fh, f2, f3, f4, f5, hh⟩ := h
+  have hc : ∀ k ≤ 4, Region.Contains ⟨stackArgAddr s 0, 8⟩ (State.addr (s.sp + BitVec.ofNat 32 k)) 4 := by
+    intro k hk
+    simp only [Region.Contains, stackArgAddr, State.addr]
+    bv_omega
+  have ra : (⟨stackArgAddr s 0, 8⟩ : Region) ∈ s.rd ++ s.wr := by
+    rw [h2]; exact List.mem_append_left _ (.tail _ (.tail _ (.tail _ (.head _))))
+  exact ⟨⟨kl768_wf, kl768_calls, h0, by show _ ∈ s.rd; rw [h2]; exact .head _,
+    by show _ ∈ s.rd; rw [h2]; exact .tail _ (.tail _ (.head _)), h3, d1, d2, d3, d4, d5, d6, d7, d8, d10,
+    b1, b2, b3, b4, b5, f1, f2, f3, f4, f5⟩, by rw [h2]; exact .tail _ (.head _), dh3, bh, fh,
+    by rw [EK_eq]; exact hh, ⟨_, ra, hc 0 (by decide)⟩, ⟨_, ra, hc 4 (by decide)⟩,
+    d12.symm.sub_left (Region.sub_prefix (by decide))⟩
+
+/-- `post_of` for `encapsH`, whose `m` and `key` are one register later and `ct` on the stack. -/
+theorem post_ofH {s₀ s : State}
+    (h0 : s.gpr .r0 = if okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k then 1 else 0)
+    (hkey : bytesAt s.mem (State.addr (pKey (args s₀))) 32 = KK kl768 (args s₀))
+    (hct : bytesAt s.mem (State.addr (pCt (args s₀))) 1088 = VG.Proof.MlKem.KPke.ct kl768.p
+      (aEnc (ekRho kl768.p (EK kl768 (args s₀))) (RR kl768 (args s₀))) (EK kl768 (args s₀)) (M kl768 (args s₀))
+      (RR kl768 (args s₀))) :
+    (Spec.MlKem.encapsHContract Arm.abi 8).post s₀ s := by
+  sig_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val]
+  rw [setWidth_append32, h0]
+  have e0 : bytesAt s₀.mem (BitVec.setWidth 64 (s₀.gpr .r0)) 1184 = EK kl768 (args s₀) :=
+    (EK_eq kl768 (args s₀)).symm
+  have e1 : bytesAt s₀.mem (BitVec.setWidth 64 (s₀.gpr .r2)) 32 = M kl768 (args s₀) := (M_eq kl768 (args s₀)).symm
+  have e2 : bytesAt s.mem (BitVec.setWidth 64 (s₀.gpr .r3)) 32 = KK kl768 (args s₀) := hkey
+  have e3 : bytesAt s.mem (BitVec.setWidth 64 (stackArg s₀ 0)) 1088 = VG.Proof.MlKem.KPke.ct kl768.p
+      (aEnc (ekRho kl768.p (EK kl768 (args s₀))) (RR kl768 (args s₀))) (EK kl768 (args s₀)) (M kl768 (args s₀))
+      (RR kl768 (args s₀)) := hct
+  rw [e0, e1, e2, e3]
+  exact outcome kl768_wf (args s₀)
+
+/-- A state satisfying `encapsH`'s precondition: `ct` (`0x5000`) and `scratch` (`0x10000`) on the stack,
+and `H(ek)` at `h` (`hMem`). -/
+def satStateH (ekLen ctLen scr : Nat) : State where
+  gpr r := match r with
+    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
+  sp := 0x8000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem a := if a = 0x8001 then 0x50 else if a = 0x8006 then 1 else VG.Proof.MlKem.hMem ekLen a
+  rd := [⟨0x1000, ekLen⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x8000, 8⟩]
+  wr := [⟨0x4000, 32⟩, ⟨0x5000, ctLen⟩, ⟨0x10000, scr⟩]
+
+theorem satStateH_mem {ekLen ctLen scr : Nat} :
+    ∀ a : Addr, a.toNat < 0x2020 → (satStateH ekLen ctLen scr).mem a = VG.Proof.MlKem.hMem ekLen a := by
+  intro a ha
+  have n1 : a ≠ 0x8001 := by rintro rfl; exact absurd ha (by decide)
+  have n6 : a ≠ 0x8006 := by rintro rfl; exact absurd ha (by decide)
+  simp only [satStateH, n1, n6, ite_false]
+
+theorem verifiedH : Verified Arm.target Impl.MlKem.Arm.encapsH (Spec.MlKem.encapsHContract Arm.abi 8) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, h0, hkey, hct⟩ := entryH_correct (pre_ofH hs)
+    exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp⟩, post_ofH h0 hkey hct⟩
+  · sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi, Arm.argRegs,
+      Arm.reduceClassify, Arm.Loc.val] at hpub
+    obtain ⟨hsp, hl, g0, g1, g2, g3, gc, gs⟩ := hpub
+    have hr : ekRho kl768.p (EK kl768 (args s₁)) = ekRho kl768.p (EK kl768 (args s₂)) := by
+      rw [EK_eq, EK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (entryH_ct ⟨pre_ofH h₁, pre_ofH h₂, hsp, g0, g1, g2, g3, gc, gs, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩
+      e₁ e₂).1
+  · refine ⟨satStateH 1184 1088 32768, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Arm.abi,
+        Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+      sig_and_intros
+      all_goals first
+        | (show bytesAt (satStateH 1184 1088 32768).mem (0x2000 : BitVec 64) 32 =
+              VG.Spec.MlKem.H (bytesAt (satStateH 1184 1088 32768).mem (0x1000 : BitVec 64) 1184)
+           exact VG.Proof.MlKem.hMem_h_of (by decide) satStateH_mem)
+        | (fail_if_success show bytesAt _ _ _ = _
+           decide +kernel)
 
 end VG.Proof.MlKem.Arm.Encaps

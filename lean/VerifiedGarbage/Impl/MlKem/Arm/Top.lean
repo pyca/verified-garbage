@@ -373,19 +373,21 @@ def KemLay.encaps (K : KemLay) : Prog isa := .seq (.block [.ldrSp .r12 0]) K.enc
 
 /-! ## `vg_mlkem<n>_encaps_h(ek = r0, h = r1, m = r2, key = r3, ct = [sp], scratch = [sp + 4]) -> r0`
 
-`encaps` with `H(ek)` given: `h`, kept in `r9` (which the setup saves, and
-nothing uses before the copy), is copied to `960` in place of hashing `ek`,
-first. -/
+`encaps` with `H(ek)` given: `ct`, the first argument on the stack, is loaded
+into `r8` once the setup has saved it; and `h`, kept in `r9` (which the setup
+saves, and nothing uses before the copy), is copied to `960` in place of
+hashing `ek`, first. -/
 
 /-- After `scratch` loaded into `r12` from the stack. -/
 def encapsHSetup : List Instr :=
   saveRegs .r12 oSave ++
-    ([.str .lr .r12 (oSave + 32), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3), .ldrSp .r8 0,
+    ([.str .lr .r12 (oSave + 32), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3),
       .mov .r7 (.reg .r12), .mov .r9 (.reg .r1)] : List Instr)
 
 /-- After `scratch` loaded into `r12` from the stack. -/
 def KemLay.encapsHBody (K : KemLay) : Prog isa :=
   .seq (.block encapsHSetup) <|
+  .seq (.block [.ldrSp .r8 0]) <|
   .seq (copy .r9 0 .r7 oHek 32) <|
   .seq (copy .r5 0 .r7 oMsg 32) <|
   .seq (.block [ptrTo .r5 .r7 oMsg]) <|
