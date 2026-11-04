@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp

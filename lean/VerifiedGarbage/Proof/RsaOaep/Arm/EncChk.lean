@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

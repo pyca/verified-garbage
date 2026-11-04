@@ -29,16 +29,6 @@ open VG.Proof.Rsa.Arm.Recover (VP)
 
 variable {L : Lay} {scr : BitVec 32} (h : PssHash)
 
-/-- The 16 bytes below the stack pointer, where a streaming function's frame
-goes, are in our callees' stack. -/
-theorem below_low (hg : Geo L scr) {σ s : State} (hc : Ctx L scr σ s) :
-    Region.Sub (Pbkdf2.Stream.Arm.below s) L.LOW := by
-  have hC := hg.C16
-  have hB := hc.st.ok.B56
-  rw [Pbkdf2.Stream.Arm.below, hc.st.sp]
-  show Region.Sub ⟨State.addr L.B - BitVec.ofNat 64 16, 16⟩ ⟨State.addr L.B - BitVec.ofNat 64 L.C, L.C⟩
-  exact Offset.sub_below _ hC (by omega)
-
 /-- The streaming `init` on the hash value at `oSt`. -/
 theorem init_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt (h.N + h.B), L.LOW] m m' → Inv σ m') :

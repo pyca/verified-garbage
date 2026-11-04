@@ -51,7 +51,7 @@ abbrev Y1 (P : EP) (τ : State) (m : Mem) : Prop :=
 
 /-- `Y` cleared and `mHash` after its 8 zero bytes. -/
 theorem yDig_vf (P : EP) (hP : ∃ σ, In h.D P σ) (Q : Prop) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ Q) (yDig h.H 4)
+    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ Q) (yDig h.sh 4)
       (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ Q) ∧ Y1 h P τ s.mem) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo

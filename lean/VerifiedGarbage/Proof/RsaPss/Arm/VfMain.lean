@@ -32,7 +32,7 @@ abbrev GE (P : EP) (τ t : State) : Prop :=
 /-- The path for the expected salt length. -/
 theorem tailIte_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) ∧ s.z = decide (P.any = 0))
-      (.ite .eq (fixedPath h.H) (anyPath h.H)) (GE h P) := by
+      (.ite .eq (fixedPath h.sh) (anyPath h.sh)) (GE h P) := by
   refine VP.ite (fun _ _ _ _ h₁ h₂ => by
     rw [VG.Proof.X25519.Arm.eval_eq, VG.Proof.X25519.Arm.eval_eq, h₁.2, h₂.2]) ?_ ?_
   · by_cases ha : P.any = 0
@@ -48,9 +48,9 @@ theorem tailIte_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 
 /-- After the call. -/
 theorem rest_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (W0 h P) (.seq (.block accSet) (.seq (.block acc0) (.seq (mgfXor h.H) (.seq (.block topSet)
+    VP (W0 h P) (.seq (.block accSet) (.seq (.block acc0) (.seq (mgfXor h.sh) (.seq (.block topSet)
       (.seq (.block topAnd) (.seq (.block scanSet) (.seq (countLoop scanBody) (.seq (.block posSet)
-        (.seq (.block posChk) (.seq (.block anySet) (.ite .eq (fixedPath h.H) (anyPath h.H)))))))))))) (GE h P) :=
+        (.seq (.block posChk) (.seq (.block anySet) (.ite .eq (fixedPath h.sh) (anyPath h.sh)))))))))))) (GE h P) :=
   VP.assoc ((acc_vp h P hP).seq (VP.assoc (VP.assoc ((unmask_vp h P hP).seq
     ((scanSet_vp h P hP).seq ((scan_vp h P hP (X := Kd h P) fun _ _ hk => hk.2.1).seq
       (VP.assoc ((pos_vp h P hP).seq ((anySet_vp h P hP).seq (tailIte_vp h P hP))))))))))
@@ -81,11 +81,11 @@ theorem fin_of (P : EP) {σ τ t : State} (hv : V2 h P σ τ) (hg : GE h P τ t)
   · rw [ite_eq_right e, ite_eq_right (fun h' => e (g.2 h'))]
 
 /-- The body. -/
-theorem body_vq (P : EP) (c : PdImpl) : VQ (S h P) (verifyBody h.H c.name c.code) (Fin h P) := by
+theorem body_vq (P : EP) (c : PdImpl) : VQ (S h P) (verifyBody h.sh c.name c.code) (Fin h P) := by
   by_cases hP : ∃ σ, In h.D P σ
   swap
   · exact VQ.of_vp (VP.empty fun σ s hs => hP ⟨σ, hs.1⟩)
-  show VQ _ (.seq (.block (verifyChk h.H)) (.seq (.block (params ++ expLen ++ saltFits))
+  show VQ _ (.seq (.block (verifyChk h.sh)) (.seq (.block (params ++ expLen ++ saltFits))
     (.ite .ne (.block [mw .r0 0]) (.seq (.block pubArgs) (.seq (.call c.name c.code) _))))) _
   refine VQ.seq (chk_vp h P) (VQ.seq (par_vp h P) (VQ.ite (fun _ _ _ _ h₁ h₂ => by
       rw [VG.Proof.X25519.Arm.eval_ne, VG.Proof.X25519.Arm.eval_ne, h₁.2.2.2.2.2.2, h₂.2.2.2.2.2.2])

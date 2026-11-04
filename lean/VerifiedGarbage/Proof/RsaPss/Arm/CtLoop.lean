@@ -45,18 +45,11 @@ structure CM (L : Lay) (scr : BitVec 32) (T : Nat) (yv : Nat → Byte) (lb b : N
   st : h.md.stateAt m (sa scr oSt) = h.md.compressList h.ok.iv (ylist yv T) b
   sel : lb < b → h.md.stateAt m (sa scr oSel) = h.md.compressList h.ok.iv (ylist yv T) (lb + 1)
 
-theorem ofNat_shl {x : Nat} (hx : x * h.B < 2 ^ 32) : BitVec.ofNat 32 x <<< lgB h.H = BitVec.ofNat 32 (x * h.B) := by
+theorem ofNat_shl {x : Nat} (hx : x * h.B < 2 ^ 32) : BitVec.ofNat 32 x <<< lgB h.sh = BitVec.ofNat 32 (x * h.B) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, h.pow_lg,
     Nat.mod_eq_of_lt (a := x) (by have := Nat.le_mul_of_pos_right x (show 0 < h.B by have := h.B_ge; omega); omega)]
 
-theorem slot_frame (L : Lay) (m : Mem) (d : Nat) (v : BitVec 32) : Frame [slotR L d] m (m.writeW (L.fr d) v) :=
-  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-
-theorem neg_bit (c : Prop) [Decidable c] : (0 : BitVec 32) - (if c then 1 else 0) = maskOf c := by
-  by_cases hc : c <;> simp [maskOf, hc]
-
-theorem neg_bit' (c : Prop) [Decidable c] : 0#32 - (if c then 1 else 0) = maskOf c := neg_bit c
 
 /-- The compression loop. -/
 theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
@@ -66,7 +59,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     (hsn : ∀ σ m, Inv σ m → m.readW (L.fr sNb) 32 = BitVec.ofNat 32 nbm) :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ (∀ i < nbm * h.B, s.mem (sa scr (oY + i)) = yv σ i) ∧
         h.md.stateAt s.mem (sa scr oSt) = h.ok.iv)
-      (compLoop h.H)
+      (compLoop h.sh)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ h.md.stateAt s.mem (sa scr oSel) =
         h.md.compressList h.ok.iv (ylist (yv σ) (nbm * h.B)) ((ℓ σ + h.L) / h.B + 1)) := by
   have hN := h.N_le
@@ -141,7 +134,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     (((ℓ σ + h.L) / h.B) < b + 1 → h.md.stateAt m (sa scr oSel) = h.md.compressList h.ok.iv (ylist (yv σ) T) (((ℓ σ + h.L) / h.B) + 1))
   have hsub : ∀ rs : List Region, (∀ r ∈ rs, r ∈ loopW h L scr) → ∀ r ∈ rs, Region.Disjoint (sR scr oY T) r :=
     fun rs hs r hr => dY r (hs r hr)
-  show VP _ (.seq (.block (compSet h.H)) (.seq h.H.md.compressBlock (.seq (.block (selSet h.H))
+  show VP _ (.seq (.block (compSet h.sh)) (.seq h.H.md.compressBlock (.seq (.block (selSet h.sh))
     (.seq (countLoop selBody) (.block compNext))))) _
   refine VP.seq (G := fun σ s => CS b σ s ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧ s.gpr .r3 = scr ∧
       s.gpr .r6 = scr + BitVec.ofNat 32 (oY + b * h.B)) ?_
@@ -152,7 +145,7 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     (VP.seq (G := fun σ s => Ctx L scr σ s ∧ X4 σ s.mem) ?_ ?_)))
   · -- The compression's registers.
     refine VP.blk (blkOk rfl) (sp_eq fun _ _ h => h.2.1) fun σ s ⟨_, hc, hi, hm⟩ => ?_
-    have hw : WP isa (.block (compSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    have hw : WP isa (.block (compSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧ t.gpr .r3 = scr ∧
         t.gpr .r6 = scr + BitVec.ofNat 32 (oY + b * h.B) := by
       prun [compSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hm.bi,
@@ -183,13 +176,13 @@ theorem compLoop_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb
     refine VP.blk (blkOk rfl) (sp_eq fun _ _ h => h.1) fun σ s ⟨hc, hx⟩ => ?_
     have l2 : ℓ σ + h.L < 2 ^ 32 := by have := hℓ2 σ; omega_arith
     have e1 : BitVec.ofNat 32 (ℓ σ) + BitVec.ofNat 32 h.L = BitVec.ofNat 32 (ℓ σ + h.L) := BitVec.ofNat_add_ofNat ..
-    have e2 : BitVec.ofNat 32 (ℓ σ + h.L) >>> lgB h.H = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) := by
+    have e2 : BitVec.ofNat 32 (ℓ σ + h.L) >>> lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) := by
       rw [VG.Proof.MdStream.Arm.ofNat_shr l2, h.pow_lg]
-    have e3 : BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) <<< lgB h.H = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B) * h.B) :=
+    have e3 : BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) <<< lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B) * h.B) :=
       ofNat_shl h (by have := Nat.div_mul_le_self (ℓ σ + h.L) h.B; omega_arith)
     have e4 := eqBit (a := b * h.B) (b := ((ℓ σ + h.L) / h.B) * h.B) (by omega_arith)
       (by have := Nat.div_mul_le_self (ℓ σ + h.L) h.B; have := hℓ2 σ; omega_arith)
-    have hw : WP isa (.block (selSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    have hw : WP isa (.block (selSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧ t.gpr .r1 = scr + BitVec.ofNat 32 oSel ∧
         t.gpr .lr = BitVec.ofNat 32 h.N ∧ t.gpr .r2 = maskOf (b * h.B = ((ℓ σ + h.L) / h.B) * h.B) := by
       prun [selSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hx.2.2.1, hsl σ _ hx.1,

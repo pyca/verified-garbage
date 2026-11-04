@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
@@ -267,13 +267,12 @@ import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 import VerifiedGarbage.Proof.Sha256.StateMem
 public meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
@@ -539,8 +538,7 @@ meta import VerifiedGarbage.Proof.Rsa.ZeroTest32
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.RsaPss.Arm.Step

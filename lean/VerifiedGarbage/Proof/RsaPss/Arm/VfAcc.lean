@@ -180,7 +180,7 @@ abbrev U0 (P : EP) (τ s : State) : Prop :=
 /-- `DB = maskedDB ⊕ MGF1(H, dbLen)`, its top bits cleared. -/
 theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧ ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i)
-      (.seq (.seq (mgfXor h.H) (.block topSet)) (.block topAnd)) (U0 h P) := by
+      (.seq (.seq (mgfXor h.sh) (.block topSet)) (.block topAnd)) (U0 h P) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok

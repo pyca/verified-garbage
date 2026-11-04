@@ -102,7 +102,7 @@ abbrev C0 (P : EP) (σ s : State) : Prop :=
     s.gpr .r2 = BitVec.ofNat 32 P.slt ∧ s.gpr .r10 = P.any ∧ s.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧
     s.gpr .r12 = P.B
 
-theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.H)) (C0 h P) := by
+theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.sh)) (C0 h P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm) fun σ s ⟨hi, hs⟩ => ?_
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   obtain ⟨a9, r9, v9⟩ := argAt hi hs (j := 9) (by decide)
@@ -115,14 +115,14 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.H)) (C0 h P) := by
     fun j v hj => Lay.readW_fr_other _ _ _ (by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes sS; split <;> omega_arith) (by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by decide)
-  have hw : WP isa (.block (verifyChk h.H)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
+  have hw : WP isa (.block (verifyChk h.sh)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.gpr .r0 = P.n ∧ t.gpr .r1 = BitVec.ofNat 32 P.K ∧
       t.gpr .r2 = BitVec.ofNat 32 P.slt ∧ t.gpr .r10 = P.any ∧ t.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧
       t.gpr .r12 = P.B := by
     prun [verifyChk, sp0, ld, st, mw, hs.sp, a9, r9, v9, a0, r0, v0, a1, r1, v1, a7, r7, v7, a8, r8, v8,
       k 0 _ (by decide), k 1 _ (by decide), k 7 _ (by decide), k 8 _ (by decide),
       slotAt hi (d := sS) (by decide), hs.inFr (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide), arg_lt,
-      movw_val (show dig h.H + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
+      movw_val (show dig h.sh + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
     exact ⟨rfl, rfl, rfl, rfl, rfl⟩
   refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, t2, t10, t11, t12⟩ => ⟨⟨?_, ?_⟩, hi, t0, t1, t2, t10, t11, t12⟩
   · exact hs.frameW (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide) (by

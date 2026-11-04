@@ -74,7 +74,7 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B
     {msg : State → List Byte} (hfit : ∀ τ, (msg τ).length + 1 + h.L ≤ nbm * h.B) :
     VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
         ∀ i < nbm * h.B, s.mem (sa P.scr (oY + i)) = (msg τ).getD i 0)
-      (.seq (ctHash h.H) (cmpH h.H))
+      (.seq (ctHash h.sh) (cmpH h.sh))
       (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
         s.gpr .r0 = if acc2 h P τ = 0 ∧ HOk h P τ (msg τ) then 1 else 0) := by
   obtain ⟨σ₀, hi₀⟩ := hP
@@ -91,7 +91,7 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B
       slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide)) hk.2.1,
       slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide)) hk.2.2⟩)
     (fun τ m hk => hk.2.1) (fun τ m hk => hk.2.2)).seq ?_
-  show VP _ (.seq (.block (cmpSet h.H)) (.seq Impl.Bignum.Arm.compareBytes (.block result))) _
+  show VP _ (.seq (.block (cmpSet h.sh)) (.seq Impl.Bignum.Arm.compareBytes (.block result))) _
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Kt h P msg nbm τ s.mem ∧
         ∀ i < h.D, s.mem (sa P.scr (oDig + i)) = (h.ok.SH.H.hash (msg τ)).getD i 0) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 oDig ∧ s.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧
@@ -105,12 +105,12 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B
         (fun τ s ⟨⟨hc, hk, hd⟩, r0, r1, lr, r2⟩ => ⟨hc, hk, r0, r1, lr, r2, fun i hi => ?_, fun i hi => ?_⟩)
         fun τ s h' => h')
       (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hr⟩ => ?_))
-  · have hw : WP isa (.block (cmpSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+  · have hw : WP isa (.block (cmpSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 oDig ∧ t.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧
         t.gpr .lr = BitVec.ofNat 32 h.D ∧ t.gpr .r2 = 0 := by
       prun [cmpSet, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.2.1,
         hk.1.2.2.1.2.2.1, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega),
+        movw_val (show 0 < 2 ^ 16 by decide), movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega),
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       rfl
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, r2⟩ =>

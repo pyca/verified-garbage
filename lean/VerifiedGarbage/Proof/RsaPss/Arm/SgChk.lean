@@ -108,7 +108,7 @@ abbrev C0 (P : EP) (σ s : State) : Prop :=
   Ctx (P.lay h.D) P.scr σ s ∧ In h.D P σ ∧ s.gpr .r0 = P.n ∧ s.gpr .r1 = BitVec.ofNat 32 P.K ∧
     s.gpr .r2 = BitVec.ofNat 32 P.sl ∧ s.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧ s.gpr .r12 = P.B
 
-theorem chk_vp (P : EP) : VP (S h P) (.block (signChk h.H)) (C0 h P) := by
+theorem chk_vp (P : EP) : VP (S h P) (.block (signChk h.sh)) (C0 h P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm) fun σ s ⟨hi, hs⟩ => ?_
   have hK := hi.k1024
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
@@ -121,13 +121,13 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (signChk h.H)) (C0 h P) := by
     fun j v hj hj' => Lay.readW_fr_other _ _ _ (by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes sS; split <;> omega_arith) (by
       unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by decide)
-  have hw : WP isa (.block (signChk h.H)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
+  have hw : WP isa (.block (signChk h.sh)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.gpr .r0 = P.n ∧ t.gpr .r1 = BitVec.ofNat 32 P.K ∧
       t.gpr .r2 = BitVec.ofNat 32 P.sl ∧ t.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧ t.gpr .r12 = P.B := by
     prun [signChk, sp0, ld, st, mw, hs.sp, a19, r19, v19, a2, r2, v2, a3, r3, v3, a18, r18, v18,
       k 2 _ (by decide) (by decide), k 3 _ (by decide) (by decide), k 18 _ (by decide) (by decide),
       slotAt hi (d := sS) (by decide), hs.inFr (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide), arg_lt,
-      movw_val (show dig h.H + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
+      movw_val (show dig h.sh + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
     exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, t2, t11, t12⟩ => ⟨⟨?_, ?_⟩, hi, t0, t1, t2, t11, t12⟩
   · exact hs.frameW (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide) (by

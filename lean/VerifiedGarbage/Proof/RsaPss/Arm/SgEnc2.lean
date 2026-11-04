@@ -257,7 +257,7 @@ theorem cpS_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 /-- `H` after `DB`. -/
 theorem putH_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧ EMv P s.mem (emA h P σ))
-      (.seq (.block (putH h.H)) Impl.Bignum.Arm.copyBytes)
+      (.seq (.block (putH h.sh)) Impl.Bignum.Arm.copyBytes)
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧ EMv P s.mem (emB h P σ)) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
@@ -287,12 +287,12 @@ theorem putH_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         m (sa P.scr (oEm + i)) = emA h P σ i) fun σ m m' ⟨hk, ho⟩ hf' => ?_).mono
       (fun σ s ⟨⟨hc, hk, he⟩, r0, r1, lr⟩ => ⟨hc, ⟨hk, fun i hi _ => he i hi⟩, r0, r1, lr, fun i hi => by
         rw [hg.byteAt_scr (by omega_arith)]; exact hk.2 i hi⟩) fun σ s ⟨hc, ⟨hk, ho⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩)
-  · have hw : WP isa (.block (putH h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+  · have hw : WP isa (.block (putH h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧ t.gpr .r1 = P.scr + BitVec.ofNat 32 oDig ∧
         t.gpr .lr = BitVec.ofNat 32 h.D := by
       prun [putH, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.2.1,
         hk.1.2.2.2.2, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+        movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ he⟩, r0, r1, lr⟩
   · rw [hg.addr (by omega_arith)] at hf'
     refine ⟨hk.keep h hg hf' (by omega_arith) (by omega_arith), fun i hi hr => ?_⟩

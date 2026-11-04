@@ -57,4 +57,7 @@ structure PssHash where
   /-- MGF1's message `H ‖ C`, `0x80` and the length field fit one block. -/
   one : H.md.st.D + 5 + H.md.L ≤ H.md.st.B
 
+/-- Its shape, all the code uses of it but its functions. -/
+abbrev PssHash.sh (h : PssHash) : Impl.RsaPss.Arm.Sh := h.H.sh
+
 end VG.Proof.RsaPss.Arm

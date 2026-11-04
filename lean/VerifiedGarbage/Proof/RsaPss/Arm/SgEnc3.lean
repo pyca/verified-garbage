@@ -53,7 +53,7 @@ theorem Hs_length (P : EP) (σ : State) : (Hs h P σ).length = h.D := by
 
 /-- `maskedDB`, before its first byte's top bits are cleared. -/
 theorem mask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧ EMv P s.mem (emC h P σ)) (mgfXor h.H)
+    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧ EMv P s.mem (emC h P σ)) (mgfXor h.sh)
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ko h P σ s.mem ∧
         (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = dbv h P σ i ^^^ (mkS h P σ).getD i 0) ∧
         ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (Hs h P σ).getD i 0) := by
@@ -184,13 +184,13 @@ theorem top_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 
 /-- The encoding, when everything fits. -/
 theorem enc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (E0 h P) (signEnc h.H)
+    VP (E0 h P) (signEnc h.sh)
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ)) := by
-  show VP _ (.seq (yDig h.H 16) (.seq (.block (cpSalt h.H)) (.seq (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes)
-    (.seq (.block (lenSet h.H 18)) (.seq (ctHash h.H) (.seq (.block clrEm) (.seq Impl.Bignum.Arm.maskBytes
+  show VP _ (.seq (yDig h.sh 16) (.seq (.block (cpSalt h.sh)) (.seq (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes)
+    (.seq (.block (lenSet h.sh 18)) (.seq (ctHash h.sh) (.seq (.block clrEm) (.seq Impl.Bignum.Arm.maskBytes
     (.seq (.block saltPos) (.seq (.block put1) (.seq (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes)
-    (.seq (.block (putH h.H)) (.seq Impl.Bignum.Arm.copyBytes (.seq (.block bcSet) (.seq (.block bcPut)
-    (.seq (mgfXor h.H) (.seq (.block topSet) (.block topAnd))))))))))))))))) _
+    (.seq (.block (putH h.sh)) (.seq Impl.Bignum.Arm.copyBytes (.seq (.block bcSet) (.seq (.block bcPut)
+    (.seq (mgfXor h.sh) (.seq (.block topSet) (.block topAnd))))))))))))))))) _
   exact (yDig_sg h P hP).seq (VP.assoc ((salt_vp h P hP).seq ((lenSet_vp h P).seq ((hash_vp h P hP).seq
     (VP.assoc ((clr_vp h P hP).seq (VP.assoc ((one_vp h P hP).seq ((cpS_vp h P hP).seq
     (VP.assoc ((putH_vp h P hP).seq (VP.assoc ((bc_vp h P hP).seq ((mask_vp h P hP).seq (top_vp h P hP)))))))))))))))

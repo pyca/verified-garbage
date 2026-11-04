@@ -41,7 +41,7 @@ abbrev ctW (L : Lay) (scr : BitVec 32) (T : Nat) : List Region :=
 
 /-- The digest of the hash value at `oSel`, to `oDig`. -/
 theorem out_vp (hg : Geo L scr) {X : State → Mem → Prop} :
-    VP (fun σ s => Ctx L scr σ s ∧ X σ s.mem) (outPart h.H)
+    VP (fun σ s => Ctx L scr σ s ∧ X σ s.mem) (outPart h.sh)
       (fun σ s => Ctx L scr σ s ∧ ∃ m₀, X σ m₀ ∧ Frame [sR scr oDig h.N] m₀ s.mem ∧
         s.mem = VG.WriteBytes.writeBytes m₀ (sa scr oDig) (h.md.digest (h.md.stateAt m₀ (sa scr oSel)))) := by
   have hN := h.N_le
@@ -90,7 +90,7 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
     (hsl : ∀ σ m, Inv σ m → m.readW (L.fr sL) 32 = BitVec.ofNat 32 (msg σ).length)
     (hsn : ∀ σ m, Inv σ m → m.readW (L.fr sNb) 32 = BitVec.ofNat 32 nbm) :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ ∀ i < nbm * h.B, s.mem (sa scr (oY + i)) = (msg σ).getD i 0)
-      (ctHash h.H)
+      (ctHash h.sh)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧
         ∀ i < h.D, s.mem (sa scr (oDig + i)) = (h.ok.SH.H.hash (msg σ)).getD i 0) := by
   have hN := h.N_le
@@ -109,7 +109,7 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
   have hq : ∀ σ, ((msg σ).length + h.L) / h.B < nbm := fun σ =>
     (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega)
   have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega
-  show VP _ (.seq (initPart h.H) (.seq (lenPart h.H) (.seq (padPart h.H) (.seq (compLoop h.H) (outPart h.H))))) _
+  show VP _ (.seq (initPart h.sh) (.seq (lenPart h.sh) (.seq (padPart h.sh) (.seq (compLoop h.sh) (outPart h.sh))))) _
   -- the hash value initialized
   refine VP.seq (init_vp h hg (Inv := fun σ m => Inv σ m ∧ ∀ i < nbm * h.B, m (sa scr (oY + i)) = (msg σ).getD i 0)
     fun σ m m' ⟨hi, hy⟩ hf => ⟨hIs _ (by

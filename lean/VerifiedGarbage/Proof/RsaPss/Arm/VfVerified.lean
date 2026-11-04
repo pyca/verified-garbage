@@ -25,7 +25,7 @@ open VG VG.Arm VG.Impl.RsaPss.Arm VG.Proof.RsaPkcs1Sig.Arm VG.Proof.RsaPss.Arm
 variable (h : PssHash)
 
 /-- The code, calling `c`. -/
-abbrev verifyCode (c : PdImpl) : Prog isa := verifyPrecomputed h.H c.name c.code
+abbrev verifyCode (c : PdImpl) : Prog isa := verifyPrecomputed h.sh c.name c.code
 
 theorem entered_state {s : State} (hs : (spec h.G).pre s) :
     S h (ep s) (entered frameBytes s) (entered frameBytes s) := by

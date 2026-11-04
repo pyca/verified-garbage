@@ -28,12 +28,12 @@ open VG.Proof.Rsa.Arm.Recover (VP)
 variable (h : PssHash)
 
 theorem body_vp (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
-    VP (S h P) (signBody h.H (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin h P) := by
+    VP (S h P) (signBody h.sh (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin h P) := by
   by_cases hP : ∃ σ, In h.D P σ
   swap
   · exact VP.empty fun σ s hs => hP ⟨σ, hs.1⟩
-  show VP _ (.seq (.block (signChk h.H)) (.seq (.block (params ++ saltFits)) (.ite .ne signFail
-    (.seq (signEnc h.H) (.seq (.block privArgs) (.call (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v))))))) _
+  show VP _ (.seq (.block (signChk h.sh)) (.seq (.block (params ++ saltFits)) (.ite .ne signFail
+    (.seq (signEnc h.sh) (.seq (.block privArgs) (.call (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v))))))) _
   exact (chk_vp h P).seq ((par_vp h P).seq (VP.ite (fun _ _ _ _ h₁ h₂ => by
       rw [VG.Proof.X25519.Arm.eval_ne, VG.Proof.X25519.Arm.eval_ne, h₁.2.2.2.2.2, h₂.2.2.2.2.2])
     (fail_vp h P) (((enc_vp h P hP).mono (fun σ s ⟨h1, e⟩ => e0_of h h1 e) fun _ _ h => h).seq
@@ -41,7 +41,7 @@ theorem body_vp (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
 
 /-- The code, calling `vg_rsa_private_checked` over `v`. -/
 abbrev signCode (v : Proof.Rsa.Arm.CrtImpl) : Prog isa :=
-  sign h.H (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)
+  sign h.sh (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)
 
 theorem entered_state {s : State} (hs : (spec h.G).pre s) :
     S h (ep s) (entered frameBytes s) (entered frameBytes s) := by

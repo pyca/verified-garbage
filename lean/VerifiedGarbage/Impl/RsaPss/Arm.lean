@@ -60,6 +60,20 @@ structure Hash where
   md : Impl.Pbkdf2.Md.Arm.Hash
   len : List Instr
 
+/-- What the code uses of a hash function: its block size `B`, digest size
+`D`, the size `N` of its hash value and `L` of its length field, and its
+streaming code's length field (`len`). Everything else it reaches through
+the hash function's table of `MdHash`. -/
+structure Sh where
+  B : Nat
+  D : Nat
+  N : Nat
+  L : Nat
+  len : List Instr
+
+/-- A hash function's shape. -/
+abbrev Hash.sh (H : Hash) : Sh := ⟨H.md.st.B, H.md.st.D, H.md.N, H.md.L, H.len⟩
+
 /-- `c₁; c₂; …`. -/
 def seqs : List (Prog isa) → Prog isa
   | [] => .block []
@@ -75,17 +89,17 @@ def frameBytes : Nat := 128
 /-- `scratch`. -/
 def sS : Nat := 64
 /-- `lo = k - emLen`, 0 or 1. -/
-def sLo : Nat := 68
+def sLo : Nat := 84
 /-- The mask `0xFF >> (8 emLen - emBits)` of `maskedDB`'s first byte. -/
-def sC : Nat := 72
+def sC : Nat := 108
 /-- `dbLen = emLen - hLen - 1`. -/
-def sDb : Nat := 76
+def sDb : Nat := 88
 /-- The length `ℓ` of the message `ctHash` hashes. -/
-def sL : Nat := 80
+def sL : Nat := 68
 /-- The number of its blocks `nbm`. -/
-def sNb : Nat := 84
+def sNb : Nat := 72
 /-- The block `ctHash` compresses. -/
-def sBi : Nat := 88
+def sBi : Nat := 76
 /-- MGF1's counter. -/
 def sCtr : Nat := 92
 /-- The bytes of `DB` masked so far. -/
@@ -101,24 +115,24 @@ def sD : Nat := 112
 /-- The shift's passes left (verifying). -/
 def sPc : Nat := 116
 /-- 1 if `any_salt_len` is not zero (verifying). -/
-def sAny : Nat := 120
+def sAny : Nat := 112
 
 /-! ## Our part of `scratch` -/
 
 /-- The compression function's working space. -/
-def oCW : Nat := 0
+def oCW : Nat := 4096
 /-- The streaming state `init` sets: its first `N` bytes are the hash value. -/
-def oSt : Nat := 512
+def oSt : Nat := 4608
 /-- The hash value selected after the last block. -/
-def oSel : Nat := 768
+def oSel : Nat := 4864
 /-- The digest. -/
-def oDig : Nat := 832
+def oDig : Nat := 4928
 /-- A block whose last `L` bytes are the length field, the others zero. -/
-def oLen : Nat := 896
+def oLen : Nat := 4992
 /-- `EM` (signing), or the signature's RSAVP1 (verifying): `k` bytes. -/
-def oEm : Nat := 1024
+def oEm : Nat := 0
 /-- The message hashed by `ctHash`, and its padding: 2048 bytes. -/
-def oY : Nat := 2048
+def oY : Nat := 1024
 /-- Where the RSA operation's working space starts. -/
 def oRsa : Nat := 8192
 
@@ -148,14 +162,14 @@ def atDb (d : Reg) : List Instr := atS d oEm ++ addSlot d sLo
 /-- The loop of `n > 0` iterations of a block ending with `subs lr, lr, #1`. -/
 def countLoop (body : List Instr) : Prog isa := .loop (.block body) .ne
 
-variable (H : Hash)
+variable (H : Sh)
 
 /-- The block size, the digest size, the size of the hash value and of the
 length field. -/
-abbrev blk : Nat := H.md.st.B
-abbrev dig : Nat := H.md.st.D
-abbrev hvN : Nat := H.md.N
-abbrev lenL : Nat := H.md.L
+abbrev blk : Nat := H.B
+abbrev dig : Nat := H.D
+abbrev hvN : Nat := H.N
+abbrev lenL : Nat := H.L
 
 /-- `log₂ B`. -/
 def lgB : Nat := Nat.log2 (blk H)
@@ -219,18 +233,8 @@ def selBody : List Instr :=
 /-- The next block, and the flags of whether it was the last. -/
 def compNext : List Instr := [sp0, ld .r0 sBi, .dp .add .r0 .r0 (.imm 1), st .r0 sBi, ld .r1 sNb, .cmp .r0 (.reg .r1)]
 
-def compBody : Prog isa :=
-  seqs [.block (compSet H), H.md.compressBlock, .block (selSet H),
-    countLoop selBody, .block compNext]
-
-/-- Every block compressed, the last one's hash value selected. -/
-def compLoop : Prog isa := .seq (.block compInit) (.loop (compBody H) .ne)
-
-/-- The digest code's registers: the selected hash value `r0`, the digest `r6`. -/
-def outSet : List Instr := sp0 :: (atS .r0 oSel ++ atS .r6 oDig)
-
-/-- The hash value set to the initial one. -/
-def initPart : Prog isa := .seq (.block initArgs) (.call H.md.st.initN H.md.st.initC)
+/-- The digest's arguments: the selected hash value `r0`, the digest `r1`. -/
+def outSet : List Instr := sp0 :: (atS .r0 oSel ++ atS .r1 oDig)
 
 /-- The block at `oLen`: zeros, then the length field. -/
 def lenPart : Prog isa :=
@@ -239,58 +243,20 @@ def lenPart : Prog isa :=
 /-- The padding of `Y`. -/
 def padPart : Prog isa := .seq (.block (padArgs H)) (countLoop (padBody H))
 
-/-- The digest of the selected hash value. -/
-def outPart : Prog isa := .seq (.block outSet) (.block H.md.out)
-
-/-- The digest of the first `ℓ` bytes of `Y`, padded in `nbm` blocks, to
-`scratch + oDig`, without revealing `ℓ`. -/
-def ctHash : Prog isa := seqs [initPart H, lenPart H, padPart H, compLoop H, outPart H]
-
 /-! ## MGF1 -/
 
 /-- The counter and the bytes masked, zero. -/
 def mgfInit : List Instr := [sp0, mw .r0 0, st .r0 sCtr, st .r0 sDone]
-
-/-- `Y`'s first block, for `maskBytes` with a zero mask. -/
-def mgfClr : List Instr := sp0 :: (atS .r0 oY ++ [mw .r2 0, mw .lr (blk H)])
-
-/-- `H` (at `DB + dbLen`) to `Y`, for `copyBytes`. -/
-def mgfSeed : List Instr := sp0 :: (atS .r0 oY ++ atDb .r1 ++ addSlot .r1 sDb ++ [mw .lr (dig H)])
-
-/-- The counter's place after `H` in `Y` (`r0`) and the counter (`r1`); the
-message's length `hLen + 4` and its one block, for `ctHash`. -/
-def ctrSet : List Instr :=
-  sp0 :: (atS .r0 (oY + dig H) ++ [ld .r1 sCtr, mw .r2 (dig H + 4), st .r2 sL, mw .r2 1, st .r2 sNb])
 
 /-- The counter, big-endian. -/
 def ctrPut : List Instr :=
   [.mov .r2 (.shifted .r1 .lsr 24), .strb .r2 .r0 0, .mov .r2 (.shifted .r1 .lsr 16), .strb .r2 .r0 1,
     .mov .r2 (.shifted .r1 .lsr 8), .strb .r2 .r0 2, .strb .r1 .r0 3]
 
-/-- `DB + done` (`r0`), the digest (`r1`) and `min(hLen, dbLen - done)`
-(`lr`), for `xorBody`. -/
-def xorSet : List Instr :=
-  sp0 :: (atDb .r0 ++ addSlot .r0 sDone ++ atS .r1 oDig ++
-    [ld .r2 sDone, ld .r3 sDb, .dp .sub .r3 .r3 (.reg .r2), mw .r4 (dig H), .dp .sub .r5 .r3 (.reg .r4),
-      .mov .r5 (.shifted .r5 .lsr 31), mw .r6 0, .dp .sub .r5 .r6 (.reg .r5), .dp .eor .r6 .r3 (.reg .r4),
-      .dp .and .r6 .r6 (.reg .r5), .dp .eor .lr .r4 (.reg .r6)])
-
 /-- A byte of the digest XORed into `DB`. -/
 def xorBody : List Instr :=
   [.ldrb .r2 .r0 0, .ldrb .r3 .r1 0, .dp .eor .r2 .r2 (.reg .r3), .strb .r2 .r0 0, .dp .add .r0 .r0 (.imm 1),
     .dp .add .r1 .r1 (.imm 1), .subs .lr .lr (.imm 1)]
-
-/-- The next counter, and the flags of `done ≥ dbLen`. -/
-def mgfNext : List Instr :=
-  [sp0, ld .r0 sCtr, .dp .add .r0 .r0 (.imm 1), st .r0 sCtr, ld .r0 sDone, mw .r1 (dig H), .dp .add .r0 .r0 (.reg .r1),
-    st .r0 sDone, ld .r1 sDb, .dp .sub .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .cmp .r0 (.imm 0)]
-
-def mgfBody : Prog isa :=
-  seqs [.block (mgfClr H), maskBytes, .block (mgfSeed H), copyBytes, .block (ctrSet H), .block ctrPut, ctHash H,
-    .block (xorSet H), countLoop xorBody, .block (mgfNext H)]
-
-/-- `DB ⊕= MGF1(H, dbLen)`. -/
-def mgfXor : Prog isa := .seq (.block mgfInit) (.loop (mgfBody H) .ne)
 
 /-- `DB`'s first byte, and the mask `sC`. -/
 def topSet : List Instr := sp0 :: (atDb .r0 ++ [ld .r1 sC])
@@ -342,23 +308,23 @@ def yDig (j : Nat) : Prog isa := seqs [.block clrY, maskBytes, .block (cpDig H j
 /-! ## Signing
 
 `sign(out = r0, out_len = r1, n = r2, n_len = r3, e, e_len, p, p_len, q,
-q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, salt, salt_len,
-scratch, scratch_len)`, the last seventeen on the stack: argument `j` is at
-`argOff frameBytes j` in the inner frame. -/
+q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt,
+salt_len, scratch, scratch_len, hash, mgf1)`, the last twenty on the stack:
+argument `j` is at `argOff frameBytes j` in the inner frame. -/
 
 /-- Argument `j`'s place. -/
 abbrev arg (j : Nat) : Nat := argOff frameBytes j
 
 /-- `scratch` to its slot; `n`, `k`, `salt_len` and `hLen + 1` for `params`. -/
 def signChk : List Instr :=
-  [sp0, ld .r0 (arg 19), st .r0 sS, ld .r0 (arg 2), ld .r1 (arg 3), ld .r2 (arg 18), mw .r11 (dig H + 1)]
+  [sp0, ld .r0 (arg 20), st .r0 sS, ld .r0 (arg 2), ld .r1 (arg 3), ld .r2 (arg 19), mw .r11 (dig H + 1)]
 
 /-- Zeros to `out`, for `maskBytes`, and 0 returned. -/
 def signFail : Prog isa :=
   seqs [.block [sp0, ld .r0 (arg 0), ld .lr (arg 3), mw .r2 0], maskBytes, .block [mw .r0 0]]
 
 /-- The salt after `mHash` in `Y`, if it is not empty. -/
-def cpSalt : List Instr := sp0 :: (atS .r0 (oY + 8 + dig H) ++ [ld .r1 (arg 17), ld .lr (arg 18), .cmp .lr (.imm 0)])
+def cpSalt : List Instr := sp0 :: (atS .r0 (oY + 8 + dig H) ++ [ld .r1 (arg 18), ld .lr (arg 19), .cmp .lr (.imm 0)])
 
 /-- `EM`'s `k` bytes, for `maskBytes` with a zero mask. -/
 def clrEm : List Instr := sp0 :: (atS .r0 oEm ++ [mw .r2 0, ld .lr (arg 3)])
@@ -366,7 +332,7 @@ def clrEm : List Instr := sp0 :: (atS .r0 oEm ++ [mw .r2 0, ld .lr (arg 3)])
 /-- `DB + dbLen - sLen - 1` (`r0`), the salt (`r1`) and its length (`lr`). -/
 def saltPos : List Instr :=
   sp0 :: (atDb .r0 ++ addSlot .r0 sDb ++
-    [ld .r1 (arg 18), .dp .sub .r0 .r0 (.reg .r1), .dp .sub .r0 .r0 (.imm 1), ld .r1 (arg 17), ld .lr (arg 18)])
+    [ld .r1 (arg 19), .dp .sub .r0 .r0 (.reg .r1), .dp .sub .r0 .r0 (.imm 1), ld .r1 (arg 18), ld .lr (arg 19)])
 
 /-- `0x01`, then `r0` after it; the flags of an empty salt. -/
 def put1 : List Instr := [mw .r2 1, .strb .r2 .r0 0, .dp .add .r0 .r0 (.imm 1), .cmp .lr (.imm 0)]
@@ -388,36 +354,19 @@ def copyArg (j i : Nat) : List Instr := [ld .r0 (arg j), st .r0 (4 * i)]
 def privArgs : List Instr :=
   [sp0] ++ copyArg 4 0 ++ copyArg 5 1 ++ atS .r0 oEm ++ [st .r0 8] ++ copyArg 3 3 ++ copyArg 6 4 ++
     copyArg 7 5 ++ copyArg 8 6 ++ copyArg 9 7 ++ copyArg 10 8 ++ copyArg 7 9 ++ copyArg 12 10 ++
-    copyArg 9 11 ++ copyArg 14 12 ++ copyArg 7 13 ++ atS .r0 oRsa ++ [st .r0 56, ld .r0 (arg 20), mw .r1 1024,
+    copyArg 9 11 ++ copyArg 14 12 ++ copyArg 7 13 ++ atS .r0 oRsa ++ [st .r0 56, ld .r0 (arg 21), mw .r1 1024,
     .dp .sub .r0 .r0 (.reg .r1), st .r0 60, ld .r0 (arg 0), ld .r1 (arg 3), ld .r2 (arg 2), ld .r3 (arg 3)]
-
-/-- After the checks: `EM` at `scratch + oEm`. -/
-def signEnc : Prog isa :=
-  seqs [yDig H 16, .block (cpSalt H), .ite .eq (.block []) copyBytes, .block (lenSet H 18), ctHash H,
-    .block clrEm, maskBytes, .block saltPos, .block put1, .ite .eq (.block []) copyBytes, .block (putH H), copyBytes,
-    .block bcSet, .block bcPut, mgfXor H, .block topSet, .block topAnd]
-
-variable (privN : String) (privC : Prog isa)
-
-/-- The inner frame's body. -/
-def signBody : Prog isa :=
-  seqs [.block (signChk H), .block (params ++ saltFits),
-    .ite .ne signFail (seqs [signEnc H, .block privArgs, .call privN privC])]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`, calling a checked private operation by
-its name. -/
-def sign : Prog isa := wrap frameBytes (signBody H privN privC)
 
 /-! ## Verifying
 
-`verifyPrecomputed(n = r0, n_len = r1, e = r2, e_len = r3, digest, sig,
-sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len)`, the
-last nine on the stack. -/
+`verifyPrecomputed(n = r0, n_len = r1, e = r2, e_len = r3, digest,
+digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre,
+pre_len, hash, mgf1)`, the last twelve on the stack. -/
 
 /-- `scratch` to its slot; `n`, `k`, `salt_len`, `any_salt_len` and
 `hLen + 1` for the checks. -/
 def verifyChk : List Instr :=
-  [sp0, ld .r0 (arg 9), st .r0 sS, ld .r0 (arg 0), ld .r1 (arg 1), ld .r2 (arg 7), ld .r10 (arg 8),
+  [sp0, ld .r0 (arg 10), st .r0 sS, ld .r0 (arg 0), ld .r1 (arg 1), ld .r2 (arg 8), ld .r10 (arg 9),
     mw .r11 (dig H + 1)]
 
 /-- `sAny := [any_salt_len ≠ 0]` and `r2 :=` the expected salt length,
@@ -430,9 +379,9 @@ def expLen : List Instr :=
 bytes), `pre` (`pre_len` words), `e`, the signature (`k` bytes), and the rest
 of `scratch`. -/
 def pubArgs : List Instr :=
-  [sp0] ++ copyArg 2 0 ++ copyArg 3 1 ++ copyArg 5 2 ++ copyArg 1 3 ++ atS .r0 oRsa ++
-    [st .r0 16, ld .r0 (arg 10), mw .r1 1024, .dp .sub .r0 .r0 (.reg .r1), st .r0 20] ++ atS .r0 oEm ++
-    [ld .r1 (arg 1), ld .r2 (arg 11), ld .r3 (arg 12)]
+  [sp0] ++ copyArg 2 0 ++ copyArg 3 1 ++ copyArg 6 2 ++ copyArg 1 3 ++ atS .r0 oRsa ++
+    [st .r0 16, ld .r0 (arg 11), mw .r1 1024, .dp .sub .r0 .r0 (.reg .r1), st .r0 20] ++ atS .r0 oEm ++
+    [ld .r1 (arg 1), ld .r2 (arg 12), ld .r3 (arg 13)]
 
 /-- `EM` (`r0`), its last byte (`r7`), `DB` (`r6`), `lo` (`r4`) and `c` (`r5`). -/
 def accSet : List Instr :=
@@ -461,7 +410,7 @@ def scanBody : List Instr :=
     .dp .add .r0 .r0 (.imm 1), .dp .add .r1 .r1 (.imm 1), .subs .lr .lr (.imm 1)]
 
 /-- `acc` (`r1`), `dbLen` (`r2`), `salt_len` (`r3`) and `[any_salt_len ≠ 0]` (`r8`). -/
-def posSet : List Instr := [sp0, ld .r1 sAcc, ld .r2 sDb, ld .r3 (arg 7), ld .r8 sAny]
+def posSet : List Instr := [sp0, ld .r1 sAcc, ld .r2 sDb, ld .r3 (arg 8), ld .r8 sAny]
 
 /-- `acc |= (val ⊕ 1) | notFound`, `pos` to its slot, and, if a salt length
 is expected, `acc |= sLen ⊕ (dbLen - pos - 1)`. -/
@@ -476,7 +425,7 @@ def anySet : List Instr := [sp0, ld .r0 sAny, .cmp .r0 (.imm 0)]
 /-- The last `salt_len` bytes of `DB` after `mHash` in `Y`, if there are any. -/
 def fxSalt : List Instr :=
   sp0 :: (atS .r0 (oY + 8 + dig H) ++ atDb .r1 ++ addSlot .r1 sDb ++
-    [ld .r2 (arg 7), .dp .sub .r1 .r1 (.reg .r2), ld .lr (arg 7), .cmp .lr (.imm 0)])
+    [ld .r2 (arg 8), .dp .sub .r1 .r1 (.reg .r2), ld .lr (arg 8), .cmp .lr (.imm 0)])
 
 /-- `DB` after `mHash` in `Y`, for `copyBytes`. -/
 def cpDb : List Instr := sp0 :: (atS .r0 (oY + 8 + dig H) ++ atDb .r1 ++ [ld .lr sDb])
@@ -528,31 +477,5 @@ def result : List Instr :=
 
 /-- The hash of `M'` compared with `H`, and the result. -/
 def cmpH : Prog isa := seqs [.block (cmpSet H), compareBytes, .block result]
-
-/-- A salt of the expected length: copied from the end of `DB`. -/
-def fixedPath : Prog isa :=
-  seqs [yDig H 4, .block (fxSalt H), .ite .eq (.block []) copyBytes, .block (lenSet H 7), ctHash H, cmpH H]
-
-/-- A salt of any length: `DB` shifted into place, hashed over the blocks of
-the longest salt. -/
-def anyPath : Prog isa :=
-  seqs [yDig H 4, .block (cpDb H), copyBytes, shift H, .block (anyLen H), ctHash H, cmpH H]
-
-variable (pubN : String) (pubC : Prog isa)
-
-/-- After the public checks. -/
-def verifyMain : Prog isa :=
-  seqs [.block pubArgs, .call pubN pubC, .block accSet, .block acc0, mgfXor H, .block topSet, .block topAnd,
-    .block scanSet, countLoop scanBody, .block posSet, .block posChk, .block anySet,
-    .ite .eq (fixedPath H) (anyPath H)]
-
-/-- The inner frame's body. -/
-def verifyBody : Prog isa :=
-  seqs [.block (verifyChk H), .block (params ++ expLen ++ saltFits),
-    .ite .ne (.block [mw .r0 0]) (verifyMain H pubN pubC)]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling a precomputed
-public operation by its name. -/
-def verifyPrecomputed : Prog isa := wrap frameBytes (verifyBody H pubN pubC)
 
 end VG.Impl.RsaPss.Arm
