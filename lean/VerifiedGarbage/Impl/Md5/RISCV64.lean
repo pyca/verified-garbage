@@ -18,12 +18,13 @@ accesses:
 * The words of a block (little-endian) and of the MD buffer (`state`, an
   array of `u32`) are in argument buffers, whose alignment the contract
   does not state, so they are read and written a byte at a time
-  (`Impl/Words/RISCV64.lean`): each operation loads its word `X[k]` from
-  the block. `scratch` is not used.
+  (`Impl/Words/RISCV64.lean`). Each block's 16 words are decoded once into
+  `scratch` (an array of `u64`, so 8-byte aligned), from which each
+  operation loads its word `X[k]` with one `lw`.
 * `¬d` is `xori d, -1`; a rotation left by `s` is `slliw` by `s` and
   `srliw` by `32 - s`, combined by `or`.
 * Only temporaries are used, so nothing is saved.
-* `a0`–`a2` (the pointers and the block count) are public; no address and
+* `a0`–`a3` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
 
@@ -43,7 +44,7 @@ def var (t k : Nat) : Reg := work.getD ((k + 4 - t % 4) % 4) .t0
 
 /-- Temporaries: `T0` holds the auxiliary function's terms and the rotated
 bits, `T1` the word `X[k]` and then the constant `T[t+1]`, `T2` the bytes
-of `X[k]`. -/
+of the block's words as they are decoded. -/
 def T0 : Reg := .t4
 def T1 : Reg := .t5
 def T2 : Reg := .t6

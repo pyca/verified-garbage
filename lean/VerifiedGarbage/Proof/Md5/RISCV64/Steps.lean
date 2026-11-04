@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 Untrusted: everything here is checked by Lean. The structure of the PPC64LE
 proof (`Proof/Md5/PPC64LE/Compress.lean`): each operation is the auxiliary
 function of its round, symbolically executed once per round (`fn_ok`),
-between the loads and additions before it (`head_ok`) and the rotation and
+between the load of `X[k]` from `scratch` and the additions before it (`head_ok`) and the rotation and
 addition after it (`tail_ok`), each symbolically executed once for all
 operations. The words are the low 32 bits of the registers (`Vars`).
 -/
@@ -107,7 +107,7 @@ theorem fn_ok (r : Nat) (hr : r < 4) (a b c d : Reg) (ha : a ≠ T0) (hb : b ≠
 
 /-- The instructions of an operation before the auxiliary function. -/
 def headI (a : Reg) (k : Nat) (T : Word) : List Instr :=
-  loadLE32 T1 T2 .a1 (4 * k) ++ (.add a a T1 :: li32 T1 T ++ [.add a a T1])
+  .load .w T1 .a3 (4 * k) :: .add a a T1 :: (li32 T1 T ++ [.add a a T1])
 
 /-- The instructions of an operation after the auxiliary function. -/
 def tailI (a b : Reg) (n : Nat) : List Instr :=
@@ -119,25 +119,30 @@ theorem step_split (t : Nat) :
       tailI (var t 0) (var t 1) (Proof.Md5.rot t)) := by
   simp only [step, headI, tailI, List.append_assoc, List.cons_append]; rfl
 
-theorem head_ok (a : Reg) (k : Nat) (hk : k < 16) (T : Word) (ha₁ : a ≠ T1) (ha₂ : a ≠ T2)
-    (s : State) (va x : Word) (bp : Addr) (h₁ : (s.gpr a).setWidth 32 = va)
-    (hr1 : s.gpr .a1 = bp) (hin : InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (4 * k)) 4)
-    (hx : s.mem.readW (bp + BitVec.ofNat 64 (4 * k)) 32 = x) :
+/-- With `scratch` 8-byte aligned, its words are naturally aligned. -/
+theorem word_al {scr : Addr} (hal : scr.toNat % 8 = 0) {k : Nat} (hk : k < 16) :
+    (scr + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * k) (by omega)]
+  have := scr.isLt
+  omega
+
+theorem head_ok (a : Reg) (k : Nat) (hk : k < 16) (T : Word) (ha₁ : a ≠ T1)
+    (s : State) (va x : Word) (scr : Addr) (h₁ : (s.gpr a).setWidth 32 = va)
+    (hr3 : s.gpr .a3 = scr) (hal : scr.toNat % 8 = 0)
+    (hin : InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 (4 * k)) 4)
+    (hx : s.mem.readW (scr + BitVec.ofNat 64 (4 * k)) 32 = x) :
     WP isa (.block (headI a k T)) s fun s' =>
       (s'.gpr a).setWidth 32 = va + x + T ∧
       (∀ r, r ≠ a → r ≠ T1 → r ≠ T2 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  unfold headI
-  rw [WP.block_append_iff]
-  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega) (by rw [hr1]; exact hin))
-    fun s₁ e => ?_
-  subst e
   apply WP.of_runBlock
-  simp only [li32, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
-    exec_add, exec_lui, exec_addiw_lo12, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-    RegUpd.wr_write, ha₁, ha₂, ↓reduceIte, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, fun r hr hr' hr'' => by simp [hr, hr', hr''], trivial, trivial, trivial⟩
-  simp only [lo32_add, lo32_ext, lo32_sext, li32_val, h₁, hx, hr1]
+  simp only [headI, li32, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+    runBlock_nil, exec_load_w (s := s) (show 4 * k < 2048 by omega) (by rw [hr3]; exact word_al hal hk)
+      (by rw [hr3]; exact hin), exec_add, exec_lui, exec_addiw_lo12, RegUpd.gpr_write,
+    RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, ha₁, ↓reduceIte, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨?_, fun r hr hr' _ => by simp [hr, hr'], trivial, trivial, trivial⟩
+  simp only [lo32_add, lo32_ext, lo32_sext, li32_val, h₁, hx, hr3]
 
 theorem tail_ok (a b : Reg) (n : Nat) (hn0 : 0 < n) (hn : n < 32) (hab : a ≠ b) (ha : a ≠ T0) (hb : b ≠ T0)
     (s : State) (va vb : Word) (h₁ : (s.gpr a).setWidth 32 = va) (h₂ : (s.gpr b).setWidth 32 = vb) :
@@ -160,10 +165,10 @@ theorem tail_ok (a b : Reg) (n : Nat) (hn0 : 0 < n) (hn : n < 32) (hab : a ≠ b
 
 /-- The operation is symbolically executed once per round for the auxiliary
 function and once for the rest, for any registers `a … d`. -/
-theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) (bp : Addr)
-    (hv : Vars t s v) (hr1 : s.gpr .a1 = bp)
-    (hin : ∀ k < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (4 * k)) 4)
-    (hX : ∀ k (hk : k < 16), s.mem.readW (bp + BitVec.ofNat 64 (4 * k)) 32 = X ⟨k, hk⟩) :
+theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) (scr : Addr)
+    (hv : Vars t s v) (hr3 : s.gpr .a3 = scr) (hal : scr.toNat % 8 = 0)
+    (hin : ∀ k < 16, InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 (4 * k)) 4)
+    (hX : ∀ k (hk : k < 16), s.mem.readW (scr + BitVec.ofNat 64 (4 * k)) 32 = X ⟨k, hk⟩) :
     WP isa (.block (step t)) s fun s' =>
       Vars (t + 1) s' (Spec.Md5.step X v t) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
@@ -171,8 +176,8 @@ theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) 
   have hk := Proof.Md5.ks_lt t ht
   have hr := Proof.Md5.rot_range t ht
   rw [step_split, WP.block_append_iff]
-  refine WP.mono (head_ok (var t 0) (ks.getD t 0) hk (Ts.getD t 0) (var_ne_T1 t 0) (var_ne_T2 t 0)
-    s v[0] (X ⟨ks.getD t 0, hk⟩) bp h0 hr1 (hin _ hk) (hX _ hk)) fun s₁ ⟨a₁, e₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (head_ok (var t 0) (ks.getD t 0) hk (Ts.getD t 0) (var_ne_T1 t 0)
+    s v[0] (X ⟨ks.getD t 0, hk⟩) scr h0 hr3 hal (hin _ hk) (hX _ hk)) fun s₁ ⟨a₁, e₁, m₁, rd₁, wr₁⟩ => ?_
   have e : ∀ k, 0 < k → k < 4 → s₁.gpr (var t k) = s.gpr (var t k) := fun k h0 h4 =>
     e₁ _ (var_ne t h4 (by omega) (by omega)) (var_ne_T1 t k) (var_ne_T2 t k)
   rw [WP.block_append_iff]
@@ -213,9 +218,10 @@ structure RInv (H : HashValue) (X : Block) (sB : State) (t : Nat) (s : State) : 
   wr : s.wr = sB.wr
   mem : s.mem = sB.mem
 
-theorem steps_ok (H : HashValue) (X : Block) (bp : Addr) (sB : State) (hr1 : sB.gpr .a1 = bp)
-    (hin : ∀ k < 16, InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofNat 64 (4 * k)) 4)
-    (hX : ∀ k (hk : k < 16), sB.mem.readW (bp + BitVec.ofNat 64 (4 * k)) 32 = X ⟨k, hk⟩)
+theorem steps_ok (H : HashValue) (X : Block) (scr : Addr) (sB : State) (hr3 : sB.gpr .a3 = scr)
+    (hal : scr.toNat % 8 = 0)
+    (hin : ∀ k < 16, InRegions (sB.rd ++ sB.wr) (scr + BitVec.ofNat 64 (4 * k)) 4)
+    (hX : ∀ k (hk : k < 16), sB.mem.readW (scr + BitVec.ofNat 64 (4 * k)) 32 = X ⟨k, hk⟩)
     (h0 : Vars 0 sB H) :
     ∀ t ≤ 64, WP isa (steps t) sB (RInv H X sB t) := by
   intro t ht
@@ -223,8 +229,8 @@ theorem steps_ok (H : HashValue) (X : Block) (bp : Addr) (sB : State) (hr1 : sB.
   | zero => exact WP.block_nil (M := isa) ⟨h0, fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ t ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
-    have hs_r1 : s.gpr .a1 = bp := (hs.pub .a1 (by decide)).trans hr1
-    refine WP.mono (step_ok t (by omega) s _ X bp hs.vars hs_r1
+    have hs_r3 : s.gpr .a3 = scr := (hs.pub .a3 (by decide)).trans hr3
+    refine WP.mono (step_ok t (by omega) s _ X scr hs.vars hs_r3 hal
       (by rw [hs.rd, hs.wr]; exact hin) (by rw [hs.mem]; exact hX)) fun s' ⟨hv, hm, hrd, hwr, hp⟩ => ?_
     refine ⟨?_, fun r hr => by rw [hp r hr, hs.pub r hr], by rw [hrd, hs.rd], by rw [hwr, hs.wr],
       by rw [hm, hs.mem]⟩
