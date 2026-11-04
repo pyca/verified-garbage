@@ -5,8 +5,11 @@ public import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 public import VerifiedGarbage.Proof.RsaKeyGen.SearchFrame
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+public import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 
 /-! # The search's public data and its loop states (RISCV64)
@@ -14,7 +17,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 As on AArch64 (`Proof/RsaKeyGen/AArch64/Search/Data.lean`): the search keeps
 its working state in the 20 words at `sp - 160` (`SearchPublic.F`) of the
 frame it allocates, with their base in `s0`; the loop runs below it, in the
-frame saving the link register.
+16-byte frame saving `ra`.
 -/
 
 @[expose] public section
@@ -233,6 +236,53 @@ end SearchInput
 theorem frame_of_callChanges (s : State) {m m' : Mem} (hf : Frame (SearchInput.callChanges s) m m') :
     Frame (SearchInput.changes s) m m' := hf.sub (SearchInput.callChanges_sub s)
 
+/-! ## What straight-line code keeps -/
+
+/-- The registers but `rs`, the permissions and the stack pointer keep their
+values. -/
+structure KeepS (rs : List Reg) (s s' : State) : Prop where
+  gpr : ∀ r, r ∉ rs → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+
+namespace KeepS
+
+theorem refl (rs : List Reg) (s : State) : KeepS rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
+theorem trans {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : KeepS rs s₁ s₂) (h₂ : KeepS rs' s₂ s₃) :
+    KeepS (rs ++ rs') s₁ s₃ :=
+  ⟨fun r hr => by
+    rw [List.mem_append, not_or] at hr
+    rw [h₂.gpr r hr.2, h₁.gpr r hr.1], h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
+
+theorem mono {rs rs' : List Reg} {s s' : State} (h : KeepS rs s s')
+    (hr : ∀ r ∈ rs, r ∈ rs' := by decide) : KeepS rs' s s' :=
+  ⟨fun r hn => h.gpr r fun h' => hn (hr r h'), h.rd, h.wr, h.sp⟩
+
+theorem trans' {rs : List Reg} {s₁ s₂ s₃ : State} (h₁ : KeepS rs s₁ s₂) (h₂ : KeepS rs s₂ s₃) :
+    KeepS rs s₁ s₃ :=
+  ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
+
+theorem mem (s : State) (m : Mem) : KeepS [] s { s with mem := m } := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
+theorem write (s : State) (r : Reg) (v : BitVec 64) : KeepS [r] s (s.write r v) :=
+  ⟨fun r' hr => RegUpd.gpr_write_of_ne s v (by simpa using hr), rfl, rfl, rfl⟩
+
+end KeepS
+
+/-- `WP.keep`, with the stack pointer. -/
+theorem WP.keep' {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
+    (hc : writesOnly rs c = true) (hn : callFree c = true := by decide +kernel) :
+    WP isa c s fun s' => Q s' ∧ KeepS rs s s' :=
+  WP.mono (WP.rdwr (WP.keep rs h hc hn)) fun _ ⟨⟨hq, k⟩, _, _, hsp⟩ => ⟨hq, ⟨fun _ hr => k.gpr hr, k.2.1, k.2.2, hsp⟩⟩
+
+/-- `WP.keep'`, with the addresses of statics kept. -/
+theorem WP.keepS {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
+    (hc : writesOnly rs c = true) (hn : callFree c = true := by decide +kernel) :
+    WP isa c s fun s' => (Q s' ∧ KeepS rs s s') ∧ s'.syms = s.syms :=
+  VG.RISCV64.WP.mono_syms (WP.keep' rs h hc hn) fun _ h hy => ⟨h, hy⟩
+
 /-! ## The loop states -/
 
 /-- A state of the loop, in the frame saving `ra`: `used`
@@ -283,10 +333,10 @@ theorem restore (h : SearchLive p original used remaining s)
     exact (hc e.1 (headers_index he)).trans (h.headers e he)
 
 theorem keep (h : SearchLive p original used remaining s) {rs : List Reg}
-    (kp : Keep rs s t) (hsp : t.sp = s.sp) (hm : t.mem = s.mem) (hy : t.syms = s.syms)
+    (kp : KeepS rs s t) (hm : t.mem = s.mem) (hy : t.syms = s.syms)
     (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
     SearchLive p original used remaining t := by
-  apply h.restore kp.2.1 kp.2.2 hsp hy (fun reg hr => kp.gpr (hregs reg hr))
+  apply h.restore kp.rd kp.wr kp.sp hy (fun reg hr => kp.gpr reg (hregs reg hr))
   rw [hm]
   exact Frame.refl _ _
 
@@ -306,12 +356,12 @@ theorem update (h : SearchLive p original used remaining s) {u k : Nat}
     (values : List (Nat × BitVec 64)) (hb : ∀ e ∈ values, e.1 < 20)
     (h4 : ∀ e ∈ values, 4 ≠ e.1)
     (hm : t.mem = writeFrame s.mem p.F values) (hy : t.syms = s.syms)
-    {rs : List Reg} (kp : Keep rs s t) (hsp : t.sp = s.sp) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide)
+    {rs : List Reg} (kp : KeepS rs s t) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide)
     (hh : Slots t.mem p.F (p.headers u k)) : SearchLive p original u k t := by
   have hf : Frame (SearchInput.changes original) s.mem t.mem := by
     rw [hm]; exact h.frame_of_writeFrame values hb
-  have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr (hregs r hr)
-  refine ⟨h.input, hu, hk, kp.2.1.trans h.rd, kp.2.2.trans h.wr, hsp.trans h.sp,
+  have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr r (hregs r hr)
+  refine ⟨h.input, hu, hk, kp.rd.trans h.rd, kp.wr.trans h.wr, kp.sp.trans h.sp,
     (hg .s0 (by decide)).trans h.s0,
     fun reg hreg h31 => (hg reg hreg).trans (h.saved reg hreg h31), hy.trans h.syms, ?_, ?_, ?_, ?_,
     h.tab.trans hf, hh⟩
