@@ -79,6 +79,32 @@ structure TabM {H : Hash} {hH : HashOK H} (M : MdL H hH) (dN : String) (f : MdFn
   mem : TabMemM H M.compN dN s.syms p s.mem
   ok : TabOKM H M.compN M.compC dN (digest M.out) f s.syms
 
+/-- `TabM` of a state with `s`'s stack pointer, regions, statics' addresses
+and working space, and memory as `s`'s apart from regions disjoint from the
+stack argument and the table. -/
+theorem TabM.transfer {H : Hash} {hH : HashOK H} {M : MdL H hH} {dN : String} {f : MdFns} {j : Nat}
+    {S S' : State → Addr} {s s' : State} {p : Addr} (T : TabM M dN f j S s p) (hsp : s'.sp = s.sp)
+    (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms) (hS : SC S' s' = SC S s) {rs : List Region}
+    (hm : Frame rs s.mem s'.mem) (ha : ∀ r ∈ rs, Region.Disjoint ⟨stackArgAddr s j, 8⟩ r)
+    (ht : ∀ k < 5, ∀ r ∈ rs, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ r) : TabM M dN f j S' s' p := by
+  have eA : stackArgAddr s' j = stackArgAddr s j := by simp only [stackArgAddr, hsp]
+  have eK : kR s' = kR s := by simp only [kR, hsp]
+  have rd : ∀ k < 5, s'.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 :=
+    fun k hk => hm.readW (w := 64) (Region.contains_self _ _) (ht k hk) (by decide)
+  obtain ⟨m0, m1, m2, m3, m4⟩ := T.mem
+  have r0 := rd 0 (by decide)
+  rw [show p + BitVec.ofNat 64 (8 * 0) = p by simp] at r0
+  refine ⟨T.jo, ?_, by rw [eA]; exact T.argA, by rw [hrd, eA]; exact T.argR, by rw [eA, eK]; exact T.argK,
+    by rw [eA, hS]; exact T.argS, T.pA, T.pw, fun k hk => by rw [hrd]; exact T.tR k hk,
+    fun k hk => by rw [eK]; exact T.tK k hk, fun k hk => by rw [hS]; exact T.tS k hk, ⟨?_, ?_, ?_, ?_, ?_⟩,
+    by rw [hsy]; exact T.ok⟩
+  · rw [eA, hm.readW (w := 64) (Region.contains_self _ _) ha (by decide)]; exact T.arg
+  · rw [hsy, r0]; exact m0
+  · rw [hsy, rd 1 (by decide)]; exact m1
+  · rw [hsy, rd 2 (by decide)]; exact m2
+  · rw [hsy, rd 3 (by decide)]; exact m3
+  · rw [hsy, rd 4 (by decide)]; exact m4
+
 section
 variable {H : Hash} {hH : HashOK H} {M : MdL H hH} {dN : String} {f : MdFns} {j : Nat} {S : State → Addr}
   {vf : State → Reg → BitVec 64} {s : State} {p : Addr} (T : TabM M dN f j S s p)

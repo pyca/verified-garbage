@@ -3,6 +3,7 @@ module
 -- separate module: it builds in parallel with `Unmask`, `Scan` and `Finish`, which `Post` also needs.
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -85,14 +86,14 @@ theorem check_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) {a : Byte} {p
     (ha : view t.mem (Sp s) ((s.gpr .a1).toNat - 1) = a) (h8 : t.gpr .a5 = BitVec.ofNat 64 pos) (hp : pos < dN)
     (h9 : t.gpr .a6 = val) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base Sp (vP D) s t' → Xs s t' → t'.mem = t.mem → Only [.t1, .s10, .t2, .a6, .s11, .s8] t t' →
-      t'.gpr .s10 = accW a val (dN - pos - 1) (anyL s) (stackArg s 0) →
+      t'.syms = t.syms → t'.gpr .s10 = accW a val (dN - pos - 1) (anyL s) (stackArg s 0) →
       t'.gpr .s11 = BitVec.ofNat 64 (dN - pos - 1) → t'.gpr .s8 = BitVec.ofNat 64 pos → WP isa rest t' Q) :
     WP isa (.seq (.block posCheck) (.seq lenCheck rest)) t Q :=
-  WP.seq (WP.mono (posCheck_ok L h ha h8 hp h9) fun t₈ ⟨b₈, k₈, x24, x25, x8⟩ =>
+  WP.seq (WP.mono_syms (posCheck_ok L h ha h8 hp h9) fun t₈ ⟨b₈, k₈, x24, x25, x8⟩ y₈ =>
     have x₈ : Xs s t₈ := x.of fun r hr => k₈.gpr r (by revert r; decide)
-    WP.seq (WP.mono (lenCheck_ok L b₈ x₈ x24 x25) fun w ⟨b, q, e⟩ =>
+    WP.seq (WP.mono_syms (lenCheck_ok L b₈ x₈ x24 x25) fun w ⟨b, q, e⟩ yw =>
       k w b (x₈.of fun r hr => q.gpr r (by revert r; decide)) (by rw [q.mem, k₈.mem]) (k₈.trans q).mono
-      (by rw [e]; rfl) (by rw [q.get .s11, x25]) (by rw [q.get .s8, x8])))
+      (yw.trans y₈) (by rw [e]; rfl) (by rw [q.get .s11, x25]) (by rw [q.get .s8, x8])))
 
 end
 
