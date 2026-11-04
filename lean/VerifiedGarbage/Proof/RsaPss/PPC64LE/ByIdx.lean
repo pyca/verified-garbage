@@ -65,6 +65,44 @@ theorem twordA_ok {s : State} {j k : Nat} {p : Addr} (hj : arg j < 2 ^ 15 ∧ ar
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr)
         (by rw [e₃, o₂.mem, o₁.mem, rd hTk])) (by decide) hk) (by decide) hj
 
+/-- Our stack argument `j` into `r11`, from the state after the frame's
+push. -/
+theorem argA_ok {s : State} {j : Nat} (hj : arg j < 2 ^ 15 ∧ arg j % 4 = 0)
+    (hA : InRegions s.rd (stackArgAddr s j) 8) (hAk : Region.Disjoint ⟨stackArgAddr s j, 8⟩ (kR s)) :
+    WP isa (.block [.addSp .r11 0, .load .d .r11 .r11 (arg j)]) (allocated frameBytes s) fun u =>
+      Only [.r11] (allocated frameBytes s) u ∧ u.gpr .r11 = stackArg s j := by
+  have hm0 : Frame [kR s] s.mem (allocated frameBytes s).mem := by
+    rw [allocated_mem]
+    exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (by
+      have := frame_contains s (d := 0) (n := 8) (by decide); rwa [BitVec.add_zero] at this)
+  refine wp_addSp fun u₁ o₁ e₁ => wp_ld (a := stackArgAddr s j) (by
+      rw [e₁, allocated_sp, BitVec.add_zero, stackArgAddr_fb])
+    (by rw [o₁.rd, allocated_rd]; exact let ⟨R, hR, hc⟩ := hA; ⟨R, List.mem_append_left _ hR, hc⟩)
+    (fun u₂ o₂ e₂ => wp_nil ⟨(o₁.trans o₂).mono fun r hr => by
+      simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, by
+        rw [e₂, o₁.mem]
+        exact hm0.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hAk)
+          (by decide)⟩) (by decide) hj
+
+/-- The word at `r11 + o` into `r11`, from a state after the frame's push
+whose only change is `r11`. -/
+theorem wordA_ok {s u : State} {o : Nat} {p : Addr} (hu : Only [.r11] (allocated frameBytes s) u)
+    (h11 : u.gpr .r11 = p) (ho : o < 2 ^ 15 ∧ o % 4 = 0) (hT : InRegions s.rd (p + BitVec.ofNat 64 o) 8)
+    (hTk : Region.Disjoint ⟨p + BitVec.ofNat 64 o, 8⟩ (kR s)) :
+    WP isa (.block [.load .d .r11 .r11 o]) u fun u' =>
+      Only [.r11] (allocated frameBytes s) u' ∧ u'.gpr .r11 = s.mem.readW (p + BitVec.ofNat 64 o) 64 := by
+  have hm0 : Frame [kR s] s.mem (allocated frameBytes s).mem := by
+    rw [allocated_mem]
+    exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (by
+      have := frame_contains s (d := 0) (n := 8) (by decide); rwa [BitVec.add_zero] at this)
+  refine wp_ld (a := p + BitVec.ofNat 64 o) (by rw [h11])
+    (by rw [hu.rd, allocated_rd]; exact let ⟨R, hR, hc⟩ := hT; ⟨R, List.mem_append_left _ hR, hc⟩)
+    (fun u₂ o₂ e₂ => wp_nil ⟨(hu.trans o₂).mono fun r hr => by
+      simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, by
+        rw [e₂, hu.mem]
+        exact hm0.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hTk)
+          (by decide)⟩) (by decide) ho
+
 /-- The comparisons with each of `idxs`: an immediate `subi` takes, and the
 taint check with `r11` public. -/
 theorem idxs_certs : ∀ x ∈ idxs, x ≤ 2 ^ 15 ∧
