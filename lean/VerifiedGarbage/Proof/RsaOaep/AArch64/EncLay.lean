@@ -41,6 +41,7 @@ structure ELay where
   msg : Addr
   ml : BitVec 64
   sd : Addr
+  sdl : BitVec 64
   scr : Addr
   sl : BitVec 64
   D : Nat
@@ -91,7 +92,7 @@ structure Ok : Prop where
   elk : L.el.toNat ≤ L.k.toNat
   slk : Spec.RsaPss.publicScratchWords L.k.toNat ≤ L.sl.toNat
   al40 : 40 ≤ L.al
-  al64 : L.al ≤ 64
+  al80 : L.al ≤ 80
   nQa : L.Q.toNat + 288 + L.al ≤ 2 ^ 64
   xO : ∀ R ∈ L.X, R.Disjoint L.OUT
   xS : ∀ R ∈ L.X, R.Disjoint L.SCR
@@ -174,7 +175,7 @@ end ELay.Ok
 
 /-- Our stack argument `j`. -/
 def ourArg (L : ELay) : Nat → BitVec 64
-  | 0 => L.msg | 1 => L.ml | 2 => L.sd | 3 => L.scr | _ => L.sl
+  | 0 => L.msg | 1 => L.ml | 2 => L.sd | 3 => L.sdl | _ => L.scr
 
 structure Ctx (L : ELay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where

@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
 public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
-import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
@@ -21,7 +22,8 @@ meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
 meta import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 meta import VerifiedGarbage.Proof.Mgf1.Basic
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
@@ -38,8 +40,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # RSAES-OAEP encryption on AArch64: `EM` and the call in constant time
 
 `encMain` from two runs in the same layout (`encMain_tr`): the copies into
-`EM` from the registers their heads fix (`*E_pin`), the label's hash and
-MGF1 as for any caller (`pw_lr`), the arguments' blocks by the taint
+`EM` from the registers their heads fix (`*E_pin`), the label's hash (with
+the table `hash`, which both runs hold) and MGF1 as for any caller (`pw_lr`), the arguments' blocks by the taint
 analysis, and the call of a precomputed public operation, whose public
 arguments, `pre`'s words and `e` agree in both runs (`pdCallCT`). Nothing
 after the call branches on its result.
@@ -57,13 +59,13 @@ open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked pdCallCT)
 
-/-- Two layouts' `pre` from the two entry memories are the same. -/
+/-- Two layouts' `pre` and tables from the two entry memories are the same. -/
 theorem pre_eq {L : ELay} {m₁ m₂ : Mem} (q₁ : PreOk L m₁) (q₂ : PreOk L m₂) :
-    preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ ∧ tabW L m₁ = tabW L m₂ := by
+    preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ ∧ tabW L m₁ = tabW L m₂ ∧ tabLW L m₁ = tabLW L m₂ := by
   have h := q₁.hx.symm.trans q₂.hx
-  simp only [List.cons.injEq, PRE, TABR, Sig.tableRegion, Region.mk.injEq, and_true] at h
-  obtain ⟨⟨h1, h2⟩, h3⟩ := h
-  exact ⟨h1, BitVec.eq_of_toNat_eq (by omega), h3⟩
+  simp only [List.cons.injEq, PRE, TABJ, Sig.tableRegion, Region.mk.injEq, and_true] at h
+  obtain ⟨⟨h1, h2⟩, h3, h4⟩ := h
+  exact ⟨h1, BitVec.eq_of_toNat_eq (by omega), h4, h3⟩
 
 /-- The registers of the call, with the first run's `pre`. -/
 theorem readyP_of {L : ELay} {m m' : Mem} {t : State} (q : PreOk L m) (q' : PreOk L m') (h : PReadyP L m t) :
@@ -84,8 +86,9 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked)
     {P : Nat} {e : Env} (hL : e.L.Ok) (hP : c.stack ≤ e.L.P) (hP16 : 16 ≤ e.L.P) (hD : e.L.D = Hl.D)
     (q₁ : PreOk e.L e.m₁) (q₂ : PreOk e.L e.m₂) (hk : 2 * Hl.D + 2 + e.L.ml.toNat ≤ e.L.k.toNat)
-    {p ai au af : Addr} :
-    RelCT isa (PW P e fun _ t => Table.TabX Gm f (arg 7) e.L.Q e.L.scr p ai au af t)
+    {p ai au af pL aiL auL afL : Addr} :
+    RelCT isa (PW P e fun _ t => Table.TabX Gm f (arg 9) e.L.Q e.L.scr p ai au af t ∧
+        Table.TabX Hl.stream f (arg 8) e.L.Q e.L.scr pL aiL auL afL t)
       (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code) fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
@@ -118,16 +121,18 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
       R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD] ++ e.L.X ++ [e.L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
-  let TX : (Nat → BitVec 64) → State → Prop := fun _ t => Table.TabX Gm f (arg 7) e.L.Q e.L.scr p ai au af t
+  let TX : (Nat → BitVec 64) → State → Prop := fun _ t => Table.TabX Gm f (arg 9) e.L.Q e.L.scr p ai au af t
+  let TX2 : (Nat → BitVec 64) → State → Prop := fun W t => TX W t ∧
+    Table.TabX Hl.stream f (arg 8) e.L.Q e.L.scr pL aiL auL afL t
   simp only [Impl.RsaOaep.AArch64.Precomputed.encMain, encEm, seqs]
   -- `EM`'s place cleared.
-  refine RelCT.seq (R := PW P e TX) (RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
+  refine RelCT.seq (R := PW P e TX) (RelCT.seq (pw_wp (X' := TX2) (pw_seq_tr [.x11, .x12, .x13]
       (fun r => ([(Reg.x11, off e.L.scr oEm), (.x12, BitVec.ofNat 64 128), (.x13, BitVec.ofNat 64 0)].lookup r).getD 0)
       (by taint_decide) (by taint_decide) fun _ _ _ _ _ _ _ _ hc R hS _ => clearE_pin (ly hc R hS))
     fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (clearEm_ok (ly hc R hS) R))
-      fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_) ?_
+      fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS ⟨hx.1.step Su sy, hx.2.step Su sy⟩) ?_) ?_
   -- The seed.
-  · refine RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
+  · refine RelCT.seq (pw_wp (X' := TX2) (pw_seq_tr [.x11, .x12, .x13]
         (fun r => ([(Reg.x11, e.L.sd), (.x12, off e.L.scr (oEm + 1)), (.x13, BitVec.ofNat 64 Hl.D)].lookup r).getD 0)
         (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (([.ldrSp .x11 sSeed] : List Instr) ++
           scr .x12 (oEm + 1) ++ ([.movz .x .x13 (BitVec.ofNat 16 gH.D) 0] : List Instr))) (by rfl) (by taint_decide))
@@ -136,15 +141,21 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
         (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega_arith)
           (by have := hL.bR _ (ro_SD e.L); simp only at this; omega_arith)))
         (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith))))
-        fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_
+        fun _ ⟨⟨_, Su, Ru⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS ⟨hx.1.step Su sy, hx.2.step Su sy⟩) ?_
+    -- The table's address to its slot.
+    refine RelCT.seq (pw_blk (X' := fun W t => TX2 W t ∧ W 32 = pL) [] (by taint_decide) nopin
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (tabSlot_ok (by decide) (ly hc R hS) R hx.2.1))
+        fun _ ⟨⟨_, Su, Ru, _⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru
+          (hS.of fun j _ h2 _ => by simp only [upd]; rw [ifn (by omega_arith)])
+          ⟨⟨hx.1.step Su sy, hx.2.step Su sy⟩, by simp [upd]⟩) ?_
     -- The label's hash.
     refine RelCT.seq (pw_wp (X' := TX)
-      (pw_lr hP16 (hashLabel_tr hH e.L.labl.isLt (.inl rfl)
-        (X := fun W t => LabAt t e.L.Q e.L.scr W e.L.lab e.L.labl.toNat) fun _ _ h => h)
-        fun _ _ _ _ _ _ hc hS _ => hc.labAt hL hP16 hS)
-      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (hashLabel_ok hH (Hs := Hs) hHh (ly hc R hS) R
-        (hc.labAt hL hP16 hS) (o := oDig) (.inl rfl)))
-        fun _ ⟨⟨_, Su, _, Ru, _, _⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.step Su sy)) ?_
+      (pw_lr hP16 (hashLabelT_tr hH e.L.labl.isLt (.inl rfl) (f := f) (p := pL) (ai := aiL) (au := auL) (af := afL))
+        fun _ _ _ _ _ _ hc hS hx => ⟨hc.labAt hL hP16 hS, hx.2,
+          ⟨⟨_, _, hx.1.2.1, Step.refl _ _ _ _, rfl⟩, hx.1.2.2.1, hx.1.2.2.2.1, hx.1.2.2.2.2⟩⟩)
+      fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (Table.wp_sy (hashLabelT_ok hH (Hs := Hs) hHh hx.1.2.1 (ly hc R hS) R
+        hx.2 (hc.labAt hL hP16 hS) (o := oDig) (.inl rfl)))
+        fun _ ⟨⟨_, Su, _, Ru, _, _⟩, sy⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS (hx.1.1.step Su sy)) ?_
     -- `lHash` after the seed.
     refine RelCT.seq (pw_wp (X' := TX) (pw_seq_tr [.x11, .x12, .x13]
         (fun r => ([(Reg.x11, off e.L.scr oDig), (.x12, off e.L.scr (oEm + 1 + Hl.D)),

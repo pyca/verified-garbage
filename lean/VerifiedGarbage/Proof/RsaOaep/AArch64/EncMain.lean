@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaOaep.Encode
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,7 +15,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 `encEm` (`encEm_ok`): `EM` before masking, `0x00 ‖ seed ‖ lHash ‖ 0…0 ‖ 0x01
 ‖ M`, in our working space (`EmAt`), from the seed, the label and the
-message as on entry.
+message as on entry, with `lHash` by the hash function of the table that is
+our stack argument 8, whose address it leaves in its slot.
 -/
 
 @[expose] public section
@@ -25,6 +28,7 @@ open VG.Impl.RsaOaep.AArch64.Mgf1 (seqs)
 open VG.Proof.Mgf1 (ifp ifn)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
+open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 
 theorem nil_ws {L : ELay} : ∀ r ∈ ([] : List Region), Region.Sub r L.OUT :=
   fun _ h => absurd h List.not_mem_nil
@@ -36,11 +40,12 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 variable {Hl : Hash} (hH : StreamOK Hl.stream)
 
 include hH in
-theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) {L : ELay} (hL : L.Ok)
+theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) {f : Fns} {L : ELay} (hL : L.Ok)
     (hP : 16 ≤ L.P) (hD : L.D = Hl.D) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem L.Q L.scr V W)
-    (hS : Slots L W) (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) :
-    WP isa (encEm Hl) t fun t' => Ctx L g vv m₀ t' ∧ ∃ V', Rep t'.mem L.Q L.scr V' W ∧
+    (hS : Slots L W) (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) {p : Addr}
+    (T : Table.Tab Hl.stream f L.Q L.scr p (arg 8) t) :
+    WP isa (encEm Hl f) t fun t' => Ctx L g vv m₀ t' ∧ ∃ V', Rep t'.mem L.Q L.scr V' (upd W 32 p) ∧
       EmAt V' L.k.toNat Hl.D (Spec.Rsa.bytesAt m₀ L.sd Hl.D)
         (Hs.hash (Spec.Rsa.bytesAt m₀ L.lab L.labl.toNat)) (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) L.ml.toNat := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
@@ -49,8 +54,9 @@ theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
   have hk1024 := hL.k1024
   have c0 : oEm = 0 := rfl
   have cR : oRsa = 8192 := rfl
-  have hk3 : W 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hm3 : W 28 = BitVec.ofNat 64 L.ml.toNat := by rw [hS.ml, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hS' : Slots L (upd W 32 p) := hS.of fun j _ h2 _ => by simp only [upd]; rw [ifn (by omega_arith)]
+  have hk3 : (upd W 32 p) 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS'.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hm3 : (upd W 32 p) 28 = BitVec.ofNat 64 L.ml.toNat := by rw [hS'.ml, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- The seed's and the message's bytes are apart from our working space.
   have hsdS : ∀ i < Hl.D, ∀ j < oRsa, off L.sd i ≠ off L.scr j := fun i hi j hj
       (h' : L.sd + BitVec.ofNat 64 i = L.scr + BitVec.ofNat 64 j) =>
@@ -65,28 +71,33 @@ theorem encEm_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
   have inRd : ∀ {u : State} {R : Region}, Ctx L g vv m₀ u → R ∈ [L.N, L.E, L.LAB, L.MSG, L.SD] ++ L.X ++ [L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
-  unfold encEm seqs seqs seqs seqs
+  unfold encEm seqs seqs seqs seqs seqs
   -- `EM`'s place cleared.
-  refine WP.seq (WP.mono (clearEm_ok (hc.lay hL hP R hS.scr) R) fun t1 ⟨_, S1, R1⟩ => ?_)
+  refine WP.seq (WP.mono (Table.wp_sy (clearEm_ok (hc.lay hL hP R hS.scr) R)) fun t1 ⟨⟨_, S1, R1⟩, sy1⟩ => ?_)
   have hc1 := hc.step hL hP S1 nil_ws
   -- The seed.
-  refine WP.seq (WP.mono (copySeed_ok (hc1.lay hL hP R1 hS.scr) R1 (H := Hl) hS.sd hD0 hD64
+  refine WP.seq (WP.mono (Table.wp_sy (copySeed_ok (hc1.lay hL hP R1 hS.scr) R1 (H := Hl) hS.sd hD0 hD64
     (fun i hi => inRd hc1 (by simp) (Offset.contains_base L.sd (d := i) (n := 1) (k := L.D) (by omega_arith)
       (by have := hL.bR _ (ro_SD L); simp only at this; omega_arith)))
-    (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith))) fun t2 ⟨_, S2, R2⟩ => ?_)
+    (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith)))) fun t2 ⟨⟨_, S2, R2⟩, sy2⟩ => ?_)
   have hc2 := hc1.step hL hP S2 nil_ws
+  -- The table's address to its slot.
+  have T2 := (T.step S1 sy1).step S2 sy2
+  refine WP.seq (WP.mono (Table.wp_sy (tabSlot_ok (by decide) (hc2.lay hL hP R2 hS.scr) R2 T2))
+    fun t2' ⟨⟨L2', S2', R2', _⟩, sy2'⟩ => ?_)
+  have hc2' := hc2.step hL hP S2' nil_ws
   -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok hH (Hs := Hs) hHh (hc2.lay hL hP R2 hS.scr) R2 (hc2.labAt hL hP hS)
-    (o := oDig) (.inl rfl)) fun t3 ⟨_, S3, V3, R3, hV3, hV3'⟩ => ?_)
-  have hc3 := hc2.step hL hP S3 nil_ws
-  have hlab := hc2.bytes_ro hL (ro_LAB L)
+  refine WP.seq (WP.mono (hashLabelT_ok hH (Hs := Hs) hHh (T2.step S2' sy2') L2' R2' (by simp [upd])
+    (hc2'.labAt hL hP hS') (o := oDig) (.inl rfl)) fun t3 ⟨_, S3, V3, R3, hV3, hV3'⟩ => ?_)
+  have hc3 := hc2'.step hL hP S3 nil_ws
+  have hlab := hc2'.bytes_ro hL (ro_LAB L)
   simp only at hlab
   rw [hlab] at hV3'
   -- `lHash` after the seed.
-  refine WP.seq (WP.mono (copyLh_ok (hc3.lay hL hP R3 hS.scr) R3 (H := Hl) hD0 hD64) fun t4 ⟨_, S4, R4⟩ => ?_)
+  refine WP.seq (WP.mono (copyLh_ok (hc3.lay hL hP R3 hS'.scr) R3 (H := Hl) hD0 hD64) fun t4 ⟨_, S4, R4⟩ => ?_)
   have hc4 := hc3.step hL hP S4 nil_ws
   -- `0x01` and the message.
-  refine WP.mono (putMsg_ok (hc4.lay hL hP R4 hS.scr) R4 hk3 hm3 hS.msg (by omega_arith) hk1024
+  refine WP.mono (putMsg_ok (hc4.lay hL hP R4 hS'.scr) R4 hk3 hm3 hS'.msg (by omega_arith) hk1024
     (fun i hi => inRd hc4 (by simp) (Offset.contains_base L.msg (d := i) (n := 1) (k := L.ml.toNat) (by omega_arith)
       (by have := hL.bR _ (ro_MSG L); simp only at this; omega_arith)))
     hmsS) fun t5 ⟨_, S5, R5⟩ => ⟨hc4.step hL hP S5 nil_ws, _, R5, ?_⟩

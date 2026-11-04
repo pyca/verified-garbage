@@ -27,7 +27,7 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink MdHash)
 open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl)
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf held_tableOf hashAt_tableOf)
-open VG.Proof.HashTable (symsOf symsOf_distinct put5 put5_held put5_below)
+open VG.Proof.HashTable (symsOf symsOf_distinct symsOf_distinct2 put5 put5_held put5_below)
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
 
@@ -58,21 +58,6 @@ theorem withTable_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
 theorem withTable_held (s : State) (vs : List MdHash) (w : MdHash) :
     Abi.tableHeld 64 (withTable s vs w).mem 0x300000 (FnTable.words isa (withTable s vs w) (tableOf w)) :=
   put5_held (ws := tw vs w) rfl
-
-/-- The functions' addresses are distinct, in the list of the functions of
-both tables. -/
-theorem symsOf_distinct2 {ns : List String} (h : ns.length < 2 ^ 32) :
-    (ns ++ ns).Pairwise fun f g => f ≠ g → symsOf ns f ≠ symsOf ns g :=
-  (List.pairwise_of_forall (R := fun _ _ => True) fun _ _ => trivial).imp_of_mem fun {f g} hf hg _ hne e => by
-    have hf' : f ∈ ns := (List.mem_append.mp hf).elim id id
-    have hg' : g ∈ ns := (List.mem_append.mp hg).elim id id
-    have i1 := List.idxOf_lt_length_of_mem hf'
-    have i2 := List.idxOf_lt_length_of_mem hg'
-    have e' := congrArg BitVec.toNat e
-    simp only [symsOf, BitVec.toNat_ofNat] at e'
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
-    have hi : ns.idxOf f = ns.idxOf g := by omega
-    exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
 /-! ## Decryption -/
 
