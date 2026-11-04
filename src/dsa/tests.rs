@@ -1,12 +1,4 @@
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "riscv64",
-    target_arch = "x86",
-    target_arch = "x86_64"
-))]
-use super::Ordering;
-use super::{Backend, Error, Features, PrivateKey, PublicKey, Vec, vec};
+use super::{Backend, Error, Features, Ordering, PrivateKey, PublicKey, Vec, vec};
 use verified_garbage_cpu::feature;
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
