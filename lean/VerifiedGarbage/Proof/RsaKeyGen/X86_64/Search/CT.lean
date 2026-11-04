@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Safety
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Implies
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -8,12 +9,13 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTCode
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Safety
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Implies
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # The search's timing depends on its public data and its trace
+/-! # The search's timing depends on its public data and its trace, and the verified search
 
 Two runs at the same point (`SearchPoint`) agree on the public descriptor,
 the octets consumed, the counted candidates left and the trace still to come,
@@ -586,5 +588,133 @@ theorem search_loop_ct (v : RoundImpl) :
   exact RelCT.loop (M := isa) (body := iteration (candidateCall v)) (c := .e)
     (Q := fun _ _ => True) LoopPair (iteration_pair v) (q.inputs.randLen - q.used + 1)
     _ _ _ _ _ _ ⟨q, rfl, hs, ht⟩ he₁ he₂
+
+/-! ## Entry and return -/
+
+/-- A run's entry, with its public descriptor and its result's trace. -/
+def SearchStart (a : SearchPublic × List Nat) (s : State) : Prop :=
+  SearchInput a.1 s ∧ (searchResult s).trace = a.2
+
+/-- A run's entry, past the frame's allocation. -/
+def AllocStart (a : SearchPublic × List Nat) (u : State) : Prop :=
+  ∃ s, SearchStart a s ∧ u = allocated 160 s
+
+private theorem alloc_start_pins : Pins AllocStart [.rsp] := by
+  rintro a _ _ ⟨s, ⟨h₁, -⟩, rfl⟩ ⟨t, ⟨h₂, -⟩, rfl⟩ r hr
+  simp only [List.mem_singleton] at hr
+  subst r
+  rw [alloc_rsp h₁, alloc_rsp h₂]
+
+/-- The state's pointer, the frame's base and the stack pointer, past the
+frame's first words. -/
+def EntryPins (p : SearchPublic) (t : State) : Prop :=
+  t.gpr .rax = p.stp ∧ t.gpr .r12 = p.F ∧ t.gpr .rsp = p.F
+
+private theorem entry_pins (a : SearchPublic × List Nat) (u : State) (h : AllocStart a u) :
+    WP isa (.block (entryHead ++ entryArgs)) u (EntryPins a.1) := by
+  obtain ⟨s, ⟨hi, -⟩, rfl⟩ := h
+  rw [WP.block_append_iff]
+  refine WP.mono (entry_head_ok hi) fun t ⟨hr, hm, k⟩ => ?_
+  refine WP.mono (entry_args_ok hi hm k hr) fun w ⟨hra, _, kw⟩ => ⟨?_, (kw.gpr (by decide)).trans hr, ?_⟩
+  · rw [hra, ← hi.2]; rfl
+  · rw [kw.gpr (by decide), k.gpr (by decide), alloc_rsp hi]
+
+theorem search_entry_ct : RelCT isa (Two AllocStart) (.block entry) (fun _ _ => True) := by
+  unfold entry
+  refine RelCT.block_append (RelCT.seq (two_piece (Ψ := fun a => EntryPins a.1) [.rsp] alloc_start_pins
+    (by taint_decide) entry_pins) ?_)
+  exact two_taint [.rax, .r12, .rsp] (fun _ _ _ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    exacts [h₁.1.trans h₂.1.symm, h₁.2.1.trans h₂.2.1.symm, h₁.2.2.trans h₂.2.2.symm]) (by taint_decide)
+
+/-- A loop's end. -/
+def DoneCT (p : SearchPublic) (s : State) : Prop := ∃ original r, SearchDone p original r s
+
+private theorem finish_pointers (p : SearchPublic) (s : State) (h : DoneCT p s) :
+    WP isa (.block (finish.take 9)) s fun t => t.gpr .rax = p.stp ∧ t.gpr .r8 = p.up := by
+  obtain ⟨o, r, h⟩ := h
+  have scr := h.input.frame_scr h.wr
+  have hl : ∀ d, d + 8 ≤ 160 → InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 d) 8 := fun d hd =>
+    let ⟨r, hr, hc⟩ := scr.st hd; ⟨r, List.mem_append_right _ hr, hc⟩
+  have hl0 : InRegions (s.rd ++ s.wr) p.F 8 := by simpa only [BitVec.add_zero] using hl 0 (by decide)
+  have w7 := h.usedPtr
+  have w18 := h.stp
+  simp only [Bignum.word, off, Nat.reduceMul] at w7 w18
+  unfold finish
+  simp only [List.take_succ_cons, List.take_zero]
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, BitVec.add_zero,
+    h.r12, hl0, hl 8 (by decide), hl 16 (by decide), hl 24 (by decide), hl 32 (by decide), hl 56 (by decide),
+    hl 128 (by decide), hl 136 (by decide), hl 144 (by decide), w7, w18]
+
+theorem search_finish_ct : RelCT isa (Two DoneCT) (.block finish) (fun _ _ => True) := by
+  change RelCT isa (Two DoneCT) (.block (finish.take 9 ++ finish.drop 9)) _
+  refine RelCT.block_append (RelCT.seq (two_piece [.r12] ?_ (by taint_decide) finish_pointers) ?_)
+  · intro p s t ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact h₁.r12.trans h₂.r12.symm
+  · exact two_taint [.rax, .r8] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [h₁.1.trans h₂.1.symm, h₁.2.trans h₂.2.symm]) (by taint_decide)
+
+/-! ## The whole search -/
+
+/-- The point the loop starts at. -/
+def initialPoint (a : SearchPublic × List Nat) : SearchPoint := ⟨a.1, 0, a.1.remaining, a.2⟩
+
+theorem tail_initial {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    tailOf p s 0 p.remaining = searchResult s := by
+  rw [← h.2]
+  simp only [searchResult, tailOf, searchOfState, List.drop_zero]
+
+private theorem entry_started (a : SearchPublic × List Nat) (u : State) (h : AllocStart a u) :
+    WP isa (.block entry) u (SearchCTL (initialPoint a)) := by
+  obtain ⟨s, ⟨hi, ht⟩, rfl⟩ := h
+  exact WP.mono (search_start hi) fun _ hl => ⟨s, hl, by
+    show (tailOf a.1 s 0 a.1.remaining).trace = a.2
+    rw [tail_initial hi, ht]⟩
+
+private theorem loop_done (v : RoundImpl) (a : SearchPublic × List Nat) (s : State)
+    (h : SearchCTL (initialPoint a) s) :
+    WP isa (.loop (iteration (candidateCall v)) .e) s (DoneCT a.1) := by
+  obtain ⟨o, hl, _⟩ := h
+  exact WP.mono (search_loop v (final := (tailOf a.1 o 0 a.1.remaining).consume 0 []) ⟨hl, [], rfl⟩)
+    fun _ ht => ⟨o, _, ht⟩
+
+theorem search_code_ct (v : RoundImpl) :
+    RelCT isa (Two SearchStart) (searchCode v) (fun _ _ => True) := by
+  unfold searchCode code
+  apply frame_alloc_ct
+  change RelCT isa _ (.seq _ (.seq _ _)) _
+  refine (RelCT.seq (two_post search_entry_ct entry_started)
+    (RelCT.seq (two_post (two_map initialPoint (fun _ _ h => h) (search_loop_ct v)) (loop_done v))
+      (two_map Prod.fst (fun _ _ h => h) search_finish_ct))).mono ?_ (fun _ _ h => h)
+  rintro _ _ ⟨s, t, ⟨a, h₁, h₂⟩, rfl, rfl⟩
+  exact ⟨a, ⟨s, h₁, rfl⟩, ⟨t, h₂, rfl⟩⟩
+
+private theorem search_public_descriptor {s t : State} (h : searchPub s t) : searchOfState s = searchOfState t := by
+  obtain ⟨hsp, hdi, hsi, hdx, hcx, h8, h9, ha, he, hw, -⟩ := h
+  change [word s.mem (stackArg s 5) 0, word s.mem (stackArg s 5) 8, word s.mem (stackArg s 5) 16,
+    word s.mem (stackArg s 5) 24] = [word t.mem (stackArg t 5) 0, word t.mem (stackArg t 5) 8,
+      word t.mem (stackArg t 5) 16, word t.mem (stackArg t 5) 24] at hw
+  have h0 : s.mem.readW (stackArg s 5) 64 = t.mem.readW (stackArg t 5) 64 := by
+    simpa only [Bignum.word, off, BitVec.add_zero] using (List.cons.inj hw).1
+  unfold searchOfState
+  rw [searchRemaining, searchRemaining, searchLen, searchLen, h0, he, hsp, hdi, hsi, hdx, hcx, h8, h9,
+    ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide), ha 5 (by decide)]
+
+theorem search_constantTime (v : RoundImpl) :
+    ConstantTime isa searchContract.pre searchContract.pub (searchCode v) := by
+  refine RelCT.constantTime ((search_code_ct v).mono ?_ (fun _ _ h => h))
+  intro s t ⟨hs, ht, hp⟩
+  exact ⟨(searchOfState s, (searchResult s).trace), ⟨⟨hs, rfl⟩, rfl⟩,
+    ⟨⟨ht, (search_public_descriptor hp).symm⟩, hp.2.2.2.2.2.2.2.2.2.2.2.2.2.symm⟩⟩
+
+/-- The verified search, for every arithmetic backend. -/
+theorem search_verified (v : RoundImpl) :
+    Verified target (searchCode v) (Spec.RsaKeyGen.primeSearchContract abi stackUse) :=
+  Verified.of_correct (search_correct v) (search_constantTime v) search_implies
 
 end VG.Proof.RsaKeyGen.X86_64.Search
