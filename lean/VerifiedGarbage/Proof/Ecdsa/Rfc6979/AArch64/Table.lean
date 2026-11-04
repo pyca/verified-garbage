@@ -121,6 +121,8 @@ structure CurveT (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) : Prop wh
   ecdsa : T.ecdsa = R.inst
   tries_pos : 0 < T.tries
   tries_lt : T.tries < 2 ^ 16
+  /-- The curve has the comb's tables of constants. -/
+  tbl : R.E.tbl.isEmpty = false
 
 /-- None of the variants' streaming functions writes a callee-saved SIMD register. -/
 theorem fnsKeep_of (vs : List MdHash) :
