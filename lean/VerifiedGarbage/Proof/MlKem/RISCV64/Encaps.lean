@@ -73,7 +73,8 @@ structure Pre (K : KemLay) (s : State) : Prop where
   calls : K.CallsOk
   al : s.sp.toNat % 16 = 0
   sp1168 : 1168 ≤ s.sp.toNat
-  rd : s.rd = [⟨pEk s, K.ekLen⟩, ⟨pM s, 32⟩]
+  rdEk : (⟨pEk s, K.ekLen⟩ : Region) ∈ s.rd
+  rdM : (⟨pM s, 32⟩ : Region) ∈ s.rd
   wr : s.wr = [⟨pKey s, 32⟩, ⟨pCt s, K.ctLen⟩, ⟨pScr s, K.scratch⟩]
   d_ek_key : (⟨pEk s, K.ekLen⟩ : Region).Disjoint ⟨pKey s, 32⟩
   d_ek_ct : (⟨pEk s, K.ekLen⟩ : Region).Disjoint ⟨pCt s, K.ctLen⟩
@@ -205,7 +206,7 @@ theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv
 theorem buf_wr {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     (lay s₀ K).buf 0 ∈ s₀.wr ∧ (lay s₀ K).buf 3 ∈ s₀.wr ∧ (lay s₀ K).buf 4 ∈ s₀.wr ∧
       (lay s₀ K).buf 2 ∈ s₀.rd ++ s₀.wr ∧ (layM s₀ K).buf 2 ∈ s₀.rd ++ s₀.wr ∧ (layM s₀ K).buf 0 ∈ s₀.wr := by
-  rw [hp.wr, hp.rd]; simp [Lay.buf, lay, layM]
+  rw [hp.wr]; simp [Lay.buf, lay, layM, hp.rdEk, hp.rdM]
 
 theorem A_zero (L : Lay) (i : Nat) : L.A i 0 = L.ptr i := BitVec.add_zero _
 
@@ -262,12 +263,13 @@ theorem layA0 (K : KemLay) (s₀ : State) (o : Nat) : (layM s₀ K).A 0 o = (lay
 theorem copyM_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s) (h29 : s.gpr .s9 = pM s₀)
     (hm : bytesAt s.mem ((layM s₀ K).A 2 0) 32 = M K s₀) :
     WP isa (copy .s9 0 .s11 oMsg 32) s fun s' =>
-      EnEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ := by
+      EnEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ ∧
+        Kept ((lay s₀ K).RL [(0, oMsg, 32)]) s s' := by
   have hK := hp.wf
   obtain ⟨-, -, -, -, wM, wM0⟩ := buf_wr hp
   refine WP.mono (copyL (layM_ok hp) (i := 2) (j := 0) (by decide) (by decide) h29
     h.ctx.s11 (by decide) (by decide) (by decide) (by decide) (by edecide)
-    (by rw [h.rd, h.wr]; exact wM) (by rw [h.wr]; exact wM0)) fun s' ⟨k, e⟩ => ⟨?_, ?_⟩
+    (by rw [h.rd, h.wr]; exact wM) (by rw [h.wr]; exact wM0)) fun s' ⟨k, e⟩ => ⟨?_, ?_, k⟩
   · have k' : Kept ((lay s₀ K).RL [(0, oMsg, 32)]) s s' := k
     exact h.keep hp (k'.x []) (by simp) (by edecide)
   · rw [← layA0, e, hm]
@@ -483,16 +485,24 @@ theorem end_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀
   have hb : o + 8 ≤ (lay s₀ K).size 0 := by simp only [lay, Lay.size, List.getD_cons_zero]; omega
   exact mem_rd_wr' (Lay.covers w0 hb _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
 
-theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
-    WP isa K.encaps s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.gpr .ra = s₀.gpr .ra ∧
-      s.gpr .a0 = (if okEnc K.k (ekRho K.p (EK K s₀)) K.k then 1 else 0) ∧
-      bytesAt s.mem (pKey s₀) 32 = KK K s₀ ∧
-      bytesAt s.mem (pCt s₀) K.ctLen =
-        VG.Proof.MlKem.KPke.ct K.p (aEnc (ekRho K.p (EK K s₀)) (RR K s₀)) (EK K s₀) (M K s₀) (RR K s₀) := by
-  refine WP.seq (WP.mono (setup_ok hp) fun s₂ ⟨h₂, g29, m₂⟩ => ?_)
-  refine WP.seq (WP.mono (copyM_ok hp h₂ g29 m₂) fun s₃ ⟨h₃, m₃⟩ => ?_)
-  refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
-  refine WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => ?_)
+/-- What follows `H(ek)` (in `encaps`; its copy from `h` in `encapsH`): `G(m ‖ H(ek))`, `K` into `key`,
+K-PKE.Encrypt and the end. -/
+abbrev tail (K : KemLay) : Prog isa :=
+  .seq (hash 72 0x06 [⟨.s11, oMsg, 32⟩, ⟨.s11, oHek, 32⟩] [⟨.s11, oG, 64⟩]) <|
+  .seq (copy .s11 oG .s8 0 32) <|
+  .seq K.encrypt (.block topEnd)
+
+/-- What the function ensures, of the arguments of `s₀`. -/
+abbrev Post (K : KemLay) (s₀ s : State) : Prop :=
+  (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.gpr .ra = s₀.gpr .ra ∧
+    s.gpr .a0 = (if okEnc K.k (ekRho K.p (EK K s₀)) K.k then 1 else 0) ∧
+    bytesAt s.mem (pKey s₀) 32 = KK K s₀ ∧
+    bytesAt s.mem (pCt s₀) K.ctLen =
+      VG.Proof.MlKem.KPke.ct K.p (aEnc (ekRho K.p (EK K s₀)) (RR K s₀)) (EK K s₀) (M K s₀) (RR K s₀)
+
+theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀)
+    (h₅ : F4 K s₀ s ∧ bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (tail K) s (Post K s₀) := by
   refine WP.seq (WP.mono (s6_ok hp h₅) fun s₆ h₆ => ?_)
   refine WP.seq (WP.mono (s7_ok hp h₆) fun s₇ h₇ => ?_)
   refine WP.seq (WP.mono (s8_ok hp h₇) fun s₈ ⟨h₈, key₈, r24₈, ct₈⟩ => ?_)
@@ -501,5 +511,169 @@ theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     rw [m', ← A_zero (lay s₀ K) 3]; exact key₈
   · show bytesAt s.mem ((lay s₀ K).ptr 4) K.ctLen = _
     rw [m', ← A_zero (lay s₀ K) 4]; exact ct₈
+
+theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) : WP isa K.encaps s₀ (Post K s₀) := by
+  refine WP.seq (WP.mono (setup_ok hp) fun s₂ ⟨h₂, g29, m₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyM_ok hp h₂ g29 m₂) fun s₃ ⟨h₃, m₃, _⟩ => ?_)
+  refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
+  exact WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => tail_ok hp h₅)
+
+
+/-! ## `encapsH`: `H(ek)` given at `h`
+
+`encapsH` takes `encaps`'s arguments with `h` after `ek`, so its phases are
+`encaps`'s, of the arguments `args s₀` (`ek`, `m`, `key`, `ct` and `scratch`
+in `a0`–`a4`): its setup (`setupH_ok`), the copy of `h` into `H(ek)`'s place
+(`copyH_ok`), and then `encaps`'s phases from the copy of `m` on, but the
+hash of `ek`. Its own buffer `h`, which it only reads, has a layout of its own
+(`layH`), as `m`. -/
+
+/-- The arguments of `encaps` from those of `encapsH` in `s₀`: `ek` in `a0`;
+`m`, `key`, `ct` and `scratch`, in `a2`–`a5`, in `a1`–`a4`. -/
+def args (s₀ : State) : State :=
+  { s₀ with gpr := fun r => match r with
+    | .a1 => s₀.gpr .a2 | .a2 => s₀.gpr .a3 | .a3 => s₀.gpr .a4 | .a4 => s₀.gpr .a5 | r => s₀.gpr r }
+
+theorem args_preserved (s₀ : State) : ∀ r ∈ preserved, (args s₀).gpr r = s₀.gpr r := by
+  intro r hr
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+abbrev pH (s₀ : State) : Addr := s₀.gpr .a1
+
+/-- The buffers of the copy of `h`: `scratch`, the stack and `h`. -/
+def layH (K : KemLay) (s₀ : State) : Lay :=
+  ⟨fun i => [pScr (args s₀), s₀.sp - BitVec.ofNat 64 1168, pH s₀].getD i 0, [K.scratch, 1168, 32]⟩
+
+theorem layH_sizes (K : KemLay) (s₀ : State) : (layH K s₀).sizes = [K.scratch, 1168, 32] := rfl
+
+/-- The precondition of `encapsH`'s contract: `encaps`'s, of `args s`, and `h`,
+which holds `H(ek)`. -/
+structure PreH (K : KemLay) (s : State) : Prop where
+  pre : Pre K (args s)
+  rdH : (⟨pH s, 32⟩ : Region) ∈ s.rd
+  d_h_scr : (⟨pH s, 32⟩ : Region).Disjoint ⟨pScr (args s), K.scratch⟩
+  b_h : (below s.sp 1168).Disjoint ⟨pH s, 32⟩
+  f_h : (pH s).toNat + 32 ≤ 2 ^ 64
+  hh : bytesAt s.mem (pH s) 32 = H (EK K (args s))
+
+section
+variable {K : KemLay} {s₀ : State} (hq : PreH K s₀)
+include hq
+
+theorem layH_ok : (layH K s₀).Ok := by
+  have hp := hq.pre
+  refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
+  · simp only [layH, List.length_cons, List.length_nil] at hi
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    · exact hp.f_scr
+    · exact stack_fit (s₀ := args s₀) hp
+    · exact hq.f_h
+  · simp only [layH, List.length_cons, List.length_nil] at hi hj
+    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    simp only [layH, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
+    first | omega | skip
+    · exact hp.b_scr.symm
+    · exact hq.d_h_scr.symm
+    · exact hq.b_h
+
+theorem setupH_ok :
+    WP isa (.block encapsHSetup) s₀ fun s => EnEnv K (args s₀) s ∧ s.gpr .s9 = pM (args s₀) ∧
+      s.gpr .a1 = pH s₀ ∧ bytesAt s.mem ((layM (args s₀) K).A 2 0) 32 = M K (args s₀) ∧
+      bytesAt s.mem ((layH K s₀).A 2 0) 32 = bytesAt s₀.mem ((layH K s₀).A 2 0) 32 := by
+  have hp := hq.pre
+  have hL := lay_ok hp
+  have hK := hp.wf
+  have scr := hK.scr
+  obtain ⟨w0, -, -, -, -, -⟩ := buf_wr hp
+  have hw : ∀ o, 1288 ≤ o → o + 8 ≤ 1368 → InRegions s₀.wr (pScr (args s₀) + BitVec.ofNat 64 o) 8 :=
+    fun o h₁ h₂ =>
+      Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
+        ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  rw [encapsHSetup, WP.block_append_iff]
+  refine WP.mono (topSave_ok (b := .a5) rfl hp.alS hw) fun s₁ ⟨sav, fr, g₁, rd₁, wr₁, sp₁⟩ => ?_
+  have hmv : WP isa (.block [mov .s10 .a0, mov .s9 .a2, mov .s8 .a3, mov .s7 .a4, mov .s11 .a5]) s₁ fun s =>
+      s.gpr .s10 = s₀.gpr .a0 ∧ s.gpr .s9 = s₀.gpr .a2 ∧ s.gpr .s8 = s₀.gpr .a3 ∧ s.gpr .s7 = s₀.gpr .a4 ∧
+      s.gpr .s11 = s₀.gpr .a5 ∧ s.gpr .a1 = s₀.gpr .a1 ∧
+      (∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₁.gpr r) ∧ s.mem = s₁.mem ∧
+      s.rd = s₁.rd ∧ s.wr = s₁.wr ∧ s.sp = s₁.sp :=
+    wp_mv fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_mv fun u₃ h₃ => wp_mv fun u₄ h₄ => wp_mv fun u₅ h₅ => WP.block_nil
+      ⟨by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        by simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, reduceCtorEq, ↓reduceIte, g₁],
+        fun r hr hs => by
+          simp only [savedTop, List.mem_cons, List.not_mem_nil, or_false, not_or] at hs
+          obtain ⟨-, -, -, -, a7, a8, a9, a10, a11⟩ := hs
+          simp only [h₅.gpr_eq, h₄.gpr_eq, h₃.gpr_eq, h₂.gpr_eq, h₁.gpr_eq, a7, a8, a9, a10, a11, ↓reduceIte],
+        by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], by rw [h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd],
+        by rw [h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr], by rw [h₅.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp]⟩
+  refine WP.mono hmv fun s ⟨g30, g29, g28, g27, g31, g1, cs, m, rd, wr, sp⟩ => ?_
+  have fr' : Frame ((lay (args s₀) K).RL [(0, 1288, 80)]) s₀.mem s.mem := by rw [m]; exact fr
+  have ek : K.ekLen ≤ 2 ^ 64 := by have := hK.k4; simp only [KemLay.ekLen]; omega
+  have hwr : s₀.wr = (args s₀).wr := rfl
+  have sav' : TopSaved s.mem (pScr (args s₀)) (args s₀) := by
+    rw [m]; exact ⟨sav.v3, sav.v4, sav.v5, sav.v6, sav.v7, sav.v8, sav.v9, sav.v10, sav.v11, sav.vra⟩
+  refine ⟨⟨⟨hL, scr, rfl, by simp [lay], g31, by rw [sp, sp₁]; exact hp.sp1168, by rw [sp, sp₁]; exact hp.al,
+    hp.alS, by rw [sp, sp₁]; rfl, by rw [wr, wr₁, hwr, hp.wr]; simp [lay]⟩, g30, g28, g27, rd.trans rd₁,
+    wr.trans wr₁, sp.trans sp₁, fun r hr hs => ?_, sav', ?_⟩, g29, g1, ?_, ?_⟩
+  · rw [cs r hr hs, g₁, args_preserved s₀ r hr]
+  · exact Lay.bytes_keep hL fr' (by edecide) ek
+  · rw [m]; exact Lay.bytes_keep (layM_ok hp) (L := layM (args s₀) K) (W := [(0, 1288, 80)]) fr (by edecide)
+      (by decide)
+  · rw [m]; exact Lay.bytes_keep (layH_ok hq) (L := layH K s₀) (W := [(0, 1288, 80)]) fr
+      (by rw [layH_sizes]; edecide) (by decide)
+
+theorem copyH_ok {s : State} (h : EnEnv K (args s₀) s) (h1 : s.gpr .a1 = pH s₀)
+    (hh : bytesAt s.mem ((layH K s₀).A 2 0) 32 = bytesAt s₀.mem ((layH K s₀).A 2 0) 32)
+    (hm : bytesAt s.mem ((layM (args s₀) K).A 2 0) 32 = M K (args s₀)) :
+    WP isa (copy .a1 0 .s11 oHek 32) s fun s' => EnEnv K (args s₀) s' ∧ s'.gpr .s9 = s.gpr .s9 ∧
+      bytesAt s'.mem ((layM (args s₀) K).A 2 0) 32 = M K (args s₀) ∧
+      bytesAt s'.mem ((lay (args s₀) K).A 0 oHek) 32 = H (EK K (args s₀)) := by
+  have hp := hq.pre
+  have hK := hp.wf
+  obtain ⟨-, -, -, -, -, wM0⟩ := buf_wr hp
+  have wH : (layH K s₀).buf 2 ∈ s.rd ++ s.wr := by rw [h.rd]; exact List.mem_append_left _ hq.rdH
+  refine WP.mono (copyL (layH_ok hq) (i := 2) (j := 0) (by decide) (by decide) h1
+    h.ctx.s11 (by decide) (by decide) (by decide) (by decide) (by rw [layH_sizes]; edecide) wH
+    (by rw [h.wr]; exact wM0)) fun s' ⟨k, e⟩ => ?_
+  have k' : Kept ((lay (args s₀) K).RL [(0, oHek, 32)]) s s' := k
+  refine ⟨h.keep hp (k'.x []) (by simp) (by edecide), k'.cs .s9 (by decide), ?_, ?_⟩
+  · have fM : Frame ((layM (args s₀) K).RL [(0, oHek, 32)]) s.mem s'.mem := k.frame
+    rw [Lay.bytes_keep (layM_ok hp) fM (by edecide) (by decide)]; exact hm
+  · show bytesAt s'.mem ((layH K s₀).A 0 oHek) 32 = _
+    rw [e, hh, A_zero]; exact hq.hh
+
+end
+
+/-- The copy of `m`, keeping `H(ek)`. -/
+theorem copyMh_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s) (h29 : s.gpr .s9 = pM s₀)
+    (hm : bytesAt s.mem ((layM s₀ K).A 2 0) 32 = M K s₀)
+    (hh : bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (copy .s9 0 .s11 oMsg 32) s fun s' => EnEnv K s₀ s' ∧
+      bytesAt s'.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀ ∧ bytesAt s'.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀) :=
+  have hK := hp.wf
+  WP.mono (copyM_ok hp h h29 hm) fun _ ⟨e, m, k⟩ =>
+    ⟨e, m, by rw [Lay.bytes_keep (lay_ok hp) k.frame (by edecide) (by decide)]; exact hh⟩
+
+/-- `s4_ok`, keeping `H(ek)`. -/
+theorem s4h_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀ s)
+    (hm : bytesAt s.mem ((lay s₀ K).A 0 oMsg) 32 = M K s₀)
+    (hh : bytesAt s.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀)) :
+    WP isa (.block [.addi .s9 .s11 oMsg]) s fun s' =>
+      F4 K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oHek) 32 = H (EK K s₀) :=
+  WP.mono ptr29_ok fun _ ⟨k, g29, m⟩ =>
+    ⟨⟨h.keep hp (W := []) k (by simp [savedTop]) rfl, by rw [g29, h.ctx.s11], by rw [m]; exact hm⟩,
+      by rw [m]; exact hh⟩
+
+theorem correctH {K : KemLay} {s₀ : State} (hq : PreH K s₀) : WP isa K.encapsH s₀ (Post K (args s₀)) := by
+  have hp := hq.pre
+  refine WP.seq (WP.mono (setupH_ok hq) fun s₂ ⟨h₂, g29, g1, m₂, hh₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyH_ok hq h₂ g1 hh₂ m₂) fun s₃ ⟨h₃, g29₃, m₃, hh₃⟩ => ?_)
+  refine WP.seq (WP.mono (copyMh_ok hp h₃ (g29₃.trans g29) m₃ hh₃) fun s₄ ⟨h₄, m₄, hh₄⟩ => ?_)
+  exact WP.seq (WP.mono (s4h_ok hp h₄ m₄ hh₄) fun _ h₅ => tail_ok hp h₅)
 
 end VG.Proof.MlKem.RISCV64.Encaps

@@ -258,6 +258,152 @@ bl {vg_mlkem_compress_encode}
     )
 }
 
+/// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1088 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `ek` must have passed `vg_mlkem768_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfEgDCPtQAyj7WANI+2ADaPtoA4j7cAOo+3gDyPuAA+j7iAMI+AAAwzsAAKU7AACGOwAAZzsAAOg7AABEOwAAejjgA584IACgOA=="
+20:
+.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 20b
+.base64 "AAB9OAAEnzggAKA4"
+21:
+.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 21b
+.base64 "AAS/OwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfzhIAIA4AATfOCAA4DjIAB85"
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfzhIAIA44APfOCAA4DjIAB85"
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfzhIAIA4BgDAOMgA/zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AACgOAAAfzhIAIA4mAPfOEAA4DjIAB85"
+bl {vg_keccak_squeeze_scratch}
+.base64 "mAN/OAAAnDggAKA4"
+22:
+.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 22b
+.base64 "gAR+OOAEnzggAKA4"
+23:
+.base64 "AADDiAAAxJgBAGM4AQCEOP//pTgAACUo"
+bne %cr0, 23b
+.base64 "AABAOw=="
+24:
+.base64 "gAEAONIBGnwUAn58ZFVEexQin3wACIQ4"
+bl {vg_mlkem_decode12}
+.base64 "AQBaO/3/GjgAACAo"
+bne %cr0, 24b
+.base64 "AABAOw=="
+25:
+.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
+bl {vg_keccak_squeeze_scratch}
+.base64 "IAR/OGRVRHsUIp98ABSEOA=="
+bl {vg_mlkem_cbd2}
+.base64 "ZFVDexQaf3wAFGM4AEifOA=="
+bl {vg_mlkem_ntt}
+.base64 "AQBaO/3/GjgAACAo"
+bne %cr0, 25b
+.base64 "AwBAOw=="
+26:
+.base64 "2ANfmwAAADgAAB/4CAAf+BAAH/gYAB/4IAAf+CgAH/gwAB/4OAAf+EAAH/hIAB/4UAAf+FgAH/hgAB/4aAAf+HAAH/h4AB/4gAAf+IgAH/iQAB/4mAAf+KAAH/ioAB/4sAAf+LgAH/jAAB/4AACgOAAAfziIAIA4uAPfOCEA4DjIAB85"
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AACgOAAAfziIAIA4IATfOIAA4DjIAB85"
+bl {vg_keccak_squeeze_scratch}
+.base64 "IAR/OGRVRHsUIp98ABSEOA=="
+bl {vg_mlkem_cbd2}
+.base64 "AQBaO/n/GjgAACAo"
+bne %cr0, 26b
+.base64 "AAB9OCAAgDgBAKA4ADDfOA=="
+bl {vg_mlkem_decode_decompress}
+.base64 "AQAAOwAAQDs="
+27:
+.base64 "ADR/OAAAgDgAAaA4"
+28:
+.base64 "AACDkAQAYzj//6U4AAAlKA=="
+bne %cr0, 28b
+.base64 "AAAgOw=="
+29:
+.base64 "AAVfmwEFP5vgBH84ADyfOABAvzg="
+bl {vg_mlkem_sample_ntt}
+.base64 "OBgYfwAAIyg="
+beq %cr0, 210f
+.base64 "ADyfOA=="
+b 211f
+210:
+.base64 "ZFUkexQin3wAFIQ4"
+211:
+.base64 "ADh/OGRVJXsUKr98ABSlOABI3zg="
+bl {vg_mlkem_multiply_ntts}
+.base64 "ADR/OAA4nzg="
+bl {vg_mlkem_add}
+.base64 "AQA5O/3/GTgAACAo"
+bne %cr0, 29b
+.base64 "ADR/OABInzg="
+bl {vg_mlkem_inv_ntt}
+.base64 "ADR/OGRVRHsUIp98ACCEOA=="
+bl {vg_mlkem_add}
+.base64 "QAEAONIBGnwUArt8ADR/OAoAgDhAAcA4"
+bl {vg_mlkem_compress_encode}
+.base64 "AQBaO/3/GjgAACAo"
+bne %cr0, 27b
+.base64 "ADR/OAAAgDgAAaA4"
+212:
+.base64 "AACDkAQAYzj//6U4AAAlKA=="
+bne %cr0, 212b
+.base64 "AAAgOw=="
+213:
+.base64 "ADh/OGRVJHsUIp98AAiEOGRVJXsUKr98ABSlOABI3zg="
+bl {vg_mlkem_multiply_ntts}
+.base64 "ADR/OAA4nzg="
+bl {vg_mlkem_add}
+.base64 "AQA5O/3/GTgAACAo"
+bne %cr0, 213b
+.base64 "ADR/OABInzg="
+bl {vg_mlkem_inv_ntt}
+.base64 "ADR/OAAsnzg="
+bl {vg_mlkem_add}
+.base64 "ADR/OAAwnzg="
+bl {vg_mlkem_add}
+.base64 "ADR/OAQAgDjAA7s4gADAOA=="
+bl {vg_mlkem_compress_encode}
+.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sgAIBO""#,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
+    )
+}
+
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.

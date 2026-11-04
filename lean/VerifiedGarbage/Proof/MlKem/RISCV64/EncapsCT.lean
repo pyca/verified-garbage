@@ -23,6 +23,10 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+meta import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.EncapsHSat
+meta import VerifiedGarbage.Proof.MlKem.EncapsHSat
 
 /-!
 # ML-KEM on RISC-V: encapsulation, constant time and `Verified`
@@ -91,58 +95,13 @@ theorem Two.hashOk {ins outs : List Piece} {a b : State} (ha : EnEnv K s₁ a) (
   ⟨⟨ha.ctx, hi two.hp₁ ha, ho two.hp₁ ha⟩,
     by rw [← two.layEq]; exact ⟨hb.ctx, hi two.hp₂ hb, ho two.hp₂ hb⟩, two.spE ha hb⟩
 
-theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ => True := by
+/-- From `G(m ‖ H(ek))` on (`tail`), in both runs. -/
+theorem tail_ct :
+    RelCT isa (fun a b => (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
+      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂))) (tail K) fun _ _ => True := by
   have hp₁ := two.hp₁
   have hp₂ := two.hp₂
   have hK := hp₁.wf
-  -- the setup
-  refine RelCT.seq (R := fun (a b : State) =>
-      (EnEnv K s₁ a ∧ a.gpr .s9 = pM s₁ ∧ bytesAt a.mem ((layM s₁ K).A 2 0) 32 = M K s₁) ∧
-      (EnEnv K s₂ b ∧ b.gpr .s9 = pM s₂ ∧ bytesAt b.mem ((layM s₂ K).A 2 0) 32 = M K s₂))
-    (relct_wp (taint_block [.a0, .a1, .a2, .a3, .a4] (fun a b hab => by rw [hab.1, hab.2, two.sp])
-      (fun a b hab r hr => by
-        rw [hab.1, hab.2]
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl
-        · exact two.a0
-        · exact two.a1
-        · exact two.a2
-        · exact two.a3
-        · exact two.a4) (by taint_decide))
-      fun a b hab => ⟨by rw [hab.1]; exact setup_ok hp₁, by rw [hab.2]; exact setup_ok hp₂⟩) ?_
-  -- `m` copied
-  refine RelCT.seq (R := fun (a b : State) =>
-      (EnEnv K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = M K s₁) ∧
-      (EnEnv K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oMsg) 32 = M K s₂))
-    (relct_wp (taint_prog [.s9, .s11] (fun a b hab => two.spE hab.1.1 hab.2.1)
-      (fun a b hab r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · rw [hab.1.2.1, hab.2.2.1]; exact two.a1
-        · exact two.regs hab.1.1 hab.2.1 .s11 (by simp)) (by taint_decide))
-      fun a b hab => ⟨copyM_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2,
-        copyM_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
-  refine RelCT.seq (R := fun (a b : State) => F4 K s₁ a ∧ F4 K s₂ b)
-    (relct_wp (relct_noMem (by rfl)) fun a b hab =>
-      ⟨s4_ok hp₁ hab.1.1 hab.1.2, s4_ok hp₂ hab.2.1 hab.2.2⟩) ?_
-  -- `H(ek)`
-  refine RelCT.seq (R := fun (a b : State) =>
-      (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
-      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂)))
-    (relct_wp (hash_ct (L := lay s₁ K) (idx := eidx) VG.Proof.MlKem.rate136 (by decide)
-      (List.cons_ne_nil _ _) fun a b hab =>
-        two.hashOk (ins := [⟨.s10, 0, K.ekLen⟩]) (outs := [⟨.s11, oHek, 32⟩]) hab.1.1 hab.2.1
-        (fun hp h p hp' => by
-          have hK := hp.wf
-          rw [List.mem_singleton] at hp'; subst hp'
-          exact pieceE hp h (.inl rfl) (by simp) (by show 0 < 32768; decide)
-            (by show K.ekLen < 2048; have := hK.k4; simp only [KemLay.ekLen]; omega)
-            (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega) (by edecide))
-        (fun hp h p hp' => by
-          have hK := hp.wf
-          rw [List.mem_singleton] at hp'; subst hp'
-          exact pieceE hp h (.inr rfl) (fun _ => rfl) (by decide) (by decide) (by decide) (by edecide)))
-      fun a b hab => ⟨s5_ok hp₁ hab.1, s5_ok hp₂ hab.2⟩) ?_
   -- `G(m ‖ H(ek))`
   refine RelCT.seq (R := fun (a b : State) =>
       (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oG) 32 = KK K s₁ ∧
@@ -187,6 +146,60 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ =
     rw [← two.layEq]; exact hxy.2.1.1.ek
   rw [hxy.1.1.1.ek, e₂]; exact two.rho
 
+
+theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ => True := by
+  have hp₁ := two.hp₁
+  have hp₂ := two.hp₂
+  have hK := hp₁.wf
+  -- the setup
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K s₁ a ∧ a.gpr .s9 = pM s₁ ∧ bytesAt a.mem ((layM s₁ K).A 2 0) 32 = M K s₁) ∧
+      (EnEnv K s₂ b ∧ b.gpr .s9 = pM s₂ ∧ bytesAt b.mem ((layM s₂ K).A 2 0) 32 = M K s₂))
+    (relct_wp (taint_block [.a0, .a1, .a2, .a3, .a4] (fun a b hab => by rw [hab.1, hab.2, two.sp])
+      (fun a b hab r hr => by
+        rw [hab.1, hab.2]
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · exact two.a0
+        · exact two.a1
+        · exact two.a2
+        · exact two.a3
+        · exact two.a4) (by taint_decide))
+      fun a b hab => ⟨by rw [hab.1]; exact setup_ok hp₁, by rw [hab.2]; exact setup_ok hp₂⟩) ?_
+  -- `m` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = M K s₁) ∧
+      (EnEnv K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oMsg) 32 = M K s₂))
+    (relct_wp (taint_prog [.s9, .s11] (fun a b hab => two.spE hab.1.1 hab.2.1)
+      (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.1, hab.2.2.1]; exact two.a1
+        · exact two.regs hab.1.1 hab.2.1 .s11 (by simp)) (by taint_decide))
+      fun a b hab => ⟨WP.mono (copyM_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2) fun _ h => ⟨h.1, h.2.1⟩,
+        WP.mono (copyM_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2) fun _ h => ⟨h.1, h.2.1⟩⟩) ?_
+  refine RelCT.seq (R := fun (a b : State) => F4 K s₁ a ∧ F4 K s₂ b)
+    (relct_wp (relct_noMem (by rfl)) fun a b hab =>
+      ⟨s4_ok hp₁ hab.1.1 hab.1.2, s4_ok hp₂ hab.2.1 hab.2.2⟩) ?_
+  -- `H(ek)`
+  refine RelCT.seq (R := fun (a b : State) =>
+      (F4 K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oHek) 32 = H (EK K s₁)) ∧
+      (F4 K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oHek) 32 = H (EK K s₂)))
+    (relct_wp (hash_ct (L := lay s₁ K) (idx := eidx) VG.Proof.MlKem.rate136 (by decide)
+      (List.cons_ne_nil _ _) fun a b hab =>
+        two.hashOk (ins := [⟨.s10, 0, K.ekLen⟩]) (outs := [⟨.s11, oHek, 32⟩]) hab.1.1 hab.2.1
+        (fun hp h p hp' => by
+          have hK := hp.wf
+          rw [List.mem_singleton] at hp'; subst hp'
+          exact pieceE hp h (.inl rfl) (by simp) (by show 0 < 32768; decide)
+            (by show K.ekLen < 2048; have := hK.k4; simp only [KemLay.ekLen]; omega)
+            (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega) (by edecide))
+        (fun hp h p hp' => by
+          have hK := hp.wf
+          rw [List.mem_singleton] at hp'; subst hp'
+          exact pieceE hp h (.inr rfl) (fun _ => rfl) (by decide) (by decide) (by decide) (by edecide)))
+      fun a b hab => ⟨s5_ok hp₁ hab.1, s5_ok hp₂ hab.2⟩) (tail_ct two)
+
 end
 
 /-! ## The outcome -/
@@ -220,7 +233,7 @@ theorem pre_of {s : State} (h : (Spec.MlKem.encapsContract RISCV64.abi 1168).pre
   sig_pre [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨al, h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5,
     f1, f2, f3, f4, f5, alS⟩ := h
-  exact ⟨kl768_wf, kl768_calls, al, h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
+  exact ⟨kl768_wf, kl768_calls, al, h0, by rw [h1]; exact .head _, by rw [h1]; exact .tail _ (.head _), h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
     b5, f1, f2, f3, f4, f5, alS⟩
 
 theorem post_of {s₀ s : State}
@@ -268,6 +281,161 @@ theorem verified :
     · sig_reduce [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
+        | trivial
+        | decide +kernel
+
+
+/-! ## `encapsH` -/
+
+/-- Two runs of `encapsH`, from states that agree on the public data. -/
+structure TwoH (K : KemLay) (s₁ s₂ : State) : Prop where
+  hq₁ : PreH K s₁
+  hq₂ : PreH K s₂
+  sp : s₁.sp = s₂.sp
+  a0 : s₁.gpr .a0 = s₂.gpr .a0
+  a1 : s₁.gpr .a1 = s₂.gpr .a1
+  a2 : s₁.gpr .a2 = s₂.gpr .a2
+  a3 : s₁.gpr .a3 = s₂.gpr .a3
+  a4 : s₁.gpr .a4 = s₂.gpr .a4
+  a5 : s₁.gpr .a5 = s₂.gpr .a5
+  rho : ekRho K.p (EK K (args s₁)) = ekRho K.p (EK K (args s₂))
+
+/-- What `encaps`'s runs of their arguments are. -/
+theorem TwoH.two {K : KemLay} {s₁ s₂ : State} (t : TwoH K s₁ s₂) : Two K (args s₁) (args s₂) :=
+  ⟨t.hq₁.pre, t.hq₂.pre, t.sp, t.a0, t.a2, t.a3, t.a4, t.a5, t.rho⟩
+
+theorem all_ctH {K : KemLay} {s₁ s₂ : State} (two : TwoH K s₁ s₂) :
+    RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encapsH fun _ _ => True := by
+  have hq₁ := two.hq₁
+  have hq₂ := two.hq₂
+  have hp₁ := hq₁.pre
+  have hp₂ := hq₂.pre
+  have tw := two.two
+  -- the setup
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K (args s₁) a ∧ a.gpr .s9 = pM (args s₁) ∧ a.gpr .a1 = pH s₁ ∧
+        bytesAt a.mem ((layM (args s₁) K).A 2 0) 32 = M K (args s₁) ∧
+        bytesAt a.mem ((layH K s₁).A 2 0) 32 = bytesAt s₁.mem ((layH K s₁).A 2 0) 32) ∧
+      (EnEnv K (args s₂) b ∧ b.gpr .s9 = pM (args s₂) ∧ b.gpr .a1 = pH s₂ ∧
+        bytesAt b.mem ((layM (args s₂) K).A 2 0) 32 = M K (args s₂) ∧
+        bytesAt b.mem ((layH K s₂).A 2 0) 32 = bytesAt s₂.mem ((layH K s₂).A 2 0) 32))
+    (relct_wp (taint_block [.a0, .a1, .a2, .a3, .a4, .a5] (fun a b hab => by rw [hab.1, hab.2, two.sp])
+      (fun a b hab r hr => by
+        rw [hab.1, hab.2]
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+        · exact two.a0
+        · exact two.a1
+        · exact two.a2
+        · exact two.a3
+        · exact two.a4
+        · exact two.a5) (by taint_decide))
+      fun a b hab => ⟨by rw [hab.1]; exact setupH_ok hq₁, by rw [hab.2]; exact setupH_ok hq₂⟩) ?_
+  -- `h` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K (args s₁) a ∧ a.gpr .s9 = pM (args s₁) ∧
+        bytesAt a.mem ((layM (args s₁) K).A 2 0) 32 = M K (args s₁) ∧
+        bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (EnEnv K (args s₂) b ∧ b.gpr .s9 = pM (args s₂) ∧
+        bytesAt b.mem ((layM (args s₂) K).A 2 0) 32 = M K (args s₂) ∧
+        bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (taint_prog [.a1, .s11] (fun a b hab => tw.spE hab.1.1 hab.2.1)
+      (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.2.1, hab.2.2.2.1]; exact two.a1
+        · exact tw.regs hab.1.1 hab.2.1 .s11 (by simp)) (by taint_decide))
+      fun a b hab =>
+        ⟨WP.mono (copyH_ok hq₁ hab.1.1 hab.1.2.2.1 hab.1.2.2.2.2 hab.1.2.2.2.1) fun _ h =>
+          ⟨h.1, h.2.1.trans hab.1.2.1, h.2.2⟩,
+        WP.mono (copyH_ok hq₂ hab.2.1 hab.2.2.2.1 hab.2.2.2.2.2 hab.2.2.2.2.1) fun _ h =>
+          ⟨h.1, h.2.1.trans hab.2.2.1, h.2.2⟩⟩) ?_
+  -- `m` copied
+  refine RelCT.seq (R := fun (a b : State) =>
+      (EnEnv K (args s₁) a ∧ bytesAt a.mem ((lay (args s₁) K).A 0 oMsg) 32 = M K (args s₁) ∧
+        bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (EnEnv K (args s₂) b ∧ bytesAt b.mem ((lay (args s₂) K).A 0 oMsg) 32 = M K (args s₂) ∧
+        bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (taint_prog [.s9, .s11] (fun a b hab => tw.spE hab.1.1 hab.2.1)
+      (fun a b hab r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [hab.1.2.1, hab.2.2.1]; exact two.a2
+        · exact tw.regs hab.1.1 hab.2.1 .s11 (by simp)) (by taint_decide))
+      fun a b hab => ⟨copyMh_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2.1 hab.1.2.2.2,
+        copyMh_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2.1 hab.2.2.2.2⟩) ?_
+  refine RelCT.seq (R := fun (a b : State) =>
+      (F4 K (args s₁) a ∧ bytesAt a.mem ((lay (args s₁) K).A 0 oHek) 32 = H (EK K (args s₁))) ∧
+      (F4 K (args s₂) b ∧ bytesAt b.mem ((lay (args s₂) K).A 0 oHek) 32 = H (EK K (args s₂))))
+    (relct_wp (relct_noMem (by rfl)) fun a b hab =>
+      ⟨s4h_ok hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, s4h_ok hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
+  exact tail_ct tw
+
+/-! ## ML-KEM-768's `encapsH` -/
+
+theorem pre_ofH {s : State} (h : (Spec.MlKem.encapsHContract RISCV64.abi 1168).pre s) : PreH kl768 s := by
+  sig_pre [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+    RISCV64.argRegs] at h
+  obtain ⟨al, h0, h1, h2, d1, d2, d3, dh1, dh2, dh3, d4, d5, d6, d7, d8, d9, b1, bh, b2, b3, b4, b5,
+    f1, fh, f2, f3, f4, f5, hh, alS⟩ := h
+  have r : (args s).rd = _ := h1
+  exact ⟨⟨kl768_wf, kl768_calls, al, h0, by rw [r]; exact .head _, by rw [r]; exact .tail _ (.tail _ (.head _)),
+    h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5, f1, f2, f3, f4, f5, alS⟩,
+    by rw [h1]; exact .tail _ (.head _), dh3, bh, fh, by rw [EK_eq]; exact hh⟩
+
+/-- `post_of` for `encapsH`, whose arguments after `ek` are one register later. -/
+theorem post_ofH {s₀ s : State}
+    (h3 : s.gpr .a0 = if okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k then 1 else 0)
+    (hkey : bytesAt s.mem (pKey (args s₀)) 32 = KK kl768 (args s₀))
+    (hct : bytesAt s.mem (pCt (args s₀)) 1088 = VG.Proof.MlKem.KPke.ct kl768.p
+      (aEnc (ekRho kl768.p (EK kl768 (args s₀))) (RR kl768 (args s₀))) (EK kl768 (args s₀)) (M kl768 (args s₀))
+      (RR kl768 (args s₀))) :
+    (Spec.MlKem.encapsHContract RISCV64.abi 1168).post s₀ s := by
+  sig_post [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+    RISCV64.argRegs]
+  have e : BitVec.setWidth 32
+      (if okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k then (1 : BitVec 64) else 0) =
+      if okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k then 1 else 0 := by
+    cases okEnc kl768.k (ekRho kl768.p (EK kl768 (args s₀))) kl768.k <;> rfl
+  have e0 : bytesAt s₀.mem (s₀.gpr .a0) 1184 = EK kl768 (args s₀) := (EK_eq kl768 (args s₀)).symm
+  have e1 : bytesAt s₀.mem (s₀.gpr .a2) 32 = M kl768 (args s₀) := (M_eq kl768 (args s₀)).symm
+  have hkey' : bytesAt s.mem (s₀.gpr .a3) 32 = KK kl768 (args s₀) := hkey
+  have hct' : bytesAt s.mem (s₀.gpr .a4) 1088 = _ := hct
+  rw [h3, e, hkey', hct', e0, e1]
+  exact outcome kl768_wf (args s₀)
+
+/-- A state satisfying `encapsH`'s precondition, with `H(ek)` at `h` (`hMem`). -/
+def satStateH (ekLen ctLen scr : Nat) : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x4000 | .a4 => 0x5000 | .a5 => 0x10000 | _ => 0
+  sp := 0x8000
+  mem := VG.Proof.MlKem.hMem ekLen
+  rd := [⟨0x1000, ekLen⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
+  wr := [⟨0x4000, 32⟩, ⟨0x5000, ctLen⟩, ⟨0x10000, scr⟩]
+
+theorem verifiedH :
+    Verified RISCV64.target Impl.MlKem.RISCV64.encapsH (Spec.MlKem.encapsHContract RISCV64.abi 1168) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correctH (pre_ofH hs)
+    exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp, hlr⟩, post_ofH h3 hkey hct⟩
+  · have hq₁ := pre_ofH h₁
+    have hq₂ := pre_ofH h₂
+    sig_pub [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+      RISCV64.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6, g7, g8⟩ := hpub
+    have hr : ekRho kl768.p (EK kl768 (args s₁)) = ekRho kl768.p (EK kl768 (args s₂)) := by
+      rw [EK_eq, EK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ctH ⟨hq₁, hq₂, hsp, g3, g4, g5, g6, g7, g8, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨satStateH 1184 1088 32768, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+        RISCV64.argRegs]
+      sig_and_intros
+      all_goals first
+        | exact VG.Proof.MlKem.hMem_h (by decide)
         | trivial
         | decide +kernel
 

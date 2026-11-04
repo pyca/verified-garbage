@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Impl.MlKem1024.RISCV64.Top
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Encaps
-
 import VerifiedGarbage.Proof.MlKem.RISCV64.EncapsCT
+import VerifiedGarbage.Proof.MlKem.EncapsHSat
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+
 import VerifiedGarbage.Proof.MlKem1024.RISCV64.Calls
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -26,13 +28,13 @@ open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.RISCV64 VG.Proof.MlKem1024.RISCV64
 open VG.Proof.MlKem.RISCV64.Enc
-open VG.Proof.MlKem.RISCV64.Encaps hiding pre_of post_of satState verified
+open VG.Proof.MlKem.RISCV64.Encaps hiding pre_of post_of satState verified pre_ofH post_ofH verifiedH
 
 theorem pre_of {s : State} (h : (Spec.MlKem1024.encapsContract RISCV64.abi 1168).pre s) : Pre kl1024 s := by
   sig_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨al, h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5,
     f1, f2, f3, f4, f5, alS⟩ := h
-  exact ⟨kl1024_wf, kl1024_calls, al, h0, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
+  exact ⟨kl1024_wf, kl1024_calls, al, h0, by rw [h1]; exact .head _, by rw [h1]; exact .tail _ (.head _), h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4,
     b5, f1, f2, f3, f4, f5, alS⟩
 
 theorem post_of {s₀ s : State}
@@ -80,6 +82,65 @@ theorem verified :
     · sig_reduce [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, RISCV64.abi, RISCV64.argRegs]
       sig_and_intros
       all_goals first
+        | trivial
+        | decide +kernel
+
+/-! ## `encapsH` -/
+
+theorem pre_ofH {s : State} (h : (Spec.MlKem1024.encapsHContract RISCV64.abi 1168).pre s) : PreH kl1024 s := by
+  sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+    RISCV64.argRegs] at h
+  obtain ⟨al, h0, h1, h2, d1, d2, d3, dh1, dh2, dh3, d4, d5, d6, d7, d8, d9, b1, bh, b2, b3, b4, b5,
+    f1, fh, f2, f3, f4, f5, hh, alS⟩ := h
+  have r : (args s).rd = _ := h1
+  exact ⟨⟨kl1024_wf, kl1024_calls, al, h0, by rw [r]; exact .head _, by rw [r]; exact .tail _ (.tail _ (.head _)),
+    h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5, f1, f2, f3, f4, f5, alS⟩,
+    by rw [h1]; exact .tail _ (.head _), dh3, bh, fh, by rw [EK_eq]; exact hh⟩
+
+/-- `post_of` for `encapsH`, whose arguments after `ek` are one register later. -/
+theorem post_ofH {s₀ s : State}
+    (h3 : s.gpr .a0 = if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then 1 else 0)
+    (hkey : bytesAt s.mem (pKey (args s₀)) 32 = KK kl1024 (args s₀))
+    (hct : bytesAt s.mem (pCt (args s₀)) 1568 = VG.Proof.MlKem.KPke.ct kl1024.p
+      (aEnc (ekRho kl1024.p (EK kl1024 (args s₀))) (RR kl1024 (args s₀))) (EK kl1024 (args s₀)) (M kl1024 (args s₀))
+      (RR kl1024 (args s₀))) :
+    (Spec.MlKem1024.encapsHContract RISCV64.abi 1168).post s₀ s := by
+  sig_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+    RISCV64.argRegs]
+  have e : BitVec.setWidth 32
+      (if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then (1 : BitVec 64) else 0) =
+      if okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k then 1 else 0 := by
+    cases okEnc kl1024.k (ekRho kl1024.p (EK kl1024 (args s₀))) kl1024.k <;> rfl
+  have e0 : bytesAt s₀.mem (s₀.gpr .a0) 1568 = EK kl1024 (args s₀) := (EK_eq kl1024 (args s₀)).symm
+  have e1 : bytesAt s₀.mem (s₀.gpr .a2) 32 = M kl1024 (args s₀) := (M_eq kl1024 (args s₀)).symm
+  have hkey' : bytesAt s.mem (s₀.gpr .a3) 32 = KK kl1024 (args s₀) := hkey
+  have hct' : bytesAt s.mem (s₀.gpr .a4) 1568 = _ := hct
+  rw [h3, e, hkey', hct', e0, e1]
+  exact outcome kl1024_wf (args s₀)
+
+theorem verifiedH :
+    Verified RISCV64.target Impl.MlKem1024.RISCV64.encapsH1024 (Spec.MlKem1024.encapsHContract RISCV64.abi 1168) := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, hlr, h3, hkey, hct⟩ := correctH (pre_ofH hs)
+    exact ⟨t, s', he, ⟨fun r hr => (hpres r hr).trans (args_preserved s r hr), hsp, hlr⟩, post_ofH h3 hkey hct⟩
+  · have hq₁ := pre_ofH h₁
+    have hq₂ := pre_ofH h₂
+    sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+      RISCV64.argRegs] at hpub
+    obtain ⟨hsp, hl, g3, g4, g5, g6, g7, g8⟩ := hpub
+    have hr : ekRho kl1024.p (EK kl1024 (args s₁)) = ekRho kl1024.p (EK kl1024 (args s₂)) := by
+      rw [EK_eq, EK_eq]
+      unfold leakRho at hl
+      exact (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hl
+    exact (all_ctH ⟨hq₁, hq₂, hsp, g3, g4, g5, g6, g7, g8, hr⟩ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  · refine ⟨VG.Proof.MlKem.RISCV64.Encaps.satStateH 1568 1568 49152, ?_⟩
+    sig_apply_check
+    · decide +kernel
+    · sig_reduce [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
+        RISCV64.argRegs]
+      sig_and_intros
+      all_goals first
+        | exact VG.Proof.MlKem.hMem_h (by decide)
         | trivial
         | decide +kernel
 
