@@ -235,9 +235,11 @@ these once were, cost it a tenth of a build of the crate.)
 
 `files` checks that `features` are exactly the features the code requires.
 (The functions get no `#[target_feature]` attribute: Rust does not allow one
-on naked functions. The x86 assemblers accept every instruction without it;
-on AArch64 the printer's `enableFeature`/`disableFeature` directives enable
-each feature for the function's body only.) A feature that some of the
+on naked functions. Nor do they need an assembler directive enabling it: the
+x86 and AArch64 printers emit each instruction of a feature as its machine
+code, which the assembler copies without reading a mnemonic, and ARM's one
+feature, `umaal`, which it prints as text, is compiled only where the target
+assembles it, under its `cfg`.) A feature that some of the
 target's configurations cannot assemble or must never run has a `cfg`
 (`Printer.featureCfg`, ARMv7's `umaal`): the function and its constants are
 compiled only under it, `#[cfg(<predicate>)]`.
@@ -745,20 +747,17 @@ def funcOptions : String → List String × List String
 `Printer.featureCfg` of its features). -/
 def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
 
-/-- The lines of a function on the target `T` whose code needs the CPU
-features `features`, given its printed code `lines`: the target's opening
-`funcOptions`, the directives enabling its features, `lines`, the directives
-disabling them, the printer's `funcAlign`, and the closing `funcOptions`. -/
-def bodyLines (T : Target) (features : List String) (lines : List Line) : List Line :=
-  let P := T.printer
+/-- The lines of a function on the target `T`, given its printed code
+`lines`: the target's opening `funcOptions`, `lines`, the printer's
+`funcAlign`, and the closing `funcOptions`. -/
+def bodyLines (T : Target) (lines : List Line) : List Line :=
   let (start, stop) := funcOptions T.name
-  start.map .text ++ (features.flatMap P.enableFeature).map .text ++ lines ++
-    (features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+  start.map .text ++ lines ++ T.printer.funcAlign.map .text ++ stop.map .text
 
-/-- The lines of `a`'s function, given its printed code `lines` (`bodyLines`
-of its features). -/
+/-- The lines of `a`'s function, given its printed code `lines`
+(`bodyLines`). -/
 def bodyOf (a : Artifact) (lines : List Line) : List Line :=
-  bodyLines a.target a.features lines
+  bodyLines a.target lines
 
 /-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
 its template, then the `sym` operand of each function it calls, at the path
@@ -1084,9 +1083,8 @@ code the function is emitted with (`checkCalls`).
 Its fields are what the emitter reads of it: its target, name and code, its
 printed code (`Printer.function`), the CPU features its code, and that of
 the functions it calls, requires (`requiresDedup`), which its function's
-body enables and its `cfg` attribute follows, as an artifact's
-(`bodyLines`, `gateOf`); the tables of constants its instructions carry
-(`Printer.codeTables`), and the tables its printed code names. -/
+`cfg` attribute follows, as an artifact's (`gateOf`); the tables of
+constants its instructions carry (`Printer.codeTables`), and the tables its printed code names. -/
 structure Internal where
   /-- Its target and code, the `Fn` of the first call of it (`Shared.calls`). -/
   fn : Fn
@@ -1579,7 +1577,7 @@ def internalDoc : String :=
 the CPU features its code needs (`featuresConst`, for the checks of the
 generated code, `ci/check_variants.py`), and the function, a naked function
 of no parameters, `pub(crate)`, with the `cfg` attribute of those features
-(`Printer.featureCfg`), whose body enables them (`bodyLines`); `moduleOf` gives the module of each function it calls,
+(`Printer.featureCfg`); `moduleOf` gives the module of each function it calls,
 from the crate's root (`internalModule` for an internal function). -/
 def internalFile (h : Internal) (moduleOf : String → String) : String :=
   let T := h.target
@@ -1592,7 +1590,7 @@ def internalFile (h : Internal) (moduleOf : String → String) : String :=
   gate ++
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{T.rustAbi}\" fn {h.name}() " ++ "{\n" ++
-  asmOf T (bodyLines T h.features h.lines) moduleOf "crate" ++ "}\n"
+  asmOf T (bodyLines T h.lines) moduleOf "crate" ++ "}\n"
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
@@ -1626,7 +1624,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
       let m := s!"internal/{h.name}"
       [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
-         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.features h.lines))]).flatMap
+         moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.lines))]).flatMap
       Task.get ++
     -- Each module's files on a task of their own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>

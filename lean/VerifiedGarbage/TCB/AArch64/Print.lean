@@ -260,11 +260,6 @@ def printer : Printer isa where
   tables
     | .ldrqTbl _ _ _ name ws => [(name, ws)]
     | _ => []
-  -- LLVM's AArch64 assembler rejects, e.g., `aese` unless the `aes` extension
-  -- is enabled, and a directive in a naked function stays in effect for the
-  -- rest of the module, so each function disables what it enabled.
-  enableFeature f := [s!".arch_extension {f}"]
-  disableFeature f := [s!".arch_extension no{f}"]
   /- Every function starts on a 64-byte boundary, a cache line, and so on
   the 32-byte boundaries the Arm Neoverse N1 Software Optimization Guide
   (§4.8, "Branch instruction alignment") recommends for subroutine entry
