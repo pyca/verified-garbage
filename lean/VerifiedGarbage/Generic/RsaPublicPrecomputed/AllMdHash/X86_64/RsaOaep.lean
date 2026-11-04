@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
-public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.Arm.Step
