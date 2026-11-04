@@ -69,6 +69,8 @@ structure Lay (dn : Nat) where
   the functions an indirect call of a table's functions may reach. -/
   G : Stream
   f : Fns
+  /-- The addresses of `G`'s functions, public. -/
+  fa : String → Addr
 
 namespace Lay
 
@@ -271,6 +273,7 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t : 
   held : Abi.constsHeld m₀ L.sy L.cs
   tabOk : TabOK L.G L.f t.syms
   tabMem : TabMem L.G t.syms L.tab m₀
+  fsy : ∀ n ∈ [L.G.initN, L.G.updN, L.G.finN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -300,7 +303,7 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
     (hf.readW (r := L.TS) (Offset.contains _ (Nat.le_refl _) (by have := L.he; omega_arith) (by have := hL.nb; have := L.he; omega_arith))
       (fun r hr => hL.ts_safe (hs r hr)) (by decide)).trans hc.pTab,
     hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.sy, hc.held,
-    by rw [hsy]; exact hc.tabOk, by rw [hsy]; exact hc.tabMem⟩
+    by rw [hsy]; exact hc.tabOk, by rw [hsy]; exact hc.tabMem, by rw [hsy]; exact hc.fsy⟩
 
 /-- Code that writes only caller-saved registers. -/
 theorem regs (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
@@ -395,7 +398,8 @@ addresses, public, of those tables only). -/
 def lay (dn q e : Nat) (he : e ≤ 34) (cs : List (String × List (BitVec 64))) (G : Stream) (f : Fns)
     (s : State) : Lay dn :=
   ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r9, s.gpr .rsp - BitVec.ofNat 64 (248 + 8 * e), q, e,
-    he, cs, fun n => if n ∈ cs.map Prod.fst then s.syms n else 0, G, f⟩
+    he, cs, fun n => if n ∈ cs.map Prod.fst then s.syms n else 0, G, f,
+    fun n => if n ∈ [G.initN, G.updN, G.finN] then s.syms n else 0⟩
 
 /-- What the contract says of the table at `r9`: it holds `G`'s functions,
 which an indirect call of `f`'s reaches. -/
@@ -476,7 +480,7 @@ theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc697
   have htf : tabFacts G f s := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   refine ⟨by rw [pushed_rd, h.2.1, lay_tbls]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr,
     hw' 3 (by omega_arith), hw' 2 (by omega_arith), hw' 1 (by omega_arith), hw' 0 (by omega_arith), hwt, ?_,
-    fun c hc => (congrFun (pushRegs_syms s _) c.1).trans (lay_sy I.hashLen I.ecdsa.curve.len e he (cs := cs) (G := G) (f := f) s c hc).symm, fun c hc i hi => ?_, ?_, ?_⟩
+    fun c hc => (congrFun (pushRegs_syms s _) c.1).trans (lay_sy I.hashLen I.ecdsa.curve.len e he (cs := cs) (G := G) (f := f) s c hc).symm, fun c hc i hi => ?_, ?_, ?_, ?_⟩
   · rw [pushed_wr, h.2.2.1, pushRs_length, push_base, show 8 * (28 + e) = 224 + 8 * e by omega_arith]; rfl
   · rw [pushed_rsp, pushRs_length, push_base]; rfl
   · refine Frame.sub hf fun r hr => ?_
@@ -490,5 +494,9 @@ theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc697
     rw [pushRegs_syms]; exact htf.1
   · show TabMem G (pushRegs s (pushRs e)).syms (s.gpr .r9) s.mem
     rw [pushRegs_syms]; exact htf.2
+  · intro n hn
+    show (pushRegs s (pushRs e)).syms n = (if n ∈ [G.initN, G.updN, G.finN] then s.syms n else 0)
+    have hn' : n ∈ [G.initN, G.updN, G.finN] := hn
+    rw [pushRegs_syms, ite_eq_left_of_eq_true _ _ (eq_true hn')]
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

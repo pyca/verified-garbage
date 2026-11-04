@@ -193,11 +193,11 @@ def scrPtr : List Instr := [.mov .rdi (.mem (stk fScratch))]
 
 /-! ## HMAC through the table -/
 
-/-- The indirect call of the table's function `j`, among `ts`: its address
-(the table's word `j`) into `r11`, then `call r11`. -/
+/-- The indirect call of the table's function `j`, among `ts`: the table's
+address into `r11`, its word `j` into `r11`, then `call r11`. -/
 def tcall (j : Nat) (ts : List (String × Prog isa)) : Prog isa :=
-  .seq (.block [.mov .r11 (.mem (stk c.fTab)), .mov .r11 (.mem (at_ .r11 (8 * j)))])
-    (Code.icalls (.callr .r11) ts)
+  .seq (.block [.mov .r11 (.mem (stk c.fTab))]) (.seq (.block [.mov .r11 (.mem (at_ .r11 (8 * j)))])
+    (Code.icalls (.callr .r11) ts))
 
 /-- The streaming `init` of the state at `scratch + o`. -/
 def initCall (o : Nat) : Prog isa := .seq (.block (scr .rdi o)) (c.tcall 0 c.f.init)

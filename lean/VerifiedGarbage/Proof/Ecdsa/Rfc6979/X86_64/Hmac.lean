@@ -94,10 +94,11 @@ theorem tcall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {
   have hx : (cfgOf P).fTab = 216 + 8 * L.e := by rw [Cfg.fTab, extra_eq, hT.2.2]; rfl
   have hs := hc.inFr (d := 240 + 8 * L.e) (by omega) (by omega)
   have ht := hc.inTab hL (o := 8 * j) hj
-  have hb : WP isa (.block [.mov .r11 (.mem (stk (cfgOf P).fTab)), .mov .r11 (.mem (at_ .r11 (8 * j)))]) t
+  have hb : WP isa (.block ([.mov .r11 (.mem (stk (cfgOf P).fTab))] ++ [.mov .r11 (.mem (at_ .r11 (8 * j)))])) t
       fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .r11 = t.syms n ∧
         (∀ r, r ≠ .r11 → t'.gpr r = t.gpr r) ∧ t'.syms = t.syms := by
     apply WP.of_runBlock
+    simp only [List.cons_append, List.nil_append]
     simp only [hx, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, ea_at, hc.rsp,
       Offset.add_add, show 24 + (216 + 8 * L.e) = 240 + 8 * L.e by omega, hs, ite_true, Option.map_some,
       hc.pTab, RegUpd.gpr_setReg_self, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, ht,
@@ -106,7 +107,8 @@ theorem tcall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {
     · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setReg_of_ne _ _ hr]
     · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setReg_of_ne _ _ hr]
   unfold Cfg.tcall
-  refine WP.seq (WP.mono hb fun t' ⟨hc', hm, h11, hk, hsy⟩ => ?_)
+  rw [WP.block_append_iff] at hb
+  refine WP.seq (WP.mono hb fun t₁ h₁ => WP.seq (WP.mono h₁ fun t' ⟨hc', hm, h11, hk, hsy⟩ => ?_))
   refine WP.icalls_of_call (a := t.syms n) (by simp only [X86_64.icall, h11]) ?_ (h t' hc' hm hk hsy)
   show ts.find? (fun q => t'.syms q.1 == t.syms n) = _
   rw [hsy]; exact hf
