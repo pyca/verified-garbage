@@ -164,4 +164,216 @@ theorem body_noSp {f : MdFns} {fG : Fns} (hf : FnsSp f fG) (hall : ∀ i ∈ idx
   rw [tail_eq h' hs]
   exact tail_noSp h' hf.hi hf.hc hf.hd hf.gi hf.gu hf.gf v
 
+/-! ## The entry -/
+
+/-- What the registration checks of the variants `vs` of the tables of
+`MdHash` and `gs` of `Hash`: the functions of one name have one code, each
+hash function has the sizes of its index, each index has a variant, and few
+enough functions for the contract's satisfiability. -/
+def OK (vs : List MVar) (gs : List TVar) : Prop :=
+  Proof.MdHashTable.X86.Coh vs ∧ (∀ w ∈ vs, Proof.MdHashTable.X86.Shape w) ∧ Proof.HashTable.X86.Coh gs ∧
+    (∀ i ∈ idxs, ∃ w ∈ vs, Proof.MdHashTable.X86.idx w = i) ∧ gs ≠ [] ∧
+    (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24
+
+instance (vs : List MVar) (gs : List TVar) : Decidable (OK vs gs) := by unfold OK; infer_instance
+
+variable {vs : List MVar} {gs : List TVar}
+
+/-- The code, calling `vg_rsa_private_checked` over `v`, with the hash
+function any of the tables of `vs` and MGF1's any of `gs`. -/
+abbrev signCode (vs : List MVar) (gs : List TVar) (v : CrtImpl) : Prog isa :=
+  sign (Proof.MdHashTable.X86.fnsOf vs) (Proof.HashTable.X86.fnsOf gs) (privName v) (privCode v)
+
+/-- The contract, with those tables. -/
+abbrev sspec (vs : List MVar) (gs : List TVar) : Contract isa :=
+  spec (Proof.MdHashTable.X86.tables vs) (Proof.HashTable.X86.tables gs)
+
+theorem fnsSp (vs : List MVar) (gs : List TVar) :
+    FnsSp (Proof.MdHashTable.X86.fnsOf vs) (Proof.HashTable.X86.fnsOf gs) := by
+  obtain ⟨gi, gu, gf⟩ := Proof.HashTable.X86.fnsOf_noSp gs
+  refine ⟨?_, ?_, ?_, gi, gu, gf⟩ <;> simp only [Proof.MdHashTable.X86.fnsOf, List.mem_map] <;>
+    rintro _ ⟨w, -, rfl⟩
+  exacts [w.h.ok.hH.initSp, w.h.ok.comp.nosp, w.h.certs.digSp]
+
+theorem hall_of (hok : OK vs gs) : ∀ i ∈ idxs, ∃ h : PssHash, sizes h.H = sizesOf i := fun i hi => by
+  obtain ⟨w, hw, rfl⟩ := hok.2.2.2.1 i hi
+  exact ⟨w.h, (hok.2.1 w hw).2⟩
+
+theorem code_noSp (hok : OK vs gs) (v : CrtImpl) : NoSp (signCode vs gs v) :=
+  noSp_frame rfl rfl (noSp_seq (noSp_frame rfl rfl (body_noSp (fnsSp vs gs) (hall_of hok) v)) restore_noSp)
+
+theorem code_sp (hok : OK vs gs) (v : CrtImpl) : (signCode vs gs v).all (fun i => !isa.writesSp i) = true :=
+  Proof.Rsa.X86.PrivChecked.noSp_allStack (code_noSp hok v)
+
+theorem spec_sp {s : State} (hs : (sspec vs gs).pre s) :
+    stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
+  sign_pre at hs
+  obtain ⟨hsp, hsa, -⟩ := hs
+  exact ⟨hsp, by omega⟩
+
+theorem fne_of {w : MVar} (hw : w ∈ vs) {wg : TVar} (hwg : wg ∈ gs) :
+    ((Proof.MdHashTable.X86.fnsOf vs).init ≠ [] ∧ (Proof.MdHashTable.X86.fnsOf vs).comp ≠ [] ∧
+      (Proof.MdHashTable.X86.fnsOf vs).dig ≠ []) ∧
+    ((Proof.HashTable.X86.fnsOf gs).init ≠ [] ∧ (Proof.HashTable.X86.fnsOf gs).upd ≠ [] ∧
+      (Proof.HashTable.X86.fnsOf gs).fin ≠ []) := by
+  have h1 := List.ne_nil_of_mem hw
+  have h2 := List.ne_nil_of_mem hwg
+  simp only [Proof.MdHashTable.X86.fnsOf, Proof.HashTable.X86.fnsOf, ne_eq, List.map_eq_nil_iff]
+  exact ⟨⟨h1, h1, h1⟩, h2, h2, h2⟩
+
+/-- What the entry state holds of the table of `MdHash` of `w` at `p`, with
+its functions where `s'` has them. -/
+abbrev THw (vs : List MVar) (w : MVar) (p : BitVec 32) (s' : State) (σ : State) : Prop :=
+  HFacts w.h (Proof.MdHashTable.X86.digName w) (Proof.MdHashTable.X86.fnsOf vs) p (s'.syms w.h.H.st.initN)
+      (s'.syms w.h.H.compN) (s'.syms (Proof.MdHashTable.X86.digName w)) σ ∧
+    σ.mem.readW (VG.X86.addr p 20) 32 = BitVec.ofNat 32 (Proof.MdHashTable.X86.idx w)
+
+/-- The public parameters for the table of `MdHash` of `w` and that of
+`Hash` of `wg`, with their functions where `s'` has them. -/
+abbrev epw (vs : List MVar) (gs : List TVar) (s s' : State) (w : MVar) (wg : TVar) : EP :=
+  ep s (s'.syms w.h.H.st.initN) (s'.syms w.h.H.compN) (s'.syms (Proof.MdHashTable.X86.digName w))
+    (THw vs w (arg s 22) s') (s'.syms wg.g.H.initN) (s'.syms wg.g.H.updN) (s'.syms wg.g.H.finN)
+    (TabFacts wg.g.H (Proof.HashTable.X86.fnsOf gs) (arg s 23) (s'.syms wg.g.H.initN) (s'.syms wg.g.H.updN)
+      (s'.syms wg.g.H.finN))
+
+/-- The digest's length, from the hash function the table names. -/
+theorem dlen_of {s : State} (hs : (sspec vs gs).pre s) {w : MVar}
+    (hh : Abi.tableHeld 32 s.mem ((arg s 22).setWidth 64) (FnTable.words isa s (Proof.MdHashTable.X86.tableOf w))) :
+    (arg s 17).toNat = w.h.D := by
+  obtain ⟨-, -, -, hfitH, -, hdl⟩ := spec_tab hs
+  have := hdl _ (Proof.MdHashTable.X86.hashAt_tableOf hfitH (Proof.MdHashTable.X86.held_tableOf hfitH hh).2.2.2)
+  rw [this, w.h.glen]
+
+/-- The entry state, for the tables of `w` at the argument 22 and `wg` at
+23, with the functions where `s'` has them (`s'` has them where `s` does). -/
+theorem entered_state (hok : OK vs gs) {s s' : State} (hs : (sspec vs gs).pre s) {w : MVar} {wg : TVar}
+    (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hhH : Abi.tableHeld 32 s.mem ((arg s 22).setWidth 64) (FnTable.words isa s (Proof.MdHashTable.X86.tableOf w)))
+    (hh : Abi.tableHeld 32 s.mem ((arg s 23).setWidth 64) (FnTable.words isa s (Proof.HashTable.X86.tableOf wg)))
+    (hsy : ∀ n ∈ Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs, s.syms n = s'.syms n) :
+    Sy (S w.h (epw vs gs s s' w wg)) (entered frameBytes s) (entered frameBytes s) := by
+  obtain ⟨-, -, hpw, hfitH, hfit, -⟩ := spec_tab hs
+  have hpwH := hpw.sublist (List.sublist_append_left _ _)
+  have hpwG := (hpw.sublist (List.sublist_append_right _ _)).sublist (List.sublist_append_left _ _)
+  obtain ⟨hsp0, -⟩ := spec_sp hs
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hD := dlen_of hs hhH
+  let e0 := ep s 0 0 0 (fun _ => True) 0 0 0 fun _ => True
+  have ok := (in_of_pre (hai := 0) (hac := 0) (had := 0) (TH := fun _ => True) (ai := 0) (au := 0) (af := 0)
+    (T := fun _ => True) hs trivial trivial).ok
+  rw [ep_lay] at ok
+  have hn := Proof.MdHashTable.X86.mem_names hw
+  have hng := Proof.HashTable.X86.mem_names hwg
+  have hsyH : ∀ n ∈ Proof.MdHashTable.X86.names vs, s.syms n = s'.syms n := fun n h => hsy n (List.mem_append_left _ h)
+  have hsyG : ∀ n ∈ Proof.HashTable.X86.names gs, s.syms n = s'.syms n := fun n h => hsy n (List.mem_append_right _ h)
+  have tf := Proof.HashTable.X86.tabFacts_entered (argv := e0.argv (arg s 17).toNat) (ro := e0.ro (arg s 17).toNat)
+    (rw := e0.rw) (C := 3448) hsp ok (p := arg s 23) (by simp [e0, ep]) hfit hok.2.2.1 hpwG hwg hh
+  rw [hsyG _ hng.1, hsyG _ hng.2.1, hsyG _ hng.2.2] at tf
+  have sy : (entered frameBytes s).syms = s.syms := pushRegs_syms s _
+  obtain ⟨m0, m3, m4, m5⟩ := Proof.MdHashTable.X86.held_entered (argv := e0.argv (arg s 17).toNat)
+    (ro := e0.ro (arg s 17).toNat) (rw := e0.rw) (C := 3448) hsp ok (p := arg s 22) (by simp [e0, ep]) hfitH hhH
+  have hf := Proof.MdHashTable.X86.hfacts_of hok.1 (σ := entered frameBytes s) (by rw [sy]; exact hpwH) hw m0 m3 m4
+  rw [sy, hsyH _ hn.1, hsyH _ hn.2.2.2.1, hsyH _ hn.2.2.2.2] at hf
+  have hi := in_of_pre (hai := s'.syms w.h.H.st.initN) (hac := s'.syms w.h.H.compN)
+    (had := s'.syms (Proof.MdHashTable.X86.digName w)) (TH := THw vs w (arg s 22) s')
+    (ai := s'.syms wg.g.H.initN) (au := s'.syms wg.g.H.updN) (af := s'.syms wg.g.H.finN) hs ⟨hf, m5⟩ tf
+  rw [hD] at hi
+  exact ⟨⟨hi, ⟨hi.ok, hi.ok.sp, rfl, rfl, Frame.refl _ _⟩⟩, rfl⟩
+
+theorem code_ok (hok : OK vs gs) (v : CrtImpl) {s : State} (hs : (sspec vs gs).pre s) :
+    WP isa (signCode vs gs v) s fun t => abiPreserved s t ∧ (sspec vs gs).post s t := by
+  obtain ⟨⟨TH, hTH, hhH⟩, ⟨T, hT, hh⟩, -, hfitH, hfit, -⟩ := spec_tab hs
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTH
+  obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hT
+  have hidxH := (Proof.MdHashTable.X86.held_tableOf hfitH hhH).2.2.2
+  have hidx := (Proof.HashTable.X86.held_tableOf hfit hh).2.1
+  have he := entered_state hok hs hw hwg hhH hh (s' := s) fun _ _ => rfl
+  have hin := he.1.1
+  obtain ⟨hsp0, hfit4⟩ := spec_sp hs
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  obtain ⟨fneH, fne⟩ := fne_of hw hwg
+  have hb := (body_vp w.h (epw vs gs s s w wg) (hok.2.1 w hw).1 (hok.2.1 w hw).2 (fun _ x => x) fneH wg.g
+    (fun _ x => x) fne v).wp _ _ he
+  have hD := dlen_of hs hhH
+  refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp (fnsSp vs gs) (hall_of hok) v) hsp hfit4
+    (W := ((epw vs gs s s w wg).lay w.h.D).W)
+    (Q := fun r m => Res w.h wg.g.G (epw vs gs s s w wg) (entered frameBytes s) m r) (fun r hr => ?_)
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+  · have ok := hin.ok
+    rw [← hD, ep_lay] at ok hr
+    rw [save_eq (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat)
+        (rw := (epw vs gs s s w wg).rw) (C := 3448) hsp,
+      ret_eq (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat)
+        (rw := (epw vs gs s s w wg).rw) (C := 3448) hsp]
+    exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [← hD, ep_lay] at ok
+    have ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 17).toNat) => entered_ro hsp ok hR
+    sig_post [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
+      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes]
+    intro H G hH hG
+    rw [Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH, Option.some.injEq] at hH
+    rw [Proof.HashTable.X86.hashAt_tableOf hfit hidx, Option.some.injEq] at hG
+    subst hH hG
+    unfold Res at res
+    rw [show pB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).PP) (by simp),
+      show qB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).QQ) (by simp),
+      show dpB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).DP) (by simp),
+      show dqB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).DQ) (by simp),
+      show qiB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).QI) (by simp),
+      show saltB (epw vs gs s s w wg) (entered frameBytes s) = _ from ro (R := (epw vs gs s s w wg).SALT) (by simp)]
+      at res
+    have hdg : digB w.h (epw vs gs s s w wg) (entered frameBytes s) =
+        Spec.Rsa.bytesAt s.mem ((arg s 16).setWidth 64) (arg s 17).toNat := by
+      unfold digB; rw [← hD]; exact ro (R := (epw vs gs s s w wg).DIG (arg s 17).toNat) (by simp)
+    rw [hdg, hD] at res
+    rw [BitVec.setWidth_append_eq_right, w.h.glen]
+    exact res
+
+theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (hab : a.map (·.toNat) = b.map (·.toNat)) : a = b :=
+  (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hab
+
+theorem code_ct (hok : OK vs gs) (v : CrtImpl) : ConstantTime isa (sspec vs gs).pre (sspec vs gs).pub (signCode vs gs v) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
+  obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨T, hT, hh₁⟩, -, -, -, -⟩ := spec_tab h₁
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTH
+  obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hT
+  sig_pub [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
+    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal,
+    argBytes] at hp
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq] at hp
+  obtain ⟨hsp, hsy, htabH, htab, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17,
+    a18, a19, a20, a21, a22, a23⟩ := hp
+  have hhH₂ := (htabH _ _ rfl rfl _ hTH).mp hhH₁
+  have hh₂ := (htab _ _ rfl rfl _ hT).mp hh₁
+  have hsy' : ∀ n ∈ Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs, s₂.syms n = s₁.syms n :=
+    fun n hn => (hsy n (by simpa [Proof.MdHashTable.X86.names, Proof.HashTable.X86.names] using hn)).symm
+  have hep : epw vs gs s₁ s₁ w wg = epw vs gs s₂ s₁ w wg := by
+    obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl) (by simp [RsaPkcs1Sig.bytesAt_len, a3])
+    simp only [ep]
+    rw [hsp, a0, a2, a3, a4, a5, a6, a7, a8, a9, a10, a12, a14, a16, a18, a19, a20, a21, a22, a23]
+    rw [a2, a3] at hn
+    rw [a4, a5] at he
+    rw [hn, he]
+  have hD₁ := dlen_of h₁ hhH₁
+  obtain ⟨fneH, fne⟩ := fne_of hw hwg
+  refine (wrap_ct (F := frameBytes) (body_noSp (fnsSp vs gs) (hall_of hok) v) (P := fun a b => a = s₁ ∧ b = s₂)
+    (fun a b h => by rw [h.1, h.2]; exact hsp) ?_ s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
+  refine (body_vp w.h (epw vs gs s₁ s₁ w wg) (hok.2.1 w hw).1 (hok.2.1 w hw).2 (fun _ x => x) fneH wg.g
+    (fun _ x => x) fne v).ct.mono ?_ fun _ _ _ => trivial
+  rintro a b ⟨x, y, ⟨hx, hy⟩, ha, hb⟩
+  rw [ha, hb, hx, hy]
+  exact ⟨_, _, entered_state hok h₁ hw hwg hhH₁ hh₁ (s' := s₁) (fun _ _ => rfl),
+    by rw [hep]; exact entered_state hok h₂ hw hwg hhH₂ hh₂ (s' := s₁) hsy'⟩
+
+/-- `vg_rsa_pss_sign`, calling `vg_rsa_private_checked` over `v`, with the
+hash function any of the tables of `vs` and MGF1's any of `gs`, meets the
+shared contract (satisfiable, `SgSat.lean`). -/
+theorem sign_verified (hok : OK vs gs) (hsat : ∃ s, (sspec vs gs).pre s) (v : CrtImpl) :
+    Verified target (signCode vs gs v) (sspec vs gs) :=
+  ⟨fun _ hs => let ⟨t, s', he, hq⟩ := code_ok hok v hs; ⟨t, s', he, hq.1, hq.2⟩, code_ct hok v, hsat⟩
+
 end VG.Proof.RsaPss.X86.Sg
