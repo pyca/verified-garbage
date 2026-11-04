@@ -42,15 +42,6 @@ theorem input_self {r : Region} (hr : r ∈ L.inputs) :
 theorem input_slots (hL : L.Ok) {r : Region} (hr : r ∈ L.inputs) : r.Disjoint (slots L) :=
   (hL.ks _ hr).symm.sub_right (Region.sub_prefix (by decide))
 
-theorem seed_input (hL : L.Ok) (h32 : L.seedLen = 32) : Input L L.seed 32 := by
-  have hs : (⟨State.addr L.seed, (32 : BitVec 32).toNat⟩ : Region) = L.SEED := by rw [Lay.SEED, h32]; rfl
-  have ns := hL.ns
-  rw [h32] at ns
-  refine ⟨?_, ?_, ?_, ns⟩ <;> rw [hs]
-  · exact .inr (input_self (r := L.SEED) (by simp [Lay.inputs]))
-  · exact hL.sc _ (by simp [Lay.inputs])
-  · exact input_slots hL (by simp [Lay.inputs])
-
 theorem key_input (hL : L.Ok) : Input L L.pk 32 :=
   ⟨.inr (input_self (r := L.PK) (by simp [Lay.inputs])), hL.sc _ (by simp [Lay.inputs]),
     input_slots hL (by simp [Lay.inputs]), hL.np⟩
@@ -346,24 +337,6 @@ open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
-theorem hashSeed_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
-    WP isa (hashSeed) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr L.E + 184) 64 =
-        Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
-  refine WP.seq (WP.mono (init_step hc hL ha) fun u ⟨hu, fu, ru⟩ => ?_)
-  refine WP.seq (WP.mono (update_input hu hL ha 1 0 (by decide) (by decide) (seed_input hL h32)
-    (by decide) ru) fun v ⟨hv, fv, rv⟩ => ?_)
-  have hs := hu.input_bytes hL (r := L.SEED) (by simp [Lay.inputs])
-    (by change L.seedLen ≤ 2 ^ 64; rw [h32]; decide)
-  change Spec.Ed25519.bytesAt u.mem (State.addr L.seed) L.seedLen =
-    Spec.Ed25519.bytesAt m₀ (State.addr L.seed) L.seedLen at hs
-  rw [h32] at hs
-  change Spec.Sha512.Repr _ v.mem _ ([] ++ Spec.Ed25519.bytesAt u.mem (State.addr L.seed) 32) at rv
-  rw [List.nil_append, hs] at rv
-  refine WP.mono (finalize_step hv hL ha 32 (by decide) false
-    (by rw [bytes_length]; decide) (by rw [bytes_length]; rfl) rv)
-    fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans ft), hd⟩
-
 theorem hashNonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (hashNonce) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.E + 184) 64 =
@@ -616,8 +589,6 @@ theorem saveSecret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) {expanded : List Byte}
     rw [keep, ← he, Proof.Ed25519.signatureBytes_drop]
     rw [BitVec.add_assoc, show (184 : BitVec 64) + BitVec.ofNat 64 32 = (216 : BitVec 64) from rfl]
 
-/-- The SHA-512 digest of the seed: hashed (`hashSeed`) or cached. -/
-def expanded (L : Lay) (m : Mem) : List Byte := Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m (State.addr L.seed) 32)
 def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
 def nonce (L : Lay) (E : List Byte) (m : Mem) : List Byte := Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
   (E.drop 32 ++ Spec.Ed25519.bytesAt m (State.addr L.msg) L.len.toNat))
@@ -629,10 +600,6 @@ def DigestReady (L : Lay) (E : List Byte) (t : State) : Prop :=
 structure SecretReady (L : Lay) (E : List Byte) (t : State) : Prop where
   scalar : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32 = scalar E
   prefixBytes : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 56) 32 = E.drop 32
-
-theorem seed_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
-    WP isa hashSeed s fun t => Ctx L g m₀ t ∧ DigestReady L (expanded L m₀) t :=
-  WP.mono (hashSeed_ok hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩
 
 theorem secret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) {E : List Byte} (hd : DigestReady L E s) :
     WP isa (.block saveSecret) s fun t => Ctx L g m₀ t ∧ SecretReady L E t :=

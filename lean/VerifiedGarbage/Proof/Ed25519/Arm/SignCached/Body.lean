@@ -176,14 +176,4 @@ theorem bodyFrom_ok {first : Prog isa} {E : List Byte}
   refine WP.seq (WP.mono (challenge_ok hv hL ha nv hE hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
 
-theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32))
-    (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (h32 : L.seedLen = 32) :
-    WP isa (body) s fun t => Ctx L g m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)
-        (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) :=
-  bodyFrom_ok (seed_ok hc hL ha h32) hL ha rfl hk hw hsy
-
 end VG.Proof.Ed25519.Arm.SignCached

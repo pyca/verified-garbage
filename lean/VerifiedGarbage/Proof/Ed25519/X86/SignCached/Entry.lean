@@ -23,7 +23,7 @@ def signPub (s t : State) : Prop :=
     arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5 ∧
     s.syms combSym = t.syms combSym
 
-/-- Signing with the `n` bytes at the second argument (the seed, or its SHA-512 digest),
+/-- Signing with the `n` bytes at the second argument (the seed's SHA-512 digest, 64),
 the condition `key` on them and the public key, and the postcondition `post`. -/
 def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → Prop) : Contract isa where
   pre s :=
@@ -48,13 +48,6 @@ def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → P
       CombHeld s [out, scr, stk, ret]
   post := post
   pub := signPub
-
-def signCachedLocal : Contract isa := signLocalWith 32
-  (fun s => Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32))
-  (fun s t => Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
-    (Spec.Ed25519.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat))
 
 def lay (n : Nat) (s : State) : Lay :=
   ⟨arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, s.gpr .esp - BitVec.ofNat 32 256,

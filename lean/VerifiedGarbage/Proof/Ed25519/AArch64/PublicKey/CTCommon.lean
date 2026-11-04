@@ -107,25 +107,6 @@ theorem Ctx.tbl (hc : Ctx L g vec m₀ t) (hL : L.Ok) (hm : TblWords L.T m₀) :
     · exact hL.tbk.sub_right (frame_sub L)
     · exact hL.tbck
 
-theorem Lay.Ok.sc32 (hL : L.Ok) (h32 : L.seedLen = 32) : (⟨L.seed, 32⟩ : Region).Disjoint L.SCR := by
-  have := hL.sc; simp only [Lay.SEED, h32] at this; exact this
-
-theorem Lay.Ok.cs32 (hL : L.Ok) (h32 : L.seedLen = 32) : L.CK.Disjoint ⟨L.seed, 32⟩ := by
-  have := hL.cs; simp only [Lay.SEED, h32] at this; exact this
-
-theorem Ctx.seed_bytes (hc : Ctx L g vec m₀ t) (hL : L.Ok) (h32 : L.seedLen = 32) :
-    Spec.Ed25519.bytesAt t.mem L.seed 32 = Spec.Ed25519.bytesAt m₀ L.seed 32 := by
-  unfold Spec.Ed25519.bytesAt
-  refine List.map_congr_left fun i hi => hc.frame.bytes (R := L.SEED) ?_
-    (by change L.seedLen ≤ 2 ^ 64; rw [h32]; decide)
-    (by change i < L.seedLen; rw [h32]; exact List.mem_range.mp hi)
-  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl | rfl | rfl)
-  · exact hL.os.symm
-  · exact hL.sc
-  · exact (hL.ks.sub_left (frame_sub L)).symm
-  · exact hL.cs.symm
-
 theorem Ctx.arg_word (hc : Ctx L g vec m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 3) :
     t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 =
       m₀.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 := by
@@ -270,100 +251,6 @@ theorem wipe_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) :
 end VG.Proof.Ed25519.AArch64.PublicKey
 end
 
-/-! Merged from `Proof.Ed25519.AArch64.PublicKey.Hash`. -/
-section
-namespace VG.Proof.Ed25519.AArch64.PublicKey
-open VG VG.AArch64 VG.Impl.Ed25519.AArch64.PublicKey
-open VG.Impl.Ed25519.AArch64.Whole (callWith)
-
-variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
-
-theorem init_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith initArgs Spec.Sha512.init512Api.name
-      (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512)) t fun u =>
-      Ctx L g vec m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem L.scr [] := by
-  refine WP.seq (WP.mono (setup_ok hc hL ha (args := [(.x0, .caller 2 0)])
-    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, _, hs⟩ => ?_)
-  have h0 := hs (.x0, .caller 2 0) (by simp)
-  simp only [argValue, Lay.value, BitVec.add_zero] at h0
-  have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
-  exact WP.mono (Whole.init_call hu (Whole.init_pre h0) (Whole.covers_writes hw) hw h0)
-    fun v ⟨hv, _, hh⟩ => ⟨hv, hh⟩
-
-theorem update_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
-    (h32 : L.seedLen = 32) (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr []) :
-    WP isa (callWith updateArgs ("vg_sha512_update_scratch" ++ v.suffix) v.update) t fun u =>
-      Ctx L g vec m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem L.scr
-        (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  refine WP.seq (WP.mono (setup_ok hc hL ha
-    (args := [(.x0, .caller 2 0), (.x1, .const 0), (.x2, .caller 1 0), (.x3, .const 32), (.x4, .caller 2 192)])
-    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
-  have h0 := hs (.x0, .caller 2 0) (by simp)
-  have h1 := hs (.x1, .const 0) (by simp)
-  have h2 := hs (.x2, .caller 1 0) (by simp)
-  have h3 := hs (.x3, .const 32) (by simp)
-  have h4 := hs (.x4, .caller 2 192) (by simp)
-  simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2 h3 h4
-  have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
-  have hp := Whole.update_pre h0 h2 h3 h4 (hL.sc32 h32) (by rw [hu.sp]; exact hL.e16)
-    (by rw [hu.sp]; exact hL.cc) (by rw [hu.sp]; exact hL.cs32 h32)
-  have cv : Covers (Whole.updateRd L.seed 32 ++ Whole.hashWr L.scr)
-      (L.inputs ++ Whole.FR L.E :: L.outputs) := by
-    intro a n hin
-    obtain ⟨r, hr, hh⟩ := hin
-    rcases List.mem_append.mp hr with hr | hr
-    ·
-      simp only [Whole.updateRd, List.mem_singleton] at hr
-      subst r
-      exact ⟨L.SEED, List.mem_append_left _ (by simp [Lay.inputs]), by change Region.Contains ⟨L.seed, L.seedLen⟩ a n; rw [h32]; exact hh⟩
-    · exact Whole.covers_writes hw a n ⟨r, hr, hh⟩
-  refine WP.mono (Whole.update_call v hu hp cv hw (prev := []) h0 h2 h3 h1 (hm ▸ hh)) fun u' ⟨hu', _, hr⟩ => ⟨hu', ?_⟩
-  simp only [List.nil_append, BitVec.toNat_ofNat] at hr
-  rw [hu.seed_bytes hL h32] at hr
-  exact hr
-
-theorem finalize_writes (L : Lay) : ∀ r ∈ Whole.finalizeWr L.scr (L.E + 192),
-    Whole.Within r (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
-  intro r hr
-  simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact .inr ⟨L.SCR, by simp [Lay.outputs], 0, (BitVec.add_zero _).symm, by change 0 + 192 ≤ 8192; decide⟩
-  · exact .inl ⟨192, rfl, by change 192 + 64 ≤ 256; decide⟩
-  · exact .inr ⟨L.SCR, by simp [Lay.outputs], 192, rfl, by change 192 + 688 ≤ 8192; decide⟩
-
-theorem finalize_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
-    (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (callWith finalizeArgs ("vg_sha512_finalize_scratch" ++ v.suffix) v.finalize) t fun u =>
-      Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem (L.E + 192) 64 =
-        Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  refine WP.seq (WP.mono (setup_ok hc hL ha
-    (args := [(.x0, .caller 2 0), (.x1, .const 32), (.x2, .frame 192), (.x3, .caller 2 192)])
-    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
-  have h0 := hs (.x0, .caller 2 0) (by simp)
-  have h1 := hs (.x1, .const 32) (by simp)
-  have h2 := hs (.x2, .frame 192) (by simp)
-  have h3 := hs (.x3, .caller 2 192) (by simp)
-  simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2 h3
-  have hd : Region.Disjoint ⟨L.E + 192, 64⟩ L.SCR :=
-    hL.kc.sub_left (Offset.sub_base _ (by decide : 192 + 64 ≤ 336))
-  have hp := Whole.finalize_pre h0 h2 h3 hd (by rw [hu.sp]; exact hL.e16) (by rw [hu.sp]; exact hL.cc)
-    (by rw [hu.sp]; exact Whole.ck_frame (by decide : 192 + 64 ≤ 304))
-  have hw := finalize_writes L
-  have hl : (Spec.Ed25519.bytesAt m₀ L.seed 32).length = 32 := by
-    simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range]
-  exact WP.mono (Whole.finalize_call v hu hp (Whole.covers_writes hw) hw h0 h2
-    (by rw [hl]; exact h1) (hm ▸ hh) (by rw [hl]; decide)) fun u' ⟨hu', _, hd⟩ => ⟨hu', hd⟩
-
-theorem hash_ok (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
-    (h32 : L.seedLen = 32) :
-    WP isa (hash v.code v.suffix) t fun u => Ctx L g vec m₀ u ∧
-      Spec.Ed25519.bytesAt u.mem (L.E + 192) 64 = Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  exact WP.seq (WP.mono (init_step hc hL ha) fun t₁ ⟨h₁, hh₁⟩ =>
-    WP.seq (WP.mono (update_step v h₁ hL ha h32 hh₁) fun t₂ ⟨h₂, hh₂⟩ => finalize_step v h₂ hL ha hh₂))
-
-end VG.Proof.Ed25519.AArch64.PublicKey
-end
-
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.Correct`. -/
 section
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.Entry`. -/
@@ -387,9 +274,6 @@ def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
   post := post
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
     s.syms Impl.Ed25519.AArch64.combSym = t.syms Impl.Ed25519.AArch64.combSym
-
-def pkLocal : Contract isa := pkLocalWith 32 fun s t => Spec.Ed25519.bytesAt t.mem (s.gpr .x0) 32 =
-  Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32)
 
 def lay (n : Nat) (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, Whole.base s, s.syms Impl.Ed25519.AArch64.combSym, n⟩
@@ -460,42 +344,6 @@ theorem bodyFrom_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {first : Prog isa} 
   refine WP.seq (WP.mono_syms (prune_step hu hh) fun u' ⟨hu', hs⟩ su' => ?_)
   refine WP.seq (WP.mono (base_step hu' hL ha hs (by rw [su', su]; exact hsy)) fun u'' ⟨hu'', hp⟩ => ?_)
   exact WP.mono (wipe_step hu'' hL) fun w ⟨hw, hm⟩ => ⟨hw, hm.trans hp⟩
-
-theorem body_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
-    (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) (h32 : L.seedLen = 32) :
-    WP isa (body v.code v.suffix) t fun u => Ctx L g vec m₀ u ∧
-      Spec.Ed25519.bytesAt u.mem L.out 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32) :=
-  bodyFrom_ok (hash_ok v hc hL ha h32) hL ha hsy
-
-theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤ 1 := by
-  have hu := Whole.update_depth v
-  have hf := Whole.finalize_depth v
-  change (Impl.Sha512.AArch64.Stream.updateWith v.suffix v.code).aarch64Depth ≤ 1 at hu
-  change (Impl.Sha512.AArch64.Stream.finalizeWith v.suffix v.code).aarch64Depth ≤ 1 at hf
-  have hb := Whole.depth_zero_of_noFrames base_noFrames
-  simp only [body, bodyFrom, Impl.Ed25519.AArch64.PublicKey.hash, Impl.Ed25519.AArch64.Whole.callWith,
-    Code.aarch64Depth, Nat.max_le, Impl.Sha512.AArch64.Stream.init, hb]
-  omega
-
-theorem publicKey_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s : State} (h : pkLocal.pre s) :
-    WP isa (code v.code v.suffix) s fun u => abiPreserved s u ∧ pkLocal.post s u := by
-  have hw := Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
-    (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m (s.gpr .x1) 32))
-    (fun p hp => WP.mono (body_ok v (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_syms hp) rfl)
-      fun u ⟨hu, ho⟩ => ⟨by
-      simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
-        Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
-  refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
-  have hs : Spec.Ed25519.bytesAt m (s.gpr .x1) 32 = Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32 := by
-    unfold Spec.Ed25519.bytesAt
-    refine List.map_congr_left fun i hi => hf.bytes (R := ⟨s.gpr .x1, 32⟩) ?_
-      (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
-    rintro r hr
-    rw [List.mem_singleton.mp hr]
-    exact (lay_ok h).ks.symm
-  change Spec.Ed25519.bytesAt u.mem (s.gpr .x0) 32 = _
-  rw [hp, hs]
 
 end VG.Proof.Ed25519.AArch64.PublicKey
 end

@@ -20,7 +20,7 @@ structure Lay where
   E : BitVec 32
   /-- The address of the comb's tables (`VG_ED25519_COMB`). -/
   T : BitVec 32
-  /-- The bytes read at `seed`: the seed (32), or its cached SHA-512 digest (64). -/
+  /-- The bytes read at `seed`: the seed's cached SHA-512 digest (64). -/
   seedLen : Nat
 
 namespace Lay

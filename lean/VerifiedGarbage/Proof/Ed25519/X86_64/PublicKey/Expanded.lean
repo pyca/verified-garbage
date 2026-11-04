@@ -18,10 +18,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Ed25519 public-key derivation from the seed's SHA-512 digest (x86-64)
 
-`publicKeyExpanded` is `publicKey` with its first step, `pkHash`, replaced by
-`pkCopyExpanded`: the digest at the second argument is copied to `scratch + 1568`, where
-`pkHash` leaves it. The rest is proven once, by `bodyFrom_ok` and `bodyFrom_pk_ct`, for
-both. -/
+`publicKeyExpanded` is `pkBodyFrom pkCopyExpanded` in its frame: the digest at the second
+argument is copied to `scratch + 1568`, where `pkBodyFrom` reads it. The rest is proven by
+`bodyFrom_ok` and `bodyFrom_pk_ct`. -/
 
 @[expose] public section
 

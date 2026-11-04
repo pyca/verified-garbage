@@ -72,15 +72,6 @@ theorem setup_ok {s t : State} (h : Facts n s) (hc : Ctx n s t) {vs : List Value
   | caller i d =>
     exact congrArg (· + BitVec.ofNat 32 d) (original_arg h hc vv)
 
-/-- Setup only writes the outgoing argument area, so unrelated buffers survive. -/
-theorem setup_disjoint {s : State} (h : Facts n s) :
-    (⟨(esp s).setWidth 64, 24⟩ : Region).Disjoint (SCR s) ∧
-    (⟨(esp s).setWidth 64, 24⟩ : Region).Disjoint (SEED n s) ∧
-    (⟨(esp s).setWidth 64, 24⟩ : Region).Disjoint (OUT s) := by
-  have sub : Region.Sub ⟨(esp s).setWidth 64, 24⟩ (Whole.STK (esp s)) :=
-    fun p hp => Whole.frame_sub (esp s) p (Region.sub_prefix (by decide) p hp)
-  exact ⟨h.kc.sub_left sub, h.ks.sub_left sub, h.ko.sub_left sub⟩
-
 end VG.Proof.Ed25519.X86.PublicKey
 end
 
@@ -213,26 +204,6 @@ section
 namespace VG.Proof.Ed25519.X86.PublicKey
 open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
 variable {n : Nat}
-
-theorem hashSpace {s : State} (h : Facts n s) : Whole.HashSpace (esp s) (arg s 2) :=
-  ⟨h.toBounds.call, by have := h.toBounds.frame; omega, h.scratch, h.kc⟩
-
-theorem hash_covers {s : State} {rs : List Region}
-    (h : ∀ r ∈ rs, Whole.Within r (Whole.FR (esp s)) ∨ Whole.Within r (SCR s) ∨ Whole.Within r (SEED n s)) :
-    Covers rs (pkRd n s ++ Whole.FR (esp s) :: pkWr s) := by
-  refine Covers.of_sub fun r hr => ?_
-  rcases h r hr with h | h | h
-  · exact ⟨_, by simp [pkRd, pkWr], h⟩
-  · exact ⟨_, by simp [pkRd, pkWr], h⟩
-  · exact ⟨_, by simp [pkRd, pkWr], h⟩
-
-theorem hash_writes {s : State} {rs : List Region}
-    (h : ∀ r ∈ rs, Whole.Within r (Whole.FR (esp s)) ∨ Whole.Within r (SCR s)) :
-    ∀ r ∈ rs, Whole.Within r (Whole.FR (esp s)) ∨ ∃ R ∈ pkWr s, Whole.Within r R := by
-  intro r hr
-  rcases h r hr with h | h
-  · exact .inl h
-  · exact .inr ⟨_, by simp [pkWr], h⟩
 
 theorem seed_same {s t : State} (h : Facts n s) (hc : Ctx n s t) :
     Spec.Ed25519.bytesAt t.mem ((arg s 1).setWidth 64) n =

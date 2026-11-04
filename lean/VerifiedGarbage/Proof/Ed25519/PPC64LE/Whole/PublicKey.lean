@@ -105,7 +105,7 @@ theorem pkV_r21 (s : State) : pkV s .r21 = s.gpr .r4 := rfl
 theorem pkV_r22 (s : State) : pkV s .r22 = s.gpr .r5 := rfl
 theorem pkV_r23 (s : State) : pkV s .r23 = s.gpr .r6 := rfl
 
-/-- The seed, or the digest, while the body runs. -/
+/-- The digest, while the body runs. -/
 theorem pk_seed {n : Nat} {s t : State} (hp : PkPre n s) (h : PkInv s t) (hn : n < 2 ^ 64) :
     bytesAt t.mem (s.gpr .r4) n = bytesAt s.mem (s.gpr .r4) n :=
   bytes_keep h.frame hn fun r hr => by

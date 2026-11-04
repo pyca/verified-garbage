@@ -9,11 +9,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# `vg_ed25519_sign_cached` on PPC64LE: the secret scalar and the nonce's prefix
+# `vg_ed25519_sign_expanded` on PPC64LE: the secret scalar and the nonce's prefix
 
-The seed hashed into `128(F)` (`signHash_ok`; or the digest copied there, in
-`vg_ed25519_sign_expanded`), the first half of the digest pruned into `0(F)`
-and its second half copied to `32(F)` (`signExpandWith_ok`).
+The digest at `r4` copied to `128(F)` (`signCopy_ok`), the first half of the
+digest pruned into `0(F)` and its second half copied to `32(F)`
+(`signExpandWith_ok`).
 -/
 
 @[expose] public section
@@ -22,9 +22,6 @@ namespace VG.Proof.Ed25519.PPC64LE.Whole
 
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE.Whole VG.Proof.X25519.PPC64LE
 open VG.Spec.Ed25519 (bytesAt decodeLE encodeLE)
-
-/-- The seed's digest. -/
-abbrev seedH (s : State) : List Byte := Spec.Sha512.sha512 (bytesAt s.mem (s.gpr .r4) 32)
 
 theorem sign_env {sn : Nat} {s t : State} (hp : SignPre sn s) (h : SignInv s t) : ScEnv (s.gpr .r8) t :=
   ⟨by rw [h.wr, hp.wr]; simp, by rw [h.sp]; exact hp.sp, by rw [h.sp]; exact hp.bC⟩
@@ -64,60 +61,6 @@ theorem keep_hi {sn : Nat} {s : State} (hp : SignPre sn s) {d n : Nat} (hd : 192
   · exact hp.cF.symm.sub_left hs
   · exact Offset.disjoint_base _ hd (by omega_arith)
   · exact hp.bF.symm.sub_left hs
-
-/-- The seed hashed into `128(F)`. -/
-theorem signHash_ok (C : ShaOK) {s t : State} (hp : SignPre 32 s) (h : SignInv s t) :
-    WP isa signHash t fun t' => SignInv s t' ∧
-      Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 192⟩, below s.sp 48] t.mem t'.mem ∧
-      bytesAt t'.mem (s.gpr .r9 + BitVec.ofNat 64 128) 64 = seedH s := by
-  have hS : (⟨s.gpr .r4, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
-  -- Writes of the scratch space and the callees' frames, into the frame's list.
-  have toL : ∀ {m m' : Mem} {sp : Addr}, sp = s.sp → Frame [⟨s.gpr .r8, 8192⟩, below sp 48] m m' →
-      Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 192⟩, below s.sp 48] m m' := fun e hf => by
-    subst e; exact hf.mono (by simp)
-  unfold signHash
-  refine WP.seq (hashInit_ok C (sr := .r24) (by decide) (h.regs _ (by decide)) (sign_env hp h)
-    fun t₂ a b c f₂ g hr₂ => ?_)
-  have h₂ := signStep hp h a b c g f₂ (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact .inl rfl
-    · exact .inr (.inl (by rw [h.sp])))
-  refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r21) (off := 0) (len := 32) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide), BitVec.add_zero]; rfl)
-    (Sets.li (d := .r4) (k := 0) (by decide)) (Sets.li (d := .r6) (k := 32) (by decide))
-    (fun _ _ _ => rfl) (fun _ _ _ => rfl) rfl (sign_env hp h₂)
-    (fun a n hi => by obtain ⟨r, hr, hc⟩ := hi; rw [h₂.rd]; exact ⟨r, List.mem_append_left _ (by
-      rw [List.mem_singleton.mp hr]; exact hS), hc⟩)
-    hp.sC (by rw [h₂.sp]; exact hp.bS) fun t₃ a b c f₃ g hr₃ => ?_)
-  have h₃ := signStep hp h₂ a b c g f₃ (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact .inl rfl
-    · exact .inr (.inl (by rw [h₂.sp])))
-  have r₃ : Repr t₃.mem (s.gpr .r8) (bytesAt s.mem (s.gpr .r4) 32) := by
-    have := hr₃ [] hr₂ rfl
-    rwa [List.nil_append, sign_input h₂ (by decide) hp.oS.symm hp.sC hp.sF hp.bS.symm] at this
-  have F128 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  refine hashFinalize_ok C (sr := .r24) (f := .r25) (o := 128) (out := s.gpr .r9 + BitVec.ofNat 64 128)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (h₃.regs _ (by decide))
-    (by rw [h₃.regs _ (by decide)]; rfl)
-    (Sets.li (d := .r4) (k := 32) (by decide)) (fun _ _ _ => rfl) (sign_env hp h₃)
-    (Covers.of_sub fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact ⟨_, sign_Fw hp h₃, 128, rfl, show 128 + 64 ≤ 288 by decide⟩)
-    (hp.cF.symm.sub_left F128) (by rw [h₃.sp]; exact hp.bF.sub_right F128) fun t₄ a b c f₄ g hd₄ => ?_
-  refine ⟨signStep hp h₃ a b c g f₄ (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inl rfl
-    · exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))
-    · exact .inr (.inl (by rw [h₃.sp]))), ?_, hd₄ _ r₃ (by simp [bytesAt]) (by simp [bytesAt])⟩
-  refine (toL h.sp f₂).trans <| (toL h₂.sp f₃).trans <| f₄.sub fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-  · exact ⟨⟨s.gpr .r9, 192⟩, by simp, Offset.sub_base _ (by decide)⟩
-  · exact ⟨below s.sp 48, by simp, by rw [h₃.sp]; exact fun _ h => h⟩
 
 /-- The secret scalar and the nonce's prefix, from a first step that leaves the digest `D` at
 `128(F)`. -/

@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached.Prefix
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
-/-! Complete cached-key signing. SHA-512 is generic over its compression
+/-! Complete signing from the seed's cached SHA-512 digest. SHA-512 is generic over its compression
 implementation. The local frame holds scalar32, prefix64, nonce96,
 challenge128 and digest192; the original six arguments are saved at256.
 SHA-512 state and working memory use scratch[0..880). All secret local
@@ -37,8 +39,6 @@ def finalize (compress : Prog isa) (suffix : String) (n : Nat) (b : Bool) : Prog
   callWith (finalizeArgs n b) ("vg_sha512_finalize_scratch" ++ suffix)
     (Sha512.AArch64.Stream.finalizeWith suffix compress)
 
-def hashSeed (compress : Prog isa) (suffix : String) : Prog isa :=
-  .seq init (.seq (update compress suffix (inputArgs 1 0)) (finalize compress suffix 32 false))
 def saveSecret : List Instr := PublicKey.prune ++ copyPrefix
 
 def hashNonce (compress : Prog isa) (suffix : String) : Prog isa :=
@@ -58,8 +58,6 @@ def mulAddArgs : List Instr :=
     (.x3, .frame 32), (.x4, .caller 5 0)]
 def wipe : List Instr := zeroWords 4 28
 
-def secretCode (compress : Prog isa) (suffix : String) : Prog isa :=
-  .seq (hashSeed compress suffix) (.block saveSecret)
 def nonceCode (compress : Prog isa) (suffix : String) : Prog isa :=
   .seq (hashNonce compress suffix) (.seq (reduce 96)
     (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
@@ -70,12 +68,8 @@ def challengeCode (compress : Prog isa) (suffix : String) : Prog isa :=
 def bodyFrom (secret : Prog isa) (compress : Prog isa) (suffix : String) : Prog isa :=
   .seq (.seq secret (.block saveSecret)) (.seq (nonceCode compress suffix)
     (.seq (challengeCode compress suffix) (.block wipe)))
-def body (compress : Prog isa) (suffix : String) : Prog isa :=
-  bodyFrom (hashSeed compress suffix) compress suffix
-def code (compress : Prog isa) (suffix : String) : Prog isa := wrap (body compress suffix)
-
-/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
-digest copied (`PublicKey.copyExpanded`) rather than computed. -/
+/-- `vg_ed25519_sign_expanded`: signing with the seed's cached SHA-512 digest
+(`signExpandedContract`), copied to `frame 192` by `PublicKey.copyExpanded`. -/
 def codeExpanded (compress : Prog isa) (suffix : String) : Prog isa :=
   wrap (bodyFrom PublicKey.copyExpanded compress suffix)
 

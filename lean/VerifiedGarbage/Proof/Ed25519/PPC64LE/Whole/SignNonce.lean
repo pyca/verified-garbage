@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignSetup
 
 /-!
-# `vg_ed25519_sign_cached` on PPC64LE: the nonce, and `R`
+# `vg_ed25519_sign_expanded` on PPC64LE: the nonce, and `R`
 
 The prefix at `32(F)` and the message hashed into `128(F)`, the digest
 reduced into the nonce at `64(F)` by a call of `vg_ed25519_scalar_reduce`,

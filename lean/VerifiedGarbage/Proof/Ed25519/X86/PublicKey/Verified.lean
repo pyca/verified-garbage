@@ -234,7 +234,6 @@ end
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Lit`. -/
 section
 namespace VG.Impl.Ed25519.X86.PublicKey
-materialize_code publicKey
 materialize_code publicKeyExpanded
 end VG.Impl.Ed25519.X86.PublicKey
 end
@@ -277,13 +276,6 @@ theorem pkWide_pre {post : State → State → Prop} (s : State) (h : (pkWideWit
 
 end VG.Proof.Ed25519.X86.PublicKey
 end
-
-namespace VG.Proof.Ed25519.X86.PublicKey
-open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
-open VG.Impl.Ed25519.X86 (combConsts)
-variable {n : Nat}
-
-end VG.Proof.Ed25519.X86.PublicKey
 
 /-! ## Derivation from the seed's cached digest -/
 

@@ -21,9 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Ed25519 public-key derivation from the seed's cached SHA-512 digest (Arm)
 
-`codeExpanded` is `code` with its first step, `hash`, replaced by `copyExpanded`: the digest at
-the second argument is copied to `frame 184`, where `hash` leaves it. The rest is proven once,
-by `bodyFrom_ok` and `bodyFrom_ct`, for both. -/
+`codeExpanded` is `bodyFrom copyExpanded`: the digest at the second argument is copied to
+`frame 184`, where the rest, proven by `bodyFrom_ok` and `bodyFrom_ct`, reads it. -/
 
 @[expose] public section
 
