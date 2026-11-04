@@ -68,7 +68,7 @@ theorem passSet_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hk.1.1 hk.1.2.1
   have hpz := pzF_lt h (τ := τ) hdb
   have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega_arith
   have hav : aV h P τ / 2 ^ p < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith)
   have hw : WP isa (.block (passSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
@@ -106,10 +106,10 @@ theorem passMid_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
   · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hi₀ hf
   have e2 : oRsa = 8192 := rfl
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hp0 : 0 < 2 ^ p := Nat.two_pow_pos p
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   refine (pass_vp hg (o := oY + 8 + h.D) (d := 2 ^ p) (n := dbN h P) (by omega_arith) hp0 (by omega_arith)
     (c := fun τ => aV h P τ / 2 ^ p % 2 = 1) (X := fun τ m => Kq h P τ m ∧ SH h P τ p m)).mono
     (fun τ s ⟨⟨hc, hk, hs⟩, r0, r1, lr, r2⟩ => ⟨hc, ⟨hk, hs⟩, r0, r1, lr, r2⟩)
@@ -146,7 +146,7 @@ theorem keep3 (P : EP) (hg : Geo (P.lay h.D) P.scr) {τ : State} {m m' : Mem}
     {f : Nat → Byte} (hy : ∀ j < 2040 - h.D, m (sa P.scr (oY + 8 + h.D + j)) = f j) :
     Kq h P τ m' ∧ ∀ j < 2040 - h.D, m' (sa P.scr (oY + 8 + h.D + j)) = f j := by
   obtain ⟨σ', ok⟩ := hg.ok
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc],
       Region.Disjoint (sR P.scr o n) r := fun o n hon r hr => by

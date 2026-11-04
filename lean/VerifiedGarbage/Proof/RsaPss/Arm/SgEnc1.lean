@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgChk
-public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
 import VerifiedGarbage.Proof.RsaPss.Arm.YDig
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPss.EncBytes
@@ -60,11 +60,11 @@ theorem away3_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
   exact ⟨hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     hg.slot ok ho (by rw [hg.F]; decide)⟩
 
-theorem away3_slot {L : Lay} {d : Nat} (hd : d + 4 ≤ frameBytes) (h₁ : d + 4 ≤ sLo ∨ sDb + 4 ≤ d) :
-    Away3 L (slotR L d) := by
-  have e1 : sLo = 68 := rfl
-  have e2 : sC = 72 := rfl
-  have e3 : sDb = 76 := rfl
+theorem away3_slot {L : Lay} {d : Nat} (hd : d + 4 ≤ frameBytes)
+    (h₁ : (d + 4 ≤ sLo ∨ sDb + 4 ≤ d) ∧ (d + 4 ≤ sC ∨ sC + 4 ≤ d)) : Away3 L (slotR L d) := by
+  have e1 : sLo = 84 := rfl
+  have e2 : sC = 108 := rfl
+  have e3 : sDb = 88 := rfl
   exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega)⟩
 
 theorem away3_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
@@ -151,8 +151,8 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_)
     (VP.ite (fun _ _ _ _ h₁ h₂ => by rw [VG.Proof.X25519.Arm.eval_eq, VG.Proof.X25519.Arm.eval_eq, h₁.2.2.2.2,
       h₂.2.2.2.2]) (VP.block_nil fun σ s ⟨⟨⟨⟨hc, hk⟩, hy⟩, _, _, _, z⟩, e⟩ => ⟨⟨hc, hk⟩, fun i hi => ?_⟩) ?_)
-  · obtain ⟨a17, r17, v17⟩ := argAt hk.1 hc.st (j := 17) (by decide)
-    obtain ⟨a18, r18, v18⟩ := argAt hk.1 hc.st (j := 18) (by decide)
+  · obtain ⟨a17, r17, v17⟩ := argAt hk.1 hc.st (j := 18) (by decide)
+    obtain ⟨a18, r18, v18⟩ := argAt hk.1 hc.st (j := 19) (by decide)
     have hz0 : ∀ y : BitVec 32, y - 0 = y := fun y => BitVec.sub_zero y
     have hw : WP isa (.block (cpSalt h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧ t.gpr .r1 = P.salt ∧
@@ -211,7 +211,7 @@ theorem Mp_length (P : EP) (σ : State) : (Mp h P σ).length = P.sl + (8 + h.D) 
 
 /-- `M'`'s length and blocks. -/
 theorem lenSet_vp (P : EP) :
-    VP (fun σ s => E0 h P σ s ∧ Y2 h P σ s.mem) (.block (lenSet h.sh 18))
+    VP (fun σ s => E0 h P σ s ∧ Y2 h P σ s.mem) (.block (lenSet h.sh 19))
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_
   have hg := hk.1.geo
@@ -221,11 +221,11 @@ theorem lenSet_vp (P : EP) :
   have hsl := hk.1.sl32
   have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hk.2.1.2; omega
   have hK := hk.1.k1024
-  obtain ⟨a18, r18, v18⟩ := argAt hk.1 hc.st (j := 18) (by decide)
-  replace v18 : s.mem.readW ((P.lay h.D).fr (arg 18)) 32 = BitVec.ofNat 32 P.sl := v18
+  obtain ⟨a18, r18, v18⟩ := argAt hk.1 hc.st (j := 19) (by decide)
+  replace v18 : s.mem.readW ((P.lay h.D).fr (arg 19)) 32 = BitVec.ofNat 32 P.sl := v18
   have e1 : BitVec.ofNat 32 (P.sl + (8 + h.D) + h.L) >>> lgB h.sh = BitVec.ofNat 32 ((P.sl + (8 + h.D) + h.L) / h.B) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega), h.pow_lg]
-  have hw : WP isa (.block (lenSet h.sh 18)) s fun t =>
+  have hw : WP isa (.block (lenSet h.sh 19)) s fun t =>
       t.mem = (s.mem.writeW ((P.lay h.D).fr sL) (BitVec.ofNat 32 (P.sl + (8 + h.D)))).writeW ((P.lay h.D).fr sNb)
         (BitVec.ofNat 32 (nbS h P)) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [lenSet, sp0, ld, st, mw, hc.st.sp, a18, r18, v18, arg_lt, slotAt hk.1 (d := sL) (by decide),
@@ -255,14 +255,15 @@ theorem lenSet_vp (P : EP) :
     · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
 
 /-- `H = Hash(M')`, at `oDig`. -/
-theorem hash_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) (ctHash h.sh)
-      (fun σ s => E0 h P σ s ∧ Dg h P.scr (Mp h P σ) s.mem) := by
+theorem hash_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
+    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) :
+    VP (fun σ s => (Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) ∧ s.syms = σ.syms) (ctHash f h.sh 22)
+      (fun σ s => (E0 h P σ s ∧ Dg h P.scr (Mp h P σ) s.mem) ∧ s.syms = σ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
   have hB := h.B_le
@@ -274,11 +275,13 @@ theorem hash_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have hT : nbS h P * h.B ≤ 2048 := by
     show ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega
-  refine (ctHash_vp h hg (nbm := nbS h P) hT (Nat.succ_pos _) (msg := Mp h P) (fun σ => by
+  refine (ctHash_vp h hg (j := 22) (by simp) (arg_lt (by decide)) hi₀.htbl Q.fne (nbm := nbS h P) hT
+    (Nat.succ_pos _) (msg := Mp h P) (fun σ => by
       rw [Mp_length]; show _ ≤ ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega)
     (Inv := Kh h P) (fun σ m m' hk hf' => ⟨hk.1.keep h hf' (away3_ctW h hg hT), slot_keep hf'
       (ctW_slot h hg hT (by decide) (by decide)) hk.2.1, slot_keep hf' (ctW_slot h hg hT (by decide) (by decide)) hk.2.2⟩)
-    (fun σ m hk => hk.2.1) (fun σ m hk => hk.2.2)).mono
-    (fun σ s ⟨hc, hk, hy⟩ => ⟨hc, hk, fun i hi => hy i (by omega)⟩) fun σ s ⟨hc, hk, hd⟩ => ⟨⟨hc, hk.1⟩, hd⟩
+    (fun σ m hk => hk.2.1) (fun σ m hk => hk.2.2) (fun σ m hk => Q.ht σ hk.1.1.htabT)).mono
+    (fun σ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩)
+    fun σ s ⟨⟨hc, hk, hd⟩, sy⟩ => ⟨⟨⟨hc, hk.1⟩, hd⟩, sy⟩
 
 end VG.Proof.RsaPss.Arm.Sg

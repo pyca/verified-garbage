@@ -59,9 +59,9 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   obtain ⟨hf, ha⟩ := hf
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
   have es : eLen P = P.slt := by simp only [eLen, ha, ite_true]
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have hsl := hi₀.slt32
   refine VP.seq (G := fun τ s => F0 h P τ s ∧ s.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧
       s.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P - P.slt) ∧ s.gpr .lr = BitVec.ofNat 32 P.slt ∧

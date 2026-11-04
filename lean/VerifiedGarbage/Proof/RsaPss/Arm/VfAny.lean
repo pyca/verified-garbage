@@ -66,9 +66,9 @@ theorem cpDb_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ True) ∧ Y1 h P τ s.mem) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧ s.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧
       s.gpr .lr = BitVec.ofNat 32 (dbN h P))
@@ -120,7 +120,7 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have hpz := pzF_lt h (τ := τ) hdb
   have hL := h.L_le
   have hB := h.B_ge
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have e1 : BitVec.ofNat 32 (dbN h P + (7 + h.D + h.L)) >>> lgB h.sh =
       BitVec.ofNat 32 ((dbN h P + (7 + h.D + h.L)) / h.B) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega_arith), h.pow_lg]

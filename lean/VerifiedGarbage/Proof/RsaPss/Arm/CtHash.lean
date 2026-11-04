@@ -47,6 +47,55 @@ abbrev ctW (L : Lay) (scr : BitVec 32) (T : Nat) : List Region :=
   [sR scr oSt (h.N + h.B), L.LOW, sR scr oLen h.B, sR scr oY T, sR scr oSt h.N, sR scr oCW h.H.md.so,
     sR scr oSel h.N, slotR L sBi, sR scr oDig h.N, slotR L sTab]
 
+/-- The digest of `x` at `oDig`. -/
+abbrev Dg (scr : BitVec 32) (x : List Byte) (m : Mem) : Prop :=
+  ∀ i < h.D, m (sa scr (oDig + i)) = (h.ok.SH.H.hash x).getD i 0
+
+/-- What `ctHash` writes misses the other slots. -/
+theorem ctW_slot (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) {d : Nat} (hd : d + 4 ≤ frameBytes)
+    (hb : (d + 4 ≤ sBi ∨ sBi + 4 ≤ d) ∧ (d + 4 ≤ sTab ∨ sTab + 4 ≤ d)) :
+    ∀ r ∈ ctW h L scr T, (slotR L d).Disjoint r := by
+  have hN := h.N_le
+  have hB := h.B_le
+  have hso := h.so_le
+  obtain ⟨σ', ok⟩ := hg.ok
+  have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.B56; have := L.B.isLt; omega
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact hg.slot ok (by pomega) hF
+  · exact Lay.fr_low (by unfold frameBytes at hd; omega) hC
+  · exact hg.slot ok (by pomega) hF
+  · exact hg.slot ok (by pomega) hF
+  · exact hg.slot ok (by pomega) hF
+  · exact hg.slot ok (by pomega) hF
+  · exact hg.slot ok (by pomega) hF
+  · exact slotSep hd (by decide) hb.1
+  · exact hg.slot ok (by pomega) hF
+  · exact slotSep hd (by decide) hb.2
+
+/-- And `EM`'s place. -/
+theorem ctW_em (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) {o n : Nat} (h₂ : o + n ≤ oY) :
+    ∀ r ∈ ctW h L scr T, (sR scr o n).Disjoint r := by
+  have hN := h.N_le
+  have hB := h.B_le
+  have hso := h.so_le
+  obtain ⟨σ', ok⟩ := hg.ok
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact hg.low ok (by pomega)
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
+  · exact Geo.sep (by pomega) (by pomega) (by pomega)
+  · exact (sTab_sep hg (by pomega)).symm
+
 /-- The digest of the hash value at `oSel`, to `oDig`, by the digest of the
 table at `p` in the slot `sTab`. -/
 theorem out_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 32}

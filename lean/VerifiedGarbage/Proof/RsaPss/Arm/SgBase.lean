@@ -54,6 +54,9 @@ structure EP where
   nB : List Byte
   eB : List Byte
   hd : BitVec 32
+  hi : BitVec 32
+  hc : BitVec 32
+  hdg : BitVec 32
   HT : State → Prop
   tab : BitVec 32
   ai : BitVec 32
@@ -177,7 +180,7 @@ macro "sign_pre" " at " h:ident : tactic => `(tactic| (
 
 /-- The public parameters of an entry state, with what `HT` and `T` say of
 the tables. -/
-def ep (s : State) (HT : State → Prop) (ai au af : BitVec 32) (T : State → Prop) : EP where
+def ep (s : State) (hi hc hdg : BitVec 32) (HT : State → Prop) (ai au af : BitVec 32) (T : State → Prop) : EP where
   B := s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 frameBytes
   out := s.gpr .r0
   n := s.gpr .r2
@@ -199,6 +202,9 @@ def ep (s : State) (HT : State → Prop) (ai au af : BitVec 32) (T : State → P
   nB := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
   eB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat
   hd := stackArg s 18
+  hi := hi
+  hc := hc
+  hdg := hdg
   HT := HT
   tab := stackArg s 19
   ai := ai
@@ -206,18 +212,18 @@ def ep (s : State) (HT : State → Prop) (ai au af : BitVec 32) (T : State → P
   af := af
   T := T
 
-variable {HT : State → Prop} {ai au af : BitVec 32} {T : State → Prop}
+variable {hi hc hdg : BitVec 32} {HT : State → Prop} {ai au af : BitVec 32} {T : State → Prop}
 
 theorem ep_lay (D : Nat) (s : State) :
-    (ep s HT ai au af T).lay D = layOf frameBytes 80 ((ep s HT ai au af T).argv D)
-      [(ep s HT ai au af T).N, (ep s HT ai au af T).E, (ep s HT ai au af T).PP, (ep s HT ai au af T).QQ,
-        (ep s HT ai au af T).DP, (ep s HT ai au af T).DQ, (ep s HT ai au af T).QI, (ep s HT ai au af T).DIG D,
-        (ep s HT ai au af T).SALT, (ep s HT ai au af T).HTAB, (ep s HT ai au af T).TAB]
-      [(ep s HT ai au af T).OUT, (ep s HT ai au af T).SCR] s 3440 := rfl
+    (ep s hi hc hdg HT ai au af T).lay D = layOf frameBytes 80 ((ep s hi hc hdg HT ai au af T).argv D)
+      [(ep s hi hc hdg HT ai au af T).N, (ep s hi hc hdg HT ai au af T).E, (ep s hi hc hdg HT ai au af T).PP, (ep s hi hc hdg HT ai au af T).QQ,
+        (ep s hi hc hdg HT ai au af T).DP, (ep s hi hc hdg HT ai au af T).DQ, (ep s hi hc hdg HT ai au af T).QI, (ep s hi hc hdg HT ai au af T).DIG D,
+        (ep s hi hc hdg HT ai au af T).SALT, (ep s hi hc hdg HT ai au af T).HTAB, (ep s hi hc hdg HT ai au af T).TAB]
+      [(ep s hi hc hdg HT ai au af T).OUT, (ep s hi hc hdg HT ai au af T).SCR] s 3440 := rfl
 
 theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D : Nat}
     (hD : (stackArg s 13).toNat = D) (hHT : HT (entered frameBytes s)) (hT : T (entered frameBytes s)) :
-    In D (ep s HT ai au af T) (entered frameBytes s) := by
+    In D (ep s hi hc hdg HT ai au af T) (entered frameBytes s) := by
   sign_pre at h
   sig_split h
   rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA nS eS pS qS dpS dqS qiS dS
@@ -285,5 +291,15 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl <;>
       simp [ep, a7, a9, a11, a13]
+
+/-- What the proofs need of the tables, for the hash function `h`, whose
+digest is named `dn`, and MGF1's `g`: an indirect call of `f`'s and `fg`'s
+functions (not empty) through the table reaches theirs, in every run. -/
+structure TF (h : PssHash) (g : RsaOaep.Arm.OHash) (f : MdFns) (fg : Impl.RsaOaep.Arm.Fns) (dn : String) (P : EP) :
+    Prop where
+  ht : ∀ σ, P.HT σ → HTab h dn f P.hd P.hi P.hc P.hdg σ
+  t : ∀ σ, P.T σ → RsaOaep.Arm.TabFacts g.H fg P.tab P.ai P.au P.af σ
+  fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []
+  gne : fg.init ≠ [] ∧ fg.upd ≠ [] ∧ fg.fin ≠ []
 
 end VG.Proof.RsaPss.Arm.Sg

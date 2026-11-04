@@ -140,7 +140,7 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         · exact (hg.slot ok (o := o) (n := 1) (by omega_arith) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
         · exact (hg.slot ok (o := o) (n := 1) (by omega_arith) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)
     obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
-    have e1 : oEm = 1024 := rfl
+    have e1 : oEm = 0 := rfl
     have e2 : oRsa = 8192 := rfl
     refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hi, hf,
       ⟨by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.1, by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.1,

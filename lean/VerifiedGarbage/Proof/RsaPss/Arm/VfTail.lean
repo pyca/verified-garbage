@@ -83,9 +83,9 @@ theorem tail_vp (P : EP) (hP : ∃ σ, In h.D P σ) {nbm : Nat} (hnb : nbm * h.B
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
-  have e3 : oDig = 832 := rfl
+  have e3 : oDig = 4928 := rfl
   refine (ctHash_vp h hg hnb hnb0 hfit (Inv := Kt h P msg nbm)
     (fun τ m m' hk hf' => ⟨K2.keep h hk.1 hf' (away2_ctW h hg hnb),
       slot_keep hf' (ctW_slot h hg hnb (by decide) (by decide)) hk.2.1,

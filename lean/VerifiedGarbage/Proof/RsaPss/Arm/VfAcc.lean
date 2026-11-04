@@ -103,7 +103,7 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
   have fit := hg.fit
   refine VP.seq (G := fun τ s => W0 h P τ s ∧ s.gpr .r0 = P.scr + BitVec.ofNat 32 oEm ∧
@@ -188,9 +188,9 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
-  have e3 : oY = 2048 := rfl
+  have e3 : oY = 1024 := rfl
   have fit := hg.fit
   have hB := h.B_le
   have mp : MP h (P.lay h.D) P.scr (lo P) (dbN h P) (seedV h P) (Ka h P) := by
