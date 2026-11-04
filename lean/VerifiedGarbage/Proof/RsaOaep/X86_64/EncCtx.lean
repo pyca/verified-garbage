@@ -15,10 +15,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 /-!
 # RSAES-OAEP encryption on x86-64: the contract on the registers
 
-`encK H G` states `Spec.RsaOaep.encryptContract H G` (with the stack the
-frame and the calls use, `encStack`) on the registers and the stack, which
-`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` meets when `pre` holds the
-values for `n` (`PcContract`).
+`encK H G`: RSAES-OAEP encryption with MGF1 over `G` (`Spec.RsaOaep.encrypt
+H G`), with the stack the frame and the calls use (`encStack`), on the
+registers and the stack, which `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`
+meets when `pre` holds the values for `n` and `mgf1` names `G`
+(`PcContract`).
 -/
 
 @[expose] public section

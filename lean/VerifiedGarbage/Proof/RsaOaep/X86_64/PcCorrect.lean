@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: correctness
 
-`EM` built and masked as `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` does
+`EM` built and masked as `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` does
 (`encMask_ok`), then the call with `pre` (`encMain_ok`), after the
 prologue and the checks (`encBodyWith_ok`): memory safety and the registers
 the ABI keeps whatever `pre` holds, and, if `pre` holds the values for `n`,

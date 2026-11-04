@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSAES-OAEP encryption on PPC64LE: the frame
 
 Untrusted: everything here is checked by Lean. The frame of
-`vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` (`Impl/RsaOaep/PPC64LE.lean`),
+`vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` (`Impl/RsaOaep/PPC64LE.lean`),
 from its base `fb`, and the 48 bytes below it that the streaming hash
 functions use (`cR`): the stack the function uses, `kR`, the 304 bytes below
 the stack pointer on entry. As for RSASSA-PKCS1-v1_5

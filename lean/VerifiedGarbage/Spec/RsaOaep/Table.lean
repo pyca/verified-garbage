@@ -4,24 +4,53 @@ public import VerifiedGarbage.Spec.RsaOaep.Precomputed
 public import VerifiedGarbage.Spec.HashTable
 
 /-!
-# RSAES-OAEP with MGF1's hash function given as a table
+# RSAES-OAEP, with MGF1's hash function given as a table
 
 **Trusted** (as every file in `Spec/`). For the hash function `H` (any of
-`Mgf1.hashes`), in the module `rsa_oaep_<H>_mgf1`, the functions of
-`Spec/RsaOaep/Contract.lean` and `Spec/RsaOaep/Precomputed.lean` with MGF1's
-hash function not fixed but given at run time: a last parameter `mgf1`, a
-table of the interface `Hash` (`Spec/HashTable.lean`), and MGF1 with the
-hash function it names (`HashTable.hashAt`):
+`Mgf1.hashes`), in the module `rsa_oaep_<H>_mgf1`, each with a last
+parameter `mgf1`, a table of the interface `Hash` (`Spec/HashTable.lean`),
+and MGF1 with the hash function `G` it names (`HashTable.hashAt`):
 
-* `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`: as
-  `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`;
-* `vg_rsa_oaep_<H>_mgf1_decrypt`: as `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`;
+* `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`: `RSAES-OAEP-ENCRYPT` of a
+  message with a label and a seed (`RsaOaep.encrypt H G`), given the
+  modulus' `Rsa.publicPrecompute` values `pre`;
+* `vg_rsa_oaep_<H>_mgf1_decrypt`: `RSAES-OAEP-DECRYPT` of a ciphertext with
+  a label, with the private key checked against the public exponent
+  (`RsaOaep.decrypt H G`).
 
-for `G` the hash function `mgf1` names. So one function serves every MGF1
-hash function, with every implementation of it, rather than a function for
-each. Everything else, the timing guarantee included, is that of the
-contracts with `G` fixed: which table `mgf1` is, is public
-(`Abi.withTables`), and the table's own memory is read-only.
+So one function serves every MGF1 hash function, with every implementation
+of it, rather than a function for each.
+
+Numbers are as in `Spec/Rsa/Contract.lean`: slices of octets, most
+significant first, with the modulus `n` of `n_len` octets, from 64 to 1024,
+and `e` of at most `n_len`; the private key is as `vg_rsa_private_checked`
+takes it. The seed is `hLen` octets, an array. These are preconditions, on
+the public lengths; everything about the values is checked. Encryption
+returns 1 and writes the ciphertext, or returns 0 and writes zeros; with a
+`pre` that does not hold the values for `n`, what it writes and returns is
+unspecified, as in `Rsa.publicPrecomputedCheckedContract`. Decryption
+returns 1 and writes the message, padded with zeros to `n_len` octets, and
+its length; or writes zeros and returns 0, the single error for every
+failure of the key, the ciphertext or its decoding, or 2 (the internal
+error: RSADP's result failed its check against `e`).
+
+The signature determines memory validity, separation and that the pointers
+and lengths (among them the message's and the label's) are public, through
+`Sig.contract`; which table `mgf1` is, is public too (`Abi.withTables`),
+and the table's own memory is read-only. The public key, `n` and `e`, and
+`pre` are public, and may affect timing (`leak`). Nothing else is: the
+message, the label, the seed, the private key, the ciphertext and
+everything computed from them, among them whether the decoding is valid,
+where the message starts and its length: only the returned value says
+whether decryption succeeded, and the message and its length are its
+output.
+
+`scratch` is working space of at least `RsaPss.publicScratchWords n_len`
+`u64`s when encrypting and `RsaPss.scratchWords n_len` when decrypting,
+whose contents on return are unspecified. `stack` is the number of bytes
+below the stack pointer that an implementation's calls and frames use. The
+functions may overwrite their arguments passed in memory, where the calling
+convention allows it (`writeArgs`).
 -/
 
 @[expose] public section
@@ -49,7 +78,10 @@ def encryptTableSig : Sig where
   params := (encryptPrecomputedSig H).params ++ [("mgf1", HashTable.param)]
   ret := some .u32
 
-/-- `encryptPrecomputedContract H G` for `G` the hash function `mgf1` names. -/
+/-- `RSAES-OAEP-ENCRYPT` of the message with the label and the seed, with the
+public key `(n, e)` and MGF1 over the hash function `mgf1` names, when `pre`
+holds the values for `n`. Constant time but for the public key, its
+precomputed values, the lengths and which table `mgf1` is. -/
 def encryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   (encryptTableSig H).contract A
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed _scratch
@@ -104,7 +136,10 @@ def decryptTableSig : Sig where
   params := decryptSig.params ++ [("mgf1", HashTable.param)]
   ret := some .u32
 
-/-- `decryptContract H G` for `G` the hash function `mgf1` names. -/
+/-- `RSAES-OAEP-DECRYPT` of the ciphertext with the label, with the private
+key `(p, q, dP, dQ, qInv)` of the modulus `n` checked against the public
+exponent `e`, and MGF1 over the hash function `mgf1` names. Constant time
+but for the public key, the lengths and which table `mgf1` is. -/
 def decryptTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   decryptTableSig.contract A
     (pre := fun _out outLen _msgLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv

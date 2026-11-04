@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Spec.RsaPkcs1Sig
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: constant time
 
-The pieces of `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` (`EncCT`), for entry states
+The pieces of `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed` (`EncCT`), for entry states
 related to the anchor by `contract` too (`PP`: the precondition, `pre` and
 its words), and the call of the precomputed public operation, constant time
 for its contract, which makes `pre`'s words public. Nothing follows the

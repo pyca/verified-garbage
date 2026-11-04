@@ -49,7 +49,7 @@ abbrev pR (s : State) : Region := ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩
 abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 5
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 64⟩
 
-/-- What the code needs of `encryptPrecomputedContract.pre`, by name, for a
+/-- What the code needs of `encryptTableContract.pre`, by name, for a
 hash function of `D`-byte digests. -/
 structure PreO (D : Nat) (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
