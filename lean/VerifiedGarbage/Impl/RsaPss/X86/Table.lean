@@ -104,11 +104,17 @@ def sizesOf : Nat → Nat × Nat × Nat × Nat × Bool
   | 6 => (128, 64, 16, 28, true)
   | _ => (128, 64, 16, 32, true)
 
-/-- The hash function of index `i`, as the code sees it: its sizes, all that
-the pieces of code chosen by the index read of it. -/
-def ofIdx (i : Nat) : Hash :=
-  ⟨⟨(sizesOf i).1, 0, (sizesOf i).2.2.2.1, 0, 0, "", .block [], "", .block [], "", .block []⟩, (sizesOf i).2.1,
-    (sizesOf i).2.2.1, (sizesOf i).2.2.2.2, 0, "", .block [], []⟩
+/-- A hash function's sizes, in the order of `sizesOf`. -/
+def sizes (H : Hash) : Nat × Nat × Nat × Nat × Bool := (H.B, H.N, H.L, H.D, H.be)
+
+/-- A hash function with the sizes `z` and no code: all that the pieces of
+code chosen by the index read of it. -/
+def ofSizes (z : Nat × Nat × Nat × Nat × Bool) : Hash :=
+  ⟨⟨z.1, 0, z.2.2.2.1, 0, 0, "", .block [], "", .block [], "", .block []⟩, z.2.1, z.2.2.1, z.2.2.2.2, 0, "",
+    .block [], []⟩
+
+/-- The hash function of index `i`, as the code sees it. -/
+def ofIdx (i : Nat) : Hash := ofSizes (sizesOf i)
 
 /-- The index of the hash function of the table that is our argument `j`
 (its word 5), to `edx`. -/

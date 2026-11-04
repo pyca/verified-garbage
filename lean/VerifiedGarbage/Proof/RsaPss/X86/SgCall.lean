@@ -28,7 +28,7 @@ namespace VG.Proof.RsaPss.X86.Sg
 open VG VG.X86.Wp VG.Impl.RsaPss.X86 VG.Proof.RsaPkcs1Sig.X86 VG.Proof.RsaPss.X86
 open VG.X86 hiding frameBytes
 
-variable (h : PssHash)
+variable (h : PssHash) (G : Spec.Mgf1.Hash)
 
 /-- The call's arguments. -/
 abbrev outv (P : EP) : List (BitVec 32) :=
@@ -45,12 +45,12 @@ abbrev Kq (P : EP) (σ : State) (_m : Mem) : Prop := In h.D P σ ∧ fits h P �
 
 /-- During the call's arguments. -/
 abbrev A0 (P : EP) (σ s : State) (k : Nat) : Prop :=
-  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧ Slots h P s.mem k
+  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h G P σ) ∧ Slots h P s.mem k
 
 /-- A word stored below the slots keeps what the encoding left. -/
 theorem keepSlot {P : EP} {σ : State} {m : Mem} {d : Nat} (hd : d + 4 ≤ 80) (v : BitVec 32)
-    (hk : Kq h P σ m) (he : EMv P m (emF h P σ)) :
-    Kq h P σ (m.writeW ((P.lay h.D).fr d) v) ∧ EMv P (m.writeW ((P.lay h.D).fr d) v) (emF h P σ) := by
+    (hk : Kq h P σ m) (he : EMv P m (emF h G P σ)) :
+    Kq h P σ (m.writeW ((P.lay h.D).fr d) v) ∧ EMv P (m.writeW ((P.lay h.D).fr d) v) (emF h G P σ) := by
   have hg := hk.1.geo
   obtain ⟨σ', ok⟩ := hg.ok
   have hK := hk.1.k1024
@@ -71,9 +71,9 @@ theorem slots_next {P : EP} {m : Mem} {i : Nat} (hs : Slots h P m i) (hi : i < 2
     exact hs k hki
 
 /-- `mov eax, [arg j]; mov [esp + 4 i], eax`: argument `j` to the call's argument `i`. -/
-theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h P σ s i) (hi : i < 20)
-    (hj : j < 21) (hv : P.argv.getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
-    (kk : ∀ t, A0 h P σ t (i + 1) → WP isa (.block is) t Q) :
+theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h G P σ s i) (hi : i < 20)
+    (hj : j < 24) (hv : (P.argv h.D).getD j 0 = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
+    (kk : ∀ t, A0 h G P σ t (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (copyArg j i ++ is)) s Q := by
   obtain ⟨hc, hk, he, hs⟩ := ha
   have hg := hk.1.geo
@@ -81,13 +81,13 @@ theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h P σ s i) (hi : 
   refine hc.wp_arg hg (sg_arg h hj) (by decide) (by decide) fun t1 c1 u1 =>
     c1.wp_st hg (d := 4 * i) (by unfold frameBytes; omega_arith) fun t2 c2 m2 => kk t2 ⟨c2, ?_⟩
   rw [m2.mem, u1.mem, u1.gpr]
-  have kp := keepSlot h (show 4 * i + 4 ≤ 80 by omega_arith) (P.lay h.D |>.argv.getD j 0) hk he
+  have kp := keepSlot h G (show 4 * i + 4 ≤ 80 by omega_arith) ((P.lay h.D).argv.getD j 0) hk he
   exact ⟨kp.1, kp.2, slots_next h hs hi _ hv⟩
 
 /-- `scratch + o` to the call's argument `i`. -/
-theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h P σ s i) (hi : i < 20)
+theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h G P σ s i) (hi : i < 20)
     (hv : P.scr + BitVec.ofNat 32 o = (outv P).getD i 0) {is : List Instr} {Q : State → Prop}
-    (kk : ∀ t, A0 h P σ t (i + 1) → WP isa (.block is) t Q) :
+    (kk : ∀ t, A0 h G P σ t (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (atS .eax o ++ [st .eax (4 * i)] ++ is)) s Q := by
   obtain ⟨hc, hk, he, hs⟩ := ha
   have hg := hk.1.geo
@@ -96,25 +96,25 @@ theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h P σ s i) (hi : i
   refine ((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).wp_st hg (d := 4 * i)
     (by unfold frameBytes; omega_arith) fun t3 c3 m3 => kk t3 ⟨c3, ?_⟩
   rw [m3.mem, u2.mem, u1.mem, u2.gpr, u1.gpr, hc.ebp]
-  have kp := keepSlot h (show 4 * i + 4 ≤ 80 by omega_arith) (P.scr + BitVec.ofNat 32 o) hk he
+  have kp := keepSlot h G (show 4 * i + 4 ≤ 80 by omega_arith) (P.scr + BitVec.ofNat 32 o) hk he
   exact ⟨kp.1, kp.2, slots_next h hs hi _ hv⟩
 
 theorem privArgs_eq : privArgs = copyArg 0 0 ++ copyArg 3 1 ++ copyArg 2 2 ++ copyArg 3 3 ++ copyArg 4 4 ++
     copyArg 5 5 ++ (atS .eax oEm ++ [st .eax (4 * 6)]) ++ copyArg 3 7 ++ copyArg 6 8 ++ copyArg 7 9 ++
     copyArg 8 10 ++ copyArg 9 11 ++ copyArg 10 12 ++ copyArg 7 13 ++ copyArg 12 14 ++ copyArg 9 15 ++
     copyArg 14 16 ++ copyArg 7 17 ++ (atS .eax oRsa ++ [st .eax (4 * 18)]) ++
-    [ld .eax (arg 20), .alu .sub .eax (.imm 1024), st .eax (4 * 19)] := by
+    [ld .eax (arg 21), .alu .sub .eax (.imm 1024), st .eax (4 * 19)] := by
   simp only [privArgs, List.append_assoc]; rfl
 
 /-- Before the call. -/
 abbrev R1 (P : EP) (σ s : State) : Prop :=
-  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧
+  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h G P σ) ∧
     PrivArgs s P.out P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv (P.scr + BitVec.ofNat 32 oRsa)
       P.K P.el P.pl P.ql (P.scl - 1024)
 
 theorem pa_vp (P : EP) :
-    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ)) (.block privArgs)
-      (R1 h P) := by
+    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h G P σ)) (.block privArgs)
+      (R1 h G P) := by
   refine VP.taint [.esp, .ebp] privArgs_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hk, he⟩ => ?_
   have hi := hk.1
   have hg := hi.geo
@@ -123,37 +123,37 @@ theorem pa_vp (P : EP) :
     have := hi.slK; unfold Spec.RsaPss.scratchWords at this; omega_arith
   rw [privArgs_eq]
   simp only [List.append_assoc]
-  have z0 : A0 h P σ s 0 := ⟨hc, ⟨hk.1, hk.2.1, trivial⟩, he, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
-  refine copySlot h z0 (by decide) (j := 0) (by decide) (by simp [EP.argv, outv, privArgv]) fun t1 z1 => ?_
-  refine copySlot h z1 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t2 z2 => ?_
-  refine copySlot h z2 (by decide) (j := 2) (by decide) (by simp [EP.argv, outv, privArgv]) fun t3 z3 => ?_
-  refine copySlot h z3 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t4 z4 => ?_
-  refine copySlot h z4 (by decide) (j := 4) (by decide) (by simp [EP.argv, outv, privArgv]) fun t5 z5 => ?_
-  refine copySlot h z5 (by decide) (j := 5) (by decide) (by simp [EP.argv, outv, privArgv]) fun t6 z6 => ?_
+  have z0 : A0 h G P σ s 0 := ⟨hc, ⟨hk.1, hk.2.1, trivial⟩, he, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
+  refine copySlot h G z0 (by decide) (j := 0) (by decide) (by simp [EP.argv, outv, privArgv]) fun t1 z1 => ?_
+  refine copySlot h G z1 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t2 z2 => ?_
+  refine copySlot h G z2 (by decide) (j := 2) (by decide) (by simp [EP.argv, outv, privArgv]) fun t3 z3 => ?_
+  refine copySlot h G z3 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t4 z4 => ?_
+  refine copySlot h G z4 (by decide) (j := 4) (by decide) (by simp [EP.argv, outv, privArgv]) fun t5 z5 => ?_
+  refine copySlot h G z5 (by decide) (j := 5) (by decide) (by simp [EP.argv, outv, privArgv]) fun t6 z6 => ?_
   rw [← List.append_assoc (atS .eax oEm)]
-  refine scrSlot h z6 (by decide) (by simp [outv, privArgv]) fun t7 z7 => ?_
-  refine copySlot h z7 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t8 z8 => ?_
-  refine copySlot h z8 (by decide) (j := 6) (by decide) (by simp [EP.argv, outv, privArgv]) fun t9 z9 => ?_
-  refine copySlot h z9 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t10 z10 => ?_
-  refine copySlot h z10 (by decide) (j := 8) (by decide) (by simp [EP.argv, outv, privArgv]) fun t11 z11 => ?_
-  refine copySlot h z11 (by decide) (j := 9) (by decide) (by simp [EP.argv, outv, privArgv]) fun t12 z12 => ?_
-  refine copySlot h z12 (by decide) (j := 10) (by decide) (by simp [EP.argv, outv, privArgv]) fun t13 z13 => ?_
-  refine copySlot h z13 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t14 z14 => ?_
-  refine copySlot h z14 (by decide) (j := 12) (by decide) (by simp [EP.argv, outv, privArgv]) fun t15 z15 => ?_
-  refine copySlot h z15 (by decide) (j := 9) (by decide) (by simp [EP.argv, outv, privArgv]) fun t16 z16 => ?_
-  refine copySlot h z16 (by decide) (j := 14) (by decide) (by simp [EP.argv, outv, privArgv]) fun t17 z17 => ?_
-  refine copySlot h z17 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t18 z18 => ?_
+  refine scrSlot h G z6 (by decide) (by simp [outv, privArgv]) fun t7 z7 => ?_
+  refine copySlot h G z7 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t8 z8 => ?_
+  refine copySlot h G z8 (by decide) (j := 6) (by decide) (by simp [EP.argv, outv, privArgv]) fun t9 z9 => ?_
+  refine copySlot h G z9 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t10 z10 => ?_
+  refine copySlot h G z10 (by decide) (j := 8) (by decide) (by simp [EP.argv, outv, privArgv]) fun t11 z11 => ?_
+  refine copySlot h G z11 (by decide) (j := 9) (by decide) (by simp [EP.argv, outv, privArgv]) fun t12 z12 => ?_
+  refine copySlot h G z12 (by decide) (j := 10) (by decide) (by simp [EP.argv, outv, privArgv]) fun t13 z13 => ?_
+  refine copySlot h G z13 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t14 z14 => ?_
+  refine copySlot h G z14 (by decide) (j := 12) (by decide) (by simp [EP.argv, outv, privArgv]) fun t15 z15 => ?_
+  refine copySlot h G z15 (by decide) (j := 9) (by decide) (by simp [EP.argv, outv, privArgv]) fun t16 z16 => ?_
+  refine copySlot h G z16 (by decide) (j := 14) (by decide) (by simp [EP.argv, outv, privArgv]) fun t17 z17 => ?_
+  refine copySlot h G z17 (by decide) (j := 7) (by decide) (by simp [EP.argv, outv, privArgv]) fun t18 z18 => ?_
   rw [← List.append_assoc (atS .eax oRsa)]
-  refine scrSlot h z18 (by decide) (by simp [outv, privArgv]) fun t19 z19 => ?_
+  refine scrSlot h G z18 (by decide) (by simp [outv, privArgv]) fun t19 z19 => ?_
   obtain ⟨c19, k19, e19, s19⟩ := z19
   simp only [ld, st]
-  refine c19.wp_arg hg (sg_arg h (j := 20) (by decide)) (by decide) (by decide) fun t20 c20 u20 =>
+  refine c19.wp_arg hg (sg_arg h (j := 21) (by decide)) (by decide) (by decide) fun t20 c20 u20 =>
     wp_subi fun t21 u21 _ _ => (c20.upd u21 (by decide) (by decide)).wp_st hg (d := 4 * 19) (by decide)
       fun t22 c22 m22 => WP.block_nil ?_
   have v : t21.gpr .eax = BitVec.ofNat 32 (P.scl - 1024) := by
     rw [u21.gpr, u20.gpr]
     exact Offset.ofNat_sub_ofNat (w := 32) (d := 1024) hs1
-  have kp := keepSlot h (show 4 * 19 + 4 ≤ 80 by decide) (t21.gpr .eax) k19 e19
+  have kp := keepSlot h G (show 4 * 19 + 4 ≤ 80 by decide) (t21.gpr .eax) k19 e19
   have sl := slots_next h s19 (by decide) _ (v.trans (by simp [outv, privArgv]))
   have m : t22.mem = t19.mem.writeW ((P.lay h.D).fr (4 * 19)) (t21.gpr .eax) := by
     rw [m22.mem, u21.mem, u20.mem]
@@ -167,9 +167,9 @@ theorem pa_vp (P : EP) :
   · have hs := hi.slK; unfold Spec.RsaPss.scratchWords at hs; omega_arith
 
 /-- What the specification signs: RSASP1 of `EM`, checked against `e`. -/
-theorem sign_ok {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
-    Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ) =
-      Spec.Rsa.privateChecked P.nB P.eB ((List.range P.K).map (emF h P σ)) (pB P σ) (qB P σ) (dpB P σ)
+theorem sign_ok (hG : Proof.Mgf1.Valid G) {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
+    Spec.RsaPss.sign h.G G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ) =
+      Spec.Rsa.privateChecked P.nB P.eB ((List.range P.K).map (emF h G P σ)) (pB P σ) (qB P σ) (dpB P σ)
         (dqB P σ) (qiB P σ) := by
   have hl := nB_length hi
   have hK := hi.k64
@@ -200,7 +200,7 @@ theorem sign_ok {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
   have hfit : h.G.len + (saltB P σ).length + 2 ≤
       Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (b :: rest)) - 1) := by
     rw [gl, RsaPkcs1Sig.bytesAt_len, hem]; have := hf.2; omega_arith
-  rw [hbr, RsaPss.sign_eq h.G (PssHash.valid h) hb0 hm rfl rfl e1 hdb hfit]
+  rw [hbr, RsaPss.sign_eq₂ G h.G (PssHash.valid h) hG hb0 hm rfl rfl e1 hdb hfit]
   refine congrArg (fun em => Spec.Rsa.privateChecked (b :: rest) P.eB em (pB P σ) (qB P σ) (dpB P σ) (dqB P σ)
     (qiB P σ)) ?_
   rw [List.length_cons, show rest.length + 1 = P.K by omega_arith]
@@ -244,8 +244,8 @@ theorem eB_at {P : EP} {σ s : State} (hi : In h.D P σ) (hs : (P.lay h.D).St σ
 def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
 
 /-- `out` and the result: the call. -/
-theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
-    VP (R1 h P) (.call (privName v) (Proof.Rsa.X86.PrivChecked.privCode v)) (Fin h P) := by
+theorem call_vp (hG : Proof.Mgf1.Valid G) (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
+    VP (R1 h G P) (.call (privName v) (Proof.Rsa.X86.PrivChecked.privCode v)) (Fin h G P) := by
   have hv := Proof.Rsa.X86.PrivChecked.code_verified v
   have hst := Proof.Rsa.X86.PrivChecked.code_stack v
   refine VP.call hv.1 hv.2.1 (Proof.Rsa.X86.PrivChecked.privateCode_noSp v)
@@ -393,7 +393,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     have ro := fun {R : Region} (hR : R ∈ (P.lay h.D).ro) => hs.callEntry_ro (by show 4 ≤ 3448; decide) hR
     have hg := hi.geo
     have em : Spec.Rsa.bytesAt s.callEntry.mem ((P.scr + BitVec.ofNat 32 oEm).setWidth 64) P.K =
-        (List.range P.K).map (emF h P σ) := by
+        (List.range P.K).map (emF h G P σ) := by
       rw [RsaPkcs1Sig.bytesAt_frame (hs.callEntry_frame (by show 4 ≤ 3448; decide)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (ok.low_buf (R := P.SCR) (.inr (by simp))).symm.sub_left sI)
         (by omega_arith)]
@@ -404,7 +404,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     rw [ro (R := P.N) (by simp), hi.nB, ro (R := P.E) (by simp), hi.eB, em,
       ro (R := P.PP) (by simp), ro (R := P.QQ) (by simp), ro (R := P.DP) (by simp), ro (R := P.DQ) (by simp),
       ro (R := P.QI) (by simp)] at this
-    rw [Res, sign_ok h hi hk.2.1]
+    rw [Res, sign_ok h G hG hi hk.2.1]
     exact this
 
 end VG.Proof.RsaPss.X86.Sg
