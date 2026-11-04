@@ -26,6 +26,10 @@ def artifacts : List Artifact := [
     code := Impl.MlKem1024.RISCV64.encaps1024
     stack := 1168
     verified := Proof.MlKem1024.RISCV64.Encaps.verified },
+  Spec.MlKem1024.encapsHApi.artifact RISCV64.target {
+    code := Impl.MlKem1024.RISCV64.encapsH1024
+    stack := 1168
+    verified := Proof.MlKem1024.RISCV64.Encaps.verifiedH },
   Spec.MlKem1024.decapsApi.artifact RISCV64.target {
     code := Impl.MlKem1024.RISCV64.decaps1024
     stack := 1168
