@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
@@ -10,6 +14,16 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.X25519.Field
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rc2.Memory32
+meta import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-521
@@ -28,6 +42,17 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p521_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 16 64) := by rfcT_decide
+theorem p521_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 20 64) := by rfcT_decide
+theorem p521_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 28 64) := by rfcT_decide
+theorem p521_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 32 64) := by rfcT_decide
+theorem p521_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 48 128) := by rfcT_decide
+theorem p521_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 64 128) := by rfcT_decide
+theorem p521_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 28 128) := by rfcT_decide
+theorem p521_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.p521 false 7 32 128) := by rfcT_decide
+
 /-- P-521, with the group law `hL`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p521
@@ -38,7 +63,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.Arm.P521.p521_sh
-  coreN := "vg_ecdsa_p521_sign"
+  coreN := "vg_ecdsa_p521_sign_k"
   coreC := Impl.Ecdsa.Arm.signP521
   coreConsts := []
   coreX := by
@@ -55,5 +80,12 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
       Proof.Ecdsa.Arm.P521.signArm] using Proof.Ecdsa.Arm.P521.sign_ct
   coreStack := by lit_decide
   reduceT := nofun
+  blkT := blkT_of p521_blk₀ p521_blk₁ p521_blk₂ p521_blk₃ p521_blk₄ p521_blk₅ p521_blk₆ p521_blk₇
+
+/-- `vg_ecdsa_p521_sign`, with the tables of `vs`. -/
+theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HashTable.Arm.TVar) (h : OK vs) :
+    Verified Arm.target (signCode (p521 hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ rfl h (sat_nil h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

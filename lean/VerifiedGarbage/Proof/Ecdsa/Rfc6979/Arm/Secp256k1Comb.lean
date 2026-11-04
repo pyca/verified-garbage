@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombMain
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombCT
@@ -85,5 +88,21 @@ def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :
       exact post
     coreCT := comb_core_ctU
     coreStack := by lit_decide }
+
+/-- secp256k1 with the comb, multiplying with UMAAL (`u`) or not. -/
+def secp256k1Of (u : Bool) (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
+  bif u then secp256k1CombCurveU hL else secp256k1CombCurve hL
+
+/-- `vg_ecdsa_secp256k1_sign` (`_umaal`, multiplying with UMAAL), with the tables of `vs`. -/
+theorem secp256k1T_verified (u : Bool) (hL : Weierstrass.Law Spec.Secp256k1.curve) (vs : List Proof.HashTable.Arm.TVar)
+    (h : OK vs ∧ ∀ c ∈ secp256k1CombConsts, c.1 ∉ Proof.HashTable.Arm.names vs) :
+    Verified Arm.target (signCode (secp256k1Of u hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 secp256k1CombConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.secp256k1) h.1 VG.Proof.Secp256k1.Arm.combSatMem
+    (h.2 _ (List.mem_singleton_self _)) (by rw [VG.Proof.Secp256k1.Arm.comb_words_length]; decide)
+    VG.Proof.Secp256k1.Arm.combSat_held (by decide) rfl
+  cases u
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

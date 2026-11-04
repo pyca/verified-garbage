@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
@@ -38,6 +42,17 @@ theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 51
   have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem brainpoolp512r1_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 16 64) := by rfcT_decide
+theorem brainpoolp512r1_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 20 64) := by rfcT_decide
+theorem brainpoolp512r1_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 28 64) := by rfcT_decide
+theorem brainpoolp512r1_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 32 64) := by rfcT_decide
+theorem brainpoolp512r1_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 48 128) := by rfcT_decide
+theorem brainpoolp512r1_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 64 128) := by rfcT_decide
+theorem brainpoolp512r1_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 28 128) := by rfcT_decide
+theorem brainpoolp512r1_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp512r1 true 0 32 128) := by rfcT_decide
+
 /-- brainpoolP512r1, with the group law `hL`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.brainpoolp512r1
@@ -49,7 +64,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
   hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.Arm.BrainpoolP512r1.brainpoolp512r1_sh
-  coreN := "vg_ecdsa_brainpoolp512r1_sign"
+  coreN := "vg_ecdsa_brainpoolp512r1_sign_k"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP512r1
   coreConsts := []
   coreX := by
@@ -66,6 +81,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
       Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of brainpoolp512r1_blk₀ brainpoolp512r1_blk₁ brainpoolp512r1_blk₂ brainpoolp512r1_blk₃ brainpoolp512r1_blk₄ brainpoolp512r1_blk₅ brainpoolp512r1_blk₆ brainpoolp512r1_blk₇
 
 /-- `brainpoolp512r1`, calling `vg_ecdsa_brainpoolp512r1_sign_umaal`. -/
 def brainpoolp512r1U (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
@@ -78,7 +94,7 @@ def brainpoolp512r1U (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurv
   hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.Arm.BrainpoolP512r1.brainpoolp512r1_sh
-  coreN := "vg_ecdsa_brainpoolp512r1_sign" ++ "_umaal"
+  coreN := "vg_ecdsa_brainpoolp512r1_sign_k" ++ "_umaal"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP512r1U
   coreConsts := []
   coreX := by
@@ -95,5 +111,20 @@ def brainpoolp512r1U (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurv
       Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.signU_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of brainpoolp512r1_blk₀ brainpoolp512r1_blk₁ brainpoolp512r1_blk₂ brainpoolp512r1_blk₃ brainpoolp512r1_blk₄ brainpoolp512r1_blk₅ brainpoolp512r1_blk₆ brainpoolp512r1_blk₇
+
+/-- brainpoolP512r1, multiplying with UMAAL (`u`) or not. -/
+def brainpoolp512r1Of (u : Bool) (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve :=
+  bif u then brainpoolp512r1U hL else brainpoolp512r1 hL
+
+/-- `vg_ecdsa_brainpoolp512r1_sign` (`_umaal`, multiplying with UMAAL), with the tables of `vs`. -/
+theorem brainpoolp512r1T_verified (u : Bool) (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (vs : List Proof.HashTable.Arm.TVar)
+    (h : OK vs) :
+    Verified Arm.target (signCode (brainpoolp512r1Of u hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 [] vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h (by decide) rfl
+  cases u
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

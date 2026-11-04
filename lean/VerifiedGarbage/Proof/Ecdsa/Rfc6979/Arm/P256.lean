@@ -34,6 +34,17 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p256_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 16 64) := by rfcT_decide
+theorem p256_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 20 64) := by rfcT_decide
+theorem p256_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 28 64) := by rfcT_decide
+theorem p256_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 32 64) := by rfcT_decide
+theorem p256_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 48 128) := by rfcT_decide
+theorem p256_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 64 128) := by rfcT_decide
+theorem p256_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 28 128) := by rfcT_decide
+theorem p256_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.p256 false 0 32 128) := by rfcT_decide
+
 /-- P-256, with the group law `hL`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p256
@@ -44,7 +55,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
-  coreN := "vg_ecdsa_p256_sign"
+  coreN := "vg_ecdsa_p256_sign_k"
   coreC := Impl.Ecdsa.Arm.signP256
   coreConsts := []
   coreX := by
@@ -61,5 +72,6 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
       Proof.Ecdsa.Arm.signArm] using Proof.Ecdsa.Arm.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p256_blk₀ p256_blk₁ p256_blk₂ p256_blk₃ p256_blk₄ p256_blk₅ p256_blk₆ p256_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

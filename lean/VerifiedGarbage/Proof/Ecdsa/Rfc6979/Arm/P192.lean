@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
@@ -36,6 +40,17 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p192_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 16 64) := by rfcT_decide
+theorem p192_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 20 64) := by rfcT_decide
+theorem p192_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 28 64) := by rfcT_decide
+theorem p192_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 32 64) := by rfcT_decide
+theorem p192_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 48 128) := by rfcT_decide
+theorem p192_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 64 128) := by rfcT_decide
+theorem p192_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 28 128) := by rfcT_decide
+theorem p192_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.p192 false 0 32 128) := by rfcT_decide
+
 /-- P-192, with the group law `hL`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p192
@@ -46,7 +61,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
-  coreN := "vg_ecdsa_p192_sign"
+  coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.Arm.signP192
   coreConsts := []
   coreX := by
@@ -63,5 +78,12 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
       Proof.Ecdsa.Arm.P192.signArm] using Proof.Ecdsa.Arm.P192.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p192_blk₀ p192_blk₁ p192_blk₂ p192_blk₃ p192_blk₄ p192_blk₅ p192_blk₆ p192_blk₇
+
+/-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
+theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) (vs : List Proof.HashTable.Arm.TVar) (h : OK vs) :
+    Verified Arm.target (signCode (p192 hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 [] vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ rfl h (sat_nil h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

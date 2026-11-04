@@ -36,6 +36,17 @@ theorem p224_nBits : Spec.Ecdsa.nBits Spec.P224.curve = 224 := by
   have h₂ : Spec.P224.curve.n.log2 < 224 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p224_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 16 64) := by rfcT_decide
+theorem p224_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 20 64) := by rfcT_decide
+theorem p224_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 28 64) := by rfcT_decide
+theorem p224_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 32 64) := by rfcT_decide
+theorem p224_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 48 128) := by rfcT_decide
+theorem p224_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 64 128) := by rfcT_decide
+theorem p224_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 28 128) := by rfcT_decide
+theorem p224_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.p224 false 0 32 128) := by rfcT_decide
+
 /-- P-224, with the group law `hL`. -/
 def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p224
@@ -46,7 +57,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 28 - Spec.Ecdsa.nBits Spec.P224.curve = 0; rw [p224_nBits]
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.Arm.signP224
   coreConsts := []
   coreX := by
@@ -63,5 +74,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
       Proof.Ecdsa.Arm.P224.signArm] using Proof.Ecdsa.Arm.P224.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p224_blk₀ p224_blk₁ p224_blk₂ p224_blk₃ p224_blk₄ p224_blk₅ p224_blk₆ p224_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

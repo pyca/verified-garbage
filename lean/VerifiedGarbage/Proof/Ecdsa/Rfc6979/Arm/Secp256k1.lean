@@ -36,6 +36,17 @@ theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
   have h₂ : Spec.Secp256k1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem secp256k1_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 16 64) := by rfcT_decide
+theorem secp256k1_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 20 64) := by rfcT_decide
+theorem secp256k1_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 28 64) := by rfcT_decide
+theorem secp256k1_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 32 64) := by rfcT_decide
+theorem secp256k1_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 48 128) := by rfcT_decide
+theorem secp256k1_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 64 128) := by rfcT_decide
+theorem secp256k1_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 28 128) := by rfcT_decide
+theorem secp256k1_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.secp256k1 false 0 32 128) := by rfcT_decide
+
 /-- secp256k1, with the group law `hL`. -/
 def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.secp256k1
@@ -46,7 +57,7 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
-  coreN := "vg_ecdsa_secp256k1_sign"
+  coreN := "vg_ecdsa_secp256k1_sign_k"
   coreC := Impl.Ecdsa.Arm.signSecp256k1
   coreConsts := []
   coreX := by
@@ -63,5 +74,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
       Proof.Ecdsa.Arm.Secp256k1.signArm] using Proof.Ecdsa.Arm.Secp256k1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of secp256k1_blk₀ secp256k1_blk₁ secp256k1_blk₂ secp256k1_blk₃ secp256k1_blk₄ secp256k1_blk₅ secp256k1_blk₆ secp256k1_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

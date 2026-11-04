@@ -36,6 +36,17 @@ theorem brainpoolp256r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 25
   have h₂ : Spec.BrainpoolP256r1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem brainpoolp256r1_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 16 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 20 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 28 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 32 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 48 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 64 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 28 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.brainpoolp256r1 false 0 32 128) := by rfcT_decide
+
 /-- brainpoolP256r1, with the group law `hL`. -/
 def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.brainpoolp256r1
@@ -46,7 +57,7 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 0; rw [brainpoolp256r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp256r1_sign"
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP256r1
   coreConsts := []
   coreX := by
@@ -63,5 +74,6 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve
       Proof.Ecdsa.Arm.BrainpoolP256r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP256r1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of brainpoolp256r1_blk₀ brainpoolp256r1_blk₁ brainpoolp256r1_blk₂ brainpoolp256r1_blk₃ brainpoolp256r1_blk₄ brainpoolp256r1_blk₅ brainpoolp256r1_blk₆ brainpoolp256r1_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

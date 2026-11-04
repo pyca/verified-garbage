@@ -34,6 +34,17 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p384_blk₀ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 16 64) := by rfcT_decide
+theorem p384_blk₁ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 20 64) := by rfcT_decide
+theorem p384_blk₂ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 28 64) := by rfcT_decide
+theorem p384_blk₃ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 32 64) := by rfcT_decide
+theorem p384_blk₄ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 48 128) := by rfcT_decide
+theorem p384_blk₅ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 64 128) := by rfcT_decide
+theorem p384_blk₆ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 28 128) := by rfcT_decide
+theorem p384_blk₇ : RfcT (cfgS Impl.Ecdsa.Arm.p384 false 0 32 128) := by rfcT_decide
+
 /-- P-384, with the group law `hL`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p384
@@ -44,7 +55,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
-  coreN := "vg_ecdsa_p384_sign"
+  coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.Arm.signP384
   coreConsts := []
   coreX := by
@@ -61,5 +72,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
       Proof.Ecdsa.Arm.P384.signArm] using Proof.Ecdsa.Arm.P384.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p384_blk₀ p384_blk₁ p384_blk₂ p384_blk₃ p384_blk₄ p384_blk₅ p384_blk₆ p384_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
