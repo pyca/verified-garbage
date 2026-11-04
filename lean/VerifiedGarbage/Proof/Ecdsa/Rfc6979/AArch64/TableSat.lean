@@ -95,4 +95,33 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : 
        rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by
          simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
 
+theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : OK vs)
+    (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) : ∃ s, (specK T [] vs).pre s := by
+  obtain ⟨w, hv⟩ := List.exists_mem_of_ne_nil vs hO.2.2.1
+  have hw := hO.2.2.2 w hv
+  refine ⟨satT vs w (fun _ => 0) T.ecdsa.curve.len [], ?_⟩
+  sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, below, stackT,
+    String.reduceEq, Option.map_some,
+    List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', hsw, tableRegion_eq,
+    List.append_nil, names_eq]
+  have hD : w.H.D ≤ 64 := by have := w.ok.stream.hF; have := w.ok.stream.hDF; exact Nat.le_trans this (by omega)
+  have hDn : (BitVec.ofNat 64 w.H.D).toNat = w.H.D := by rw [BitVec.toNat_ofNat]; omega
+  have hG : Spec.HashTable.hashAt 64 (satT vs w (fun _ => 0) T.ecdsa.curve.len []).mem 0x300000 =
+      some w.mgf.G := hashAt_tableOf (held_tableOf (satT_held vs w _ _ _)).2.1
+  simp only [hsw, hDn, satT] at hG ⊢
+  sig_and_intros
+  all_goals first
+    | decide
+    | rfl
+    | exact ⟨tableOf w, List.mem_map_of_mem hv, satT_held vs w _ _ _⟩
+    | (rw [List.append_eq, List.append_nil]; exact symT_distinct hO.2.1)
+    | exact Region.disjoint_of_sep (by
+        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+    | bv_omega
+    | (intro H hH
+       obtain rfl := Option.some.inj (hH.symm.trans hG)
+       exact ⟨w.mgf.len.symm, by rw [hw.hmac]; rfl⟩)
+
 end VG.Proof.Ecdsa.Rfc6979.AArch64
