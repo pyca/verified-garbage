@@ -21,60 +21,60 @@ impl Hash {
 
 #[rustfmt::skip]
 mod vg_hash_md5;
-pub use vg_hash_md5::*;
+pub use vg_hash_md5::VG_HASH_MD5;
 
 #[rustfmt::skip]
 mod vg_hash_sha1;
-pub use vg_hash_sha1::*;
+pub use vg_hash_sha1::VG_HASH_SHA1;
 
 #[rustfmt::skip]
 mod vg_hash_sha1_sha2;
-pub use vg_hash_sha1_sha2::*;
+pub use vg_hash_sha1_sha2::{VG_HASH_SHA1_SHA2, VG_HASH_SHA1_SHA2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha224;
-pub use vg_hash_sha224::*;
+pub use vg_hash_sha224::VG_HASH_SHA224;
 
 #[rustfmt::skip]
 mod vg_hash_sha224_sha2;
-pub use vg_hash_sha224_sha2::*;
+pub use vg_hash_sha224_sha2::{VG_HASH_SHA224_SHA2, VG_HASH_SHA224_SHA2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha256;
-pub use vg_hash_sha256::*;
+pub use vg_hash_sha256::VG_HASH_SHA256;
 
 #[rustfmt::skip]
 mod vg_hash_sha256_sha2;
-pub use vg_hash_sha256_sha2::*;
+pub use vg_hash_sha256_sha2::{VG_HASH_SHA256_SHA2, VG_HASH_SHA256_SHA2_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha384;
-pub use vg_hash_sha384::*;
+pub use vg_hash_sha384::VG_HASH_SHA384;
 
 #[rustfmt::skip]
 mod vg_hash_sha384_sha3;
-pub use vg_hash_sha384_sha3::*;
+pub use vg_hash_sha384_sha3::{VG_HASH_SHA384_SHA3, VG_HASH_SHA384_SHA3_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512;
-pub use vg_hash_sha512::*;
+pub use vg_hash_sha512::VG_HASH_SHA512;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224;
-pub use vg_hash_sha512_224::*;
+pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224_sha3;
-pub use vg_hash_sha512_224_sha3::*;
+pub use vg_hash_sha512_224_sha3::{VG_HASH_SHA512_224_SHA3, VG_HASH_SHA512_224_SHA3_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256;
-pub use vg_hash_sha512_256::*;
+pub use vg_hash_sha512_256::VG_HASH_SHA512_256;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256_sha3;
-pub use vg_hash_sha512_256_sha3::*;
+pub use vg_hash_sha512_256_sha3::{VG_HASH_SHA512_256_SHA3, VG_HASH_SHA512_256_SHA3_FEATURES};
 
 #[rustfmt::skip]
 mod vg_hash_sha512_sha3;
-pub use vg_hash_sha512_sha3::*;
+pub use vg_hash_sha512_sha3::{VG_HASH_SHA512_SHA3, VG_HASH_SHA512_SHA3_FEATURES};
