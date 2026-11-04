@@ -10,7 +10,8 @@ public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
 `esi`), `H(ek)` hashed to `scratch + eH`, `(K, r) = G(m ‖ H(ek))` to `eKR`,
 the ciphertext computed by `encrypt` (`Encrypt.lean`), and `K` and the
 ciphertext copied into `key` and `ct`; `eACC` is returned.
-`vg_mlkem768_encaps` is `encaps` (`L768`).
+`vg_mlkem768_encaps` is `encaps` (`L768`), and `vg_mlkem768_encaps_h`,
+with `H(ek)` given, `encapsH`.
 -/
 
 @[expose] public section
@@ -34,5 +35,22 @@ def encapsBody : Prog isa :=
 
 /-- `vg_mlkem768_encaps`. -/
 def encaps : Prog isa := leaf (encapsBody L768)
+
+/-- `encapsBody` with `H(ek)` given at `h` (argument 1): `ek`, `m` and `h` are
+copied into `scratch` (argument 5), `h` where `encapsBody` hashes `H(ek)` to;
+the rest is `encapsBody`'s, with `key` and `ct` arguments 3 and 4. -/
+def encapsHBody : Prog isa :=
+  .seq (.block [.mov .esi (.mem (at_ .esp 40))]) <|
+  .seq (copyW 5 ⟨0, 0, L.p.ekLen⟩ ⟨5, L.eEK, L.p.ekLen⟩ (L.p.ekLen / 4)) <|
+  .seq (copyW 5 ⟨2, 0, 32⟩ ⟨5, L.eM, 32⟩ 8) <|
+  .seq (copyW 5 ⟨1, 0, 32⟩ ⟨5, L.eH, 32⟩ 8) <|
+  .seq (hash2 5 L.eST L.eWK 72 6 ⟨5, L.eM, 32⟩ ⟨5, L.eH, 32⟩ ⟨5, L.eKR, 64⟩) <|
+  .seq (encrypt L 5) <|
+  .seq (copyW 5 ⟨5, L.eKR, 32⟩ ⟨3, 0, 32⟩ 8) <|
+  .seq (copyW 5 ⟨5, L.eC, L.p.ctLen⟩ ⟨4, 0, L.p.ctLen⟩ (L.p.ctLen / 4))
+    (.block [.mov .eax (.mem (at_ .esi L.eACC))])
+
+/-- `vg_mlkem768_encaps_h`. -/
+def encapsH : Prog isa := leaf (encapsHBody L768)
 
 end VG.Impl.MlKem.X86

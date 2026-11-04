@@ -35,6 +35,10 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86.encaps
     stack := 88
     verified := Proof.MlKem.X86.Encaps.verified },
+  Spec.MlKem.encapsHApi.artifact X86.target {
+    code := Impl.MlKem.X86.encapsH
+    stack := 88
+    verified := Proof.MlKem.X86.Encaps.verifiedH },
   Spec.MlKem.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.decaps
     stack := 88
