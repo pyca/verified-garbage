@@ -1,7 +1,9 @@
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "powerpc64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86",
+    target_arch = "x86_64"
 ))]
 use super::Ordering;
 use super::{Backend, Error, Features, PrivateKey, PublicKey, Vec, vec};
