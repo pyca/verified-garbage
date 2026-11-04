@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaPss.AArch64.Select
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
+public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,7 +14,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 `compLoop` compresses each of the `nbm` blocks of `Y` into the hash value at
 `scratch + oSt`, and copies it to `scratch + oSel` after block
 `fb = ⌊(ℓ + L) / B⌋` (`compLoop_ok`): the hash value at `oSel` is then that
-of the first `fb + 1` blocks.
+of the first `fb + 1` blocks. The compression function is the one whose
+address the slot `sCmpH` holds (`compT`), `cn`, which the calls of `f`
+reach.
 -/
 
 @[expose] public section
@@ -22,11 +25,10 @@ namespace VG.Proof.RsaPss.AArch64
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64 VG.WriteBytes
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
-open VG.Impl.MdStream.AArch64 (compressAt)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_addImm wp_subImm wp_lsl wp_add wp_sub)
 open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
-open VG.Proof.Pbkdf2.AArch64 (CallOk compressAt_ok)
+open VG.Proof.Pbkdf2.AArch64 (CallOk)
 open VG.Proof.MdStream (Md)
 
 /-- The `n` bytes of `Y` in the view `V`. -/
@@ -42,7 +44,7 @@ def CompW (so N o : Nat) : Prop := o < so ∨ (oSt ≤ o ∧ o < oSt + N) ∨ (o
 instance (so N o : Nat) : Decidable (CompW so N o) := by unfold CompW; infer_instance
 
 section
-variable {H : Hash} (hH : HashOK H)
+variable {H : Hash} (hH : HashOK H) {f : MdFns} {cn : String}
 
 /-- The compression loop, after the blocks before `b`. -/
 structure CInv (t : State) (F S : Addr) (V₀ : Nat → Byte) (h₀ : hH.md.HV) (nbm fb : Nat) (b : Nat)
@@ -57,6 +59,7 @@ structure CInv (t : State) (F S : Addr) (V₀ : Nat → Byte) (h₀ : hH.md.HV) 
   keep : ∀ o < oRsa, ¬ CompW H.P.so H.P.N o → u.mem (off S o) = V₀ o
   st : hH.md.stateAt u.mem (off S oSt) = hH.md.compressList h₀ (yList V₀ (nbm * H.P.B)) b
   sel : fb < b → hH.md.stateAt u.mem (off S oSel) = hH.md.compressList h₀ (yList V₀ (nbm * H.P.B)) (fb + 1)
+  sy : u.syms = t.syms
 
 /-- An address of the working space outside a region of it. -/
 theorem not_in (S : Addr) {o e k : Nat} (h : o + 1 ≤ e ∨ e + k ≤ o) (ho : o < 8192) (he : e + k ≤ 8192) :
@@ -85,9 +88,10 @@ theorem lsl_val {x k : Nat} (hx : x * 2 ^ k < 2 ^ 64) : BitVec.ofNat 64 x <<< k 
 theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte} {h₀ : hH.md.HV} {ℓ nbm b : Nat}
     (hB : 2 ^ lgB H = H.P.B) (hlg : lgB H < 64) (hℓ : ℓ < 2 ^ 62) (hnb : nbm * H.P.B ≤ 2048) (hb : b < nbm)
     (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ) (h19 : t.gpr .x19 = off S oSt)
-    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm) {u : State}
+    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
+    (hC : t.mem.readW (off F sCmpH) 64 = t.syms cn) (hfc : Finds f.comp t.syms (t.syms cn) cn H.compC) {u : State}
     (I : CInv hH t F S V₀ h₀ nbm ((ℓ + H.P.L) / H.P.B) b u) :
-    WP isa (seqs [.block (compArgs H), compressAt H.compN H.compC, select H, .block nextBlock]) u fun u' =>
+    WP isa (seqs [.block (compArgs H), compT f, select H, .block nextBlock]) u fun u' =>
       CInv hH t F S V₀ h₀ nbm ((ℓ + H.P.L) / H.P.B) (b + 1) u' ∧
         ((u'.gpr .x9).toNat ≠ 0 ↔ b + 1 ≠ nbm) := by
   generalize hfbd : (ℓ + H.P.L) / H.P.B = fb at I ⊢
@@ -103,9 +107,11 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
   have hcm : b * H.P.B = H.P.B * b := Nat.mul_comm _ _
   have hnb1 : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right _ hB0) hnb
   have Lu : Lay u F S := L.congr I.sp I.wr (by rw [I.cs .x20 (by decide)])
+  refine WP.of_syms ?_
   simp only [seqs]
   unfold compArgs
-  refine WP.seq (wp_lsl hlg fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_lsl hlg fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ =>
+    wp_nil fun sy₃ => ?_))
   have O₃ : Only [.x1] u u₃ := (o₁.trans (o₂.trans o₃)).mono
   have x1 : u₃.gpr .x1 = off S (oY + H.P.B * b) := by
     rw [e₃, e₂, e₁, o₁.get .x20, I.x27, I.cs .x20 (by decide), L.x20, lsl_val (by rw [hB]; omega_arith),
@@ -137,13 +143,21 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       refine Covers.cons (Covers.one (Lu.st (by unfold oSt oRsa; omega_arith))) (Covers.cons (Covers.one ?_) Covers.nil)
       have := Lu.st (o := 0) (n := H.P.so) (by unfold oRsa; omega_arith)
       rwa [off, BitVec.add_zero] at this }
-  refine WP.seq (WP.mono (WP.preservedV (compressAt_ok hH.comp hcall (Q := fun s' => s'.rd = u₃.rd ∧
+  have hC₃ : u₃.mem.readW (u₃.sp + BitVec.ofNat 64 sCmpH) 64 = u₃.syms cn := by
+    rw [O₃.mem, O₃.sp, Lu.sp, sy₃, I.sy, I.fr.readW (r := ⟨F, frameBytes⟩) (Offset.contains_base _ (by decide) (by decide))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact L.dFS) (by decide)]
+    exact hC
+  have hin₃ : InRegions (u₃.rd ++ u₃.wr) (u₃.sp + BitVec.ofNat 64 sCmpH) 8 := by
+    rw [O₃.rd, O₃.wr, O₃.sp, Lu.sp]; exact Lu.fld (by decide)
+  refine WP.seq (WP.mono_syms (compT_ok f hH.comp hcall hin₃ hC₃ (by rw [sy₃, I.sy]; exact hfc)
+      (Q := fun s' => (s'.rd = u₃.rd ∧
       s'.wr = u₃.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = u₃.gpr r) ∧ s'.sp = u₃.sp ∧
       Frame [⟨off S oSt, H.P.N⟩, ⟨S, H.P.so⟩] u₃.mem s'.mem ∧
       hH.md.stateAt s'.mem (off S oSt) = hH.md.compress (hH.md.stateAt u₃.mem (off S oSt))
-        (hH.md.blockAt u₃.mem (off S (oY + H.P.B * b))))
-      fun s' a b c d e f => ⟨a, b, c, d, e, f⟩) (by rw [Code.allInstrs_eq]; exact hH.cmp_keepsV))
-    fun v ⟨⟨vrd, vwr, vcs, vsp, vfr, vst⟩, vv⟩ => ?_)
+        (hH.md.blockAt u₃.mem (off S (oY + H.P.B * b)))) ∧
+      ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (u₃.v r).extractLsb' 0 64)
+      fun s' a b c d e f g => ⟨⟨a, b, c, d, e, f⟩, g⟩)
+    fun v ⟨⟨vrd, vwr, vcs, vsp, vfr, vst⟩, vv⟩ syv => ?_)
   have Lv : Lay v F S := Lu.congr (by rw [vsp, O₃.sp]) (by rw [vwr, O₃.wr])
     (by rw [vcs .x20 (by decide) (by decide), O₃.get .x20])
   have v22 : v.gpr .x22 = BitVec.ofNat 64 ℓ := by
@@ -188,7 +202,9 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
         rw [off_add]; exact wv _ (by unfold oSt oRsa; omega_arith) (by unfold oSt oSel; omega_arith), vst,
       O₃.mem, I.st, hH.md.compressList_succ]
     exact congrArg _ (hH.md.parse_congr fun k hk => hY k hk)
-  refine ⟨⟨?sp, ?rd, ?wr, ?cs, x27, ?vec, ?fr, ?keep, ?st, ?sel⟩, ?flag⟩
+  intro syw
+  refine ⟨⟨?sp, ?rd, ?wr, ?cs, x27, ?vec, ?fr, ?keep, ?st, ?sel, ?sy⟩, ?flag⟩
+  case sy => rw [syw, I.sy]
   case sp => rw [P₃.sp, wK.sp, vsp, O₃.sp, I.sp]
   case rd => rw [P₃.rd, wK.rd, vrd, O₃.rd, I.rd]
   case wr => rw [P₃.wr, wK.wr, vwr, O₃.wr, I.wr]
@@ -230,13 +246,14 @@ blocks. -/
 theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte} (R : Rep t.mem S V₀) {ℓ nbm : Nat}
     (hB : 2 ^ lgB H = H.P.B) (hlg : lgB H < 64) (hℓ : ℓ < 2 ^ 62) (hnb : nbm * H.P.B ≤ 2048) (hnb0 : 0 < nbm)
     (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ) (h19 : t.gpr .x19 = off S oSt)
-    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm) :
-    WP isa (compLoop H) t
+    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
+    (hC : t.mem.readW (off F sCmpH) 64 = t.syms cn) (hfc : Finds f.comp t.syms (t.syms cn) cn H.compC) :
+    WP isa (compLoop f H) t
       (CInv hH t F S V₀ (hH.md.stateAt t.mem (off S oSt)) nbm ((ℓ + H.P.L) / H.P.B) nbm) := by
   unfold compLoop
-  refine WP.seq (wp_movz fun u o e => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_movz fun u o e => wp_nil fun syu => ?_))
   refine VG.Proof.MlKem.AArch64.count_loop (cr := .x9) hnb0 _
-    (fun b hb u I => comp_step hH L hB hlg hℓ hnb hb h22 h19 hNb I) ?_
+    (fun b hb u I => comp_step hH L hB hlg hℓ hnb hb h22 h19 hNb hC hfc I) ?_
   exact {
     sp := o.sp, rd := o.rd, wr := o.wr
     cs := fun r hr => o.gpr r (by revert r; decide)
@@ -245,7 +262,8 @@ theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byt
     fr := by rw [o.mem]; exact Frame.refl _ _
     keep := fun x hx _ => by rw [o.mem]; exact R x hx
     st := by rw [o.mem, hH.md.compressList_zero]
-    sel := fun h => absurd h (Nat.not_lt_zero _) }
+    sel := fun h => absurd h (Nat.not_lt_zero _)
+    sy := syu }
 
 end
 

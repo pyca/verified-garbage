@@ -33,7 +33,7 @@ abbrev N : Nat := h.H.md.N
 abbrev L : Nat := h.H.md.L
 
 /-- `omega` does not see through abbreviations: the sizes as one form. -/
-theorem eqs : h.H.md.B = h.B ∧ h.H.md.D = h.D ∧ blk h.H = h.B ∧ dig h.H = h.D ∧ hvN h.H = h.N ∧ lenL h.H = h.L :=
+theorem eqs : h.H.md.B = h.B ∧ h.H.md.D = h.D ∧ blk h.sh = h.B ∧ dig h.sh = h.D ∧ hvN h.sh = h.N ∧ lenL h.sh = h.L :=
   ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 abbrev md : Md h.B h.N h.L := h.ok.md
 
@@ -48,24 +48,24 @@ theorem B_le : h.B ≤ 128 := by rcases h.B_cases with e | e <;> omega
 theorem B_ge : 64 ≤ h.B := by rcases h.B_cases with e | e <;> omega
 theorem S_eq : h.H.md.st.S = h.N + h.B := h.ok.sizes.S
 
-theorem lg : lgB h.H = 6 ∧ h.B = 64 ∨ lgB h.H = 7 ∧ h.B = 128 := by
+theorem lg : lgB h.sh = 6 ∧ h.B = 64 ∨ lgB h.sh = 7 ∧ h.B = 128 := by
   unfold lgB
   rcases h.B_cases with e | e
   · exact .inl ⟨by show Nat.log2 h.B = 6; rw [e]; decide, e⟩
   · exact .inr ⟨by show Nat.log2 h.B = 7; rw [e]; decide, e⟩
 
-theorem pow_lg : 2 ^ lgB h.H = h.B := by rcases h.lg with ⟨a, b⟩ | ⟨a, b⟩ <;> rw [a, b] <;> rfl
+theorem pow_lg : 2 ^ lgB h.sh = h.B := by rcases h.lg with ⟨a, b⟩ | ⟨a, b⟩ <;> rw [a, b] <;> rfl
 
-theorem lg_range : 1 ≤ lgB h.H ∧ lgB h.H ≤ 31 := by rcases h.lg with ⟨a, _⟩ | ⟨a, _⟩ <;> rw [a] <;> decide
+theorem lg_range : 1 ≤ lgB h.sh ∧ lgB h.sh ≤ 31 := by rcases h.lg with ⟨a, _⟩ | ⟨a, _⟩ <;> rw [a] <;> decide
 
 end PssHash
 
-theorem offs : oCW = 0 ∧ oSt = 512 ∧ oSel = 768 ∧ oDig = 832 ∧ oLen = 896 ∧ oEm = 1024 ∧ oY = 2048 ∧
+theorem offs : oCW = 4096 ∧ oSt = 4608 ∧ oSel = 4864 ∧ oDig = 4928 ∧ oLen = 4992 ∧ oEm = 0 ∧ oY = 1024 ∧
     oRsa = 8192 ∧ frameBytes = 128 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `omega`, with the offsets of our part of `scratch` and of the frame as
 numbers, and the hash function's sizes in one form. -/
-macro "pomega" : tactic => `(tactic| (have _ : VG.Impl.RsaPss.Arm.oCW = 0 := rfl; have _ : VG.Impl.RsaPss.Arm.oSt = 512 := rfl; have _ : VG.Impl.RsaPss.Arm.oSel = 768 := rfl; have _ : VG.Impl.RsaPss.Arm.oDig = 832 := rfl; have _ : VG.Impl.RsaPss.Arm.oLen = 896 := rfl; have _ : VG.Impl.RsaPss.Arm.oEm = 1024 := rfl; have _ : VG.Impl.RsaPss.Arm.oY = 2048 := rfl; have _ : VG.Impl.RsaPss.Arm.oRsa = 8192 := rfl; have _ : VG.Impl.RsaPss.Arm.frameBytes = 128 := rfl; (try simp only [VG.Impl.RsaPss.Arm.blk, VG.Impl.RsaPss.Arm.dig, VG.Impl.RsaPss.Arm.hvN, VG.Impl.RsaPss.Arm.lenL, VG.Impl.Pbkdf2.Md.Arm.Hash.B, VG.Impl.Pbkdf2.Md.Arm.Hash.D, VG.Proof.RsaPss.Arm.PssHash.B, VG.Proof.RsaPss.Arm.PssHash.D, VG.Proof.RsaPss.Arm.PssHash.N, VG.Proof.RsaPss.Arm.PssHash.L] at *); omega))
+macro "pomega" : tactic => `(tactic| (have _ : VG.Impl.RsaPss.Arm.oCW = 4096 := rfl; have _ : VG.Impl.RsaPss.Arm.oSt = 4608 := rfl; have _ : VG.Impl.RsaPss.Arm.oSel = 4864 := rfl; have _ : VG.Impl.RsaPss.Arm.oDig = 4928 := rfl; have _ : VG.Impl.RsaPss.Arm.oLen = 4992 := rfl; have _ : VG.Impl.RsaPss.Arm.oEm = 0 := rfl; have _ : VG.Impl.RsaPss.Arm.oY = 1024 := rfl; have _ : VG.Impl.RsaPss.Arm.oRsa = 8192 := rfl; have _ : VG.Impl.RsaPss.Arm.frameBytes = 128 := rfl; (try simp only [VG.Impl.RsaPss.Arm.blk, VG.Impl.RsaPss.Arm.dig, VG.Impl.RsaPss.Arm.hvN, VG.Impl.RsaPss.Arm.lenL, VG.Proof.RsaPss.Arm.PssHash.sh, VG.Impl.RsaPss.Arm.Hash.sh, VG.Impl.Pbkdf2.Md.Arm.Hash.B, VG.Impl.Pbkdf2.Md.Arm.Hash.D, VG.Proof.RsaPss.Arm.PssHash.B, VG.Proof.RsaPss.Arm.PssHash.D, VG.Proof.RsaPss.Arm.PssHash.N, VG.Proof.RsaPss.Arm.PssHash.L] at *); omega))
 
 variable {L : Lay} {scr : BitVec 32}
 

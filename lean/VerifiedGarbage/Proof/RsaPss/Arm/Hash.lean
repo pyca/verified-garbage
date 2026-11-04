@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.Arm
+public import VerifiedGarbage.Impl.MdHashTable.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
 public import VerifiedGarbage.Spec.Mgf1
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,7 +16,7 @@ a Merkle–Damgård hash function (`Proof.Pbkdf2.Md.Arm.HashOK`, with which HMAC
 and PBKDF2 call its compression function), that its streaming code's length
 field is right (`LenOk`, each hash function's `Shape.len`), the hash function
 as RSA's padding takes it (`G`), the taint checks of its length field and
-digest code (once for each hash function), and that MGF1's message `H ‖ C`
+of the digest of a hash value (once for each hash function), and that MGF1's message `H ‖ C`
 and its padding fit one block.
 -/
 
@@ -50,11 +51,16 @@ structure PssHash where
   G : Spec.Mgf1.Hash
   hash : ∀ x, G.hash x = ok.SH.H.hash x
   glen : G.len = H.md.st.D
-  /-- The taint checks of the digest code (from the hash value at `r0` to
-  `r6`) and of the length field (at `r0`). -/
-  outCk : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r6]) (.block H.md.out) hc).isSome = true
+  /-- The taint checks of the digest of a hash value, a function of its
+  table of `MdHash` (from the hash value at `r0` to `r1`,
+  `Impl/MdHashTable/Arm.lean`), and of the length field (at `r0`). -/
+  outCk : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1]) (Impl.MdHashTable.Arm.digest H.md.out)
+    hc).isSome = true
   lenCk : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) (.block H.len) hc).isSome = true
   /-- MGF1's message `H ‖ C`, `0x80` and the length field fit one block. -/
   one : H.md.st.D + 5 + H.md.L ≤ H.md.st.B
+
+/-- Its shape, all the code uses of it but its functions. -/
+abbrev PssHash.sh (h : PssHash) : Impl.RsaPss.Arm.Sh := h.H.sh
 
 end VG.Proof.RsaPss.Arm

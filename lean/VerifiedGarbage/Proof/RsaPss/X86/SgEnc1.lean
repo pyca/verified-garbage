@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.SgChk
 public import VerifiedGarbage.Proof.RsaPss.X86.CtMgfLoop
+public import VerifiedGarbage.Proof.RsaPss.X86.CtTab
 public import VerifiedGarbage.Proof.RsaPss.X86.YDig
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
@@ -61,9 +62,9 @@ theorem away3_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
 
 theorem away3_slot {L : Lay} {d : Nat} (hd : d + 4 ≤ frameBytes) (h₁ : d + 4 ≤ sLo ∨ sDb + 4 ≤ d) :
     Away3 L (slotR L d) := by
-  have e1 : sLo = 80 := rfl
-  have e2 : sC = 84 := rfl
-  have e3 : sDb = 88 := rfl
+  have e1 : sLo = 40 := rfl
+  have e2 : sC = 44 := rfl
+  have e3 : sDb = 48 := rfl
   exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega)⟩
 
 theorem away3_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
@@ -134,7 +135,7 @@ theorem salt_at {P : EP} {σ s : State} (hc : Ctx (P.lay h.D) P.scr σ s) {i : N
   rw [← e, RsaPkcs1Sig.bytesAt_getD hi]
 
 /-- The arguments of `sign`. -/
-theorem sg_arg {j : Nat} (hj : j < 21) {P : EP} : j < ((P.lay h.D).argv).length := by simp; omega
+theorem sg_arg {j : Nat} (hj : j < 24) {P : EP} : j < ((P.lay h.D).argv).length := by simp; omega
 
 /-- The salt after the digest. -/
 theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -158,10 +159,10 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     (VP.ite (fun σ s h' => ⟨_, h'.2.2.2.2⟩) (fun _ _ _ _ h₁ h₂ => by simp only [eval, h₁.2.2.2.2, h₂.2.2.2.2])
       (VP.block_nil fun σ s ⟨⟨⟨⟨hc, hk⟩, hy⟩, _, _, _, z⟩, e⟩ => ⟨⟨hc, hk⟩, fun i hi => ?_⟩) ?_)
   · simp only [cpSalt, atS, ld, addi, List.cons_append, List.nil_append]
-    refine hc.wp_arg hg (sg_arg h (j := 17) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
+    refine hc.wp_arg hg (sg_arg h (j := 18) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
       wp_mov fun t2 u2 => wp_addi fun t3 u3 => ?_
     refine (((c1.upd u2 (by decide) (by decide)).upd u3 (by decide) (by decide))).wp_arg hg
-      (sg_arg h (j := 18) (by decide)) (by decide) (by decide) fun t4 c4 u4 => wp_test fun t5 u5 z5 => WP.block_nil ?_
+      (sg_arg h (j := 19) (by decide)) (by decide) (by decide) fun t4 c4 u4 => wp_test fun t5 u5 z5 => WP.block_nil ?_
     have m5 : t5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨⟨c4.fupd u5, m5 ▸ hk⟩, m5 ▸ hy⟩, ?_, ?_, ?_, ?_⟩
     · rw [u5.gpr]; simp (disch := decide) only [u4.other, u3.gpr, u2.gpr, u1.other, hc.ebp]
@@ -217,9 +218,9 @@ theorem Mp_length (P : EP) (σ : State) : (Mp h P σ).length = P.sl + (8 + h.D) 
 
 /-- `M'`'s length and blocks. -/
 theorem lenSet_vp (P : EP) :
-    VP (fun σ s => E0 h P σ s ∧ Y2 h P σ s.mem) (.block (lenArgs h.H 18))
+    VP (fun σ s => E0 h P σ s ∧ Y2 h P σ s.mem) (.block (lenArgs h.H 19))
       (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) := by
-  refine VP.taint [.esp, .ebp] h.certs.lenArgs18 (sp_bp fun _ _ h => h.1.1) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_
+  refine VP.taint [.esp, .ebp] h.certs.lenArgs19 (sp_bp fun _ _ h => h.1.1) fun σ s ⟨⟨hc, hk⟩, hy⟩ => ?_
   have hg := hk.1.geo
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
@@ -232,7 +233,7 @@ theorem lenSet_vp (P : EP) :
     rw [ofNat_shr (by omega), h.pow_lg]
   obtain ⟨σ', ok⟩ := hg.ok
   simp only [lenArgs, ld, st, addi]
-  refine hc.wp_arg hg (sg_arg h (j := 18) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
+  refine hc.wp_arg hg (sg_arg h (j := 19) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
     wp_addi fun t2 u2 => (c1.upd u2 (by decide) (by decide)).wp_st hg (by decide) fun t3 c3 u3 =>
       wp_addi fun t4 u4 => wp_shr h.lg_range fun t5 u5 _ => wp_addi fun t6 u6 => ?_
   refine ((((c3.upd u4 (by decide) (by decide)).upd u5 (by decide) (by decide)).upd u6 (by decide)
@@ -260,15 +261,27 @@ theorem lenSet_vp (P : EP) :
     · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
     · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
 
-/-- `H = Hash(M')`, at `oDig`. -/
-theorem hash_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) (ctHash h.H)
-      (fun σ s => E0 h P σ s ∧ Dg h P.scr (Mp h P σ) s.mem) := by
+/-- `ctHashT`'s writes miss the parameters' slots. -/
+theorem away3_ctWT {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
+    ∀ r ∈ ctWT h L scr T, Away3 L r := fun r hr => by
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact away3_slot (by decide) (.inr (by decide))
+  · exact away3_ctW h hg hT r hr
+
+/-- `H = Hash(M')`, at `oDig`, with the hash function of the table at the
+argument 22. -/
+theorem hash_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
+    (fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) :
+    VP (fun σ s => (Ctx (P.lay h.D) P.scr σ s ∧ Kh h P σ s.mem ∧ Y2 h P σ s.mem) ∧ s.syms = σ.syms)
+      (ctHashT f h.H 22)
+      (fun σ s => (E0 h P σ s ∧ Dg h P.scr (Mp h P σ) s.mem) ∧ s.syms = σ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
+  obtain ⟨σ', ok⟩ := hg.ok
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
   have hB := h.B_le
@@ -280,12 +293,18 @@ theorem hash_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have hT : nbS h P * h.B ≤ 2048 := by
     show ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega
-  refine (ctHash_vp h hg (nbm := nbS h P) hT (Nat.succ_pos _) (msg := Mp h P) (fun σ => by
+  have dT : ∀ d, d = sL ∨ d = sNb → ∀ r ∈ ctWT h (P.lay h.D) P.scr (nbS h P * h.B), (slotR (P.lay h.D) d).Disjoint r := by
+    intro d hd r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · rcases hd with rfl | rfl <;> exact Lay.fr_sep (by decide) (by decide) (by decide)
+    · rcases hd with rfl | rfl <;> exact ctW_slot h hg hT (by decide) (by decide) (by decide) r hr
+  refine (ctHashT_vp h hg (nbm := nbS h P) hT (Nat.succ_pos _) (msg := Mp h P) (fun σ => by
       rw [Mp_length]; show _ ≤ ((P.sl + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega)
-    (Inv := Kh h P) (fun σ m m' hk hf' => ⟨hk.1.keep h hf' (away3_ctW h hg hT), slot_keep hf'
-      (ctW_slot h hg hT (by decide) (by decide) (by decide)) hk.2.1,
-      slot_keep hf' (ctW_slot h hg hT (by decide) (by decide) (by decide)) hk.2.2⟩)
-    (fun σ m hk => hk.2.1) (fun σ m hk => hk.2.2)).mono
-    (fun σ s ⟨hc, hk, hy⟩ => ⟨hc, hk, fun i hi => hy i (by omega)⟩) fun σ s ⟨hc, hk, hd⟩ => ⟨⟨hc, hk.1⟩, hd⟩
+    (Inv := Kh h P) (fun σ m m' hk hf' => ⟨hk.1.keep h hf' (away3_ctWT h hg hT), slot_keep hf'
+      (dT sL (.inl rfl)) hk.2.1, slot_keep hf' (dT sNb (.inr rfl)) hk.2.2⟩)
+    (fun σ m hk => hk.2.1) (fun σ m hk => hk.2.2) ⟨h.certs.digSp, h.certs.digCt⟩ (sg_arg h (j := 22) (by decide))
+    hTab22_taint (fun σ m hk => hTH σ hk.1.1.tabTH) hi₀.tblH fne).mono
+    (fun σ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩)
+    fun σ s ⟨⟨hc, hk, hd⟩, sy⟩ => ⟨⟨⟨hc, hk.1⟩, hd⟩, sy⟩
 
 end VG.Proof.RsaPss.X86.Sg

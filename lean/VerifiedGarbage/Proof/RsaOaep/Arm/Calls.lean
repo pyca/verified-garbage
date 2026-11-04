@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
@@ -267,13 +267,12 @@ import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 import VerifiedGarbage.Proof.Sha256.StateMem
 public meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
@@ -539,8 +538,7 @@ meta import VerifiedGarbage.Proof.Rsa.ZeroTest32
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtHash
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
@@ -837,7 +835,7 @@ theorem lens_certs : ∀ x ∈ Impl.RsaOaep.Arm.lens, x < 2 ^ 32 ∧ encodable (
       true := by
   intro x hx
   simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide, _, by taint_decide⟩
 
 theorem UArgs.r4 {d : BitVec 32} {len c : Nat} {s : State} (h : UArgs scr d len c s) (v : BitVec 32) :
     UArgs scr d len c (s.setReg .r4 v) := by

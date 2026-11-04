@@ -23,17 +23,24 @@ open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 
 /-- The checks of `encode`'s own pieces. -/
 structure EFixed : Prop where
-  pro : ∃ hc, (taint.check (pT 2 [] [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) (.block encPrologue) hc).isSome = true
+  pro : ∃ hc, (taint.check (pT 2 [] [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    (.block (encPrologue ++ [.mov .r11 (.mem (arg 2))])) hc).isSome = true
+  hSl : ∃ hc, (taint.check (pT 2 [] [.r11]) (.block (hSlots ++ [.mov .r11 (.mem (arg 3))])) hc).isSome = true
+  gSl : ∃ hc, (taint.check (pT 2 [] [.r11]) (.block gSlots) hc).isSome = true
   ret0 : ∃ hc, (taint.check (pT 2 [] []) ret0 hc).isSome = true
   copyOut : ∃ hc, (taint.check (pT 2 [16, 17, 21] []) copyOut hc).isSome = true
   ret1 : ∃ hc, (taint.check (pT 2 [] []) (.block [.mov32 .rax (.imm 1)]) hc).isSome = true
 
 theorem eFixed : EFixed :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
 
 /-- The checks of `checkEncoding`'s own pieces. -/
 structure CFixed : Prop where
-  pro : ∃ hc, (taint.check (pT 1 [] [.rdi, .rsi, .rdx, .rcx, .r8]) (.block chkPrologue) hc).isSome = true
+  pro : ∃ hc, (taint.check (pT 1 [] [.rdi, .rsi, .rdx, .rcx, .r8])
+    (.block (chkPrologue ++ [.mov .r11 (.mem (arg 2))])) hc).isSome = true
+  hSl : ∃ hc, (taint.check (pT 1 [] [.r11]) (.block (hSlots ++ [.mov .r11 (.mem (arg 3))])) hc).isSome = true
+  gSl : ∃ hc, (taint.check (pT 1 [] [.r11]) (.block gSlots) hc).isSome = true
   copyIn : ∃ hc, (taint.check (pT 1 [17, 21, 38] []) copyIn hc).isSome = true
   any1 : ∃ hc, (taint.check (pT 1 [] []) (.block [.mov32 .rax (.reg .r9), .alu .test .rax (.reg .rax)]) hc).isSome
     = true
@@ -47,6 +54,6 @@ structure CFixed : Prop where
 
 theorem cFixed : CFixed :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.RsaPss.X86_64

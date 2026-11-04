@@ -168,13 +168,8 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
-theorem pss_md5 : Proof.RsaPss.AArch64.PssChecks coreH.P 16 := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-  taint_decide_all
-
 /-- MD5 with its compression function. -/
-def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_md5 rfl rfl satI satF satT satP (by decide)
+def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract

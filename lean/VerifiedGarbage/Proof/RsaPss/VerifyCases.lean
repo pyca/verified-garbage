@@ -105,16 +105,33 @@ def EncOk (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) : Prop :=
     G.hash (zeros 8 ++ mHash ++ (vDb G em (E - G.len - 1) z).drop (lz (vDb G em (E - G.len - 1) z) + 1)) =
       vH G em (E - G.len - 1)
 
-theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
-    (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
-    (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
-    verifyEncoding G G mHash em emBits sLen = true ↔
-      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen := by
-  unfold EncOk vDb vH
+/-- `DB` with MGF1's `G` and the digest of `H`. -/
+def vDb₂ (H : Hash) (em : List Byte) (L z : Nat) : List Byte :=
+  clearTop z (xorBytes (em.take L) (mgf1 G (vH H em L) L))
+
+/-- What `verifyEncoding H G` checks, a byte at a time, for `emLen = E`. -/
+def EncOk₂ (H : Hash) (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) : Prop :=
+  em.getD (E - 1) 0 = 0xbc ∧ em.getD 0 0 &&& ~~~((0xFF : Byte) >>> z) = 0 ∧
+    lz (vDb₂ G H em (E - H.len - 1) z) < E - H.len - 1 ∧
+    (vDb₂ G H em (E - H.len - 1) z).getD (lz (vDb₂ G H em (E - H.len - 1) z)) 0 = 1 ∧
+    (sLen = none ∨ sLen = some (E - H.len - 1 - 1 - lz (vDb₂ G H em (E - H.len - 1) z))) ∧
+    H.hash (zeros 8 ++ mHash ++ (vDb₂ G H em (E - H.len - 1) z).drop (lz (vDb₂ G H em (E - H.len - 1) z) + 1)) =
+      vH H em (E - H.len - 1)
+
+theorem vDb_eq : vDb G = vDb₂ G G := rfl
+
+theorem EncOk_eq : EncOk G = EncOk₂ G G := rfl
+
+theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
+    (hm : mHash.length = H.len) (hl : em.length = emLength emBits)
+    (hfit : H.len + sLen.getD 0 + 2 ≤ emLength emBits) :
+    verifyEncoding H G mHash em emBits sLen = true ↔
+      EncOk₂ G H mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen := by
+  unfold EncOk₂ vDb₂ vH
   generalize hE : emLength emBits = E at *
-  generalize hL : E - G.len - 1 = L
+  generalize hL : E - H.len - 1 = L
   generalize hz : 8 * E - emBits = z
-  generalize hh : (em.drop L).take G.len = h
+  generalize hh : (em.drop L).take H.len = h
   generalize hdb : clearTop z (xorBytes (em.take L) (mgf1 G h L)) = db
   have hdbl : db.length = L := by
     rw [← hdb, clearTop_length, xorBytes_length, mgf1_length hG]; simp; omega
@@ -162,6 +179,13 @@ theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat
   · rw [ifp (by rw [getLast?_eq hne, hl]; simpa using h1)]
     simp only [h1, false_and, Bool.false_eq_true]
 
+theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
+    (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
+    (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
+    verifyEncoding G G mHash em emBits sLen = true ↔
+      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen :=
+  verifyEncoding_bytes₂ G G hG hm hl hfit
+
 theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :: rest) eB sB = none := by
   have := os2ip_lt' rest
   simp only [Rsa.publicOpChecked, Rsa.publicOp, Rsa.modulusValid, os2ip_zero_cons, List.length_cons,
@@ -173,25 +197,34 @@ theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :
   · rfl
 
 /-- A modulus whose first octet is zero verifies nothing. -/
-theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
-    verify G G (0 :: rest) eB mHash sB sLen = false := by
+theorem verify_zero₂ (H : Hash) (rest eB mHash sB : List Byte) (sLen : Option Nat) :
+    verify H G (0 :: rest) eB mHash sB sLen = false := by
   unfold verify
   rw [publicOpChecked_zero]
   simp
 
+theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
+    verify G G (0 :: rest) eB mHash sB sLen = false :=
+  verify_zero₂ G G rest eB mHash sB sLen
+
 /-- Nor does an encoding too short for the digest and the salt. -/
-theorem verify_short {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
-    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + sLen.getD 0 + 2) :
-    verify G G nB eB mHash sB sLen = false := by
+theorem verify_short₂ (H : Hash) {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
+    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < H.len + sLen.getD 0 + 2) :
+    verify H G nB eB mHash sB sLen = false := by
   unfold verify
   cases Rsa.publicOpChecked nB eB sB with
   | none => simp
   | some x =>
-    have : verifyEncoding G G mHash (x.drop (nB.length - emLength (bitLength (Rsa.os2ip nB) - 1)))
+    have : verifyEncoding H G mHash (x.drop (nB.length - emLength (bitLength (Rsa.os2ip nB) - 1)))
         (bitLength (Rsa.os2ip nB) - 1) sLen = false := by
       unfold verifyEncoding
       rw [ifp (Or.inr (Or.inr h))]
     simp [this]
+
+theorem verify_short {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
+    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + sLen.getD 0 + 2) :
+    verify G G nB eB mHash sB sLen = false :=
+  verify_short₂ G G eB mHash sB h
 
 theorem publicOpChecked_length' {nB eB sB x : List Byte} (h : Rsa.publicOpChecked nB eB sB = some x) :
     x.length = nB.length := by
@@ -206,13 +239,13 @@ theorem publicOpChecked_length' {nB eB sB x : List Byte} (h : Rsa.publicOpChecke
 /-- `verify`, byte by byte, for a modulus whose first octet is not zero and
 `emLen = k - lo` octets: of `x`, RSAVP1's result (zeros if it fails), the
 first `lo ≤ 1` are zero and the rest is a valid encoding. -/
-theorem verify_bytes (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte} {sLen : Option Nat}
-    (hm : mHash.length = G.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
+theorem verify_bytes₂ (H : Hash) (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte} {sLen : Option Nat}
+    (hm : mHash.length = H.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
     (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hk : emLen + lo = (n₀ :: rest).length) (hlo : lo ≤ 1) (hfit : G.len + sLen.getD 0 + 2 ≤ emLen) :
-    verify G G (n₀ :: rest) eB mHash sB sLen = true ↔
+    (hk : emLen + lo = (n₀ :: rest).length) (hlo : lo ≤ 1) (hfit : H.len + sLen.getD 0 + 2 ≤ emLen) :
+    verify H G (n₀ :: rest) eB mHash sB sLen = true ↔
       (lo = 1 → ((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).getD 0 0 = 0) ∧
-      EncOk G mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
+      EncOk₂ G H mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
         emLen (8 * emLen - emBits) sLen := by
   unfold verify
   simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega]
@@ -226,11 +259,21 @@ theorem verify_bytes (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte}
   | some x =>
     have hx := publicOpChecked_length' hp
     simp only [Option.getD_some, Bool.and_eq_true, beq_iff_eq]
-    rw [← he, verifyEncoding_bytes G hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
+    rw [← he, verifyEncoding_bytes₂ G H hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
     refine and_congr_left fun _ => ?_
     rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
     · simp [zeros]
     · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
       simp [zeros]
+
+theorem verify_bytes (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte} {sLen : Option Nat}
+    (hm : mHash.length = G.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
+    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
+    (hk : emLen + lo = (n₀ :: rest).length) (hlo : lo ≤ 1) (hfit : G.len + sLen.getD 0 + 2 ≤ emLen) :
+    verify G G (n₀ :: rest) eB mHash sB sLen = true ↔
+      (lo = 1 → ((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).getD 0 0 = 0) ∧
+      EncOk G mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
+        emLen (8 * emLen - emBits) sLen :=
+  verify_bytes₂ G G hG hm hs hb he hk hlo hfit
 
 end VG.Proof.RsaPss

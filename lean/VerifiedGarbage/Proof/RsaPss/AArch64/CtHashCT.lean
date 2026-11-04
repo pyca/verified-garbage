@@ -53,6 +53,7 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_addImm wp_lsr wp_lsl)
 open VG.Proof.RsaPkcs1Sig.AArch64 (Two Pins two_taint two_post wp_mov wp_ldrSp)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+open VG.Impl.MdStream.AArch64 (mov)
 
 /-- Code the taint analysis checks without its immediates. -/
 theorem two_taintE {α : Type} {Φ : α → State → Prop} {c c' : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
@@ -80,12 +81,17 @@ structure HA where
   F : Addr
   S : Addr
   nbm : Nat
-  /-- The message's length, if public (MGF1's). -/
+  /-- The message's length, if public. -/
   fx : Option Nat
+  /-- The addresses of the hash function's `init`, compression function and
+  digest, which both runs agree on. -/
+  ai : Addr
+  ac : Addr
+  ad : Addr
 
 /-- A run of `ctHashWith` and its pieces, with the anchor's frame, working
 space and number of blocks: the message's length `ℓ` (secret) fits. -/
-structure HE (H : Hash) (a : HA) (u : State) : Prop where
+structure HE (H : Hash) (dn : String) (f : MdFns) (a : HA) (u : State) : Prop where
   L : Lay u a.F a.S
   x19 : u.gpr .x19 = off a.S oSt
   x21 : u.gpr .x21 = off a.S oDig
@@ -93,9 +99,13 @@ structure HE (H : Hash) (a : HA) (u : State) : Prop where
   len : ∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ + 1 + H.P.L ≤ a.nbm * H.P.B
   hnb : a.nbm * H.P.B ≤ 2048
   fx : ∀ ℓ, a.fx = some ℓ → u.gpr .x22 = BitVec.ofNat 64 ℓ
+  ht : HT H dn f a.F u.mem u.syms
+  ai : u.syms H.initN = a.ai
+  ac : u.syms H.compN = a.ac
+  ad : u.syms dn = a.ad
 
-theorem HE.pins {H : Hash} {rs : List Reg} (h : ∀ r ∈ rs, r = .x19 ∨ r = .x20 ∨ r = .x21) :
-    Pins (HE H) rs := fun a s₁ s₂ h₁ h₂ => by
+theorem HE.pins {H : Hash} {dn : String} {f : MdFns} {rs : List Reg} (h : ∀ r ∈ rs, r = .x19 ∨ r = .x20 ∨ r = .x21) :
+    Pins (HE H dn f) rs := fun a s₁ s₂ h₁ h₂ => by
   refine ⟨by rw [h₁.L.sp, h₂.L.sp], fun r hr => ?_⟩
   rcases h r hr with rfl | rfl | rfl
   · rw [h₁.x19, h₂.x19]
@@ -104,8 +114,9 @@ theorem HE.pins {H : Hash} {rs : List Reg} (h : ∀ r ∈ rs, r = .x19 ∨ r = .
 
 /-- `HE` after code that keeps the registers it fixes and writes only the
 working space. -/
-theorem HE.keep {H : Hash} {a : HA} {u u' : State} (h : HE H a u) {rs : List Reg} (k : Keep rs u u')
-    (hr : ∀ r ∈ [Reg.x19, .x20, .x21, .x22], r ∉ rs) (hf : Frame [⟨a.S, oRsa⟩] u.mem u'.mem) : HE H a u' where
+theorem HE.keep {H : Hash} {dn : String} {f : MdFns} {a : HA} {u u' : State} (h : HE H dn f a u) {rs : List Reg} (k : Keep rs u u')
+    (hr : ∀ r ∈ [Reg.x19, .x20, .x21, .x22], r ∉ rs) (hf : Frame [⟨a.S, oRsa⟩] u.mem u'.mem)
+    (hs : u'.syms = u.syms) : HE H dn f a u' where
   L := h.L.congr k.sp k.wr (k.gpr .x20 (hr _ (by simp)))
   x19 := by rw [k.gpr .x19 (hr _ (by simp))]; exact h.x19
   x21 := by rw [k.gpr .x21 (hr _ (by simp))]; exact h.x21
@@ -113,33 +124,54 @@ theorem HE.keep {H : Hash} {a : HA} {u u' : State} (h : HE H a u) {rs : List Reg
   len := by obtain ⟨ℓ, e, f⟩ := h.len; exact ⟨ℓ, by rw [k.gpr .x22 (hr _ (by simp))]; exact e, f⟩
   hnb := h.hnb
   fx := fun ℓ e => by rw [k.gpr .x22 (hr _ (by simp))]; exact h.fx ℓ e
+  ht := by
+    rw [hs]
+    exact h.ht.keep hf fun r hr => by rw [List.mem_singleton.mp hr]; exact h.L.dFS
+  ai := by rw [hs]; exact h.ai
+  ac := by rw [hs]; exact h.ac
+  ad := by rw [hs]; exact h.ad
 
 section
-variable {H : Hash} (hH : HashOK H)
+variable {H : Hash} (hH : HashOK H) {dn : String} {f : MdFns}
 
 /-! ## `init` -/
 
-/-- Before the call of `init`. -/
-def HI (H : Hash) (a : HA) (u : State) : Prop := HE H a u ∧ u.gpr .x0 = off a.S oSt
+/-- After the setup of the call of `init` from `σ`: its argument, and the
+address in `x16`. -/
+def HI (σ u : State) : Prop :=
+  Only [.x0, .x16] σ u ∧ u.gpr .x0 = σ.gpr .x19 ∧ u.gpr .x16 = σ.syms H.initN ∧ u.syms = σ.syms
+
+theorem ctInit_setup {a : HA} {σ : State} (h : HE H dn f a σ) :
+    WP isa (.block ([mov .x0 .x19] ++ [.ldrSp .x16 sIniH])) σ (HI (H := H) σ) := by
+  refine WP.mono_syms (Q := fun u => Only [.x0, .x16] σ u ∧ u.gpr .x0 = σ.gpr .x19 ∧ u.gpr .x16 = σ.syms H.initN) ?_
+    fun u ⟨o, e0, e16⟩ sy => ⟨o, e0, e16, sy⟩
+  refine wp_mov fun u₁ o₁ e₁ => wp_ldrSp (by decide) (by rw [o₁.rd, o₁.wr, o₁.sp, h.L.sp]; exact h.L.fld (by decide))
+    fun u₂ o₂ e₂ => wp_nil ⟨(o₁.trans o₂).mono, by rw [o₂.get .x0, e₁], ?_⟩
+  rw [e₂, o₁.mem, o₁.sp, h.L.sp, h.ht.wi]
 
 include hH in
-theorem ctInit_tr : RelCT isa (Two (HE H)) (ctInit H) fun _ _ => True := by
+theorem ctInit_tr : RelCT isa (Two (HE H dn f)) (ctInit f) fun _ _ => True := by
   have hN := hH.N_le; have hBl := hH.B_le
   unfold ctInit
-  refine RelCT.seq (two_post (Ψ := HI H)
+  refine scall_rel (n := H.initN) (c := H.initC) (F := HI (H := H))
     (two_taint [.x19] (HE.pins fun r hr => by simp at hr; exact .inl hr) (by taint_decide))
-    fun a u h => wp_mov fun u' o e => wp_nil ⟨h.keep o.keep (by decide) (by rw [o.mem]; exact Frame.refl _ _),
-      by rw [e, h.x19]⟩) ?_
-  refine (RelCT.exists_ (P := fun a s₁ s₂ => HI H a s₁ ∧ HI H a s₂) fun a =>
-    VG.Proof.Pbkdf2.Md.AArch64.Calls.init_rel hH.stream (st := off a.S oSt) fun s s' ⟨h₁, h₂⟩ =>
-      ⟨h₁.2, h₂.2, Covers.one (h₁.1.L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith)),
-        Covers.one (h₂.1.L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith)),
-        by rw [h₁.1.L.sp, h₂.1.L.sp]⟩).mono (fun _ _ h => h) fun _ _ h => h
+    (fun s₁ s₂ ⟨a, h₁, h₂⟩ => ⟨ctInit_setup h₁, ctInit_setup h₂⟩) ?_ ?_
+  · intro σ₁ σ₂ t₁ t₂ ⟨a, h₁, h₂⟩ ⟨_, _, e₁, y₁⟩ ⟨_, _, e₂, y₂⟩
+    refine ⟨by rw [e₁, e₂, h₁.ai, h₂.ai], by rw [y₁, e₁]; exact h₁.ht.fi, by rw [y₂, e₂]; exact h₂.ht.fi⟩
+  refine (RelCT.exists_ (P := fun a t₁ t₂ => (∃ σ₁, HE H dn f a σ₁ ∧ HI (H := H) σ₁ t₁) ∧
+      ∃ σ₂, HE H dn f a σ₂ ∧ HI (H := H) σ₂ t₂) fun a =>
+    VG.Proof.Pbkdf2.Md.AArch64.Calls.init_rel hH.stream (st := off a.S oSt)
+      fun t₁ t₂ ⟨⟨σ₁, h₁, o₁, x₁, _⟩, ⟨σ₂, h₂, o₂, x₂, _⟩⟩ =>
+        ⟨by rw [x₁, h₁.x19], by rw [x₂, h₂.x19],
+          by rw [o₁.wr]; exact Covers.one (h₁.L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith)),
+          by rw [o₂.wr]; exact Covers.one (h₂.L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith)),
+          by rw [o₁.sp, o₂.sp, h₁.L.sp, h₂.L.sp]⟩).mono
+    (fun _ _ ⟨σ₁, σ₂, ⟨a, h₁, h₂⟩, f₁, f₂⟩ => ⟨a, ⟨σ₁, h₁, f₁⟩, σ₂, h₂, f₂⟩) fun _ _ h => h
 
 include hH in
-theorem ctInit_wp {a : HA} {u : State} (h : HE H a u) : WP isa (ctInit H) u (HE H a) := by
+theorem ctInit_wp {a : HA} {u : State} (h : HE H dn f a u) : WP isa (ctInit f) u (HE H dn f a) := by
   have hN := hH.N_le; have hBl := hH.B_le
-  refine WP.mono (ctInit_ok hH h.L h.x19) fun u' ⟨sp, _, wr, cs, _, fr, _⟩ => ?_
+  refine WP.mono_syms (ctInit_ok hH h.L h.x19 h.ht) fun u' ⟨sp, _, wr, cs, _, fr, _⟩ sy => ?_
   have hfr : Frame [⟨a.S, oRsa⟩, below a.F 16] u.mem u'.mem := fr.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -159,7 +191,11 @@ theorem ctInit_wp {a : HA} {u : State} (h : HE H a u) : WP isa (ctInit H) u (HE 
       · exact slot_not_below _ (by decide)
     len := by obtain ⟨ℓ, e, f⟩ := h.len; exact ⟨ℓ, by rw [g .x22 (by simp)]; exact e, f⟩
     hnb := h.hnb
-    fx := fun ℓ e => by rw [g .x22 (by simp)]; exact h.fx ℓ e }
+    fx := fun ℓ e => by rw [g .x22 (by simp)]; exact h.fx ℓ e
+    ht := by rw [sy]; exact h.ht.keepL h.L hfr
+    ai := by rw [sy]; exact h.ai
+    ac := by rw [sy]; exact h.ac
+    ad := by rw [sy]; exact h.ad }
 
 /-- Facts about the anchor alone, kept by code that keeps the per-run ones. -/
 theorem two_X {α : Type} {Φ Ψ : α → State → Prop} {c : Prog isa} (X : α → Prop)
@@ -171,11 +207,11 @@ theorem two_X {α : Type} {Φ Ψ : α → State → Prop} {c : Prog isa} (X : α
 /-! ## The padding, the length field and the digest -/
 
 /-- `HE`, with registers the anchor fixes. -/
-def HR (H : Hash) (rs : List (Reg × (HA → BitVec 64))) (a : HA) (u : State) : Prop :=
-  HE H a u ∧ ∀ p ∈ rs, u.gpr p.1 = p.2 a
+def HR (H : Hash) (dn : String) (f : MdFns) (rs : List (Reg × (HA → BitVec 64))) (a : HA) (u : State) : Prop :=
+  HE H dn f a u ∧ ∀ p ∈ rs, u.gpr p.1 = p.2 a
 
-theorem HR.pins {H : Hash} {rs : List (Reg × (HA → BitVec 64))} {qs : List Reg}
-    (h : ∀ r ∈ qs, r = .x19 ∨ r = .x20 ∨ r = .x21 ∨ ∃ f, (r, f) ∈ rs) : Pins (HR H rs) qs :=
+theorem HR.pins {H : Hash} {dn : String} {f : MdFns} {rs : List (Reg × (HA → BitVec 64))} {qs : List Reg}
+    (h : ∀ r ∈ qs, r = .x19 ∨ r = .x20 ∨ r = .x21 ∨ ∃ f, (r, f) ∈ rs) : Pins (HR H dn f rs) qs :=
   fun a s₁ s₂ h₁ h₂ => by
     refine ⟨by rw [h₁.1.L.sp, h₂.1.L.sp], fun r hr => ?_⟩
     rcases h r hr with rfl | rfl | rfl | ⟨f, hf⟩
@@ -185,15 +221,15 @@ theorem HR.pins {H : Hash} {rs : List (Reg × (HA → BitVec 64))} {qs : List Re
     · rw [h₁.2 _ hf, h₂.2 _ hf]
 
 include hH in
-theorem lenField_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (lenField H)) (Two (HE H)) := by
+theorem lenField_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H dn f)) (.block (lenField H)) (Two (HE H dn f)) := by
   have hd := hH.sizes.dims
   have hNL := hH.sizes.NL
   have hN := hH.N_le
   have hB := hH.B_le
   obtain ⟨_, hcl⟩ := hc.lenField
   refine two_post (two_taint [.x20] (HE.pins fun r hr => by simp at hr; exact .inr (.inl hr)) hcl)
-    fun a u h => WP.mono (lenField_ok H hH.shape h.L (fun _ _ => rfl) (by omega_arith) hd.L.2)
-      fun u' ⟨k, h19, fr, _⟩ => ?_
+    fun a u h => WP.mono_syms (lenField_ok H hH.shape h.L (fun _ _ => rfl) (by omega_arith) hd.L.2)
+      fun u' ⟨k, h19, fr, _⟩ sy => ?_
   exact {
     L := h.L.congr k.sp k.wr (k.get .x20)
     x19 := h19
@@ -201,30 +237,32 @@ theorem lenField_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (l
     nb := by rw [nb_keep fr h.L.nbS]; exact h.nb
     len := by obtain ⟨ℓ, e, f⟩ := h.len; exact ⟨ℓ, by rw [k.get .x22]; exact e, f⟩
     hnb := h.hnb
-    fx := fun ℓ e => by rw [k.get .x22]; exact h.fx ℓ e }
+    fx := fun ℓ e => by rw [k.get .x22]; exact h.fx ℓ e
+    ht := by rw [sy]; exact h.ht.keep fr fun r hr => by rw [List.mem_singleton.mp hr]; exact h.L.dFS
+    ai := by rw [sy]; exact h.ai
+    ac := by rw [sy]; exact h.ac
+    ad := by rw [sy]; exact h.ad }
 
-theorem digestOut_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (digestOut H)) fun _ _ => True := by
-  obtain ⟨_, hcl⟩ := hc.digestOut
-  exact two_taint [.x20, .x21] (HE.pins fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp) hcl
-
-theorem fixedPad_ct (ℓ : Nat) (h4 : oY + ℓ < 4096) :
-    RelCT isa (Two fun a u => HE H a u ∧ a.fx = some ℓ) (fixedPad80 ℓ) (Two (HE H)) := by
-  refine two_post (two_taintE [.x20] (fun a s₁ s₂ h₁ h₂ => HE.pins (H := H) (rs := [.x20])
-      (fun r hr => by simp at hr; exact .inr (.inl hr)) a s₁ s₂ h₁.1 h₂.1)
-    (c' := .block [.addImm .x .x10 .x20 0, .ldrb .x9 .x10 0, .movz .x .x13 0 0, .logic .orr .x .x9 .x9 .x13,
-      .strb .x9 .x10 0]) rfl (by taint_decide)) fun a u ⟨h, hf⟩ => ?_
-  have hℓ : ℓ < a.nbm * H.P.B := by
-    obtain ⟨ℓ', e, f⟩ := h.len
-    have e' := h.fx ℓ hf
-    rw [e] at e'
-    have := h.hnb
-    have := congrArg BitVec.toNat e'
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at this
-    omega_arith
-  exact WP.mono (fixedPad_ok h.L (fun _ _ => rfl) hℓ h4) fun u' ⟨k, fr, _⟩ => h.keep k (by decide) fr
+/-- The slot of the digest, in a run of `ctHashWith`. -/
+theorem HE.dslot {a : HA} {u : State} (h : HE H dn f a u) :
+    u.mem.readW (u.sp + BitVec.ofNat 64 sDigH) 64 = u.syms dn := by rw [h.L.sp]; exact h.ht.wd
 
 include hH in
-theorem pad80_ct : RelCT isa (Two (HE H)) (pad80 H) (Two (HE H)) := by
+theorem digestOut_ct (hdo : DigOK H.P) : RelCT isa (Two (HE H dn f)) (digestOut f) fun _ _ => True := by
+  have hN := hH.N_le
+  refine (RelCT.exists_ (P := fun a s₁ s₂ => HE H dn f a s₁ ∧ HE H dn f a s₂) fun a =>
+    digT_rel f hH.shape hdo (dn := dn) (vp := off a.S oSel) (op := off a.S oDig) fun u₁ u₂ ⟨h₁, h₂⟩ =>
+      ⟨by rw [h₁.L.sp, h₂.L.sp], by rw [h₁.L.sp]; exact h₁.L.fld (by decide),
+        by rw [h₂.L.sp]; exact h₂.L.fld (by decide), by rw [h₁.dslot, h₂.dslot, h₁.ad, h₂.ad],
+        by rw [h₁.dslot]; exact h₁.ht.fd, by rw [h₂.dslot]; exact h₂.ht.fd, by rw [h₁.L.x20], h₁.x21,
+        by rw [h₂.L.x20], h₂.x21, Covers.one (h₁.L.ld (by unfold oSel oRsa; omega_arith)),
+        Covers.one (h₁.L.st (by unfold oDig oRsa; omega_arith)), Covers.one (h₂.L.ld (by unfold oSel oRsa; omega_arith)),
+        Covers.one (h₂.L.st (by unfold oDig oRsa; omega_arith)),
+        Offset.disjoint _ (by unfold oSel oDig; omega_arith) (by unfold oSel; omega_arith)
+          (by unfold oDig; omega_arith)⟩).mono (fun _ _ h => h) fun _ _ h => h
+
+include hH in
+theorem pad80_ct : RelCT isa (Two (HE H dn f)) (pad80 H) (Two (HE H dn f)) := by
   have hB := hH.B_le
   have hB0 := hH.B_pos
   have hlg : 2 ^ lgB H = H.P.B ∧ lgB H < 64 := by
@@ -234,17 +272,17 @@ theorem pad80_ct : RelCT isa (Two (HE H)) (pad80 H) (Two (HE H)) := by
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
   refine two_post ?_ fun a u h => ?_
   · unfold pad80
-    refine RelCT.seq (two_post (Ψ := HR H [(.x10, fun a => off a.S oY), (.x11, fun _ => (BitVec.ofNat 16 0).setWidth 64),
+    refine RelCT.seq (two_post (Ψ := HR H dn f [(.x10, fun a => off a.S oY), (.x11, fun _ => (BitVec.ofNat 16 0).setWidth 64),
         (.x12, fun a => BitVec.ofNat 64 a.nbm <<< lgB H)])
       (two_taintE [.x20] (HE.pins fun r hr => by simp at hr; exact .inr (.inl hr))
         (c' := .block [.addImm .x .x10 .x20 0, .movz .x .x11 0 0, .ldrSp .x12 sNb, .lsl .x .x12 .x12 0]) rfl
         (by taint_decide))
       fun a u h => ?_) ?_
     · unfold ld movi
-      refine wp_addImm (by decide) fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ => wp_ldrSp (by decide) ?_
-        fun u₃ o₃ e₃ => wp_lsl hlg.2 fun u₄ o₄ e₄ => wp_nil ⟨h.keep
+      refine WP.of_syms (wp_addImm (by decide) fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ => wp_ldrSp (by decide) ?_
+        fun u₃ o₃ e₃ => wp_lsl hlg.2 fun u₄ o₄ e₄ => wp_nil fun sy => ⟨h.keep
           (Only.mono (rs' := [.x10, .x11, .x12]) (o₁.trans (o₂.trans (o₃.trans o₄)))).keep (by decide)
-          (by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact Frame.refl _ _), fun p hp => ?_⟩
+          (by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact Frame.refl _ _) sy, fun p hp => ?_⟩)
       · rw [o₂.sp, o₁.sp, h.L.sp, o₂.rd, o₁.rd, o₂.wr, o₁.wr]; exact h.L.fld (by decide)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl | rfl
@@ -255,11 +293,11 @@ theorem pad80_ct : RelCT isa (Two (HE H)) (pad80 H) (Two (HE H)) := by
         simp at hr; rcases hr with rfl | rfl | rfl <;> simp) (by taint_decide)
   · obtain ⟨ℓ, e, f⟩ := h.len
     have := h.hnb
-    exact WP.mono (pad80_ok H h.L (fun _ _ => rfl) hlg.1 hlg.2 (ℓ := ℓ) (by omega_arith) h.hnb
-      (by omega_arith) e h.nb) fun u' ⟨k, fr, _⟩ => h.keep k (by decide) fr
+    exact WP.mono_syms (pad80_ok H h.L (fun _ _ => rfl) hlg.1 hlg.2 (ℓ := ℓ) (by omega_arith) h.hnb
+      (by omega_arith) e h.nb) fun u' ⟨k, fr, _⟩ sy => h.keep k (by decide) fr sy
 
 include hH in
-theorem lenLoop_ct : RelCT isa (Two (HE H)) (lenLoop H) (Two (HE H)) := by
+theorem lenLoop_ct : RelCT isa (Two (HE H dn f)) (lenLoop H) (Two (HE H dn f)) := by
   have hB := hH.B_le
   have hB0 := hH.B_pos
   have hd := hH.sizes.dims
@@ -271,7 +309,7 @@ theorem lenLoop_ct : RelCT isa (Two (HE H)) (lenLoop H) (Two (HE H)) := by
   have hLB : H.P.L < H.P.B := by have : 0 < H.P.N := hd.N.1; have := hH.sizes.NL; omega_arith
   refine two_post ?_ fun a u h => ?_
   · unfold lenLoop
-    refine RelCT.seq (two_post (Ψ := HR H [(.x10, fun a => off a.S (oY + H.P.B - H.P.L)),
+    refine RelCT.seq (two_post (Ψ := HR H dn f [(.x10, fun a => off a.S (oY + H.P.B - H.P.L)),
         (.x11, fun _ => (BitVec.ofNat 16 0).setWidth 64), (.x12, fun a => BitVec.ofNat 64 a.nbm)])
       (two_taintE [.x20] (HE.pins fun r hr => by simp at hr; exact .inr (.inl hr))
         (c' := Code.eraseOff (.block ([.addImm .x .x10 .x20 (oY + zH.P.B - zH.P.L), movi .x11 0, ld .x12 sNb] ++
@@ -279,10 +317,11 @@ theorem lenLoop_ct : RelCT isa (Two (HE H)) (lenLoop H) (Two (HE H)) := by
       fun a u h => ?_) ?_
     · unfold ld movi Impl.RsaPss.AArch64.lastBlk
       simp only [List.cons_append, List.nil_append]
-      refine wp_addImm (by unfold oY; omega_arith) fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ => wp_ldrSp (by decide) ?_
-        fun u₃ o₃ e₃ => wp_addImm (by omega_arith) fun u₄ o₄ e₄ => wp_lsr hlg.2 fun u₅ o₅ e₅ => wp_nil ⟨h.keep
+      refine WP.of_syms (wp_addImm (by unfold oY; omega_arith) fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ =>
+        wp_ldrSp (by decide) ?_
+        fun u₃ o₃ e₃ => wp_addImm (by omega_arith) fun u₄ o₄ e₄ => wp_lsr hlg.2 fun u₅ o₅ e₅ => wp_nil fun sy => ⟨h.keep
           (Only.mono (rs' := [.x10, .x11, .x12, .x15]) (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅))))).keep
-          (by decide) (by rw [o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact Frame.refl _ _), fun p hp => ?_⟩
+          (by decide) (by rw [o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact Frame.refl _ _) sy, fun p hp => ?_⟩)
       · rw [o₂.sp, o₁.sp, h.L.sp, o₂.rd, o₁.rd, o₂.wr, o₁.wr]; exact h.L.fld (by decide)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl | rfl
@@ -301,8 +340,8 @@ theorem lenLoop_ct : RelCT isa (Two (HE H)) (lenLoop H) (Two (HE H)) := by
   · obtain ⟨ℓ, e, f⟩ := h.len
     have := h.hnb
     have hfb : (ℓ + H.P.L) / H.P.B < a.nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega_arith)
-    exact WP.mono (lenLoop_ok H h.L (fun _ _ => rfl) hlg.1 hlg.2 (by omega_arith) hd.L.1 hd.L.2 hB (ℓ := ℓ) (by omega_arith)
-      h.hnb hfb e h.nb) fun u' ⟨k, fr, _⟩ => h.keep k (by decide) fr
+    exact WP.mono_syms (lenLoop_ok H h.L (fun _ _ => rfl) hlg.1 hlg.2 (by omega_arith) hd.L.1 hd.L.2 hB (ℓ := ℓ)
+      (by omega_arith) h.hnb hfb e h.nb) fun u' ⟨k, fr, _⟩ sy => h.keep k (by decide) fr sy
 
 /-! ## The blocks -/
 
@@ -362,31 +401,40 @@ theorem compArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {b nbm : Nat} (hb :
 
 /-- In the loop over the blocks, before block `p.2`: a run of `compLoop`
 from `t` (`CInv`). -/
-def CI (p : HA × Nat) (u : State) : Prop :=
-  ∃ t V₀ h₀ ℓ, HE H p.1 t ∧ t.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ + 1 + H.P.L ≤ p.1.nbm * H.P.B ∧
+def CI (dn : String) (f : MdFns) (p : HA × Nat) (u : State) : Prop :=
+  ∃ t V₀ h₀ ℓ, HE H dn f p.1 t ∧ t.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ + 1 + H.P.L ≤ p.1.nbm * H.P.B ∧
     CInv hH t p.1.F p.1.S V₀ h₀ p.1.nbm ((ℓ + H.P.L) / H.P.B) p.2 u
 
-/-- Before the call of the compression function. -/
-def CA (H : Hash) (p : HA × Nat) (u : State) : Prop :=
+/-- Before the call of the compression function, by the slot of the
+compression function. -/
+def CA (H : Hash) (f : MdFns) (p : HA × Nat) (u : State) : Prop :=
   VG.Proof.Pbkdf2.AArch64.CallOk u H.P.N H.P.B H.P.so (off p.1.S oSt) p.1.S (off p.1.S (oY + H.P.B * p.2)) ∧
     Lay u p.1.F p.1.S ∧ u.gpr .x27 = BitVec.ofNat 64 p.2 ∧ p.2 < 2 ^ 62 ∧
-      ∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ < 2 ^ 62
+      (∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ < 2 ^ 62) ∧
+      u.mem.readW (u.sp + BitVec.ofNat 64 sCmpH) 64 = u.syms H.compN ∧ u.syms H.compN = p.1.ac ∧
+      Finds f.comp u.syms (u.syms H.compN) H.compN H.compC
 
 /-- After it. -/
 def CB (p : HA × Nat) (u : State) : Prop :=
   Lay u p.1.F p.1.S ∧ u.gpr .x27 = BitVec.ofNat 64 p.2 ∧ p.2 < 2 ^ 62 ∧
     ∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ < 2 ^ 62
 
-theorem CI.lay {p : HA × Nat} {u : State} (h : CI hH p u) : Lay u p.1.F p.1.S :=
+theorem CI.lay {p : HA × Nat} {u : State} (h : CI hH dn f p u) : Lay u p.1.F p.1.S :=
   let ⟨_, _, _, _, ht, _, _, I⟩ := h; ht.L.congr I.sp I.wr (I.cs .x20 (by decide))
 
-theorem CI.x27 {p : HA × Nat} {u : State} (h : CI hH p u) : u.gpr .x27 = BitVec.ofNat 64 p.2 :=
+theorem CI.x27 {p : HA × Nat} {u : State} (h : CI hH dn f p u) : u.gpr .x27 = BitVec.ofNat 64 p.2 :=
   let ⟨_, _, _, _, _, _, _, I⟩ := h; I.x27
+
+/-- The slots, in the loop. -/
+theorem CI.ht {p : HA × Nat} {u : State} (h : CI hH dn f p u) : HT H dn f p.1.F u.mem u.syms ∧ u.syms H.compN = p.1.ac := by
+  obtain ⟨t, _, _, _, ht, _, _, I⟩ := h
+  rw [I.sy]
+  exact ⟨ht.ht.keep I.fr fun r hr => by rw [List.mem_singleton.mp hr]; exact ht.L.dFS, ht.ac⟩
 
 include hH in
 theorem body_ct :
-    RelCT isa (Two fun p u => CI hH p u ∧ p.2 < p.1.nbm)
-      (seqs [.block (compArgs H), Impl.MdStream.AArch64.compressAt H.compN H.compC, select H, .block nextBlock])
+    RelCT isa (Two fun p u => CI hH dn f p u ∧ p.2 < p.1.nbm)
+      (seqs [.block (compArgs H), compT f, select H, .block nextBlock])
       fun _ _ => True := by
   have hN0 := hH.sizes.dims.N.1
   have hN := hH.N_le
@@ -397,7 +445,7 @@ theorem body_ct :
     · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
   simp only [seqs]
-  refine RelCT.seq (two_post (Ψ := CA H)
+  refine RelCT.seq (two_post (Ψ := CA H f)
     (two_taintE [.x20, .x27] (fun p u₁ u₂ ⟨h₁, _⟩ ⟨h₂, _⟩ => by
         refine ⟨by rw [(h₁.lay hH).sp, (h₂.lay hH).sp], fun r hr => ?_⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -407,19 +455,26 @@ theorem body_ct :
       (c' := Code.eraseOff (.block (compArgs zH))) rfl (by taint_decide))
     fun p u ⟨h, hb⟩ => ?_) ?_
   · have Lh := h.lay hH
+    obtain ⟨T, hac⟩ := h.ht hH
     obtain ⟨t, V₀, h₀, ℓ, ht, e, f, I⟩ := h
     have := ht.hnb
-    refine WP.mono (compArgs_ok hH Lh hb ht.hnb I.x27 (by rw [I.cs .x19 (by decide), ht.x19]))
-      fun u₃ ⟨O, C⟩ => ⟨C, Lh.congr O.sp O.wr (O.get .x20), by rw [O.get .x27, I.x27], by
+    refine WP.mono_syms (compArgs_ok hH Lh hb ht.hnb I.x27 (by rw [I.cs .x19 (by decide), ht.x19]))
+      fun u₃ ⟨O, C⟩ sy => ⟨C, Lh.congr O.sp O.wr (O.get .x20), by rw [O.get .x27, I.x27], by
         have h0 := hH.B_pos; have : p.2 * H.P.B < p.1.nbm * H.P.B := Nat.mul_lt_mul_of_pos_right hb h0
         have : p.2 ≤ p.2 * H.P.B := Nat.le_mul_of_pos_right _ h0
-        omega_arith, ℓ, by rw [O.get .x22, I.cs .x22 (by decide), e], by omega_arith⟩
-  refine RelCT.seq (two_post (Ψ := CB) ((RelCT.exists_ (P := fun p s₁ s₂ => CA H p s₁ ∧ CA H p s₂) fun p =>
-      VG.Proof.Pbkdf2.AArch64.compressAt_rel hH.comp fun s₁ s₂ ⟨h₁, h₂⟩ =>
-        ⟨h₁.1, h₂.1, by rw [h₁.2.1.sp, h₂.2.1.sp]⟩).mono (fun _ _ h => h) fun _ _ h => h)
-    fun p u ⟨C, Lu, h27, hb, ℓ, e, f⟩ => VG.Proof.Pbkdf2.AArch64.compressAt_ok hH.comp C
-      fun v vrd vwr vcs vsp _ _ => ⟨Lu.congr vsp vwr (vcs .x20 (by decide) (by decide)),
-        by rw [vcs .x27 (by decide) (by decide), h27], hb, ℓ, by rw [vcs .x22 (by decide) (by decide), e], f⟩) ?_
+        omega_arith, ⟨ℓ, by rw [O.get .x22, I.cs .x22 (by decide), e], by omega_arith⟩,
+        by rw [O.mem, O.sp, Lh.sp, sy]; exact T.wc, by rw [sy]; exact hac, by rw [sy]; exact T.fc⟩
+  refine RelCT.seq (two_post (Ψ := CB) ((RelCT.exists_ (P := fun p s₁ s₂ => CA H f p s₁ ∧ CA H f p s₂) fun p =>
+      compT_rel f hH.comp fun s₁ s₂ ⟨h₁, h₂⟩ =>
+        ⟨h₁.1, h₂.1, by rw [h₁.2.1.sp, h₂.2.1.sp], by rw [h₁.2.1.sp]; exact h₁.2.1.fld (by decide),
+          by rw [h₂.2.1.sp]; exact h₂.2.1.fld (by decide),
+          by rw [h₁.2.2.2.2.2.1, h₂.2.2.2.2.2.1, h₁.2.2.2.2.2.2.1, h₂.2.2.2.2.2.2.1],
+          by rw [h₁.2.2.2.2.2.1]; exact h₁.2.2.2.2.2.2.2, by rw [h₂.2.2.2.2.2.1]; exact h₂.2.2.2.2.2.2.2⟩).mono
+        (fun _ _ h => h) fun _ _ h => h)
+    fun p u ⟨C, Lu, h27, hb, ⟨ℓ, e, hℓ⟩, hw, _, hfd⟩ => compT_ok f hH.comp C
+      (by rw [Lu.sp]; exact Lu.fld (by decide))
+      hw hfd fun v vrd vwr vcs vsp _ _ _ => ⟨Lu.congr vsp vwr (vcs .x20 (by decide) (by decide)),
+        by rw [vcs .x27 (by decide) (by decide), h27], hb, ℓ, by rw [vcs .x22 (by decide) (by decide), e], hℓ⟩) ?_
   refine RelCT.seq (two_post (Ψ := fun p u => u.sp = p.1.F)
     (two_taintE [.x20, .x27] (fun p u₁ u₂ ⟨L₁, a₁, _, _⟩ ⟨L₂, a₂, _, _⟩ => by
         refine ⟨by rw [L₁.sp, L₂.sp], fun r hr => ?_⟩
@@ -432,7 +487,8 @@ theorem body_ct :
       (b := p.2) hb e h27) fun v ⟨k, _, _⟩ => by rw [k.sp, Lu.sp]) ?_
   exact two_taint [] (fun _ _ _ h₁ h₂ => ⟨by rw [h₁, h₂], fun _ h => absurd h List.not_mem_nil⟩) (by taint_decide)
 
-theorem CI.he {a : HA} {u : State} (h : CI hH (a, a.nbm) u) : HE H a u := by
+theorem CI.he {a : HA} {u : State} (h : CI hH dn f (a, a.nbm) u) : HE H dn f a u := by
+  obtain ⟨T, _⟩ := h.ht hH
   obtain ⟨t, _, _, ℓ, ht, e, f, I⟩ := h
   have fx := ht.fx
   exact {
@@ -442,10 +498,14 @@ theorem CI.he {a : HA} {u : State} (h : CI hH (a, a.nbm) u) : HE H a u := by
     nb := by rw [nb_keep I.fr ht.L.nbS]; exact ht.nb
     len := ⟨ℓ, by rw [I.cs .x22 (by decide)]; exact e, f⟩
     hnb := ht.hnb
-    fx := fun ℓ e => by rw [I.cs .x22 (by decide)]; exact fx ℓ e }
+    fx := fun ℓ e => by rw [I.cs .x22 (by decide)]; exact fx ℓ e
+    ht := T
+    ai := by rw [I.sy]; exact ht.ai
+    ac := by rw [I.sy]; exact ht.ac
+    ad := by rw [I.sy]; exact ht.ad }
 
 include hH in
-theorem compLoop_ct : RelCT isa (Two (HE H)) (compLoop H) (Two (HE H)) := by
+theorem compLoop_ct : RelCT isa (Two (HE H dn f)) (compLoop f H) (Two (HE H dn f)) := by
   have hB0 := hH.B_pos
   have hlg : 2 ^ lgB H = H.P.B ∧ lgB H < 64 := by
     unfold lgB
@@ -453,11 +513,11 @@ theorem compLoop_ct : RelCT isa (Two (HE H)) (compLoop H) (Two (HE H)) := by
     · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
   unfold compLoop
-  refine RelCT.seq (two_post (Ψ := fun a u => CI hH (a, 0) u ∧ 0 < a.nbm)
+  refine RelCT.seq (two_post (Ψ := fun a u => CI hH dn f (a, 0) u ∧ 0 < a.nbm)
     (two_taint [] (HE.pins fun _ h => absurd h List.not_mem_nil) (by taint_decide)) fun a u h => ?_) ?_
   · obtain ⟨ℓ, e, f⟩ := h.len
-    refine wp_movz fun u' o e' => wp_nil ⟨⟨u, fun o => u.mem (off a.S o), hH.md.stateAt u.mem (off a.S oSt), ℓ, h,
-      e, f, {
+    refine WP.of_syms (wp_movz fun u' o e' => wp_nil fun sy => ⟨⟨u, fun o => u.mem (off a.S o),
+      hH.md.stateAt u.mem (off a.S oSt), ℓ, h, e, f, {
         sp := o.sp, rd := o.rd, wr := o.wr
         cs := fun r hr => o.gpr r (by revert r; decide)
         x27 := by rw [e']; rfl
@@ -465,21 +525,22 @@ theorem compLoop_ct : RelCT isa (Two (HE H)) (compLoop H) (Two (HE H)) := by
         fr := by rw [o.mem]; exact Frame.refl _ _
         keep := fun x _ _ => by rw [o.mem]
         st := by rw [o.mem, hH.md.compressList_zero]
-        sel := fun h => absurd h (Nat.not_lt_zero _) }⟩, ?_⟩
+        sel := fun h => absurd h (Nat.not_lt_zero _)
+        sy := sy }⟩, ?_⟩)
     rcases Nat.eq_zero_or_pos a.nbm with h0 | h0
     · rw [h0, Nat.zero_mul] at f; omega_arith
     · exact h0
   refine RelCT.exists_ fun a => ?_
-  let I : Nat → State → State → Prop := fun n => Two fun p u => CI hH p u ∧ p.2 < p.1.nbm ∧ n = p.1.nbm - p.2
-  refine (RelCT.loop (Q := Two (HE H)) I (fun n => ?_) a.nbm).mono
+  let I : Nat → State → State → Prop := fun n => Two fun p u => CI hH dn f p u ∧ p.2 < p.1.nbm ∧ n = p.1.nbm - p.2
+  refine (RelCT.loop (Q := Two (HE H dn f)) I (fun n => ?_) a.nbm).mono
     (fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨(a, 0), ⟨h₁.1, h₁.2, rfl⟩, h₂.1, h₂.2, rfl⟩) fun _ _ h => h
-  have T : RelCT isa (I n) _ _ := (two_post (Ψ := fun p u => CI hH (p.1, p.2 + 1) u ∧
+  have T : RelCT isa (I n) _ _ := (two_post (Ψ := fun p u => CI hH dn f (p.1, p.2 + 1) u ∧
       ((u.gpr .x9).toNat ≠ 0 ↔ p.2 + 1 ≠ p.1.nbm) ∧ p.2 < p.1.nbm ∧ n = p.1.nbm - p.2)
     ((body_ct hH).mono (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, ⟨h₁.1, h₁.2.1⟩, h₂.1, h₂.2.1⟩) fun _ _ h => h)
     fun p u ⟨h, hb, hn⟩ => by
       obtain ⟨t, V₀, h₀, ℓ, ht, e, f, Ic⟩ := h
       have := ht.hnb
-      exact WP.mono (comp_step hH ht.L hlg.1 hlg.2 (by omega_arith) ht.hnb hb e ht.x19 ht.nb Ic)
+      exact WP.mono (comp_step hH ht.L hlg.1 hlg.2 (by omega_arith) ht.hnb hb e ht.x19 ht.nb ht.ht.wc ht.ht.fc Ic)
         fun u' ⟨I', fl⟩ => ⟨⟨t, V₀, h₀, ℓ, ht, e, f, I'⟩, fl, hb, hn⟩)
   refine T.mono (fun _ _ h => h) fun s₁ s₂ ⟨⟨a', b⟩, ⟨c₁, f₁, hb, hn⟩, c₂, f₂, _, _⟩ => ?_
   dsimp only at c₁ c₂ f₁ f₂ hb hn
@@ -497,25 +558,18 @@ theorem compLoop_ct : RelCT isa (Two (HE H)) (compLoop H) (Two (HE H)) := by
 /-! ## The whole hash -/
 
 include hH in
-theorem ctHashWith_ct (hc : PssChecks H.P H.D) {padding : Prog isa} {X : HA → Prop}
-    (hp : RelCT isa (Two fun a u => HE H a u ∧ X a) padding (Two (HE H))) :
-    RelCT isa (Two fun a u => HE H a u ∧ X a) (ctHashWith H padding) fun _ _ => True := by
+theorem ctHashWith_ct (hc : PssChecks H.P H.D) (hdo : DigOK H.P) {padding : Prog isa} {X : HA → Prop}
+    (hp : RelCT isa (Two fun a u => HE H dn f a u ∧ X a) padding (Two (HE H dn f))) :
+    RelCT isa (Two fun a u => HE H dn f a u ∧ X a) (ctHashWith f H padding) fun _ _ => True := by
   unfold ctHashWith seqs seqs seqs seqs seqs
   exact RelCT.seq (two_X X (ctInit_tr hH) fun _ _ h => ctInit_wp hH h) (RelCT.seq hp (RelCT.seq
-    (lenField_ct hH hc) (RelCT.seq (lenLoop_ct hH) (RelCT.seq (compLoop_ct hH) (digestOut_ct hc)))))
+    (lenField_ct hH hc) (RelCT.seq (lenLoop_ct hH) (RelCT.seq (compLoop_ct hH) (digestOut_ct hH hdo)))))
 
 include hH in
-theorem ctHash_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (ctHash H) fun _ _ => True :=
-  (ctHashWith_ct hH hc (X := fun _ => True) ((pad80_ct hH).mono
+theorem ctHash_ct (hc : PssChecks H.P H.D) (hdo : DigOK H.P) : RelCT isa (Two (HE H dn f)) (ctHash f H) fun _ _ => True :=
+  (ctHashWith_ct hH hc hdo (X := fun _ => True) ((pad80_ct hH).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩) fun _ _ h => h)).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁, trivial⟩, h₂, trivial⟩) fun _ _ h => h
-
-include hH in
-theorem mgfHash_ct (hc : PssChecks H.P H.D) :
-    RelCT isa (Two fun a u => HE H a u ∧ a.fx = some (H.D + 4)) (mgfHash H) fun _ _ => True := by
-  have hDN := hH.sizes.DN
-  have hN := hH.N_le
-  exact ctHashWith_ct hH hc (fixedPad_ct (H.D + 4) (by unfold oY; omega_arith))
 
 end
 

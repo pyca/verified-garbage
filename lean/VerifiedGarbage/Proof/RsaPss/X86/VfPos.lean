@@ -58,7 +58,7 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     fun τ s ⟨hs, hx, hf, hp⟩ => ?_
   have hi := hx.1.1
   simp only [posChk, ld, st, Impl.RsaPkcs1Sig.X86.stk]
-  refine hs.wp_arg (vf_arg h (j := 9) (by decide)) (by decide) fun t1 s1 u1 => ?_
+  refine hs.wp_arg (vf_arg h (j := 10) (by decide)) (by decide) fun t1 s1 u1 => ?_
   have c1 : Ctx (P.lay h.D) P.scr τ t1 := ⟨s1, by rw [u1.gpr]; rfl⟩
   refine c1.wp_slot hg (d := sAcc) (by decide) (by decide) (by decide) fun t2 c2 u2 => ?_
   refine c2.wp_slot hg (d := sVal) (by decide) (by decide) (by decide) fun t3 c3 u3 => ?_
@@ -71,7 +71,7 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     (by rw [hg.aFr ok sPos (by decide)]; exact c8.rFr hg sPos (by decide)) fun t9 u9 => ?_
   refine wp_subi fun t10 u10 _ _ => ?_
   have c10 : Ctx (P.lay h.D) P.scr τ t10 := (c8.upd u9 (by decide) (by decide)).upd u10 (by decide) (by decide)
-  refine wp_xorm (B := (P.lay h.D).B) (by rw [c10.st.sp]) (by rw [hg.aArg ok 7 (by simp)]; exact
+  refine wp_xorm (B := (P.lay h.D).B) (by rw [c10.st.sp]) (by rw [hg.aArg ok 8 (by simp)]; exact
       (by rw [c10.st.rd, c10.st.wr]; exact c10.st.ok.arg_read (vf_arg h (by decide)))) fun t11 u11 => ?_
   have c11 : Ctx (P.lay h.D) P.scr τ t11 := c10.upd u11 (by decide) (by decide)
   refine c11.wp_slot hg (d := sAny) (by decide) (by decide) (by decide) fun t12 c12 u12 => ?_
@@ -96,7 +96,7 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       simp (disch := decide) only [u14.gpr, u13.gpr, u13.other, u12.gpr, u12.other, u11.gpr, u10.gpr, u9.gpr,
         u8.gpr]
       rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem,
-        hg.aFr ok sPos (by decide), hp.pos, hx.1.2.2.1.2.2.1, hx.1.2.2.1.2.2.2, hg.aArg ok 7 (by simp),
+        hg.aFr ok sPos (by decide), hp.pos, hx.1.2.2.1.2.2.1, hx.1.2.2.1.2.2.2, hg.aArg ok 8 (by simp),
         hs.arg (vf_arg h (by decide))]
       rfl
     rw [u15.gpr, e14, u14.other .eax (by decide), u13.other .eax (by decide), u12.other .eax (by decide),

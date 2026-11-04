@@ -66,7 +66,7 @@ theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs)
   have e : argAddr (withTable (satState D) vs w) 0 = 0x20004 := rfl
   have hha' := hha (satState D)
   simp only [Impl.RsaOaep.X86.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
-  rcases hl' with rfl | rfl | rfl | rfl | rfl
+  rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
     sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,

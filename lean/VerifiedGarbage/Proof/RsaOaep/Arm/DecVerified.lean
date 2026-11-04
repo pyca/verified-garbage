@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk

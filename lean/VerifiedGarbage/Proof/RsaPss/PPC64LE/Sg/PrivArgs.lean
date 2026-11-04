@@ -35,7 +35,7 @@ def psa (s : State) : Nat → BitVec 64
   | 0 => s.gpr .r9
   | 1 => s.gpr .r10
   | 10 => Ss s + BitVec.ofNat 64 oRsa
-  | 11 => BitVec.ofNat 64 ((stackArg s 12).toNat - 1024)
+  | 11 => BitVec.ofNat 64 ((stackArg s 13).toNat - 1024)
   | i + 2 => stackArg s i
 
 theorem pb_eq (s : State) : pb s = s.sp - BitVec.ofNat 64 (frameBytes + privBytes) := by
@@ -79,7 +79,7 @@ structure Cp (s t₀ : State) (n : Nat) (t : State) : Prop where
 
 theorem privArgs_eq : privArgs = ([.addSp .r12 0, .store .d .r17 .r12 96, .store .d .r18 .r12 104] : List Instr) ++
     ((List.range 8).flatMap fun j => [.load .d .r0 .r12 (argP j), .store .d .r0 .r12 (112 + 8 * j)]) ++
-    ([.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP 12),
+    ([.li .r0 oRsa, .add .r0 .r14 .r0, .store .d .r0 .r12 176, .load .d .r11 .r12 (argP 13),
       .subi .r11 .r11 1024, .store .d .r11 .r12 184, Impl.AesGcm.PPC64LE.mov .r3 .r16,
       Impl.AesGcm.PPC64LE.mov .r4 .r15, Impl.AesGcm.PPC64LE.mov .r5 .r20, Impl.AesGcm.PPC64LE.mov .r6 .r15,
       Impl.AesGcm.PPC64LE.mov .r7 .r21, Impl.AesGcm.PPC64LE.mov .r8 .r22, .addi .r9 .r14 oEm,
@@ -116,7 +116,7 @@ theorem PB_sub : Region.Sub (PB s) (kS s) := by
   have := pb_sub s (d := 0) (n := privBytes) (by decide); rwa [BitVec.add_zero] at this
 
 /-- A load of our stack argument `j` through `b`, which holds `fb s - o`. -/
-theorem wp_argS {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 13)
+theorem wp_argS {t : State} {r b : Reg} {j o : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
     (hb : t.gpr b = fb s - BitVec.ofNat 64 o) (hrd : t.rd = s.rd) (hm : Frame [kS s, SC Ss s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : o + arg j < 2 ^ 15 ∧ (o + arg j) % 4 = 0 := by decide) (hb0 : b ≠ .r0 := by decide) :
@@ -212,7 +212,7 @@ theorem privArgs_ok {t : State} (h : Base Ss vS s t) {em : List Byte}
   have f₇ : Frame [PB s] t.mem u₇.mem := by
     rw [m₇.mem, o₆.mem, o₅.mem]; exact f₄'.writeW (List.mem_singleton_self _) _ (pb_in s (by decide))
   have rd₇ : u₇.rd = s.rd := by rw [m₇.rd, o₆.rd, o₅.rd, k₄.rd, k₃.rd, urd]
-  refine wp_argS P (j := 12) (o := privBytes) (by decide) (by rw [m₇.gpr, g₆]) rd₇ (hmS f₇) fun u₈ o₈ e₈ => ?_
+  refine wp_argS P (j := 13) (o := privBytes) (by decide) (by rw [m₇.gpr, g₆]) rd₇ (hmS f₇) fun u₈ o₈ e₈ => ?_
   refine wp_subi fun u₉ o₉ e₉ => ?_
   refine wp_std (a := pb s + BitVec.ofNat 64 184) (by rw [o₉.get .r12, o₈.get .r12, m₇.gpr, g₆])
     (by rw [o₉.wr, o₈.wr, m₇.wr, o₆.wr, o₅.wr, w₄]; exact psa_in (by decide) (by decide)) fun u₁₀ m₁₀ => ?_
@@ -231,7 +231,7 @@ theorem privArgs_ok {t : State} (h : Base Ss vS s t) {em : List Byte}
     ((k₃.trans (k₄.trans ((o₅.keep.trans o₆.keep).trans (m₇.keep.trans (o₈.keep.trans (o₉.keep.trans
       m₁₀.keep))))))).mono
   have k10 : ∀ r ∉ [Reg.r12, .r0, .r11], u₁₀.gpr r = t.gpr r := fun r hr => by rw [K₁₀.gpr r hr]; rfl
-  have hl : 1024 ≤ (stackArg s 12).toNat := by
+  have hl : 1024 ≤ (stackArg s 13).toNat := by
     have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
   have v184 : u₉.gpr .r11 = psa s 11 := by rw [e₉, e₈]; exact sub_ofNat hl
   have v176 : u₆.gpr .r0 = psa s 10 := by

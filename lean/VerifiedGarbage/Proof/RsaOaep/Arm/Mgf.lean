@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
-import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
@@ -40,7 +41,7 @@ open VG.Proof.Rsa.Arm.Recover (VP Two)
 open VG.Impl.RsaOaep.Arm (tcall tcallF tload)
 
 /-- A piece keeps the addresses of the statics. -/
-theorem VP.syms {F G : State → State → Prop} {c : Prog isa} (h : VP F c G) :
+theorem _root_.VG.Proof.Rsa.Arm.Recover.VP.syms {F G : State → State → Prop} {c : Prog isa} (h : VP F c G) :
     VP (fun σ s => F σ s ∧ s.syms = σ.syms) c (fun σ s => G σ s ∧ s.syms = σ.syms) := by
   refine ⟨fun σ s hs => WP.mono_syms (h.wp σ s hs.1) fun _ hq sy => ⟨hq, sy.trans hs.2⟩, ?_⟩
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨σ₁, σ₂, ⟨h₁, y₁⟩, ⟨h₂, y₂⟩⟩ e₁ e₂

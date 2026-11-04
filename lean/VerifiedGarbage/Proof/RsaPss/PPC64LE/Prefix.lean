@@ -118,24 +118,24 @@ theorem copyIn_ok {t : State} (h : Base Sp (vP D) s t) {a b n : Nat} (hn : 0 < n
 
 /-- `copySalt`: the last `salt_len` bytes of `DB` after `mHash`. -/
 theorem salt_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
-    (hsl : (s.gpr .r10).toNat + 1 ≤ dN) :
+    (hsl : (stackArg s 0).toNat + 1 ≤ dN) :
     WP isa (copySalt H) t fun t' => Base Sp (vP D) s t' ∧ (∀ r ∈ kpR, t'.gpr r = t.gpr r) ∧
-      ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + (s.gpr .r10).toNat then
-        view t.mem (Sp s) (lN + dN - (s.gpr .r10).toNat + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
+      ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + (stackArg s 0).toNat then
+        view t.mem (Sp s) (lN + dN - (stackArg s 0).toNat + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
   have F := L.F
   have hk := L.hk; have hk2 := L.k2; have hD64 := L.D64
   have hR : oRsa = 8192 := rfl
   have hY : oY = 2560 := rfl
-  generalize hS : (s.gpr .r10).toNat = sl at hsl
+  generalize hS : (stackArg s 0).toNat = sl at hsl
   refine WP.seq (wp_add fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_sub fun t₃ o₃ e₃ =>
     wp_addi (h := by rw [hD]; unfold oY; omega_arith) fun t₄ o₄ e₄ => wp_mov fun t₅ o₅ e₅ => wp_nil ?_)
   have k₅ : Only [.r4, .r5, .r6] t t₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
   have b₅ := h.only F k₅
   have g6 : t₅.gpr .r6 = BitVec.ofNat 64 sl := by
-    rw [e₅, o₄.get .r19, o₃.get .r19, o₂.get .r19, o₁.get .r19, h.psl, ← ofNat_toNat (s.gpr .r10), hS]
+    rw [e₅, o₄.get .r19, o₃.get .r19, o₂.get .r19, o₁.get .r19, h.psl, ← ofNat_toNat (stackArg s 0), hS]
   have g4 : t₅.gpr .r4 = off (Sp s) (lN + dN - sl) := by
     rw [o₅.get .r4, o₄.get .r4, e₃, e₂, e₁, o₂.get .r19, o₁.get .r19, h.psl, o₁.get .r21, h.pdb, L.hdb,
-      h.r14, h.plo, L.hlo, ← ofNat_toNat (s.gpr .r10), hS]
+      h.r14, h.plo, L.hlo, ← ofNat_toNat (stackArg s 0), hS]
     exact (congrArg (· - BitVec.ofNat 64 sl) (off_off (Sp s) lN dN)).trans (off_sub _ (by omega_arith) (by omega_arith))
   have g5 : t₅.gpr .r5 = off (Sp s) (oY + 8 + D) := by
     rw [o₅.get .r5, e₄, o₃.get .r14, o₂.get .r14, o₁.get .r14, h.r14, hD]

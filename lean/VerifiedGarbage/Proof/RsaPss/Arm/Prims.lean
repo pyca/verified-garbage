@@ -191,4 +191,48 @@ theorem cmp_vp {a b : BitVec 32} {n : Nat} (ha : RBuf L a n) (hb : RBuf L b n) (
   refine forall_congr' fun i => imp_congr_right fun hi' => ?_
   rw [byte32 fa hi', byte32 fb hi', hf i hi', hg i hi']
 
+namespace Sg
+
+theorem rdS {L : Lay} (m : Mem) (v : BitVec 32) {d : Nat} (hd : d + 4 ≤ 64) :
+    (m.writeW (L.fr d) v).readW (L.fr sS) 32 = m.readW (L.fr sS) 32 :=
+  Lay.readW_fr_other L m v (by unfold sS; omega_arith) (by decide) (by omega_arith)
+
+/-- Words written to the frame from slot `k` on. -/
+def wl (L : Lay) : Mem → Nat → List (BitVec 32) → Mem
+  | m, _, [] => m
+  | m, k, v :: vs => wl L (m.writeW (L.fr (4 * k)) v) (k + 1) vs
+
+theorem wl_nil (L : Lay) (m : Mem) (k : Nat) : wl L m k [] = m := rfl
+theorem wl_cons (L : Lay) (m : Mem) (k : Nat) (v : BitVec 32) (vs : List (BitVec 32)) :
+    wl L m k (v :: vs) = wl L (m.writeW (L.fr (4 * k)) v) (k + 1) vs := rfl
+
+theorem wl_other (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k j : Nat), j < k → k + vs.length ≤ 16 →
+    (wl L m k vs).readW (L.fr (4 * j)) 32 = m.readW (L.fr (4 * j)) 32
+  | [], _, _, _, _, _ => rfl
+  | v :: vs, m, k, j, hj, hl => by
+    rw [wl_cons, wl_other L vs _ (k + 1) j (by omega_arith) (by simp at hl; omega_arith),
+      Lay.readW_fr_other _ _ _ (by omega_arith) (by omega_arith) (by simp at hl; omega_arith)]
+
+theorem wl_read (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k i : Nat), k ≤ i → i < k + vs.length →
+    k + vs.length ≤ 16 → (wl L m k vs).readW (L.fr (4 * i)) 32 = vs.getD (i - k) 0
+  | [], _, _, _, h₁, h₂, _ => by simp at h₂; omega_arith
+  | v :: vs, m, k, i, h₁, h₂, hl => by
+    rw [wl_cons]
+    simp only [List.length_cons] at h₂ hl
+    by_cases e : i = k
+    · subst e
+      rw [wl_other L vs _ (i + 1) i (by omega_arith) (by omega_arith), Mem.readW_writeW_self32, Nat.sub_self]; rfl
+    · rw [wl_read L vs _ (k + 1) i (by omega_arith) (by omega_arith) (by omega_arith), show i - k = (i - (k + 1)) + 1 by omega_arith]; rfl
+
+theorem wl_frame (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k : Nat), k + vs.length ≤ 16 →
+    Frame [⟨L.fr 0, 64⟩] m (wl L m k vs)
+  | [], _, _, _ => Frame.refl _ _
+  | v :: vs, m, k, hl => by
+    rw [wl_cons]
+    simp only [List.length_cons] at hl
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.zero_le _) (by omega_arith) (by omega_arith))).trans (wl_frame L vs _ (k + 1) (by omega_arith))
+
+end Sg
+
 end VG.Proof.RsaPss.Arm

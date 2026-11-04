@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3
+import VerifiedGarbage.Proof.RsaPss.X86.Base
 
 /-!
 # RSAES-OAEP on x86: the indirect calls of a table's functions

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBase
 public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
@@ -14,7 +15,7 @@ public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
 # RSA paddings on RISC-V: the hash functions
 
 Untrusted: everything here is checked by Lean. The streaming functions of
-SHA-1 and the SHA-2 family are constant time for the contracts the proofs
+MD5, SHA-1 and the SHA-2 family are constant time for the contracts the proofs
 call them by (`HashCT`), from their artifacts' proofs; a hash function's
 streaming functions with what RSAES-OAEP's proofs need of them (`Link`:
 `HashOK`, `HashCT`, the bound on their frames, `FitsF`, and the hash
@@ -36,8 +37,8 @@ abbrev FitsF (H : Hash) : Prop := H.F ≤ 208
 
 /-- The hash functions the label is hashed with. -/
 def labelHashes : List Spec.Mgf1.Hash :=
-  [Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512, Spec.Mgf1.sha512_224,
-    Spec.Mgf1.sha512_256]
+  [Spec.Mgf1.md5, Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512,
+    Spec.Mgf1.sha512_224, Spec.Mgf1.sha512_256]
 
 /-! ## The hash functions -/
 
@@ -45,6 +46,11 @@ theorem ct_mono {pre pre' : State → Prop} {pub pub' : State → State → Prop
     (h : ConstantTime isa pre pub c) (hp : ∀ s, pre' s → pre s) (hq : ∀ s₁ s₂, pub' s₁ s₂ → pub s₁ s₂) :
     ConstantTime isa pre' pub' c :=
   fun _ _ _ _ _ _ h₁ h₂ hpub e₁ e₂ => h _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (hq _ _ hpub) e₁ e₂
+
+theorem md5CT : HashCT Md5.ok where
+  init := ct_mono Proof.Md5.RISCV64.Stream.init_verified.2.1 (fun _ hs => hs) fun _ _ h => h
+  upd := ct_mono Proof.Md5.RISCV64.Stream.update_verified.2.1 (fun _ hs => hs) fun _ _ h => h
+  fin := ct_mono Proof.Md5.RISCV64.Stream.finalize_verified.2.1 (fun _ hs => hs) fun _ _ h => h
 
 theorem sha1CT : HashCT Sha1.ok where
   init := ct_mono Proof.Sha1.RISCV64.Stream.init_verified.2.1 (fun _ hs => hs) fun _ _ h => h
@@ -95,6 +101,8 @@ theorem Link.lens_mem {H : Hash} (l : Link H) : H.D ∈ Impl.RsaOaep.RISCV64.len
 theorem Link.valid {H : Hash} (l : Link H) : Proof.Mgf1.Valid l.G :=
   ⟨by rw [l.len]; exact l.ok.hD0, fun x => by rw [l.hash, l.ok.hashLen, l.len]⟩
 
+def md5L : Link Md5.hash :=
+  ⟨Md5.ok, md5CT, by decide, Spec.Mgf1.md5, fun _ => rfl, rfl, by simp [labelHashes]⟩
 def sha1L : Link Sha1.hash :=
   ⟨Sha1.ok, sha1CT, by decide, Spec.Mgf1.sha1, fun _ => rfl, rfl, by simp [labelHashes]⟩
 def sha224L : Link Sha256Family.hash224 :=

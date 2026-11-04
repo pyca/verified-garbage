@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBody
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.HashTable.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Syms
