@@ -39,7 +39,7 @@ theorem Rep.callEntry {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte
     (R : Rep u.mem F S V W) : Rep u.callEntry.mem F S V W :=
   R.frame (rgs := []) L.geo (by simp) (by
     rw [State.callEntry_mem, L.rsp]
-    exact Frame.writeW (Frame.refl _ _) (by simp [regs]) _ (below_call _ (n := 8) (by decide) (by decide)))
+    exact Frame.writeW (Frame.refl _ _) (by simp [regs]) _ (below_call _ (n := 16) (by decide) (by decide)))
     |> fun R' => (congrArg (fun V' => Rep u.callEntry.mem F S V' W) (funext fun o => by
       simp only [inR, List.not_mem_nil, false_and, exists_false, ite_false])).mp R'
 
@@ -118,8 +118,8 @@ theorem compCall_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     refine ⟨Offset.disjoint_base S (by unfold oSt; omega_using [hso]) (by unfold oSt; omega_using [hN]),
       Offset.disjoint S (by unfold oY oSt; omega_using [hN]) (by unfold oY; omega_using [hbB]) (by unfold oSt; omega_using [hN]),
       Offset.disjoint_base S (by unfold oY; omega_using [hso]) (by unfold oY; omega_using [hbB]),
-      Region.Disjoint.sub_right L.dRS (Offset.sub_base S (by unfold oSt oRsa; omega_using [hN])),
-      Region.Disjoint.sub_right L.dRS (Region.sub_prefix (by unfold oRsa; omega_using [hso]))⟩
+      Region.Disjoint.sub_right L.dR8 (Offset.sub_base S (by unfold oSt oRsa; omega_using [hN])),
+      Region.Disjoint.sub_right L.dR8 (Region.sub_prefix (by unfold oRsa; omega_using [hso]))⟩
   · have c₁ := cS0 (o := 0) (n := H.P.so) (by unfold oRsa; omega_using [hso])
     rw [hS0] at c₁
     exact Covers.right (Covers.append_left (cS0 (by unfold oY oRsa; omega_using [hbB]))
@@ -135,7 +135,7 @@ theorem compCall_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     rw [hH.comp.depth, Lv.rsp] at hF
     obtain ⟨L', R'⟩ := Lv.after_call Rv (rgs := [(oSt, H.P.N), (0, H.P.so)])
       (by simp only [List.mem_cons, List.not_mem_nil, or_false]
-          rintro p (rfl | rfl) <;> simp only [oSt, oRsa] <;> omega_using [hN, hso]) (by simpa [regs, hS0] using hF)
+          rintro p (rfl | rfl) <;> simp only [oSt, oRsa] <;> omega_using [hN, hso]) (by simpa [regs, hS0] using frame_ret hF)
       (hcs .rsp (by decide)) hwr
     refine ⟨L', hrd.trans hk.2.1, hwr.trans hk.2.2, fun r hr => (hcs r hr).trans (hk.gpr ?_), R', ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -387,7 +387,7 @@ theorem digestAt_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     have := Lv.Sw
     refine ⟨Offset.disjoint S (by unfold oDig at *; omega_using [ho]) (by unfold oDig oRsa at *; omega_using [ho, this])
       (by unfold oDig oRsa at *; omega_using [hN, this]),
-      Region.Disjoint.sub_right L.dRS (Offset.sub_base S hsrc), Region.Disjoint.sub_right L.dRS (Offset.sub_base S hdg)⟩
+      Region.Disjoint.sub_right L.dR8 (Offset.sub_base S hsrc), Region.Disjoint.sub_right L.dR8 (Offset.sub_base S hdg)⟩
   · exact Covers.append_left (Covers.right (Lv.cov hsrc)) (Covers.right (Lv.cov hdg))
   · intro u' hrd hwr hcs hF hnc ⟨s₂, hm₂, _, hpost⟩
     simp only [Proof.MdHashTable.X86_64.digestK, State.withRegions_gpr, State.withRegions_mem,
@@ -396,7 +396,7 @@ theorem digestAt_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     simp only [Impl.MdHashTable.X86_64.digest, Code.depth] at hF
     rw [Lv.rsp] at hF
     obtain ⟨L', R'⟩ := Lv.after_call Rv (rgs := [(oDig, H.P.N)])
-      (by simp only [List.mem_singleton]; rintro p rfl; exact hdg) (by simpa [regs] using hF)
+      (by simp only [List.mem_singleton]; rintro p rfl; exact hdg) (by simpa [regs] using frame_ret hF)
       (hcs .rsp (by decide)) hwr
     refine ⟨L', ⟨fun r hr => ?_, hrd.trans hk.2.1, hwr.trans hk.2.2⟩, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

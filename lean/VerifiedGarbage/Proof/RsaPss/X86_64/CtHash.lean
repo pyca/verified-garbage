@@ -51,6 +51,15 @@ theorem Lay.after_call {t t' : State} {F S : Addr} (L : Lay t F S) {V : Nat → 
   refine ⟨L.congr hsp hwr ?_, R'⟩
   rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R'.fr 21 (by decide), R.fr 21 (by decide)]
 
+/-- The return address of a call from the frame is apart from our working
+space. -/
+theorem Lay.dR8 {t : State} {F S : Addr} (L : Lay t F S) : (below F 8).Disjoint ⟨S, oRsa⟩ :=
+  L.dRS.sub_left (below_sub (by decide) (by decide))
+
+/-- A frame of a call whose callee makes no calls is within `retR`. -/
+theorem frame_ret {rs : List Region} {F : Addr} {m m' : Mem} (h : Frame (rs ++ [below F (8 * (0 + 1))]) m m') :
+    Frame (rs ++ [retR F]) m m' := Frame.below_mono h (by decide) (by decide)
+
 /-- A callee-saved register is not `rdi`. -/
 theorem cs_ne {r : Reg} (hr : r ∈ calleeSaved) : r ∉ [Reg.rdi, .r11] := by
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -81,14 +90,14 @@ theorem ctInit_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
     (rd := []) (wr := [⟨off S oSt, H.P.N + H.P.B⟩]) ?_ ?_ (Lu.cov (by unfold oSt oRsa; omega_using [hNB])) ?_
   · simp only [initK, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.callEntry_rsp,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), hdi, Lu.rsp, true_and]
-    exact Region.Disjoint.sub_right L.dRS (Offset.sub_base S (by unfold oSt oRsa; omega_using [hNB]))
+    exact Region.Disjoint.sub_right L.dR8 (Offset.sub_base S (by unfold oSt oRsa; omega_using [hNB]))
   · exact Covers.right (Lu.cov (by unfold oSt oRsa; omega_using [hNB]))
   · intro t' hrd hwr hcs hF _ ⟨s₂, hm₂, _, hpost⟩
     simp only [initK, State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), hdi, hm₂]
       at hpost
     rw [K.iD, Lu.rsp] at hF
     obtain ⟨L', R'⟩ := Lu.after_call Ru (rgs := [(oSt, H.P.N + H.P.B)])
-      (by simp only [List.mem_singleton]; rintro p rfl; unfold oSt oRsa; omega_using [hNB]) hF
+      (by simp only [List.mem_singleton]; rintro p rfl; unfold oSt oRsa; omega_using [hNB]) (by simpa [regs] using frame_ret hF)
       (hcs .rsp (by decide)) hwr
     refine ⟨L', hrd.trans hk.2.1, hwr.trans hk.2.2, fun r hr => (hcs r hr).trans ?_, R', ?_⟩
     · exact hk.gpr (cs_ne hr)
