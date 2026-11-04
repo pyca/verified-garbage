@@ -907,6 +907,141 @@ theorem fromOuter_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : 
 theorem atOff' (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d := by
   rw [BitVec.ofInt_natCast]
 
+/-- The comb's header block, in the pieces between loads that address. -/
+abbrev headA1 : List Instr := [.mov .rdx (.mem (Crt.stk 6))]
+abbrev headA2 : List Instr := [.store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx,
+  .store (hdr iI) .rdx, .mov .rax (.mem (hdr Crt.sLink))]
+abbrev headA3 : List Instr := [.mov .rdx (.mem (Crt.ws .rax VG.Impl.Ffdh.X86_64.Domain.sX)), .store (hdr iXp) .rdx,
+  .mov .rax (.mem (hdr Crt.sLink))]
+abbrev headA4 : List Instr := [.mov .rdx (.mem (Crt.ws .rax VG.Impl.Ffdh.X86_64.Domain.sXl)), .store (hdr iXl) .rdx]
+
+theorem head_eq : [.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
+    .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
+    fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl = headA1 ++ (headA2 ++ (headA3 ++ headA4)) := rfl
+
+/-- What the header block keeps, from its start `s`. -/
+def HI (B : Addr) (Z o w : Nat) (mi : BitVec 64) (P : Nat) (s t : State) : Prop :=
+  ModCtx t B Z o w mi P ∧ InScr B Z s.mem t.mem ∧ Frm (off B o) [(8 * 17, 8 * 15)] s.mem t.mem ∧
+    (∀ k < 32, word t.mem B (8 * k) = word s.mem B (8 * k)) ∧ Keep [.rax, .rdx] s t
+
+theorem HI.store {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {s t u : State} (h : HI B Z o w mi P s t)
+    {i : Nat} (hi : 17 ≤ i) (hi' : i < 32) {v : BitVec 64} (hm : u.mem = t.mem.writeW (off (off B o) (8 * i)) v)
+    (k : Keep [.rax, .rdx] t u) :
+    HI B Z o w mi P s u ∧ word u.mem (off B o) (8 * i) = v ∧
+      (∀ k < 32, k ≠ i → word u.mem (off B o) (8 * k) = word t.mem (off B o) (8 * k)) := by
+  obtain ⟨hc, hin, hf, hb, kt⟩ := h
+  obtain ⟨hc', hf', hw, ho, hin', hb'⟩ := hc.store hi hi' hm k.2.2 (k.gpr (by decide))
+  refine ⟨⟨hc', hin.trans hin', Frm.widen (hf.append hf') fun r hr => ?_, fun j hj => (hb' j hj).trans (hb j hj),
+    (kt.trans k).mono (by decide)⟩, hw, ho⟩
+  simp only [List.mem_append, List.mem_singleton] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, by simp, Nat.le_refl _, Nat.le_refl _⟩
+  · exact ⟨(8 * 17, 8 * 15), by simp, by simp only; omega, by simp only; omega⟩
+
+theorem head1_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {cp : Addr}
+    (hc : ModCtx s B Z o w mi P) (hsp : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * 6)) 8)
+    (hCtx : word s.mem (s.gpr .rsp) (8 * 6) = cp) :
+    WP isa (.block headA1) s fun t => HI B Z o w mi P s t ∧ t.gpr .rdx = cp := by
+  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.mem = s.mem ∧ t.gpr .rdx = cp) (by
+    xrun [State.ea, Crt.stk, hdrOff, hsp, hCtx]) rfl) fun t ⟨⟨hm, hd⟩, k⟩ => ⟨⟨?_, fun x _ => by rw [hm],
+      fun x _ => by rw [hm], fun _ _ => by rw [hm], k.mono (by decide)⟩, hd⟩
+  exact hc.of_inner (fun x _ => by rw [hm]) k.2.2 (k.gpr (by decide))
+
+theorem head2_ok {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {cp : Addr} {rows : Nat}
+    (hs : ModCtx s B Z o w mi P) (hreg : CtxRd s B Z cp (3 + 34 * w)) (hrows : word s.mem cp 16 = BitVec.ofNat 64 rows)
+    (h : HI B Z o w mi P s t) (hd : t.gpr .rdx = cp) :
+    WP isa (.block headA2) t fun u => HI B Z o w mi P s u ∧ u.gpr .rax = B ∧
+      word u.mem (off B o) (8 * iCtx) = cp ∧ word u.mem (off B o) (8 * iRows) = BitVec.ofNat 64 rows ∧
+      word u.mem (off B o) (8 * iI) = BitVec.ofNat 64 rows := by
+  have hlo := hs.sub.lo
+  have hhi := hs.sub.hi
+  have hn := hs.sub.scr.nowrap
+  have hg := h.1.sub.good
+  change WP isa (.block ([.store (hdr iCtx) .rdx] ++ ([.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx] ++
+    ([.store (hdr iI) .rdx] ++ [.mov .rax (.mem (hdr Crt.sLink))])))) t _
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [] (Q := fun u => u.mem = t.mem.writeW (off (off B o) (8 * iCtx)) cp) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hd, hg.scr.st (d := 8 * iCtx) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun t₁ ⟨hm₁, k₁⟩ => ?_
+  obtain ⟨h₁, hw₁, ho₁⟩ := h.store (by decide) (by decide) hm₁ (k₁.mono (by decide))
+  rw [WP.block_append_iff]
+  have hg₁ := h₁.1.sub.good
+  have hr₁ : word t₁.mem cp 16 = BitVec.ofNat 64 rows := by rw [hreg.word h₁.2.1 (by omega)]; exact hrows
+  have hrd₁ : InRegions (t₁.rd ++ t₁.wr) (off cp 16) 8 := by
+    rw [(h₁.2.2.2.2).2.1, (h₁.2.2.2.2).2.2]; exact hreg.rd 2 (by omega)
+  have hd₁ : t₁.gpr .rdx = cp := (k₁.gpr (by decide)).trans hd
+  refine WP.mono (WP.keep [.rdx] (Q := fun u => u.mem = t₁.mem.writeW (off (off B o) (8 * iRows)) (BitVec.ofNat 64 rows) ∧
+      u.gpr .rdx = BitVec.ofNat 64 rows) (by
+    xrun [State.ea, hdr, at_, hg₁.rdi, hdrOff, hd₁, atOff', hrd₁, hr₁, hg₁.scr.st (d := 8 * iRows) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun t₂ ⟨⟨hm₂, hd₂⟩, k₂⟩ => ?_
+  obtain ⟨h₂, hw₂, ho₂⟩ := h₁.store (by decide) (by decide) hm₂ (k₂.mono (by decide))
+  rw [WP.block_append_iff]
+  have hg₂ := h₂.1.sub.good
+  refine WP.mono (WP.keep [] (Q := fun u => u.mem = t₂.mem.writeW (off (off B o) (8 * iI)) (BitVec.ofNat 64 rows)) (by
+    xrun [State.ea, hdr, hg₂.rdi, hdrOff, hd₂, hg₂.scr.st (d := 8 * iI) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun t₃ ⟨hm₃, k₃⟩ => ?_
+  obtain ⟨h₃, hw₃, ho₃⟩ := h₂.store (by decide) (by decide) hm₃ (k₃.mono (by decide))
+  have hg₃ := h₃.1.sub.good
+  refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t₃.mem ∧ u.gpr .rax = B) (by
+    xrun [State.ea, hdr, hg₃.rdi, hdrOff, hg₃.scr.ld (d := 8 * Crt.sLink) (hdr_lt_slot _ 8 (by decide)),
+      h₃.1.sub.link]) rfl)
+    fun u ⟨⟨hm, hax⟩, ku⟩ => ?_
+  obtain ⟨hc₃, hin₃, hf₃, hb₃, k₃'⟩ := h₃
+  refine ⟨⟨hc₃.of_inner (fun x _ => by rw [hm]) ku.2.2 (ku.gpr (by decide)), by intro x hx; rw [hm]; exact hin₃ x hx, fun x hx => by rw [hm]; exact hf₃ x hx,
+      fun j hj => by rw [hm]; exact hb₃ j hj, (k₃'.trans ku).mono (by decide)⟩, hax, ?_, ?_, ?_⟩
+  · rw [hm, ho₃ _ (by decide) (by decide), ho₂ _ (by decide) (by decide), hw₁]
+  · rw [hm, ho₃ _ (by decide) (by decide), hw₂]
+  · rw [hm, hw₃]
+
+/-- `fromOuter`'s load and store, then the link again. -/
+theorem head3_ok {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {v : BitVec 64}
+    (hv : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = v)
+    (h : HI B Z o w mi P s t) (hax : t.gpr .rax = B) :
+    WP isa (.block headA3) t fun u => HI B Z o w mi P s u ∧ u.gpr .rax = B ∧ word u.mem (off B o) (8 * iXp) = v ∧
+      (∀ k < 32, k ≠ iXp → word u.mem (off B o) (8 * k) = word t.mem (off B o) (8 * k)) := by
+  have hc := h.1
+  have hg := hc.sub.good
+  have hlo := hc.sub.lo
+  have hhi := hc.sub.hi
+  have hO : InRegions (t.rd ++ t.wr) (off B (8 * VG.Impl.Ffdh.X86_64.Domain.sX)) 8 := hc.sub.scr.ld (by
+    have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.X86_64.Domain.sX < 32 by decide); omega)
+  have hv' : word t.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = v := (h.2.2.2.1 _ (by decide)).trans hv
+  change WP isa (.block ([.mov .rdx (.mem (Crt.ws .rax VG.Impl.Ffdh.X86_64.Domain.sX)), .store (hdr iXp) .rdx] ++
+    [.mov .rax (.mem (hdr Crt.sLink))])) t _
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.rdx] (Q := fun u => u.mem = t.mem.writeW (off (off B o) (8 * iXp)) v) (by
+    xrun [State.ea, hdr, Crt.ws, hg.rdi, hdrOff, hax, hO, hv', hg.scr.st (d := 8 * iXp) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun t₁ ⟨hm₁, k₁⟩ => ?_
+  obtain ⟨h₁, hw₁, ho₁⟩ := h.store (by decide) (by decide) hm₁ (k₁.mono (by decide))
+  have hg₁ := h₁.1.sub.good
+  refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t₁.mem ∧ u.gpr .rax = B) (by
+    xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (d := 8 * Crt.sLink) (hdr_lt_slot _ 8 (by decide)),
+      h₁.1.sub.link]) rfl)
+    fun u ⟨⟨hm, hax'⟩, ku⟩ => ?_
+  obtain ⟨hc₁, hin₁, hf₁, hb₁, k₁'⟩ := h₁
+  refine ⟨⟨hc₁.of_inner (fun x _ => by rw [hm]) ku.2.2 (ku.gpr (by decide)),
+      by intro x hx; rw [hm]; exact hin₁ x hx, fun x hx => by rw [hm]; exact hf₁ x hx,
+      fun j hj => by rw [hm]; exact hb₁ j hj, (k₁'.trans ku).mono (by decide)⟩, hax', by rw [hm, hw₁],
+    fun j hj hne => by rw [hm]; exact ho₁ j hj hne⟩
+
+theorem head4_ok {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} {v : BitVec 64}
+    (hv : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = v)
+    (h : HI B Z o w mi P s t) (hax : t.gpr .rax = B) :
+    WP isa (.block headA4) t fun u => HI B Z o w mi P s u ∧ word u.mem (off B o) (8 * iXl) = v ∧
+      (∀ k < 32, k ≠ iXl → word u.mem (off B o) (8 * k) = word t.mem (off B o) (8 * k)) := by
+  have hc := h.1
+  have hg := hc.sub.good
+  have hlo := hc.sub.lo
+  have hhi := hc.sub.hi
+  have hO : InRegions (t.rd ++ t.wr) (off B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl)) 8 := hc.sub.scr.ld (by
+    have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.X86_64.Domain.sXl < 32 by decide); omega)
+  have hv' : word t.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = v := (h.2.2.2.1 _ (by decide)).trans hv
+  refine WP.mono (WP.keep [.rdx] (Q := fun u => u.mem = t.mem.writeW (off (off B o) (8 * iXl)) v) (by
+    xrun [State.ea, hdr, Crt.ws, hg.rdi, hdrOff, hax, hO, hv', hg.scr.st (d := 8 * iXl) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun u ⟨hm, k⟩ => ?_
+  obtain ⟨h₁, hw₁, ho₁⟩ := h.store (by decide) (by decide) hm (k.mono (by decide))
+  exact ⟨h₁, hw₁, ho₁⟩
+
 /-- The comb's pointers and counts into the inner header: `iCtx`, `iRows`,
 `iI := rows`, `iXp` and `iXl`. -/
 theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
@@ -922,56 +1057,19 @@ theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : N
       word t.mem (off B o) (8 * iI) = BitVec.ofNat 64 rows ∧ word t.mem (off B o) (8 * iXp) = xp ∧
       word t.mem (off B o) (8 * iXl) = BitVec.ofNat 64 L ∧ Frm (off B o) [(8 * 17, 8 * 15)] s.mem t.mem ∧
       InScr B Z s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
-  have hlo := hc.sub.lo
-  have hhi := hc.sub.hi
-  have hn := hc.sub.scr.nowrap
-  rw [List.append_assoc]
-  change WP isa (.block (([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx] ++
-    ([.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx] ++ [.store (hdr iI) .rdx])) ++ _)) s _
-  rw [WP.block_append_iff, WP.block_append_iff]
-  have hg := hc.sub.good
-  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.mem = s.mem.writeW (off (off B o) (8 * iCtx)) cp ∧
-      t.gpr .rdx = cp) (by
-    xrun [State.ea, Crt.stk, hdr, hg.rdi, hdrOff, hsp, hCtx, hg.scr.st (d := 8 * iCtx) (hdr_lt_slot _ 8 (by decide))]) rfl)
-    fun s₁ ⟨⟨hm₁, hd₁⟩, k₁⟩ => ?_
-  obtain ⟨hc₁, hf₁, hw₁, ho₁, hin₁, hb₁⟩ := hc.store (by decide) (by decide) hm₁ k₁.2.2 (k₁.gpr (by decide))
+  rw [head_eq, WP.block_append_iff]
+  refine WP.mono (head1_ok hc hsp hCtx) fun t₁ ⟨h₁, hd₁⟩ => ?_
   rw [WP.block_append_iff]
-  have hg₁ := hc₁.sub.good
-  have hr₁ : word s₁.mem cp 16 = BitVec.ofNat 64 rows := by rw [hreg.word hin₁ (by omega)]; exact hrows
-  have hrd₁ : InRegions (s₁.rd ++ s₁.wr) (off cp 16) 8 := by rw [k₁.2.1, k₁.2.2]; exact hreg.rd 2 (by omega)
-  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.mem = s₁.mem.writeW (off (off B o) (8 * iRows)) (BitVec.ofNat 64 rows) ∧
-      t.gpr .rdx = BitVec.ofNat 64 rows) (by
-    xrun [State.ea, hdr, at_, hg₁.rdi, hdrOff, hd₁, atOff', hrd₁, hr₁, hg₁.scr.st (d := 8 * iRows) (hdr_lt_slot _ 8 (by decide))]) rfl)
-    fun s₂ ⟨⟨hm₂, hd₂⟩, k₂⟩ => ?_
-  obtain ⟨hc₂, hf₂, hw₂, ho₂, hin₂, hb₂⟩ := hc₁.store (by decide) (by decide) hm₂ k₂.2.2 (k₂.gpr (by decide))
-  have hg₂ := hc₂.sub.good
-  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s₂.mem.writeW (off (off B o) (8 * iI)) (BitVec.ofNat 64 rows)) (by
-    xrun [State.ea, hdr, hg₂.rdi, hdrOff, hd₂, hg₂.scr.st (d := 8 * iI) (hdr_lt_slot _ 8 (by decide))]) rfl)
-    fun s₃ ⟨hm₃, k₃⟩ => ?_
-  obtain ⟨hc₃, hf₃, hw₃, ho₃, hin₃, hb₃⟩ := hc₂.store (by decide) (by decide) hm₃ k₃.2.2 (k₃.gpr (by decide))
+  refine WP.mono (head2_ok hc hreg hrows h₁ hd₁) fun t₂ ⟨h₂, hax₂, hC, hR, hI⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (fromOuter_ok hc₃ (by decide) (by decide) (v := xp) (by
-    rw [hb₃ _ (by decide), hb₂ _ (by decide), hb₁ _ (by decide), hX])) fun s₄ ⟨hm₄, _, k₄⟩ => ?_
-  obtain ⟨hc₄, hf₄, hw₄, ho₄, hin₄, hb₄⟩ := hc₃.store (by decide) (by decide) hm₄ k₄.2.2 (k₄.gpr (by decide))
-  refine WP.mono (fromOuter_ok hc₄ (by decide) (by decide) (v := BitVec.ofNat 64 L) (by
-    rw [hb₄ _ (by decide), hb₃ _ (by decide), hb₂ _ (by decide), hb₁ _ (by decide), hXl])) fun t ⟨hm₅, _, k₅⟩ => ?_
-  obtain ⟨hc₅, hf₅, hw₅, ho₅, hin₅, hb₅⟩ := hc₄.store (by decide) (by decide) hm₅ k₅.2.2 (k₅.gpr (by decide))
-  refine ⟨hc₅, ?_, ?_, ?_, ?_, hw₅, ?_, hin₁.trans (hin₂.trans (hin₃.trans (hin₄.trans hin₅))),
-    ((k₁.trans k₂).trans (k₃.trans (k₄.trans k₅))).mono (by decide)⟩
-  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide),
-      ho₂ _ (by decide) (by decide), hw₁]
-  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide), hw₂]
-  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), hw₃]
-  · rw [ho₅ _ (by decide) (by decide), hw₄]
-  · have cov : ∀ {i : Nat}, 17 ≤ i → i < 32 → ∀ r ∈ [(8 * i, 8)], ∃ r' ∈ [(8 * 17, 8 * 15)],
-        r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := fun h1 h2 r hr => ⟨(8 * 17, 8 * 15), by simp, by
-      rw [List.mem_singleton.mp hr]; simp only; omega, by rw [List.mem_singleton.mp hr]; simp only; omega⟩
-    have f₁ := Frm.widen hf₁ (cov (i := iCtx) (by decide) (by decide))
-    have f₂ := Frm.widen hf₂ (cov (i := iRows) (by decide) (by decide))
-    have f₃ := Frm.widen hf₃ (cov (i := iI) (by decide) (by decide))
-    have f₄ := Frm.widen hf₄ (cov (i := iXp) (by decide) (by decide))
-    have f₅ := Frm.widen hf₅ (cov (i := iXl) (by decide) (by decide))
-    exact (((f₁.trans f₂).trans f₃).trans f₄).trans f₅
+  refine WP.mono (head3_ok hX h₂ hax₂) fun t₃ ⟨h₃, hax₃, hXp, ho₃⟩ => ?_
+  refine WP.mono (head4_ok hXl h₃ hax₃) fun t ⟨h₄, hXl', ho₄⟩ => ?_
+  obtain ⟨hc₄, hin₄, hf₄, _, k₄⟩ := h₄
+  refine ⟨hc₄, ?_, ?_, ?_, ?_, hXl', hf₄, hin₄, k₄⟩
+  · rw [ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide), hC]
+  · rw [ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide), hR]
+  · rw [ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide), hI]
+  · rw [ho₄ _ (by decide) (by decide), hXp]
 
 /-- Montgomery multiplication in the inner workspace for `P`. -/
 theorem mm_mc (Mo : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
