@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LE
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 meta import VerifiedGarbage.Spec.Ecdsa.P521
 
 /-!
@@ -15,9 +14,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.P521
 P-521 as the proof's curve (`p521C`): its signature with a given `k`
 (`vg_ecdsa_p521_sign_k`, proven correct given the group law and constant
 time), the facts of its sizes with each hash function's (`p521_sizes`), the
-taint checks of the blocks that depend on them (`p521_cblk`), and
-`vg_ecdsa_p521_sign`, with the tables of `vs`, verified against
-`TableInstance.signContract` (`p521_verified`).
+taint checks of the blocks that depend on them (`p521_cblk`). `Verified.lean`
+verifies `vg_ecdsa_p521_sign` with it.
 -/
 
 @[expose] public section
@@ -53,14 +51,5 @@ theorem p521_cblk : ∀ i ∈ hidx, CBlks (cfgS Spec.Ecdsa.P521.inst i) := by
 
 /-- P-521, with its group law `hL`. -/
 def p521C (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve := ⟨p521Core hL, 0, p521_sizes, p521_cblk⟩
-
-theorem p521T (hL : Weierstrass.Law Spec.P521.curve) : CurveT (p521C hL) Spec.Ecdsa.Rfc6979.Curves.p521 :=
-  ⟨rfl, by decide, by decide⟩
-
-/-- `vg_ecdsa_p521_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
-theorem p521_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HashTable.PPC64LE.TVar) (hO : OK vs) :
-    Verified PPC64LE.target (signCode (p521C hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 vs) :=
-  signT_verified (p521T hL) rfl hO (by decide)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

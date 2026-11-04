@@ -1,5 +1,5 @@
 //! ECDSA over brainpoolP384r1: deterministic signatures with HMAC-SHA-384
-//! (`vg_ecdsa_brainpoolp384r1_sha384_sign`), or, on x86-64, with HMAC over
+//! (`vg_ecdsa_brainpoolp384r1_sha384_sign`), or, on x86-64 and PPC64LE, with HMAC over
 //! any hash function with HMAC, taken as a table
 //! (`vg_ecdsa_brainpoolp384r1_sign`, [`super::x86_64`]), public keys
 //! (`vg_ec_brainpoolp384r1_public_key`), and verification
@@ -17,13 +17,15 @@
 
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "powerpc64")]
+use super::powerpc64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{BrainpoolP384r1, Error, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_sha3;
@@ -31,9 +33,9 @@ use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_s
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::brainpoolp384r1::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP384r1> {
@@ -73,7 +75,7 @@ fn verify_e(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), Erro
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl sealed::Functions<BrainpoolP384r1> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
@@ -107,10 +109,10 @@ impl sealed::Functions<BrainpoolP384r1> for Sha384 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl SignatureHash<BrainpoolP384r1> for Sha384 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 impl<H: TableHash> sealed::Functions<BrainpoolP384r1> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
         let f = detected();
@@ -129,5 +131,5 @@ impl<H: TableHash> sealed::Functions<BrainpoolP384r1> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 impl<H: TableHash> SignatureHash<BrainpoolP384r1> for H {}

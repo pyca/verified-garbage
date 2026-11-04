@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 meta import VerifiedGarbage.Spec.Ecdsa.P256
 
 /-!
@@ -15,9 +14,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.P256
 P-256 as the proof's curve (`p256C`): its signature with a given `k`
 (`vg_ecdsa_p256_sign_k`, proven correct given the group law and constant
 time), the facts of its sizes with each hash function's (`p256_sizes`), the
-taint checks of the blocks that depend on them (`p256_cblk`), and
-`vg_ecdsa_p256_sign`, with the tables of `vs`, verified against
-`TableInstance.signContract` (`p256_verified`).
+taint checks of the blocks that depend on them (`p256_cblk`). `Verified.lean`
+verifies `vg_ecdsa_p256_sign` with it.
 -/
 
 @[expose] public section
@@ -53,14 +51,5 @@ theorem p256_cblk : ∀ i ∈ hidx, CBlks (cfgS Spec.Ecdsa.P256.inst i) := by
 
 /-- P-256, with its group law `hL`. -/
 def p256C (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve := ⟨p256Core hL, 8, p256_sizes, p256_cblk⟩
-
-theorem p256T (hL : Weierstrass.Law Spec.P256.curve) : CurveT (p256C hL) Spec.Ecdsa.Rfc6979.Curves.p256 :=
-  ⟨rfl, by decide, by decide⟩
-
-/-- `vg_ecdsa_p256_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
-theorem p256_verified (hL : Weierstrass.Law Spec.P256.curve) (vs : List Proof.HashTable.PPC64LE.TVar) (hO : OK vs) :
-    Verified PPC64LE.target (signCode (p256C hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p256 vs) :=
-  signT_verified (p256T hL) rfl hO (by decide)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

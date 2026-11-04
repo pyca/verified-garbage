@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LE
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Curve
 meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 
 /-!
@@ -15,9 +14,8 @@ meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 secp256k1 as the proof's curve (`secp256k1C`): its signature with a given `k`
 (`vg_ecdsa_secp256k1_sign_k`, proven correct given the group law and constant
 time), the facts of its sizes with each hash function's (`secp256k1_sizes`), the
-taint checks of the blocks that depend on them (`secp256k1_cblk`), and
-`vg_ecdsa_secp256k1_sign`, with the tables of `vs`, verified against
-`TableInstance.signContract` (`secp256k1_verified`).
+taint checks of the blocks that depend on them (`secp256k1_cblk`). `Verified.lean`
+verifies `vg_ecdsa_secp256k1_sign` with it.
 -/
 
 @[expose] public section
@@ -53,14 +51,5 @@ theorem secp256k1_cblk : ∀ i ∈ hidx, CBlks (cfgS Spec.Ecdsa.Secp256k1.inst i
 
 /-- secp256k1, with its group law `hL`. -/
 def secp256k1C (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve := ⟨secp256k1Core hL, 8, secp256k1_sizes, secp256k1_cblk⟩
-
-theorem secp256k1T (hL : Weierstrass.Law Spec.Secp256k1.curve) : CurveT (secp256k1C hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1 :=
-  ⟨rfl, by decide, by decide⟩
-
-/-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
-theorem secp256k1_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (vs : List Proof.HashTable.PPC64LE.TVar) (hO : OK vs) :
-    Verified PPC64LE.target (signCode (secp256k1C hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 vs) :=
-  signT_verified (secp256k1T hL) rfl hO (by decide)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

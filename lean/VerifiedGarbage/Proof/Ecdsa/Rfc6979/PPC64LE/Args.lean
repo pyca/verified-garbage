@@ -46,7 +46,7 @@ theorem scrBase_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
 
 /-- The state at `scratch + o` in `r3`, after `scrBase`. -/
 theorem initArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {o : Nat} (ho : o < 2 ^ 15) :
-    WP isa (.block (Cfg.scrBase ++ [.addi .r3 .r12 o])) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧
+    WP isa (.block (Cfg.scrBase ++ ([.addi .r3 .r12 o] : List Instr))) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧
       Kp argRegs t t' ∧ t'.gpr .r3 = L.scr + BitVec.ofNat 64 o := by
   rw [WP.block_append_iff]
   refine WP.mono (scrBase_ok hL hc) fun t₁ ⟨hc₁, m₁, k₁, b₁, s₁⟩ => ?_

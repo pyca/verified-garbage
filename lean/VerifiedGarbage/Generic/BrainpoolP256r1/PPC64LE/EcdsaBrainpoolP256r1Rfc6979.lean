@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP256r1
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Deterministic ECDSA (RFC 6979) over brainpoolP256r1 on PPC64LE, with the hash function as a table -/

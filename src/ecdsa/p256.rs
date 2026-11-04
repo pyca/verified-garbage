@@ -1,5 +1,5 @@
 //! ECDSA over P-256: deterministic signatures with HMAC-SHA-256 or
-//! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`), or, on x86-64, with HMAC over
+//! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`), or, on x86-64 and PPC64LE, with HMAC over
 //! any hash function with HMAC, taken as a table (`vg_ecdsa_p256_sign`,
 //! [`super::x86_64`]), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`), and their variants on CPUs with the
@@ -17,6 +17,8 @@
 
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "powerpc64")]
+use super::powerpc64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "arm")]
@@ -25,7 +27,7 @@ use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_umaal;
 use crate::arch::ecdsa_p256::{
     vg_ecdsa_p256_sign, vg_ecdsa_p256_sign_adx, vg_ecdsa_p256_verify_adx,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
@@ -33,7 +35,7 @@ use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
@@ -41,11 +43,11 @@ use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::p256::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::hashes::sha256::{Sha256, Sha256Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P256> {
@@ -61,7 +63,7 @@ impl SigningKey<P256> {
 }
 
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
@@ -70,7 +72,7 @@ type SignFn<const N: usize> =
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 unsafe fn sign_with<const N: usize>(
     sign: SignFn<N>,
     d: &[u8; 32],
@@ -124,7 +126,7 @@ fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), E
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl sealed::Functions<P256> for Sha256 {
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let f = detected();
@@ -147,10 +149,10 @@ impl sealed::Functions<P256> for Sha256 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl SignatureHash<P256> for Sha256 {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl sealed::Functions<P256> for Sha384 {
     fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
         let f = detected();
@@ -174,15 +176,16 @@ impl sealed::Functions<P256> for Sha384 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64")))]
 impl SignatureHash<P256> for Sha384 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 impl<H: TableHash> sealed::Functions<P256> for H {
     fn sign(d: &[u8; 32], digest: &H::Output) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign: TableSignFn<32, 64> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p256_sign,
+            #[cfg(target_arch = "x86_64")]
             Mul::Adx => vg_ecdsa_p256_sign_adx,
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
@@ -197,7 +200,7 @@ impl<H: TableHash> sealed::Functions<P256> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 impl<H: TableHash> SignatureHash<P256> for H {}
 
 #[cfg(all(test, target_arch = "x86_64"))]
