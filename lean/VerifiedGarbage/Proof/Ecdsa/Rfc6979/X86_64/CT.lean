@@ -18,6 +18,10 @@ import VerifiedGarbage.Proof.Framework.ICall
 meta import VerifiedGarbage.Proof.Framework.ICall
 import VerifiedGarbage.Proof.Framework.KernelList
 meta import VerifiedGarbage.Proof.Framework.KernelList
+import VerifiedGarbage.Proof.Framework.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 
@@ -339,5 +343,170 @@ theorem finCall_piece {Φ : Pr P} {o cnt : Nat} (ho : o + 192 ≤ 384) (hcnt : c
   (Piece.blkS (Ψ := FA P o cnt) (finArgs_taint o cnt) fun _ _ _ _ hL _ hc _ =>
     WP.mono (finArgs_ok hL hc ho hcnt) fun _ ⟨c, _, d, s, x, k⟩ => ⟨c, d, s, x, k⟩).seq
     (tcall_piece (by decide) tfn_fin r11_fa (fin_piece ho hcnt))
+
+/-! ## Blocks from `scratch`'s pointer -/
+
+/-- `scratch` in `rdi`. -/
+def ScrIn (P : RfcHash) : Pr P := fun L _ u => u.gpr .rdi = L.scr
+
+theorem scrPtr_piece {Φ : Pr P} : Piece P Φ (.block Cfg.scrPtr) (ScrIn P) :=
+  Piece.blkS ⟨_, by taint_decide⟩ fun _ _ _ _ hL _ hc _ => WP.mono (scrPtr_ok hL hc) fun _ h => ⟨h.1, h.2.2⟩
+
+theorem scrRegs {Φ : Pr P} (hΦ : ∀ L m₀ t, Φ L m₀ t → t.gpr .rdi = L.scr) :
+    ∀ (L : Lay P.I.hashLen) (t₁ t₂ : State) g₁ g₂ m₁ m₂, Ctx L g₁ m₁ t₁ → Ctx L g₂ m₂ t₂ → Φ L m₁ t₁ →
+      Φ L m₂ t₂ → ∀ r ∈ [Reg.rsp, .rdi], t₁.gpr r = t₂.gpr r := by
+  intro L _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact rsp_two c₁ c₂
+  · exact (hΦ _ _ _ f₁).trans (hΦ _ _ _ f₂).symm
+
+/-- A block that loads `scratch` into `rdi`, then addresses memory only from
+`rsp` and `rdi`. -/
+theorem Piece.scrBlk {is : List Instr} {Φ Ψ : Pr P} (ht : TaintOk [.rsp, .rdi] is)
+    (hw : ∀ (L : Lay P.I.hashLen) g m₀ (t : State), L.Ok → CoreOk P L → Ctx L g m₀ t → Φ L m₀ t →
+      WP isa (.block (Cfg.scrPtr ++ is)) t fun t' => Ctx L g m₀ t' ∧ Ψ L m₀ t') :
+    Piece P Φ (.block (Cfg.scrPtr ++ is)) Ψ :=
+  Piece.of (RelCT.block_append (scrPtr_piece.ct.seq (two_blk [.rsp, .rdi] (scrRegs fun _ _ _ h => h) ht))) hw
+
+/-! ## HMAC -/
+
+/-- The blocks of the curve and the hash function's sizes. -/
+theorem rT (P : RfcHash) : RfcT (cfgS P.R.E P.R.hHigh P.R.sh P.H.D P.H.P.B) := P.R.blkT _ _ P.hDB
+
+/-- `K₀ ⊕ c` at `scratch + sPad`. -/
+theorem padBlk_piece {Φ : Pr P} (c : Byte) : Piece P Φ (.block ((cfgOf P).padBlk (c ++ c ++ c ++ c))) (Tt P) := by
+  have e : (cfgOf P).padBlk (c ++ c ++ c ++ c) = Cfg.scrPtr ++ (([.mov32 .rcx (.imm (c ++ c ++ c ++ c))] : List Instr) ++
+      (List.range ((cfgOf P).B / 4)).flatMap (cfgOf P).padW) := by
+    simp only [Cfg.padBlk, List.append_assoc]
+  rw [e]
+  refine Piece.scrBlk (taintOk_erase (by exact (rT P).pad) (by simp only [List.map_append]; rfl))
+    fun _ _ _ _ hL _ hc _ => ?_
+  rw [← e]
+  exact WP.mono (padBlk_ok hL hc c) fun _ h => ⟨h.1, trivial⟩
+
+theorem updScr_taint (a : Nat) : TaintOk [.rsp] (Cfg.updArgs 0 0 (Cfg.scr .rdx a) 0) :=
+  taintOk_erase (is₀ := Cfg.updArgs 0 0 (Cfg.scr .rdx 0) 0) ⟨_, by taint_decide⟩
+    (by simp only [Cfg.updArgs, Cfg.scr, List.map_append]; rfl)
+
+theorem updFr_taint (a : Nat) : TaintOk [.rsp] (Cfg.updArgs 0 0 (Cfg.fr .rdx a) 0) :=
+  taintOk_erase (is₀ := Cfg.updArgs 0 0 (Cfg.fr .rdx 0) 0) ⟨_, by taint_decide⟩
+    (by simp only [Cfg.updArgs, Cfg.scr, Cfg.fr, List.map_append]; rfl)
+
+/-- Data at `scratch + a`. -/
+theorem scrDA (a : Nat) (ha : a < 2 ^ 31) : DataA P (Cfg.scr .rdx a) fun L => L.scr + BitVec.ofNat 64 a :=
+  fun _ _ _ _ hL hu => scr_ok hL hu (d := .rdx) (by decide) ha
+
+/-- Data in the frame at `o`. -/
+theorem frDA (o : Nat) (ho : o < 2 ^ 31) : DataA P (Cfg.fr .rdx o) fun L => L.B + BitVec.ofNat 64 (24 + o) :=
+  fun _ _ _ _ hL hu => fr_ok hL hu (d := .rdx) (by decide) ho
+
+/-- `hinit`: each state set by `init` and updated with its padded key. -/
+theorem hinit_piece {Φ : Pr P} : Piece P Φ (cfgOf P).hinit (Tt P) := by
+  unfold Cfg.hinit
+  rw [ipad32_eq, opad32_eq]
+  exact (initCall_piece (by decide)).seq ((initCall_piece (by decide)).seq ((padBlk_piece _).seq
+    ((updCall_piece (by decide) (scrDA 1792 (by decide)) (fun _ hL => padData hL (by decide)) (updScr_taint _)
+      (by decide) (by show P.H.P.B < 2 ^ 32; nums)).seq ((padBlk_piece _).seq
+    (updCall_piece (by decide) (scrDA 1792 (by decide)) (fun _ hL => padData hL (by decide)) (updScr_taint _)
+      (by decide) (by show P.H.P.B < 2 ^ 32; nums))))))
+
+/-- `hupd`: the inner state updated with the data. -/
+theorem hupd_piece {Φ : Pr P} {dataA : List Instr} {da : Lay P.I.hashLen → Addr} {len : Nat}
+    (hdA : DataA P dataA da) (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len)
+    (ht : TaintOk [.rsp] (Cfg.updArgs 0 0 dataA 0)) (hlen : len ≤ 256) :
+    Piece P Φ ((cfgOf P).hupd dataA len) (Tt P) := by
+  unfold Cfg.hupd
+  simp only [show (cfgOf P).B = P.H.P.B from rfl, sInner]
+  exact updCall_piece (by decide) hdA (fun L hL => (hd L hL).upd hL) ht (by nums) (by omega)
+
+theorem hfinCopy_taint (dst : Nat) : TaintOk [.rsp, .rdi] (Cfg.copyBytes (cfgOf P).D .rdi sTmp .rsp dst) :=
+  taintOk_erase (is₀ := Cfg.copyBytes (cfgOf P).D .rdi sTmp .rsp 0) (by exact (rT P).hfinCopy)
+    (by simp only [Cfg.copyBytes, Cfg.copyN, List.map_append, List.map_flatMap]; split <;> rfl)
+
+/-- The MAC's copy to the frame. -/
+theorem hcopy_piece {Φ : Pr P} {dst : Nat} (hdst : dst + P.H.D ≤ 168) :
+    Piece P Φ (.block (Cfg.scrPtr ++ Cfg.copyBytes (cfgOf P).D .rdi sTmp .rsp dst)) (Tt P) :=
+  Piece.scrBlk (hfinCopy_taint dst) fun L _ _ _ hL _ hc _ => by
+    rw [WP.block_append_iff]
+    refine WP.mono (scrPtr_ok hL hc) fun w₄ ⟨hc₄, _, hdi₄⟩ => ?_
+    have hsep : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 1920, P.H.D⟩
+        ⟨L.B + BitVec.ofNat 64 24 + BitVec.ofNat 64 dst, P.H.D⟩ := by
+      rw [Offset.add_add]; exact (hL.stk_scr (by nums) (by nums)).symm
+    refine WP.mono_syms (copyBytes_ok (src := .rdi) (dst := .rsp) (S := L.scr) (D := L.B + BitVec.ofNat 64 24)
+      (so := 1920) (d := dst) (Q := P.H.D) (by decide) (by decide) hsep (by nums) (by nums) (by omega) hdi₄ hc₄.rsp
+      (fun j hj => hc₄.inScr (by nums)) (fun j hj => by
+        rw [Offset.add_add]; exact hc₄.inFrW (by omega) (by omega)))
+      fun w₅ ⟨hrd₅, hwr₅, hg₅, hf₅, _⟩ hsy₅ => ?_
+    rw [Offset.add_add] at hf₅
+    exact ⟨hc₄.keep hL hrd₅ hwr₅ (hg₅ _ (by decide)) (fun r hr _ => hg₅ r (ne_cs hr (by decide))) hf₅
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)) hsy₅, trivial⟩
+
+/-- `hfin`: the MAC, for `len` bytes of data, to the frame at `dst`. -/
+theorem hfin_piece {Φ : Pr P} {len dst : Nat} (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
+    Piece P Φ ((cfgOf P).hfin len dst) (Tt P) := by
+  unfold Cfg.hfin
+  simp only [show (cfgOf P).B = P.H.P.B from rfl, show (cfgOf P).D = P.H.D from rfl, sInner, sOuter]
+  exact (finCall_piece (by decide) (by nums)).seq ((updCall_piece (by decide) (scrDA 1920 (by decide))
+    (fun L hL => ⟨⟨L.SCR, by simp, within_off _ (by nums)⟩, Offset.disjoint _ (by nums) (by nums) (by nums),
+      Offset.disjoint _ (by nums) (by nums) (by nums), hL.low_scr (by nums)⟩) (updScr_taint _) (by nums)
+      (by nums)).seq ((finCall_piece (by decide) (by nums)).seq (hcopy_piece hdst)))
+
+theorem copyStates_taint (b : Bool) : TaintOk [.rsp, .rdi] (Cfg.copyStates b) := by
+  cases b
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
+
+/-- HMAC's states saved, or restored. -/
+theorem copyStates_piece {Φ : Pr P} (b : Bool) : Piece P Φ (.block (Cfg.scrPtr ++ Cfg.copyStates b)) (Tt P) :=
+  Piece.scrBlk (copyStates_taint b) fun L _ _ _ hL _ hc _ => by
+    rw [WP.block_append_iff]
+    refine WP.mono (scrPtr_ok hL hc) fun u ⟨hcu, _, hdi⟩ => ?_
+    cases b
+    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 3072) (d := 0) (K := 48)
+        (by decide) (fun j hj => hcu.inScr (by omega)) (Offset.disjoint _ (by decide) (by decide) (by decide)))
+        fun _ h => ⟨h.1, trivial⟩
+    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 0) (d := 3072) (K := 48)
+        (by decide) (fun j hj => hcu.inScr (by omega)) (Offset.disjoint _ (by decide) (by decide) (by decide)))
+        fun _ h => ⟨h.1, trivial⟩
+
+section Mac
+
+variable {Φ : Pr P} {dataA : List Instr} {da : Lay P.I.hashLen → Addr} {len dst : Nat}
+  (hdA : DataA P dataA da) (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len)
+  (ht : TaintOk [.rsp] (Cfg.updArgs 0 0 dataA 0)) (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168)
+include hdA hd ht hlen hdst
+
+theorem hmac_piece : Piece P Φ ((cfgOf P).hmac dataA len dst) (Tt P) :=
+  hinit_piece.seq ((hupd_piece hdA hd ht hlen).seq (hfin_piece hlen hdst))
+
+theorem hmacS_piece : Piece P Φ ((cfgOf P).hmacS dataA len dst) (Tt P) :=
+  hinit_piece.seq ((copyStates_piece true).seq ((hupd_piece hdA hd ht hlen).seq (hfin_piece hlen hdst)))
+
+theorem hmacR_piece : Piece P Φ ((cfgOf P).hmacR dataA len dst) (Tt P) :=
+  (copyStates_piece false).seq ((hupd_piece hdA hd ht hlen).seq (hfin_piece hlen hdst))
+
+end Mac
+
+theorem vData (L : Lay P.I.hashLen) : DataOk L (L.B + BitVec.ofNat 64 (24 + 64)) P.H.D :=
+  .inl ⟨88, rfl, by omega, by nums⟩
+
+theorem hmacVS_piece {Φ : Pr P} : Piece P Φ (cfgOf P).hmacVS (Tt P) :=
+  hmacS_piece (frDA 64 (by decide)) (fun L _ => vData L) (updFr_taint _) (by show P.H.D ≤ 256; nums)
+    (by show 64 + P.H.D ≤ 168; nums)
+
+theorem hmacVR_piece {Φ : Pr P} : Piece P Φ (cfgOf P).hmacVR (Tt P) :=
+  hmacR_piece (frDA 64 (by decide)) (fun L _ => vData L) (updFr_taint _) (by show P.H.D ≤ 256; nums)
+    (by show 64 + P.H.D ≤ 168; nums)
+
+/-- `K = HMAC_K(m)`, for the message of `len` bytes at `scratch + 2256`, from
+the saved states if `rs`. -/
+theorem hmacK_piece {Φ : Pr P} {len : Nat} (hlen : len ≤ 256) (rs : Bool) :
+    Piece P Φ ((if rs then (cfgOf P).hmacR else (cfgOf P).hmac) (Cfg.scr .rdx sMsg) len fK) (Tt P) := by
+  cases rs
+  · exact hmac_piece (scrDA 2256 (by decide)) (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) (updScr_taint _)
+      hlen (by show 0 + P.H.D ≤ 168; nums)
+  · exact hmacR_piece (scrDA 2256 (by decide)) (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) (updScr_taint _)
+      hlen (by show 0 + P.H.D ≤ 168; nums)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
