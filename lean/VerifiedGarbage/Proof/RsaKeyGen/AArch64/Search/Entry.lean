@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: it builds in parallel with `Classify` and `Loop`, which `Correct` also imports
+
 /-! # The RSA prime search's entry (AArch64)
 
 In the search's frame, the stack arguments are loaded, the caller's `x19`

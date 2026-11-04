@@ -215,7 +215,10 @@ struct Random<F> {
 }
 
 impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
-    #[cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), allow(unused_variables))]
+    #[cfg_attr(
+        any(target_arch = "x86_64", target_arch = "aarch64"),
+        allow(unused_variables)
+    )]
     fn new(len: usize, fill: F) -> Self {
         Self {
             octets: Vec::new(),

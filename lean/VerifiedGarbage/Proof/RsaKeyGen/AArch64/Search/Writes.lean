@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: it builds in parallel with `Call`, which `Classify` also imports
+
 /-! # The RSA prime search's writes of its own words, and zeros at `out` (AArch64)
 
 The terminal statuses and the exit for an exhausted search

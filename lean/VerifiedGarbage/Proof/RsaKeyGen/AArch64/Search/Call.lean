@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: it builds in parallel with `Writes`, which `Classify` also imports
+
 /-! # One candidate of the RSA prime search (AArch64)
 
 In its frame, the search passes `vg_rsa_keygen_candidate` the rest of the
