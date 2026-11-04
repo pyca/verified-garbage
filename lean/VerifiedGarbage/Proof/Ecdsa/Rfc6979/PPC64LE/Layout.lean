@@ -131,6 +131,9 @@ def HOk : Prop := L.q ≤ 64 ∧ (L.ho = 160 ∧ L.q ≤ 48 ∨ L.ho = 256 ∧ L
 frame. -/
 def HFar : Prop := 160 ≤ L.ho ∧ L.ho + L.q ≤ 304 + L.e
 
+/-- Where `h` is, as the messages need it: `Q ≤ 72` bytes, in the frame. -/
+def HOk' : Prop := L.q ≤ 72 ∧ 64 ≤ L.ho ∧ L.ho + L.q ≤ 256 + L.e
+
 theorem e_le : L.e ≤ 272 := by
   simp only [e, Impl.Ecdsa.Rfc6979.PPC64LE.extra]; split <;> [omega; split <;> omega]
 
