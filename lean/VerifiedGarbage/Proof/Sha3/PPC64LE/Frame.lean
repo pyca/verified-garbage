@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # The SHA-3 sponge on PPC64LE, with its working space on the stack
 
-`absorb`, `pad` and `squeeze` run their code, proved with the working space
+`pad` and `squeeze` run their code, proved with the working space
 as an argument (`Stream/Verified.lean`), in a frame of 672 bytes that
 allocates it (`Verified.stackScratch`): the frame's 32-byte header and the
 640 bytes of working space. Below it, their own frame saving the link
@@ -21,23 +21,6 @@ register takes 48 bytes more.
 namespace VG.Proof.Sha3.PPC64LE.Frame
 
 open VG VG.PPC64LE
-
-/-- A state satisfying `vg_keccak_absorb`'s precondition, without the
-working space. -/
-def absorbSat : State := { Stream.absorbSat with wr := [⟨0x1000, 200⟩] }
-
-theorem absorbSat_pre : ∃ s, (Spec.Sha3.absorbContract PPC64LE.abi (48 + 672)).pre s := by
-  implies_sat [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
-    Spec.Sha3.absorbPost, Spec.Sha3.rates, PPC64LE.abi, PPC64LE.argRegs]
-    [absorbSat, Stream.absorbSat] using absorbSat
-
-theorem absorb_framed : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch 672 .r8 Impl.Sha3.PPC64LE.Stream.absorb)
-    (Spec.Sha3.absorbContract PPC64LE.abi (48 + 672)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
-    (pre := Spec.Sha3.absorbPre PPC64LE.abi.ptrBits) (post := Spec.Sha3.absorbPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 48) (bytes := 672) Stream.absorb_verified (by decide) (by decide)
-    (absorbPre_local _) (absorbPost_local _) absorbSat_pre
 
 /-- A state satisfying `vg_keccak_pad`'s precondition, without the working
 space. -/

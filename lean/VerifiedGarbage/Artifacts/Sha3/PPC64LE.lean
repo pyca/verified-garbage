@@ -11,10 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sha3.absorbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r8 Impl.Sha3.PPC64LE.Stream.absorb
-    stack := 48 + 672
-    verified := Proof.Sha3.PPC64LE.Frame.absorb_framed },
   Spec.Sha3.absorbScratchApi.artifact PPC64LE.target {
     code := Impl.Sha3.PPC64LE.Stream.absorb
     stack := 48

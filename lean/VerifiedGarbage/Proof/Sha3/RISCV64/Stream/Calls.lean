@@ -96,7 +96,7 @@ theorem absorb_call (h : AbsorbArgs s st dp rate pos len)
       (∀ msg, Spec.Sha3.Repr s.mem st rate msg → pos = msg.length % rate →
         Spec.Sha3.Repr s'.mem st rate (msg ++ bytesAt s.mem dp len)) →
       (s'.gpr .a0).toNat = (pos + len) % rate → Q s') :
-    WP isa (.call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb) s Q := by
+    WP isa (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb) s Q := by
   have hr := rate_lt h.hrate
   refine call1168 (k := Proof.Sha3.absorbRISCV64) absorb_verified'.1 absorb_sdepth
     (absorb_pre h) hc hw fun s' hrd hwr hsp hf hcs hpost => ?_

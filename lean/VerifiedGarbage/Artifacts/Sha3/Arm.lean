@@ -11,10 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha3.absorbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.Sha3.Arm.Stream.absorb
-    stack := 656
-    verified := Proof.Sha3.Arm.Frame.absorb_framed },
   Spec.Sha3.absorbScratchApi.artifact Arm.target {
     code := Impl.Sha3.Arm.Stream.absorb
     verified := Proof.Sha3.Arm.Shared.absorb },

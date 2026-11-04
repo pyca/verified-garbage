@@ -315,7 +315,7 @@ theorem absorbArgs_ok {s : State} (h : SEnv s₀ s) :
   · rw [sp, h.sp]; exact hp.b_seed
 
 theorem absorb_phase {s : State} (h : SEnv s₀ s) (hz : stateAt s.mem (S s₀) = Spec.Sha3.zero) :
-    WP isa (.seq (.block absorbSeedArgs) (.call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb)) s
+    WP isa (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb)) s
       fun s' => SEnv s₀ s' ∧ Repr s'.mem (S s₀) 168 (B s₀) ∧ (s'.gpr .a0).toNat = 34 := by
   refine WP.seq (WP.mono (absorbArgs_ok hp h) fun t ⟨ht, hm, ha⟩ => ?_)
   obtain ⟨hc, hw⟩ := call_covers hp ht (rd := [⟨SEED s₀, 34⟩]) (wr := [⟨S s₀, 200⟩])

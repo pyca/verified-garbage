@@ -25,7 +25,9 @@ constant time (by taint tracking, `taint_decide`), and a state satisfying
 each precondition, against the per-target contracts, then moved to the
 shared ones of `Spec/Sha3/Contract.lean` with the stack they use: their
 frame and the permutation's (608 bytes), or for `absorbWs`, which has no
-frame, the permutation's alone.
+frame, the permutation's alone. `absorb` has no shared contract: it is an internal
+function, which RISC-V's verified code (ML-KEM, ML-DSA, Ed448, the SHA-3
+pieces) calls by its per-target contract (`Calls.lean`).
 -/
 
 @[expose] public section
@@ -62,12 +64,6 @@ theorem absorb_verified' :
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
 
-theorem absorb_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorb (Spec.Sha3.absorbContract RISCV64.abi 1168) :=
-  absorb_verified'.of_implies (by
-    contract_implies [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
-      Spec.Sha3.absorbPost, Proof.Sha3.absorbRISCV64, RISCV64.abi, RISCV64.argRegs] [absorbSat]
-      using absorbSat)
 
 /-! ## `absorbWs` -/
 
