@@ -208,11 +208,18 @@ structure Rfc where
   hD : I.hashLen = c.D
   hnw : c.nw = kit.nw
   hQ : c.Q = kit.Q
-  /-- The signature reads the digest's `D` bytes if the scalars are longer
-  (`wide`), else their `Q` bytes, with their whole bytes as `k`. -/
-  hG : kit.G = if c.wide then c.D else kit.Q
+  /-- The signature reads `G` bytes of the digest: its `Q` bytes, the
+  scalars' whole bytes as `k`, unless the scalars are longer (`wide`); then
+  at least the hash's `D` bytes (after zeros), whose number is all their
+  leftmost bits. -/
+  hG : c.G = kit.G
+  hGw : c.wide = false → kit.G = kit.Q
+  hGD : c.wide = true → c.D ≤ kit.G
+  hG8 : 8 * kit.G ≤ Spec.Ecdsa.nBits kit.E.curve
+  hGQ : kit.G ≤ kit.Q
   hsh : c.wide = false → kit.sh = 0
-  hQD : kit.Q ≤ c.D + 8
+  hshc : c.sh = kit.sh
+  hD16 : 16 ≤ c.D
   hD64 : c.D ≤ 64
   hD4 : c.D % 4 = 0
   hS : w.H.S ≤ 192
@@ -323,7 +330,7 @@ structure Sz (P : Rfc) : Prop where
   B : P.c.B = 64 ∨ P.c.B = 128
   S : P.H.S = P.H.N + P.c.B
   S192 : P.H.S ≤ 192
-  D : P.Q ≤ P.c.D + 8 ∧ P.c.D ≤ 64
+  D : P.Q ≤ 72 ∧ P.c.D ≤ 64 ∧ 16 ≤ P.c.D
   /-- The scalars are longer than the hash's output exactly if `wide`. -/
   W : P.c.wide = false ↔ P.Q ≤ P.c.D
   Q : 24 ≤ P.Q ∧ P.Q ≤ 72 ∧ P.c.Q = P.Q ∧
@@ -347,18 +354,14 @@ theorem Rfc.nbits0 (P : Rfc) (hw : P.c.wide = false) : Spec.Ecdsa.nBits P.kit.E.
   omega
 
 /-- The digest's bytes the signature reads. -/
-theorem Rfc.G0 (P : Rfc) (hw : P.c.wide = false) : P.kit.G = P.kit.Q := by
-  rw [P.hG, hw]; rfl
-
-theorem Rfc.GW (P : Rfc) (hw : P.c.wide = true) : P.kit.G = P.c.D := by
-  rw [P.hG, hw]; rfl
+theorem Rfc.G0 (P : Rfc) (hw : P.c.wide = false) : P.kit.G = P.kit.Q := P.hGw hw
 
 theorem sizes (P : Rfc) : Sz P := by
   have hB := P.hH.hB64
   have := P.kit.nw9
   have := P.kit.Qw
   have hD := P.hD64
-  have hDQ := P.hQD
+  have hDQ := P.hD16
   have hnw := P.hnw
   have hDw := P.hDw
   have hBw := P.hBw
@@ -367,7 +370,7 @@ theorem sizes (P : Rfc) : Sz P := by
   have hfH : (P.c.fH = 192 ∧ P.c.D < 64) ∨ (P.c.fH = 208 ∧ ¬ P.c.D < 64) := by
     unfold Cfg.fH; split <;> simp_all
   have hnu : P.c.nums = 1 ∨ P.c.nums = 2 := by unfold Cfg.nums; split <;> simp
-  refine ⟨P.hH.hN, by rw [hBw]; exact hB, by rw [hBw], P.hS, ⟨hDQ, hD⟩, P.wide_iff, ⟨by simp only [Rfc.Q]; omega,
+  refine ⟨P.hH.hN, by rw [hBw]; exact hB, by rw [hBw], P.hS, ⟨by simp only [Rfc.Q]; omega, hD, hDQ⟩, P.wide_iff, ⟨by simp only [Rfc.Q]; omega,
     by simp only [Rfc.Q]; omega, by simp only [Rfc.Q, P.hQ], ?_, by simp only [Rfc.Q]; omega,
     by simp only [Rfc.Q]; omega, by omega⟩, rfl, by omega, hF, ⟨hF, rfl⟩, ⟨hDw.symm, hBw.symm, by omega⟩⟩
   simp only [Cfg.frB, hnw]

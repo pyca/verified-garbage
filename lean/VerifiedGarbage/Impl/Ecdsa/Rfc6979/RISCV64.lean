@@ -70,15 +70,17 @@ functions we call save and restore: `s0` = `scratch`, `s1` = the frame,
 only on the pointers.
 
 If the scalars are longer than the hash's output (`wide`: P-521's 66 bytes
-with SHA-512's 64), `core` reads the digest's `D` bytes and the candidate's
-leftmost `Q` bytes, and takes the leftmost bits of each as `e` and `k`, as
-the specification's `bits2int` does; the frame has the candidate's `Q`
-bytes after `h`, at `fT`:
+with any hash function, or SHA-1 with P-256), `core` reads `G` bytes of the
+digest after zeros (`h`'s last `G` bytes) and the candidate's leftmost `Q`
+bytes, and takes the leftmost bits of each as `e` and `k`, as the
+specification's `bits2int` does; the frame has the candidate's `Q` bytes
+after `h`, at `fT`:
 
 1. `h` is the digest after `Q - D` zero bytes: its number is below
    `2^(8 D) < n`, which `bits2octets` keeps.
-2. A candidate is `T = V₁ ‖ V₂`, two `V = HMAC_K(V)`: `V₁` to `fT`, `V₂`
-   from it to `V`'s place, and the first `Q - D` bytes of `V₂` after `V₁`.
+2. A candidate is `T = V₁ ‖ … ‖ Vₘ`, `m` successive `V = HMAC_K(V)`, each
+   copied from `V`'s place to `T + j D`, of which the leftmost `Q` bytes are
+   kept (`candW`).
 -/
 
 @[expose] public section
@@ -116,6 +118,11 @@ structure Cfg where
   tries : Nat
   nw : Nat
   Q : Nat := 8 * nw
+  /-- The bits of a scalar's `Q` bytes that are not its number's,
+  `8 Q - qlen`. -/
+  sh : Nat := 0
+  /-- The bytes of the digest `core` reads. -/
+  G : Nat := Q
 
 /-- Our caller's registers we save, and where, at the start of the frame. -/
 def saved : List (Reg × Nat) :=
@@ -161,6 +168,9 @@ def wide : Bool := decide (c.D < c.Q)
 
 /-- If `wide`: the candidate, after `h`. -/
 def fT : Nat := c.fH + 8 * c.nw
+
+/-- The number of `V`s in a candidate: the least `m` with `8 D m ≥ qlen`. -/
+def m : Nat := (8 * c.Q - c.sh + 8 * c.D - 1) / (8 * c.D)
 
 /-- The numbers in the frame from `fH` on: `h`, and if `wide` the
 candidate. -/
@@ -287,15 +297,19 @@ def initCnt : List Instr := [.li .s5 c.tries]
 /-- `core(out, d, digest, k = V, scratch)`. -/
 def coreArgs : List Instr := [mov .a0 .s2, mov .a1 .s3, mov .a2 .s4, .addi .a3 .s1 fV, mov .a4 .s0]
 
-/-- If `wide`: `core(out, d, digest, k = fT, scratch)`. -/
-def coreArgsW : List Instr := [mov .a0 .s2, mov .a1 .s3, mov .a2 .s4, .addi .a3 .s1 c.fT, mov .a4 .s0]
+/-- If `wide`: `core(out, d, digest, k = fT, scratch)`, with the digest `h`'s
+last `G` bytes (the digest after zeros). -/
+def coreArgsW : List Instr :=
+  [mov .a0 .s2, mov .a1 .s3, .addi .a2 .s1 ((c.fH + c.Q - c.G : Nat) : Int), .addi .a3 .s1 c.fT, mov .a4 .s0]
 
-/-- If `wide`, the candidate: `V₁ = HMAC_K(V)` to `fT`, `V₂ = HMAC_K(V₁)` to
-`V`'s place, and `V₂`'s first `Q - D` bytes after `V₁`. -/
-def candW : Prog isa :=
-  .seq (c.hmac [(.s1, fV, c.D)] c.fT)
-  (.seq (c.hmac [(.s1, c.fT, c.D)] fV)
-    (.block (Words.RISCV64.copyBytes .t0 .s1 .s1 fV (c.fT + c.D) (c.Q - c.D))))
+/-- If `wide`: `V`'s first `min(D, Q - j D)` bytes to `T + j D`. -/
+def keepV (j : Nat) : List Instr :=
+  Words.RISCV64.copyBytes .t0 .s1 .s1 fV (c.fT + j * c.D) (min c.D (c.Q - j * c.D))
+
+/-- If `wide`: `V = HMAC_K(V)` and its bytes to `T + j D`, for each `j < k`. -/
+def candW : Nat → Prog isa
+  | 0 => .block []
+  | k + 1 => .seq (candW k) (.seq c.hmacV (.block (c.keepV k)))
 
 /-- One candidate fewer, and `t6 ≠ 0` iff the signature failed (the low bit
 of `a0` is 0) and candidates are left: `t6 = ((a0 & 1) - 1) & s5`. -/
@@ -308,10 +322,11 @@ def again : List Instr := [.li .t6 1]
 /-- Stop. -/
 def stop : List Instr := [.li .t6 0]
 
-/-- One candidate: `V = HMAC_K(V)` (or, if `wide`, `candW`), `core` with
-it, then, if it failed and candidates are left, step h.3. -/
+/-- One candidate: `V = HMAC_K(V)` (or, if `wide`, the leftmost `Q` bytes of
+`m` successive ones), `core` with it, then, if it failed and candidates are
+left, step h.3. -/
 def tryOne : Prog isa :=
-  .seq (if c.wide then c.candW else c.hmacV)
+  .seq (if c.wide then c.candW c.m else c.hmacV)
   (.seq (.block (if c.wide then c.coreArgsW else coreArgs))
   (.seq (.call c.coreN c.coreC)
   (.seq (.block goOn)
