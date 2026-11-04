@@ -509,4 +509,290 @@ theorem hmacK_piece {Φ : Pr P} {len : Nat} (hlen : len ≤ 256) (rs : Bool) :
   · exact hmacR_piece (scrDA 2256 (by decide)) (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) (updScr_taint _)
       hlen (by show 0 + P.H.D ≤ 168; nums)
 
+/-! ## `K` and `V` from a message -/
+
+/-- `scratch` in `rdi` and `d` in `rsi`. -/
+def PtrsIn (P : RfcHash) : Pr P := fun L _ u => u.gpr .rdi = L.scr ∧ u.gpr .rsi = L.d
+
+theorem msgPtrs_piece {Φ : Pr P} : Piece P Φ (.block Cfg.msgPtrs) (PtrsIn P) :=
+  Piece.blkS ⟨_, by taint_decide⟩ fun _ _ _ _ hL _ hc _ =>
+    WP.mono (ptrs_ok hL hc) fun _ ⟨c, _, d, s⟩ => ⟨c, d, s⟩
+
+/-- The message `V ‖ b (‖ d ‖ h)` at `scratch + sMsg`. -/
+theorem msg_piece {b : Nat} {full : Bool} {ho : Nat} (hho : full = true → ho = P.hB - 24)
+    (ht : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg P.Q P.H.D b full ho)) :
+    Piece P (PtrsIn P) (.block (Cfg.msg P.Q P.H.D b full ho)) (Tt P) :=
+  Piece.blk [.rsp, .rdi, .rsi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact rsp_two c₁ c₂
+      · exact f₁.1.trans f₂.1.symm
+      · exact f₁.2.trans f₂.2.symm) ht
+    fun _ _ _ _ hL hk hc hp => WP.mono (msg_ok hL hc hp.1 hp.2 b full ho (D := P.H.D) (Q := P.Q) (by nums)
+      (by nums) (by nums) (by nums) (hok_of hk).1 (fun hf => by rw [hho hf]; exact hB_fit (hok_of hk)))
+      fun _ h => ⟨h.1, trivial⟩
+
+theorem msgF_taint (b : Nat) : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg P.Q P.H.D b true (cfgOf P).fHo) :=
+  taintOk_erase (by exact (rT P).msgF) (by simp only [Cfg.msg, ↓reduceIte, List.map_append]; rfl)
+
+/-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)`. -/
+theorem rekeyFull_piece {Φ : Pr P} (b : Nat) : Piece P Φ ((cfgOf P).rekeyFull b) (Tt P) := by
+  have hlen : P.H.D + 2 * P.Q + 1 ≤ 256 := by nums
+  unfold Cfg.rekeyFull
+  split
+  · exact msgPtrs_piece.seq ((msg_piece (fun _ => fHo_eq P) (msgF_taint b)).seq
+      ((hmacK_piece (len := P.H.D + 2 * P.Q + 1) hlen false).seq hmacVS_piece))
+  · exact msgPtrs_piece.seq ((msg_piece (fun _ => fHo_eq P) (msgF_taint b)).seq
+      ((hmacK_piece (len := P.H.D + 2 * P.Q + 1) hlen true).seq hmacVS_piece))
+
+/-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)`. -/
+theorem rekey_piece {Φ : Pr P} : Piece P Φ (cfgOf P).rekey (Tt P) := by
+  have hlen : P.H.D + 1 ≤ 256 := by nums
+  unfold Cfg.rekey
+  exact msgPtrs_piece.seq ((msg_piece (fun h => absurd h (by decide)) (by exact (rT P).msgN)).seq
+    ((hmacK_piece (len := P.H.D + 1) hlen false).seq hmacVS_piece))
+
+/-! ## The candidate -/
+
+theorem ce_rsp_two {dn : Nat} {L : Lay dn} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem}
+    (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) (rd₁ wr₁ rd₂ wr₂ : List Region) :
+    (t₁.callEntry.withRegions rd₁ wr₁).gpr .rsp = (t₂.callEntry.withRegions rd₂ wr₂).gpr .rsp := by
+  rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, rsp_two c₁ c₂]
+
+theorem ce_two {t₁ t₂ : State} {r : Reg} (hr : r ≠ .rsp) {x : BitVec 64} (h₁ : t₁.gpr r = x) (h₂ : t₂.gpr r = x)
+    (rd₁ wr₁ rd₂ wr₂ : List Region) :
+    (t₁.callEntry.withRegions rd₁ wr₁).gpr r = (t₂.callEntry.withRegions rd₂ wr₂).gpr r := by
+  rw [ce_gpr _ _ _ hr, ce_gpr _ _ _ hr, h₁, h₂]
+
+
+/-- `V`'s `D` bytes to `T + k D`. -/
+theorem keepV_piece {Φ : Pr P} (hw : P.wide = true) {k : Nat} (hkb : k * P.H.D + P.H.D ≤ 128) :
+    Piece P Φ (.block ((cfgOf P).keepV k)) (Tt P) :=
+  Piece.blkS (taintOk_erase (is₀ := (cfgOf P).keepV 0) (by exact (rT P).keepV)
+      (by simp only [Cfg.keepV, Cfg.copyBytes, Cfg.copyN, List.map_append, List.map_flatMap]; split <;> rfl))
+    fun L _ _ _ hL hk hc _ => by
+      have he := e34 hk.2.2.1 hw
+      have hsep : Region.Disjoint ⟨L.B + BitVec.ofNat 64 24 + BitVec.ofNat 64 64, P.H.D⟩
+          ⟨L.B + BitVec.ofNat 64 (24 + (fT + k * (cfgOf P).D)), P.H.D⟩ := by
+        rw [fr_add]; exact Offset.disjoint _ (by simp only [fT, cfgOf]; nums) (by nums)
+          (by simp only [fT, cfgOf]; nums)
+      exact WP.mono (copyBF_ok hL hc (src := .rsp) (S := L.B + BitVec.ofNat 64 24) hc.rsp (by decide) (so := fV)
+        (d := fT + k * (cfgOf P).D) (Q := P.H.D) (by nums) (by simp only [fV]; nums) (by simp only [fT]; omega)
+        (by simp only [fT, cfgOf]; rw [he]; nums)
+        (fun j hj => by rw [fr_add]; exact hc.inFr (by simp only [fV]; omega) (by simp only [fV]; nums)) hsep)
+        fun _ h => ⟨h.1, trivial⟩
+
+/-- The first `k` `V`s of the candidate. -/
+theorem candW_piece {Φ : Pr P} (hw : P.wide = true) : ∀ k, k * P.H.D ≤ 128 →
+    Piece P Φ ((cfgOf P).candW k) (Tt P)
+  | 0, _ => by
+    rw [Cfg.candW]
+    exact Piece.blkS ⟨_, by taint_decide⟩ fun _ _ _ t _ _ hc _ => WP.of_runBlock ⟨t, rfl, hc, trivial⟩
+  | k + 1, hk => by
+    have hk' : k * P.H.D + P.H.D ≤ 128 := by rw [Nat.succ_mul] at hk; exact hk
+    rw [Cfg.candW]
+    exact (candW_piece hw k (by omega)).seq (hmacVR_piece.seq (keepV_piece hw hk'))
+
+/-- If `sh ≠ 0`: `T`'s first `Q` bytes shifted right by `sh` bits. -/
+theorem candTop_piece {Φ : Pr P} (hw : P.wide = true) : Piece P Φ (.block (cfgOf P).candTop) (Tt P) := by
+  by_cases hsh : P.R.sh = 0
+  · have e : (cfgOf P).candTop = [] := by
+      simp only [Cfg.candTop, show (cfgOf P).sh = 0 from hsh, ite_true]
+    rw [e]
+    exact Piece.blkS ⟨_, by taint_decide⟩ fun _ _ _ t _ _ hc _ => WP.of_runBlock ⟨t, rfl, hc, trivial⟩
+  · have e : (cfgOf P).candTop = Cfg.scrPtr ++ (cfgOf P).conv fT (cfgOf P).sh := by
+      simp only [Cfg.candTop, show (cfgOf P).sh = P.R.sh from rfl, hsh, ite_false]
+    rw [e]
+    refine Piece.scrBlk (by exact (rT P).candTop hsh) fun _ _ _ _ hL hk hc _ => ?_
+    rw [← e]
+    exact WP.mono (candTop_ok hL hk.2.2.1 hw hsh hc) fun _ h => ⟨h.1, trivial⟩
+
+/-- The candidate: its calls and blocks leak the same in both runs. -/
+theorem cand_piece {Φ : Pr P} : Piece P Φ (cfgOf P).cand (Tt P) := by
+  cases hw : P.wide
+  · simp only [Cfg.cand, cfgOf_wide, hw, Bool.false_eq_true, ite_false]
+    exact hmacVR_piece
+  · simp only [Cfg.cand, cfgOf_wide, hw, ite_true]
+    exact (candW_piece hw _ (m_facts P hw).2).seq (candTop_piece hw)
+
+/-- `core`, with arguments that agree. -/
+theorem core_ct {i : Nat} :
+    RelCT isa (Two P fun L m₀ u => P₁ P L m₀ i u ∧ Args P L u) (.call (cfgOf P).coreN (cfgOf P).coreC)
+      fun _ _ => True :=
+  RelCT.callEx (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2)
+    (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => P.R.coreCT s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1)
+    fun _ _ ⟨⟨L, _, _, _, _⟩, hL, hk, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
+    ⟨coreRd P L, coreWr P L, coreRd P L, coreWr P L,
+      ⟨core_pre hL hk c₁ a₁.rdi a₁.rsi a₁.rdx a₁.rcx a₁.r8, core_clear hL hk c₁⟩,
+      ⟨core_pre hL hk c₂ a₂.rdi a₂.rsi a₂.rdx a₂.rcx a₂.r8, core_clear hL hk c₂⟩,
+      ⟨ce_rsp_two c₁ c₂ _ _ _ _, ce_two (by decide) a₁.rdi a₂.rdi _ _ _ _, ce_two (by decide) a₁.rsi a₂.rsi _ _ _ _,
+        ce_two (by decide) a₁.rdx a₂.rdx _ _ _ _, ce_two (by decide) a₁.rcx a₂.rcx _ _ _ _,
+        ce_two (by decide) a₁.r8 a₂.r8 _ _ _ _, fun c hc => by
+          have hc' : c ∈ L.cs := by rw [hk.2.2.2.1]; exact hc
+          exact (c₁.sy c hc').trans (c₂.sy c hc').symm⟩,
+      core_covers hk hL c₁, core_coversW hk.1 c₁, core_covers hk hL c₂, core_coversW hk.1 c₂, rsp_two c₁ c₂⟩
+
+/-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
+theorem dec_two {L : Lay P.I.hashLen} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P L m₁ = exitAt P L m₂) {u₁ u₂ : State}
+    (h₁ : Mid P L m₁ i u₁) (h₂ : Mid P L m₂ i u₂) : isa.eval .ne u₁ = isa.eval .ne u₂ := by
+  rw [h₁.dec, h₂.dec]
+  refine congrArg some (decide_eq_decide.mpr ?_)
+  rw [go_iff h₁.lt h₁.fails, go_iff h₂.lt h₂.fails, hx]
+
+/-- What one candidate leaves: the end, or the next candidate. -/
+def After (P : RfcHash) (i : Nat) (L : Lay P.I.hashLen) (m₀ : Mem) (t : State) : Prop :=
+  (isa.eval .ne t = some false ∧ Exit P L m₀ i t) ∨ (isa.eval .ne t = some true ∧ LoopInv P L m₀ (i + 1) t)
+
+theorem tryOne_trace {i : Nat} :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun _ _ => True := by
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u) ((cand_piece (Φ := Tt P)).rel fun _ _ _ _ => trivial)
+    fun _ _ _ _ hL hk hc hi => try₁_ok hL hk hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u ∧ Args P L u) (two_blk [.rsp] rspOnly (by exact (rT P).coreArgs))
+    fun _ _ _ _ hL hk hc hi => try₂_ok hL hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₃ P L m₀ i u) core_ct fun _ _ _ _ hL hk hc hi =>
+    try₃_ok hL hk hc hi.1 hi.2).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => Mid P L m₀ i u) (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩)
+    fun _ _ _ _ hL hk hc hi => try₄_ok hL hk hc hi).seq ?_
+  refine VG.RelCT.ite (fun _ _ ⟨_, _, _, hx, _, _, f₁, f₂⟩ => dec_two hx f₁ f₂) ?_ ?_
+  · exact (rekey_piece.ct.seq (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩)).mono (fun _ _ h => h.1) fun _ _ h => h
+  · exact (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩).mono (fun _ _ h => h.1) fun _ _ h => h
+
+/-- One candidate: both runs end, or both go on. -/
+theorem tryOne_ct {i : Nat} :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun s₁ s₂ =>
+      isa.eval .ne s₁ = isa.eval .ne s₂ ∧ (isa.eval .ne s₁ = some false → Two P (Exit P · · i) s₁ s₂) ∧
+        (isa.eval .ne s₁ = some true → Two P (LoopInv P · · (i + 1)) s₁ s₂) := by
+  refine (two_wp (Ψ := After P i) tryOne_trace fun _ _ _ _ hL hk hc hi => tryOne_ok hL hk hc hi).mono
+    (fun _ _ h => h) fun s₁ s₂ ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ => ?_
+  -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
+  have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
+      LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
+    rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
+    rcases hE.last with h | h
+    · exact h hgo.1
+    · omega
+  rcases f₁ with ⟨d₁, x₁⟩ | ⟨d₁, x₁⟩ <;> rcases f₂ with ⟨d₂, x₂⟩ | ⟨d₂, x₂⟩
+  · exact ⟨d₁.trans d₂.symm, fun _ => ⟨e, hL, hk, hx, c₁, c₂, x₁, x₂⟩, fun h => absurd (h.symm.trans d₁) (by decide)⟩
+  · exact (mixed _ _ _ _ hx x₁ x₂).elim
+  · exact (mixed _ _ _ _ hx.symm x₂ x₁).elim
+  · exact ⟨d₁.trans d₂.symm, fun h => absurd (h.symm.trans d₁) (by decide), fun _ => ⟨e, hL, hk, hx, c₁, c₂, x₁, x₂⟩⟩
+
+/-! ## The loop -/
+
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
+  ⟨by omega, by omega⟩
+
+theorem loop_ct :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) :=
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
+
+/-! ## The frame's body -/
+
+theorem initCnt_blk₀ : TaintOk [.rsp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
+
+/-- The count's initial store, for any count: the analysis does not read
+immediates (`taint_eraseInv`), so it is that of one count's. -/
+theorem initCnt_blk (c : Cfg) : TaintOk [.rsp] c.initCnt := by
+  obtain ⟨h, hs⟩ := initCnt_blk₀
+  refine ⟨h, ?_⟩
+  have e := (taint_eraseInv.check (.block c.initCnt) (Taint.ofRegs [.rsp]) h rfl).1
+  have e₀ := (taint_eraseInv.check (.block (cfgC { n := 4, C := Spec.P256.curve }).initCnt)
+    (Taint.ofRegs [.rsp]) h rfl).1
+  rw [← e, show Code.mapBlocks Instr.erase (.block c.initCnt) =
+    Code.mapBlocks Instr.erase (.block (cfgC { n := 4, C := Spec.P256.curve }).initCnt) from rfl, e₀]
+  exact hs
+
+/-- `digest` in `rsi`, and, if the hash is shorter than the scalars, `scratch` in `rdi`. -/
+def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Mem) (u : State) : Prop :=
+  u.gpr .rsi = L.dg ∧ (P.wide = true → u.gpr .rdi = L.scr)
+
+/-- Unless the hash is shorter, `bits2octets` is the curve's. -/
+theorem reduce_eq (hw : P.wide = false) : (cfgOf P).reduce = (cfgC P.R.E P.R.hHigh).reduce := by
+  have h₁ : (cfgC P.R.E P.R.hHigh).wide = false := by
+    show decide (64 < P.Q) = false
+    have := (P.sizesA hw).2.2
+    simp only [decide_eq_false_iff_not]; nums
+  have h₂ : (cfgOf P).fHo = (cfgC P.R.E P.R.hHigh).fHo := by
+    simp only [Cfg.fHo, cfgOf_wide, hw, h₁]; rfl
+  have h₃ : (cfgOf P).selWord = (cfgC P.R.E P.R.hHigh).selWord := funext fun j => by
+    simp only [Cfg.selWord, h₂]; rfl
+  have h₄ : (cfgOf P).subWord = (cfgC P.R.E P.R.hHigh).subWord := rfl
+  simp only [Cfg.reduce, h₃, h₄]
+  rfl
+
+theorem prep_ct : RelCT isa (Two P (DgIn P)) (.block (cfgOf P).prep) fun _ _ => True := by
+  cases hw : P.wide
+  · have e : (cfgOf P).prep = (cfgC P.R.E P.R.hHigh).reduce ++ Cfg.initKV := by
+      simp only [Cfg.prep, cfgOf_wide, hw, Bool.false_eq_true, ite_false, reduce_eq hw]
+    rw [e]
+    exact two_blk [.rsp, .rsi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact rsp_two c₁ c₂
+      · exact f₁.1.trans f₂.1.symm) (P.R.reduceT (P.curveA hw))
+  · exact two_blk [.rsp, .rsi, .rdi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact rsp_two c₁ c₂
+      · exact f₁.1.trans f₂.1.symm
+      · exact (f₁.2 hw).trans (f₂.2 hw).symm) (by exact (rT P).prepW hw)
+
+theorem body_ct :
+    RelCT isa (Two P fun _ _ _ => True) (cfgOf P).body (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
+  refine (two_wp (Ψ := DgIn P) (two_blk [.rsp] rspOnly (by exact (rT P).digestPtr)) fun _ _ _ _ hL hk hc _ =>
+    WP.mono (digestPtr_ok hL hc) fun _ h => ⟨h.1, h.2.2.1, h.2.2.2⟩).seq ?_
+  refine (two_wp (Ψ := QB P) prep_ct fun _ _ _ _ hL hk hc h => stageB_ok (P := P) hL hk hc h.1 h.2).seq ?_
+  refine (two_wp (Ψ := QC P) ((rekeyFull_piece 0).rel fun _ _ _ _ => trivial)
+    fun _ _ _ _ hL hk hc h => stageC_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := QD P) ((rekeyFull_piece 1).rel fun _ _ _ _ => trivial)
+    fun _ _ _ _ hL hk hc h => stageD_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [.rsp] rspOnly (initCnt_blk _))
+    fun _ _ _ _ hL hk hc h => stageE_ok (P := P) hL hk hc h).seq ?_
+  refine loop_ct.seq ?_
+  exact two_wp (two_blk [.rsp] rspOnly (by exact (rT P).wipe)) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
+    WP.mono (stageG_ok hL hk hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
+
+/-! ## The whole function -/
+
+/-- Runs whose public data agree (with the addresses of the hash function's
+functions among `ns`) have the same layout, and stop at the same candidate. -/
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.stream.initN, P.H.stream.updN, P.H.stream.finN], n ∈ ns) :
+    ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
+  have he : P.e ≤ 34 := by nums
+  rw [sign_eq]
+  refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_)
+  refine body_ct.mono (fun a b ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, h9, hres, hsy, hns'⟩, ea, eb⟩ => ?_)
+    fun _ _ _ => trivial
+  subst ea eb
+  have hsy' : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₁.syms n else 0) =
+      fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0 := funext fun n => by
+    split
+    · next h => obtain ⟨c, hc, rfl⟩ := List.mem_map.mp h; exact hsy c hc
+    · rfl
+  have hfa : (fun n => if n ∈ [P.H.stream.initN, P.H.stream.updN, P.H.stream.finN] then s₁.syms n else 0) =
+      fun n => if n ∈ [P.H.stream.initN, P.H.stream.updN, P.H.stream.finN] then s₂.syms n else 0 :=
+    funext fun n => by
+      split
+      · next h => exact hns' n (hns n h)
+      · rfl
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts P.H.stream P.f s₁ =
+      lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts P.H.stream P.f s₂ := by
+    unfold lay; rw [hsp, hdi, hsi, hdx, hcx, h9, hsy', hfa]
+  have hr : (result P.I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 = (result P.I s₂.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 := by
+    rw [hres, hsi, hdx]
+  refine ⟨⟨lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts P.H.stream P.f s₁, s₁.gpr, s₂.gpr, s₁.mem,
+    s₂.mem⟩, lay_ok he p₁, coreOk_lay P he s₁, congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr,
+    push_ctx he p₁, by rw [hl]; exact push_ctx he p₂, trivial, trivial⟩
+
 end VG.Proof.Ecdsa.Rfc6979.X86_64
