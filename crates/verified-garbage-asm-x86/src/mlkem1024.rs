@@ -778,6 +778,402 @@ jne 230b
     )
 }
 
+/// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1568 bytes.
+/// * `scratch` must be valid for reads and writes of 49152 bytes.
+/// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "U1ZXVYt0JCiLfCQUg8cAifWBxcw3AAC5iAEAAA=="
+20:
+.base64 "iweJRQCDxwSDxQSD6QE="
+jne 20b
+.base64 "i3wkHIPHAIn1gcXwPQAAuQgAAAA="
+21:
+.base64 "iweJRQCDxwSDxQSD6QE="
+jne 21b
+.base64 "i3wkGIPHAIn1gcV4RAAAuQgAAAA="
+22:
+.base64 "iweJRQCDxwSDxQSD6QE="
+jne 22b
+.base64 "ifKBwgA0AAC4AAAAALkyAAAA"
+23:
+.base64 "iQKDwgSD6QE="
+jne 23b
+.base64 "ifAFADQAALlIAAAAugAAAACJ84HD8D0AAL0gAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALlIAAAAuiAAAACJ84HDeEQAAL0gAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALlIAAAAukAAAAC7BgAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuUgAAAC6AAAAAInzgcMQPgAAvUAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYuAEAAACJhsg3AAC4AAAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+24:
+.base64 "iQKDwgSD6QE="
+jne 24b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxg8EAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8IPAAInxgcEAKAAAUVA="
+call {vg_mlkem_ntt}
+.base64 "WFi4AQAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+25:
+.base64 "iQKDwgSD6QE="
+jne 25b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEABAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUABAAAifGBwQAoAABRUA=="
+call {vg_mlkem_ntt}
+.base64 "WFi4AgAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+26:
+.base64 "iQKDwgSD6QE="
+jne 26b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEACAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUACAAAifGBwQAoAABRUA=="
+call {vg_mlkem_ntt}
+.base64 "WFi4AwAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+27:
+.base64 "iQKDwgSD6QE="
+jne 27b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEADAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUADAAAifGBwQAoAABRUA=="
+call {vg_mlkem_ntt}
+.base64 "WFi4AAAAAIiG7D0AALgAAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+28:
+.base64 "iwch0IkHg8cEg+kB"
+jne 28b
+.base64 "ifAFABQAAInxgcEAGAAAifKDwgCJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWLgAAAAAiIbsPQAAuAEAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+29:
+.base64 "iwch0IkHg8cEg+kB"
+jne 29b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAEAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AAAAAIiG7D0AALgCAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+210:
+.base64 "iwch0IkHg8cEg+kB"
+jne 210b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAIAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AAAAAIiG7D0AALgDAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+211:
+.base64 "iwch0IkHg8cEg+kB"
+jne 211b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAMAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAifGBwQAoAABRUA=="
+call {vg_mlkem_inv_ntt}
+.base64 "WFi4BAAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+212:
+.base64 "iQKDwgSD6QE="
+jne 212b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEAEAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUAFAAAifGBwQAQAABRUA=="
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAuQsAAACJ8oHCVD4AAL9gAQAAV1JRUA=="
+call {vg_mlkem1024_compress_encode}
+.base64 "WFhYWLgBAAAAiIbsPQAAuAAAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+213:
+.base64 "iwch0IkHg8cEg+kB"
+jne 213b
+.base64 "ifAFABQAAInxgcEAGAAAifKDwgCJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWLgBAAAAiIbsPQAAuAEAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+214:
+.base64 "iwch0IkHg8cEg+kB"
+jne 214b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAEAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AQAAAIiG7D0AALgCAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+215:
+.base64 "iwch0IkHg8cEg+kB"
+jne 215b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAIAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AQAAAIiG7D0AALgDAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+216:
+.base64 "iwch0IkHg8cEg+kB"
+jne 216b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAMAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAifGBwQAoAABRUA=="
+call {vg_mlkem_inv_ntt}
+.base64 "WFi4BQAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+217:
+.base64 "iQKDwgSD6QE="
+jne 217b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEAEAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUAFAAAifGBwQAQAABRUA=="
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAuQsAAACJ8oHCtD8AAL9gAQAAV1JRUA=="
+call {vg_mlkem1024_compress_encode}
+.base64 "WFhYWLgCAAAAiIbsPQAAuAAAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+218:
+.base64 "iwch0IkHg8cEg+kB"
+jne 218b
+.base64 "ifAFABQAAInxgcEAGAAAifKDwgCJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWLgCAAAAiIbsPQAAuAEAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+219:
+.base64 "iwch0IkHg8cEg+kB"
+jne 219b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAEAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AgAAAIiG7D0AALgCAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+220:
+.base64 "iwch0IkHg8cEg+kB"
+jne 220b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAIAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AgAAAIiG7D0AALgDAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+221:
+.base64 "iwch0IkHg8cEg+kB"
+jne 221b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAMAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAifGBwQAoAABRUA=="
+call {vg_mlkem_inv_ntt}
+.base64 "WFi4BgAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+222:
+.base64 "iQKDwgSD6QE="
+jne 222b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEAEAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUAFAAAifGBwQAQAABRUA=="
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAuQsAAACJ8oHCFEEAAL9gAQAAV1JRUA=="
+call {vg_mlkem1024_compress_encode}
+.base64 "WFhYWLgDAAAAiIbsPQAAuAAAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+223:
+.base64 "iwch0IkHg8cEg+kB"
+jne 223b
+.base64 "ifAFABQAAInxgcEAGAAAifKDwgCJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWLgDAAAAiIbsPQAAuAEAAACIhu09AACJ8AXMPQAAifGBwQAYAACJ8oHCACwAAFJRUA=="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+224:
+.base64 "iwch0IkHg8cEg+kB"
+jne 224b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAEAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AwAAAIiG7D0AALgCAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+225:
+.base64 "iwch0IkHg8cEg+kB"
+jne 225b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAIAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFi4AwAAAIiG7D0AALgDAAAAiIbtPQAAifAFzD0AAInxgcEAGAAAifKBwgAsAABSUVA="
+call {vg_mlkem_sample_ntt}
+.base64 "WVlZugAAAAApwouOyDcAACHBiY7INwAAifeBxwAYAAC5AAEAAA=="
+226:
+.base64 "iwch0IkHg8cEg+kB"
+jne 226b
+.base64 "ifAFABwAAInxgcEAGAAAifKBwgAMAACJ94HHACgAAFdSUVA="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAifGBwQAoAABRUA=="
+call {vg_mlkem_inv_ntt}
+.base64 "WFi4BwAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+227:
+.base64 "iQKDwgSD6QE="
+jne 227b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEAEAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUAFAAAifGBwQAQAABRUA=="
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAuQsAAACJ8oHCdEIAAL9gAQAAV1JRUA=="
+call {vg_mlkem1024_compress_encode}
+.base64 "WFhYWInwBcw3AACJ8YHBACAAAFFQ"
+call {vg_mlkem_decode12}
+.base64 "WFiJ8AUAFAAAifGBwQAgAACJ8oPCAIn3gccAKAAAV1JRUA=="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBUw5AACJ8YHBACAAAFFQ"
+call {vg_mlkem_decode12}
+.base64 "WFiJ8AUAHAAAifGBwQAgAACJ8oHCAAQAAIn3gccAKAAAV1JRUA=="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AXMOgAAifGBwQAgAABRUA=="
+call {vg_mlkem_decode12}
+.base64 "WFiJ8AUAHAAAifGBwQAgAACJ8oHCAAgAAIn3gccAKAAAV1JRUA=="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AVMPAAAifGBwQAgAABRUA=="
+call {vg_mlkem_decode12}
+.base64 "WFiJ8AUAHAAAifGBwQAgAACJ8oHCAAwAAIn3gccAKAAAV1JRUA=="
+call {vg_mlkem_multiply_ntts}
+.base64 "WFhYWInwBQAUAACJ8YHBABwAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAifGBwQAoAABRUA=="
+call {vg_mlkem_inv_ntt}
+.base64 "WFi4CAAAAIiGUD4AAInygcIANAAAuAAAAAC5MgAAAA=="
+228:
+.base64 "iQKDwgSD6QE="
+jne 228b
+.base64 "ifAFADQAALmIAAAAugAAAACJ84HDMD4AAL0hAAAAifeBx8g0AABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifAFADQAALmIAAAAuiEAAAC7HwAAAIn3gcfINAAAV1NSUVA="
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8AUANAAAuYgAAAC6AAAAAInzgcNINwAAvYAAAACJ94HHyDQAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYifAFSDcAAInxgcEAEAAAUVA="
+call {vg_mlkem_cbd2}
+.base64 "WFiJ8AUAFAAAifGBwQAQAABRUA=="
+call {vg_mlkem_add}
+.base64 "WFiJ8AXwPQAAuSAAAAC6AQAAAIn3gccAJAAAV1JRUA=="
+call {vg_mlkem_decode_decompress}
+.base64 "WFhYWInwBQAUAACJ8YHBACQAAFFQ"
+call {vg_mlkem_add}
+.base64 "WFiJ8AUAFAAAuQUAAACJ8oHC1EMAAL+gAAAAV1JRUA=="
+call {vg_mlkem1024_compress_encode}
+.base64 "WFhYWIn3gccQPgAAi2wkIIPFALkIAAAA"
+229:
+.base64 "iweJRQCDxwSDxQSD6QE="
+jne 229b
+.base64 "ifeBx1Q+AACLbCQkg8UAuYgBAAA="
+230:
+.base64 "iweJRQCDxwSDxQSD6QE="
+jne 230b
+.base64 "i4bINwAAi3QkCIt8JASLLCRbW1tbww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+    )
+}
+
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
