@@ -106,6 +106,18 @@ structure GT (G : Impl.Pbkdf2.Md.X86_64.Stream) (g : Impl.Mgf1.X86_64.Table.Fns)
   fu : g.upd.find? (fun q => sy q.1 == sy G.updN) = some (G.updN, G.updC)
   ff : g.fin.find? (fun q => sy q.1 == sy G.finN) = some (G.finN, G.finC)
 
+/-- The calls of `g` reach `G`'s streaming functions at the addresses `sy`
+gives them: what `GT` says but for the slots. -/
+structure GTF (G : Impl.Pbkdf2.Md.X86_64.Stream) (g : Impl.Mgf1.X86_64.Table.Fns) (sy : String → Addr) : Prop where
+  fi : g.init.find? (fun q => sy q.1 == sy G.initN) = some (G.initN, G.initC)
+  fu : g.upd.find? (fun q => sy q.1 == sy G.updN) = some (G.updN, G.updC)
+  ff : g.fin.find? (fun q => sy q.1 == sy G.finN) = some (G.finN, G.finC)
+
+theorem GTF.gt {G : Impl.Pbkdf2.Md.X86_64.Stream} {g : Impl.Mgf1.X86_64.Table.Fns} {sy : String → Addr}
+    (h : GTF G g sy) {W : Nat → BitVec 64} (h11 : W 11 = sy G.initN) (h12 : W 12 = sy G.updN)
+    (h13 : W 13 = sy G.finN) (h14 : W 14 = BitVec.ofNat 64 G.D) : GT G g W sy :=
+  ⟨h11, h12, h13, h14, h.fi, h.fu, h.ff⟩
+
 theorem GT.congr {G : Impl.Pbkdf2.Md.X86_64.Stream} {g : Impl.Mgf1.X86_64.Table.Fns} {W W' : Nat → BitVec 64}
     {sy sy' : String → Addr} (h : GT G g W sy) (hsy : sy' = sy) (hW : ∀ k, 11 ≤ k → k ≤ 14 → W' k = W k) :
     GT G g W' sy' := by
