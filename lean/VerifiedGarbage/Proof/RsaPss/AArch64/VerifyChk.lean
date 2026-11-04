@@ -465,6 +465,37 @@ theorem bytesAt_drop (m : Mem) (p : Addr) {k lo : Nat} :
   simp only [Spec.Rsa.bytesAt, List.getElem_drop, List.getElem_map, List.getElem_range, off, BitVec.add_assoc,
     BitVec.ofNat_add_ofNat]
 
+/-- What a call of `checkEncoding` reads and writes is ours to. -/
+theorem chkCovers {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG : List FnTable} {K : Nat}
+    {s t : State} (hp : PreV tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash}
+    (E : CSel f g tsH tsG s i T Hs Gs) (h0 : s.mem (s.gpr .x0) ≠ 0) (ht : AtChkC K s t) :
+    Covers (chkRdT T.H.D t) (t.rd ++ t.wr) ∧ Covers (chkWrT t) t.wr := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  obtain ⟨-, -, hlok, -⟩ := eb_bounds hk1 hk2 h0
+  have hcw : (s.gpr .x1).toNat ≤ 8 * cwV s ∧ 8 * cwV s ≤ (s.gpr .x1).toNat + 7 := by unfold cwV; omega
+  have hsc := cw_toNat hp
+  have hhs := hp.hs
+  have hws : (scr s).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64 := hp.ws
+  have he : (BitVec.ofNat 64 (elS s)).toNat = elS s := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show elS s < 2 ^ 64 by omega)]
+  have hcr : Covers (chkRdT T.H.D t) (t.rd ++ t.wr) := by
+    simp only [chkRdT, ht.x0, ht.x1, ht.x2, ht.a0, ht.a1, E.hD, he]
+    rw [ht.rd, ht.wr]
+    have hm : ∀ r ∈ [dgR s, tHR s, tGR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
+      fun r hr => Covers.left (Covers.trans (Covers.of_mem fun x hx => by
+        rw [List.mem_singleton.mp hx]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+        rcases hr with h | h | h <;> simp [h]) hp.hrd)
+    exact Covers.cons (hm _ (by simp)) (Covers.cons (Covers.right (Covers.one ⟨sR s,
+      List.mem_cons_of_mem _ hp.hws, Offset.contains_base _ (by omega) (by omega)⟩))
+      (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.right (Covers.one (by
+        rw [stackArgAddr, ht.sp]; exact in_frame s s.wr (d := 8 * 0) (n := 16) (by decide)))))))
+  have hcw' : Covers (chkWrT t) t.wr := by
+    simp only [chkWrT, ht.x6, ht.x7]
+    rw [ht.wr]
+    exact Covers.one ⟨sR s, List.mem_cons_of_mem _ hp.hws, Offset.contains_base _ (by rw [hsc]; omega)
+      (by omega)⟩
+  exact ⟨hcr, hcw'⟩
+
 theorem chkCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG : List FnTable} {K : Nat}
     {s t : State} (hp : PreV tsH tsG K s) (h624 : 624 ≤ K) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash}
     (E : CSel f g tsH tsG s i T Hs Gs) (h0 : s.mem (s.gpr .x0) ≠ 0) (ht : AtChkC K s t)
@@ -484,22 +515,7 @@ theorem chkCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
   have hSem : Region.Sub ⟨off (scr s) (loS s), elS s⟩ (sR s) := Offset.sub_base _ (by omega)
   have hSsc : Region.Sub ⟨off (scr s) (8 * cwV s), (stackArg s 3 - BitVec.ofNat 64 (cwV s)).toNat * 8⟩ (sR s) :=
     Offset.sub_base _ (by rw [hsc]; omega)
-  have hcr : Covers (chkRdT T.H.D t) (t.rd ++ t.wr) := by
-    simp only [chkRdT, ht.x0, ht.x1, ht.x2, ht.a0, ht.a1, E.hD, he]
-    rw [ht.rd, ht.wr]
-    have hm : ∀ r ∈ [dgR s, tHR s, tGR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
-      fun r hr => Covers.left (Covers.trans (Covers.of_mem fun x hx => by
-        rw [List.mem_singleton.mp hx]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-        rcases hr with h | h | h <;> simp [h]) hp.hrd)
-    exact Covers.cons (hm _ (by simp)) (Covers.cons (Covers.right (Covers.one ⟨sR s,
-      List.mem_cons_of_mem _ hp.hws, Offset.contains_base _ (by omega) (by omega)⟩))
-      (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.right (Covers.one (by
-        rw [stackArgAddr, ht.sp]; exact in_frame s s.wr (d := 8 * 0) (n := 16) (by decide)))))))
-  have hcw' : Covers (chkWrT t) t.wr := by
-    simp only [chkWrT, ht.x6, ht.x7]
-    rw [ht.wr]
-    exact Covers.one ⟨sR s, List.mem_cons_of_mem _ hp.hws, Offset.contains_base _ (by rw [hsc]; omega)
-      (by omega)⟩
+  obtain ⟨hcr, hcw'⟩ := chkCovers hp E h0 ht
   refine WP.callFV (k := Chk.chkK T Hs Gs) E.ok (chkPre_of hp h624 E h0 ht hsy)
     (Covers.append_left hcr (Covers.right hcw')) hcw' ?_ (by omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
