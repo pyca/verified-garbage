@@ -34,7 +34,7 @@
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
 //!
-//! On x86-64, AArch64 and PPC64LE, the verified `vg_rsa_prime_search` (contract
+//! On x86-64, AArch64, PPC64LE and RISC-V, the verified `vg_rsa_prime_search` (contract
 //! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
 //! rejected ones and chooses how many random octets to ask for when they run
 //! out, from the state `vg_rsa_prime_search_init` makes
@@ -57,8 +57,8 @@
 //!
 //! This module only checks the lengths and the exponent, allocates the
 //! memory the candidates and the key are computed in, gives the search its
-//! random octets, counts the candidates (but on x86-64, AArch64 and
-//! PPC64LE) and the generations, and compares the pairwise test's result with
+//! random octets, counts the candidates (but on x86-64, AArch64, PPC64LE
+//! and RISC-V) and the generations, and compares the pairwise test's result with
 //! its message.
 
 #![cfg(all(
@@ -67,7 +67,8 @@
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ),
     feature = "alloc"
 ))]
@@ -79,7 +80,8 @@ use core::fmt;
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
 #[cfg(all(
@@ -99,7 +101,8 @@ use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
@@ -221,7 +224,8 @@ struct Random<F> {
     #[cfg(not(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     )))]
     initial: usize,
     fill: F,
@@ -232,7 +236,8 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
         any(
             target_arch = "x86_64",
             target_arch = "aarch64",
-            target_arch = "powerpc64"
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
         ),
         allow(unused_variables)
     )]
@@ -243,7 +248,8 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "powerpc64"
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
             )))]
             initial: 16 * len,
             fill,
@@ -255,7 +261,8 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     #[cfg(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     ))]
     fn prime(
         &mut self,
@@ -279,7 +286,8 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     #[cfg(not(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
-        target_arch = "powerpc64"
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
     )))]
     fn prime(
         &mut self,
@@ -334,7 +342,8 @@ impl<F> Drop for Random<F> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 struct Search<'a> {
     e: &'a [u8],
@@ -347,7 +356,8 @@ struct Search<'a> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 impl<'a> Search<'a> {
     /// The search for a prime of `len` octets with the exponent `e`, which
@@ -424,7 +434,8 @@ impl<'a> Search<'a> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 impl Drop for Search<'_> {
     fn drop(&mut self) {
@@ -453,7 +464,8 @@ pub fn generate_prime_from(
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 fn prime_from(
     len: usize,
@@ -481,7 +493,8 @@ fn prime_from(
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 fn prime_from(
     len: usize,
@@ -496,7 +509,8 @@ fn prime_from(
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 fn prime_from_counted(
     len: usize,
@@ -1077,7 +1091,8 @@ mod tests {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "powerpc64"
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
             )))]
             {
                 random.initial = initial;
@@ -1085,7 +1100,8 @@ mod tests {
             #[cfg(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "powerpc64"
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
             ))]
             let _ = initial;
             let key = generate_with(&[1, 0, 1], &mut |other| {
@@ -1127,7 +1143,8 @@ mod tests {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "powerpc64"
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
             )))]
             {
                 random.initial = initial;
@@ -1135,7 +1152,8 @@ mod tests {
             #[cfg(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                target_arch = "powerpc64"
+                target_arch = "powerpc64",
+                target_arch = "riscv64"
             ))]
             let _ = initial;
             assert_eq!(
