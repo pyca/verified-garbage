@@ -198,4 +198,100 @@ theorem search_short_ct : RelCT isa (Two SearchAt) short (fun _ _ => True) := by
   · exact two_map (fun q => q.inputs) (fun _ _ h => let ⟨o, h⟩ := h.1.1; ⟨o, _, _, h⟩) search_exhausted_ct
   · exact two_map (fun q => q.inputs) (fun _ _ h => let ⟨o, h⟩ := h.1.1; ⟨o, _, _, h⟩) search_request_ct
 
+/-- The candidate's status in rax, at the point. -/
+def RejectCT (q : SearchPoint) (s : State) : Prop := CandCT q s ∧ s.gpr .rax = BitVec.ofNat 64 q.status
+
+def Reject1 (q : SearchPoint) (s : State) : Prop :=
+  RejectCT q s ∧ s.gpr .rdx = BitVec.ofNat 64 q.status ∧ s.gpr .rcx = q.inputs.up
+
+def Reject2 (q : SearchPoint) (s : State) : Prop :=
+  s.gpr .r12 = q.inputs.F ∧ s.gpr .rsp = q.inputs.F ∧ s.gpr .rdx = BitVec.ofNat 64 q.status ∧
+    eval .e s = some (decide (q.cand = 0)) ∧ SearchAny q.inputs s ∧ q.status < 4
+
+def Reject3 (q : SearchPoint) (s : State) : Prop :=
+  s.gpr .r12 = q.inputs.F ∧ s.gpr .rsp = q.inputs.F ∧ eval .e s = some (decide (q.status = 2))
+
+theorem CandCT.keep {q : SearchPoint} {s t : State} (h : CandCT q s) {rs : List Reg} (k : Keep rs s t)
+    (hm : t.mem = s.mem) (hr : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32)
+    (hregs : ∀ reg ∈ calleeSaved, reg ∉ rs) : CandCT q t :=
+  let ⟨o, hl, hc, ht, hr'⟩ := h
+  ⟨o, hl.keep k hm hregs, hc.keep hm hr, ht, hr'⟩
+
+private theorem reject1_ok (q : SearchPoint) (s : State) (h : RejectCT q s) :
+    WP isa (.block [.mov .rdx (.reg .rax), .mov .rcx (.mem (field 7))]) s (Reject1 q) := by
+  obtain ⟨⟨o, hl, hc, ht, hr⟩, hra⟩ := h
+  obtain ⟨hld, -, -⟩ := hl.frame_in (t := s) rfl
+  have h7 := hl.slot (j := 7) (v := q.inputs.up) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h7
+  refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rax ∧ t.gpr .rcx = q.inputs.up ∧
+    t.mem = s.mem) (by
+      xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, hl.r12,
+        hld 56 (by decide), h7]) rfl) fun t ⟨⟨hdx, hcx, hm⟩, k⟩ => ?_
+  have hrt : t.gpr .rax = s.gpr .rax := k.gpr (by decide)
+  exact ⟨⟨CandCT.keep (q := q) ⟨o, hl, hc, ht, hr⟩ k hm (by rw [hrt]) (by decide), hrt.trans hra⟩,
+    hdx.trans hra, hcx⟩
+
+private theorem reject2_ok (q : SearchPoint) (s : State) (h : Reject1 q s) :
+    WP isa (.block [.mov .rcx (.mem { base := .rcx }), .alu .test .rcx (.reg .rcx)]) s (Reject2 q) := by
+  obtain ⟨⟨⟨o, hl, hc, ht, hr⟩, hra⟩, hdx, hcx⟩ := h
+  have h4 := status_lt q (s := s) ⟨o, hl, hc, ht, hr⟩
+  have hcu := CandCT.used hl ht hr
+  have hf := hl.callFacts
+  have hin : InRegions (s.rd ++ s.wr) q.inputs.up 8 := by
+    refine ⟨inUsed o, List.mem_append_right _ ?_, ?_⟩
+    · rw [hl.wr, hl.input.1.2.2.2.1]; exact List.mem_cons_of_mem _ (by simp [inWrites])
+    · rw [← hl.input.2]; simp only [inUsed, searchOfState, Region.Contains, BitVec.sub_self, BitVec.toNat_zero,
+        Nat.zero_add]; decide
+  have hu : s.mem.readW q.inputs.up 64 = BitVec.ofNat 64 q.cand := by
+    have := hc.2.2
+    change [word s.mem q.inputs.up 0] = _ at this
+    have h' := (List.cons.inj this).1
+    simp only [Bignum.word, off, BitVec.add_zero] at h'
+    rw [h', ← hcu]
+    rfl
+  have hz : (BitVec.ofNat 64 q.cand == 0) = decide (q.cand = 0) :=
+    ofNat64_beq_zero (by
+      have : candUsed q.inputs o q.used ≤ q.inputs.randLen := by unfold candUsed; split <;> omega
+      have := hf.rand64; omega)
+  refine WP.mono (WP.keep [.rcx] (Q := fun t => eval .e t = some (decide (q.cand = 0)) ∧ t.mem = s.mem) (by
+      xrun [State.ea, BitVec.ofInt_ofNat, BitVec.add_zero, eval, hcx, hin, hu, BitVec.and_self, hz]) rfl)
+    fun t ⟨⟨he, hm⟩, k⟩ => ⟨(k.gpr (by decide)).trans hl.r12, (k.gpr (by decide)).trans hl.rsp,
+      (k.gpr (by decide)).trans hdx, he, ⟨o, _, _, hl.keep k hm (by decide)⟩, h4⟩
+
+private theorem reject3_ok (q : SearchPoint) (s : State) (h : Reject2 q s ∧ eval .e s = some false) :
+    WP isa (.block (advance ++ [.alu .cmp .rdx (.imm 2)])) s (Reject3 q) := by
+  obtain ⟨⟨hr12, hsp, hdx, -, ⟨o, u, k, hl⟩, h4⟩, -⟩ := h
+  refine WP.mono (advance_ok hl (u := (s.gpr .rcx).toNat) (ofNat_toNat64 _).symm) fun t ⟨⟨_, he⟩, kt⟩ => ?_
+  refine ⟨(kt.gpr (by decide)).trans hr12, (kt.gpr (by decide)).trans hsp, ?_⟩
+  rw [he, hdx]
+  congr 1
+  rcases (show q.status = 0 ∨ q.status = 1 ∨ q.status = 2 ∨ q.status = 3 by omega) with h | h | h | h <;>
+    rw [h] <;> decide
+
+theorem search_reject_ct : RelCT isa (Two RejectCT) reject (fun _ _ => True) := by
+  unfold reject
+  change RelCT isa _ (.seq (.block ([.mov .rdx (.reg .rax), .mov .rcx (.mem (field 7))] ++
+    [.mov .rcx (.mem { base := .rcx }), .alu .test .rcx (.reg .rcx)])) _) _
+  refine RelCT.seq (RelCT.block_append (RelCT.seq
+    (two_piece (Ψ := Reject1) [.r12, .rsp] (fun q _ _ h₁ h₂ => cand_ct_pins q _ _ h₁.1 h₂.1)
+      (by taint_decide) reject1_ok)
+    (two_piece (Ψ := Reject2) [.r12, .rsp, .rcx] (fun q _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact cand_ct_pins q _ _ h₁.1.1 h₂.1.1 .r12 (by simp)
+      · exact cand_ct_pins q _ _ h₁.1.1 h₂.1.1 .rsp (by simp)
+      · exact h₁.2.2.trans h₂.2.2.symm) (by taint_decide) reject2_ok))) ?_
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.1.trans h₂.2.2.2.1.symm) ?_ ?_
+  · exact two_map (fun q => q.inputs) (fun _ _ h => h.1.2.2.2.2.1) search_exhausted_ct
+  · refine RelCT.seq (two_piece (Ψ := Reject3) [.r12, .rsp] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [h₁.1.1.trans h₂.1.1.symm, h₁.1.2.1.trans h₂.1.2.1.symm]) (by taint_decide) reject3_ok) ?_
+    refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_ ?_
+    · exact two_taint [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide)
+    · exact two_taint [.r12, .rsp] (fun _ _ _ h₁ h₂ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        exacts [h₁.1.1.trans h₂.1.1.symm, h₁.1.2.1.trans h₂.1.2.1.symm]) (by taint_decide)
+
 end VG.Proof.RsaKeyGen.X86_64.Search
