@@ -6,9 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
@@ -46,13 +44,6 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     verified := Proof.Ffdh.X86_64.DerivePublic.deriveCode_verified v
     spSafe := Proof.Ffdh.X86_64.DerivePublic.deriveCode_sp v
     features := v.features },
-  Spec.Ffdh.generateKeyApi.artifact X86_64.target {
-    suffix := v.suffix
-    stack := 8
-    code := Proof.Ffdh.X86_64.GenerateKey.generateCode v
-    verified := Proof.Ffdh.X86_64.GenerateKey.generateCode_verified v
-    spSafe := Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
-    features := v.features },
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
     consts := Impl.Ffdh.X86_64.VettedValidation.tableConsts
     suffix := v.suffix
@@ -67,13 +58,6 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     code := Proof.Ffdh.X86_64.Generation.searchCode v
     verified := Proof.Ffdh.X86_64.Generation.search_verified v
     spSafe := Proof.Ffdh.X86_64.Generation.searchCode_sp v
-    features := v.features },
-  Spec.Ffdh.keySearchApi.artifact X86_64.target {
-    suffix := v.suffix
-    stack := 56
-    code := Proof.Ffdh.X86_64.KeyGeneration.keyCode v
-    verified := Proof.Ffdh.X86_64.KeyGeneration.key_verified v
-    spSafe := Proof.Ffdh.X86_64.KeyGeneration.keyCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh
