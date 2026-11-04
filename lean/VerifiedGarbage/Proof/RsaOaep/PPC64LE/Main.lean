@@ -14,7 +14,8 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 # RSAES-OAEP encryption on PPC64LE: `EM`
 
 Untrusted: everything here is checked by Lean. `em_ok`: `EM` before masking
-(`encEm`, the label's hash and `copyLh`, as `RsaOaep.EmAt`); `mask_ok`: `DB`
+(`encEm`, the label's hash with the table that is our stack argument 8, and
+`copyLh`, as `RsaOaep.EmAt`); `mask_ok`: `DB`
 masked with MGF1 of the seed and the seed with MGF1 of `maskedDB`, which
 leaves EME-OAEP's encoding at `S` (`RsaOaep.emOf`, by `RsaOaep.em_mask`),
 MGF1's hash function being that of the table that is our stack argument `j`
@@ -32,6 +33,7 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_li wp_addi wp_subi wp_mov 
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.RsaOaep (mixV srcB EmAt emOf)
 open VG.Proof.Mgf1 (ifp ifn)
+open VG.Impl.RsaOaep.PPC64LE (hashLabelT)
 
 /-- The seed's and the message's bytes, the label's, and the message's length,
 from the entry state. -/
@@ -52,20 +54,22 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 /-- `EM` before masking: `encEm`, the label's hash and `copyLh`. -/
-theorem em_ok {H : Hash} (hH : HashOK H) {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
-    (hD : H.D = D) {t : State} (E : Entered s t) (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa}
-    {Q : State → Prop}
+theorem em_ok {H : Hash} (hH : HashOK H) {f : Impl.RsaOaep.PPC64LE.Fns} (TL : TabS H f 8 S s (stackArg s 8))
+    {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
+    (hD : H.D = D) {t : State} (E : Entered s t) (hsy : t.syms = s.syms) (hk : 2 * D + 2 + mLen s ≤ kk s)
+    {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → t'.syms = t.syms →
       EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) → WP isa rest t' Q) :
-    WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
+    WP isa (.seq (encEm H) (.seq (hashLabelT f 8 .r19 .r20) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
   have hDF := hH.hDF
   have F := hfits hH
   obtain ⟨_, hSt, hDg, hCt, hW, hRs⟩ := offs
   refine WP.seq (WP.mono_syms (encEm_ok P hD (by omega_arith) (by omega_arith) E hk) fun t₁ ⟨b₁, hp⟩ y₁ => ?_)
-  refine WP.seq (WP.mono_syms (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, d₂⟩ y₂ => ?_)
-  refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ => k t₃ b₃ (y₃.trans (y₂.trans y₁)) ?_)
+  refine WP.seq (WP.mono (hashLabelT_ok P hH TL b₁ (y₁.trans hsy)) fun t₂ ⟨⟨b₂, _, s₂, d₂⟩, y₂⟩ => ?_)
+  refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ =>
+    k t₃ b₃ (y₃.trans (y₂.trans hsy.symm)) ?_)
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, hH.hashTake, ← d₂, ← hD]
     simp only [Spec.Rsa.bytesAt]

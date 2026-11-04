@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Encode
 public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
@@ -73,8 +73,8 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 def ArgsW (s : State) (W : Nat → BitVec 64) : Prop := ∀ k, k = 14 ∨ (21 ≤ k ∧ k ≤ 31) → W k = encW s k
 
 theorem ArgsW.w {s : State} {W : Nat → BitVec 64} (h : ArgsW s W) :
-    W 14 = stackArg s 5 ∧ W 21 = s.gpr .rdi ∧ W 22 = s.gpr .rdx ∧ W 23 = s.gpr .rcx ∧ W 24 = s.gpr .r8 ∧
-    W 25 = s.gpr .r9 ∧ W 26 = stackArg s 6 ∧ W 27 = stackArg s 0 ∧ W 28 = stackArg s 1 ∧
+    W 14 = stackArg s 6 ∧ W 21 = s.gpr .rdi ∧ W 22 = s.gpr .rdx ∧ W 23 = s.gpr .rcx ∧ W 24 = s.gpr .r8 ∧
+    W 25 = s.gpr .r9 ∧ W 26 = stackArg s 7 ∧ W 27 = stackArg s 0 ∧ W 28 = stackArg s 1 ∧
     W 29 = stackArg s 2 ∧ W 30 = stackArg s 3 ∧ W 31 = stackArg s 4 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     (rw [h _ (by omega_using [])]; simp [encW, upd])
@@ -82,12 +82,15 @@ theorem ArgsW.w {s : State} {W : Nat → BitVec 64} (h : ArgsW s W) :
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-include hH KH mH in
-theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
-    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+include hH mH in
+theorem encEm_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
+    (hgf : Table.FnsGood f.fin) {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
+    (hTL : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Hl.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t)
+    (L : Lay t (fb s) (stackArg s 6))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
-    WP isa (encEm Hl.stream) t fun t' => EnvE s t' ∧ Lay t' (fb s) (stackArg s 5) ∧
-      ∃ V', Rep t'.mem (fb s) (stackArg s 5) V' W ∧
+    WP isa (encEm Hl.stream f) t fun t' => EnvE s t' ∧ Lay t' (fb s) (stackArg s 6) ∧
+      ∃ V', Rep t'.mem (fb s) (stackArg s 6) V' (upd W 35 (stackArg s 10)) ∧
         EmAt V' (s.gpr .rcx).toNat Hl.D (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
           (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
           (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) (stackArg s 3).toNat := by
@@ -101,35 +104,45 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
   have cD : oDig = 3328 := rfl
   have cW : oW = 4096 := rfl
   -- What reads the caller's buffers needs.
-  have scrC : ∀ {o : Nat}, o < oRsa → (scrR s).Contains (off (stackArg s 5) o) 1 := fun ho =>
+  have scrC : ∀ {o : Nat}, o < oRsa → (scrR s).Contains (off (stackArg s 6) o) 1 := fun ho =>
     Offset.contains_base _ (by unfold oRsa at ho; omega_using [hsl, ho]) (by unfold oRsa at ho; omega_using [ho])
-  unfold encEm seqs seqs seqs seqs
+  unfold encEm seqs seqs seqs seqs seqs
   -- `EM`'s place cleared.
-  refine WP.seq (WP.mono (wp_good clearEm_good (clearEm_ok L R)) fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (wp_good clearEm_good (clearEm_ok L R)) fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ sy1 => ?_)
   have he1 : EnvE s t1 := he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1
   -- The seed.
-  refine WP.seq (WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hl.stream) L1 R1 w31 hD (by omega_using [hDN, hN, hsD])
+  refine WP.seq (WP.mono_syms (wp_good (copySeed_good _) (copySeed_ok (H := Hl.stream) L1 R1 w31 hD (by omega_using [hDN, hN, hsD])
     (fun i hi => hp.rd_in he1.rd (by simp [rdL]) (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
       (k := mH.G.len) (by omega_using [hlen, hsD, hi]) (by omega_using [hDN, hN, hsD, hi])))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (Offset.contains_base (stackArg s 4) (d := i) (n := 1)
       (k := mH.G.len) (by omega_using [hlen, hsD, hi]) (by omega_using [hDN, hN, hsD, hi])) (scrC
           (by unfold oRsa; omega_using [hDN, hN, hsD, c0, hj])))))
-    fun t2 ⟨⟨L2, k2, R2⟩, sp2, mx2, f2⟩ => ?_)
+    fun t2 ⟨⟨L2, k2, R2⟩, sp2, mx2, f2⟩ sy2 => ?_)
   have he2 : EnvE s t2 := he1.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
+  -- The table of the label's hash function to its slot.
+  have TL2 := hTL t2 he2 (sy2.trans (sy1.trans hsy))
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L2 R2 TL2))
+    fun t2' ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
+  have he2' : EnvE s t2' := he2.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa
+  have hW' : ArgsW s (upd W 35 (stackArg s 10)) := fun k hk => by
+    simp only [upd]; rw [ifn (by omega)]; exact hW k hk
+  obtain ⟨-, -, -, w23, -, -, -, w27, w28, w29, w30, -⟩ := hW'.w
   -- The label's hash.
-  have hll : W 28 = BitVec.ofNat 64 (stackArg s 1).toNat := by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
-  have A2 : LabAt t2 (fb s) (stackArg s 5) W (stackArg s 0) (stackArg s 1).toNat :=
+  have hll : upd W 35 (stackArg s 10) 28 = BitVec.ofNat 64 (stackArg s 1).toNat := by
+    rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  have A2 : LabAt t2' (fb s) (stackArg s 6) (upd W 35 (stackArg s 10)) (stackArg s 0) (stackArg s 1).toNat :=
     ⟨w27, hll, (stackArg s 1).isLt, Covers.left (by
-        rw [he2.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
+        rw [he2'.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
       (hp.d_lb_scr.sub_right sS), (hp.d_stk_lb.sub_left (ret_sub s))⟩
-  refine WP.seq (WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oDig)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash L2 R2 A2 (Or.inl rfl)))
+  refine WP.seq (WP.mono (wp_good (hashLabelT_good hgi hgu hgf oDig)
+    (hashLabelT_ok hH.stream hgi hgu (Hs := mH.G) mH.hash (hTL t2' he2' (sya.trans (sy2.trans (sy1.trans hsy))))
+      (Table.TJ.refl t2' _) rfl rfl La Ra (by simp [upd]) A2 (Or.inl rfl)))
     fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, R3, hV3, hV3'⟩, sp3, mx3, f3⟩ => ?_)
-  have he3 : EnvE s t3 := he2.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3
-  have hlab : Spec.Rsa.bytesAt t2.mem (stackArg s 0) (stackArg s 1).toNat =
+  have he3 : EnvE s t3 := he2'.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3
+  have hlab : Spec.Rsa.bytesAt t2'.mem (stackArg s 0) (stackArg s 1).toNat =
       Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat :=
-    FrE.bytes he2.fr hp.d_stk_lb hp.d_out_lb hp.d_lb_scr.symm (by have := hp.wL; omega_using [])
+    FrE.bytes he2'.fr hp.d_stk_lb hp.d_out_lb hp.d_lb_scr.symm (by have := hp.wL; omega_using [])
   rw [hlab] at hV3'
   -- `lHash` after the seed.
   refine WP.seq (WP.mono (wp_good (copyLh_good _) (copyLh_ok (H := Hl.stream) L3 R3 hD (by omega_using [hDN, hN, hsD])))
@@ -175,25 +188,28 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       FrE.byte he4.fr hp.d_stk_ms hp.d_out_ms hp.d_ms_scr.symm (by have := hp.wM; omega_using []) hi,
       bytesAt_getD _ _ hi]
 
-include hH KH hG mH mG in
-/-- `EM` built and masked, with MGF1's hash function the one of the table
-that the stack argument 9 points to (`hT`), then `rest`, from the state with
+include hH hG mH mG in
+/-- `EM` built and masked, with the label's hash function the one of the
+table that the stack argument 10 points to (`hTL`, its address in its slot)
+and MGF1's the one of the table that the stack argument 11 points to
+(`hT`), then `rest`, from the state with
 the arguments of the public operation's call to make: `EnvE`, the slots, and
 `EM` in the working space. -/
 theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
     (hgf : Table.FnsGood f.fin) {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
-    (hT : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Gm.stream f (fb s) (stackArg s 9) (frameBytes + 8 + 8 * 9) t)
-    (L : Lay t (fb s) (stackArg s 5))
-    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+    (hT : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Gm.stream f (fb s) (stackArg s 11) (frameBytes + 8 + 8 * 11) t)
+    (hTL : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Hl.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t)
+    (L : Lay t (fb s) (stackArg s 6))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) {rest : Prog isa} {Q : State → Prop}
-    (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 5) → Rep t9.mem (fb s) (stackArg s 5) V9 W9 →
+    (hrest : ∀ t9 V9 W9, EnvE s t9 → Lay t9 (fb s) (stackArg s 6) → Rep t9.mem (fb s) (stackArg s 6) V9 W9 →
       (∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k) →
       (List.range (s.gpr .rcx).toNat).map (fun i => V9 (oEm + i)) =
         emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
           (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
           (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) → WP isa rest t9 Q) :
-    WP isa (.seq (encEm Hl.stream) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfT f 9)
-      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfT f 9) rest))))) t Q := by
+    WP isa (.seq (encEm Hl.stream f) (.seq (.block (dbArgs Hl.stream)) (.seq (mgfT f 11)
+      (.seq (.block (seedArgs Hl.stream)) (.seq (mgfT f 11) rest))))) t Q := by
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0
@@ -203,9 +219,14 @@ theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init)
   have cS : oSt = 3072 := rfl
   have w23' : W 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- `EM` before masking.
-  refine WP.seq (WP.mono_syms (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ sy5 => ?_)
+  refine WP.seq (WP.mono_syms (encEm_ok hH mH hgi hgu hgf hp he hsy hTL L R hW hk)
+    fun t5 ⟨he5, L5, V5, R5, E⟩ sy5 => ?_)
+  have hW5 : ArgsW s (upd W 35 (stackArg s 10)) := fun k hk => by
+    simp only [upd]; rw [ifn (by omega)]; exact hW k hk
+  have w23'' : upd W 35 (stackArg s 10) 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
+    simp only [upd]; exact w23'
   -- `DB` masked.
-  refine WP.seq (WP.mono_syms (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23'
+  refine WP.seq (WP.mono_syms (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23''
       (by omega_using [hk, hk2, hsD]) (by omega_using [hk, hsD])))
     fun t6 ⟨⟨L6, k6, R6⟩, sp6, mx6, f6⟩ sy6 => ?_)
   have he6 : EnvE s t6 := he5.step k6.2.1 k6.2.2 sp6 (keep_cs3 k6 (by decide)) mx6 f6
@@ -214,11 +235,11 @@ theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init)
         L6 R6 ⟨by unfold oEm oSt; omega_using [hk, hk2, hsD], by unfold oEm oSt; omega_using [hk, hk2, hsD], by omega_using [], by omega_using [hk, hsD], by omega_using [hk2]⟩
     (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ sy7 => ?_)
   have he7 : EnvE s t7 := he6.step rd7 wr7 sp7 (fun r hr _ => cs7 r hr) mx7 f7
-  have W7e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = W k := fun k h1 h2 h3 h4 =>
+  have W7e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = upd W 35 (stackArg s 10) k := fun k h1 h2 h3 h4 =>
     (hW7 k h2 h3 h4 (by omega) (by omega)).trans (mW_other (by omega))
   -- The seed masked.
   refine WP.seq (WP.mono_syms (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
-    ((W7e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23')
+    ((W7e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23'')
         (by omega_using [hk, hk2, hsD]) (by omega_using [hk, hsD])))
     fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ sy8 => ?_)
   have he8 : EnvE s t8 := he7.step k8.2.1 k8.2.2 sp8 (keep_cs3 k8 (by decide)) mx8 f8
@@ -232,7 +253,7 @@ theorem encMask_ok {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init)
     rw [hW9 k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])
       (by omega_using [h2]) (by omega_using [h2]), mW_other (by omega_using [h1]),
       W7e k (by omega_using [h1, h2]) (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h1]) (by omega_using [h1])]
-    exact hW k (.inr ⟨h1, by omega_using [h2]⟩)
+    exact hW5 k (.inr ⟨h1, by omega_using [h2]⟩)
   have e1 : (s.gpr .rcx).toNat - (Hl.D + 1) = (s.gpr .rcx).toNat - Hl.D - 1 := by omega_using []
   rw [hsD, e1] at hV7 hV9
   have hm : ∀ o, o < (s.gpr .rcx).toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by omega_using [hk2, cS, ho]))

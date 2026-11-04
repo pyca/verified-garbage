@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
@@ -74,8 +75,8 @@ theorem encEnd_ok {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : En
     · exact hp.d_ret_scr
 
 /-- Zeros to `out` and 0, from a state in the frame. -/
-theorem encFail_ok {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
-    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W) :
+theorem encFail_ok {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 6))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W) :
     WP isa zeroOut t fun t' => EnvE s t' ∧
       Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32) none := by
   obtain ⟨w14, w21, w22, w23, -⟩ := hW.w
@@ -115,59 +116,86 @@ theorem chkMsg_ok {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {u : State} {F S : Addr} (
     VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega)]
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
-/-- The prologue and the check of `k`: in the frame, with the argument
-slots, `rax = k` and CF set if `k < 2 hLen + 2`. -/
-theorem encHead_ok {H : Spec.Mgf1.Hash} {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {s : State} (hp : EPre H s)
-    (hD : Hm.D < 2 ^ 20) :
-    WP isa (.block (encPrologue ++ chkK Hm)) (allocState frameBytes s) fun t2 => EnvE s t2 ∧
-      Lay t2 (fb s) (stackArg s 5) ∧
-      Rep t2.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) ∧
-      t2.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧
-      t2.cf = some (decide ((s.gpr .rcx).toNat < 2 * Hm.D + 2)) := by
-  have hk1 := hp.k1; have hk2 := hp.k2
-  rw [WP.block_append_iff]
+/-- The prologue: in the frame, with the argument slots. -/
+theorem encHead_ok {H : Spec.Mgf1.Hash} {s : State} (hp : EPre H s) :
+    WP isa (.block encPrologue) (allocState frameBytes s) fun t1 => EnvE s t1 ∧
+      Lay t1 (fb s) (stackArg s 6) ∧
+      Rep t1.mem (fb s) (stackArg s 6) (fun o => s.mem (off (stackArg s 6) o)) (encW s) := by
   refine WP.mono (wp_good (block_good _ rfl) (encPro_ok hp)) fun t1 ⟨⟨k1, L1, R1, f1⟩, sp1, mx1, _⟩ => ?_
-  have hW : ArgsW s (encW s) := fun _ _ => rfl
-  obtain ⟨-, -, -, w23, -⟩ := hW.w
-  have w23' : encW s 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
-    rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.mono (wp_good (block_good _ rfl) (chkK_ok (Hm := Hm) L1 R1 w23' (by omega) hD))
-    fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, _⟩ => ?_
-  have he2 : EnvE s t2 :=
-    { rsp := (k2.gpr (by decide)).trans ((k1.gpr (by decide)).trans rfl)
-      rd := k2.2.1.trans k1.2.1
-      wr := k2.2.2.trans (k1.2.2.trans (EPre.wr hp))
+  have he1 : EnvE s t1 :=
+    { rsp := (k1.gpr (by decide)).trans rfl
+      rd := k1.2.1
+      wr := k1.2.2.trans (EPre.wr hp)
       cs := fun r hr h => by
-        rw [k2.gpr (cs_disj [.rax] (by decide) r hr), k1.gpr (cs_disj [.rax] (by decide) r hr)]
+        rw [k1.gpr (cs_disj [.rax] (by decide) r hr)]
         show (if r = .rsp then _ else s.gpr r) = s.gpr r
         simp only [h, ↓reduceIte]
-      mx := by rw [mx2, mx1]; rfl
-      fr := by
-        rw [hm2]
-        exact Frame.sub f1 fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩ }
-  exact ⟨he2, L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), hm2 ▸ R1, hax2, hcf2⟩
+      mx := by rw [mx1]; rfl
+      fr := Frame.sub f1 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩ }
+  exact ⟨he1, L1, R1⟩
+
+/-- The checks, for the digest length the code uses only. -/
+theorem encChecks_D {G G' : Impl.Pbkdf2.Md.X86_64.Stream} (h : G.D = G'.D) (main : Prog isa) :
+    encChecks G main = encChecks G' main := by
+  simp only [encChecks, chkK, chkMsg, h]
+
+theorem ArgsW_35 {s : State} {p : Addr} : ArgsW s (upd (encW s) 35 p) := fun k hk => by
+  simp only [upd]; rw [ifn (by omega)]
 
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-include hH in
-/-- The prologue and the checks, then `main` from a state in the frame if
-they pass: `Q`, if failing them leads to `Q` and `main` does. -/
-theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp : EPre Hs s) {Q : State → Prop}
+include hH mH in
+/-- The prologue, the table of the label's hash function to its slot, the
+branch on its digest length and the checks, then `main` from a state in the
+frame if they pass: `Q`, if failing them leads to `Q` and `main` does. -/
+theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {f : Impl.Mgf1.X86_64.Table.Fns} {main : Nat → Prog isa} {s : State}
+    (hp : EPre Hs s)
+    (hTL : ∀ t, EnvE s t → t.syms = s.syms → Table.Tab Hl.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t)
+    {Q : State → Prop}
     (hfail : ∀ t', EnvE s t' → Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
       none → ¬ 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → Q t')
-    (hmain : ∀ t, EnvE s t → t.syms = s.syms → Lay t (fb s) (stackArg s 5) →
-      Rep t.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) →
-      2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → WP isa main t Q) :
-    WP isa (encBodyWith Hl.stream main) (allocState frameBytes s) Q := by
+    (hmain : ∀ t, EnvE s t → t.syms = s.syms → Lay t (fb s) (stackArg s 6) →
+      Rep t.mem (fb s) (stackArg s 6) (fun o => s.mem (off (stackArg s 6) o)) (upd (encW s) 35 (stackArg s 10)) →
+      2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → WP isa (main Hl.D) t Q) :
+    WP isa (encBodyWith main) (allocState frameBytes s) Q := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0; have hDN := hH.hDN; have hN := hH.N_le
   have hsD : Hl.stream.D = Hl.D := rfl
+  have hDl : Hl.stream.D ∈ lens := by rw [hsD, ← mH.len]; exact mem_lens mH.mem
   unfold encBodyWith seqs seqs seqs
-  have hW : ArgsW s (encW s) := fun _ _ => rfl
+  have hW : ArgsW s (upd (encW s) 35 (stackArg s 10)) := ArgsW_35
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
-  refine WP.seq (WP.mono_syms (encHead_ok (Hm := Hl.stream) hp (by omega)) fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ sy2 => ?_)
+  refine WP.seq (WP.mono_syms (encHead_ok hp) fun t1 ⟨he1, L1, R1⟩ sy1 => ?_)
+  have TL := hTL t1 he1 sy1
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L1 R1 TL))
+    fun ta ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
+  have hea : EnvE s ta := he1.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa
+  have hDa : ta.mem.readW (off (stackArg s 10) 32) 64 = BitVec.ofNat 64 Hl.stream.D :=
+    (TL.mem ta.mem (by have := fa; rwa [L1.rsp] at this)).2.1
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (lenLoad_ok La Ra (by simp [upd])
+      (by rw [ka.2.1, ka.2.2]; exact TL.rdD) hDa))
+    fun tb ⟨⟨kb, h11b, hmb, syb⟩, spb, mxb, fb'⟩ _ => ?_)
+  have heb : EnvE s tb := hea.step kb.2.1 kb.2.2 spb (keep_cs3 kb (by decide)) mxb fb'
+  refine byLen_ok hDl (by decide) (mem_lens_lt hDl) h11b fun t1' kc hmc syc mxc => ?_
+  rw [encChecks_D (G := ofLen Hl.stream.D) (G' := Hl.stream) rfl]
+  have he1' : EnvE s t1' := heb.step kc.2.1 kc.2.2 (kc.gpr (by simp)) (keep_cs3 kc rfl) mxc
+    (by rw [hmc]; exact Frame.refl _ _)
+  have hm1' : t1'.mem = ta.mem := hmc.trans hmb
+  have L1' : Lay t1' (fb s) (stackArg s 6) := La.congr ((kc.gpr (by simp)).trans (kb.gpr (by decide)))
+    (kc.2.2.trans kb.2.2) (by rw [hm1'])
+  have R1' := hm1' ▸ Ra
+  have sy1' : t1'.syms = s.syms := syc.trans (syb.trans (sya.trans sy1))
+  unfold encChecks seqs seqs seqs
+  have w23' : upd (encW s) 35 (stackArg s 10) 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
+    rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) L1' R1' w23' (by omega)
+      (by omega)))
+    fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ?_)
+  have he2 : EnvE s t2 := he1'.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
+  have L2 : Lay t2 (fb s) (stackArg s 6) := L1'.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
+  have R2 := hm2 ▸ R1'
   refine WP.ite (M := isa) _ (show isa.eval .b t2 = _ from hcf2) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
     exact WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
@@ -177,12 +205,12 @@ theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp :
       (by omega) (stackArg s 3).isLt (by omega)))
       fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ sy3 => ?_)
     have he3 : EnvE s t3 := he2.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3
-    have L3 : Lay t3 (fb s) (stackArg s 5) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
-    have R3 : Rep t3.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) := hm3 ▸ R2
+    have L3 : Lay t3 (fb s) (stackArg s 6) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
+    have R3 := hm3 ▸ R2
     refine WP.ite (M := isa) _ (show isa.eval .b t3 = _ from hcf3) (fun hb' => ?_) (fun hb' => ?_)
     · rw [decide_eq_true_eq] at hb'
       exact WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
     · rw [decide_eq_false_iff_not] at hb'
-      exact hmain t3 he3 (sy3.trans (sy2.trans rfl)) L3 R3 (by omega)
+      exact hmain t3 he3 (sy3.trans (sy2.trans sy1')) L3 R3 (by omega)
 
 end VG.Proof.RsaOaep.X86_64

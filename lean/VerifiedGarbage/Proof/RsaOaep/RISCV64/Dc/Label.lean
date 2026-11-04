@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Priv
 public import VerifiedGarbage.Proof.RsaOaep.Scan
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Label
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
@@ -12,7 +14,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/Label.lean`, `Dc/Scan.lean`), with the label and
 its length loaded from our stack arguments 9 and 10 (`wp_argB`): its hash to
-`scratch + oDig` (`hashLabel_ok`), and the accumulator of `EM`'s first byte
+`scratch + oDig`, through the table that is our stack argument 15, of the
+hash function `H` (`hashLabelT_ok`), and the accumulator of `EM`'s first byte
 and `lHash' ⊕ lHash` (`accLh_ok`, `accG`), which reads our part of the
 working space only.
 -/
@@ -26,8 +29,9 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only wp_li wp_addi wp_subi wp_mov wp_xor wp_or wp_ld wp_lbu wp_addSp wp_nil)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
-open VG.Proof.RsaOaep.RISCV64 (Base Fits SC Same view off offs hfits init_ok upd_ok fin_ok bytes_entry sc_in sc_inR
-  cR_sub only_pres)
+open VG.Proof.RsaOaep.RISCV64 (Base Fits SC Same view off offs hfits initT_ok updT_ok finT_ok bytes_entry sc_in sc_inR
+  cR_sub only_pres TabS)
+open VG.Impl.RsaOaep.RISCV64 (Fns hashLabelT)
 open VG.Proof.Bignum.RISCV64 (wp_countdown)
 open VG.Proof.RsaOaep (accG)
 
@@ -38,7 +42,7 @@ include P
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 in the decoding, whose memory is that after the private operation, `m`. -/
 theorem wp_argB (hm : Frame [kD s, scR s] s.mem m) {u : State} {r : Reg} {j : Nat} {is : List Instr}
-    {Q : State → Prop} (hj : j < 16) (h6 : u.gpr .t6 = s.sp) (hrd : u.rd = s.rd)
+    {Q : State → Prop} (hj : j < 17) (h6 : u.gpr .t6 = s.sp) (hrd : u.rd = s.rd)
     (hmu : Frame [Proof.RsaOaep.RISCV64.kR s, SC (SD s) s] m u.mem)
     (k : ∀ u', Only [r] u u' → u'.gpr r = stackArg s j → WP isa (.block is) u' Q)
     (ho : 8 * j < 2048 := by decide) :
@@ -56,47 +60,50 @@ theorem wp_argB (hm : Frame [kD s, scR s] s.mem m) {u : State} {r : Reg} {j : Na
         · exact P.ka.symm
         · exact P.sa.symm) (by decide)]
 
-theorem hashLabel_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame [kD s, scR s] s.mem m) {t : State}
-    (h : Base (SD s) (VD s rc) (withMem s m) t) :
-    WP isa (Dec.hashLabel H) t fun t' => Base (SD s) (VD s rc) (withMem s m) t' ∧
+theorem hashLabelT_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame [kD s, scR s] s.mem m) {f : Fns}
+    {p : Addr} (T : TabS H f 15 (SD s) (withMem s m) p) {t : State}
+    (h : Base (SD s) (VD s rc) (withMem s m) t) (sy : t.syms = s.syms) :
+    WP isa (hashLabelT f 15 Dec.labU Dec.labF) t fun t' => (Base (SD s) (VD s rc) (withMem s m) t' ∧
       (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧ Same (Sd s) t t' [(oSt, H.S), (oDig, H.D)] ∧
       Spec.Rsa.bytesAt t'.mem (off (Sd s) oDig) H.D =
-        hH.SH.H.hash (Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat) := by
+        hH.SH.H.hash (Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat)) ∧ t'.syms = s.syms := by
   have F := hfits hH
   have PF : Fits (SD s) (withMem s m) := fits P rfl rfl
   obtain ⟨_, _, _, _, _⟩ := offs
   have top : ∀ {u : State}, u.sp = fb s → u.sp + BitVec.ofNat 64 frameBytes = s.sp := fun hu => by
     rw [hu, BitVec.sub_add_cancel]
-  refine WP.seq (wp_addi (imm := oSt) fun t₁ o₁ e₁ => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_addi (imm := oSt) fun t₁ o₁ e₁ => wp_nil fun y₁ => ?_))
   have b₁ := h.only PF o₁
-  refine WP.seq (WP.mono (init_ok PF hH hF b₁ (by rw [e₁, h.s0])) fun t₂ ⟨b₂, g₂, s₂, r₂⟩ => ?_)
-  unfold argBase
-  refine WP.seq (wp_addSp (imm := frameBytes) (fun t₃ o₃ e₃ => wp_addi (imm := oSt) fun t₄ o₄ e₄ =>
-    wp_li (imm := 0) (by decide) fun t₅ o₅ e₅ => ?_) (by decide))
+  have sy₁ : t₁.syms = (withMem s m).syms := y₁.trans sy
+  refine WP.seq (WP.mono (initT_ok PF T hH hF b₁ sy₁ (by rw [e₁, h.s0])) fun t₂ ⟨⟨b₂, g₂, s₂, r₂⟩, y₂⟩ => ?_)
+  unfold Dec.labU argBase
+  refine WP.seq (WP.of_syms (wp_addSp (imm := frameBytes) (fun t₃ o₃ e₃ => wp_addi (imm := oSt) fun t₄ o₄ e₄ =>
+    wp_li (imm := 0) (by decide) fun t₅ o₅ e₅ => ?_) (by decide)))
   have K₅ : Only [.t6, .a0, .a1] t₂ t₅ := (o₃.trans (o₄.trans o₅)).mono
   have g6 : t₅.gpr .t6 = s.sp := by rw [o₅.get .t6, o₄.get .t6, e₃, top b₂.sv.sp]
   refine wp_argB P hm (j := 9) (by decide) g6 (K₅.rd.trans b₂.rd) (by rw [K₅.mem]; exact b₂.mem)
     fun t₆ o₆ e₆ => wp_argB P hm (j := 10) (by decide) (by rw [o₆.get .t6, g6])
-      ((o₆.rd.trans K₅.rd).trans b₂.rd) (by rw [o₆.mem, K₅.mem]; exact b₂.mem) fun t₇ o₇ e₇ => wp_nil ?_
+      ((o₆.rd.trans K₅.rd).trans b₂.rd) (by rw [o₆.mem, K₅.mem]; exact b₂.mem) fun t₇ o₇ e₇ => wp_nil fun y₇ => ?_
   have k₇ : Only [.t6, .a0, .a1, .a2, .a3] t₂ t₇ := (K₅.trans (o₆.trans o₇)).mono
   have b₇ := b₂.only PF k₇
   have hl : lR s ∈ s.rd := by rw [P.hrd]; simp
   have hb : Spec.Rsa.bytesAt t₇.mem (stackArg s 9) (stackArg s 10).toNat =
       Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat :=
     bytes_entry b₇.mem (P.kl.sub_left kR_sub) ((P.ls.symm).sub_left (sc_sub P)) (by have := P.wl; omega)
-  refine WP.seq (WP.mono (upd_ok PF hH hF b₇ (dat := stackArg s 9) (len := (stackArg s 10).toNat)
+  refine WP.seq (WP.mono (updT_ok PF T hH hF b₇ (y₇.trans y₂) (dat := stackArg s 9) (len := (stackArg s 10).toNat)
     (by rw [o₇.get .a0, o₆.get .a0, o₅.get .a0, e₄, o₃.get .s0, b₂.s0])
     (by rw [o₇.get .a2, e₆])
     (by rw [e₇])
     (Covers.left (by rw [b₇.rd]; exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hl))
     ((P.ls.sub_right (sc_sub P)).sub_right (sc_in (by omega)))
-    (P.kl.sub_left fun a ha => kR_sub a (cR_sub (withMem s m) a ha))) fun t₈ ⟨b₈, g₈, s₈, r₈⟩ => ?_)
-  refine WP.seq (wp_addSp (imm := frameBytes) (fun t₉ o₉ e₉ => wp_addi (imm := oSt) fun t₁₀ o₁₀ e₁₀ => ?_)
-    (by decide))
+    (P.kl.sub_left fun a ha => kR_sub a (cR_sub (withMem s m) a ha))) fun t₈ ⟨⟨b₈, g₈, s₈, r₈⟩, y₈⟩ => ?_)
+  unfold Dec.labF argBase
+  refine WP.seq (WP.of_syms (wp_addSp (imm := frameBytes) (fun t₉ o₉ e₉ => wp_addi (imm := oSt) fun t₁₀ o₁₀ e₁₀ => ?_)
+    (by decide)))
   have g6' : t₁₀.gpr .t6 = s.sp := by rw [o₁₀.get .t6, e₉, top b₈.sv.sp]
   refine wp_argB P hm (j := 10) (by decide) g6' ((o₁₀.rd.trans o₉.rd).trans b₈.rd)
     (by rw [o₁₀.mem, o₉.mem]; exact b₈.mem) fun t₁₁ o₁₁ e₁₁ =>
-      wp_addi (imm := oDig) (fun t₁₂ o₁₂ e₁₂ => wp_nil ?_)
+      wp_addi (imm := oDig) (fun t₁₂ o₁₂ e₁₂ => wp_nil fun y₁₂ => ?_)
   have k₁₂ : Only [.t6, .a0, .a1, .a2] t₈ t₁₂ := (o₉.trans (o₁₀.trans (o₁₁.trans o₁₂))).mono
   have b₁₂ := b₈.only PF k₁₂
   have g1 : t₁₂.gpr .a1 = stackArg s 10 := by rw [o₁₂.get .a1, e₁₁]
@@ -104,9 +111,9 @@ theorem hashLabel_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hm : Frame [
     rw [k₁₂.mem, ← hb]
     have := r₈ [] (by rw [k₇.mem]; exact r₂) (by rw [o₇.get .a1, o₆.get .a1, e₅]; rfl)
     simp only [List.nil_append] at this; exact this
-  refine WP.mono (fin_ok PF hH hF b₁₂ (by rw [o₁₂.get .a0, o₁₁.get .a0, e₁₀, o₉.get .s0, b₈.s0])
-    (by rw [e₁₂, o₁₁.get .s0, o₁₀.get .s0, o₉.get .s0, b₈.s0])) fun t' ⟨b', g', s', r'⟩ =>
-      ⟨b', fun r hr' => ?_, ?_, ?_⟩
+  refine WP.mono (finT_ok PF T hH hF b₁₂ (y₁₂.trans y₈) (by rw [o₁₂.get .a0, o₁₁.get .a0, e₁₀, o₉.get .s0, b₈.s0])
+    (by rw [e₁₂, o₁₁.get .s0, o₁₀.get .s0, o₉.get .s0, b₈.s0])) fun t' ⟨⟨b', g', s', r'⟩, y'⟩ =>
+      ⟨⟨b', fun r hr' => ?_, ?_, ?_⟩, y'⟩
   · rw [g' r hr', only_pres k₁₂ (by decide) r hr', g₈ r hr', only_pres k₇ (by decide) r hr', g₂ r hr',
       only_pres o₁ (by decide) r hr']
   · have e : ∀ {a b : State}, a.mem = b.mem → ∀ rgs, Same (Sd s) a b rgs := fun e rgs => Same.of_mem e.symm rgs

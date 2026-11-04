@@ -204,9 +204,9 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
     · rw [ite_eq_left h1, ite_eq_left (by omega_arith), Proof.Mgf1.xorBytes_getD (by omega_arith) (by omega_arith)]
     · rw [ite_eq_right h1, ite_eq_right (by omega_arith)]
 
-/-- MGF1's table, the argument 15, in a buffer only read. -/
+/-- MGF1's table, the argument 17, in a buffer only read. -/
 theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
-    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA ((P.lay D).argv.getD 15 0) o) 4 := by
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA ((P.lay D).argv.getD 17 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
@@ -220,7 +220,7 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
     VP (fun σ s => (E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
         (msgB P σ) P.ml) ∧ s.syms = σ.syms)
-      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 15) (.seq (.block (seedArgs h.H 3)) (mgfXor f 15))))
+      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 17) (.seq (.block (seedArgs h.H 3)) (mgfXor f 17))))
       (fun σ s => E1 h g P σ s ∧ s.syms = σ.syms) := by
   by_cases hP : ∃ σ, In h.H.D P σ ∧ fits h P
   swap
@@ -231,7 +231,7 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
   have hD := h.D_le
   have hD0 := h.D_pos
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
-  have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 15 0) P.ai P.au P.af σ :=
+  have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 17 0) P.ai P.au P.af σ :=
     fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
     (by omega_arith) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P) (seedB_length h P)

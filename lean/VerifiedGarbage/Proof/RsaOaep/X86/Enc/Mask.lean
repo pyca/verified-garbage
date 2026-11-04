@@ -234,9 +234,9 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
     · rw [ite_eq_left h1, ite_eq_left (by omega), Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
     · rw [ite_eq_right h1, ite_eq_right (by omega)]
 
-/-- MGF1's table, the argument 15, in a buffer only read. -/
+/-- MGF1's table, the argument 17, in a buffer only read. -/
 theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
-    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 15 0) o) 4 := by
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 17 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
@@ -252,7 +252,7 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
     (k : VP (fun σ s => E1 h g P σ s ∧ s.syms = σ.syms) c Q) :
     VP (fun σ s => (E0 h P σ s ∧ Proof.RsaOaep.EmAt (emV P.scr s.mem) P.K h.H.D (seedB h P σ) (lhB h P σ)
         (msgB P σ) P.ml) ∧ s.syms = σ.syms)
-      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 15) (.seq (.block (seedArgs h.H 3)) (.seq (mgfXor f 15) c))))
+      (.seq (.block (dbArgs h.H 3)) (.seq (mgfXor f 17) (.seq (.block (seedArgs h.H 3)) (.seq (mgfXor f 17) c))))
       Q := by
   by_cases hP : ∃ σ, In h.H.D P σ ∧ fits h P
   swap
@@ -263,14 +263,14 @@ theorem mask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab
   have hD := h.D_le
   have hD0 := h.D_pos
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
-  have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 15 0) P.ai P.au P.af σ :=
+  have tab : ∀ σ m, X0 h P σ m → TabFacts g.H f ((P.lay h.H.D).argv.getD 17 0) P.ai P.au P.af σ :=
     fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
     (by omega) (by oomega) (by oomega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P)
-    (seedB_length h P) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg15_taint tab fne
+    (seedB_length h P) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg17_taint tab fne
   have P2 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
     (by omega) hD0 (by oomega) (by oomega) (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P)
-    (mdbB_length h g hf) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg15_taint tab fne
+    (mdbB_length h g hf) (x0_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg17_taint tab fne
   refine VP.seq (VP.syms (db_vp h P)) (VP.seq (mgf_vp g P1 (dstv := fun σ i => (dbB h P σ).getD i 0))
     (VP.seq (VP.syms (seed_vp h g P)) (VP.seq ((mgf_vp g P2 (dstv := fun σ i => (seedB h P σ).getD i 0)).mono
       (fun _ _ hh => hh) fun σ s ⟨⟨hc, ⟨⟨⟨hi, _⟩, z0⟩, _⟩, hsd, hdb⟩, sy⟩ => ⟨⟨⟨hc, hi, hf⟩, fun i hi' => ?_⟩, sy⟩)

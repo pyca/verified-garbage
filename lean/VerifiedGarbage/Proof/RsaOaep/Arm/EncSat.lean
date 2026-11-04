@@ -8,11 +8,11 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the contract is satisfiable
 
-A state that meets `encryptTableContract` (`encrypt_sat`), for each hash
-function ARMv7 registers RSAES-OAEP with, with MGF1's the table of any `w`
-of `vs`: a modulus of 64 bytes, `e` of one byte, an empty label and
-message, the seed, the working space it needs, the precomputed values' 16
-words, the stack arguments at `0x8000`, and the table at `0x300000`
+A state that meets `encryptTablesContract` (`encrypt_sat`), with both hash
+functions the table of any `w` of `vs`: a modulus of 64 bytes, `e` of one
+byte, an empty label and message, the seed of the hash function's digest
+length, the working space it needs, the precomputed values' 16 words, the
+stack arguments at `0x8000`, and the table, both arguments, at `0x300000`
 (`withTable`).
 -/
 
@@ -21,8 +21,9 @@ words, the stack arguments at `0x8000`, and the table at `0x300000`
 namespace VG.Proof.RsaOaep.Arm.Enc
 
 open VG VG.Arm
-open VG.Proof.HashTable.Arm (TVar tables tableOf names withTable withTable_held withTable_below)
-open VG.Proof.HashTable (symsOf32_distinct)
+open VG.Proof.HashTable.Arm (TVar tables tableOf names withTable withTable_held withTable_below hashAt_tableOf
+  held_tableOf)
+open VG.Proof.HashTable (symsOf32_distinct2)
 
 /-- The state, for a seed of `D` bytes, but for the table. -/
 def satState (D : Nat) : State where
@@ -38,60 +39,81 @@ def satState (D : Nat) : State where
     if a = 0x8009 then 0x30 else
     if a = 0x8011 then 0x31 else
     if a = 0x8019 then 0x32 else
-    if a = 0x801e then 1 else
-    if a = 0x8020 then 0x20 else
-    if a = 0x8021 then 8 else
-    if a = 0x8025 then 0x70 else
-    if a = 0x8028 then 0x10 else
-    if a = 0x802e then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, D⟩, ⟨0x7000, 128⟩, ⟨0x300000, 20⟩, ⟨0x8000, 48⟩]
+    if a = 0x801c then BitVec.ofNat 8 D else
+    if a = 0x8022 then 1 else
+    if a = 0x8024 then 0x20 else
+    if a = 0x8025 then 8 else
+    if a = 0x8029 then 0x70 else
+    if a = 0x802c then 0x10 else
+    if a = 0x8032 then 0x30 else
+    if a = 0x8036 then 0x30 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, D⟩, ⟨0x7000, 128⟩, ⟨0x300000, 20⟩,
+    ⟨0x300000, 20⟩, ⟨0x8000, 56⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x10000, 2080 * 8⟩]
 
-/-- The hash functions ARMv7 registers RSAES-OAEP with. -/
-def hashes : List Spec.Mgf1.Hash :=
-  [Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512, Spec.Mgf1.sha512_224,
-    Spec.Mgf1.sha512_256]
-
-theorem encrypt_sat {H : Spec.Mgf1.Hash} (hH : H ∈ hashes) {vs : List TVar} {w : TVar} (hw : w ∈ vs)
-    (hl : (names vs).length < 2 ^ 24) : ∃ s, (spec H (tables vs)).pre s := by
-  refine ⟨withTable (satState H.len) vs w, ?_⟩
-  have hA : ∀ D, ∀ j < 12, (stackArgAddr (satState D) j).toNat + 4 ≤ 0x300000 := fun _ => by
-    show ∀ j < 12, (stackArgAddr (satState 0) j).toNat + 4 ≤ 0x300000; decide
-  have a0 : ∀ D, stackArg (withTable (satState D) vs w) 0 = 0x2100 := fun D =>
-    (withTable_below _ _ _ (hA D 0 (by decide))).trans (show stackArg (satState 0) 0 = 0x2100 by decide)
-  have a1 : ∀ D, stackArg (withTable (satState D) vs w) 1 = 1 := fun D =>
-    (withTable_below _ _ _ (hA D 1 (by decide))).trans (show stackArg (satState 0) 1 = 1 by decide)
-  have a2 : ∀ D, stackArg (withTable (satState D) vs w) 2 = 0x3000 := fun D =>
-    (withTable_below _ _ _ (hA D 2 (by decide))).trans (show stackArg (satState 0) 2 = 0x3000 by decide)
-  have a3 : ∀ D, stackArg (withTable (satState D) vs w) 3 = 0 := fun D =>
-    (withTable_below _ _ _ (hA D 3 (by decide))).trans (show stackArg (satState 0) 3 = 0 by decide)
-  have a4 : ∀ D, stackArg (withTable (satState D) vs w) 4 = 0x3100 := fun D =>
-    (withTable_below _ _ _ (hA D 4 (by decide))).trans (show stackArg (satState 0) 4 = 0x3100 by decide)
-  have a5 : ∀ D, stackArg (withTable (satState D) vs w) 5 = 0 := fun D =>
-    (withTable_below _ _ _ (hA D 5 (by decide))).trans (show stackArg (satState 0) 5 = 0 by decide)
-  have a6 : ∀ D, stackArg (withTable (satState D) vs w) 6 = 0x3200 := fun D =>
-    (withTable_below _ _ _ (hA D 6 (by decide))).trans (show stackArg (satState 0) 6 = 0x3200 by decide)
-  have a7 : ∀ D, stackArg (withTable (satState D) vs w) 7 = 0x10000 := fun D =>
-    (withTable_below _ _ _ (hA D 7 (by decide))).trans (show stackArg (satState 0) 7 = 0x10000 by decide)
-  have a8 : ∀ D, stackArg (withTable (satState D) vs w) 8 = 0x820 := fun D =>
-    (withTable_below _ _ _ (hA D 8 (by decide))).trans (show stackArg (satState 0) 8 = 0x820 by decide)
-  have a9 : ∀ D, stackArg (withTable (satState D) vs w) 9 = 0x7000 := fun D =>
-    (withTable_below _ _ _ (hA D 9 (by decide))).trans (show stackArg (satState 0) 9 = 0x7000 by decide)
-  have a10 : ∀ D, stackArg (withTable (satState D) vs w) 10 = 16 := fun D =>
-    (withTable_below _ _ _ (hA D 10 (by decide))).trans (show stackArg (satState 0) 10 = 16 by decide)
-  have a11 : ∀ D, stackArg (withTable (satState D) vs w) 11 = 0x300000 := fun D =>
-    (withTable_below _ _ _ (hA D 11 (by decide))).trans (show stackArg (satState 0) 11 = 0x300000 by decide)
-  have e : ∀ D, stackArgAddr (withTable (satState D) vs w) 0 = 0x8000 := fun _ =>
-    show stackArgAddr (satState 0) 0 = _ by decide
-  simp only [hashes, List.mem_cons, List.not_mem_nil, or_false] at hH
-  rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
+    ∃ s, (spec (tables vs)).pre s := by
+  have hha : ∀ s : State, Spec.HashTable.hashAt 32 (withTable s vs w).mem (State.addr (0x300000 : BitVec 32)) =
+      some w.g.G := fun s => hashAt_tableOf (by decide) (held_tableOf (by decide) (withTable_held s vs w)).2.1
+  have hl' : w.g.G.len ∈ Impl.RsaOaep.Arm.lens := w.g.glen ▸ w.g.lens
+  generalize hDd : w.g.G.len = D at hl'
+  refine ⟨withTable (satState D) vs w, ?_⟩
+  have hA : ∀ D ∈ Impl.RsaOaep.Arm.lens, ∀ j < 14, (stackArgAddr (satState D) j).toNat + 4 ≤ 0x300000 := by decide
+  have hA' := hA D hl'
+  have a0 : stackArg (withTable (satState D) vs w) 0 = 0x2100 :=
+    (withTable_below _ _ _ (hA' 0 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 0 = 0x2100 by decide) D hl')
+  have a1 : stackArg (withTable (satState D) vs w) 1 = 1 :=
+    (withTable_below _ _ _ (hA' 1 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 1 = 1 by decide) D hl')
+  have a2 : stackArg (withTable (satState D) vs w) 2 = 0x3000 :=
+    (withTable_below _ _ _ (hA' 2 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 2 = 0x3000 by decide) D hl')
+  have a3 : stackArg (withTable (satState D) vs w) 3 = 0 :=
+    (withTable_below _ _ _ (hA' 3 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 3 = 0 by decide) D hl')
+  have a4 : stackArg (withTable (satState D) vs w) 4 = 0x3100 :=
+    (withTable_below _ _ _ (hA' 4 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 4 = 0x3100 by decide) D hl')
+  have a5 : stackArg (withTable (satState D) vs w) 5 = 0 :=
+    (withTable_below _ _ _ (hA' 5 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 5 = 0 by decide) D hl')
+  have a6 : stackArg (withTable (satState D) vs w) 6 = 0x3200 :=
+    (withTable_below _ _ _ (hA' 6 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 6 = 0x3200 by decide) D hl')
+  have a7 : stackArg (withTable (satState D) vs w) 7 = BitVec.ofNat 32 D :=
+    (withTable_below _ _ _ (hA' 7 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 7 = BitVec.ofNat 32 D by decide) D hl')
+  have a8 : stackArg (withTable (satState D) vs w) 8 = 0x10000 :=
+    (withTable_below _ _ _ (hA' 8 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 8 = 0x10000 by decide) D hl')
+  have a9 : stackArg (withTable (satState D) vs w) 9 = 0x820 :=
+    (withTable_below _ _ _ (hA' 9 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 9 = 0x820 by decide) D hl')
+  have a10 : stackArg (withTable (satState D) vs w) 10 = 0x7000 :=
+    (withTable_below _ _ _ (hA' 10 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 10 = 0x7000 by decide) D hl')
+  have a11 : stackArg (withTable (satState D) vs w) 11 = 16 :=
+    (withTable_below _ _ _ (hA' 11 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 11 = 16 by decide) D hl')
+  have a12 : stackArg (withTable (satState D) vs w) 12 = 0x300000 :=
+    (withTable_below _ _ _ (hA' 12 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 12 = 0x300000 by decide) D hl')
+  have a13 : stackArg (withTable (satState D) vs w) 13 = 0x300000 :=
+    (withTable_below _ _ _ (hA' 13 (by decide))).trans
+      ((show ∀ D ∈ Impl.RsaOaep.Arm.lens, stackArg (satState D) 13 = 0x300000 by decide) D hl')
+  have e : stackArgAddr (withTable (satState D) vs w) 0 = 0x8000 := rfl
+  have hha' := hha (satState D)
+  simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
+  rcases hl' with rfl | rfl | rfl | rfl | rfl
   all_goals
-    sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, e]
-    sig_pre [Spec.RsaOaep.encryptTableContract, Spec.RsaOaep.encryptTableSig, Spec.RsaOaep.encryptPrecomputedSig,
+      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+      a12, a13, e]
+    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
     sig_and_intros
@@ -100,7 +122,10 @@ theorem encrypt_sat {H : Spec.Mgf1.Hash} (hH : H ∈ hashes) {vs : List TVar} {w
       | decide
       | exact Region.disjoint_of_sep (by decide)
       | exact ⟨tableOf w, List.mem_map_of_mem hw, withTable_held _ _ _⟩
-      | (rw [List.append_eq, List.append_nil]; exact symsOf32_distinct hl)
+      | (intro H' hH'
+         obtain rfl := Option.some.inj (hha'.symm.trans hH')
+         rw [hDd]; rfl)
+      | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
       | (simp only [Spec.Rsa.lenValid]; decide)
 
 end VG.Proof.RsaOaep.Arm.Enc

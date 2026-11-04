@@ -40,6 +40,8 @@ theorem certsOf {D : Nat} (h : D = 20 ∨ D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 6
 
 /-- The RSASSA-PSS hash function's streaming functions. -/
 def OHash.ofPss (h : PssHash) (hD : h.H.D = 20 ∨ h.H.D = 28 ∨ h.H.D = 32 ∨ h.H.D = 48 ∨ h.H.D = 64) : OHash :=
-  ⟨h.H.st, h.ok.hH, h.G, h.hash, h.glen, h.valid, OCerts.of_shape (certsOf hD)⟩
+  ⟨h.H.st, h.ok.hH, h.G, h.hash, h.glen, h.valid, OCerts.of_shape (certsOf hD), by
+    show h.H.D ∈ Impl.RsaOaep.X86.lens
+    rcases hD with e | e | e | e | e <;> rw [e] <;> decide⟩
 
 end VG.Proof.RsaOaep.X86

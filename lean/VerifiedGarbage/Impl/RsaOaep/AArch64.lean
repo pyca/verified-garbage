@@ -153,6 +153,54 @@ def mgfT (j : Nat) : Prog isa := Mgf1.Table.mgfXor lay (arg j) sTab sD f
 
 /-! ## Common pieces -/
 
+/-- The label's hash, `H(label)`, to `scratch + o`, with the hash function
+of the table whose address is in `sTab`: its `init`, `update` with the label
+and `finalize`, each an indirect call (`tcall`). -/
+def hashLabelT (o : Nat) : Prog isa :=
+  seqs [.block (scr .x0 oSt), Mgf1.Table.tcall sTab 0 f.init,
+    .block (scr .x0 oSt ++ [.movz .x .x1 0 0, .ldrSp .x2 sLab, .ldrSp .x3 sLabLen] ++ scr .x4 oW),
+    Mgf1.Table.tcall sTab 1 f.upd,
+    .block (scr .x0 oSt ++ [.ldrSp .x1 sLabLen] ++ scr .x2 o ++ scr .x3 oW),
+    Mgf1.Table.tcall sTab 2 f.fin]
+
+/-- The address of the table that is our stack argument `j` to `sTab`
+(through `x16`, which keeps `x0`). -/
+def tabSlot (j : Nat) : List Instr := [.ldrSp .x16 (arg j), .addSp .x9 0, .str .x .x16 .x9 sTab]
+
+/-- The digest length of the table whose address is in `sTab` (its word 4),
+to `x16`. -/
+def lenLoad : List Instr := [.ldrSp .x16 sTab, .ldr .x .x16 .x16 32]
+
+/-- The digest lengths of the hash functions whose tables the functions take
+(MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
+SHA-512). -/
+def lens : List Nat := [16, 20, 28, 32, 48, 64]
+
+/-- The shape of a hash function with only the digest length `d`, which is
+all the code with the hash function's calls through a table uses of it. -/
+def ofLen (d : Nat) : Hash where
+  P := { N := 0, B := 0, L := 0, so := 0, len := [], out := [] }
+  D := d
+  W := 0
+  compN := ""
+  compC := .block []
+  initN := ""
+  initC := .block []
+  updN := ""
+  updC := .block []
+  finN := ""
+  finC := .block []
+  hmacInitN := ""
+  hmacFinN := ""
+  iterN := ""
+
+/-- `b d` for the digest length `d` in `x16`, among `ds`: the last if it is
+none of the others (`x17 = x16 - d`, zero for `d`). -/
+def byLen (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [d] => b d
+  | d :: ds => .seq (.block [.subImm .x .x17 .x16 d]) (.ite (.zero .x .x17) (b d) (byLen b ds))
+
 /-- The label's hash, `H(label)`, to `scratch + o`. -/
 def hashLabel (o : Nat) : Prog isa :=
   seqs [.block (scr .x0 oSt), .call H.initN H.initC,
@@ -190,7 +238,7 @@ def chkK : List Instr :=
 def encPrologue : List Instr :=
   [.addSp .x9 0, .str .x .x0 .x9 sOut, .str .x .x2 .x9 sN, .str .x .x3 .x9 sK, .str .x .x4 .x9 sE,
     .str .x .x5 .x9 sEl, .str .x .x6 .x9 sLab, .str .x .x7 .x9 sLabLen] ++
-  mvArg 0 sMsg ++ mvArg 1 sMsgLen ++ mvArg 2 sSeed ++ mvArg 3 sScr ++ mvArg 4 sScrLen
+  mvArg 0 sMsg ++ mvArg 1 sMsgLen ++ mvArg 2 sSeed ++ mvArg 4 sScr ++ mvArg 5 sScrLen
 
 /-- In `x11`, all ones if `msg_len > k - 2 hLen - 2`, zero if not: the
 borrow of `k - 2 hLen - 2 - msg_len`, with `k ≥ 2 hLen + 2`. -/
@@ -241,15 +289,21 @@ def pubArgs : List Instr :=
     .str .x .x11 .x9 8, .ldrSp .x0 sOut, .ldrSp .x1 sK, .ldrSp .x2 sN, .ldrSp .x3 sK, .ldrSp .x4 sE,
     .ldrSp .x5 sEl] ++ scr .x6 oEm ++ [.ldrSp .x7 sK]
 
-/-- `EM`, before masking. -/
-def encEm : Prog isa := seqs [clearEm, copySeed H, hashLabel H oDig, copyLh H, putMsg]
+/-- `EM`, before masking, with the label's hash function that of the table
+`hash` (our stack argument 8), whose address it stores to `sTab` first. -/
+def encEm : Prog isa := seqs [clearEm, copySeed H, .block (tabSlot 8), hashLabelT f oDig, copyLh H, putMsg]
 
 variable (pubN : String) (pubC : Prog isa)
 
-/-- The prologue and the checks, then `main`. -/
-def encBodyWith (main : Prog isa) : Prog isa :=
-  seqs [.block (encPrologue ++ chkK H),
-    .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail main])]
+/-- The checks for the label's hash function's digest length `H.D`, then
+`main`. -/
+def encChecks (main : Prog isa) : Prog isa :=
+  seqs [.block (chkK H), .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail main])]
+
+/-- The prologue, the address of the table `hash` (our stack argument 8) to
+`sTab` and its digest length `d` to `x16`, then the checks and `main d`. -/
+def encBodyWith (main : Nat → Prog isa) : Prog isa :=
+  seqs [.block encPrologue, .block (tabSlot 8), .block lenLoad, byLen (fun d => encChecks (ofLen d) (main d)) lens]
 
 
 /-! ## Decryption -/
@@ -362,20 +416,28 @@ def decRet : List Instr :=
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H oLh, .block (seedArgs H), mgfT f 15, .block (dbArgs H), mgfT f 15, accLh H, scan H,
+  seqs [hashLabelT f oLh, .block (seedArgs H), mgfT f 16, .block (dbArgs H), mgfT f 16, accLh H, scan H,
     clearBuf, copyT H, shift, .block okMask, outLoop, .block (decRet H)]
+
+/-- After the private operation, for the label's hash function's digest
+length `H.D`: its result to its slot, the check of `k`, and the decoding. -/
+def decTail : Prog isa :=
+  seqs [.block ([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] ++ chkK H),
+    .ite (.nonzero .x .x11) decFail (decMain H f)]
 
 variable (privN : String) (privC : Prog isa)
 
-/-- The inner frame's body. -/
+/-- The inner frame's body: the prologue, the private operation, the address
+of the table `hash` (our stack argument 15) to `sTab` and its digest length
+`d` to `x16`, then the tail for `d`. -/
 def decBody : Prog isa :=
-  seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block ([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] ++ chkK H),
-    .ite (.nonzero .x .x11) decFail (decMain H f)]
+  seqs [.block (decPrologue ++ privArgs), .call privN privC, .block (tabSlot 15), .block lenLoad,
+    byLen (fun d => decTail (ofLen d) f) lens]
 
-/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, with MGF1's hash function the table that
-is its stack argument 15 (`mgf1`, after the 23 words of `decryptSig`). -/
+/-- `vg_rsa_oaep_decrypt`, with the label's hash function the table that is
+its stack argument 15 (`hash`, after the 23 words of `decryptSig`) and
+MGF1's the table that is its stack argument 16 (`mgf1`). -/
 def decrypt : Prog isa :=
-  .frame (.push .x30) (.frame (.alloc frameBytes) (decBody H f privN privC) (.free frameBytes)) (.pop .x30)
+  .frame (.push .x30) (.frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)) (.pop .x30)
 
 end VG.Impl.RsaOaep.AArch64

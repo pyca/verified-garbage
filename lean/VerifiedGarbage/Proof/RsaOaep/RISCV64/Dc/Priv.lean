@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Table
+public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Base
 public import VerifiedGarbage.Impl.RsaOaep.RISCV64.Decrypt
@@ -41,9 +41,9 @@ rest of `scratch` (`callWr`), where its precondition holds (`preP_at`);
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/Pre.lean`, `Dc/Entry.lean`): `PreD s`, the
-contract's precondition (`Spec.RsaOaep.decryptTableContract`, with the stack
+contract's precondition (`Spec.RsaOaep.decryptTablesContract`, with the stack
 of the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
-(`preD_of`), and what it says of MGF1's table (`spec_tabD`); the working space `Sd s` and the values the decoding keeps in
+(`preD_of`), and what it says of the tables (`spec_tabD`); the working space `Sd s` and the values the decoding keeps in
 `s1`–`s4` (`vD s rc`, with the private operation's result `rc` in `s4`),
 both functions of the entry state `s` alone, as `Base` takes them; `fits`,
 `Fits` for any state with `s`'s stack pointer and regions; and `entry_ok`:
@@ -64,10 +64,10 @@ theorem stackArgs_fifteen (s : State) :
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
       stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14] := rfl
 
-theorem stackArgs_sixteen (s : State) :
-    List.map (stackArg s) (List.range 16) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+theorem stackArgs_seventeen (s : State) :
+    List.map (stackArg s) (List.range 17) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15] := rfl
+      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15, stackArg s 16] := rfl
 
 /-- The stack the function uses: its frame (`frameBytes`), the private
 operation's (`privBytes`) and that function's own. -/
@@ -89,17 +89,18 @@ abbrev qiR (s : State) : Region := ⟨stackArg s 7, (stackArg s 8).toNat⟩
 abbrev lR (s : State) : Region := ⟨stackArg s 9, (stackArg s 10).toNat⟩
 abbrev ctR (s : State) : Region := ⟨stackArg s 11, (stackArg s 12).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩
-abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
+abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
+abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 16) 5
+abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 136⟩
 /-- The stack the function uses. -/
 abbrev kD (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
-/-- What the code needs of `decryptTableContract.pre`, by name. -/
+/-- What the code needs of `decryptTablesContract.pre`, by name. -/
 structure PreD (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
   sp1 : stackBytes ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 128 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, lR s, ctR s, tR s, aR s]
+  sp2 : s.sp.toNat + 136 ≤ 2 ^ 64
+  hrd : s.rd = [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, lR s, ctR s, tLR s, tR s, aR s]
   hwr : s.wr = [oR s, mlR s, scR s]
   oml : (oR s).Disjoint (mlR s)
   on : (oR s).Disjoint (nR s)
@@ -112,6 +113,7 @@ structure PreD (s : State) : Prop where
   ol : (oR s).Disjoint (lR s)
   oct : (oR s).Disjoint (ctR s)
   os : (oR s).Disjoint (scR s)
+  otl : (oR s).Disjoint (tLR s)
   ot : (oR s).Disjoint (tR s)
   oa : (oR s).Disjoint (aR s)
   mln : (mlR s).Disjoint (nR s)
@@ -124,6 +126,7 @@ structure PreD (s : State) : Prop where
   mll : (mlR s).Disjoint (lR s)
   mlct : (mlR s).Disjoint (ctR s)
   mls : (mlR s).Disjoint (scR s)
+  mltl : (mlR s).Disjoint (tLR s)
   mlt : (mlR s).Disjoint (tR s)
   mla : (mlR s).Disjoint (aR s)
   ns : (nR s).Disjoint (scR s)
@@ -135,6 +138,7 @@ structure PreD (s : State) : Prop where
   qis : (qiR s).Disjoint (scR s)
   ls : (lR s).Disjoint (scR s)
   cts : (ctR s).Disjoint (scR s)
+  stl : (scR s).Disjoint (tLR s)
   st : (scR s).Disjoint (tR s)
   sa : (scR s).Disjoint (aR s)
   ko : (kD s).Disjoint (oR s)
@@ -149,6 +153,7 @@ structure PreD (s : State) : Prop where
   kl : (kD s).Disjoint (lR s)
   kct : (kD s).Disjoint (ctR s)
   ks : (kD s).Disjoint (scR s)
+  ktl : (kD s).Disjoint (tLR s)
   kt : (kD s).Disjoint (tR s)
   ka : (kD s).Disjoint (aR s)
   wo : (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64
@@ -163,7 +168,8 @@ structure PreD (s : State) : Prop where
   wl : (stackArg s 9).toNat + (stackArg s 10).toNat ≤ 2 ^ 64
   wct : (stackArg s 11).toNat + (stackArg s 12).toNat ≤ 2 ^ 64
   wsc : (stackArg s 13).toNat + (stackArg s 14).toNat * 8 ≤ 2 ^ 64
-  wt : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
+  wtl : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
+  wt : (stackArg s 16).toNat + 40 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .a4).toNat
   k2 : (s.gpr .a4).toNat ≤ 1024
   ok : (s.gpr .a1).toNat = (s.gpr .a4).toNat
@@ -180,47 +186,52 @@ structure PreD (s : State) : Prop where
   hs : Spec.RsaPss.scratchWords (s.gpr .a4).toNat ≤ (stackArg s 14).toNat
   alm : (s.gpr .a2).toNat % 8 = 0
   als : (stackArg s 13).toNat % 8 = 0
-  alt : (stackArg s 15).toNat % 8 = 0
+  altl : (stackArg s 15).toNat % 8 = 0
+  alt : (stackArg s 16).toNat % 8 = 0
 
-/-- The contract, with MGF1's hash function one of the tables `ts`, and the
-stack of the frames and of `vg_rsa_private_checked`. -/
-abbrev decSpec (H : Spec.Mgf1.Hash) (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.decryptTableContract H (abi.withTables Spec.RsaOaep.decryptTableSig [("mgf1", ts)]) stackBytes
+/-- The contract, with both hash functions each one of the tables `ts`, and
+the stack of the frames and of `vg_rsa_private_checked`. -/
+abbrev decSpec (ts : List FnTable) : Contract isa :=
+  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+    stackBytes
 
 /-- Unfolds the precondition at `h`. -/
 macro "dec_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 3471 + 1 := rfl
   unfold decSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    stackArgs_seventeen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
+    stackArgs_seventeen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', Sig.pairFacts, List.filterMap_cons, List.filterMap_nil,
     Bool.cond_true, Bool.cond_false, Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj,
     List.append_nil] at $h:ident))
 
-theorem preD_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (decSpec H ts).pre s) : PreD s := by
+theorem preD_of {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) : PreD s := by
   dec_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, ot, oa, mln, mle, mlp, mlq,
-    mldp, mldq, mlqi, mll, mlct, mls, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, st, sa, ko, kml, kn, ke, kp,
-    kq, kdp, kdq, kqi, kl, kct, ks, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wt, k1, k2, ok, oc,
-    e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, alt⟩ := h
-  exact ⟨spal, sp1, sp2, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, ot, oa, mln, mle, mlp, mlq, mldp,
-    mldq, mlqi, mll, mlct, mls, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, st, sa, ko, kml, kn, ke, kp, kq,
-    kdp, kdq, kqi, kl, kct, ks, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wt, k1, k2, ok, oc, e1,
-    e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, alt⟩
+  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle,
+    mlp, mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa,
+    ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct,
+    wsc, wtl, wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, alt⟩ := h
+  exact ⟨spal, sp1, by omega, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp,
+    mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko, kml,
+    kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wtl,
+    wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, alt⟩
 
-/-- MGF1's table, as the contract gives it: one of `ts`, at the stack
-argument 15, with the functions of distinct names at distinct addresses. -/
-theorem spec_tabD {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (decSpec H ts).pre s) :
+/-- The tables, as the contract gives them: each one of `ts`, the label's
+hash function's at the stack argument 15 and MGF1's at 16, with the
+functions of distinct names at distinct addresses. -/
+theorem spec_tabD {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) :
     (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s T)) ∧
-      (ts.map (fun T : FnTable => T.fns)).flatten.Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
+      (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s T)) ∧
+      ((ts.map (fun T : FnTable => T.fns)).flatten ++ (ts.map (fun T : FnTable => T.fns)).flatten).Pairwise
+        (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
   dec_pre at h
-  exact ⟨h.2.2.2.1, h.2.2.2.2.1⟩
+  exact ⟨h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩
 
 /-! ## The working space and the registers the decoding keeps -/
 
@@ -283,7 +294,7 @@ end
 /-! ## The entry -/
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 17) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
 /-- After the saves and the prologue: our caller's registers and return
@@ -303,7 +314,7 @@ section
 variable {s : State} (P : PreD s)
 include P
 
-theorem arg_al {j : Nat} (hj : j < 16) : (stackArgAddr s j).toNat % 8 = 0 := by
+theorem arg_al {j : Nat} (hj : j < 17) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
     simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
@@ -314,7 +325,7 @@ theorem fb_al8 : (fb s).toNat % 8 = 0 := by
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 with memory changed only in the stack and our part of the working space. -/
-theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
+theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 17)
     (h6 : t.gpr .t6 = s.sp) (hrd : t.rd = s.rd) (hm : Frame [kR s, SC (SD s) s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :
@@ -481,7 +492,7 @@ include P
 
 /-- A load of our stack argument `j` through `t6`, with memory changed only
 in the stack the function uses. -/
-theorem wp_argD {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
+theorem wp_argD {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 17)
     (h6 : t.gpr .t6 = s.sp) (hrd : t.rd = s.rd) (hm : Frame [kD s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :

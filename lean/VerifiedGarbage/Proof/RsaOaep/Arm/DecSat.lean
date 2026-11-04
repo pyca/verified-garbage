@@ -8,10 +8,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # RSAES-OAEP decryption on ARMv7: the contract is satisfiable
 
-A state that meets `decryptTableContract` (`dec_sat`), whatever the label's
-hash function, with MGF1's the table of any `w` of `vs`: a modulus of 64
-bytes, `e`, `p`, `q`, `dP`, `dQ` and `qInv` of one byte, an empty label, the
-working space it needs, the stack arguments at `0x8000`, and the table at
+A state that meets `decryptTablesContract` (`dec_sat`), with both hash
+functions the table of any `w` of `vs`: a modulus of 64 bytes, `e`, `p`,
+`q`, `dP`, `dQ` and `qInv` of one byte, an empty label, the working space it
+needs, the stack arguments at `0x8000`, and the table, both arguments, at
 `0x300000` (`withTable`).
 -/
 
@@ -21,7 +21,7 @@ namespace VG.Proof.RsaOaep.Arm.Dec
 
 open VG VG.Arm
 open VG.Proof.HashTable.Arm (TVar tables tableOf names withTable withTable_held withTable_below)
-open VG.Proof.HashTable (symsOf32_distinct)
+open VG.Proof.HashTable (symsOf32_distinct2)
 
 /-- The state, but for the table. -/
 def satState : State where
@@ -51,15 +51,16 @@ def satState : State where
     if a = 0x8046 then 1 else
     if a = 0x8048 then 0x20 else
     if a = 0x8049 then 8 else
-    if a = 0x804e then 0x30 else 0
+    if a = 0x804e then 0x30 else
+    if a = 0x8052 then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩, ⟨0x3300, 1⟩, ⟨0x3400, 1⟩, ⟨0x3500, 1⟩,
-    ⟨0x3600, 0⟩, ⟨0x3700, 64⟩, ⟨0x300000, 20⟩, ⟨0x8000, 80⟩]
+    ⟨0x3600, 0⟩, ⟨0x3700, 64⟩, ⟨0x300000, 20⟩, ⟨0x300000, 20⟩, ⟨0x8000, 84⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x10000, 2080 * 8⟩]
 
-theorem dec_sat (H : Spec.Mgf1.Hash) {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
-    ∃ s, (spec H (tables vs)).pre s := by
+theorem dec_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
+    ∃ s, (spec (tables vs)).pre s := by
   refine ⟨withTable satState vs w, ?_⟩
-  have hA : ∀ j < 20, (stackArgAddr satState j).toNat + 4 ≤ 0x300000 := by decide
+  have hA : ∀ j < 21, (stackArgAddr satState j).toNat + 4 ≤ 0x300000 := by decide
   have a0 : stackArg (withTable satState vs w) 0 = 64 := (withTable_below _ _ _ (hA 0 (by decide))).trans (by decide)
   have a1 : stackArg (withTable satState vs w) 1 = 0x2100 := (withTable_below _ _ _ (hA 1 (by decide))).trans (by decide)
   have a2 : stackArg (withTable satState vs w) 2 = 1 := (withTable_below _ _ _ (hA 2 (by decide))).trans (by decide)
@@ -80,13 +81,14 @@ theorem dec_sat (H : Spec.Mgf1.Hash) {vs : List TVar} {w : TVar} (hw : w ∈ vs)
   have a17 : stackArg (withTable satState vs w) 17 = 0x10000 := (withTable_below _ _ _ (hA 17 (by decide))).trans (by decide)
   have a18 : stackArg (withTable satState vs w) 18 = 0x820 := (withTable_below _ _ _ (hA 18 (by decide))).trans (by decide)
   have a19 : stackArg (withTable satState vs w) 19 = 0x300000 := (withTable_below _ _ _ (hA 19 (by decide))).trans (by decide)
+  have a20 : stackArg (withTable satState vs w) 20 = 0x300000 := (withTable_below _ _ _ (hA 20 (by decide))).trans (by decide)
   have e : stackArgAddr (withTable satState vs w) 0 = 0x8000 := show stackArgAddr satState 0 = _ by decide
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
     abi, argRegs, reduceClassify, Loc.val]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, e]
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, e]
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
     Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
     abi, argRegs, reduceClassify, Loc.val]
   sig_and_intros
@@ -95,7 +97,7 @@ theorem dec_sat (H : Spec.Mgf1.Hash) {vs : List TVar} {w : TVar} (hw : w ∈ vs)
     | decide
     | exact Region.disjoint_of_sep (by decide)
     | exact ⟨tableOf w, List.mem_map_of_mem hw, withTable_held _ _ _⟩
-    | (rw [List.append_eq, List.append_nil]; exact symsOf32_distinct hl)
+    | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
     | (simp only [Spec.Rsa.lenValid]; decide)
 
 end VG.Proof.RsaOaep.Arm.Dec

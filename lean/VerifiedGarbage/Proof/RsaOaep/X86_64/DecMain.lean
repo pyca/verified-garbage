@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
@@ -84,15 +84,18 @@ def ResD (V : Nat → Byte) (W : Nat → BitVec 64) (k : Nat) : Spec.Rsa.Outcome
   | .invalid => W 30 = 0
   | .fault => W 30 = 2
 
-variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm)
+variable {Hl Gm : Hash} (hH : HashOK Hl) (hG : HashOK Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG) {f : Fns} (hgi : Table.FnsGood f.init)
   (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
 
-include hH KH hG mH mG hgi hgu hgf in
+include hH hG mH mG hgi hgu hgf in
 theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s.syms)
-    (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 17) s.mem)
-    (hDm : s.mem.readW (off (stackArg s 17) 32) 64 = BitVec.ofNat 64 Gm.D) (L : Lay t (fb s) (stackArg s 15))
+    (okL : Table.TabOK Hl.stream f s.syms) (hmL : Table.TabMem Hl.stream s.syms (stackArg s 17) s.mem)
+    (hDmL : s.mem.readW (off (stackArg s 17) 32) 64 = BitVec.ofNat 64 Hl.D)
+    (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 18) s.mem)
+    (hDm : s.mem.readW (off (stackArg s 18) 32) 64 = BitVec.ofNat 64 Gm.D) (L : Lay t (fb s) (stackArg s 15))
     {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 15) V W) (hW : ArgsD s W)
+    (h35 : W 35 = stackArg s 17)
     (hk : 2 * Hl.D + 2 ≤ (s.gpr .r8).toNat) {o : Spec.Rsa.Outcome} (hres : ResD V W (s.gpr .r8).toNat o) :
     WP isa (decMain Hl.stream f) t fun t' => EnvD s t' ∧
       Spec.RsaOaep.writtenDecrypt t'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((t'.gpr .rax).setWidth 32)
@@ -112,8 +115,9 @@ theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s
     ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 12).isLt,
       Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, he.rd, hp.hrd]; simp),
       hp.dlbs.sub_right sS, hp.dKlb.sub_left (ret_subD s)⟩
-  refine WP.seq (WP.mono_syms (wp_good (hashLabel_good (HGood.of hH KH) oLh)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash L R A0 (Or.inr rfl)))
+  refine WP.seq (WP.mono_syms (wp_good (hashLabelT_good hgi hgu hgf oLh)
+    (hashLabelT_ok hH.stream hgi hgu (Hs := mH.G) mH.hash (dtabL hp he hsy okL hmL hDmL) (Table.TJ.refl t _) rfl
+      rfl L R h35 A0 (Or.inr rfl)))
     fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, R1, hV1, hV1'⟩, sp1, mx1, f1⟩ sy1 => ?_)
   have he1 : EnvD s t1 := he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1
   have hlab : Spec.Rsa.bytesAt t.mem (stackArg s 11) (stackArg s 12).toNat =

@@ -94,6 +94,8 @@ structure OHash where
   glen : G.len = H.D
   valid : Proof.Mgf1.Valid G
   certs : OCerts H
+  /-- Its digest length is one the functions taking a table branch on. -/
+  lens : H.D ∈ Impl.RsaOaep.X86.lens
 
 namespace OHash
 

@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
@@ -31,26 +31,26 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 /-- In the frame, with the argument slots as the prologue stored them. -/
 structure EW (s t : State) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
-  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 5) V W ∧ ArgsW s W
+  L : Lay t (fb s) (stackArg s 6)
+  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 6) V W ∧ ArgsW s W
 
 /-- Before MGF1, with its slots set. -/
 structure EWM (s t : State) (src srcLen dst dstLen : Nat) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
-  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 5) V W ∧ ArgsW s W ∧ MArgs W (stackArg s 5) src srcLen dst dstLen
+  L : Lay t (fb s) (stackArg s 6)
+  rep : ∃ V W, Rep t.mem (fb s) (stackArg s 6) V W ∧ ArgsW s W ∧ MArgs W (stackArg s 6) src srcLen dst dstLen
 
 /-- The words of `vg_rsa_public_checked`'s stack arguments. -/
 def pw (s : State) : Nat → BitVec 64
-  | 0 => off (stackArg s 5) oEm
+  | 0 => off (stackArg s 6) oEm
   | 1 => s.gpr .rcx
-  | 2 => off (stackArg s 5) oRsa
-  | _ => stackArg s 6 - 1024
+  | 2 => off (stackArg s 6) oRsa
+  | _ => stackArg s 7 - 1024
 
 /-- Before the call of `vg_rsa_public_checked`, with its arguments. -/
 structure EWP (s t : State) : Prop where
   he : EnvE s t
-  L : Lay t (fb s) (stackArg s 5)
+  L : Lay t (fb s) (stackArg s 6)
   w : ∀ i < 4, t.mem.readW (off (fb s) (8 * i)) 64 = pw s i
   rdi : t.gpr .rdi = s.gpr .rdi
   rsi : t.gpr .rsi = s.gpr .rcx
@@ -133,20 +133,23 @@ theorem ew_copySeed {Hm : Stream} (hl : Hs.len = Hm.D) (hD : 0 < Hm.D) (hD64 : H
 
 /-- The label, where `hashLabel` finds it. -/
 theorem EW.lab {t : State} (h : EW s t) {W : Nat → BitVec 64} (hW : ArgsW s W) :
-    LabAt t (fb s) (stackArg s 5) W (stackArg s 0) (stackArg s 1).toNat := by
+    LabAt t (fb s) (stackArg s 6) W (stackArg s 0) (stackArg s 1).toNat := by
   obtain ⟨-, -, -, -, -, -, -, w27, w28, -⟩ := hW.w
   have hsl := hp.hsl
-  have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
+  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
   exact ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 1).isLt,
     Covers.left (by rw [h.he.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
     hp.d_lb_scr.sub_right sS, hp.d_stk_lb.sub_left (ret_sub s)⟩
 
-theorem ew_hashLabel {Hm : Hash} (hH : HashOK Hm) (KH : Callees Hm) (mH : MgfLink Hm hH) {t : State}
-    (h : EW s t) :
-    WP isa (hashLabel Hm.stream oDig) t (EW s) := by
+theorem ew_hashLabelT {Hm : Hash} (hH : HashOK Hm) (mH : MgfLink Hm hH) {f : Impl.Mgf1.X86_64.Table.Fns}
+    (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin) {t : State}
+    (h : EW s t) (h35 : word t.mem (fb s) (8 * 35) = stackArg s 10)
+    (T : Table.Tab Hm.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t) :
+    WP isa (hashLabelT f oDig) t (EW s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good (hashLabel_good (HGood.of hH KH) oDig)
-    (hashLabel_ok hH.stream (Hs := mH.G) mH.hash h.L R (h.lab hp hW) (Or.inl rfl)))
+  exact WP.mono (wp_good (hashLabelT_good hgi hgu hgf oDig)
+    (hashLabelT_ok hH.stream hgi hgu (Hs := mH.G) mH.hash T (Table.TJ.refl t _) rfl rfl h.L R
+      ((R.fr 35 (by decide)).symm.trans h35) (h.lab hp hW) (Or.inl rfl)))
     fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, R3, _, _⟩, sp3, mx3, f3⟩ =>
       ⟨h.he.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3, L3, V3, W, R3, hW⟩
 
@@ -213,8 +216,8 @@ theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1
     (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
     {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State}
     (h : EWM s t src srcLen dst dstLen)
-    (T : Table.Tab Gm.stream f (fb s) (stackArg s 9) (frameBytes + 8 + 8 * 9) t) :
-    WP isa (mgfT f 9) t (EW s) := by
+    (T : Table.Tab Gm.stream f (fb s) (stackArg s 11) (frameBytes + 8 + 8 * 11) t) :
+    WP isa (mgfT f 11) t (EW s) := by
   obtain ⟨V, W, R, hW, A⟩ := h.rep
   exact WP.mono (wp_good (Table.mgfT_good hgi hgu hgf _) (Table.mgfXorT_ok hG.stream hgi hgu hgf mG.hash mG.len
     (valid_of_link hG mG) T h.L R hf A))

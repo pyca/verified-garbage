@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
 public import VerifiedGarbage.Proof.RsaOaep.Decode
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLoops
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.Mgf1.Bytes
@@ -71,9 +71,10 @@ variable {Hl : Hash} {Gm : Stream} (hH : StreamOK Hl.stream) (hG : StreamOK Gm) 
 include hH hG in
 theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
-    (hGv : Proof.Mgf1.Valid Gs) {u : State} {F S p : Addr} (T : Table.Tab Gm f F S p (arg 15) u) (L : Lay u F S)
+    (hGv : Proof.Mgf1.Valid Gs) {u : State} {F S pL p : Addr} (TL : Table.Tab Hl.stream f F S pL (arg 15) u)
+    (T : Table.Tab Gm f F S p (arg 16) u) (L : Lay u F S)
     {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k : Nat} (hk : W 21 = BitVec.ofNat 64 k)
+    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) (hpL : W 32 = pL) {k : Nat} (hk : W 21 = BitVec.ofNat 64 k)
     (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024) {lab : Addr} {labLen : Nat} (A : LabAt u F S W lab labLen)
     {o ml : Addr} (O : OutAt u F S W o ml k) {res : Spec.Rsa.Outcome} (hres : ResD V W k res) :
     WP isa (decMain Hl f) u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
@@ -86,7 +87,7 @@ theorem decMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have cR : oRsa = 8192 := rfl
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine WP.seq (WP.mono (Table.wp_sy (hashLabel_ok hH hHh L R A (Or.inr rfl)))
+  refine WP.seq (WP.mono (Table.wp_sy (hashLabelT_ok hH hHh TL L R hpL A (Or.inr rfl)))
     fun u1 ⟨⟨L1, S1, V1, R1, hV1, hV1'⟩, sy1⟩ => ?_)
   -- The seed unmasked.
   refine WP.seq (WP.mono (Table.wp_sy (seedArgs_ok L1 R1 hk hD (by omega_using [hD64]) hk' [])) fun u2 ⟨⟨L2, S2, R2⟩, sy2⟩ => ?_)

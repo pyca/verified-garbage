@@ -7,20 +7,22 @@ public import VerifiedGarbage.Impl.ICall
 /-!
 # RSAES-OAEP encryption (RFC 8017 §7.1.1) with a precomputed public key on PPC64LE
 
-`vg_rsa_oaep_<H>_mgf1_encrypt_precomputed(out = r3, out_len = r4, n = r5,
+`vg_rsa_oaep_encrypt_precomputed(out = r3, out_len = r4, n = r5,
 n_len = r6, e = r7, e_len = r8, label = r9, label_len = r10, msg, msg_len,
-seed, scratch, scratch_len, pre, pre_len, mgf1)`, the last eight on the
-stack, for a hash function `H` (the label's), an
-`Impl.Hmac.Stream.PPC64LE.Hash` (its streaming functions), and MGF1 over
-the hash function of the table `mgf1` of the interface `Hash`
+seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
+ten on the stack, with the label's hash function that of the table `hash`
+and MGF1 over that of the table `mgf1`, both of the interface `Hash`
 (`Spec/HashTable.lean`), which it calls, with
-`vg_rsa_public_precomputed_checked`. The steps are those of
-AArch64 (`Impl/RsaOaep/AArch64.lean`).
+`vg_rsa_public_precomputed_checked`. The steps are those of AArch64
+(`Impl/RsaOaep/AArch64.lean`): the digest length of `hash` (its word 4)
+selects the code for that length (`byLen`, among `lens`), which is all that
+code uses of the hash function's shape (`ofLen`), and every call of a hash
+function is through its table (`tcall`).
 
 If `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2` (`k = n_len`, public), it
 writes zeros to `out` and returns 0. Otherwise it writes
 `EM = 0x00 ‖ seed ‖ DB` to `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the
-label hashed with `H`), masks `DB` with MGF1 of the seed and then the seed
+label hashed with `hash`'s hash function), masks `DB` with MGF1 of the seed and then the seed
 with MGF1 of `maskedDB`, and returns `vg_rsa_public_precomputed_checked`
 of `EM` into `out`, with `pre` and the rest of `scratch`.
 
@@ -96,8 +98,8 @@ def restore : List Instr :=
 /-- The arguments into the registers that keep them, with `r12 = r1`; `msg`,
 `msg_len` and `seed` into `r9`, `r10` and `r11`. -/
 def prologue : List Instr :=
-  [.load .d .r14 .r12 (arg 3), mov .r15 .r6, mov .r16 .r3, mov .r17 .r7, mov .r18 .r8, mov .r19 .r9,
-    mov .r20 .r10, .load .d .r21 .r12 (arg 5), .load .d .r22 .r12 (arg 6), .load .d .r23 .r12 (arg 4),
+  [.load .d .r14 .r12 (arg 4), mov .r15 .r6, mov .r16 .r3, mov .r17 .r7, mov .r18 .r8, mov .r19 .r9,
+    mov .r20 .r10, .load .d .r21 .r12 (arg 6), .load .d .r22 .r12 (arg 7), .load .d .r23 .r12 (arg 5),
     .load .d .r9 .r12 (arg 0), .load .d .r10 .r12 (arg 1), .load .d .r11 .r12 (arg 2)]
 
 /-! ## Loops -/
@@ -145,12 +147,6 @@ def putMsg : Prog isa :=
   .seq (.block [.add .r5 .r14 .r15, .sub .r5 .r5 .r10, .subi .r5 .r5 1, .li .r7 1, .stb .r7 .r5 0,
       .addi .r5 .r5 1, mov .r4 .r9, mov .r6 .r10])
     (.ite (.nonzero .d .r6) copyLoop (.block []))
-
-/-- `H(label)` to `scratch + oDig`. -/
-def hashLabel : Prog isa :=
-  .seq (.block [.addi .r3 .r14 oSt]) (.seq H.callInit
-  (.seq (.block [.addi .r3 .r14 oSt, .li .r4 0, mov .r5 .r19, mov .r6 .r20, .addi .r7 .r14 oW]) (.seq H.callUpd
-  (.seq (.block [.addi .r3 .r14 oSt, mov .r4 .r20, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) H.callFin))))
 
 /-- `lHash` (the digest at `scratch + oDig`) to `EM + 1 + hLen`. -/
 def copyLh : Prog isa :=
@@ -228,6 +224,36 @@ def roundT : Prog isa :=
 the table that is our stack argument `j`. -/
 def mgfXorT : Prog isa := .seq (.block [.li .r28 0, .li .r29 0]) (.loop (roundT f j) (.nonzero .d .r12))
 
+/-- The label (`lab`, `len` bytes, in those registers) hashed to
+`scratch + oDig`, with the hash function of the table that is our stack
+argument `j`. -/
+def hashLabelT (lab len : Reg) : Prog isa :=
+  .seq (.block [.addi .r3 .r14 oSt]) (.seq (tcall j 0 f.init)
+  (.seq (.block [.addi .r3 .r14 oSt, .li .r4 0, mov .r5 lab, mov .r6 len, .addi .r7 .r14 oW]) (.seq (tcall j 1 f.upd)
+  (.seq (.block [.addi .r3 .r14 oSt, mov .r4 len, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) (tcall j 2 f.fin)))))
+
+/-! ## The hash function's digest length -/
+
+/-- The digest length of the table that is our stack argument `j` (its word
+4), to `r3`. -/
+def lenLoad : List Instr := tword .r3 j 4
+
+/-- The digest lengths of the hash functions whose tables the functions take
+(SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
+SHA-512). -/
+def lens : List Nat := [20, 28, 32, 48, 64]
+
+/-- The shape of a hash function with only the digest length `d`, which is
+all the code with the hash function's calls through a table uses of it. -/
+def ofLen (d : Nat) : Hash := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "", .block [], ""⟩
+
+/-- `b d` for the digest length `d` in `r3`, among `ds`: the last if it is
+none of the others. -/
+def byLen (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [d] => b d
+  | d :: ds => .seq (.block [.subi .r4 .r3 d]) (.ite (.zero .d .r4) (b d) (byLen b ds))
+
 /-! MGF1 with a hash function `G` given at compile time, as RSASSA-PSS
 (`Impl/RsaPss/PPC64LE.lean`) calls it. -/
 
@@ -288,11 +314,12 @@ def encEm : Prog isa := .seq clearEm (.seq (copySeed H) (putMsg))
 
 variable (f : Fns)
 
-/-- After the checks. -/
+/-- After the checks: the label's hash with the table `hash`, our stack
+argument 8, and MGF1 with the table `mgf1`, our stack argument 9. -/
 def encMain : Prog isa :=
-  .seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H)
-  (.seq (.block (dbArgs H)) (.seq (mgfXorT f 7)
-  (.seq (.block (seedArgs H)) (.seq (mgfXorT f 7)
+  .seq (encEm H) (.seq (hashLabelT f 8 .r19 .r20) (.seq (copyLh H)
+  (.seq (.block (dbArgs H)) (.seq (mgfXorT f 9)
+  (.seq (.block (seedArgs H)) (.seq (mgfXorT f 9)
   (.seq (.block pubArgs) Impl.RsaPkcs1Sig.PPC64LE.pubCall)))))))
 
 /-- The checks, then `encMain`. -/
@@ -300,11 +327,15 @@ def checks : Prog isa :=
   .seq (.block (chkK H)) (.ite (.nonzero .d .r3) encFail
     (.seq (.block (chkMsg H)) (.ite (.nonzero .d .r3) encFail (encMain H f))))
 
-/-- The frame's body. -/
-def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (checks H f) (.block restore))
+/-- The frame's body: the digest length of the table `hash` (our stack
+argument 8) to `r3`, then the checks for that length. -/
+def body : Prog isa :=
+  .seq (.block (save ++ prologue)) (.seq (.block (lenLoad 8))
+    (.seq (byLen (fun d => checks (ofLen d) f) lens) (.block restore)))
 
-/-- `vg_rsa_oaep_<H>_mgf1_encrypt_precomputed`, with MGF1's hash function
-the table that is its stack argument 7 (`mgf1`). -/
-def encrypt : Prog isa := .frame (.alloc frameBytes) (body H f) (.free frameBytes)
+/-- `vg_rsa_oaep_encrypt_precomputed`, with the label's hash function the
+table that is its stack argument 8 (`hash`) and MGF1's the table that is its
+stack argument 9 (`mgf1`). -/
+def encrypt : Prog isa := .frame (.alloc frameBytes) (body f) (.free frameBytes)
 
 end VG.Impl.RsaOaep.PPC64LE

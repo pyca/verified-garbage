@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
@@ -39,8 +41,12 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The prologue and the private-key operation's arguments (`head_ct`), from two
 entry states whose public data agree; the private-key operation
-(`priv_ct`); its result to its slot and the check of `k` (`resK_ct`); and
-the failure for a short `k` (`decFail_tr`).
+(`priv_ct`); the address of the table of the label's hash function to its
+slot (`tabSlot_ct`) and its digest length to `x16` (`lenLoad_ct`), which
+both runs take as that of the same table (`WithL`), so that they take the
+same branch on it (`byLen_ct`); the private-key operation's result to its
+slot and the check of `k` (`resK_ct`); and the failure for a short `k`
+(`decFail_tr`).
 -/
 
 @[expose] public section
@@ -52,6 +58,8 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.RsaPkcs1Enc.AArch64 (PrivImpl privK)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (gpr_ce stackArg_ce leak_split bytesAt_length)
 open VG.Proof.Mgf1 (ifp ifn)
+open VG.Proof.HashTable.AArch64 (tables tableOf Coh tabOK_of held_tableOf)
+open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
 
 /-! ## The prologue and the arguments -/
 
@@ -59,7 +67,7 @@ open VG.Proof.Mgf1 (ifp ifn)
 abbrev PrivReady : Inv := fun L g vv m₀ t =>
   Ctx L g vv m₀ t ∧ Ready L t ∧ ∃ V W, Rep t.mem L.Q L.scr V W ∧ Slots L W ∧ CallArgs L W
 
-theorem head_ok {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec Hs ts P).pre s)
+theorem head_ok {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec ts P).pre s)
     (hP : 16 ≤ P) :
     WP isa (.block (decPrologue ++ privArgs)) (entered s) (PrivReady (lay P s) s.gpr s.v s.mem) := by
   have hL := lay_ok h
@@ -77,23 +85,23 @@ theorem head_ok {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} 
       by simp [privW, upd], by simp [privW, upd]⟩⟩
 
 /-- Two calls whose public data agree, in the inner frame. -/
-def Entered (Hs : Spec.Mgf1.Hash) (ts : List FnTable) (S : Nat) (a b : State) : Prop :=
-  ∃ s₁ s₂, (decSpec Hs ts (S + 1)).pre s₁ ∧ (decSpec Hs ts (S + 1)).pre s₂ ∧ (decSpec Hs ts (S + 1)).pub s₁ s₂ ∧
+def Entered (ts : List FnTable) (S : Nat) (a b : State) : Prop :=
+  ∃ s₁ s₂, (decSpec ts (S + 1)).pre s₁ ∧ (decSpec ts (S + 1)).pre s₂ ∧ (decSpec ts (S + 1)).pub s₁ s₂ ∧
     a = entered s₁ ∧ b = entered s₂
 
-theorem head_ct (Hs : Spec.Mgf1.Hash) (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
-    RelCT isa (Entered Hs ts S) (.block (decPrologue ++ privArgs)) (Two S ts PrivReady) := by
+theorem head_ct (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Entered ts S) (.block (decPrologue ++ privArgs)) (Two S ts PrivReady) := by
   intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, hp, ea, eb⟩ e₁ e₂
   subst ea eb
-  obtain ⟨hT₁, hd₁⟩ := spec_tab h₁
-  obtain ⟨hT₂, hd₂⟩ := spec_tab h₂
-  sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  obtain ⟨hL₁, hT₁, hd₁⟩ := spec_tab h₁
+  obtain ⟨hL₂, hT₂, hd₂⟩ := spec_tab h₂
+  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at hp
-  obtain ⟨hsp, hsy, htab, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
-    a13, a14, a15⟩ := hp
+  obtain ⟨hsp, hsy, htabL, htab, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+    a11, a12, a13, a14, a15, a16⟩ := hp
   have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩) (by taint_decide)
     _ _ _ _ _ _ (by show (entered s₁).sp = (entered s₂).sp; rw [entered_sp (S + 1), entered_sp (S + 1)]; simp only [lay, hsp]) e₁ e₂).1
@@ -103,13 +111,19 @@ theorem head_ct (Hs : Spec.Mgf1.Hash) (ts : List FnTable) {S : Nat} (hS : 15 ≤
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   have e : lay (S + 1) s₂ = lay (S + 1) s₁ := by
     simp only [lay, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
-      a14, a15, hsp]
+      a14, a15, a16, hsp]
   obtain ⟨hn, he⟩ := leak_split hl (by rw [bytesAt_length, bytesAt_length, h4])
+  have hsy' : ∀ f ∈ Proof.HashTable.AArch64.tabFns ts, s₁.syms f = s₂.syms f :=
+    fun f hf => hsy f (List.mem_append_left _ hf)
+  have htaL : Proof.HashTable.AArch64.TabAgree ts (lay (S + 1) s₁).tabL s₁.mem s₂.mem s₁ s₂ :=
+    ⟨⟨hL₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tabL = stackArg s₂ 15 from a15]; exact hL₂, hd₂⟩, hsy',
+      fun T hT => htabL _ _ rfl a15.symm T hT⟩
   have hta : Proof.HashTable.AArch64.TabAgree ts (lay (S + 1) s₁).tab s₁.mem s₂.mem s₁ s₂ :=
-    ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 15 from a15]; exact hT₂, hd₂⟩, hsy,
-      fun T hT => htab _ _ rfl a15.symm T hT⟩
+    ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 16 from a16]; exact hT₂, hd₂⟩, hsy',
+      fun T hT => htab _ _ rfl a16.symm T hT⟩
   refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,
-    ⟨⟨?_, ?_⟩, hta.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl)⟩, y₁, e ▸ y₂⟩
+    ⟨⟨?_, ?_⟩, htaL.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl),
+      hta.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl)⟩, y₁, e ▸ y₂⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat
     rw [hn, h3, h4]
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x5) (s₁.gpr .x6).toNat
@@ -162,26 +176,121 @@ theorem priv_ct (v : PrivImpl) (ts : List FnTable) :
         (covers_priv hL c₁).1, (covers_priv hL c₁).2, (covers_priv hL c₂).1, (covers_priv hL c₂).2⟩)
     fun _ _ _ _ _ hL hP ⟨hc, hr, V, W, R, hS, hA⟩ => WP.mono (priv_call v hL hP hc hr R hA) fun _ h => ⟨W, h, hS⟩
 
+/-! ## The table of the label's hash function -/
+
+/-- After the private-key operation, with the address of the table of the
+label's hash function in its slot. -/
+abbrev SlotI : Inv := fun L g vv m₀ t => In L g vv m₀ (fun W _ => W 32 = L.tabL) t
+
+/-- And its digest length `D` in `x16`. -/
+abbrev LenI (D : Nat) : Inv := fun L g vv m₀ t =>
+  In L g vv m₀ (fun W t => W 32 = L.tabL ∧ t.gpr .x16 = BitVec.ofNat 64 D) t
+
+section
+variable {vs : List MdHash} (hc : Coh vs) {w₁ : MdHash} (hw₁ : w₁ ∈ vs)
+
+include hc hw₁ in
+theorem tabSlot_ct {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Two S (tables vs) (WithL (tables vs) (tableOf w₁) CalledI)) (.block (tabSlot 15))
+      (Two S (tables vs) (WithL (tables vs) (tableOf w₁) SlotI)) :=
+  two [] (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ _ ⟨⟨_, f₁, _⟩, _⟩ ⟨⟨_, f₂, _⟩, _⟩ =>
+      ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
+    fun L g vv m₀ t hL hP h => by
+      obtain ⟨⟨W, hcl, hSl⟩, hh, hd⟩ := h
+      have hP16 : 16 ≤ L.P := by omega_arith
+      obtain ⟨hmL, -, hDL⟩ := held_tableOf hh
+      have TL := hcl.ctx.tabL hL hP16 (tabOK_of hc hd hw₁) hmL hDL
+      exact WP.mono (Table.wp_sy (tabSlot_ok (by decide) (hcl.ctx.lay hL hP16 hcl.rep hSl.scr) hcl.rep TL))
+        fun u ⟨⟨_, Su, Ru, _⟩, sy⟩ => WithL.of (Φ := CalledI) (Ψ := SlotI) ⟨⟨W, hcl, hSl⟩, hh, hd⟩ sy
+          (In.of_step hL hP16 hcl.ctx Su nil_ws Ru (hSl.of fun j _ h2 _ => by simp only [upd]; rw [ifn (by omega_arith)])
+            (X := fun W _ => W 32 = L.tabL) (by simp [upd]))
+
+include hc hw₁ in
+theorem lenLoad_ct {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Two S (tables vs) (WithL (tables vs) (tableOf w₁) SlotI)) (.block lenLoad)
+      (Two S (tables vs) (WithL (tables vs) (tableOf w₁) (LenI w₁.H.D))) := by
+  refine two_wp (fun e => ?_) fun L g vv m₀ t hL hP h => ?_
+  · show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 32])) _
+    refine (RelCT.block_append (pw_seq_tr (X := fun W _ => W 32 = e.L.tabL) [.x16] (fun _ => e.L.tabL)
+      (by taint_decide) (by taint_decide) fun g vv m₀ t V W hL hP hc R hS h32 => ?_)).mono
+      (fun _ _ ⟨hL, hP, _, f₁, f₂⟩ => ⟨hL, hP, f₁.1, f₂.1⟩) fun _ _ h => h
+    have Ly := hc.lay hL (by omega_arith) R hS.scr
+    have h256 : InRegions (t.rd ++ t.wr) (e.L.Q + BitVec.ofNat 64 256) 8 := Ly.ld (d := 256) (by decide)
+    have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) h32
+    oaep_run [sTab, h256, Ly.sp, r32]
+    and_intros <;> first | trivial | rfl | (intro r hr; rw [List.mem_singleton.mp hr]; rfl)
+  · obtain ⟨⟨hcx, V, W, R, hSl, h32⟩, hh, hd⟩ := h
+    have hP16 : 16 ≤ L.P := by omega_arith
+    obtain ⟨hmL, -, hDL⟩ := held_tableOf hh
+    have TL := hcx.tabL hL hP16 (tabOK_of hc hd hw₁) hmL hDL
+    exact WP.mono (Table.wp_sy (lenLoad_ok (hcx.lay hL hP16 R hSl.scr) R h32 TL.rdD (TL.mem _ (Frame.refl _ _)).2.1))
+      fun u ⟨⟨Su, hm, h16, _⟩, sy⟩ => WithL.of (Φ := SlotI) (Ψ := LenI w₁.H.D) ⟨⟨hcx, V, W, R, hSl, h32⟩, hh, hd⟩ sy
+        (In.of_step hL hP16 hcx Su nil_ws (hm ▸ R) hSl (X := fun W t => W 32 = L.tabL ∧
+          t.gpr .x16 = BitVec.ofNat 64 w₁.H.D) ⟨h32, h16⟩)
+
+end
+
+/-- `byLen` in two runs with the same digest length `D` in `x16`: both take
+the branch of `D`. -/
+theorem byLen_ct {S : Nat} {ts : List FnTable} {b : Nat → Prog isa} {Q : State → State → Prop} {Φ : Inv} {D : Nat}
+    (hΦ : ∀ L g vv m₀ t, Φ L g vv m₀ t → Ctx L g vv m₀ t) (hD : D < 4096)
+    (h16 : ∀ L g vv m₀ t, Φ L g vv m₀ t → t.gpr .x16 = BitVec.ofNat 64 D)
+    (hst : ∀ L g vv m₀ (t u : State), L.Ok → L.P = S + 1 → Φ L g vv m₀ t → Step L.Q L.scr [] t u →
+      u.mem = t.mem → u.syms = t.syms → (∀ r, r ≠ .x17 → u.gpr r = t.gpr r) → Φ L g vv m₀ u)
+    (hb : RelCT isa (Two S ts Φ) (b D) Q) :
+    ∀ {ds : List Nat}, D ∈ ds → (∀ x ∈ ds, x < 4096) → RelCT isa (Two S ts Φ) (byLen b ds) Q
+  | [], h, _ => absurd h List.not_mem_nil
+  | [x], h, _ => by obtain rfl := List.mem_singleton.mp h; exact hb
+  | x :: y :: ds, h, hx => by
+    have hx0 := hx x (List.mem_cons_self ..)
+    have hev : ∀ u : State, (u.gpr .x17 == 0) = decide (D = x) →
+        isa.eval (.zero .x .x17) u = some (decide (D = x)) := fun u hz => by
+      show eval (.zero .x .x17) u = _
+      simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hz]
+    have hback : ∀ s₁ s₂ (c : Option Bool), (Two S ts (fun L g vv m₀ t => Φ L g vv m₀ t ∧
+        (t.gpr .x17 == 0) = decide (D = x)) s₁ s₂ ∧ isa.eval (.zero .x .x17) s₁ = c) → Two S ts Φ s₁ s₂ :=
+      fun _ _ _ ⟨⟨e, hL, hP, hk, ⟨fa, _⟩, ⟨fb, _⟩⟩, _⟩ => ⟨e, hL, hP, hk, fa, fb⟩
+    refine RelCT.seq (two (Ψ := fun L g vv m₀ t => Φ L g vv m₀ t ∧ (t.gpr .x17 == 0) = decide (D = x)) []
+      (check_of_zImm (τ := Taint.ofRegs []) (c := .block [.subImm .x .x17 .x16 x])
+        (c' := .block [.subImm .x .x17 .x16 0]) rfl (by taint_decide))
+      (fun _ _ _ _ _ _ _ _ _ _ fa fb => ⟨(hΦ _ _ _ _ _ fa).sp.trans (hΦ _ _ _ _ _ fb).sp.symm,
+        fun _ h => absurd h List.not_mem_nil⟩)
+      fun L g vv m₀ t hL hP hφ => WP.mono (Table.wp_sy (cmpLen_ok (F := L.Q) (S := L.scr) (h16 _ _ _ _ _ hφ) hD hx0))
+        fun u ⟨⟨hz, st, hm, hg⟩, sy⟩ => ⟨hst _ _ _ _ _ _ hL hP hφ st hm sy hg, hz⟩) ?_
+    refine RelCT.ite (fun a b ⟨_, _, _, _, ⟨_, za⟩, ⟨_, zb⟩⟩ => by rw [hev a za, hev b zb]) ?_ ?_
+    · by_cases hDx : D = x
+      · subst hDx
+        exact hb.mono (fun a b h => hback a b _ h) fun _ _ h => h
+      · exact RelCT.of_false fun a _ ⟨⟨_, _, _, _, ⟨_, za⟩, _⟩, ht⟩ => by rw [hev a za] at ht; simp [hDx] at ht
+    · by_cases hDx : D = x
+      · exact RelCT.of_false fun a _ ⟨⟨_, _, _, _, ⟨_, za⟩, _⟩, ht⟩ => by rw [hev a za] at ht; simp [hDx] at ht
+      · exact (byLen_ct hΦ hD h16 hst hb ((List.mem_cons.mp h).resolve_left hDx)
+          fun z hz => hx z (List.mem_cons_of_mem _ hz)).mono (fun a b h => hback a b _ h) fun _ _ h => h
+
 /-! ## The result and the check of `k` -/
 
 /-- After the check of `k`: `x11` all ones iff `k < 2 hLen + 2`. -/
 abbrev KReady (D : Nat) : Inv := fun L g vv m₀ t =>
-  In L g vv m₀ (fun _ t => t.gpr .x11 = if 2 * D + 2 ≤ L.k.toNat then 0 else BitVec.allOnes 64) t
+  In L g vv m₀ (fun W t => W 32 = L.tabL ∧
+    t.gpr .x11 = if 2 * D + 2 ≤ L.k.toNat then 0 else BitVec.allOnes 64) t
 
-theorem resK_ct {H : Hash} (hD : H.D ≤ 64) {S : Nat} (hS : 15 ≤ S) (ts : List FnTable) :
-    RelCT isa (Two S ts CalledI)
+theorem resK_ct {H : Hash} (hD : H.D ≤ 64) {S : Nat} (hS : 15 ≤ S) (ts : List FnTable) (T : FnTable) (D : Nat) :
+    RelCT isa (Two S ts (WithL ts T (LenI D)))
       (.block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK H))
-      (Two S ts (KReady H.D)) :=
-  two (Φ := CalledI) [] (check_of_zImm (τ := Taint.ofRegs []) (c := .block (([.logic .orr .w .x0 .x0 .x0,
-    .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK H)) (c' := .block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0,
+      (Two S ts (WithL ts T (KReady H.D))) :=
+  two [] (check_of_zImm (τ := Taint.ofRegs []) (c := .block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0,
+    .str .x .x0 .x9 sR] : List Instr) ++ chkK H)) (c' := .block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0,
     .str .x .x0 .x9 sR] : List Instr) ++ chkK gH)) rfl (by taint_decide))
-    (fun _ _ _ _ _ _ _ _ _ _ ⟨_, f₁, _⟩ ⟨_, f₂, _⟩ => ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
-    fun L g vv m₀ t hL hP ⟨W, hcl, hS⟩ => by
+    (fun _ _ _ _ _ _ _ _ _ _ ⟨⟨c₁, _⟩, _⟩ ⟨⟨c₂, _⟩, _⟩ => ⟨c₁.sp.trans c₂.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
+    fun L g vv m₀ t hL hP h => by
+      obtain ⟨⟨hcx, V, W, R, hS, h32, _⟩, _⟩ := id h
       have hP16 : 16 ≤ L.P := by omega_arith
       have hk3 : W 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-      exact WP.mono (resK_ok (H := H) (hcl.ctx.lay hL hP16 hcl.rep hS.scr) hcl.rep hk3 hL.k1024 (by omega_arith))
-        fun u ⟨_, S4, R4, x11⟩ => In.of_step hL hP16 hcl.ctx S4 nil_ws R4
-          (hS.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega_arith)]) x11
+      exact WP.mono (Table.wp_sy (resK_ok (H := H) (hcx.lay hL hP16 R hS.scr) R hk3 hL.k1024 (by omega_arith)))
+        fun u ⟨⟨_, S4, R4, x11⟩, sy⟩ => WithL.of h sy (In.of_step hL hP16 hcx S4 nil_ws R4
+          (hS.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega_arith)])
+          ⟨by simp only [upd]; rw [ifn (by decide)]; exact h32, x11⟩)
 
 /-! ## A short `k` -/
 

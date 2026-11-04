@@ -61,7 +61,8 @@ theorem labB_eq {m : Mem} (hm : Frame [kD s, scR s] s.mem m) :
 theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
     (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
-    {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms)
+    {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16)) (TL : TabS H f 15 (SD s) s (stackArg s 15)) {v : State}
+    (A : AfterPriv s v) (hsy : v.syms = s.syms)
     (hk : 2 * H.D + 2 ≤ kk s) :
     WP isa (decMain H f) v fun u => Saves s u ∧ u.rd = s.rd ∧
       Spec.RsaOaep.writtenDecrypt u.mem (s.gpr .r3) (s.gpr .r5) (kk s) ((u.gpr .r3).setWidth 32)
@@ -80,9 +81,9 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   rw [hO, hRC] at b0
   unfold decMain
   -- `EM` unmasked.
-  refine unmask_ok P hG (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega) (by omega) b0 hsy fun t₁ b₁ _ v₁ => ?_
-  -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok P hH b₁) fun t₂ ⟨b₂, _, s₂, h₂⟩ => ?_)
+  refine unmask_ok P hG (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega) (by omega) b0 hsy fun t₁ b₁ y₁ v₁ => ?_
+  -- The label's hash, through its table.
+  refine WP.seq (WP.mono (hashLabelT_ok P hH (tabS_wmL P TL A.mem) b₁ y₁) fun t₂ ⟨⟨b₂, _, s₂, h₂⟩, _⟩ => ?_)
   -- `lHash'` against `lHash`.
   refine WP.seq (WP.mono (accLh_ok P hD hD0 (by omega) (by omega) b₂) fun t₃ ⟨b₃, m₃, g₃, a₃⟩ => ?_)
   -- The scan.

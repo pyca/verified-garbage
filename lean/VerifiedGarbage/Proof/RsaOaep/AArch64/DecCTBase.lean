@@ -51,11 +51,11 @@ structure Env where
 /-- What correctness says of a point of the code. -/
 abbrev Inv := DLay → (Reg → BitVec 64) → (VReg → BitVec 128) → Mem → State → Prop
 
-/-- Two runs in the layout of `e`, each satisfying `Φ`, with MGF1's table one
-of `ts`. -/
+/-- Two runs in the layout of `e`, each satisfying `Φ`, with the label's hash
+function's table and MGF1's each one of `ts`. -/
 def TwoE (S : Nat) (ts : List FnTable) (Φ : Inv) (e : Env) (a b : State) : Prop :=
-  e.L.Ok ∧ e.L.P = S + 1 ∧ (LeakEq e.L e.m₁ e.m₂ ∧ TabAgree ts e.L.tab e.m₁ e.m₂ a b) ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧
-    Φ e.L e.g₂ e.v₂ e.m₂ b
+  e.L.Ok ∧ e.L.P = S + 1 ∧ (LeakEq e.L e.m₁ e.m₂ ∧ TabAgree ts e.L.tabL e.m₁ e.m₂ a b ∧
+    TabAgree ts e.L.tab e.m₁ e.m₂ a b) ∧ Φ e.L e.g₁ e.v₁ e.m₁ a ∧ Φ e.L e.g₂ e.v₂ e.m₂ b
 
 /-- Two runs with the same layout, each satisfying `Φ`. -/
 def Two (S : Nat) (ts : List FnTable) (Φ : Inv) (a b : State) : Prop := ∃ e : Env, TwoE S ts Φ e a b
@@ -73,7 +73,29 @@ theorem two_wp {S : Nat} {ts : List FnTable} {c : Prog isa} {Φ Ψ : Inv}
   obtain ⟨_, u₂, x₂, y₂⟩ := hw _ _ _ _ s₂ hL hP f₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, e, hL, hP, ⟨hk.1, hk.2.congr (Exec.syms e₁) (Exec.syms e₂)⟩, y₁, y₂⟩
+  exact ⟨ht, e, hL, hP, ⟨hk.1, hk.2.1.congr (Exec.syms e₁) (Exec.syms e₂),
+    hk.2.2.congr (Exec.syms e₁) (Exec.syms e₂)⟩, y₁, y₂⟩
+
+/-- `Φ`, with `T` the table of the label's hash function and the addresses
+of the functions of `ts` apart. -/
+def WithL (ts : List FnTable) (T : FnTable) (Φ : Inv) : Inv := fun L g vv m₀ t =>
+  Φ L g vv m₀ t ∧ Abi.tableHeld 64 m₀ L.tabL (T.words isa t) ∧
+    (Proof.HashTable.AArch64.tabFns ts).Pairwise fun f g => f ≠ g → t.syms f ≠ t.syms g
+
+/-- Two runs hold the same table of the label's hash function, one of `ts`. -/
+theorem two_split {S : Nat} {ts : List FnTable} {c : Prog isa} {Φ : Inv} {Q : State → State → Prop}
+    (h : ∀ T ∈ ts, RelCT isa (Two S ts (WithL ts T Φ)) c Q) : RelCT isa (Two S ts Φ) c Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨e, hL, hP, ⟨hk, ta, tb⟩, f₁, f₂⟩ e₁ e₂
+  obtain ⟨⟨⟨T, hT, hh₁⟩, hd₁⟩, ⟨-, hd₂⟩, -, hiff⟩ := id ta
+  exact h T hT _ _ _ _ _ _ ⟨e, hL, hP, ⟨hk, ta, tb⟩, ⟨f₁, hh₁, hd₁⟩, ⟨f₂, (hiff T hT).mp hh₁, hd₂⟩⟩ e₁ e₂
+
+/-- `WithL`, after code that keeps the addresses of the functions. -/
+theorem WithL.of {ts : List FnTable} {T : FnTable} {Φ Ψ : Inv} {L : DLay} {g : Reg → BitVec 64}
+    {vv : VReg → BitVec 128} {m₀ : Mem} {t u : State} (h : WithL ts T Φ L g vv m₀ t) (hs : u.syms = t.syms)
+    (hΨ : Ψ L g vv m₀ u) : WithL ts T Ψ L g vv m₀ u := by
+  refine ⟨hΨ, ?_, ?_⟩
+  · rw [Proof.HashTable.AArch64.words_congr hs]; exact h.2.1
+  · rw [hs]; exact h.2.2
 
 /-- Code checked by the taint analysis from the registers `rs`, which `Φ`
 fixes as functions of the layout, with `sp`. -/

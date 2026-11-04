@@ -15,8 +15,8 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/Unmask.lean`), with encryption's MGF1
 (`mgfXorT_ok`, with MGF1's hash function the table's): `unmask_ok`, the seed
 unmasked with MGF1 of `maskedDB`, then `DB` with MGF1 of the seed, in `EM`'s
-place. `tabS_to`: what MGF1 needs of the table, in the states the decoding
-runs from.
+place. `tabS_to`, `tabS_toL`: what MGF1 and the label's hash need of
+their tables, in the states the decoding runs from.
 -/
 
 @[expose] public section
@@ -34,16 +34,17 @@ section
 variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
 include P
 
-/-- MGF1's table, in a state with the entry's stack pointer, regions,
-statics' addresses and working space, and memory as on entry but for the
-stack and the working space. -/
-theorem tabS_to {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {S' : State → Addr} {s' : State}
+/-- A table that is our stack argument `j` (`j < 17`), in the region `R` of
+what the function only reads, as on entry, in a state with the entry's
+stack pointer, regions and statics' addresses, and memory as on entry
+apart from the stack and `scratch`. -/
+theorem tabS_toJ {G : Hash} {f : Fns} {j : Nat} {R : Region} (T : TabS G f j (SD s) s (stackArg s j))
+    (hj : j < 17) (hR : ∀ k < 5, Region.Sub ⟨stackArg s j + BitVec.ofNat 64 (8 * k), 8⟩ R)
+    (hkR : (kD s).Disjoint R) (hsR : (scR s).Disjoint R) {S' : State → Addr} {s' : State}
     (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
-    (hS : SC S' s' = SC (SD s) s) : TabS G f 15 S' s' (stackArg s 15) := by
-  have hA : Region.Sub ⟨stackArgAddr s 15, 8⟩ (aR s) := by
+    (hS : SC S' s' = SC (SD s) s) : TabS G f j S' s' (stackArg s j) := by
+  have hA : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
     rw [stackArgAddr_eq]; exact Offset.sub_base _ (by omega)
-  have hT : ∀ k < 5, Region.Sub ⟨stackArg s 15 + BitVec.ofNat 64 (8 * k), 8⟩ (tR s) := fun k hk =>
-    Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)
   refine T.transfer hsp hrd hsy hS hm (fun r hr => ?_) (fun k hk r hr => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -51,18 +52,34 @@ theorem tabS_to {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) 
     · exact (P.sa.sub_right hA).symm
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (P.kt.sub_right (hT k hk)).symm
-    · exact (P.st.sub_right (hT k hk)).symm
+    · exact (hkR.sub_right (hR k hk)).symm
+    · exact (hsR.sub_right (hR k hk)).symm
 
-/-- MGF1's table, for `Base` after the private operation: as on entry, which
-wrote only the stack and the working space. -/
-theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15))
-    (hm : Frame [kD s, scR s] s.mem m) : TabS G f 15 (SD s) (withMem s m) (stackArg s 15) :=
+/-- MGF1's table, as on entry. -/
+theorem tabS_to {G : Hash} {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16)) {S' : State → Addr} {s' : State}
+    (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
+    (hS : SC S' s' = SC (SD s) s) : TabS G f 16 S' s' (stackArg s 16) :=
+  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)) P.kt P.st hm hsp
+    hrd hsy hS
+
+/-- The label's hash function's table, as on entry. -/
+theorem tabS_toL {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {S' : State → Addr} {s' : State}
+    (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
+    (hS : SC S' s' = SC (SD s) s) : TabS G f 15 S' s' (stackArg s 15) :=
+  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)) P.ktl P.stl hm
+    hsp hrd hsy hS
+
+theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16))
+    (hm : Frame [kD s, scR s] s.mem m) : TabS G f 16 (SD s) (withMem s m) (stackArg s 16) :=
   tabS_to P T hm rfl rfl rfl rfl
+
+theorem tabS_wmL {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15))
+    (hm : Frame [kD s, scR s] s.mem m) : TabS G f 15 (SD s) (withMem s m) (stackArg s 15) :=
+  tabS_toL P T hm rfl rfl rfl rfl
 
 /-- EME-OAEP's unmasking, in place. -/
 theorem unmask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
-    (T : TabS G f 15 (SD s) (withMem s m) (stackArg s 15)) {Gs : Spec.Mgf1.Hash}
+    (T : TabS G f 16 (SD s) (withMem s m) (stackArg s 16)) {Gs : Spec.Mgf1.Hash}
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {D : Nat}
     (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64) (hk : 2 * D + 2 ≤ kk s) {t : State}
     (h : Base (SD s) (VD s rc) (withMem s m) t) (hsy : t.syms = s.syms) {rest : Prog isa} {Q : State → Prop}
@@ -71,7 +88,7 @@ theorem unmask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
           (Spec.Mgf1.mgf1 Gs (srcB (mixV (view t.mem (Sd s))
             (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (Sd s)) (1 + D) (kk s - D - 1)) D) 1 D) 1 D) (kk s - D - 1))
           (1 + D) (kk s - D - 1) x) → WP isa rest t' Q) :
-    WP isa (.seq (.block (seedArgs H)) (.seq (mgfXorT f 15) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 15) rest)))) t Q := by
+    WP isa (.seq (.block (seedArgs H)) (.seq (mgfXorT f 16) (.seq (.block (dbArgs H)) (.seq (mgfXorT f 16) rest)))) t Q := by
   obtain ⟨hE, hSt, hDg, hCt, hRs⟩ := offs
   have hk2 := P.k2
   have ek : kk s = (s.gpr .a4).toNat := rfl

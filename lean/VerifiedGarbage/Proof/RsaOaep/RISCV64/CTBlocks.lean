@@ -158,24 +158,29 @@ theorem nextCtr_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (nextCtr G))
     (c := .block (nextCtr G)) (c' := .block (nextCtr Hd)) (by rfl) (by taint_decide))
 
 /-- The first two loads of a table's word, through our stack argument `j`. -/
-theorem twA_taint {d : Reg} (j : Nat) (hd : d = .a6 ∨ d = .t1) (h : Pins Φ []) :
+theorem twA_taint {d : Reg} (j : Nat) (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) (h : Pins Φ []) :
     RelCT isa (Two Φ) (.block [.addSp d (frameBytes + 8 * j), .load .d d d 0]) fun _ _ => True := by
-  rcases hd with rfl | rfl
+  rcases hd with rfl | rfl | rfl
   · exact two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
       (c := .block [.addSp .a6 (frameBytes + 8 * j), .load .d .a6 .a6 0])
       (c' := .block [.addSp .a6 0, .load .d .a6 .a6 0]) (by rfl) (by taint_decide))
   · exact two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
       (c := .block [.addSp .t1 (frameBytes + 8 * j), .load .d .t1 .t1 0])
       (c' := .block [.addSp .t1 0, .load .d .t1 .t1 0]) (by rfl) (by taint_decide))
+  · exact two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
+      (c := .block [.addSp .a0 (frameBytes + 8 * j), .load .d .a0 .a0 0])
+      (c' := .block [.addSp .a0 0, .load .d .a0 .a0 0]) (by rfl) (by taint_decide))
 
 /-- The load of the table's word, through its address in `d`. -/
-theorem twB_taint {d : Reg} (o : Nat) (hd : d = .a6 ∨ d = .t1) (h : Pins Φ [d]) :
+theorem twB_taint {d : Reg} (o : Nat) (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) (h : Pins Φ [d]) :
     RelCT isa (Two Φ) (.block [.load .d d d o]) fun _ _ => True := by
-  rcases hd with rfl | rfl
+  rcases hd with rfl | rfl | rfl
   · exact two_taint [.a6] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.a6])
       (c := .block [.load .d .a6 .a6 o]) (c' := .block [.load .d .a6 .a6 0]) (by rfl) (by taint_decide))
   · exact two_taint [.t1] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.t1])
       (c := .block [.load .d .t1 .t1 o]) (c' := .block [.load .d .t1 .t1 0]) (by rfl) (by taint_decide))
+  · exact two_taint [.a0] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.a0])
+      (c := .block [.load .d .a0 .a0 o]) (c' := .block [.load .d .a0 .a0 0]) (by rfl) (by taint_decide))
 
 /-- `xorOutT` after the load of `hLen` into `a6`. -/
 abbrev xorRest : List Instr :=

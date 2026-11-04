@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSteps
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelTCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
@@ -9,6 +10,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Spec.RsaPkcs1Sig
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSteps
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelTCT
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
@@ -39,16 +41,26 @@ namespace VG.Proof.RsaOaep.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp seqs mgfXor)
-open VG.Proof.MlKem.X86_64 (Keep)
+open VG.Proof.MlKem.X86_64 (Keep ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 open VG.Proof.RsaPkcs1Sig.X86_64 (pubChecked pubChk)
 
 /-! ## The taint checks of the code with `hLen` as an immediate -/
 
-theorem head_taint : ∀ d < 65, (taint.check (Taint.ofRegs [.rsp]) (.block (encPrologue ++ chkK (gD d)))
-    (taint.hintOf (Taint.ofRegs [.rsp]) (.block (encPrologue ++ chkK (gD 0))))).isSome = true := by
+theorem pro_taint : (taint.check (Taint.ofRegs [.rsp]) (.block encPrologue)
+    (taint.hintOf (Taint.ofRegs [.rsp]) (.block encPrologue))).isSome = true := by
+  taint_decide
+
+theorem chkK_taint : ∀ d < 65, (taint.check (Taint.ofRegs [.rsp]) (.block (chkK (gD d)))
+    (taint.hintOf (Taint.ofRegs [.rsp]) (.block (chkK (gD 0))))).isSome = true := by
   decide +kernel
+
+theorem etabSlot_taint : ∃ hc, (taint.check (frT [] [] 2) (.block (tabSlot 10)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem elenLoad_taint : ∃ hc, (taint.check (frT [] [35] 2) (.block lenLoad) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem chkMsg_taint : ∀ d < 65, (taint.check (Taint.ofRegs [.rsp]) (.block (chkMsg (gD d)))
     (taint.hintOf (Taint.ofRegs [.rsp]) (.block (chkMsg (gD 0))))).isSome = true := by
@@ -92,7 +104,7 @@ variable {H G : Spec.Mgf1.Hash} {P : State → State → Prop}
 theorem ESib.gpr {a s : State} (h : ESib H G P a s) {r : Reg}
     (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) : s.gpr r = a.gpr r := (h.2.1.1 r hr).symm
 
-theorem ESib.arg {a s : State} (h : ESib H G P a s) {i : Nat} (hi : i < 7) : stackArg s i = stackArg a i :=
+theorem ESib.arg {a s : State} (h : ESib H G P a s) {i : Nat} (hi : i < 8) : stackArg s i = stackArg a i :=
   ((List.map_inj_left.mp h.2.1.2.1) i (List.mem_range.mpr hi)).symm
 
 theorem ESib.fb {a s : State} (h : ESib H G P a s) : fb s = fb a := by
@@ -102,7 +114,7 @@ theorem ESib.out_eq {a s : State} (h : ESib H G P a s) : outR s = outR a := by
   unfold outR; rw [h.gpr (r := .rdi) (by decide), h.gpr (r := .rsi) (by decide)]
 
 theorem ESib.scr_eq {a s : State} (h : ESib H G P a s) : scrR s = scrR a := by
-  unfold scrR; rw [h.arg (i := 5) (by decide), h.arg (i := 6) (by decide)]
+  unfold scrR; rw [h.arg (i := 6) (by decide), h.arg (i := 7) (by decide)]
 
 theorem ESib.k {a s : State} (h : ESib H G P a s) : (s.gpr .rcx).toNat = (a.gpr .rcx).toNat := by
   rw [h.gpr (r := .rcx) (by decide)]
@@ -138,6 +150,14 @@ theorem e_taintF {J : State → State → Prop} (hJ : ∀ s t, EPre H s → J s 
       rw [← S.fb, ← S.out_eq, ← S.scr_eq]
       exact ⟨e.he.frv S.1, fun k hk => (e.words k (hks k hk)).trans (S.w_eq (hks k hk))⟩)
     hpin (fun k hk => encKs_lt k (hks k hk)) h
+
+/-- What correctness says after a piece, from what the entry state's
+relation to the anchor says too. -/
+theorem e_postS {J J' : State → State → Prop} {c : Prog isa}
+    (hct : RelCT isa (Two (EAt H G P J)) c fun _ _ => True)
+    (hw : ∀ a s t, ESib H G P a s → J s t → WP isa c t (J' s)) :
+    RelCT isa (Two (EAt H G P J)) c (Two (EAt H G P J')) :=
+  two_post hct fun a t ⟨s, S, j⟩ => WP.mono (hw a s t S j) fun _ j' => ⟨s, S, j'⟩
 
 /-- What correctness says after a piece. -/
 theorem e_post {J J' : State → State → Prop} {c : Prog isa} (hct : RelCT isa (Two (EAt H G P J)) c fun _ _ => True)
@@ -212,32 +232,75 @@ def EKM (D : Nat) (src srcLen dst dstLen : State → Nat) (s t : State) : Prop :
   EWM s t (src s) (srcLen s) (dst s) (dstLen s) ∧ 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat
 
 /-- The label's hash's public data. -/
-def lq (a : State) : LQ := ⟨fb a, stackArg a 5, [outR a, scrR a], stackArg a 0, (stackArg a 1).toNat⟩
+def lq (a : State) : LQ := ⟨fb a, stackArg a 6, [outR a, scrR a], stackArg a 0, (stackArg a 1).toNat⟩
 
 /-- MGF1's public data. -/
 def mq (src srcLen dst dstLen : State → Nat) (a : State) : MQ :=
-  ⟨fb a, stackArg a 5, [outR a, scrR a], src a, srcLen a, dst a, dstLen a⟩
+  ⟨fb a, stackArg a 6, [outR a, scrR a], src a, srcLen a, dst a, dstLen a⟩
 
-include hH KH mH in
-theorem encEm_ct : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (encEm Hl.stream) (Two (EAt mH.G mG.G P (EK Hl.D))) := by
+/-- The label's hash's public data with its table, the stack argument 10. -/
+def lqtE (Hm : Hash) (a : State) : LQT :=
+  ⟨lq a, stackArg a 10, a.syms Hm.initN, a.syms Hm.updN, a.syms Hm.finN⟩
+
+omit hH KH hG KG mH mG in
+/-- `EW` in a state with the flags of another. -/
+theorem EW.after {s t t' : State} (h : EW s t) (k : Keep [] t t') (hm : t'.mem = t.mem)
+    (hmx : t'.mxcsr = t.mxcsr) : EW s t' :=
+  let ⟨V, W, R, hW⟩ := h.rep
+  ⟨h.he.step k.2.1 k.2.2 (k.gpr (by simp)) (keep_cs3 k rfl) hmx (by rw [hm]; exact Frame.refl _ _),
+    h.L.congr (k.gpr (by simp)) k.2.2 (by rw [hm]), V, W, hm ▸ R, hW⟩
+
+omit hH KH hG KG mH mG in
+/-- The table's address to its slot, from a state in the frame. -/
+theorem ew_tabSlot {s t : State} {G' : Stream} {f : Impl.Mgf1.X86_64.Table.Fns} (h : EW s t)
+    (T : Table.Tab G' f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t) :
+    WP isa (.block (tabSlot 10)) t fun t' => (EW s t' ∧ word t'.mem (fb s) (8 * 35) = stackArg s 10) ∧
+      t'.syms = t.syms := by
+  obtain ⟨V, W, R, hW⟩ := h.rep
+  exact WP.mono (wp_good (block_good _ rfl) (tabSlot_ok h.L R T)) fun t' ⟨⟨k, L', R', sy⟩, sp, mx, f'⟩ =>
+    ⟨⟨⟨h.he.step k.2.1 k.2.2 sp (keep_cs3 k (by decide)) mx f', L', V, _, R', fun k hk => by
+      simp only [upd]; rw [ifn (by omega)]; exact hW k hk⟩, by rw [R'.fr 35 (by decide)]; simp [upd]⟩, sy⟩
+
+include hH mH in
+/-- `EM` before masking, with the label's hash function that of the table at
+the stack argument 10 (`hT`), whose address (`harg`) and functions'
+addresses (`hsym`) the anchor's public data fixes. -/
+theorem encEm_ct {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
+    (hgf : Table.FnsGood f.fin)
+    (hT : ∀ a s t, ESib mH.G mG.G P a s → EnvE s t → t.syms = s.syms →
+      Table.Tab Hl.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t)
+    (harg : ∀ a s, ESib mH.G mG.G P a s → stackArg s 10 = stackArg a 10)
+    (hsym : ∀ a s, ESib mH.G mG.G P a s →
+      s.syms Hl.initN = a.syms Hl.initN ∧ s.syms Hl.updN = a.syms Hl.updN ∧ s.syms Hl.finN = a.syms Hl.finN) :
+    RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (encEm Hl.stream f) (Two (EAt mH.G mG.G P (EK Hl.D))) := by
   have hz := sizes hH.stream
   have hsD : Hl.stream.D = Hl.D := rfl
   have hD65 : Hl.D < 65 := by omega
-  unfold encEm seqs seqs seqs seqs
+  unfold encEm seqs seqs seqs seqs seqs
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin ⟨_, by taint_decide⟩)
     fun s t hs h => WP.mono_syms (ew_clearEm h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14, 31] (by decide) nopin
       ⟨_, copySeed_taint Hl.D hD65⟩)
     fun s t hs h => WP.mono_syms (ew_copySeed hs (Hm := Hl.stream) mH.len (by omega) (by omega) h.1)
       fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
-  refine RelCT.seq (e_post (J' := EK Hl.D) (two_map lq (fun a t ⟨s, S, e, _⟩ => by
+  -- The table's address to its slot.
+  refine RelCT.seq (e_postS (J' := fun s t => EK Hl.D s t ∧ word t.mem (fb s) (8 * 35) = stackArg s 10)
+    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin etabSlot_taint)
+    fun a s t S h => WP.mono (ew_tabSlot h.1 (hT a s t S h.1.he h.2.2)) fun _ ⟨⟨e, h35⟩, sy⟩ =>
+      ⟨⟨e, h.2.1, sy.trans h.2.2⟩, h35⟩) ?_
+  -- The label's hash.
+  refine RelCT.seq (e_postS (J' := EK Hl.D) (two_map (lqtE Hl) (fun a t ⟨s, S, ⟨e, _, sy⟩, h35⟩ => by
       have hp := S.1
       obtain ⟨V, W, R, hW⟩ := e.rep
-      have := (⟨e.he.frv hp, e.L, V, W, R, e.lab hp hW⟩ : LW 2 (lq s) t)
-      simp only [lq] at this ⊢
-      rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.arg (i := 0) (by decide),
-        S.arg (i := 1) (by decide)] at this) (hashLabel_ct hH.stream 2 (.inl rfl) (Or.inl rfl)))
-    fun s t hs h => WP.mono_syms (ew_hashLabel hs hH KH mH h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
+      have := (⟨⟨e.he.frv hp, e.L, V, W, R, e.lab hp hW⟩, h35, ⟨t, _, hT a s t S e.he sy, Table.TJ.refl t _, rfl, rfl⟩,
+        by rw [sy]; rfl, by rw [sy]; rfl, by rw [sy]; rfl⟩ : LWT Hl.stream f 2 (lqtE Hl s) t)
+      obtain ⟨y1, y2, y3⟩ := hsym a s S
+      simp only [lqtE, lq] at this ⊢
+      rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 6) (by decide), S.arg (i := 0) (by decide),
+        S.arg (i := 1) (by decide), harg a s S, y1, y2, y3] at this)
+      (hashLabelT_ct hH.stream hgi hgu (.inl rfl) (Or.inl rfl)))
+    fun a s t S h => WP.mono_syms (ew_hashLabelT S.1 hH mH hgi hgu hgf h.1.1 h.2 (hT a s t S h.1.1.he h.1.2.2))
+      fun _ e sy => ⟨e, h.1.2.1, sy.trans h.1.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin
       ⟨_, copyLh_taint Hl.D hD65⟩)
     fun s t hs h => WP.mono_syms (ew_copyLh (Hm := Hl.stream) (by omega) (by omega) h.1)
@@ -264,13 +327,13 @@ theorem me_of {src srcLen dst dstLen : Nat → Nat} {a s t : State} (S : ESib H 
       (dstLen (s.gpr .rcx).toNat))
     (hf : MFit (src (s.gpr .rcx).toNat) (srcLen (s.gpr .rcx).toNat) (dst (s.gpr .rcx).toNat)
       (dstLen (s.gpr .rcx).toNat)) :
-    ME 2 ⟨fb a, stackArg a 5, [outR a, scrR a], src (a.gpr .rcx).toNat, srcLen (a.gpr .rcx).toNat,
+    ME 2 ⟨fb a, stackArg a 6, [outR a, scrR a], src (a.gpr .rcx).toNat, srcLen (a.gpr .rcx).toNat,
       dst (a.gpr .rcx).toNat, dstLen (a.gpr .rcx).toNat⟩ t := by
   have hp := S.1
   obtain ⟨V, W, R, _, A⟩ := h.rep
-  have := (⟨h.he.frv hp, h.L, hf, V, W, R, A⟩ : ME 2 ⟨fb s, stackArg s 5, [outR s, scrR s],
+  have := (⟨h.he.frv hp, h.L, hf, V, W, R, A⟩ : ME 2 ⟨fb s, stackArg s 6, [outR s, scrR s],
     src (s.gpr .rcx).toNat, srcLen (s.gpr .rcx).toNat, dst (s.gpr .rcx).toNat, dstLen (s.gpr .rcx).toNat⟩ t)
-  rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.k] at this
+  rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 6) (by decide), S.k] at this
 
 /-! ## The checks -/
 
@@ -318,20 +381,73 @@ theorem chkMsg_step {s t : State} (hs : EPre mH.G s) (h : J2' Hl.D s t) :
 def JA (s t : State) : Prop := t = allocState frameBytes s
 
 include hH mH mG in
-/-- The prologue and the checks, then `main`, constant time if `main` is. -/
-theorem encBodyWith_ct {main : Prog isa}
-    (hmain : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) main fun _ _ => True) :
-    RelCT isa (Two (EAt mH.G mG.G P JA)) (encBodyWith Hl.stream main) fun _ _ => True := by
+/-- The prologue, the branch on the digest length of the table at the stack
+argument 10 (`hT`, `harg`) and the checks, then `main`, constant time if
+`main` is. -/
+theorem encBodyWith_ct {f : Impl.Mgf1.X86_64.Table.Fns} {main : Nat → Prog isa}
+    (hT : ∀ a s t, ESib mH.G mG.G P a s → EnvE s t → t.syms = s.syms →
+      Table.Tab Hl.stream f (fb s) (stackArg s 10) (frameBytes + 8 + 8 * 10) t)
+    (harg : ∀ a s, ESib mH.G mG.G P a s → stackArg s 10 = stackArg a 10)
+    (hmain : RelCT isa (Two (EAt mH.G mG.G P (EK Hl.D))) (main Hl.D) fun _ _ => True) :
+    RelCT isa (Two (EAt mH.G mG.G P JA)) (encBodyWith main) fun _ _ => True := by
   have hz := sizes hH.stream
   have hsD : Hl.stream.D = Hl.D := rfl
   have hD65 : Hl.D < 65 := by omega
+  have hDl : Hl.D ∈ lens := by rw [← mH.len]; exact mem_lens mH.mem
   unfold encBodyWith seqs seqs seqs
-  refine RelCT.seq (e_post (J' := J2 Hl.D) (two_taint [.rsp] (e_pins_rsp fun s t _ h => by rw [h]; rfl)
-      (head_taint Hl.D hD65))
+  -- The prologue.
+  refine RelCT.seq (e_post (J' := fun s t => EW s t ∧ t.syms = s.syms)
+    (two_taint [.rsp] (e_pins_rsp fun s t _ h => by rw [h]; rfl) pro_taint)
     fun s t hs h => by
       subst h
-      exact WP.mono_syms (encHead_ok (Hm := Hl.stream) hs (by omega))
-        fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ sy => ⟨⟨he2, L2, _, _, R2, fun _ _ => rfl⟩, hax2, hcf2, sy⟩) ?_
+      exact WP.mono_syms (encHead_ok hs) fun t1 ⟨he1, L1, R1⟩ sy => ⟨⟨he1, L1, _, _, R1, fun _ _ => rfl⟩, sy⟩) ?_
+  -- The table's address to its slot, and its digest length to `r11`.
+  refine RelCT.seq (e_postS (J' := fun s t => (EW s t ∧ word t.mem (fb s) (8 * 35) = stackArg s 10) ∧
+      t.syms = s.syms)
+    (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin etabSlot_taint)
+    fun a s t S h => WP.mono (ew_tabSlot h.1 (hT a s t S h.1.he h.2)) fun _ ⟨e, sy⟩ => ⟨e, sy.trans h.2⟩) ?_
+  refine RelCT.seq (e_postS (J' := fun s t => EW s t ∧ t.syms = s.syms ∧ t.gpr .r11 = BitVec.ofNat 64 Hl.D)
+    (two_taintF [] [35] fb (fun a => [outR a, scrR a]) (fun a _ => stackArg a 10)
+      (fun a t ⟨s, S, ⟨⟨e, h35⟩, _⟩⟩ => by
+        rw [← S.fb, ← S.out_eq, ← S.scr_eq, ← harg a s S]
+        refine ⟨e.he.frv S.1, fun k hk => ?_⟩
+        simp only [List.mem_singleton] at hk; subst hk
+        exact h35)
+      nopin (by decide) elenLoad_taint)
+    fun a s t S h => by
+      obtain ⟨⟨e, h35⟩, sy⟩ := h
+      obtain ⟨V, W, R, hW⟩ := e.rep
+      have T := hT a s t S e.he sy
+      exact WP.mono (wp_good (block_good _ rfl) (lenLoad_ok e.L R ((R.fr 35 (by decide)).symm.trans h35) T.rdD
+          (T.mem _ (Frame.refl _ _)).2.1))
+        fun t' ⟨⟨k, h11, hm, sy'⟩, sp, mx, f'⟩ => ⟨⟨e.he.step k.2.1 k.2.2 sp (keep_cs3 k (by decide)) mx f',
+          e.L.congr (k.gpr (by decide)) k.2.2 (by rw [hm]), V, W, hm ▸ R, hW⟩, sy'.trans sy, h11⟩) ?_
+  -- The checks for that length.
+  refine byLen_ct (fun _ => Hl.D) cmpLens_taint (fun a t ⟨_, _, ⟨_, _, h11⟩⟩ => ⟨h11, hDl, mem_lens_lt hDl⟩)
+    fun d _ => ?_
+  by_cases hdd : Hl.D = d
+  swap
+  · exact RelCT.of_false fun _ _ ⟨_, ⟨_, e⟩, _⟩ => hdd e
+  subst hdd
+  rw [encChecks_D (G := ofLen Hl.D) (G' := Hl.stream) rfl]
+  refine (?_ : RelCT isa (Two (EAt mH.G mG.G P fun s t => EW s t ∧ t.syms = s.syms))
+    (encChecks Hl.stream (main Hl.D)) _).mono (fun _ _ ⟨a, ⟨⟨t₁, ⟨s₁, S₁, j₁⟩, k₁, m₁, y₁, x₁⟩, _⟩,
+      ⟨⟨t₂, ⟨s₂, S₂, j₂⟩, k₂, m₂, y₂, x₂⟩, _⟩⟩ =>
+    ⟨a, ⟨s₁, S₁, j₁.1.after k₁ m₁ x₁, y₁.trans j₁.2.1⟩, ⟨s₂, S₂, j₂.1.after k₂ m₂ x₂, y₂.trans j₂.2.1⟩⟩)
+    fun _ _ h => h
+  unfold encChecks seqs seqs seqs
+  refine RelCT.seq (e_post (J' := J2 Hl.D) (two_taint [.rsp] (e_pins_rsp fun s t _ h => h.1.he.rsp)
+      (chkK_taint Hl.D hD65))
+    fun s t hs h => by
+      obtain ⟨e, sy⟩ := h
+      obtain ⟨V, W, R, hW⟩ := e.rep
+      obtain ⟨-, -, -, w23, -⟩ := hW.w
+      have hk1 := hs.k1; have hk2 := hs.k2
+      exact WP.mono_syms (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) e.L R
+          (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) (by omega)))
+        fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ⟨⟨e.he.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide))
+          mx2 f2, e.L.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), V, W, hm2 ▸ R, hW⟩, hax2,
+          by rw [hcf2, hsD], sy2.trans sy⟩) ?_
   refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat < 2 * Hl.D + 2))) (fun s t h => h.2.2.1)
     (fun a s S => by rw [S.k]) (e_branch (J' := EW) (fun _ _ _ h _ => h.1) zeroOut_ct)
     (e_branch (J' := J2' Hl.D) (fun s t _ h e => ⟨h.1, h.2.1, by have := cf_false h.2.2.1 e; omega, h.2.2.2⟩) ?_)

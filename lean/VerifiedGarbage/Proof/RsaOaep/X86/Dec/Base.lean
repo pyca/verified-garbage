@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Impl.RsaOaep.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Table
+public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -29,9 +29,10 @@ namespace VG.Proof.RsaOaep.X86.Dec
 open VG VG.Impl.RsaPss.X86 VG.Proof.RsaPkcs1Sig.X86 VG.Proof.RsaPss.X86
 open VG.X86 hiding frameBytes
 
-/-- What two runs share: MGF1's table (`tab`) among them, its hash
-function's functions at `ai`, `au` and `af`, and what each run's entry
-state holds of it (`T`). -/
+/-- What two runs share: the label's hash function's table (`tabL`) and
+MGF1's (`tab`) among them, their hash functions' functions at `aiL`, `auL`,
+`afL` and `ai`, `au`, `af`, and what each run's entry state holds of them
+(`TL`, `T`). -/
 structure EP where
   B : BitVec 32
   out : BitVec 32
@@ -59,6 +60,11 @@ structure EP where
   au : BitVec 32
   af : BitVec 32
   T : State → Prop
+  tabL : BitVec 32
+  aiL : BitVec 32
+  auL : BitVec 32
+  afL : BitVec 32
+  TL : State → Prop
 
 namespace EP
 
@@ -77,15 +83,16 @@ abbrev LAB : Region := ⟨P.lab.setWidth 64, P.ll⟩
 abbrev CT : Region := ⟨P.ct.setWidth 64, P.K⟩
 abbrev SCR : Region := ⟨P.scr.setWidth 64, P.scl * 8⟩
 abbrev TAB : Region := Sig.tableRegion 32 (P.tab.setWidth 64) 5
+abbrev TABL : Region := Sig.tableRegion 32 (P.tabL.setWidth 64) 5
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
   [P.out, BitVec.ofNat 32 P.K, P.ml, P.n, BitVec.ofNat 32 P.K, P.e, BitVec.ofNat 32 P.el, P.p, BitVec.ofNat 32 P.pl,
     P.q, BitVec.ofNat 32 P.ql, P.dp, BitVec.ofNat 32 P.pl, P.dq, BitVec.ofNat 32 P.ql, P.qinv,
     BitVec.ofNat 32 P.pl, P.lab, BitVec.ofNat 32 P.ll, P.ct, BitVec.ofNat 32 P.K, P.scr, BitVec.ofNat 32 P.scl,
-    P.tab]
+    P.tabL, P.tab]
 
-abbrev ro : List Region := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.LAB, P.CT, P.TAB]
+abbrev ro : List Region := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.LAB, P.CT, P.TABL, P.TAB]
 abbrev rw : List Region := [P.OUT, P.ML, P.SCR]
 
 abbrev lay : Lay where
@@ -114,6 +121,7 @@ structure In (P : EP) (σ : State) : Prop where
   nB : Spec.Rsa.bytesAt σ.mem (P.n.setWidth 64) P.K = P.nB
   eB : Spec.Rsa.bytesAt σ.mem (P.e.setWidth 64) P.el = P.eB
   tabT : P.T σ
+  tabTL : P.TL σ
 
 namespace In
 
@@ -141,25 +149,27 @@ end In
 /-- The stack the function uses: the push, the inner frame and the call's. -/
 abbrev stackBytes : Nat := 16 + frameBytes + 3448
 
-/-- The shared contract, with MGF1's hash function one of the tables `ts` and
-that stack. -/
-abbrev spec (H : Spec.Mgf1.Hash) (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.decryptTableContract H (abi.withTables Spec.RsaOaep.decryptTableSig [("mgf1", ts)]) stackBytes
+/-- The shared contract, with the label's hash function and MGF1's each one
+of the tables `ts`, and that stack. -/
+abbrev spec (ts : List FnTable) : Contract isa :=
+  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+    stackBytes
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "dec_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argSlots, argVal, argBytes, stackBelow] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 
 /-- The public parameters of an entry state, with MGF1's hash function's
-functions at `ai`, `au` and `af`, and `T` of the entry. -/
-def ep (s : State) (ai au af : BitVec 32) (T : State → Prop) : EP where
+functions at `ai`, `au` and `af`, the label's at `aiL`, `auL` and `afL`, and
+`T` and `TL` of the entry. -/
+def ep (s : State) (ai au af : BitVec 32) (T : State → Prop) (aiL auL afL : BitVec 32) (TL : State → Prop) : EP where
   B := s.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 frameBytes
   out := arg s 0
   ml := arg s 2
@@ -181,50 +191,58 @@ def ep (s : State) (ai au af : BitVec 32) (T : State → Prop) : EP where
   scl := (arg s 22).toNat
   nB := Spec.Rsa.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat
   eB := Spec.Rsa.bytesAt s.mem ((arg s 5).setWidth 64) (arg s 6).toNat
-  tab := arg s 23
+  tab := arg s 24
   ai := ai
   au := au
   af := af
   T := T
+  tabL := arg s 23
+  aiL := aiL
+  auL := auL
+  afL := afL
+  TL := TL
 
-variable {ai au af : BitVec 32} {T : State → Prop}
+variable {ai au af : BitVec 32} {T : State → Prop} {aiL auL afL : BitVec 32} {TL : State → Prop}
 
 theorem ep_lay (s : State) :
-    (ep s ai au af T).lay = layOf frameBytes (ep s ai au af T).argv (ep s ai au af T).ro (ep s ai au af T).rw s 3448 :=
+    (ep s ai au af T aiL auL afL TL).lay = layOf frameBytes (ep s ai au af T aiL auL afL TL).argv
+      (ep s ai au af T aiL auL afL TL).ro (ep s ai au af T aiL auL afL TL).rw s 3448 :=
   rfl
 
-/-- MGF1's table, as the contract gives it: one of `ts`, at the argument 23,
-with the functions of distinct names at distinct addresses. -/
-theorem spec_tab {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spec H ts).pre s) :
+/-- The tables, as the contract gives them: each one of `ts`, the label's
+hash function's at the argument 23 and MGF1's at 24, with the functions of
+distinct names at distinct addresses. -/
+theorem spec_tab {ts : List FnTable} {s : State} (h : (spec ts).pre s) :
     (∃ T ∈ ts, Abi.tableHeld 32 s.mem ((arg s 23).setWidth 64) (FnTable.words isa s T)) ∧
-      ((ts.map (fun T : FnTable => T.fns)).flatten ++ []).Pairwise
+      (∃ T ∈ ts, Abi.tableHeld 32 s.mem ((arg s 24).setWidth 64) (FnTable.words isa s T)) ∧
+      ((ts.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (arg s 23).toNat + 20 ≤ 2 ^ 32 := by
+      (arg s 23).toNat + 20 ≤ 2 ^ 32 ∧ (arg s 24).toNat + 20 ≤ 2 ^ 32 := by
   dec_pre at h
   sig_split h
-  rename_i hsp hsa hheld hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oT oA mN mE mP mQ mDP mDQ mQI mL mC mS
-    mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA sT sA tA rO rM rN rE rP rQ rDP rDQ rQI rL
-    rC rS rT rA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fT kv olk
-    clk el1 elK pl1 plK ql1 qlK dpl qil dql
-  exact ⟨hheld, hpw, fT⟩
+  rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oTL oT oA mN mE mP mQ mDP mDQ mQI mL mC mS
+    mTL mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA sTL sT sA tlA tA rO rM rN rE rP rQ rDP rDQ
+    rQI rL rC rS rTL rT rA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fTL
+    fT kv olk clk el1 elK pl1 plK ql1 qlK dpl qil dql
+  exact ⟨hheld, hheld2, hpw, fTL, fT⟩
 
-theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spec H ts).pre s)
-    (hT : T (entered frameBytes s)) :
-    In (ep s ai au af T) (entered frameBytes s) := by
+theorem in_of_pre {ts : List FnTable} {s : State} (h : (spec ts).pre s)
+    (hT : T (entered frameBytes s)) (hTL : TL (entered frameBytes s)) :
+    In (ep s ai au af T aiL auL afL TL) (entered frameBytes s) := by
   dec_pre at h
   sig_split h
-  rename_i hsp hsa hheld hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oT oA mN mE mP mQ mDP mDQ mQI mL mC mS
-    mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA sT sA tA rO rM rN rE rP rQ rDP rDQ rQI rL
-    rC rS rT rA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fT kv olk
-    clk el1 elK pl1 plK ql1 qlK dpl qil dql
+  rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oTL oT oA mN mE mP mQ mDP mDQ mQI mL mC mS
+    mTL mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA sTL sT sA tlA tA rO rM rN rE rP rQ rDP rDQ
+    rQI rL rC rS rTL rT rA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fTL
+    fT kv olk clk el1 elK pl1 plK ql1 qlK dpl qil dql
   have slK := h
-  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kT kA
+  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kTL kT kA
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   have a20 : arg s 20 = arg s 4 := BitVec.eq_of_toNat_eq clk
   have a12 : arg s 12 = arg s 8 := BitVec.eq_of_toNat_eq dpl
   have a16 : arg s 16 = arg s 8 := BitVec.eq_of_toNat_eq qil
   have a14 : arg s 14 = arg s 10 := BitVec.eq_of_toNat_eq dql
-  rw [olk] at hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oT oA rO kO fO
+  rw [olk] at hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oTL oT oA rO kO fO
   rw [clk] at hrd oC mC cS cA rC kC fC
   rw [dpl] at hrd oDP mDP dpS dpA rDP kDP fDP
   rw [qil] at hrd oQI mQI qiS qiA rQI kQI fQI
@@ -250,14 +268,15 @@ theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spe
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
         (by show (arg s 6).toNat ≤ 2 ^ 64; omega_arith)
-      tabT := hT }
+      tabT := hT
+      tabTL := hTL }
   rw [ep_lay]
   refine ok_entered (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [kN, kE, kP, kQ, kDP, kDQ, kQI, kL, kC, kT, kO, kM, kS]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [kN, kE, kP, kQ, kDP, kDQ, kQI, kL, kC, kTL, kT, kO, kM, kS]
   · intro r hr
     simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -265,15 +284,16 @@ theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spe
   · intro w hw r hr
     simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hw with rfl | rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [oN, oE, oP, oQ, oDP, oDQ, oQI, oL, oC, oT, oA, mN, mE, mP, mQ, mDP, mDQ, mQI, mL, mC, mT, mA,
-      nS.symm, eS.symm, pS.symm, qS.symm, dpS.symm, dqS.symm, qiS.symm, lS.symm, cS.symm, sT, sA]
+    rcases hw with rfl | rfl | rfl <;>
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [oN, oE, oP, oQ, oDP, oDQ, oQI, oL, oC, oTL, oT, oA, mN, mE, mP, mQ, mDP, mDQ, mQI, mL, mC, mTL, mT, mA,
+      nS.symm, eS.symm, pS.symm, qS.symm, dpS.symm, dqS.symm, qiS.symm, lS.symm, cS.symm, sTL, sT, sA]
   · simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨⟨oM, oS⟩, mS, fun _ h => h.elim⟩
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth, Sig.tableRegion]
     all_goals first
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
@@ -289,12 +309,13 @@ theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spe
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 19).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 21).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 23).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 24).isLt; omega_arith)]; omega_arith)
   · intro j hj
-    have : j < 24 := hj
+    have : j < 25 := hj
     rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
-        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23) with
+        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a12, a14, a16, a20]
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a12, a14, a16, a20]
 
 end VG.Proof.RsaOaep.X86.Dec

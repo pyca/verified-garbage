@@ -132,23 +132,27 @@ structure CallArgs (L : ELay) (W : Nat → BitVec 64) : Prop where
   s0 : W 0 = L.scr + BitVec.ofNat 64 8192
   s1 : W 1 = L.sl - BitVec.ofNat 64 1024
 
-/-- `pre` and `pre_len`, the words of the entry memory `m₀` at `Q + 328`
-and `Q + 336`. -/
-abbrev preW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 328) 64
-abbrev prlW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 336) 64
+/-- `pre` and `pre_len`, the words of the entry memory `m₀` at `Q + 336`
+and `Q + 344`. -/
+abbrev preW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 336) 64
+abbrev prlW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 344) 64
 
 /-- The region of `pre`. -/
 abbrev PRE (L : ELay) (m₀ : Mem) : Region := ⟨preW L m₀, (prlW L m₀).toNat * 8⟩
 
-/-- MGF1's table, the word of the entry memory `m₀` at `Q + 344`, and its
-region. -/
-abbrev tabW (L : ELay) (m₀ : Mem) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 344) 64
-abbrev TABR (L : ELay) (m₀ : Mem) : Region := Sig.tableRegion 64 (tabW L m₀) 5
+/-- The table that is our stack argument `j`, the word of the entry memory
+`m₀` at `Q + 288 + 8 j`, and its region. -/
+abbrev tabJ (L : ELay) (m₀ : Mem) (j : Nat) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 (arg j)) 64
+abbrev TABJ (L : ELay) (m₀ : Mem) (j : Nat) : Region := Sig.tableRegion 64 (tabJ L m₀ j) 5
 
-/-- `pre` and MGF1's table in a layout from the entry memory `m₀`. -/
+/-- The label's hash function's table (our stack argument 8) and MGF1's (9). -/
+abbrev tabLW (L : ELay) (m₀ : Mem) : BitVec 64 := tabJ L m₀ 8
+abbrev tabW (L : ELay) (m₀ : Mem) : BitVec 64 := tabJ L m₀ 9
+
+/-- `pre` and the tables in a layout from the entry memory `m₀`. -/
 structure PreOk (L : ELay) (m₀ : Mem) : Prop where
-  hx : L.X = [PRE L m₀, TABR L m₀]
-  al : L.al = 64
+  hx : L.X = [PRE L m₀, TABJ L m₀ 8, TABJ L m₀ 9]
+  al : L.al = 80
   pl : (prlW L m₀).toNat = Spec.Rsa.precomputedWords L.k.toNat
 
 theorem pre_ok (hL : L.Ok) (hp : PreOk L m₀) :
@@ -196,18 +200,18 @@ structure PReadyP (L : ELay) (m₀ : Mem) (t : State) : Prop where
   x7 : t.gpr .x7 = L.k
 
 theorem loads_ok (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) (hr : PReady L t) :
-    WP isa (.block ([.ldrSp .x2 (arg 5), .ldrSp .x3 (arg 6)] : List Instr)) t fun u =>
+    WP isa (.block ([.ldrSp .x2 (arg 6), .ldrSp .x3 (arg 7)] : List Instr)) t fun u =>
       Ctx L g vv m₀ u ∧ u.mem = t.mem ∧ PReadyP L m₀ u := by
   have hA := hp.al
   have := hL.nQa
-  have i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 328) 8 := by
+  have i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
-      Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al64; omega_arith)⟩
-  have i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
+      Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al80; omega_arith)⟩
+  have i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 344) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
-      Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al64; omega_arith)⟩
-  have k0 := arg_keep hL hc (d := 328) (by omega_arith) (by omega_arith)
-  have k1 := arg_keep hL hc (d := 336) (by omega_arith) (by omega_arith)
+      Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al80; omega_arith)⟩
+  have k0 := arg_keep hL hc (d := 336) (by omega_arith) (by omega_arith)
+  have k1 := arg_keep hL hc (d := 344) (by omega_arith) (by omega_arith)
   rw [← hc.sp] at k0 k1
   apply WP.of_runBlock
   simp only [arg, frameBytes, runBlock_cons, runStep_some, runBlock_nil, exec, State.load,
@@ -353,26 +357,27 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
   rw [hr.x0, hr.x1, hr.x2, hr.x3, hr.x4, hr.x5, hr.x6, pre_words hL hc hp, hc.bytes_ro hL (ro_E L)] at hpost
   exact hpost _ (by simp [Spec.Rsa.bytesAt]) hq
 
-/-- MGF1's table, at the stack argument 7, from what the entry's memory
-holds there: the table and that argument are apart from everything the
-function writes. -/
-theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
-    {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
-    (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabW L m₀) m₀)
-    (hD : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
-    Table.Tab G f L.Q L.scr (tabW L m₀) (arg 7) t := by
+/-- The table at our stack argument `j` (8, the label's hash function's, or
+9, MGF1's), from what the entry's memory holds there: the table and that
+argument are apart from everything the function writes. -/
+theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) {j : Nat}
+    (hj : j = 8 ∨ j = 9) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
+    (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabJ L m₀ j) m₀)
+    (hD : m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    Table.Tab G f L.Q L.scr (tabJ L m₀ j) (arg j) t := by
   have hA := hp.al
   have hnQ := hL.nQa
   have hpQ := hL.pQ
-  have hT : TABR L m₀ ∈ L.X := by rw [hp.hx]; simp
-  have cT : ∀ d, d + 8 ≤ 40 → (TABR L m₀).Contains (tabW L m₀ + BitVec.ofNat 64 d) 8 := fun d hd => by
-    show (⟨tabW L m₀, 40⟩ : Region).Contains _ _
-    exact Offset.contains_base _ hd (by omega)
-  have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 7)) 8 :=
-    Offset.contains _ (by decide) (by unfold arg frameBytes; omega) (by omega)
-  have mT : TABR L m₀ ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
+  have hT : TABJ L m₀ j ∈ L.X := by rw [hp.hx]; rcases hj with rfl | rfl <;> simp
+  have cT : ∀ d, d + 8 ≤ 40 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
+    show (⟨tabJ L m₀ j, 40⟩ : Region).Contains _ _
+    exact Offset.contains_base _ hd (by have := hL.xw _ hT; simp only [Sig.tableRegion] at this; omega)
+  have hj' : 288 ≤ arg j ∧ arg j + 8 ≤ 368 := by rcases hj with rfl | rfl <;> decide
+  have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg j)) 8 :=
+    Offset.contains _ hj'.1 (by omega) (by omega)
+  have mT : TABJ L m₀ j ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
   have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
-  have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABR L m₀).Disjoint r := by
+  have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABJ L m₀ j).Disjoint r := by
     intro r hr
     simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -381,7 +386,7 @@ theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : Pr
       exact (hL.xK _ hT).symm.sub_right hf
     · exact (hL.xS _ hT).sub_right hL.ours_scr
     · exact (hL.xK _ hT).symm.sub_right (sub_trans (ELay.Ok.ret_low (L := L) hP16) ELay.Ok.low_stk)
-  have dT0 : ∀ r ∈ [L.OUT, L.SCR, L.STK], (TABR L m₀).Disjoint r := by
+  have dT0 : ∀ r ∈ [L.OUT, L.SCR, L.STK], (TABJ L m₀ j).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -390,23 +395,38 @@ theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : Pr
     · exact (hL.xK _ hT).symm
   refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 32 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
   have rt : ∀ d, d + 8 ≤ 40 →
-      m.readW (tabW L m₀ + BitVec.ofNat 64 d) 64 = m₀.readW (tabW L m₀ + BitVec.ofNat 64 d) 64 :=
+      m.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 = m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
     (rt 32 (by decide)).trans hD, ?_⟩
-  have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 344, 8⟩ r := by
-    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 344, 8⟩ L.ARGS := Offset.sub _ (by decide) (by omega)
+  have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ r := by
+    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega)
     intro r hr
     simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := Offset.disjoint L.Q (d := 344) (n := 8) (e := 0) (k := frameBytes) (.inr (by decide)) (by decide)
-        (by decide)
+    · have := Offset.disjoint L.Q (d := arg j) (n := 8) (e := 0) (k := frameBytes)
+        (.inr (by unfold frameBytes; omega)) (by omega) (by decide)
       rwa [BitVec.add_zero] at this
     · exact (hL.sA.symm.sub_left hs).sub_right hL.ours_scr
-    · exact Offset.disjoint_below _ (by decide)
-  show m.readW (L.Q + BitVec.ofNat 64 344) 64 = tabW L m₀
+    · exact Offset.disjoint_below _ (by omega)
   exact (hf.readW (Region.contains_self _ _) ka (by decide)).trans
-    (arg_keep hL hc (d := 344) (by decide) (by omega))
+    (arg_keep hL hc (d := arg j) hj'.1 (by omega))
+
+/-- MGF1's table, at our stack argument 9. -/
+theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
+    {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
+    (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabW L m₀) m₀)
+    (hD : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    Table.Tab G f L.Q L.scr (tabW L m₀) (arg 9) t :=
+  tabJ_of hL hP16 hc hp (.inr rfl) ok hm hD
+
+/-- The label's hash function's table, at our stack argument 8. -/
+theorem tabL_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
+    {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
+    (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabLW L m₀) m₀)
+    (hD : m₀.readW (tabLW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    Table.Tab G f L.Q L.scr (tabLW L m₀) (arg 8) t :=
+  tabJ_of hL hP16 hc hp (.inl rfl) ok hm hD
 
 end
 

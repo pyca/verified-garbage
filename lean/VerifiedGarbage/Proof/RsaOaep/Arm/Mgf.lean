@@ -105,7 +105,8 @@ end VG.Proof.RsaOaep.Arm
 
 `OHash`: a hash function as RSAES-OAEP on ARMv7 uses it, its streaming
 functions verified (`Pbkdf2.Stream.Arm.HashOK`) and the hash function as
-RSA's padding takes it; from the RSASSA-PSS one (`OHash.ofPss`).
+RSA's padding takes it, with a digest length the functions taking a table
+branch on (`lens`); from the RSASSA-PSS one (`OHash.ofPss`).
 
 `mgf_vp`: with `src` (`sl` bytes at `so`) and `dst` (`dl` bytes at `dOff`)
 in `EM`'s place in our part of `scratch`, their addresses and lengths in
@@ -140,9 +141,12 @@ structure OHash where
   hash : ∀ x, G.hash x = ok.SH.H.hash x
   glen : G.len = H.D
   valid : Proof.Mgf1.Valid G
+  /-- Its digest length is one the functions taking a table branch on. -/
+  lens : H.D ∈ Impl.RsaOaep.Arm.lens
 
 /-- The RSASSA-PSS hash function's streaming functions. -/
-def OHash.ofPss (h : PssHash) : OHash := ⟨h.H.md.st, h.ok.stream, h.G, h.hash, h.glen, h.valid⟩
+def OHash.ofPss (h : PssHash) (hD : h.H.md.st.D ∈ Impl.RsaOaep.Arm.lens := by decide) : OHash :=
+  ⟨h.H.md.st, h.ok.stream, h.G, h.hash, h.glen, h.valid, hD⟩
 
 namespace OHash
 
