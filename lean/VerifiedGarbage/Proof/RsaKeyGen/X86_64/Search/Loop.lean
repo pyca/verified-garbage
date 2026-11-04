@@ -48,7 +48,7 @@ theorem SearchIter.keep {p : SearchPublic} {original s t : State} {final : Prime
 theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
     {used remaining : Nat} (h : SearchIter p original final used remaining s)
     (hc : CandPost p (searchP original) (searchRand original) used s) (hr : remaining ≠ 0) :
-    WP isa classify s (IterPost p original final used) := by
+    WP isa classify s (IterPost p original final used remaining) := by
   have hst := hc.1
   have h4 : Spec.RsaKeyGen.candidateStatus
       (Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used)) < 4 := by
@@ -122,10 +122,10 @@ theorem iter_guard {p : SearchPublic} {original s : State} {used remaining : Nat
     h.r12, hl0, h0, BitVec.and_self, hz]
 
 theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchResult} {used : Nat}
-    (h : IterPost p original final used s) :
+    {remaining : Nat} (h : IterPost p original final used remaining s) :
     WP isa (.block [.mov .rax (.mem (field 17)), .alu .cmp .rax (.imm 4)]) s (LoopStep p original final used) := by
   have hregs : s.gpr .r12 = p.F ∧ ∃ o : State, SearchInput p o ∧ s.wr = p.frame :: o.wr := by
-    rcases h with ⟨-, _, _, -, hi, -⟩ | ⟨-, hd⟩
+    rcases h with ⟨-, _, _, -, ⟨hi, -⟩, -⟩ | ⟨-, hd⟩
     · exact ⟨hi.r12, _, hi.input, hi.wr⟩
     · exact ⟨hd.r12, _, hd.input, hd.wr⟩
   obtain ⟨hr12, o, hi, hw⟩ := hregs
@@ -137,7 +137,7 @@ theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchRe
     t.mem = s.mem) (by
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, hr12, hl, h4]) rfl) fun t ⟨⟨he, hm⟩, k⟩ => ?_
   rw [sub_beq_zero] at he
-  rcases h with ⟨h17, u, k', hlt, hit⟩ | ⟨h17, hd⟩
+  rcases h with ⟨h17, u, k', hlt, hit, -⟩ | ⟨h17, hd⟩
   · exact .inl ⟨by rw [he, h17]; rfl, u, k', hlt, hit.keep k hm (by decide)⟩
   · refine .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], ?_⟩
     exact ⟨hd.input, k.2.1.trans hd.rd, k.2.2.trans hd.wr, (k.gpr (by decide)).trans hd.rsp,
@@ -161,7 +161,7 @@ theorem search_iteration (v : RoundImpl) {p : SearchPublic} {original s : State}
     unfold tailOf at hfinal
     rw [VG.Proof.RsaKeyGen.Search.search_zero] at hfinal
     exact WP.mono (search_exhausted hl (result := final) (by rw [hfinal]; rfl)) fun t hd =>
-      iter_test (.inr ⟨hd.status_ne, hd⟩)
+      iter_test (remaining := 0) (.inr ⟨hd.status_ne, hd⟩)
   · have hz := of_decide_eq_false hz
     refine WP.seq (WP.mono (search_candidate_run v hu.1) fun t ⟨ht, hc⟩ => ?_)
     exact WP.mono (search_classify ⟨ht, hu.2⟩ hc hz) fun _ hp => iter_test hp

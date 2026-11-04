@@ -227,17 +227,28 @@ def SearchIter (p : SearchPublic) (original : State) (final : PrimeSearchResult)
     (s : State) : Prop :=
   SearchLive p original used remaining s ∧ ∃ tr, final = (tailOf p original used remaining).consume used tr
 
-/-- What an iteration leaves: the search goes on (status 4) from a later
-offset, or it is finished. -/
-def IterPost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used : Nat) (t : State) : Prop :=
-  (word t.mem p.F (8 * 17) = 4 ∧ ∃ u k, used < u ∧ SearchIter p original final u k t) ∨
-    (word t.mem p.F (8 * 17) ≠ 4 ∧ SearchDone p original final t)
+/-- The candidate's status, from `used`. -/
+abbrev candStatus (p : SearchPublic) (original : State) (used : Nat) : Nat :=
+  Spec.RsaKeyGen.candidateStatus
+    (Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used))
 
 /-- The candidate's consumption, from `used`. -/
 abbrev candUsed (p : SearchPublic) (original : State) (used : Nat) : Nat :=
   match Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) with
   | some (_, rest) => (p.randLen - used) - rest.length
   | none => 0
+
+/-- What an iteration leaves: the search goes on (status 4) past its
+candidate, or it is finished. -/
+def IterPost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  (word t.mem p.F (8 * 17) = 4 ∧ ∃ u k, used < u ∧ SearchIter p original final u k t ∧
+    u = used + candUsed p original used ∧
+    ((k = remaining ∧ candStatus p original used = 2) ∨ (k = remaining - 1 ∧ candStatus p original used = 3)) ∧
+    tailOf p original used remaining =
+      (tailOf p original u k).consume (u - used)
+        (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used))) ∨
+    (word t.mem p.F (8 * 17) ≠ 4 ∧ SearchDone p original final t)
 
 theorem search_load_used {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s) :
@@ -637,7 +648,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
       some (x, rest))
     (hx : x = .close ∨ x = .rejected)
     (hra : s.gpr .rax = BitVec.ofNat 64 (if x = .close then 2 else 3)) :
-    WP isa reject s (IterPost p original final used) := by
+    WP isa reject s (IterPost p original final used remaining) := by
   obtain ⟨h, tr, hfinal⟩ := h
   have hf := h.callFacts
   have hlen := h.rand_length
@@ -705,7 +716,8 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         · simp only [reduceCtorEq, ↓reduceIte] at hb; cases hb
       subst hxc
       simp only [↓reduceIte] at hfinal
-      exact WP.block_nil (.inl ⟨h17, _, remaining, by omega, hvl, _, hfinal⟩)
+      exact WP.block_nil (.inl ⟨h17, _, remaining, by omega, ⟨hvl, _, hfinal⟩, rfl, .inl ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+        by rw [hpast, Nat.add_sub_cancel_left]; simp only [↓reduceIte]⟩)
     · -- Rejected: one fewer counted candidate.
       have hxr : x = .rejected := by
         rcases hx with rfl | rfl
@@ -731,6 +743,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         all_goals exact hvl.slot (by simp [SearchPublic.headers])
       have h17w : word w.mem p.F (8 * 17) = 4 := by
         rw [hmw, writeFrame_word _ _ _ (fun e he => (hb0 e he).1) 17 (by decide)]; exact h17
-      exact .inl ⟨h17w, _, remaining - 1, by omega, hwl, _, hfinal⟩
+      exact .inl ⟨h17w, _, remaining - 1, by omega, ⟨hwl, _, hfinal⟩, rfl, .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+        by rw [hpast, Nat.add_sub_cancel_left]; simp only [reduceCtorEq, ↓reduceIte]⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Search
