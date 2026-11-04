@@ -84,7 +84,7 @@ def padArgs (rate : Nat) : List Instr :=
 def sqzArgs (rate outlen : Nat) : List Instr :=
   [mov .a0 .s11, .li .a1 rate, .li .a2 0, .addi .a3 .s11 840, .li .a4 outlen]
 
-def callAbsorb : Prog isa := .call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb
+def callAbsorb : Prog isa := .call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb
 def callPad : Prog isa := .call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad
 def callSqueeze : Prog isa := .call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze
 

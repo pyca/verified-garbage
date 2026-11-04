@@ -111,7 +111,7 @@ call {vg_ed448_scalar_base}
 .insn 2, 0x610d
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
@@ -543,7 +543,7 @@ call {vg_ed448_scalar_mul_add}
 .insn 4, 0x21010113
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -1029,7 +1029,7 @@ call {vg_ed448_verify_equation}
 .insn 2, 0x6139
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -1052,6 +1052,10 @@ pub(crate) mod vg_ed448_scalar_reduce;
 #[rustfmt::skip]
 #[path = "internal/vg_ed448_verify_equation.rs"]
 pub(crate) mod vg_ed448_verify_equation;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb.rs"]
+pub(crate) mod vg_keccak_absorb;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]

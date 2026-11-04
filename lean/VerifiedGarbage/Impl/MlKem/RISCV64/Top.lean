@@ -112,7 +112,7 @@ position, the piece `p` and its length. -/
 def spongeArgs (rate : Nat) (first : Bool) (p : Piece) : List Instr :=
   [posArg first, mov .a0 .s11, .li .a1 rate] ++ addrOf .a3 p.base p.off ++ [.li .a4 p.len]
 
-def callAbsorb : Prog isa := .call Spec.Sha3.absorbApi.name Impl.Sha3.RISCV64.Stream.absorb
+def callAbsorb : Prog isa := .call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb
 def callPad : Prog isa := .call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad
 def callSqueeze : Prog isa := .call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze
 

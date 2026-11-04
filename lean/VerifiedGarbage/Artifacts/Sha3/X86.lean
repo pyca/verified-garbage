@@ -12,10 +12,6 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 namespace VG.Artifacts.Sha3.X86
 
 def artifacts : List Artifact := [
-  Spec.Sha3.absorbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 668 5 Impl.Sha3.X86.Stream.absorb
-    stack := 680
-    verified := Proof.Sha3.X86.Frame.absorb_framed },
   Spec.Sha3.absorbScratchApi.artifact X86.target {
     code := Impl.Sha3.X86.Stream.absorb
     stack := 12

@@ -15,10 +15,10 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # The SHA-3 sponge on x86, with its working space on the stack
 
-`absorb`, `pad` and `squeeze` run their code, proved with the working space
+`pad` and `squeeze` run their code, proved with the working space
 as an argument (`Shared.lean`), in a frame that allocates it and copies the
 arguments passed on the stack (`Verified.stackScratch`): the return address,
-the copied argument slots (five for `absorb` and `squeeze`, four for `pad`)
+the copied argument slots (five for `squeeze`, four for `pad`)
 and the 640 bytes of working space. The copies are read only where the pre-
 and postconditions read the buffers (`Proof/Sha3/Scratch.lean`).
 -/
@@ -28,25 +28,6 @@ and postconditions read the buffers (`Proof/Sha3/Scratch.lean`).
 namespace VG.Proof.Sha3.X86.Frame
 
 open VG VG.X86
-
-/-- A state satisfying `vg_keccak_absorb`'s precondition, without the
-working space. -/
-def absorbSat : State :=
-  { Stream.Absorb.sat with wr := [⟨0x1000, 200⟩, ⟨0x4004, 20⟩] }
-
-theorem absorbSat_pre : ∃ s, (Spec.Sha3.absorbContract X86.abi 680).pre s := by
-  implies_sat [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
-    Spec.Sha3.absorbPost, Spec.Sha3.rates, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [absorbSat, Stream.Absorb.sat, Stream.Absorb.satMem, X86.arg, X86.argAddr, Mem.readW,
-      Mem.read] using absorbSat
-
-theorem absorb_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 668 5 Impl.Sha3.X86.Stream.absorb)
-      (Spec.Sha3.absorbContract X86.abi 680) :=
-  X86.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
-    (pre := Spec.Sha3.absorbPre X86.abi.ptrBits) (post := Spec.Sha3.absorbPost X86.abi.ptrBits)
-    (wa := true) (stack := 12) (bytes := 668) Shared.absorb (by decide) (by lit_decide)
-    (by lit_decide) (absorbPre_local _) (absorbPost_local _) absorbSat_pre
 
 /-- A state satisfying `vg_keccak_pad`'s precondition, without the working
 space. -/
