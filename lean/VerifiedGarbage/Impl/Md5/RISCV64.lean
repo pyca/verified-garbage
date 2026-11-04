@@ -65,7 +65,7 @@ def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 /-- Operation `t`: `a := b + ((a + X[k] + T[t+1] + fn(b,c,d)) <<< s)`. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  loadLE32 T1 T2 .a1 (4 * ks.getD t 0) ++ [.add a a T1] ++ li32 T1 (Ts.getD t 0) ++
+  [.load .w T1 .a3 (4 * ks.getD t 0), .add a a T1] ++ li32 T1 (Ts.getD t 0) ++
   ([.add a a T1] : List Instr) ++ fn (t / 16) a b c d ++
   ([.shift .sll .w T0 a (rot t), .shift .srl .w a a (32 - rot t), .logic .or a a T0,
     .add a a b] : List Instr)
@@ -83,12 +83,16 @@ def load : List Instr := (List.range 4).flatMap fun k => loadLE32 (var 0 k) T0 .
 def updateW (k : Nat) : List Instr :=
   loadLE32 T0 T1 .a0 (4 * k) ++ [.add (var 0 k) (var 0 k) T0] ++ storeLE32 (var 0 k) T0 .a0 (4 * k)
 
+/-- The block's words to `scratch`, once, read a byte at a time. -/
+def decode : List Instr :=
+  (List.range 16).flatMap fun k => loadLE32 T1 T2 .a1 (4 * k) ++ [.store .w T1 .a3 (4 * k)]
+
 /-- Advance to the next block and decrement the count. -/
 def advance : List Instr := [.addi .a1 .a1 64, .addi .a2 .a2 (-1)]
 
 /-- One block. -/
 def body : Prog isa :=
-  .seq (.block load) (.seq (steps 64) (.block ((List.range 4).flatMap updateW ++ advance)))
+  .seq (.block (load ++ decode)) (.seq (steps 64) (.block ((List.range 4).flatMap updateW ++ advance)))
 
 def compress : Prog isa := .ite (.zero .a2) (.block []) (.loop body (.nonzero .a2))
 
