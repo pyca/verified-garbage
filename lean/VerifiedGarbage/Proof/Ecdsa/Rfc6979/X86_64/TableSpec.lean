@@ -213,4 +213,41 @@ theorem pub_nil (hcs : R.E.combConsts = []) {s₁ s₂ : State}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+
+theorem PreFacts.pre (hO : OK vs) {s : State} (h : PreFacts R T vs s) : (tabK R T vs).pre s :=
+  let ⟨⟨w, hv, hh⟩, f⟩ := h; ⟨w, hv, hO.2.2.2 w hv, f w hv hh⟩
+
+/-- `TableInstance.signContract` with the tables of `vs` implies `tabK`. -/
+theorem tab_implies (hsw : T.scratchWords = 1024) (hO : OK vs)
+    (hsat : ∃ s, (specK T R.E.combConsts vs).pre s) : (tabK R T vs).Implies (specK T R.E.combConsts vs) := by
+  generalize hcs : R.E.combConsts = cs at hsat ⊢
+  have facts : ∀ s, (specK T cs vs).pre s → PreFacts R T vs s := fun s h => by
+    cases cs with
+    | nil => exact pre_nil hsw hO hcs h
+    | cons c cs => exact pre_cons hsw hO hcs h
+  have pubs : ∀ s₁ s₂, (specK T cs vs).pub s₁ s₂ → PubFacts R T vs s₁ s₂ := fun s₁ s₂ h => by
+    cases cs with
+    | nil => exact pub_nil hcs h
+    | cons c cs => exact pub_cons hcs h
+  refine ⟨fun s h => (facts s h).pre hO, fun s s' h hp => ?_,
+    fun s₁ s₂ h₁ h₂ hp => pub_of hO (facts _ h₁) (facts _ h₂) (pubs _ _ hp), hsat⟩
+  have hk := (facts s h).pre hO
+  cases cs
+  all_goals
+    sig_post [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
+      List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
+      List.append_nil, names_eq]
+    exact post_of hk hp
+
+/-- `vg_ecdsa_<curve>_sign`, with the tables of `vs`, meets
+`TableInstance.signContract` (given a state that meets it). -/
+theorem signT_verified (hC : CurveT R T) (hsw : T.scratchWords = 1024) (hO : OK vs)
+    (hsat : ∃ s, (specK T R.E.combConsts vs).pre s) :
+    Verified X86_64.target (signCode R T.tries vs) (specK T R.E.combConsts vs) :=
+  Verified.of_correct (fun _ h => let ⟨t, s', he, hg, hp⟩ := signT_ok hC h
+      ⟨t, s', he, abiPreserved_of_exec (signCode_mx R T.tries vs) he hg, hp⟩)
+    (signT_ct hC hO.2.2.2) (tab_implies hsw hO hsat)
+
 end VG.Proof.Ecdsa.Rfc6979.X86_64
