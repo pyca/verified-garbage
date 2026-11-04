@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.7: P-521, with SHA-512.
+//! RFC 6979 §A.2.7: P-521, with SHA-512,
+//! and on x86-64 with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,6 +12,15 @@
 
 use verified_garbage::ecdsa::{Error, P521, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha512::Sha512;
+
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha1::Sha1;
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha224::Sha224;
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha256::Sha256;
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha384::Sha384;
 
 use super::{Signatures, add};
 
@@ -93,4 +103,44 @@ fn p521_keys() {
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve signs with on x86-64.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p521_sha1() {
+    super::sign_with::<P521, Sha1, 66, 133, 132>(
+        "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-224, which the curve signs with on x86-64.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p521_sha224() {
+    super::sign_with::<P521, Sha224, 66, 133, 132>(
+        "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// The signatures with SHA-256, which the curve signs with on x86-64.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p521_sha256() {
+    super::sign_with::<P521, Sha256, 66, 133, 132>(
+        "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n",
+        "SHA-256",
+    );
+}
+
+/// The signatures with SHA-384, which the curve signs with on x86-64.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn p521_sha384() {
+    super::sign_with::<P521, Sha384, 66, 133, 132>(
+        "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n",
+        "SHA-384",
+    );
 }

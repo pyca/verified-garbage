@@ -13,22 +13,25 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "x86_64")]
+use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify_umaal;
+#[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_sha3;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_umaal;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_brainpoolp512r1_sha512::{
-    vg_ecdsa_brainpoolp512r1_sha512_sign_avx2, vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
-};
 use crate::cpu::detected;
 use crate::ec::brainpoolp512r1::{Mul, public_key};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha512::{Sha512, Sha512Backend};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP512r1> {
@@ -43,6 +46,32 @@ impl SigningKey<BrainpoolP512r1> {
     }
 }
 
+/// Whether `signature` verifies with `q` for the hash whose leftmost bits,
+/// as many as the order has, are `e`.
+fn verify_e(q: &[u8; 129], e: &[u8; 64], signature: &[u8; 128]) -> Result<(), Error> {
+    let mut scratch = [0u64; 1024];
+    let ok = match Mul::select(detected()) {
+        // SAFETY: `q` is valid for reads of 129 bytes, `e` of 64,
+        // `signature` of 128 and `scratch` for reads and writes of 8192;
+        // `scratch` is a distinct object from the others, so it overlaps
+        // neither them nor the call's stack frame, and, as Rust objects,
+        // none wraps around the address space.
+        Mul::Baseline => unsafe { vg_ecdsa_brainpoolp512r1_verify(q, e, signature, &mut scratch) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+        // (`Mul::select`).
+        #[cfg(target_arch = "arm")]
+        Mul::Umaal => unsafe {
+            vg_ecdsa_brainpoolp512r1_verify_umaal(q, e, signature, &mut scratch)
+        },
+    };
+    if ok == 1 {
+        Ok(())
+    } else {
+        Err(Error::InvalidSignature)
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         let f = detected();
@@ -50,10 +79,6 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
             (Sha512Backend::Scalar, Mul::Baseline) => vg_ecdsa_brainpoolp512r1_sha512_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha512Backend::Sha3, Mul::Baseline) => vg_ecdsa_brainpoolp512r1_sha512_sign_sha3,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::ShaNi, Mul::Baseline) => vg_ecdsa_brainpoolp512r1_sha512_sign_shani,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::Avx2, Mul::Baseline) => vg_ecdsa_brainpoolp512r1_sha512_sign_avx2,
             #[cfg(target_arch = "arm")]
             (Sha512Backend::Scalar, Mul::Umaal) => vg_ecdsa_brainpoolp512r1_sha512_sign_umaal,
         };
@@ -76,29 +101,31 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     }
 
     fn verify(q: &[u8; 129], digest: &[u8; 64], signature: &[u8; 128]) -> Result<(), Error> {
-        let mut scratch = [0u64; 1024];
-        let ok = match Mul::select(detected()) {
-            // SAFETY: `q` is valid for reads of 129 bytes, `digest` of 64,
-            // `signature` of 128 and `scratch` for reads and writes of 8192;
-            // `scratch` is a distinct object from the others, so it overlaps
-            // neither them nor the call's stack frame, and, as Rust objects,
-            // none wraps around the address space.
-            Mul::Baseline => unsafe {
-                vg_ecdsa_brainpoolp512r1_verify(q, digest, signature, &mut scratch)
-            },
-            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-            // (`Mul::select`).
-            #[cfg(target_arch = "arm")]
-            Mul::Umaal => unsafe {
-                vg_ecdsa_brainpoolp512r1_verify_umaal(q, digest, signature, &mut scratch)
-            },
-        };
-        if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
-        }
+        verify_e(q, digest, signature)
     }
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<BrainpoolP512r1> for Sha512 {}
+
+#[cfg(target_arch = "x86_64")]
+impl<H: TableHash> sealed::Functions<BrainpoolP512r1> for H {
+    fn sign(d: &[u8; 64], digest: &H::Output) -> Result<[u8; 128], Error> {
+        let f = detected();
+        let sign: TableSignFn<64, 128> = match Mul::select(f) {
+            Mul::Baseline => vg_ecdsa_brainpoolp512r1_sign,
+        };
+        // SAFETY: `sign` needs no CPU feature that the multiplications
+        // selected for this CPU do not.
+        unsafe { sign_table::<H, 64, 128>(sign, f, d, digest) }
+    }
+
+    /// `e` is the leftmost 512 bits of the hash (FIPS 186-5 §6.4.2): its
+    /// first 64 bytes, or the hash after zeros if it is shorter.
+    fn verify(q: &[u8; 129], digest: &H::Output, signature: &[u8; 128]) -> Result<(), Error> {
+        verify_e(q, &leftmost::<64>(digest.as_ref()), signature)
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl<H: TableHash> SignatureHash<BrainpoolP512r1> for H {}
