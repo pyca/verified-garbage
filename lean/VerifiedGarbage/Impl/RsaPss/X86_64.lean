@@ -44,11 +44,10 @@ never on `ℓ`, which verification computes from the signature:
 ## MGF1 (`mgfXor`)
 
 With `DB` at `scratch + oEm + lo` (`sEb`), `dbLen` bytes (`sDb`), and `H`
-after it: for each counter `c`, `Y` is cleared (`mgfNb` blocks: one for every
-hash function here), `H ‖ I2OSP(c, 4)` written to it and hashed (`mgfHash`),
-and the first
-`min(hLen, dbLen - c hLen)` bytes of the digest XORed into `DB` at
-`c hLen`.
+after it: `Impl.Mgf1.X86_64`'s MGF1 with the streaming functions of the
+table of `Hash` (`mgfRound`): for each counter `c`, the digest of
+`H ‖ I2OSP(c, 4)`, whose first `min(hLen, dbLen - c hLen)` bytes are XORed
+into `DB` at `c hLen`.
 
 ## The encoding's parameters (`params`)
 

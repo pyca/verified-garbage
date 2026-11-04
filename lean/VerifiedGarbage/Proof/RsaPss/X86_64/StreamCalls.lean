@@ -47,7 +47,7 @@ theorem sdis (S : Addr) {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : 
   Offset.disjoint S h (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
 
 /-- After a call that keeps `rsp` and the callee-saved registers. -/
-theorem keep_cs {t t' : State} (h : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : t'.gpr .rsp = t.gpr .rsp :=
+theorem keep_rsp {t t' : State} (h : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : t'.gpr .rsp = t.gpr .rsp :=
   h .rsp (by decide)
 
 /-! ## `init` -/
@@ -66,7 +66,7 @@ theorem init_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W :
   have hF : Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem := by
     have := A.frame; rw [L.rsp] at this; exact this
   obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S)])
-    (by simp only [List.mem_singleton]; rintro p rfl; exact h1) hF (keep_cs A.cs) A.wr
+    (by simp only [List.mem_singleton]; rintro p rfl; exact h1) hF (keep_rsp A.cs) A.wr
   exact ⟨L', A.rd, A.wr, A.cs, R', hF, hr⟩
 
 /-! ## `update` -/
@@ -101,7 +101,7 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   refine upd_call hG args (by unfold oRsa at ha; omega) fun t' A hr => ?_
   obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S), (oCW, hG.Wb)])
     (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption)
-    (by have := A.frame; rw [L.rsp] at this; exact this) (keep_cs A.cs) A.wr
+    (by have := A.frame; rw [L.rsp] at this; exact this) (keep_rsp A.cs) A.wr
   refine ⟨L', A.rd, A.wr, A.cs, R', fun m hm hc => ?_⟩
   have e : Spec.Sha256.bytesAt t.mem (off S a) len = (List.range len).map fun i => V (a + i) := by
     simp only [Spec.Sha256.bytesAt]
@@ -140,7 +140,7 @@ theorem fin_frame_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
     (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
-    (by have := A.frame; rw [L.rsp] at this; exact this) (keep_cs A.cs) A.wr
+    (by have := A.frame; rw [L.rsp] at this; exact this) (keep_rsp A.cs) A.wr
   refine ⟨L', A.rd, A.wr, A.cs, R', (by have hf := A.frame; rw [L.rsp] at hf; exact hf), fun m hm hl hc i hi => ?_⟩
   have e := hr m hm hl hc
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]

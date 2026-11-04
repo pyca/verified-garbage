@@ -19,7 +19,9 @@ registration whose functions of distinct names are at distinct addresses).
 `HT`: the slots of the table of `MdHash` hold the addresses of a hash
 function's `init`, compression function and digest (`dn`), which the calls
 of `MdFns` reach, in a view `W` of the frame's words; it holds of any view
-that differs from `W` only in other words (`HT.upd`).
+that differs from `W` only in other words (`HT.upd`). `GT`: the slots of the
+table of `Hash` hold the addresses of MGF1's hash function's streaming
+functions, which the calls of `Fns` reach, and its digest length.
 -/
 
 @[expose] public section
@@ -71,6 +73,26 @@ theorem HT.congr {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {W W
     (h10 : W' 10 = W 10) : HT H dn f W' sy' := by
   subst hsy
   exact ⟨h8.trans h.wi, h9.trans h.wc, h10.trans h.wd, h.fi, h.fc, h.fd⟩
+
+/-- The slots of the table of `Hash` (frame words 11 to 14) hold the
+addresses `sy` gives `G`'s `init`, `update` and `finalize`, which the calls
+of `g` reach, and its digest length. -/
+structure GT (G : Impl.Pbkdf2.Md.X86_64.Stream) (g : Impl.Mgf1.X86_64.Table.Fns) (W : Nat → BitVec 64)
+    (sy : String → Addr) : Prop where
+  wi : W 11 = sy G.initN
+  wu : W 12 = sy G.updN
+  wf : W 13 = sy G.finN
+  wd : W 14 = BitVec.ofNat 64 G.D
+  fi : g.init.find? (fun q => sy q.1 == sy G.initN) = some (G.initN, G.initC)
+  fu : g.upd.find? (fun q => sy q.1 == sy G.updN) = some (G.updN, G.updC)
+  ff : g.fin.find? (fun q => sy q.1 == sy G.finN) = some (G.finN, G.finC)
+
+theorem GT.congr {G : Impl.Pbkdf2.Md.X86_64.Stream} {g : Impl.Mgf1.X86_64.Table.Fns} {W W' : Nat → BitVec 64}
+    {sy sy' : String → Addr} (h : GT G g W sy) (hsy : sy' = sy) (hW : ∀ k, 11 ≤ k → k ≤ 14 → W' k = W k) :
+    GT G g W' sy' := by
+  subst hsy
+  exact ⟨(hW 11 (by decide) (by decide)).trans h.wi, (hW 12 (by decide) (by decide)).trans h.wu,
+    (hW 13 (by decide) (by decide)).trans h.wf, (hW 14 (by decide) (by decide)).trans h.wd, h.fi, h.fu, h.ff⟩
 
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and
