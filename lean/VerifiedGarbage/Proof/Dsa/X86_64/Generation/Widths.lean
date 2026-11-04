@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Verified
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SharedChecker
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedBackend
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sized
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
@@ -31,7 +34,7 @@ width fixed, by choosing on entry (`Verified.entryBranch`).
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation.Widths
-open VG VG.X86_64 VG.Proof.Pbkdf2.Md.X86_64 VG.Proof.MillerRabin.X86_64
+open VG VG.X86_64 VG.Proof.Pbkdf2.Md.X86_64 VG.Proof.MillerRabin.X86_64 VG.Proof.Dsa.X86_64.Generation
 open VG.Spec.Rsa (bytesAt)
 
 variable {checkName : String}
@@ -348,5 +351,36 @@ theorem widths_spSafe {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c�
     Impl.Dsa.X86_64.Generation.Widths.width, Code.iteCold, Code.all, forward_spSafe s₁₂₈, forward_spSafe s₂₅₆,
     forward_spSafe s₃₈₄, Bool.and_true]
   rfl
+
+/-! ## The instances the registration binds -/
+
+/-- The restricted body for width `p`, with the hash `h` and Miller–Rabin `v`. -/
+def body (h : MdHash) (v : RoundImpl) (p : Nat) : Prog isa :=
+  Impl.Dsa.X86_64.Generation.Sized.single (checkName := SharedChecker.name) p h.H.stream
+    VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm
+    VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm
+    (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run
+
+/-- The name the restricted body for width `p` is emitted as, its hash tagged `tag`. -/
+def name (tag : String) (h : MdHash) (v : RoundImpl) (p : Nat) : String :=
+  (Spec.Dsa.GenerationSized.api p).name ++ Emit.qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
+
+/-- The complete generation with the hashes `v1` and `v256` and Miller–Rabin `v`. -/
+def code (v1 v256 : MdHash) (v : RoundImpl) : Prog isa :=
+  Impl.Dsa.X86_64.Generation.Widths.widths (name "sha1" v1 v 128) (name "sha256" v256 v 256)
+    (name "sha256" v256 v 384) (body v1 v 128) (body v256 v 256) (body v256 v 384)
+
+theorem code_verified (v1 v256 : MdHash) (v : RoundImpl) (h1 : v1.mgf.G.rust = "sha1")
+    (h256 : v256.mgf.G.rust = "sha256") :
+    Verified target (code v1 v256 v) (Spec.Dsa.generateParametersContract abi 600) :=
+  generation_verified (Sized.sha1_verified v1 v h1) (Sized.sha256_verified v256 v h256 256 (.inl rfl))
+    (Sized.sha256_verified v256 v h256 384 (.inr rfl)) (Sized.sha1_safe v1 v)
+    (Sized.sha256_safe v256 v 256 (.inl rfl)) (Sized.sha256_safe v256 v 384 (.inr rfl))
+    (single_depth v1 v 128) (single_depth v256 v 256) (single_depth v256 v 384)
+
+theorem code_spSafe (v1 v256 : MdHash) (v : RoundImpl) :
+    (code v1 v256 v).all (fun i => !isa.writesSp i) = true :=
+  widths_spSafe (Sized.sha1_safe v1 v) (Sized.sha256_safe v256 v 256 (.inl rfl))
+    (Sized.sha256_safe v256 v 384 (.inr rfl))
 
 end VG.Proof.Dsa.X86_64.Generation.Widths
