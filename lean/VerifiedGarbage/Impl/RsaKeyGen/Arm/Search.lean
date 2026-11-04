@@ -109,9 +109,18 @@ variable (candidate : Prog isa)
 stack arguments. -/
 def candidateRun : Prog isa := .frame (.alloc 32) (.seq (.block arguments) candidate) (.free 32)
 
+/-- The candidate, unless fewer than `out_len` octets are left, which no
+candidate fits in: then the tape ended inside one (status 0, as the
+candidate would return), with zeros at `out`, and the candidate is not
+called, which keeps the tape's pointer within it. -/
+def candidateStep : Prog isa := .seq
+  (.block [arg .r0 0 4, .dp .sub .r0 .r0 (.reg .r8), .cmp .r0 (.reg .r5), .mov .r12 (.imm 0),
+    .adc .r12 .r12 (.imm 0), .cmp .r12 (.imm 0)])
+  (.ite .eq (.seq zeroOut short) (.seq (candidateRun candidate) classify))
+
 /-- The loop goes on while the status is 4. -/
 def iteration : Prog isa :=
-  .seq (.block [.cmp .r9 (.imm 0)]) (.seq (.ite .eq exhausted (.seq (candidateRun candidate) classify))
+  .seq (.block [.cmp .r9 (.imm 0)]) (.seq (.ite .eq exhausted (candidateStep candidate))
     (.block [.cmp .r11 (.imm 4)]))
 
 /-- The state's words (the counted candidates left, `out_len`, the budget

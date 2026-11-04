@@ -80,9 +80,32 @@ abbrev pushRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .
 /-- The regions the search (and its callee) may write, and its stack. -/
 def changes (s : State) : List Region := inWrites s ++ [inStack s]
 
+/-- The precondition's facts of numbers, in terms of the public data. -/
+structure PreFacts (p : SearchPublic) : Prop where
+  room : 184 ≤ p.sp.toNat
+  top : p.sp.toNat + 32 ≤ 2 ^ 32
+  nO : p.op.toNat + p.len ≤ 2 ^ 32
+  nU : p.up.toNat + 8 ≤ 2 ^ 32
+  nE : p.ep.toNat + p.elen ≤ 2 ^ 32
+  nP : p.pp.toNat + p.plen ≤ 2 ^ 32
+  nR : p.rp.toNat + p.randLen ≤ 2 ^ 32
+  nS : p.B.toNat + p.words * 8 ≤ 2 ^ 32
+  nT : p.stp.toNat + 32 ≤ 2 ^ 32
+  valid : Spec.RsaKeyGen.primeLenValid p.len
+  e1 : 1 ≤ p.elen
+  e8 : p.elen ≤ 8
+  plen : p.plen = 0 ∨ p.plen = p.len
+  scr : Spec.Rsa.scratchWords p.len ≤ p.words
+  remaining : p.remaining ≤ Spec.RsaKeyGen.primeLimit (8 * p.len) (Spec.Rsa.os2ip p.eB)
+  randLen : p.randLen ≤ primeEntropy p.len
+
 namespace SearchInput
 
 variable {p : SearchPublic} {s : State}
+
+theorem facts (h : SearchInput p s) : PreFacts p := by
+  obtain ⟨⟨room, top, -, -, -, -, -, nO, nU, nE, nP, nR, nS, nT, valid, e1, e8, plen, scr, rem, -, -, rl⟩, rfl⟩ := h
+  exact ⟨room, top, nO, nU, nE, nP, nR, nS, nT, valid, e1, e8, plen, scr, rem, rl⟩
 
 theorem pre (h : SearchInput p s) : searchPre s := h.1
 
