@@ -234,4 +234,98 @@ theorem SearchLive.callFacts {p : SearchPublic} {original s : State} {used remai
     exact hscr
   · simp only [searchOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
 
+/-! ## The candidate's arguments -/
+
+open VG.Proof.Ffdh.X86_64.Generation (allocated allocated_rsp allocated_reg allocated_mem)
+open VG.Impl.RsaKeyGen.X86_64.Search
+
+/-- The candidate's stack arguments, in the call's frame. -/
+def callValues (p : SearchPublic) (used : Nat) : List (Nat × BitVec 64) :=
+  [(0, BitVec.ofNat 64 p.plen), (1, p.rp + BitVec.ofNat 64 used),
+    (2, BitVec.ofNat 64 (p.randLen - used)), (3, p.B), (4, BitVec.ofNat 64 (p.Z / 8))]
+
+theorem callValues_bound (p : SearchPublic) (used : Nat) : ∀ e ∈ callValues p used, e.1 < 20 := by
+  simp only [callValues, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
+
+/-- The candidate's arguments in registers. -/
+def CallRegs (p : SearchPublic) (s : State) : Prop :=
+  s.gpr .rdi = p.op ∧ s.gpr .rsi = BitVec.ofNat 64 p.len ∧ s.gpr .rdx = p.up ∧
+    s.gpr .rcx = p.ep ∧ s.gpr .r8 = BitVec.ofNat 64 p.elen ∧ s.gpr .r9 = p.pp
+
+theorem SearchLive.frame_ld {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) {t : State} (hw : t.wr = (allocated 40 s).wr) :
+    ∀ d, d + 8 ≤ 160 → InRegions (t.rd ++ t.wr) (p.F + BitVec.ofNat 64 d) 8 := by
+  have scr := h.input.frame_scr h.wr
+  intro d hd
+  obtain ⟨r, hr, hc⟩ := scr.st hd
+  refine ⟨r, List.mem_append_right _ ?_, hc⟩
+  rw [hw]
+  exact List.mem_cons_of_mem _ hr
+
+/-- A read of the frame sees past a store to the call's frame below it. -/
+theorem read_past_call (m : Mem) (F : Addr) (v : BitVec 64) {d e : Nat} (hd : d + 8 ≤ 40)
+    (he : e + 48 ≤ 2 ^ 64) :
+    (m.writeW (F - BitVec.ofNat 64 40 + BitVec.ofNat 64 d) v).readW (F + BitVec.ofNat 64 e) 64 =
+      m.readW (F + BitVec.ofNat 64 e) 64 := by
+  have hF : F + BitVec.ofNat 64 e = F - BitVec.ofNat 64 40 + BitVec.ofNat 64 (40 + e) := by
+    rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  rw [hF]
+  exact Mem.readW_writeW_sep (Offset.sep _ (d := 40 + e) (n := 8) (e := d) (k := 8) (Or.inr (by omega))
+    (by omega) (by omega)) (by decide)
+
+theorem read_past_call0 (m : Mem) (F : Addr) (v : BitVec 64) {e : Nat} (he : e + 48 ≤ 2 ^ 64) :
+    (m.writeW (F - BitVec.ofNat 64 40) v).readW (F + BitVec.ofNat 64 e) 64 =
+      m.readW (F + BitVec.ofNat 64 e) 64 := by
+  have := read_past_call m F v (d := 0) (by decide) he
+  rwa [BitVec.add_zero] at this
+
+theorem search_arguments_ok {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (.block arguments) (allocated 40 s) fun t =>
+      CallRegs p t ∧ t.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used) ∧
+      Keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (allocated 40 s) t := by
+  have hl := h.frame_ld (t := allocated 40 s) rfl
+  have hsp : (allocated 40 s).gpr .rsp = p.F - BitVec.ofNat 64 40 := by rw [allocated_rsp, h.rsp]
+  have hr12 : (allocated 40 s).gpr .r12 = p.F := by rw [allocated_reg _ _ _ (by decide), h.r12]
+  have hF := h.input.F_toNat
+  have hroom : 336 ≤ p.sp.toNat := h.input.room
+  have haw : (allocated 40 s).wr = ⟨p.F - BitVec.ofNat 64 40, 40⟩ :: s.wr := by
+    show (⟨s.gpr .rsp - BitVec.ofNat 64 40, 40⟩ : Region) :: s.wr = _
+    rw [h.rsp]
+  have scr : Scr (allocated 40 s) (p.F - BitVec.ofNat 64 40) 40 :=
+    Scr.of_mem (by rw [haw]; exact List.mem_cons_self ..) (by
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, show (BitVec.ofNat 64 40).toNat = 40 from rfl]; omega)]
+      have := h.input.top
+      simp only [show (BitVec.ofNat 64 40).toNat = 40 from rfl]
+      omega)
+  have hs : ∀ d, d + 8 ≤ 40 → InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40 + BitVec.ofNat 64 d) 8 :=
+    fun _ hd => scr.st hd
+  have hs0 : InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40) 8 := by
+    simpa only [BitVec.add_zero] using hs 0 (by decide)
+  have hv (j : Nat) (v : BitVec 64) (hj : (j, v) ∈ p.headers used remaining) :
+      s.mem.readW (p.F + BitVec.ofNat 64 (8 * j)) 64 = v := h.headers (j, v) hj
+  have hv5 := hv 5 p.op (by simp [SearchPublic.headers])
+  have hv6 := hv 6 (BitVec.ofNat 64 p.len) (by simp [SearchPublic.headers])
+  have hv7 := hv 7 p.up (by simp [SearchPublic.headers])
+  have hv8 := hv 8 p.ep (by simp [SearchPublic.headers])
+  have hv9 := hv 9 (BitVec.ofNat 64 p.elen) (by simp [SearchPublic.headers])
+  have hv10 := hv 10 p.pp (by simp [SearchPublic.headers])
+  have hv11 := hv 11 (BitVec.ofNat 64 p.plen) (by simp [SearchPublic.headers])
+  have hv12 := hv 12 (p.rp + BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
+  have hv13 := hv 13 (BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
+  have hv14 := hv 14 p.B (by simp [SearchPublic.headers])
+  have hv15 := hv 15 (BitVec.ofNat 64 (p.Z / 8)) (by simp [SearchPublic.headers])
+  simp only [Nat.reduceMul] at hv5 hv6 hv7 hv8 hv9 hv10 hv11 hv12 hv13 hv14 hv15
+  refine WP.mono (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (Q := fun t =>
+    CallRegs p t ∧ t.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) ?_ rfl)
+    fun _ ⟨⟨ha, hm⟩, k⟩ => ⟨ha, hm, k⟩
+  unfold arguments CallRegs writeFrame callValues
+  simp only [List.foldl_cons, List.foldl_nil]
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, allocated_mem,
+    hsp, hr12, hl 40 (by decide), hl 48 (by decide), hl 56 (by decide), hl 64 (by decide),
+    hl 72 (by decide), hl 80 (by decide), hl 88 (by decide), hl 96 (by decide), hl 104 (by decide),
+    hl 112 (by decide), hl 120 (by decide), read_past_call, read_past_call0, hv5, hv6, hv7, hv8, hv9, hv10, hv11, hv12, hv13, hv14, hv15,
+    hs0, hs 8 (by decide), hs 16 (by decide), hs 24 (by decide), hs 32 (by decide)]
+
 end VG.Proof.RsaKeyGen.X86_64.Search
