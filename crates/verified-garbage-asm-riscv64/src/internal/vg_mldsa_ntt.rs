@@ -13,829 +13,967 @@ pub(crate) unsafe extern "C" fn vg_mldsa_ntt() {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0x000003b7
-.insn 2, 0x0385
-.insn 4, 0x0075a023
-.insn 4, 0x004963b7
-.insn 4, 0xe0238393
-.insn 4, 0x0075a223
-.insn 4, 0x003973b7
-.insn 4, 0x56738393
-.insn 4, 0x0075a423
-.insn 4, 0x003963b7
-.insn 4, 0x56938393
-.insn 4, 0x0075a623
-.insn 4, 0x004f03b7
-.insn 4, 0x62b38393
-.insn 4, 0x0075a823
-.insn 4, 0x0053e3b7
-.insn 4, 0xf7338393
-.insn 4, 0x0075aa23
-.insn 4, 0x004fe3b7
-.insn 4, 0x03338393
-.insn 4, 0x0075ac23
-.insn 4, 0x004f03b7
-.insn 4, 0x66b38393
-.insn 4, 0x0075ae23
-.insn 4, 0x0076b3b7
-.insn 4, 0x1ae38393
-.insn 4, 0x0275a023
-.insn 4, 0x003613b7
-.insn 4, 0xdd538393
-.insn 4, 0x0275a223
-.insn 4, 0x0028f3b7
-.insn 4, 0xdb038393
-.insn 4, 0x0275a423
-.insn 4, 0x002083b7
-.insn 2, 0x1391
-.insn 4, 0x0275a623
-.insn 4, 0x003973b7
-.insn 4, 0x28338393
-.insn 4, 0x0275a823
-.insn 4, 0x007093b7
-.insn 4, 0x94a38393
-.insn 4, 0x0275aa23
-.insn 4, 0x000883b7
-.insn 4, 0x19238393
-.insn 4, 0x0275ac23
-.insn 4, 0x006d43b7
-.insn 4, 0xdc838393
-.insn 4, 0x0275ae23
-.insn 4, 0x004c73b7
-.insn 4, 0x29438393
-.insn 4, 0x0475a023
-.insn 4, 0x0041e3b7
-.insn 4, 0x0b438393
-.insn 4, 0x0475a223
-.insn 4, 0x0028a3b7
-.insn 4, 0x3d238393
-.insn 4, 0x0475a423
-.insn 4, 0x006653b7
-.insn 4, 0x28a38393
-.insn 4, 0x0475a623
-.insn 4, 0x004a23b7
-.insn 4, 0x8a738393
-.insn 4, 0x0475a823
-.insn 4, 0x007943b7
-.insn 4, 0x03438393
-.insn 4, 0x0475aa23
-.insn 4, 0x000a53b7
-.insn 4, 0x2ee38393
-.insn 4, 0x0475ac23
-.insn 4, 0x006b83b7
-.insn 4, 0xd8138393
-.insn 4, 0x0475ae23
-.insn 4, 0x004ea3b7
-.insn 4, 0xf1d38393
-.insn 4, 0x0675a023
-.insn 4, 0x001a33b7
-.insn 4, 0x87738393
-.insn 4, 0x0675a223
-.insn 4, 0x002573b7
-.insn 4, 0x1df38393
-.insn 4, 0x0675a423
-.insn 4, 0x001653b7
-.insn 4, 0x9ee38393
-.insn 4, 0x0675a623
-.insn 4, 0x007613b7
-.insn 4, 0x1bd38393
-.insn 4, 0x0675a823
-.insn 4, 0x004933b7
-.insn 4, 0xbb738393
-.insn 4, 0x0675aa23
-.insn 4, 0x002af3b7
-.insn 4, 0x69738393
-.insn 4, 0x0675ac23
-.insn 4, 0x0022e3b7
-.insn 4, 0x8d538393
-.insn 4, 0x0675ae23
-.insn 4, 0x0036f3b7
-.insn 4, 0x72a38393
-.insn 4, 0x0875a023
-.insn 4, 0x003093b7
-.insn 4, 0x11e38393
-.insn 4, 0x0875a223
-.insn 4, 0x0029d3b7
-.insn 4, 0x13f38393
-.insn 4, 0x0875a423
-.insn 4, 0x004923b7
-.insn 4, 0x67338393
-.insn 4, 0x0875a623
-.insn 4, 0x005073b7
-.insn 4, 0x85f38393
-.insn 4, 0x0875a823
-.insn 4, 0x002013b7
-.insn 4, 0x0a238393
-.insn 4, 0x0875aa23
-.insn 4, 0x003883b7
-.insn 4, 0x7f738393
-.insn 4, 0x0875ac23
-.insn 4, 0x0011b3b7
-.insn 4, 0x2c338393
-.insn 4, 0x0875ae23
-.insn 4, 0x000603b7
-.insn 4, 0x3a438393
-.insn 4, 0x0a75a023
-.insn 4, 0x000e33b7
-.insn 4, 0xbed38393
-.insn 4, 0x0a75a223
-.insn 4, 0x0010b3b7
-.insn 4, 0x72c38393
-.insn 4, 0x0a75a423
-.insn 4, 0x004a63b7
-.insn 4, 0xf3538393
-.insn 4, 0x0a75a623
-.insn 4, 0x001fa3b7
-.insn 4, 0xd1538393
-.insn 4, 0x0a75a823
-.insn 4, 0x004293b7
-.insn 4, 0xcd438393
-.insn 4, 0x0a75aa23
-.insn 4, 0x003173b7
-.insn 4, 0x7f438393
-.insn 4, 0x0a75ac23
-.insn 4, 0x0020e3b7
-.insn 4, 0x61238393
-.insn 4, 0x0a75ae23
-.insn 4, 0x003423b7
-.insn 4, 0xc1d38393
-.insn 4, 0x0c75a023
-.insn 4, 0x001ae3b7
-.insn 4, 0x87338393
-.insn 4, 0x0c75a223
-.insn 4, 0x007363b7
-.insn 4, 0x68138393
-.insn 4, 0x0c75a423
-.insn 4, 0x004953b7
-.insn 4, 0x53f38393
-.insn 4, 0x0c75a623
-.insn 4, 0x003953b7
-.insn 4, 0x2f638393
-.insn 4, 0x0c75a823
-.insn 4, 0x006253b7
-.insn 4, 0x64a38393
-.insn 4, 0x0c75aa23
-.insn 4, 0x0065b3b7
-.insn 4, 0xd0538393
-.insn 4, 0x0c75ac23
-.insn 4, 0x0043a3b7
-.insn 4, 0xa1c38393
-.insn 4, 0x0c75ae23
-.insn 4, 0x0053b3b7
-.insn 4, 0xa5f38393
-.insn 4, 0x0e75a023
-.insn 4, 0x0030b3b7
-.insn 4, 0x62238393
-.insn 4, 0x0e75a223
-.insn 4, 0x000883b7
-.insn 4, 0xf3838393
-.insn 4, 0x0e75a423
-.insn 4, 0x003b13b7
-.insn 4, 0xe6d38393
-.insn 4, 0x0e75a623
-.insn 4, 0x002c83b7
-.insn 4, 0x3da38393
-.insn 4, 0x0e75a823
-.insn 4, 0x001c53b7
-.insn 4, 0x96e38393
-.insn 4, 0x0e75aa23
-.insn 4, 0x003313b7
-.insn 4, 0xe2b38393
-.insn 4, 0x0e75ac23
-.insn 4, 0x001c63b7
-.insn 4, 0xb7038393
-.insn 4, 0x0e75ae23
-.insn 4, 0x002ee3b7
-.insn 4, 0x3f138393
-.insn 4, 0x1075a023
-.insn 4, 0x001383b7
-.insn 4, 0xeb938393
-.insn 4, 0x1075a223
-.insn 4, 0x0057b3b7
-.insn 4, 0x93038393
-.insn 4, 0x1075a423
-.insn 4, 0x003ac3b7
-.insn 4, 0x6ef38393
-.insn 4, 0x1075a623
-.insn 4, 0x003fd3b7
-.insn 4, 0x54c38393
-.insn 4, 0x1075a823
-.insn 4, 0x004eb3b7
-.insn 4, 0x2ea38393
-.insn 4, 0x1075aa23
-.insn 4, 0x005043b7
-.insn 4, 0xee138393
-.insn 4, 0x1075ac23
-.insn 4, 0x007bb3b7
-.insn 4, 0x17538393
-.insn 4, 0x1075ae23
-.insn 4, 0x002653b7
-.insn 4, 0x8b438393
-.insn 4, 0x1275a023
-.insn 4, 0x001ef3b7
-.insn 4, 0x25638393
-.insn 4, 0x1275a223
-.insn 4, 0x001d93b7
-.insn 4, 0x0a238393
-.insn 4, 0x1275a423
-.insn 4, 0x0045a3b7
-.insn 4, 0x6d438393
-.insn 4, 0x1275a623
-.insn 4, 0x002ae3b7
-.insn 4, 0x59b38393
-.insn 4, 0x1275a823
-.insn 4, 0x005263b7
-.insn 4, 0x89c38393
-.insn 4, 0x1275aa23
-.insn 4, 0x006ef3b7
-.insn 4, 0x1f538393
-.insn 4, 0x1275ac23
-.insn 4, 0x003f73b7
-.insn 4, 0x28838393
-.insn 4, 0x1275ae23
-.insn 4, 0x001753b7
-.insn 4, 0x10238393
-.insn 4, 0x1475a023
-.insn 4, 0x000763b7
-.insn 4, 0xd5938393
-.insn 4, 0x1475a223
-.insn 4, 0x001183b7
-.insn 4, 0x7ba38393
-.insn 4, 0x1475a423
-.insn 4, 0x0052b3b7
-.insn 4, 0xca938393
-.insn 4, 0x1475a623
-.insn 4, 0x007743b7
-.insn 4, 0xe9e38393
-.insn 4, 0x1475a823
-.insn 4, 0x000293b7
-.insn 4, 0x6d838393
-.insn 4, 0x1475aa23
-.insn 4, 0x002593b7
-.insn 4, 0x2ec38393
-.insn 4, 0x1475ac23
-.insn 4, 0x004d03b7
-.insn 4, 0xf1238393
-.insn 4, 0x1475ae23
-.insn 4, 0x004053b7
-.insn 4, 0xce838393
-.insn 4, 0x1675a023
-.insn 4, 0x004aa3b7
-.insn 4, 0x58238393
-.insn 4, 0x1675a223
-.insn 4, 0x001e53b7
-.insn 4, 0x4e638393
-.insn 4, 0x1675a423
-.insn 4, 0x004f13b7
-.insn 4, 0x6c138393
-.insn 4, 0x1675a623
-.insn 4, 0x001a83b7
-.insn 4, 0xe7938393
-.insn 4, 0x1675a823
-.insn 4, 0x000393b7
-.insn 4, 0x78f38393
-.insn 4, 0x1675aa23
-.insn 4, 0x004e53b7
-.insn 4, 0x81738393
-.insn 4, 0x1675ac23
-.insn 4, 0x0031c3b7
-.insn 4, 0x85938393
-.insn 4, 0x1675ae23
-.insn 4, 0x005883b7
-.insn 4, 0x4cc38393
-.insn 4, 0x1875a023
-.insn 4, 0x001b53b7
-.insn 4, 0x82738393
-.insn 4, 0x1875a223
-.insn 4, 0x005b63b7
-.insn 4, 0x3d038393
-.insn 4, 0x1875a423
-.insn 4, 0x005d83b7
-.insn 4, 0x87a38393
-.insn 4, 0x1875a623
-.insn 4, 0x003523b7
-.insn 4, 0x25e38393
-.insn 4, 0x1875a823
-.insn 4, 0x004013b7
-.insn 4, 0xc7e38393
-.insn 4, 0x1875aa23
-.insn 4, 0x006c13b7
-.insn 4, 0x9d138393
-.insn 4, 0x1875ac23
-.insn 4, 0x005bd3b7
-.insn 4, 0x53238393
-.insn 4, 0x1875ae23
-.insn 4, 0x006bc3b7
-.insn 4, 0x4d338393
-.insn 4, 0x1a75a023
-.insn 4, 0x002593b7
-.insn 4, 0xecb38393
-.insn 4, 0x1a75a223
-.insn 4, 0x002e53b7
-.insn 4, 0x34c38393
-.insn 4, 0x1a75a423
-.insn 4, 0x000983b7
-.insn 4, 0xa6c38393
-.insn 4, 0x1a75a623
-.insn 4, 0x003b93b7
-.insn 4, 0x82038393
-.insn 4, 0x1a75a823
-.insn 4, 0x006d33b7
-.insn 4, 0x85c38393
-.insn 4, 0x1a75aa23
-.insn 4, 0x002ca3b7
-.insn 4, 0x4f838393
-.insn 4, 0x1a75ac23
-.insn 4, 0x003383b7
-.insn 4, 0xcaa38393
-.insn 4, 0x1a75ae23
-.insn 4, 0x0014b3b7
-.insn 4, 0x2a038393
-.insn 4, 0x1c75a023
-.insn 4, 0x005583b7
-.insn 4, 0x53638393
-.insn 4, 0x1c75a223
-.insn 4, 0x0028f3b7
-.insn 4, 0x18638393
-.insn 4, 0x1c75a423
-.insn 4, 0x005583b7
-.insn 4, 0x95d38393
-.insn 4, 0x1c75a623
-.insn 4, 0x004af3b7
-.insn 4, 0x67038393
-.insn 4, 0x1c75a823
-.insn 4, 0x002353b7
-.insn 4, 0xa8638393
-.insn 4, 0x1c75aa23
-.insn 4, 0x0075f3b7
-.insn 4, 0x82638393
-.insn 4, 0x1c75ac23
-.insn 4, 0x0078e3b7
-.insn 4, 0xe6638393
-.insn 4, 0x1c75ae23
-.insn 4, 0x000553b7
-.insn 4, 0x28c38393
-.insn 4, 0x1e75a023
-.insn 4, 0x007ae3b7
-.insn 4, 0xf5938393
-.insn 4, 0x1e75a223
-.insn 4, 0x000f73b7
-.insn 4, 0xe1738393
-.insn 4, 0x1e75a423
-.insn 4, 0x005bf3b7
-.insn 4, 0x3da38393
-.insn 4, 0x1e75a623
-.insn 4, 0x0045a3b7
-.insn 4, 0xb7e38393
-.insn 4, 0x1e75a823
-.insn 4, 0x006293b7
-.insn 4, 0xb3438393
-.insn 4, 0x1e75aa23
-.insn 4, 0x005dc3b7
-.insn 4, 0xecb38393
-.insn 4, 0x1e75ac23
-.insn 4, 0x001aa3b7
-.insn 4, 0xe7b38393
-.insn 4, 0x1e75ae23
-.insn 4, 0x000003b7
-.insn 4, 0x6d938393
-.insn 4, 0x2075a023
-.insn 4, 0x006253b7
-.insn 4, 0x7c538393
-.insn 4, 0x2075a223
-.insn 4, 0x005753b7
-.insn 4, 0xb3c38393
-.insn 4, 0x2075a423
-.insn 4, 0x0069b3b7
-.insn 4, 0x8ef38393
-.insn 4, 0x2075a623
-.insn 4, 0x0028a3b7
-.insn 4, 0x83838393
-.insn 4, 0x2075a823
-.insn 4, 0x0064b3b7
-.insn 4, 0x5fe38393
-.insn 4, 0x2075aa23
-.insn 4, 0x007f03b7
-.insn 4, 0x8f538393
-.insn 4, 0x2075ac23
-.insn 4, 0x002a53b7
-.insn 4, 0xe7838393
-.insn 4, 0x2075ae23
-.insn 4, 0x001213b7
-.insn 4, 0xa2338393
-.insn 4, 0x2275a023
-.insn 2, 0x63d5
-.insn 4, 0x4a838393
-.insn 4, 0x2275a223
-.insn 4, 0x0009b3b7
-.insn 4, 0x7ff38393
-.insn 4, 0x2275a423
-.insn 4, 0x004363b7
-.insn 4, 0xe8738393
-.insn 4, 0x2275a623
-.insn 4, 0x004383b7
-.insn 2, 0x13e1
-.insn 4, 0x2275a823
-.insn 4, 0x005cd3b7
-.insn 4, 0x5b438393
-.insn 4, 0x2275aa23
-.insn 4, 0x004dc3b7
-.insn 4, 0x04e38393
-.insn 4, 0x2275ac23
-.insn 4, 0x004733b7
-.insn 4, 0x8af38393
-.insn 4, 0x2275ae23
-.insn 4, 0x007f73b7
-.insn 4, 0x35d38393
-.insn 4, 0x2475a023
-.insn 4, 0x000c93b7
-.insn 4, 0xd0d38393
-.insn 4, 0x2475a223
-.insn 4, 0x000f63b7
-.insn 4, 0x6d538393
-.insn 4, 0x2475a423
-.insn 4, 0x005a73b7
-.insn 4, 0xd8038393
-.insn 4, 0x2475a623
-.insn 4, 0x0061b3b7
-.insn 4, 0xb9838393
-.insn 4, 0x2475a823
-.insn 4, 0x001863b7
-.insn 4, 0xd9638393
-.insn 4, 0x2475aa23
-.insn 4, 0x004383b7
-.insn 4, 0xf3138393
-.insn 4, 0x2475ac23
-.insn 4, 0x004683b7
-.insn 4, 0x29838393
-.insn 4, 0x2475ae23
-.insn 4, 0x006633b7
-.insn 4, 0x96038393
-.insn 4, 0x2675a023
-.insn 4, 0x004bd3b7
-.insn 4, 0x57938393
-.insn 4, 0x2675a223
-.insn 4, 0x0028e3b7
-.insn 4, 0xe0638393
-.insn 4, 0x2675a423
-.insn 4, 0x004663b7
-.insn 4, 0xd8d38393
-.insn 4, 0x2675a623
-.insn 4, 0x0049b3b7
-.insn 4, 0x0e338393
-.insn 4, 0x2675a823
-.insn 4, 0x0009b3b7
-.insn 4, 0x43438393
-.insn 4, 0x2675aa23
-.insn 4, 0x007c13b7
-.insn 4, 0xdb338393
-.insn 4, 0x2675ac23
-.insn 4, 0x005a73b7
-.insn 4, 0x8b038393
-.insn 4, 0x2675ae23
-.insn 4, 0x0040a3b7
-.insn 4, 0xba938393
-.insn 4, 0x2875a023
-.insn 4, 0x0064d3b7
-.insn 4, 0x3d538393
-.insn 4, 0x2875a223
-.insn 4, 0x002173b7
-.insn 4, 0x62a38393
-.insn 4, 0x2875a423
-.insn 4, 0x006583b7
-.insn 4, 0x59138393
-.insn 4, 0x2875a623
-.insn 4, 0x002473b7
-.insn 4, 0xe3938393
-.insn 4, 0x2875a823
-.insn 4, 0x0048c3b7
-.insn 4, 0x39b38393
-.insn 4, 0x2875aa23
-.insn 4, 0x007bc3b7
-.insn 4, 0x75938393
-.insn 4, 0x2875ac23
-.insn 4, 0x004f63b7
-.insn 4, 0x85938393
-.insn 4, 0x2875ae23
-.insn 4, 0x003933b7
-.insn 4, 0xdb238393
-.insn 4, 0x2a75a023
-.insn 4, 0x002313b7
-.insn 4, 0x92338393
-.insn 4, 0x2a75a223
-.insn 4, 0x0012f3b7
-.insn 4, 0xb6738393
-.insn 4, 0x2a75a423
-.insn 4, 0x004553b7
-.insn 4, 0xdf238393
-.insn 4, 0x2a75a623
-.insn 4, 0x0030c3b7
-.insn 4, 0x31c38393
-.insn 4, 0x2a75a823
-.insn 4, 0x002853b7
-.insn 4, 0x42438393
-.insn 4, 0x2a75aa23
-.insn 4, 0x001323b7
-.insn 4, 0x32e38393
-.insn 4, 0x2a75ac23
-.insn 4, 0x007fb3b7
-.insn 4, 0xf8038393
-.insn 4, 0x2a75ae23
-.insn 4, 0x002dc3b7
-.insn 4, 0xfcb38393
-.insn 4, 0x2c75a023
-.insn 4, 0x000233b7
-.insn 4, 0xa0b38393
-.insn 4, 0x2c75a223
-.insn 4, 0x007e83b7
-.insn 4, 0x32c38393
-.insn 4, 0x2c75a423
-.insn 4, 0x002663b7
-.insn 4, 0x87a38393
-.insn 4, 0x2c75a623
-.insn 4, 0x006b33b7
-.insn 4, 0x37538393
-.insn 4, 0x2c75a823
-.insn 4, 0x000963b7
-.insn 4, 0xb7638393
-.insn 4, 0x2c75aa23
-.insn 4, 0x006be3b7
-.insn 4, 0x1cc38393
-.insn 4, 0x2c75ac23
-.insn 4, 0x005e03b7
-.insn 4, 0x61e38393
-.insn 4, 0x2c75ae23
-.insn 4, 0x0078e3b7
-.insn 2, 0x03b5
-.insn 4, 0x2e75a023
-.insn 4, 0x006293b7
-.insn 4, 0xc3738393
-.insn 4, 0x2e75a223
-.insn 4, 0x003da3b7
-.insn 4, 0x60438393
-.insn 4, 0x2e75a423
-.insn 4, 0x004ae3b7
-.insn 4, 0x53c38393
-.insn 4, 0x2e75a623
-.insn 4, 0x001f23b7
-.insn 4, 0xd6838393
-.insn 4, 0x2e75a823
-.insn 4, 0x006333b7
-.insn 4, 0x0bb38393
-.insn 4, 0x2e75aa23
-.insn 4, 0x007363b7
-.insn 4, 0x1b838393
-.insn 4, 0x2e75ac23
-.insn 4, 0x005ea3b7
-.insn 4, 0x06c38393
-.insn 4, 0x2e75ae23
-.insn 4, 0x006723b7
-.insn 4, 0xac738393
-.insn 4, 0x3075a023
-.insn 4, 0x002023b7
-.insn 4, 0xfc638393
-.insn 4, 0x3075a223
-.insn 4, 0x005ba3b7
-.insn 4, 0x4ff38393
-.insn 4, 0x3075a423
-.insn 4, 0x0060d3b7
-.insn 4, 0x77238393
-.insn 4, 0x3075a623
-.insn 4, 0x0008f3b7
-.insn 4, 0x20138393
-.insn 4, 0x3075a823
-.insn 4, 0x006de3b7
-.insn 4, 0x02438393
-.insn 4, 0x3075aa23
-.insn 4, 0x000813b7
-.insn 4, 0xe6d38393
-.insn 4, 0x3075ac23
-.insn 4, 0x005603b7
-.insn 4, 0x38e38393
-.insn 4, 0x3075ae23
-.insn 4, 0x006953b7
-.insn 4, 0x68838393
-.insn 4, 0x3275a023
-.insn 4, 0x001e73b7
-.insn 4, 0xd3e38393
-.insn 4, 0x3275a223
-.insn 4, 0x002603b7
-.insn 4, 0x3bd38393
-.insn 4, 0x3275a423
-.insn 4, 0x006aa3b7
-.insn 4, 0xdfa38393
-.insn 4, 0x3275a623
-.insn 4, 0x0007c3b7
-.insn 2, 0x03dd
-.insn 4, 0x3275a823
-.insn 4, 0x006dc3b7
-.insn 4, 0xfd438393
-.insn 4, 0x3275aa23
-.insn 4, 0x0074d3b7
-.insn 4, 0x0bd38393
-.insn 4, 0x3275ac23
-.insn 4, 0x0063e3b7
-.insn 4, 0x1e338393
-.insn 4, 0x3275ae23
-.insn 4, 0x005193b7
-.insn 4, 0x57338393
-.insn 4, 0x3475a023
-.insn 4, 0x007ab3b7
-.insn 4, 0x60d38393
-.insn 4, 0x3475a223
-.insn 4, 0x002863b7
-.insn 4, 0x7ba38393
-.insn 4, 0x3475a423
-.insn 4, 0x002df3b7
-.insn 4, 0xcd438393
-.insn 4, 0x3475a623
-.insn 4, 0x005803b7
-.insn 4, 0x18c38393
-.insn 4, 0x3475a823
-.insn 4, 0x003f53b7
-.insn 4, 0xcf538393
-.insn 4, 0x3475aa23
-.insn 4, 0x000b73b7
-.insn 2, 0x03a5
-.insn 4, 0x3475ac23
-.insn 4, 0x004283b7
-.insn 4, 0xe2338393
-.insn 4, 0x3475ae23
-.insn 4, 0x003cc3b7
-.insn 4, 0xd3738393
-.insn 4, 0x3675a023
-.insn 4, 0x002733b7
-.insn 4, 0x33338393
-.insn 4, 0x3675a223
-.insn 4, 0x006743b7
-.insn 4, 0x95738393
-.insn 4, 0x3675a423
-.insn 4, 0x001a53b7
-.insn 4, 0xb5d38393
-.insn 4, 0x3675a623
-.insn 4, 0x001973b7
-.insn 4, 0x92638393
-.insn 4, 0x3675a823
-.insn 4, 0x001ef3b7
-.insn 4, 0x20638393
-.insn 4, 0x3675aa23
-.insn 4, 0x0011c3b7
-.insn 4, 0x14e38393
-.insn 4, 0x3675ac23
-.insn 4, 0x004c73b7
-.insn 4, 0x6c838393
-.insn 4, 0x3675ae23
-.insn 4, 0x003cf3b7
-.insn 4, 0x42f38393
-.insn 4, 0x3875a023
-.insn 4, 0x007fb3b7
-.insn 4, 0x19a38393
-.insn 4, 0x3875a223
-.insn 4, 0x006af3b7
-.insn 4, 0x66c38393
-.insn 4, 0x3875a423
-.insn 4, 0x002e13b7
-.insn 4, 0x66938393
-.insn 4, 0x3875a623
-.insn 4, 0x003353b7
-.insn 4, 0x2d638393
-.insn 4, 0x3875a823
-.insn 4, 0x000343b7
-.insn 4, 0x76038393
-.insn 4, 0x3875aa23
-.insn 4, 0x000853b7
-.insn 4, 0x26038393
-.insn 4, 0x3875ac23
-.insn 4, 0x007423b7
-.insn 4, 0xe7838393
-.insn 4, 0x3875ae23
-.insn 4, 0x002f63b7
-.insn 4, 0x31638393
-.insn 4, 0x3a75a023
-.insn 4, 0x006f13b7
-.insn 4, 0xa1138393
-.insn 4, 0x3a75a223
-.insn 4, 0x0007c3b7
-.insn 4, 0x0f138393
-.insn 4, 0x3a75a423
-.insn 4, 0x007773b7
-.insn 4, 0xd0b38393
-.insn 4, 0x3a75a623
-.insn 4, 0x000d23b7
-.insn 2, 0x13c1
-.insn 4, 0x3a75a823
-.insn 4, 0x003463b7
-.insn 4, 0x82438393
-.insn 4, 0x3a75aa23
-.insn 4, 0x000223b7
-.insn 4, 0x3d438393
-.insn 4, 0x3a75ac23
-.insn 4, 0x0068c3b7
-.insn 4, 0x55938393
-.insn 4, 0x3a75ae23
-.insn 4, 0x005e93b7
-.insn 4, 0x88538393
-.insn 4, 0x3c75a023
-.insn 4, 0x002fb3b7
-.insn 4, 0xa3238393
-.insn 4, 0x3c75a223
-.insn 4, 0x002403b7
-.insn 4, 0xc6538393
-.insn 4, 0x3c75a423
-.insn 4, 0x005e73b7
-.insn 4, 0x94238393
-.insn 4, 0x3c75a623
-.insn 4, 0x0051e3b7
-.insn 4, 0x0ed38393
-.insn 4, 0x3c75a823
-.insn 4, 0x0065b3b7
-.insn 4, 0xdb338393
-.insn 4, 0x3c75aa23
-.insn 4, 0x002ca3b7
-.insn 4, 0x5e638393
-.insn 4, 0x3c75ac23
-.insn 4, 0x0079e3b7
-.insn 4, 0x1fe38393
-.insn 4, 0x3c75ae23
-.insn 4, 0x007b43b7
-.insn 4, 0x06438393
-.insn 4, 0x3e75a023
-.insn 4, 0x0035e3b7
-.insn 4, 0x1dd38393
-.insn 4, 0x3e75a223
-.insn 4, 0x004343b7
-.insn 4, 0xaac38393
-.insn 4, 0x3e75a423
-.insn 4, 0x004653b7
-.insn 4, 0xade38393
-.insn 4, 0x3e75a623
-.insn 4, 0x001d03b7
-.insn 4, 0xe1438393
-.insn 4, 0x3e75a823
-.insn 4, 0x0073f3b7
-.insn 4, 0x1ce38393
-.insn 4, 0x3e75aa23
-.insn 4, 0x001013b7
-.insn 4, 0x70e38393
-.insn 4, 0x3e75ac23
-.insn 4, 0x0074b3b7
-.insn 4, 0x6d738393
-.insn 4, 0x3e75ae23
-.insn 4, 0x200807b7
-.insn 4, 0x1c078793
-.insn 2, 0x07b2
-.insn 4, 0x60178793
-.insn 4, 0x007fe837
-.insn 2, 0x0805
-.insn 4, 0x01080f33
-.insn 4, 0x40050513
-.insn 2, 0x0591
-.insn 4, 0x20000893
-20:
-.insn 4, 0xc0050613
-21:
-.insn 4, 0x0005e703
-.insn 2, 0x0591
-.insn 4, 0x011606b3
-.insn 4, 0x0028d313
-22:
-.insn 4, 0x00066383
-.insn 4, 0x0006e283
-.insn 4, 0x025702b3
-.insn 4, 0x02f2be33
-.insn 4, 0x030e0e33
-.insn 4, 0x41c282b3
-.insn 4, 0x40538e33
-.insn 2, 0x9e7a
-.insn 4, 0x01c6a023
-.insn 2, 0x9396
-.insn 4, 0x00762023
-.insn 2, 0x0611
-.insn 2, 0x0691
-.insn 2, 0x137d
-bnez t1, 22b
-.insn 2, 0x8636
-.insn 4, 0x40a602b3
-bnez t0, 21b
-.insn 4, 0x0018d893
-.insn 4, 0xffe88293
-bnez t0, 20b
-.insn 4, 0xc0050613
-.insn 4, 0x10000313
+lui t2, 0
+addi t2, t2, 1
+sw t2, 0(a1)
+lui t2, 1174
+addi t2, t2, -510
+sw t2, 4(a1)
+lui t2, 919
+addi t2, t2, 1383
+sw t2, 8(a1)
+lui t2, 918
+addi t2, t2, 1385
+sw t2, 12(a1)
+lui t2, 1264
+addi t2, t2, 1579
+sw t2, 16(a1)
+lui t2, 1342
+addi t2, t2, -141
+sw t2, 20(a1)
+lui t2, 1278
+addi t2, t2, 51
+sw t2, 24(a1)
+lui t2, 1264
+addi t2, t2, 1643
+sw t2, 28(a1)
+lui t2, 1899
+addi t2, t2, 430
+sw t2, 32(a1)
+lui t2, 865
+addi t2, t2, -555
+sw t2, 36(a1)
+lui t2, 655
+addi t2, t2, -592
+sw t2, 40(a1)
+lui t2, 520
+addi t2, t2, -28
+sw t2, 44(a1)
+lui t2, 919
+addi t2, t2, 643
+sw t2, 48(a1)
+lui t2, 1801
+addi t2, t2, -1718
+sw t2, 52(a1)
+lui t2, 136
+addi t2, t2, 402
+sw t2, 56(a1)
+lui t2, 1748
+addi t2, t2, -568
+sw t2, 60(a1)
+lui t2, 1223
+addi t2, t2, 660
+sw t2, 64(a1)
+lui t2, 1054
+addi t2, t2, 180
+sw t2, 68(a1)
+lui t2, 650
+addi t2, t2, 978
+sw t2, 72(a1)
+lui t2, 1637
+addi t2, t2, 650
+sw t2, 76(a1)
+lui t2, 1186
+addi t2, t2, -1881
+sw t2, 80(a1)
+lui t2, 1940
+addi t2, t2, 52
+sw t2, 84(a1)
+lui t2, 165
+addi t2, t2, 750
+sw t2, 88(a1)
+lui t2, 1720
+addi t2, t2, -639
+sw t2, 92(a1)
+lui t2, 1258
+addi t2, t2, -227
+sw t2, 96(a1)
+lui t2, 419
+addi t2, t2, -1929
+sw t2, 100(a1)
+lui t2, 599
+addi t2, t2, 479
+sw t2, 104(a1)
+lui t2, 357
+addi t2, t2, -1554
+sw t2, 108(a1)
+lui t2, 1889
+addi t2, t2, 445
+sw t2, 112(a1)
+lui t2, 1171
+addi t2, t2, -1097
+sw t2, 116(a1)
+lui t2, 687
+addi t2, t2, 1687
+sw t2, 120(a1)
+lui t2, 558
+addi t2, t2, -1835
+sw t2, 124(a1)
+lui t2, 879
+addi t2, t2, 1834
+sw t2, 128(a1)
+lui t2, 777
+addi t2, t2, 286
+sw t2, 132(a1)
+lui t2, 669
+addi t2, t2, 319
+sw t2, 136(a1)
+lui t2, 1170
+addi t2, t2, 1651
+sw t2, 140(a1)
+lui t2, 1287
+addi t2, t2, -1953
+sw t2, 144(a1)
+lui t2, 513
+addi t2, t2, 162
+sw t2, 148(a1)
+lui t2, 904
+addi t2, t2, 2039
+sw t2, 152(a1)
+lui t2, 283
+addi t2, t2, 707
+sw t2, 156(a1)
+lui t2, 96
+addi t2, t2, 932
+sw t2, 160(a1)
+lui t2, 227
+addi t2, t2, -1043
+sw t2, 164(a1)
+lui t2, 267
+addi t2, t2, 1836
+sw t2, 168(a1)
+lui t2, 1190
+addi t2, t2, -203
+sw t2, 172(a1)
+lui t2, 506
+addi t2, t2, -747
+sw t2, 176(a1)
+lui t2, 1065
+addi t2, t2, -812
+sw t2, 180(a1)
+lui t2, 791
+addi t2, t2, 2036
+sw t2, 184(a1)
+lui t2, 526
+addi t2, t2, 1554
+sw t2, 188(a1)
+lui t2, 834
+addi t2, t2, -995
+sw t2, 192(a1)
+lui t2, 430
+addi t2, t2, -1933
+sw t2, 196(a1)
+lui t2, 1846
+addi t2, t2, 1665
+sw t2, 200(a1)
+lui t2, 1173
+addi t2, t2, 1343
+sw t2, 204(a1)
+lui t2, 917
+addi t2, t2, 758
+sw t2, 208(a1)
+lui t2, 1573
+addi t2, t2, 1610
+sw t2, 212(a1)
+lui t2, 1627
+addi t2, t2, -763
+sw t2, 216(a1)
+lui t2, 1082
+addi t2, t2, -1508
+sw t2, 220(a1)
+lui t2, 1339
+addi t2, t2, -1441
+sw t2, 224(a1)
+lui t2, 779
+addi t2, t2, 1570
+sw t2, 228(a1)
+lui t2, 136
+addi t2, t2, -200
+sw t2, 232(a1)
+lui t2, 945
+addi t2, t2, -403
+sw t2, 236(a1)
+lui t2, 712
+addi t2, t2, 986
+sw t2, 240(a1)
+lui t2, 453
+addi t2, t2, -1682
+sw t2, 244(a1)
+lui t2, 817
+addi t2, t2, -469
+sw t2, 248(a1)
+lui t2, 454
+addi t2, t2, -1168
+sw t2, 252(a1)
+lui t2, 750
+addi t2, t2, 1009
+sw t2, 256(a1)
+lui t2, 312
+addi t2, t2, -327
+sw t2, 260(a1)
+lui t2, 1403
+addi t2, t2, -1744
+sw t2, 264(a1)
+lui t2, 940
+addi t2, t2, 1775
+sw t2, 268(a1)
+lui t2, 1021
+addi t2, t2, 1356
+sw t2, 272(a1)
+lui t2, 1259
+addi t2, t2, 746
+sw t2, 276(a1)
+lui t2, 1284
+addi t2, t2, -287
+sw t2, 280(a1)
+lui t2, 1979
+addi t2, t2, 373
+sw t2, 284(a1)
+lui t2, 613
+addi t2, t2, -1868
+sw t2, 288(a1)
+lui t2, 495
+addi t2, t2, 598
+sw t2, 292(a1)
+lui t2, 473
+addi t2, t2, 162
+sw t2, 296(a1)
+lui t2, 1114
+addi t2, t2, 1748
+sw t2, 300(a1)
+lui t2, 686
+addi t2, t2, 1435
+sw t2, 304(a1)
+lui t2, 1318
+addi t2, t2, -1892
+sw t2, 308(a1)
+lui t2, 1775
+addi t2, t2, 501
+sw t2, 312(a1)
+lui t2, 1015
+addi t2, t2, 648
+sw t2, 316(a1)
+lui t2, 373
+addi t2, t2, 258
+sw t2, 320(a1)
+lui t2, 118
+addi t2, t2, -679
+sw t2, 324(a1)
+lui t2, 280
+addi t2, t2, 1978
+sw t2, 328(a1)
+lui t2, 1323
+addi t2, t2, -855
+sw t2, 332(a1)
+lui t2, 1908
+addi t2, t2, -354
+sw t2, 336(a1)
+lui t2, 41
+addi t2, t2, 1752
+sw t2, 340(a1)
+lui t2, 601
+addi t2, t2, 748
+sw t2, 344(a1)
+lui t2, 1232
+addi t2, t2, -238
+sw t2, 348(a1)
+lui t2, 1029
+addi t2, t2, -792
+sw t2, 352(a1)
+lui t2, 1194
+addi t2, t2, 1410
+sw t2, 356(a1)
+lui t2, 485
+addi t2, t2, 1254
+sw t2, 360(a1)
+lui t2, 1265
+addi t2, t2, 1729
+sw t2, 364(a1)
+lui t2, 424
+addi t2, t2, -391
+sw t2, 368(a1)
+lui t2, 57
+addi t2, t2, 1935
+sw t2, 372(a1)
+lui t2, 1253
+addi t2, t2, -2025
+sw t2, 376(a1)
+lui t2, 796
+addi t2, t2, -1959
+sw t2, 380(a1)
+lui t2, 1416
+addi t2, t2, 1228
+sw t2, 384(a1)
+lui t2, 437
+addi t2, t2, -2009
+sw t2, 388(a1)
+lui t2, 1462
+addi t2, t2, 976
+sw t2, 392(a1)
+lui t2, 1496
+addi t2, t2, -1926
+sw t2, 396(a1)
+lui t2, 850
+addi t2, t2, 606
+sw t2, 400(a1)
+lui t2, 1025
+addi t2, t2, -898
+sw t2, 404(a1)
+lui t2, 1729
+addi t2, t2, -1583
+sw t2, 408(a1)
+lui t2, 1469
+addi t2, t2, 1330
+sw t2, 412(a1)
+lui t2, 1724
+addi t2, t2, 1235
+sw t2, 416(a1)
+lui t2, 601
+addi t2, t2, -309
+sw t2, 420(a1)
+lui t2, 741
+addi t2, t2, 844
+sw t2, 424(a1)
+lui t2, 152
+addi t2, t2, -1428
+sw t2, 428(a1)
+lui t2, 953
+addi t2, t2, -2016
+sw t2, 432(a1)
+lui t2, 1747
+addi t2, t2, -1956
+sw t2, 436(a1)
+lui t2, 714
+addi t2, t2, 1272
+sw t2, 440(a1)
+lui t2, 824
+addi t2, t2, -854
+sw t2, 444(a1)
+lui t2, 331
+addi t2, t2, 672
+sw t2, 448(a1)
+lui t2, 1368
+addi t2, t2, 1334
+sw t2, 452(a1)
+lui t2, 655
+addi t2, t2, 390
+sw t2, 456(a1)
+lui t2, 1368
+addi t2, t2, -1699
+sw t2, 460(a1)
+lui t2, 1199
+addi t2, t2, 1648
+sw t2, 464(a1)
+lui t2, 565
+addi t2, t2, -1402
+sw t2, 468(a1)
+lui t2, 1887
+addi t2, t2, -2010
+sw t2, 472(a1)
+lui t2, 1934
+addi t2, t2, -410
+sw t2, 476(a1)
+lui t2, 85
+addi t2, t2, 652
+sw t2, 480(a1)
+lui t2, 1966
+addi t2, t2, -167
+sw t2, 484(a1)
+lui t2, 247
+addi t2, t2, -489
+sw t2, 488(a1)
+lui t2, 1471
+addi t2, t2, 986
+sw t2, 492(a1)
+lui t2, 1114
+addi t2, t2, -1154
+sw t2, 496(a1)
+lui t2, 1577
+addi t2, t2, -1228
+sw t2, 500(a1)
+lui t2, 1500
+addi t2, t2, -309
+sw t2, 504(a1)
+lui t2, 426
+addi t2, t2, -389
+sw t2, 508(a1)
+lui t2, 0
+addi t2, t2, 1753
+sw t2, 512(a1)
+lui t2, 1573
+addi t2, t2, 1989
+sw t2, 516(a1)
+lui t2, 1397
+addi t2, t2, -1220
+sw t2, 520(a1)
+lui t2, 1691
+addi t2, t2, -1809
+sw t2, 524(a1)
+lui t2, 650
+addi t2, t2, -1992
+sw t2, 528(a1)
+lui t2, 1611
+addi t2, t2, 1534
+sw t2, 532(a1)
+lui t2, 2032
+addi t2, t2, -1803
+sw t2, 536(a1)
+lui t2, 677
+addi t2, t2, -392
+sw t2, 540(a1)
+lui t2, 289
+addi t2, t2, -1501
+sw t2, 544(a1)
+lui t2, 21
+addi t2, t2, 1192
+sw t2, 548(a1)
+lui t2, 155
+addi t2, t2, 2047
+sw t2, 552(a1)
+lui t2, 1078
+addi t2, t2, -377
+sw t2, 556(a1)
+lui t2, 1080
+addi t2, t2, -8
+sw t2, 560(a1)
+lui t2, 1485
+addi t2, t2, 1460
+sw t2, 564(a1)
+lui t2, 1244
+addi t2, t2, 78
+sw t2, 568(a1)
+lui t2, 1139
+addi t2, t2, -1873
+sw t2, 572(a1)
+lui t2, 2039
+addi t2, t2, 861
+sw t2, 576(a1)
+lui t2, 201
+addi t2, t2, -755
+sw t2, 580(a1)
+lui t2, 246
+addi t2, t2, 1749
+sw t2, 584(a1)
+lui t2, 1447
+addi t2, t2, -640
+sw t2, 588(a1)
+lui t2, 1563
+addi t2, t2, -1128
+sw t2, 592(a1)
+lui t2, 390
+addi t2, t2, -618
+sw t2, 596(a1)
+lui t2, 1080
+addi t2, t2, -207
+sw t2, 600(a1)
+lui t2, 1128
+addi t2, t2, 664
+sw t2, 604(a1)
+lui t2, 1635
+addi t2, t2, -1696
+sw t2, 608(a1)
+lui t2, 1213
+addi t2, t2, 1401
+sw t2, 612(a1)
+lui t2, 654
+addi t2, t2, -506
+sw t2, 616(a1)
+lui t2, 1126
+addi t2, t2, -627
+sw t2, 620(a1)
+lui t2, 1179
+addi t2, t2, 227
+sw t2, 624(a1)
+lui t2, 155
+addi t2, t2, 1076
+sw t2, 628(a1)
+lui t2, 1985
+addi t2, t2, -589
+sw t2, 632(a1)
+lui t2, 1447
+addi t2, t2, -1872
+sw t2, 636(a1)
+lui t2, 1034
+addi t2, t2, -1111
+sw t2, 640(a1)
+lui t2, 1613
+addi t2, t2, 981
+sw t2, 644(a1)
+lui t2, 535
+addi t2, t2, 1578
+sw t2, 648(a1)
+lui t2, 1624
+addi t2, t2, 1425
+sw t2, 652(a1)
+lui t2, 583
+addi t2, t2, -455
+sw t2, 656(a1)
+lui t2, 1164
+addi t2, t2, 923
+sw t2, 660(a1)
+lui t2, 1980
+addi t2, t2, 1881
+sw t2, 664(a1)
+lui t2, 1270
+addi t2, t2, -1959
+sw t2, 668(a1)
+lui t2, 915
+addi t2, t2, -590
+sw t2, 672(a1)
+lui t2, 561
+addi t2, t2, -1757
+sw t2, 676(a1)
+lui t2, 303
+addi t2, t2, -1177
+sw t2, 680(a1)
+lui t2, 1109
+addi t2, t2, -526
+sw t2, 684(a1)
+lui t2, 780
+addi t2, t2, 796
+sw t2, 688(a1)
+lui t2, 645
+addi t2, t2, 1060
+sw t2, 692(a1)
+lui t2, 306
+addi t2, t2, 814
+sw t2, 696(a1)
+lui t2, 2043
+addi t2, t2, -128
+sw t2, 700(a1)
+lui t2, 732
+addi t2, t2, -53
+sw t2, 704(a1)
+lui t2, 35
+addi t2, t2, -1525
+sw t2, 708(a1)
+lui t2, 2024
+addi t2, t2, 812
+sw t2, 712(a1)
+lui t2, 614
+addi t2, t2, -1926
+sw t2, 716(a1)
+lui t2, 1715
+addi t2, t2, 885
+sw t2, 720(a1)
+lui t2, 150
+addi t2, t2, -1162
+sw t2, 724(a1)
+lui t2, 1726
+addi t2, t2, 460
+sw t2, 728(a1)
+lui t2, 1504
+addi t2, t2, 1566
+sw t2, 732(a1)
+lui t2, 1934
+addi t2, t2, 13
+sw t2, 736(a1)
+lui t2, 1577
+addi t2, t2, -969
+sw t2, 740(a1)
+lui t2, 986
+addi t2, t2, 1540
+sw t2, 744(a1)
+lui t2, 1198
+addi t2, t2, 1340
+sw t2, 748(a1)
+lui t2, 498
+addi t2, t2, -664
+sw t2, 752(a1)
+lui t2, 1587
+addi t2, t2, 187
+sw t2, 756(a1)
+lui t2, 1846
+addi t2, t2, 440
+sw t2, 760(a1)
+lui t2, 1514
+addi t2, t2, 108
+sw t2, 764(a1)
+lui t2, 1650
+addi t2, t2, -1337
+sw t2, 768(a1)
+lui t2, 514
+addi t2, t2, -58
+sw t2, 772(a1)
+lui t2, 1466
+addi t2, t2, 1279
+sw t2, 776(a1)
+lui t2, 1549
+addi t2, t2, 1906
+sw t2, 780(a1)
+lui t2, 143
+addi t2, t2, 513
+sw t2, 784(a1)
+lui t2, 1758
+addi t2, t2, 36
+sw t2, 788(a1)
+lui t2, 129
+addi t2, t2, -403
+sw t2, 792(a1)
+lui t2, 1376
+addi t2, t2, 910
+sw t2, 796(a1)
+lui t2, 1685
+addi t2, t2, 1672
+sw t2, 800(a1)
+lui t2, 487
+addi t2, t2, -706
+sw t2, 804(a1)
+lui t2, 608
+addi t2, t2, 957
+sw t2, 808(a1)
+lui t2, 1706
+addi t2, t2, -518
+sw t2, 812(a1)
+lui t2, 124
+addi t2, t2, 23
+sw t2, 816(a1)
+lui t2, 1756
+addi t2, t2, -44
+sw t2, 820(a1)
+lui t2, 1869
+addi t2, t2, 189
+sw t2, 824(a1)
+lui t2, 1598
+addi t2, t2, 483
+sw t2, 828(a1)
+lui t2, 1305
+addi t2, t2, 1395
+sw t2, 832(a1)
+lui t2, 1963
+addi t2, t2, 1549
+sw t2, 836(a1)
+lui t2, 646
+addi t2, t2, 1978
+sw t2, 840(a1)
+lui t2, 735
+addi t2, t2, -812
+sw t2, 844(a1)
+lui t2, 1408
+addi t2, t2, 396
+sw t2, 848(a1)
+lui t2, 1013
+addi t2, t2, -779
+sw t2, 852(a1)
+lui t2, 183
+addi t2, t2, 9
+sw t2, 856(a1)
+lui t2, 1064
+addi t2, t2, -477
+sw t2, 860(a1)
+lui t2, 972
+addi t2, t2, -713
+sw t2, 864(a1)
+lui t2, 627
+addi t2, t2, 819
+sw t2, 868(a1)
+lui t2, 1652
+addi t2, t2, -1705
+sw t2, 872(a1)
+lui t2, 421
+addi t2, t2, -1187
+sw t2, 876(a1)
+lui t2, 407
+addi t2, t2, -1754
+sw t2, 880(a1)
+lui t2, 495
+addi t2, t2, 518
+sw t2, 884(a1)
+lui t2, 284
+addi t2, t2, 334
+sw t2, 888(a1)
+lui t2, 1223
+addi t2, t2, 1736
+sw t2, 892(a1)
+lui t2, 975
+addi t2, t2, 1071
+sw t2, 896(a1)
+lui t2, 2043
+addi t2, t2, 410
+sw t2, 900(a1)
+lui t2, 1711
+addi t2, t2, 1644
+sw t2, 904(a1)
+lui t2, 737
+addi t2, t2, 1641
+sw t2, 908(a1)
+lui t2, 821
+addi t2, t2, 726
+sw t2, 912(a1)
+lui t2, 52
+addi t2, t2, 1888
+sw t2, 916(a1)
+lui t2, 133
+addi t2, t2, 608
+sw t2, 920(a1)
+lui t2, 1858
+addi t2, t2, -392
+sw t2, 924(a1)
+lui t2, 758
+addi t2, t2, 790
+sw t2, 928(a1)
+lui t2, 1777
+addi t2, t2, -1519
+sw t2, 932(a1)
+lui t2, 124
+addi t2, t2, 241
+sw t2, 936(a1)
+lui t2, 1911
+addi t2, t2, -757
+sw t2, 940(a1)
+lui t2, 210
+addi t2, t2, -16
+sw t2, 944(a1)
+lui t2, 838
+addi t2, t2, -2012
+sw t2, 948(a1)
+lui t2, 34
+addi t2, t2, 980
+sw t2, 952(a1)
+lui t2, 1676
+addi t2, t2, 1369
+sw t2, 956(a1)
+lui t2, 1513
+addi t2, t2, -1915
+sw t2, 960(a1)
+lui t2, 763
+addi t2, t2, -1486
+sw t2, 964(a1)
+lui t2, 576
+addi t2, t2, -923
+sw t2, 968(a1)
+lui t2, 1511
+addi t2, t2, -1726
+sw t2, 972(a1)
+lui t2, 1310
+addi t2, t2, 237
+sw t2, 976(a1)
+lui t2, 1627
+addi t2, t2, -589
+sw t2, 980(a1)
+lui t2, 714
+addi t2, t2, 1510
+sw t2, 984(a1)
+lui t2, 1950
+addi t2, t2, 510
+sw t2, 988(a1)
+lui t2, 1972
+addi t2, t2, 100
+sw t2, 992(a1)
+lui t2, 862
+addi t2, t2, 477
+sw t2, 996(a1)
+lui t2, 1076
+addi t2, t2, -1364
+sw t2, 1000(a1)
+lui t2, 1125
+addi t2, t2, -1314
+sw t2, 1004(a1)
+lui t2, 464
+addi t2, t2, -492
+sw t2, 1008(a1)
+lui t2, 1855
+addi t2, t2, 462
+sw t2, 1012(a1)
+lui t2, 257
+addi t2, t2, 1806
+sw t2, 1016(a1)
+lui t2, 1867
+addi t2, t2, 1751
+sw t2, 1020(a1)
+lui a5, 131200
+addi a5, a5, 448
+slli a5, a5, 12
+addi a5, a5, 1537
+lui a6, 2046
+addi a6, a6, 1
+add t5, a6, a6
+addi a0, a0, 1024
+addi a1, a1, 4
+addi a2, a0, -1024
+30:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 512
+31:
+lwu t2, 0(a2)
+lwu t0, 512(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 512(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 31b
+addi a2, a2, 512
+bne a2, a0, 30b
+addi a2, a0, -1024
+32:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 256
+33:
+lwu t2, 0(a2)
+lwu t0, 256(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 256(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 33b
+addi a2, a2, 256
+bne a2, a0, 32b
+addi a2, a0, -1024
+34:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 128
+35:
+lwu t2, 0(a2)
+lwu t0, 128(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 128(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 35b
+addi a2, a2, 128
+bne a2, a0, 34b
+addi a2, a0, -1024
+36:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 64
+37:
+lwu t2, 0(a2)
+lwu t0, 64(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 64(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 37b
+addi a2, a2, 64
+bne a2, a0, 36b
+addi a2, a0, -1024
+38:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 32
+39:
+lwu t2, 0(a2)
+lwu t0, 32(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 32(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 39b
+addi a2, a2, 32
+bne a2, a0, 38b
+addi a2, a0, -1024
+40:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 16
+41:
+lwu t2, 0(a2)
+lwu t0, 16(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 16(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 41b
+addi a2, a2, 16
+bne a2, a0, 40b
+addi a2, a0, -1024
+42:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 8
+43:
+lwu t2, 0(a2)
+lwu t0, 8(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 8(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 43b
+addi a2, a2, 8
+bne a2, a0, 42b
+addi a2, a0, -1024
+44:
+lwu a4, 0(a1)
+addi a1, a1, 4
+addi a3, a2, 4
+45:
+lwu t2, 0(a2)
+lwu t0, 4(a2)
+mul t0, a4, t0
+mulhu t3, t0, a5
+mul t3, t3, a6
+sub t0, t0, t3
+sub t3, t2, t0
+add t3, t3, t5
+sw t3, 4(a2)
+add t2, t2, t0
+sw t2, 0(a2)
+addi a2, a2, 4
+bne a2, a3, 45b
+addi a2, a2, 4
+bne a2, a0, 44b
+addi a2, a0, -1024
+addi t1, zero, 256
 23:
-.insn 4, 0x00066383
-.insn 4, 0x02f3be33
-.insn 4, 0x030e0e33
-.insn 4, 0x41c383b3
-.insn 4, 0x410383b3
-.insn 4, 0x43f3de13
-.insn 4, 0x010e7e33
-.insn 2, 0x93f2
-.insn 4, 0x00762023
-.insn 2, 0x0611
-.insn 2, 0x137d
+lwu t2, 0(a2)
+mulhu t3, t2, a5
+mul t3, t3, a6
+sub t2, t2, t3
+sub t2, t2, a6
+srai t3, t2, 63
+and t3, t3, a6
+add t2, t2, t3
+sw t2, 0(a2)
+addi a2, a2, 4
+addi t1, t1, -1
 bnez t1, 23b
-.insn 2, 0x8082
+ret
 .option pop",
     )
 }
