@@ -51,6 +51,10 @@ theorem Lay.Ok.sp_toNat {L : Lay dn} (hL : L.Ok) : (L.B + BitVec.ofNat 64 96).to
   have := hL.nB
   rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega_arith : 96 < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith)]
 
+theorem Lay.below96 (L : Lay dn) : below (L.B + BitVec.ofNat 64 96) 96 = ⟨L.B, 96⟩ := by
+  show (⟨L.B + BitVec.ofNat 64 96 - BitVec.ofNat 64 96, 96⟩ : Region) = _
+  rw [BitVec.add_sub_cancel]
+
 theorem Lay.below48 (L : Lay dn) : below (L.B + BitVec.ofNat 64 96) 48 = ⟨L.B + BitVec.ofNat 64 48, 48⟩ := by
   show (⟨L.B + BitVec.ofNat 64 96 - BitVec.ofNat 64 48, 48⟩ : Region) = _
   congr 1
