@@ -81,7 +81,7 @@ def gprDst : Instr → Option Reg
   | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .cselc _ d .. | .csneg _ d .. | .adrSym d _
   | .madd _ d .. | .addImm _ d .. | .subImm _ d .. | .ror _ d .. | .lsr _ d .. | .lsl _ d ..
   | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..
-  | .ldrSp d _ | .umov _ d .. | .pop d => some d
+  | .ldrSp d _ | .umov _ d .. | .pop d | .mrsDit d => some d
   | _ => none
 
 /-- `i` writes no register of `F`. -/

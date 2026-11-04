@@ -38,10 +38,10 @@ def dstOf : Instr → Option Reg
   | .adds _ d .. | .adcs _ d .. | .subs _ d .. | .sbcs _ d .. | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adrSym d _ => some d
   | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .movz _ d ..
-  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
+  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
   | .cselc _ d .. | .csneg _ d .. => some d
   | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ | .blr _ => none
+  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ => none
 
 /-- The general-purpose registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -349,6 +349,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
   | align _ => obtain rfl := Option.some.inj h; rfl
+  | msrDitImm _ => obtain rfl := Option.some.inj h; rfl
   | _ => obtain rfl := Option.some.inj h; exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :

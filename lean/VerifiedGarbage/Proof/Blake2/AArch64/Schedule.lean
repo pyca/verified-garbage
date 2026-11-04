@@ -42,9 +42,9 @@ theorem rotate {z : Size} {s : State} {d n : Reg} {sh : Nat} (h : sh < z.bits) :
 theorem state_eq {s t : State} (hg : s.gpr = t.gpr) (hs : s.sp = t.sp)
     (hc : s.c = t.c) (hn : s.nf = t.nf) (hz : s.zf = t.zf) (hvf : s.vf = t.vf)
     (hv : s.v = t.v) (hm : s.mem = t.mem) (hr : s.rd = t.rd) (hw : s.wr = t.wr)
-    (hu : s.unknowns = t.unknowns) (hsy : s.syms = t.syms) : s = t := by
+    (hu : s.unknowns = t.unknowns) (hsy : s.syms = t.syms) (hd : s.dit = t.dit) : s = t := by
   cases s; cases t; cases hg; cases hs; cases hc; cases hn; cases hz
-  cases hvf; cases hv; cases hm; cases hr; cases hw; cases hu; cases hsy
+  cases hvf; cases hv; cases hm; cases hr; cases hw; cases hu; cases hsy; cases hd
   rfl
 
 theorem ext_trunc (z : Size) (v : BitVec z.bits) : (v.setWidth 64).setWidth z.bits = v := by

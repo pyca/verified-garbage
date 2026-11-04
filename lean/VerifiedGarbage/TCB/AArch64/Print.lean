@@ -232,6 +232,8 @@ def Instr.asm : Instr → List String
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
+  | .mrsDit t => [s!"mrs {t.name .x}, DIT"]
+  | .msrDitImm on => [s!"msr DIT, #{on.toNat}"]
   | .align k => [s!".p2align {k}"]
 
 /-- The lines of an instruction: each of its instructions' text (`asm`) as a
