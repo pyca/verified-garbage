@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
 import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -244,5 +245,207 @@ theorem search_exhausted {p : SearchPublic} {original s : State} {used remaining
   · rw [hwv 3 (by decide)]; rfl
   · rw [hwv 16 (by decide)]; exact h.slot (by simp [SearchPublic.headers])
   · rw [hwv 17 (by decide)]; rfl
+
+/-! ## The search's tail -/
+
+/-- The search from octet `used` of the tape, with `remaining` counted
+candidates left. -/
+abbrev tailOf (p : SearchPublic) (original : State) (used remaining : Nat) : PrimeSearchResult :=
+  primeSearch p.len p.eB (searchP original) remaining ((searchRand original).drop used)
+
+/-- A loop state, whose search from there finishes as `final`. -/
+def SearchIter (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (s : State) : Prop :=
+  SearchLive p original used remaining s ∧ ∃ tr, final = (tailOf p original used remaining).consume used tr
+
+/-- The candidate's status, from `used`. -/
+abbrev candStatus (p : SearchPublic) (original : State) (used : Nat) : Nat :=
+  Spec.RsaKeyGen.candidateStatus
+    (Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used))
+
+/-- The candidate's consumption, from `used`. -/
+abbrev candUsed (p : SearchPublic) (original : State) (used : Nat) : Nat :=
+  match Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) with
+  | some (_, rest) => (p.randLen - used) - rest.length
+  | none => 0
+
+/-- Whether the search goes on past its candidate: one was run, rejected
+(too close, or counted), and it consumed something. -/
+def Continues (p : SearchPublic) (original : State) (used remaining : Nat) : Prop :=
+  remaining ≠ 0 ∧ (candStatus p original used = 2 ∨ candStatus p original used = 3) ∧
+    candUsed p original used ≠ 0
+
+/-- The loop state past a candidate rejected from `used`, with the next
+offset and count, and the search from `used` in terms of the one from there. -/
+def ContinuePost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  remaining ≠ 0 ∧ ∃ u k, used < u ∧ SearchIter p original final u k t ∧
+    u = used + candUsed p original used ∧
+    ((k = remaining ∧ candStatus p original used = 2) ∨ (k = remaining - 1 ∧ candStatus p original used = 3)) ∧
+    tailOf p original used remaining =
+      (tailOf p original u k).consume (u - used)
+        (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used))
+
+theorem ContinuePost.continues {p : SearchPublic} {original t : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : ContinuePost p original final used remaining t) :
+    Continues p original used remaining := by
+  obtain ⟨hr, u, k, hlt, -, hu, hk, -⟩ := h
+  exact ⟨hr, hk.elim (fun h => .inl h.2) (fun h => .inr h.2), by omega⟩
+
+theorem ContinuePost.keep {p : SearchPublic} {original s t : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : ContinuePost p original final used remaining s) {rs : List Reg}
+    (k : Keep rs s t) (hm : t.mem = s.mem) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
+    ContinuePost p original final used remaining t :=
+  let ⟨hr, u, k', hlt, hi, rest⟩ := h
+  ⟨hr, u, k', hlt, ⟨hi.1.keep k hm hregs, hi.2⟩, rest⟩
+
+/-- What an iteration leaves: the search goes on (status 4) past its
+candidate, or it is finished. -/
+def IterPost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  (word t.mem p.F (8 * 17) = 4 ∧ ContinuePost p original final used remaining t) ∨
+    (word t.mem p.F (8 * 17) ≠ 4 ∧ ¬Continues p original used remaining ∧ SearchDone p original final t)
+
+theorem SearchLive.rand_length {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) : (searchRand original).length = p.randLen := by
+  rw [← h.input.2]; simp [searchRand, Spec.Rsa.bytesAt, searchOfState]
+
+theorem status_lt (p : SearchPublic) (original : State) (used : Nat) : candStatus p original used < 4 := by
+  unfold candStatus Spec.RsaKeyGen.candidateStatus; split <;> decide
+
+/-- The status and the octets the candidate consumed, after it. -/
+theorem search_head {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) (hp : CandPost p (searchP original) (searchRand original) used s) :
+    WP isa (.block (head ++ ([.subImm .x .x12 .x9 1] : List Instr))) s fun t =>
+      SearchLive p original used remaining t ∧ CandPost p (searchP original) (searchRand original) used t ∧
+      t.gpr .x9 = BitVec.ofNat 64 (candStatus p original used) ∧
+      t.gpr .x10 = BitVec.ofNat 64 (candUsed p original used) ∧
+      isa.eval (.zero .x .x12) t = some (decide (candStatus p original used = 1)) := by
+  have hv7 := h.slot (j := 7) (v := p.up) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at hv7
+  have hu : InRegions (s.rd ++ s.wr) p.up 8 := by
+    refine ⟨inUsed original, List.mem_append_right _ ?_, ?_⟩
+    · rw [h.wr, h.input.1.2.2.2.1]; exact List.mem_cons_of_mem _ (by simp [inWrites])
+    · rw [← h.input.2]; simp only [inUsed, searchOfState, Region.Contains, BitVec.sub_self, BitVec.toNat_zero,
+        Nat.zero_add]; decide
+  have hw : s.mem.readW p.up 64 = BitVec.ofNat 64 (candUsed p original used) := by
+    have := hp.2.2
+    change [word s.mem p.up 0] = _ at this
+    simp only [Bignum.word, off, BitVec.add_zero, List.cons.injEq, and_true] at this
+    exact this
+  have hst := status_lt p original used
+  have h0 : (s.gpr .x0).setWidth 32 = BitVec.ofNat 32 (candStatus p original used) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [hp.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine WP.mono (WP.keep [.x9, .x10, .x11, .x12] (Q := fun t =>
+    (t.gpr .x9 = BitVec.ofNat 64 (candStatus p original used) ∧
+      t.gpr .x10 = BitVec.ofNat 64 (candUsed p original used) ∧
+      isa.eval (.zero .x .x12) t = some (decide (candStatus p original used = 1))) ∧ t.mem = s.mem) ?_
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨⟨h9, h10, he⟩, hm⟩, k⟩ => ?_
+  · unfold head
+    brun [ldf, ld, h.x19, hv7, h.frame_ld' 56 (by decide), hu, hw, BitVec.add_zero,
+      VG.Proof.RsaKeyGen.AArch64.exec_addImm_w (show 0 < 4096 by decide), h0]
+    refine ⟨?_, ?_⟩
+    · apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      omega
+    · have : ∀ st < 4, ((BitVec.ofNat 32 st).setWidth 64 - BitVec.ofNat 64 1 == 0) =
+          decide (st = 1) := by decide
+      simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq,
+        this _ hst]
+  · refine ⟨h.keep k hm, ?_, h9, h10, he⟩
+    exact hp.keep hm (by rw [k.gpr .x0 (by decide)])
+
+/-- Through stores of the frame's words but its fixed ones, a finished search
+with the words stored. -/
+theorem SearchLive.done_after {p : SearchPublic} {original s t : State} {used remaining : Nat}
+    {result : PrimeSearchResult} (h : SearchLive p original used remaining s)
+    (values : List (Nat × BitVec 64)) (hb : ∀ e ∈ values, e.1 < 20)
+    (hfix : ∀ e ∈ values, e.1 ≠ 1 ∧ e.1 ≠ 2 ∧ e.1 ≠ 4 ∧ e.1 ≠ 7 ∧ e.1 ≠ 18)
+    (hm : t.mem = writeFrame s.mem p.F values) {rs : List Reg} (kt : Keep rs s t)
+    (hrs : ∀ r ∈ preserved, r ∉ rs)
+    (h0 : frameValue values 0 (word s.mem p.F (8 * 0)) = BitVec.ofNat 64 result.remaining)
+    (h3 : frameValue values 3 (word s.mem p.F (8 * 3)) = BitVec.ofNat 64 result.requested)
+    (h16 : frameValue values 16 (word s.mem p.F (8 * 16)) = BitVec.ofNat 64 result.used)
+    (h17 : frameValue values 17 (word s.mem p.F (8 * 17)) = BitVec.ofNat 64 result.status)
+    (hout : Spec.Rsa.bytesAt s.mem p.op p.len =
+      match result.outcome with
+      | .accepted c => Spec.Rsa.i2osp c p.len
+      | _ => List.replicate p.len 0) :
+    SearchDone p original result t := by
+  have hw (j : Nat) (hj : j < 20) : word t.mem p.F (8 * j) = frameValue values j (word s.mem p.F (8 * j)) := by
+    rw [hm]; exact writeFrame_word _ _ _ hb j hj
+  have hkeep (j : Nat) (hj : j < 20) (hn : ∀ e ∈ values, j ≠ e.1) : word t.mem p.F (8 * j) = word s.mem p.F (8 * j) := by
+    rw [hw j hj, frameValue_unchanged _ _ _ hn]
+  have hd := h.input.frame_disjoint (r := inOut original) (by simp [SearchInput.callChanges])
+  rw [← h.out_region] at hd
+  have hn := h.callFacts.nO
+  have hbytes : Spec.Rsa.bytesAt t.mem p.op p.len = Spec.Rsa.bytesAt s.mem p.op p.len := by
+    rw [hm]
+    simp only [Spec.Rsa.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact (writeFrame_frame s.mem p.F values hb).bytes (R := ⟨p.op, p.len⟩)
+      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.symm) (by show p.len ≤ 2 ^ 64; omega)
+      (List.mem_range.mp hi)
+  refine ⟨h.input, kt.rd.trans h.rd, kt.wr.trans h.wr, kt.sp.trans h.sp,
+    (kt.gpr _ (hrs .x19 (by decide))).trans h.x19,
+    fun r hr hn hs => (kt.gpr r (hrs r hr)).trans (h.saved r hr hn hs),
+    fun r hr => (kt.vcs r hr).trans (h.vcs r hr),
+    ?_, ?_, ?_, ?_, ?_, by rw [hw 0 (by decide)]; exact h0, by rw [hw 3 (by decide)]; exact h3,
+    by rw [hw 16 (by decide)]; exact h16, by rw [hw 17 (by decide)]; exact h17, by rw [hbytes]; exact hout⟩
+  · exact (hkeep 4 (by decide) fun e he => (hfix e he).2.2.1.symm).trans h.savedX19
+  · exact (hkeep 7 (by decide) fun e he => (hfix e he).2.2.2.1.symm).trans (h.slot (by simp [SearchPublic.headers]))
+  · exact (hkeep 18 (by decide) fun e he => (hfix e he).2.2.2.2.symm).trans (h.slot (by simp [SearchPublic.headers]))
+  · exact (hkeep 1 (by decide) fun e he => (hfix e he).1.symm).trans (h.slot (by simp [SearchPublic.headers]))
+  · exact (hkeep 2 (by decide) fun e he => (hfix e he).2.1.symm).trans (h.slot (by simp [SearchPublic.headers]))
+
+/-! ## Accepting a prime -/
+
+theorem add_ofNat_ofNat (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
+  (BitVec.ofNat_add a b).symm
+
+def acceptValues (used cu : Nat) : List (Nat × BitVec 64) :=
+  (16, BitVec.ofNat 64 used + BitVec.ofNat 64 cu) :: terminalValues 1
+
+theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining c : Nat} {rest : List Byte}
+    (h : SearchIter p original final used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s)
+    (hr : remaining ≠ 0)
+    (hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) =
+      some (.prime c, rest))
+    (h10 : s.gpr .x10 = BitVec.ofNat 64 (candUsed p original used)) :
+    WP isa (.block accept) s (SearchDone p original final) := by
+  obtain ⟨h, tr, hfinal⟩ := h
+  have hs := h.frame_st
+  have hs0 : InRegions s.wr p.F 8 := by simpa only [BitVec.add_zero] using hs 0 (by decide)
+  have h16 := h.slot (j := 16) (v := BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h16
+  have hacc : WP isa (.block accept) s fun t =>
+      t.mem = writeFrame s.mem p.F (acceptValues used (candUsed p original used)) ∧
+        Keep [.x10, .x11] s t := by
+    refine WP.keep [.x10, .x11] ?_ (by decide) (by decide) (by decide +kernel)
+    unfold accept terminal writeFrame acceptValues terminalValues
+    simp only [List.cons_append, List.nil_append, List.foldl_cons, List.foldl_nil]
+    brun [ldf, stf, h.x19, h10, h16, h.frame_ld' 128 (by decide), imm64 (show 0 < 65536 by decide),
+      imm64 (show 1 < 65536 by decide), hs0, hs 0 (by decide), hs 24 (by decide), hs 128 (by decide),
+      hs 136 (by decide)]
+    rfl
+  refine WP.mono hacc fun t ⟨ht, kt⟩ => ?_
+  have hu : candUsed p original used = ((searchRand original).drop used).length - rest.length := by
+    simp only [candUsed, hres, List.length_drop, h.rand_length]
+  unfold tailOf at hfinal
+  rw [VG.Proof.RsaKeyGen.Search.search_prime hr hres, Spec.Entropy.Result.consume] at hfinal
+  subst hfinal
+  refine h.done_after _ (by
+      simp only [acceptValues, terminalValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) (by
+      simp only [acceptValues, terminalValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) ht kt (by decide) rfl rfl ?_ rfl ?_
+  · simp only [frameValue, acceptValues, terminalValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
+      ↓reduceIte]
+    rw [add_ofNat_ofNat, hu]
+  · have ho := hc.2.1
+    rw [hres] at ho
+    exact ho
 
 end VG.Proof.RsaKeyGen.AArch64.Search
