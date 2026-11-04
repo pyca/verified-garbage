@@ -819,4 +819,121 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
         by rw [hpast, Nat.add_sub_cancel_left]; simp only [reduceCtorEq, ↓reduceIte]⟩
 
+/-! ## The classification -/
+
+theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s)
+    (hc : CandPost p (searchP original) (searchRand original) used s) (hr : remaining ≠ 0) :
+    WP isa classify s (IterPost p original final used remaining) := by
+  unfold classify
+  refine WP.seq (WP.mono (search_head h.1 hc) fun u ⟨hu, hcu, h9, h10, he⟩ => ?_)
+  have hu' : SearchIter p original final used remaining u := ⟨hu, h.2⟩
+  cases hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) with
+  | none =>
+    simp only [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at he h9
+    refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
+    refine WP.ite true (by rw [eval_zero, h9]; rfl) (fun _ => ?_) (fun hf => by cases hf)
+    refine WP.mono (search_short hu' hcu hr hres) fun t hd => .inr ⟨hd.status_ne, fun ⟨_, hs, _⟩ => ?_, hd⟩
+    simp [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at hs
+  | some pr =>
+    obtain ⟨x, rest⟩ := pr
+    cases x with
+    | prime c =>
+      simp only [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at he h9
+      refine WP.ite true he (fun _ => ?_) (fun hf => by cases hf)
+      exact WP.mono (search_accept hu' hcu hr hres h10) fun t hd =>
+        .inr ⟨hd.status_ne, fun ⟨_, hs, _⟩ => by simp [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at hs, hd⟩
+    | close =>
+      simp only [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at he h9
+      refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
+      refine WP.ite false (by rw [eval_zero, h9]; rfl) (fun hf => by cases hf) fun _ => ?_
+      exact search_reject hu' hr hres (.inl rfl) (by rw [h9]; rfl) h10
+    | rejected =>
+      simp only [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at he h9
+      refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
+      refine WP.ite false (by rw [eval_zero, h9]; rfl) (fun hf => by cases hf) fun _ => ?_
+      exact search_reject hu' hr hres (.inr rfl) (by rw [h9]; rfl) h10
+
+/-! ## An iteration -/
+
+/-- What an iteration leaves, with the loop's condition. -/
+def LoopStep (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  (isa.eval (.zero .x .x9) t = some true ∧ ContinuePost p original final used remaining t) ∨
+    (isa.eval (.zero .x .x9) t = some false ∧ ¬Continues p original used remaining ∧ SearchDone p original final t)
+
+theorem iter_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (.block [ldf .x9 0]) s fun t =>
+      (isa.eval (.zero .x .x9) t = some (decide (remaining = 0)) ∧ t.mem = s.mem) ∧ Keep [.x9] s t := by
+  have hl0 : InRegions (s.rd ++ s.wr) p.F 8 := by simpa only [BitVec.add_zero] using h.frame_ld' 0 (by decide)
+  have h0 := h.slot (j := 0) (v := BitVec.ofNat 64 remaining) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul, BitVec.add_zero] at h0
+  have hz : (BitVec.ofNat 64 remaining == 0) = decide (remaining = 0) :=
+    ofNat_beq_zero (Nat.lt_of_le_of_lt h.remaining_le (by rw [← h.input.2]; exact BitVec.isLt _))
+  refine WP.keep [.x9] ?_ (by decide) (by decide) (by decide +kernel)
+  brun [ldf, h.x19, Nat.mul_zero, BitVec.add_zero, hl0, h0]
+  simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq, hz]
+
+theorem sub4_beq (x : BitVec 64) : (x - BitVec.ofNat 64 4 == 0) = (x == 4) := by
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq]
+  constructor
+  · intro h
+    have := congrArg (· + BitVec.ofNat 64 4) h
+    simp only [BitVec.sub_add_cancel] at this
+    exact this
+  · rintro rfl; rfl
+
+theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchResult} {used : Nat}
+    {remaining : Nat} (h : IterPost p original final used remaining s) :
+    WP isa (.block [ldf .x9 17, .subImm .x .x9 .x9 4]) s (LoopStep p original final used remaining) := by
+  have hregs : s.gpr .x19 = p.F ∧ ∃ o : State, SearchInput p o ∧ s.wr = p.frame :: o.wr := by
+    rcases h with ⟨-, -, _, _, -, ⟨hi, -⟩, -⟩ | ⟨-, -, hd⟩
+    · exact ⟨hi.x19, _, hi.input, hi.wr⟩
+    · exact ⟨hd.x19, _, hd.input, hd.wr⟩
+  obtain ⟨hr19, o, hi, hw⟩ := hregs
+  have scr := hi.frame_scr hw
+  have hl : InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 136) 8 :=
+    let ⟨r, hr, hc⟩ := scr.st (d := 136) (by decide); ⟨r, List.mem_append_right _ hr, hc⟩
+  refine WP.mono (WP.keep [.x9] (Q := fun t =>
+    isa.eval (.zero .x .x9) t = some (word s.mem p.F (8 * 17) - BitVec.ofNat 64 4 == 0) ∧ t.mem = s.mem) (by
+      brun [ldf, hr19, hl, Nat.reduceMul]
+      simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨he, hm⟩, k⟩ => ?_
+  rw [sub4_beq] at he
+  rcases h with ⟨h17, hc⟩ | ⟨h17, hn, hd⟩
+  · exact .inl ⟨by rw [he, h17]; rfl, hc.keep k hm⟩
+  · exact .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], hn, hd.keep k hm⟩
+
+theorem search_iteration (c : Cand) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s) :
+    WP isa (iteration c.call) s (LoopStep p original final used remaining) := by
+  unfold iteration
+  refine WP.seq (WP.mono (iter_guard h.1) fun u ⟨⟨he, hmu⟩, ku⟩ => ?_)
+  have hu : SearchIter p original final used remaining u := ⟨h.1.keep ku hmu, h.2⟩
+  refine WP.seq (WP.ite _ he (fun hz => ?_) (fun hz => ?_))
+  · have hz := of_decide_eq_true hz
+    subst hz
+    obtain ⟨hl, tr, hfinal⟩ := hu
+    unfold tailOf at hfinal
+    rw [VG.Proof.RsaKeyGen.Search.search_zero] at hfinal
+    exact WP.mono (search_exhausted hl (result := final) (by rw [hfinal]; rfl)) fun t hd =>
+      iter_test (.inr ⟨hd.status_ne, fun ⟨h, _⟩ => h rfl, hd⟩)
+  · have hz := of_decide_eq_false hz
+    refine WP.seq (WP.mono (search_candidate_run c hu.1) fun t ⟨ht, hc⟩ => ?_)
+    exact WP.mono (search_classify ⟨ht, hu.2⟩ hc hz) fun _ hp => iter_test hp
+
+theorem search_loop (c : Cand) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s) :
+    WP isa (.loop (iteration c.call) (.zero .x .x9)) s (SearchDone p original final) := by
+  refine WP.loop (M := isa)
+    (fun n t => ∃ u k, n = p.randLen - u + 1 ∧ SearchIter p original final u k t) ?_
+    (p.randLen - used + 1) s ⟨used, remaining, rfl, h⟩
+  rintro n t ⟨u, k, rfl, ht⟩
+  refine WP.mono (search_iteration c ht) fun t' hs => ?_
+  rcases hs with ⟨he, -, u', k', hlt, ht', -⟩ | ⟨he, -, hd⟩
+  · have hle := ht'.1.used_le
+    exact .inr ⟨he, _, by omega, u', k', rfl, ht'⟩
+  · exact .inl ⟨he, hd⟩
+
 end VG.Proof.RsaKeyGen.AArch64.Search
