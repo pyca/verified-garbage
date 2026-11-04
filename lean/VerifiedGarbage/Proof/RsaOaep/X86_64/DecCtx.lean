@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Table
+public import VerifiedGarbage.Spec.RsaOaep.Tables
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Algebra.Group.Nat.Defs
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 /-!
 # RSAES-OAEP decryption on x86-64: the contract on the registers
 
-`decK H ts` states `Spec.RsaOaep.decryptTableContract H` with the tables
+`decK ts` states `Spec.RsaOaep.decryptTablesContract` with the tables
 `ts` of MGF1's hash function (`Abi.withTables`, with the stack the frame and
 the calls use, `decStack`) on the registers and the stack (`dec_implies`);
 `DPre` is its precondition by name. The callee
@@ -36,29 +36,33 @@ address and what `vg_rsa_private_checked` uses (more than the streaming
 hash functions' 16 bytes). -/
 def decStack : Nat := Impl.RsaOaep.X86_64.frameBytes + 8 + privStack
 
-theorem stackArgs_eighteen (s : State) :
-    List.map (stackArg s) (List.range 18) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+theorem stackArgs_nineteen (s : State) :
+    List.map (stackArg s) (List.range 19) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
       stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15, stackArg s 16,
-      stackArg s 17] := rfl
+      stackArg s 17, stackArg s 18] := rfl
 
-/-- The table's region. -/
-def tabR (s : State) : Region := ⟨stackArg s 17, 40⟩
+/-- The region of the table of the label's hash function. -/
+def tabL (s : State) : Region := ⟨stackArg s 17, 40⟩
+
+/-- The region of MGF1's table. -/
+def tabR (s : State) : Region := ⟨stackArg s 18, 40⟩
 
 /-- The functions of the tables `ts`. -/
 def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
 
-variable (H : Spec.Mgf1.Hash) (ts : List FnTable)
+variable (ts : List FnTable)
 
 /-- `decrypt(out = rdi, out_len = rsi, msg_len = rdx, n = rcx, n_len = r8,
 e = r9, e_len = [rsp + 8], p, p_len, q, q_len, dp, dp_len, dq, dq_len,
 qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len,
-mgf1 = [rsp + 144])`, `mgf1` one of the tables `ts`. -/
+hash = [rsp + 144], mgf1 = [rsp + 152])`, `hash` and `mgf1` each one of
+the tables `ts`. -/
 def decK : Contract isa where
   pre s :=
     decStack ≤ (s.gpr .rsp).toNat ∧
-      (s.gpr .rsp).toNat + 152 ≤ 2 ^ 64 ∧
-      s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabR s, ⟨stackArgAddr s 0, 144⟩] ∧
+      (s.gpr .rsp).toNat + 160 ≤ 2 ^ 64 ∧
+      s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabL s, tabR s, ⟨stackArgAddr s 0, 152⟩] ∧
       s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, 8⟩, ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩] ∧
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩ ∧
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ ∧
@@ -71,7 +75,7 @@ def decK : Contract isa where
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩ ∧
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩ ∧
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
-      (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩ ∧
+      (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩ ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨s.gpr .r9, (stackArg s 0).toNat⟩ ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 1, (stackArg s 2).toNat⟩ ∧
@@ -82,7 +86,7 @@ def decK : Contract isa where
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩ ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩ ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
-      (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩ ∧
+      (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩ ∧
       (⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
       (⟨s.gpr .r9, (stackArg s 0).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
       (⟨stackArg s 1, (stackArg s 2).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
@@ -92,7 +96,7 @@ def decK : Contract isa where
       (⟨stackArg s 9, (stackArg s 10).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
       (⟨stackArg s 11, (stackArg s 12).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
       (⟨stackArg s 13, (stackArg s 14).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
-      (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩ ∧
+      (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩ ∧
       (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ ∧
       (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩ ∧
       (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
@@ -108,7 +112,7 @@ def decK : Contract isa where
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩ ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩ ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ ∧
-      (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩ ∧
+      (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩ ∧
       (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧
       (s.gpr .rdx).toNat + 8 ≤ 2 ^ 64 ∧
       (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
@@ -138,10 +142,17 @@ def decK : Contract isa where
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabR s) ∧
       (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabR s) ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabR s) ∧
+      (stackArg s 18).toNat + 40 ≤ 2 ^ 64 ∧
+      (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint (tabL s) ∧
+      (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabL s) ∧
+      (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabL s) ∧
+      (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabL s) ∧
       (stackArg s 17).toNat + 40 ≤ 2 ^ 64 ∧
       (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
-      (tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  post s s' := ∀ G, Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+      (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 18) (FnTable.words isa s T)) ∧
+      (tabFns ts ++ tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
+  post s s' := ∀ H G, Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some H →
+    Spec.HashTable.hashAt 64 s.mem (stackArg s 18) = some G →
     Spec.RsaOaep.writtenDecrypt s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaOaep.decrypt H G (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
@@ -154,20 +165,22 @@ def decK : Contract isa where
         (Spec.Rsa.bytesAt s.mem (stackArg s 13) (s.gpr .r8).toNat))
   pub s₁ s₂ :=
     (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
-      (List.range 18).map (stackArg s₁) = (List.range 18).map (stackArg s₂) ∧
+      (List.range 19).map (stackArg s₁) = (List.range 19).map (stackArg s₂) ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rcx) (s₁.gpr .r8).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rcx) (s₂.gpr .r8).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r9) (stackArg s₁ 0).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r9) (stackArg s₂ 0).toNat ∧
       (∀ f ∈ tabFns ts, s₁.syms f = s₂.syms f) ∧
-      ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
-        Abi.tableHeld 64 s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))
+      (∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))) ∧
+      ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 18) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 18) (FnTable.words isa s₂ T))
 
 /-- `decK.pre`, by name. -/
 structure DPre (s : State) : Prop where
   sp1 : decStack ≤ (s.gpr .rsp).toNat
-  sp2 : (s.gpr .rsp).toNat + 152 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabR s, ⟨stackArgAddr s 0, 144⟩]
+  sp2 : (s.gpr .rsp).toNat + 160 ≤ 2 ^ 64
+  hrd : s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩, ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩, ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat⟩, tabL s, tabR s, ⟨stackArgAddr s 0, 152⟩]
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, 8⟩, ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩]
   dOM : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
@@ -180,7 +193,7 @@ structure DPre (s : State) : Prop where
   dOlb : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩
   dOct : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩
   dOs : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
-  dOa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
+  dOa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩
   dMn : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
   dMe : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨s.gpr .r9, (stackArg s 0).toNat⟩
   dMp : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 1, (stackArg s 2).toNat⟩
@@ -191,7 +204,7 @@ structure DPre (s : State) : Prop where
   dMlb : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩
   dMct : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩
   dMs : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
-  dMa : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
+  dMa : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩
   dns : (⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
   des : (⟨s.gpr .r9, (stackArg s 0).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
   dps : (⟨stackArg s 1, (stackArg s 2).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
@@ -201,7 +214,7 @@ structure DPre (s : State) : Prop where
   dqis : (⟨stackArg s 9, (stackArg s 10).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
   dlbs : (⟨stackArg s 11, (stackArg s 12).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
   dcts : (⟨stackArg s 13, (stackArg s 14).toNat⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
-  dsa : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
+  dsa : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩
   dRO : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   dRM : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩
   dRs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
@@ -217,7 +230,7 @@ structure DPre (s : State) : Prop where
   dKlb : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 11, (stackArg s 12).toNat⟩
   dKct : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 13, (stackArg s 14).toNat⟩
   dKs : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩
-  dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
+  dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 152⟩
   wO : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
   wM : (s.gpr .rdx).toNat + 8 ≤ 2 ^ 64
   wN : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
@@ -247,65 +260,76 @@ structure DPre (s : State) : Prop where
   dMt : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabR s)
   dst : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabR s)
   dKt : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabR s)
-  wT : (stackArg s 17).toNat + 40 ≤ 2 ^ 64
+  wT : (stackArg s 18).toNat + 40 ≤ 2 ^ 64
+  dOtL : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint (tabL s)
+  dMtL : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabL s)
+  dstL : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabL s)
+  dKtL : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabL s)
+  wTL : (stackArg s 17).toNat + 40 ≤ 2 ^ 64
 
-theorem DPre.of {s : State} (h : (decK H ts).pre s) : DPre s := by
+theorem DPre.of {s : State} (h : (decK ts).pre s) : DPre s := by
   simp only [decK] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr dOM dOn dOe dOp dOq dOdp dOdq dOqi dOlb dOct dOs dOa dMn dMe dMp dMq dMdp dMdq dMqi
     dMlb dMct dMs dMa dns des dps dqs ddps ddqs dqis dlbs dcts dsa dRO dRM dRs dKO dKM dKn dKe dKp dKq dKdp
     dKdq dKqi dKlb dKct dKs dKa wO wM wN wE wP wQ wDp wDq wQi wL wC wS lv hsi hcl el1 el2 pl1 pl2 ql1 ql2 hdpl
-    hqil hdql hsw dOt dMt dst dKt wT _
+    hqil hdql hsw dOt dMt dst dKt wT dOtL dMtL dstL dKtL wTL _ _
   clear h
-  exact ⟨sp1, sp2, hrd, hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, dOt, dMt, dst, dKt, wT⟩
+  exact ⟨sp1, sp2, hrd, hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, dOt, dMt, dst, dKt, wT, dOtL, dMtL, dstL, dKtL, wTL⟩
 
-/-- The table: one of `ts`, at the stack argument 17. -/
-theorem DPre.tab {s : State} (h : (decK H ts).pre s) :
+/-- The tables: each one of `ts`, the label's hash function's at the stack
+argument 17 and MGF1's at 18. -/
+theorem DPre.tab {s : State} (h : (decK ts).pre s) :
     (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
+      (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 18) (FnTable.words isa s T)) ∧
       (tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
   simp only [decK] at h
   sig_split h
-  exact ⟨by assumption, by assumption⟩
+  have hw : (tabFns ts ++ tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
+    with_reducible assumption
+  exact ⟨by with_reducible assumption, by with_reducible assumption, hw.sublist (List.sublist_append_left _ _)⟩
 
 /-- The contract, with the tables `ts`. -/
 abbrev decC : Contract isa :=
-  Spec.RsaOaep.decryptTableContract H (abi.withTables Spec.RsaOaep.decryptTableSig [("mgf1", ts)]) decStack
+  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+    decStack
 
-theorem dec_implies (hsat : ∃ s, (decC H ts).pre s) : (decK H ts).Implies (decC H ts) where
+theorem dec_implies (hsat : ∃ s, (decC ts).pre s) : (decK ts).Implies (decC ts) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
-    sig_pre [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns] at h
+    sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns,
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns,
       Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
-    sig_reduce [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    sig_reduce [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns,
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns,
       Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+  post := by sig_implies_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns]
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
+    sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_eighteen, List.append_eq, tabR, tabFns] at h
+      decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at h
-    obtain ⟨hsp, hsy, htab, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
-      a13, a14, a15, a16, a17⟩ := h
+    obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+      a13, a14, a15, a16, a17, a18⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
-    refine ⟨?_, by simp only [stackArgs_eighteen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16, a17], hn, he, hsy, fun T hT => htab _ _ rfl rfl T hT⟩
+    refine ⟨?_, by simp only [stackArgs_nineteen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
+      a15, a16, a17, a18], hn, he, fun f hf => hsy f (List.mem_append_left _ hf),
+      fun T hT => htab _ _ rfl rfl T hT, fun T hT => htab' _ _ rfl rfl T hT⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := hsat

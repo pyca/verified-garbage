@@ -65,7 +65,7 @@ namespace VG.Impl.RsaOaep.X86_64
 open VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Impl.Mgf1.X86_64 (seqs sp ix at_ step byteLoop Layout)
-open VG.Impl.Mgf1.X86_64.Table (Fns)
+open VG.Impl.Mgf1.X86_64.Table (Fns tcall)
 
 /-! ## The frame -/
 
@@ -157,6 +157,41 @@ def hashLabel (o : Nat) : Prog isa :=
     .call H.updN H.updC,
     .block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW),
     .call H.finN H.finC]
+
+/-- The label's hash, `H(label)`, to `scratch + o`, with the hash function
+of the table whose address is in `sTab`: its `init`, `update` with the label
+and `finalize`, each an indirect call (`tcall`). -/
+def hashLabelT (o : Nat) : Prog isa :=
+  seqs [.block (scr .rdi oSt), tcall sTab 0 f.init,
+    .block (scr .rdi oSt ++ [.mov32 .rsi (.imm 0), .mov .rdx (.mem (sp sLab)), .mov .rcx (.mem (sp sLabLen))] ++
+      scr .r8 oW),
+    tcall sTab 1 f.upd,
+    .block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW),
+    tcall sTab 2 f.fin]
+
+/-- The streaming functions' shape with only the digest length `d`, which
+is all the code with the hash function's calls through a table uses of it. -/
+def ofLen (d : Nat) : Stream := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "", .block []⟩
+
+/-- The digest lengths of the hash functions whose tables the functions take
+(MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
+SHA-512). -/
+def lens : List Nat := [16, 20, 28, 32, 48, 64]
+
+/-- The address of the table that the function's stack argument `j` points
+to, to `sTab` (through `r11`, which keeps `rax`). -/
+def tabSlot (j : Nat) : List Instr := [.mov .r11 (.mem (arg j)), .store (sp sTab) .r11]
+
+/-- The digest length of the table whose address is in `sTab` (its word 4),
+to `r11`. -/
+def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 32))]
+
+/-- `b d` for the digest length `d` in `r11`, among `ds`: the last if it is
+none of the others. -/
+def byLen (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [d] => b d
+  | d :: ds => .seq (.block [.alu .cmp .r11 (im d)]) (.ite .e (b d) (byLen b ds))
 
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`). -/
@@ -347,17 +382,22 @@ def decRet : List Instr :=
 
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
-  seqs [hashLabel H oLh, .block (seedArgs H), mgfT f 17, .block (dbArgs H), mgfT f 17, accLh H, scan H,
+  seqs [hashLabelT f oLh, .block (seedArgs H), mgfT f 18, .block (dbArgs H), mgfT f 18, accLh H, scan H,
     clearBuf H, copyT, shift, .block okMask, outLoop, .block (decRet H)]
+
+/-- After the private operation, for the label's hash function's digest
+length `H.D`: its result to its slot, the check of `k`, and the decoding. -/
+def decTail : Prog isa :=
+  seqs [.block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H), .ite .b decFail (decMain H f)]
 
 variable (privN : String) (privC : Prog isa)
 
 def decBody : Prog isa :=
   seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
-    .ite .b decFail (decMain H f)]
+    .block (tabSlot 17), .block lenLoad,
+    byLen (fun d => decTail (ofLen d) f) lens]
 
-/-- `vg_rsa_oaep_<H>_mgf1_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody H f privN privC) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt`. -/
+def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

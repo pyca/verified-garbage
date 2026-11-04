@@ -114,10 +114,10 @@ theorem EnvD.step {s t t' : State} (he : EnvD s t) (hrd : t'.rd = t.rd) (hwr : t
 /-! ## The stack arguments -/
 
 /-- Stack argument `j`, read from memory changed only in the frame. -/
-theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 17) :
+theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 19) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
-  refine hf.readW (r := ⟨stackArgAddr s 0, 144⟩) ?_ (fun r' hr' => ?_) (by decide)
+  refine hf.readW (r := ⟨stackArgAddr s 0, 152⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
   · simp only [List.mem_singleton] at hr'; subst hr'
@@ -125,14 +125,14 @@ theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem 
 
 /-- One stack argument copied to a slot. -/
 theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
-    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 17) (hd : d + 8 ≤ frameBytes) :
+    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 19) (hd : d + 8 ≤ frameBytes) :
     WP isa (.block (argSlot j d)) u fun u' => Keep [.rax] u u' ∧
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNatD hp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    refine ⟨⟨stackArgAddr s 0, 152⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
     rw [argAddr, stackArgAddr_j s j]
     exact Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
@@ -242,7 +242,7 @@ theorem privArgs_eq : privArgs =
 /-- A copy of a stack argument to the frame's word `k`, with `Rep`. -/
 theorem copyRep_ok {s : State} (hp : DPre s) {u : State} (L : Lay u (fb s) (stackArg s 15)) {V : Nat → Byte}
     {W : Nat → BitVec 64} (R : Rep u.mem (fb s) (stackArg s 15) V W) (hrd : u.rd = s.rd)
-    (hf : Frame [frR s] s.mem u.mem) (hfr : frR s ∈ u.wr) {j k : Nat} (hj : j < 17) (hk : k < 14) :
+    (hf : Frame [frR s] s.mem u.mem) (hfr : frR s ∈ u.wr) {j k : Nat} (hj : j < 19) (hk : k < 14) :
     WP isa (.block (argSlot j (8 * k))) u fun u' => Keep [.rax] u u' ∧ Lay u' (fb s) (stackArg s 15) ∧
       Rep u'.mem (fb s) (stackArg s 15) V (upd W k (stackArg s j)) ∧ Frame [frR s] s.mem u'.mem ∧
       u'.rd = s.rd ∧ frR s ∈ u'.wr :=
