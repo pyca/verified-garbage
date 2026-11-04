@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -33,6 +34,7 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -977,5 +979,81 @@ theorem frame_ct {first : Prog isa}
 
 theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code :=
   frame_ct fun hL _ ha hb => hashSeed_ct hL ha hb
+
+end VG.Proof.Ed25519.X86.SignCached
+
+/-! ## The copy of the cached digest -/
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
+
+variable {L : Lay}
+
+theorem seed64 (h64 : L.seedLen = 64) : L.SEED = ⟨L.seed.setWidth 64, 64⟩ := by
+  rw [Lay.SEED, h64]
+
+theorem seed64_mem (h64 : L.seedLen = 64) : (⟨L.seed.setWidth 64, 64⟩ : Region) ∈ L.inputs := by
+  rw [← seed64 h64]; simp [Lay.inputs]
+
+/-- The 64 bytes at the second argument, apart from the frame. -/
+theorem seed64_disjoint (hL : L.Ok) (h64 : L.seedLen = 64) :
+    Region.Disjoint ⟨L.seed.setWidth 64, 64⟩ ⟨L.E.setWidth 64 + BitVec.ofNat 64 192, 64⟩ := by
+  have hk := (hL.ks _ (seed64_mem h64)).symm
+  exact hk.sub_right fun p hp => Whole.frame_sub L.E p (Offset.sub_base _ (by decide) p hp)
+
+/-- The second argument's slot, readable, holds the digest's address. -/
+theorem copy_arg {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
+    (ha : Arguments L m₀) :
+    InRegions (t.rd ++ t.wr) (addr L.E 264) 4 ∧ t.mem.readW (addr L.E 264) 32 = L.seed := by
+  rw [addr_eq (by have := hL.top; omega)]
+  refine ⟨⟨L.ARGS, ?_, ?_⟩, (hc.arg_word hL (j := 1) (by decide)).trans (ha.1 1 (by decide))⟩
+  · rw [hc.rd]; exact List.mem_append_left _ (by simp [Lay.inputs])
+  · exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
+
+/-- `copyExpanded` leaves the caller's 64 bytes at the second argument at frame offset 192. -/
+theorem copy_ok {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
+    (ha : Arguments L m₀) (h64 : L.seedLen = 64) :
+    WP isa copyExpanded t fun u => Ctx L g m₀ u ∧
+      Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 192) 64 = Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 64 := by
+  obtain ⟨harg, hp⟩ := copy_arg hc hL ha
+  refine WP.mono (Whole.copyExpanded_ok hc (by have := hL.top; omega) harg hp
+    (by have := hL.ns; omega) (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64))
+    (seed64_disjoint hL h64)) fun u ⟨hu, hb⟩ => ⟨hu, hb.trans ?_⟩
+  have hs := hc.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega)
+  rw [seed64 h64] at hs
+  exact hs
+
+theorem copy_nosp : NoSp copyExpanded := NoSp.of_all (by decide +kernel)
+
+variable {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
+
+theorem copy_ct (hL : L.Ok) (h64 : L.seedLen = 64) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) copyExpanded (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+  have p : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block copyPtr)
+      (Two L g₁ g₂ m₁ m₂ fun u => u.gpr .ecx = L.seed) := by
+    refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
+    · intro t hc _
+      obtain ⟨harg, hp⟩ := copy_arg hc hL ha
+      exact WP.mono (Whole.copyPtr_ok hc harg) fun _ ⟨hu, _, he⟩ => ⟨hu, he.trans hp⟩
+    · intro t hc _
+      obtain ⟨harg, hp⟩ := copy_arg hc hL hb
+      exact WP.mono (Whole.copyPtr_ok hc harg) fun _ ⟨hu, _, he⟩ => ⟨hu, he.trans hp⟩
+  have w : RelCT isa (Two L g₁ g₂ m₁ m₂ fun u => u.gpr .ecx = L.seed) (.block copyDigestWords)
+      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    refine two_wp (RelCT.taint (A := taint) (τr [.esp, .ecx]) (fun a b h => agree_regs fun r hr => ?_)
+      (by native_taint_decide)) ?_ ?_
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact two_esp h
+      · exact h.2.2.1.trans h.2.2.2.symm
+    · intro t hc he
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+        (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
+        fun _ hu => ⟨hu.1, trivial⟩
+    · intro t hc he
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+        (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
+        fun _ hu => ⟨hu.1, trivial⟩
+  exact p.seq w
 
 end VG.Proof.Ed25519.X86.SignCached
