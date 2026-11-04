@@ -17,11 +17,14 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 
 As on ARMv7 (`Proof/RsaPss/Arm/VfBase.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, `salt_len`,
-`any_salt_len`, and the public key's bytes and precomputed words), and its
+`any_salt_len`, the public key's bytes and precomputed words, and the
+tables, as for signing (`SgBase.lean`): the hash function's of `MdHash` at
+`tabH` and MGF1's of `Hash` at `tab`, whose hash function is `g`), and its
 layout (`EP.lay`), with the 100 bytes below the frame that the call of
-`vg_rsa_public_precomputed_checked` (100) and the hash function's calls (48)
-use. `In D P σ`: the state `σ` the body starts from (`in_of_pre`); the
-working space's bound is used in one place, `In.pubScr`.
+`vg_rsa_public_precomputed_checked` (100) and the hash functions' calls (48)
+use. `In D P σ`: the state `σ` the body starts from, for digests of `D`
+bytes (`in_of_pre`, `D` the argument `digest_len`); the working space's bound
+is used in one place, `In.pubScr`.
 
 `VQ F c G`: a piece correct (`wp`) and constant time with nothing after it
 (`ct`), as the end of a body; the pieces after the call are proven over the

@@ -256,8 +256,8 @@ def lenLoad (j : Nat) : List Instr := [ld .edx (arg j), .mov .edx (.mem (at_ .ed
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
-SHA-512). -/
-def lens : List Nat := [20, 28, 32, 48, 64]
+SHA-512, MD5). -/
+def lens : List Nat := [20, 28, 32, 48, 64, 16]
 
 /-- The shape of a hash function with only the digest length `d`, which is
 all the code with the hash function's calls through a table uses of it. -/
