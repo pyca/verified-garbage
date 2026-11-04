@@ -42,9 +42,20 @@ for the interface and the suffix (`vg_argon2_blake2b_avx2_g_avx512`;
 the instance of the baseline variants keeps the plain name, `vg_argon2`).
 Callers of one interface append the suffix alone (`vg_sha256_update_shani`).
 
+A caller may instead take every variant of an interface at once, as a list:
+one that calls whichever of them it is given at run time, through a table
+of functions (`Abi.withTables`), whose contract the emitter checks lists
+every table (`Rust.checkFnTables`). Its file names the interface `All<Iface>`
+(`allOf`), e.g. `VerifiedGarbage/Generic/MdHash/RsaPrivateCrt/AllMdHash/X86_64/RsaOaep.lean`,
+and its `artifacts` takes, in that place, the list of every variant of
+`<Iface>` on `<Target>`, in order of their module names: it is emitted once
+for them all, rather than once for each. So a new variant reaches it, as it
+reaches the callers of one variant, without anyone listing it.
+
 The artifacts emitted include each generic function applied to each variant
 of its interface and target (each combination of a variant of each of its
-interfaces), in order of their module names. What a variant is (its type)
+interfaces, and the list of every variant of each `All` interface), in order
+of their module names. What a variant is (its type)
 is up to the interface, as long as every variant and every generic function
 of it agree, which elaboration checks. Nothing here needs trusting beyond
 the files found: every artifact carries its own proof, and
@@ -166,20 +177,29 @@ def qualifiedName (base : String) (parts : List (String × String)) : String :=
   base ++ String.join (parts.map fun (tag, suffix) =>
     if suffix.isEmpty then "" else "_" ++ tag ++ suffix)
 
+/-- The interface whose variants the interface `i` of a generic function
+takes (`<Iface>.<Target>`), and whether it takes all of them at once, as a
+list: an interface `All<Iface>.<Target>` takes every variant of
+`<Iface>.<Target>`. -/
+def allOf (i : String) : String × Bool :=
+  if i.startsWith "All" then ((i.drop 3).toString, true) else (i, false)
+
 /-- The name of the variable bound to a variant of the `i`th interface of a
 generic function: `v`, then `v2`, `v3`, …. -/
 def varName (i : Nat) : String := if i == 0 then "v" else s!"v{i + 1}"
 
 /-- The artifacts of the generic modules `gens` of the same interfaces and
 target, for each combination of a variant module of each interface, in
-`vars` (one list per interface, in order): one term of type
-`List Artifact`. -/
-def instances (gens : List String) (vars : List (List String)) : String :=
+`vars` (one list per interface, in order, with whether the interface takes
+them all, `allOf`, as one list): one term of type `List Artifact`. -/
+def instances (gens : List String) (vars : List (Bool × List String)) : String :=
   let names := (List.range vars.length).map varName
   let apply (g : String) : String := listOf g ++ String.join (names.map (" " ++ ·))
   let body := "List.flatten [" ++ ", ".intercalate (gens.map apply) ++ "]"
-  (names.zip vars).foldr (fun (v, ms) acc =>
-    s!"(List.flatMap (fun {v} => {acc}) [" ++ ", ".intercalate (ms.map variantOf) ++ "])") body
+  (names.zip vars).foldr (fun (v, all, ms) acc =>
+    let list := "[" ++ ", ".intercalate (ms.map variantOf) ++ "]"
+    if all then s!"((fun {v} => {acc}) {list})"
+    else s!"(List.flatMap (fun {v} => {acc}) {list})") body
 
 /-- The program that emits every artifact: those of each registration
 module `mods`, in order, then each generic function of `gens` applied to
@@ -196,7 +216,7 @@ audits take the rest from the audit records (`TCB/AuditRecords.lean`). -/
 def driver (mods : List String) (gens : List (List String × List String) := [])
     (vars : List (String × List String) := []) : String :=
   let groups := gens.map fun (is, gs) =>
-    (gs, is.map fun i => ((vars.find? (·.1 == i)).map (·.2)).getD [])
+    (gs, is.map fun i => let (b, all) := allOf i; (all, ((vars.find? (·.1 == b)).map (·.2)).getD []))
   -- Each module both ways: `public import` for its declarations, `public meta import`
   -- for its compiled code, which `main` runs.
   let imp (m : String) := s!"public import {m}\npublic meta import {m}\n"
