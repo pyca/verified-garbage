@@ -68,13 +68,18 @@ then incremented by its size. Uniform 64-bit arguments (pointers, `usize`,
 `u64`) are modelled on the stack: Apple's arm64 ABI ("Writing ARM64 code for
 Apple platforms") passes narrower stack arguments in slots of their natural
 size instead, and for 8-byte arguments the two conventions agree. We also
-accept a first 32-bit stack argument followed by a nonempty tail of 64-bit
-arguments. AAPCS64 C.14/C.16/C.17 place the second argument at offset 8;
-Apple uses four bytes for the first argument, then aligns the second to
-eight. The first slot's high half is unspecified and must be ignored.
-The nonempty tail ensures that reading the whole first slot stays within
-the caller's allocated argument area. Other narrow stack layouts remain
-unsupported because the two ABIs may assign different offsets.
+accept 32-bit stack arguments each immediately followed by a 64-bit one
+(`pairedNarrowStack`). AAPCS64 C.14/C.16/C.17 give each argument a slot of 8
+bytes, so the `i`-th is at offset `8 * i`. Apple's ABI puts each argument at
+the next offset of its natural alignment: one of 64 bits ends at a multiple
+of 8, so a 32-bit argument after it (or first) starts at a multiple of 8,
+`8 * i`, takes four bytes, and the 64-bit argument after it is aligned up to
+the next multiple of 8, `8 * (i + 1)`; by induction, every argument is at
+the same offset under both ABIs. A 32-bit slot's high half is unspecified
+and must be ignored. The 64-bit argument after it ensures that reading the
+whole slot stays within the caller's allocated argument area. Other narrow
+stack layouts remain unsupported because the two ABIs may assign different
+offsets.
 Sources: https://github.com/ARM-software/abi-aa/blob/2025Q4/aapcs64/aapcs64.rst
 and https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
 ("Pass arguments to functions correctly"). `abi` only
@@ -89,11 +94,13 @@ def stackArgAddr (s : State) (i : Nat) : Addr := s.sp + BitVec.ofNat 64 (8 * i)
 /-- The `i`-th (from 0) stack argument, on entry. -/
 def stackArg (s : State) (i : Nat) : BitVec 64 := s.mem.readW (stackArgAddr s i) 64
 
-/-- A common stack layout under AAPCS64 and Apple's natural-size slots. -/
-def firstNarrowStack (ws : List Nat) : Bool :=
-  match ws with
-  | 32 :: 64 :: rest => rest.all (· = 64)
-  | _ => false
+/-- A stack layout on which AAPCS64 and Apple's natural-size slots agree:
+arguments of 64 bits, and of 32 bits each immediately followed by one of 64. -/
+def pairedNarrowStack : List Nat → Bool
+  | [] => true
+  | [w] => w = 64
+  | w :: w' :: rest => if w = 64 then pairedNarrowStack (w' :: rest)
+      else w = 32 && w' = 64 && pairedNarrowStack rest
 
 def abi : Abi isa where
   ptrBits := 64
@@ -101,7 +108,7 @@ def abi : Abi isa where
     some fun s => (argRegs.take ws.length).map s.gpr
   else if (ws.drop argRegs.length).all (· = 64) then
     some fun s => argRegs.map s.gpr ++ (List.range (ws.length - argRegs.length)).map (stackArg s)
-  else if firstNarrowStack (ws.drop argRegs.length) then
+  else if pairedNarrowStack (ws.drop argRegs.length) then
     some fun s => argRegs.map s.gpr ++ (List.range (ws.length - argRegs.length)).map (stackArg s)
   else none
   argArea ws s := let n := ws.length - argRegs.length
