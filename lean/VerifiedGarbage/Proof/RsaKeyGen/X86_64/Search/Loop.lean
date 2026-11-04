@@ -72,7 +72,8 @@ theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSe
       obtain ⟨x, rest⟩ := pr
       cases x with
       | prime c =>
-        exact WP.mono (search_accept hu hcu hr hres) fun t hd => .inr ⟨hd.status_ne, hd⟩
+        exact WP.mono (search_accept hu hcu hr hres) fun t hd =>
+          .inr ⟨hd.status_ne, fun ⟨_, hs, _⟩ => by simp [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at hs, hd⟩
       | close => rw [hres] at h1; cases h1
       | rejected => rw [hres] at h1; cases h1
   · refine WP.seq (WP.mono (test_rax u hra h4) fun v ⟨⟨hrv, he0, hmv⟩, kv⟩ => ?_)
@@ -81,7 +82,9 @@ theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSe
     refine WP.ite _ he0 (fun h0 => ?_) (fun h0 => ?_)
     · have h0 := of_decide_eq_true h0
       cases hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) with
-      | none => exact WP.mono (search_short hv hcv hr hres) fun t hd => .inr ⟨hd.status_ne, hd⟩
+      | none =>
+        refine WP.mono (search_short hv hcv hr hres) fun t hd => .inr ⟨hd.status_ne, fun ⟨_, hs, _⟩ => ?_, hd⟩
+        simp [candStatus, hres, Spec.RsaKeyGen.candidateStatus] at hs
       | some pr =>
         obtain ⟨x, rest⟩ := pr
         cases x <;> (rw [hres] at h0; cases h0)
@@ -103,9 +106,10 @@ theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSe
 /-! ## An iteration -/
 
 /-- What an iteration leaves, with the loop's condition. -/
-def LoopStep (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used : Nat) (t : State) : Prop :=
-  (eval .e t = some true ∧ ∃ u k, used < u ∧ SearchIter p original final u k t) ∨
-    (eval .e t = some false ∧ SearchDone p original final t)
+def LoopStep (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  (eval .e t = some true ∧ ContinuePost p original final used remaining t) ∨
+    (eval .e t = some false ∧ ¬Continues p original used remaining ∧ SearchDone p original final t)
 
 theorem iter_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) :
@@ -123,9 +127,9 @@ theorem iter_guard {p : SearchPublic} {original s : State} {used remaining : Nat
 
 theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchResult} {used : Nat}
     {remaining : Nat} (h : IterPost p original final used remaining s) :
-    WP isa (.block [.mov .rax (.mem (field 17)), .alu .cmp .rax (.imm 4)]) s (LoopStep p original final used) := by
+    WP isa (.block [.mov .rax (.mem (field 17)), .alu .cmp .rax (.imm 4)]) s (LoopStep p original final used remaining) := by
   have hregs : s.gpr .r12 = p.F ∧ ∃ o : State, SearchInput p o ∧ s.wr = p.frame :: o.wr := by
-    rcases h with ⟨-, _, _, -, ⟨hi, -⟩, -⟩ | ⟨-, hd⟩
+    rcases h with ⟨-, -, _, _, -, ⟨hi, -⟩, -⟩ | ⟨-, -, hd⟩
     · exact ⟨hi.r12, _, hi.input, hi.wr⟩
     · exact ⟨hd.r12, _, hd.input, hd.wr⟩
   obtain ⟨hr12, o, hi, hw⟩ := hregs
@@ -137,9 +141,9 @@ theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchRe
     t.mem = s.mem) (by
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, hr12, hl, h4]) rfl) fun t ⟨⟨he, hm⟩, k⟩ => ?_
   rw [sub_beq_zero] at he
-  rcases h with ⟨h17, u, k', hlt, hit, -⟩ | ⟨h17, hd⟩
-  · exact .inl ⟨by rw [he, h17]; rfl, u, k', hlt, hit.keep k hm (by decide)⟩
-  · refine .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], ?_⟩
+  rcases h with ⟨h17, hc⟩ | ⟨h17, hn, hd⟩
+  · exact .inl ⟨by rw [he, h17]; rfl, hc.keep k hm (by decide)⟩
+  · refine .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], hn, ?_⟩
     exact ⟨hd.input, k.2.1.trans hd.rd, k.2.2.trans hd.wr, (k.gpr (by decide)).trans hd.rsp,
       (k.gpr (by decide)).trans hd.r12, fun r hr hn hs => (k.gpr (by cases r <;> simp_all [calleeSaved])).trans
         (hd.saved r hr hn hs), by rw [hm]; exact hd.savedR12, by rw [hm]; exact hd.usedPtr,
@@ -149,7 +153,7 @@ theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchRe
 
 theorem search_iteration (v : RoundImpl) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
     {used remaining : Nat} (h : SearchIter p original final used remaining s) :
-    WP isa (iteration (candidateCall v)) s (LoopStep p original final used) := by
+    WP isa (iteration (candidateCall v)) s (LoopStep p original final used remaining) := by
   unfold iteration
   change WP isa (.seq _ (.seq _ _)) s _
   refine WP.seq (WP.mono (iter_guard h.1) fun u ⟨⟨he, hmu⟩, ku⟩ => ?_)
@@ -161,7 +165,7 @@ theorem search_iteration (v : RoundImpl) {p : SearchPublic} {original s : State}
     unfold tailOf at hfinal
     rw [VG.Proof.RsaKeyGen.Search.search_zero] at hfinal
     exact WP.mono (search_exhausted hl (result := final) (by rw [hfinal]; rfl)) fun t hd =>
-      iter_test (remaining := 0) (.inr ⟨hd.status_ne, hd⟩)
+      iter_test (.inr ⟨hd.status_ne, fun ⟨h, _⟩ => h rfl, hd⟩)
   · have hz := of_decide_eq_false hz
     refine WP.seq (WP.mono (search_candidate_run v hu.1) fun t ⟨ht, hc⟩ => ?_)
     exact WP.mono (search_classify ⟨ht, hu.2⟩ hc hz) fun _ hp => iter_test hp
@@ -174,7 +178,7 @@ theorem search_loop (v : RoundImpl) {p : SearchPublic} {original s : State} {fin
     (p.randLen - used + 1) s ⟨used, remaining, rfl, h⟩
   rintro n t ⟨u, k, rfl, ht⟩
   refine WP.mono (search_iteration v ht) fun t' hs => ?_
-  rcases hs with ⟨he, u', k', hlt, ht'⟩ | ⟨he, hd⟩
+  rcases hs with ⟨he, -, u', k', hlt, ht', -⟩ | ⟨he, -, hd⟩
   · have hle := ht'.1.used_le
     exact .inr ⟨he, _, by omega, u', k', rfl, ht'⟩
   · exact .inl ⟨he, hd⟩

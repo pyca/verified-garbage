@@ -29,6 +29,7 @@ namespace VG.Proof.RsaKeyGen.X86_64.Search
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.MillerRabin.X86_64
 open VG.Impl.RsaKeyGen.X86_64.Search
+open VG.Spec.RsaKeyGen (PrimeSearchResult)
 
 structure SearchPoint where
   inputs : SearchPublic
@@ -430,5 +431,160 @@ theorem search_candidate_run_ct (v : RoundImpl) :
     (search_call_ct v)).mono ?_ (fun _ _ h => h)
   rintro _ _ ⟨s, t, ⟨q, h₁, h₂⟩, rfl, rfl⟩
   exact ⟨q, ⟨s, h₁, rfl⟩, ⟨t, h₂, rfl⟩⟩
+
+/-! ## An iteration -/
+
+/-- Whether the search goes on past the point's candidate. -/
+def SearchPoint.continues (q : SearchPoint) : Prop :=
+  q.remaining ≠ 0 ∧ (q.status = 2 ∨ q.status = 3) ∧ q.cand ≠ 0
+
+/-- The point past the candidate, when the search goes on. -/
+def SearchPoint.next (q : SearchPoint) : SearchPoint :=
+  ⟨q.inputs, q.used + q.cand, if q.status = 2 then q.remaining else q.remaining - 1,
+    q.trace.drop (q.leak.length + 1)⟩
+
+theorem SearchCTL.status {q : SearchPoint} {original : State}
+    (ht : (tailOf q.inputs original q.used q.remaining).trace = q.trace) (hr : q.remaining ≠ 0) :
+    candStatus q.inputs original q.used = q.status := by
+  rw [candStatus, VG.Proof.RsaKeyGen.Search.status_of_leak, SearchCTL.leak ht hr]
+
+theorem continues_iff {q : SearchPoint} {original s : State}
+    (hl : SearchLive q.inputs original q.used q.remaining s)
+    (ht : (tailOf q.inputs original q.used q.remaining).trace = q.trace) :
+    Continues q.inputs original q.used q.remaining ↔ q.continues := by
+  by_cases hr : q.remaining = 0
+  · simp [Continues, SearchPoint.continues, hr]
+  · rw [Continues, SearchPoint.continues, SearchCTL.status ht hr, CandCT.used hl ht hr]
+
+theorem ctl_next {q : SearchPoint} {original s t : State} {final : PrimeSearchResult}
+    (hl : SearchLive q.inputs original q.used q.remaining s)
+    (ht : (tailOf q.inputs original q.used q.remaining).trace = q.trace)
+    (hc : ContinuePost q.inputs original final q.used q.remaining t) : SearchCTL q.next t := by
+  obtain ⟨hr, u, k, -, hi, hu, hk, htail⟩ := hc
+  have hs := SearchCTL.status ht hr
+  have hcu := CandCT.used hl ht hr
+  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega
+  have hk' : q.next.remaining = k := by
+    simp only [SearchPoint.next]
+    rcases hk with ⟨rfl, h2⟩ | ⟨rfl, h3⟩
+    · rw [hs] at h2; simp [h2]
+    · rw [hs] at h3; simp [h3]
+  refine ⟨original, ?_, ?_⟩
+  · rw [hu', hk']; exact hi.1
+  · have htr := congrArg Spec.Entropy.Result.trace htail
+    rw [ht] at htr
+    simp only [Spec.Entropy.Result.consume] at htr
+    have hL := SearchCTL.leak ht hr
+    show _ = q.trace.drop (q.leak.length + 1)
+    rw [hu', hk', htr, VG.Proof.RsaKeyGen.Search.entry, hL]
+    simp
+    rfl
+
+/-- After an iteration: the next point and the loop's condition, or its end. -/
+def SearchCTStep (q : SearchPoint) (t : State) : Prop :=
+  (q.continues ∧ eval .e t = some true ∧ SearchCTL q.next t) ∨ (¬q.continues ∧ eval .e t = some false)
+
+theorem search_ct_step (v : RoundImpl) (q : SearchPoint) (s : State) (h : SearchCTL q s) :
+    WP isa (iteration (candidateCall v)) s (SearchCTStep q) := by
+  obtain ⟨o, hl, ht⟩ := h
+  refine WP.mono (search_iteration v (final := (tailOf q.inputs o q.used q.remaining).consume q.used [])
+    ⟨hl, [], rfl⟩) fun t hs => ?_
+  rcases hs with ⟨he, hc⟩ | ⟨he, hn, -⟩
+  · exact .inl ⟨(continues_iff hl ht).mp hc.continues, he, ctl_next hl ht hc⟩
+  · exact .inr ⟨fun h => hn ((continues_iff hl ht).mpr h), he⟩
+
+/-- The loop state with the guard's flag. -/
+def GuardCT (q : SearchPoint) (s : State) : Prop :=
+  SearchCTL q s ∧ eval .e s = some (decide (q.remaining = 0))
+
+private theorem guard_ready (q : SearchPoint) (s : State) (h : SearchCTL q s) :
+    WP isa (.block [.mov .rax (.mem (field 0)), .alu .test .rax (.reg .rax)]) s (GuardCT q) := by
+  obtain ⟨o, hl, ht⟩ := h
+  exact WP.mono (iter_guard hl) fun t ⟨⟨he, hm⟩, k⟩ => ⟨⟨o, hl.keep k hm (by decide), ht⟩, he⟩
+
+/-- The branch leaves r12 at the frame. -/
+theorem search_branch (v : RoundImpl) {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : SearchIter p original final used remaining s)
+    (he : eval .e s = some (decide (remaining = 0))) :
+    WP isa (.ite .e exhausted (.seq (candidateRun (candidateCall v)) classify)) s
+      fun t => t.gpr .r12 = p.F := by
+  refine WP.ite _ he (fun hz => ?_) (fun hz => ?_)
+  · have hz := of_decide_eq_true hz
+    subst hz
+    obtain ⟨hl, tr, hfinal⟩ := h
+    unfold tailOf at hfinal
+    rw [VG.Proof.RsaKeyGen.Search.search_zero] at hfinal
+    exact WP.mono (search_exhausted hl (result := final) (by rw [hfinal]; rfl)) fun t hd => hd.r12
+  · have hz := of_decide_eq_false hz
+    refine WP.seq (WP.mono (search_candidate_run v h.1) fun t ⟨ht, hc⟩ => ?_)
+    refine WP.mono (search_classify ⟨ht, h.2⟩ hc hz) fun _ hp => ?_
+    rcases hp with ⟨-, -, _, _, -, ⟨hi, -⟩, -⟩ | ⟨-, -, hd⟩
+    exacts [hi.r12, hd.r12]
+
+private theorem ready_of_guard {q : SearchPoint} {s : State} (h : GuardCT q s ∧ eval .e s = some false) :
+    ReadyCT q s := by
+  refine ⟨h.1.1, fun h0 => ?_⟩
+  have := h.1.2.symm.trans h.2
+  simp [h0] at this
+
+private theorem cand_ready (v : RoundImpl) (q : SearchPoint) (s : State) (h : ReadyCT q s) :
+    WP isa (candidateRun (candidateCall v)) s (CandCT q) :=
+  let ⟨⟨o, hl, ht⟩, hr⟩ := h
+  WP.mono (search_candidate_run v hl) fun _ ⟨hl', hc⟩ => ⟨o, hl', hc, ht, hr⟩
+
+private theorem branch_ct (v : RoundImpl) :
+    RelCT isa (Two GuardCT) (.ite .e exhausted (.seq (candidateRun (candidateCall v)) classify))
+      (fun _ _ => True) := by
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+  · exact two_map (fun q => q.inputs) (fun _ _ h => h.1.1.any) search_exhausted_ct
+  · refine RelCT.seq ((two_post (search_candidate_run_ct v) (cand_ready v)).mono
+      (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, ready_of_guard h₁, ready_of_guard h₂⟩) fun _ _ h => h) ?_
+    exact search_classify_ct
+
+theorem search_iteration_ct (v : RoundImpl) :
+    RelCT isa (Two SearchCTL) (iteration (candidateCall v)) (fun _ _ => True) := by
+  unfold iteration
+  change RelCT isa _ (.seq _ (.seq _ _)) _
+  refine RelCT.seq (two_piece [.r12, .rsp] search_ctl_pins (by taint_decide) guard_ready) ?_
+  exact RelCT.seq (two_post (branch_ct v) (Ψ := fun q t => t.gpr .r12 = q.inputs.F)
+      fun q u h => let ⟨⟨_, hl, _⟩, he⟩ := h; search_branch v ⟨hl, [], rfl⟩ he)
+    (two_taint [.r12] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact h₁.trans h₂.symm) (by taint_decide))
+
+/-! ## The loop -/
+
+private def LoopPair (n : Nat) (s t : State) : Prop :=
+  ∃ q : SearchPoint, n = q.inputs.randLen - q.used + 1 ∧ SearchCTL q s ∧ SearchCTL q t
+
+private theorem iteration_pair (v : RoundImpl) (n : Nat) :
+    RelCT isa (LoopPair n) (iteration (candidateCall v)) fun s t =>
+      eval .e s = eval .e t ∧ (eval .e s = some false → True) ∧
+      (eval .e s = some true → ∃ m < n, LoopPair m s t) := by
+  have hw (q : SearchPoint) (s : State) (h : n = q.inputs.randLen - q.used + 1 ∧ SearchCTL q s) :
+      WP isa (iteration (candidateCall v)) s fun t => n = q.inputs.randLen - q.used + 1 ∧ SearchCTStep q t :=
+    WP.mono (search_ct_step v q s h.2) fun _ ht => ⟨h.1, ht⟩
+  have hc := two_post ((search_iteration_ct v).mono
+    (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.2, h₂.2⟩) (fun _ _ h => h)) hw
+  refine hc.mono (fun _ _ ⟨q, hn, h₁, h₂⟩ => ⟨q, ⟨hn, h₁⟩, hn, h₂⟩) ?_
+  rintro s t ⟨q, ⟨hn, h₁⟩, _, h₂⟩
+  rcases h₁ with ⟨hb, e₁, c₁⟩ | ⟨hb, e₁⟩ <;> rcases h₂ with ⟨hb', e₂, c₂⟩ | ⟨hb', e₂⟩
+  · refine ⟨e₁.trans e₂.symm, fun _ => trivial, fun _ => ⟨_, ?_, q.next, rfl, c₁, c₂⟩⟩
+    obtain ⟨o, hl, _⟩ := c₁
+    have hle := hl.used_le
+    have hcand := hb.2.2
+    simp only [SearchPoint.next] at hle ⊢
+    omega
+  · exact absurd hb hb'
+  · exact absurd hb' hb
+  · exact ⟨e₁.trans e₂.symm, fun _ => trivial, fun h => by rw [e₁] at h; cases h⟩
+
+theorem search_loop_ct (v : RoundImpl) :
+    RelCT isa (Two SearchCTL) (.loop (iteration (candidateCall v)) .e) (fun _ _ => True) := by
+  intro s t tr₁ tr₂ u₁ u₂ ⟨q, hs, ht⟩ he₁ he₂
+  exact RelCT.loop (M := isa) (body := iteration (candidateCall v)) (c := .e)
+    (Q := fun _ _ => True) LoopPair (iteration_pair v) (q.inputs.randLen - q.used + 1)
+    _ _ _ _ _ _ ⟨q, rfl, hs, ht⟩ he₁ he₂
 
 end VG.Proof.RsaKeyGen.X86_64.Search

@@ -238,17 +238,42 @@ abbrev candUsed (p : SearchPublic) (original : State) (used : Nat) : Nat :=
   | some (_, rest) => (p.randLen - used) - rest.length
   | none => 0
 
-/-- What an iteration leaves: the search goes on (status 4) past its
-candidate, or it is finished. -/
-def IterPost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+/-- Whether the search goes on past its candidate: one was run, rejected
+(too close, or counted), and it consumed something. -/
+def Continues (p : SearchPublic) (original : State) (used remaining : Nat) : Prop :=
+  remaining ≠ 0 ∧ (candStatus p original used = 2 ∨ candStatus p original used = 3) ∧
+    candUsed p original used ≠ 0
+
+/-- The loop state past a candidate rejected from `used`, with the next
+offset and count, and the search from `used` in terms of the one from there. -/
+def ContinuePost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
     (t : State) : Prop :=
-  (word t.mem p.F (8 * 17) = 4 ∧ ∃ u k, used < u ∧ SearchIter p original final u k t ∧
+  remaining ≠ 0 ∧ ∃ u k, used < u ∧ SearchIter p original final u k t ∧
     u = used + candUsed p original used ∧
     ((k = remaining ∧ candStatus p original used = 2) ∨ (k = remaining - 1 ∧ candStatus p original used = 3)) ∧
     tailOf p original used remaining =
       (tailOf p original u k).consume (u - used)
-        (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used))) ∨
-    (word t.mem p.F (8 * 17) ≠ 4 ∧ SearchDone p original final t)
+        (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used))
+
+theorem ContinuePost.continues {p : SearchPublic} {original t : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : ContinuePost p original final used remaining t) :
+    Continues p original used remaining := by
+  obtain ⟨hr, u, k, hlt, -, hu, hk, -⟩ := h
+  exact ⟨hr, hk.elim (fun h => .inl h.2) (fun h => .inr h.2), by omega⟩
+
+theorem ContinuePost.keep {p : SearchPublic} {original s t : State} {final : PrimeSearchResult}
+    {used remaining : Nat} (h : ContinuePost p original final used remaining s) {rs : List Reg}
+    (k : Keep rs s t) (hm : t.mem = s.mem) (hregs : ∀ reg ∈ calleeSaved, reg ∉ rs) :
+    ContinuePost p original final used remaining t :=
+  let ⟨hr, u, k', hlt, hi, rest⟩ := h
+  ⟨hr, u, k', hlt, ⟨hi.1.keep k hm hregs, hi.2⟩, rest⟩
+
+/-- What an iteration leaves: the search goes on (status 4) past its
+candidate, or it is finished. -/
+def IterPost (p : SearchPublic) (original : State) (final : PrimeSearchResult) (used remaining : Nat)
+    (t : State) : Prop :=
+  (word t.mem p.F (8 * 17) = 4 ∧ ContinuePost p original final used remaining t) ∨
+    (word t.mem p.F (8 * 17) ≠ 4 ∧ ¬Continues p original used remaining ∧ SearchDone p original final t)
 
 theorem search_load_used {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s) :
@@ -670,7 +695,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
       · rw [VG.Proof.RsaKeyGen.Search.search_rejected hr hres, ite_eq_right_of_eq_false _ _ (eq_false hlt)]
     rw [htail] at hfinal
     refine WP.mono (search_exhausted ht (result := final) (by rw [hfinal]; rfl)) fun t' hd => ?_
-    exact .inr ⟨hd.status_ne, hd⟩
+    exact .inr ⟨hd.status_ne, fun ⟨_, _, h⟩ => h hz, hd⟩
   · have hz := of_decide_eq_false hz
     have hu0 : candUsed p original used ≠ 0 := hz
     have hpast := tail_past (u := candUsed p original used) hr hres hx hcu hu0
@@ -716,7 +741,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         · simp only [reduceCtorEq, ↓reduceIte] at hb; cases hb
       subst hxc
       simp only [↓reduceIte] at hfinal
-      exact WP.block_nil (.inl ⟨h17, _, remaining, by omega, ⟨hvl, _, hfinal⟩, rfl, .inl ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+      exact WP.block_nil (.inl ⟨h17, hr, _, remaining, by omega, ⟨hvl, _, hfinal⟩, rfl, .inl ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
         by rw [hpast, Nat.add_sub_cancel_left]; simp only [↓reduceIte]⟩)
     · -- Rejected: one fewer counted candidate.
       have hxr : x = .rejected := by
@@ -743,7 +768,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         all_goals exact hvl.slot (by simp [SearchPublic.headers])
       have h17w : word w.mem p.F (8 * 17) = 4 := by
         rw [hmw, writeFrame_word _ _ _ (fun e he => (hb0 e he).1) 17 (by decide)]; exact h17
-      exact .inl ⟨h17w, _, remaining - 1, by omega, ⟨hwl, _, hfinal⟩, rfl, .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+      exact .inl ⟨h17w, hr, _, remaining - 1, by omega, ⟨hwl, _, hfinal⟩, rfl, .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
         by rw [hpast, Nat.add_sub_cancel_left]; simp only [reduceCtorEq, ↓reduceIte]⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Search
