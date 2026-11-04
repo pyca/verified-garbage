@@ -593,4 +593,40 @@ theorem count_ok {p : SearchPublic} {original s : State} {used remaining : Nat}
   xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, BitVec.add_zero,
     h.r12, hl0, h0, hs0, h1]
 
+theorem SearchDone.status_ne {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    (h : SearchDone p original final s) : word s.mem p.F (8 * 17) ≠ 4 := by
+  rw [h.status]
+  intro he
+  have := congrArg BitVec.toNat he
+  rw [ofNat_toNat_lt (by
+    unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide)] at this
+  revert this
+  unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status
+  split <;> decide
+
+/-- A candidate rejected, too close or otherwise, at `used`: the search from
+there is the search from after it. -/
+theorem tail_past {p : SearchPublic} {original : State} {used remaining u : Nat} {x : Spec.RsaKeyGen.Candidate}
+    {rest : List Byte} (hr : remaining ≠ 0)
+    (hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) =
+      some (x, rest))
+    (hx : x = .close ∨ x = .rejected) (hu : u = ((searchRand original).drop used).length - rest.length)
+    (hu0 : u ≠ 0) :
+    tailOf p original used remaining =
+      (tailOf p original (used + u) (if x = .close then remaining else remaining - 1)).consume u
+        (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used)) := by
+  obtain ⟨n, hn, -, hrest⟩ := Search.candidateOp_suffix hres
+  have hun : u = n := by
+    rw [hu, hrest]; simp only [List.length_drop] at hn ⊢; omega
+  have hl : rest.length < ((searchRand original).drop used).length := by
+    rw [hrest]; simp only [List.length_drop] at hn ⊢; omega
+  have hu' : ((searchRand original).drop used).length - rest.length = u := hu.symm
+  have hd : rest = (searchRand original).drop (used + u) := by rw [hrest, List.drop_drop, hun]
+  unfold tailOf
+  rcases hx with rfl | rfl
+  · rw [VG.Proof.RsaKeyGen.Search.search_close hr hres, ite_eq_left_of_eq_true _ _ (eq_true hl), hu', hd]
+    simp only [↓reduceIte]
+  · rw [VG.Proof.RsaKeyGen.Search.search_rejected hr hres, ite_eq_left_of_eq_true _ _ (eq_true hl), hu', hd]
+    simp only [reduceCtorEq, ↓reduceIte]
+
 end VG.Proof.RsaKeyGen.X86_64.Search
