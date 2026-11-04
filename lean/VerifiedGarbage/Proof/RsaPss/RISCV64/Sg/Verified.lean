@@ -50,7 +50,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 /-- The checks passed, in terms of the anchor. -/
 structure Ck (D : Nat) (a : State) : Prop where
   h0 : a.mem (a.gpr .a2) ≠ 0
-  fit : D + (stackArg a 10).toNat + 2 ≤ kk a - loN a
+  fit : D + (stackArg a 11).toNat + 2 ≤ kk a - loN a
   k2 : kk a ≤ 1024
 
 /-- `Base` and the saved arguments from an entry state with the anchor's
@@ -83,14 +83,14 @@ theorem Spilled.ofAnchor {a s : State} (p : PubK a s) {m : Mem} (h : Spilled a m
 theorem ss_eq {a s : State} (p : PubK a s) : Ss s = Ss a := p.1.args 11 (by decide)
 
 theorem ck_s {a s : State} (p : PubK a s) (C : Ck D a) :
-    s.mem (s.gpr .a2) ≠ 0 ∧ D + (stackArg s 10).toNat + 2 ≤ kk s - loN s := by
+    s.mem (s.gpr .a2) ≠ 0 ∧ D + (stackArg s 11).toNat + 2 ≤ kk s - loN s := by
   rw [p.1.byte p.2, p.1.pLoN p.2, p.1.pKk, p.1.args 10 (by decide)]; exact ⟨C.h0, C.fit⟩
 
 /-- A step keeping `Base` and the saved arguments, from the entry state of a
 run. -/
 theorem M.step {c : Prog isa} {a t : State} (h : M D a t)
     (k : ∀ s, PreS D s → PubK a s → Base Ss vS s t → Spilled s t.mem → s.mem (s.gpr .a2) ≠ 0 →
-      D + (stackArg s 10).toNat + 2 ≤ kk s - loN s → WP isa c t fun t' => Base Ss vS s t' ∧ Spilled s t'.mem) :
+      D + (stackArg s 11).toNat + 2 ≤ kk s - loN s → WP isa c t fun t' => Base Ss vS s t' ∧ Spilled s t'.mem) :
     WP isa c t (M D a) :=
   let ⟨⟨s, P, p, b, sp⟩, C⟩ := h
   WP.mono (k s P p b sp (ck_s p C).1 (ck_s p C).2) fun _ ⟨b', sp'⟩ => ⟨⟨s, P, p, b', sp'⟩, C⟩
@@ -114,8 +114,8 @@ theorem pins3 {α : Type} {Φ : α → State → Prop} {an : α → State} (hb :
 theorem copySalt_ct (d : State → Nat) :
     RelCT isa (Two fun a t => M D a t ∧ t.gpr .a1 = off (Ss a) (d a)) copySalt fun _ _ => True := by
   unfold copySalt
-  refine two_seq (Ψ := fun a t => M D a t ∧ t.gpr .a4 = stackArg a 9 ∧ t.gpr .a1 = off (Ss a) (d a) ∧
-      t.gpr .a5 = stackArg a 10) (saltArgs_taint (mpin (fun _ _ h => h.1.1.bs) []))
+  refine two_seq (Ψ := fun a t => M D a t ∧ t.gpr .a4 = stackArg a 10 ∧ t.gpr .a1 = off (Ss a) (d a) ∧
+      t.gpr .a5 = stackArg a 11) (saltArgs_taint (mpin (fun _ _ h => h.1.1.bs) []))
     (fun a t ⟨⟨⟨s, P, p, b, sp⟩, C⟩, h1⟩ => ldArg_ok P b (r := .a4) (j := 9) (by decide) fun t₂ o₂ e₂ =>
       wp_mov fun t₃ o₃ e₃ => wp_nil ?_) ?_
   · have k₃ : Only [.t6, .a4, .a5] t t₃ := (o₂.trans o₃).mono
@@ -173,7 +173,7 @@ omit hD0 in
 /-- `0x01` and the salt in `EM`, in both runs. -/
 theorem putSalt_ct : RelCT isa (Two (M D)) (putSalt H) fun _ _ => True := by
   unfold putSalt
-  let d := fun (a : State) => kk a - (stackArg a 10).toNat - D - 1
+  let d := fun (a : State) => kk a - (stackArg a 11).toNat - D - 1
   refine two_seq (Ψ := fun a t => M D a t ∧ t.gpr .a1 = off (Ss a) (d a))
     (saltHead_taint H (mpin (fun _ _ h => h.1.bs) [.s0, .s1, .s4]))
     (fun a t ⟨⟨s, P, p, b, sp⟩, C⟩ => ?_) (copySalt_ct d)
@@ -234,17 +234,17 @@ theorem main_ct : RelCT isa (Two (M Gs.len)) (signMain H) fun _ _ => True := by
   refine two_seq (Ψ := M Gs.len) (mPrime_ct hGl.symm hD0 hD64) (fun a t h => mPrime_wp hGl.symm hD0 hD64 h) ?_
   -- `H`.
   refine two_seq (Ψ := M Gs.len)
-    (two_seq (Ψ := fun a t => M Gs.len a t ∧ t.gpr .s6 = stackArg a 10)
+    (two_seq (Ψ := fun a t => M Gs.len a t ∧ t.gpr .s6 = stackArg a 11)
       (hashArg_taint (mpin (fun _ _ h => h.1.bs) []))
       (fun a t ⟨⟨s, P, p, b, sp⟩, C⟩ => wp_mov fun t₁ o₁ e₁ => wp_nil
         ⟨⟨⟨s, P, p, b.only (fits P) o₁, by rw [o₁.mem]; exact sp⟩, C⟩, by rw [e₁, Base.ssl b, p.1.args 10 (by decide)]⟩)
-      ((hashFixedG_ct (signOk Gs.len) hH cH hF hGl.symm (fun a => stackArg a 10)).mono
+      ((hashFixedG_ct (signOk Gs.len) hH cH hF hGl.symm (fun a => stackArg a 11)).mono
         (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁.1.1.bs, h₁.2, by have := h₁.1.2.fit; have := h₁.1.2.k2; omega⟩,
           ⟨h₂.1.1.bs, h₂.2, by have := h₂.1.2.fit; have := h₂.1.2.k2; omega⟩⟩) fun _ _ h => h))
     (fun a t h => h.step fun s P p b sp _ hf => by
       unfold hashM
       exact WP.seq (wp_mov fun t₁ o₁ e₁ => wp_nil (WP.mono
-        (hashFixedG_ok (fits P) hH hF hGl.symm (sl := (stackArg s 10).toNat) (by rw [e₁, Base.ssl b, ofNat_toNat])
+        (hashFixedG_ok (fits P) hH hF hGl.symm (sl := (stackArg s 11).toNat) (by rw [e₁, Base.ssl b, ofNat_toNat])
           (b.only (fits P) o₁) (by have := P.k2; unfold kk at hf; omega)) fun _ ⟨b', _, s', _⟩ =>
           ⟨b', (show Spilled s t₁.mem by rw [o₁.mem]; exact sp).same s' (by simp; omega)⟩))) ?_
   -- `EM`.
@@ -314,7 +314,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     exact ⟨s, P, p, E, h0, by rw [p.1.pKk, p.1.pLoN p.2]; omega⟩
   -- The salt's length.
   refine two_seq (Ψ := fun a t => E2 a t ∧
-      (t.gpr .a0 != 0) = decide (kk a - loN a - (H.D + 2) < (stackArg a 10).toNat))
+      (t.gpr .a0 != 0) = decide (kk a - loN a - (H.D + 2) < (stackArg a 11).toNat))
     (chkSalt_taint H (pin (fun _ _ h => let ⟨s, P, p, E, _⟩ := e2 h; ⟨s, P, p, E⟩) [] (by decide)))
     (fun a t h => ?_) ?_
   · obtain ⟨s, P, p, E, h0, hem⟩ := e2 h
@@ -323,10 +323,10 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
   refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.2, h₂.2])
     (fail_taint (pin (fun _ _ h => let ⟨s, P, p, E, _⟩ := h.1.1; ⟨s, P, p, E⟩) _ (by decide))) ?_
   have e4 : ∀ {a t : State}, (E2 a t ∧
-      (t.gpr .a0 != 0) = decide (kk a - loN a - (H.D + 2) < (stackArg a 10).toNat)) ∧
+      (t.gpr .a0 != 0) = decide (kk a - loN a - (H.D + 2) < (stackArg a 11).toNat)) ∧
       isa.eval (.nonzero .a0) t = some false → M Gs.len a t := fun {a t} ⟨⟨⟨s, P, p, E, h0, hem⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
-    have hn : ¬ kk a - loN a - (H.D + 2) < (stackArg a 10).toNat := by simpa using hc
+    have hn : ¬ kk a - loN a - (H.D + 2) < (stackArg a 11).toNat := by simpa using hc
     have k2 : kk s ≤ 1024 := P.k2
     rw [p.1.byte p.2, p.1.pKk, p.1.pLoN p.2] at *
     exact ⟨⟨s, P, p, E.base, E.sp⟩, ⟨h0, by omega, k2⟩⟩

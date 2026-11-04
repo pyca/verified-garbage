@@ -57,12 +57,12 @@ def psa (s : State) : Nat → BitVec 64
   | 0 => s.gpr .a6
   | 1 => s.gpr .a7
   | 10 => Ss s + BitVec.ofNat 64 oRsa
-  | 11 => BitVec.ofNat 64 ((stackArg s 12).toNat - 1024)
+  | 11 => BitVec.ofNat 64 ((stackArg s 13).toNat - 1024)
   | i + 2 => stackArg s i
 
 /-- `EM`, and the private operation's part of `scratch`. -/
 abbrev emR (s : State) : Region := ⟨off (Ss s) 0, kk s⟩
-abbrev rsR (s : State) : Region := ⟨Ss s + BitVec.ofNat 64 oRsa, ((stackArg s 12).toNat - 1024) * 8⟩
+abbrev rsR (s : State) : Region := ⟨Ss s + BitVec.ofNat 64 oRsa, ((stackArg s 13).toNat - 1024) * 8⟩
 
 /-- The private operation's frame, below its stack arguments. -/
 abbrev pkR (s : State) : Region := ⟨kb s, Impl.Rsa.RISCV64.Priv.frameBytes⟩
@@ -122,9 +122,9 @@ theorem pb_top : pb s + BitVec.ofNat 64 (privBytes + frameBytes) = s.sp := by
     privBytes] at *
   omega
 
-theorem sl_sub : stackArg s 12 - BitVec.ofNat 64 1024 = BitVec.ofNat 64 ((stackArg s 12).toNat - 1024) := by
+theorem sl_sub : stackArg s 13 - BitVec.ofNat 64 1024 = BitVec.ofNat 64 ((stackArg s 13).toNat - 1024) := by
   have := scLen P; unfold oRsa at this
-  have := (stackArg s 12).isLt
+  have := (stackArg s 13).isLt
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   omega
@@ -173,7 +173,7 @@ theorem Spilled.pb {m m' : Mem} (sp : Spilled s m) (hf : Frame [PB s] m m') : Sp
 
 /-- A load of our stack argument `j` through `t6`, with memory changed only
 in the stack the function uses and our part of `scratch`. -/
-theorem wp_argS {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 13)
+theorem wp_argS {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 16)
     (h6 : t.gpr .t6 = s.sp) (hrd : t.rd = s.rd) (hm : Frame [kS s, SC Ss s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :
@@ -338,7 +338,7 @@ theorem privArgs_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem) {em 
     (by rw [O₃.wr, vwr]; exact pb_in (by decide)) (fun x₄ m₄ => ?_) (by decide)
   have f₄' : Frame [PB s] t.mem x₄.mem := by
     rw [m₄.mem, O₃.mem]; exact fv.writeW (List.mem_singleton_self _) _ (inPB (by decide))
-  refine wp_argS P (j := 12) (by decide) (by rw [m₄.gpr, O₃.get .t6, v6]) (m₄.rd.trans (O₃.rd.trans vrd))
+  refine wp_argS P (j := 13) (by decide) (by rw [m₄.gpr, O₃.get .t6, v6]) (m₄.rd.trans (O₃.rd.trans vrd))
     (toS f₄') (fun x₅ o₅ e₅ => wp_subi (imm := 1024) (fun x₆ o₆ e₆ => ?_) (by decide))
   have K₆' : Kept [.t1] v x₆ := (O₃.keep.trans (m₄.keep.trans (o₅.keep.trans o₆.keep))).mono
   refine wp_sd (a := pb s + BitVec.ofNat 64 88) (by rw [K₆'.get .t0, v0]) (pb_off_al P (by decide))
@@ -488,10 +488,10 @@ theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.P
   have s8 : stackArg (callE s t) 8 = stackArg s 6 := sa 8 (by decide)
   have s9 : stackArg (callE s t) 9 = stackArg s 7 := sa 9 (by decide)
   have s10 : stackArg (callE s t) 10 = Ss s + BitVec.ofNat 64 oRsa := sa 10 (by decide)
-  have s11 : stackArg (callE s t) 11 = BitVec.ofNat 64 ((stackArg s 12).toNat - 1024) := sa 11 (by decide)
-  have hl : 1024 ≤ (stackArg s 12).toNat := by have := scLen P; unfold oRsa at this; omega
-  have l11 : (stackArg (callE s t) 11).toNat = (stackArg s 12).toNat - 1024 := by
-    rw [s11, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := (stackArg s 12).isLt; omega)
+  have s11 : stackArg (callE s t) 11 = BitVec.ofNat 64 ((stackArg s 13).toNat - 1024) := sa 11 (by decide)
+  have hl : 1024 ≤ (stackArg s 13).toNat := by have := scLen P; unfold oRsa at this; omega
+  have l11 : (stackArg (callE s t) 11).toNat = (stackArg s 13).toNat - 1024 := by
+    rw [s11, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := (stackArg s 13).isLt; omega)
   have hO : Rsa.RISCV64.Priv.oR (callE s t) = oR s := by simp only [Rsa.RISCV64.Priv.oR, g0, g1, oR, P.ok]
   have hN : Rsa.RISCV64.Priv.nR (callE s t) = nR s := by simp only [Rsa.RISCV64.Priv.nR, g2, g3]
   have hE : Rsa.RISCV64.Priv.eR (callE s t) = eR s := by simp only [Rsa.RISCV64.Priv.eR, g4, g5]
@@ -518,7 +518,7 @@ theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.P
   have pbt : (pb s).toNat = s.sp.toNat - 224 := by
     have := pb_kb P
     rw [this, Offset.toNat_add_ofNat, kb_toNat P, stackBytes_eq]; omega
-  have e11 : (Ss s).toNat = (stackArg s 11).toNat := rfl
+  have e11 : (Ss s).toNat = (stackArg s 12).toNat := rfl
   have hsw := P.hs
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsw
   have sdt : (Ss s + BitVec.ofNat 64 oRsa).toNat = (Ss s).toNat + oRsa := by
@@ -589,7 +589,7 @@ theorem preP_at {t : State} {em : List Byte} (A : AtPriv s em t) : Rsa.RISCV64.P
     hs := by rw [g3, l11]; unfold Spec.Rsa.scratchWords; omega
     al := by rw [s10, sdt, e11]; have := P.als; unfold oRsa; omega }
 
-theorem cov_sc {d n : Nat} (h : d + n ≤ (stackArg s 12).toNat * 8) {rs : List Region} :
+theorem cov_sc {d n : Nat} (h : d + n ≤ (stackArg s 13).toNat * 8) {rs : List Region} :
     Covers [⟨Ss s + BitVec.ofNat 64 d, n⟩] (rs ++ s.wr) :=
   Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr, P.hwr]

@@ -12,7 +12,9 @@ import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
+public import VerifiedGarbage.Proof.RsaPss.RISCV64.TabCall
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Hash
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -170,7 +172,7 @@ theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (S
   Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
 
 /-- Our stack argument `j` into `r`, through `t6`. -/
-theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 13) {is : List Instr}
+theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 16) {is : List Instr}
     {Q : State → Prop} (k : ∀ t', Only [.t6, r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :
     WP isa (.block (argBase :: .load .d r .t6 (8 * j) :: is)) t Q := by
@@ -180,25 +182,25 @@ theorem ldArg_ok {t : State} (h : Base Ss vS s t) {r : Reg} {j : Nat} (hj : j < 
 
 /-- `copySalt`: the salt to `S + d`, from `a1`. -/
 theorem copySalt_ok {t : State} (h : Base Ss vS s t) {d : Nat} (h1 : t.gpr .a1 = off (Ss s) d)
-    (hd : d + (stackArg s 10).toNat ≤ oRsa) :
+    (hd : d + (stackArg s 11).toNat ≤ oRsa) :
     WP isa copySalt t fun t' => Base Ss vS s t' ∧ t'.mem = writeBytes t.mem (off (Ss s) d) (saltB s) := by
   have F := fits P
-  generalize hL : (stackArg s 10).toNat = sl at hd
-  refine WP.seq (ldArg_ok P h (r := .a4) (j := 9) (by decide) fun t₂ o₂ e₂ => wp_mov fun t₃ o₃ e₃ => wp_nil ?_)
+  generalize hL : (stackArg s 11).toNat = sl at hd
+  refine WP.seq (ldArg_ok P h (r := .a4) (j := 10) (by decide) fun t₂ o₂ e₂ => wp_mov fun t₃ o₃ e₃ => wp_nil ?_)
   have k₃ : Only [.t6, .a4, .a5] t t₃ := (o₂.trans o₃).mono
   have b₃ := h.only F k₃
-  have g4 : t₃.gpr .a4 = stackArg s 9 := by rw [o₃.get .a4, e₂]
+  have g4 : t₃.gpr .a4 = stackArg s 10 := by rw [o₃.get .a4, e₂]
   have g5 : t₃.gpr .a5 = BitVec.ofNat 64 sl := by
     rw [e₃, o₂.get .s4, Base.ssl h, ← hL, ofNat_toNat]
   have g1 : t₃.gpr .a1 = off (Ss s) d := by rw [k₃.get .a1, h1]
-  have hb : Spec.Rsa.bytesAt t₃.mem (stackArg s 9) sl = saltB s := by
+  have hb : Spec.Rsa.bytesAt t₃.mem (stackArg s 10) sl = saltB s := by
     rw [← hL, k₃.mem]
     exact bytes_entry h.mem (P.ksl.sub_left kR_sub) ((P.sls.symm).sub_left (sc_sub P)) (by have := P.wsl; omega)
   refine WP.ite _ (eval_nonzero _ _) (fun hc => ?_) (fun hc => ?_)
   · have hs0 : sl ≠ 0 := by intro h0; rw [g5, ne_zero_iff, h0] at hc; simp at hc
-    refine WP.mono (copy_ok (q := stackArg s 9) (p := off (Ss s) d) (n := sl) (by omega) (by unfold oRsa at hd; omega)
+    refine WP.mono (copy_ok (q := stackArg s 10) (p := off (Ss s) d) (n := sl) (by omega) (by unfold oRsa at hd; omega)
       g1 g4 g5 (rd_in (s := s) (t := t₃) b₃.rd (R := sR s) (by rw [P.hrd]; simp) P.wsl
-        (by show sl ≤ (stackArg s 10).toNat; omega))
+        (by show sl ≤ (stackArg s 11).toNat; omega))
       (sc_w F b₃.wr (d := d) hd)
       (fun j hj i hi => ne_of_dis P.sls (Offset.contains_base _ (by omega) (by have := P.wsl; omega))
         (by have := scR_contains P (o := d + i) (n := 1) (by omega); rwa [← off_off] at this)))
@@ -274,7 +276,7 @@ theorem saltDst_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D 
 
 /-- `M' = 0⁸ ‖ mHash ‖ salt` at `S + oY`. -/
 theorem mPrime_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hsl : (stackArg s 10).toNat + 8 + D ≤ 2048) :
+    (h : Base Ss vS s t) (hsl : (stackArg s 11).toNat + 8 + D ≤ 2048) :
     WP isa (mPrime H) t fun t' => Base Ss vS s t' ∧
       t'.mem = writeBytes (writeBytes (writeBytes t.mem (off (Ss s) oY) (List.replicate 8 0))
         (off (Ss s) (oY + 8)) (digB D s)) (off (Ss s) (oY + 8 + D)) (saltB s) := by
@@ -315,21 +317,21 @@ theorem addr_k {t : State} (h : Base Ss vS s t) {a : Nat} (ha : a ≤ kk s) :
 
 /-- `0x01` at `S + k - sLen - hLen - 2`, and `a1` after it. -/
 theorem saltHead_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hfit : (stackArg s 10).toNat + D + 2 ≤ kk s) :
+    (h : Base Ss vS s t) (hfit : (stackArg s 11).toNat + D + 2 ≤ kk s) :
     WP isa (.block [.add .a1 .s0 .s1, .sub .a1 .a1 .s4, .addi .a1 .a1 (-(H.D + 2 : Nat)), .li .t1 1,
       .store .b .t1 .a1 0, .addi .a1 .a1 1]) t fun t' => Base Ss vS s t' ∧
-      t'.mem = t.mem.writeW (off (Ss s) (kk s - (stackArg s 10).toNat - D - 2)) (1 : Byte) ∧
-      t'.gpr .a1 = off (Ss s) (kk s - (stackArg s 10).toNat - D - 1) := by
+      t'.mem = t.mem.writeW (off (Ss s) (kk s - (stackArg s 11).toNat - D - 2)) (1 : Byte) ∧
+      t'.gpr .a1 = off (Ss s) (kk s - (stackArg s 11).toNat - D - 1) := by
   have F := fits P
   have k2 : kk s ≤ 1024 := P.k2
   have hR : oRsa = 8192 := rfl
   refine wp_add fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_subi (imm := H.D + 2) (h := by omega)
     fun t₃ o₃ e₃ => wp_li (imm := 1) (by decide) fun t₄ o₄ e₄ => ?_
   have k₄ : Only [.a1, .t1] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  have a₃ : t₃.gpr .a1 = off (Ss s) (kk s - (stackArg s 10).toNat - D - 2) := by
+  have a₃ : t₃.gpr .a1 = off (Ss s) (kk s - (stackArg s 11).toNat - D - 2) := by
     rw [e₃, e₂, e₁, o₁.get .s4, Base.ssl h, h.s0, Base.sk h, hD]
     apply BitVec.eq_of_toNat_eq
-    have := (stackArg s 10).isLt
+    have := (stackArg s 11).isLt
     have := F.wS
     have ek : (s.gpr .a3).toNat = kk s := rfl
     simp only [off, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, ek] at this ⊢
@@ -338,10 +340,10 @@ theorem saltHead_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D
     rw [o₄.get .a1, a₃, BitVec.add_zero, k₄.wr, h.wr]; exact sc_inW F (by omega)
   refine wp_sb rfl hA fun t₅ m₅ => wp_addi (imm := 1) fun t₆ o₆ e₆ => wp_nil ?_
   have hv : (t₄.gpr .t1).setWidth 8 = (1 : Byte) := by rw [e₄]; rfl
-  have m₆ : t₆.mem = t.mem.writeW (off (Ss s) (kk s - (stackArg s 10).toNat - D - 2)) (1 : Byte) := by
+  have m₆ : t₆.mem = t.mem.writeW (off (Ss s) (kk s - (stackArg s 11).toNat - D - 2)) (1 : Byte) := by
     rw [o₆.mem, m₅.mem, o₄.get .a1, a₃, BitVec.add_zero, hv, k₄.mem]
   have b₆ : Base Ss vS s t₆ := (h.only F k₄).keep F (m₅.keep.trans o₆.keep)
-    (R := [⟨off (Ss s) (kk s - (stackArg s 10).toNat - D - 2), 1⟩])
+    (R := [⟨off (Ss s) (kk s - (stackArg s 11).toNat - D - 2), 1⟩])
     (by rw [m₆, ← k₄.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by omega)))
   refine ⟨b₆, m₆, ?_⟩
@@ -351,10 +353,10 @@ theorem saltHead_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D
 
 /-- `putSalt`: `0x01` at `S + k - sLen - hLen - 2`, and the salt after it. -/
 theorem putSalt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D ≤ 64) {t : State}
-    (h : Base Ss vS s t) (hfit : (stackArg s 10).toNat + D + 2 ≤ kk s) :
+    (h : Base Ss vS s t) (hfit : (stackArg s 11).toNat + D + 2 ≤ kk s) :
     WP isa (putSalt H) t fun t' => Base Ss vS s t' ∧
-      t'.mem = writeBytes (t.mem.writeW (off (Ss s) (kk s - (stackArg s 10).toNat - D - 2)) (1 : Byte))
-        (off (Ss s) (kk s - (stackArg s 10).toNat - D - 1)) (saltB s) := by
+      t'.mem = writeBytes (t.mem.writeW (off (Ss s) (kk s - (stackArg s 11).toNat - D - 2)) (1 : Byte))
+        (off (Ss s) (kk s - (stackArg s 11).toNat - D - 1)) (saltB s) := by
   have k2 : kk s ≤ 1024 := P.k2
   have hR : oRsa = 8192 := rfl
   refine WP.seq (WP.mono (saltHead_ok P hD hD64 h hfit) fun t₆ ⟨b₆, m₆, a₆⟩ => ?_)
@@ -412,13 +414,13 @@ namespace VG.Proof.RsaPss.RISCV64.Sg
 
 open VG VG.RISCV64 VG.Impl.RsaPss.RISCV64.Sign VG.WriteBytes
 open VG.Impl.RsaOaep.RISCV64 (oEm oSt oDig oCtr oRsa)
-open VG.Impl.RsaPss.RISCV64 (oY)
+open VG.Impl.RsaPss.RISCV64 (oY MdFns)
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
 open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off off_off view view_wb view_w8 sc_in sc_inR sc_inW offs hfits
-  mgfXor_ok MFit kR)
+  mgfXorT_ok MFit kR TabS)
 open VG.Proof.RsaOaep (mixV srcB range_ext map_range_getD')
-open VG.Proof.RsaPss.RISCV64 (hashFixedG_ok smB loB cmB)
+open VG.Proof.RsaPss.RISCV64 (hashFixedG_ok smB loB cmB MdL TabM)
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_li wp_addi wp_subi wp_add wp_sub wp_mov wp_lbu wp_ld
   wp_srl wp_or wp_and wp_sb wp_nil)
 open VG.Proof.Mgf1 (ifp ifn)
@@ -489,70 +491,76 @@ theorem clearTop_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem) (h0 
 end
 
 section
-variable {Gs : Spec.Mgf1.Hash} {s : State} (P : PreS Gs.len s) {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208)
-  (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D) (hGv : Proof.Mgf1.Valid Gs)
-include P hH hF hGh hGl hGv
+variable {Hs Gs : Spec.Mgf1.Hash} {s : State} (P : PreS Hs.len s) {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208)
+  {M : MdL H hH} {dg : String} {f : MdFns} {p : Addr} (T : TabM M dg f 14 Ss s p)
+  (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
+  {G : Hash} (hG : HashOK G) (hGF : G.F ≤ 208) {g : Impl.RsaOaep.RISCV64.Fns} {pg : Addr}
+  (TG : TabS G g 15 Ss s pg) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
+  (hGv : Proof.Mgf1.Valid Gs)
+include P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv
 
 /-- After the checks: `encEm` at `scratch`, with `Base` and the saved
 arguments. -/
-theorem signEnc_ok {t : State} (E : Entered s t) (h0 : s.mem (s.gpr .a2) ≠ 0)
-    (hfit : Gs.len + (stackArg s 10).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
-    (k : ∀ t', Base Ss vS s t' → Spilled s t'.mem →
-      Spec.Rsa.bytesAt t'.mem (off (Ss s) 0) (kk s) = encEm Gs s → WP isa priv t' Q) :
-    WP isa (signMain H) t Q := by
+theorem signEnc_ok {t : State} (E : Entered s t) (sy : t.syms = s.syms) (h0 : s.mem (s.gpr .a2) ≠ 0)
+    (hfit : Hs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s) {Q : State → Prop}
+    (k : ∀ t', Base Ss vS s t' → Spilled s t'.mem → t'.syms = s.syms →
+      Spec.Rsa.bytesAt t'.mem (off (Ss s) 0) (kk s) = encEm Hs Gs s → WP isa priv t' Q) :
+    WP isa (signMain H M.be f g) t Q := by
   have F := fits P
-  have hD0 : 0 < Gs.len := hGl ▸ hH.hD0
-  have hD64 : Gs.len ≤ 64 := hGl ▸ hH.hD64
+  have hD0 : 0 < Hs.len := hHl ▸ hH.hD0
+  have hD64 : Hs.len ≤ 64 := hHl ▸ hH.hD64
   have hk2 : kk s ≤ 1024 := P.k2
   have hl1 := loN_le s
   have Fh := hfits hH
   obtain ⟨hE, hSt, hDg, hCt, hR⟩ := offs
   have hY : oY = 2048 := rfl
   have hP : oP = 1352 := rfl
-  have hsalt : (saltB s).length = (stackArg s 10).toNat := bytesAt_length _ _ _
-  have hdl : (digB Gs.len s).length = Gs.len := bytesAt_length _ _ _
-  have hhl : (hS Gs s).length = Gs.len := hGv.2 _
+  have hCs : Impl.RsaPss.RISCV64.oCs = 1664 := rfl
+  have hsalt : (saltB s).length = (stackArg s 11).toNat := bytesAt_length _ _ _
+  have hdl : (digB Hs.len s).length = Hs.len := bytesAt_length _ _ _
+  have hhl : (hS Hs s).length = Hs.len := hHv.2 _
   unfold signMain hashM
   -- `M'` and `H`.
-  refine WP.seq (WP.mono (mPrime_ok P hGl.symm hD0 hD64 E.base (by omega)) fun t₁ ⟨b₁, m₁⟩ => ?_)
-  refine WP.seq (WP.seq (wp_mov fun t₂ o₂ e₂ => wp_nil ?_))
-  refine WP.mono (hashFixedG_ok F hH hF hGl.symm (sl := (stackArg s 10).toNat)
-    (by rw [e₂, Base.ssl b₁, ofNat_toNat]) (b₁.only F o₂) (by omega)) fun t₃ ⟨b₃, _, s₃, d₃⟩ => ?_
-  have hM : Spec.Sha256.bytesAt t₂.mem (off (Ss s) oY) (8 + Gs.len + (stackArg s 10).toNat) =
-      Spec.RsaPss.zeros 8 ++ digB Gs.len s ++ saltB s := by
-    have := mPrime_bytes t.mem (Ss s) (digB Gs.len s) (saltB s) hdl (by rw [hsalt]; omega)
+  refine WP.seq (WP.mono_syms (mPrime_ok P hHl.symm hD0 hD64 E.base (by omega)) fun t₁ ⟨b₁, m₁⟩ y₁ => ?_)
+  refine WP.seq (WP.seq (WP.of_syms (wp_mov fun t₂ o₂ e₂ => wp_nil fun y₂ => ?_)))
+  refine WP.mono (hashFixedG_ok F hF T P.als hHl.symm (sl := (stackArg s 11).toNat)
+    (by rw [e₂, Base.ssl b₁, ofNat_toNat]) (b₁.only F o₂) (y₂.trans (y₁.trans sy)) (by omega))
+    fun t₃ ⟨⟨b₃, _, s₃, d₃⟩, y₃⟩ => ?_
+  have hM : Spec.Sha256.bytesAt t₂.mem (off (Ss s) oY) (8 + Hs.len + (stackArg s 11).toNat) =
+      Spec.RsaPss.zeros 8 ++ digB Hs.len s ++ saltB s := by
+    have := mPrime_bytes t.mem (Ss s) (digB Hs.len s) (saltB s) hdl (by rw [hsalt]; omega)
     rw [hsalt] at this
     rw [o₂.mem, m₁]; exact this
-  have hh : ∀ i < Gs.len, view t₃.mem (Ss s) (oDig + i) = (hS Gs s).getD i 0 := by
+  have hh : ∀ i < Hs.len, view t₃.mem (Ss s) (oDig + i) = (hS Hs s).getD i 0 := by
     intro i hi
     have := congrArg (fun l => l.getD i 0) d₃
     simp only [show Spec.Sha256.bytesAt t₃.mem (off (Ss s) oDig) H.D = Spec.Rsa.bytesAt t₃.mem (off (Ss s) oDig) H.D
       from rfl, bytesAt_eq_view, map_range_getD' _ (show i < H.D by omega), hM] at this
-    rw [this]; simp only [hS, hGh]
+    rw [this]; simp only [hS, hHh]
   -- `EM` before masking.
-  refine WP.seq (WP.mono (clearEm_ok P b₃) fun t₄ ⟨b₄, m₄⟩ => ?_)
-  refine WP.seq (WP.mono (putSalt_ok P hGl.symm hD64 b₄ (by omega)) fun t₅ ⟨b₅, m₅⟩ => ?_)
-  have hdig : Spec.Rsa.bytesAt t₅.mem (off (Ss s) oDig) Gs.len = hS Gs s := by
+  refine WP.seq (WP.mono_syms (clearEm_ok P b₃) fun t₄ ⟨b₄, m₄⟩ y₄ => ?_)
+  refine WP.seq (WP.mono_syms (putSalt_ok P hHl.symm hD64 b₄ (by omega)) fun t₅ ⟨b₅, m₅⟩ y₅ => ?_)
+  have hdig : Spec.Rsa.bytesAt t₅.mem (off (Ss s) oDig) Hs.len = hS Hs s := by
     rw [bytesAt_eq_view]
     refine range_ext hhl fun i hi => ?_
     rw [m₅, view_wb _ _ (by rw [hsalt]; omega) (by omega), ifn (by omega), view_w8 _ _ (by omega) (by omega),
       ifn (by omega), m₄, view_wb _ _ (by rw [List.length_replicate]; omega) (by omega),
       ifn (by rw [List.length_replicate]; omega)]
     exact hh i (by omega)
-  refine WP.seq (WP.mono (putH_ok P hGl.symm hD0 hD64 b₅ (by omega)) fun t₆ ⟨b₆, m₆⟩ => ?_)
+  refine WP.seq (WP.mono_syms (putH_ok P hHl.symm hD0 hD64 b₅ (by omega)) fun t₆ ⟨b₆, m₆⟩ y₆ => ?_)
   have hpre : ∀ o < kk s, view t₆.mem (Ss s) o =
-      emPre (kk s) Gs.len (stackArg s 10).toNat (saltB s) (hS Gs s) o :=
+      emPre (kk s) Hs.len (stackArg s 11).toNat (saltB s) (hS Hs s) o :=
     fun o ho => emPre_of hsalt hhl hk2 (by omega) m₄ m₅ (by rw [m₆, hdig]) ho
   -- MGF1 and `clearTop`.
-  refine WP.seq (WP.mono (dbArgs_ok P hGl.symm hD64 b₆ h0 (by omega)) fun t₇ ⟨b₇, v₇, x6, x7, x8, x9⟩ => ?_)
-  have hsrc : srcB (view t₇.mem (Ss s)) (kk s - Gs.len - 1) Gs.len = hS Gs s := by
+  refine WP.seq (WP.mono_syms (dbArgs_ok P hHl.symm hD64 b₆ h0 (by omega)) fun t₇ ⟨b₇, v₇, x6, x7, x8, x9⟩ y₇ => ?_)
+  have hsrc : srcB (view t₇.mem (Ss s)) (kk s - Hs.len - 1) Hs.len = hS Hs s := by
     refine range_ext hhl fun i hi => ?_
     rw [v₇, hpre _ (by omega)]
     simp only [emPre]
-    rw [ifn (by omega), ifp (by omega), show kk s - Gs.len - 1 + i - (kk s - Gs.len - 1) = i by omega]
-  refine WP.seq (WP.mono (mgfXor_ok F hH hF hGh hGl hGv (src := kk s - Gs.len - 1) (srcLen := Gs.len)
-    (dst := loN s) (dstLen := kk s - loN s - Gs.len - 1) ⟨by omega, by omega, .inr (by omega), by omega⟩
-    b₇ x6 x7 x8 x9) fun t₈ ⟨b₈, v₈⟩ => ?_)
+    rw [ifn (by omega), ifp (by omega), show kk s - Hs.len - 1 + i - (kk s - Hs.len - 1) = i by omega]
+  refine WP.seq (WP.mono (mgfXorT_ok F hG hGF TG hGh hGl hGv (src := kk s - Hs.len - 1) (srcLen := Hs.len)
+    (dst := loN s) (dstLen := kk s - loN s - Hs.len - 1) ⟨by omega, by omega, .inr (by omega), by omega⟩
+    b₇ (y₇.trans (y₆.trans (y₅.trans (y₄.trans y₃)))) x6 x7 x8 x9) fun t₈ ⟨⟨b₈, v₈⟩, y₈⟩ => ?_)
   have sp₈ : Spilled s t₈.mem := E.sp.of_view fun o h1 h2 => by
     rw [v₈ o ⟨by omega, .inr (by omega)⟩, mixV, ifn (by omega), v₇, m₆, view_w8 _ _ (by omega) (by omega),
       ifn (by omega), hdig, view_wb _ _ (by rw [hhl]; omega) (by omega), ifn (by rw [hhl]; omega), m₅,
@@ -562,19 +570,20 @@ theorem signEnc_ok {t : State} (E : Entered s t) (h0 : s.mem (s.gpr .a2) ≠ 0)
       view_wb _ _ (by rw [hsalt]; omega) (by omega), ifn (by omega),
       view_wb _ _ (by rw [hdl]; omega) (by omega), ifn (by omega),
       view_wb _ _ (by rw [List.length_replicate]; omega) (by omega), ifn (by omega)]
-  refine WP.seq (WP.mono (clearTop_ok P b₈ sp₈ h0) fun t₉ ⟨b₉, m₉⟩ => ?_)
-  refine k t₉ b₉ (sp₈.of_view fun o h1 h2 => by rw [m₉, view_w8 _ _ (by omega) (by omega), ifn (by omega)]) ?_
+  refine WP.seq (WP.mono_syms (clearTop_ok P b₈ sp₈ h0) fun t₉ ⟨b₉, m₉⟩ y₉ => ?_)
+  refine k t₉ b₉ (sp₈.of_view fun o h1 h2 => by rw [m₉, view_w8 _ _ (by omega) (by omega), ifn (by omega)])
+    (y₉.trans y₈) ?_
   rw [bytesAt_eq_view]
   unfold encEm
   refine List.map_congr_left fun o ho => ?_
   have ho := List.mem_range.mp ho
   rw [Nat.zero_add, m₉, view_w8 _ _ (by omega) (by omega)]
-  have e8 : ∀ x < kk s, view t₈.mem (Ss s) x = mixV (view t₇.mem (Ss s)) (Spec.Mgf1.mgf1 Gs (hS Gs s)
-      (kk s - loN s - Gs.len - 1)) (loN s) (kk s - loN s - Gs.len - 1) x := fun x hx => by
+  have e8 : ∀ x < kk s, view t₈.mem (Ss s) x = mixV (view t₇.mem (Ss s)) (Spec.Mgf1.mgf1 Gs (hS Hs s)
+      (kk s - loN s - Hs.len - 1)) (loN s) (kk s - loN s - Hs.len - 1) x := fun x hx => by
     rw [v₈ x ⟨by omega, .inl (by omega)⟩, hsrc]
   rw [e8 o ho, e8 (loN s) (by omega)]
-  have := emT_of (saltB s) (hS Gs s) (Spec.Mgf1.mgf1 Gs (hS Gs s) (kk s - loN s - Gs.len - 1)) (cS s)
-    (k := kk s) (sl := (stackArg s 10).toNat) hhl hl1 rfl (by omega) (V := view t₇.mem (Ss s))
+  have := emT_of (saltB s) (hS Hs s) (Spec.Mgf1.mgf1 Gs (hS Hs s) (kk s - loN s - Hs.len - 1)) (cS s)
+    (k := kk s) (sl := (stackArg s 11).toNat) hhl hl1 rfl (by omega) (V := view t₇.mem (Ss s))
     (fun x hx => by rw [v₇]; exact hpre x hx) ho
   by_cases hl : o = loN s
   · subst hl; rw [ifp rfl]; rw [ifp rfl] at this; exact this
