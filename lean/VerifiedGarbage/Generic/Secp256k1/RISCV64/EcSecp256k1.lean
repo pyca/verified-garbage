@@ -17,6 +17,7 @@ namespace VG.Generic.Secp256k1.RISCV64.EcSecp256k1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Spec.EcKey.Secp256k1.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.publicKeySecp256k1
+    consts := Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts
     verified := Proof.Ecdh.RISCV64.Secp256k1.pk_verified h.law }]
 
 end VG.Generic.Secp256k1.RISCV64.EcSecp256k1

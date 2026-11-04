@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 
 /-! # ECDSA over secp256k1 on RISC-V: `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
 
-Signing computes `[k]G` by four-bit windows, `vg_secp256k1_mul`; verification's
+Signing computes `[k]G` by the comb, `vg_secp256k1_mul_g`; verification's
 joint ladder adds by the complete addition for any `a` (`secp256k1.am3 =
 false`), and its `R = 4 R` is two Jacobian doublings by `dblJ0`, for `a = 0`
 (`Impl/Ecdsa/RISCV64/VerifyJ.lean`). -/
@@ -18,7 +18,8 @@ open VG.RISCV64
 
 /-- `vg_ecdsa_secp256k1_sign`, the signature for a nonce, which RFC 6979's
 function calls. -/
-def signSecp256k1 : Prog isa := Sign.Cfg.sign secp256k1 secp256k1Order "vg_secp256k1_mul" mulSecp256k1
+def signSecp256k1 : Prog isa :=
+  Sign.Cfg.sign secp256k1 secp256k1Order Comb.mulGSecp256k1Name Comb.mulGSecp256k1
 
 /-- `vg_ecdsa_secp256k1_verify`. -/
 def verifySecp256k1 : Prog isa :=
