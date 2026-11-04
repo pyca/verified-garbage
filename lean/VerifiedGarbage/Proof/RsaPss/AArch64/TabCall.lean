@@ -59,9 +59,9 @@ theorem scall_wp {args : List Instr} {s : Nat} {ts : List (String × Prog isa)} 
 same address, which names the same function `n` in both. -/
 theorem scall_rel {args : List Instr} {s : Nat} {ts : List (String × Prog isa)} {n : String} {c : Prog isa}
     {P F : State → State → Prop}
-    (ht : RelCT isa P (.block (args ++ [.ldrSp .x16 s])) fun _ _ => True)
-    (hw : ∀ s₁ s₂, P s₁ s₂ → WP isa (.block (args ++ [.ldrSp .x16 s])) s₁ (F s₁) ∧
-      WP isa (.block (args ++ [.ldrSp .x16 s])) s₂ (F s₂))
+    (ht : RelCT isa P (.block (args ++ ([.ldrSp .x16 s] : List Instr))) fun _ _ => True)
+    (hw : ∀ s₁ s₂, P s₁ s₂ → WP isa (.block (args ++ ([.ldrSp .x16 s] : List Instr))) s₁ (F s₁) ∧
+      WP isa (.block (args ++ ([.ldrSp .x16 s] : List Instr))) s₂ (F s₂))
     (hi : ∀ σ₁ σ₂ t₁ t₂, P σ₁ σ₂ → F σ₁ t₁ → F σ₂ t₂ → t₁.gpr .x16 = t₂.gpr .x16 ∧
       Finds ts t₁.syms (t₁.gpr .x16) n c ∧ Finds ts t₂.syms (t₂.gpr .x16) n c)
     (hc : RelCT isa (fun t₁ t₂ => ∃ σ₁ σ₂, P σ₁ σ₂ ∧ F σ₁ t₁ ∧ F σ₂ t₂) (.call n c) fun _ _ => True) :
@@ -135,7 +135,7 @@ theorem compT_ok (f : MdFns) {name : String} {code : Prog isa} (hf : CompOk H so
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) → Q s') :
     WP isa (compT f) s Q := by
   unfold compT
-  refine scall_wp (n := name) (c := code) (by decide) (WP.mono_syms (WP.preservedV (csetup_ok s))
+  refine scall_wp (n := name) (c := code) (by decide) (WP.mono_syms (WP.preservedV (csetup_ok s) (by lit_decide))
     fun t ⟨hs, hv⟩ sy => ?_)
   refine ⟨by rw [hs.rd, hs.wr, hs.sp]; exact hin, by rw [hs.mem, hs.sp, sy]; exact hw, by rw [sy]; exact hfd,
     fun u o _ => comp_call hf h (csetup_only hs o) (fun r hr => (o.vcs r hr).trans (hv r hr)) hQ⟩
@@ -214,7 +214,8 @@ structure DSetup (u t : State) : Prop where
   syms : t.syms = u.syms
 
 theorem dsetup_ok {u : State} (hin : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 sDigH) 8) :
-    WP isa (.block ([.addImm .x .x0 .x20 oSel, mov .x1 .x21] ++ [.ldrSp .x16 sDigH])) u (DSetup u) := by
+    WP isa (.block (([.addImm .x .x0 .x20 oSel, mov .x1 .x21] : List Instr) ++
+      ([.ldrSp .x16 sDigH] : List Instr))) u (DSetup u) := by
   refine WP.mono_syms (Q := fun t => t.gpr .x0 = u.gpr .x20 + BitVec.ofNat 64 oSel ∧ t.gpr .x1 = u.gpr .x21 ∧
     t.gpr .x16 = u.mem.readW (u.sp + BitVec.ofNat 64 sDigH) 64 ∧ Only [.x0, .x1, .x16] u t) ?_
     fun t ⟨a, b, c, d⟩ sy => ⟨a, b, c, d, sy⟩

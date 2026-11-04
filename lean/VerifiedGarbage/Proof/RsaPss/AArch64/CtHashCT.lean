@@ -142,7 +142,8 @@ def HI (σ u : State) : Prop :=
   Only [.x0, .x16] σ u ∧ u.gpr .x0 = σ.gpr .x19 ∧ u.gpr .x16 = σ.syms H.initN ∧ u.syms = σ.syms
 
 theorem ctInit_setup {a : HA} {σ : State} (h : HE H dn f a σ) :
-    WP isa (.block ([mov .x0 .x19] ++ [.ldrSp .x16 sIniH])) σ (HI (H := H) σ) := by
+    WP isa (.block (([mov .x0 .x19] : List Instr) ++ ([.ldrSp .x16 sIniH] : List Instr))) σ
+      (HI (H := H) σ) := by
   refine WP.mono_syms (Q := fun u => Only [.x0, .x16] σ u ∧ u.gpr .x0 = σ.gpr .x19 ∧ u.gpr .x16 = σ.syms H.initN) ?_
     fun u ⟨o, e0, e16⟩ sy => ⟨o, e0, e16, sy⟩
   refine wp_mov fun u₁ o₁ e₁ => wp_ldrSp (by decide) (by rw [o₁.rd, o₁.wr, o₁.sp, h.L.sp]; exact h.L.fld (by decide))
