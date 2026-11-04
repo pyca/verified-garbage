@@ -454,7 +454,6 @@ vg_rsa_oaep_sha256_mgf1_decrypt:
 	.p2align 6
 
 vg_rsa_oaep_sha256_mgf1_decrypt_sha256_sha2:
-	.arch_extension sha2
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0
@@ -901,7 +900,6 @@ vg_rsa_oaep_sha256_mgf1_decrypt_sha256_sha2:
 	add sp, sp, #272
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha2
 	.p2align 6
 
 vg_rsa_oaep_sha256_mgf1_encrypt_precomputed:
@@ -1255,7 +1253,6 @@ vg_rsa_oaep_sha256_mgf1_encrypt_precomputed:
 	.p2align 6
 
 vg_rsa_oaep_sha256_mgf1_encrypt_precomputed_sha256_sha2:
-	.arch_extension sha2
 	str x30, [sp, #-16]!
 	sub sp, sp, #272
 	add x9, sp, #0
@@ -1603,5 +1600,4 @@ vg_rsa_oaep_sha256_mgf1_encrypt_precomputed_sha256_sha2:
 	add sp, sp, #272
 	ldr x30, [sp], #16
 	ret
-	.arch_extension nosha2
 	.p2align 6

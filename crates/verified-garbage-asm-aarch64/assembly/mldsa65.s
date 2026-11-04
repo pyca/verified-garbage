@@ -5560,7 +5560,6 @@ vg_mldsa65_verify_message_cached:
 	.p2align 6
 
 vg_mldsa65_keygen_sha3:
-	.arch_extension sha3
 	str x24, [x3, #840]
 	str x25, [x3, #848]
 	str x26, [x3, #856]
@@ -6686,11 +6685,9 @@ vg_mldsa65_keygen_sha3:
 	ldr x27, [x28, #864]
 	ldr x28, [x28, #872]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mldsa65_sign_sha3:
-	.arch_extension sha3
 	str x23, [x4, #840]
 	str x24, [x4, #848]
 	str x25, [x4, #856]
@@ -8076,11 +8073,9 @@ vg_mldsa65_sign_sha3:
 	ldr x30, [x28, #880]
 	ldr x28, [x28, #888]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mldsa65_sign_message_sha3:
-	.arch_extension sha3
 	lsr x9, x4, #8
 	cbnz x9, 20f
 	movz x9, #37888, lsl #0
@@ -8184,11 +8179,9 @@ vg_mldsa65_sign_message_sha3:
 	movz x0, #2, lsl #0
 21:
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mldsa65_verify_sha3:
-	.arch_extension sha3
 	str x24, [x3, #840]
 	str x25, [x3, #848]
 	str x26, [x3, #856]
@@ -9318,11 +9311,9 @@ vg_mldsa65_verify_sha3:
 	ldr x27, [x28, #864]
 	ldr x28, [x28, #872]
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_mldsa65_verify_message_cached_sha3:
-	.arch_extension sha3
 	lsr x9, x4, #8
 	cbnz x9, 20f
 	movz x9, #37888, lsl #0
@@ -9424,5 +9415,4 @@ vg_mldsa65_verify_message_cached_sha3:
 	movz x0, #2, lsl #0
 21:
 	ret
-	.arch_extension nosha3
 	.p2align 6

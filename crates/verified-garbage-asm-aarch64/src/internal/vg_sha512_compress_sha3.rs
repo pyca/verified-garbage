@@ -14,8 +14,7 @@ pub(crate) const VG_SHA512_COMPRESS_SHA3_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_compress_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-cbz x2, 20f",
+        r"cbz x2, 20f",
         concat!("adrp x4, ", vg_sym_page!("{VG_SHA512_K}")),
         concat!("add x4, x4, ", vg_sym_pageoff!("{VG_SHA512_K}")),
         r".inst 0x3dc0009d,0x3dc0049e,0x6f00e41f,0x3dc00018,0x3dc00419,0x3dc0081a,0x3dc00c1b
@@ -96,7 +95,6 @@ b 21f
 20:
 21:
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         VG_SHA512_K = sym crate::consts::VG_SHA512_K,
     )

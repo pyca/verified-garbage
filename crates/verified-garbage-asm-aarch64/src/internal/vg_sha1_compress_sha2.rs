@@ -14,8 +14,7 @@ pub(crate) const VG_SHA1_COMPRESS_SHA2_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_compress_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-cbz x2, 20f
+        r"cbz x2, 20f
 .inst 0x528f3324,0x72ab5044,0x4e040c92,0x529d7424,0x72addb24,0x4e040c93,0x52979b84,0x72b1e364
 .inst 0x4e040c94,0x52983ac4,0x72b94c44,0x4e040c95,0x3dc00000,0xb9401004,0x4e040c81,0x5e040421
 22:
@@ -41,7 +40,6 @@ b 21f
 20:
 21:
 .inst 0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
     )
 }

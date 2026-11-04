@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_cfb8_encrypt_aes:
-	.arch_extension aes
 	str x19, [x5, #2064]
 	str x20, [x5, #2072]
 	str x21, [x5, #2080]
@@ -55,11 +54,9 @@ vg_aes_cfb8_encrypt_aes:
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_cfb8_decrypt_aes:
-	.arch_extension aes
 	str x19, [x5, #2064]
 	str x20, [x5, #2072]
 	str x21, [x5, #2080]
@@ -109,7 +106,6 @@ vg_aes_cfb8_decrypt_aes:
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_cfb8_encrypt:

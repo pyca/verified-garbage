@@ -144,8 +144,7 @@ pub const VG_HMAC_SHA1_INIT_SHA2_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
+        r".inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
 .inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
@@ -210,7 +209,6 @@ bl {vg_hmac_sha1_init_scratch_sha2}
 .inst 0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
 .inst 0xa9054611,0x911183ff
 b 21b
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
@@ -239,8 +237,7 @@ pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
+        r".inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
 bl {vg_sha1_finalize_scratch_sha2}
 .inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
@@ -254,7 +251,6 @@ bl {vg_sha1_compress_sha2}
 .inst 0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9
 .inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
 .inst 0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,

@@ -492,7 +492,6 @@ vg_sha384_digest:
 	.p2align 6
 
 vg_sha384_finalize_sha3:
-	.arch_extension sha3
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -592,11 +591,9 @@ vg_sha384_finalize_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #1376
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha384_digest_sha3:
-	.arch_extension sha3
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -803,7 +800,6 @@ vg_sha384_digest_sha3:
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #896
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_update:
@@ -1284,7 +1280,6 @@ vg_sha512_digest:
 	.p2align 6
 
 vg_sha512_update_sha3:
-	.arch_extension sha3
 	sub sp, sp, #1376
 	add x4, sp, #0
 	str x30, [sp, #-16]!
@@ -1436,11 +1431,9 @@ vg_sha512_update_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #1376
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_finalize_sha3:
-	.arch_extension sha3
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -1546,11 +1539,9 @@ vg_sha512_finalize_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #1376
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_digest_sha3:
-	.arch_extension sha3
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -1763,7 +1754,6 @@ vg_sha512_digest_sha3:
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #896
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_224_finalize:
@@ -2066,7 +2056,6 @@ vg_sha512_224_digest:
 	.p2align 6
 
 vg_sha512_224_finalize_sha3:
-	.arch_extension sha3
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -2160,11 +2149,9 @@ vg_sha512_224_finalize_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #1376
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_224_digest_sha3:
-	.arch_extension sha3
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -2365,7 +2352,6 @@ vg_sha512_224_digest_sha3:
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #896
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_256_finalize:
@@ -2668,7 +2654,6 @@ vg_sha512_256_digest:
 	.p2align 6
 
 vg_sha512_256_finalize_sha3:
-	.arch_extension sha3
 	sub sp, sp, #1376
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -2762,11 +2747,9 @@ vg_sha512_256_finalize_sha3:
 	ldr x30, [sp], #16
 	add sp, sp, #1376
 	ret
-	.arch_extension nosha3
 	.p2align 6
 
 vg_sha512_256_digest_sha3:
-	.arch_extension sha3
 	sub sp, sp, #896
 	add x10, sp, #832
 	stp x19, x21, [x10, #0]
@@ -2967,5 +2950,4 @@ vg_sha512_256_digest_sha3:
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #896
 	ret
-	.arch_extension nosha3
 	.p2align 6

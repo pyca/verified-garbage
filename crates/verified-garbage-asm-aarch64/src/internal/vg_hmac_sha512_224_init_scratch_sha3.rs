@@ -14,8 +14,7 @@ pub(crate) const VG_HMAC_SHA512_224_INIT_SCRATCH_SHA3_FEATURES: verified_garbage
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init_scratch_sha3() {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
+        r".inst 0xf9015893,0xf9015c94,0xf9016095,0xf9016496,0xf9016898,0xf9016c9e,0xf9017097,0x91000013
 .inst 0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
 bl {vg_sha512_224_init}
 .inst 0x910002a0
@@ -49,7 +48,6 @@ bl {vg_sha512_compress_sha3}
 .inst 0x910002b3,0x910102a1,0x91000260,0xd2800022,0x91000283
 bl {vg_sha512_compress_sha3}
 .inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_224_init = sym crate::sha512::vg_sha512_224_init,
         vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,

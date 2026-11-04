@@ -14,8 +14,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_ENCODE_SHA2_FEATURES: verified_ga
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha224_mgf1_sha224_encode_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
+        r".inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
 .inst 0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9006e00,0xf9006a02,0xf9007203
 .inst 0xf9007604,0x91000037,0x910000d4,0x91200293,0x91240295,0xd37df2e9,0xcb050129,0xd280000b
 .inst 0xd100212c,0xd37ffd8c,0xd340fd8c,0xaa0c016b,0xd1001d2c,0xd37ffd8c,0xd37ff98c,0xaa0c016b
@@ -150,7 +149,6 @@ b 21f
 21:
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha224_init = sym crate::sha256::vg_sha224_init,
         vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,

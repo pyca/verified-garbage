@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_siv_init_aes:
-	.arch_extension aes
 	sub sp, sp, #2560
 	add x3, sp, #0
 	str x19, [x3, #2176]
@@ -37,7 +36,6 @@ vg_aes_siv_init_aes:
 	ldr x22, [x22, #2200]
 	add sp, sp, #2560
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_siv_init:
@@ -75,7 +73,6 @@ vg_aes_siv_init:
 	.p2align 6
 
 vg_aes_siv_encrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #2576
 	add x7, sp, #0
 	str x19, [x7, #160]
@@ -423,11 +420,9 @@ vg_aes_siv_encrypt_aes:
 	ldr x19, [x19, #160]
 	add sp, sp, #2576
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_siv_decrypt_aes:
-	.arch_extension aes
 	sub sp, sp, #2576
 	add x7, sp, #0
 	str x19, [x7, #160]
@@ -813,11 +808,9 @@ vg_aes_siv_decrypt_aes:
 	ldr x19, [x19, #160]
 	add sp, sp, #2576
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_siv_encrypt_aes_cbc:
-	.arch_extension aes
 	sub sp, sp, #2576
 	add x7, sp, #0
 	str x19, [x7, #160]
@@ -1165,11 +1158,9 @@ vg_aes_siv_encrypt_aes_cbc:
 	ldr x19, [x19, #160]
 	add sp, sp, #2576
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_siv_decrypt_aes_cbc:
-	.arch_extension aes
 	sub sp, sp, #2576
 	add x7, sp, #0
 	str x19, [x7, #160]
@@ -1555,7 +1546,6 @@ vg_aes_siv_decrypt_aes_cbc:
 	ldr x19, [x19, #160]
 	add sp, sp, #2576
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_siv_encrypt:

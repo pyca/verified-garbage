@@ -21,8 +21,7 @@ pub const VG_AES_SIV_INIT_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
+        r".inst 0xd12803ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c76,0xf904507e,0x91000013
 .inst 0xd341fc34,0x91000055,0x91000076,0x91000281
 bl {vg_aes_expand_key_scratch_aes}
 .inst 0x910002a0,0xd342fe81,0x91001821,0x9103c2a2,0x910002c3
@@ -30,7 +29,6 @@ bl {vg_cmac_aes_subkeys_aes}
 .inst 0x8b140260,0x91000281,0x910442a2,0x910002c3
 bl {vg_aes_expand_key_scratch_aes}
 .inst 0xf94442d3,0xf94446d4,0xf9444ad5,0xf94452de,0xf9444ed6,0x912803ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
@@ -85,8 +83,7 @@ pub const VG_AES_SIV_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
 .inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
@@ -196,7 +193,6 @@ b 218f
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
 .inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
 .inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
@@ -224,8 +220,7 @@ pub const VG_AES_SIV_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
 .inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
@@ -352,7 +347,6 @@ b 229f
 229:
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
@@ -380,8 +374,7 @@ pub const VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_encrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
 .inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
@@ -491,7 +484,6 @@ b 218f
 .inst 0x91000356,0x91000377,0xf9407e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9405674
 .inst 0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b,0xf940767c
 .inst 0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,
@@ -519,8 +511,7 @@ pub const VG_AES_SIV_DECRYPT_AES_CBC_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_siv_decrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
+        r".inst 0xd12843ff,0x910003e7,0xf90050f3,0xf90054f4,0xf90058f5,0xf9005cf6,0xf90060f7,0xf90064f8
 .inst 0xf90068f9,0xf9006cfa,0xf90070fb,0xf90074fc,0xf90078fe,0xf9007ce6,0x910000f3,0x91000014
 .inst 0x91000035,0x91000058,0x91000079,0x9100009a,0x910000bb,0xd2800009,0xf9000a69,0xf9000e69
 .inst 0xf9050269,0xf9050669,0x91000280,0x910002a1,0x91280262,0x91004263,0xd2800204,0x91040265
@@ -647,7 +638,6 @@ b 229f
 229:
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912843ff,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc::vg_cmac_aes_update_aes_cbc,

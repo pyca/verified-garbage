@@ -5,7 +5,6 @@
 // gives.
 
 vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_sha3:
-	.arch_extension sha3
 	sub sp, sp, #336
 	add x16, sp, #0
 	str x19, [x16, #96]
@@ -485,5 +484,4 @@ vg_rsa_pss_sha512_224_mgf1_sha512_224_encode_sha3:
 	ldr x30, [x16, #176]
 	add sp, sp, #336
 	ret
-	.arch_extension nosha3
 	.p2align 6

@@ -387,7 +387,6 @@ vg_hmac_sha256_finalize:
 	.p2align 6
 
 vg_hmac_sha256_init_sha2:
-	.arch_extension sha2
 	movz x10, #64, lsl #0
 	movz x12, #0, lsl #0
 	subs x11, x10, x3
@@ -677,11 +676,9 @@ vg_hmac_sha256_init_sha2:
 	stp x17, x17, [x16, #48]
 	add sp, sp, #1600
 	b 21b
-	.arch_extension nosha2
 	.p2align 6
 
 vg_hmac_sha256_finalize_sha2:
-	.arch_extension sha2
 	sub sp, sp, #832
 	add x4, sp, #0
 	str x19, [x4, #160]
@@ -769,5 +766,4 @@ vg_hmac_sha256_finalize_sha2:
 	ldr x23, [x23, #208]
 	add sp, sp, #832
 	ret
-	.arch_extension nosha2
 	.p2align 6

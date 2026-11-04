@@ -7024,8 +7024,7 @@ pub const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_dsa_generate_parameters_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
+        r".inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
 .inst 0xf900b7fa,0xf900bbfb,0xf900bffc,0x4e083d09,0xf900c3e9,0x4e083d29,0xf900c7e9,0x4e083d49
 .inst 0xf900cbe9,0x4e083d69,0xf900cfe9,0x4e083d89,0xf900d3e9,0x4e083da9,0xf900d7e9,0x4e083dc9
 .inst 0xf900dbe9,0x4e083de9,0xf900dfe9,0xf90097fe,0xf9001be0,0xf9001fe1,0xf90047e2,0xf9004be3
@@ -8495,7 +8494,6 @@ cbnz x9, 2252b
 .inst 0xf940d3e9,0x4e081d2c,0xf940d7e9,0x4e081d2d,0xf940dbe9,0x4e081d2e,0xf940dfe9,0x4e081d2f
 .inst 0xf9409bf3,0xf9409ff4,0xf940a3f5,0xf940a7f6,0xf940abf7,0xf940aff8,0xf940b3f9,0xf940b7fa
 .inst 0xf940bbfb,0xf940bffc,0xf94097fe,0x910703ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,
@@ -8536,8 +8534,7 @@ pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: verified_garbage_cpu::F
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
+        r".inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
 .inst 0xf900b7fa,0xf900bbfb,0xf900bffc,0x4e083d09,0xf900c3e9,0x4e083d29,0xf900c7e9,0x4e083d49
 .inst 0xf900cbe9,0x4e083d69,0xf900cfe9,0x4e083d89,0xf900d3e9,0x4e083da9,0xf900d7e9,0x4e083dc9
 .inst 0xf900dbe9,0x4e083de9,0xf900dfe9,0xf90097fe,0xf9001be0,0xf9001fe1,0xf90047e2,0xf9004be3
@@ -10007,7 +10004,6 @@ cbnz x9, 2252b
 .inst 0xf940d3e9,0x4e081d2c,0xf940d7e9,0x4e081d2d,0xf940dbe9,0x4e081d2e,0xf940dfe9,0x4e081d2f
 .inst 0xf9409bf3,0xf9409ff4,0xf940a3f5,0xf940a7f6,0xf940abf7,0xf940aff8,0xf940b3f9,0xf940b7fa
 .inst 0xf940bbfb,0xf940bffc,0xf94097fe,0x910703ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
@@ -10048,8 +10044,7 @@ pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: verified_ga
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
+        r".inst 0xd10703ff,0xf9009bf3,0xf9009ff4,0xf900a3f5,0xf900a7f6,0xf900abf7,0xf900aff8,0xf900b3f9
 .inst 0xf900b7fa,0xf900bbfb,0xf900bffc,0x4e083d09,0xf900c3e9,0x4e083d29,0xf900c7e9,0x4e083d49
 .inst 0xf900cbe9,0x4e083d69,0xf900cfe9,0x4e083d89,0xf900d3e9,0x4e083da9,0xf900d7e9,0x4e083dc9
 .inst 0xf900dbe9,0x4e083de9,0xf900dfe9,0xf90097fe,0xf9001be0,0xf9001fe1,0xf90047e2,0xf9004be3
@@ -11519,7 +11514,6 @@ cbnz x9, 2252b
 .inst 0xf940d3e9,0x4e081d2c,0xf940d7e9,0x4e081d2d,0xf940dbe9,0x4e081d2e,0xf940dfe9,0x4e081d2f
 .inst 0xf9409bf3,0xf9409ff4,0xf940a3f5,0xf940a7f6,0xf940abf7,0xf940aff8,0xf940b3f9,0xf940b7fa
 .inst 0xf940bbfb,0xf940bffc,0xf94097fe,0x910703ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,

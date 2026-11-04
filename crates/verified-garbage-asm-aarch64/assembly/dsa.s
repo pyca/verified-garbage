@@ -22844,7 +22844,6 @@ vg_dsa_generate_parameters:
 	.p2align 6
 
 vg_dsa_generate_parameters_sha256_sha2:
-	.arch_extension sha2
 	sub sp, sp, #448
 	str x19, [sp, #304]
 	str x20, [sp, #312]
@@ -29077,11 +29076,9 @@ vg_dsa_generate_parameters_sha256_sha2:
 	ldr x30, [sp, #296]
 	add sp, sp, #448
 	ret
-	.arch_extension nosha2
 	.p2align 6
 
 vg_dsa_generate_parameters_sha1_sha2:
-	.arch_extension sha2
 	sub sp, sp, #448
 	str x19, [sp, #304]
 	str x20, [sp, #312]
@@ -35314,11 +35311,9 @@ vg_dsa_generate_parameters_sha1_sha2:
 	ldr x30, [sp, #296]
 	add sp, sp, #448
 	ret
-	.arch_extension nosha2
 	.p2align 6
 
 vg_dsa_generate_parameters_sha1_sha2_sha256_sha2:
-	.arch_extension sha2
 	sub sp, sp, #448
 	str x19, [sp, #304]
 	str x20, [sp, #312]
@@ -41551,5 +41546,4 @@ vg_dsa_generate_parameters_sha1_sha2_sha256_sha2:
 	ldr x30, [sp, #296]
 	add sp, sp, #448
 	ret
-	.arch_extension nosha2
 	.p2align 6

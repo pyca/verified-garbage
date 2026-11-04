@@ -5,7 +5,6 @@
 // gives.
 
 vg_hmac_sha224_finalize_scratch_sha2:
-	.arch_extension sha2
 	str x19, [x4, #160]
 	str x20, [x4, #168]
 	str x21, [x4, #176]
@@ -102,5 +101,4 @@ vg_hmac_sha224_finalize_scratch_sha2:
 	ldr x30, [x23, #200]
 	ldr x23, [x23, #208]
 	ret
-	.arch_extension nosha2
 	.p2align 6

@@ -24,8 +24,7 @@ pub const VG_AES_CTR_AES_FEATURES: verified_garbage_cpu::Features = verified_gar
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_ctr_aes(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
+        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
 .inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
 cbz x23, 20f
 22:
@@ -44,7 +43,6 @@ b 21f
 20:
 21:
 .inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )

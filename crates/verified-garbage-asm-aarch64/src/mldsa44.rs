@@ -1033,8 +1033,7 @@ pub const VG_MLDSA44_KEYGEN_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_keygen_sha3(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
+        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0xd2800089,0x390e0389,0xd2800089,0x390e0789,0x91000380
 .inst 0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409,0xf9001809
 .inst 0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409,0xf9003809
@@ -1195,7 +1194,6 @@ bl {vg_keccak_pad_scratch_sha3}
 .inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91010363,0xd2800804
 bl {vg_keccak_squeeze_scratch_sha3}
 .inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
@@ -1234,8 +1232,7 @@ pub const VG_MLDSA44_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_sha3(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
+        r".inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
 .inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
 .inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
 .inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
@@ -1501,7 +1498,6 @@ bl {vg_mldsa_hint_bit_pack}
 21:
 .inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
@@ -1547,8 +1543,7 @@ pub const VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_message_sha3(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd348fc89
+        r".inst 0xd348fc89
 cbnz x9, 20f
 .inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
 .inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
@@ -1576,7 +1571,6 @@ b 21f
 .inst 0xd2800040
 21:
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
@@ -1605,8 +1599,7 @@ pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_sha3(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
+        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
 .inst 0x9100005b,0x9100007c,0xd2800038,0x91248360,0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383
 .inst 0xd2808004
 bl {vg_mldsa_hint_bit_unpack}
@@ -1792,7 +1785,6 @@ cbnz x2, 29b
 23:
 21:
 .inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
@@ -1835,8 +1827,7 @@ pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_SHA3_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_message_cached_sha3(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd348fc89
+        r".inst 0xd348fc89
 cbnz x9, 20f
 .inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
 .inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
@@ -1864,7 +1855,6 @@ b 21f
 .inst 0xd2800040
 21:
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,

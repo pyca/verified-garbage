@@ -14,8 +14,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA256_ITERATE_SHA2_FEATURES: verified_garbage_c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_iterate_sha2() {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0x11000042,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897,0xf9004c98,0xf900509e
+        r".inst 0x11000042,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897,0xf9004c98,0xf900509e
 .inst 0x9102a093,0x91000094,0x91032095,0x91000077,0x91000058,0xb9400029,0xb90002a9,0xb9400429
 .inst 0xb90006a9,0xb9400829,0xb9000aa9,0xb9400c29,0xb9000ea9,0xb9401029,0xb90012a9,0xb9401429
 .inst 0xb90016a9,0xb9401829,0xb9001aa9,0xb9401c29,0xb9001ea9,0xd2801009,0xb90022a9,0xd2800009
@@ -42,7 +41,6 @@ b 21f
 20:
 21:
 .inst 0xf940529e,0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym crate::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )

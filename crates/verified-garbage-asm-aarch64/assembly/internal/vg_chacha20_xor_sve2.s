@@ -5,7 +5,6 @@
 // gives.
 
 vg_chacha20_xor_sve2:
-	.arch_extension sve2
 	lsr x5, x2, #6
 	sub x5, x5, #8
 	lsr x5, x5, #63
@@ -1871,5 +1870,4 @@ vg_chacha20_xor_sve2:
 	ldr x30, [x1, #272]
 210:
 	ret
-	.arch_extension nosve2
 	.p2align 6

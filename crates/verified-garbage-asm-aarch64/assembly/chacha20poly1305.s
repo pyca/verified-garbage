@@ -34390,7 +34390,6 @@ vg_chacha20_poly1305_seal_gather:
 	.p2align 6
 
 vg_chacha20_poly1305_seal_sve2:
-	.arch_extension sve2
 	sub sp, sp, #1280
 	add x7, sp, #0
 	sub x9, x5, #1
@@ -46051,11 +46050,9 @@ vg_chacha20_poly1305_seal_sve2:
 	str q0, [x21, #1248]
 	str q0, [x21, #1264]
 	b 25b
-	.arch_extension nosve2
 	.p2align 6
 
 vg_chacha20_poly1305_open_sve2:
-	.arch_extension sve2
 	sub sp, sp, #1280
 	add x7, sp, #0
 	sub x9, x5, #1
@@ -57484,11 +57481,9 @@ vg_chacha20_poly1305_open_sve2:
 	add x3, x21, #632
 	bl {vg_poly1305_finalize_scratch}
 	b 25b
-	.arch_extension nosve2
 	.p2align 6
 
 vg_chacha20_poly1305_seal_gather_sve2:
-	.arch_extension sve2
 	sub sp, sp, #16
 	add x16, sp, #0
 	str x30, [x16, #8]
@@ -57567,5 +57562,4 @@ vg_chacha20_poly1305_seal_gather_sve2:
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	ret
-	.arch_extension nosve2
 	.p2align 6

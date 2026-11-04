@@ -29,9 +29,7 @@ pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt_aes_sha3(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.arch_extension sha3
-.inst 0xd1002829,0xd100302a
+        r".inst 0xd1002829,0xd100302a
 cbz x9, 20f
 cbz x10, 22f
 .inst 0x9100004b,0x91000062,0x91000083,0x910000a4,0x3dc0017f,0x3dc00010,0x3dc00411,0x3dc00812
@@ -188,8 +186,6 @@ b 220f
 .inst 0x3d80017f
 21:
 .inst 0xd65f03c0
-.arch_extension noaes
-.arch_extension nosha3
 .p2align 6",
     )
 }
@@ -220,8 +216,7 @@ pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xd1002829,0xd100302a
+        r".inst 0xd1002829,0xd100302a
 cbz x9, 20f
 cbz x10, 22f
 .inst 0x9100004b,0x91000062,0x91000083,0x910000a4,0x3dc0017f,0x3dc00010,0x3dc00411,0x3dc00812
@@ -300,7 +295,6 @@ b 215f
 .inst 0x6e3e1fff,0x3d80017f
 21:
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }
@@ -326,8 +320,7 @@ pub const VG_AES_CBC_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
+        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
 .inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
 cbz x23, 20f
 22:
@@ -341,7 +334,6 @@ b 21f
 20:
 21:
 .inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
         vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
     )

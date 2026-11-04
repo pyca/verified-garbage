@@ -158,8 +158,7 @@ pub const VG_RSA_PKCS1_DECRYPT_SHA256_SHA2_FEATURES: verified_garbage_cpu::Featu
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pkcs1_decrypt_sha256_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xd10343ff,0x910003e9,0xf9003120,0xf9003522,0xf9003923,0xf9003d24,0xf9004125
+        r".inst 0xf81f0ffe,0xd10343ff,0x910003e9,0xf9003120,0xf9003522,0xf9003923,0xf9003d24,0xf9004125
 .inst 0xf9004526,0xf9004927,0xf94073ea,0xf9004d2a,0xf94077ea,0xf900512a,0xf940a7ea,0xf900552a
 .inst 0xf9407fea,0xf900012a,0xf94083ea,0xf900052a,0xf94087ea,0xf900092a,0xf9408bea,0xf9000d2a
 .inst 0xf9408fea,0xf900112a,0xf94093ea,0xf900152a,0xf94097ea,0xf900192a,0xf9409bea,0xf9001d2a
@@ -240,7 +239,6 @@ cbnz x12, 26b
 .inst 0x8a0801ad,0x3900016d,0x91000529,0x9100056b,0x9100054a,0xd100058c
 cbnz x12, 27b
 .inst 0xf9405be0,0x910343ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,

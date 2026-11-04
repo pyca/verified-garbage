@@ -14,8 +14,7 @@ pub(crate) const VG_CHACHA20_XOR_SVE2_FEATURES: verified_garbage_cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor_sve2() {
     core::arch::naked_asm!(
-        r".arch_extension sve2
-.inst 0xd346fc45,0xd10020a5,0xd37ffca5
+        r".inst 0xd346fc45,0xd10020a5,0xd37ffca5
 cbnz x5, 20f
 .inst 0xf9008074,0xf9008473,0xf900887a,0x91000074,0x3d802068,0x3d802469
 22:
@@ -318,7 +317,6 @@ b 222f
 .inst 0xf9408033,0xf9408434,0xf940883e
 210:
 .inst 0xd65f03c0
-.arch_extension nosve2
 .p2align 6",
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )

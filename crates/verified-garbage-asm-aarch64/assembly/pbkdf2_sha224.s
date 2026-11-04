@@ -236,7 +236,6 @@ vg_pbkdf2_hmac_sha224:
 	.p2align 6
 
 vg_pbkdf2_hmac_sha224_sha2:
-	.arch_extension sha2
 	sub sp, sp, #1600
 	add x7, sp, #0
 	add x10, x4, #0
@@ -465,5 +464,4 @@ vg_pbkdf2_hmac_sha224_sha2:
 	ldr x23, [x23, #880]
 	add sp, sp, #1600
 	ret
-	.arch_extension nosha2
 	.p2align 6

@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_ccm_seal_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -335,11 +334,9 @@ vg_aes_ccm_seal_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ccm_open_aes:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -725,11 +722,9 @@ vg_aes_ccm_open_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ccm_seal_aes_cbc:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -1059,11 +1054,9 @@ vg_aes_ccm_seal_aes_cbc:
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ccm_open_aes_cbc:
-	.arch_extension aes
 	sub sp, sp, #2592
 	add x16, sp, #0
 	ldr x17, [sp, #2592]
@@ -1449,7 +1442,6 @@ vg_aes_ccm_open_aes_cbc:
 	ldr x19, [x19, #128]
 	add sp, sp, #2592
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_ccm_seal:

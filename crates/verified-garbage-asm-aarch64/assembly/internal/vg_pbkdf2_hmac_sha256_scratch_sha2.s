@@ -5,7 +5,6 @@
 // gives.
 
 vg_pbkdf2_hmac_sha256_scratch_sha2:
-	.arch_extension sha2
 	add x10, x4, #0
 	add x4, x7, #0
 	str x19, [x4, #832]
@@ -233,5 +232,4 @@ vg_pbkdf2_hmac_sha256_scratch_sha2:
 	ldr x30, [x23, #872]
 	ldr x23, [x23, #880]
 	ret
-	.arch_extension nosha2
 	.p2align 6

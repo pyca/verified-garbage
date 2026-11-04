@@ -105,8 +105,7 @@ pub const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHA2_FEATURES: verified_garb
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
+        r".inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
 .inst 0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9006e00,0xf9005e02,0xf9006204
 .inst 0xf9006605,0xf9009206,0xf9009607,0x91000077,0xf940cbe9,0xf9006a09,0xf940cfe9,0xf9007209
 .inst 0xf940d3e9,0xf9007609,0xf940d7f4,0xf940dbe9,0xf9007a09,0x91200293,0x91240295,0x3940004a
@@ -140,7 +139,6 @@ cbnz x13, 25b
 21:
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_rsa_pss_sha256_mgf1_sha256_encode_sha2 = sym super::rsa_pss_sha256_mgf1_sha256::vg_rsa_pss_sha256_mgf1_sha256_encode_sha2::vg_rsa_pss_sha256_mgf1_sha256_encode_sha2,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
@@ -234,8 +232,7 @@ pub const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHA2_FEATURES:
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_sha2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
+        r".inst 0xd10543ff,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217,0xf9004618
 .inst 0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9005e00,0xf9006202,0xf9006603
 .inst 0xf9006a04,0xf9006e05,0xf9007607,0x91000037,0xf940abe9,0x11000129,0xf9008609,0xf940aff4
 .inst 0xf940b3e9,0xf9007a09,0xf940b7e9,0xf9009e09,0xf940bbe9,0xf900a209,0x91200293,0x91240295
@@ -256,7 +253,6 @@ b 21f
 21:
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
         vg_rsa_pss_sha256_mgf1_sha256_check_encoding_sha2 = sym super::rsa_pss_sha256_mgf1_sha256::vg_rsa_pss_sha256_mgf1_sha256_check_encoding_sha2::vg_rsa_pss_sha256_mgf1_sha256_check_encoding_sha2,

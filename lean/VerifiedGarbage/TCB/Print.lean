@@ -119,12 +119,6 @@ structure Printer (M : ISA) where
   `aluTbl`): each a `static`'s name and its words, which the emitter writes
   (`TCB/Rust.lean`). -/
   tables : M.Instr → List (String × List (BitVec 64)) := fun _ => []
-  /-- Assembler directives before, and after, the body of a function that
-  needs the CPU feature `f` (`Artifact.features`), for an assembler that
-  rejects the instructions of a feature the target does not enable: they
-  enable it for that function only. -/
-  enableFeature : String → List String := fun _ => []
-  disableFeature : String → List String := fun _ => []
   /-- The Rust `cfg` predicate under which code needing the CPU feature `f`
   may be compiled, for a feature that some of the target's configurations
   cannot assemble or must never run (e.g. ARMv7's `umaal`, which the

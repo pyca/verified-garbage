@@ -5,7 +5,6 @@
 // gives.
 
 vg_aes_gcm_siv_seal_aes:
-	.arch_extension aes
 	sub sp, sp, #3824
 	add x16, sp, #0
 	add x17, sp, #16
@@ -1526,11 +1525,9 @@ vg_aes_gcm_siv_seal_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #3824
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_siv_open_aes:
-	.arch_extension aes
 	sub sp, sp, #3824
 	add x16, sp, #0
 	add x17, sp, #16
@@ -4348,12 +4345,9 @@ vg_aes_gcm_siv_open_aes:
 	ldr x19, [x19, #128]
 	add sp, sp, #3824
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_gcm_siv_seal_aes_sha3:
-	.arch_extension aes
-	.arch_extension sha3
 	sub sp, sp, #3824
 	add x16, sp, #0
 	add x17, sp, #16
@@ -5838,13 +5832,9 @@ vg_aes_gcm_siv_seal_aes_sha3:
 	ldr x19, [x19, #128]
 	add sp, sp, #3824
 	ret
-	.arch_extension noaes
-	.arch_extension nosha3
 	.p2align 6
 
 vg_aes_gcm_siv_open_aes_sha3:
-	.arch_extension aes
-	.arch_extension sha3
 	sub sp, sp, #3824
 	add x16, sp, #0
 	add x17, sp, #16
@@ -8542,8 +8532,6 @@ vg_aes_gcm_siv_open_aes_sha3:
 	ldr x19, [x19, #128]
 	add sp, sp, #3824
 	ret
-	.arch_extension noaes
-	.arch_extension nosha3
 	.p2align 6
 
 vg_aes_gcm_siv_seal:

@@ -14,8 +14,7 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: verified_garbage_cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch_aes() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x6f00e400,0xd1006029,0xd100802a
+        r".inst 0x6f00e400,0xd1006029,0xd100802a
 cbz x9, 20f
 cbz x10, 22f
 .inst 0xb9400004,0xb9000044,0xb9400405,0xb9000445,0xb9400806,0xb9000846,0xb9400c07,0xb9000c47
@@ -83,7 +82,6 @@ b 21f
 .inst 0x4a090084,0xb900c044,0x4a0400a5,0xb900c445,0x4a0500c6,0xb900c846,0x4a0600e7,0xb900cc47
 21:
 .inst 0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

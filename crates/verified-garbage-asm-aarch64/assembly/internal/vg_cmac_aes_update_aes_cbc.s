@@ -5,7 +5,6 @@
 // gives.
 
 vg_cmac_aes_update_aes_cbc:
-	.arch_extension aes
 	cbz x4, 20f
 	ldr q16, [x0, #0]
 	ldr q17, [x0, #16]
@@ -131,5 +130,4 @@ vg_cmac_aes_update_aes_cbc:
 20:
 21:
 	ret
-	.arch_extension noaes
 	.p2align 6

@@ -126,8 +126,7 @@ pub const VG_PBKDF2_HMAC_SHA512_SHA3_FEATURES: verified_garbage_cpu::Features = 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_sha3(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha3
-.inst 0xd13543ff,0x910003e7,0x9100008a,0x910000e4,0xf903a893,0xf903ac94,0xf903b095,0xf903b496
+        r".inst 0xd13543ff,0x910003e7,0x9100008a,0x910000e4,0xf903a893,0xf903ac94,0xf903b095,0xf903b496
 .inst 0xf903b898,0xf903bc9e,0xf903c097,0x91000097,0xf903c6e5,0x51000549,0xf903cae9,0xf903cee6
 .inst 0x91000013,0x91000034,0x91000055,0x91000076,0xd347fe89
 cbz x9, 20f
@@ -206,7 +205,6 @@ b 25f
 25:
 .inst 0xf943aaf3,0xf943aef4,0xf943b2f5,0xf943b6f6,0xf943baf8,0xf943befe,0xf943c2f7,0x913543ff
 .inst 0xd65f03c0
-.arch_extension nosha3
 .p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3::vg_sha512_update_scratch_sha3,

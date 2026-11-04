@@ -14,8 +14,7 @@ pub(crate) const VG_GHASH_AES_FEATURES: verified_garbage_cpu::Features = verifie
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash_aes() {
     core::arch::naked_asm!(
-        r".arch_extension aes
-.inst 0x3dc00006,0x4e2008c6,0xd2f84005,0x4e080ca1,0x6f4104c7,0x4f4154c3,0x6e0740e4,0x6e241c63
+        r".inst 0x3dc00006,0x4e2008c6,0xd2f84005,0x4e080ca1,0x6f4104c7,0x4f4154c3,0x6e0740e4,0x6e241c63
 .inst 0x0ee1e0e5,0x6e251c78,0x6e184310,0x3dc00020,0x4e200800,0xd343fc65
 cbz x5, 20f
 .inst 0x0ef8e305,0x4ef8e303,0x0ee1e067,0x6e034063,0x6e271c64,0x0ee1e087,0x6e0540a5,0x6e241ca5
@@ -88,7 +87,6 @@ b 210f
 210:
 21:
 .inst 0x4e200800,0x3d800020,0xd65f03c0
-.arch_extension noaes
 .p2align 6",
     )
 }

@@ -177,8 +177,7 @@ pub const VG_RSA_OAEP_SHA256_MGF1_DECRYPT_SHA256_SHA2_FEATURES: verified_garbage
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_oaep_sha256_mgf1_decrypt_sha256_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9006d22,0xf9005123,0xf9005524,0xf9005925
+        r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9006d22,0xf9005123,0xf9005524,0xf9005925
 .inst 0xf9005d26,0xf9000127,0xf940b7ea,0xf900652a,0xf940bbea,0xf900692a,0xf940c7ea,0xf900312a
 .inst 0xf940cbea,0xf900612a,0xf94093ea,0xf900052a,0xf94097ea,0xf900092a,0xf9409bea,0xf9000d2a
 .inst 0xf9409fea,0xf900112a,0xf940a3ea,0xf900152a,0xf940a7ea,0xf900192a,0xf940abea,0xf9001d2a
@@ -274,7 +273,6 @@ cbnz x12, 213b
 .inst 0x8a0c0140
 21:
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
@@ -441,8 +439,7 @@ pub const VG_RSA_OAEP_SHA256_MGF1_ENCRYPT_PRECOMPUTED_SHA256_SHA2_FEATURES: veri
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rsa_oaep_sha256_mgf1_encrypt_precomputed_sha256_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005122,0xf9005523,0xf9005924,0xf9005d25
+        r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005122,0xf9005523,0xf9005924,0xf9005d25
 .inst 0xf9006526,0xf9006927,0xf94093ea,0xf9006d2a,0xf94097ea,0xf900712a,0xf9409bea,0xf900752a
 .inst 0xf9409fea,0xf900312a,0xf940a3ea,0xf900612a,0xf94057ea,0xd280084c,0xeb0c014b,0xda0b016b
 cbnz x11, 20f
@@ -530,7 +527,6 @@ cbnz x12, 215b
 .inst 0xd2800000
 21:
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2::vg_sha256_update_scratch_sha2,

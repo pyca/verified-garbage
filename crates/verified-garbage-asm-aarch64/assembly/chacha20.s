@@ -284,7 +284,6 @@ vg_chacha20_apply:
 	.p2align 6
 
 vg_chacha20_apply_sve2:
-	.arch_extension sve2
 	ldr x9, [x0, #128]
 	subs x13, x9, x2
 	movz x11, #0, lsl #0
@@ -394,5 +393,4 @@ vg_chacha20_apply_sve2:
 	movz x0, #0, lsl #0
 21:
 	ret
-	.arch_extension nosve2
 	.p2align 6

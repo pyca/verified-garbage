@@ -477,8 +477,6 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.umov .x .x0 .v1 1) == ["umov x0, v1.d[1]"]
 #guard Instr.asm (.ldrq .v31 .x2 16) == ["ldr q31, [x2, #16]"]
 #guard Instr.asm (.strq .v16 .x30 65520) == ["str q16, [x30, #65520]"]
-#guard printer.enableFeature "aes" == [".arch_extension aes"]
-#guard printer.disableFeature "sha3" == [".arch_extension nosha3"]
 
 /-! ## CPU features -/
 

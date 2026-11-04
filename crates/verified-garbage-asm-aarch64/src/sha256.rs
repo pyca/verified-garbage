@@ -190,8 +190,7 @@ pub const VG_SHA224_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha224_finalize_sha2(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -229,7 +228,6 @@ cbz x24, 20b
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xb9401669
 .inst 0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0xf9403a93,0xf9404295,0xf9404696
 .inst 0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -252,8 +250,7 @@ pub const VG_SHA224_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha224_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0",
         concat!("adrp x9, ", vg_sym_page!("{VG_SHA224_H0}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA224_H0}")),
@@ -308,7 +305,6 @@ bl {vg_sha256_compress_sha2}
 .inst 0xb90012a9,0xb9401669,0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0x910003f0
 .inst 0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0x910343f0
 .inst 0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
         VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
@@ -568,8 +564,7 @@ pub const VG_SHA256_UPDATE_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha256_update_sha2(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10983ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
+        r".inst 0xd10983ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
 cbz x22, 20f
 22:
@@ -660,7 +655,6 @@ b 21f
 21:
 .inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff
 .inst 0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -684,8 +678,7 @@ pub const VG_SHA256_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = ver
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha256_finalize_sha2(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -721,7 +714,6 @@ bl {vg_sha256_compress_sha2}
 cbz x24, 20b
 .inst 0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf9403a93,0xf9404295
 .inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -744,8 +736,7 @@ pub const VG_SHA256_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_sha256_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".arch_extension sha2
-.inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
+        r".inst 0xd10443ff,0x910343ea,0xa9005553,0xa9016556,0xa9026d5a,0xa903795c,0x91000039,0x9100005a
 .inst 0x9100001b,0x910003e0",
         concat!("adrp x9, ", vg_sym_page!("{VG_SHA256_H0}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA256_H0}")),
@@ -798,7 +789,6 @@ bl {vg_sha256_compress_sha2}
 .inst 0x910003f3,0x91000355,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1
 .inst 0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
 .inst 0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
-.arch_extension nosha2
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
         VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,

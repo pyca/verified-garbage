@@ -5,8 +5,6 @@
 // gives.
 
 vg_aes_cbc_decrypt_aes_sha3:
-	.arch_extension aes
-	.arch_extension sha3
 	sub x9, x1, #10
 	sub x10, x1, #12
 	cbz x9, 20f
@@ -849,12 +847,9 @@ vg_aes_cbc_decrypt_aes_sha3:
 	str q31, [x11, #0]
 21:
 	ret
-	.arch_extension noaes
-	.arch_extension nosha3
 	.p2align 6
 
 vg_aes_cbc_encrypt_aes:
-	.arch_extension aes
 	sub x9, x1, #10
 	sub x10, x1, #12
 	cbz x9, 20f
@@ -1089,11 +1084,9 @@ vg_aes_cbc_encrypt_aes:
 	str q31, [x11, #0]
 21:
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_cbc_decrypt_aes:
-	.arch_extension aes
 	str x19, [x5, #2064]
 	str x20, [x5, #2072]
 	str x21, [x5, #2080]
@@ -1145,7 +1138,6 @@ vg_aes_cbc_decrypt_aes:
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
 	ret
-	.arch_extension noaes
 	.p2align 6
 
 vg_aes_cbc_encrypt:
