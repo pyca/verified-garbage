@@ -356,6 +356,27 @@ theorem hInit_two {α : Type} {Φ : α → State → Prop} {an : α → State} (
     by rw [o₂.get .r3, h₂.2, (X.agree p₂).S], by rw [o₁.get .r3, o₂.get .r3, h₁.2, h₂.2],
     (Base.spA X.s p₁ b₁).trans (Base.spA X.s p₂ b₂).symm⟩
 
+/-- `ctHash` keeps `BL`. -/
+theorem ctHash_wp (hH : HashOK Z.H) (hD : Z.H.D = D) (ok : CtOK P md Z.cc Z.dc) {a t : State} (h : BL D Z a t)
+    (hs : ∃ sl < (dbLen D a).toNat, t.gpr .r25 = BitVec.ofNat 64 sl) :
+    WP isa (ctHash Z.H P Z.f hArg) t (BL D Z a) := by
+  refine WP.seq (WP.mono (ctLens_wp ok hD h hs) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (hInit_K1 hH h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (pad80_K1 ok h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (lenField_K2 ok h₃) fun t₄ h₄ => ?_)
+  refine WP.seq (WP.mono (lenLoop_K2 ok h₄) fun t₅ h₅ => ?_)
+  obtain ⟨hnb, hn0⟩ := nbm_le ok h₅.1
+  obtain ⟨⟨s, Pr, p, b, sy⟩, h28, fb, hfb, h27⟩ := h₅
+  have L := agree_lay Pr p
+  have X := lOk D Z
+  refine WP.seq (WP.mono (compLoop_ok L ((tabH D Z).tab Pr) ok b sy h28 h27 hn0 hnb hfb) fun t₆ I => ?_)
+  refine WP.seq (WP.of_syms (wp_addi (h := by decide) fun t₇ o₇ e₇ => wp_addi (h := by decide)
+    fun t₈ o₈ e₈ => wp_nil fun y₈ => ?_))
+  have k : Only [.r3, .r4] t₆ t₈ := (o₇.trans o₈).mono
+  exact WP.mono (digM_ok (X.fits Pr) ((tabH D Z).tab Pr) ok.dig ok.digNF ok.dims.N.2 (I.base.only (X.fits Pr) k)
+    (y₈.trans I.sy) (by rw [o₈.get .r3, e₇, I.base.r14]) (by rw [e₈, o₇.get .r14, I.base.r14]))
+    fun t' ⟨⟨b', _⟩, y'⟩ => ⟨s, Pr, p, b', y'⟩
+
 /-- `ctHash` from some salt length below `dbLen` in `r25`, in both runs. -/
 theorem ctHash_ct (hH : HashOK Z.H) (cH : HashCT hH) (hD : Z.H.D = D) (ok : CtOK P md Z.cc Z.dc)
     (ct : CtTaint P) (hcc : ConstantTime isa (compressK md).pre (compressK md).pub Z.cc)
