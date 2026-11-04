@@ -71,8 +71,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
   blkT := blkT_of secp256k1_blk₀ secp256k1_blk₁ secp256k1_blk₂ secp256k1_blk₃ secp256k1_blk₄ secp256k1_blk₅ secp256k1_blk₆ secp256k1_blk₇
 
 

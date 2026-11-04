@@ -73,8 +73,6 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := nofun
-  reduceSp := nofun
-  reduceMx := nofun
   blkT := blkT_of p521_blk₀ p521_blk₁ p521_blk₂ p521_blk₃ p521_blk₄ p521_blk₅ p521_blk₆ p521_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

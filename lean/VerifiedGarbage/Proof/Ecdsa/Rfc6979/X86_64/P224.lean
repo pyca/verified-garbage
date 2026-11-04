@@ -77,8 +77,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
   blkT := blkT_of p224_blk₀ p224_blk₁ p224_blk₂ p224_blk₃ p224_blk₄ p224_blk₅ p224_blk₆ p224_blk₇
 
 

@@ -59,8 +59,6 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := (p384 hL hT hI).reduceT
-  reduceSp := (p384 hL hT hI).reduceSp
-  reduceMx := (p384 hL hT hI).reduceMx
   blkT := blkT_of p384_blk₀ p384_blk₁ p384_blk₂ p384_blk₃ p384_blk₄ p384_blk₅ p384_blk₆ p384_blk₇
 
 /-- P-384 with BMI2 and ADX (`adx`) or without. -/
