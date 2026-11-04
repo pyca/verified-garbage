@@ -96,7 +96,7 @@ def encBody : Prog isa :=
       .ite (.nonzero .x .x10) ret0 (encMain f H g)]),
     .block restore]
 
-/-- `vg_rsa_pss_encode_<H>`. -/
+/-- `vg_rsa_pss_<H>_encode`. -/
 def encode : Prog isa := .frame (.alloc frameBytes) (encBody f H g) (.free frameBytes)
 
 /-! ## `checkEncoding`
@@ -126,7 +126,7 @@ def chkBody : Prog isa :=
       .ite (.nonzero .x .x10) ret0 (chkMain f H g)]),
     .block restore]
 
-/-- `vg_rsa_pss_check_encoding_<H>`. -/
+/-- `vg_rsa_pss_<H>_check_encoding`. -/
 def checkEncoding : Prog isa := .frame (.alloc frameBytes) (chkBody f H g) (.free frameBytes)
 
 /-! ## The callers -/
@@ -180,8 +180,8 @@ def hashName : Nat → String
   | 0 => "md5" | 1 => "sha1" | 2 => "sha224" | 3 => "sha256" | 4 => "sha384" | 5 => "sha512"
   | 6 => "sha512_224" | _ => "sha512_256"
 
-def encName (i : Nat) : String := s!"vg_rsa_pss_encode_{hashName i}"
-def chkName (i : Nat) : String := s!"vg_rsa_pss_check_encoding_{hashName i}"
+def encName (i : Nat) : String := s!"vg_rsa_pss_{hashName i}_encode"
+def chkName (i : Nat) : String := s!"vg_rsa_pss_{hashName i}_check_encoding"
 
 /-- `b i` for the index `i` in `x27`, by comparisons with each of `is`
 (`x9 := x27 - i`): the last is taken for every other value. -/
