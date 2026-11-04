@@ -94,9 +94,8 @@ theorem digest_agree : ∀ s₁ s₂, (digestK H).pre s₁ → (digestK H).pre s
   · exact h.2.1
 
 /-- `digest P` is constant time, given the taint analysis of its code. -/
-theorem digest_ct {hc : VG.Taint.Hint VG.PPC64LE.Taint.T}
-    (h : (VG.Taint.check taint (Taint.ofRegs [.r3, .r4]) (digest P) hc).isSome = true) :
+theorem digest_ct (h : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r3, .r4]) (digest P) hc).isSome = true) :
     ConstantTime isa (digestK H).pre (digestK H).pub (digest P) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) digest_agree h
+  let ⟨_, hc⟩ := h; VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) digest_agree hc
 
 end VG.Proof.MdHashTable.PPC64LE
