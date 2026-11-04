@@ -34,11 +34,12 @@ abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region :=
   [⟨L.d, P.Q⟩, ⟨dgArg P L, P.Q⟩, ⟨kArg P L, P.Q⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
-/-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
-candidate, the digest has `Q` bytes; if they do, the frame has the words
-above its pointers; and the tables are the comb's. -/
+/-- What `core`'s digest and `k` need of the layout: unless the hash is
+shorter than the scalars, the digest has `Q` bytes; the frame has `P`'s
+words above its pointers; the tables are the comb's; and the table of the
+hash function is of `P`'s. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ (P.R.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts
+  L.q = P.Q ∧ (P.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts ∧ L.G = P.H.stream ∧ L.f = P.f
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the return address of a call from the frame. -/
@@ -46,7 +47,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
     (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
   have hQ := P.sizes
-  cases hw : P.R.wide
+  cases hw : P.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hn := hk.2.1 hw
     simp only [dgArg, kArg, hw, Bool.false_eq_true, ite_false] at hx
@@ -56,14 +57,21 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
           (Region.sub_prefix hn))⟩
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ8, h6])⟩, (hL.stk_OUT (by omega_using [hQ8, h6])),
         hL.stk_SCR (by omega_using [hQ8, h6]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ8, h6]) (by omega_using [])⟩
-  · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
+  · obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -, -, -⟩ := hQ
+    have he : L.e = 34 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
+    have key : ∀ o, 240 ≤ o → o + 66 ≤ 456 → (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR],
+        Within ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ R) ∧ Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.OUT ∧
+        Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.SCR ∧
+        Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := fun o h₁ h₂ =>
+      ⟨⟨L.FR, by simp, within_fr _ (by omega_using [h₁]) (by omega_using [hQ66, he, h₂])⟩,
+        (hL.stk_OUT (by omega_using [hQ66, he, h₂])), hL.stk_SCR (by omega_using [hQ66, he, h₂]),
+        Offset.disjoint _ (by omega_using [h₁]) (by omega_using [hQ66, h₂]) (by omega_using [])⟩
     simp only [dgArg, kArg, hw, ite_true] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ66, he])⟩, (hL.stk_OUT (by omega_using [hQ66, he])),
-        hL.stk_SCR (by omega_using [hQ66, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ66]) (by omega_using [])⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ66, he])⟩, (hL.stk_OUT (by omega_using [hQ66, he])),
-        hL.stk_SCR (by omega_using [hQ66, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ66]) (by omega_using [])⟩
+    rcases hx with h | rfl
+    · split at h <;> subst h
+      · exact key 240 (by decide) (by decide)
+      · exact key 312 (by decide) (by decide)
+    · exact key 384 (by decide) (by decide)
 
 theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ≠ .rsp) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
@@ -91,12 +99,12 @@ theorem ce_bytesAt {t : State} (hc : Ctx L g m₀ t) {p : Addr} {n : Nat}
 /-- The comb's tables, at the addresses the state gives their statics. -/
 theorem Ctx.tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constRegions (fun n => t.syms n) P.R.E.combConsts = L.TBLs := by
-  rw [Lay.TBLs, ← hk.2.2.2]; exact constRegions_congr hc.sy
+  rw [Lay.TBLs, ← hk.2.2.2.1]; exact constRegions_congr hc.sy
 
 /-- The comb's tables, as on entry, on entry to a call from the frame. -/
 theorem tbl_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constsHeld t.callEntry.mem (fun n => t.syms n) P.R.E.combConsts := fun c hc' i hi => by
-  have hcs : c ∈ L.cs := by rw [hk.2.2.2]; exact hc'
+  have hcs : c ∈ L.cs := by rw [hk.2.2.2.1]; exact hc'
   show t.callEntry.mem.readW (t.syms c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
   rw [hc.sy c hcs]
   obtain ⟨hn, tO, tS, tK⟩ := hL.tbl ⟨L.sy c.1, 8 * c.2.length⟩
