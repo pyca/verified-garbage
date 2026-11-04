@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.CombBitBytes
@@ -776,5 +777,202 @@ theorem combStep_ok (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s₀ : 
     exact Frm.combR_trans (Frm.combR_trans (Frm.combR_trans (Frm.combR_trans (Frm.combR_trans
       (Frm.combR_trans hf hf₁) hf₂) hf₃) hf₄') hf₅) hfu
   · exact (((((k.trans k₁).trans k₂).trans k₃).trans k₄).trans (k₅.trans ku)).mono (by decide)
+
+/-! ## The comb's setup -/
+
+/-- A store to an inner counter slot. -/
+theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.store {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
+    (hc : ModCtx s B Z o w mi P) {i : Nat} (hi : 17 ≤ i) (hi' : i < 32) {v : BitVec 64}
+    (hm : t.mem = s.mem.writeW (off (off B o) (8 * i)) v) (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) :
+    ModCtx t B Z o w mi P ∧ Frm (off B o) [(8 * i, 8)] s.mem t.mem ∧ word t.mem (off B o) (8 * i) = v ∧
+      (∀ k < 32, k ≠ i → word t.mem (off B o) (8 * k) = word s.mem (off B o) (8 * k)) ∧
+      InScr B Z s.mem t.mem ∧ (∀ k < 32, word t.mem B (8 * k) = word s.mem B (8 * k)) := by
+  have ho := writeW_outside s.mem (off B o) (d := 8 * i) v (by omega)
+  rw [← hm] at ho
+  have hf : Frm (off B o) [(8 * i, 8)] s.mem t.mem := Frm.of_outside ho (by simp)
+  have hl := hdr_lt_slot w 8 hi'
+  refine ⟨hc.of_inner (Frm.cover hf fun r hr => ⟨(8 * 17, 8 * 15), by simp [innerR], by
+      rw [List.mem_singleton.mp hr]; simp only; omega, by rw [List.mem_singleton.mp hr]; simp only; omega⟩) hwr hdi,
+    hf, by rw [hm]; exact word_writeW_self _ _ _ _, fun k hk hne => ho.word (by omega) (by
+      have := hdr_lt_slot w 8 hk; omega),
+    (VG.Proof.Ffdh.X86_64.child_frm hc.sub hc.wide hf fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp only; unfold tabBytes; omega).2,
+    (VG.Proof.Ffdh.X86_64.child_frm hc.sub hc.wide hf fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp only; unfold tabBytes; omega).1⟩
+
+/-- The outer slot `oo` to the inner slot `i`, through the link. -/
+theorem fromOuter_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
+    (hc : ModCtx s B Z o w mi P) {oo i : Nat} (hoo : oo < 32) (hi' : i < 32) {v : BitVec 64}
+    (hv : word s.mem B (8 * oo) = v) :
+    WP isa (.block (fromOuter oo i)) s fun t => t.mem = s.mem.writeW (off (off B o) (8 * i)) v ∧
+      t.gpr .rdx = v ∧ Keep [.rax, .rdx] s t := by
+  have hg := hc.sub.good
+  have hlo := hc.sub.lo
+  have hhi := hc.sub.hi
+  have hO : InRegions (s.rd ++ s.wr) (off B (8 * oo)) 8 := hc.sub.scr.ld (by
+    have := hdr_lt_slot w 8 hoo; omega)
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.mem = s.mem.writeW (off (off B o) (8 * i)) v ∧
+      t.gpr .rdx = v) (by
+    unfold fromOuter
+    xrun [State.ea, hdr, Crt.ws, hg.rdi, hdrOff, hg.scr.ld (d := 8 * Crt.sLink) (hdr_lt_slot _ 8 (by decide)),
+      hc.sub.link, hO, hv, hg.scr.st (d := 8 * i) (hdr_lt_slot _ 8 hi')]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+
+theorem atOff' (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d := by
+  rw [BitVec.ofInt_natCast]
+
+/-- The comb's pointers and counts into the inner header: `iCtx`, `iRows`,
+`iI := rows`, `iXp` and `iXl`. -/
+theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
+    (hc : ModCtx s B Z o w mi P) {cp xp : Addr} {L rows : Nat}
+    (hCtx : word s.mem B (8 * sCtx) = cp) (hX : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
+    (hXl : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = BitVec.ofNat 64 L)
+    (hreg : CtxRd s B Z cp (3 + 34 * w)) (hrows : word s.mem cp 16 = BitVec.ofNat 64 rows) :
+    WP isa (.block (fromOuter sCtx iCtx ++ [.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx,
+      .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
+      fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl)) s fun t => ModCtx t B Z o w mi P ∧
+      word t.mem (off B o) (8 * iCtx) = cp ∧ word t.mem (off B o) (8 * iRows) = BitVec.ofNat 64 rows ∧
+      word t.mem (off B o) (8 * iI) = BitVec.ofNat 64 rows ∧ word t.mem (off B o) (8 * iXp) = xp ∧
+      word t.mem (off B o) (8 * iXl) = BitVec.ofNat 64 L ∧ Frm (off B o) [(8 * 17, 8 * 15)] s.mem t.mem ∧
+      InScr B Z s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
+  have hlo := hc.sub.lo
+  have hhi := hc.sub.hi
+  have hn := hc.sub.scr.nowrap
+  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (fromOuter_ok hc (by decide) (by decide) hCtx) fun s₁ ⟨hm₁, hd₁, k₁⟩ => ?_
+  obtain ⟨hc₁, hf₁, hw₁, ho₁, hin₁, hb₁⟩ := hc.store (by decide) (by decide) hm₁ k₁.2.2 (k₁.gpr (by decide))
+  rw [WP.block_append_iff]
+  change WP isa (.block ([.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx] ++ [.store (hdr iI) .rdx])) s₁ _
+  rw [WP.block_append_iff]
+  have hg₁ := hc₁.sub.good
+  have hr₁ : word s₁.mem cp 16 = BitVec.ofNat 64 rows := by rw [hreg.word hin₁ (by omega)]; exact hrows
+  have hrd₁ : InRegions (s₁.rd ++ s₁.wr) (off cp 16) 8 := by rw [k₁.2.1, k₁.2.2]; exact hreg.rd 2 (by omega)
+  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.mem = s₁.mem.writeW (off (off B o) (8 * iRows)) (BitVec.ofNat 64 rows) ∧
+      t.gpr .rdx = BitVec.ofNat 64 rows) (by
+    xrun [State.ea, hdr, at_, hg₁.rdi, hdrOff, hd₁, atOff', hrd₁, hr₁, hg₁.scr.st (d := 8 * iRows) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun s₂ ⟨⟨hm₂, hd₂⟩, k₂⟩ => ?_
+  obtain ⟨hc₂, hf₂, hw₂, ho₂, hin₂, hb₂⟩ := hc₁.store (by decide) (by decide) hm₂ k₂.2.2 (k₂.gpr (by decide))
+  have hg₂ := hc₂.sub.good
+  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s₂.mem.writeW (off (off B o) (8 * iI)) (BitVec.ofNat 64 rows)) (by
+    xrun [State.ea, hdr, hg₂.rdi, hdrOff, hd₂, hg₂.scr.st (d := 8 * iI) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun s₃ ⟨hm₃, k₃⟩ => ?_
+  obtain ⟨hc₃, hf₃, hw₃, ho₃, hin₃, hb₃⟩ := hc₂.store (by decide) (by decide) hm₃ k₃.2.2 (k₃.gpr (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (fromOuter_ok hc₃ (by decide) (by decide) (v := xp) (by
+    rw [hb₃ _ (by decide), hb₂ _ (by decide), hb₁ _ (by decide), hX])) fun s₄ ⟨hm₄, _, k₄⟩ => ?_
+  obtain ⟨hc₄, hf₄, hw₄, ho₄, hin₄, hb₄⟩ := hc₃.store (by decide) (by decide) hm₄ k₄.2.2 (k₄.gpr (by decide))
+  refine WP.mono (fromOuter_ok hc₄ (by decide) (by decide) (v := BitVec.ofNat 64 L) (by
+    rw [hb₄ _ (by decide), hb₃ _ (by decide), hb₂ _ (by decide), hb₁ _ (by decide), hXl])) fun t ⟨hm₅, _, k₅⟩ => ?_
+  obtain ⟨hc₅, hf₅, hw₅, ho₅, hin₅, hb₅⟩ := hc₄.store (by decide) (by decide) hm₅ k₅.2.2 (k₅.gpr (by decide))
+  refine ⟨hc₅, ?_, ?_, ?_, ?_, hw₅, ?_, hin₁.trans (hin₂.trans (hin₃.trans (hin₄.trans hin₅))),
+    ((k₁.trans k₂).trans (k₃.trans (k₄.trans k₅))).mono (by decide)⟩
+  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide),
+      ho₂ _ (by decide) (by decide), hw₁]
+  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), ho₃ _ (by decide) (by decide), hw₂]
+  · rw [ho₅ _ (by decide) (by decide), ho₄ _ (by decide) (by decide), hw₃]
+  · rw [ho₅ _ (by decide) (by decide), hw₄]
+  · have cov : ∀ {i : Nat}, 17 ≤ i → i < 32 → ∀ r ∈ [(8 * i, 8)], ∃ r' ∈ [(8 * 17, 8 * 15)],
+        r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := fun h1 h2 r hr => ⟨(8 * 17, 8 * 15), by simp, by
+      rw [List.mem_singleton.mp hr]; simp only; omega, by rw [List.mem_singleton.mp hr]; simp only; omega⟩
+    have f₁ := Frm.widen hf₁ (cov (i := iCtx) (by decide) (by decide))
+    have f₂ := Frm.widen hf₂ (cov (i := iRows) (by decide) (by decide))
+    have f₃ := Frm.widen hf₃ (cov (i := iI) (by decide) (by decide))
+    have f₄ := Frm.widen hf₄ (cov (i := iXp) (by decide) (by decide))
+    have f₅ := Frm.widen hf₅ (cov (i := iXl) (by decide) (by decide))
+    exact (((f₁.trans f₂).trans f₃).trans f₄).trans f₅
+
+/-- Montgomery multiplication in the inner workspace for `P`. -/
+theorem mm_mc (Mo : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
+    (hc : ModCtx s B Z o w mi P) {out a b : Nat} (ho : out = aX ∨ out = aXm ∨ out = aY) (ha : a < 8) (hb : b < 8)
+    (ha₁ : a ≠ aAcc) (ha₂ : a ≠ aTmp) (hb₁ : b ≠ aAcc) (hb₂ : b ≠ aTmp)
+    (hbl : wv s.mem (off B o) (slot w b) w < P) :
+    WP isa (Mo.mm out a b) s fun t => ModCtx t B Z o w mi P ∧
+      wv t.mem (off B o) (slot w out) w < P ∧
+      wv t.mem (off B o) (slot w out) w * 2 ^ (64 * w) % P =
+        wv s.mem (off B o) (slot w a) w * wv s.mem (off B o) (slot w b) w % P ∧
+      Frm (off B o) (combR w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hout : out < 8 := by rcases ho with rfl | rfl | rfl <;> decide
+  have ho₁ : out ≠ aAcc := by rcases ho with rfl | rfl | rfl <;> decide
+  have ho₂ : out ≠ aTmp := by rcases ho with rfl | rfl | rfl <;> decide
+  refine WP.mono (Mo.mm_ok hc.sub.good (Nat.le_refl _) (by have := hc.w2; omega) (by have := hc.w28; omega) hout
+    ha hb ho₁ ho₂ ha₁ hb₁ hc.xv.inv (by rw [hc.xv.n]; exact hbl) ha₂ hb₂) fun t ⟨_, hl, hv, ha', k⟩ => ?_
+  rw [hc.xv.n] at hl hv
+  have hf : Frm (off B o) (combR w) s.mem t.mem := Frm.toCombR (Frm.of_arrays ha' (by simp)) (mm_combR w ho)
+  exact ⟨hc.of_inner (Frm.widen hf (combR_inner w)) k.2.2 (k.gpr (by decide)), hl, hv, hf, k⟩
+
+theorem TabP.M_zero (T : TabP) (h1 : 1 < T.P) : T.M 0 = T.R % T.P := by
+  unfold TabP.M
+  rw [powMod_eq, Nat.pow_zero, Nat.mod_eq_of_lt h1, Nat.one_mul]
+
+/-- `aY := g^x mod p`, by the context's comb over its rows. -/
+theorem comb_ok (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s : State}
+    (hc : ModCtx s T.B T.Z T.o T.w T.mi T.P)
+    (hCtx : word s.mem T.B (8 * sCtx) = T.cp) (hX : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
+    (hXl : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = BitVec.ofNat 64 xb.length)
+    (hreg : CtxRd s T.B T.Z T.cp T.n) (hrows : word s.mem T.cp 16 = BitVec.ofNat 64 T.rows)
+    (hent : ∀ a < 32, row s.mem T.cp T.w (2 + a) = Spec.Rsa.toWords (T.entry a) T.w)
+    (hx : Src s T.B T.Z xp xb)
+    (hr1 : 1 ≤ T.rows) (hr : 5 * T.rows < 2 ^ 31) (hL : 8 * xb.length < 2 ^ 32)
+    (hxb : Spec.Rsa.os2ip xb < 2 ^ T.bits) :
+    WP isa (seqs (comb Mo.mm)) s fun t => ModCtx t T.B T.Z T.o T.w T.mi T.P ∧
+      wv t.mem (off T.B T.o) (slot T.w aY) T.w = Spec.Rsa.powMod T.G (Spec.Rsa.os2ip xb) T.P ∧
+      Frm (off T.B T.o) (innerR T.w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hP : 0 < T.P := by have := hc.x1; omega
+  have hR : Nat.Coprime T.R T.P := VG.Proof.Bignum.coprime_pow2 hc.odd _
+  have hn := hc.sub.scr.nowrap
+  unfold comb
+  -- `aY := R mod p`.
+  refine wp_seqs_cons (by simp) (WP.mono (mm_mc Mo hc (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [hc.xv.one]; exact hc.x1)) fun s₁ ⟨hc₁, hl₁, hv₁, hf₁, k₁⟩ => ?_)
+  have hY₁ : wv s₁.mem (off T.B T.o) (slot T.w aY) T.w = T.M 0 := by
+    rw [T.M_zero hc.x1]
+    have := mont_cancel hR (o := wv s₁.mem (off T.B T.o) (slot T.w aY) T.w) (c := T.R) (by
+      rw [hv₁, hc.xv.one, Nat.mul_one, ← hc.r2])
+    rw [Nat.mod_eq_of_lt hl₁] at this
+    exact this
+  obtain ⟨hh₁, hin₁⟩ := VG.Proof.Ffdh.X86_64.child_frm hc.sub hc.wide hf₁ fun r hr => by
+    have := (combR_le T.w r hr).2; omega
+  have hcw : 3 + 34 * T.w = T.n := rfl
+  -- The header.
+  refine wp_seqs_cons (by simp) (WP.mono (combHead_ok hc₁ (cp := T.cp) (xp := xp) (L := xb.length) (rows := T.rows)
+    (by rw [hh₁ _ (by decide)]; exact hCtx) (by rw [hh₁ _ (by decide)]; exact hX)
+    (by rw [hh₁ _ (by decide)]; exact hXl) (hcw ▸ hreg.congr k₁.2.1 k₁.2.2)
+    (by rw [hreg.word hin₁ (by unfold TabP.n; omega)]; exact hrows))
+    fun s₂ ⟨hc₂, hC₂, hR₂, hI₂, hXp₂, hXl₂, hf₂, hin₂, k₂⟩ => ?_)
+  have hin₁₂ := hin₁.trans hin₂
+  have he₂ : CEnv T xp xb s₂ := ⟨hc₂, hC₂, hR₂, hXp₂, hXl₂, hreg.congr (k₁.trans k₂).2.1 (k₁.trans k₂).2.2,
+    fun a ha => by
+      rw [← hent a ha]
+      refine row_congr fun i hi => hreg.word hin₁₂ ?_
+      have : T.w * (2 + a) + T.w ≤ 34 * T.w := by
+        have h := Nat.mul_le_mul_left T.w (show 2 + a + 1 ≤ 34 by omega); rw [Nat.mul_succ] at h; omega
+      unfold TabP.n
+      rw [Nat.mul_assoc]; omega,
+    hx.congr hin₁₂ (k₁.trans k₂).2.1 (k₁.trans k₂).2.2⟩
+  have hY₂ : wv s₂.mem (off T.B T.o) (slot T.w aY) T.w = T.M 0 := by
+    rw [hf₂.wv_eq (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Or.inr (by have := hdr_lt_slot T.w aY (show 31 < 32 by decide); simp only; omega))
+      (by simp only [slot, hdrBytes, aY]; have := hc.w28; omega), hY₁]
+  have hI0 : CInv T xp xb s₂ 0 s₂ := ⟨he₂, by rw [hI₂, Nat.sub_zero], by
+      rw [hY₂, Nat.sub_zero, Rsa.FixedBaseComb.high_top], fun _ _ => rfl, Keep.refl _ _⟩
+  -- The rows.
+  refine wp_seqs_cons (by simp) (wp_upto (a := 0) (N := T.rows) hr1 (CInv T xp xb s₂)
+    (fun j _ hj t hI => combStep_ok Mo hr hL hj hI) (fun t h => ?_) hI0)
+  obtain ⟨he₃, _, hy₃, hf₃, k₃⟩ := h
+  rw [Nat.sub_self, Rsa.FixedBaseComb.high_zero _ _ hxb] at hy₃
+  -- Out of Montgomery form.
+  refine WP.mono (mm_cenv Mo he₃ (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [he₃.mc.xv.one]; exact hc.x1)) fun u ⟨heu, hlu, hvu, _, hfu, ku⟩ => ?_
+  rw [hy₃, he₃.mc.xv.one, Nat.mul_one] at hvu
+  have hval : wv u.mem (off T.B T.o) (slot T.w aY) T.w = Spec.Rsa.powMod T.G (Spec.Rsa.os2ip xb) T.P := by
+    have := mont_cancel hR (o := wv u.mem (off T.B T.o) (slot T.w aY) T.w)
+      (c := Spec.Rsa.powMod T.G (Spec.Rsa.os2ip xb) T.P) (by rw [hvu]; unfold TabP.M; rw [Nat.mod_mod])
+    rw [Nat.mod_eq_of_lt hlu, Nat.mod_eq_of_lt (by rw [powMod_eq]; exact Nat.mod_lt _ hP)] at this
+    exact this
+  have w₁ := Frm.widen hf₁ (combR_inner T.w)
+  have w₂ : Frm (off T.B T.o) (innerR T.w) s₁.mem s₂.mem := Frm.widen hf₂ fun r hr =>
+    ⟨(8 * 17, 8 * 15), by simp [innerR], by rw [List.mem_singleton.mp hr], by rw [List.mem_singleton.mp hr]⟩
+  have w₃ := Frm.widen hf₃ (combR_inner T.w)
+  have w₄ := Frm.widen hfu (combR_inner T.w)
+  exact ⟨heu.mc, hval, ((w₁.trans w₂).trans w₃).trans w₄, (((k₁.trans k₂).trans k₃).trans ku).mono (by decide)⟩
 
 end VG.Proof.Ffdh.X86_64.Cached
