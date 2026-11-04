@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Verified
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Bignum.LazyMath
 public import VerifiedGarbage.Proof.Bignum.Octets
@@ -153,7 +154,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 
-/-! # Emit RSA candidates for every shared Miller–Rabin backend -/
+/-! # Emit RSA candidates and prime searches for every shared Miller–Rabin backend -/
 
 @[expose] public section
 
@@ -166,6 +167,13 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     stack := 128
     verified := Proof.RsaKeyGen.X86_64.sharedCandidate_verified v
     spSafe := Proof.RsaKeyGen.X86_64.sharedCandidate_sp v
+    features := v.features },
+  Spec.RsaKeyGen.primeSearchApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Proof.RsaKeyGen.X86_64.Search.searchCode v
+    stack := 336
+    verified := Proof.RsaKeyGen.X86_64.Search.search_verified v
+    spSafe := Proof.RsaKeyGen.X86_64.Search.searchCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.RsaKeyGen
