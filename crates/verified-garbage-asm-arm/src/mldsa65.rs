@@ -7445,3 +7445,187 @@ bx lr",
         vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
     )
 }
+
+/// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa65_verify_message`.
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_verify_message_cached(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r"ldr r12, [sp, #0]
+lsr r12, r12, #8
+cmp r12, #0
+bne 20f
+ldr r12, [sp, #8]
+str r7, [r12, #0]
+movw r7, #37888
+movt r7, #1
+add r7, r12, r7
+ldr r12, [r12, #0]
+str r12, [r7, #904]
+str lr, [r7, #908]
+str r0, [r7, #912]
+str r1, [r7, #916]
+str r2, [r7, #920]
+str r3, [r7, #924]
+ldr r0, [sp, #0]
+ldr r1, [sp, #12]
+ldr r2, [sp, #4]
+ldr r3, [sp, #8]
+str r0, [r7, #928]
+str r1, [r7, #932]
+str r2, [r7, #936]
+str r3, [r7, #940]
+mov r12, #0
+strb r12, [r7, #944]
+strb r0, [r7, #945]
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+movw r2, #0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #932]
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #64
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #944
+add r3, r7, r3
+movw r12, #2
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #66
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #924]
+ldr r12, [r7, #928]
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #916]
+ldr r12, [r7, #920]
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #31
+movw lr, #200
+add lr, r7, lr
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r2, #0
+movw r3, #840
+add r3, r7, r3
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+ldr r0, [r7, #912]
+movw r1, #840
+add r1, r7, r1
+ldr r2, [r7, #936]
+ldr r3, [r7, #940]
+bl {vg_mldsa65_verify}
+ldr lr, [r7, #908]
+ldr r7, [r7, #904]
+b 21f
+20:
+mov r0, #2
+21:
+bx lr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
+    )
+}

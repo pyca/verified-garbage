@@ -2,6 +2,7 @@ module
 -- separate module: the contracts' preconditions, built in parallel with `Steps`, which `Sign` also imports
 
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.Contract
@@ -9,8 +10,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # ML-DSA on RISC-V, `sign_message` and `verify_message`: the contracts, evaluated
 
-The preconditions of `signMessageContract` and `verifyMessageContract` by
-register (`MSPre`, `MVPre`); and the contracts of the functions on `μ` they
+The preconditions of `signMessageContract`, `verifyMessageContract` and
+`verifyMessageCachedContract` by register (`MSPre`, `MVPre`, `MVCPre`); and the contracts of the functions on `μ` they
 call, `vg_mldsa*_sign` and `vg_mldsa*_verify`: what their preconditions
 need (`sign_pre`, `verify_pre`), what their postconditions give
 (`sign_post`, `verify_post`), and their public parts (`sign_pub`,
@@ -89,11 +90,12 @@ abbrev vscrR : Region := ⟨s.gpr .a6, messageScratchWords p * 8⟩
 
 end
 
-/-- `verifyMessageContract`'s precondition, by register. -/
-structure MVPre (p : Params) (STK : Nat) (s : State) : Prop where
+/-- `verifyMessageContract`'s precondition, by register, with the further
+regions `X` to read (`verifyMessageCachedContract`'s `tr`). -/
+structure MVPre (p : Params) (STK : Nat) (X : List Region) (s : State) : Prop where
   al : s.sp.toNat % 16 = 0
   stk : STK ≤ s.sp.toNat
-  rd : s.rd = [pkR p s, msgR s, ctxR s, vsigR p s]
+  rd : s.rd = [pkR p s, msgR s, ctxR s, vsigR p s] ++ X
   wr : s.wr = [vscrR p s]
   kc : (pkR p s).Disjoint (vscrR p s)
   mc : (msgR s).Disjoint (vscrR p s)
@@ -112,10 +114,32 @@ structure MVPre (p : Params) (STK : Nat) (s : State) : Prop where
   alx : (s.gpr .a6).toNat % 8 = 0
 
 theorem mvpre_of {p : Params} {n : Nat} {s : State}
-    (h : (verifyMessageContract p RISCV64.abi (n + 1)).pre s) : MVPre p (n + 1) s := by
+    (h : (verifyMessageContract p RISCV64.abi (n + 1)).pre s) : MVPre p (n + 1) [] s := by
   sig_pre [verifyMessageContract, verifyMessageSig, RISCV64.abi, RISCV64.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
   exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
+
+/-! ## `verify_message_cached` -/
+
+/-- `tr`. -/
+abbrev trR (s : State) : Region := ⟨s.gpr .a7, 64⟩
+
+/-- `verifyMessageCachedContract`'s precondition, by register: `verify_message`'s, reading `tr` too, which
+is `H(pk, 64)`. -/
+structure MVCPre (p : Params) (STK : Nat) (s : State) : Prop where
+  mv : MVPre p STK [trR s] s
+  tc : (vscrR p s).Disjoint (trR s)
+  bt : (below s.sp STK).Disjoint (trR s)
+  ft : (s.gpr .a7).toNat + 64 ≤ 2 ^ 64
+  tr : bytesAt s.mem (s.gpr .a7) 64 = pkTr (bytesAt s.mem (s.gpr .a0) p.pkLen)
+
+theorem mvcpre_of {p : Params} {n : Nat} {s : State}
+    (h : (verifyMessageCachedContract p RISCV64.abi (n + 1)).pre s) : MVCPre p (n + 1) s := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs] at h
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
+    h22⟩ := h
+  exact ⟨⟨h0, h1, h2, h3, h4, h5, h6, h7, h9, h10, h11, h12, h13, h15, h16, h17, h18, h19, h22⟩, h8, h14, h20,
+    h21⟩
 
 /-! ## The functions on `μ` -/
 

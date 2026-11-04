@@ -25,12 +25,13 @@ meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions
+# ML-DSA on x86 (32-bit), `sign_message`, `verify_message` and `verify_message_cached`: the functions
 
-Untrusted: everything here is checked by Lean. `vg_mldsa{44,65,87}_sign_message`
-and `_verify_message`, calling `vg_mldsa{44,65,87}_sign` and `_verify`
-(`sign44Fn`, `verify44Fn`, …), meet `signMessageContract p X86.abi 136` and
-`verifyMessageContract p X86.abi 132` (`signMessage44_verified`, …).
+Untrusted: everything here is checked by Lean. `vg_mldsa{44,65,87}_sign_message`,
+`_verify_message` and `_verify_message_cached`, calling `vg_mldsa{44,65,87}_sign`
+and `_verify` (`sign44Fn`, `verify44Fn`, …), meet `signMessageContract p X86.abi
+136`, `verifyMessageContract p X86.abi 132` and `verifyMessageCachedContract p
+X86.abi 132` (`signMessage44_verified`, …).
 -/
 
 @[expose] public section
@@ -87,5 +88,19 @@ theorem verifyMessage87_verified :
       (verifyMessageContract mlDsa87 X86.abi 132) :=
   verifyMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) verify87Fn
     (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by lit_decide))
+
+theorem verifyMessageCached44_verified :
+    Verified X86.target (verifyMessageCached verify44Api.name Impl.MlDsa.X86.Verify.verify44 mlDsa44)
+      (verifyMessageCachedContract mlDsa44 X86.abi 132) :=
+  verifyMessageCached_verified (List.mem_cons_self ..) verify44Fn (by native_taint_decide)
+theorem verifyMessageCached65_verified :
+    Verified X86.target (verifyMessageCached verify65Api.name Impl.MlDsa.X86.Verify.verify65 mlDsa65)
+      (verifyMessageCachedContract mlDsa65 X86.abi 132) :=
+  verifyMessageCached_verified (List.mem_cons_of_mem _ (List.mem_cons_self ..)) verify65Fn (by native_taint_decide)
+theorem verifyMessageCached87_verified :
+    Verified X86.target (verifyMessageCached verify87Api.name Impl.MlDsa.X86.Verify.verify87 mlDsa87)
+      (verifyMessageCachedContract mlDsa87 X86.abi 132) :=
+  verifyMessageCached_verified (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) verify87Fn
+    (by native_taint_decide)
 
 end VG.Proof.MlDsa.X86.Message

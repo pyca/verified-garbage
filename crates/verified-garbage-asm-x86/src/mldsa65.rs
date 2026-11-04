@@ -1676,3 +1676,54 @@ jmp 21f
         vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
     )
 }
+
+/// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa65_verify_message`.
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the arguments on the stack, overlap the return address on the stack or the 132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_verify_message_cached(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "U1ZXVYtEJCQ9AAEAAA=="
+jae 20f
+.base64 "i3QkLIHGAJQBALgAAAAAiIawAwAAi0QkJIiGsQMAALgAAAAAiQaJRgSJRgiJRgyJRhCJRhSJRhiJRhyJRiCJRiSJRiiJRiyJRjCJRjSJRjiJRjyJRkCJRkSJRkiJRkyJRlCJRlSJRliJRlyJRmCJRmSJRmiJRmyJRnCJRnSJRniJRnyJhoAAAACJhoQAAACJhogAAACJhowAAACJhpAAAACJhpQAAACJhpgAAACJhpwAAACJhqAAAACJhqQAAACJhqgAAACJhqwAAACJhrAAAACJhrQAAACJhrgAAACJhrwAAACJhsAAAACJhsQAAAC6AAAAAInwg8AAuYgAAACLXCQwvUAAAACJ94HHyAAAAFdVU1JRUA=="
+call {vg_keccak_absorb_scratch}
+.base64 "WVlZWVlZukAAAACJ8IPAALmIAAAAifOBw7ADAAC9AgAAAIn3gcfIAAAAV1VTUlFQ"
+call {vg_keccak_absorb_scratch}
+.base64 "WVlZWVlZukIAAACJ8IPAALmIAAAAi1wkIItsJCSJ94HHyAAAAFdVU1JRUA=="
+call {vg_keccak_absorb_scratch}
+.base64 "WVlZWVlZicKJ8IPAALmIAAAAi1wkGItsJByJ94HHyAAAAFdVU1JRUA=="
+call {vg_keccak_absorb_scratch}
+.base64 "WVlZWVlZicKJ8IPAALmIAAAAux8AAACJ94HHyAAAAFdTUlFQ"
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYi0QkFInxgcFIAwAAi1QkKItcJCxTUlFQ"
+call {vg_mldsa65_verify}
+.base64 "WVlZWQ=="
+jmp 21f
+20:
+.base64 "uAIAAAA="
+21:
+.base64 "i3QkCIt8JASLLCRbW1tbww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
+    )
+}

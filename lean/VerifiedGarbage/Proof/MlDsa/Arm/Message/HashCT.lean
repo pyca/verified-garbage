@@ -10,13 +10,15 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs of the hashing
+# ML-DSA on ARMv7, `sign_message`, `verify_message` and `verify_message_cached`: two runs of the hashing
 
 Untrusted: everything here is checked by Lean. In two runs with the same
 layout (`Two`), zeroing the state and each call of a sponge function leak
 the same: their addresses and arguments are functions of the layout alone,
 and ML-KEM's lemmas on two runs of the sponge functions' calls need just that
-(`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); so do `muHash` and `trHash`.
+(`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); so do `muHash` and `trHash`
+(`muHash_tr`, or `muHash_tr_of` when where `tr` is follows from what the
+runs satisfy, as for a cached `tr`).
 -/
 
 @[expose] public section
@@ -81,6 +83,26 @@ theorem absA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hin⟩
 
 /-- Two runs of a call of `vg_keccak_absorb` whose arguments are the same
+functions of the layout in both, with where the data are following from `Φ`. -/
+theorem kabs_tr_of {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
+    (hok : argsOk (absArgs src len pos) = true) (dp : Lay → BitVec 32) (n q : Lay → Nat)
+    (hv : ∀ (L : Lay) g m (t : State), L.Ok → Ctx L g m t → Φ L m t →
+      src.val t = dp L ∧ len.val t = BitVec.ofNat 32 (n L) ∧ pos.val t = BitVec.ofNat 32 (q L))
+    (hs : ∀ (L : Lay) m (t : State), L.Ok → Φ L m t → q L < 136 ∧ n L < 2 ^ 32 ∧ (dp L).toNat + n L ≤ 2 ^ 32 ∧
+      (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr (dp L), n L⟩ R) ∧
+      Region.Disjoint ⟨State.addr (dp L), n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨State.addr (dp L), n L⟩ ⟨L.KS, 640⟩ ∧
+      L.STK.Disjoint ⟨State.addr (dp L), n L⟩) :
+    RelCT isa (Two I Φ) (kabs src len pos) fun _ _ => True := by
+  refine RelCT.seq (setArgs_two hok) (absorb_ct fun a1 b1 ⟨a, b, ⟨L, g₁, g₂, m₁, m₂, hL, _, c₁, c₂, φ₁, φ₂⟩, f₁, f₂⟩ =>
+    ⟨by rw [f₁.2.sp, f₂.2.sp, c₁.sp, c₂.sp], L.X32, L.X32 + BitVec.ofNat 32 200, dp L, 136, q L, n L, ?_, ?_⟩)
+  · obtain ⟨h1, h2, h3⟩ := hv L g₁ m₁ a hL c₁ φ₁
+    obtain ⟨s1, s2, s3, s4, s5, s6, s7⟩ := hs L m₁ a hL φ₁
+    exact absA_of hL c₁ f₁ h1 h2 h3 s1 s2 s3 s4 s5 s6 s7
+  · obtain ⟨h1, h2, h3⟩ := hv L g₂ m₂ b hL c₂ φ₂
+    obtain ⟨s1, s2, s3, s4, s5, s6, s7⟩ := hs L m₂ b hL φ₂
+    exact absA_of hL c₂ f₂ h1 h2 h3 s1 s2 s3 s4 s5 s6 s7
+
+/-- Two runs of a call of `vg_keccak_absorb` whose arguments are the same
 functions of the layout in both. -/
 theorem kabs_tr {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
     (hok : argsOk (absArgs src len pos) = true) (dp : Lay → BitVec 32) (n q : Lay → Nat)
@@ -90,15 +112,8 @@ theorem kabs_tr {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
       (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr (dp L), n L⟩ R) ∧
       Region.Disjoint ⟨State.addr (dp L), n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨State.addr (dp L), n L⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨State.addr (dp L), n L⟩) :
-    RelCT isa (Two I Φ) (kabs src len pos) fun _ _ => True := by
-  refine RelCT.seq (setArgs_two hok) (absorb_ct fun a1 b1 ⟨a, b, ⟨L, g₁, g₂, m₁, m₂, hL, _, c₁, c₂, φ₁, φ₂⟩, f₁, f₂⟩ =>
-    ⟨by rw [f₁.2.sp, f₂.2.sp, c₁.sp, c₂.sp], L.X32, L.X32 + BitVec.ofNat 32 200, dp L, 136, q L, n L, ?_, ?_⟩)
-  · obtain ⟨h1, h2, h3⟩ := hv L g₁ m₁ a hL c₁ φ₁
-    obtain ⟨s1, s2, s3, s4, s5, s6, s7⟩ := hs L hL
-    exact absA_of hL c₁ f₁ h1 h2 h3 s1 s2 s3 s4 s5 s6 s7
-  · obtain ⟨h1, h2, h3⟩ := hv L g₂ m₂ b hL c₂ φ₂
-    obtain ⟨s1, s2, s3, s4, s5, s6, s7⟩ := hs L hL
-    exact absA_of hL c₂ f₂ h1 h2 h3 s1 s2 s3 s4 s5 s6 s7
+    RelCT isa (Two I Φ) (kabs src len pos) fun _ _ => True :=
+  kabs_tr_of hok dp n q hv fun L _ _ hL _ => hs L hL
 
 theorem padA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : State}
     (hc : Ctx L g m₀ t) {pos : Arg} (hm : Moved (padArgs pos) t t1) {q : Nat}
@@ -176,24 +191,27 @@ abbrev qCtx (L : Lay) : Nat := (66 + L.ctxLen.toNat) % 136
 /-- The position after the message. -/
 abbrev qMsg (L : Lay) : Nat := (qCtx L + L.len.toNat) % 136
 
-theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
-    (hok : tr.ok = true) (hret : tr.isRet = false) (trp : Lay → BitVec 32)
+/-- `muHash`, with where `tr` is following from a property `G` of the layout
+that the runs have (a cached `tr` in an argument). -/
+theorem muHash_tr_of {Φ : Lay → Mem → State → Prop} {G : Lay → Prop} {tr : Arg}
+    (hG : ∀ L m t, Φ L m t → G L) (hok : tr.ok = true) (hret : tr.isRet = false) (trp : Lay → BitVec 32)
     (htr : ∀ (L : Lay) g m (t : State), L.Ok → Ctx L g m t → tr.val t = trp L)
-    (hs : ∀ L : Lay, L.Ok → (trp L).toNat + 64 ≤ 2 ^ 32 ∧ (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr (trp L), 64⟩ R) ∧
+    (hs : ∀ L : Lay, L.Ok → G L → (trp L).toNat + 64 ≤ 2 ^ 32 ∧
+      (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr (trp L), 64⟩ R) ∧
       Region.Disjoint ⟨State.addr (trp L), 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨State.addr (trp L), 64⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨State.addr (trp L), 64⟩) :
     RelCT isa (Two I Φ) (muHash tr) fun _ _ => True := by
   -- The relation keeps only the position in `r0`.
   let Ψ : (Lay → Nat) → Lay → Mem → State → Prop := fun q L _ t => (t.gpr .r0).toNat = q L
-  have z := two_wp (I := I) (Φ := Φ) (Ψ := fun _ _ _ => True) zeroSt_tr
-    fun L g m₀ t hL hc _ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
+  have z := two_wp (I := I) (Φ := Φ) (Ψ := fun L _ _ => G L) zeroSt_tr
+    fun L g m₀ t hL hc hφ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', hG L m₀ t hφ⟩
   have a1 := two_wp (I := I) (Ψ := Ψ fun _ => 64)
-    (kabs_tr (Φ := fun _ _ _ => True) (absOk hok rfl rfl hret rfl) trp (fun _ => 64)
+    (kabs_tr_of (Φ := fun L _ _ => G L) (absOk hok rfl rfl hret rfl) trp (fun _ => 64)
       (fun _ => 0) (fun L g m t hL hc _ => ⟨htr L g m t hL hc, rfl, rfl⟩)
-      fun L hL => ⟨by decide, by decide, (hs L hL).1, (hs L hL).2.1, (hs L hL).2.2.1, (hs L hL).2.2.2.1,
-        (hs L hL).2.2.2.2⟩)
-    fun L g m₀ t hL hc _ => by
-      obtain ⟨a, b, c, d, e⟩ := hs L hL
+      fun L _ _ hL hg => ⟨by decide, by decide, (hs L hL hg).1, (hs L hL hg).2.1, (hs L hL hg).2.2.1,
+        (hs L hL hg).2.2.2.1, (hs L hL hg).2.2.2.2⟩)
+    fun L g m₀ t hL hc hg => by
+      obtain ⟨a, b, c, d, e⟩ := hs L hL hg
       exact WP.mono (kabs_ok hL hc (src := tr) (len := .imm 64) (pos := .imm 0) (n := 64) (q := 0)
         (absOk hok rfl rfl hret rfl) (htr L g m₀ t hL hc) rfl rfl (by decide)
         (by decide) a b c d e) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
@@ -261,6 +279,15 @@ theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
     fun L g m₀ t hL hc hφ => WP.mono (kpad_ok hL hc (pos := .ret) (padOk rfl) (ofNat_toNat_eq32 hφ)
       (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
   exact RelCT.seq z (a1.seq (a2.seq (a3.seq (a4.seq (pd'.seq ksqz_tr)))))
+
+theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
+    (hok : tr.ok = true) (hret : tr.isRet = false) (trp : Lay → BitVec 32)
+    (htr : ∀ (L : Lay) g m (t : State), L.Ok → Ctx L g m t → tr.val t = trp L)
+    (hs : ∀ L : Lay, L.Ok → (trp L).toNat + 64 ≤ 2 ^ 32 ∧ (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr (trp L), 64⟩ R) ∧
+      Region.Disjoint ⟨State.addr (trp L), 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨State.addr (trp L), 64⟩ ⟨L.KS, 640⟩ ∧
+      L.STK.Disjoint ⟨State.addr (trp L), 64⟩) :
+    RelCT isa (Two I Φ) (muHash tr) fun _ _ => True :=
+  muHash_tr_of (G := fun _ => True) (fun _ _ _ _ => trivial) hok hret trp htr fun L hL _ => hs L hL
 
 theorem trHash_tr {p : Params} (hk : p.pkLen < 2 ^ 16)
     {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → L.keyLen = p.pkLen) :

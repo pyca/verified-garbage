@@ -5,10 +5,11 @@ public import VerifiedGarbage.Impl.Sha3.X86.Stream
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
+# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_message`, `_verify_message` and `_verify_message_cached`
 
-`sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) -> eax`
-and `verify_message(pk, msg, msg_len, ctx, ctx_len, sig, scratch) -> eax`,
+`sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) -> eax`,
+`verify_message(pk, msg, msg_len, ctx, ctx_len, sig, scratch) -> eax` and
+`verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) -> eax`,
 all their arguments on the stack (cdecl): `ML-DSA.Sign` and `ML-DSA.Verify`
 (FIPS 204 Algorithms 2 and 3), as calls of the sponge functions and of the
 functions on `μ` (`vg_mldsa*_sign`, `vg_mldsa*_verify`), named `n` and with
@@ -26,6 +27,9 @@ functions' working space (640 bytes), `μ` (64 bytes), and the two bytes
   bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
 * Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
   `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
+* Verification with a cached `tr` computes `μ` likewise from the 64 bytes
+  `tr` (argument 7) that its caller keeps equal to `H(pk, 64)`, and calls
+  `vg_mldsa*_verify(pk, μ, sig, scratch)`.
 
 Each call's arguments are set in its registers from the arguments on the
 stack (plus an offset), offsets from `esi`, immediates, or `eax` (the
@@ -149,5 +153,14 @@ def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
     (.seq (trHash p) (.seq (muHash (.off oMU))
       (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6)]))
         (callRet [.ebx, .edx, .ecx, .eax] n f))))
+
+/-- `vg_mldsa*_verify_message_cached` for the parameter set `p`, calling the
+verification function on `μ` `f`, named `n`: `verify_message` with `μ` from
+the cached `tr` (argument 7) instead of from `H(pk, 64)`. -/
+def verifyMessageCached (n : String) (f : Prog isa) (p : Params) : Prog isa :=
+  top (enter 6 p)
+    (.seq (muHash (.arg 7))
+      (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6)]))
+        (callRet [.ebx, .edx, .ecx, .eax] n f)))
 
 end VG.Impl.MlDsa.X86.Message

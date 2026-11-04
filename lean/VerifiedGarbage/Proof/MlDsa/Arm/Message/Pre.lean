@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.Message
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,12 +13,13 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
-# ML-DSA on ARMv7, `sign_message` and `verify_message`: the preconditions and the layouts
+# ML-DSA on ARMv7, `sign_message`, `verify_message` and `verify_message_cached`: the preconditions and the layouts
 
 Untrusted: everything here is checked by Lean. The preconditions of
-`signMessageContract p Arm.abi 36` and `verifyMessageContract p Arm.abi
-36`, spelled out (`SPre`, `VPre`), and the layouts of runs from states
-satisfying them (`slay`, `vlay`).
+`signMessageContract p Arm.abi 36`, `verifyMessageContract p Arm.abi 36` and
+`verifyMessageCachedContract p Arm.abi 36`, spelled out (`SPre`, `VPre`,
+`CPre`), and the layouts of runs from states satisfying them (`slay`,
+`vlay`, `clay`).
 -/
 
 @[expose] public section
@@ -188,6 +190,69 @@ theorem vlay_ok {p : Params} (hp : p ∈ params) {s : State} (h : VPre p s) (h8 
     (vlay p s).Ok :=
   ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], pkLen_ge hp, h.sp, h.nScr, by simp [vlay, h.wr], by simp [vlay, h.rd],
     by simp [vlay, h.rd], by simp [vlay, h.rd], h.pkScr.symm, h.msgScr.symm, h.ctxScr.symm, h.stkScr,
+    h.stkPk, h.stkMsg, h.stkCtx, h.nPk, h.nMsg, h.nCtx⟩
+
+/-! ## Verification with a cached `tr` -/
+
+/-- The precondition of `verifyMessageCachedContract p Arm.abi 36`. -/
+structure CPre (p : Params) (s : State) : Prop where
+  sp : 36 ≤ s.sp.toNat
+  spA : s.sp.toNat + 16 ≤ 2 ^ 32
+  rd : s.rd = [rKey s p.pkLen, rMsg s, rCtx s, ⟨sArg s 1, p.sigLen⟩, ⟨sArg s 3, 64⟩, rArgs s 16]
+  wr : s.wr = [⟨sArg s 2, mScrLen p⟩]
+  pkScr : (rKey s p.pkLen).Disjoint ⟨sArg s 2, mScrLen p⟩
+  msgScr : (rMsg s).Disjoint ⟨sArg s 2, mScrLen p⟩
+  ctxScr : (rCtx s).Disjoint ⟨sArg s 2, mScrLen p⟩
+  sigScr : Region.Disjoint ⟨sArg s 1, p.sigLen⟩ ⟨sArg s 2, mScrLen p⟩
+  scrTr : Region.Disjoint ⟨sArg s 2, mScrLen p⟩ ⟨sArg s 3, 64⟩
+  scrArgs : Region.Disjoint ⟨sArg s 2, mScrLen p⟩ (rArgs s 16)
+  stkPk : (rStk s).Disjoint (rKey s p.pkLen)
+  stkMsg : (rStk s).Disjoint (rMsg s)
+  stkCtx : (rStk s).Disjoint (rCtx s)
+  stkSig : (rStk s).Disjoint ⟨sArg s 1, p.sigLen⟩
+  stkScr : (rStk s).Disjoint ⟨sArg s 2, mScrLen p⟩
+  stkTr : (rStk s).Disjoint ⟨sArg s 3, 64⟩
+  stkArgs : (rStk s).Disjoint (rArgs s 16)
+  nPk : (s.gpr .r0).toNat + p.pkLen ≤ 2 ^ 32
+  nMsg : (s.gpr .r1).toNat + (s.gpr .r2).toNat ≤ 2 ^ 32
+  nCtx : (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32
+  nSig : (stackArg s 1).toNat + p.sigLen ≤ 2 ^ 32
+  nScr : (stackArg s 2).toNat + mScrLen p ≤ 2 ^ 32
+  nTr : (stackArg s 3).toNat + 64 ≤ 2 ^ 32
+  tr : Spec.Sha3.bytesAt s.mem (sArg s 3) 64 = pkTr (Spec.Sha3.bytesAt s.mem (State.addr (s.gpr .r0)) p.pkLen)
+
+theorem cPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p Arm.abi 36).pre s) : CPre p s := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    Arm.Loc.val] at h
+  obtain ⟨a1, a2, a3, a4, a5, h⟩ := h
+  obtain ⟨a6, a7, a8, a9, a10, h⟩ := h
+  obtain ⟨a11, a12, a13, a14, a15, h⟩ := h
+  obtain ⟨a16, a17, a18, a19, a20, h⟩ := h
+  obtain ⟨a21, a22, a23, a24⟩ := h
+  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
+    a23, a24⟩
+
+/-- The layout of a run of `verify_message_cached` from `s` (`tr` in the slot of `rnd`). -/
+def clay (p : Params) (s : State) : Lay where
+  SP := s.sp
+  key := s.gpr .r0
+  keyLen := p.pkLen
+  msg := s.gpr .r1
+  len := s.gpr .r2
+  ctx := s.gpr .r3
+  ctxLen := stackArg s 0
+  rnd := stackArg s 3
+  sig := stackArg s 1
+  scr := stackArg s 2
+  scrLen := mScrLen p
+  E := oE p
+  rd := s.rd
+  wr := s.wr
+
+theorem clay_ok {p : Params} (hp : p ∈ params) {s : State} (h : CPre p s) (h8 : (stackArg s 0).toNat < 256) :
+    (clay p s).Ok :=
+  ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], pkLen_ge hp, h.sp, h.nScr, by simp [clay, h.wr], by simp [clay, h.rd],
+    by simp [clay, h.rd], by simp [clay, h.rd], h.pkScr.symm, h.msgScr.symm, h.ctxScr.symm, h.stkScr,
     h.stkPk, h.stkMsg, h.stkCtx, h.nPk, h.nMsg, h.nCtx⟩
 
 end VG.Proof.MlDsa.Arm.Message

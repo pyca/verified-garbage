@@ -7229,3 +7229,140 @@ call {vg_mldsa65_verify}
         vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
     )
 }
+
+/// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa65_verify_message`.
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes, and aligned for `u64`.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_verify_message_cached(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x00875313
+beqz t1, 20f
+.insn 2, 0x4509
+j 21f
+20:
+.insn 2, 0x63e5
+.insn 4, 0x40038393
+.insn 2, 0x93c2
+.insn 4, 0x3883b423
+.insn 4, 0x3893b823
+.insn 4, 0x3923bc23
+.insn 4, 0x3b33b023
+.insn 4, 0x3b43b423
+.insn 4, 0x3b53b823
+.insn 4, 0x3b63bc23
+.insn 4, 0x3d73b023
+.insn 4, 0x3d83b423
+.insn 4, 0x3c13b823
+.insn 2, 0x842a
+.insn 2, 0x84ae
+.insn 2, 0x8932
+.insn 2, 0x89b6
+.insn 2, 0x8a3a
+.insn 2, 0x8abe
+.insn 2, 0x8b46
+.insn 2, 0x8bc2
+.insn 2, 0x8c1e
+.insn 2, 0x4281
+.insn 4, 0x3c5c0c23
+.insn 4, 0x3d4c0ca3
+.insn 2, 0x4281
+.insn 4, 0x005c3023
+.insn 4, 0x005c3423
+.insn 4, 0x005c3823
+.insn 4, 0x005c3c23
+.insn 4, 0x025c3023
+.insn 4, 0x025c3423
+.insn 4, 0x025c3823
+.insn 4, 0x025c3c23
+.insn 4, 0x045c3023
+.insn 4, 0x045c3423
+.insn 4, 0x045c3823
+.insn 4, 0x045c3c23
+.insn 4, 0x065c3023
+.insn 4, 0x065c3423
+.insn 4, 0x065c3823
+.insn 4, 0x065c3c23
+.insn 4, 0x085c3023
+.insn 4, 0x085c3423
+.insn 4, 0x085c3823
+.insn 4, 0x085c3c23
+.insn 4, 0x0a5c3023
+.insn 4, 0x0a5c3423
+.insn 4, 0x0a5c3823
+.insn 4, 0x0a5c3c23
+.insn 4, 0x0c5c3023
+.insn 2, 0x86da
+.insn 2, 0x4601
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 4, 0x04000713
+call {vg_keccak_absorb}
+.insn 4, 0x3d8c0693
+.insn 2, 0x862a
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 2, 0x4709
+call {vg_keccak_absorb}
+.insn 2, 0x86ce
+.insn 2, 0x862a
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 2, 0x8752
+call {vg_keccak_absorb}
+.insn 2, 0x86a6
+.insn 2, 0x862a
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 2, 0x874a
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x8562
+.insn 4, 0x08800593
+.insn 2, 0x4601
+.insn 4, 0x348c0693
+.insn 4, 0x04000713
+call {vg_keccak_squeeze}
+.insn 2, 0x8522
+.insn 4, 0x348c0593
+.insn 2, 0x8656
+.insn 2, 0x86de
+call {vg_mldsa65_verify}
+.insn 4, 0x3d0c3083
+.insn 4, 0x388c3403
+.insn 4, 0x390c3483
+.insn 4, 0x398c3903
+.insn 4, 0x3a0c3983
+.insn 4, 0x3a8c3a03
+.insn 4, 0x3b0c3a83
+.insn 4, 0x3b8c3b03
+.insn 4, 0x3c0c3b83
+.insn 4, 0x3c8c3c03
+21:
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
+    )
+}
