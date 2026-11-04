@@ -1,4 +1,6 @@
 module
+-- separate module: as `Absorb`, `Pad` and `Squeeze`, whose proofs cost more than their imports,
+-- apart from `Verified`, which composes them
 
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Absorb
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # SHA-3 on RISC-V: the contracts

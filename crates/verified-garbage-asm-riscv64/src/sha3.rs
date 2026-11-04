@@ -120,6 +120,126 @@ j 21f
     )
 }
 
+/// `vg_keccak_absorb`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 640 bytes, and aligned for `u64`.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
 /// Pads a SHA-3 or SHAKE message: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it becomes the state after absorbing that message with the domain-separation suffix (the low byte of `suffix`, with the first bit of the padding: `0x06` for SHA-3, `0x1f` for SHAKE) and `pad10*1`.
 ///
 /// Contract: `VG.Spec.Sha3.padContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
