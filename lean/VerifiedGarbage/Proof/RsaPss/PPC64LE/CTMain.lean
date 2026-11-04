@@ -72,7 +72,7 @@ end
 structure Ck (D : Nat) (s : State) : Prop where
   h0 : s.mem (s.gpr .r3) ≠ 0
   em : D + 2 ≤ kk s - loN s
-  fit : anyL s = 0 → (s.gpr .r10).toNat + 1 ≤ kk s - loN s - D - 1
+  fit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - D - 1
 
 section
 variable {H : Hash} (hH : HashOK H) (cH : HashCT hH) {Gs : Spec.Mgf1.Hash}
@@ -137,7 +137,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     have : ¬ kk a - loN a < Gs.len + 2 := by simpa using hc
     exact ⟨s, P, p, E, h0, by rw [p.1.pKk, p.1.pLoN p.2]; omega_arith⟩
   -- The salt length expected.
-  let E3 := fun (a t : State) => E2 a t ∧ t.gpr .r4 = if anyL a = 0 then a.gpr .r10 else 0
+  let E3 := fun (a t : State) => E2 a t ∧ t.gpr .r4 = if anyL a = 0 then stackArg a 0 else 0
   refine two_seq (Ψ := E3) (expLen_taint (pk_pins (an := id) (fun a t hp =>
       let ⟨s, P, p, E, _⟩ := e2 hp; ⟨s, P, p, E.base⟩) [.r20]))
     (fun a t h => ?_) ?_
@@ -145,7 +145,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     exact WP.mono (expLen_ok E.base.pany E.base.psl) fun t' ⟨o, e⟩ =>
       ⟨⟨s, P, p, E.only P o, h0, hem⟩, by rw [e, p.1.pAny, p.1.g .r10 (by decide)]⟩
   refine two_seq (Ψ := fun a t => E2 a t ∧ (t.gpr .r3 != 0) =
-      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .r10 else 0).toNat))
+      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat))
     (chkSalt_taint H (pin fun _ _ h => let ⟨s, P, p, E, _⟩ := h.1; ⟨s, P, p, E⟩))
     (fun a t ⟨⟨s, P, p, E, h0, hem⟩, h4⟩ => WP.mono (chkSalt_ok P hGl hD64 E h0 hem
       (by rw [h4, p.1.pAny, p.1.g .r10 (by decide)])) fun t' ⟨E', r3⟩ =>
@@ -153,11 +153,11 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
   refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.2, h₂.2])
     (fail_taint (pin fun _ _ h => let ⟨s, P, p, E, _⟩ := h.1.1; ⟨s, P, p, E⟩)) ?_
   have e4 : ∀ {a t : State}, (E2 a t ∧ (t.gpr .r3 != 0) =
-      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .r10 else 0).toNat)) ∧
+      decide (kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat)) ∧
       isa.eval (.nonzero .d .r3) t = some false →
       ∃ s, PreP Gs.len s ∧ PubK a s ∧ Before Gs.len s t ∧ Ck Gs.len s := fun {a t} ⟨⟨⟨s, P, p, E, h0, hem⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
-    have hn : ¬ kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .r10 else 0).toNat := by simpa using hc
+    have hn : ¬ kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat := by simpa using hc
     refine ⟨s, P, p, E.before, h0, hem, fun ha => ?_⟩
     rw [← p.1.pAny, ifp ha, ← p.1.g .r10 (by decide), ← p.1.pKk, ← p.1.pLoN p.2] at hn
     omega_arith

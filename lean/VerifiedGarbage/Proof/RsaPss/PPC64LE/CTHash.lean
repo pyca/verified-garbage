@@ -136,9 +136,9 @@ theorem fin_wp {a t : State} (h : BL D a t) (h3 : t.gpr .r3 = off (Sp a) oSt) (h
 include hH cH hD in
 /-- `H' = Hash(M')` for a given salt length, in both runs. -/
 theorem hashFixed_ct :
-    RelCT isa (Two fun a t => BL D a t ∧ (a.gpr .r10).toNat + 8 + D ≤ 2048) (hashFixed H) fun _ _ => True :=
-  hashFixedG_ct (lOk D) hH cH hD (fun a => (a.gpr .r10).toNat) fun a => by
-    show a.gpr .r10 = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    RelCT isa (Two fun a t => BL D a t ∧ (stackArg a 0).toNat + 8 + D ≤ 2048) (hashFixed H) fun _ _ => True :=
+  hashFixedG_ct (lOk D) hH cH hD (fun a => (stackArg a 0).toNat) fun a => by
+    show stackArg a 0 = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- In the loop over the lengths, for the length `L`: `BL`, the counters and
 some salt length in `r25`. -/

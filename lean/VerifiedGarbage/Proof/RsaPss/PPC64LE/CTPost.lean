@@ -34,7 +34,7 @@ open VG.Proof.RsaOaep.PPC64LE (Base Fits off view fx Agree Ok B two_seq HashCT h
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep Two Pins two_post two_ite eval_zero)
 
 /-- The salt length given fits in `DB`. -/
-abbrev Fit (D : Nat) (a : State) : Prop := anyL a = 0 → (a.gpr .r10).toNat + 1 ≤ (dbLen D a).toNat
+abbrev Fit (D : Nat) (a : State) : Prop := anyL a = 0 → (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat
 
 /-- MGF1's arguments for unmasking `DB`, from the anchor. -/
 abbrev qM (D : Nat) (a : State) : Nat × Nat × Nat × Nat :=
@@ -121,16 +121,16 @@ theorem prefix_wp {n : Nat} (hn : 8 ≤ n) (hn' : n ≤ 2048) {a t : State} (h :
   obtain ⟨s, P, g, b⟩ := h
   exact WP.mono (prefix_ok (agree_lay P g) hD hn hn' b) fun t' ⟨b', g', _⟩ => ⟨⟨s, P, g, b'⟩, g'⟩
 
-theorem r10_agree {a s : State} (g : Agree Sp (vP D) a s) : s.gpr .r10 = a.gpr .r10 := g.v .r19 (by decide)
+theorem r10_agree {a s : State} (g : Agree Sp (vP D) a s) : stackArg s 0 = stackArg a 0 := g.v .r19 (by decide)
 
 include hD in
-theorem salt_wp {a t : State} (h : BL D a t) (hsl : (a.gpr .r10).toNat + 1 ≤ (dbLen D a).toNat) :
+theorem salt_wp {a t : State} (h : BL D a t) (hsl : (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat) :
     WP isa (copySalt H) t (BL D a) := by
   obtain ⟨s, P, g, b⟩ := h
   exact WP.mono (salt_ok (agree_lay P g) hD b (by rw [r10_agree g]; exact hsl)) fun t' ⟨b', _⟩ => ⟨s, P, g, b'⟩
 
 include hH hD in
-theorem hashFixed_wp {a t : State} (h : BL D a t) (hsl : (a.gpr .r10).toNat + 8 + D ≤ 2048) :
+theorem hashFixed_wp {a t : State} (h : BL D a t) (hsl : (stackArg a 0).toNat + 8 + D ≤ 2048) :
     WP isa (hashFixed H) t (BL D a) := by
   obtain ⟨s, P, g, b⟩ := h
   exact WP.mono (hashFixed_ok P.F hH hD b (by rw [r10_agree g]; exact hsl)) fun t' ⟨b', _⟩ => ⟨s, P, g, b'⟩
@@ -189,13 +189,13 @@ theorem post_ct : RelCT isa (Two fun a t => BL D a t ∧ Fit D a)
     ?_ ?_
   · have ha : ∀ {a t : State}, (P0 a t ∧ Pos25 D a t) ∧ isa.eval (.zero .d .r20) t = some true → anyL a = 0 :=
       fun ⟨h, e⟩ => by rw [eval_zero, h.1.1.v (r := .r20)] at e; exact beq_iff_eq.mp (Option.some.inj e)
-    let F0 := fun (a t : State) => BL D a t ∧ (a.gpr .r10).toNat + 1 ≤ (dbLen D a).toNat
+    let F0 := fun (a t : State) => BL D a t ∧ (stackArg a 0).toNat + 1 ≤ (dbLen D a).toNat
     refine two_seq (Ψ := F0) (mPrefix_taint H 8 (bl_pins (an := id) (fun _ _ h => h.1.1.1) [.r14, .r16]))
       (fun a t h => WP.mono (prefix_wp hD (by decide) (by decide) h.1.1.1) fun t' ⟨b, _⟩ =>
         ⟨b, h.1.1.2 (ha h)⟩) ?_
     refine two_seq (Ψ := F0) (copySalt_taint H (bl_pins (an := id) (fun _ _ h => h.1) [.r14, .r17, .r19, .r21]))
       (fun a t h => WP.mono (salt_wp hD h.1 h.2) fun t' b => ⟨b, h.2⟩) ?_
-    have hb : ∀ {a t : State}, F0 a t → (a.gpr .r10).toNat + 8 + D ≤ 2048 := fun h => by
+    have hb : ∀ {a t : State}, F0 a t → (stackArg a 0).toNat + 8 + D ≤ 2048 := fun h => by
       have := h.1.dn; have := h.2; omega_arith
     refine two_seq (Ψ := BL D) ((hashFixed_ct hH cH hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1, hb h₁⟩, ⟨h₂.1, hb h₂⟩⟩) fun _ _ h => h)

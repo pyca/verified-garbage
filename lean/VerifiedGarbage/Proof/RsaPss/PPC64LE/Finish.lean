@@ -71,16 +71,16 @@ variable {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c) {H : Hash}
 include L hH
 
 theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State}
-    (h : Base Sp (vP D) s t) (hsl : (s.gpr .r10).toNat + 1 ≤ dN) (ha : (t.gpr .r24).toNat < 2 ^ 63) :
+    (h : Base Sp (vP D) s t) (hsl : (stackArg s 0).toNat + 1 ≤ dN) (ha : (t.gpr .r24).toNat < 2 ^ 63) :
     WP isa (.seq (mPrefix H 8) (.seq (copySalt H) (.seq (hashFixed H) (cmpH H oDig)))) t fun t' =>
       Base Sp (vP D) s t' ∧ t'.gpr .r3 = if t.gpr .r24 = 0#64 ∧ ∀ i < D, view t.mem (Sp s) (lN + dN + i) =
-        (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN (s.gpr .r10).toNat)).getD i 0 then 1#64 else 0#64 := by
+        (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN (stackArg s 0).toNat)).getD i 0 then 1#64 else 0#64 := by
   have F := L.F
   have Fh := hfits hH
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
   have hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64
   have hY : oY = 2560 := rfl
-  generalize hS : (s.gpr .r10).toNat = sl at hsl
+  generalize hS : (stackArg s 0).toNat = sl at hsl
   refine WP.seq (WP.mono (prefix_ok L hD (n := 8) (Nat.le_refl _) (by decide) h) fun t₁ ⟨b₁, g₁, v₁⟩ => ?_)
   refine WP.seq (WP.mono (salt_ok L hD b₁ (by rw [hS]; exact hsl)) fun t₂ ⟨b₂, g₂, v₂⟩ => ?_)
   rw [hS] at v₂

@@ -29,12 +29,12 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 structure PubP (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10], s.gpr r = a.gpr r
-  a0 : (stackArg s 0).setWidth 32 = (stackArg a 0).setWidth 32
+  a0 : (stackArg s 1).setWidth 32 = (stackArg a 1).setWidth 32
   args : ∀ i, 1 ≤ i → i < 5 → stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .r3) (kk s) = Spec.Rsa.bytesAt a.mem (a.gpr .r3) (kk a)
   e : Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .r5) (a.gpr .r6).toNat
-  w : Spec.Rsa.wordsAt s.mem (stackArg s 3) (stackArg s 4).toNat =
-    Spec.Rsa.wordsAt a.mem (stackArg a 3) (stackArg a 4).toNat
+  w : Spec.Rsa.wordsAt s.mem (stackArg s 4) (stackArg s 5).toNat =
+    Spec.Rsa.wordsAt a.mem (stackArg a 4) (stackArg a 5).toNat
 
 theorem pubP_refl (s : State) : PubP s s := ⟨rfl, fun _ _ => rfl, rfl, fun _ _ _ => rfl, rfl, rfl, rfl⟩
 

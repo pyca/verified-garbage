@@ -45,8 +45,8 @@ open VG.Proof.Mgf1 (ifp ifn)
 /-- What the function returns, from its entry state. -/
 def vOut (Gs : Spec.Mgf1.Hash) (s : State) : Bool :=
   Spec.RsaPss.verify Gs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (kk s))
-    (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (mh Gs.len s) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (kk s))
-    (Spec.RsaPss.expectedSaltLen (s.gpr .r10) ((stackArg s 0).setWidth 32))
+    (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (mh Gs.len s) (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (kk s))
+    (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32))
 
 /-- The result, from the entry state `s`. -/
 def Post (Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=
@@ -61,15 +61,15 @@ def loN (s : State) : Nat := if (s.mem (s.gpr .r3)).toNat = 1 then 1 else 0
 def cB (s : State) : Byte :=
   if (s.mem (s.gpr .r3)).toNat = 1 then 0xFF else BitVec.ofNat 8 (2 ^ Nat.log2 (s.mem (s.gpr .r3)).toNat - 1)
 
-theorem anyL_eq (s : State) : anyL s = 0 ↔ (stackArg s 0).setWidth 32 = 0 := by
+theorem anyL_eq (s : State) : anyL s = 0 ↔ (stackArg s 1).setWidth 32 = 0 := by
   unfold anyL
   rw [BitVec.ushiftRight_zero, ← BitVec.toNat_inj, ← BitVec.toNat_inj (y := 0)]
   simp only [BitVec.toNat_setWidth]
-  rw [Nat.mod_eq_of_lt (by have := (stackArg s 0).toNat.mod_lt (show 0 < 2 ^ 32 by decide); omega_arith)]
+  rw [Nat.mod_eq_of_lt (by have := (stackArg s 1).toNat.mod_lt (show 0 < 2 ^ 32 by decide); omega_arith)]
   simp
 
-theorem sLen_eq (s : State) : Spec.RsaPss.expectedSaltLen (s.gpr .r10) ((stackArg s 0).setWidth 32) =
-    if anyL s = 0 then some (s.gpr .r10).toNat else none := by
+theorem sLen_eq (s : State) : Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32) =
+    if anyL s = 0 then some (stackArg s 0).toNat else none := by
   unfold Spec.RsaPss.expectedSaltLen
   by_cases h : anyL s = 0
   · rw [ifp h, ifp ((anyL_eq s).mp h)]
@@ -88,7 +88,7 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 theorem emOf_length (s : State) : (emOf s).length = kk s := by
   unfold emOf
   cases hp : Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (kk s))
-    (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (kk s)) with
+    (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (kk s)) with
   | none => simp
   | some y => rw [Option.getD_some, Proof.RsaPss.publicOpChecked_length' hp, bytesAt_length]
 
@@ -115,7 +115,7 @@ theorem emLen_eq (h0 : s.mem (s.gpr .r3) ≠ 0) {rest : List Byte} (hr : rest.le
   rw [Proof.RsaPss.emLength_eq rest h0, hr, loN]; split <;> omega_arith
 
 theorem short_false (h0 : s.mem (s.gpr .r3) ≠ 0)
-    (h : kk s - loN s < Gs.len + (Spec.RsaPss.expectedSaltLen (s.gpr .r10) ((stackArg s 0).setWidth 32)).getD 0 + 2) :
+    (h : kk s - loN s < Gs.len + (Spec.RsaPss.expectedSaltLen (stackArg s 0) ((stackArg s 1).setWidth 32)).getD 0 + 2) :
     vOut Gs s = false := by
   obtain ⟨rest, hn, hr⟩ := nB_cons hk
   rw [vOut, hn]
@@ -127,16 +127,16 @@ end
 theorem res_vOut {Gs : Spec.Mgf1.Hash} (hGv : Proof.Mgf1.Valid Gs) {s : State} (P : PreP Gs.len s)
     (h0 : s.mem (s.gpr .r3) ≠ 0) {m : Mem} (hm : Spec.Rsa.bytesAt m (off (Sp s) 0) (kk s) = emOf s)
     (hem : Gs.len + 2 ≤ kk s - loN s)
-    (hfit : anyL s = 0 → (s.gpr .r10).toNat + 1 ≤ kk s - loN s - Gs.len - 1) :
+    (hfit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - Gs.len - 1) :
     Res Gs (view m (Sp s)) Gs.len (loN s) (kk s - loN s - Gs.len - 1) (cB s) (kk s) (mh Gs.len s) (anyL s)
-      (s.gpr .r10) ↔ vOut Gs s = true := by
+      (stackArg s 0) ↔ vOut Gs s = true := by
   have hk1 : 64 ≤ kk s := P.k1; have hk2 : kk s ≤ 1024 := P.k2
   have hl1 : loN s ≤ 1 := by unfold loN; split <;> omega_arith
   obtain ⟨rest, hn, hr⟩ := nB_cons (show 1 ≤ kk s by omega_arith)
   have hE := emLen_eq (by omega_arith) h0 hr
   have hM := Proof.RsaPss.mask_eq rest h0
   have hx : (Spec.Rsa.publicOpChecked (s.mem (s.gpr .r3) :: rest) (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
-      (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (kk s))).getD (Spec.RsaPss.zeros (s.mem (s.gpr .r3) :: rest).length) =
+      (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (kk s))).getD (Spec.RsaPss.zeros (s.mem (s.gpr .r3) :: rest).length) =
       emOf s := by
     rw [emOf, hn, Spec.RsaPss.zeros, List.length_cons, hr, show kk s - 1 + 1 = kk s by omega_arith]
   generalize hB : Spec.RsaPss.bitLength (Spec.Rsa.os2ip (s.mem (s.gpr .r3) :: rest)) - 1 = eb at hE hM
@@ -169,8 +169,8 @@ theorem fail_ok {t : State} (h : Base Sp (vP Gs.len) s t) (hv : vOut Gs s = fals
   wp_li (by decide) fun t' o e => wp_nil ⟨(h.only P.fits o).sv, fun _ => by rw [e, hv]; rfl⟩
 
 omit P in
-theorem expLen_ok {t : State} (h20 : t.gpr .r20 = anyL s) (h19 : t.gpr .r19 = s.gpr .r10) :
-    WP isa expLen t fun u => Only [.r4] t u ∧ u.gpr .r4 = if anyL s = 0 then s.gpr .r10 else 0 := by
+theorem expLen_ok {t : State} (h20 : t.gpr .r20 = anyL s) (h19 : t.gpr .r19 = stackArg s 0) :
+    WP isa expLen t fun u => Only [.r4] t u ∧ u.gpr .r4 = if anyL s = 0 then stackArg s 0 else 0 := by
   refine WP.ite _ (eval_zero _ _) (fun hz => wp_mov fun u o e => wp_nil ⟨o, ?_⟩)
     (fun hz => wp_li (by decide) fun u o e => wp_nil ⟨o, ?_⟩)
   · rw [ifp (by rw [← h20]; simpa using hz), e, h19]
@@ -249,9 +249,9 @@ theorem chkEm_ok {H : Hash} (hGl : Gs.len = H.D) (hD64 : Gs.len ≤ 64) {t : Sta
 /-- `chkSalt`: whether the salt length expected is more than `emLen - hLen - 2`. -/
 theorem chkSalt_ok {H : Hash} (hGl : Gs.len = H.D) (hD64 : Gs.len ≤ 64) {t : State} (E : Entered Gs.len s t)
     (h0 : s.mem (s.gpr .r3) ≠ 0) (hem : Gs.len + 2 ≤ kk s - loN s)
-    (h4 : t.gpr .r4 = if anyL s = 0 then s.gpr .r10 else 0) :
+    (h4 : t.gpr .r4 = if anyL s = 0 then stackArg s 0 else 0) :
     WP isa (.block (chkSalt H)) t fun t' => Entered Gs.len s t' ∧
-      (t'.gpr .r3 != 0) = decide (kk s - loN s - (Gs.len + 2) < (if anyL s = 0 then s.gpr .r10 else 0).toNat) := by
+      (t'.gpr .r3 != 0) = decide (kk s - loN s - (Gs.len + 2) < (if anyL s = 0 then stackArg s 0 else 0).toNat) := by
   have hk2 : kk s ≤ 1024 := P.k2
   refine wp_sub fun t₅ o₅ e₅ => wp_subi (h := by omega_arith) fun t₆ o₆ e₆ => wp_sub fun t₇ o₇ e₇ =>
     wp_lsr fun t₈ o₈ e₈ => wp_lsr fun t₉ o₉ e₉ => wp_or fun t₁₀ o₁₀ e₁₀ => wp_nil ?_
@@ -259,7 +259,7 @@ theorem chkSalt_ok {H : Hash} (hGl : Gs.len = H.D) (hD64 : Gs.len ≤ 64) {t : S
   refine ⟨E.only P k₁₀, ?_⟩
   rw [e₁₀, o₉.get .r3, e₉, e₈, o₈.get .r4, e₇, o₇.get .r4, e₆, o₆.get .r4, e₅, o₅.get .r4, E.base.pk, E.base.plo,
     lo_N P h0, h4, ← hGl, Offset.ofNat_sub_ofNat hem, BitVec.or_comm]
-  have := msgBit (x := kk s - loN s - (Gs.len + 2)) (y := (if anyL s = 0 then s.gpr .r10 else 0).toNat)
+  have := msgBit (x := kk s - loN s - (Gs.len + 2)) (y := (if anyL s = 0 then stackArg s 0 else 0).toNat)
     (by omega_arith) (BitVec.isLt _)
   rwa [ofNat_toNat] at this
 
@@ -269,7 +269,7 @@ variable {H : Hash} (hH : HashOK H) (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (h
 include hH hGh hGl hGv
 
 theorem main_done {t : State} (B : Before Gs.len s t) (h0 : s.mem (s.gpr .r3) ≠ 0)
-    (hem : Gs.len + 2 ≤ kk s - loN s) (hfit : anyL s = 0 → (s.gpr .r10).toNat + 1 ≤ kk s - loN s - Gs.len - 1) :
+    (hem : Gs.len + 2 ≤ kk s - loN s) (hfit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - Gs.len - 1) :
     WP isa (verifyMain H) t (Done Gs s) := by
   refine WP.seq (WP.mono (pubArgs_ok P B) fun t₁ a₁ => WP.seq (WP.mono (call_ok P a₁) fun t₂ c₂ => ?_))
   have L := lay_reE P hH hGl c₂.mem h0 hem
@@ -307,7 +307,7 @@ theorem checks_done {t : State} (E : Entered Gs.len s t) : WP isa (checks H) t (
     by_cases ha : anyL s = 0
     · rw [ifp ha] at hc ⊢; simp only [Option.getD_some]; simp at hc; omega_arith
     · rw [ifn ha] at hc; simp at hc
-  have hfit : anyL s = 0 → (s.gpr .r10).toNat + 1 ≤ kk s - loN s - Gs.len - 1 := fun ha => by
+  have hfit : anyL s = 0 → (stackArg s 0).toNat + 1 ≤ kk s - loN s - Gs.len - 1 := fun ha => by
     rw [r3', ifp ha] at hc; simp at hc; omega_arith
   exact main_done P hH hGh hGl hGv E₁₀.before h0 hem hfit
 
