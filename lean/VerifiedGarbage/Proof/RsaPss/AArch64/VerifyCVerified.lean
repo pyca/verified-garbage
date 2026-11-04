@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCCt
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTop
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 /-!
 # RSASSA-PSS verification on AArch64, calling `checkEncoding`: correctness and constant time
@@ -18,8 +19,7 @@ data `PubV` and the tables'), which `verifyC` meets: correctness
 the hash functions of the first run's tables, which every run with the same
 public data holds): `verify_correct`, `verify_constantTime`.
 
-That the contract implies `verifyK`, and is satisfiable, waits for the
-model of AArch64's stack arguments to accept its layout (`pre_unsat`).
+The contract implies `verifyK` (`verify_implies`).
 -/
 
 @[expose] public section
@@ -109,5 +109,45 @@ theorem verify_constantTime :
   refine ⟨(idx w, tabsOf vs w w', w.mgf.G, w'.mgf.G), ⟨chk_of hok hw, chkCT_of hok hw⟩, s₁,
     ⟨⟨h₁, PubV.refl s₁⟩, csel_of hok hw hw' h₁.hsy h₁.hdl hH hG, fun _ _ => rfl⟩,
     ⟨⟨h₂, pV⟩, csel_of hok hw hw' h₂.hsy h₂.hdl hH₂ hG₂, fun n hn => (hsy n (names_sub hw hw' n hn)).symm⟩⟩
+
+/-- The contract, with the tables of `vs`. -/
+abbrev verifyCK (vs : List MdHash) (K : Nat) : Contract isa :=
+  Spec.RsaPss.verifyPrecomputedTableContract (verifyAbi (MdHashTable.AArch64.tables vs) (HashTable.AArch64.tables vs))
+    (stk K)
+
+omit hok c h624 hcK in
+/-- The contract implies `verifyK`, if it is satisfiable. -/
+theorem verify_implies (hsat : ∃ s, (verifyCK vs K).pre s) : (verifyKV vs K).Implies (verifyCK vs K) where
+  pre _ h := preV_of h
+  post s s' _ h := by
+    sig_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.HashTable.param,
+    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    List.append_eq, _root_.List.range, _root_.List.range.loop]
+    intro H G hH hG hc
+    exact h H G hH hG hc
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.HashTable.param,
+    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    List.append_eq, _root_.List.range, _root_.List.range.loop] at h
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+      List.getD_cons_zero, Option.some.injEq] at h
+    obtain ⟨hsp, hsy, htH, htG, hl, g0, g1, g2, g3, g4, g5, g6, g7, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
+    obtain ⟨hne, hw⟩ := List.append_inj hl (by simp [VG.Proof.RsaPkcs1Sig.bytesAt_length, g1, g3])
+    obtain ⟨hn, he⟩ := leak_eq2 (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length, VG.Proof.RsaPkcs1Sig.bytesAt_length, g1]) hne
+    refine ⟨⟨hsp.symm, fun r hr => ?_, a1.symm, fun i hi hi1 => ?_, hn.symm, he.symm,
+      ((List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hw).symm⟩, hsy,
+      fun T hT => htH _ _ rfl rfl T hT, fun T hT => htG _ _ rfl rfl T hT⟩
+    · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [g0.symm, g1.symm, g2.symm, g3.symm, g4.symm, g5.symm, g6.symm, g7.symm]
+    · match i, hi, hi1 with
+      | 0, _, _ => exact a0.symm | 1, _, h => exact absurd rfl h | 2, _, _ => exact a2.symm
+      | 3, _, _ => exact a3.symm | 4, _, _ => exact a4.symm | 5, _, _ => exact a5.symm
+      | 6, _, _ => exact a6.symm | 7, _, _ => exact a7.symm | n + 8, h, _ => exact absurd h (by omega)
+  sat := hsat
 
 end VG.Proof.RsaPss.AArch64.Vfy
