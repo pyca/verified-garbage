@@ -20,6 +20,7 @@ namespace VG.Generic.BrainpoolP256r1.RISCV64.EcdsaBrainpoolP256r1
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.verifyBrainpoolP256r1
+    consts := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
     verified := Proof.Ecdsa.RISCV64.BrainpoolP256r1.verify_verified h.law }]
 
 end VG.Generic.BrainpoolP256r1.RISCV64.EcdsaBrainpoolP256r1
