@@ -32,10 +32,6 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.X86.RandomSign.code Proof.Dsa.X86.signFn.name Proof.Dsa.X86.signFn.code
     verified := Proof.Dsa.X86.randomSigning_verified
     stack := 232 },
-  Spec.Dsa.verifyApi.artifact X86.target {
-    code := Impl.Dsa.X86.Entry.operation false
-    verified := Proof.Dsa.X86.verifying_verified
-    stack := 108 },
   Spec.Dsa.validatePublicKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Prevalidated.validate
     verified := Proof.Dsa.X86.validating_verified

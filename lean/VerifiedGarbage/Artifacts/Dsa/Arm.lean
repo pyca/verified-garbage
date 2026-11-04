@@ -19,9 +19,6 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.Arm.RandomSign.code "vg_dsa_sign" (Impl.Dsa.Arm.Entry.operation true)
     verified := Proof.Dsa.Arm.randomSigning_verified
     stack := 144 },
-  Spec.Dsa.verifyApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.Entry.operation false
-    verified := Proof.Dsa.Arm.verify_verified },
   Spec.Dsa.deriveKeyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Generate.deriveKey
     verified := Proof.Dsa.Arm.derive_verified },

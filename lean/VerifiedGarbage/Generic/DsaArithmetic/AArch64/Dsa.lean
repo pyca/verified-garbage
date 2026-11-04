@@ -21,13 +21,6 @@ def artifacts (v : Backend) : List Artifact := [
     verified := random_sign_verified v
     spSafe := random_sign_sp v
     features := v.features },
-  Spec.Dsa.verifyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.SignVerify.verify v.mul
-    stack := v.stack
-    verified := v.verifyVerified
-    spSafe := v.verifySp
-    features := v.features },
   Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Dsa.AArch64.Prevalidated.validate v.mul

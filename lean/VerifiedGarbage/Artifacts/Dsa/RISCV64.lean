@@ -15,9 +15,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Dsa.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Dsa.verifyApi.artifact RISCV64.target {
-    code := Impl.Dsa.RISCV64.Verify.verify
-    verified := Proof.Dsa.RISCV64.verify_verified },
   Spec.Dsa.deriveKeyApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Derive.derive
     verified := Proof.Dsa.RISCV64.deriveKey_verified },

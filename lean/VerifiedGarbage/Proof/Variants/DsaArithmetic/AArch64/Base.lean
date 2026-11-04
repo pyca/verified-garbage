@@ -44,7 +44,6 @@ def variant : Backend where
   suffix := ""
   features := []
   signVerified := signing_verified Mont.calledProductEight
-  verifyVerified := verifying_verified Mont.calledProductEight
   validateVerified := validating_verified Mont.calledProductEight
   prevalidatedVerified := prevalidated_verified Mont.calledProductEight
   validateSp := by decide +kernel
@@ -58,6 +57,5 @@ def variant : Backend where
   signSp := by decide +kernel
   signDepth := by decide +kernel
   stackBound := by decide
-  verifySp := by decide +kernel
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base
