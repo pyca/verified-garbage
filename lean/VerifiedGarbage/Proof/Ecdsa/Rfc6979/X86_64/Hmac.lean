@@ -82,6 +82,33 @@ theorem Ctx.tabWord (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {o : Nat} (ho 
     · exact hL.tc
     · exact hL.tk) (by decide)
 
+/-- The table's address into `r11`. -/
+theorem tblk1_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block [.mov .r11 (.mem (stk (cfgOf P).fTab))]) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
+      t'.gpr .r11 = L.tab ∧ (∀ r, r ≠ .r11 → t'.gpr r = t.gpr r) ∧ t'.syms = t.syms := by
+  have hx : (cfgOf P).fTab = 216 + 8 * L.e := by rw [Cfg.fTab, extra_eq, hT.2.2]; rfl
+  have hs := hc.inFr (d := 240 + 8 * L.e) (by omega) (by omega)
+  apply WP.of_runBlock
+  simp only [hx, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp,
+    Offset.add_add, show 24 + (216 + 8 * L.e) = 240 + 8 * L.e by omega, hs, ite_true, Option.map_some,
+    hc.pTab, RegUpd.gpr_setReg_self, RegUpd.mem_setReg, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.set hL (d := .r11) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, trivial,
+    trivial, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl⟩
+
+/-- The table's word `j` into `r11`, from its address there. -/
+theorem tblk2_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h11 : t.gpr .r11 = L.tab) {j : Nat}
+    (hj : 8 * j + 8 ≤ 40) :
+    WP isa (.block [.mov .r11 (.mem (at_ .r11 (8 * j)))]) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
+      t'.gpr .r11 = m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 ∧ (∀ r, r ≠ .r11 → t'.gpr r = t.gpr r) ∧
+      t'.syms = t.syms := by
+  have ht := hc.inTab hL (o := 8 * j) hj
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_at, h11, ht, ite_true,
+    Option.map_some, hc.tabWord hL hj, RegUpd.gpr_setReg_self, RegUpd.mem_setReg, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨hc.set hL (d := .r11) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, trivial,
+    trivial, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl⟩
+
 /-- The indirect call of the table's function `j`, at the address its word
 `j` holds, of `n`. -/
 theorem tcall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {j : Nat} (hj : 8 * j + 8 ≤ 40)
@@ -91,27 +118,13 @@ theorem tcall_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {
     (h : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → (∀ r, r ≠ .r11 → t'.gpr r = t.gpr r) → t'.syms = t.syms →
       WP isa (.call n c) t' Q) :
     WP isa ((cfgOf P).tcall j ts) t Q := by
-  have hx : (cfgOf P).fTab = 216 + 8 * L.e := by rw [Cfg.fTab, extra_eq, hT.2.2]; rfl
-  have hs := hc.inFr (d := 240 + 8 * L.e) (by omega) (by omega)
-  have ht := hc.inTab hL (o := 8 * j) hj
-  have hb : WP isa (.block ([.mov .r11 (.mem (stk (cfgOf P).fTab))] ++ [.mov .r11 (.mem (at_ .r11 (8 * j)))])) t
-      fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .r11 = t.syms n ∧
-        (∀ r, r ≠ .r11 → t'.gpr r = t.gpr r) ∧ t'.syms = t.syms := by
-    apply WP.of_runBlock
-    simp only [List.cons_append, List.nil_append]
-    simp only [hx, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, ea_at, hc.rsp,
-      Offset.add_add, show 24 + (216 + 8 * L.e) = 240 + 8 * L.e by omega, hs, ite_true, Option.map_some,
-      hc.pTab, RegUpd.gpr_setReg_self, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, ht,
-      hc.tabWord hL hj, hw, Option.some.injEq, exists_eq_left']
-    refine ⟨hc.set hL (d := .r11) (by decide) rfl rfl rfl rfl fun r hr => ?_, trivial, trivial, fun r hr => ?_, rfl⟩
-    · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setReg_of_ne _ _ hr]
-    · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setReg_of_ne _ _ hr]
   unfold Cfg.tcall
-  rw [WP.block_append_iff] at hb
-  refine WP.seq (WP.mono hb fun t₁ h₁ => WP.seq (WP.mono h₁ fun t' ⟨hc', hm, h11, hk, hsy⟩ => ?_))
-  refine WP.icalls_of_call (a := t.syms n) (by simp only [X86_64.icall, h11]) ?_ (h t' hc' hm hk hsy)
+  refine WP.seq (WP.mono (tblk1_ok hL hT hc) fun t₁ ⟨hc₁, hm₁, h11₁, hk₁, hs₁⟩ =>
+    WP.seq (WP.mono (tblk2_ok hL hc₁ h11₁ hj) fun t' ⟨hc', hm, h11, hk, hsy⟩ => ?_))
+  refine WP.icalls_of_call (a := t.syms n) (by simp only [X86_64.icall, h11, hw]) ?_
+    (h t' hc' (hm.trans hm₁) (fun r hr => (hk r hr).trans (hk₁ r hr)) (hsy.trans hs₁))
   show ts.find? (fun q => t'.syms q.1 == t.syms n) = _
-  rw [hsy]; exact hf
+  rw [hsy, hs₁]; exact hf
 
 /-! ## The streaming `init` -/
 
