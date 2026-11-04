@@ -33,12 +33,15 @@
 //! This module only checks the lengths, draws the salt and allocates the
 //! memory the functions work in.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(any(target_arch = "x86_64", target_arch = "riscv64"), feature = "alloc"))]
 
+mod riscv64;
 mod table;
 mod x86_64;
 
 // The verified functions and tables of the target's architecture.
+#[cfg(target_arch = "riscv64")]
+use riscv64 as arch;
 #[cfg(target_arch = "x86_64")]
 use x86_64 as arch;
 

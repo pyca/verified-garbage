@@ -113,19 +113,6 @@ theorem select_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (select H) fun _ _
   two_taint [.s0] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0])
     (c := select H) (c' := select Hd) (by rfl) (by taint_decide))
 
-theorem fixUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.addi .a3 .s6 ((8 + H.D : Nat) : Int)] : List Instr)))
-    fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
-    (c := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 ((8 + H.D : Nat) : Int)]))
-    (c' := .block ([.li .a1 0] ++ yBase .a2 ++ [.addi .a3 .s6 0])) (by rfl) (by taint_decide))
-
-theorem fixFin_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.addi .a1 .s6 ((8 + H.D : Nat) : Int)]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
-    (c := .block [.addi .a1 .s6 ((8 + H.D : Nat) : Int)]) (c' := .block [.addi .a1 .s6 0]) (by rfl)
-    (by taint_decide))
-
 theorem anyUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block (([.li .a1 0] : List Instr) ++ yBase .a2 ++ ([.li .a3 (8 + H.D)] : List Instr))) fun _ _ => True :=
   two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])

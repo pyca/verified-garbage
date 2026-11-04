@@ -1,5 +1,8 @@
 module
 
+-- separate module: it imports every compression function's proof, which builds in parallel with the
+-- streaming functions' that `TabCall` also needs.
+
 public import VerifiedGarbage.Proof.MdHashTable.RISCV64
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1

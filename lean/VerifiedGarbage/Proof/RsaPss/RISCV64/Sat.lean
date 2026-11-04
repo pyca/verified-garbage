@@ -198,7 +198,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | assumption
+    | with_reducible assumption
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hdl']; rfl)
     | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
@@ -313,7 +313,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | assumption
+    | with_reducible assumption
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hdl']; rfl)
     | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)

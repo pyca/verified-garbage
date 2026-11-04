@@ -1,5 +1,8 @@
 module
 
+-- separate module: the tables of `MdHash` on RISC-V, as `Proof/HashTable/RISCV64.lean` has those of `Hash`, for
+-- any function that takes them.
+
 public import VerifiedGarbage.Proof.HashTable.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.TabCall
 public import VerifiedGarbage.Spec.MdHashTable
