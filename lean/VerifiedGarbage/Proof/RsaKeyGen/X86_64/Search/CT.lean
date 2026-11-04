@@ -294,4 +294,39 @@ theorem search_reject_ct : RelCT isa (Two RejectCT) reject (fun _ _ => True) := 
         rcases hr with rfl | rfl
         exacts [h₁.1.1.trans h₂.1.1.symm, h₁.1.2.1.trans h₂.1.2.1.symm]) (by taint_decide)
 
+def Classify1 (q : SearchPoint) (s : State) : Prop :=
+  RejectCT q s ∧ eval .e s = some (decide (q.status = 1))
+
+def Classify2 (q : SearchPoint) (s : State) : Prop :=
+  RejectCT q s ∧ eval .e s = some (decide (q.status = 0))
+
+private theorem classify1_ok (q : SearchPoint) (s : State) (h : CandCT q s) :
+    WP isa (.block [.mov32 .rax (.reg .rax), .alu .cmp .rax (.imm 1)]) s (Classify1 q) := by
+  have h4 := status_lt q h
+  refine WP.mono (classify_head s h.status h4) fun t ⟨⟨hra, he, hm⟩, k⟩ => ?_
+  have hlow : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
+    rw [hra]; apply BitVec.eq_of_toNat_eq
+    have hst' : (s.gpr .rax).toNat % 2 ^ 32 = q.status := by rw [← BitVec.toNat_setWidth]; exact h.status
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hst', Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (by omega)]
+  exact ⟨⟨h.keep k hm hlow (by decide), hra⟩, he⟩
+
+private theorem classify2_ok (q : SearchPoint) (s : State) (h : Classify1 q s ∧ eval .e s = some false) :
+    WP isa (.block [.alu .test .rax (.reg .rax)]) s (Classify2 q) := by
+  obtain ⟨⟨⟨hc, hra⟩, -⟩, -⟩ := h
+  refine WP.mono (test_rax s hra (status_lt q hc)) fun t ⟨⟨hrt, he, hm⟩, k⟩ =>
+    ⟨⟨hc.keep k hm (by rw [hrt]) (by decide), hrt.trans hra⟩, he⟩
+
+theorem search_classify_ct : RelCT isa (Two CandCT) classify (fun _ _ => True) := by
+  unfold classify
+  refine RelCT.seq (two_piece (Ψ := Classify1) [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil)
+    (by taint_decide) classify1_ok) ?_
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+  · exact two_map (fun q => q.inputs) (fun _ _ h => let ⟨o, h⟩ := h.1.1.1.at; ⟨o, _, _, h⟩) search_accept_ct
+  · refine RelCT.seq (two_piece (Ψ := Classify2) [] (fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil)
+      (by taint_decide) classify2_ok) ?_
+    refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+    · exact (search_short_ct.mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.1.1.1.at, h₂.1.1.1.at⟩) fun _ _ h => h)
+    · exact (search_reject_ct.mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.1.1, h₂.1.1⟩) fun _ _ h => h)
+
 end VG.Proof.RsaKeyGen.X86_64.Search
