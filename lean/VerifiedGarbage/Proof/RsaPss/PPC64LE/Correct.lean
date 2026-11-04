@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Logic
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Call
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Params
 import VerifiedGarbage.Proof.RsaPss.Params
@@ -35,7 +36,7 @@ it (`res_iff`, `verify_bytes`), if `pre` holds the modulus' values.
 namespace VG.Proof.RsaPss.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE
-open VG.Impl.RsaOaep.PPC64LE (frameBytes restore Fns)
+open VG.Impl.RsaOaep.PPC64LE (frameBytes restore Fns tword)
 open VG.Impl.MdStream.PPC64LE (Params)
 open VG.Proof.MdStream (Md)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
@@ -353,6 +354,47 @@ theorem body_ok {u : State} (hu : Only [.r11, .r12] (allocated frameBytes s) u) 
   exact res hc
 
 end
+
+end
+
+
+/-- The frame's body depends on the hash function only through its digest
+length. -/
+theorem body_D {H H' : Hash} (hD : H.D = H'.D) (P : Params) (f : MdFns) (g : Fns) :
+    body H P f g = body H' P f g := by
+  simp only [body, checks, verifyMain, finish, prologue, chkEm, chkSalt, dbArgs, mPrefix, copySalt, copyDb, shiftPass,
+    shift, hashFixed, ctHash, ctLens, cmpH, hD]
+
+section
+variable {Gs Gm : Spec.Mgf1.Hash} {s : State} (P : PreP Gs.len s)
+  {H : Hash} (hH : HashOK H) (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D)
+  (hHv : Proof.Mgf1.Valid Gs) {G : Hash} (hG : HashOK G) {g : Fns} (Tg : TabS G g gArg Sp s (stackArg s 7))
+  (hGmh : ∀ x, Gm.hash x = hG.SH.H.hash x) (hGml : Gm.len = G.D) (hGmv : Proof.Mgf1.Valid Gm)
+  {cn dn : String} {cc dc : Prog isa} {f : MdFns} (T : MdTabS H cn cc dn dc f hArg Sp s (stackArg s 6))
+  {P' : Params} {md : Md P'.B P'.N P'.L} (ok : CtOK P' md cc dc) {iv : md.HV} (hl : md.Link hH.SH iv Gs.len)
+  (hN : H.N = P'.N) (hB : H.B = P'.B)
+include P hH hGh hGl hHv hG Tg hGmh hGml hGmv T ok hl hN hB
+
+/-- `vg_rsa_pss_verify_precomputed`, for a hash function's table whose index
+`i` is one of `idxs`, whose sizes and parameters `shapeOf i` gives. -/
+theorem verify_ok {i : Nat} (hidx : s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i)
+    (hi : i ∈ idxs) (hD : (shapeOf i).1.D = H.D) (hP : (shapeOf i).2 = P') :
+    WP isa (verifyPrecomputed f g) s (Post Gs Gm s) := by
+  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
+  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
+  show WP isa (.seq (.block (tword .r11 hArg 5 ++ [])) _) _ _
+  refine WP.seq (WP.of_syms (twordA_ok (j := 6) (k := 5) (p := stackArg s 6) (by decide) (by decide)
+    ⟨aR s, by rw [P.hrd]; simp, in_aR (by decide)⟩ (P.ka.sub_right (in_aR_sub (by decide))).symm rfl
+    ⟨tHR s, by rw [P.hrd]; simp, Offset.contains_base _ (by decide) (by decide)⟩
+    (P.kth.sub_right (tab_sub (n := 11) (show 5 < 11 by decide))).symm fun u o e => wp_nil fun y => ?_))
+  rw [show 8 * 5 = 40 from rfl, hidx] at e
+  refine byIdx_ok (D := i) (by omega)
+    (F := fun u' => Only [.r11, .r12] (allocated frameBytes s) u' ∧ u'.syms = s.syms ∧
+      u'.gpr .r11 = BitVec.ofNat 64 i)
+    (fun _ h => h.2.2) (fun u₁ u₂ ⟨o₁, y₁, e₁⟩ o y => ⟨(o₁.trans o).mono, y.trans y₁, by rw [o.get .r11]; exact e₁⟩)
+    (fun u' ⟨o', y', _⟩ => ?_) hi (fun x hx => (idxs_certs x hx).1) u ⟨o.mono, y.trans rfl, e⟩
+  rw [body_D hD, hP]
+  exact body_ok P hH hGh hGl hHv hG Tg hGmh hGml hGmv T ok hl hN hB o' y'
 
 end
 
