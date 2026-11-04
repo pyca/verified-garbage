@@ -35,4 +35,16 @@ theorem publicKey_ct {Pre : State → Prop} {Pub : State → State → Prop}
       exact ⟨⟨hsp, fun r h => hr r (by simpa using h)⟩, fun n hn => by
         simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
+/-- `vg_ed25519_public_key_expanded`: the same, with the digest copied in place of the hash. -/
+theorem publicKeyExpanded_ct {Pre : State → Prop} {Pub : State → State → Prop}
+    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ →
+      s₁.sp = s₂.sp ∧ (∀ r ∈ [Reg.a0, .a1, .a2, .a3], s₁.gpr r = s₂.gpr r) ∧
+        s₁.syms Impl.Ed25519.RISCV64.combSym = s₂.syms Impl.Ed25519.RISCV64.combSym) :
+    ConstantTime isa Pre Pub publicKeyExpanded :=
+  VG.Taint.constantTime (A := taintSym [Impl.Ed25519.RISCV64.combSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun s₁ s₂ h₁ h₂ hp => by
+      obtain ⟨hsp, hr, hsy⟩ := hpub s₁ s₂ h₁ h₂ hp
+      exact ⟨⟨hsp, fun r h => hr r (by simpa using h)⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+
 end VG.Proof.Ed25519.RISCV64.Whole

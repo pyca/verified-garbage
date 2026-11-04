@@ -35,6 +35,12 @@ and passes them to `vg_ed25519_verify_equation`. `F` is on the
 stack, so aligned to 16 bytes, and its slots take `ld`/`sd`; the arguments
 are read only by the functions called, but for `pk`, which `signCached`
 copies a byte at a time.
+
+`publicKeyExpanded` and `signExpanded` take the seed's SHA-512 digest in
+place of the seed: each is its function's body with the first step, the
+hash of the seed, replaced by a copy of the digest, a byte at a time (the
+argument has no alignment), to where the hash leaves it in `F`
+(`publicKeyWith`, `signWith`).
 -/
 
 @[expose] public section
@@ -95,14 +101,28 @@ def copyIn (src f : Reg) (o : Nat) (n : Nat := 32) : List Instr := Impl.Words.RI
 
 def pkRegs : List Reg := [.s7, .s8, .s9, .s10]
 
-def publicKey : Prog isa :=
-  .seq (.block (saveRegs .a3 96 pkRegs ++ [mov .s7 .a0, mov .s8 .a1, mov .s9 .a2, mov .s10 .a3])) <|
+/-- The seed (`s8`) hashed into `0(F)`. -/
+def pkHash : Prog isa :=
   .seq (hashInit .s9) <|
   .seq (hashUpdate .s9 [.li .a1 0] .s8 0 [.li .a3 32]) <|
-  .seq (hashFinalize .s9 [.li .a1 32] .s10 0) <|
+  hashFinalize .s9 [.li .a1 32] .s10 0
+
+/-- The seed's digest, at `expanded` (`s8`), copied to `0(F)`, where `pkHash` leaves it. -/
+def pkCopy : Prog isa := .block (copyIn .s8 .s10 0 64)
+
+/-- The body, after `first` leaves the seed's digest at `0(F)`. -/
+def publicKeyWith (first : Prog isa) : Prog isa :=
+  .seq (.block (saveRegs .a3 96 pkRegs ++ [mov .s7 .a0, mov .s8 .a1, mov .s9 .a2, mov .s10 .a3])) <|
+  .seq first <|
   .seq (.block (prune .s10 0 64 ++ [mov .a0 .s7, .addi .a1 .s10 64, mov .a2 .s9])) <|
   .seq (.call "vg_ed25519_scalar_base" scalarBase) <|
   .block (restoreRegs .s10 96 pkRegs)
+
+def publicKey : Prog isa := publicKeyWith pkHash
+
+/-- `vg_ed25519_public_key_expanded(out = a0, expanded = a1, scratch = a2)`, `F` in `a3`: the
+digest at `expanded` copied where `publicKey` hashes the seed. -/
+def publicKeyExpanded : Prog isa := publicKeyWith pkCopy
 
 /-! ## `vg_ed25519_sign_cached(out = a0, seed = a1, pk = a2, message = a3, len = a4, scratch = a5)`,
 `F` in `a6`
@@ -118,12 +138,20 @@ def signSetup : List Instr :=
   saveRegs .a6 224 signRegs ++
     ([mov .s7 .a0, mov .s1 .a1, mov .s8 .a3, mov .s9 .a4, mov .s10 .a5, mov .s11 .a6] ++ copyIn .a2 .s11 192)
 
-/-- The secret scalar and the nonce's prefix. -/
-def signExpand : Prog isa :=
+/-- The seed (`s1`) hashed into `128(F)`. -/
+def signHash : Prog isa :=
   .seq (hashInit .s10) <|
   .seq (hashUpdate .s10 [.li .a1 0] .s1 0 [.li .a3 32]) <|
-  .seq (hashFinalize .s10 [.li .a1 32] .s11 128) <|
-  .block (prune .s11 128 0 ++ copy32 .s11 160 32)
+  hashFinalize .s10 [.li .a1 32] .s11 128
+
+/-- The seed's digest, at `expanded` (`s1`), copied to `128(F)`, where `signHash` leaves it. -/
+def signCopy : Prog isa := .block (copyIn .s1 .s11 128 64)
+
+/-- The secret scalar and the nonce's prefix, after `first` leaves the seed's digest at `128(F)`. -/
+def signExpandWith (first : Prog isa) : Prog isa :=
+  .seq first <| .block (prune .s11 128 0 ++ copy32 .s11 160 32)
+
+def signExpand : Prog isa := signExpandWith signHash
 
 /-- The nonce, and `R`. -/
 def signNonce : Prog isa :=
@@ -148,9 +176,16 @@ def signChallenge : Prog isa :=
   .seq (.block [.addi .a0 .s7 32, .addi .a1 .s11 64, .addi .a2 .s11 96, .addi .a3 .s11 0, mov .a4 .s10]) <|
   .call "vg_ed25519_scalar_mul_add" scalarMulAdd
 
-def signCached : Prog isa :=
-  .seq (.block signSetup) <| .seq signExpand <| .seq signNonce <| .seq signChallenge <|
+/-- The body, with `first` the step that leaves the seed's digest at `128(F)`. -/
+def signWith (first : Prog isa) : Prog isa :=
+  .seq (.block signSetup) <| .seq (signExpandWith first) <| .seq signNonce <| .seq signChallenge <|
   .block (restoreRegs .s11 224 signRegs)
+
+def signCached : Prog isa := signWith signHash
+
+/-- `vg_ed25519_sign_expanded(out = a0, expanded = a1, pk = a2, message = a3, len = a4,
+scratch = a5)`, `F` in `a6`: the digest at `expanded` copied where `signCached` hashes the seed. -/
+def signExpanded : Prog isa := signWith signCopy
 
 /-! ## `vg_ed25519_verify(pk = a0, message = a1, len = a2, signature = a3, scratch = a4)`, `F` in `a5`
 
@@ -181,6 +216,8 @@ def verifyMessage : Prog isa :=
 
 def publicKeyCode : Prog isa := Impl.StackScratch.RISCV64.withStackScratchWiped 144 .a3 17 publicKey
 def signCachedCode : Prog isa := Impl.StackScratch.RISCV64.withStackScratchWiped 288 .a6 28 signCached
+def publicKeyExpandedCode : Prog isa := Impl.StackScratch.RISCV64.withStackScratchWiped 144 .a3 17 publicKeyExpanded
+def signExpandedCode : Prog isa := Impl.StackScratch.RISCV64.withStackScratchWiped 288 .a6 28 signExpanded
 def verifyCode : Prog isa := Impl.StackScratch.RISCV64.withStackScratch 272 .a5 verifyMessage
 
 end VG.Impl.Ed25519.RISCV64.Whole
