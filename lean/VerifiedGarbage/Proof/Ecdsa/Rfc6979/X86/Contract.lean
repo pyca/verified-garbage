@@ -67,7 +67,7 @@ def rfcX86 (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × Lis
     | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
       bytesAt s'.mem ((arg s 0).setWidth 64) (2 * I.ecdsa.curve.len) = List.replicate (2 * I.ecdsa.curve.len) 0
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
-    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 4 = arg s₂ 4 ∧ arg s₁ 5 = arg s₂ 5 ∧
+    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4 ∧ arg s₁ 5 = arg s₂ 5 ∧
     (result I s₁.mem ((arg s₁ 1).setWidth 64) ((arg s₁ 2).setWidth 64)).2 =
       (result I s₂.mem ((arg s₂ 1).setWidth 64) ((arg s₂ 2).setWidth 64)).2 ∧
     (∀ c ∈ cs, s₁.syms c.1 = s₂.syms c.1) ∧ ∀ n ∈ ns, s₁.syms n = s₂.syms n

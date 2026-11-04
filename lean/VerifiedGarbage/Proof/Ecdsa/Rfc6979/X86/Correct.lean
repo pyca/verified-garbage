@@ -429,6 +429,7 @@ variable (P : RfcHash)
 theorem rfcT_of : RfcT (cfgOf P) :=
   have h := P.R.blkT P.H.D P.H.B P.hDB
   { msgF := h.msgF,
+    msgF₁ := h.msgF₁,
     msgN := h.msgN,
     prepW := h.prepW,
     coreArgs := h.coreArgs,
@@ -436,7 +437,8 @@ theorem rfcT_of : RfcT (cfgOf P) :=
     candTop := h.candTop,
     wipe := h.wipe,
     digestPtr := h.digestPtr,
-    pad := h.pad,
+    padI := h.padI,
+    padO := h.padO,
     hfinCopyK := h.hfinCopyK,
     hfinCopyV := h.hfinCopyV,
     iMsgF₀ := h.iMsgF₀,

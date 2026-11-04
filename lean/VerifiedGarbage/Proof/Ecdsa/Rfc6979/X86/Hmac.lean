@@ -233,6 +233,19 @@ theorem sub_hm {e k : Nat} (h : e + k ≤ 2256) :
 
 theorem low_hm : ∃ r' ∈ HM L, Region.Sub ⟨L.B, 76⟩ r' := ⟨⟨L.B, 76⟩, by simp, sub_refl _⟩
 
+/-- `init`'s argument: the state at `scratch + o`, in `ebx`. -/
+theorem initArgsOf (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512)
+    (hbx : w.gpr .ebx = L.a4 + BitVec.ofNat 32 o) : InitArgs (H := P.H) w .ebx (L.a4 + BitVec.ofNat 32 o) := by
+  have hS := P.ok.hSB
+  have nc := hL.nc
+  exact ⟨hbx, by decide, sp48 hL hc, hc.coversW fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨L.SCR, by simp, within_scr hL (by omega_arith) (by omega_arith)⟩,
+      ((hL.low_scr' (by omega_arith) (by omega_arith)).sub_left (by rw [← hc.esp]; exact
+        (show Region.Sub (Proof.Pbkdf2.Stream.X86.stk w) (below (w.gpr .esp) 76) from
+          below_sub (by omega_arith) (by rw [hc.esp, hL.FN]; have := hL.e272; omega_arith)))),
+      by rw [hL.scrN (by omega_arith)]; omega_arith⟩
+
 /-- `init` of the state at `scratch + o`, in `ebx`, in its frame. -/
 theorem initRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512)
     (hbx : w.gpr .ebx = L.a4 + BitVec.ofNat 32 o) :
@@ -241,14 +254,7 @@ theorem initRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho :
       P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) [] := by
   have hS := P.ok.hSB
   have nc := hL.nc
-  have a : InitArgs (H := P.H) w .ebx (L.a4 + BitVec.ofNat 32 o) :=
-    ⟨hbx, by decide, sp48 hL hc, hc.coversW fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.SCR, by simp, within_scr hL (by omega_arith) (by omega_arith)⟩,
-      ((hL.low_scr' (by omega_arith) (by omega_arith)).sub_left (by rw [← hc.esp]; exact
-        (show Region.Sub (Proof.Pbkdf2.Stream.X86.stk w) (below (w.gpr .esp) 76) from
-          below_sub (by omega_arith) (by rw [hc.esp, hL.FN]; have := hL.e272; omega_arith)))),
-      by rw [hL.scrN (by omega_arith)]; omega_arith⟩
+  have a := initArgsOf (P := P) hL hc ho hbx
   refine WP.of_syms (init_frame P.ok a fun u af hr hsy => ?_)
   rw [hL.scrv (by omega_arith)] at af hr
   refine ⟨hc.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame fun r hr => ?_, af.frame.sub fun r hr => ?_, hr⟩
@@ -320,25 +326,20 @@ structure UpdData (P : RfcHash) {dn : Nat} (L : Lay dn) (o : Nat) (dv : BitVec 3
   low : Region.Disjoint ⟨L.B, 76⟩ ⟨dv.setWidth 64, len⟩
   fit : dv.toNat + len ≤ 2 ^ 32
 
-/-- `update` of the state at `scratch + o`, holding `cnt` bytes, with `len`
-bytes at `dv`, in its frame. -/
-theorem updRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512) {dv : BitVec 32}
-    {len : Nat} (hd : UpdData P L o dv len) (hlen : len < 2 ^ 32) {cnt : Nat} (hcnt : cnt < 2 ^ 32)
+/-- `update`'s arguments: the state at `scratch + o` holding `cnt` bytes, the
+`len` bytes at `dv`, and the working space. -/
+theorem updArgsOf (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512) {dv : BitVec 32}
+    {len : Nat} (hd : UpdData P L o dv len) (hlen : len < 2 ^ 32) {cnt : Nat}
     (hbx : w.gpr .ebx = L.a4 + BitVec.ofNat 32 o) (hdi : w.gpr .edi = BitVec.ofNat 32 cnt) (hax : w.gpr .eax = 0)
     (hdx : w.gpr .edx = dv) (hcx : w.gpr .ecx = BitVec.ofNat 32 len) (hbp : w.gpr .ebp = L.a4 + BitVec.ofNat 32 512) :
-    WP isa (.frame (.push Impl.Ecdsa.Rfc6979.X86.upd6) (.call P.H.updN P.H.updC) (.pop .eax upd6.length)) w
-      fun u => Ctx L g m₀ u ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 512, P.ok.Wb⟩, ⟨L.B, 76⟩] w.mem u.mem ∧
-      ∀ msg : List Byte, P.ok.SH.Repr w.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
-        P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt w.mem (dv.setWidth 64) len) := by
+    UpdArgs P.ok w .edi .ebx (L.a4 + BitVec.ofNat 32 o) dv (L.a4 + BitVec.ofNat 32 512) (BitVec.ofNat 32 cnt) len := by
   have hS := P.ok.hSB
   have hWb := P.sizes.2.1
   have nc := hL.nc
   have hsp := stk_sub hL hc
   have aS : (L.a4 + BitVec.ofNat 32 o).setWidth 64 = L.scr + BitVec.ofNat 64 o := hL.scrv (by omega_arith)
   have aW : (L.a4 + BitVec.ofNat 32 512).setWidth 64 = L.scr + BitVec.ofNat 64 512 := hL.scrv (by omega_arith)
-  have a : UpdArgs P.ok w .edi .ebx (L.a4 + BitVec.ofNat 32 o) dv (L.a4 + BitVec.ofNat 32 512)
-      (BitVec.ofNat 32 cnt) len :=
+  exact
     { hst := hbx, hlo := hdi, eax := hax, ecx := hcx, edx := hdx, ebp := hbp, hr := by decide, hl := by decide
       hlen := hlen
       sp48 := sp48 hL hc
@@ -356,6 +357,25 @@ theorem updRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : 
       nst := by rw [hL.scrN (by omega_arith)]; omega_arith
       nd := hd.fit
       nsc := by rw [hL.scrN (by omega_arith)]; omega_arith }
+
+/-- `update` of the state at `scratch + o`, holding `cnt` bytes, with `len`
+bytes at `dv`, in its frame. -/
+theorem updRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512) {dv : BitVec 32}
+    {len : Nat} (hd : UpdData P L o dv len) (hlen : len < 2 ^ 32) {cnt : Nat} (hcnt : cnt < 2 ^ 32)
+    (hbx : w.gpr .ebx = L.a4 + BitVec.ofNat 32 o) (hdi : w.gpr .edi = BitVec.ofNat 32 cnt) (hax : w.gpr .eax = 0)
+    (hdx : w.gpr .edx = dv) (hcx : w.gpr .ecx = BitVec.ofNat 32 len) (hbp : w.gpr .ebp = L.a4 + BitVec.ofNat 32 512) :
+    WP isa (.frame (.push Impl.Ecdsa.Rfc6979.X86.upd6) (.call P.H.updN P.H.updC) (.pop .eax upd6.length)) w
+      fun u => Ctx L g m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩, ⟨L.scr + BitVec.ofNat 64 512, P.ok.Wb⟩, ⟨L.B, 76⟩] w.mem u.mem ∧
+      ∀ msg : List Byte, P.ok.SH.Repr w.mem (L.scr + BitVec.ofNat 64 o) msg → msg.length = cnt →
+        P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 o) (msg ++ Spec.Sha256.bytesAt w.mem (dv.setWidth 64) len) := by
+  have hS := P.ok.hSB
+  have hWb := P.sizes.2.1
+  have nc := hL.nc
+  have hsp := stk_sub hL hc
+  have aS : (L.a4 + BitVec.ofNat 32 o).setWidth 64 = L.scr + BitVec.ofNat 64 o := hL.scrv (by omega_arith)
+  have aW : (L.a4 + BitVec.ofNat 32 512).setWidth 64 = L.scr + BitVec.ofNat 64 512 := hL.scrv (by omega_arith)
+  have a := updArgsOf (P := P) hL hc ho hd hlen hbx hdi hax hdx hcx hbp
   refine WP.of_syms (upd_frame P.ok a fun u af hr hsy => ?_)
   rw [aS, aW] at af; rw [aS] at hr
   refine ⟨hc.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame fun r hr => ?_, af.frame.sub fun r hr => ?_,
@@ -427,6 +447,37 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
   · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), cx₂]
   · rw [h₄.keep _ (by decide), h₃.val]
 
+/-- `finalize`'s arguments: the state at `scratch + o` holding `cnt` bytes,
+the output at `scratch + sTmp`, and the working space. -/
+theorem finArgsOf (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512) {cnt : Nat}
+    (hbx : w.gpr .ebx = L.a4 + BitVec.ofNat 32 o) (hax : w.gpr .eax = BitVec.ofNat 32 cnt) (hcx : w.gpr .ecx = 0)
+    (hdx : w.gpr .edx = L.a4 + BitVec.ofNat 32 1152) (hbp : w.gpr .ebp = L.a4 + BitVec.ofNat 32 512) :
+    FinArgs P.ok w .ebx (L.a4 + BitVec.ofNat 32 o) (L.a4 + BitVec.ofNat 32 1152) (L.a4 + BitVec.ofNat 32 512)
+      (BitVec.ofNat 32 cnt) 0 := by
+  have hS := P.ok.hSB
+  have hWb := P.sizes.2.1
+  have hF := P.ok.hF
+  have nc := hL.nc
+  have hsp := stk_sub hL hc
+  have aS : (L.a4 + BitVec.ofNat 32 o).setWidth 64 = L.scr + BitVec.ofNat 64 o := hL.scrv (by omega_arith)
+  have aO : (L.a4 + BitVec.ofNat 32 1152).setWidth 64 = L.scr + BitVec.ofNat 64 1152 := hL.scrv (by omega_arith)
+  have aW : (L.a4 + BitVec.ofNat 32 512).setWidth 64 = L.scr + BitVec.ofNat 64 512 := hL.scrv (by omega_arith)
+  exact
+    { hst := hbx, eax := hax, ecx := hcx, edx := hdx, ebp := hbp, hr := by decide
+      sp48 := sp48 hL hc
+      cw := hc.coversW fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_scr hL (by omega_arith) (by omega_arith)⟩
+      st_o := by rw [aS, aO]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      st_sc := by rw [aS, aW]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      o_sc := by rw [aO, aW]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      b_st := by rw [aS]; exact (hL.low_scr (by omega_arith)).sub_left hsp
+      b_o := by rw [aO]; exact (hL.low_scr (by omega_arith)).sub_left hsp
+      b_sc := by rw [aW]; exact (hL.low_scr (by omega_arith)).sub_left hsp
+      nst := by rw [hL.scrN (by omega_arith)]; omega_arith
+      no := by rw [hL.scrN (by omega_arith)]; omega_arith
+      nsc := by rw [hL.scrN (by omega_arith)]; omega_arith }
+
 /-- `finalize` of the state at `scratch + o`, holding `cnt` bytes, into
 `scratch + sTmp`, in its frame. -/
 theorem finRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : o + 256 ≤ 512) {cnt : Nat}
@@ -447,22 +498,7 @@ theorem finRaw_ok (hL : L.Ok) {w : State} (hc : Ctx L g m₀ w) {o : Nat} (ho : 
   have aS : (L.a4 + BitVec.ofNat 32 o).setWidth 64 = L.scr + BitVec.ofNat 64 o := hL.scrv (by omega_arith)
   have aO : (L.a4 + BitVec.ofNat 32 1152).setWidth 64 = L.scr + BitVec.ofNat 64 1152 := hL.scrv (by omega_arith)
   have aW : (L.a4 + BitVec.ofNat 32 512).setWidth 64 = L.scr + BitVec.ofNat 64 512 := hL.scrv (by omega_arith)
-  have a : FinArgs P.ok w .ebx (L.a4 + BitVec.ofNat 32 o) (L.a4 + BitVec.ofNat 32 1152) (L.a4 + BitVec.ofNat 32 512)
-      (BitVec.ofNat 32 cnt) 0 :=
-    { hst := hbx, eax := hax, ecx := hcx, edx := hdx, ebp := hbp, hr := by decide
-      sp48 := sp48 hL hc
-      cw := hc.coversW fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_scr hL (by omega_arith) (by omega_arith)⟩
-      st_o := by rw [aS, aO]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      st_sc := by rw [aS, aW]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      o_sc := by rw [aO, aW]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-      b_st := by rw [aS]; exact (hL.low_scr (by omega_arith)).sub_left hsp
-      b_o := by rw [aO]; exact (hL.low_scr (by omega_arith)).sub_left hsp
-      b_sc := by rw [aW]; exact (hL.low_scr (by omega_arith)).sub_left hsp
-      nst := by rw [hL.scrN (by omega_arith)]; omega_arith
-      no := by rw [hL.scrN (by omega_arith)]; omega_arith
-      nsc := by rw [hL.scrN (by omega_arith)]; omega_arith }
+  have a := finArgsOf (P := P) hL hc ho hbx hax hcx hdx hbp
   refine WP.of_syms (fin_frame P.ok a fun u af hr hsy => ?_)
   rw [aS, aO, aW] at af; rw [aS, aO] at hr
   refine ⟨hc.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame fun r hr => ?_, af.frame.sub fun r hr => ?_,
@@ -882,6 +918,14 @@ theorem tmp_digest {m : Mem} {msg : List Byte}
     Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 1152) P.H.D = P.ok.SH.H.hash msg := by
   rw [bytesAt_take _ _ (show P.H.D ≤ P.H.F from P.ok.hDF)]; exact h
 
+/-- The inner digest, the outer `update`'s data. -/
+theorem tmpData (hL : L.Ok) : UpdData P L 256 (L.a4 + BitVec.ofNat 32 1152) P.H.D :=
+  ⟨⟨L.SCR, by simp, within_scr hL (by omega) (by nums)⟩,
+    by rw [hL.scrv (by omega)]; exact Offset.disjoint _ (by nums) (by nums) (by nums),
+    by rw [hL.scrv (by omega)]; exact Offset.disjoint _ (by nums) (by nums) (by nums),
+    by rw [hL.scrv (by omega)]; exact hL.low_scr (by nums),
+    by rw [hL.scrN (by omega)]; have := hL.nc; nums⟩
+
 /-- What `finalize` writes and the working space, within what HMAC changes. -/
 theorem fin_hm {o : Nat} (ho : o + 256 ≤ 512) : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, P.H.S⟩ : Region),
     ⟨L.scr + BitVec.ofNat 64 1152, P.H.F⟩, ⟨L.scr + BitVec.ofNat 64 512, P.ok.Wb⟩, ⟨L.B, 76⟩],
@@ -910,12 +954,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {dv : BitVec 32} {len
     · exact Offset.disjoint _ (by nums) (by nums) (by nums)
     · exact Offset.disjoint _ (by nums) (by nums) (by nums)
     · exact (hL.low_scr (by decide)).symm) hu.outer
-  have tmpD : UpdData P L 256 (L.a4 + BitVec.ofNat 32 1152) P.H.D :=
-    ⟨⟨L.SCR, by simp, within_scr hL (by omega) (by nums)⟩,
-      by rw [hL.scrv (by omega)]; exact Offset.disjoint _ (by nums) (by nums) (by nums),
-      by rw [hL.scrv (by omega)]; exact Offset.disjoint _ (by nums) (by nums) (by nums),
-      by rw [hL.scrv (by omega)]; exact hL.low_scr (by nums),
-      by rw [hL.scrN (by omega)]; have := hL.nc; nums⟩
+  have tmpD := tmpData (P := P) hL
   refine WP.seq (WP.mono (updCall_ok hL hT hc₁ (o := 256) (cnt := P.H.B) (by decide)
     (fun _ hu' => scr_ok hL hT.cw hT.ch hu' (d := .edx) (by decide) 1152) tmpD (by nums) (by nums) ho₁
     (by rw [xorPad_length, hkl])) fun w₂ ⟨hc₂, hf₂, hr₂⟩ => ?_)

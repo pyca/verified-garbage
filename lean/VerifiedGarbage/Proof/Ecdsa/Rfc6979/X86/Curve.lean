@@ -112,6 +112,7 @@ base and the pointers the code put there (the taint analysis): those that
 load `scratch` from our arguments first (`Cfg.scrPtr`), from `edi` after it. -/
 structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
   msgF : TaintOk [.esp, .edi, .esi] (Cfg.msg c.len c.D 0 true c.fHo)
+  msgF₁ : TaintOk [.esp, .edi, .esi] (Cfg.msg c.len c.D 1 true c.fHo)
   msgN : TaintOk [.esp, .edi, .esi] (Cfg.msg c.len c.D 0 false)
   prepW : c.wide = true → TaintOk [.esp, .esi, .edi] c.prep
   coreArgs : TaintOk [.esp] c.coreArgs
@@ -119,7 +120,8 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
   candTop : c.sh ≠ 0 → TaintOk [.esp, .edi] (c.conv fT c.sh)
   wipe : TaintOk [.esp] c.wipe
   digestPtr : TaintOk [.esp] (save ++ c.digestPtr)
-  pad : TaintOk [.esp, .edi] (([.mov .ecx (.imm 0)] : List Instr) ++ (List.range (c.B / 4)).flatMap c.padW)
+  padI : TaintOk [.esp, .edi] (([.mov .ecx (.imm ipad32)] : List Instr) ++ (List.range (c.B / 4)).flatMap c.padW)
+  padO : TaintOk [.esp, .edi] (([.mov .ecx (.imm opad32)] : List Instr) ++ (List.range (c.B / 4)).flatMap c.padW)
   hfinCopyK : TaintOk [.esp, .edi] (Cfg.copyBytes c.D .edi sTmp .esp fK)
   hfinCopyV : TaintOk [.esp, .edi] (Cfg.copyBytes c.D .edi sTmp .esp fV)
   /-- None of their instructions writes `esp`. -/
@@ -142,14 +144,14 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
 
 /-- `RfcT` of the code's blocks for literal sizes, by evaluating them. -/
 macro "rfcT_decide" : tactic => `(tactic| exact
-  { msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, prepW := by exact (Function.const _ ⟨_, by taint_decide⟩),
+  { msgF := ⟨_, by taint_decide⟩, msgF₁ := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, prepW := by exact (Function.const _ ⟨_, by taint_decide⟩),
     coreArgs := ⟨_, by taint_decide⟩,
     keepV := fun j hj => match j, hj with
       | 0, _ => ⟨_, by taint_decide⟩ | 1, _ => ⟨_, by taint_decide⟩ | 2, _ => ⟨_, by taint_decide⟩
       | 3, _ => ⟨_, by taint_decide⟩ | 4, _ => ⟨_, by taint_decide⟩ | 5, _ => ⟨_, by taint_decide⟩
       | 6, _ => ⟨_, by taint_decide⟩ | 7, _ => ⟨_, by taint_decide⟩,
     candTop := by exact (Function.const _ ⟨_, by taint_decide⟩),
-    wipe := ⟨_, by taint_decide⟩, digestPtr := ⟨_, by taint_decide⟩, pad := ⟨_, by taint_decide⟩,
+    wipe := ⟨_, by taint_decide⟩, digestPtr := ⟨_, by taint_decide⟩, padI := ⟨_, by taint_decide⟩, padO := ⟨_, by taint_decide⟩,
     hfinCopyK := ⟨_, by taint_decide⟩, hfinCopyV := ⟨_, by taint_decide⟩, iMsgF₀ := by decide +kernel,
     iMsgF₁ := by decide +kernel,
     iMsgN := by decide +kernel, iPrep := by decide +kernel, iCoreArgs := by decide +kernel,
