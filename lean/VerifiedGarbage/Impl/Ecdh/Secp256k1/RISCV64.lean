@@ -20,7 +20,7 @@ def checkSecp256k1 : Prog isa := Cfg.checkFn secp256k1
 def ecdhSecp256k1 : Prog isa :=
   Cfg.ecdhFn secp256k1 "vg_secp256k1_check_point" "vg_secp256k1_mul" checkSecp256k1 mulSecp256k1
 
-/-- `vg_ec_secp256k1_public_key`, with `[d]G` by the ladder, `vg_secp256k1_mul`. -/
+/-- `vg_ec_secp256k1_public_key`, with `[d]G` by the comb, `vg_secp256k1_mul_g`. -/
 def publicKeySecp256k1 : Prog isa :=
   Cfg.publicKeyFn secp256k1 Ecdsa.RISCV64.Comb.mulGSecp256k1Name Ecdsa.RISCV64.Comb.mulGSecp256k1
 

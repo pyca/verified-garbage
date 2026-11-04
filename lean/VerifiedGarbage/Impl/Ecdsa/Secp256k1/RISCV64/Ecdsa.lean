@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 
 /-! # ECDSA over secp256k1 on RISC-V: `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
 
-Signing computes `[k]G` by four-bit windows, `vg_secp256k1_mul`; verification's
+Signing computes `[k]G` by the comb, `vg_secp256k1_mul_g`; verification's
 joint ladder adds by the complete addition for any `a` (`secp256k1.am3 =
 false`), and its `R = 4 R` is two Jacobian doublings by `dblJ0`, for `a = 0`
 (`Impl/Ecdsa/RISCV64/VerifyJ.lean`). -/
