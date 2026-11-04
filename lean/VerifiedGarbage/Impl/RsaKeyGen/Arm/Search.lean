@@ -126,13 +126,18 @@ def iteration : Prog isa :=
 /-- The state's words (the counted candidates left, `out_len`, the budget
 `32769 out_len` and the request, high halves zero), the octets consumed to
 `used`, the status returned and the callee-saved registers restored. -/
-def finish : List Instr := [
+def results : List Instr := [
   arg .r12 0 7, .mov .r0 (.imm 0), .mov .r1 (.shifted .r5 .lsl 15), .dp .add .r1 .r1 (.reg .r5),
   .str .r9 .r12 0, .str .r0 .r12 4, .str .r5 .r12 8, .str .r0 .r12 12, .str .r1 .r12 16,
   .str .r0 .r12 20, .str .r10 .r12 24, .str .r0 .r12 28, .str .r8 .r6 0, .str .r0 .r6 4,
-  .mov .r0 (.reg .r11),
+  .mov .r0 (.reg .r11)]
+
+/-- The callee-saved registers but `r4`, which the frame's pop restores. -/
+def restore : List Instr := [
   .ldrSp .r5 4, .ldrSp .r6 8, .ldrSp .r7 12, .ldrSp .r8 16, .ldrSp .r9 20, .ldrSp .r10 24,
   .ldrSp .r11 28, .ldrSp .lr 36]
+
+def finish : List Instr := results ++ restore
 
 def body : Prog isa := .seq (.block entry) (.seq (.loop (iteration candidate) .eq) (.block finish))
 

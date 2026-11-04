@@ -173,7 +173,7 @@ theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult}
     have e' : final = ⟨.exhausted, used, tr ++ e⟩ := by
       rw [hfin, htail, ite_eq_right (by omega)]; rfl
     rw [e']
-    exact WP.mono (exhausted_ok hu3.toSearchBase hu3.r8 _) fun t ht => .inl ht
+    exact WP.mono (exhausted_ok hu3.toSearchBase hu3.r8 hu3.used_le _) fun t ht => .inl ht
   · have z := of_decide_eq_false z
     refine WP.mono (advance_ok hu3 ((k3.gpr .r12 (by decide)).trans ((k2.gpr .r12 (by decide)).trans h12))
       ((k3.gpr .r0 (by decide)).trans ((k2.gpr .r0 (by decide)).trans h0)) hst hk hum) fun t ht => ?_
@@ -209,7 +209,8 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl
     rw [e]
-    exact WP.mono (short_ok hu2.toSearchBase hu2.r8 hu2.r9 hu (by rw [hm2, hm]; exact hout) _) fun t ht => .inl ht
+    exact WP.mono (short_ok hu2.toSearchBase hu2.r8 hu2.r9 hu hu2.remaining_le (by rw [hm2, hm]; exact hout) _)
+      fun t ht => .inl ht
   | some pair =>
     obtain ⟨x, rest⟩ := pair
     obtain ⟨m, hm', hLm, hum, hrest⟩ := used_bound hi hu hop
@@ -225,7 +226,7 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
       have e : final = ⟨.accepted c, used + m, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
         rw [hfin, tailOf, Search.search_prime hk hop, List.length_drop, hlen, ← hn]; rfl
       rw [e]
-      exact WP.mono (accept_ok hu'.toSearchBase hu'.r8 h12 (by rw [hm]; exact hout) _) fun t ht => .inl ht
+      exact WP.mono (accept_ok hu'.toSearchBase hu'.r8 h12 hum (by rw [hm]; exact hout) _) fun t ht => .inl ht
     | close =>
       refine WP.seq (WP.mono (head_ok h hw (st := 2) (by decide) (status_ofNat h0')) fun u ⟨⟨h12, he, hm⟩, ku⟩ => ?_)
       have hu' := h.keep ku hm

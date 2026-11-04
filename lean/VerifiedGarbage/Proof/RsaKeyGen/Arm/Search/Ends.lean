@@ -29,28 +29,29 @@ theorem terminal_ok (s : State) (status : Nat) (hs : status < 256) :
 
 /-- Exhausted: zeros at `out`, after `used` octets. -/
 theorem exhausted_ok {p : SearchPublic} {o s : State} {used : Nat} (h : SearchBase p o s)
-    (h8 : s.gpr .r8 = BitVec.ofNat 32 used) (tr : List Nat) :
+    (h8 : s.gpr .r8 = BitVec.ofNat 32 used) (hu : used ≤ p.randLen) (tr : List Nat) :
     WP isa exhausted s (SearchDone p o ⟨.exhausted, used, tr⟩) := by
   unfold exhausted
   refine WP.seq (WP.mono (terminal_ok s 3 (by decide)) fun u ⟨⟨h9, h10, h11, hm⟩, k⟩ => ?_)
-  have hu := h.keep k hm
-  refine WP.mono (zeroOut_ok hu) fun t ⟨⟨hz, hf⟩, kt⟩ => ?_
-  exact ⟨hu.step kt (by decide) hf (out_changes h.input) (out_apart h.input),
+  have hb := h.keep k hm
+  refine WP.mono (zeroOut_ok hb) fun t ⟨⟨hz, hf⟩, kt⟩ => ?_
+  exact ⟨hb.step kt (by decide) hf (out_changes h.input) (out_apart h.input),
     (kt.gpr .r8 (by decide)).trans ((k.gpr .r8 (by decide)).trans h8),
     (kt.gpr .r9 (by decide)).trans h9, (kt.gpr .r10 (by decide)).trans h10,
-    (kt.gpr .r11 (by decide)).trans h11, hz⟩
+    (kt.gpr .r11 (by decide)).trans h11, hz, hu, Nat.zero_le _, Nat.zero_le _⟩
 
 theorem add_ofNat32 (a b : Nat) : BitVec.ofNat 32 a + BitVec.ofNat 32 b = BitVec.ofNat 32 (a + b) :=
   (BitVec.ofNat_add a b).symm
 
 /-- The prime, after `used + n` octets. -/
 theorem accept_ok {p : SearchPublic} {o s : State} {used n c : Nat} (h : SearchBase p o s)
-    (h8 : s.gpr .r8 = BitVec.ofNat 32 used) (h12 : s.gpr .r12 = BitVec.ofNat 32 n)
+    (h8 : s.gpr .r8 = BitVec.ofNat 32 used) (h12 : s.gpr .r12 = BitVec.ofNat 32 n) (hu : used + n ≤ p.randLen)
     (hout : Spec.Rsa.bytesAt s.mem (State.addr p.op) p.len = Spec.Rsa.i2osp c p.len) (tr : List Nat) :
     WP isa (.block accept) s (SearchDone p o ⟨.accepted c, used + n, tr⟩) := by
   refine WP.mono (withRest_all [.r8, .r9, .r10, .r11] (Q := fun t => t.gpr .r8 = BitVec.ofNat 32 (used + n) ∧
     t.gpr .r9 = 0 ∧ t.gpr .r10 = 0 ∧ t.gpr .r11 = 1 ∧ t.mem = s.mem) ?_ (by rfl) (by rfl))
-    fun t ⟨⟨h8', h9, h10, h11, hm⟩, k⟩ => ⟨h.keep k hm, h8', h9, h10, h11, by rw [hm]; exact hout⟩
+    fun t ⟨⟨h8', h9, h10, h11, hm⟩, k⟩ => ⟨h.keep k hm, h8', h9, h10, h11, by rw [hm]; exact hout, hu,
+      Nat.zero_le _, Nat.zero_le _⟩
   unfold accept terminal
   ffrun [h8, h12, add_ofNat32]
 
@@ -193,6 +194,7 @@ counted candidates left: exhausted if it had the whole budget, else a
 request for more. -/
 theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase p o s)
     (h8 : s.gpr .r8 = BitVec.ofNat 32 used) (h9 : s.gpr .r9 = BitVec.ofNat 32 k) (hu : used ≤ p.randLen)
+    (hk : k ≤ p.remaining)
     (hout : Spec.Rsa.bytesAt s.mem (State.addr p.op) p.len = List.replicate p.len 0) (tr : List Nat) :
     WP isa short s (SearchDone p o (if primeEntropy p.len ≤ p.randLen - used then ⟨.exhausted, used, tr⟩
       else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used, tr⟩)) := by
@@ -220,12 +222,13 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
   refine WP.ite _ he (fun hz => ?_) (fun hz => ?_)
   · have hz := of_decide_eq_true hz
     rw [ite_eq_left_of_eq_true _ _ (by unfold primeEntropy; exact eq_true (by omega))]
-    exact exhausted_ok hu' h8' tr
+    exact exhausted_ok hu' h8' hu tr
   · have hz := of_decide_eq_false hz
     rw [ite_eq_right_of_eq_false _ _ (by unfold primeEntropy; exact eq_false (by omega))]
     refine WP.mono (request_ok hl.2.1 (by omega) h0 h1 ((k'.gpr .r5 (by decide)).trans h.r5))
       fun t ⟨⟨h10, h11, hmt⟩, kt⟩ => ⟨hu'.keep kt hmt, (kt.gpr .r8 (by decide)).trans h8',
         (kt.gpr .r9 (by decide)).trans ((k'.gpr .r9 (by decide)).trans h9), h10, h11,
-        by rw [hmt, hm]; exact hout⟩
+        by rw [hmt, hm]; exact hout, hu, hk, by
+          unfold primeRequest Spec.Entropy.request; exact Nat.min_le_right _ _⟩
 
 end VG.Proof.RsaKeyGen.Arm.Search

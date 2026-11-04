@@ -218,5 +218,6 @@ structure SearchDone (p : SearchPublic) (o : State) (result : PrimeSearchResult)
     match result.outcome with
     | .accepted c => Spec.Rsa.i2osp c p.len
     | _ => List.replicate p.len 0
+  bounds : result.used ≤ p.randLen ∧ result.remaining ≤ p.remaining ∧ result.requested ≤ primeEntropy p.len
 
 end VG.Proof.RsaKeyGen.Arm.Search
