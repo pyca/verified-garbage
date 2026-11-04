@@ -78,6 +78,36 @@ def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc697
   coreC := .block []
   hHigh := hHigh
 
+/-- The digest lengths and block sizes of the hash functions whose tables
+the code takes (`Impl.Ecdsa.Rfc6979.X86_64.shapeOf`). -/
+def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 128), (64, 128), (28, 128), (32, 128)]
+
+/-- The taint check of a block whose addresses depend only on `rs`. -/
+abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
+  ∃ hc, (taint.check (Taint.ofRegs rs) (.block is) hc).isSome = true
+
+/-- The code's blocks for scalars of `E` (with `h` above the frame's
+pointers if `hHigh`, and digests shifted by `sh` bits) and a hash function
+of output length `D` and block size `B`. -/
+def cfgS (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool) (sh D B : Nat) : Impl.Ecdsa.Rfc6979.X86_64.Cfg :=
+  { cfgC E hHigh with D := D, B := B, sh := sh }
+
+open Impl.Ecdsa.Rfc6979.X86_64 in
+/-- The blocks that depend on both the scalars' and the hash function's
+sizes, each addressing memory only from the registers that hold the frame's
+base and the pointers the code put there (the taint analysis). -/
+structure RfcT (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
+  msgF : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg c.len c.D 0 true c.fHo)
+  msgN : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg c.len c.D 0 false)
+  prepW : c.wide = true → TaintOk [.rsp, .rsi, .rdi] c.prep
+  coreArgs : TaintOk [.rsp] c.coreArgs
+  keepV : TaintOk [.rsp] (c.keepV 0)
+  candTop : TaintOk [.rsp] c.candTop
+  wipe : TaintOk [.rsp] c.wipe
+  digestPtr : TaintOk [.rsp] c.digestPtr
+  pad : TaintOk [.rsp] (c.padBlk 0)
+  hfinCopy : TaintOk [.rsp] (Cfg.scrPtr ++ Cfg.copyBytes c.D .rdi sTmp .rsp 0)
+
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
   /-- The curve, as the code of `vg_ecdsa_<curve>_sign` has it. -/
@@ -129,6 +159,8 @@ structure RfcCurve where
   reduceMx : wide = false →
     (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
       (fun i => !loadsMxcsr i) = true
+  /-- The blocks for each hash function's sizes. -/
+  blkT : ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B)
 
 namespace RfcCurve
 
