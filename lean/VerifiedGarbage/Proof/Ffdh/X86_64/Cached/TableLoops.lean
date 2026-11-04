@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Table
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Ring
 
@@ -335,5 +338,125 @@ theorem column_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {c : Nat} (h
       (Same.of_slot (i := iJ) (by decide) hh₄ ha₄ kp₄)).trans (st₅.mono (by decide) (by decide))).trans
       (Same.of_slot (i := iD) (by decide) hht hat kpt))
   · exact ((k₁.trans k₂).trans ((k₃.trans k₄).trans (k₅.trans kt))).mono (by decide)
+
+/-- Bytes outside the working space and the context keep their values. -/
+theorem Src.of_only {T : TabP} {s t : State} {p : Addr} {bs : List Byte} (h : Src s T.B T.Z p bs)
+    (hm : Only T s.mem t.mem) (hsep : ∀ i < bs.length, 8 * T.n ≤ ofs T.cp (p + BitVec.ofNat 64 i))
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : Src t T.B T.Z p bs :=
+  ⟨fun i hi => by rw [hrd, hwr]; exact h.rd i hi,
+    fun i hi => by rw [hm _ (h.out i hi) (hsep i hi)]; exact h.val i hi, h.out⟩
+
+/-- The table: entries 0 and 1, then the four teeth's columns. -/
+theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63)
+    {gp : Addr} {gb : List Byte} (hG : Spec.Rsa.os2ip gb = T.G)
+    (hsG : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sG) = gp)
+    (hsK : word s.mem T.B (8 * sK) = BitVec.ofNat 64 gb.length)
+    (hsrc : Src s T.B T.Z gp gb) (hgsep : ∀ i < gb.length, 8 * T.n ≤ ofs T.cp (gp + BitVec.ofNat 64 i))
+    (hgl : 1 ≤ gb.length) (hgw : (gb.length + 7) / 8 ≤ T.w) :
+    WP isa (seqs (Precompute.table Mo.mm)) s fun t => Env T t ∧ Entries T 32 t.mem ∧
+      (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t := by
+  have hn := he.mc.sub.scr.nowrap
+  have hP : 0 < T.P := by have := he.mc.x1; omega
+  have hR : Nat.Coprime T.R T.P := VG.Proof.Bignum.coprime_pow2 he.mc.odd _
+  have hio : ∀ i < 32, T.o + 8 * i + 8 ≤ T.Z := fun i hi => by
+    have := hdr_lt_slot T.w 8 hi; have := he.mc.sub.lo; have := he.mc.sub.hi; omega
+  unfold Precompute.table Precompute.initial
+  simp only [List.cons_append, List.append_assoc]
+  -- Entry 0.
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (mm_env Mo he (Or.inr (Or.inr rfl)) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [he.mc.xv.one]; exact he.mc.x1))
+    fun s₁ ⟨he₁, hl₁, hv₁, ha₁, hr₁, hh₁, kp₁, k₁⟩ => ?_)
+  have hY₁ : wv s₁.mem (off T.B T.o) (slot T.w aY) T.w = T.entry 0 := by
+    rw [T.entry_zero he.mc.x1]
+    have := mont_cancel hR (o := wv s₁.mem (off T.B T.o) (slot T.w aY) T.w) (c := T.R) (by
+      rw [hv₁, he.mc.xv.one, Nat.mul_one, ← he.mc.r2])
+    rw [Nat.mod_eq_of_lt hl₁] at this
+    exact this
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 2 ∧
+      t.mem = s₁.mem) (by xrun [show BitVec.setWidth 64 (2 : BitVec 32) = BitVec.ofNat 64 2 from rfl]) rfl)
+    fun s₂ ⟨⟨hax₂, hm₂⟩, k₂⟩ => ?_)
+  have he₂ : Env T s₂ := he₁.of_outScr (by intro x _; rw [hm₂]) k₂.2.1 k₂.2.2 (k₂.gpr (by decide))
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp [Crt.loadArr]) (WP.mono (store_env he₂ hax₂ (by decide) (by decide))
+    fun s₃ ⟨he₃, hrow₃, hr₃, hos₃, kp₃, k₃⟩ => ?_)
+  rw [hm₂, hY₁] at hrow₃
+  -- `aX := g`.
+  have kp₃' : Kept T s s₃ := (kp₁.trans (Kept.of_eq hm₂)).trans kp₃
+  have hsrc₃ : Src s₃ T.B T.Z gp gb := Src.of_only hsrc kp₃'.only hgsep
+    (by rw [k₃.2.1, k₂.2.1, k₁.2.1]) (by rw [k₃.2.2, k₂.2.2, k₁.2.2])
+  refine wp_seqs_append (a := Crt.loadArr aX VG.Impl.Ffdh.X86_64.Domain.sG sK) (by simp [Crt.loadArr]) (by simp) (WP.mono (primeLoad_ok he₃.mc.sub he.mc.w2 (Nat.le_refl _)
+    (by have := he.mc.w28; omega) (show aX < 8 by decide) (show VG.Impl.Ffdh.X86_64.Domain.sG < 32 by decide)
+    (show sK < 32 by decide) (by rw [kp₃'.outer _ (by decide)]; exact hsG)
+    (by rw [kp₃'.outer _ (by decide)]; exact hsK) hsrc₃ hgl (by have := he.mc.w28; omega) hgw)
+    fun s₄ ⟨_, hX₄, ho₄, k₄⟩ => ?_)
+  have hf₄ : Frm (off T.B T.o) [(slot T.w aX, 8 * (T.w + 2))] s₃.mem s₄.mem := Frm.of_outside ho₄ (by simp)
+  obtain ⟨hin₄, hout₄⟩ := inScr_of_inner he₃ hf₄ (fun r hr => by rw [List.mem_singleton.mp hr]; exact slot_le (by decide))
+  have hd₄ : ∀ i, i < 32 → word s₄.mem (off T.B T.o) (8 * i) = word s₃.mem (off T.B T.o) (8 * i) :=
+    fun i hi => hf₄.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot T.w aX hi))
+      (by have := hdr_lt_slot T.w 8 hi; omega)
+  have he₄ : Env T s₄ := he₃.of_inner (Frm.cover hf₄ (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨(slot T.w aX, 3 * (8 * (T.w + 2))), by simp [innerR], by simp only; omega, by simp only; omega⟩))
+    k₄.2.1 k₄.2.2 (k₄.gpr (by decide)) (hd₄ _ (by decide)) (hd₄ _ (by decide))
+  have kp₄ : Kept T s₃ s₄ := ⟨Only.of_inScr hin₄, hout₄, fun i hi => ctxWord_of_inScr he₃ hin₄ (by unfold TabP.n; omega)⟩
+  have hR2₄ : wv s₄.mem (off T.B T.o) (slot T.w aR2) T.w = wv s.mem (off T.B T.o) (slot T.w aR2) T.w := by
+    rw [hf₄.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [slot, aX, aR2]; omega)
+      (by have := slot_le (w := T.w) (show aR2 < 8 by decide); have := he.mc.w28; unfold slot hdrBytes at *; omega),
+      OutScr.wvAt hos₃ (by have := slot_le (w := T.w) (show aR2 < 8 by decide); have := he.mc.sub.hi; omega) hn,
+      hm₂, ha₁.wv_of_not_mem (by decide) (by decide) he.mc.sub.good.scr.nowrap]
+  -- Entry 1.
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (mm_env Mo he₄ (Or.inr (Or.inl rfl)) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [hR2₄]; exact he.mc.r2l))
+    fun s₅ ⟨he₅, hl₅, hv₅, ha₅, hr₅, hh₅, kp₅, k₅⟩ => ?_)
+  have hXm₅ : wv s₅.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry 1 := by
+    rw [T.entry_one]
+    have := mont_cancel hR (o := wv s₅.mem (off T.B T.o) (slot T.w aXm) T.w) (c := T.G * T.R) (by
+      rw [hv₅, hX₄, hG, hR2₄, Nat.mul_mod, he.mc.r2, ← Nat.mul_mod, Nat.mul_assoc])
+    rw [Nat.mod_eq_of_lt hl₅] at this
+    exact this
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 3 ∧
+      t.mem = s₅.mem) (by xrun [show BitVec.setWidth 64 (3 : BitVec 32) = BitVec.ofNat 64 3 from rfl]) rfl)
+    fun s₆ ⟨⟨hax₆, hm₆⟩, k₆⟩ => ?_)
+  have he₆ : Env T s₆ := he₅.of_outScr (by intro x _; rw [hm₆]) k₆.2.1 k₆.2.2 (k₆.gpr (by decide))
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (store_env he₆ hax₆ (by decide) (by decide))
+    fun s₇ ⟨he₇, hrow₇, hr₇, hos₇, kp₇, k₇⟩ => ?_)
+  rw [hm₆, hXm₅] at hrow₇
+  have hg₇ := he₇.mc.sub.good
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = s₇.mem.writeW (off (off T.B T.o) (8 * iD)) (BitVec.ofNat 64 2)) (by
+    xrun [State.ea, hdr, hg₇.rdi, hdrOff, hg₇.scr.st (d := 8 * iD) (by have := hdr_lt_slot T.w 8 (show iD < 32 by decide); omega),
+      show BitVec.setWidth 64 (2 : BitVec 32) = BitVec.ofNat 64 2 from rfl]) rfl)
+    fun s₈ ⟨hm₈, k₈⟩ => ?_)
+  obtain ⟨he₈, hD₈, _, ha₈, hr₈, kp₈⟩ := slot_env he₇ (i := iD) (by decide) (by decide) hm₈ k₈.2.1 k₈.2.2
+    (k₈.gpr (by decide))
+  have hXm₈ : wv s₈.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry 1 := by
+    have := slot_le (w := T.w) (show aXm < 8 by decide)
+    have := he.mc.sub.hi
+    rw [ha₈ _ (by decide), OutScr.wvAt hos₇ (by omega) hn, hm₆, hXm₅]
+  have hE₈ : Entries T 2 s₈.mem := fun a ha => by
+    rw [hr₈ _ (rowFits_of (by omega))]
+    rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl
+    · rw [hr₇ _ (by decide) (rowFits_of (by decide)), hm₆, hr₅ _ (rowFits_of (by decide)),
+        row_of_inScr he₃ hin₄ (rowFits_of (by decide))]
+      exact hrow₃
+    · exact hrow₇
+  have hp₈ : ∀ j', j' < 2 → row s₈.mem T.cp T.w j' = row s.mem T.cp T.w j' := fun j' hj' => by
+    rw [hr₈ _ (rowFits_of (by omega)), hr₇ _ (by omega) (rowFits_of (by omega)), hm₆, hr₅ _ (rowFits_of (by omega)),
+      row_of_inScr he₃ hin₄ (rowFits_of (by omega)), hr₃ _ (by omega) (rowFits_of (by omega)), hm₂,
+      hr₁ _ (rowFits_of (by omega))]
+  have kp₈' : Kept T s s₈ := ((((kp₃'.trans kp₄).trans kp₅).trans (Kept.of_eq hm₆)).trans kp₇).trans kp₈
+  have k₈' : Keep mmRegs s s₈ := ((((k₁.trans k₂).trans (k₃.trans k₄)).trans (k₅.trans k₆)).trans (k₇.trans k₈)).mono
+    (by decide)
+  -- The four teeth.
+  let Inv : Nat → State → Prop := fun c t => Env T t ∧
+    word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)) ∧
+    wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ c) ∧ Entries T (2 ^ (c + 1)) t.mem ∧
+    (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t
+  refine wp_upto (a := 0) (N := 4) (by decide) Inv
+    (fun c _ hc t ⟨het, hDt, hxt, hEt, hpt, kpt, kt⟩ => WP.mono (column_ok Mo het hc hDt hxt hEt hr hr')
+      fun u ⟨heu, hz, hDu, hxu, hEu, hpu, stu, ku⟩ =>
+        ⟨hz, heu, hDu, by rw [hxu], hEu, fun j' hj' => (hpu j' hj').trans (hpt j' hj'), kpt.trans stu.kept,
+          (kt.trans ku).mono (by decide)⟩)
+    (fun t ⟨het, _, _, hEt, hpt, kpt, kt⟩ => ⟨het, hEt, hpt, kpt, kt⟩)
+    ⟨he₈, hD₈, hXm₈, hE₈, hp₈, kp₈', k₈'⟩
 
 end VG.Proof.Ffdh.X86_64.Cached
