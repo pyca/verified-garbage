@@ -10612,6 +10612,84 @@ bnez t3, 2274b
     )
 }
 
+/// Start a search for a prime of an RSA key, of `prime_len` octets, for the public exponent `e` (`e_len` octets, most significant first). Returns 1 and writes the search's four public words to `state`: the rejected candidates it still allows, `prime_len`, its entropy budget, and the length of the first random tape to give `vg_rsa_prime_search`. Returns 0 and writes zeros if `prime_len` is not a multiple of 8 in 32..=512 or `e_len` is not in 1..=8.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeInitContract`. Timing may depend on `e`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 32 bytes, and aligned for `u64`.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `state` must not overlap `e` (distinct Rust objects never do).
+/// * Neither `state` nor `e` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_prime_search_init(state: *mut [u64; 4], prime_len: usize, e: *const u8, e_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x02000293
+.insn 4, 0x0055b333
+.insn 4, 0x20100293
+.insn 4, 0x0055b3b3
+.insn 4, 0x40638e33
+.insn 4, 0x0075f313
+.insn 2, 0x4285
+.insn 4, 0x00533333
+.insn 4, 0x006e7e33
+.insn 4, 0x0056b333
+.insn 2, 0x42a5
+.insn 4, 0x0056b3b3
+.insn 4, 0x40638333
+.insn 4, 0x006e7e33
+beqz t3, 20f
+.insn 2, 0x4e81
+.insn 4, 0xfff68f13
+beqz t5, 22f
+24:
+.insn 4, 0x00064f83
+.insn 4, 0x01feeeb3
+.insn 2, 0x0605
+.insn 2, 0x1f7d
+bnez t5, 24b
+j 23f
+22:
+23:
+.insn 4, 0x00064f83
+.insn 2, 0x428d
+.insn 4, 0x005fcfb3
+.insn 4, 0x01feeeb3
+.insn 2, 0x4285
+.insn 4, 0x005eb2b3
+.insn 4, 0x00359313
+.insn 4, 0x00559393
+.insn 2, 0x931e
+.insn 4, 0x00459393
+.insn 4, 0x00359f13
+.insn 2, 0x93fa
+.insn 4, 0x025383b3
+.insn 2, 0x931e
+.insn 4, 0x00653023
+.insn 2, 0xe50c
+.insn 4, 0x00f59393
+.insn 2, 0x93ae
+.insn 4, 0x00753823
+.insn 4, 0x00559393
+.insn 4, 0x00753c23
+.insn 2, 0x4505
+j 21f
+20:
+.insn 2, 0x4281
+.insn 4, 0x00553023
+.insn 4, 0x00553423
+.insn 4, 0x00553823
+.insn 4, 0x00553c23
+.insn 2, 0x4501
+21:
+.insn 2, 0x8082
+.option pop",
+    )
+}
+
 /// One candidate for a prime of an RSA key, as BoringSSL's `generate_prime` tests it (FIPS 186-5 Appendix A.1.3 steps 4 and 5). Reads from the front of `rand` `out_len` octets, most significant first, sets the two most significant bits and the least significant bit, and tests the candidate `c`: too close to `p` (`|p − c| ≤ 2^(8 out_len − 100)`, if `p_len` is not 0); then divisible by one of the first 512 primes (1024 above 1024 bits) but 2; then `gcd(c − 1, e) ≠ 1`; then Miller–Rabin (FIPS 186-5 B.3.1), with the witnesses read from `rand` after the candidate, at least 16 of them and as many as it takes for `BN_prime_checks_for_size` of them to be uniform. Returns 1 and writes `c` to `out` if it passes, 2 if it is too close to `p`, 3 if it fails otherwise, and writes the number of octets of `rand` it read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random octets. `out` is zeros but for 1, and `used` is 0 for 0. `e` (`e_len` bytes) and `p` (`p_len` bytes) are most significant first.
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
@@ -14310,6 +14388,222 @@ j 22f
 .option pop",
         vg_miller_rabin_round = sym super::rsa_keygen::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym super::consts::VG_RSA_KEYGEN_TRIAL32,
+    )
+}
+
+/// Search for a prime of an RSA key, of `out_len` octets, for the public exponent `e`, not too close to the prime `p` if `p_len` is not 0, over the random tape `rand`: the candidates and their tests of `vg_rsa_keygen_candidate`, one after another, with the rejected candidates counted in `state` (those too close to `p` are not). Returns 1 and writes the prime to `out` once one is accepted; 3 if the search is exhausted, by too many rejected candidates or by one candidate needing more than the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape: keep the octets of `rand` after the first `used`, in order, and append fresh random octets up to that length. `out` is zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the pointers, the lengths, `e`, `state`, the status, consumption and request it returns, and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. Not on `p`, or on the prime it accepts.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes, and aligned for `u64`.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * `state` must be valid for reads and writes of 32 bytes, and aligned for `u64`.
+/// * `state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, or from the last call of this function for the same `out_len`, `e` and `p` that returned 0.
+/// * `out_len` must be a multiple of 8 in 32..=512.
+/// * `e_len` must be in 1..=8.
+/// * `p_len` must be 0 or `out_len`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` holds secrets; the caller must destroy both after use.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `e`, `p`, `rand`, `scratch` and `state` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_prime_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7135
+.insn 2, 0x8f8a
+.insn 4, 0x0a0fb283
+.insn 4, 0x0a8fb303
+.insn 4, 0x0b0fb383
+.insn 4, 0x0b8fbe03
+.insn 4, 0x000e3e83
+.insn 4, 0x028fb023
+.insn 2, 0x847e
+.insn 2, 0xf408
+.insn 2, 0xf80c
+.insn 2, 0xfc10
+.insn 2, 0xe034
+.insn 2, 0xe438
+.insn 2, 0xe83c
+.insn 4, 0x05043c23
+.insn 4, 0x07143023
+.insn 4, 0x06543423
+.insn 4, 0x06643823
+.insn 4, 0x06743c23
+.insn 4, 0x09c43823
+.insn 4, 0x01d43023
+.insn 2, 0xe40c
+.insn 4, 0x00f59e93
+.insn 2, 0x9eae
+.insn 4, 0x01d43823
+.insn 2, 0x4f01
+.insn 4, 0x01e43c23
+.insn 4, 0x09e43023
+.insn 2, 0x1141
+.insn 2, 0xe406
+20:
+.insn 4, 0x00043303
+beqz t1, 21f
+.insn 2, 0x1101
+.insn 2, 0x7408
+.insn 2, 0x780c
+.insn 2, 0x7c10
+.insn 2, 0x6034
+.insn 2, 0x6438
+.insn 2, 0x683c
+.insn 4, 0x05843803
+.insn 4, 0x06043883
+.insn 4, 0x06843303
+.insn 4, 0x07043383
+.insn 4, 0x07843e03
+.insn 2, 0x828a
+.insn 4, 0x0062b023
+.insn 4, 0x0072b423
+.insn 4, 0x01c2b823
+call {vg_rsa_keygen_candidate}
+.insn 2, 0x6105
+.insn 4, 0x02051313
+.insn 4, 0x02035313
+.insn 4, 0x03843e03
+.insn 4, 0x000e3383
+.insn 4, 0xfff30e93
+beqz t4, 23f
+beqz t1, 25f
+beqz t2, 27f
+.insn 4, 0x06043e03
+.insn 4, 0x06843e83
+.insn 4, 0x08043f03
+.insn 2, 0x9e1e
+.insn 4, 0x407e8eb3
+.insn 2, 0x9f1e
+.insn 2, 0x4f91
+.insn 4, 0x07c43023
+.insn 4, 0x07d43423
+.insn 4, 0x09e43023
+.insn 4, 0x09f43423
+.insn 4, 0xffe30f13
+beqz t5, 29f
+.insn 4, 0x00043e03
+.insn 2, 0x1e7d
+.insn 4, 0x01c43023
+j 210f
+29:
+210:
+j 28f
+27:
+.insn 2, 0x4381
+.insn 2, 0x4e0d
+.insn 4, 0x00743023
+.insn 4, 0x00743c23
+.insn 4, 0x09c43423
+.insn 2, 0x740c
+.insn 2, 0x7810
+.insn 2, 0x4681
+211:
+.insn 4, 0x00d58023
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 211b
+28:
+j 26f
+25:
+.insn 4, 0x06843383
+.insn 4, 0x01043e03
+.insn 4, 0x01c3beb3
+beqz t4, 212f
+.insn 4, 0x00843e83
+.insn 2, 0x0e92
+.insn 4, 0x01d3b2b3
+.insn 2, 0x4f01
+.insn 4, 0x405f02b3
+.insn 4, 0x01d3cf33
+.insn 4, 0x005f7f33
+.insn 4, 0x007f4f33
+.insn 2, 0x9f7a
+.insn 4, 0x01cf32b3
+.insn 2, 0x4f81
+.insn 4, 0x405f82b3
+.insn 4, 0x01cf4fb3
+.insn 4, 0x005fffb3
+.insn 4, 0x01cfcfb3
+.insn 2, 0x4e81
+.insn 4, 0x01f43c23
+.insn 4, 0x09d43423
+j 213f
+212:
+.insn 2, 0x4381
+.insn 2, 0x4e0d
+.insn 4, 0x00743023
+.insn 4, 0x00743c23
+.insn 4, 0x09c43423
+.insn 2, 0x740c
+.insn 2, 0x7810
+.insn 2, 0x4681
+214:
+.insn 4, 0x00d58023
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 214b
+213:
+26:
+j 24f
+23:
+.insn 4, 0x08043e03
+.insn 2, 0x9e1e
+.insn 4, 0x09c43023
+.insn 2, 0x4381
+.insn 2, 0x4e05
+.insn 4, 0x00743023
+.insn 4, 0x00743c23
+.insn 4, 0x09c43423
+24:
+j 22f
+21:
+.insn 2, 0x4381
+.insn 2, 0x4e0d
+.insn 4, 0x00743023
+.insn 4, 0x00743c23
+.insn 4, 0x09c43423
+.insn 2, 0x740c
+.insn 2, 0x7810
+.insn 2, 0x4681
+215:
+.insn 4, 0x00d58023
+.insn 2, 0x0585
+.insn 2, 0x167d
+bnez a2, 215b
+22:
+.insn 4, 0x08843303
+.insn 2, 0x1371
+beqz t1, 20b
+.insn 2, 0x60a2
+.insn 2, 0x0141
+.insn 4, 0x09043283
+.insn 4, 0x00043303
+.insn 4, 0x00843383
+.insn 4, 0x01043e03
+.insn 4, 0x01843e83
+.insn 4, 0x03843f03
+.insn 4, 0x08043f83
+.insn 2, 0x6448
+.insn 2, 0x7000
+.insn 4, 0x0062b023
+.insn 4, 0x0072b423
+.insn 4, 0x01c2b823
+.insn 4, 0x01d2bc23
+.insn 4, 0x01ff3023
+.insn 2, 0x610d
+.insn 2, 0x8082
+.option pop",
+        vg_rsa_keygen_candidate = sym super::rsa_keygen::vg_rsa_keygen_candidate,
     )
 }
 
