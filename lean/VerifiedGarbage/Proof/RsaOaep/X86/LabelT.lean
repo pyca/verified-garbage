@@ -9,8 +9,10 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 /-!
 # RSAES-OAEP on x86: the label's hash with a table
 
-`labelT_vp`: as `label_vp` (`Label.lean`), with the hash function that of
-the table at `p`, whose address is in the slot `sTab`: each of its calls
+`labelT_vp`: with the label in the arguments `j` (its address) and `j + 1`
+(its length), a range of bytes the body may read whose bytes do not change,
+`hashLabelT` writes `H(label)` to `scratch + o`, as on ARMv7, with the hash
+function that of the table at `p`, whose address is in the slot `sTab`: each of its calls
 through the table (`tcallG_vp`, as `tcallK_vp` for MGF1) runs as the
 function's own, in every run at the same address (`TabFacts`).
 -/

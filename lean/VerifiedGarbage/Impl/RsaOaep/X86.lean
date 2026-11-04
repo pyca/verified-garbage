@@ -7,10 +7,12 @@ public import VerifiedGarbage.Impl.ICall
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86 (32-bit)
 
-`encryptPrecomputed` and `decrypt`, for a hash function `H` (the label's),
-a streaming hash function (`Impl.Pbkdf2.Stream.X86.Hash`: its `init`,
-`update` and `finalize`), with MGF1 over the hash function of a table of the
-interface `Hash` (`Spec/HashTable.lean`) that is the last argument, with
+`encryptPrecomputed` and `decrypt`, with the label's hash function and
+MGF1's those of two tables of the interface `Hash` (`Spec/HashTable.lean`),
+the last two arguments, each a streaming hash function's `init`, `update`
+and `finalize` (`Impl.Pbkdf2.Stream.X86.Hash`), and, for the code that
+depends on it, branching on the label's hash function's digest length
+(`byLen`, among `lens`), with
 the steps of ARMv7 (`Impl/RsaOaep/Arm.lean`) and the frame, slots, byte loops
 and RSA calls of the x86 RSASSA-PSS functions (`Impl/RsaPss/X86.lean`),
 whose definitions this file reuses: the public-key operation with the
@@ -48,19 +50,20 @@ first `min(hLen, dstLen - done)` bytes are XORed into `dst + done`
 ## Encryption
 
 `encryptPrecomputed(out, out_len, n, n_len, e, e_len, label, label_len, msg,
-msg_len, seed, scratch, scratch_len, pre, pre_len, mgf1)`, all on the stack. If
+msg_len, seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`,
+all on the stack. If
 `k < 2 hLen + 2` or `msg_len > k - 2 hLen - 2` (public), it writes zeros to
 `out` and returns 0. Otherwise it writes `EM = 0x00 ‖ seed ‖ DB` to
 `scratch` (`DB = lHash ‖ 0… ‖ 0x01 ‖ M`, the label hashed with `H`), masks
 `DB` with MGF1 of the seed and then the seed with MGF1 of `maskedDB` (`G`),
-and returns the precomputed public operation of `EM` into `out`, MGF1's
-hash function being that of the table `mgf1`.
+and returns the precomputed public operation of `EM` into `out`, `H` being
+the hash function of the table `hash` and MGF1's that of the table `mgf1`.
 
 ## Decryption
 
 `decrypt(out, out_len, msg_len, n, n_len, e, e_len, p, p_len, q, q_len, dp,
 dp_len, dq, dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch,
-scratch_len, mgf1)`, all on the stack, as on ARMv7: `vg_rsa_private_checked`
+scratch_len, hash, mgf1)`, all on the stack, as on ARMv7: `vg_rsa_private_checked`
 writes `EM` (or zeros) to `scratch` and returns `r` (1, 0 or 2), which only
 selects values without a branch. If `k < 2 hLen + 2` (public), the result is
 `r = 2 ? 2 : 0`, with zeros to `out` and `*msg_len`. Otherwise, without a
@@ -153,7 +156,8 @@ def tcall (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) : Prog isa 
   .seq (.block [ld .esi sTab, .mov .esi (.mem (at_ .esi (4 * j)))])
     (.frame (.push rs) (Code.icalls (.callr .esi) ts) (.pop .eax rs.length))
 
-/-- The direct calls of `H`'s functions, for the label's hash. -/
+/-- The calls of `H`'s functions in their frames, which a call through a
+table (`tcall`) runs as. -/
 def hInit (H : Hash) : Prog isa := H.callInit .ebx
 def hUpd (H : Hash) : Prog isa := .frame (.push upd6) (.call H.updN H.updC) (.pop .eax 6)
 def hFin (H : Hash) : Prog isa := .frame (.push fin5) (.call H.finN H.finC) (.pop .eax 5)
@@ -221,11 +225,6 @@ def updLabArgs (j : Nat) : List Instr := atS .ebx oSt ++ [mi .edi 0, mi .eax 0, 
 
 /-- `finalize(state, label_len, scratch + o)`. -/
 def finLabArgs (j o : Nat) : List Instr := atS .ebx oSt ++ [ld .eax (arg (j + 1)), mi .ecx 0] ++ atS .edx o
-
-/-- The label's hash, `H(label)`, to `scratch + o`, the label being
-argument `j`. -/
-def hashLabel (j o : Nat) : Prog isa :=
-  seqs [.block initArgs, hInit H, .block (updLabArgs j), hUpd H, .block (finLabArgs j o), hFin H]
 
 /-- The label's hash to `scratch + o`, the label being argument `j`, with
 the hash function of the table whose address is in `sTab`: its `init`,

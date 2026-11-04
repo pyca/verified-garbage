@@ -49,11 +49,11 @@ abbrev Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
 /-- The end of the body. -/
 abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h g P σ s.mem (s.gpr .eax)
 
-theorem enc_arg {j : Nat} (hj : j < 15) {D : Nat} {P : EP} : j < ((P.lay D).argv).length := by simp; omega
+theorem enc_arg {j : Nat} (hj : j < 18) {D : Nat} {P : EP} : j < ((P.lay D).argv).length := by simp; omega
 
 /-- An argument's place may be read. -/
 theorem argR {D : Nat} {P : EP} {σ t : State} (hg : Geo (P.lay D) P.scr) (ct : Ctx (P.lay D) P.scr σ t) {j : Nat}
-    (hj : j < 15) : InRegions (t.rd ++ t.wr) (VG.X86.addr (P.lay D).B (Impl.RsaPkcs1Sig.X86.argOff frameBytes j)) 4 := by
+    (hj : j < 18) : InRegions (t.rd ++ t.wr) (VG.X86.addr (P.lay D).B (Impl.RsaPkcs1Sig.X86.argOff frameBytes j)) 4 := by
   rw [hg.aArg ct.st.ok j (enc_arg hj), ct.st.rd, ct.st.wr]; exact ct.st.ok.arg_read (enc_arg hj)
 
 /-- The flags of the checks: zero exactly when `c + ml ≤ K`. -/
@@ -88,7 +88,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (encChk h.H)) (C0 h P) := by
   have hD := h.D_le
   have hK := hi.k1024
   simp only [encChk, ld, Impl.RsaPkcs1Sig.X86.stk]
-  refine hs.wp_arg (enc_arg (j := 11) (by decide)) (by decide) fun t1 s1 u1 => ?_
+  refine hs.wp_arg (enc_arg (j := 12) (by decide)) (by decide) fun t1 s1 u1 => ?_
   have c1 : Ctx (P.lay h.H.D) P.scr σ t1 := ⟨s1, by rw [u1.gpr]; rfl⟩
   refine c1.wp_arg hg (enc_arg (j := 3) (by decide)) (by decide) (by decide) fun t2 c2 u2 => ?_
   refine wp_subi fun t3 u3 cf3 _ => wp_sbb_self cf3 fun t4 u4 => ?_

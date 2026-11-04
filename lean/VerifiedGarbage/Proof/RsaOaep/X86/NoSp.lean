@@ -7,10 +7,10 @@ import VerifiedGarbage.Proof.RsaPss.X86.NoSp
 /-!
 # RSAES-OAEP on x86: the calls write `esp` only through their frames
 
-The direct calls of the streaming functions (`hInit_noSp`, …) and the
-label's hash (`hashLabel_noSp`), for both functions' bodies, and MGF1's mask
-with its table's indirect calls (`mgfX_noSp`), when every function they may
-reach writes `esp` only through its frames.
+The label's hash (`hashLabelT_noSp`) and MGF1's mask (`mgfX_noSp`) with
+their table's indirect calls, and the branch on the digest length
+(`byLen_noSp`), when every function they may reach writes `esp` only through
+its frames.
 -/
 
 @[expose] public section
@@ -22,13 +22,6 @@ open VG.X86 hiding frameBytes
 open VG.Impl.RsaPss.X86 (seqs countLoop)
 
 variable (h g : OHash)
-
-theorem hInit_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (hInit G) := noSp_pushCall hG.initSp
-theorem hUpd_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (hUpd G) := noSp_pushCall hG.updSp
-theorem hFin_noSp (G : Impl.Pbkdf2.Stream.X86.Hash) (hG : Proof.Pbkdf2.Stream.X86.HashOK G) :
-    NoSp (hFin G) := noSp_pushCall hG.finSp
 
 /-- The indirect calls of `ts`'s functions write `esp` only through their
 frames when each of them does. -/
@@ -88,16 +81,5 @@ theorem byLen_noSp {b : Nat → Prog isa} : ∀ {ds : List Nat}, (∀ d ∈ ds, 
 /-- The certificates of a digest length `byLen` branches on. -/
 theorem lens_certs {d : Nat} (hd : d ∈ lens) : OCerts (ofLen d) :=
   certsOf (by simpa only [lens, List.mem_cons, List.not_mem_nil, or_false] using hd)
-
-theorem hashLabel_noSp {j o : Nat} (hj : NoSp (.block (updLabArgs j) : Prog isa))
-    (ho : NoSp (.block (finLabArgs j o) : Prog isa)) : NoSp (hashLabel h.H j o) := by
-  have i := hInit_noSp h.H h.ok
-  have u := hUpd_noSp h.H h.ok
-  have f := hFin_noSp h.H h.ok
-  simp only [hashLabel, seqs]
-  repeat' (first
-    | with_reducible apply noSp_seq
-    | exact i | exact u | exact f | exact hj | exact ho
-    | exact NoSp.of_all (by decide +kernel))
 
 end VG.Proof.RsaOaep.X86
