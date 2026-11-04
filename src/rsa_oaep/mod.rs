@@ -204,7 +204,12 @@ verified_fn_types! {
 fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(EncryptFn, DecryptFn, Table, Table)> {
     let f = detected();
     let (encrypt, decrypt) = arch::functions(f);
-    Some((encrypt, decrypt, table::table(hash, f)?, table::table(mgf1_hash, f)?))
+    Some((
+        encrypt,
+        decrypt,
+        table::table(hash, f)?,
+        table::table(mgf1_hash, f)?,
+    ))
 }
 
 /// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and

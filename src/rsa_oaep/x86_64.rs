@@ -9,6 +9,7 @@
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
 use crate::arch::fn_tables::{self, *};
+use crate::arch::rsa_oaep::*;
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
 use crate::hashes::sha256::Sha256Backend;
@@ -16,7 +17,6 @@ use crate::hashes::sha384::Sha384Backend;
 use crate::hashes::sha512::Sha512Backend;
 use crate::hashes::sha512_224::Sha512_224Backend;
 use crate::hashes::sha512_256::Sha512_256Backend;
-use crate::arch::rsa_oaep::*;
 use crate::rsa_pkcs1_sig::Hash;
 use verified_garbage_cpu::Features;
 
