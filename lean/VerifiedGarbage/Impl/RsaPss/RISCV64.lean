@@ -322,13 +322,18 @@ the blocks at `scratch + oY`, their number, the working space. -/
 def compArgs : List Instr :=
   [.addi .a0 .s0 oSt] ++ yBase .a1 ++ [.shift .srl .d .a2 .t3 H.b, .addi .a3 .s0 oCs]
 
+/-- The padding of `M'` after it, and the compression function's arguments. -/
+def padAll (be : Bool) : Prog isa := .seq (.block (padLen H)) (.seq padZero (.block (padEnd be ++ compArgs H)))
+
+/-- The digest's arguments: the hash value at `scratch + oSt`, to `scratch + oDig`. -/
+def digArgs : List Instr := [.addi .a0 .s0 oSt, .addi .a1 .s0 oDig]
+
 /-- For a given salt length: `H' = Hash(M')`, `8 + hLen + salt_len` bytes,
 the digest of the hash value after the blocks of its padding, to
 `scratch + oDig`, with the hash function of the table that is our stack
 argument `j`. -/
 def hashFixed (be : Bool) (f : MdFns) (j : Nat) : Prog isa :=
-  .seq (hInit f j) (.seq (.block (padLen H)) (.seq (padZero) (.seq (.block (padEnd be ++ compArgs H))
-    (.seq (tcall j 3 f.comp) (.seq (.block [.addi .a0 .s0 oSt, .addi .a1 .s0 oDig]) (tcall j 4 f.dig))))))
+  .seq (hInit f j) (.seq (padAll H be) (.seq (tcall j 3 f.comp) (.seq (.block digArgs) (tcall j 4 f.dig))))
 
 /-! ### A message of a secret length -/
 

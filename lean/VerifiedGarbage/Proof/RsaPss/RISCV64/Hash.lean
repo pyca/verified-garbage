@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Pre
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.TabCall
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
-import VerifiedGarbage.Proof.RsaPss.CtPad
+public import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.MdHashTable.RISCV64
 import VerifiedGarbage.Proof.MdStream.RISCV64.Words
@@ -233,18 +233,21 @@ theorem storeLen_ok (be : Bool) {t : State} (hw : InRegions t.wr (t.gpr .a1) 8)
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (F : Fits S s) {H : Hash}
-  {hH : HashOK H} (hF : H.F ≤ 208) {M : MdL H hH} {dN : String} {f : MdFns} {j : Nat} {p : Addr}
-  (T : TabM M dN f j S s p)
-include F hF T
+  {hH : HashOK H} (M : MdL H hH)
+include F
 
-/-- `hashFixed`, for a salt length `sl` in `s6`. -/
-theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl : Nat} {t : State}
-    (h6 : t.gpr .s6 = BitVec.ofNat 64 sl) (h : Base S vf s t) (sy : t.syms = s.syms)
-    (hsl : 8 + D + sl ≤ 1880) :
-    WP isa (hashFixed H M.be f j) t fun t' => (Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
-      Same (S s) t t' [(oSt, H.S), (oDig, 64), (oCs, 144), (oY, 2048)] ∧
-      Spec.Sha256.bytesAt t'.mem (off (S s) oDig) H.D =
-        hH.SH.H.hash (Spec.Sha256.bytesAt t.mem (off (S s) oY) (8 + D + sl))) ∧ t'.syms = s.syms := by
+/-- `padAll`, for `M'`'s `ℓ = 8 + hLen + sl` bytes at `oY` (`sl` in `s6`): its
+blocks' padding after it, and the compression function's arguments; it
+writes only `oY` on. -/
+theorem padAll_ok {sl : Nat} {t : State} (h6 : t.gpr .s6 = BitVec.ofNat 64 sl) (h : Base S vf s t)
+    (hsl : 8 + H.D + sl ≤ 1880) :
+    WP isa (padAll H M.be) t fun t' => Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      Same (S s) t t' [(oY, 2048)] ∧ t'.gpr .a0 = off (S s) oSt ∧ t'.gpr .a1 = off (S s) oY ∧
+      t'.gpr .a2 = BitVec.ofNat 64 ((8 + H.D + sl + M.L) / H.B + 1) ∧ t'.gpr .a3 = off (S s) oCs ∧
+      (∀ i < padB H.B M.L (8 + H.D + sl), view t'.mem (S s) (oY + i) =
+        Proof.RsaPss.padded H.B M.L (Spec.Sha256.bytesAt t.mem (off (S s) oY) (8 + H.D + sl))
+          (M.md.lenBytes (8 + H.D + sl)) i) ∧
+      ∀ i < H.N, view t'.mem (S s) (oSt + i) = view t.mem (S s) (oSt + i) := by
   have Fh := hfits hH
   have hY : oY = 2048 := rfl
   have hR : oRsa = 8192 := rfl
@@ -252,43 +255,32 @@ theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl :
   obtain ⟨_, hSt, hDg, _, _⟩ := offs
   have hD64 := hH.hD64
   have hN := hH.hN
-  have hDN := M.hDN
   obtain ⟨hL, hL8⟩ := M.hL
   have hb := hH.hb
   have hB : H.B = 2 ^ H.b := rfl
   have hB' : H.B = 64 ∨ H.B = 128 := by rcases hb with e | e <;> simp [hB, e]
   have hLB : M.L < H.B := by rcases hB' with e | e <;> rw [hL, e] <;> decide
   have hB0 : 0 < H.B := by omega
-  -- The message and the padding's sizes.
-  generalize hl : 8 + D + sl = ℓ at hsl
-  have hl' : 8 + H.D + sl = ℓ := by rw [hD, hl]
+  generalize hl : 8 + H.D + sl = ℓ at hsl ⊢
   have hpb := padB_bounds (ℓ := ℓ) (L := M.L) hB0
-  generalize hP : padB H.B M.L ℓ = P at hpb
-  have hP' : padB H.B (H.B / 8) (8 + H.D + sl) = P := by rw [← hL, hl', hP]
+  generalize hP : padB H.B M.L ℓ = P at hpb ⊢
+  have hP' : padB H.B (H.B / 8) (8 + H.D + sl) = P := by rw [← hL, hl, hP]
   let msg := Spec.Sha256.bytesAt t.mem (off (S s) oY) ℓ
-  -- `init`.
-  refine WP.seq (WP.mono (hInit_ok F hF T h sy) fun t₁ ⟨⟨b₁, g₁, s₁, r₁⟩, y₁⟩ => ?_)
-  have iv₁ : M.md.stateAt t₁.mem (off (S s) oSt) = M.iv := M.init _ _ r₁
-  have v₁ : ∀ i < ℓ, view t₁.mem (S s) (oY + i) = view t.mem (S s) (oY + i) := fun i hi =>
-    s₁ _ (by omega) fun q hq => by simp at hq; subst hq; simp only; omega
   -- The sizes.
-  refine WP.seq (WP.of_syms (padLen_ok hb hD64 (sl := sl) (by omega) (by rw [g₁ _ (by decide), h6])
-    fun t₂ o₂ e₂ e₃ => wp_nil fun sy₂ => ?_))
-  rw [hl'] at e₂
+  refine WP.seq (WP.of_syms (padLen_ok hb hD64 (sl := sl) (by omega) h6 fun t₂ o₂ e₂ e₃ => wp_nil fun _ => ?_))
+  rw [hl] at e₂
   rw [hP'] at e₃
-  have b₂ := b₁.only F o₂
+  have b₂ := h.only F o₂
   -- Zeros after `M'`.
-  refine WP.seq (WP.seq (WP.of_syms (Proof.RsaPss.RISCV64.wp_yBase (by rw [o₂.get .s0, b₁.s0]) fun t₃ o₃ e₃' =>
-    wp_add fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_li (imm := 0) (by decide) fun t₆ o₆ e₆ =>
-      wp_nil fun sy₆ => ?_)))
+  refine WP.seq (WP.seq (Proof.RsaPss.RISCV64.wp_yBase (by rw [o₂.get .s0, h.s0]) fun t₃ o₃ e₃' =>
+    wp_add fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_li (imm := 0) (by decide) fun t₆ o₆ e₆ => wp_nil ?_))
   have k₆ : Only [.a1, .t5, .t0] t₂ t₆ := (o₃.trans (o₄.trans (o₅.trans o₆))).mono
   have g6a1 : t₆.gpr .a1 = off (S s) (oY + ℓ) := by
     rw [o₆.get .a1, o₅.get .a1, e₄, e₃', o₃.get .t2, e₂]; exact off_off _ _ _
   have g6t5 : t₆.gpr .t5 = BitVec.ofNat 64 (P - ℓ) := by
     rw [o₆.get .t5, e₅, o₄.get .t3, o₃.get .t3, e₃, o₄.get .t2, o₃.get .t2, e₂, Offset.ofNat_sub_ofNat (by omega)]
-  refine WP.mono_syms (fill_ok (p := off (S s) (oY + ℓ)) (n := P - ℓ) (b := 0) (by omega) (by omega) g6a1 g6t5
-    (by rw [e₆]; rfl) (sc_w F (by rw [k₆.wr, b₂.wr]) (d := oY + ℓ) (by omega))) fun t₇ ⟨k₇, m₇⟩ sy₇ => ?_
-  have y₇ : t₇.syms = s.syms := sy₇.trans (sy₆.trans (sy₂.trans y₁))
+  refine WP.mono (fill_ok (p := off (S s) (oY + ℓ)) (n := P - ℓ) (b := 0) (by omega) (by omega) g6a1 g6t5
+    (by rw [e₆]; rfl) (sc_w F (by rw [k₆.wr, b₂.wr]) (d := oY + ℓ) (by omega))) fun t₇ ⟨k₇, m₇⟩ => ?_
   have K₇ : Kept [.a1, .t5, .t0] t₂ t₇ := (k₆.keep.trans k₇).mono
   have m₇' : t₇.mem = writeBytes t₂.mem (off (S s) (oY + ℓ)) (List.replicate (P - ℓ) 0) := by rw [m₇, k₆.mem]
   have b₇ := b₂.wb F K₇ (by rw [List.length_replicate]; omega) m₇'
@@ -297,8 +289,8 @@ theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl :
   have t3₇ : t₇.gpr .t3 = BitVec.ofNat 64 P := by rw [K₇.get .t3, e₃]
   have s0₇ : t₇.gpr .s0 = S s := b₇.s0
   simp only [padEnd, compArgs, List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.seq (WP.of_syms (Proof.RsaPss.RISCV64.wp_yBase s0₇ fun t₈ o₈ e₈ => wp_add fun t₉ o₉ e₉ =>
-    wp_li (imm := 0x80) (by decide) fun t₁₀ o₁₀ e₁₀ => ?_))
+  refine Proof.RsaPss.RISCV64.wp_yBase s0₇ fun t₈ o₈ e₈ => wp_add fun t₉ o₉ e₉ =>
+    wp_li (imm := 0x80) (by decide) fun t₁₀ o₁₀ e₁₀ => ?_
   have k₁₀ : Only [.a1, .t1] t₇ t₁₀ := (o₈.trans (o₉.trans o₁₀)).mono
   have a1₁₀ : t₁₀.gpr .a1 = off (S s) (oY + ℓ) := by
     rw [o₁₀.get .a1, e₉, e₈, o₈.get .t2, t2₇]; exact off_off _ _ _
@@ -329,19 +321,104 @@ theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl :
   have b₁₆ : Base S vf s t₁₆ := b₁₁.wb F K₁₆ (by rw [bytes64_length]; omega) hm₁₆
   refine wp_addi (imm := oSt) (h := by decide) fun t₁₇ o₁₇ e₁₇ => Proof.RsaPss.RISCV64.wp_yBase
     (by rw [o₁₇.get .s0, b₁₆.s0]) fun t₁₈ o₁₈ e₁₈ => wp_srl (sh := H.b) (h := by omega) fun t₁₉ o₁₉ e₁₉ =>
-    wp_addi (imm := oCs) (h := by decide) fun t₂₀ o₂₀ e₂₀ => wp_nil fun sy₂₀ => ?_
+    wp_addi (imm := oCs) (h := by decide) fun t₂₀ o₂₀ e₂₀ => wp_nil ?_
   have k₂₀ : Only [.a0, .a1, .a2, .a3] t₁₆ t₂₀ := (o₁₇.trans (o₁₈.trans (o₁₉.trans o₂₀))).mono
-  have b₂₀ := b₁₆.only F k₂₀
   have hnb : P / H.B = (ℓ + M.L) / H.B + 1 := by rw [← hP]; exact Nat.mul_div_cancel_left _ hB0
-  have a2₂₀ : t₂₀.gpr .a2 = BitVec.ofNat 64 ((ℓ + M.L) / H.B + 1) := by
-    rw [o₂₀.get .a2, e₁₉, o₁₈.get .t3, o₁₇.get .t3, K₁₆.get .t3, K₁₁.get .t3, t3₇]
+  refine ⟨b₁₆.only F k₂₀, fun r hr => ?_, ?_, by rw [o₂₀.get .a0, o₁₉.get .a0, o₁₈.get .a0, e₁₇, b₁₆.s0],
+    by rw [o₂₀.get .a1, o₁₉.get .a1, e₁₈], ?_, by rw [e₂₀, o₁₉.get .s0, o₁₈.get .s0, o₁₇.get .s0, b₁₆.s0],
+    fun i hi => ?_, fun i hi => ?_⟩
+  · rw [k₂₀.gpr r (by revert r; decide), K₁₆.gpr r (by revert r; decide), K₁₁.gpr r (by revert r; decide),
+      K₇.gpr r (by revert r; decide), o₂.gpr r (by revert r; decide)]
+  · have hR' : ∃ q ∈ [(oY, 2048)], q.1 ≤ oY + ℓ ∧ oY + ℓ + 1 ≤ q.1 + q.2 :=
+      ⟨(oY, 2048), by simp, by simp only; omega, by simp only; omega⟩
+    exact ((((Same.of_mem o₂.mem _).trans
+      (same_wb (by rw [List.length_replicate]; omega) m₇' ⟨(oY, 2048), by simp, by simp only; omega,
+        by simp only [List.length_replicate]; omega⟩)).trans (same_w8 (by omega) hm₁₁ hR')).trans
+      (same_wb (by rw [bytes64_length]; omega) hm₁₆ ⟨(oY, 2048), by simp, by simp only; omega,
+        by simp only [bytes64_length]; omega⟩)).trans (Same.of_mem k₂₀.mem _)
+  · rw [o₂₀.get .a2, e₁₉, o₁₈.get .t3, o₁₇.get .t3, K₁₆.get .t3, K₁₁.get .t3, t3₇]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
       Nat.shiftRight_eq_div_pow, ← hB, hnb, Nat.mod_eq_of_lt (by have := Nat.div_le_self (ℓ + M.L) H.B; omega)]
+  · -- The padded message in memory.
+    have hml : msg.length = ℓ := by simp [msg, Spec.Sha256.bytesAt]
+    have hmg : ∀ i < ℓ, msg.getD i 0 = view t.mem (S s) (oY + i) := fun i hi => by
+      simp only [msg, Spec.Sha256.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
+        List.getElem?_range hi, Option.map_some, Option.getD_some, view]
+      rw [← off_off]
+    have hPB : H.B * Proof.RsaPss.lastBlk H.B M.L ℓ + H.B = P := by
+      rw [← hP]; unfold padB Proof.RsaPss.lastBlk; rw [Nat.mul_add, Nat.mul_one]
+    have hlen := M.len ℓ (by omega)
+    show view t₂₀.mem (S s) (oY + i) = Proof.RsaPss.padded H.B M.L msg (M.md.lenBytes ℓ) i
+    rw [k₂₀.mem, hm₁₆, view_wb _ _ (by rw [bytes64_length]; omega) (by omega), bytes64_length, hm₁₁,
+      view_w8 _ _ (by omega) (by omega), m₇', view_wb _ _ (by rw [List.length_replicate]; omega) (by omega),
+      List.length_replicate, Proof.RsaPss.padded, hml, hlen, Proof.RsaPss.getD_app, List.length_replicate]
+    simp only [o₂.mem]
+    generalize H.B * Proof.RsaPss.lastBlk H.B M.L ℓ = Q at hPB ⊢
+    have z : ∀ n k, k < n → (List.replicate n (0 : Byte)).getD k 0 = 0 := fun n k hk => by
+      simp [List.getD_eq_getElem?_getD, hk]
+    by_cases h₁ : i < ℓ
+    · rw [ifn (by omega), ifn (by omega), ifn (by omega), ifp h₁, hmg i h₁]
+    · by_cases h₂ : i = ℓ
+      · subst h₂; rw [ifn (by omega), ifp rfl, ifn (Nat.lt_irrefl _), ifp rfl]
+      · by_cases h₃ : P - 8 ≤ i
+        · rw [ifp ⟨by omega, by omega⟩, ifn h₁, ifn h₂, ifp ⟨by omega, by omega⟩, ifn (by omega)]
+          congr 1; omega
+        · rw [ifn (by omega), ifn (by omega), ifp ⟨by omega, by omega⟩, ifn h₁, ifn h₂, z _ _ (by omega)]
+          by_cases h₄ : Q + H.B - M.L ≤ i ∧ i < Q + H.B
+          · rw [ifp h₄, ifp (by omega), z _ _ (by omega)]
+          · rw [ifn h₄]
+  · -- The hash value.
+    rw [k₂₀.mem, hm₁₆, view_wb _ _ (by rw [bytes64_length]; omega) (by omega), ifn (by omega), hm₁₁,
+      view_w8 _ _ (by omega) (by omega), ifn (by omega), m₇', view_wb _ _ (by rw [List.length_replicate]; omega)
+      (by omega), ifn (by omega), o₂.mem]
+
+end
+
+section
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (F : Fits S s) {H : Hash}
+  {hH : HashOK H} (hF : H.F ≤ 208) {M : MdL H hH} {dN : String} {f : MdFns} {j : Nat} {p : Addr}
+  (T : TabM M dN f j S s p)
+include F hF T
+
+/-- `hashFixed`, for a salt length `sl` in `s6`. -/
+theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl : Nat} {t : State}
+    (h6 : t.gpr .s6 = BitVec.ofNat 64 sl) (h : Base S vf s t) (sy : t.syms = s.syms)
+    (hsl : 8 + D + sl ≤ 1880) :
+    WP isa (hashFixed H M.be f j) t fun t' => (Base S vf s t' ∧ (∀ r ∈ preserved, t'.gpr r = t.gpr r) ∧
+      Same (S s) t t' [(oSt, H.S), (oDig, 64), (oCs, 144), (oY, 2048)] ∧
+      Spec.Sha256.bytesAt t'.mem (off (S s) oDig) H.D =
+        hH.SH.H.hash (Spec.Sha256.bytesAt t.mem (off (S s) oY) (8 + D + sl))) ∧ t'.syms = s.syms := by
+  have Fh := hfits hH
+  have hY : oY = 2048 := rfl
+  have hR : oRsa = 8192 := rfl
+  have hCs : oCs = 1664 := rfl
+  obtain ⟨_, hSt, hDg, _, _⟩ := offs
+  have hD64 := hH.hD64
+  have hN := hH.hN
+  have hDN := M.hDN
+  obtain ⟨hL, hL8⟩ := M.hL
+  have hb := hH.hb
+  have hB : H.B = 2 ^ H.b := rfl
+  have hB' : H.B = 64 ∨ H.B = 128 := by rcases hb with e | e <;> simp [hB, e]
+  have hLB : M.L < H.B := by rcases hB' with e | e <;> rw [hL, e] <;> decide
+  have hB0 : 0 < H.B := by omega
+  subst hD
+  generalize hl : 8 + H.D + sl = ℓ at hsl
+  have hpb := padB_bounds (ℓ := ℓ) (L := M.L) hB0
+  generalize hP : padB H.B M.L ℓ = P at hpb
+  -- `init`.
+  refine WP.seq (WP.mono (hInit_ok F hF T h sy) fun t₁ ⟨⟨b₁, g₁, s₁, r₁⟩, y₁⟩ => ?_)
+  have iv₁ : M.md.stateAt t₁.mem (off (S s) oSt) = M.iv := M.init _ _ r₁
+  have em : Spec.Sha256.bytesAt t₁.mem (off (S s) oY) ℓ = Spec.Sha256.bytesAt t.mem (off (S s) oY) ℓ :=
+    bytes_same s₁ (by omega) fun q hq => by simp at hq; subst hq; simp only; omega
+  -- The padding.
+  refine WP.seq (WP.mono_syms (padAll_ok F M (sl := sl) (by rw [g₁ _ (by decide), h6]) b₁ (by omega))
+    fun t₂₀ ⟨b₂₀, g₂₀, s₂₀, x0, x1, x2, x3, vY, vS⟩ sy₂₀ => ?_)
+  rw [hl] at x2 vY
+  rw [hP, em] at vY
   -- The compression function.
-  refine WP.seq (WP.mono (compM_ok T F hal b₂₀ (sy₂₀.trans y₇) (o := oY) (n := (ℓ + M.L) / H.B + 1)
-    (by rw [o₂₀.get .a0, o₁₉.get .a0, o₁₈.get .a0, e₁₇, b₁₆.s0])
-    (by rw [o₂₀.get .a1, o₁₉.get .a1, e₁₈]) a2₂₀ (by rw [e₂₀, o₁₉.get .s0, o₁₈.get .s0, o₁₇.get .s0, b₁₆.s0])
+  refine WP.seq (WP.mono (compM_ok T F hal b₂₀ (sy₂₀.trans y₁) (o := oY) (n := (ℓ + M.L) / H.B + 1) x0 x1 x2 x3
     (by omega) (by have := hP; unfold padB at this; omega))
     fun t₂₁ ⟨⟨b₂₁, g₂₁, s₂₁, c₂₁⟩, y₂₁⟩ => ?_)
   -- The digest.
@@ -351,18 +428,11 @@ theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl :
   refine WP.mono (digM_ok T F (b₂₁.only F k₂₃) (sy₂₃.trans y₂₁) (by rw [o₂₃.get .a0, e₂₂, b₂₁.s0])
     (by rw [e₂₃, o₂₂.get .s0, b₂₁.s0])) fun t' ⟨⟨b', g', s', m'⟩, y'⟩ => ⟨⟨b', ?_, ?_, ?_⟩, y'⟩
   · intro r hr
-    rw [g' r hr, k₂₃.gpr r (by revert r; decide), g₂₁ r hr, k₂₀.gpr r (by revert r; decide),
-      K₁₆.gpr r (by revert r; decide), K₁₁.gpr r (by revert r; decide), K₇.gpr r (by revert r; decide),
-      o₂.gpr r (by revert r; decide), g₁ r hr]
-  · have hR' : ∃ q ∈ [(oSt, H.S), (oDig, 64), (oCs, 144), (oY, 2048)], q.1 ≤ oY + ℓ ∧ oY + ℓ + 1 ≤ q.1 + q.2 :=
-      ⟨(oY, 2048), by simp, by simp only; omega, by simp only; omega⟩
-    refine (((((((((Same.sub s₁ fun q hq => ?_).trans (Same.of_mem o₂.mem _)).trans
-      (same_wb (by rw [List.length_replicate]; omega) m₇' ⟨(oY, 2048), by simp, by simp only; omega,
-        by simp only [List.length_replicate]; omega⟩)).trans (same_w8 (by omega) hm₁₁ hR')).trans
-      (same_wb (by rw [bytes64_length]; omega) hm₁₆ ⟨(oY, 2048), by simp, by simp only; omega,
-        by simp only [bytes64_length]; omega⟩)).trans (Same.of_mem k₂₀.mem _)).trans
-      (Same.sub s₂₁ fun q hq => ?_)).trans (Same.of_mem k₂₃.mem _)).trans (Same.sub s' fun q hq => ?_))
+    rw [g' r hr, k₂₃.gpr r (by revert r; decide), g₂₁ r hr, g₂₀ r hr, g₁ r hr]
+  · refine ((((Same.sub s₁ fun q hq => ?_).trans (Same.sub s₂₀ fun q hq => ?_)).trans
+      (Same.sub s₂₁ fun q hq => ?_)).trans (Same.of_mem k₂₃.mem _)).trans (Same.sub s' fun q hq => ?_)
     · simp only [List.mem_singleton] at hq; subst hq; exact ⟨(oSt, H.S), by simp, by simp, by simp⟩
+    · simp only [List.mem_singleton] at hq; subst hq; exact ⟨(oY, 2048), by simp, by simp, by simp⟩
     · have := M.hcs
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
@@ -370,55 +440,26 @@ theorem hashFixedG_ok (hal : (S s).toNat % 8 = 0) {D : Nat} (hD : H.D = D) {sl :
       · exact ⟨(oCs, 144), by simp, by simp, by simp only; omega⟩
     · simp only [List.mem_singleton] at hq; subst hq; exact ⟨(oDig, 64), by simp, by simp, by simp only; omega⟩
   · -- The message.
+    let msg := Spec.Sha256.bytesAt t.mem (off (S s) oY) ℓ
     have hml : msg.length = ℓ := by simp [msg, Spec.Sha256.bytesAt]
-    have hmg : ∀ i < ℓ, msg.getD i 0 = view t.mem (S s) (oY + i) := fun i hi => by
-      simp only [msg, Spec.Sha256.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-        List.getElem?_range hi, Option.map_some, Option.getD_some, view]
-      rw [← off_off]
-    have hPB : H.B * Proof.RsaPss.lastBlk H.B M.L ℓ + H.B = P := by
-      rw [← hP]; unfold padB Proof.RsaPss.lastBlk; rw [Nat.mul_add, Nat.mul_one]
-    have hlen := M.len ℓ (by omega)
-    -- The padded message in memory.
-    have vY : ∀ i < P, view t₂₀.mem (S s) (oY + i) = Proof.RsaPss.padded H.B M.L msg (M.md.lenBytes msg.length) i := by
-      intro i hi
-      rw [k₂₀.mem, hm₁₆, view_wb _ _ (by rw [bytes64_length]; omega) (by omega), bytes64_length, hm₁₁,
-        view_w8 _ _ (by omega) (by omega), m₇', view_wb _ _ (by rw [List.length_replicate]; omega) (by omega),
-        List.length_replicate, Proof.RsaPss.padded, hml, hlen, Proof.RsaPss.getD_app, List.length_replicate]
-      simp only [o₂.mem]
-      generalize H.B * Proof.RsaPss.lastBlk H.B M.L ℓ = Q at hPB ⊢
-      have z : ∀ n k, k < n → (List.replicate n (0 : Byte)).getD k 0 = 0 := fun n k hk => by
-        simp [List.getD_eq_getElem?_getD, hk]
-      by_cases h₁ : i < ℓ
-      · rw [ifn (by omega), ifn (by omega), ifn (by omega), ifp h₁, v₁ i h₁, hmg i h₁]
-      · by_cases h₂ : i = ℓ
-        · subst h₂; rw [ifn (by omega), ifp rfl, ifn (Nat.lt_irrefl _), ifp rfl]
-        · by_cases h₃ : P - 8 ≤ i
-          · rw [ifp ⟨by omega, by omega⟩, ifn h₁, ifn h₂, ifp ⟨by omega, by omega⟩, ifn (by omega)]
-            congr 1; omega
-          · rw [ifn (by omega), ifn (by omega), ifp ⟨by omega, by omega⟩, ifn h₁, ifn h₂, z _ _ (by omega)]
-            by_cases h₄ : Q + H.B - M.L ≤ i ∧ i < Q + H.B
-            · rw [ifp h₄, ifp (by omega), z _ _ (by omega)]
-            · rw [ifn h₄]
     -- The hash value after the blocks.
-    have sY : ∀ i < H.N, t₂₀.mem (off (S s) oSt + BitVec.ofNat 64 i) = t₁.mem (off (S s) oSt + BitVec.ofNat 64 i) := by
+    have sY : ∀ i < H.N, t₂₀.mem (off (S s) oSt + BitVec.ofNat 64 i) =
+        t₁.mem (off (S s) oSt + BitVec.ofNat 64 i) := by
       intro i hi
       rw [show off (S s) oSt + BitVec.ofNat 64 i = off (S s) (oSt + i) from off_off _ _ _]
-      show view t₂₀.mem (S s) (oSt + i) = view t₁.mem (S s) (oSt + i)
-      rw [k₂₀.mem, hm₁₆, view_wb _ _ (by rw [bytes64_length]; omega) (by omega), ifn (by omega), hm₁₁,
-        view_w8 _ _ (by omega) (by omega), ifn (by omega), m₇', view_wb _ _ (by rw [List.length_replicate]; omega)
-        (by omega), ifn (by omega), o₂.mem]
+      exact vS i hi
     have iv₂₀ : M.md.stateAt t₂₀.mem (off (S s) oSt) = M.iv := (M.md.stateAt_congr sY).trans iv₁
     have hc : M.md.compressBlocks M.iv t₂₀.mem (off (S s) oY) ((ℓ + M.L) / H.B + 1) =
         M.md.compressList M.iv (M.md.pad msg) ((M.md.pad msg).length / H.B) := by
       rw [Proof.RsaPss.pad_length M.md msg hB0 hLB, hml, Nat.mul_div_cancel_left _ hB0]
       refine M.md.compressBlocks_eq fun i hi => ?_
-      rw [Proof.RsaPss.pad_getD M.md msg hB0 hLB (by rw [hml]; unfold Proof.RsaPss.lastBlk; exact hi),
+      rw [Proof.RsaPss.pad_getD M.md msg hB0 hLB (by rw [hml]; unfold Proof.RsaPss.lastBlk; exact hi), hml,
         ← vY i (by rw [← hP]; exact hi)]
       show t₂₀.mem (off (off (S s) oY) i) = view t₂₀.mem (S s) (oY + i)
       rw [off_off]; rfl
     have hdl := M.md.digest_length (M.md.stateAt t₂₃.mem (off (S s) oSt))
     rw [m', bytesAt_wb_take _ _ _ (by omega) (by omega), k₂₃.mem, c₂₁, iv₂₀, hc, M.hash]
-    rfl
+    subst hl; rfl
 
 end
 
