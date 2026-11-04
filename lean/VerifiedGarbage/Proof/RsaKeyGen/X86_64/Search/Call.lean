@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Data
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-! # The search's call of the candidate
 
@@ -375,6 +378,21 @@ theorem call_arg {p : SearchPublic} {used : Nat} {s u : State} (hu : u.gpr .rsp 
     hm, F_40]
   exact writeFrame_word _ _ _ (callValues_bound p used) j (by omega)
 
+/-- The candidate's stack arguments. -/
+theorem call_args {p : SearchPublic} {used : Nat} {s u : State}
+    (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200)
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) :
+    arg (callState p used u) 0 = BitVec.ofNat 64 p.plen ∧
+      arg (callState p used u) 1 = p.rp + BitVec.ofNat 64 used ∧
+      arg (callState p used u) 2 = BitVec.ofNat 64 (p.randLen - used) ∧
+      arg (callState p used u) 3 = p.B ∧ arg (callState p used u) 4 = BitVec.ofNat 64 (p.Z / 8) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · show stackArg _ 0 = _; rw [call_arg hu hm 0 (by decide)]; rfl
+  · show stackArg _ 1 = _; rw [call_arg hu hm 1 (by decide)]; rfl
+  · show stackArg _ 2 = _; rw [call_arg hu hm 2 (by decide)]; rfl
+  · show stackArg _ 3 = _; rw [call_arg hu hm 3 (by decide)]; rfl
+  · show stackArg _ 4 = _; rw [call_arg hu hm 4 (by decide)]; rfl
+
 /-- The candidate's precondition at its entry. -/
 theorem call_cand_pre {p : SearchPublic} {used : Nat} {s u : State} (hf : CallFacts p used)
     (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) (ha : CallRegs p u)
@@ -443,5 +461,251 @@ theorem call_cand_pre {p : SearchPublic} {used : Nat} {s u : State} (hf : CallFa
         List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
       exacts [lE, lP, lR, lA, lO, lU, lS]
+
+/-! ## The call -/
+
+theorem writeFrame_frame_size (m : Mem) (B : Addr) (values : List (Nat × BitVec 64)) {size : Nat}
+    (hsize : size ≤ 2 ^ 64) (hvalues : ∀ e ∈ values, 8 * e.1 + 8 ≤ size) :
+    Frame [⟨B, size⟩] m (writeFrame m B values) := by
+  induction values generalizing m with
+  | nil => exact Frame.refl _ _
+  | cons e values ih =>
+    have he := hvalues e (List.mem_cons_self ..)
+    have hstore : Frame [⟨B, size⟩] m (m.writeW (off B (8 * e.1)) e.2) :=
+      Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Offset.contains_base _ he (by omega))
+    exact hstore.trans (ih _ (fun x hx => hvalues x (List.mem_cons_of_mem _ hx)))
+
+section
+
+variable {p : SearchPublic} {original s : State} {used remaining : Nat}
+
+theorem call_covers_writes (h : SearchLive p original used remaining s) {u : State}
+    (hw : u.wr = (allocated 40 s).wr) : Covers (callWrites p) u.wr := by
+  apply Covers.of_mem
+  intro r hr
+  rw [hw]
+  apply List.mem_cons_of_mem
+  rw [h.wr]
+  apply List.mem_cons_of_mem
+  have hi := h.input
+  rw [hi.1.2.2.2.1]
+  cases hi.2
+  simp only [callWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · simp [inWrites, inOut, searchOfState]
+  · simp [inWrites, inUsed, searchOfState]
+  · simp [inWrites, inScr, searchOfState]
+
+theorem call_covers_reads (h : SearchLive p original used remaining s) {u : State}
+    (hrd : u.rd = (allocated 40 s).rd) (hw : u.wr = (allocated 40 s).wr) :
+    Covers (callReads p used ++ callWrites p) (u.rd ++ u.wr) := by
+  refine Covers.append_left ?_ (call_covers_writes h hw).right
+  apply Covers.of_sub
+  have hi := h.input
+  have hu := h.used_le
+  have hrd' := hi.1.2.2.1
+  intro r hr
+  simp only [callReads, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · refine ⟨inE original, ?_, 0, ?_, ?_⟩
+    · rw [hrd]; exact List.mem_append_left _ (by
+        change inE original ∈ s.rd; rw [h.rd, hrd']; simp [inReads])
+    · cases hi.2; simp only [BitVec.add_zero]; rfl
+    · cases hi.2; simp only [Nat.zero_add]; exact Nat.le_refl _
+  · refine ⟨inP original, ?_, 0, ?_, ?_⟩
+    · rw [hrd]; exact List.mem_append_left _ (by
+        change inP original ∈ s.rd; rw [h.rd, hrd']; simp [inReads])
+    · cases hi.2; simp only [BitVec.add_zero]; rfl
+    · cases hi.2; simp only [Nat.zero_add]; exact Nat.le_refl _
+  · refine ⟨inRand original, ?_, used, ?_, ?_⟩
+    · rw [hrd]; exact List.mem_append_left _ (by
+        change inRand original ∈ s.rd; rw [h.rd, hrd']; simp [inReads])
+    · cases hi.2; rfl
+    · cases hi.2; simp only [searchOfState, inRand] at hu ⊢; omega
+  · refine ⟨⟨s.gpr .rsp - BitVec.ofNat 64 40, 40⟩, ?_, 0, ?_, Nat.le_refl _⟩
+    · rw [hw]; exact List.mem_append_right _ (List.mem_cons_self ..)
+    · rw [h.rsp, BitVec.add_zero, F_40]
+
+/-- What the call writes, as the search sees it. -/
+theorem call_frame (h : SearchLive p original used remaining s) {u t : State}
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used))
+    (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) {d : Nat} (hd : d ≤ 128)
+    (hf : Frame (callWrites p ++ [below (u.gpr .rsp) (d + 8)]) u.mem t.mem) :
+    Frame (SearchInput.callChanges original) s.mem t.mem := by
+  have hi := h.input
+  have hsp : original.gpr .rsp = p.sp := hi.sp_eq.symm
+  have hlow : (⟨original.gpr .rsp - BitVec.ofNat 64 stackUse, 176⟩ : Region) ∈
+      SearchInput.callChanges original := by simp [SearchInput.callChanges]
+  have h1 : Frame (SearchInput.callChanges original) s.mem u.mem := by
+    rw [hm, F_40]
+    apply (writeFrame_frame_size _ _ (callValues p used) (size := 40) (by decide) (by
+      simp only [callValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide)).sub
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    refine ⟨_, hlow, ?_⟩
+    rw [hsp]
+    exact Offset.sub_below _ (by decide) (by decide)
+  have h2 : Frame (SearchInput.callChanges original) u.mem t.mem := by
+    apply hf.sub
+    intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · cases hi.2
+      simp only [callWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨inOut original, by simp [SearchInput.callChanges], by
+          simp only [inOut, searchOfState, searchLen]; exact fun _ hi => hi⟩
+      · exact ⟨inUsed original, by simp [SearchInput.callChanges], fun _ hi => hi⟩
+      · exact ⟨inScr original, by simp [SearchInput.callChanges], fun _ hi => hi⟩
+    · obtain rfl := List.mem_singleton.mp hr
+      refine ⟨_, hlow, ?_⟩
+      rw [hu, hsp]
+      show Region.Sub ⟨p.sp - BitVec.ofNat 64 200 - BitVec.ofNat 64 (d + 8), d + 8⟩
+        ⟨p.sp - BitVec.ofNat 64 336, 176⟩
+      rw [BitVec.sub_sub, show BitVec.ofNat 64 200 + BitVec.ofNat 64 (d + 8) = BitVec.ofNat 64 (208 + d) by
+        rw [← BitVec.ofNat_add]; congr 1; omega]
+      exact Offset.sub_below _ (by omega) (by omega)
+  exact h1.trans h2
+
+end
+
+theorem bytesAt_drop (m : Mem) (P : Addr) (k n : Nat) :
+    Spec.Rsa.bytesAt m (P + BitVec.ofNat 64 k) (n - k) = (Spec.Rsa.bytesAt m P n).drop k := by
+  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
+  intro i h₁ h₂
+  simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_drop,
+    BitVec.add_assoc, ← BitVec.ofNat_add]
+
+section
+
+variable {p : SearchPublic} {original s : State} {used remaining : Nat}
+
+/-- The call's entry changes only the stack below the frame. -/
+theorem call_mem_frame (h : SearchLive p original used remaining s) {u : State}
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used))
+    (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) :
+    Frame (SearchInput.changes original) s.mem (callState p used u).mem := by
+  have hsp : original.gpr .rsp = p.sp := h.input.sp_eq.symm
+  have hin : below (original.gpr .rsp) stackUse ∈ SearchInput.changes original := by
+    simp [SearchInput.changes]
+  have h1 : Frame (SearchInput.changes original) s.mem u.mem := by
+    rw [hm, F_40]
+    apply (writeFrame_frame_size _ _ (callValues p used) (size := 40) (by decide) (by
+      simp only [callValues, List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide)).sub
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    refine ⟨_, hin, ?_⟩
+    rw [hsp]
+    exact Offset.sub_below _ (by decide) (by decide)
+  refine h1.trans ?_
+  simp only [State.withRegions_mem, State.callEntry_mem]
+  refine Frame.writeW (Frame.refl _ _) hin _ ?_
+  rw [hu, hsp, BitVec.sub_sub]
+  rw [show p.sp - (BitVec.ofNat 64 200 + 8) = p.sp - BitVec.ofNat 64 336 + BitVec.ofNat 64 128 by
+    rw [show BitVec.ofNat 64 200 + 8 = BitVec.ofNat 64 208 from rfl]
+    exact Offset.sub_ofNat_eq _ (by decide)]
+  exact Offset.contains_base _ (by decide) (by decide)
+
+/-- The candidate's inputs: `e`, `p` and the rest of the tape. -/
+theorem call_inputs (h : SearchLive p original used remaining s) {u : State}
+    (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used))
+    (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) :
+    Spec.Rsa.bytesAt (callState p used u).mem p.ep p.elen = p.eB ∧
+      Spec.Rsa.bytesAt (callState p used u).mem p.pp p.plen = searchP original ∧
+      Spec.Rsa.bytesAt (callState p used u).mem (p.rp + BitVec.ofNat 64 used) (p.randLen - used) =
+        (searchRand original).drop used := by
+  have hf := call_mem_frame h hm hu
+  refine ⟨(h.input.e_frame hf).trans h.e, (h.input.p_frame hf).trans h.other, ?_⟩
+  rw [bytesAt_drop, h.input.random_frame hf, h.random]
+
+end
+
+/-! ## The candidate, run -/
+
+open VG.Proof.Ffdh.X86_64.Generation (freed freed_rsp freed_reg frame_alloc)
+
+/-- What the candidate at `used` leaves: its status, its prime or zeros, and
+the octets it read. -/
+def CandPost (p : SearchPublic) (pB rand : List Byte) (used : Nat) (t : State) : Prop :=
+  ((t.gpr .rax).setWidth 32).toNat =
+      Spec.RsaKeyGen.candidateStatus (Spec.RsaKeyGen.candidateOp p.len p.eB pB (rand.drop used)) ∧
+    Spec.Rsa.bytesAt t.mem p.op p.len =
+      (match Spec.RsaKeyGen.candidateOp p.len p.eB pB (rand.drop used) with
+        | some (.prime c, _) => Spec.Rsa.i2osp c p.len
+        | _ => List.replicate p.len 0) ∧
+    Spec.Rsa.wordsAt t.mem p.up 1 =
+      [BitVec.ofNat 64 (match Spec.RsaKeyGen.candidateOp p.len p.eB pB (rand.drop used) with
+        | some (_, rest) => (p.randLen - used) - rest.length
+        | none => 0)]
+
+theorem CandPost.keep {p : SearchPublic} {pB rand : List Byte} {used : Nat} {s t : State}
+    (h : CandPost p pB rand used s) (hm : t.mem = s.mem)
+    (hr : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32) : CandPost p pB rand used t := by
+  unfold CandPost at h ⊢
+  rw [hm, hr]
+  exact h
+
+theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (candidateRun (candidateCall v)) s fun t =>
+      SearchLive p original used remaining t ∧ CandPost p (searchP original) (searchRand original) used t := by
+  have hf := h.callFacts
+  have hroom : 40 ≤ (s.gpr .rsp).toNat := by
+    rw [h.rsp, h.input.F_toNat]; have : 336 ≤ p.sp.toNat := h.input.room; omega
+  unfold candidateRun
+  apply frame_alloc (by decide) (by decide) (by decide) hroom
+  refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨ha, hm, k⟩ => ?_)
+  have hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200 := by
+    rw [k.gpr (by decide), allocated_rsp, h.rsp, F_40]
+  have hpre := call_cand_pre hf hu ha hm
+  have hd := sharedCandidate_depth v
+  have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
+  refine WP.callF (k := sharedCandContract)
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (SpSafe.of_all (sharedCandidate_sp v))
+    (by change (sharedCandidateCode v).x86_64Depth + 16 < 2 ^ 64; omega) hpre
+    (call_covers_reads h k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
+  intro t hrd hwr hcs hfr ⟨s₂, hm₂, hg₂, hpost⟩ _
+  have htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
+  refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, ?_, ?_⟩
+  · apply h.restore (show (freed 40 t).rd = s.rd from hrd.trans k.2.1)
+      (show (freed 40 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
+    · intro r hr
+      by_cases he : r = .rsp
+      · subst he
+        rw [freed_rsp, htsp, k.gpr (by decide), allocated_rsp]
+        exact BitVec.sub_add_cancel _ _
+      · rw [freed_reg _ _ _ he, hcs r hr, k.gpr (by
+          simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
+          allocated_reg _ _ _ he]
+    · exact call_frame h hm hu hd hfr
+  · obtain ⟨he, hpb, hrand⟩ := call_inputs h hm hu
+    obtain ⟨a0, a1, a2, -, -⟩ := call_args (used := used) hu hm
+    obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha
+    have t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega)]
+    have tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
+    have tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
+    have tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega)]
+    have hres : candRes (callState p used u) =
+        Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) := by
+      simp only [candRes, call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
+        call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
+        hsi, hcx, h8, h9, a0, a1, a2, t8, tl, tp, tr, he, hpb, hrand]
+    have hp := hpost
+    simp only [sharedCandContract, candPost, hres, a2, tr, call_gpr (show Reg.rdi ≠ .rsp by decide),
+      call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rdx ≠ .rsp by decide), hdi, hsi, hdx,
+      tl] at hp
+    have hrax : (freed 40 t).gpr .rax = s₂.gpr .rax := by
+      rw [freed_reg _ _ _ (by decide), hg₂ .rax (by decide)]
+    have hmem : (freed 40 t).mem = s₂.mem := hm₂.symm
+    unfold CandPost
+    rw [hrax, hmem]
+    exact hp
 
 end VG.Proof.RsaKeyGen.X86_64.Search
