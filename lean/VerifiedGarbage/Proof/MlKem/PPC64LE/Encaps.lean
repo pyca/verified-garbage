@@ -219,7 +219,7 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsSetup, WP.block_append_iff]
-  refine WP.mono (topSave_ok (.inr (.inl rfl)) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
+  refine WP.mono (topSave_ok (.inr rfl) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
   have g3 : s₁.gpr .r3 = pEk s₀ := g₁ _ (by decide)
   have g4 : s₁.gpr .r4 = pM s₀ := g₁ _ (by decide)
   have g5 : s₁.gpr .r5 = pKey s₀ := g₁ _ (by decide)
@@ -588,7 +588,7 @@ theorem setupH_ok :
       Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
         ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsHSetup, WP.block_append_iff]
-  refine WP.mono (topSave_ok (.inr (.inr rfl)) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
+  refine WP.mono (topSave_ok' (.inr (.inr rfl)) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
   have g3 : s₁.gpr .r3 = s₀.gpr .r3 := g₁ _ (by decide)
   have g4 : s₁.gpr .r4 = s₀.gpr .r4 := g₁ _ (by decide)
   have g5 : s₁.gpr .r5 = s₀.gpr .r5 := g₁ _ (by decide)

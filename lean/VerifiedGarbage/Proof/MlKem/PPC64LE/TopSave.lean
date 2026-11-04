@@ -66,8 +66,8 @@ theorem topEnd_eq : topEnd = [mov .r3 .r24, .load .d .r0 .r31 904, .mtlr .r0, .l
     .load .d .r25 .r31 848, .load .d .r26 .r31 856, .load .d .r27 .r31 864, .load .d .r28 .r31 872,
     .load .d .r29 .r31 880, .load .d .r30 .r31 888, .load .d .r31 .r31 896] := rfl
 
-/-- Our caller's registers and return address saved, with `scratch` in `b`. -/
-theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7 ∨ b = .r8) (hP : s.gpr b = P)
+/-- Our caller's registers and return address saved, with `scratch` in `b`, any of `r6`–`r8`. -/
+theorem topSave_ok' {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7 ∨ b = .r8) (hP : s.gpr b = P)
     (hw : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions s.wr (P + BitVec.ofNat 64 o) 8) :
     WP isa (.block (topSave b)) s fun s' => TopSaved s'.mem P s ∧ Frame [saveR P] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
@@ -89,6 +89,13 @@ theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7 �
       | exact RegUpd.gpr_write_of_ne _ _ hr
       | ((repeat (first | exact Frame.refl _ _ |
           refine Frame.writeW ?_ (List.mem_singleton_self _) _ (saveR_contains _ (by decide) (by decide)))); done)
+
+/-- `topSave_ok'`, with `scratch` in `r6` or `r7`. -/
+theorem topSave_ok {s : State} {b : Reg} {P : Addr} (hb : b = .r6 ∨ b = .r7) (hP : s.gpr b = P)
+    (hw : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions s.wr (P + BitVec.ofNat 64 o) 8) :
+    WP isa (.block (topSave b)) s fun s' => TopSaved s'.mem P s ∧ Frame [saveR P] s.mem s'.mem ∧
+      (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  topSave_ok' (hb.elim .inl fun h => .inr (.inl h)) hP hw
 
 /-- The return value, and our caller's registers and return address restored. -/
 theorem topEnd_ok {s₀ s : State} {P : Addr} (h31 : s.gpr .r31 = P) (hsav : TopSaved s.mem P s₀)
