@@ -40,6 +40,26 @@ open VG VG.Arm
 open VG.Arm.FrameStack (addr_sub' sub_toNat')
 open VG.Proof.X25519.Arm (Upd Mupd)
 open VG.Impl.Ecdsa.Rfc6979.Arm (extra)
+open VG.Impl.Pbkdf2.Stream.Arm (Hash)
+open VG.Impl.RsaOaep.Arm (Fns)
+
+/-- At `p` in `m`, the addresses `sy` gives `G`'s `init`, `update` and
+`finalize`: a table of `G`. -/
+def TabMem (G : Hash) (sy : String → BitVec 32) (p : BitVec 32) (m : Mem) : Prop :=
+  m.readW (State.addr (p + BitVec.ofNat 32 0)) 32 = sy G.initN ∧
+    m.readW (State.addr (p + BitVec.ofNat 32 4)) 32 = sy G.updN ∧
+    m.readW (State.addr (p + BitVec.ofNat 32 8)) 32 = sy G.finN
+
+/-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
+address of one of `G`'s functions reaches it. -/
+def TabOK (G : Hash) (f : Fns) (sy : String → BitVec 32) : Prop :=
+  f.init.find? (fun q => (sy q.1).setWidth 64 == (sy G.initN).setWidth 64) = some (G.initN, G.initC) ∧
+    f.upd.find? (fun q => (sy q.1).setWidth 64 == (sy G.updN).setWidth 64) = some (G.updN, G.updC) ∧
+    f.fin.find? (fun q => (sy q.1).setWidth 64 == (sy G.finN).setWidth 64) = some (G.finN, G.finC)
+
+/-- What the contract says of the table, stack argument 1: it holds `G`'s
+functions, which an indirect call of `f`'s reaches. -/
+def tabFacts (G : Hash) (f : Fns) (s : State) : Prop := TabOK G f s.syms ∧ TabMem G s.syms (stackArg s 1) s.mem
 
 /-- The buffers, as the registers hold them, and the stack pointer on entry,
 for a digest of `dn` bytes and scalars of `q`. -/
@@ -48,9 +68,11 @@ structure Lay (dn : Nat) where
   d : BitVec 32
   dg : BitVec 32
   scr : BitVec 32
+  /-- The table of the hash function. -/
+  tab : BitVec 32
   sp : BitVec 32
   q : Nat
-  /-- Whether two `V`s make a candidate. -/
+  /-- Whether the hash is shorter than the scalars. -/
   wide : Bool
   /-- Whether `h` is at the frame's top. -/
   hHigh : Bool
@@ -59,8 +81,14 @@ structure Lay (dn : Nat) where
   ew : e = extra wide hHigh
   cs : List (String × List (BitVec 64)) := []
   sy : String → BitVec 32 := fun _ => 0
+  /-- The hash function's streaming functions, which the table holds, and
+  the functions an indirect call of a table's functions may reach. -/
+  G : Hash
+  f : Fns
+  /-- The addresses of `G`'s functions, public. -/
+  fa : String → BitVec 32
 
-theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 36 := by
+theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 68 := by
   rw [L.ew, extra]; split <;> (try split) <;> omega
 
 namespace Lay
@@ -76,13 +104,17 @@ abbrev OUT : Region := ⟨State.addr L.out, 2 * L.q⟩
 abbrev D : Region := ⟨State.addr L.d, L.q⟩
 abbrev DG : Region := ⟨State.addr L.dg, dn⟩
 abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
+/-- The table of the hash function. -/
+abbrev TAB : Region := ⟨State.addr L.tab, 20⟩
+/-- The stack arguments, above the stack used. -/
+abbrev ARGS : Region := ⟨State.addr L.sp, 8⟩
 abbrev TBLs : List Region := Abi.constRegions (fun n => State.addr (L.sy n)) L.cs
 /-- The stack used. -/
 abbrev STK : Region := ⟨L.B, 240 + 4 * L.e⟩
 /-- The frame. -/
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 24, 216 + 4 * L.e⟩
-/-- The stack below the saved registers: the calls', `K`, `V`, `h` and the unused word. -/
-abbrev LOW : Region := ⟨L.B, 204⟩
+/-- The stack below `out` and the saved registers: the calls', `K`, `V` and `h`. -/
+abbrev LOW : Region := ⟨L.B, 200⟩
 /-- The frame above the saved registers. -/
 abbrev HIGH : Region := ⟨L.B + BitVec.ofNat 64 240, 4 * L.e⟩
 
@@ -103,6 +135,16 @@ structure Ok : Prop where
   ng : L.dg.toNat + dn ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   nB : 240 + 4 * L.e ≤ L.sp.toNat
+  /-- The table and the stack arguments do not wrap around, and are apart
+  from what the code writes. -/
+  nt : L.tab.toNat + 20 ≤ 2 ^ 32
+  to : L.TAB.Disjoint L.OUT
+  tc : L.TAB.Disjoint L.SCR
+  tk : L.TAB.Disjoint L.STK
+  na : L.sp.toNat + 8 ≤ 2 ^ 32
+  ao : L.ARGS.Disjoint L.OUT
+  ac : L.ARGS.Disjoint L.SCR
+  ak : L.ARGS.Disjoint L.STK
   tables : ∀ r∈L.TBLs,r.base.toNat+r.len≤2^32 ∧ (∀ w∈[L.OUT,L.SCR,L.STK],r.Disjoint w) ∧ r.base.toNat%64=0
 
 end Lay
@@ -180,7 +222,7 @@ theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Withi
 def Safe {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   Region.Sub r L.OUT ∨ Region.Sub r L.SCR ∨ Region.Sub r L.LOW ∨ Region.Sub r L.HIGH
 
-theorem safe_low {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 204) : Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
+theorem safe_low {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 200) : Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
   .inr (.inr (.inl (Offset.sub_base _ h)))
 
 theorem safe_high {dn : Nat} (L : Lay dn) {d n : Nat} (h₁ : 240 ≤ d) (h₂ : d + n ≤ 240 + 4 * L.e) :
@@ -200,9 +242,9 @@ namespace Lay.Ok
 
 variable {dn : Nat} {L : Lay dn}
 
-/-- The saved registers are apart from every safe region. -/
+/-- `out` and the saved registers are apart from every safe region. -/
 theorem saved_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 204, 36⟩ r := by
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 200, 40⟩ r := by
   have := h.B_fit
   rcases hs with hs | hs | hs | hs
   · exact (h.stk_OUT (by omega)).sub_right hs
@@ -224,6 +266,22 @@ theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
   · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
   · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
 
+/-- The table is apart from every safe region. -/
+theorem tab_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TAB.Disjoint r := by
+  rcases hs with hs | hs | hs | hs
+  · exact h.to.sub_right hs
+  · exact h.tc.sub_right hs
+  · exact (h.tk.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · exact (h.tk.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+
+/-- The stack arguments are apart from every safe region. -/
+theorem args_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.ARGS.Disjoint r := by
+  rcases hs with hs | hs | hs | hs
+  · exact h.ao.sub_right hs
+  · exact h.ac.sub_right hs
+  · exact (h.ak.sub_right (Region.sub_prefix (by omega))).sub_right hs
+  · exact (h.ak.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+
 end Lay.Ok
 
 /-! ## Between the frame's allocation and its release -/
@@ -234,18 +292,22 @@ abbrev ptrRegs : List Reg := [.r4, .r5, .r6, .r8, .r11]
 /-- The state between the frame's allocation and its release: `g` are the
 registers on entry, `m₀` the memory. -/
 structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.D, L.DG] ++ L.TBLs
+  rd : t.rd = [L.D, L.DG, L.TAB, L.ARGS] ++ L.TBLs
   wr : t.wr = [L.FR, L.OUT, L.SCR]
   sp : t.sp = L.fp
-  r4 : t.gpr .r4 = L.out
+  r4 : t.gpr .r4 = L.tab
   r5 : t.gpr .r5 = L.d
   r6 : t.gpr .r6 = L.dg
   r8 : t.gpr .r8 = L.fp
   r11 : t.gpr .r11 = L.scr
   saved : ∀ p ∈ Impl.Ecdsa.Rfc6979.Arm.saved, t.mem.readW (L.B + BitVec.ofNat 64 (24 + p.2)) 32 = g p.1
+  pOut : t.mem.readW (L.B + BitVec.ofNat 64 200) 32 = L.out
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
   sy : ∀ c∈L.cs,t.syms c.1=L.sy c.1
   held : Abi.constsHeld m₀ (fun n => State.addr (L.sy n)) L.cs
+  tabOk : TabOK L.G L.f t.syms
+  tabMem : TabMem L.G t.syms L.tab m₀
+  fsy : ∀ n ∈ [L.G.initN, L.G.updN, L.G.finN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -268,12 +330,16 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
     {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) (hsy : t'.syms=t.syms) : Ctx L g m₀ t' := by
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hp _ (by decide)).trans hc.r4,
     (hp _ (by decide)).trans hc.r5, (hp _ (by decide)).trans hc.r6, (hp _ (by decide)).trans hc.r8,
-    (hp _ (by decide)).trans hc.r11, fun p hp' => ?_, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame),
-    fun c hc' => by rw [hsy]; exact hc.sy c hc',hc.held⟩
-  have ho := saved_off p hp'
-  rw [hf.readW (r := ⟨L.B + BitVec.ofNat 64 204, 36⟩) (Offset.contains _ (by omega) (by omega) (by omega))
-    (fun r hr => hL.saved_safe (hs r hr)) (by decide)]
-  exact hc.saved p hp'
+    (hp _ (by decide)).trans hc.r11, fun p hp' => ?_, ?_, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame),
+    fun c hc' => by rw [hsy]; exact hc.sy c hc',hc.held, by rw [hsy]; exact hc.tabOk, by rw [hsy]; exact hc.tabMem,
+    by rw [hsy]; exact hc.fsy⟩
+  · have ho := saved_off p hp'
+    rw [hf.readW (r := ⟨L.B + BitVec.ofNat 64 200, 40⟩) (Offset.contains _ (by omega) (by omega) (by omega))
+      (fun r hr => hL.saved_safe (hs r hr)) (by decide)]
+    exact hc.saved p hp'
+  · rw [hf.readW (r := ⟨L.B + BitVec.ofNat 64 200, 40⟩) (Offset.contains _ (by omega) (by omega) (by omega))
+      (fun r hr => hL.saved_safe (hs r hr)) (by decide)]
+    exact hc.pOut
 
 /-- An update of one register, not one that holds a pointer. -/
 theorem upd (hc : Ctx L g m₀ t) {d : Reg} {v : BitVec 32} (u : UpdS t t' d v) (hd : d ∉ ptrRegs) :
@@ -282,7 +348,8 @@ theorem upd (hc : Ctx L g m₀ t) {d : Reg} {v : BitVec 32} (u : UpdS t t' d v) 
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r4, (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r5,
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r6, (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r8,
     (u.other _ (fun e => hd (e ▸ by decide))).trans hc.r11, fun p hp => by rw [u.mem]; exact hc.saved p hp,
-    by rw [u.mem]; exact hc.frame,fun c hc' => by rw [u.syms]; exact hc.sy c hc',hc.held⟩
+    by rw [u.mem]; exact hc.pOut, by rw [u.mem]; exact hc.frame,fun c hc' => by rw [u.syms]; exact hc.sy c hc',hc.held,
+    by rw [u.syms]; exact hc.tabOk, by rw [u.syms]; exact hc.tabMem, by rw [u.syms]; exact hc.fsy⟩
 
 /-- A byte of `d`, as on entry. -/
 theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
@@ -340,6 +407,14 @@ theorem covers (hc : Ctx L g m₀ t) {rs : List Region}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl | rfl | rfl <;> simp
 
+theorem inTab (hL : L.Ok) (hc : Ctx L g m₀ t) {o : Nat} (h : o + 4 ≤ 20) :
+    InRegions (t.rd ++ t.wr) (State.addr L.tab + BitVec.ofNat 64 o) 4 :=
+  ⟨L.TAB, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.nt; omega)⟩
+
+theorem inArgs (hL : L.Ok) (hc : Ctx L g m₀ t) {o : Nat} (h : o + 4 ≤ 8) :
+    InRegions (t.rd ++ t.wr) (State.addr L.sp + BitVec.ofNat 64 o) 4 :=
+  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.na; omega)⟩
+
 theorem coversW (hc : Ctx L g m₀ t) {rs : List Region}
     (h : ∀ r ∈ rs, ∃ R ∈ [L.FR, L.OUT, L.SCR], Within r R) : Covers rs t.wr :=
   covers_of fun r hr => by
@@ -354,32 +429,46 @@ end Ctx
 /-! ## The layout of a call -/
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
-`q`, two `V`s making a candidate if `wide`, and `h` at the frame's top if
-`hHigh`. -/
-def lay (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
-  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, s.sp, q, wide, hHigh, _, rfl,cs,fun n => if n∈cs.map Prod.fst then s.syms n else 0⟩
+`q`, the hash shorter than the scalars if `wide`, `h` at the frame's top if
+`hHigh`, the tables of constants `cs`, and the table's hash function `G`,
+whose functions an indirect call of `f`'s reaches. -/
+def lay (dn q : Nat) (wide hHigh : Bool) (G : Hash) (f : Fns) (s : State)
+    (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, stackArg s 0, stackArg s 1, s.sp, q, wide, hHigh, _, rfl, cs,
+    fun n => if n∈cs.map Prod.fst then s.syms n else 0, G, f,
+    fun n => if n ∈ [G.initN, G.updN, G.finN] then s.syms n else 0⟩
 
-theorem lay_sy (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)))
-    {c : String × List (BitVec 64)} (hc : c∈cs) : (lay dn q wide hHigh s cs).sy c.1=s.syms c.1 := by
+theorem lay_sy (dn q : Nat) (wide hHigh : Bool) (G : Hash) (f : Fns) (s : State) (cs : List (String × List (BitVec 64)))
+    {c : String × List (BitVec 64)} (hc : c∈cs) : (lay dn q wide hHigh G f s cs).sy c.1=s.syms c.1 := by
   simp only [lay,List.mem_map_of_mem hc,↓reduceIte]
 
-theorem lay_tbls (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64))) :
-    (lay dn q wide hHigh s cs).TBLs=Abi.constRegions (fun n => State.addr (s.syms n)) cs := by
+theorem lay_tbls (dn q : Nat) (wide hHigh : Bool) (G : Hash) (f : Fns) (s : State) (cs : List (String × List (BitVec 64))) :
+    (lay dn q wide hHigh G f s cs).TBLs=Abi.constRegions (fun n => State.addr (s.syms n)) cs := by
   apply List.map_congr_left
   intro c hc
-  simp only [lay_sy dn q wide hHigh s cs hc]
+  simp only [lay_sy dn q wide hHigh G f s cs hc]
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
-    {cs : List (String × List (BitVec 64))}
-    (h : (rfcArm I (240 + 4 * extra wide hHigh) cs).pre s) :
-    (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).Ok := by
-  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp,tables⟩ := h
-  refine ⟨od,og,oc,dc,gc,ko,kd,kg,kc,no,nd,ng,nc,hsp,?_⟩
-  intro r hr
-  rw [lay_tbls] at hr
-  obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
-  have tc := tables c hc
-  refine ⟨?_,tc.2.2.1,tc.2.2.2⟩
-  simpa only [toNat_addr] using tc.2.1
+theorem lay_fa (dn q : Nat) (wide hHigh : Bool) (G : Hash) (f : Fns) (s : State) (cs : List (String × List (BitVec 64))) :
+    ∀ n ∈ [G.initN, G.updN, G.finN], s.syms n = (lay dn q wide hHigh G f s cs).fa n := fun n hn => by
+  simp only [lay, ite_eq_left_of_eq_true _ _ (eq_true hn)]
+
+theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {G : Hash} {f : Fns} {ns : List String}
+    {s : State} {cs : List (String × List (BitVec 64))}
+    (h : (rfcArm I (240 + 4 * extra wide hHigh) cs (tabFacts G f) ns).pre s) :
+    (lay I.hashLen I.ecdsa.curve.len wide hHigh G f s cs).Ok := by
+  obtain ⟨-, -, od, og, oc, ot, oa, dc, gc, ct, ca, ko, kd, kg, kc, kt, ka, no, nd, ng, nc, nt, na, hsp, tables, -⟩ := h
+  refine ⟨od,og,oc,dc,gc,ko,kd,kg,kc,no,nd,ng,nc,hsp,nt,ot.symm,ct.symm,kt.symm,na,?_,?_,?_,?_⟩
+  · show Region.Disjoint ⟨State.addr s.sp, 8⟩ _
+    rw [show State.addr s.sp = stackArgAddr s 0 by simp [stackArgAddr]]; exact oa.symm
+  · show Region.Disjoint ⟨State.addr s.sp, 8⟩ _
+    rw [show State.addr s.sp = stackArgAddr s 0 by simp [stackArgAddr]]; exact ca.symm
+  · show Region.Disjoint ⟨State.addr s.sp, 8⟩ _
+    rw [show State.addr s.sp = stackArgAddr s 0 by simp [stackArgAddr]]; exact ka.symm
+  · intro r hr
+    rw [lay_tbls] at hr
+    obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
+    have tc := tables c hc
+    refine ⟨?_,tc.2.2.1,tc.2.2.2⟩
+    simpa only [toNat_addr] using tc.2.1
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

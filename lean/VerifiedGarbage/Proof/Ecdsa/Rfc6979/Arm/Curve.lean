@@ -67,14 +67,65 @@ def coreK (E : Impl.Ecdsa.Arm.Cfg) (cs : List (String × List (BitVec 64)) := []
 functions it calls, for scalars of `E` (with `h` at the frame's top if
 `hHigh`). -/
 def cfgC (E : Impl.Ecdsa.Arm.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
-  F := ⟨⟨0, 0, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩, 0, "", .block [], "", .block [], "",
-    .block []⟩
+  D := 64
+  B := 128
+  f := ⟨[], [], []⟩
   w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
+  len := E.C.len
   n := E.C.n
   tries := 8
   coreN := ""
   coreC := .block []
   hHigh := hHigh
+
+/-- The digest lengths and block sizes of the hash functions whose tables
+the code takes (`Impl.Ecdsa.Rfc6979.Arm.shapeOf`). -/
+def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 128), (64, 128), (28, 128), (32, 128)]
+
+/-- The taint check of a block whose addresses depend only on the registers that hold pointers. -/
+abbrev TaintOk (is : List Instr) : Prop :=
+  ∃ hc, (VG.Taint.check taint (τr ptrRegs) (.block is) hc).isSome = true
+
+/-- The code's blocks for scalars of `E` (with `h` at the frame's top if
+`hHigh`, and digests shifted by `sh` bits) and a hash function of output
+length `D` and block size `B`. -/
+def cfgS (E : Impl.Ecdsa.Arm.Cfg) (hHigh : Bool) (sh D B : Nat) : Impl.Ecdsa.Rfc6979.Arm.Cfg :=
+  { cfgC E hHigh with D := D, B := B, sh := sh }
+
+open Impl.Ecdsa.Rfc6979.Arm in
+/-- The blocks that depend on both the scalars' and the hash function's
+sizes, each addressing memory only from the registers that hold the
+pointers (the taint analysis; the immediates of the others the analysis
+does not read, `Taint.check_eraseOff`), and how many `V`s make a candidate. -/
+structure RfcT (c : Impl.Ecdsa.Rfc6979.Arm.Cfg) : Prop where
+  msgF : TaintOk (Cfg.msg c.len c.D 0 true c.fHo)
+  msgN : TaintOk (Cfg.msg c.len c.D 0 false)
+  prepW : c.wide = true → TaintOk (c.prep ++ Cfg.initKV)
+  coreArgs : TaintOk c.coreArgs
+  keepV : TaintOk (c.keepV 0)
+  candTop : TaintOk c.candTop
+  pad : TaintOk (c.padBlk ipad32)
+  hfinCopy : TaintOk (Cfg.copyN (c.D / 4) .r11 sTmp .r8 0)
+  /-- The candidate's `V`s fit `T`. -/
+  mD : c.m * c.D ≤ 128
+
+/-- `RfcT` of the code's blocks for literal sizes, by evaluating them. -/
+macro "rfcT_decide" : tactic => `(tactic| exact
+  { msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩,
+    prepW := by exact (Function.const _ ⟨_, by taint_decide⟩), coreArgs := ⟨_, by taint_decide⟩,
+    keepV := ⟨_, by taint_decide⟩, candTop := ⟨_, by taint_decide⟩, pad := ⟨_, by taint_decide⟩,
+    hfinCopy := ⟨_, by taint_decide⟩, mD := by decide })
+
+/-- `blkT` from `RfcT` for each of the shapes. -/
+theorem blkT_of {E : Impl.Ecdsa.Arm.Cfg} {hHigh : Bool} {sh : Nat}
+    (h₀ : RfcT (cfgS E hHigh sh 16 64)) (h₁ : RfcT (cfgS E hHigh sh 20 64)) (h₂ : RfcT (cfgS E hHigh sh 28 64))
+    (h₃ : RfcT (cfgS E hHigh sh 32 64)) (h₄ : RfcT (cfgS E hHigh sh 48 128)) (h₅ : RfcT (cfgS E hHigh sh 64 128))
+    (h₆ : RfcT (cfgS E hHigh sh 28 128)) (h₇ : RfcT (cfgS E hHigh sh 32 128)) :
+    ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B) := by
+  intro D B h
+  simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  exacts [h₀, h₁, h₂, h₃, h₄, h₅, h₆, h₇]
 
 /-- A curve, for RFC 6979 on 32-bit ARM. -/
 structure RfcCurve where
@@ -83,8 +134,9 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.Arm.Cfg.wide`). -/
+  /-- Whether the scalars are longer than any hash function's output
+  (P-521's), so that several `V`s make a candidate whatever the hash
+  function (`Impl.Ecdsa.Rfc6979.Arm.Cfg.wide`). -/
   wide : Bool
   /-- Scalars of 3, 4, 6 or 8 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
   bits, with `2^(64 n) < 2 n`; or P-224, 28 bytes in 4 words;
@@ -113,6 +165,8 @@ structure RfcCurve where
   of the block for `n`'s words). -/
   reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr ptrRegs)
     (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.Arm.Cfg.initKV)) hc).isSome = true
+  /-- The blocks for each hash function's sizes. -/
+  blkT : ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B)
 
 namespace RfcCurve
 
