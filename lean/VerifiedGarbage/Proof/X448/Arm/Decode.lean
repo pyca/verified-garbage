@@ -67,4 +67,18 @@ theorem decodeLimb_outside (m : Mem) (base : Addr) {i : Nat} (hi : i < 28) (v : 
   rw [writeW_outside _ _ _ (by simp only [X3, slot]; omega) p (by omega),
     writeW_outside _ _ _ (by simp only [X1, slot]; omega) p (by omega)]
 
+theorem fiveLimb_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 28) :
+    WP isa (.block (fiveLimb i)) s fun t =>
+      t.mem = (s.mem.writeW (off base (X1 + 4 * i)) (BitVec.ofNat 32 (if i = 0 then 5 else 0))).writeW
+        (off base (X3 + 4 * i)) (BitVec.ofNat 32 (if i = 0 then 5 else 0)) ∧ Keeps [.r3] s t := by
+  unfold fiveLimb
+  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by split <;> decide)) fun s1 h1 => ?_
+  have hs1 := hs.of_upd h1 (by decide) (by decide)
+  refine store_ok hs1 (by simp only [X1, slot]; omega) fun s2 h2 => ?_
+  have hs2 := hs1.of_keeps (rest_keeps (h2.rest [])) (by decide)
+  refine store_ok hs2 (by simp only [X3, slot]; omega) fun s3 h3 => WP.block_nil ⟨?_, ?_⟩
+  · have v : s1.gpr .r3 = BitVec.ofNat 32 (if i = 0 then 5 else 0) := by rw [h1.gpr]; split <;> rfl
+    rw [h3.mem, h2.mem, h1.mem, h2.gpr, v]
+  · exact rest_keeps ((h1.rest (by decide)).trans ((h2.rest _).trans (h3.rest _)))
+
 end VG.Proof.X448.Arm

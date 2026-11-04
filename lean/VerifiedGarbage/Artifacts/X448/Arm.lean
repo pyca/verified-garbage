@@ -12,6 +12,9 @@ namespace VG.Artifacts.X448.Arm
 def artifacts : List Artifact := [
   Spec.X448.x448Api.artifact Arm.target {
     code := Impl.X448.Arm.x448
-    verified := Proof.X448.Arm.x448_verified }]
+    verified := Proof.X448.Arm.x448_verified },
+  Spec.X448.x448BaseApi.artifact Arm.target {
+    code := Impl.X448.Arm.x448Base
+    verified := Proof.X448.Arm.x448Base_verified }]
 
 end VG.Artifacts.X448.Arm
