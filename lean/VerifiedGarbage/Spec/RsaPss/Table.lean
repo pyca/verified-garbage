@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-public import VerifiedGarbage.Spec.HashTable
+public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
 # RSASSA-PSS with its hash functions given as tables
@@ -9,9 +9,13 @@ public import VerifiedGarbage.Spec.HashTable
 **Trusted** (as every file in `Spec/`). In the module `rsa_pss`, the
 functions of `Spec/RsaPss/Contract.lean` and `Spec/RsaPss/Precomputed.lean`
 with neither the hash function nor MGF1's fixed but given at run time: two
-last parameters `hash` and `mgf1`, tables of the interface `Hash`
-(`Spec/HashTable.lean`), naming the hash function `H` of the digest and of
-EMSA-PSS and MGF1's `G` (`HashTable.hashAt`):
+last parameters, `hash`, a table of the interface `MdHash`
+(`Spec/MdHashTable.lean`), naming the hash function `H` of the digest and
+of EMSA-PSS (`MdHashTable.hashAt`), and `mgf1`, a table of the interface
+`Hash` (`Spec/HashTable.lean`), naming MGF1's `G` (`HashTable.hashAt`).
+`H` is a table of its compression function because verification hashes
+`M' = 0⁸ ‖ mHash ‖ salt`, whose length is secret when any salt length is
+accepted: it pads `M'` itself and compresses a public number of blocks.
 
 * `vg_rsa_pss_sign`: as `vg_rsa_pss_<H>_mgf1_<G>_sign`;
 * `vg_rsa_pss_verify_precomputed`: as
@@ -38,8 +42,8 @@ open Rsa (bytesAt lenValid writtenOutcome exponentDoc)
 tables it may be, `Rust.fnTablesDoc`). -/
 def hashSafety : String :=
   "`hash` names the hash function of the digest and of the encoding: the one of \
-    `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables \
-    of this crate, `fn_tables`, say which they name)."
+    `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' \
+    `MdHash` tables of this crate, `fn_tables`, say which they name)."
 
 /-- The `# Safety` item of `mgf1`, but for what the emitter adds. -/
 def mgf1Safety : String :=
@@ -55,20 +59,20 @@ def digestLenSafety : String :=
 names, if it names one. -/
 def digestLenOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (digestLen : BitVec w) :
     Prop :=
-  ∀ H, HashTable.hashAt ptrBits m hash = some H → digestLen.toNat = H.len
+  ∀ H, MdHashTable.hashAt ptrBits m hash = some H → digestLen.toNat = H.len
 
 /-! ## `vg_rsa_pss_sign` -/
 
 /-- `signSig`, with the digest a slice and two last parameters
-`hash: *const [usize; 5]` and `mgf1: *const [usize; 5]`, tables of
-`Hash`. -/
+`hash: *const [usize; 11]`, a table of `MdHash`, and
+`mgf1: *const [usize; 5]`, a table of `Hash`. -/
 def signTableSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
     ("q", .slice false .u8 "q_len"), ("dp", .slice false .u8 "dp_len"),
     ("dq", .slice false .u8 "dq_len"), ("qinv", .slice false .u8 "qinv_len"),
     ("digest", .slice false .u8 "digest_len"), ("salt", .slice false .u8 "salt_len"),
-    ("scratch", .slice true .u64 "scratch_len"), ("hash", HashTable.param),
+    ("scratch", .slice true .u64 "scratch_len"), ("hash", MdHashTable.param),
     ("mgf1", HashTable.param)]
   ret := some .u32
 
@@ -85,7 +89,7 @@ def signTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         scratchWords nLen.toNat ≤ scratchLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 m m' r =>
-      ∀ H G, HashTable.hashAt A.ptrBits m hash = some H →
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         HashTable.hashAt A.ptrBits m mgf1 = some G →
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
@@ -129,14 +133,14 @@ def signTableApi : Api where
 /-! ## `vg_rsa_pss_verify_precomputed` -/
 
 /-- `verifyPrecomputedSig`, with the digest a slice and two last parameters
-`hash: *const [usize; 5]` and `mgf1: *const [usize; 5]`, tables of
-`Hash`. -/
+`hash: *const [usize; 11]`, a table of `MdHash`, and
+`mgf1: *const [usize; 5]`, a table of `Hash`. -/
 def verifyPrecomputedTableSig : Sig where
   params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
     ("digest", .slice false .u8 "digest_len"), ("sig", .slice false .u8 "sig_len"),
     ("salt_len", .int .usize true), ("any_salt_len", .int .u32 true),
     ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", HashTable.param), ("mgf1", HashTable.param)]
+    ("hash", MdHashTable.param), ("mgf1", HashTable.param)]
   ret := some .u32
 
 /-- `verifyPrecomputedContract H G` for `H` and `G` the hash functions `hash`
@@ -150,7 +154,7 @@ def verifyPrecomputedTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
         preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
     (post := fun n nLen e eLen digest _digestLen sig _sigLen saltLen anySaltLen _scratch
         _scratchLen pre preLen hash mgf1 m _m' r =>
-      ∀ H G, HashTable.hashAt A.ptrBits m hash = some H →
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
         HashTable.hashAt A.ptrBits m mgf1 = some G →
         Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
           r = if verify H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
