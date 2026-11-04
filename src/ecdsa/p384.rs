@@ -1,7 +1,7 @@
 //! ECDSA over P-384: deterministic signatures with HMAC-SHA-384
-//! (`vg_ecdsa_p384_sha384_sign`), or, on x86-64, with HMAC over any hash
+//! (`vg_ecdsa_p384_sha384_sign`), or, on x86-64 and AArch64, with HMAC over any hash
 //! function with HMAC, taken as a table (`vg_ecdsa_p384_sign`,
-//! [`super::x86_64`]), public keys (`vg_ec_p384_public_key`), and
+//! `super::x86_64` and `super::aarch64`), public keys (`vg_ec_p384_public_key`), and
 //! verification (`vg_ecdsa_p384_verify`), and their variants on CPUs with the
 //! features their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on
 //! ARMv7.
@@ -17,25 +17,27 @@
 
 #[cfg(target_arch = "x86_64")]
 use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "aarch64")]
+use super::aarch64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_umaal;
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::{vg_ecdsa_p384_sign, vg_ecdsa_p384_sign_adx};
-#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign_adx;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::p384::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P384> {
@@ -77,14 +79,12 @@ fn verify_e(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), Erro
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl sealed::Functions<P384> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
         let sign = match (Sha384Backend::select(f), Mul::select(f)) {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_p384_sha384_sign,
-            #[cfg(target_arch = "aarch64")]
-            (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_sha3,
             #[cfg(target_arch = "arm")]
             (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_p384_sha384_sign_umaal,
         };
@@ -111,15 +111,16 @@ impl sealed::Functions<P384> for Sha384 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl SignatureHash<P384> for Sha384 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: TableHash> sealed::Functions<P384> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
         let f = detected();
         let sign: TableSignFn<48, 96> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p384_sign,
+            #[cfg(target_arch = "x86_64")]
             Mul::Adx => vg_ecdsa_p384_sign_adx,
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
@@ -134,7 +135,7 @@ impl<H: TableHash> sealed::Functions<P384> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: TableHash> SignatureHash<P384> for H {}
 
 #[cfg(all(test, target_arch = "x86_64"))]

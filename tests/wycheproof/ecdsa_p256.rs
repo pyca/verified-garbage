@@ -1,6 +1,6 @@
 //! ECDSA over P-256 with SHA-256 (`EcdsaP1363Verify` vectors of
 //! `ecdsa_secp256r1_sha256_p1363_test.json`, signatures as `r ‖ s`), and, on
-//! x86-64, where it signs with every hash function with HMAC, with SHA-512
+//! x86-64 and AArch64, where it signs with every hash function with HMAC, with SHA-512
 //! (`ecdsa_secp256r1_sha512_p1363_test.json`).
 //!
 //! A valid vector must verify, an invalid one must be refused (or, if its
@@ -17,7 +17,7 @@
 
 use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation};
@@ -30,7 +30,7 @@ fn ecdsa_secp256r1_sha256_p1363_test() {
     check::<Sha256>("ecdsa_secp256r1_sha256_p1363_test.json", "SHA-256");
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[test]
 fn ecdsa_secp256r1_sha512_p1363_test() {
     require_vectors!();

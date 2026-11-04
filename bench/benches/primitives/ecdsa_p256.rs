@@ -52,9 +52,9 @@ pub fn bench(c: &mut Criterion) {
         &ECDSA_P256_SHA384_ASN1,
         &d,
     );
-    // On x86-64, where the curve signs with every hash function with HMAC
+    // On x86-64 and AArch64, where the curve signs with every hash function with HMAC
     // (by the hash function's table), also with SHA-512.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     hash::<verified_garbage::hashes::sha512::Sha512>(
         c,
         "sha512",
