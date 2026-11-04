@@ -327,7 +327,7 @@ def conv (o s : Nat) : List Instr :=
 
 /-- Nine zero words at `rsp + o`. -/
 def zero9 (o : Nat) : List Instr :=
-  ([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ (List.range 9).map fun j => .store (stk (o + 8 * j)) .rax
+  (List.range 9).flatMap fun j => [.alu32 .xor .rax (.reg .rax), .store (stk (o + 8 * j)) .rax]
 
 /-- If `wide`: `h`, `Q - D` zero bytes then the digest (at `rsi`), at `fX`. -/
 def hPrep : List Instr := zero9 fX ++ copyBytes c.D .rsi 0 .rsp (fX + c.len - c.D)
