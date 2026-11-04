@@ -25,52 +25,66 @@ namespace VG.Proof.RsaPss.X86_64.Enc
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 
-variable (G : Spec.Mgf1.Hash)
+variable (T : Tabs)
 
 /-- `encK.pre`, by name. -/
 structure Pre (s : State) : Prop where
   sp1 : encStack ≤ (s.gpr .rsp).toNat
-  sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdx, G.len⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨stackArgAddr s 0, 16⟩]
+  sp2 : (s.gpr .rsp).toNat + 40 ≤ 2 ^ 64
+  hrd : s.rd = [⟨s.gpr .rdx, T.H.D⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨stackArg s 2, 40⟩, ⟨stackArg s 3, 40⟩,
+    ⟨stackArgAddr s 0, 32⟩]
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩]
-  dOdg : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, G.len⟩
+  dOdg : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, T.H.D⟩
   dOsa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
   dOs : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-  dOa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 16⟩
-  ddgs : (⟨s.gpr .rdx, G.len⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
+  dOa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 32⟩
+  ddgs : (⟨s.gpr .rdx, T.H.D⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
   dsas : (⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-  dsa : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 16⟩
+  dsa : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 32⟩
   dRo : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
-  dRdg : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, G.len⟩
+  dRdg : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, T.H.D⟩
   dRsa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
   dRs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-  dRa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 16⟩
+  dRa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 32⟩
   dKo : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
-  dKdg : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨s.gpr .rdx, G.len⟩
+  dKdg : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨s.gpr .rdx, T.H.D⟩
   dKsa : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint
     ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
   dKs : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint
     ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-  dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 16⟩
+  dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 32⟩
   wO : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
-  wDg : (s.gpr .rdx).toNat + G.len ≤ 2 ^ 64
+  wDg : (s.gpr .rdx).toNat + T.H.D ≤ 2 ^ 64
   wSa : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
   wS : (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .r9).toNat
   b2 : (s.gpr .r9).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .rsi).toNat = Spec.RsaPss.emLength (s.gpr .r9).toNat
   hsl : 1024 ≤ (stackArg s 1).toNat
+  dOtH : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
+  dOtG : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
+  dstH : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
+  dstG : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
+  dRtH : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
+  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
+  dKtH : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
+  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
+  wTH : (stackArg s 2).toNat + 40 ≤ 2 ^ 64
+  wTG : (stackArg s 3).toNat + 40 ≤ 2 ^ 64
+  tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 2) (stackArg s 3) s
 
-theorem Pre.of {s : State} (h : (encK G).pre s) : Pre G s := by
+theorem Pre.of {Hs Gs : Spec.Mgf1.Hash} {s : State} (h : (encK T Hs Gs).pre s) : Pre T s := by
   simp only [encK] at h
   obtain ⟨sp1, sp2, hrd, hwr, dOdg, dOsa, dOs, dOa, ddgs, dsas, dsa, dRo, dRdg, dRsa, dRs, dRa, dKo, dKdg,
-    dKsa, dKs, dKa, wO, wDg, wSa, wS, b1, b2, hel, hsl⟩ := h
+    dKsa, dKs, dKa, wO, wDg, wSa, wS, b1, b2, hel, hsl, dOtH, dOtG, dstH, dstG, dRtH, dRtG, dKtH, dKtG, wTH, wTG,
+    tabs⟩ := h
   exact ⟨sp1, sp2, hrd, hwr, dOdg, dOsa, dOs, dOa, ddgs, dsas, dsa, dRo, dRdg, dRsa, dRs, dRa, dKo, dKdg,
-    dKsa, dKs, dKa, wO, wDg, wSa, wS, b1, b2, hel, hsl⟩
+    dKsa, dKs, dKa, wO, wDg, wSa, wS, b1, b2, hel, hsl, dOtH, dOtG, dstH, dstG, dRtH, dRtG, dKtH, dKtG, wTH, wTG,
+    tabs⟩
 
-variable {G}
+variable {T}
 
-theorem Pre.k2 {s : State} (hp : Pre G s) : (s.gpr .rsi).toNat ≤ 1024 := by
+theorem Pre.k2 {s : State} (hp : Pre T s) : (s.gpr .rsi).toNat ≤ 1024 := by
   have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
 
 /-! ## The frame -/
@@ -81,7 +95,7 @@ def stkR (s : State) : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encSt
 theorem frame_sub (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (stkR s) :=
   Offset.sub_below _ (by decide) (by decide)
 
-theorem ret_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
+theorem ret_sub (s : State) : Region.Sub (below (fb s) 16) (stkR s) := by
   simp only [below, fb, sub_sub']
   exact Offset.sub_below _ (by decide) (by decide)
 
@@ -103,7 +117,7 @@ theorem in_apart {s : State} {R : Region} (hK : (stkR s).Disjoint R) (hO : (outR
 
 /-- An address of an input: in no writable region of the frame's state, nor
 below the frame. -/
-theorem Pre.outside {s : State} (hp : Pre G s) {R : Region}
+theorem Pre.outside {s : State} (hp : Pre T s) {R : Region}
     (hO : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint R)
     (hS : R.Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩) (hK : (stkR s).Disjoint R) {a : Addr}
     (ha : R.Contains a 1) : Outside (⟨fb s, frameBytes⟩ :: s.wr) (fb s) a := by
@@ -115,11 +129,11 @@ theorem Pre.outside {s : State} (hp : Pre G s) {R : Region}
   · exact hO a hc ha
   · exact hS a ha hc
 
-theorem fb_toNat {s : State} (hp : Pre G s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
+theorem fb_toNat {s : State} (hp : Pre T s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold encStack at this
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 
-theorem Pre.geo {s : State} (hp : Pre G s) : Geo (fb s) (stackArg s 0) := by
+theorem Pre.geo {s : State} (hp : Pre T s) : Geo (fb s) (stackArg s 0) := by
   have hF := fb_toNat hp
   have := hp.sp2
   have hsl := hp.hsl
@@ -135,9 +149,9 @@ theorem frame_wrR {s : State} {m : Mem} (h : Frame [frR s] s.mem m) : Frame (wrR
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩
 
 /-- Memory changed only in the writable regions and below the frame. -/
-theorem frame_keep {s u v : State} (hp : Pre G s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
+theorem frame_keep {s u v : State} (hp : Pre T s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
     (hM : Frame (wrR s) s.mem u.mem)
-    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 8).Contains a 1 → v.mem a = u.mem a) :
+    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 → v.mem a = u.mem a) :
     Frame (wrR s) s.mem v.mem := by
   intro x hx
   refine (hk x (fun r hr hc => ?_) (fun hc => ?_)).trans (hM x hx)
@@ -152,17 +166,17 @@ theorem frame_keep {s u v : State} (hp : Pre G s) (hw : u.wr = frR s :: s.wr) (h
 /-! ## The prologue -/
 
 /-- Stack argument `j`, read from memory changed only in the frame. -/
-theorem arg_read {s : State} (hp : Pre G s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 2) :
+theorem arg_read {s : State} (hp : Pre T s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 4) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
-  refine hf.readW (r := ⟨stackArgAddr s 0, 16⟩) ?_ (fun r' hr' => ?_) (by decide)
+  refine hf.readW (r := ⟨stackArgAddr s 0, 32⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
       simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
     exact Offset.contains_base _ (by omega) (by omega)
   · simp only [List.mem_singleton] at hr'; subst hr'
     exact (hp.dKa.sub_left (frame_sub s)).symm
 
-theorem frame_w {s : State} (hp : Pre G s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
+theorem frame_w {s : State} (hp : Pre T s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := fb_toNat hp
   have := hp.sp2
@@ -180,15 +194,15 @@ def proW' (s : State) : Nat → BitVec 64 :=
     (8 * Spec.RsaPss.emLength (s.gpr .r9).toNat - (s.gpr .r9).toNat)))) 26 0
 
 /-- One stack argument copied to a slot. -/
-theorem copy1_ok {s : State} (hp : Pre G s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
-    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 2) (hd : d + 8 ≤ frameBytes) :
+theorem copy1_ok {s : State} (hp : Pre T s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
+    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 4) (hd : d + 8 ≤ frameBytes) :
     WP isa (.block [.mov .rax (.mem (arg j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNat hp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 16⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    refine ⟨⟨stackArgAddr s 0, 32⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
     rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
       simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
     exact Offset.contains_base _ (by omega) (by omega)
@@ -203,7 +217,7 @@ theorem encPrologue_eq : encPrologue =
     ([.mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .r9 := rfl
 
 /-- The prologue: the slots as `proW'` says, the working space untouched. -/
-theorem encPro_ok {s : State} (hp : Pre G s) :
+theorem encPro_ok {s : State} (hp : Pre T s) :
     WP isa (.block encPrologue) (allocState frameBytes s) fun t => Keep [.rax, .rcx] (allocState frameBytes s) t ∧
       Lay t (fb s) (stackArg s 0) ∧
       Rep t.mem (fb s) (stackArg s 0) (fun o => s.mem (off (stackArg s 0) o)) (proW' s) ∧

@@ -125,6 +125,39 @@ theorem GT.congr {G : Impl.Pbkdf2.Md.X86_64.Stream} {g : Impl.Mgf1.X86_64.Table.
   exact ⟨(hW 11 (by decide) (by decide)).trans h.wi, (hW 12 (by decide) (by decide)).trans h.wu,
     (hW 13 (by decide) (by decide)).trans h.wf, (hW 14 (by decide) (by decide)).trans h.wd, h.fi, h.fu, h.ff⟩
 
+/-- The tables `encode` and `checkEncoding` are given: the hash function
+`H` of the table of `MdHash` (its digest `dn`), MGF1's `G` of the table of
+`Hash`, and the functions the calls through their slots may reach (`f`,
+`g`). -/
+structure Tabs where
+  H : Impl.Pbkdf2.Md.X86_64.Hash
+  dn : String
+  f : MdFns
+  G : Impl.Pbkdf2.Md.X86_64.Stream
+  g : Impl.Mgf1.X86_64.Table.Fns
+
+/-- What `encode` and `checkEncoding` need of the tables at `pH` (of
+`MdHash`) and `pG` (of `Hash`) in the state `s`: the words `hSlots` and
+`gSlots` copy, the addresses of `H`'s and `G`'s functions and `G`'s digest
+length, which the calls of `f` and `g` reach. -/
+structure TabsAt (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.X86_64.Stream)
+    (g : Impl.Mgf1.X86_64.Table.Fns) (pH pG : Addr) (s : State) : Prop where
+  h0 : s.mem.readW pH 64 = s.syms H.initN
+  h3 : s.mem.readW (pH + 24) 64 = s.syms H.compN
+  h4 : s.mem.readW (pH + 32) 64 = s.syms dn
+  g0 : s.mem.readW pG 64 = s.syms G.initN
+  g1 : s.mem.readW (pG + 8) 64 = s.syms G.updN
+  g2 : s.mem.readW (pG + 16) 64 = s.syms G.finN
+  g4 : s.mem.readW (pG + 32) 64 = BitVec.ofNat 64 G.D
+  hf : HTF H dn f s.syms
+  gf : GTF G g s.syms
+
+/-- The words of the tables that `hSlots` and `gSlots` copy, which two runs
+agree on. -/
+def tabWords (m : Mem) (pH pG : Addr) : List (BitVec 64) :=
+  [m.readW pH 64, m.readW (pH + 24) 64, m.readW (pH + 32) 64, m.readW pG 64, m.readW (pG + 8) 64,
+    m.readW (pG + 16) 64, m.readW (pG + 32) 64]
+
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and
 writes only `r8`, `r9`, `rbx`, `rbp` (which it restores) and `rax`, and it
