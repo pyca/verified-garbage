@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfCall
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaOaep.Arm.MgfSlots
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.RsaPss.Arm.VfCall
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaOaep.Arm.MgfSlots
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -50,10 +52,16 @@ theorem St.ok_self {L : Lay} {σ s : State} (hs : L.St σ s) : L.Ok s :=
     F8 := hs.ok.F8, nargs := hs.ok.nargs, A4 := hs.ok.A4, stk := hs.ok.stk, wro := hs.ok.wro, wrw := hs.ok.wrw,
     fits := hs.ok.fits, args := fun _ hj => hs.arg hj }
 
-theorem In.self {P : EP} {σ s : State} (hi : In h.D P σ) (hs : (P.lay h.D).St σ s) : In h.D P s :=
+theorem In.self {P : EP} {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String}
+    (Q : TF h g f fg dn P) {σ s : State} (hi : In h.D P σ) (hs : (P.lay h.D).St σ s) (sy : s.syms = σ.syms) :
+    In h.D P s :=
   { ok := St.ok_self hs, kv := hi.kv, el1 := hi.el1, elK := hi.elK, glK := hi.glK, scrK := hi.scrK, rlK := hi.rlK,
     slt32 := hi.slt32, scl32 := hi.scl32, nB := (hs.ro (R := P.N) (by simp)).trans hi.nB,
-    eB := (hs.ro (R := P.E) (by simp)).trans hi.eB, pw := (hs.ro_words (R := P.PRE) (by simp) rfl).trans hi.pw }
+    eB := (hs.ro (R := P.E) (by simp)).trans hi.eB, pw := (hs.ro_words (R := P.PRE) (by simp) rfl).trans hi.pw,
+    htabT := Q.htk σ s hi.htabT sy fun o ho => by
+      obtain ⟨R, hR, hc⟩ := hi.htbl; exact RsaOaep.Arm.St_roW hs hR (hc o ho),
+    tabT := Q.tk σ s hi.tabT sy fun o ho => by
+      obtain ⟨R, hR, hc⟩ := hi.tbl; exact RsaOaep.Arm.St_roW hs hR (hc o ho) }
 
 /-- `EM`'s bytes, as the call leaves them. -/
 abbrev emv (P : EP) (τ : State) (i : Nat) : Byte := τ.mem (sa P.scr (oEm + i))
@@ -67,9 +75,10 @@ abbrev accW (P : EP) (τ : State) : BitVec 32 :=
 abbrev W0 (P : EP) (τ s : State) : Prop :=
   Ctx (P.lay h.D) P.scr τ s ∧ In h.D P τ ∧ fits h P ∧ Bm h P s.mem ∧ ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i
 
-theorem w0_self {P : EP} {σ s : State} (hv : V2 h P σ s) : W0 h P s s := by
+theorem w0_self {P : EP} {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String}
+    (Q : TF h g f fg dn P) {σ s : State} (hv : V2 h P σ s) (sy : s.syms = σ.syms) : W0 h P s s := by
   obtain ⟨⟨hc, hi, hf, hb⟩, -⟩ := hv
-  have hi' := In.self h hi hc.st
+  have hi' := In.self h Q hi hc.st sy
   exact ⟨⟨⟨hi'.ok, hc.st.sp, rfl, rfl, Frame.refl _ _⟩, hc.slotS⟩, hi', hf, hb, fun _ _ => rfl⟩
 
 /-- What `acc` keeps. -/
@@ -164,7 +173,7 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 abbrev seedV (P : EP) (τ : State) : List Byte := (List.range h.D).map fun i => emv P τ (lo P + dbN h P + i)
 
 /-- The mask. -/
-abbrev mkV (P : EP) (τ : State) : List Byte := Spec.Mgf1.mgf1 h.G (seedV h P τ) (dbN h P)
+abbrev mkV (P : EP) (τ : State) : List Byte := Spec.Mgf1.mgf1 P.G (seedV h P τ) (dbN h P)
 
 /-- `DB`, unmasked, with its top bits cleared. -/
 abbrev dbF (P : EP) (τ : State) (i : Nat) : Byte :=
@@ -177,10 +186,118 @@ abbrev U0 (P : EP) (τ s : State) : Prop :=
     (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = dbF h P τ i) ∧
     ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0
 
-/-- `DB = maskedDB ⊕ MGF1(H, dbLen)`, its top bits cleared. -/
-theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧ ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i)
-      (.seq (.seq (mgfXor h.sh) (.block topSet)) (.block topAnd)) (U0 h P) := by
+/-- What the unmasking keeps: `acc` and `EM`'s bytes. -/
+abbrev Ku (P : EP) (τ s : State) : Prop :=
+  Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧ ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i
+
+theorem Ka.keep {P : EP} {τ : State} {m m' : Mem} {rs : List Region} (hk : Ka h P τ m) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (slotR (P.lay h.D) sC).Disjoint r ∧ (slotR (P.lay h.D) sLo).Disjoint r ∧
+      (slotR (P.lay h.D) sDb).Disjoint r ∧ (slotR (P.lay h.D) sAny).Disjoint r ∧ (slotR (P.lay h.D) sAcc).Disjoint r) :
+    Ka h P τ m' :=
+  ⟨hk.1, hk.2.1, ⟨slot_keep hf (fun r hr => (hd r hr).1) hk.2.2.1.1,
+    slot_keep hf (fun r hr => (hd r hr).2.1) hk.2.2.1.2.1, slot_keep hf (fun r hr => (hd r hr).2.2.1) hk.2.2.1.2.2.1,
+    slot_keep hf (fun r hr => (hd r hr).2.2.2.1) hk.2.2.1.2.2.2⟩, slot_keep hf (fun r hr => (hd r hr).2.2.2.2) hk.2.2.2⟩
+
+/-- MGF1's slots: its source `H` and its destination `DB`. -/
+theorem vslots_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
+    VP (Ku h P) (.block (mgfSlots h.sh))
+      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ (Ka h P τ s.mem ∧
+        RsaOaep.Arm.Sl (P.lay h.D) P.scr (oEm + lo P + dbN h P) h.D (oEm + lo P) (dbN h P) s.mem) ∧
+        ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i) := by
+  obtain ⟨σ₀, hi₀⟩ := hP
+  have hg := hi₀.geo
+  obtain ⟨σ', ok⟩ := hg.ok
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, he⟩ => ?_
+  let L := P.lay h.D
+  have hw : WP isa (.block (mgfSlots h.sh)) s fun t =>
+      t.mem = (((s.mem.writeW (L.fr Impl.RsaOaep.Arm.sDst) (P.scr + BitVec.ofNat 32 oEm + BitVec.ofNat 32 (lo P))).writeW
+        (L.fr Impl.RsaOaep.Arm.sDstLen) (BitVec.ofNat 32 (dbN h P))).writeW (L.fr Impl.RsaOaep.Arm.sSrc)
+          (P.scr + BitVec.ofNat 32 oEm + BitVec.ofNat 32 (lo P) + BitVec.ofNat 32 (dbN h P))).writeW
+        (L.fr Impl.RsaOaep.Arm.sSrcLen) (BitVec.ofNat 32 h.D) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+    prun [mgfSlots, atDb, atS, addSlot, sp0, ld, mw, st, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS,
+      hk.2.2.1.2.1, hk.2.2.1.2.2.1, movw_val (show oEm < 2 ^ 16 by decide),
+      movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), Impl.RsaOaep.Arm.sSrc,
+      Impl.RsaOaep.Arm.sSrcLen, Impl.RsaOaep.Arm.sDst, Impl.RsaOaep.Arm.sDstLen]
+    rfl
+  refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
+  have fr : Frame [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
+      slotR L Impl.RsaOaep.Arm.sSrcLen] s.mem t.mem := by
+    rw [m]
+    exact ((((slot_frame _ _ _ _).mono (by simp)).trans ((slot_frame _ _ _ _).mono (by simp))).trans
+      ((slot_frame _ _ _ _).mono (by simp))).trans ((slot_frame _ _ _ _).mono (by simp))
+  have dS : ∀ r ∈ [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
+      slotR L Impl.RsaOaep.Arm.sSrcLen], ∀ o n, o + n ≤ oRsa → (sR P.scr o n).Disjoint r := by
+    intro r hr o n hon
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
+  have hem : ∀ i < P.K, t.mem (sa P.scr (oEm + i)) = emv P τ i := fun i hi => by
+    rw [← he i hi]
+    exact fr _ fun r hr => dS r hr (oEm + i) 1 (by have := hi₀.k1024; pomega) _ (Region.contains_self _ _)
+  refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨Ka.keep h hk fr fun r hr => ?_, ?_, ?_, ?_, ?_⟩,
+    hem⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact slotW hg (by decide)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨slotSep (by decide) (by decide) (by decide),
+      slotSep (by decide) (by decide) (by decide), slotSep (by decide) (by decide) (by decide),
+      slotSep (by decide) (by decide) (by decide), slotSep (by decide) (by decide) (by decide)⟩
+  · rw [m, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_self32, BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat,
+      Nat.add_assoc]
+  · rw [m, Mem.readW_writeW_self32]
+  · rw [m, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_self32, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  · rw [m, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_self32]
+
+/-- `maskedDB ⊕ MGF1(H, dbLen)`, by MGF1 with the hash function `g` of the
+table `mgf1`. -/
+theorem vmask_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
+    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) :
+    VP (fun τ s => Ku h P τ s ∧ s.syms = τ.syms) (mgfPart fg h.sh 15)
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧
+        (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = emv P τ (lo P + i) ^^^
+          (mkV h P τ).getD i 0) ∧
+        ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0) ∧ s.syms = τ.syms) := by
+  obtain ⟨σ₀, hi₀⟩ := hP
+  have hg := hi₀.geo
+  obtain ⟨σ', ok⟩ := hg.ok
+  by_cases hf : fits h P
+  swap
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.2.1
+  obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
+  have e1 : oEm = 0 := rfl
+  have e2 : Impl.RsaOaep.Arm.oBuf = 1024 := rfl
+  have fit := hg.fit
+  have fd : oEm + lo P + dbN h P ≤ Impl.RsaOaep.Arm.oBuf := by omega_arith
+  have mp := RsaOaep.Arm.mpOf g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P) (dl := dbN h P)
+    hD0 (by omega_arith) (by omega_arith) fd (.inr (Nat.le_refl _)) (seed := seedV h P) (fun τ => by simp)
+    (X := Ka h P) (fun τ m m' hk hf' => Ka.keep h hk hf' fun r hr =>
+      ⟨RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr,
+        RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr,
+        RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr,
+        RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr,
+        RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr⟩)
+    (j := 15) (by simp) hi₀.tbl (fun τ m hk => Q.t τ hk.1.tabT) Q.gne
+  refine (VP.syms (vslots_vp h P ⟨σ₀, hi₀⟩)).seq ((RsaOaep.Arm.mgf_vp g mp (arg_lt (by decide))
+    (dstv := fun τ i => emv P τ (lo P + i))).mono (fun τ s ⟨⟨hc, ⟨hk, hs⟩, he⟩, sy⟩ => ⟨⟨hc, ⟨hk, hs⟩,
+      fun i hi => ?_, fun i hi => ?_⟩, sy⟩) fun τ s ⟨⟨hc, ⟨hk, _⟩, hd, hh⟩, sy⟩ => ⟨⟨hc, hk, by rw [mkV, Q.gG]; exact hd, hh⟩, sy⟩)
+  · rw [Nat.add_assoc]; exact he _ (by omega_arith)
+  · rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega_arith)]; simp [hi, Nat.add_assoc]
+
+/-- `maskedDB`'s first byte's top bits cleared. -/
+theorem vtop_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
+    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧
+        (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = emv P τ (lo P + i) ^^^
+          (mkV h P τ).getD i 0) ∧
+        ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0)
+      (.seq (.block topSet) (.block topAnd)) (U0 h P) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
@@ -192,34 +309,11 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 1024 := rfl
   have fit := hg.fit
-  have hB := h.B_le
-  have mp : MP h (P.lay h.D) P.scr (lo P) (dbN h P) (seedV h P) (Ka h P) := by
-    refine ⟨hg, by omega_arith, by omega_arith, fun τ => by simp, fun τ m m' ⟨hi, hf', hb, ha⟩ hf'' => ⟨hi, hf', ?_⟩,
-      fun τ m hk => hk.2.2.1.2.1, fun τ m hk => hk.2.2.1.2.2.1⟩
-    have away : ∀ r ∈ mgfW h (P.lay h.D) P.scr (lo P) (dbN h P), Away3 (P.lay h.D) r ∧
-        (slotR (P.lay h.D) sAny).Disjoint r ∧ (slotR (P.lay h.D) sAcc).Disjoint r := by
-      intro r hr
-      rcases List.mem_append.mp hr with hr | hr
-      · exact ⟨away3_ctW h hg (by omega_arith) r hr, ctW_slot h hg (by omega_arith) (by decide) (by decide) r hr,
-          ctW_slot h hg (by omega_arith) (by decide) (by decide) r hr⟩
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl
-        · exact ⟨away3_scr hg (by omega_arith), hg.slot ok (by omega_arith) (by rw [hg.F]; decide),
-            hg.slot ok (by omega_arith) (by rw [hg.F]; decide)⟩
-        all_goals exact ⟨away3_slot (by decide) (by decide), slotSep (by decide) (by decide) (by decide),
-          slotSep (by decide) (by decide) (by decide)⟩
-    refine ⟨⟨slot_keep hf'' (fun r hr => (away r hr).1.1) hb.1, slot_keep hf'' (fun r hr => (away r hr).1.2.1) hb.2.1,
-      slot_keep hf'' (fun r hr => (away r hr).1.2.2) hb.2.2.1, slot_keep hf'' (fun r hr => (away r hr).2.1) hb.2.2.2⟩,
-      slot_keep hf'' (fun r hr => (away r hr).2.2) ha⟩
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧
         (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = emv P τ (lo P + i) ^^^ (mkV h P τ).getD i 0) ∧
         ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧ s.gpr .r1 = cW ((n0 P).setWidth 32))
-    ((mgf_vp h mp (dbv := fun τ i => emv P τ (lo P + i))).mono (fun τ s ⟨hc, hk, he⟩ => ⟨hc, hk,
-      fun i hi => by rw [Nat.add_assoc]; exact he _ (by omega_arith),
-      fun i hi => by rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega_arith)]; simp [hi, Nat.add_assoc]⟩)
-      (fun _ _ h => h) |>.seq
-    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd, hh⟩ => ?_))
+    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd, hh⟩ => ?_)
     (VP.taint _ Sg.topAnd_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun τ s ⟨⟨hc, hk, hd, hh⟩, r0, r1⟩ => ?_)
   · have hw : WP isa (.block topSet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧ t.gpr .r1 = cW ((n0 P).setWidth 32) := by
@@ -258,5 +352,12 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
           Nat.add_zero]
       · rw [ite_eq_right (by omega_arith), ite_eq_right e, hd i hi]
     · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), hh i hi]
+
+/-- `DB = maskedDB ⊕ MGF1(H, dbLen)`, its top bits cleared. -/
+theorem unmask_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
+    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) :
+    VP (fun τ s => Ku h P τ s ∧ s.syms = τ.syms) (.seq (mgfPart fg h.sh 15) (.seq (.block topSet) (.block topAnd)))
+      (fun τ s => U0 h P τ s ∧ s.syms = τ.syms) :=
+  (vmask_vp h P Q hP).seq (VP.syms (vtop_vp h P hP))
 
 end VG.Proof.RsaPss.Arm.Vf

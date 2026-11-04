@@ -84,8 +84,8 @@ theorem cpDb_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · have hw : WP isa (.block (cpDb h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧ t.gpr .r1 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧
         t.gpr .lr = BitVec.ofNat 32 (dbN h P) := by
-      prun [cpDb, atS, atDb, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.2.1,
-        hk.1.2.2.1.2.2.1, movw_val (show oY + 8 + dig h.sh < 2 ^ 16 by show oY + 8 + h.D < 2 ^ 16; omega_arith),
+      prun [cpDb, atS, atDb, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.1.1,
+        hk.1.2.2.1.2, movw_val (show oY + 8 + dig h.sh < 2 ^ 16 by show oY + 8 + h.D < 2 ^ 16; omega_arith),
         movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ hy⟩, r0, r1, lr⟩
   · rw [hg.addr (by omega_arith)] at hf'
@@ -125,13 +125,13 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       BitVec.ofNat 32 ((dbN h P + (7 + h.D + h.L)) / h.B) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega_arith), h.pow_lg]
   have w1 : ∀ v, (s.mem.writeW ((P.lay h.D).fr sL) v).readW ((P.lay h.D).fr sDb) 32 = BitVec.ofNat 32 (dbN h P) :=
-    fun v => by rw [slot_ww _ _ (by decide) (by decide) (by decide)]; exact hk.1.2.2.1.2.2.1
+    fun v => by rw [slot_ww _ _ (by decide) (by decide) (by decide)]; exact hk.1.2.2.1.2
   have es : BitVec.ofNat 32 (dbN h P) - BitVec.ofNat 32 (pzF h P τ) = BitVec.ofNat 32 (dbN h P - pzF h P τ) :=
     Offset.ofNat_sub_ofNat (w := 32) (by omega_arith)
   have hw : WP isa (.block (anyLen h.sh)) s fun t =>
       t.mem = (s.mem.writeW ((P.lay h.D).fr sL) (BitVec.ofNat 32 (dbN h P - pzF h P τ + (7 + h.D)))).writeW
         ((P.lay h.D).fr sNb) (BitVec.ofNat 32 (nbA h P)) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-    prun [anyLen, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hk.1.2.2.1.2.2.1, hk.1.2.2.2.2.2.1, w1, es,
+    prun [anyLen, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hk.1.2.2.1.2, hk.1.2.2.2.2.2.1, w1, es,
       slotAt hi (d := sL) (by decide), slotAt hi (d := sNb) (by decide),
       hc.st.inFr (d := sL) (n := 4) (by show sL + 4 ≤ frameBytes; decide),
       hc.st.inFr (d := sNb) (n := 4) (by show sNb + 4 ≤ frameBytes; decide),
@@ -158,7 +158,6 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     rcases hr with rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact away2_slot hg (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide)
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32, Ma_length]
     congr 1; omega_arith
   · rw [m, Mem.readW_writeW_self32]
@@ -170,14 +169,15 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       congr 1; omega_arith
 
 /-- A salt of any length. -/
-theorem any_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ True) (anyPath h.sh)
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
-        s.gpr .r0 = if acc2 h P τ = 0 ∧ HOk h P τ (Ma h P τ) then 1 else 0) := by
+theorem any_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
+    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) :
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ True) ∧ s.syms = τ.syms) (anyPath f h.sh)
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
+        s.gpr .r0 = if acc2 h P τ = 0 ∧ HOk h P τ (Ma h P τ) then 1 else 0) ∧ s.syms = τ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   by_cases hf : fits h P
   swap
-  · exact VP.empty fun σ s h' => hf h'.2.1.2.1
+  · exact VP.empty fun σ s h' => hf h'.1.2.1.2.1
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_le
@@ -189,11 +189,11 @@ theorem any_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     show ((dbN h P + (7 + h.D + h.L)) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega_arith
   show VP _ (.seq (yDig h.sh 4) (.seq (.block (cpDb h.sh)) (.seq Impl.Bignum.Arm.copyBytes (.seq (shift h.sh)
-    (.seq (.block (anyLen h.sh)) (.seq (ctHash h.sh) (cmpH h.sh))))))) _
-  refine (yDig_vf h P ⟨σ₀, hi₀⟩ True).seq (VP.assoc ((cpDb_vp h P ⟨σ₀, hi₀⟩).seq ((shift_vp h P ⟨σ₀, hi₀⟩).seq
-    ((anyLen_vp h P ⟨σ₀, hi₀⟩).seq ?_))))
-  exact (tail_vp h P ⟨σ₀, hi₀⟩ hT (Nat.succ_pos _) (msg := Ma h P) fun τ => by
+    (.seq (.block (anyLen h.sh)) (.seq (ctHash f h.sh 14) (cmpH h.sh))))))) _
+  refine (VP.syms (yDig_vf h P ⟨σ₀, hi₀⟩ True)).seq (VP.assoc ((VP.syms (cpDb_vp h P ⟨σ₀, hi₀⟩)).seq
+    ((VP.syms (shift_vp h P ⟨σ₀, hi₀⟩)).seq ((VP.syms (anyLen_vp h P ⟨σ₀, hi₀⟩)).seq ?_))))
+  exact (tail_vp h P Q ⟨σ₀, hi₀⟩ hT (Nat.succ_pos _) (msg := Ma h P) fun τ => by
       rw [Ma_length]; show _ ≤ ((dbN h P + (7 + h.D + h.L)) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega_arith).mono
-    (fun τ s ⟨hc, hk, hy⟩ => ⟨hc, hk, fun i hi => hy i (by omega_arith)⟩) fun τ s ⟨hc, hk, r0⟩ => ⟨hc, hk, r0⟩
+    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega_arith)⟩, sy⟩) fun _ _ h' => h'
 
 end VG.Proof.RsaPss.Arm.Vf

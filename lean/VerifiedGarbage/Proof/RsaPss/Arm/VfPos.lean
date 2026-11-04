@@ -80,8 +80,13 @@ abbrev acc2 (P : EP) (τ : State) : BitVec 32 :=
     ((BitVec.ofNat 32 (dbN h P) - BitVec.ofNat 32 (pzF h P τ) - 1 ^^^ BitVec.ofNat 32 P.slt) &&& (anyW P - 1))
 
 /-- What the paths after the scan keep. -/
+abbrev B2 (P : EP) (m : Mem) : Prop :=
+  m.readW ((P.lay h.D).fr sLo) 32 = BitVec.ofNat 32 (lo P) ∧ m.readW ((P.lay h.D).fr sDb) 32 = BitVec.ofNat 32 (dbN h P)
+
+/-- What the paths keep: not `c` and `any_salt_len`, whose slots the shift
+reuses. -/
 abbrev K2 (P : EP) (τ : State) (m : Mem) : Prop :=
-  In h.D P τ ∧ fits h P ∧ Bm h P m ∧ (∀ i < dbN h P, m (sa P.scr (oEm + lo P + i)) = dbF h P τ i) ∧
+  In h.D P τ ∧ fits h P ∧ B2 h P m ∧ (∀ i < dbN h P, m (sa P.scr (oEm + lo P + i)) = dbF h P τ i) ∧
     (∀ i < h.D, m (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0) ∧
     m.readW ((P.lay h.D).fr sPos) 32 = BitVec.ofNat 32 (pzF h P τ) ∧
     m.readW ((P.lay h.D).fr sAcc) 32 = acc2 h P τ
@@ -93,7 +98,8 @@ theorem posChk_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r12])
 theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kd h P τ s.mem ∧ fits h P ∧ SC h P τ (dbN h P) s)
       (.seq (.block posSet) (.block posChk))
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) := by
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) ∧
+        s.mem.readW ((P.lay h.D).fr sAny) 32 = anyW P) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Kd h P τ s.mem ∧ fits h P) ∧
@@ -105,8 +111,8 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     (VP.taint _ posChk_cert (fun _ _ _ _ h₁ h₂ r hr => ?_)
       fun τ s ⟨⟨hc, hk, hf⟩, r4, r5, r6, r1, r2, r3, r8, r12⟩ => ?_)
   · have hi := hk.1.1
-    obtain ⟨a7, ra7, va7⟩ := argAt hi hc.st (j := 7) (by decide)
-    replace va7 : s.mem.readW ((P.lay h.D).fr (arg 7)) 32 = BitVec.ofNat 32 P.slt := va7
+    obtain ⟨a7, ra7, va7⟩ := argAt hi hc.st (j := 8) (by decide)
+    replace va7 : s.mem.readW ((P.lay h.D).fr (arg 8)) 32 = BitVec.ofNat 32 P.slt := va7
     have hw : WP isa (.block posSet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r4 = BitVec.ofNat 32 (pzF h P τ) ∧ t.gpr .r5 = (vzJ h P τ (dbN h P)).setWidth 32 ∧
         t.gpr .r6 = nfJ h P τ (dbN h P) ∧
@@ -142,12 +148,12 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
     have e1 : oEm = 0 := rfl
     have e2 : oRsa = 8192 := rfl
-    refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hi, hf,
-      ⟨by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.1, by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.1,
-        by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.1,
-        by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.2⟩,
+    refine ⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hi, hf,
+      ⟨by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.1,
+        by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.1⟩,
       fun i hi' => by rw [kb _ (by omega_arith)]; exact hk.2.1 i hi',
-      fun i hi' => by rw [kb _ (by omega_arith)]; exact hk.2.2 i hi', ?_, by rw [m, Mem.readW_writeW_self32]⟩
+      fun i hi' => by rw [kb _ (by omega_arith)]; exact hk.2.2 i hi', ?_, by rw [m, Mem.readW_writeW_self32]⟩,
+      by rw [kk _ (by decide) (by decide)]; exact hk.1.2.2.1.2.2.2⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact slotW hg (by decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -156,15 +162,16 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 
 /-- The flags of `any_salt_len = 0`. -/
 theorem anySet_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) (.block anySet)
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) ∧
+        s.mem.readW ((P.lay h.D).fr sAny) 32 = anyW P) (.block anySet)
       (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem) ∧ s.z = decide (P.any = 0)) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
-  refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk⟩ => ?_
+  refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun τ s ⟨⟨hc, hk⟩, ha⟩ => ?_
   have hw : WP isa (.block anySet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
       t.z = decide (P.any = 0) := by
-    prun [anySet, sp0, ld, hc.st.sp, hc.aFr hg, hc.rFr hg, hk.2.2.1.2.2.2]
-    by_cases e : P.any = 0#32 <;> simp [e]
+    prun [anySet, sp0, ld, hc.st.sp, hc.aFr hg, hc.rFr hg, ha]
+    by_cases e : P.any = 0#32 <;> simp [e, anyW]
   exact WP.mono hw fun t ⟨m, rd, wr, sp, z⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk⟩, z⟩
 
 end VG.Proof.RsaPss.Arm.Vf

@@ -62,6 +62,8 @@ structure EP where
   au : BitVec 32
   af : BitVec 32
   T : State → Prop
+  /-- MGF1's hash function. -/
+  G : Spec.Mgf1.Hash
 
 namespace EP
 
@@ -178,7 +180,7 @@ macro "verify_pre" " at " h:ident : tactic => `(tactic| (
 
 /-- The public parameters of an entry state, with what `HT` and `T` say of
 the tables. -/
-def ep (s : State) (hi hc hdg : BitVec 32) (HT : State → Prop) (ai au af : BitVec 32) (T : State → Prop) : EP where
+def ep (G : Spec.Mgf1.Hash) (s : State) (hi hc hdg : BitVec 32) (HT : State → Prop) (ai au af : BitVec 32) (T : State → Prop) : EP where
   B := s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 frameBytes
   n := s.gpr .r0
   e := s.gpr .r2
@@ -206,18 +208,19 @@ def ep (s : State) (hi hc hdg : BitVec 32) (HT : State → Prop) (ai au af : Bit
   au := au
   af := af
   T := T
+  G := G
 
-variable {hi hc hdg : BitVec 32} {HT : State → Prop} {ai au af : BitVec 32} {T : State → Prop}
+variable {G : Spec.Mgf1.Hash} {hi hc hdg : BitVec 32} {HT : State → Prop} {ai au af : BitVec 32} {T : State → Prop}
 
 theorem ep_lay (D : Nat) (s : State) :
-    (ep s hi hc hdg HT ai au af T).lay D = layOf frameBytes 48 ((ep s hi hc hdg HT ai au af T).argv D)
-      [(ep s hi hc hdg HT ai au af T).N, (ep s hi hc hdg HT ai au af T).E, (ep s hi hc hdg HT ai au af T).DIG D,
-        (ep s hi hc hdg HT ai au af T).SIG, (ep s hi hc hdg HT ai au af T).PRE, (ep s hi hc hdg HT ai au af T).HTAB,
-        (ep s hi hc hdg HT ai au af T).TAB] [(ep s hi hc hdg HT ai au af T).SCR] s := rfl
+    (ep G s hi hc hdg HT ai au af T).lay D = layOf frameBytes 48 ((ep G s hi hc hdg HT ai au af T).argv D)
+      [(ep G s hi hc hdg HT ai au af T).N, (ep G s hi hc hdg HT ai au af T).E, (ep G s hi hc hdg HT ai au af T).DIG D,
+        (ep G s hi hc hdg HT ai au af T).SIG, (ep G s hi hc hdg HT ai au af T).PRE, (ep G s hi hc hdg HT ai au af T).HTAB,
+        (ep G s hi hc hdg HT ai au af T).TAB] [(ep G s hi hc hdg HT ai au af T).SCR] s := rfl
 
 theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D : Nat}
     (hD : (stackArg s 1).toNat = D) (hHT : HT (entered frameBytes s)) (hT : T (entered frameBytes s)) :
-    In D (ep s hi hc hdg HT ai au af T) (entered frameBytes s) := by
+    In D (ep G s hi hc hdg HT ai au af T) (entered frameBytes s) := by
   verify_pre at h
   sig_split h
   rename_i hsp hsa hheld hheld2 hpw hrd hwr nS eS dS gS sR sTH sT sA kN kE kD kG kS kR kTH kT kA fN fE fD fG fS fR
@@ -286,6 +289,13 @@ structure TF (h : PssHash) (g : RsaOaep.Arm.OHash) (f : MdFns) (fg : Impl.RsaOae
   t : ∀ σ, P.T σ → RsaOaep.Arm.TabFacts g.H fg P.tab P.ai P.au P.af σ
   fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []
   gne : fg.init ≠ [] ∧ fg.upd ≠ [] ∧ fg.fin ≠ []
+  gG : P.G = g.G
+  /-- What the tables' facts need of a state: its statics' addresses and the
+  tables' words. -/
+  htk : ∀ σ s, P.HT σ → s.syms = σ.syms → (∀ o, o + 4 ≤ 44 →
+    s.mem.readW (RsaOaep.Arm.tA P.hd o) 32 = σ.mem.readW (RsaOaep.Arm.tA P.hd o) 32) → P.HT s
+  tk : ∀ σ s, P.T σ → s.syms = σ.syms → (∀ o, o + 4 ≤ 20 →
+    s.mem.readW (RsaOaep.Arm.tA P.tab o) 32 = σ.mem.readW (RsaOaep.Arm.tA P.tab o) 32) → P.T s
 
 /-! ## Pieces at the end of the body -/
 

@@ -75,7 +75,7 @@ theorem passSet_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
       t.gpr .r0 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D) ∧
       t.gpr .r1 = P.scr + BitVec.ofNat 32 (oY + 8 + h.D + 2 ^ p) ∧ t.gpr .lr = BitVec.ofNat 32 (dbN h P) ∧
       t.gpr .r2 = 0 - (BitVec.ofNat 32 (aV h P τ / 2 ^ p) &&& 1) := by
-    prun [passSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hs.1, hs.2.1, hk.1.2.2.1.2.2.1,
+    prun [passSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hs.1, hs.2.1, hk.1.2.2.1.2,
       movw_val (show oY + 8 + dig h.sh < 2 ^ 16 by show oY + 8 + h.D < 2 ^ 16; omega_arith),
       movw_val (show 0 < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat, dpVal]
     rfl
@@ -157,7 +157,6 @@ theorem keep3 (P : EP) (hg : Geo (P.lay h.D) P.scr) {τ : State} {m m' : Mem}
     sbytes_keep hf (aw _ _ (by omega_arith)) (by omega_arith) hy⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> exact away2_slot hg (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide)
 
 /-- The next pass's slots, and the flags of whether it was the last. -/
 theorem passNext_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
