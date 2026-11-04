@@ -14,8 +14,8 @@ mod tests {
     use crate::cpu;
 
     /// Entering turns the mode on and reports what it was; clearing turns
-    /// it off. Each test runs on a thread of its own, whose PSTATE.DIT
-    /// this changes alone, and leaves it as it found it.
+    /// it off. This changes PSTATE.DIT of the test's thread alone, and
+    /// leaves it off.
     #[test]
     fn enter_and_clear() {
         if !cpu::detected().contains(VG_DIT_ENTER_FEATURES) {
@@ -24,14 +24,12 @@ mod tests {
         // SAFETY: the CPU has FEAT_DIT, as both functions require
         // (`VG_DIT_CLEAR_FEATURES` is the same set).
         unsafe {
-            let was = vg_dit_enter();
+            vg_dit_enter();
             assert_eq!(vg_dit_enter(), 1);
             vg_dit_clear();
             assert_eq!(vg_dit_enter(), 0);
             assert_eq!(vg_dit_enter(), 1);
-            if was == 0 {
-                vg_dit_clear()
-            }
+            vg_dit_clear();
         }
     }
 }
