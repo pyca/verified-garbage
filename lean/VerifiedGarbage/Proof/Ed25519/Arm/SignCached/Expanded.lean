@@ -21,10 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Complete Ed25519 signing with the seed's cached SHA-512 digest (Arm)
 
-`codeExpanded` is `code` with its first step, `hashSeed`, replaced by
-`PublicKey.copyExpanded`: the digest at the second argument is copied to `frame 184`,
-where `hashSeed` leaves it. The rest is proven once, by `bodyFrom_ok` and `bodyFrom_ct`, for
-both. -/
+`codeExpanded` is `bodyFrom PublicKey.copyExpanded`: the digest at the second argument is
+copied to `frame 184`, where the rest, proven by `bodyFrom_ok` and `bodyFrom_ct`, reads it. -/
 
 @[expose] public section
 
@@ -293,9 +291,18 @@ theorem satMemE_frame : Frame [⟨0, 0x100000⟩] baseSatMem satMemE := by
   simp only [satMemE, show ¬ x.toNat < 0x2000 by omega, show ¬ x.toNat < 0x2040 by omega,
     show ¬ x.toNat < 0x100000 by omega, ↓reduceIte]
 
-def satStateE : State :=
-  { satStateT with mem := satMemE, rd := [⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x9000, 8⟩,
-    ⟨0x100000, 98304⟩] }
+def satStateE : State where
+  gpr r := match r with
+    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
+  sp := 0x9000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem := satMemE
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x9000, 8⟩, ⟨0x100000, 98304⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩]
+  syms _ := 0x100000
 
 theorem satE_held : ∀ i < 64 * 192,
     satStateE.mem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = VG.Impl.Ed25519.Arm.combWords.getD i 0 := by

@@ -10,9 +10,8 @@ public import VerifiedGarbage.Spec.Sha512.Contract
 /-!
 # Ed25519 on PPC64LE: the whole functions
 
-`publicKey`, `signCached` and `verifyMessage` (and `publicKeyExpanded` and `signExpanded`,
-which start from the seed's digest rather than the seed) hash with SHA-512's verified
-streaming functions and compute with the verified Ed25519 functions, by
+`publicKeyExpanded`, `signExpanded` and `verifyMessage` (the first two start from the seed's
+digest rather than the seed) hash with SHA-512's verified streaming functions and compute with the verified Ed25519 functions, by
 calls. Each is written for one more argument than its signature has, a frame
 buffer `F` that `withStackScratch` allocates on the stack (wiped after use
 when it holds secrets). The caller's `scratch` holds SHA-512's state (at 0)
@@ -80,20 +79,12 @@ def copyIn (src f : Reg) (o : Nat) : List Instr :=
 def copyIn64 (src f : Reg) (o : Nat) : List Instr :=
   (List.range 8).flatMap fun k => [.load .d .r8 src (8 * k), .store .d .r8 f (o + 8 * k)]
 
-/-! ## `vg_ed25519_public_key(out = r3, seed = r4, scratch = r5)`, `F` in `r6`
+/-! ## `vg_ed25519_public_key_expanded(out = r3, expanded = r4, scratch = r5)`, `F` in `r6`
 
 `F`: the digest at 0, the scalar at 64, the saves at 96. `publicKeyWith digest` is the function
-with its first step, which leaves the seed's digest at `0(F)`, `digest`: the seed's hash
-(`pkHash`), or, for `vg_ed25519_public_key_expanded(out = r3, expanded = r4, scratch = r5)`,
-a copy of the digest at `expanded`. -/
+with its first step, `digest`, which leaves the seed's digest at `0(F)`. -/
 
 def pkRegs : List Reg := [.r20, .r21, .r22, .r23]
-
-/-- The seed hashed into `0(F)`. -/
-def pkHash : Prog isa :=
-  .seq (hashInit .r22) <|
-  .seq (hashUpdate .r22 [.li .r4 0] .r21 0 [.li .r6 32]) <|
-  hashFinalize .r22 [.li .r4 32] .r23 0
 
 def publicKeyWith (digest : Prog isa) : Prog isa :=
   .seq (.block (saveRegs .r6 96 pkRegs ++ [mov .r20 .r3, mov .r21 .r4, mov .r22 .r5, mov .r23 .r6])) <|
@@ -102,17 +93,16 @@ def publicKeyWith (digest : Prog isa) : Prog isa :=
   .seq (.call "vg_ed25519_scalar_base" scalarBase) <|
   .block (restoreRegs .r23 96 pkRegs)
 
-def publicKey : Prog isa := publicKeyWith pkHash
-
 /-- The digest at `expanded` copied to `0(F)`. -/
 def publicKeyExpanded : Prog isa := publicKeyWith (.block (copyIn64 .r21 .r23 0))
 
-/-! ## `vg_ed25519_sign_cached(out = r3, seed = r4, pk = r5, message = r6, len = r7, scratch = r8)`,
+/-! ## `vg_ed25519_sign_expanded(out = r3, expanded = r4, pk = r5, message = r6, len = r7, scratch = r8)`,
 `F` in `r9`
 
 `F`: the scalar at 0, the nonce's prefix at 32, the nonce at 64, the challenge at 96, the digest at
 128, a copy of `pk` at 192, the saves at 224. Six registers hold what lives across calls: `pk` is
-copied first, and `seed` is needed only for the first hash. -/
+copied first, and `expanded` is needed only for the first step. `signWith digest` is the function
+with its first step, `digest`, which leaves the seed's digest at `128(F)`. -/
 
 def signRegs : List Reg := [.r20, .r21, .r22, .r23, .r24, .r25]
 
@@ -121,17 +111,9 @@ def signSetup : List Instr :=
   saveRegs .r9 224 signRegs ++
     ([mov .r20 .r3, mov .r21 .r4, mov .r22 .r6, mov .r23 .r7, mov .r24 .r8, mov .r25 .r9] ++ copyIn .r5 .r25 192)
 
-/-- The seed hashed into `128(F)`. -/
-def signHash : Prog isa :=
-  .seq (hashInit .r24) <|
-  .seq (hashUpdate .r24 [.li .r4 0] .r21 0 [.li .r6 32]) <|
-  hashFinalize .r24 [.li .r4 32] .r25 128
-
 /-- The secret scalar and the nonce's prefix, from the digest `digest` leaves at `128(F)`. -/
 def signExpandWith (digest : Prog isa) : Prog isa :=
   .seq digest <| .block (prune .r25 128 0 ++ copy32 .r25 160 32)
-
-def signExpand : Prog isa := signExpandWith signHash
 
 /-- The nonce, and `R`. -/
 def signNonce : Prog isa :=
@@ -160,10 +142,7 @@ def signWith (digest : Prog isa) : Prog isa :=
   .seq (.block signSetup) <| .seq (signExpandWith digest) <| .seq signNonce <| .seq signChallenge <|
   .block (restoreRegs .r25 224 signRegs)
 
-def signCached : Prog isa := signWith signHash
-
-/-- `vg_ed25519_sign_expanded(out = r3, expanded = r4, pk = r5, message = r6, len = r7, scratch = r8)`:
-the digest at `expanded` copied to `128(F)`. -/
+/-- The digest at `expanded` copied to `128(F)`. -/
 def signExpanded : Prog isa := signWith (.block (copyIn64 .r21 .r25 128))
 
 /-! ## `vg_ed25519_verify(pk = r3, message = r4, len = r5, signature = r6, scratch = r7)`, `F` in `r8`
@@ -192,10 +171,8 @@ def verifyMessage : Prog isa :=
 
 /-! ## The functions, with their frames -/
 
-def publicKeyCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 176 .r6 17 publicKey
 def publicKeyExpandedCode : Prog isa :=
   Impl.StackScratch.PPC64LE.withStackScratchWiped 176 .r6 17 publicKeyExpanded
-def signCachedCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 320 .r9 28 signCached
 def signExpandedCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 320 .r9 28 signExpanded
 def verifyCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratch 224 .r8 verifyMessage
 

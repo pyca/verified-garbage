@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.CTCommon
 import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-public import VerifiedGarbage.Spec.Ed25519.CachedSign
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -213,17 +212,6 @@ namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole VG.Impl.Ed25519.Arm.SignCached
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
-theorem hashSeed_ct (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (hashSeed)
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have hi : Input L (value L (.caller 1 0)) (value L (.const 32)) := by
-    change Input L (L.seed + 0#32) 32#32
-    rw [BitVec.add_zero]
-    exact seed_input hL h32
-  exact (init_ct hL ha hb).seq ((update_ct hL ha hb 0 (.caller 1 0) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hi).seq
-    (finalize_ct hL ha hb 32 (by decide) false))
-
 theorem hashNonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (hashNonce)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
@@ -417,8 +405,7 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by simp [Whole.valid]) (by decide) (by simp [Whole.valid]) (by simp [preserved])).seq
     (mul_call_ct hL)
 
-/-- Signing after a first step related to itself, as `hashSeed` and the copy of a cached
-digest are. -/
+/-- Signing after a first step related to itself, as the copy of a cached digest is. -/
 theorem bodyFrom_ct {first : Prog isa}
     (hfirst : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True))
     (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁)
@@ -433,13 +420,6 @@ theorem bodyFrom_ct {first : Prog isa}
       (((hashChallenge_ct hL ha hb).seq ((reduce_ct hL ha hb 120 (by decide)).seq
         (mul_ct hL ha hb))).seq (wipe_ct hL)))
 
-theorem body_ct (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁) (hb : Arguments L m₂)
-    (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂) :
-    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
-        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) body
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-  bodyFrom_ct (hashSeed_ct hL h32 ha hb) hL ha hb hw₁ hw₂
-
 end VG.Proof.Ed25519.Arm.SignCached
 end
 
@@ -448,34 +428,8 @@ section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm
 
-/-- The contract under the plain calling convention, without the tables. -/
-def signCachedAbi : Contract isa where
-  pre s :=
-    let out : Region := ⟨State.addr (s.gpr .r0), 64⟩
-    let seed : Region := ⟨State.addr (s.gpr .r1), 32⟩
-    let pk : Region := ⟨State.addr (s.gpr .r2), 32⟩
-    let msg : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
-    let scr : Region := ⟨State.addr (stackArg s 1), 8192⟩
-    let args : Region := ⟨State.addr s.sp,8⟩
-    let stk : Region := ⟨State.addr s.sp - 280,280⟩
-    s.rd = [seed, pk, msg, args] ∧ s.wr = [out, scr] ∧
-      out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint msg ∧ out.Disjoint args ∧ out.Disjoint scr ∧
-      seed.Disjoint scr ∧ pk.Disjoint scr ∧ msg.Disjoint scr ∧ args.Disjoint scr ∧
-      stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint scr ∧
-      (s.gpr .r0).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
-      (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32 ∧
-      (stackArg s 1).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
-      Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
-  post s t := Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat)
-  pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
-    s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1
-
-
-/-- Signing with `n` bytes read at the seed pointer (the seed, or its cached digest), `key`
-relating them to the public key, and the postcondition `post`. -/
+/-- Signing with `n` bytes read at the seed pointer (its cached digest), `key` relating them to
+the public key, and the postcondition `post`. -/
 def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → Prop) : Contract isa where
   pre s :=
     let out : Region := ⟨State.addr (s.gpr .r0), 64⟩
@@ -502,13 +456,6 @@ def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → P
   pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
     s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1 ∧
     s.syms VG.Impl.Ed25519.Arm.combSym = t.syms VG.Impl.Ed25519.Arm.combSym
-
-def signCachedLocal : Contract isa := signLocalWith 32
-  (fun s => Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32))
-  (fun s t => Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat))
 
 def lay (n : Nat) (s : State) : Lay :=
   ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, stackArg s 0, stackArg s 1, Whole.base s,
@@ -639,21 +586,6 @@ theorem entry_input {s : State} (h : (signLocalWith n key post).pre s) {m : Mem}
     exact (Offset.base_disjoint _ (by decide) (by decide)).symm
   · exact tstk
 
-theorem entry_key {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
-    Spec.Ed25519.bytesAt p.mem (State.addr (lay 32 s).pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (State.addr (lay 32 s).seed) 32) := by
-  have hk : Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) := by
-    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
-    exact hk
-  have hf := Whole.saved_frame (entry_below h) hp
-  have hp' := entry_input h hf (r := ⟨State.addr (s.gpr .r2), 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)
-  have hs' := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)
-  change Spec.Ed25519.bytesAt p.mem (State.addr (s.gpr .r2)) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (State.addr (s.gpr .r1)) 32)
-  rw [hp', hs']
-  exact hk
-
 /-- The tables at the body's entry. -/
 theorem entry_tbl {s p : State} (h : (signLocalWith n key post).pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
     Tbl (lay n s) p.mem := fun j hj => by
@@ -675,71 +607,18 @@ section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
 
-theorem lay_eq {n : Nat} {s t : State} (hp : signCachedLocal.pub s t) : lay n s = lay n t := by
+theorem lay_eq {n : Nat} {key : State → Prop} {post : State → State → Prop} {s t : State}
+    (hp : (signLocalWith n key post).pub s t) : lay n s = lay n t := by
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, hy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, h4, h5, hy]
-
-theorem signCached_ct :
-    ConstantTime isa signCachedLocal.pre signCachedLocal.pub code := by
-  refine Whole.wrap_ct (by decide) (fun _ _ hp => hp.1)
-    (fun _ h => entry_below h) (fun _ h => entry_top h) (fun _ h => entry_read h) ?_ ?_
-  · intro s hs p hp
-    exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_key hs hp)
-      (entry_tbl hs hp) (congrFun hp.step.syms _) rfl) fun _ _ => trivial
-  · intro s t hs ht hp
-    rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq (n := 32) hp
-    have hq : Ctx (lay 32 s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
-      he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay 32 s) q.mem := he ▸ entry_args ht hqb
-    have hqw : Tbl (lay 32 s) q.mem := he ▸ entry_tbl ht hqb
-    have hqy : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms VG.Impl.Ed25519.Arm.combSym =
-        (lay 32 s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.2.2.2.symm
-    exact ⟨(body_ct (lay_ok hs) rfl (entry_args hs hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
-      ⟨⟨entry_ctx hs hpa, hq, trivial, trivial⟩, congrFun hpa.step.syms _, hqy⟩ ea eb).1, trivial⟩
-
-end VG.Proof.Ed25519.Arm.SignCached
-end
-
-/-! Merged from `Proof.Ed25519.Arm.SignCached.Correct`. -/
-section
-namespace VG.Proof.Ed25519.Arm.SignCached
-open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
-
-theorem body_noFrames : body.noFrames = true := by
-  simp only [body, bodyFrom, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
-    init, update, finalize, reduce, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames,
-    Impl.Sha512.Arm.Stream.init, Bool.and_self]
-  rw [reduce_noFrames, base_noFrames, mul_noFrames]
-  rfl
-
-theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ signCachedLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 6 ≤ 6) (entry_below h) (entry_top h) (entry_read h) (entry_writes h)
-    (P := fun m m' _ => Spec.Ed25519.bytesAt m' (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign
-      (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 32)
-      (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r3)) (stackArg s 0).toNat))
-    (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_key h hp)
-      (entry_tbl h hp) (congrFun hp.step.syms _) rfl)
-      fun u ⟨hu, ho⟩ => ⟨by
-        change Whole.Ctx (Whole.base s) s.gpr p.mem (lay 32 s).inputs (lay 32 s).outputs u at hu
-        rw [(entry_regions h).1, (entry_regions h).2] at hu
-        exact hu, ho⟩)
-  refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
-  have hs := entry_input h hf (r := ⟨State.addr (s.gpr .r1), 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)
-  have hm := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
-    (by have := (stackArg s 0).isLt; change (stackArg s 0).toNat ≤ 2 ^ 64; omega)
-  change Spec.Ed25519.bytesAt u.mem (State.addr (s.gpr .r0)) 64 = _
-  rw [hp, hs, hm]
 
 end VG.Proof.Ed25519.Arm.SignCached
 end
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.Contract`. -/
 section
-/-! Merged from `Proof.Ed25519.Arm.SignCached.Sat`. -/
-section
-/-! A satisfiability witness with a matching seed and cached public key. -/
+/-! Parts of a satisfiability witness: a seed, its public key at `0x3000`, and the scratch
+pointer (`0x5000`) on the stack at `0x9004`. -/
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm
 
@@ -754,18 +633,6 @@ def satMem (a : Addr) : Byte :=
   if a.toNat < 0x3000 then 0 else if a.toNat < 0x3020 then satKey[a.toNat - 0x3000]?.getD 0
   else if a = 0x9005 then 0x50 else 0
 
-theorem sat_seed : Spec.Ed25519.bytesAt satMem 0x2000 32 = satSeed := by
-  unfold satSeed Spec.Ed25519.bytesAt
-  apply List.map_congr_left
-  intro i hi
-  have hi' := List.mem_range.mp hi
-  have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
-    change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
-  unfold satMem
-  rw [ha]
-  simp only [show 0x2000 + i < 0x3000 from by omega, ite_true]
-
 theorem sat_key : Spec.Ed25519.bytesAt satMem 0x3000 32 = satKey := by
   apply List.ext_getElem
   · simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range, satKey_length]
@@ -778,185 +645,6 @@ theorem sat_key : Spec.Ed25519.bytesAt satMem 0x3000 32 = satKey := by
       show ¬ 0x3000 + i < 0x3000 from by omega, ite_false, show 0x3000 + i < 0x3020 from by omega, ite_true, Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x9000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem := satMem
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x9000, 8⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩]
-
-theorem sat : ∃ s, (Spec.Ed25519.signCachedContract Arm.abi 280).pre s := by
-  refine ⟨satState, ?_⟩
-  sig_apply_check
-  · decide +kernel
-  · sig_reduce [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, satState]
-    sig_and_intros
-    · decide +kernel
-    · decide +kernel
-    · change Spec.Ed25519.bytesAt satMem 0x3000 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt satMem 0x2000 32)
-      rw [sat_seed, sat_key]
-      rfl
-
 end VG.Proof.Ed25519.Arm.SignCached
 end
 
-namespace VG.Proof.Ed25519.Arm.SignCached
-open VG VG.Arm
-
-theorem signCachedAbi_implies : signCachedAbi.Implies (Spec.Ed25519.signCachedContract Arm.abi 280) where
-  pre := by
-    intro s h
-    sig_pre [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, signCachedAbi, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr, Arm.stackArg, Arm.stackArgAddr] at h
-    sig_split h
-    sig_reduce [signCachedAbi, Arm.State.addr, Arm.stackArg, Arm.stackArgAddr]
-    sig_simp [] []
-    simp only [BitVec.add_zero, show (280#64) = (280 : Addr) from rfl] at *
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by
-    sig_implies_post [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, signCachedAbi, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr, Arm.stackArg, Arm.stackArgAddr]
-  pub := by
-    sig_implies_pub [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-      Spec.Ed25519.scratchWords, signCachedAbi, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr, Arm.stackArg, Arm.stackArgAddr]
-  sat := sat
-
-
-abbrev signSpec : Contract isa :=
-  Spec.Ed25519.signCachedContract (Arm.abi.withConsts VG.Impl.Ed25519.Arm.combConsts) 280
-
-theorem signCached_pre {s : State} (h : signSpec.pre s) : signCachedLocal.pre s := by
-  have hp : (Spec.Ed25519.signCachedContract Arm.abi 280).pre (stripConsts VG.Impl.Ed25519.Arm.combConsts s) ∧
-      ConstsOk VG.Impl.Ed25519.Arm.combConsts 280 s := pre_consts.mp h
-  obtain ⟨rd, wr, os, op, om, oa, oc, sc, pc, mc, ac, ko, ks, kp, km, kc, no, ns, np, nm, nc, hb, ht, hk⟩ :=
-    signCachedAbi_implies.pre _ hp.1
-  have hk' := hp.2
-  have mem : (VG.Impl.Ed25519.Arm.combSym, VG.Impl.Ed25519.Arm.combWords) ∈
-      VG.Impl.Ed25519.Arm.combConsts := List.mem_singleton_self _
-  have fit := hk'.fit mem
-  rw [combWords_length] at fit
-  have tr := hk'.2.2.1 _ (by rw [combConsts_regs]; exact List.mem_singleton_self _)
-  refine ⟨?_, wr, os, op, om, oa, oc, sc, pc, mc, ac, ko, ks, kp, km, kc, no, ns, np, nm, nc, hb, ht, hk,
-    fit, fun j hj => ?_, tr.2.1 _ (by rw [show s.wr = _ from wr]; exact List.mem_cons_self),
-    tr.2.1 _ (by rw [show s.wr = _ from wr]; exact List.mem_cons_of_mem _ List.mem_cons_self),
-    tr.2.2 _ (by simp [Arm.abi, stackBelow])⟩
-  · have e1 := hk'.1
-    rw [combConsts_regs] at e1
-    have hl : VG.Impl.Ed25519.Arm.combConsts.length = 1 := rfl
-    rw [hl] at e1
-    change List.take (s.rd.length - VG.Impl.Ed25519.Arm.combConsts.length) s.rd = _ at rd
-    rw [hl] at rd
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, e1, rd]
-    rfl
-  · have hw := hk'.2.1 _ mem j (by rw [combWords_length]; exact hj)
-    dsimp only at hw
-    rw [combWords_getD hj] at hw
-    exact hw
-
-/-- The witness's memory: `satMem` below the tables, the tables from `0x100000`. -/
-def satMemT (a : Addr) : Byte := if a.toNat < 0x100000 then satMem a else baseSatMem a
-
-theorem satMemT_frame : Frame [⟨0, 0x100000⟩] baseSatMem satMemT := by
-  intro x hx
-  have hn := hx _ (List.mem_singleton_self _)
-  simp only [Region.Contains] at hn
-  rw [show (x - 0 : Addr) = x from by simp] at hn
-  simp only [satMemT, show ¬ x.toNat < 0x100000 by omega, ↓reduceIte]
-
-def satStateT : State :=
-  { satState with mem := satMemT, rd := satState.rd ++ [⟨0x100000, 98304⟩], syms := fun _ => 0x100000 }
-
-theorem satT_held : ∀ i < 64 * 192,
-    satStateT.mem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = VG.Impl.Ed25519.Arm.combWords.getD i 0 := by
-  intro i hi
-  rw [← baseSatMem_held i (by rw [combWords_length]; exact hi)]
-  refine satMemT_frame.readW (r := ⟨0x100000 + BitVec.ofNat 64 (8 * i), 8⟩) (Region.contains_self _ _)
-    ?_ (by decide)
-  intro r hr
-  rw [List.mem_singleton.mp hr]
-  have e : (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat = 0x100000 + 8 * i := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-    change (0x100000 + 8 * i % 2 ^ 64) % 2 ^ 64 = _
-    omega
-  refine (Offset.disjoint_of_le (r₁ := ⟨0, 0x100000⟩) ?_ ?_).symm
-  · change 0 + 0x100000 ≤ (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat
-    omega
-  · change (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat + 8 ≤ 2 ^ 64
-    omega
-
-theorem satT_bytes {p : Addr} (h : p.toNat + 32 ≤ 0x100000) :
-    Spec.Ed25519.bytesAt satMemT p 32 = Spec.Ed25519.bytesAt satMem p 32 := by
-  unfold Spec.Ed25519.bytesAt
-  refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  have e : (p + BitVec.ofNat 64 i).toNat = p.toNat + i := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  simp only [satMemT, e, show p.toNat + i < 0x100000 by omega, ↓reduceIte]
-
-theorem satT_key : Spec.Ed25519.bytesAt satMemT 0x3000 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt satMemT 0x2000 32) := by
-  rw [satT_bytes (by decide), satT_bytes (by decide), sat_seed, sat_key]
-  rfl
-
-theorem signCached_sat : signSpec.pre satStateT := by
-  have held := satT_held
-  generalize eqs : satStateT = s
-  sig_pre [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
-    Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
-    Arm.stackArg, Arm.stackArgAddr, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  subst s
-  rw [combWords_length]
-  refine ⟨by decide, by decide, by decide, held, by decide, ?_, Region.disjoint_of_sep (by decide), by decide, ?_⟩
-  · intro r hr
-    change r ∈ [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · sig_and_intros
-    rotate_right
-    · change Spec.Ed25519.bytesAt satMemT 0x3000 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt satMemT 0x2000 32)
-      exact satT_key
-    all_goals first | exact Region.disjoint_of_sep (by decide +kernel) | decide +kernel
-
-theorem signCached_implies : signCachedLocal.Implies signSpec where
-  pre _ h := signCached_pre h
-  post := by
-    intro s s' _ h
-    sig_post [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig, Spec.Ed25519.scratchWords,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArg, Arm.stackArgAddr,
-      combConsts_eq, Abi.withConsts]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig, Spec.Ed25519.scratchWords,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArg, Arm.stackArgAddr,
-      combConsts_eq, Abi.withConsts] at h
-    obtain ⟨hsp, hsy, h0, h1, h2, h3, a0, a1⟩ := h
-    exact ⟨hsp, h0, h1, h2, h3, a0, a1, hsy⟩
-  sat := ⟨satStateT, signCached_sat⟩
-
-end VG.Proof.Ed25519.Arm.SignCached
-end
-
-namespace VG.Proof.Ed25519.Arm.SignCached
-open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
-
-theorem signCached_verified :
-    Verified Arm.target code signSpec :=
-  Verified.of_implies
-    (Verified.of_correct (fun _ h => signCached_ok h) signCached_ct (.refl signCached_implies.sat_left))
-    signCached_implies
-
-end VG.Proof.Ed25519.Arm.SignCached

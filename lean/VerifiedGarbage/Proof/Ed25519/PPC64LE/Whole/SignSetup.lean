@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# `vg_ed25519_sign_cached` on PPC64LE: the setup
+# `vg_ed25519_sign_expanded` on PPC64LE: the setup
 
-`out` in `r3`, `seed` in `r4`, `pk` in `r5`, the message in `r6` (`len` in
+`out` in `r3`, `expanded` (the seed's digest) in `r4`, `pk` in `r5`, the message in `r6` (`len` in
 `r7`), `scratch` in `r8` and the frame `F` (288 bytes) in `r9`. The setup
 saves the registers at `224(F)`, moves what lives across calls to `r20`–`r25`
 and copies `pk` to `192(F)` (`signSetup_ok`).
@@ -30,8 +30,8 @@ abbrev msgR (s : State) : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
 /-- What the body may write. -/
 abbrev signW (s : State) : List Region := [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩, below s.sp 48]
 
-/-- The precondition, by register, with `sn` bytes at `r4` (the seed, or its digest), and without
-the public key's relation to them. -/
+/-- The precondition, by register, with `sn` bytes (64 here) at `r4` (the seed's digest), and
+without the public key's relation to it. -/
 structure SignPre (sn : Nat) (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .r4, sn⟩, ⟨s.gpr .r5, 32⟩, msgR s, TBL (s.syms combSym)]
   wr : s.wr = [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9, 288⟩]

@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-! # The cached digest copied into the frame (x86)
 
 `copyExpanded` loads the second argument, the address of a seed's SHA-512 digest, into
-ECX, and copies its 16 words to frame offset 192, where the seed's hash leaves the
-digest; it writes only EAX, ECX and those 64 bytes. -/
+ECX, and copies its 16 words to frame offset 192, where the rest of the function reads
+the digest; it writes only EAX, ECX and those 64 bytes. -/
 
 @[expose] public section
 

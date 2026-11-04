@@ -167,8 +167,6 @@ theorem saveSecret_ok (hc : Ctx L g vec m₀ s) {expanded : List Byte}
     rw [keep, ← he, Proof.Ed25519.signatureBytes_drop]
     rw [BitVec.add_assoc, show (192 : BitVec 64) + BitVec.ofNat 64 32 = (224 : BitVec 64) from rfl]
 
-/-- The SHA-512 digest of the seed: hashed (`hashSeed`) or cached. -/
-def expanded (L : Lay) (m : Mem) : List Byte := Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m L.seed 32)
 def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
 def nonce (L : Lay) (E : List Byte) (m : Mem) : List Byte := Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
   (E.drop 32 ++ Spec.Ed25519.bytesAt m L.msg L.len.toNat))
@@ -180,11 +178,6 @@ def DigestReady (L : Lay) (E : List Byte) (t : State) : Prop :=
 structure SecretReady (L : Lay) (E : List Byte) (t : State) : Prop where
   scalar : Spec.Ed25519.bytesAt t.mem (L.E + 32) 32 = scalar E
   prefixBytes : Spec.Ed25519.bytesAt t.mem (L.E + 64) 32 = E.drop 32
-
-theorem seed_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (h32 : L.seedLen = 32) :
-    WP isa (hashSeed b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ DigestReady L (expanded L m₀) t :=
-  WP.mono (hashSeed_ok b hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩
 
 theorem secret_ok (hc : Ctx L g vec m₀ s) {E : List Byte} (hd : DigestReady L E s) :
     WP isa (.block saveSecret) s fun t => Ctx L g vec m₀ t ∧ SecretReady L E t :=
@@ -270,15 +263,5 @@ theorem bodyFrom_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) {firs
   refine WP.seq (WP.mono (nonce_ok b hu hL ha su (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
   refine WP.seq (WP.mono (challenge_ok b hv hL ha nv hE hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
-
-theorem body_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32))
-    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) (h32 : L.seedLen = 32) :
-    WP isa (body b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (L.seed) 32)
-        (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) :=
-  bodyFrom_ok b (seed_ok b hc hL ha h32) hL ha rfl hk hsy
 
 end VG.Proof.Ed25519.AArch64.SignCached

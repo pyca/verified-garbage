@@ -279,23 +279,6 @@ open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
-theorem hashSeed_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
-    WP isa hashSeed s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
-      Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 =
-        Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32) := by
-  refine WP.seq (WP.mono (init_step hc hL ha) fun u ⟨hu, fu, ru⟩ => ?_)
-  refine WP.seq (WP.mono (update_input hu hL ha 1 0 (by decide) (seed_input hL)
-    (by decide) ru) fun v ⟨hv, fv, rv⟩ => ?_)
-  have hs := hu.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega)
-  change Spec.Ed25519.bytesAt u.mem (L.seed.setWidth 64) L.seedLen =
-    Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) L.seedLen at hs
-  rw [h32] at hs
-  change Spec.Sha512.Repr _ v.mem _ ([] ++ Spec.Ed25519.bytesAt u.mem (L.seed.setWidth 64) 32) at rv
-  rw [List.nil_append, hs] at rv
-  refine WP.mono (finalize_step hv hL ha 32 (by decide) false
-    (by rw [bytes_length]; decide) (by rw [bytes_length]; rfl) rv)
-    fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans ft), hd⟩
-
 theorem hashNonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa hashNonce s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 =
@@ -472,8 +455,6 @@ theorem saveSecret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) {expanded : List Byte}
     rw [keep, ← he, Proof.Ed25519.signatureBytes_drop]
     rw [BitVec.add_assoc, show (192 : BitVec 64) + BitVec.ofNat 64 32 = (224 : BitVec 64) from rfl]
 
-def expanded (L : Lay) (m : Mem) : List Byte :=
-  Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m (L.seed.setWidth 64) 32)
 /-- The secret scalar of the digest `E`. -/
 def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
 /-- The nonce of the digest `E` and the message. -/
@@ -492,10 +473,6 @@ theorem secretFrom_ok {first : Prog isa} {E : List Byte}
     WP isa (secretFrom first) s fun t => Ctx L g m₀ t ∧ SecretReady L E t :=
   WP.seq (WP.mono hh fun _ ⟨hu, hd⟩ =>
     WP.mono (saveSecret_ok hu hL hd) fun _ ⟨ht, hs, hp⟩ => ⟨ht, hs, hp⟩)
-
-theorem secret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
-    WP isa secretCode s fun t => Ctx L g m₀ t ∧ SecretReady L (expanded L m₀) t :=
-  secretFrom_ok (WP.mono (hashSeed_ok hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩) hL
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -573,16 +550,6 @@ theorem bodyFrom_ok (hL : L.Ok) (ha : Arguments L m₀) {first : Prog isa} {seed
   refine WP.seq (WP.mono (nonce_ok hu hL ha su (by rw [yu]; exact hy)) fun v ⟨hv, nv⟩ => ?_)
   refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
-
-theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32)
-    (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32))
-    (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
-    WP isa body s fun t => Ctx L g m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)
-        (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) :=
-  bodyFrom_ok hL ha (WP.mono (hashSeed_ok hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩) hk hy
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -795,14 +762,6 @@ theorem finalize_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
   (finalize_args_ct hL ha hb n hn b ht).seq (finalize_call_ct hL _)
 
-theorem hashSeed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashSeed
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 1 0) (.const 32)
-    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using seed_input hL)
-    (by native_taint_decide)
-  exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by native_taint_decide)))
-
 theorem hashNonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashNonce
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
@@ -859,11 +818,6 @@ theorem bodyFrom_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) 
     (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
       (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))
 
-theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
-      (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) :=
-  bodyFrom_ct hL ha hb (hashSeed_ct hL ha hb)
-
 end VG.Proof.Ed25519.X86.SignCached
 end
 
@@ -904,11 +858,6 @@ theorem bodyFrom_nosp {first : Prog isa} (hs : NoSp first) : NoSp (bodyFrom firs
     (noSp_seq (noSp_seq hc (noSp_seq (noSp_reduce (NoSp.of_all (by decide +kernel)))
       (noSp_seq (NoSp.of_all (by decide +kernel)) mul_nosp))) (NoSp.of_all (by decide +kernel))))
 
-theorem hashSeed_nosp : NoSp hashSeed :=
-  noSp_seq (noSp_seq (NoSp.of_all (by decide +kernel)) Whole.init_nosp) (noSp_seq
-    (noSp_update (NoSp.of_all (by decide +kernel)))
-    (noSp_finalize (NoSp.of_all (by decide +kernel))))
-
 variable {n : Nat} {key : State → Prop} {post : State → State → Prop} in
 /-- The frame around `bodyFrom first`, from the signature it leaves in `out`. -/
 theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).pre s) (sl : 32 ≤ n)
@@ -943,11 +892,6 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
   · rw [popped_mem]
     exact ho
 
-theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
-    WP isa code s fun t => abiPreserved s t ∧ signCachedLocal.post s t :=
-  frame_ok h (Nat.le_refl _) hashSeed_nosp
-    (body_ok (push_ctx h) (lay_ok h (Nat.le_refl _)) (lay_arguments h) rfl (entry_key h) rfl) fun _ h => h
-
 end VG.Proof.Ed25519.X86.SignCached
 end
 
@@ -977,9 +921,6 @@ theorem frame_ct {first : Prog isa} (sl : 32 ≤ n)
     rw [he]; rfl
   exact ⟨(bodyFrom_ct (lay_ok p₁ sl) (lay_arguments p₁) ha₂ (hh (lay_ok p₁ sl) rfl (lay_arguments p₁) ha₂)
     _ _ _ _ _ _ ⟨push_ctx p₁, h₂, ⟨trivial, rfl⟩, ⟨trivial, y₂⟩⟩ ea eb).1, trivial⟩
-
-theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code :=
-  frame_ct (Nat.le_refl _) fun hL _ ha hb => hashSeed_ct hL ha hb
 
 end VG.Proof.Ed25519.X86.SignCached
 

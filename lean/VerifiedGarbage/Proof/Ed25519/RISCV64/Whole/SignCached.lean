@@ -10,14 +10,13 @@ public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignExpand
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignNonce
 
 /-!
-# `vg_ed25519_sign_cached` on RISCV64, with its frame as an argument
+# `vg_ed25519_sign_expanded` on RISCV64, with its frame as an argument
 
 The setup, the three phases and the restores, from any first step that leaves
 the seed's digest `D` at `128(F)` (`signWith_wp`): `out` then holds `R ‖ S`
 (`signFrom`), which is RFC 8032's signature (`Proof.Ed25519.sign_pipeline`) for
-the seed when `pk` is its public key. The first step hashes the seed
-(`signCached_wp`), or, for `vg_ed25519_sign_expanded`, copies its digest
-(`signExpanded_wp`).
+the seed when `pk` is its public key. The first step copies the digest at
+`expanded` (`signExpanded_wp`).
 -/
 
 @[expose] public section
@@ -79,13 +78,6 @@ theorem signWith_wp (C : ShaOK) (B : BaseOk) {first : Prog isa} {D : List Byte} 
     fun t₅ g₅ sp₅ ra₅ m₅ _ => ⟨g₅, sp₅, ra₅, ?_⟩
   rw [m₅, Proof.Ed25519.signatureBytes_split, hR, hS]
   rfl
-
-theorem signCached_wp (C : ShaOK) (B : BaseOk) {s : State} (hp : SignPre 32 s)
-    (hpk : bytesAt s.mem (s.gpr .a2) 32 = Spec.Ed25519.publicKey (bytesAt s.mem (s.gpr .a1) 32)) :
-    WP isa signCached s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
-      bytesAt t.mem (s.gpr .a0) 64 = Spec.Ed25519.sign (bytesAt s.mem (s.gpr .a1) 32) (msgB s) :=
-  WP.mono (signWith_wp C B (D := seedH s) hp fun _ h => signHash_ok C hp h) fun _ ⟨g, sp, ra, ho⟩ =>
-    ⟨g, sp, ra, by rw [ho]; exact signFrom_sha512 _ _ _ hpk⟩
 
 /-- From the seed's digest at `expanded`: the signature of every seed with that digest, given
 that `pk` is the public key of one. -/

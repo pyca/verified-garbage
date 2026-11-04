@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.ByRegister
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.PublicKeyVerified
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.PublicKeyCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignCT
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed25519.WholeLocal
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBase
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
@@ -23,14 +23,18 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # `vg_ed25519_public_key_expanded` and `vg_ed25519_sign_expanded` on RISC-V, verified
 
-As `vg_ed25519_public_key` (`PublicKeyVerified.lean`) and
-`vg_ed25519_sign_cached` (`SignVerified.lean`): each meets its contract with
-the frame as one more argument (`Sig.scratchContract`), from the proof
-against the contract's facts by register (`pkCE`, `signCE`), which it
-implies, and a state satisfying it, whose memory holds a seed's digest at
-`0x2000` and its public key at `0x2100` (`satMemE`); in its frame on the
-stack, which it wipes, it meets the contract itself. Their contracts read
-the memory on return only at `out` (`pkEPostOut_local`, `signEPostOut_local`).
+Each code meets its contract under `abi.withConsts combConsts` (the comb's
+table, which `vg_ed25519_scalar_base` reads) with the frame (18 or 36
+doublewords, so aligned as the contract's `u64` buffers are) as one more
+argument (`Sig.scratchContract`) and 208 bytes of stack for the callees'
+frames: the proof against the contract's facts by register (`pkCE`,
+`signCE`: `pkRE`, `signRE` without the table, and what the table adds),
+which it implies (`consts_implies`), and a state satisfying it, whose memory
+holds a seed's digest at `0x2000`, its public key at `0x2100` (`satMemE`)
+and the table at `0x100000` (`tblMem`). In its frame on the stack, which it
+wipes before returning (`Verified.stackScratchWipedC`), it meets the
+contract itself. Their contracts read the memory on return only at `out`
+(`pkEPostOut_local`, `signEPostOut_local`).
 -/
 
 @[expose] public section
@@ -41,7 +45,7 @@ open VG VG.RISCV64 VG.Impl.Ed25519.RISCV64.Whole
 open VG.Spec.Ed25519 (bytesAt publicKeyExpandedSig signExpandedSig)
 open VG.Impl.Ed25519.RISCV64 (combSym combWords combConsts)
 open VG.Proof.Ed25519.RISCV64 (combWords_length)
-open VG.Proof.Ed25519.WholeLocal (satSeed satKey bytesAt_congr slice_agree)
+open VG.Proof.Ed25519.WholeLocal (satSeed satKey bytesAt_congr)
 
 /-! ## The contracts' conditions, and their locality -/
 
@@ -142,6 +146,15 @@ theorem sat_keyE : bytesAt satMemE 0x2100 32 = satKey := by
       show ¬ 0x2100 + i < 0x2000 from by omega, show ¬ 0x2100 + i < 0x2100 from by omega, ite_false,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
+/-- The comb's table at `0x100000`. -/
+@[irreducible] def tblMem : Mem := constMem 0x100000 combWords
+
+theorem tblMem_held : ∀ i < combWords.length,
+    tblMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
+  have h := constMem_held 0x100000 combWords (by rw [combWords_length]; decide)
+  unfold tblMem
+  exact h
+
 /-- `satMemE` below `0x100000`, the comb's table above. -/
 @[irreducible] def satMemTE : Mem := fun a => if a.toNat < 0x100000 then satMemE a else tblMem a
 
@@ -187,15 +200,15 @@ theorem pkRE_implies : pkRE.Implies (Sig.scratchContract RISCV64.abi publicKeyEx
     (pkEPre RISCV64.abi.ptrBits) (pkEPost RISCV64.abi.ptrBits) true 208) :=
     { pre := by
         sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, pkR, RISCV64.abi,
+          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, pkR, RISCV64.abi,
+          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, RISCV64.abi,
           RISCV64.argRegs]
       pub := by
         sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, pkR, RISCV64.abi,
+          publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
         obtain ⟨m, hm⟩ : ∃ m : Mem, ∃ seed : List Byte, seed.length = 32 ∧
@@ -305,15 +318,15 @@ theorem signRE_implies : signRE.Implies (Sig.scratchContract RISCV64.abi signExp
     (signEPre RISCV64.abi.ptrBits) (signEPost RISCV64.abi.ptrBits) true 208) :=
     { pre := by
         sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, signR, RISCV64.abi,
+          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, signR, RISCV64.abi,
+          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, RISCV64.abi,
           RISCV64.argRegs]
       pub := by
         sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, signR, RISCV64.abi,
+          signExpandedSig, Spec.Ed25519.scratchWords, signEPre, signEPost, signRE, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
         refine ⟨signSatE satMemTE, ?_⟩

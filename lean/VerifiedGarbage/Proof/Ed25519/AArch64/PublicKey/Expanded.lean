@@ -23,9 +23,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Ed25519 public-key derivation from the seed's cached SHA-512 digest (AArch64)
 
-`codeExpanded` is `code` with its first step, `hash`, replaced by `copyExpanded`: the digest at
-the second argument is copied to `frame 192`, where `hash` leaves it. The rest is proven once,
-by `bodyFrom_ok` and `bodyFrom_ct`, for both. -/
+`codeExpanded` is `bodyFrom copyExpanded`: the digest at the second argument is copied to
+`frame 192`, where `bodyFrom` reads it. The rest is proven by `bodyFrom_ok` and `bodyFrom_ct`. -/
 
 @[expose] public section
 

@@ -3,8 +3,11 @@ module
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
 public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
+public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
-/-! Complete ARMv7 cached-key signing, including SHA-512. The 248-byte
+/-! ARMv7 signing from the seed's cached SHA-512 digest, hashing the nonce and the challenge
+with SHA-512. The 248-byte
 local frame contains scalar24, prefix56, nonce88, challenge120 and digest184.
 Saved caller arguments begin at248. All secret locals are cleared. -/
 
@@ -34,7 +37,6 @@ def update (args : List Instr) : Prog isa :=
 def finalize (n : Nat) (b : Bool) : Prog isa :=
   callWith (finalizeArgs n b) "vg_sha512_finalize_scratch" Sha512.Arm.Stream.finalize
 
-def hashSeed : Prog isa := .seq init (.seq (update (inputArgs 1 0)) (finalize 32 false))
 def saveSecret : List Instr := PublicKey.prune ++ copyPrefix
 
 def hashNonce : Prog isa := .seq init (.seq (update prefixArgs)
@@ -50,7 +52,6 @@ def mulAddArgs : List Instr :=
   setup [(.r0, .caller 0 32), (.r1, .frame 88), (.r2, .frame 120), (.r3, .frame 24)] [.caller 5 0]
 def wipe : List Instr := zeroWords 6 56
 
-def secretCode : Prog isa := .seq hashSeed (.block saveSecret)
 def nonceCode : Prog isa := .seq hashNonce (.seq (reduce 88)
   (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
 def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 120)
@@ -58,11 +59,9 @@ def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 120)
 /-- Signing after `secret`, which leaves the seed's SHA-512 digest at `frame 184`. -/
 def bodyFrom (secret : Prog isa) : Prog isa :=
   .seq (.seq secret (.block saveSecret)) (.seq nonceCode (.seq challengeCode (.block wipe)))
-def body : Prog isa := bodyFrom hashSeed
-def code : Prog isa := wrap 6 body
 
-/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
-digest copied (`PublicKey.copyExpanded`) rather than computed. -/
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`), copied to
+`frame 184` (`PublicKey.copyExpanded`). -/
 def codeExpanded : Prog isa := wrap 6 (bodyFrom PublicKey.copyExpanded)
 
 end VG.Impl.Ed25519.Arm.SignCached

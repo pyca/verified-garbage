@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignExpand
 
 /-!
-# `vg_ed25519_sign_cached` on RISCV64: the challenge, and `S`
+# `vg_ed25519_sign_expanded` on RISCV64: the challenge, and `S`
 
 `R` (in `out`), the copy of `pk` at `192(F)` and the message hashed into
 `128(F)`, the digest reduced into the challenge at `96(F)` by a call of

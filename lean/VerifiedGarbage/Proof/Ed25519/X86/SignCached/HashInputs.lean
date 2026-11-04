@@ -33,12 +33,6 @@ theorem Input.external {p n : BitVec 32}
   ⟨.inr hc, hs, hk.sub_left (Whole.below_sub_stack hL.below (by decide)),
     (hk.sub_left (fun a ha => Whole.frame_sub L.E a (Region.sub_prefix (by decide : 24 ≤ 256) a ha))).symm, hf⟩
 
-theorem seed_input (hL : L.Ok) : Input L L.seed 32 :=
-  Input.external ⟨L.SEED, by simp [Lay.inputs], 0, by simp, by change 0 + 32 ≤ L.seedLen; have := hL.sl; omega⟩
-    ((hL.sc _ (by simp [Lay.inputs])).sub_left (Region.sub_prefix hL.sl))
-    ((hL.ks _ (by simp [Lay.inputs])).sub_right (Region.sub_prefix hL.sl)) hL
-    (by change L.seed.toNat + 32 ≤ 2 ^ 32; have := hL.ns; have := hL.sl; omega)
-
 theorem key_input (hL : L.Ok) : Input L L.pk 32 :=
   Input.external ⟨L.PK, by simp [Lay.inputs], 0, by simp, by change 0 + 32 ≤ 32; decide⟩
     (hL.sc _ (by simp [Lay.inputs])) (hL.ks _ (by simp [Lay.inputs])) hL hL.np

@@ -24,8 +24,8 @@ def pkPub (s t : State) : Prop :=
   s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
     s.syms combSym = t.syms combSym
 
-/-- Public-key derivation from the `n` bytes at the second argument (the seed, or its
-SHA-512 digest), with the postcondition `post`. -/
+/-- Public-key derivation from the `n` bytes at the second argument (the seed's SHA-512
+digest, 64), with the postcondition `post`. -/
 def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
@@ -43,10 +43,6 @@ def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
       (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ CombHeld s [out, scratch, stack]
   post := post
   pub := pkPub
-
-def pkLocal : Contract isa := pkLocalWith 32 fun s t =>
-  Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
 
 variable {n : Nat}
 
