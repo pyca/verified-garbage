@@ -39,17 +39,17 @@ def stf (t : Reg) (j : Nat) : Instr := .str .x t .x19 (8 * j)
 /-- The frame's size: 20 words. -/
 def frameBytes : Nat := 160
 
-/-- The frame's base in `x14`, the caller's `x19` saved and the register
-arguments stored; then the stack arguments, above the frame, and the
-public words: the state's first, then `out_len` and
-`primeEntropy out_len = 32769 out_len`, which the precondition says the
-state holds; no request yet, and nothing consumed. -/
+/-- The frame's base in `x14`; the stack arguments, above the frame, and the
+state's first word, all loaded before any store; the caller's `x19` saved and
+the arguments stored; then the public words: the state's first, then
+`out_len` and `primeEntropy out_len = 32769 out_len`, which the precondition
+says the state holds; no request yet, and nothing consumed. -/
 def entry : List Instr := [
-  .addSp .x14 0, .str .x .x19 .x14 32, mov .x19 .x14,
+  .addSp .x14 0, ld .x8 .x14 160, ld .x9 .x14 168, ld .x10 .x14 176, ld .x11 .x14 184, ld .x12 .x11 0,
+  .str .x .x19 .x14 32, mov .x19 .x14,
   stf .x0 5, stf .x1 6, stf .x2 7, stf .x3 8, stf .x4 9, stf .x5 10, stf .x6 11, stf .x7 12,
-  ld .x8 .x14 160, ld .x9 .x14 168, ld .x10 .x14 176, ld .x11 .x14 184,
   stf .x8 13, stf .x9 14, stf .x10 15, stf .x11 18,
-  ld .x12 .x11 0, stf .x12 0, stf .x1 1, .lsl .x .x12 .x1 15, .add .x .x12 .x12 .x1, stf .x12 2,
+  stf .x12 0, stf .x1 1, .lsl .x .x12 .x1 15, .add .x .x12 .x12 .x1, stf .x12 2,
   movi .x13 0, stf .x13 3, stf .x13 16]
 
 /-- The candidate's arguments, for the rest of the tape: its stack
