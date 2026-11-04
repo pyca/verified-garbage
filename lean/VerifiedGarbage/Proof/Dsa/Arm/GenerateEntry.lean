@@ -165,17 +165,23 @@ theorem deriveArgs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base siz
       (outside_word (by decide) (by decide) (by omega_arith) _)).trans (outside_word (by decide) (by decide) (by omega_arith) _)).trans
       (outside_word (by decide) (by decide) (by omega_arith) _)
 
-theorem checkEntry_ok {s : State} (h : checkPre s) :
+/-- The entry of the domain check, from what it uses of `checkPre`, which
+public-key validation's precondition also gives. -/
+theorem checkEntry_of {s : State} (hsp : s.sp.toNat + 8 ≤ 2 ^ 32)
+    (hrd : (⟨State.addr s.sp, 4 * 2⟩ : Region) ∈ s.rd)
+    (hwr : s.wr = [⟨State.addr (arg s 0), (arg s 1).toNat * 8⟩])
+    (hsb : (arg s 0).toNat + (arg s 1).toNat * 8 ≤ 2 ^ 32)
+    (hv : Spec.Dsa.lengthsValid (s.gpr .r2).toNat (s.gpr .r3).toNat)
+    (hsw : Spec.Dsa.scratchWords (s.gpr .r2).toNat ≤ (arg s 1).toNat) :
     WP isa (.block Generate.checkEntry) s
       (Installed s (State.addr (arg s 0)) ((arg s 1).toNat * 8) (checkFields s)) := by
-  obtain ⟨hsp, hrd, hwr, _, hsa, _, hsb, hv, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
   have hs16 : 16384 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   show WP isa (.block (((Entry.openScratch 0) ++ Generate.checkArguments.flatMap Entry.saveArgument) ++
     Entry.keyPointers)) s _
   simp only [Entry.openScratch, List.append_assoc, List.singleton_append]
-  refine wp_ldrSp (i := 0) (by decide) (args_read (n := 2) (by rw [hrd]; simp) hsp 0 (by decide)) fun u₁ v₁ => ?_
+  refine wp_ldrSp (i := 0) (by decide) (args_read (n := 2) hrd hsp 0 (by decide)) fun u₁ v₁ => ?_
   have w₁ := openScratch_ws v₁ ((arg s 1).toNat * 8) (by rw [hwr]; simp) hsb
   have nw := w₁.nowrap
   refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega_arith)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
@@ -215,6 +221,12 @@ theorem checkEntry_ok {s : State} (h : checkPre s) :
       (O₄.mono (by decide) (by decide))
   · exact (((v₁.rest (by decide)).trans (R₂.mono (by decide))).trans (R₃.mono (by decide))).trans
       (R₄.mono (by decide))
+
+theorem checkEntry_ok {s : State} (h : checkPre s) :
+    WP isa (.block Generate.checkEntry) s
+      (Installed s (State.addr (arg s 0)) ((arg s 1).toNat * 8) (checkFields s)) := by
+  obtain ⟨hsp, hrd, hwr, _, _, _, hsb, hv, _, hsw⟩ := h
+  exact checkEntry_of hsp (by rw [hrd]; simp) hwr hsb hv hsw
 
 theorem deriveEntry_ok {s : State} (h : derivePre s) :
     WP isa (.block Generate.deriveEntry) s

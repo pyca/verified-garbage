@@ -91,6 +91,54 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
 abbrev verifyChecks (P Q G Y R S D : Nat) : Prop :=
   publicChecks P Q G Y ∧ (0 < R ∧ R < Q) ∧ (0 < S ∧ S < Q) ∧ verifyValue P Q G Y R S D = R
 
+/-- The checks of a verification after the public key's: the signature's
+ranges, and the comparison of the computed value with r, given q − 2. -/
+theorem verifyTail_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D c : Nat}
+    (Sc : Sched s base size pLen qLen nP nQ)
+    (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
+    (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
+    (Ir : Input s base size (.input .signature) qLen R) (Is : Input s base size .signatureS qLen S)
+    (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
+    (L : localVal base s Impl.Dsa.Layout.qMinusTwo qLen = Q - 2)
+    (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
+    WP isa (Core.sequence [
+      .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
+      Core.verify pLen qLen,
+      Validate.equalValues qLen (.local Impl.Dsa.Layout.u) (.input .signature)]) s fun t =>
+      maskW base t = maskW base s &&& mask32 ((0 < R ∧ R < Q) ∧ (0 < S ∧ S < Q) ∧ verifyValue P Q G Y R S D = R) ∧
+        Run base s t := by
+  obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
+  have big := Sc.big
+  have fits := Sc.fits
+  have Lu : Impl.Dsa.Layout.u = 14816 := rfl
+  have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
+  simp only [Core.sequence, List.foldr]
+  refine WP.seq (WP.seq (WP.mono (range_ok Sc.ws (by omega_arith) Sc.wq Iq.toReady Ir.toReady false)
+    fun u₂ ⟨F₂, St₂⟩ => WP.mono (range_ok (St₂.ws Sc.ws) (by omega_arith) Sc.wq
+      (Iq.next Sc St₂ (.inl ⟨rfl, rfl⟩)).toReady (Is.next Sc St₂ (.inl ⟨rfl, rfl⟩)).toReady false)
+    fun u₃ ⟨F₃, St₃⟩ => ?_))
+  rw [Iq.value, Ir.value] at F₂
+  rw [(Iq.next Sc St₂ (.inl ⟨rfl, rfl⟩)).value, (Is.next Sc St₂ (.inl ⟨rfl, rfl⟩)).value] at F₃
+  have Sc₃ := (Sc.stage St₂).stage St₃
+  have r₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₃ base size p len v :=
+    fun I => (I.next Sc St₂ (.inl ⟨rfl, rfl⟩)).next (Sc.stage St₂) St₃ (.inl ⟨rfl, rfl⟩)
+  have L₃ : localVal base u₃ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
+    rw [St₃.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
+      St₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L]
+  have C₃ : countValue base u₃ Core.digestPrefix = c := by
+    rw [countValue_stage St₃ (by omega_arith), countValue_stage St₂ (by omega_arith), hc]
+  refine WP.seq (WP.mono (verify_ok Sc₃ (r₃ Ip) (r₃ Iq) (r₃ Ig) (r₃ Iy) (r₃ Ir) (r₃ Is) (r₃ Id) C₃ L₃ hP hPo hQ hQo)
+    fun u₄ ⟨V₄, M₄, Rn₄⟩ => ?_)
+  have Sc₄ := Sc₃.run Rn₄
+  refine WP.seq (WP.mono (equalValues_ok Sc₄.ws (by omega_arith) Sc.wq
+    (localReady (o := Impl.Dsa.Layout.u) Sc₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) ((r₃ Ir).run Rn₄ (by omega_arith) fits).toReady)
+    fun u₅ ⟨F₅, St₅⟩ => WP.block_nil ⟨?_, ?_⟩)
+  · rw [local_operand Sc₄.ws (by omega_arith), V₄, ((r₃ Ir).run Rn₄ (by omega_arith) fits).value] at F₅
+    rw [F₅, M₄, F₃, F₂, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and]
+    exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte]))
+  · exact (((St₂.run (.inl ⟨rfl, rfl⟩)).trans (St₃.run (.inl ⟨rfl, rfl⟩))).trans Rn₄).trans
+      (St₅.run (.inl ⟨rfl, rfl⟩))
+
 theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D c : Nat}
     (Sc : Sched s base size pLen qLen nP nQ)
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
@@ -100,41 +148,15 @@ theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
     WP isa (SignVerify.verifyCompute pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (verifyChecks P Q G Y R S D) ∧ Run base s t := by
-  obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
-  have big := Sc.big
   have fits := Sc.fits
-  have Lu : Impl.Dsa.Layout.u = 14816 := rfl
-  have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  simp only [SignVerify.verifyCompute, Core.sequence, List.foldr]
+  have big := Sc.big
+  unfold SignVerify.verifyCompute Core.sequence
+  dsimp only [List.foldr]
   refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.run Rn₁ (by omega_arith) fits
-  have Sc₁ := Sc.run Rn₁
-  refine WP.seq (WP.seq (WP.mono (range_ok Sc₁.ws (by omega_arith) Sc.wq (r₁ Iq).toReady (r₁ Ir).toReady false)
-    fun u₂ ⟨F₂, St₂⟩ => WP.mono (range_ok (St₂.ws Sc₁.ws) (by omega_arith) Sc.wq
-      ((r₁ Iq).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).toReady ((r₁ Is).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).toReady false)
-    fun u₃ ⟨F₃, St₃⟩ => ?_))
-  rw [(r₁ Iq).value, (r₁ Ir).value] at F₂
-  rw [((r₁ Iq).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).value, ((r₁ Is).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).value] at F₃
-  have Sc₃ := (Sc₁.stage St₂).stage St₃
-  have r₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₃ base size p len v :=
-    fun I => ((r₁ I).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).next (Sc₁.stage St₂) St₃ (.inl ⟨rfl, rfl⟩)
-  have L₃ : localVal base u₃ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
-    rw [St₃.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
-      St₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L₁]
-  have C₃ : countValue base u₃ Core.digestPrefix = c := by
-    rw [countValue_stage St₃ (by omega_arith), countValue_stage St₂ (by omega_arith), countValue_run Rn₁, hc]
-  refine WP.seq (WP.mono (verify_ok Sc₃ (r₃ Ip) (r₃ Iq) (r₃ Ig) (r₃ Iy) (r₃ Ir) (r₃ Is) (r₃ Id) C₃ L₃ hP hPo hQ hQo)
-    fun u₄ ⟨V₄, M₄, Rn₄⟩ => ?_)
-  have Sc₄ := Sc₃.run Rn₄
-  refine WP.seq (WP.mono (equalValues_ok Sc₄.ws (by omega_arith) Sc.wq
-    (localReady (o := Impl.Dsa.Layout.u) Sc₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) ((r₃ Ir).run Rn₄ (by omega_arith) fits).toReady)
-    fun u₅ ⟨F₅, St₅⟩ => WP.block_nil ⟨?_, ?_⟩)
-  · rw [local_operand Sc₄.ws (by omega_arith), V₄, ((r₃ Ir).run Rn₄ (by omega_arith) fits).value] at F₅
-    rw [F₅, M₄, F₃, F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and,
-      mask32_and]
-    exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte, verifyChecks]))
-  · exact ((((Rn₁.trans (St₂.run (.inl ⟨rfl, rfl⟩))).trans (St₃.run (.inl ⟨rfl, rfl⟩))).trans Rn₄)).trans
-      (St₅.run (.inl ⟨rfl, rfl⟩))
+  refine WP.mono (verifyTail_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ir) (r₁ Is) (r₁ Id)
+    ((countValue_run Rn₁).trans hc) L₁ hP hPo hQ hQo) fun t ⟨F, Rn⟩ => ⟨?_, Rn₁.trans Rn⟩
+  rw [F, F₁, BitVec.and_assoc, mask32_and]
 
 end VG.Proof.Dsa.Arm

@@ -84,33 +84,34 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
       (localReady (o := Impl.Dsa.Layout.s) (len := qLen) w₂ (by omega_arith) (by omega_arith) (by omega_arith)) true) fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
 
-theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
+/-- The checks after the public key's, given q − 2 in both runs. -/
+theorem verifyTail_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins) (mr : (.input .signature, qLen) ∈ ins) (ms : (.signatureS, qLen) ∈ ins)
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
+    (L₁ : localVal base s₁ Impl.Dsa.Layout.qMinusTwo qLen = val₁ (.input .q) - 2)
+    (L₂ : localVal base s₂ Impl.Dsa.Layout.qMinusTwo qLen = val₂ (.input .q) - 2)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (SignVerify.verifyCompute pLen qLen) s₁ s₂ := by
+    SameTrace isa (Core.sequence [
+      .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
+      Core.verify pLen qLen,
+      Validate.equalValues qLen (.local Impl.Dsa.Layout.u) (.input .signature)]) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lu : Impl.Dsa.Layout.u = 14816 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  simp only [SignVerify.verifyCompute, Core.sequence, List.foldr]
-  refine SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
-    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
-    fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => ?_
-  have X₁ := X.run A₁ A₂
-  refine SameTrace.assoc_left (SameTrace.seq (range_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
-      (X₁.C₁.inp mq).toReady (X₁.C₂.inp mq).toReady (X₁.C₁.inp mr).toReady (X₁.E _ mq) (X₁.E _ mr) false)
-    (range_ok X₁.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₁.inp mq).toReady (X₁.C₁.inp mr).toReady false)
-    (range_ok X₁.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₂.inp mq).toReady (X₁.C₂.inp mr).toReady false)
+  simp only [Core.sequence, List.foldr]
+  refine SameTrace.assoc_left (SameTrace.seq (range_trace X.C₁.S.ws X.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
+      (X.C₁.inp mq).toReady (X.C₂.inp mq).toReady (X.C₁.inp mr).toReady (X.E _ mq) (X.E _ mr) false)
+    (range_ok X.C₁.S.ws (by omega_arith) X.C₁.S.wq (X.C₁.inp mq).toReady (X.C₁.inp mr).toReady false)
+    (range_ok X.C₂.S.ws (by omega_arith) X.C₁.S.wq (X.C₂.inp mq).toReady (X.C₂.inp mr).toReady false)
     fun v₁ v₂ ⟨_, Sa₁⟩ ⟨_, Sa₂⟩ => ?_)
   have R₁ := Sa₁.run (.inl ⟨rfl, rfl⟩)
   have R₂ := Sa₂.run (.inl ⟨rfl, rfl⟩)
-  have X₂ := X₁.run R₁ R₂
+  have X₂ := X.run R₁ R₂
   refine SameTrace.seq (range_trace X₂.C₁.S.ws X₂.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
       (X₂.C₁.inp mq).toReady (X₂.C₂.inp mq).toReady (X₂.C₁.inp ms).toReady (X₂.E _ mq) (X₂.E _ ms) false)
     (range_ok X₂.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₁.inp mq).toReady (X₂.C₁.inp ms).toReady false)
@@ -125,8 +126,8 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
   have M₂ : localVal base w₂ Impl.Dsa.Layout.qMinusTwo qLen = val₂ (.input .q) - 2 := by
     rw [Sb₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
       Sa₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L₂]
-  have c₁ := ((countValue_run R₁').trans (countValue_run R₁)).trans ((countValue_run A₁).trans hc₁)
-  have c₂ := ((countValue_run R₂').trans (countValue_run R₂)).trans ((countValue_run A₂).trans hc₂)
+  have c₁ := ((countValue_run R₁').trans (countValue_run R₁)).trans hc₁
+  have c₂ := ((countValue_run R₂').trans (countValue_run R₂)).trans hc₂
   refine SameTrace.seq (verify_trace X₃ mp mq mg my mr ms md c₁ c₂ D₁ D₂)
     (verify_ok X₃.C₁.S (X₃.C₁.inp mp) (X₃.C₁.inp mq) (X₃.C₁.inp mg) (X₃.C₁.inp my) (X₃.C₁.inp mr)
       (X₃.C₁.inp ms) (X₃.C₁.inp md) c₁ M₁ D₁.hP D₁.hPo D₁.hQ D₁.hQo)
@@ -146,6 +147,22 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
       (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) (X₄.C₂.inp mr).toReady)
       fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
+
+theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
+    {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
+    (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
+    (my : (.input .y, pLen) ∈ ins) (mr : (.input .signature, qLen) ∈ ins) (ms : (.signatureS, qLen) ∈ ins)
+    (md : (.input .digest, c) ∈ ins)
+    (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
+    (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
+    SameTrace isa (SignVerify.verifyCompute pLen qLen) s₁ s₂ := by
+  unfold SignVerify.verifyCompute Core.sequence
+  dsimp only [List.foldr]
+  exact SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
+    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
+    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
+    fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => verifyTail_trace (X.run A₁ A₂) mp mq mg my mr ms md
+      ((countValue_run A₁).trans hc₁) ((countValue_run A₂).trans hc₂) L₁ L₂ D₁ D₂
 
 /-- The output's pointer, and the flag in `r3`. -/
 theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base size) (hz : 120 ≤ size)
