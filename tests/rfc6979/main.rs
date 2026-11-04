@@ -1,7 +1,9 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
 //! §A.2.3 (P-192), §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
-//! hash functions the curve signs with here.
+//! hash functions the curve signs with here: on x86-64, every hash function
+//! the RFC signs with (SHA-1 and the SHA-2 family), elsewhere those of the
+//! curve's verified functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -105,6 +107,46 @@ fn section<const Q: usize, const U: usize, const S: usize>(
     }
     assert_eq!(signatures.len(), 2 * hashes.len());
     (q, x, u, signatures)
+}
+
+/// On x86-64, where every curve signs with each hash function with HMAC:
+/// the signatures with `H`, named `hash` in RFC 6979, of the section
+/// `title`, of the message and of its hash; they verify, of the message and
+/// of its hash, and not of another message.
+#[cfg(target_arch = "x86_64")]
+fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
+where
+    C: verified_garbage::ecdsa::Curve<
+            PrivateKey = [u8; Q],
+            PublicKey = [u8; U],
+            Signature = [u8; S],
+        >,
+    H: verified_garbage::ecdsa::SignatureHash<C>,
+{
+    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    let (_, x, u, signatures) = section::<Q, U, S>(title, &[hash]);
+    let key = SigningKey::<C>::from_bytes(&x);
+    let public = VerifyingKey::<C>::from_bytes(&u);
+    for (_, message, rs) in &signatures {
+        let m = message.as_bytes();
+        let digest = H::digest(m);
+        assert_eq!(key.sign::<H>(m), Ok(*rs), "{hash} {message}");
+        assert_eq!(
+            key.sign_prehashed::<H>(&digest),
+            Ok(*rs),
+            "{hash} {message}"
+        );
+        assert_eq!(public.verify::<H>(m, rs), Ok(()), "{hash} {message}");
+        assert_eq!(
+            public.verify_prehashed::<H>(&digest, rs),
+            Ok(()),
+            "{hash} {message}"
+        );
+        assert_eq!(
+            public.verify::<H>(b"other", rs),
+            Err(Error::InvalidSignature)
+        );
+    }
 }
 
 /// The integer `x + delta` (mod 2^(8N)) of the `N` bytes `x`.
