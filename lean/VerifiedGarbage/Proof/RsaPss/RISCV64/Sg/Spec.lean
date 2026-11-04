@@ -132,90 +132,6 @@ end
 
 end VG.Proof.RsaPss.RISCV64.Sg
 
-namespace VG.Proof.RsaPss
-
-open Spec Spec.RsaPss
-open Mgf1 (Hash xorBytes mgf1)
-open Proof.Mgf1 (Valid xorBytes_length mgf1_length)
-
-/-! ## The encoding with a modulus, for two hash functions
-
-As `encodeK_eq` and `sign_eq` (`Proof/RsaPss/EncBytes.lean`,
-`SignCases.lean`), with the hash function `H` and MGF1's `G`. -/
-
-variable (H G : Hash)
-
-theorem encodeK_eq₂ (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
-    (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
-    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
-    (hfit : H.len + salt.length + 2 ≤ emLen) :
-    encodeK H G (n₀ :: rest) mHash salt =
-      some ((List.range (n₀ :: rest).length).map
-        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
-          (mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) := by
-  have hEL := emLength_eq rest h0
-  rw [hb, he] at hEL
-  have hle : emLen ≤ (n₀ :: rest).length := by rw [hEL, List.length_cons]; split <;> omega_arith
-  simp only [encodeK, encode, hb, he, hdb, hlo]
-  rw [ifn (by omega_arith)]
-  simp only [Option.map_some]
-  generalize hgen : H.hash (zeros 8 ++ mHash ++ salt) = h
-  have hh : h.length = H.len := by rw [← hgen]; exact hH.2 _
-  have hmk : (mgf1 G h db).length = db := mgf1_length hG _ _
-  have hdbl : (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt).length = db := by
-    simp only [List.length_append, zeros_length, List.length_cons]; omega_arith
-  have hX : (clearTop (8 * emLen - emBits) (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt)
-      (mgf1 G h db))).length = db := by
-    rw [clearTop_length, xorBytes_length, hdbl, hmk, Nat.min_self]
-  refine congrArg some (eq_range_map ?_ fun i hi => ?_)
-  · simp only [List.length_append, zeros_length, hX, hh, List.length_cons, List.length_nil]
-    simp only [List.length_cons] at hlo hle; omega_arith
-  simp only [List.length_cons] at hi hlo hle
-  simp only [emT, getD_app, List.length_append, zeros_length, hX, hh]
-  have hlodb : lo + db + H.len + 1 = rest.length + 1 := by omega_arith
-  by_cases h1 : i < lo
-  · simp only [h1, ↓reduceIte]; exact zeros_getD _ _
-  simp only [h1, ↓reduceIte]
-  by_cases h2 : i - lo < db
-  · have h2' : i - lo < db + H.len := by omega_arith
-    simp only [h2, h2', ↓reduceIte, clearTop_getD]
-    have hx : ∀ j < db, (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 1 :: salt) (mgf1 G h db)).getD j 0 =
-        (if j < db - salt.length - 1 then 0 else if j = db - salt.length - 1 then 1
-          else salt.getD (j - (db - salt.length)) 0) ^^^ (mgf1 G h db).getD j 0 := fun j hj => by
-      rw [xorBytes_getD (by rw [hdbl]; exact hj) (by rw [hmk]; exact hj), db_getD,
-        show emLen - salt.length - H.len - 2 = db - salt.length - 1 by omega_arith,
-        show j - (db - salt.length - 1) - 1 = j - (db - salt.length) by omega_arith]
-    by_cases h3 : i - lo = 0
-    · simp only [h3, ↓reduceIte]; rw [hx 0 (by omega_arith)]
-    · simp only [h3, ↓reduceIte]; rw [hx _ h2]
-  · simp only [h2, ↓reduceIte]
-    by_cases h4 : i - lo < db + H.len
-    · simp only [h4, ↓reduceIte]
-    · simp only [h4, ↓reduceIte]
-      rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
-
-theorem sign_long₂ {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
-    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < H.len + salt.length + 2) :
-    sign H G nB eB pB qB dPB dQB qInvB mHash salt = .invalid := by
-  simp only [sign, encodeK, encode]
-  rw [ifp (Or.inr h)]
-  rfl
-
-theorem sign_eq₂ (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest eB pB qB dPB dQB qInvB mHash salt : List Byte}
-    (h0 : n₀ ≠ 0) (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
-    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
-    (hfit : H.len + salt.length + 2 ≤ emLen) :
-    sign H G (n₀ :: rest) eB pB qB dPB dQB qInvB mHash salt =
-      Rsa.privateChecked (n₀ :: rest) eB ((List.range (n₀ :: rest).length).map
-        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
-          (Mgf1.mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits))))
-        pB qB dPB dQB qInvB := by
-  simp only [sign, encodeK_eq₂ H G hH hG h0 hm hb he hlo hdb hfit]
-
-end VG.Proof.RsaPss
-
 namespace VG.Proof.RsaPss.RISCV64.Sg
 
 open VG VG.RISCV64
@@ -286,7 +202,7 @@ theorem emLen_eq {s : State} (hk : 1 ≤ kk s) (h0 : s.mem (s.gpr .a2) ≠ 0) :
 theorem signOut_long {s : State} (hk : 1 ≤ kk s) (h0 : s.mem (s.gpr .a2) ≠ 0)
     (h : kk s - loN s < H.len + (stackArg s 11).toNat + 2) : signOut H G s = .invalid := by
   unfold signOut
-  refine RsaPss.sign_long₂ H G _ _ _ _ _ _ _ _ ?_
+  refine RsaPss.sign_long₂ G H _ _ _ _ _ _ _ _ ?_
   rw [emLen_eq hk h0, VG.Proof.RsaPkcs1Sig.bytesAt_length]
   exact h
 
@@ -313,7 +229,7 @@ theorem signOut_eq (hH : Proof.Mgf1.Valid H) (hG : Proof.Mgf1.Valid G) {s : Stat
   generalize hnB : Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat = nB at hel ⊢
   rw [bytesAt_cons _ _ hk] at hnB
   subst hnB
-  rw [RsaPss.sign_eq₂ H G hH hG h0 (lo := loN s) (db := dbS H s)
+  rw [RsaPss.sign_eq₂ G H hH hG h0 (lo := loN s) (db := dbS H s)
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl hel
     (by rw [List.length_cons, VG.Proof.RsaPkcs1Sig.bytesAt_length]; unfold loN; split <;> omega) rfl
     (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; exact hfit)]
