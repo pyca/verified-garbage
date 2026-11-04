@@ -130,34 +130,6 @@ variable {n : Nat}
 
 variable {s₁ s₂ : State}
 
-theorem init_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) :
-    RelCT isa (Two n s₁ s₂ (Slots initValues))
-      (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
-      (Two n s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : initValues.length ≤ 6) (Whole.valid_all (by decide))
-    (Proof.Sha512.X86.Stream.init_verified _).1 (Proof.Sha512.X86.Stream.init_verified _).2.1
-    Whole.init_nosp (by rw [Whole.init_stack]; decide) init_ready
-  intro a b ar aw br bw he hj
-  exact ⟨congrArg (· - 4) he, hj 0 (by decide)⟩
-
-theorem update_ct (h₁ : Facts 32 s₁) (h₂ : Facts 32 s₂) (pub : pkPub s₁ s₂) :
-    RelCT isa (Two 32 s₁ s₂ (Slots updateValues)) (.call "vg_sha512_update_scratch" Impl.Sha512.X86.Stream.update)
-      (Two 32 s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : updateValues.length ≤ 6) (Whole.valid_all (by decide))
-    Proof.Sha512.X86.Stream.Update.update_verified.1 Proof.Sha512.X86.Stream.Update.update_verified.2.1
-    Whole.update_nosp (by rw [Whole.update_stack]) update_ready
-  intro a b ar aw br bw he hj
-  exact ⟨congrArg (· - 4) he, hj⟩
-
-theorem finalize_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) :
-    RelCT isa (Two n s₁ s₂ (Slots finalizeValues)) (.call "vg_sha512_finalize_scratch" Impl.Sha512.X86.Stream.finalize)
-      (Two n s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : finalizeValues.length ≤ 6) (Whole.valid_all (by decide))
-    Proof.Sha512.X86.Stream.Finalize.finalize_verified.1 Proof.Sha512.X86.Stream.Finalize.finalize_verified.2.1
-    Whole.finalize_nosp (by rw [Whole.finalize_stack]) finalize_ready
-  intro a b ar aw br bw he hj
-  exact ⟨congrArg (· - 4) he, hj⟩
-
 theorem base_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) :
     RelCT isa (TwoS n s₁ s₂ (Slots baseValues)) (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase)
       (TwoS n s₁ s₂ fun _ _ => True) := by
@@ -195,15 +167,6 @@ theorem wipe_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s�
   exact WP.mono (Whole.Ctx.zeroWords hc (start := 8) (count := 56)
     (by have := h.toBounds.frame; omega) (by decide)) fun _ hu => ⟨hu.1, trivial⟩
 
-/-- The seed's hash. -/
-theorem hash_ct (h₁ : Facts 32 s₁) (h₂ : Facts 32 s₂) (pub : pkPub s₁ s₂) :
-    RelCT isa (TwoS 32 s₁ s₂ fun _ _ => True) hash (TwoS 32 s₁ s₂ fun _ _ => True) := by
-  have i := setup_ct h₁ h₂ pub initValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
-  have u := setup_ct h₁ h₂ pub updateValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
-  have f := setup_ct h₁ h₂ pub finalizeValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
-  exact two_syms ((i.seq (init_ct h₁ h₂ pub)).seq
-    ((u.seq (update_ct h₁ h₂ pub)).seq (f.seq (finalize_ct h₁ h₂ pub))))
-
 /-- The frame's body after any `first` whose runs are related. -/
 theorem bodyFrom_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s₁ s₂) {first : Prog isa}
     (hh : RelCT isa (TwoS n s₁ s₂ fun _ _ => True) first (TwoS n s₁ s₂ fun _ _ => True)) :
@@ -211,10 +174,6 @@ theorem bodyFrom_ct (h₁ : Facts n s₁) (h₂ : Facts n s₂) (pub : pkPub s�
   have b := setup_ct h₁ h₂ pub baseValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
   exact hh.seq ((two_syms (prune_ct h₁ h₂ pub)).seq (((two_syms b).seq (base_ct h₁ h₂ pub)).seq
       (two_syms (wipe_ct h₁ h₂ pub))))
-
-theorem body_ct (h₁ : Facts 32 s₁) (h₂ : Facts 32 s₂) (pub : pkPub s₁ s₂) :
-    RelCT isa (TwoS 32 s₁ s₂ fun _ _ => True) body (TwoS 32 s₁ s₂ fun _ _ => True) :=
-  bodyFrom_ct h₁ h₂ pub (hash_ct h₁ h₂ pub)
 
 /-- The frame around `bodyFrom first`, for any `first` whose runs are related. -/
 theorem frame_ct {post : State → State → Prop} {first : Prog isa}
@@ -229,9 +188,6 @@ theorem frame_ct {post : State → State → Prop} {first : Prog isa}
   have f₂ := facts p₂
   exact ⟨(bodyFrom_ct f₁ f₂ hp (hh f₁ f₂ hp) _ _ _ _ _ _
     ⟨⟨push_ctx p₁, push_ctx p₂, trivial, trivial⟩, rfl, rfl⟩ ea eb).1, trivial⟩
-
-theorem publicKey_ct : ConstantTime isa pkLocal.pre pkLocal.pub publicKey :=
-  frame_ct fun h₁ h₂ pub => hash_ct h₁ h₂ pub
 
 /-! ## The copy of the cached digest -/
 
@@ -308,32 +264,8 @@ def pkWideWith (n : Nat) (post : State → State → Prop) : Contract isa := { p
       (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ CombHeld s [out, scratch, stack]
 }
 
-def pkWide : Contract isa := pkWideWith 32 pkLocal.post
-
 def pkSatMem : Mem := fun a =>
   if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800d then 0x40 else 0
-
-def pkSatState : State where
-  gpr r := match r with | .esp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMemWith pkSatMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 12⟩]
-  syms _ := 0x100000
-
-theorem pkSat_arg (j : Nat) (hj : j < 3) :
-    arg pkSatState j = pkSatMem.readW (argAddr pkSatState j) 32 := by
-  unfold arg
-  apply Mem.readW_congr
-  intro b hb
-  change satMemWith pkSatMem _ = _
-  rw [satMemWith_out]
-  have : ∀ j < 3, ∀ b < 4, 8 * 32 * 96 ≤ (argAddr pkSatState j + BitVec.ofNat 64 b - 0x100000).toNat := by
-    decide
-  exact this j hj b (by omega)
 
 theorem pkWide_pre {post : State → State → Prop} (s : State) (h : (pkWideWith n post).pre s) :
     (pkLocalWith n post).pre (s.withRegions (pkRd n s) (pkWr s)) := by
@@ -343,62 +275,6 @@ theorem pkWide_pre {post : State → State → Prop} (s : State) (h : (pkWideWit
     Taint.sub_setWidth nb, CombHeld]
   exact ⟨True.intro, True.intro, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, no, ns, nc, nb, na, held⟩
 
-theorem pk_sat : (Spec.Ed25519.publicKeyContract (X86.abi.withConsts combConsts) 280).pre pkSatState := by
-  have hl := combWords_length
-  have a0 : arg pkSatState 0 = 0x1000 := (pkSat_arg 0 (by decide)).trans (by decide)
-  have a1 : arg pkSatState 1 = 0x2000 := (pkSat_arg 1 (by decide)).trans (by decide)
-  have a2 : arg pkSatState 2 = 0x4000 := (pkSat_arg 2 (by decide)).trans (by decide)
-  have held : TblWords ((pkSatState.syms combSym).setWidth 64) pkSatState.mem :=
-    satMemWith_held pkSatMem
-  generalize e : pkSatState = s
-  sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-    Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  subst s
-  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
-  · rw [hl]
-    intro r hr
-    change r ∈ [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 12⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · rw [hl]; exact Region.disjoint_of_sep (by decide)
-  · rw [hl]; exact Region.disjoint_of_sep (by decide)
-  · rw [a0, a1, a2]
-    refine ⟨rfl, rfl, ?_⟩
-    repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
-
-theorem pkWide_implies :
-    pkWide.Implies (Spec.Ed25519.publicKeyContract (X86.abi.withConsts combConsts) 280) where
-  pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, os, oc, oa, sc, -, ca, ro, -, rc, -,
-      ko, ks, kc, -, f0, f1, f2⟩ := h
-    refine ⟨?_, hw, os, oc, sc, oa.symm, ca.symm, ro, rc, ko, ks, kc, f0, f1, f2, h280, by omega,
-      held, hfit, ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hstk
-  post := by
-    intro s t _ h
-    sig_post [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts]
-    exact h
-  pub s t _ _ h := by
-    sig_pub [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts] at h
-    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
-    exact ⟨hsp, h0, h1, h2, hsy⟩
-  sat := ⟨pkSatState, pk_sat⟩
-
 end VG.Proof.Ed25519.X86.PublicKey
 end
 
@@ -406,31 +282,6 @@ namespace VG.Proof.Ed25519.X86.PublicKey
 open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
 open VG.Impl.Ed25519.X86 (combConsts)
 variable {n : Nat}
-
-theorem publicKey_verified :
-    Verified X86.target publicKey (Spec.Ed25519.publicKeyContract (X86.abi.withConsts combConsts) 280) := by
-  have hsat := pkWide_implies.sat_left
-  have satLocal : ∃ s, pkLocal.pre s := hsat.elim fun s h => ⟨_, pkWide_pre s h⟩
-  have verifiedLocal : Verified X86.target publicKey pkLocal :=
-    Verified.of_correct (fun _ h => publicKey_ok h) publicKey_ct (.refl satLocal)
-  apply Verified.of_implies (Verified.narrowTo verifiedLocal (pkRd 32) pkWr pkWide_pre
-    ?_ ?_ ?_ ?_ hsat) pkWide_implies
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.1, h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [pkRd, pkWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false] at hr ⊢
-    rcases hr with (rfl | rfl | rfl) | (rfl | rfl) <;> simp
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [pkWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp
-  · intro s t _ h
-    simpa only [pkWide, pkWideWith, pkLocal, pkLocalWith, arg_withRegions, State.withRegions_mem] using h
-  · intro s t _ _ h
-    simpa only [pkWide, pkWideWith, pkLocal, pkLocalWith, pkPub, arg_withRegions, State.withRegions_gpr,
-      State.withRegions_syms] using h
 
 end VG.Proof.Ed25519.X86.PublicKey
 

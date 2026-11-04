@@ -44,10 +44,6 @@ def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
   post := post
   pub := pkPub
 
-def pkLocal : Contract isa := pkLocalWith 32 fun s t =>
-  Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
-
 variable {n : Nat}
 
 abbrev esp (s : State) : BitVec 32 := s.gpr .esp - BitVec.ofNat 32 256
