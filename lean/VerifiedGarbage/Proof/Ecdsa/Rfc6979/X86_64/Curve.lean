@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
-public import VerifiedGarbage.Impl.Sha256.X86_64.Stream
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -68,7 +67,9 @@ def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
 compression function, for scalars of `E` (with `h` above the frame's
 pointers if `hHigh`). -/
 def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
-  H := ⟨Impl.Sha256.X86_64.Stream.params, 32, 104, "", .block [], "", .block [], "", "", "", "", ""⟩
+  D := 64
+  B := 128
+  f := ⟨[], [], []⟩
   w := E.n
   len := E.C.len
   n := E.C.n
@@ -84,8 +85,9 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
+  /-- Whether the scalars are longer than any hash function's output
+  (P-521's), so that several `V`s make a candidate whatever the hash
+  function (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
   wide : Bool
   /-- Scalars of 4, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
