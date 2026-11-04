@@ -34,6 +34,8 @@ and the octets it consumed.
 
 namespace VG.Proof.RsaKeyGen.X86_64.Search
 
+open VG.Proof.RsaKeyGen.SearchFrame
+
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.MillerRabin.X86_64
 open VG.Impl.RsaKeyGen.X86_64.Search

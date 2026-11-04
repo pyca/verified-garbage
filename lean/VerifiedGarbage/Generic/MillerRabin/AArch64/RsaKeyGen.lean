@@ -7,6 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Verified
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
@@ -356,6 +357,12 @@ def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.RsaKeyGen.AArch64.Candidate.codeWith v.mont.mm v.kernel.run
     verified := Proof.RsaKeyGen.AArch64.sharedCandidate_verified v.mont v.kernel
+    features := v.features },
+  Spec.RsaKeyGen.primeSearchApi.artifact AArch64.target {
+    suffix := v.suffix
+    stack := 208
+    code := Proof.RsaKeyGen.AArch64.Search.searchCode v
+    verified := Proof.RsaKeyGen.AArch64.Search.search_verified v
     features := v.features }]
 
 end VG.Generic.MillerRabin.AArch64.RsaKeyGen

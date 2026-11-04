@@ -17,6 +17,7 @@ frame of 40, the call's return address and the candidate's own 128.
 
 namespace VG.Proof.RsaKeyGen.X86_64.Search
 
+
 open VG VG.X86_64
 open VG.Spec.Rsa (bytesAt wordsAt i2osp)
 open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeLimit primeLenValid PrimeSearchResult)
