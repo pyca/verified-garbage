@@ -241,4 +241,136 @@ theorem sign_sat (hok : OK vs) :
   · exact ⟨_, sign_sat_of hw hl (by decide) (by rw [e]; rfl) signSat_b28⟩
   · exact ⟨_, sign_sat_of hw hl (by decide) (by rw [e]; rfl) signSat_b32⟩
 
+/-! ## Verification with a precomputed key -/
+
+/-- A state meeting verification's precondition but for the tables: a 512-bit
+modulus, one-byte `e`, a digest of `dl` bytes, 16 words of `pre` at
+`0x5000`, the stack arguments at `0x10008`, and the tables' addresses
+`0x300000` and `0x300100`. -/
+def verifySatBase (dl : Nat) : State where
+  gpr r := match r with
+    | .rdi => 0x2000 | .rsi => 64 | .rdx => 0x3000 | .rcx => 1 | .r8 => 0x4600 | .r9 => BitVec.ofNat 64 dl
+    | .rsp => 0x10000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := bif Nat.beq a.toNat 0x10009 then 0x40 else bif Nat.beq a.toNat 0x10010 then 0x40
+    else bif Nat.beq a.toNat 0x1002A then 0x02 else bif Nat.beq a.toNat 0x10030 then 0x20
+    else bif Nat.beq a.toNat 0x10031 then 0x08 else bif Nat.beq a.toNat 0x10039 then 0x50
+    else bif Nat.beq a.toNat 0x10040 then 16 else bif Nat.beq a.toNat 0x1004A then 0x30
+    else bif Nat.beq a.toNat 0x10051 then 0x01 else bif Nat.beq a.toNat 0x10052 then 0x30 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, dl⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩, ⟨0x300100, 40⟩,
+    ⟨0x10008, 80⟩]
+  wr := [⟨0x20000, 2080 * 8⟩]
+
+/-- The stack arguments of `verifySatBase dl`. -/
+def verifyArgs : Nat → BitVec 64
+  | 0 => 0x4000 | 1 => 64 | 2 => 0 | 3 => 0 | 4 => 0x20000 | 5 => 2080 | 6 => 0x5000 | 7 => 16
+  | 8 => 0x300000 | _ => 0x300100
+
+theorem verifySat_args (dl : Nat) : ∀ j < 10, (stackArgAddr (verifySatBase dl) j).toNat + 8 ≤ 0x300000 :=
+  fun j hj => by
+    have c0 : (65536 : Addr).toNat = 65536 := rfl
+    simp only [stackArgAddr, verifySatBase, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+
+/-- Verification's precondition, from the facts of a state. -/
+theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : State}
+    (hg : s.gpr = (verifySatBase dl).gpr) (ha : ∀ j < 10, stackArg s j = verifyArgs j)
+    (hrd : s.rd = (verifySatBase dl).rd) (hwr : s.wr = (verifySatBase dl).wr)
+    (hH : ∃ T ∈ tsH, Abi.tableHeld 64 s.mem 0x300000 (FnTable.words isa s T))
+    (hG : ∃ T ∈ tsG, Abi.tableHeld 64 s.mem 0x300100 (FnTable.words isa s T))
+    (hsy : (tabFns tsH ++ tabFns tsG).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
+    (hd : Spec.RsaPss.digestLenOk 64 s.mem 0x300000 (BitVec.ofNat 64 dl)) :
+    (VG.Proof.RsaPss.X86_64.verifyC tsH tsG).pre s := by
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
+  have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
+  have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
+  have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
+    simp only [stackArgAddr, hsp]
+  simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
+    ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), hg, hrd, hwr, hA,
+    verifyArgs]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left']
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | assumption
+    | (simp only [Spec.Rsa.lenValid]; decide)
+    | (rw [hdl']; rfl)
+    | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
+    | (rw [hdl']; simp; omega)
+    | skip
+
+theorem verify_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 2 ^ 32) {dl : Nat} (hdl : dl ≤ 64)
+    (hlen : w.mgf.G.len = dl) (hb : ∀ j < 10, stackArg (verifySatBase dl) j = verifyArgs j) :
+    (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre
+      (withTabs (verifySatBase dl) vs w) :=
+  verify_pre_of hdl rfl (fun j hj => (withTabs_arg _ vs w (verifySat_args dl j hj)).trans (hb j hj)) rfl rfl
+    ⟨_, List.mem_map_of_mem hw, withTabs_heldH _ vs w⟩ ⟨_, List.mem_map_of_mem hw, withTabs_heldG _ vs w⟩
+    (symsOf_distinct hl) fun H hH => by
+      have hA := MdHashTable.X86_64.hashAt_tableOf
+        (MdHashTable.X86_64.held_tableOf (withTabs_heldH (verifySatBase dl) vs w)).2.2.2.1
+      cases hH.symm.trans hA
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen]
+
+theorem verifySat_b16 : ∀ j < 10, stackArg (verifySatBase 16) j = verifyArgs j := by decide
+theorem verifySat_b20 : ∀ j < 10, stackArg (verifySatBase 20) j = verifyArgs j := by decide
+theorem verifySat_b28 : ∀ j < 10, stackArg (verifySatBase 28) j = verifyArgs j := by decide
+theorem verifySat_b32 : ∀ j < 10, stackArg (verifySatBase 32) j = verifyArgs j := by decide
+theorem verifySat_b48 : ∀ j < 10, stackArg (verifySatBase 48) j = verifyArgs j := by decide
+theorem verifySat_b64 : ∀ j < 10, stackArg (verifySatBase 64) j = verifyArgs j := by decide
+
+theorem verify_sat (hok : OK vs) :
+    ∃ s, (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre s := by
+  obtain ⟨w, hw, -⟩ := hok.2.2.2.1 0 (by decide)
+  have hl := hok.2.2.2.2
+  have hm := w.mgf.mem
+  simp only [Pbkdf2.Md.X86_64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
+  rcases hm with e | e | e | e | e | e | e | e
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b16⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b20⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b28⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b32⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b48⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b64⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b28⟩
+  · exact ⟨_, verify_sat_of hw hl (by decide) (by rw [e]; rfl) verifySat_b32⟩
+
+/-! ## The instances -/
+
+open VG.Proof.Rsa.X86_64 (chkContract PublicImpl)
+
+/-- `vg_rsa_pss_sign`, with the tables of `vs`, calling the private-key
+operation `privC`. -/
+theorem sign_ok (hok : OK vs) {privN : String} {privC : Prog isa}
+    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
+    (hct : ConstantTime isa chkContract.pre chkContract.pub privC) (hspC : SpSafe privC)
+    (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
+    Verified X86_64.target
+      (Impl.RsaPss.X86_64.signC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) privN privC)
+      (signC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)) :=
+  signC_verified (fun _ h => sgood_of hok h) (fun i hi => (enc_safe hok i hi).1) (fun i hi => (enc_safe hok i hi).2)
+    hct hdC (ckH Impl.Md5.X86_64.Stream.params 16) (sign_sat hok) hv hspC
+
+/-- `vg_rsa_pss_verify_precomputed`, with the tables of `vs`, calling the
+public-key operation `v`. -/
+theorem verify_ok (hok : OK vs) (v : PublicImpl) :
+    Verified X86_64.target
+      (Impl.RsaPss.X86_64.verifyC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) v.name v.code)
+      (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)) :=
+  Pc.codeC_verified (fun _ h => kgood_of hok h) (fun i hi => (chk_safe hok i hi).1) (fun i hi => (chk_safe hok i hi).2)
+    (ckH Impl.Md5.X86_64.Stream.params 16) (verify_sat hok) v
+
 end VG.Proof.RsaPss.X86_64
