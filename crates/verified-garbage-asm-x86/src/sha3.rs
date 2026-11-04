@@ -3,45 +3,7 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkZP3//4uEJKACAACJRCQEi4QkpAIAAIlEJAiLhCSoAgAAiUQkDIuEJKwCAACJRCQQi4QksAIAAIlEJBSJ4IPAHIlEJBiLRCQYiZgAAgAAibAEAgAAibgIAgAAiagMAgAAicWLXCQEi0wkDAHZiY0QAgAAi0wkCImNFAIAAIt0JBCLfCQUhf8="
-je 20f
-22:
-.base64 "i40QAgAAi5UUAgAAD7YGMwGIAYPBAYmNEAIAAImVFAIAAIPGAYPvAYnIKdg50A=="
-je 23f
-jmp 24f
-23:
-.base64 "iZ0QAgAAVVM="
-call {vg_keccak_f1600}
-.base64 "WFg="
-24:
-.base64 "hf8="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i4UQAgAAKdiJ6YuZAAIAAIuxBAIAAIu5CAIAAIupDAIAAI2kJJwCAADD"
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
-}
-
-/// `vg_keccak_absorb`, with its working space in `*scratch`.
+/// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`. `*scratch` is its working space.
 ///
 /// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///

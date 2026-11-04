@@ -2200,7 +2200,7 @@ call {vg_keccak_squeeze}
 .insn 4, 0x548dbd83
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
@@ -4967,7 +4967,7 @@ call {vg_mldsa_hint_bit_pack}
 .insn 2, 0x8082
 .option pop",
         vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
@@ -5121,7 +5121,7 @@ call {vg_mldsa65_sign}
 21:
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mldsa65_sign = sym super::mldsa65::vg_mldsa65_sign,
@@ -7043,7 +7043,7 @@ bnez s6, 236b
         vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
         vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
     )
@@ -7179,7 +7179,7 @@ call {vg_mldsa65_verify}
 21:
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
         vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
