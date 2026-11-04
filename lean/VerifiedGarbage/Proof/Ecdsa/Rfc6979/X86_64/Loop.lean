@@ -31,7 +31,7 @@ variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 64} {m₀ : Mem
 /-! ## The run's values -/
 
 /-- The number of `V`s in a candidate. -/
-abbrev RfcHash.nb (P : RfcHash) : Nat := if P.R.wide then 2 else 1
+abbrev RfcHash.nb (P : RfcHash) : Nat := if P.wide then (cfgOf P).m else 1
 
 /-- The private key, the digest and its integer. -/
 abbrev xOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m₀ : Mem) : Nat :=
@@ -93,7 +93,7 @@ theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn 
   exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega_arith)
 
 theorem hok_of (hk : CoreOk P L) : HOk P L :=
-  ⟨by rw [hk.1], fun _ => by rw [P.len], hk.2.2.1⟩
+  ⟨by rw [hk.1], hk.2.2.2.2.1, hk.2.2.2.2.2, hk.2.2.1⟩
 
 /-- The count, kept by memory that changed elsewhere. -/
 theorem cnt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m')
@@ -108,10 +108,10 @@ theorem kvw_cnt (hL : L.Ok) : ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.o
 
 /-- What a candidate changes: `scratch`, the stack below the frame, `K` and
 `V`, and, if two `V`s make it, the candidate above the pointers. -/
-abbrev CW (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := if P.R.wide then CWW L else KVW L
+abbrev CW (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := if P.wide then CWW L else KVW L
 
 theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW P L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 200, 8⟩ r := by
-  cases hw : P.R.wide
+  cases hw : P.wide
   · simp only [CW, hw, Bool.false_eq_true, ite_false]; exact kvw_cnt hL
   · simp only [CW, hw, ite_true, CWW, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
@@ -122,7 +122,7 @@ theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW P L, Region.Disjoint ⟨L.B + BitVec.o
 /-- What `core` changes: `out`, `scratch` and the return addresses of it and its calls. -/
 abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩]
 
-theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 240 + 8 * L.e) :
+theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 248 + 8 * L.e) :
     ∀ r ∈ CoreW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
   simp only [CoreW, List.mem_cons, List.not_mem_nil, or_false]
   have := L.he
@@ -134,12 +134,12 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 2
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨
-    (P.R.wide = true ∧ r = ⟨L.B + BitVec.ofNat 64 312, 72⟩) ∨ r = ⟨L.B + BitVec.ofNat 64 8, 16⟩
+    (P.wide = true ∧ r = ⟨L.B + BitVec.ofNat 64 384, 128⟩) ∨ r = ⟨L.B + BitVec.ofNat 64 8, 16⟩
 
 theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) :
     Region.Disjoint ⟨dgArg P L, P.Q⟩ r := by
   have hQ := P.sizes
-  cases hw : P.R.wide
+  cases hw : P.wide
   · have hn := hk.2.1 hw
     simp only [dgArg, hw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
@@ -151,17 +151,22 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
     · exact (hL.stk_DG (by omega_arith)).symm.sub_left hD
     · rw [hw] at h; exact absurd h (by decide)
     · exact (hL.stk_DG (by omega_arith)).symm.sub_left hD
-  · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
+  · obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -, -, -⟩ := hQ
+    have he : L.e = 34 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
+    have key : ∀ o, 240 ≤ o → o + 66 ≤ 384 → Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ r := by
+      intro o h₁ h₂
+      rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩ | rfl
+      · exact hL.stk_SCR (by omega_arith)
+      · exact hL.stk_OUT (by omega_arith)
+      · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     simp only [dgArg, hw, ite_true]
-    rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩ | rfl
-    · exact hL.stk_SCR (by omega_arith)
-    · exact hL.stk_OUT (by omega_arith)
-    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+    split
+    · exact key 240 (by decide) (by decide)
+    · exact key 312 (by decide) (by decide)
 
 theorem DgOk.frame {m m' : Mem} (h : DgOk P L m₀ m) {ws : List Region} (hf : Frame ws m m')
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨dgArg P L, P.Q⟩ r) : DgOk P L m₀ m' := by
@@ -223,8 +228,31 @@ theorem genT_two (H : Spec.Hmac.HashFunction) (K V : List Byte) :
       (Spec.Hmac.hmac H K V ++ (Spec.Hmac.hmac H K (Spec.Hmac.hmac H K V) ++ []),
         Spec.Hmac.hmac H K (Spec.Hmac.hmac H K V)) := rfl
 
-/-- The candidate: `V = HMAC_K(V)` (twice if `wide`), and `k`, whose number
-is `bits2int` of the candidate, where `core` reads it. -/
+/-- If the hash is shorter than the scalars, the `V`s of a candidate hold
+the scalars' bytes, in at most 128 bytes. -/
+theorem m_facts (P : RfcHash) (hw : P.wide = true) :
+    P.Q ≤ (cfgOf P).m * P.H.D ∧ (cfgOf P).m * P.H.D ≤ 128 := by
+  have hz := P.sizes
+  have hl := P.R.nBits_len
+  have hQD : P.H.D < P.Q := by simpa [RfcHash.wide] using hw
+  have hs : (cfgOf P).sh = P.R.sh := rfl
+  have hq : (cfgOf P).len = P.Q := rfl
+  have hd : (cfgOf P).D = P.H.D := rfl
+  have hD0 : 0 < 8 * P.H.D := by omega
+  have e₁ := Nat.div_mul_le_self (8 * P.Q - P.R.sh + 8 * P.H.D - 1) (8 * P.H.D)
+  have e₂ := Nat.lt_div_mul_add (a := 8 * P.Q - P.R.sh + 8 * P.H.D - 1) hD0
+  simp only [Cfg.m, hs, hq, hd]
+  generalize (8 * P.Q - P.R.sh + 8 * P.H.D - 1) / (8 * P.H.D) = m at e₁ e₂ ⊢
+  rw [Nat.mul_comm 8 P.H.D, ← Nat.mul_assoc] at e₁ e₂
+  have h := P.hDB
+  simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
+  rcases h with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] at e₁ e₂ hQD ⊢ <;>
+    constructor <;> omega
+
+/-- The candidate: `V = HMAC_K(V)`, and `k`, whose number is `bits2int` of
+the candidate, where `core` reads it; or, if the hash is shorter than the
+scalars, `m` of them copied to `T`, its first `Q` bytes shifted right by
+`sh` bits. -/
 theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     (hS : SavedK P L t.mem (kOf P L t.mem)) :
     WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ Frame (CW P L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
@@ -232,31 +260,58 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (kArg P L) P.Q) =
         Spec.Ecdsa.Rfc6979.bits2int P.R.E.C
           (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nb (vOf P L t.mem)).1 := by
-  cases hw : P.R.wide
+  have hT : TabL P L := (hok_of hk).2
+  cases hw : P.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
-      have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_arith
+      have h₁ := (P.R.sizesA (P.curveA hw)).2.1; have h₂ := (P.R.sizesA (P.curveA hw)).2.2.1
+      show _ = 8 * P.R.E.C.len; omega_arith
     simp only [RfcHash.nb, CW, hw, Bool.false_eq_true, ite_false, kArg]
-    have hc' : (cfgOf P).cand = (cfgOf P).hmacVR := by simp only [Cfg.cand, cfgOf, hw]; rfl
+    have hc' : (cfgOf P).cand = (cfgOf P).hmacVR := by simp only [Cfg.cand, cfgOf_wide, hw]; rfl
     rw [hc', genT_one]
-    refine WP.mono (hmacVR_ok hL hc hS) fun u ⟨hcu, hf, hk', hv, _⟩ => ⟨hcu, hf, hk', hv, ?_⟩
+    refine WP.mono (hmacVR_ok hL hT hc hS) fun u ⟨hcu, hf, hk', hv, _⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     rw [Spec.Ecdsa.Rfc6979.bits2int, List.append_nil, hashToInt_takeQ hB (by rw [mac_length]; exact hQD)]
     refine congrArg Spec.Weierstrass.ofBytes ?_
     rw [bytesAt_take _ _ hQD]
     exact congrArg (List.take P.Q) hv
   · have hLe : L.e = P.e := hk.2.2.1
     have hl := P.R.nBits_len
+    obtain ⟨hQm, hm⟩ := m_facts P hw
     simp only [RfcHash.nb, CW, hw, ite_true, kArg]
-    rw [genT_two]
-    refine WP.mono (candW_ok hL hLe hw hc hS) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
-    obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
-    rw [hb, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_arith)
-      (by simp only [List.length_append, mac_length, List.length_nil]; omega_arith), List.append_nil,
-      ofBytes_toBytes _ _ (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (by
-        have := ofBytes_lt ((P.mac (kOf P L t.mem) (vOf P L t.mem) ++
-          P.mac (kOf P L t.mem) (P.mac (kOf P L t.mem) (vOf P L t.mem))).take P.Q)
-        rwa [List.length_take, Nat.min_eq_left (by simp only [List.length_append, mac_length]; omega_arith)] at this)),
-      show P.R.sh = 8 * P.R.E.C.len - _ from hl.2.2]
+    have hc' : (cfgOf P).cand = .seq ((cfgOf P).candW (cfgOf P).m) (.block (cfgOf P).candTop) := by
+      simp only [Cfg.cand, cfgOf_wide, hw, ite_true]
+    rw [hc']
+    refine WP.seq (WP.mono (candW_ok hL hLe hw hT (cfgOf P).m hm hc hS) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁, hb₁, _⟩ => ?_)
+    have hTl := genT_length P (kOf P L t.mem) (cfgOf P).m (vOf P L t.mem)
+    have hbits : Spec.Ecdsa.Rfc6979.bits2int P.R.E.C
+        (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) (cfgOf P).m (vOf P L t.mem)).1 =
+        Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 384) P.Q) >>> P.R.sh := by
+      rw [Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_arith)
+        (by rw [hTl]; exact hQm), ← hb₁, ← bytesAt_take _ _ hQm, show 8 * P.Q - Spec.Ecdsa.nBits P.R.E.C = P.R.sh by
+          rw [hl.2.2]]
+    by_cases hsh : P.R.sh = 0
+    · have e : (cfgOf P).candTop = [] := by simp only [Cfg.candTop, show (cfgOf P).sh = 0 from hsh, ite_true]
+      rw [e]
+      refine WP.block_nil ⟨hc₁, hf₁, hk₁, hv₁, ?_⟩
+      rw [hbits, hsh, Nat.shiftRight_zero]
+    · refine WP.mono (candTop_ok hL hLe hw hsh hc₁) fun u ⟨hcu, hf, hb⟩ => ?_
+      have kv : ∀ {o : Nat}, 24 ≤ o → o + P.H.D ≤ 152 →
+          Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 o) P.H.D =
+            Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 o) P.H.D := fun h₁ h₂ =>
+        bytesAt_frame hf (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact hL.stk_scr (by nums) (by decide)
+          · exact Offset.disjoint _ (by omega) (by nums) (by nums)) (by nums)
+      refine ⟨hcu, hf₁.trans (hf.sub fun r hr => ?_), (kv (by decide) (by nums)).trans hk₁,
+        (kv (by decide) (by nums)).trans hv₁, ?_⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨L.SCR, by simp [CWW], Offset.sub_base _ (by decide)⟩
+        · exact ⟨⟨L.B + BitVec.ofNat 64 384, 128⟩, by simp [CWW], Region.sub_prefix (by nums)⟩
+      · rw [hb, hbits, ofBytes_toBytes _ _ (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (by
+          have := ofBytes_lt (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 384) P.Q)
+          rwa [length_bytesAt] at this))]
 
 /-! ## One candidate -/
 
@@ -304,7 +359,7 @@ theorem kvw_apart : ∀ r ∈ KVW L, DgApart P L r := by
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> simp [DgApart]
 
 theorem cw_apart : ∀ r ∈ CW P L, DgApart P L r := by
-  cases hw : P.R.wide
+  cases hw : P.wide
   · simp only [CW, hw, Bool.false_eq_true, ite_false]; exact kvw_apart
   · simp only [CW, hw, ite_true, CWW, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> simp [DgApart, hw]
