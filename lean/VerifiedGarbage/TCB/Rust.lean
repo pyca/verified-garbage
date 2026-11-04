@@ -1364,8 +1364,9 @@ the pointer-sized words `*const ()`) then its words of data (`usize`),
 `i * size_of::<usize>()`, as `Abi.tableHeld` says, with fields private
 to this module, so that only the statics the emitter writes, in its
 submodules, are of the type; and each table's module, whose items it
-re-exports. -/
-def fnTablesMod (t : String) (ts : List FnTable) : String :=
+re-exports by name: its static, and the constant of its CPU features
+(`fnTableFile`) if `features` gives the table any. -/
+def fnTablesMod (t : String) (ts : List FnTable) (features : FnTable → List String) : String :=
   let ifaces := dedup (ts.map (·.iface))
   header ++ s!"//! The tables of functions of the verified functions for `{t}` (`Artifact.tables`).\n" ++
   "#![allow(dead_code, unused_imports)]\n" ++
@@ -1383,7 +1384,10 @@ def fnTablesMod (t : String) (ts : List FnTable) : String :=
       pub const fn as_ptr(&'static self) -> *const [usize; {k}] \{\n        \
       core::ptr::from_ref(self).cast()\n    }\n}\n") ++
   String.join (ts.map fun T =>
-    s!"\n#[rustfmt::skip]\nmod {fnTableModule T.name};\npub use {fnTableModule T.name}::*;\n")
+    let m := fnTableModule T.name
+    let items := if (features T).isEmpty then T.name
+      else s!"\{{T.name}, {T.name.toUpper}_FEATURES}"
+    s!"\n#[rustfmt::skip]\nmod {m};\npub use {m}::{items};\n")
 
 /-- The file of the table of functions `T`, needing the CPU features
 `features`: the constant of them (`featuresConst`), and the static, under
@@ -1617,7 +1621,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     (match fts, arts.head? with
       | [], _ | _, none => []
       | fts, some p₀ =>
-        (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts) ::
+        (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts (fnTableFeatures arts hs t)) ::
           fts.map fun T => (s!"{src}/fn_tables/{fnTableModule T.name}.rs",
             fnTableFile p₀.art.target T (fnTableFeatures arts hs t T) (moduleOf t))) ++
     (hs.map fun h => Task.spawn fun _ =>

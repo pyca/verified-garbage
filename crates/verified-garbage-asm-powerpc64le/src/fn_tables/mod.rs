@@ -21,28 +21,28 @@ impl Hash {
 
 #[rustfmt::skip]
 mod vg_hash_sha1;
-pub use vg_hash_sha1::*;
+pub use vg_hash_sha1::VG_HASH_SHA1;
 
 #[rustfmt::skip]
 mod vg_hash_sha224;
-pub use vg_hash_sha224::*;
+pub use vg_hash_sha224::VG_HASH_SHA224;
 
 #[rustfmt::skip]
 mod vg_hash_sha256;
-pub use vg_hash_sha256::*;
+pub use vg_hash_sha256::VG_HASH_SHA256;
 
 #[rustfmt::skip]
 mod vg_hash_sha384;
-pub use vg_hash_sha384::*;
+pub use vg_hash_sha384::VG_HASH_SHA384;
 
 #[rustfmt::skip]
 mod vg_hash_sha512;
-pub use vg_hash_sha512::*;
+pub use vg_hash_sha512::VG_HASH_SHA512;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_224;
-pub use vg_hash_sha512_224::*;
+pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
 
 #[rustfmt::skip]
 mod vg_hash_sha512_256;
-pub use vg_hash_sha512_256::*;
+pub use vg_hash_sha512_256::VG_HASH_SHA512_256;

@@ -258,8 +258,13 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
 "
 
 #guard Rust.fnTableFile target tA [] (fun n => s!"test::{n}") == expectedA
-#guard ((Rust.fnTablesMod "x86_64" (Rust.fnTables [artifact])).splitOn
+#guard ((Rust.fnTablesMod "x86_64" (Rust.fnTables [artifact]) fun _ => []).splitOn
   "pub struct TestFns {\n    fns: [*const (); 1],\n    data: [usize; 1],\n}").length == 2
+-- Each table's items are re-exported by name: its static, and its features' constant if any.
+#guard ((Rust.fnTablesMod "x86_64" [tA] fun _ => []).splitOn
+  "mod vg_test_fns_a;\npub use vg_test_fns_a::VG_TEST_FNS_A;\n").length == 2
+#guard ((Rust.fnTablesMod "x86_64" [tA] fun _ => ["avx2"]).splitOn
+  "pub use vg_test_fns_a::{VG_TEST_FNS_A, VG_TEST_FNS_A_FEATURES};\n").length == 2
 
 -- Both functions the indirect call may reach are emitted, as internal functions.
 #guard internals.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]
