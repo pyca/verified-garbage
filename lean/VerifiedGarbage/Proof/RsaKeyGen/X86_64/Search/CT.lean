@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTCode
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Safety
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
@@ -328,5 +330,105 @@ theorem search_classify_ct : RelCT isa (Two CandCT) classify (fun _ _ => True) :
     refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
     · exact (search_short_ct.mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.1.1.1.at, h₂.1.1.1.at⟩) fun _ _ h => h)
     · exact (search_reject_ct.mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.1.1, h₂.1.1⟩) fun _ _ h => h)
+
+/-! ## The candidate's call -/
+
+open VG.Proof.Ffdh.X86_64.Generation (allocated allocated_rsp allocated_reg frame_alloc_ct)
+
+/-- A loop state at the point that calls a candidate. -/
+def ReadyCT (q : SearchPoint) (s : State) : Prop := SearchCTL q s ∧ q.remaining ≠ 0
+
+/-- The candidate's entry, before the call. -/
+def CallCT (q : SearchPoint) (u : State) : Prop :=
+  ∃ original s, SearchLive q.inputs original q.used q.remaining s ∧
+    (tailOf q.inputs original q.used q.remaining).trace = q.trace ∧ q.remaining ≠ 0 ∧
+    CallRegs q.inputs u ∧ u.mem = writeFrame s.mem (q.inputs.F - BitVec.ofNat 64 40) (callValues q.inputs q.used) ∧
+    Keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (allocated 40 s) u
+
+theorem CallCT.rsp {q : SearchPoint} {u : State} (h : CallCT q u) :
+    u.gpr .rsp = q.inputs.sp - BitVec.ofNat 64 200 := by
+  obtain ⟨o, s, hl, -, -, -, -, k⟩ := h
+  rw [k.gpr (by decide), allocated_rsp, hl.rsp, F_40]
+
+/-- What the candidate's timing may depend on, from the point. -/
+theorem call_leak {q : SearchPoint} {u : State} (h : CallCT q u) :
+    candLeak (callState q.inputs q.used u) = q.inputs.eB.map (·.toNat) ++ q.leak := by
+  have hu := h.rsp
+  obtain ⟨o, s, hl, ht, hr, ha, hm, -⟩ := h
+  have hf := hl.callFacts
+  obtain ⟨he, hpb, hrand⟩ := call_inputs hl hm hu
+  obtain ⟨a0, a1, a2, -, -⟩ := call_args (used := q.used) hu hm
+  obtain ⟨-, hsi, -, hcx, h8, h9⟩ := ha
+  have t8 : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega)]
+  have tl : (BitVec.ofNat 64 q.inputs.len).toNat = q.inputs.len := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
+  have tp : (BitVec.ofNat 64 q.inputs.plen).toNat = q.inputs.plen := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
+  have tr : (BitVec.ofNat 64 (q.inputs.randLen - q.used)).toNat = q.inputs.randLen - q.used := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega)]
+  simp only [candLeak, call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
+    call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
+    hsi, hcx, h8, h9, a0, a1, a2, t8, tl, tp, tr, he, hpb, hrand]
+  rw [SearchCTL.leak ht hr]
+
+theorem search_call_ct (v : RoundImpl) : RelCT isa (Two CallCT) (candidateCall v) (fun _ _ => True) := by
+  have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
+  refine RelCT.callEx (k := sharedCandContract)
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (sharedCode_constantTime v.mont hmc (Kernel.called v)) fun u₁ u₂ ⟨q, h₁, h₂⟩ => ?_
+  have hu₁ := h₁.rsp
+  have hu₂ := h₂.rsp
+  have hl₁ := call_leak h₁
+  have hl₂ := call_leak h₂
+  obtain ⟨o₁, s₁, l₁, -, -, a₁, m₁, k₁⟩ := h₁
+  obtain ⟨o₂, s₂, l₂, -, -, a₂, m₂, k₂⟩ := h₂
+  obtain ⟨b0, b1, b2, b3, b4⟩ := call_args (used := q.used) hu₁ m₁
+  obtain ⟨c0, c1, c2, c3, c4⟩ := call_args (used := q.used) hu₂ m₂
+  obtain ⟨di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩ := a₁
+  obtain ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂⟩ := a₂
+  refine ⟨callReads q.inputs q.used, callWrites q.inputs, callReads q.inputs q.used, callWrites q.inputs,
+    call_cand_pre l₁.callFacts hu₁ ⟨di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩ m₁,
+    call_cand_pre l₂.callFacts hu₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂⟩ m₂, ?_,
+    call_covers_reads l₁ k₁.2.1 k₁.2.2, call_covers_writes l₁ k₁.2.2,
+    call_covers_reads l₂ k₂.2.1 k₂.2.2, call_covers_writes l₂ k₂.2.2, hu₁.trans hu₂.symm⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_, hl₁.trans hl₂.symm⟩
+  · rw [call_gpr (by decide), call_gpr (by decide), di₁, di₂]
+  · rw [call_gpr (by decide), call_gpr (by decide), si₁, si₂]
+  · rw [call_gpr (by decide), call_gpr (by decide), dx₁, dx₂]
+  · rw [call_gpr (by decide), call_gpr (by decide), cx₁, cx₂]
+  · rw [call_gpr (by decide), call_gpr (by decide), r8₁, r8₂]
+  · rw [call_gpr (by decide), call_gpr (by decide), r9₁, r9₂]
+  · rw [call_rsp hu₁, call_rsp hu₂]
+  · match i, hi with
+    | 0, _ => exact b0.trans c0.symm
+    | 1, _ => exact b1.trans c1.symm
+    | 2, _ => exact b2.trans c2.symm
+    | 3, _ => exact b3.trans c3.symm
+    | 4, _ => exact b4.trans c4.symm
+
+def AllocCT (q : SearchPoint) (u : State) : Prop := ∃ s, ReadyCT q s ∧ u = allocated 40 s
+
+theorem alloc_pins : Pins AllocCT [.r12, .rsp] := by
+  rintro q _ _ ⟨a, ⟨h₁, _⟩, rfl⟩ ⟨b, ⟨h₂, _⟩, rfl⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [allocated_reg _ _ _ (by decide), allocated_reg _ _ _ (by decide)]
+    exact search_ctl_pins q _ _ h₁ h₂ .r12 (by simp)
+  · rw [allocated_rsp, allocated_rsp, search_ctl_pins q _ _ h₁ h₂ .rsp (by simp)]
+
+private theorem arguments_ready (q : SearchPoint) (u : State) (h : AllocCT q u) :
+    WP isa (.block arguments) u (CallCT q) := by
+  obtain ⟨s, ⟨⟨original, h, ht⟩, hr⟩, rfl⟩ := h
+  exact WP.mono (search_arguments_ok h) fun _ ⟨ha, hm, k⟩ => ⟨original, s, h, ht, hr, ha, hm, k⟩
+
+theorem search_candidate_run_ct (v : RoundImpl) :
+    RelCT isa (Two ReadyCT) (candidateRun (candidateCall v)) (fun _ _ => True) := by
+  unfold candidateRun
+  apply frame_alloc_ct
+  refine (RelCT.seq (two_piece [.r12, .rsp] alloc_pins (by taint_decide) arguments_ready)
+    (search_call_ct v)).mono ?_ (fun _ _ h => h)
+  rintro _ _ ⟨s, t, ⟨q, h₁, h₂⟩, rfl, rfl⟩
+  exact ⟨q, ⟨s, h₁, rfl⟩, ⟨t, h₂, rfl⟩⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Search
