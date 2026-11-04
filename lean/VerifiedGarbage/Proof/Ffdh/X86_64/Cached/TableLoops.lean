@@ -86,34 +86,23 @@ theorem Same.of_slot {T : TabP} {as hs : List Nat} {s t : State} {i : Nat} (hi :
     (hk : Kept T s t) : Same T as hs s t :=
   ⟨fun b hb _ => ha b hb, fun i' _ h2 hn => hh i' h2 (fun e => hn (e ▸ hi)), hk⟩
 
-/-- `aXm := aXm^(2^rows)`: the next tooth's entry from the last. -/
-theorem squares_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {E : Nat}
-    (hx : wv s.mem (off T.B T.o) (slot T.w aXm) T.w = T.M E) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63) :
-    WP isa (Precompute.squares Mo.mm) s fun t => Env T t ∧
-      wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.M (E * 2 ^ T.rows) ∧
-      (∀ j', RowFits T j' → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
-      Same T [aAcc, aTmp, aXm] [iI] s t ∧ Keep mmRegs s t := by
-  have hg := he.mc.sub.good
-  have hl := hdr_lt_slot T.w 8 (show iI < 32 by decide)
+/-- After `j` of the squares from `s`. -/
+def SqInv (T : TabP) (s : State) (E j : Nat) (t : State) : Prop := Env T t ∧
+  word t.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (T.rows - j) ∧
+  wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.M (E * 2 ^ j) ∧
+  (∀ j', RowFits T j' → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
+  Same T [aAcc, aTmp, aY] [iI] s t ∧ Keep mmRegs s t
+
+/-- The squares' loop body. -/
+abbrev sqBody (Mo : Mont) : Prog isa := .seq (Mo.mm aY aY aY)
+  (.block [.mov .rax (.mem (hdr iI)), .alu .sub .rax (.imm 1), .store (hdr iI) .rax])
+
+theorem squares_step (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {E j : Nat} (hj : j < T.rows)
+    (hr' : T.rows < 2 ^ 63) {t : State} (hI : SqInv T s E j t) :
+    WP isa (sqBody Mo) t fun u => u.zf = some (decide (j + 1 = T.rows)) ∧ SqInv T s E (j + 1) u := by
+  obtain ⟨het, hIt, hxt, hrt, st, kt⟩ := hI
   have hP : 0 < T.P := by have := he.mc.x1; omega
-  unfold Precompute.squares
-  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun t =>
-      t.mem = s.mem.writeW (off (off T.B T.o) (8 * iI)) (BitVec.ofNat 64 T.rows)) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iRows) (by have := hdr_lt_slot T.w 8 (show iRows < 32 by decide); omega),
-      hg.scr.st (d := 8 * iI) (by omega), he.rows]) rfl) fun s₁ ⟨hm₁, k₁⟩ => ?_)
-  obtain ⟨he₁, hI₁, hh₁, ha₁, hr₁, kp₁⟩ := slot_env he (i := iI) (by decide) (by decide) hm₁ k₁.2.1 k₁.2.2
-    (k₁.gpr (by decide))
-  let Inv : Nat → State → Prop := fun j t => Env T t ∧
-    word t.mem (off T.B T.o) (8 * iI) = BitVec.ofNat 64 (T.rows - j) ∧
-    wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.M (E * 2 ^ j) ∧
-    (∀ j', RowFits T j' → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
-    Same T [aAcc, aTmp, aXm] [iI] s t ∧ Keep mmRegs s t
-  refine wp_upto (a := 0) (N := T.rows) (by omega) Inv (fun j _ hj t ⟨het, hIt, hxt, hrt, st, kt⟩ => ?_)
-    (fun t h => ⟨h.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩)
-    ⟨he₁, by rw [hI₁]; simp, by rw [ha₁ _ (by decide), hx, Nat.pow_zero, Nat.mul_one],
-      fun j' hj' => hr₁ j' hj',
-      ⟨fun b hb _ => ha₁ b hb, fun i _ h2 hn => hh₁ i h2 (fun e => hn (by simp [e])), kp₁⟩, k₁.mono (by decide)⟩
-  refine WP.seq (WP.mono (mm_env Mo het (Or.inr (Or.inl rfl)) (by decide) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (mm_env Mo het (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [hxt]; exact T.M_lt hP _)) fun u ⟨heu, hlu, hvu, hau, hru, hhu, kpu, ku⟩ => ?_)
   rw [hxt] at hvu
   have hxu := T.M_mul he.mc.odd hlu hvu
@@ -127,6 +116,34 @@ theorem squares_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {E : Nat}
       ((hru j' hj').trans (hrt j' hj')), st.trans ⟨fun b hb hn => (hav b hb).trans (hau.wv_of_not_mem hb hn
         he.mc.sub.good.scr.nowrap), fun i h1 h2 hn => (hhv i h2 (fun e => hn (by simp [e]))).trans (hhu i h1 h2),
         kpu.trans kpv⟩, (kt.trans (ku.trans kv)).mono (by decide)⟩
+
+/-- The squares' setup: `iI := rows`. -/
+theorem squares_start {T : TabP} {s : State} (he : Env T s) {E : Nat}
+    (hx : wv s.mem (off T.B T.o) (slot T.w aY) T.w = T.M E) :
+    WP isa (.block [.mov .rax (.mem (hdr iRows)), .store (hdr iI) .rax]) s (SqInv T s E 0) := by
+  have hg := he.mc.sub.good
+  have hl := hdr_lt_slot T.w 8 (show iI < 32 by decide)
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = s.mem.writeW (off (off T.B T.o) (8 * iI)) (BitVec.ofNat 64 T.rows)) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iRows) (by have := hdr_lt_slot T.w 8 (show iRows < 32 by decide); omega),
+      hg.scr.st (d := 8 * iI) (by omega), he.rows]) rfl) fun s₁ ⟨hm₁, k₁⟩ => ?_
+  obtain ⟨he₁, hI₁, hh₁, ha₁, hr₁, kp₁⟩ := slot_env he (i := iI) (by decide) (by decide) hm₁ k₁.2.1 k₁.2.2
+    (k₁.gpr (by decide))
+  exact ⟨he₁, by rw [hI₁]; simp, by rw [ha₁ _ (by decide), hx, Nat.pow_zero, Nat.mul_one],
+      fun j' hj' => hr₁ j' hj',
+      ⟨fun b hb _ => ha₁ b hb, fun i _ h2 hn => hh₁ i h2 (fun e => hn (by simp [e])), kp₁⟩, k₁.mono (by decide)⟩
+
+/-- `aY := aY^(2^rows)`: the next tooth's entry from the last. -/
+theorem squares_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {E : Nat}
+    (hx : wv s.mem (off T.B T.o) (slot T.w aY) T.w = T.M E) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63) :
+    WP isa (Precompute.squares Mo.mm) s fun t => Env T t ∧
+      wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.M (E * 2 ^ T.rows) ∧
+      (∀ j', RowFits T j' → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
+      Same T [aAcc, aTmp, aY] [iI] s t ∧ Keep mmRegs s t := by
+  unfold Precompute.squares
+  refine WP.seq (WP.mono (squares_start he hx) fun s₁ h₁ =>
+    wp_upto (a := 0) (N := T.rows) (by omega) (SqInv T s E) (fun j _ hj t hI => squares_step Mo he hj hr' hI)
+      (fun t h => ⟨h.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩) h₁)
 
 /-- The entries `a < n` are in their rows. -/
 def Entries (T : TabP) (n : Nat) (m : Mem) : Prop :=
@@ -143,13 +160,13 @@ theorem product_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {jt J : Nat
     (hJd : J < 2 ^ jt) (hjtp : 0 < jt)
     (hJs : word s.mem (off T.B T.o) (8 * iJ) = BitVec.ofNat 64 J)
     (hDs : word s.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ jt))
-    (hx : wv s.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ jt))
+    (hx : wv s.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ jt))
     (hE : Entries T (2 ^ jt + J) s.mem) :
     WP isa (Precompute.product Mo.mm) s fun t => Env T t ∧
       t.zf = some (decide (J + 1 = 2 ^ jt)) ∧
       word t.mem (off T.B T.o) (8 * iJ) = BitVec.ofNat 64 (J + 1) ∧
       word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ jt) ∧
-      wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ jt) ∧
+      wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ jt) ∧
       Entries T (2 ^ jt + (J + 1)) t.mem ∧
       (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
       Same T [aAcc, aTmp, aX, aY] [iJ] s t ∧ Keep mmRegs s t := by
@@ -169,15 +186,15 @@ theorem product_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {jt J : Nat
   have he₁ : Env T s₁ := he.of_outScr (by intro x _; rw [hm₁]) k₁.2.1 k₁.2.2 (k₁.gpr (by decide))
   have hrJ : row s₁.mem T.cp T.w (J + 2) = Spec.Rsa.toWords (T.entry J) T.w := by
     rw [hm₁, show J + 2 = 2 + J by omega]; exact hE J (by omega)
-  refine WP.seq (WP.mono (load_env he₁ hax₁ (Or.inr (Or.inr rfl)) (by omega) hrJ
+  refine WP.seq (WP.mono (load_env he₁ hax₁ (Or.inl rfl) (by omega) hrJ
     (T.M_lt_R hP (Nat.le_of_lt he.P_lt) _))
-    fun s₂ ⟨he₂, hY₂, ha₂, hr₂, hh₂, kp₂, k₂⟩ => ?_)
-  have hX₂ : wv s₂.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ jt) := by
+    fun s₂ ⟨he₂, hL₂, ha₂, hr₂, hh₂, kp₂, k₂⟩ => ?_)
+  have hX₂ : wv s₂.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ jt) := by
     rw [ha₂ _ (by decide) (by decide), hm₁, hx]
   refine WP.seq (WP.mono (mm_env Mo he₂ (Or.inl rfl) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [hX₂]; exact T.M_lt hP _))
     fun s₃ ⟨he₃, hl₃, hv₃, ha₃, hr₃, hh₃, kp₃, k₃⟩ => ?_)
-  rw [hY₂, hX₂] at hv₃
+  rw [hL₂, hX₂] at hv₃
   have hv₃' : wv s₃.mem (off T.B T.o) (slot T.w aX) T.w = T.entry (2 ^ jt + J) := by
     rw [T.entry_add hjt hJd]; exact T.M_mul he.mc.odd hl₃ hv₃
   have hJ₃ : word s₃.mem (off T.B T.o) (8 * iJ) = BitVec.ofNat 64 J := by
@@ -238,19 +255,19 @@ theorem product_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {jt J : Nat
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hnb
     rw [hat _ hb, OutScr.wvAt hos₅ (hwo _ hb) hn, hm₄,
       ha₃.wv_of_not_mem hb (by simp [hnb.1, hnb.2.1, hnb.2.2.1]) he.mc.sub.good.scr.nowrap,
-      ha₂ _ hb hnb.2.2.2, hm₁]
+      ha₂ _ hb hnb.2.2.1, hm₁]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hni
     rw [hht _ h2 hni, OutScr.wordAt hos₅ (hio _ h2) hn, hm₄, hh₃ _ h1 h2, hh₂ _ h2, hm₁]
 
 /-- The tooth `d = 2^(c+1)`: its entry and the entries `d + J` for `0 < J < d`. -/
 theorem column_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {c : Nat} (hc : c < 4)
     (hDs : word s.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)))
-    (hx : wv s.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ c))
+    (hx : wv s.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ c))
     (hE : Entries T (2 ^ (c + 1)) s.mem) (hr : 1 ≤ T.rows) (hr' : T.rows < 2 ^ 63) :
     WP isa (Precompute.column Mo.mm) s fun t => Env T t ∧
       t.zf = some (decide (c + 1 = 4)) ∧
       word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 2)) ∧
-      wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ (c + 1)) ∧
+      wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ (c + 1)) ∧
       Entries T (2 ^ (c + 2)) t.mem ∧
       (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧
       Same T [aAcc, aTmp, aX, aXm, aY] [iI, iJ, iD] s t ∧ Keep mmRegs s t := by
@@ -291,7 +308,7 @@ theorem column_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {c : Nat} (h
     (k₄.gpr (by decide))
   have hD₄ : word s₄.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)) := by
     rw [hh₄ _ (by decide) (by decide), OutScr.wordAt hos₃ (hio _ (by decide)) hn, hm₂, hD₁]
-  have hx₄ : wv s₄.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ (c + 1)) := by
+  have hx₄ : wv s₄.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ (c + 1)) := by
     rw [ha₄ _ (by decide), OutScr.wvAt hos₃ (hwo _ (by decide)) hn, hm₂, hx₁]
   have hE₄ : Entries T (2 ^ (c + 1) + 1) s₄.mem := fun a ha => by
     rw [hr₄ _ (rowFits_of (by omega))]
@@ -302,7 +319,7 @@ theorem column_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) {c : Nat} (h
   let Inv : Nat → State → Prop := fun J t => Env T t ∧
     word t.mem (off T.B T.o) (8 * iJ) = BitVec.ofNat 64 J ∧
     word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)) ∧
-    wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ (c + 1)) ∧
+    wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ (c + 1)) ∧
     Entries T (2 ^ (c + 1) + J) t.mem ∧
     (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s₄.mem T.cp T.w j') ∧
     Same T [aAcc, aTmp, aX, aY] [iJ] s₄ t ∧ Keep mmRegs s₄ t
@@ -420,36 +437,44 @@ theorem table_ok (Mo : Mont) {T : TabP} {s : State} (he : Env T s) (hr : 1 ≤ T
   refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (store_env he₆ hax₆ (by decide) (by decide))
     fun s₇ ⟨he₇, hrow₇, hr₇, hos₇, kp₇, k₇⟩ => ?_)
   rw [hm₆, hXm₅] at hrow₇
-  have hg₇ := he₇.mc.sub.good
+  -- `aY :=` entry 1.
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 3 ∧
+      t.mem = s₇.mem) (by xrun [show BitVec.setWidth 64 (3 : BitVec 32) = BitVec.ofNat 64 3 from rfl]) rfl)
+    fun s₉ ⟨⟨hax₉, hm₉⟩, k₉⟩ => ?_)
+  have he₉ : Env T s₉ := he₇.of_outScr (by intro x _; rw [hm₉]) k₉.2.1 k₉.2.2 (k₉.gpr (by decide))
+  refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (load_env he₉ hax₉ (V := T.entry 1) (Or.inr (Or.inr rfl)) (by decide)
+    (by rw [hm₉]; exact hrow₇) (T.M_lt_R hP (Nat.le_of_lt he.P_lt) _))
+    fun s₁₀ ⟨he₁₀, hY₁₀, _, hr₁₀, _, kp₁₀, k₁₀⟩ => ?_)
+  have hg₇ := he₁₀.mc.sub.good
   refine VG.Proof.Ffdh.X86_64.wp_seqs_cons (by simp) (WP.mono (WP.keep [.rax] (Q := fun t =>
-      t.mem = s₇.mem.writeW (off (off T.B T.o) (8 * iD)) (BitVec.ofNat 64 2)) (by
+      t.mem = s₁₀.mem.writeW (off (off T.B T.o) (8 * iD)) (BitVec.ofNat 64 2)) (by
     xrun [State.ea, hdr, hg₇.rdi, hdrOff, hg₇.scr.st (d := 8 * iD) (by have := hdr_lt_slot T.w 8 (show iD < 32 by decide); omega),
       show BitVec.setWidth 64 (2 : BitVec 32) = BitVec.ofNat 64 2 from rfl]) rfl)
     fun s₈ ⟨hm₈, k₈⟩ => ?_)
-  obtain ⟨he₈, hD₈, _, ha₈, hr₈, kp₈⟩ := slot_env he₇ (i := iD) (by decide) (by decide) hm₈ k₈.2.1 k₈.2.2
+  obtain ⟨he₈, hD₈, _, ha₈, hr₈, kp₈⟩ := slot_env he₁₀ (i := iD) (by decide) (by decide) hm₈ k₈.2.1 k₈.2.2
     (k₈.gpr (by decide))
-  have hXm₈ : wv s₈.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry 1 := by
-    have := slot_le (w := T.w) (show aXm < 8 by decide)
-    have := he.mc.sub.hi
-    rw [ha₈ _ (by decide), OutScr.wvAt hos₇ (by omega) hn, hm₆, hXm₅]
+  have hXm₈ : wv s₈.mem (off T.B T.o) (slot T.w aY) T.w = T.entry 1 := by
+    rw [ha₈ _ (by decide)]; exact hY₁₀
   have hE₈ : Entries T 2 s₈.mem := fun a ha => by
-    rw [hr₈ _ (rowFits_of (by omega))]
+    rw [hr₈ _ (rowFits_of (by omega)), hr₁₀ _ (rowFits_of (by omega)), hm₉]
     rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl
     · rw [hr₇ _ (by decide) (rowFits_of (by decide)), hm₆, hr₅ _ (rowFits_of (by decide)),
         row_of_inScr he₃ hin₄ (rowFits_of (by decide))]
       exact hrow₃
     · exact hrow₇
   have hp₈ : ∀ j', j' < 2 → row s₈.mem T.cp T.w j' = row s.mem T.cp T.w j' := fun j' hj' => by
-    rw [hr₈ _ (rowFits_of (by omega)), hr₇ _ (by omega) (rowFits_of (by omega)), hm₆, hr₅ _ (rowFits_of (by omega)),
+    rw [hr₈ _ (rowFits_of (by omega)), hr₁₀ _ (rowFits_of (by omega)), hm₉,
+      hr₇ _ (by omega) (rowFits_of (by omega)), hm₆, hr₅ _ (rowFits_of (by omega)),
       row_of_inScr he₃ hin₄ (rowFits_of (by omega)), hr₃ _ (by omega) (rowFits_of (by omega)), hm₂,
       hr₁ _ (rowFits_of (by omega))]
-  have kp₈' : Kept T s s₈ := ((((kp₃'.trans kp₄).trans kp₅).trans (Kept.of_eq hm₆)).trans kp₇).trans kp₈
-  have k₈' : Keep mmRegs s s₈ := ((((k₁.trans k₂).trans (k₃.trans k₄)).trans (k₅.trans k₆)).trans (k₇.trans k₈)).mono
-    (by decide)
+  have kp₈' : Kept T s s₈ := (((((kp₃'.trans kp₄).trans kp₅).trans (Kept.of_eq hm₆)).trans kp₇).trans
+    ((Kept.of_eq hm₉).trans kp₁₀)).trans kp₈
+  have k₈' : Keep mmRegs s s₈ := ((((k₁.trans k₂).trans (k₃.trans k₄)).trans (k₅.trans k₆)).trans
+    ((k₇.trans (k₉.trans k₁₀)).trans k₈)).mono (by decide)
   -- The four teeth.
   let Inv : Nat → State → Prop := fun c t => Env T t ∧
     word t.mem (off T.B T.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (c + 1)) ∧
-    wv t.mem (off T.B T.o) (slot T.w aXm) T.w = T.entry (2 ^ c) ∧ Entries T (2 ^ (c + 1)) t.mem ∧
+    wv t.mem (off T.B T.o) (slot T.w aY) T.w = T.entry (2 ^ c) ∧ Entries T (2 ^ (c + 1)) t.mem ∧
     (∀ j', j' < 2 → row t.mem T.cp T.w j' = row s.mem T.cp T.w j') ∧ Kept T s t ∧ Keep mmRegs s t
   refine wp_upto (a := 0) (N := 4) (by decide) Inv
     (fun c _ hc t ⟨het, hDt, hxt, hEt, hpt, kpt, kt⟩ => WP.mono (column_ok Mo het hc hDt hxt hEt hr hr')

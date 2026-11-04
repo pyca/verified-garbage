@@ -115,27 +115,27 @@ def storePrefix : List (Prog isa) :=
 
 variable (mul : Nat → Nat → Nat → Prog isa) (r2 : Prog isa)
 
-/-- Entry 0, Montgomery one, and entry 1, `g R mod p`; `aXm` keeps entry 1. -/
+/-- Entry 0, Montgomery one, and entry 1, `g R mod p`, which `aY` then keeps. -/
 def initial : List (Prog isa) :=
   [mul aY aR2 aOne, .block [.mov32 .rax (.imm 2)], storeRow aY] ++ loadArr aX sG sK ++
-  [mul aXm aX aR2, .block [.mov32 .rax (.imm 3)], storeRow aXm]
+  [mul aXm aX aR2, .block [.mov32 .rax (.imm 3)], storeRow aXm, .block [.mov32 .rax (.imm 3)], loadRow aY]
 
-/-- `aXm := aXm^(2^rows)`, the next tooth's entry from the last. -/
+/-- `aY := aY^(2^rows)`, the next tooth's entry from the last. -/
 def squares : Prog isa := .seq (.block [.mov .rax (.mem (hdr iRows)), .store (hdr iI) .rax])
-  (.loop (.seq (mul aXm aXm aXm)
+  (.loop (.seq (mul aY aY aY)
     (.block [.mov .rax (.mem (hdr iI)), .alu .sub .rax (.imm 1), .store (hdr iI) .rax])) .ne)
 
-/-- Entry `d + j := ` entry `j` times entry `d` (in `aXm`), for `0 < j < d`. -/
+/-- Entry `d + j := ` entry `j` times entry `d` (in `aY`), for `0 < j < d`. -/
 def product : Prog isa := seqs [
-  .block [.mov .rax (.mem (hdr iJ)), .alu .add .rax (.imm 2)], loadRow aY,
-  mul aX aY aXm,
+  .block [.mov .rax (.mem (hdr iJ)), .alu .add .rax (.imm 2)], loadRow aX,
+  mul aX aX aY,
   .block [.mov .rax (.mem (hdr iJ)), .alu .add .rax (.mem (hdr iD)), .alu .add .rax (.imm 2)], storeRow aX,
   .block [.mov .rax (.mem (hdr iJ)), .alu .add .rax (.imm 1), .store (hdr iJ) .rax,
     .alu .cmp .rax (.mem (hdr iD))]]
 
 /-- The tooth `d = 2^j` and the entries it adds to the ones below it. -/
 def column : Prog isa := seqs [squares mul,
-  .block [.mov .rax (.mem (hdr iD)), .alu .add .rax (.imm 2)], storeRow aXm,
+  .block [.mov .rax (.mem (hdr iD)), .alu .add .rax (.imm 2)], storeRow aY,
   .block [.mov32 .rax (.imm 1), .store (hdr iJ) .rax],
   .loop (product mul) .ne,
   .block [.mov .rax (.mem (hdr iD)), .alu .add .rax (.reg .rax), .store (hdr iD) .rax,
