@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_ecdsa_secp256k1_sign.rs` of `verified-garbage-asm-aarch64`, as text: generated from
+// The functions of `src/internal/vg_ecdsa_p192_sign_k.rs` of `verified-garbage-asm-aarch64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ecdsa_secp256k1_sign:
+vg_ecdsa_p192_sign_k:
 	str x19, [x4, #0]
 	str x20, [x4, #8]
 	str x21, [x4, #16]
@@ -15,48 +15,54 @@ vg_ecdsa_secp256k1_sign:
 	str x30, [x4, #56]
 	add x20, x0, #0
 	add x0, x4, #0
-	ldr x5, [x3, #24]
-	rev x5, x5
-	str x5, [x0, #1056]
 	ldr x5, [x3, #16]
 	rev x5, x5
-	str x5, [x0, #1064]
+	str x5, [x0, #1056]
 	ldr x5, [x3, #8]
 	rev x5, x5
-	str x5, [x0, #1072]
+	str x5, [x0, #1064]
 	ldr x5, [x3, #0]
 	rev x5, x5
+	str x5, [x0, #1072]
+	movz x5, #0, lsl #0
+	movk x5, #0, lsl #16
+	movk x5, #0, lsl #32
+	movk x5, #0, lsl #48
 	str x5, [x0, #1080]
-	ldr x5, [x1, #24]
-	rev x5, x5
-	str x5, [x0, #1088]
 	ldr x5, [x1, #16]
 	rev x5, x5
-	str x5, [x0, #1096]
+	str x5, [x0, #1088]
 	ldr x5, [x1, #8]
 	rev x5, x5
-	str x5, [x0, #1104]
+	str x5, [x0, #1096]
 	ldr x5, [x1, #0]
 	rev x5, x5
+	str x5, [x0, #1104]
+	movz x5, #0, lsl #0
+	movk x5, #0, lsl #16
+	movk x5, #0, lsl #32
+	movk x5, #0, lsl #48
 	str x5, [x0, #1112]
-	ldr x5, [x2, #24]
-	rev x5, x5
-	str x5, [x0, #1120]
 	ldr x5, [x2, #16]
 	rev x5, x5
-	str x5, [x0, #1128]
+	str x5, [x0, #1120]
 	ldr x5, [x2, #8]
 	rev x5, x5
-	str x5, [x0, #1136]
+	str x5, [x0, #1128]
 	ldr x5, [x2, #0]
 	rev x5, x5
+	str x5, [x0, #1136]
+	movz x5, #0, lsl #0
+	movk x5, #0, lsl #16
+	movk x5, #0, lsl #32
+	movk x5, #0, lsl #48
 	str x5, [x0, #1144]
-	movz x1, #64559, lsl #0
+	movz x1, #65535, lsl #0
 	movk x1, #65535, lsl #16
-	movk x1, #65534, lsl #32
+	movk x1, #65535, lsl #32
 	movk x1, #65535, lsl #48
 	str x1, [x0, #64]
-	movz x1, #65535, lsl #0
+	movz x1, #65534, lsl #0
 	movk x1, #65535, lsl #16
 	movk x1, #65535, lsl #32
 	movk x1, #65535, lsl #48
@@ -66,30 +72,30 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #65535, lsl #32
 	movk x1, #65535, lsl #48
 	str x1, [x0, #80]
-	movz x1, #65535, lsl #0
-	movk x1, #65535, lsl #16
+	movz x1, #0, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
+	str x1, [x0, #88]
+	movz x1, #10289, lsl #0
+	movk x1, #46290, lsl #16
+	movk x1, #51633, lsl #32
+	movk x1, #5227, lsl #48
+	str x1, [x0, #96]
+	movz x1, #63542, lsl #0
+	movk x1, #39390, lsl #16
 	movk x1, #65535, lsl #32
 	movk x1, #65535, lsl #48
-	str x1, [x0, #88]
-	movz x1, #16705, lsl #0
-	movk x1, #53302, lsl #16
-	movk x1, #24204, lsl #32
-	movk x1, #49106, lsl #48
-	str x1, [x0, #96]
-	movz x1, #41019, lsl #0
-	movk x1, #44872, lsl #16
-	movk x1, #56550, lsl #32
-	movk x1, #47790, lsl #48
 	str x1, [x0, #104]
-	movz x1, #65534, lsl #0
+	movz x1, #65535, lsl #0
 	movk x1, #65535, lsl #16
 	movk x1, #65535, lsl #32
 	movk x1, #65535, lsl #48
 	str x1, [x0, #112]
-	movz x1, #65535, lsl #0
-	movk x1, #65535, lsl #16
-	movk x1, #65535, lsl #32
-	movk x1, #65535, lsl #48
+	movz x1, #0, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
 	str x1, [x0, #120]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
@@ -131,17 +137,17 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #216]
-	movz x1, #977, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #1, lsl #32
-	movk x1, #0, lsl #48
-	str x1, [x0, #224]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
+	str x1, [x0, #224]
+	movz x1, #1, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
 	str x1, [x0, #232]
-	movz x1, #0, lsl #0
+	movz x1, #1, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
@@ -151,118 +157,118 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #248]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #65535, lsl #0
+	movk x1, #65535, lsl #16
+	movk x1, #65535, lsl #32
+	movk x1, #65535, lsl #48
 	str x1, [x0, #256]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #65531, lsl #0
+	movk x1, #65535, lsl #16
+	movk x1, #65535, lsl #32
+	movk x1, #65535, lsl #48
 	str x1, [x0, #264]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #65532, lsl #0
+	movk x1, #65535, lsl #16
+	movk x1, #65535, lsl #32
+	movk x1, #65535, lsl #48
 	str x1, [x0, #272]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #280]
-	movz x1, #6839, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #7, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #45361, lsl #0
+	movk x1, #22464, lsl #16
+	movk x1, #61125, lsl #32
+	movk x1, #29640, lsl #48
 	str x1, [x0, #288]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #60361, lsl #0
+	movk x1, #65187, lsl #16
+	movk x1, #53963, lsl #32
+	movk x1, #54946, lsl #48
 	str x1, [x0, #296]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #27362, lsl #0
+	movk x1, #6407, lsl #16
+	movk x1, #52658, lsl #32
+	movk x1, #29313, lsl #48
 	str x1, [x0, #304]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #312]
-	movz x1, #8343, lsl #0
-	movk x1, #18558, lsl #16
-	movk x1, #11866, lsl #32
-	movk x1, #55094, lsl #48
+	movz x1, #6391, lsl #0
+	movk x1, #62418, lsl #16
+	movk x1, #51449, lsl #32
+	movk x1, #38220, lsl #48
 	str x1, [x0, #320]
-	movz x1, #26331, lsl #0
-	movk x1, #10684, lsl #16
-	movk x1, #10579, lsl #32
-	movk x1, #8990, lsl #48
+	movz x1, #47615, lsl #0
+	movk x1, #9985, lsl #16
+	movk x1, #31750, lsl #32
+	movk x1, #41689, lsl #48
 	str x1, [x0, #328]
-	movz x1, #4764, lsl #0
-	movk x1, #13309, lsl #16
-	movk x1, #18624, lsl #32
-	movk x1, #38815, lsl #48
+	movz x1, #10505, lsl #0
+	movk x1, #30417, lsl #16
+	movk x1, #54263, lsl #32
+	movk x1, #35403, lsl #48
 	str x1, [x0, #336]
-	movz x1, #40776, lsl #0
-	movk x1, #59656, lsl #16
-	movk x1, #58947, lsl #32
-	movk x1, #39297, lsl #48
-	str x1, [x0, #344]
-	movz x1, #44002, lsl #0
-	movk x1, #54235, lsl #16
-	movk x1, #42706, lsl #32
-	movk x1, #45406, lsl #48
-	str x1, [x0, #352]
-	movz x1, #50765, lsl #0
-	movk x1, #7965, lsl #16
-	movk x1, #23901, lsl #32
-	movk x1, #36348, lsl #48
-	str x1, [x0, #360]
-	movz x1, #49462, lsl #0
-	movk x1, #44057, lsl #16
-	movk x1, #46490, lsl #32
-	movk x1, #28854, lsl #48
-	str x1, [x0, #368]
-	movz x1, #33494, lsl #0
-	movk x1, #54437, lsl #16
-	movk x1, #34079, lsl #32
-	movk x1, #53055, lsl #48
-	str x1, [x0, #376]
-	movz x1, #53568, lsl #0
-	movk x1, #26583, lsl #16
-	movk x1, #61972, lsl #32
-	movk x1, #35180, lsl #48
-	str x1, [x0, #384]
-	movz x1, #63608, lsl #0
-	movk x1, #3708, lsl #16
-	movk x1, #38594, lsl #32
-	movk x1, #29716, lsl #48
-	str x1, [x0, #392]
-	movz x1, #1990, lsl #0
-	movk x1, #23501, lsl #16
-	movk x1, #62948, lsl #32
-	movk x1, #59031, lsl #48
-	str x1, [x0, #400]
-	movz x1, #39877, lsl #0
-	movk x1, #33222, lsl #16
-	movk x1, #7381, lsl #32
-	movk x1, #40295, lsl #48
-	str x1, [x0, #408]
-	movz x1, #48831, lsl #0
-	movk x1, #12233, lsl #16
-	movk x1, #41331, lsl #32
-	movk x1, #16429, lsl #48
-	str x1, [x0, #416]
-	movz x1, #24516, lsl #0
-	movk x1, #20663, lsl #16
-	movk x1, #8985, lsl #32
-	movk x1, #17745, lsl #48
-	str x1, [x0, #424]
-	movz x1, #1, lsl #0
+	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
+	str x1, [x0, #344]
+	movz x1, #43085, lsl #0
+	movk x1, #27373, lsl #16
+	movk x1, #15747, lsl #32
+	movk x1, #27177, lsl #48
+	str x1, [x0, #352]
+	movz x1, #51926, lsl #0
+	movk x1, #35119, lsl #16
+	movk x1, #57530, lsl #32
+	movk x1, #58683, lsl #48
+	str x1, [x0, #360]
+	movz x1, #61534, lsl #0
+	movk x1, #35174, lsl #16
+	movk x1, #46372, lsl #32
+	movk x1, #56866, lsl #48
+	str x1, [x0, #368]
+	movz x1, #0, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
+	str x1, [x0, #376]
+	movz x1, #19495, lsl #0
+	movk x1, #33555, lsl #16
+	movk x1, #30474, lsl #32
+	movk x1, #465, lsl #48
+	str x1, [x0, #384]
+	movz x1, #26751, lsl #0
+	movk x1, #51887, lsl #16
+	movk x1, #26977, lsl #32
+	movk x1, #54940, lsl #48
+	str x1, [x0, #392]
+	movz x1, #55493, lsl #0
+	movk x1, #52981, lsl #16
+	movk x1, #37572, lsl #32
+	movk x1, #4711, lsl #48
+	str x1, [x0, #400]
+	movz x1, #0, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
+	str x1, [x0, #408]
+	movz x1, #0, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
+	str x1, [x0, #416]
+	movz x1, #55247, lsl #0
+	movk x1, #19245, lsl #16
+	movk x1, #13902, lsl #32
+	movk x1, #60308, lsl #48
+	str x1, [x0, #424]
+	movz x1, #1993, lsl #0
+	movk x1, #26145, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #432]
@@ -291,17 +297,17 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #536]
-	movz x1, #977, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #1, lsl #32
-	movk x1, #0, lsl #48
-	str x1, [x0, #544]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
+	str x1, [x0, #544]
+	movz x1, #1, lsl #0
+	movk x1, #0, lsl #16
+	movk x1, #0, lsl #32
+	movk x1, #0, lsl #48
 	str x1, [x0, #552]
-	movz x1, #0, lsl #0
+	movz x1, #1, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
@@ -384,20 +390,20 @@ vg_ecdsa_secp256k1_sign:
 	str x1, [x0, #560]
 	ldr x1, [x0, #376]
 	str x1, [x0, #568]
-	movz x1, #20517, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #21, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #5012, lsl #0
+	movk x1, #1858, lsl #16
+	movk x1, #52304, lsl #32
+	movk x1, #23386, lsl #48
 	str x1, [x0, #288]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #50013, lsl #0
+	movk x1, #64491, lsl #16
+	movk x1, #30819, lsl #32
+	movk x1, #33768, lsl #48
 	str x1, [x0, #296]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #16552, lsl #0
+	movk x1, #19222, lsl #16
+	movk x1, #26902, lsl #32
+	movk x1, #22405, lsl #48
 	str x1, [x0, #304]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
@@ -405,22 +411,22 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #0, lsl #48
 	str x1, [x0, #312]
 	mov v29.d[0], x30
-	bl {vg_secp256k1_mul}
+	bl {vg_p192_mul}
 	umov x30, v29.d[0]
-	movz x1, #6839, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #7, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #45361, lsl #0
+	movk x1, #22464, lsl #16
+	movk x1, #61125, lsl #32
+	movk x1, #29640, lsl #48
 	str x1, [x0, #288]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #60361, lsl #0
+	movk x1, #65187, lsl #16
+	movk x1, #53963, lsl #32
+	movk x1, #54946, lsl #48
 	str x1, [x0, #296]
-	movz x1, #0, lsl #0
-	movk x1, #0, lsl #16
-	movk x1, #0, lsl #32
-	movk x1, #0, lsl #48
+	movz x1, #27362, lsl #0
+	movk x1, #6407, lsl #16
+	movk x1, #52658, lsl #32
+	movk x1, #29313, lsl #48
 	str x1, [x0, #304]
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
@@ -428,17 +434,17 @@ vg_ecdsa_secp256k1_sign:
 	movk x1, #0, lsl #48
 	str x1, [x0, #312]
 	mov v29.d[0], x30
-	bl {vg_secp256k1_inv_mod_p}
+	bl {vg_p192_inv_mod_p}
 	umov x30, v29.d[0]
 	movz x7, #0, lsl #0
 	ldr x4, [x0, #992]
 	ldr x5, [x0, #1000]
 	ldr x16, [x0, #1008]
 	ldr x17, [x0, #1016]
-	movz x6, #13617, lsl #0
-	movk x6, #53797, lsl #16
-	movk x6, #2333, lsl #32
-	movk x6, #55352, lsl #48
+	movz x6, #65535, lsl #0
+	movk x6, #65535, lsl #16
+	movk x6, #65535, lsl #32
+	movk x6, #65535, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #512]
@@ -454,34 +460,20 @@ vg_ecdsa_secp256k1_sign:
 	adcs x11, x11, x2
 	umulh x2, x1, x17
 	adcs x12, x12, x2
-	mul x1, x8, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x8, x8, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x9, x9, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x10, x10, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x12, x12, x2
-	adcs x13, x13, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x8, x6
 	adds x9, x9, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x8, x6
 	adcs x10, x10, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x8, x6
 	adcs x11, x11, x2
 	adcs x12, x12, x7
 	adcs x13, x13, x7
+	umulh x2, x8, x6
+	adds x10, x10, x2
+	adcs x11, x11, x7
+	adcs x12, x12, x7
+	adcs x13, x13, x7
+	movz x8, #0, lsl #0
 	ldr x1, [x0, #520]
 	mul x2, x1, x4
 	adds x9, x9, x2
@@ -493,7 +485,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -501,35 +492,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
-	mul x1, x9, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x9, x9, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x10, x10, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x13, x13, x2
-	adcs x8, x8, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x9, x6
 	adds x10, x10, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x9, x6
 	adcs x11, x11, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x9, x6
 	adcs x12, x12, x2
 	adcs x13, x13, x7
 	adcs x8, x8, x7
+	umulh x2, x9, x6
+	adds x11, x11, x2
+	adcs x12, x12, x7
+	adcs x13, x13, x7
+	adcs x8, x8, x7
+	movz x9, #0, lsl #0
 	ldr x1, [x0, #528]
 	mul x2, x1, x4
 	adds x10, x10, x2
@@ -541,7 +517,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -549,35 +524,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
-	mul x1, x10, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x10, x10, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x13, x13, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x8, x8, x2
-	adcs x9, x9, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x10, x6
 	adds x11, x11, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x10, x6
 	adcs x12, x12, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x10, x6
 	adcs x13, x13, x2
 	adcs x8, x8, x7
 	adcs x9, x9, x7
+	umulh x2, x10, x6
+	adds x12, x12, x2
+	adcs x13, x13, x7
+	adcs x8, x8, x7
+	adcs x9, x9, x7
+	movz x10, #0, lsl #0
 	ldr x1, [x0, #536]
 	mul x2, x1, x4
 	adds x11, x11, x2
@@ -589,7 +549,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -597,35 +556,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
-	mul x1, x11, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x11, x11, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x13, x13, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x8, x8, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x9, x9, x2
-	adcs x10, x10, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x11, x6
 	adds x12, x12, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x11, x6
 	adcs x13, x13, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x11, x6
 	adcs x8, x8, x2
 	adcs x9, x9, x7
 	adcs x10, x10, x7
+	umulh x2, x11, x6
+	adds x13, x13, x2
+	adcs x8, x8, x7
+	adcs x9, x9, x7
+	adcs x10, x10, x7
+	movz x11, #0, lsl #0
 	ldr x2, [x0, #64]
 	subs x1, x12, x2
 	ldr x2, [x0, #72]
@@ -648,10 +592,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #200]
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #216]
-	movz x6, #13617, lsl #0
-	movk x6, #53797, lsl #16
-	movk x6, #2333, lsl #32
-	movk x6, #55352, lsl #48
+	movz x6, #65535, lsl #0
+	movk x6, #65535, lsl #16
+	movk x6, #65535, lsl #32
+	movk x6, #65535, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1152]
@@ -667,34 +611,20 @@ vg_ecdsa_secp256k1_sign:
 	adcs x11, x11, x2
 	umulh x2, x1, x17
 	adcs x12, x12, x2
-	mul x1, x8, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x8, x8, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x9, x9, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x10, x10, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x12, x12, x2
-	adcs x13, x13, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x8, x6
 	adds x9, x9, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x8, x6
 	adcs x10, x10, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x8, x6
 	adcs x11, x11, x2
 	adcs x12, x12, x7
 	adcs x13, x13, x7
+	umulh x2, x8, x6
+	adds x10, x10, x2
+	adcs x11, x11, x7
+	adcs x12, x12, x7
+	adcs x13, x13, x7
+	movz x8, #0, lsl #0
 	ldr x1, [x0, #1160]
 	mul x2, x1, x4
 	adds x9, x9, x2
@@ -706,7 +636,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -714,35 +643,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
-	mul x1, x9, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x9, x9, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x10, x10, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x13, x13, x2
-	adcs x8, x8, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x9, x6
 	adds x10, x10, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x9, x6
 	adcs x11, x11, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x9, x6
 	adcs x12, x12, x2
 	adcs x13, x13, x7
 	adcs x8, x8, x7
+	umulh x2, x9, x6
+	adds x11, x11, x2
+	adcs x12, x12, x7
+	adcs x13, x13, x7
+	adcs x8, x8, x7
+	movz x9, #0, lsl #0
 	ldr x1, [x0, #1168]
 	mul x2, x1, x4
 	adds x10, x10, x2
@@ -754,7 +668,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -762,35 +675,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
-	mul x1, x10, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x10, x10, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x11, x11, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x13, x13, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x8, x8, x2
-	adcs x9, x9, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x10, x6
 	adds x11, x11, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x10, x6
 	adcs x12, x12, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x10, x6
 	adcs x13, x13, x2
 	adcs x8, x8, x7
 	adcs x9, x9, x7
+	umulh x2, x10, x6
+	adds x12, x12, x2
+	adcs x13, x13, x7
+	adcs x8, x8, x7
+	adcs x9, x9, x7
+	movz x10, #0, lsl #0
 	ldr x1, [x0, #1176]
 	mul x2, x1, x4
 	adds x11, x11, x2
@@ -802,7 +700,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -810,35 +707,20 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
-	mul x1, x11, x6
-	ldr x3, [x0, #64]
-	mul x2, x1, x3
-	adds x11, x11, x2
-	ldr x3, [x0, #72]
-	mul x2, x1, x3
-	adcs x12, x12, x2
-	ldr x3, [x0, #80]
-	mul x2, x1, x3
-	adcs x13, x13, x2
-	ldr x3, [x0, #88]
-	mul x2, x1, x3
-	adcs x8, x8, x2
-	ldr x3, [x0, #88]
-	umulh x2, x1, x3
-	adcs x9, x9, x2
-	adcs x10, x10, x7
-	ldr x3, [x0, #64]
-	umulh x2, x1, x3
+	mul x2, x11, x6
 	adds x12, x12, x2
-	ldr x3, [x0, #72]
-	umulh x2, x1, x3
+	mul x2, x11, x6
 	adcs x13, x13, x2
-	ldr x3, [x0, #80]
-	umulh x2, x1, x3
+	umulh x2, x11, x6
 	adcs x8, x8, x2
 	adcs x9, x9, x7
 	adcs x10, x10, x7
+	umulh x2, x11, x6
+	adds x13, x13, x2
+	adcs x8, x8, x7
+	adcs x9, x9, x7
+	adcs x10, x10, x7
+	movz x11, #0, lsl #0
 	ldr x2, [x0, #64]
 	subs x1, x12, x2
 	ldr x2, [x0, #72]
@@ -892,10 +774,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #392]
 	ldr x16, [x0, #400]
 	ldr x17, [x0, #408]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1056]
@@ -950,7 +832,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -958,7 +839,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -998,7 +878,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -1006,7 +885,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1046,7 +924,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -1054,7 +931,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1172,17 +1048,17 @@ vg_ecdsa_secp256k1_sign:
 	and x1, x1, x2
 	str x1, [x0, #1472]
 	mov v29.d[0], x30
-	bl {vg_secp256k1_inv_mod_n}
+	bl {vg_p192_inv_mod_n}
 	umov x30, v29.d[0]
 	movz x7, #0, lsl #0
 	ldr x4, [x0, #384]
 	ldr x5, [x0, #392]
 	ldr x16, [x0, #400]
 	ldr x17, [x0, #408]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1216]
@@ -1237,7 +1113,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -1245,7 +1120,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1285,7 +1159,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -1293,7 +1166,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1333,7 +1205,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -1341,7 +1212,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1392,10 +1262,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #392]
 	ldr x16, [x0, #400]
 	ldr x17, [x0, #408]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1088]
@@ -1450,7 +1320,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -1458,7 +1327,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1498,7 +1366,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -1506,7 +1373,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1546,7 +1412,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -1554,7 +1419,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1605,10 +1469,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #392]
 	ldr x16, [x0, #400]
 	ldr x17, [x0, #408]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1120]
@@ -1663,7 +1527,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -1671,7 +1534,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1711,7 +1573,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -1719,7 +1580,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1759,7 +1619,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -1767,7 +1626,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1818,10 +1676,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #1320]
 	ldr x16, [x0, #1328]
 	ldr x17, [x0, #1336]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1280]
@@ -1876,7 +1734,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -1884,7 +1741,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1924,7 +1780,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -1932,7 +1787,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -1972,7 +1826,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -1980,7 +1833,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2062,10 +1914,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #1384]
 	ldr x16, [x0, #1392]
 	ldr x17, [x0, #1400]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #992]
@@ -2120,7 +1972,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -2128,7 +1979,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2168,7 +2018,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -2176,7 +2025,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2216,7 +2064,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -2224,7 +2071,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2275,10 +2121,10 @@ vg_ecdsa_secp256k1_sign:
 	ldr x5, [x0, #200]
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #216]
-	movz x6, #45375, lsl #0
-	movk x6, #21896, lsl #16
-	movk x6, #65382, lsl #32
-	movk x6, #19213, lsl #48
+	movz x6, #53039, lsl #0
+	movk x6, #3547, lsl #16
+	movk x6, #29191, lsl #32
+	movk x6, #34854, lsl #48
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
 	ldr x1, [x0, #1408]
@@ -2333,7 +2179,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x12, x12, x2
 	umulh x2, x1, x17
 	adcs x13, x13, x2
-	adcs x8, x8, x7
 	umulh x2, x1, x4
 	adds x10, x10, x2
 	umulh x2, x1, x5
@@ -2341,7 +2186,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x12, x12, x2
 	adcs x13, x13, x7
-	adcs x8, x8, x7
 	mul x1, x9, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2381,7 +2225,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x13, x13, x2
 	umulh x2, x1, x17
 	adcs x8, x8, x2
-	adcs x9, x9, x7
 	umulh x2, x1, x4
 	adds x11, x11, x2
 	umulh x2, x1, x5
@@ -2389,7 +2232,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x13, x13, x2
 	adcs x8, x8, x7
-	adcs x9, x9, x7
 	mul x1, x10, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2429,7 +2271,6 @@ vg_ecdsa_secp256k1_sign:
 	adcs x8, x8, x2
 	umulh x2, x1, x17
 	adcs x9, x9, x2
-	adcs x10, x10, x7
 	umulh x2, x1, x4
 	adds x12, x12, x2
 	umulh x2, x1, x5
@@ -2437,7 +2278,6 @@ vg_ecdsa_secp256k1_sign:
 	umulh x2, x1, x16
 	adcs x8, x8, x2
 	adcs x9, x9, x7
-	adcs x10, x10, x7
 	mul x1, x11, x6
 	ldr x3, [x0, #96]
 	mul x2, x1, x3
@@ -2500,35 +2340,31 @@ vg_ecdsa_secp256k1_sign:
 	ldr x1, [x0, #1216]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #24]
+	str x1, [x20, #16]
 	ldr x1, [x0, #1224]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #16]
+	str x1, [x20, #8]
 	ldr x1, [x0, #1232]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #8]
+	str x1, [x20, #0]
 	ldr x1, [x0, #1240]
 	and x1, x1, x3
-	rev x1, x1
-	str x1, [x20, #0]
 	ldr x1, [x0, #1440]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #56]
+	str x1, [x20, #40]
 	ldr x1, [x0, #1448]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #48]
+	str x1, [x20, #32]
 	ldr x1, [x0, #1456]
 	and x1, x1, x3
 	rev x1, x1
-	str x1, [x20, #40]
+	str x1, [x20, #24]
 	ldr x1, [x0, #1464]
 	and x1, x1, x3
-	rev x1, x1
-	str x1, [x20, #32]
 	ldr x19, [x0, #0]
 	ldr x20, [x0, #8]
 	ldr x21, [x0, #16]

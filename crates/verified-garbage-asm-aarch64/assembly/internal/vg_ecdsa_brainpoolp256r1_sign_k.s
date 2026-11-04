@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_ecdsa_brainpoolp256r1_sign.rs` of `verified-garbage-asm-aarch64`, as text: generated from
+// The functions of `src/internal/vg_ecdsa_brainpoolp256r1_sign_k.rs` of `verified-garbage-asm-aarch64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ecdsa_brainpoolp256r1_sign:
+vg_ecdsa_brainpoolp256r1_sign_k:
 	str x19, [x4, #0]
 	str x20, [x4, #8]
 	str x21, [x4, #16]

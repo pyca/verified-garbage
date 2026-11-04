@@ -14,18 +14,18 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn as TableSignFn, TableHash, sign_with as sign_table};
 #[cfg(target_arch = "aarch64")]
 use super::aarch64::{SignFn as TableSignFn, TableHash, sign_with as sign_table};
-use super::{Error, P521, SignatureHash, SigningKey, sealed};
-use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
+use super::x86_64::{SignFn as TableSignFn, TableHash, sign_with as sign_table};
+use super::{Error, P521, SignatureHash, SigningKey, sealed};
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign_adx;
+use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
 use crate::cpu::detected;

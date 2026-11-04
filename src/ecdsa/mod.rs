@@ -52,6 +52,7 @@
     target_arch = "riscv64"
 ))]
 
+mod aarch64;
 mod brainpoolp256r1;
 mod brainpoolp384r1;
 mod brainpoolp512r1;
@@ -61,7 +62,6 @@ mod p256;
 mod p384;
 mod p521;
 mod secp256k1;
-mod aarch64;
 mod x86_64;
 
 pub use crate::ec::{
