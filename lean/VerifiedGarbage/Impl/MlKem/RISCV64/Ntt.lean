@@ -30,16 +30,17 @@ then a store, through `t2`), and read in order through a pointer. The
 functions use only registers the calling convention lets them clobber,
 make no calls and use no stack.
 
-* `vg_mlkem_ntt(f = a0, scratch = a1)`: the seven layers of Algorithm 9 as
-  three nested loops, with `a0 = f + 1024` (the end of `f`),
-  `a7 = 4 len` (from 512, halved, until it is 4), `a1` the next zeta of the
-  table (from `zetas[1]`); for each block, its zeta in `a4`, and `len`
-  butterflies on `a2 = f + 4j` and `a3 = f + 4(j + len)`, counted by `t1`;
-  the next block starts where the butterflies left `a3`, until `a2 = a0`;
-  then every coefficient reduced.
+* `vg_mlkem_ntt(f = a0, scratch = a1)`: the seven layers of Algorithm 9,
+  each its own code (`nttLayerCode o`, `len` from 128, halved, down to 2),
+  so that `o = 4 len` is an offset in the instructions: with `a0 = f + 1024`
+  (the end of `f`) and `a1` the next zeta of the table (from `zetas[1]`),
+  a block loads its zeta into `a4` and sets `a3` to the end of its first
+  half; each butterfly is on `a2 = f + 4j` and `o(a2)`, until `a2 = a3`; the
+  next block starts `o` bytes on, until `a2 = a0`. Then every coefficient
+  reduced.
 * `vg_mlkem_inv_ntt(f = a0, scratch = a1)`: the same for Algorithm 10, with
-  `a7` from 8 (doubled, until it is 1024), the zetas from `zetas[127]`
-  down, and the inverse butterflies; then every coefficient times 3303.
+  `len` from 2, doubled, up to 128, the zetas from `zetas[127]` down, and
+  the inverse butterflies; then every coefficient times 3303.
 * `vg_mlkem_multiply_ntts(h = a0, f = a1, g = a2, scratch = a3)`: for each
   pair `i` (counted by `t1`), `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ`
   and `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, with `γᵢ`
@@ -47,7 +48,8 @@ make no calls and use no stack.
 
 A butterfly stores `f[j + len]` before `f[j]`, and an inverse butterfly
 `f[j]` before `f[j + len]`, the order in which Algorithms 9 and 10 write
-them. Every address and branch depends only on the pointers.
+them. Every address is a pointer plus a constant, and every branch depends
+on a counter or compares two pointers: only the pointers can affect timing.
 -/
 
 @[expose] public section
@@ -105,25 +107,31 @@ def table (T : List Nat) (b : Reg) : List Instr :=
 
 /-! ## `ntt` -/
 
-/-- The lazy butterfly on `[a2]` and `[a3]` with the zeta `a4`: `t = ζ·f[j + len]`
+/-- The lazy butterfly on `[a2]` and `[a2 + o]` with the zeta `a4`: `t = ζ·f[j + len]`
 less a multiple of `q`, in `[0, 2q)` (`barrettM`), in `t0`, then
 `f[j + len] = f[j] - t + 2q` (`2q` in `t5`) and `f[j] = f[j] + t`. -/
-def bflyBody : List Instr :=
-  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .mul .t0 .a4 .t0] ++ barrettM .t0 .t3 ++
-  [.sub .t3 .t2 .t0, .add .t3 .t3 .t5, .store .w .t3 .a3 0, .add .t2 .t2 .t0,
-    .store .w .t2 .a2 0, .addi .a2 .a2 4, .addi .a3 .a3 4, .addi .t1 .t1 (-1)]
+def bflyBody (o : Nat) : List Instr :=
+  [.load .w .t2 .a2 0, .load .w .t0 .a2 o, .mul .t0 .a4 .t0] ++ barrettM .t0 .t3 ++
+  [.sub .t3 .t2 .t0, .add .t3 .t3 .t5, .store .w .t3 .a2 o, .add .t2 .t2 .t0,
+    .store .w .t2 .a2 0, .addi .a2 .a2 4]
 
-/-- A block: its zeta, then `len` butterflies. -/
-def nttBlockCode : Prog isa :=
-  .seq (.block [.load .w .a4 .a1 0, .addi .a1 .a1 4, .add .a3 .a2 .a7, .shift .srl .d .t1 .a7 2])
-    (.seq (.loop (.block bflyBody) (.nonzero .t1))
-      (.block [.addi .a2 .a3 0, .sub .t0 .a2 .a0]))
+/-- A block, with `o = 4 len`: its zeta, the end of its first half in `a3`,
+then `len` butterflies, and the next block. -/
+def nttBlockCode (o : Nat) : Prog isa :=
+  .seq (.block [.load .w .a4 .a1 0, .addi .a1 .a1 4, .addi .a3 .a2 o])
+    (.seq (.loop (.block (bflyBody o)) (.ne .a2 .a3)) (.block [.addi .a2 .a2 o]))
 
-/-- A layer: its blocks. -/
-def nttLayerCode : Prog isa :=
-  .seq (.block [.addi .a2 .a0 (-1024)])
-    (.seq (.loop nttBlockCode (.nonzero .t0))
-      (.block [.shift .srl .d .a7 .a7 1, .addi .t0 .a7 (-4)]))
+/-- A layer, with `o = 4 len`: its blocks. -/
+def nttLayerCode (o : Nat) : Prog isa :=
+  .seq (.block [.addi .a2 .a0 (-1024)]) (.loop (nttBlockCode o) (.ne .a2 .a0))
+
+/-- The offsets `4 len` of the layers of `ntt`, and of `nttInv` reversed. -/
+def nttOffs : List Nat := [512, 256, 128, 64, 32, 16, 8]
+
+/-- Layers, one after the other. -/
+def layers (code : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | o :: os => .seq (code o) (layers code os)
 
 /-- `[a2] ← [a2] mod q`, and on to the next coefficient. -/
 def canonBody : List Instr :=
@@ -131,31 +139,29 @@ def canonBody : List Instr :=
 
 def ntt : Prog isa :=
   .seq (.block (table zetaTable .a1 ++ constsM ++
-      ([.add .t5 .a6 .a6, .addi .a0 .a0 1024, .addi .a1 .a1 4, .li .a7 512] : List Instr)))
-    (.seq (.loop nttLayerCode (.nonzero .t0))
+      ([.add .t5 .a6 .a6, .addi .a0 .a0 1024, .addi .a1 .a1 4] : List Instr)))
+    (.seq (layers nttLayerCode nttOffs)
       (.seq (.block [.addi .a2 .a0 (-1024), .li .t1 256]) (.loop (.block canonBody) (.nonzero .t1))))
 
 /-! ## `nttInv` -/
 
-/-- The lazy inverse butterfly on `[a2]` and `[a3]` with the zeta `a4`:
+/-- The lazy inverse butterfly on `[a2]` and `[a2 + o]` with the zeta `a4`:
 `f[j] = f[j] + f[j + len]`, then `f[j + len] = ζ·(f[j + len] - f[j] + 64 q)`
 less a multiple of `q`, in `[0, 2q)` (`barrettM`; `64 q` in `t5`). -/
-def ibflyBody : List Instr :=
-  [.load .w .t2 .a2 0, .load .w .t0 .a3 0, .add .t3 .t2 .t0, .store .w .t3 .a2 0, .sub .t0 .t0 .t2,
+def ibflyBody (o : Nat) : List Instr :=
+  [.load .w .t2 .a2 0, .load .w .t0 .a2 o, .add .t3 .t2 .t0, .store .w .t3 .a2 0, .sub .t0 .t0 .t2,
     .add .t0 .t0 .t5, .mul .t0 .a4 .t0] ++ barrettM .t0 .t3 ++
-  [.store .w .t0 .a3 0, .addi .a2 .a2 4, .addi .a3 .a3 4, .addi .t1 .t1 (-1)]
+  [.store .w .t0 .a2 o, .addi .a2 .a2 4]
 
-/-- A block: its zeta, then `len` inverse butterflies. -/
-def nttInvBlockCode : Prog isa :=
-  .seq (.block [.load .w .a4 .a1 0, .addi .a1 .a1 (-4), .add .a3 .a2 .a7, .shift .srl .d .t1 .a7 2])
-    (.seq (.loop (.block ibflyBody) (.nonzero .t1))
-      (.block [.addi .a2 .a3 0, .sub .t0 .a2 .a0]))
+/-- A block, with `o = 4 len`: its zeta, the end of its first half in `a3`,
+then `len` inverse butterflies, and the next block. -/
+def nttInvBlockCode (o : Nat) : Prog isa :=
+  .seq (.block [.load .w .a4 .a1 0, .addi .a1 .a1 (-4), .addi .a3 .a2 o])
+    (.seq (.loop (.block (ibflyBody o)) (.ne .a2 .a3)) (.block [.addi .a2 .a2 o]))
 
-/-- A layer: its blocks. -/
-def nttInvLayerCode : Prog isa :=
-  .seq (.block [.addi .a2 .a0 (-1024)])
-    (.seq (.loop nttInvBlockCode (.nonzero .t0))
-      (.block [.shift .sll .d .a7 .a7 1, .addi .t0 .a7 (-1024)]))
+/-- A layer, with `o = 4 len`: its blocks. -/
+def nttInvLayerCode (o : Nat) : Prog isa :=
+  .seq (.block [.addi .a2 .a0 (-1024)]) (.loop (nttInvBlockCode o) (.ne .a2 .a0))
 
 /-- `[a2] ← [a2] · a4 mod q`, and on to the next coefficient. -/
 def scaleBody : List Instr :=
@@ -164,8 +170,8 @@ def scaleBody : List Instr :=
 
 def nttInv : Prog isa :=
   .seq (.block (table zetaTable .a1 ++ constsM ++ ([.lui .t5 0x34, .addi .t5 .t5 64] : List Instr) ++
-      ([.addi .a0 .a0 1024, .addi .a1 .a1 508, .li .a7 8] : List Instr)))
-    (.seq (.loop nttInvLayerCode (.nonzero .t0))
+      ([.addi .a0 .a0 1024, .addi .a1 .a1 508] : List Instr)))
+    (.seq (layers nttInvLayerCode nttOffs.reverse)
     (.seq (.block (liq .a4 3303 ++ ([.addi .a2 .a0 (-1024), .li .t1 256] : List Instr)))
       (.loop (.block scaleBody) (.nonzero .t1))))
 
