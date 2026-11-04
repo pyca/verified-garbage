@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
@@ -35,6 +39,17 @@ theorem coreK_secp256k1 : coreK Impl.Ecdsa.X86_64.secp256k1 = Proof.Ecdsa.X86_64
     implies_true, and_true, Proof.Ecdsa.X86_64.Secp256k1.signX86_64]
   rfl
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem secp256k1_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 16 64) := by rfcT_decide
+theorem secp256k1_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 20 64) := by rfcT_decide
+theorem secp256k1_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 28 64) := by rfcT_decide
+theorem secp256k1_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 32 64) := by rfcT_decide
+theorem secp256k1_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 48 128) := by rfcT_decide
+theorem secp256k1_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 64 128) := by rfcT_decide
+theorem secp256k1_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 28 128) := by rfcT_decide
+theorem secp256k1_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.secp256k1 false 0 32 128) := by rfcT_decide
+
 /-- secp256k1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
@@ -58,5 +73,16 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceSp := Function.const _ (by decide +kernel)
   reduceMx := Function.const _ (by decide +kernel)
+  blkT := blkT_of secp256k1_blk₀ secp256k1_blk₁ secp256k1_blk₂ secp256k1_blk₃ secp256k1_blk₄ secp256k1_blk₅ secp256k1_blk₆ secp256k1_blk₇
+
+
+/-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`. -/
+theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve)
+    (hI : Weierstrass.X86_64.InvSounds)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs) :
+    Verified X86_64.target (signCode (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Ecdsa.X86_64.secp256k1.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.secp256k1) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
