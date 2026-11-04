@@ -38,7 +38,6 @@ structure SearchDone (p : SearchPublic) (original : State) (result : PrimeSearch
   input : SearchInput p original
   rd : s.rd = original.rd
   wr : s.wr = p.frame :: original.wr
-  sp : s.sp = p.F - 16
   x19 : s.gpr .x19 = p.F
   saved : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x30 → s.gpr r = original.gpr r
   vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (original.v r).extractLsb' 0 64
@@ -73,7 +72,7 @@ theorem done_of_live {p : SearchPublic} {original s : State} {used remaining : N
       | .accepted c => Spec.Rsa.i2osp c p.len
       | _ => List.replicate p.len 0) :
     SearchDone p original result s :=
-  ⟨h.input, h.rd, h.wr, h.sp, h.x19, h.saved, h.vcs, h.savedX19,
+  ⟨h.input, h.rd, h.wr, h.x19, h.saved, h.vcs, h.savedX19,
     h.slot (by simp [SearchPublic.headers]), h.slot (by simp [SearchPublic.headers]),
     h.slot (by simp [SearchPublic.headers]), h.slot (by simp [SearchPublic.headers]),
     h0, h3, h16, h17, hout⟩
@@ -81,7 +80,7 @@ theorem done_of_live {p : SearchPublic} {original s : State} {used remaining : N
 theorem SearchDone.keep {p : SearchPublic} {original s t : State} {result : PrimeSearchResult}
     (h : SearchDone p original result s) {rs : List Reg} (k : Keep rs s t) (hm : t.mem = s.mem)
     (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) : SearchDone p original result t := by
-  refine ⟨h.input, k.rd.trans h.rd, k.wr.trans h.wr, k.sp.trans h.sp,
+  refine ⟨h.input, k.rd.trans h.rd, k.wr.trans h.wr,
     (k.gpr _ (hregs .x19 (by decide))).trans h.x19,
     fun reg hr h19 h30 => (k.gpr reg (hregs reg hr)).trans (h.saved reg hr h19 h30),
     fun r hr => (k.vcs r hr).trans (h.vcs r hr), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -387,7 +386,7 @@ theorem SearchLive.done_after {p : SearchPublic} {original s t : State} {used re
     exact (writeFrame_frame s.mem p.F values hb).bytes (R := ⟨p.op, p.len⟩)
       (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.symm) (by show p.len ≤ 2 ^ 64; omega)
       (List.mem_range.mp hi)
-  refine ⟨h.input, kt.rd.trans h.rd, kt.wr.trans h.wr, kt.sp.trans h.sp,
+  refine ⟨h.input, kt.rd.trans h.rd, kt.wr.trans h.wr,
     (kt.gpr _ (hrs .x19 (by decide))).trans h.x19,
     fun r hr hn hs => (kt.gpr r (hrs r hr)).trans (h.saved r hr hn hs),
     fun r hr => (kt.vcs r hr).trans (h.vcs r hr),
