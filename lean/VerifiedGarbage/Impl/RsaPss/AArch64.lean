@@ -323,12 +323,14 @@ sixteen on the stack. -/
 /-- The stack argument `j` of the function into `r`. -/
 def arg (r : Reg) (j : Nat) : Instr := .ldrSp r (frameBytes + 8 * j)
 
-/-- The registers saved, and the arguments into their places. -/
+/-- The address of the table `hash` into `x10`, the registers saved, the
+arguments into their places, and the table's index (its word 5) into
+`x27`. -/
 def signPrologue : List Instr :=
-  save ++ ([.str .x .x0 .x16 sOut, .str .x .x2 .x16 sN, .str .x .x4 .x16 sE, .str .x .x5 .x16 sEl,
-    .str .x .x6 .x16 sP, .str .x .x7 .x16 sPl, mov .x23 .x3, arg .x9 8, .str .x .x9 .x16 sDig,
-    arg .x9 10, .str .x .x9 .x16 sSalt, arg .x9 11, .str .x .x9 .x16 sSaltLen, arg .x20 12, arg .x9 13,
-    .str .x .x9 .x16 sScrLen, arg .x9 14, .ldr .x .x27 .x9 40] : List Instr) ++ regsUp
+  [arg .x10 14] ++ save ++ ([.str .x .x0 .x16 sOut, .str .x .x2 .x16 sN, .str .x .x4 .x16 sE,
+    .str .x .x5 .x16 sEl, .str .x .x6 .x16 sP, .str .x .x7 .x16 sPl, mov .x23 .x3, arg .x9 8,
+    .str .x .x9 .x16 sDig, arg .x9 10, .str .x .x9 .x16 sSalt, arg .x9 11, .str .x .x9 .x16 sSaltLen,
+    arg .x20 12, arg .x9 13, .str .x .x9 .x16 sScrLen, .ldr .x .x27 .x10 40] : List Instr) ++ regsUp
 
 /-- Zeros to `out` and 0 returned. -/
 def signFail : Prog isa :=

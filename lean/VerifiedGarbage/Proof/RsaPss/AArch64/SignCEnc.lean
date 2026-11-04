@@ -314,6 +314,7 @@ structure ESel (f : MdFns) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (tsH tsG : 
   hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some Hs
   hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some Gs
   hD : T.H.D = (stackArg s 9).toNat
+  hl : Hs.len = T.H.D
   ok : ∀ s', (Enc.encK T Hs Gs).pre s' → ∃ t s'', Exec isa (encode f (ofIdx i) g) s' t s'' ∧
     abiPreserved s' s'' ∧ (Enc.encK T Hs Gs).post s' s''
   depth : (encode f (ofIdx i) g).aarch64Depth ≤ 39
@@ -447,24 +448,18 @@ structure AfterEnc (K : Nat) (s : State) (eb el lo : Nat) (t : State) : Prop whe
         Spec.Rsa.bytesAt t.mem (off (scr s) (oEm + lo)) el = e
     | none => (t.gpr .x0).setWidth 32 = (0 : BitVec 32)
 
-theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG : List FnTable} {K : Nat}
-    {s t : State} (hp : PreS tsH tsG K s) (h624 : 624 ≤ K) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash}
+/-- What a call of `encode` reads and writes is ours to. -/
+theorem enc_covers {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG : List FnTable} {K : Nat}
+    {s t : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash}
     (E : ESel f g tsH tsG s i T Hs Gs) {eb el lo : Nat}
-    (ha : AtEnc K s eb el lo t) (hsy : t.syms = s.syms) (hlo : lo + el ≤ (s.gpr .x3).toNat)
-    (hel : el = Spec.RsaPss.emLength eb) (hb1 : 1 ≤ eb) (hb2 : eb ≤ Proof.RsaPss.maxEmBits) :
-    WP isa (.call (encName i) (encode f (ofIdx i) g)) t (AfterEnc Hs Gs K s eb el lo) := by
+    (ha : AtEnc K s eb el lo t) (hlo : lo + el ≤ (s.gpr .x3).toNat) :
+    Covers (encRdT T.H.D t) (t.rd ++ t.wr) ∧ Covers (encWrT t) t.wr := by
   have hk2 := hp.k2
   have hhs := hp.hs
   have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
-  have hd := E.depth
   have hsc := oEnc_toNat hp
   have he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega)]
-  have hb : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
-  have hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) := Offset.sub_base _ (by unfold oEm; omega)
-  have hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
-    Offset.sub_base _ (by rw [hsc]; unfold oEnc oY at *; omega)
   have hcr : Covers (encRdT T.H.D t) (t.rd ++ t.wr) := by
     simp only [encRdT, ha.x2, ha.x3, ha.x4, ha.a0, ha.a1, E.hD]
     rw [ha.rd, ha.wr]
@@ -486,6 +481,27 @@ theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
     · exact ⟨sR s, List.mem_cons_of_mem _ hp.hws, oEnc, rfl,
         by show oEnc + (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8 ≤ (stackArg s 13).toNat * 8
            rw [hsc]; unfold oEnc oY at *; omega⟩
+  exact ⟨hcr, hcw⟩
+
+theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG : List FnTable} {K : Nat}
+    {s t : State} (hp : PreS tsH tsG K s) (h624 : 624 ≤ K) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash}
+    (E : ESel f g tsH tsG s i T Hs Gs) {eb el lo : Nat}
+    (ha : AtEnc K s eb el lo t) (hsy : t.syms = s.syms) (hlo : lo + el ≤ (s.gpr .x3).toNat)
+    (hel : el = Spec.RsaPss.emLength eb) (hb1 : 1 ≤ eb) (hb2 : eb ≤ Proof.RsaPss.maxEmBits) :
+    WP isa (.call (encName i) (encode f (ofIdx i) g)) t (AfterEnc Hs Gs K s eb el lo) := by
+  have hk2 := hp.k2
+  have hhs := hp.hs
+  have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
+  have hd := E.depth
+  have hsc := oEnc_toNat hp
+  have he : (BitVec.ofNat 64 el).toNat = el := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega)]
+  have hb : (BitVec.ofNat 64 eb).toNat = eb := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega)]
+  have hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) := Offset.sub_base _ (by unfold oEm; omega)
+  have hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
+    Offset.sub_base _ (by rw [hsc]; unfold oEnc oY at *; omega)
+  obtain ⟨hcr, hcw⟩ := enc_covers hp E ha hlo
   refine WP.callFV (k := Enc.encK T Hs Gs) E.ok (encPre_of hp h624 E ha hsy hlo hel hb1 hb2)
     (Covers.append_left hcr (Covers.right hcw)) hcw ?_ (by omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost

@@ -86,12 +86,24 @@ theorem wr_frame {s t : State} (hwr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr) {d 
     (h : d + n ≤ frameBytes) : InRegions t.wr (fb s + BitVec.ofNat 64 d) n := by
   rw [hwr]; exact in_frame s _ h
 
-theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS tsH tsG K s) (hsp : u.sp = fb s) (hrd : u.rd = s.rd)
-    (hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : u.mem = s.mem) (hg : ∀ r, u.gpr r = s.gpr r)
-    (hv : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
+theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS tsH tsG K s) (hsp0 : u.sp = fb s)
+    (hrd0 : u.rd = s.rd) (hwr0 : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm0 : u.mem = s.mem)
+    (hg0 : ∀ r, u.gpr r = s.gpr r)
+    (hv0 : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
     WP isa (.block (signPrologue ++ n0 .x2)) u (AtChk s) := by
   unfold signPrologue save regsUp n0 arg
   simp only [List.cons_append, List.append_assoc, List.nil_append]
+  refine wp_ldrSp (by decide) (by
+    rw [hsp0, ← stackArgAddr_fb, hrd0]; exact arg_in hp (Covers.left (Covers.refl _)) (j := 14) (by decide))
+    fun u₀ o₀ e₀ => ?_
+  rw [hsp0, ← stackArgAddr_fb, hm0] at e₀
+  have hsp : u₀.sp = fb s := o₀.sp.trans hsp0
+  have hrd : u₀.rd = s.rd := o₀.rd.trans hrd0
+  have hwr : u₀.wr = ⟨fb s, frameBytes⟩ :: s.wr := o₀.wr.trans hwr0
+  have hm : u₀.mem = s.mem := o₀.mem.trans hm0
+  have hg : ∀ r, r ≠ .x10 → u₀.gpr r = s.gpr r := fun r h => (o₀.gpr r (by simpa using h)).trans (hg0 r)
+  have hv : ∀ r ∈ preservedV, (u₀.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := fun r hr =>
+    (o₀.vcs r hr).trans (hv0 r hr)
   refine wp_addSp (by decide) fun u₁ o₁ e₁ => ?_
   rw [hsp, BitVec.add_zero] at e₁
   have hin : ∀ p ∈ saved ++ regSlots, InRegions u₁.wr (u₁.gpr .x16 + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
@@ -107,8 +119,10 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
     intro p hp'
     rw [Spill.saveMem_saved fits _ _ _ p hp']
     have : p.1 ≠ .x16 := by revert p; decide
-    rw [o₁.get p.1 (by simpa using this), hg]
-  have gs : ∀ r, r ≠ .x16 → u₁.gpr r = s.gpr r := fun r h => by rw [o₁.gpr r (by simpa using h), hg]
+    have h10 : p.1 ≠ .x10 := by revert p; decide
+    rw [o₁.get p.1 (by simpa using this), hg _ h10]
+  have gs : ∀ r, r ≠ .x16 → r ≠ .x10 → u₁.gpr r = s.gpr r := fun r h h' => by
+    rw [o₁.gpr r (by simpa using h), hg r h']
   refine wp_mov fun u₃ o₃ e₃ => ?_
   have sp₃ : u₃.sp = fb s := by rw [o₃.sp]; show u₁.sp = _; rw [o₁.sp, hsp]
   have rd₃ : u₃.rd = s.rd := by rw [o₃.rd]; show u₁.rd = _; rw [o₁.rd, hrd]
@@ -162,19 +176,19 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
   have fr₁₂' : Frame [⟨fb s, frameBytes⟩] s.mem u₁₂.mem := by
     rw [m₁₂.mem, o₁₁.mem, o₁₀.mem]
     exact fr₉.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have r₁₄ : InRegions (u₁₂.rd ++ u₁₂.wr) (u₁₂.sp + BitVec.ofNat 64 (frameBytes + 8 * 14)) 8 := by
-    rw [m₁₂.sp, o₁₁.sp, o₁₀.sp, m₁₂.rd, o₁₁.rd, o₁₀.rd, m₁₂.wr, o₁₁.wr, o₁₀.wr, sp₉, rd₉, wr₉, aj]
-    exact rj 14 (by decide)
-  refine wp_ldrSp (by decide) r₁₄ fun w₁ q₁ f₁ => ?_
-  rw [m₁₂.sp, o₁₁.sp, o₁₀.sp, sp₉, aj, arg_frame hp fr₁₂' (by decide)] at f₁
-  have rtH : InRegions (w₁.rd ++ w₁.wr) (stackArg s 14 + BitVec.ofNat 64 40) 8 := by
-    rw [q₁.rd, m₁₂.rd, o₁₁.rd, o₁₀.rd, rd₉, rd₃]
+  have x10₁₂ : u₁₂.gpr .x10 = stackArg s 14 := by
+    rw [m₁₂.gpr, o₁₁.get .x10, o₁₀.get .x10, m₉.gpr, o₈.get .x10, m₇.gpr, o₆.get .x10, m₅.gpr, o₄.get .x10,
+      o₃.get .x10]
+    show u₁.gpr .x10 = _
+    rw [o₁.get .x10, e₀]; rfl
+  have rtH : InRegions (u₁₂.rd ++ u₁₂.wr) (stackArg s 14 + BitVec.ofNat 64 40) 8 := by
+    rw [m₁₂.rd, o₁₁.rd, o₁₀.rd, rd₉, rd₃]
     refine Covers.left (Covers.trans (Covers.of_mem fun x hx => by
       rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _ ⟨tHR s, List.mem_singleton_self _, ?_⟩
     exact Offset.contains_base _ (by decide) (by omega)
-  refine wp_ldrx (by decide) (by rw [f₁]) rtH fun w₂ q₂ f₂ => ?_
+  refine wp_ldrx (by decide) (by rw [x10₁₂]) rtH fun w₂ q₂ f₂ => ?_
   have x27b : w₂.gpr .x27 = s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 := by
-    rw [f₂, q₁.mem, fr₁₂'.readW (r := ⟨stackArg s 14 + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _)
+    rw [f₂, fr₁₂'.readW (r := ⟨stackArg s 14 + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _)
       (fun r hr => by
         rw [List.mem_singleton.mp hr]
         exact ((hp.ktH.sub_left (frame_sub0 K s)).sub_right
@@ -197,17 +211,17 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
   have fr₁₂ : Frame [⟨fb s, frameBytes⟩] s.mem u₁₂.mem := by
     rw [m₁₂.mem, o₁₁.mem, o₁₀.mem]
     exact fr₉.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have sp₁₄ : u₁₄.sp = fb s := by rw [o₁₄.sp, o₁₃.sp, q₂.sp, q₁.sp, m₁₂.sp, o₁₁.sp, o₁₀.sp, sp₉, sp₃]
-  have rd₁₄ : u₁₄.rd = s.rd := by rw [o₁₄.rd, o₁₃.rd, q₂.rd, q₁.rd, m₁₂.rd, o₁₁.rd, o₁₀.rd, rd₉, rd₃]
+  have sp₁₄ : u₁₄.sp = fb s := by rw [o₁₄.sp, o₁₃.sp, q₂.sp, m₁₂.sp, o₁₁.sp, o₁₀.sp, sp₉, sp₃]
+  have rd₁₄ : u₁₄.rd = s.rd := by rw [o₁₄.rd, o₁₃.rd, q₂.rd, m₁₂.rd, o₁₁.rd, o₁₀.rd, rd₉, rd₃]
   have wr₁₄ : u₁₄.wr = ⟨fb s, frameBytes⟩ :: s.wr := by
-    rw [o₁₄.wr, o₁₃.wr, q₂.wr, q₁.wr, m₁₂.wr, o₁₁.wr, o₁₀.wr, wr₉, wr₃]
-  have mem₁₄ : u₁₄.mem = u₁₂.mem := by rw [o₁₄.mem, o₁₃.mem, q₂.mem, q₁.mem]
+    rw [o₁₄.wr, o₁₃.wr, q₂.wr, m₁₂.wr, o₁₁.wr, o₁₀.wr, wr₉, wr₃]
+  have mem₁₄ : u₁₄.mem = u₁₂.mem := by rw [o₁₄.mem, o₁₃.mem, q₂.mem]
   have K₁₄ : Keep [.x9, .x10, .x16, .x19, .x20, .x21, .x23, .x27] { u₁ with mem := m₂ } u₁₄ :=
     (o₃.keep.trans (o₄.keep.trans (m₅.keep.trans (o₆.keep.trans (m₇.keep.trans (o₈.keep.trans (m₉.keep.trans
-      (o₁₀.keep.trans (o₁₁.keep.trans (m₁₂.keep.trans (q₁.keep.trans (q₂.keep.trans
-        (o₁₃.keep.trans o₁₄.keep))))))))))))).mono
+      (o₁₀.keep.trans (o₁₁.keep.trans (m₁₂.keep.trans (q₂.keep.trans
+        (o₁₃.keep.trans o₁₄.keep)))))))))))).mono
   have x2₁₄ : u₁₄.gpr .x2 = s.gpr .x2 := by
-    rw [K₁₄.gpr .x2 (by decide)]; exact gs .x2 (by decide)
+    rw [K₁₄.gpr .x2 (by decide)]; exact gs .x2 (by decide) (by decide)
   have hk1 := hp.k1
   have rn : InRegions (u₁₄.rd ++ u₁₄.wr) (s.gpr .x2) 1 := by
     rw [rd₁₄, wr₁₄]
@@ -231,7 +245,7 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
         (stackArg s 8)).writeW (fb s + BitVec.ofNat 64 sSalt) (stackArg s 10)).writeW
         (fb s + BitVec.ofNat 64 sSaltLen) (stackArg s 11)) (fb s + BitVec.ofNat 64 d) 64 := fun hd h => by
     rw [hm₁₂, Mem.readW_writeW_sep (Offset.sep _ h (by unfold frameBytes at hd; omega) (by decide)) (by decide)]
-  have x20 : w₂.gpr .x20 = stackArg s 12 := by rw [q₂.get .x20, q₁.get .x20, m₁₂.gpr, o₁₁.get .x20, e₁₀]
+  have x20 : w₂.gpr .x20 = stackArg s 12 := by rw [q₂.get .x20, m₁₂.gpr, o₁₁.get .x20, e₁₀]
   refine ⟨?sp, ?rd, ?wr, ?g, ?x10, ?x19, ?x20, ?x21, ?x27, ?x23, ?v, ?mem, ?fr⟩
   case x27 => rw [o₁₆.get .x27, o₁₄.get .x27, o₁₃.get .x27, x27b]
   case sp => rw [o₁₆.sp, sp₁₄]
@@ -240,16 +254,16 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
   case g =>
     intro r hr
     rw [K.gpr r hr]
-    exact gs r fun h => hr (by rw [h]; decide)
+    exact gs r (fun h => hr (by rw [h]; decide)) (fun h => hr (by rw [h]; decide))
   case x10 => rw [e₁₆, hn₀]
   case x19 => rw [o₁₆.get .x19, o₁₄.get .x19, e₁₃, x20]
   case x20 => rw [o₁₆.get .x20, o₁₄.get .x20, o₁₃.get .x20, x20]
   case x21 => rw [o₁₆.get .x21, e₁₄, o₁₃.get .x20, x20]
   case x23 =>
-    rw [o₁₆.get .x23, o₁₄.get .x23, o₁₃.get .x23, q₂.get .x23, q₁.get .x23, m₁₂.gpr, o₁₁.get .x23,
+    rw [o₁₆.get .x23, o₁₄.get .x23, o₁₃.get .x23, q₂.get .x23, m₁₂.gpr, o₁₁.get .x23,
       o₁₀.get .x23, m₉.gpr,
       o₈.get .x23, m₇.gpr, o₆.get .x23, m₅.gpr, o₄.get .x23, e₃]
-    exact gs .x3 (by decide)
+    exact gs .x3 (by decide) (by decide)
   case v =>
     intro r hr
     rw [K.vcs r hr]
