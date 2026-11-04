@@ -554,20 +554,28 @@ open VG.Proof.Weierstrass.RISCV64 (maskOf WsReg copy_ok sel_ok ld_ws)
 open VG.Proof.Weierstrass (Unch combWin magH)
 open VG.Proof.X25519.RISCV64 (Rest)
 
-/-- The words of P-256's tables. -/
-abbrev tabWords : List (BitVec 64) := Impl.Weierstrass.tcombWords 4 (2 ^ 256) Spec.P256.curve.p Impl.P256.p256Comb7
+/-- The words of a four-word curve's tables, modulo `p`. -/
+abbrev tabWordsOf (p : Nat) (comb : List (List (Nat × Nat))) : List (BitVec 64) :=
+  Impl.Weierstrass.tcombWords 4 (2 ^ 256) p comb
 
-/-- What the comb needs of the table at `T`, for the working space at `base`. -/
-structure TabOk (s : State) (base T : Addr) : Prop where
-  held : ∀ i < 18944, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = tabWords.getD i 0
+/-- The words of P-256's tables. -/
+abbrev tabWords : List (BitVec 64) := tabWordsOf Spec.P256.curve.p Impl.P256.p256Comb7
+
+/-- What the comb needs of the table of words `words` at `T`, for the
+working space at `base`. -/
+structure TabOkW (words : List (BitVec 64)) (s : State) (base T : Addr) : Prop where
+  held : ∀ i < 18944, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = words.getD i 0
   al : T.toNat % 64 = 0
   rd : (⟨T, 151552⟩ : Region) ∈ s.rd
   fit : T.toNat + 151552 ≤ 2 ^ 64
   far : ∀ d < 151552, 8192 ≤ ofs base (T + BitVec.ofNat 64 d)
 
+/-- What the comb needs of P-256's table at `T`. -/
+abbrev TabOk : State → Addr → Addr → Prop := TabOkW tabWords
+
 /-- Memory changed only in the working space keeps the table. -/
-theorem TabOk.of_mem {s s' : State} {base T : Addr} (h : TabOk s base T) (hrd : s'.rd = s.rd)
-    (hm : ∀ x, 8192 ≤ ofs base x → s'.mem x = s.mem x) : TabOk s' base T where
+theorem TabOkW.of_mem {words} {s s' : State} {base T : Addr} (h : TabOkW words s base T) (hrd : s'.rd = s.rd)
+    (hm : ∀ x, 8192 ≤ ofs base x → s'.mem x = s.mem x) : TabOkW words s' base T where
   held i hi := by
     rw [← h.held i hi]
     refine Mem.readW_congr fun b hb => hm _ ?_
@@ -578,8 +586,8 @@ theorem TabOk.of_mem {s s' : State} {base T : Addr} (h : TabOk s base T) (hrd : 
   fit := h.fit
   far := h.far
 
-theorem TabOk.of_outside {s s' : State} {base T : Addr} (h : TabOk s base T) (hrd : s'.rd = s.rd) {o n : Nat}
-    (hon : o + n ≤ 8192) (ho : Outside base o n s.mem s'.mem) : TabOk s' base T :=
+theorem TabOkW.of_outside {words} {s s' : State} {base T : Addr} (h : TabOkW words s base T) (hrd : s'.rd = s.rd)
+    {o n : Nat} (hon : o + n ≤ 8192) (ho : Outside base o n s.mem s'.mem) : TabOkW words s' base T :=
   h.of_mem hrd fun x hx => ho x (.inr (by omega))
 
 /-- The address of quadword `q` of entry `e` of row `j`. -/
@@ -590,7 +598,7 @@ theorem entAddr_row (T : Addr) (j q e : Nat) :
   omega
 
 /-- What the scan of row `j` needs. -/
-theorem rowOk_of_tab {s : State} {base T : Addr} (h : TabOk s base T) {j q : Nat} (hj : j < 37) (hq : q < 8)
+theorem rowOk_of_tab {words} {s : State} {base T : Addr} (h : TabOkW words s base T) {j q : Nat} (hj : j < 37) (hq : q < 8)
     (h0 : s.gpr .a0 = T + BitVec.ofNat 64 (4096 * j)) (h7 : s.gpr .a7 = s.gpr .a0 + BitVec.ofNat 64 2048) :
     RowOk s q where
   a7 := h7
@@ -610,7 +618,8 @@ theorem rowOk_of_tab {s : State} {base T : Addr} (h : TabOk s base T) {j q : Nat
 theorem dx_eq : p256.sl DX = 608 := rfl
 
 /-- The `2 n` quadwords of entry `t % 64` of row `j` to `D`. -/
-theorem scans_ok {base T : Addr} {j t : Nat} (hj : j < 37) : ∀ n ≤ 8, ∀ {s : State}, WsReg s base → TabOk s base T →
+theorem scans_ok {words} {base T : Addr} {j t : Nat} (hj : j < 37) : ∀ n ≤ 8, ∀ {s : State}, WsReg s base →
+    TabOkW words s base T →
     s.gpr .a0 = T + BitVec.ofNat 64 (4096 * j) → s.gpr .a7 = s.gpr .a0 + BitVec.ofNat 64 2048 →
     (∀ c < 6, s.gpr (maskReg c) = maskOf (t.testBit c)) →
     WP isa (.block ((List.range n).flatMap (Cfg.scanWord p256))) s fun s' =>
@@ -625,7 +634,7 @@ theorem scans_ok {base T : Addr} {j t : Nat} (hj : j < 37) : ∀ n ≤ 8, ∀ {s
     have e0 : s₁.gpr .a0 = s.gpr .a0 := k₁.gpr (ne _ (by simp))
     have e7 : s₁.gpr .a7 = s.gpr .a7 := k₁.gpr (ne _ (by simp))
     have hw₁ : WsReg s₁ base := ⟨by rw [k₁.gpr (ne _ (by simp)), hw.s0], by rw [k₁.2.2]; exact hw.wr, hw.nowrap, hw.al⟩
-    have hT₁ : TabOk s₁ base T := hT.of_outside k₁.2.1 (by omega) O₁
+    have hT₁ : TabOkW words s₁ base T := hT.of_outside k₁.2.1 (by omega) O₁
     have hm₁ : ∀ c < 6, s₁.gpr (maskReg c) = maskOf (t.testBit c) := fun c hc => by
       rw [k₁.gpr (by
         have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 ∨ c = 5 := by omega
@@ -657,20 +666,24 @@ theorem comb7_len : Impl.P256.p256Comb7.length = 37 := by decide
 theorem comb7_lenH : ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 := by decide
 
 /-- `x R mod p`. -/
-abbrev montP (x : Nat) : Nat := x * 2 ^ 256 % Spec.P256.curve.p
+abbrev montOf (p x : Nat) : Nat := x * 2 ^ 256 % p
+
+/-- `x R mod p` for P-256's `p`. -/
+abbrev montP (x : Nat) : Nat := montOf Spec.P256.curve.p x
 
 /-- Entry `e` of row `j`. -/
 abbrev entOf (j e : Nat) : Nat × Nat := Proof.Weierstrass.combAt Impl.P256.p256Comb7 j e
 
-/-- Quadword `q` of entry `e` of row `j`: the words of `x`, then of `y`, in
-Montgomery's form. -/
-theorem entry_word {s : State} {base T : Addr} (hT : TabOk s base T) {j e q : Nat} (hj : j < 37) (he : e < 64)
-    (hq : q < 8) :
+/-- Quadword `q` of entry `e` of row `j` of a table of 37 rows of 64
+entries: the words of `x`, then of `y`, in Montgomery's form. -/
+theorem entry_wordW {p : Nat} {comb : List (List (Nat × Nat))} (hl : comb.length = 37)
+    (hh : ∀ j < 37, (comb.getD j []).length = 64) {s : State} {base T : Addr}
+    (hT : TabOkW (tabWordsOf p comb) s base T) {j e q : Nat} (hj : j < 37) (he : e < 64) (hq : q < 8) :
     s.mem.readW (entAddr (T + BitVec.ofNat 64 (4096 * j)) q e) 64 =
-      if q < 4 then Impl.Weierstrass.wordOf (montP (entOf j e).1) q
-      else Impl.Weierstrass.wordOf (montP (entOf j e).2) (q - 4) := by
+      if q < 4 then Impl.Weierstrass.wordOf (montOf p (Proof.Weierstrass.combAt comb j e).1) q
+      else Impl.Weierstrass.wordOf (montOf p (Proof.Weierstrass.combAt comb j e).2) (q - 4) := by
   rw [entAddr_row, hT.held _ (by omega)]
-  exact Proof.Weierstrass.tcombWords_getD comb7_len comb7_lenH hj he hq
+  exact Proof.Weierstrass.tcombWords_getD hl hh hj he hq
 
 
 /-- The scalar: the copy of `k`. -/
@@ -680,21 +693,24 @@ abbrev kOf (m : Mem) (base : Addr) : Nat := wordsVal m base 1536 4
 abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
 
 /-- Memory but the working space keeps the table. -/
-theorem TabOk.of_unch {s s' : State} {base T : Addr} (h : TabOk s base T) (hrd : s'.rd = s.rd)
-    {W : List (Nat × Nat)} (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192) (hu : Unch base W s.mem s'.mem) : TabOk s' base T :=
+theorem TabOkW.of_unch {words} {s s' : State} {base T : Addr} (h : TabOkW words s base T) (hrd : s'.rd = s.rd)
+    {W : List (Nat × Nat)} (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192) (hu : Unch base W s.mem s'.mem) :
+    TabOkW words s' base T :=
   h.of_mem hrd fun x hx => hu.far fun w hw => by have := hW w hw; omega
 
 /-- The entry of digit `j` in `D`: `(x R, y R, R)` for the magnitude `m ≠ 0`
 of the digit, `(0, R, 0)` for `m = 0`, and the mask of the digit's sign in
 `PT`'s first word. -/
-theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 37)
-    (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (h2 : s.gpr .s4 = T) (hT : TabOk s base T)
+theorem select_okW {p : Nat} {comb : List (List (Nat × Nat))} (hl : comb.length = 37)
+    (hh : ∀ j < 37, (comb.getD j []).length = 64) (hp0 : 0 < p) (hp : p < 2 ^ 256)
+    {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 37)
+    (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (h2 : s.gpr .s4 = T) (hT : TabOkW (tabWordsOf p comb) s base T)
     (hz : word s.mem base (1536 + 32) = 0) (hZ : wordsVal s.mem base 160 4 = 0) :
     WP isa (.block (Cfg.select p256)) s fun s' =>
       wordsVal s'.mem base 608 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then 0
-        else montP (entOf j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).1) ∧
+        else montOf p (Proof.Weierstrass.combAt comb j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).1) ∧
       wordsVal s'.mem base 640 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then wordsVal s.mem base 224 4
-        else montP (entOf j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).2) ∧
+        else montOf p (Proof.Weierstrass.combAt comb j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).2) ∧
       wordsVal s'.mem base 672 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then 0
         else wordsVal s.mem base 224 4) ∧
       word s'.mem base 1024 = maskOf (decide (combWin 7 (kOf s.mem base) j < 64)) ∧
@@ -726,7 +742,7 @@ theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj 
   have hw₄ := (hw₂.of_rest r₃).of_rest r₄
   have U₄ : Unch base [(1024, 16)] s.mem s₄.mem := by
     rw [m₄, m₃]; rw [m₁] at O₂; exact O₂.unch
-  have hT₄ : TabOk s₄ base T :=
+  have hT₄ : TabOkW (tabWordsOf p comb) s₄ base T :=
     hT.of_unch (by rw [r₄.rd, r₃.rd, r₂.rd, r₁.rd]) (by simp) U₄
   have hm₄ : ∀ c < 6, s₄.gpr (maskReg c) = maskOf ((s₂.gpr .t2).toNat.testBit c) := fun c hc => by
     rw [r₄.gpr _ (by
@@ -767,17 +783,15 @@ theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj 
   have hZ₇ : wordsVal s₇.mem base 160 4 = 0 := by rw [U₇.wordsVal (by simp) (by omega), hZ]
   have hO₇ : wordsVal s₇.mem base 224 4 = wordsVal s.mem base 224 4 := U₇.wordsVal (by simp) (by omega)
   have hD : mg ≠ 0 → ∀ q < 8, word s₇.mem base (608 + 8 * q) =
-      if q < 4 then Impl.Weierstrass.wordOf (montP (entOf j (mg - 1)).1) q
-      else Impl.Weierstrass.wordOf (montP (entOf j (mg - 1)).2) (q - 4) := by
+      if q < 4 then Impl.Weierstrass.wordOf (montOf p (Proof.Weierstrass.combAt comb j (mg - 1)).1) q
+      else Impl.Weierstrass.wordOf (montOf p (Proof.Weierstrass.combAt comb j (mg - 1)).2) (q - 4) := by
     intro h0 q hq
     have ht : (s₂.gpr .t2).toNat % 64 = mg - 1 := by rw [t₂ h0]; omega
-    rw [u₇.mem, O₆.word (by omega) (by omega), v₅ q hq, a₄, ht, entry_word hT₄ hj (by omega) hq]
-  have hpx : mg ≠ 0 → montP (entOf j (mg - 1)).1 < 2 ^ 256 := fun _ => by
-    have := Nat.mod_lt ((entOf j (mg - 1)).1 * 2 ^ 256) (show 0 < Spec.P256.curve.p by decide)
-    exact Nat.lt_trans this (by decide)
-  have hpy : mg ≠ 0 → montP (entOf j (mg - 1)).2 < 2 ^ 256 := fun _ => by
-    have := Nat.mod_lt ((entOf j (mg - 1)).2 * 2 ^ 256) (show 0 < Spec.P256.curve.p by decide)
-    exact Nat.lt_trans this (by decide)
+    rw [u₇.mem, O₆.word (by omega) (by omega), v₅ q hq, a₄, ht, entry_wordW hl hh hT₄ hj (by omega) hq]
+  have hpx : mg ≠ 0 → montOf p (Proof.Weierstrass.combAt comb j (mg - 1)).1 < 2 ^ 256 := fun _ =>
+    Nat.lt_trans (Nat.mod_lt _ hp0) hp
+  have hpy : mg ≠ 0 → montOf p (Proof.Weierstrass.combAt comb j (mg - 1)).2 < 2 ^ 256 := fun _ =>
+    Nat.lt_trans (Nat.mod_lt _ hp0) hp
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [O₁₀.wordsVal (by omega) (by omega), O₉.wordsVal (by omega) (by omega), e₈]
     by_cases h0 : mg = 0
@@ -808,6 +822,21 @@ theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj 
       ((r₄.mono (by decide)).trans ((r₅.mono (by decide)).trans ((r₆.mono (by decide)).trans
       (((u₇.rest (ws := [.a7]) (by decide)).mono (by decide)).trans ((r₈.mono (by decide)).trans ((r₉.mono (by decide)).trans
       (r₁₀.mono (by decide))))))))))
+
+/-- The entry of digit `j` of P-256's table in `D` (`select_okW`). -/
+theorem select_ok {s : State} {base T : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 37)
+    (h1 : s.gpr .s1 = BitVec.ofNat 64 j) (h2 : s.gpr .s4 = T) (hT : TabOk s base T)
+    (hz : word s.mem base (1536 + 32) = 0) (hZ : wordsVal s.mem base 160 4 = 0) :
+    WP isa (.block (Cfg.select p256)) s fun s' =>
+      wordsVal s'.mem base 608 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then 0
+        else montP (entOf j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).1) ∧
+      wordsVal s'.mem base 640 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then wordsVal s.mem base 224 4
+        else montP (entOf j (magH 64 (combWin 7 (kOf s.mem base) j) - 1)).2) ∧
+      wordsVal s'.mem base 672 4 = (if magH 64 (combWin 7 (kOf s.mem base) j) = 0 then 0
+        else wordsVal s.mem base 224 4) ∧
+      word s'.mem base 1024 = maskOf (decide (combWin 7 (kOf s.mem base) j < 64)) ∧
+      Unch base [(608, 96), (1024, 16)] s.mem s'.mem ∧ Rest selRegs s s' :=
+  select_okW comb7_len comb7_lenH (by decide) (by decide) hw hj h1 h2 hT hz hZ
 
 end
 

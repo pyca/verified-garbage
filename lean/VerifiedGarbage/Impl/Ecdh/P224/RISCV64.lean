@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num4
 public import VerifiedGarbage.Impl.Ecdsa.P224.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb.P224
 public import VerifiedGarbage.Impl.Weierstrass.Layout.CheckPoint
 
 /-!
@@ -37,12 +38,12 @@ def ecdhP224 : Prog isa :=
   .block (Cfg.zCode p224 ++ storeNum4 3 (p224.sl XO) .s2 0 ++ Cfg.retCode p224)
 
 /-- `vg_ec_p224_public_key(out = a0, d = a1, scratch = a2)`, with `[d]G` by
-the ladder, `vg_p224_mul`. -/
+the comb, `vg_p224_mul_g`. -/
 def publicKeyP224 : Prog isa :=
   .seq (.block (Cfg.saveCode .a2 ++ loadNum4 3 (p224.sl K) .a1 0 ++
     [.li .t0 0, .addi .t0 .t0 (-1)] ++ sdAt .t0 wb (p224.sl FLAG) ++ Cfg.constCode p224 ++
     copy 4 (p224.sl RX) (p224.sl GX) ++ copy 4 (p224.sl RY) (p224.sl GY))) <|
-  .seq (Cfg.tail p224 "vg_p224_mul" mulP224) <|
+  .seq (Cfg.tail p224 Ecdsa.RISCV64.Comb.mulGP224Name Ecdsa.RISCV64.Comb.mulGP224) <|
   .seq (Cfg.affineCoord p224 YM YO RY) <|
   .block (Cfg.zCode p224 ++ pointOut224 XO YO)
 

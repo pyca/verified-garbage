@@ -23,6 +23,10 @@ mod vg_ed25519_verify_neg_base;
 pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
+mod vg_p224_comb;
+pub use vg_p224_comb::VG_P224_COMB;
+
+#[rustfmt::skip]
 mod vg_p224_sqrt;
 pub use vg_p224_sqrt::VG_P224_SQRT;
 
