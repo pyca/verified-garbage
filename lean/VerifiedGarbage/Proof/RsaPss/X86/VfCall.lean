@@ -79,10 +79,10 @@ theorem keepSlot {P : EP} {m : Mem} {d : Nat} (hd : d + 4 ≤ sLo) (v : BitVec 3
     Bm h P (m.writeW ((P.lay h.D).fr d) v) :=
   hb.keep h (slot_frame (P.lay h.D) m d v) fun r hr e he => by
     simp only [List.mem_singleton] at hr; subst hr
-    have e1 : sLo = 80 := rfl
-    have e2 : sC = 84 := rfl
-    have e3 : sDb = 88 := rfl
-    have e4 : sAny = 132 := rfl
+    have e1 : sLo = 40 := rfl
+    have e2 : sC = 44 := rfl
+    have e3 : sDb = 48 := rfl
+    have e4 : sAny = 52 := rfl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by unfold frameBytes; omega_arith) (by omega_arith)
 
@@ -375,7 +375,7 @@ theorem call_vp (P : EP) (c : Ver.PublicImpl) : VP (V1 h P) (.call c.name c.code
     have st : (P.lay h.D).St σ s' := hs.write fr hw rd wr (cs .esp (by simp [calleeSaved]))
     have hct : Ctx (P.lay h.D) P.scr σ s' := ⟨st, by rw [cs .ebp (by simp [calleeSaved]), hc.ebp]⟩
     have hb' : Bm h P s'.mem := hb.keep h fr fun r hr d hd => by
-      have hd' : 80 ≤ d ∧ d + 4 ≤ frameBytes := by
+      have hd' : 40 ≤ d ∧ d + 4 ≤ frameBytes := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl <;> decide
       simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr

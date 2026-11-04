@@ -61,9 +61,9 @@ theorem away3_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
 
 theorem away3_slot {L : Lay} {d : Nat} (hd : d + 4 ≤ frameBytes) (h₁ : d + 4 ≤ sLo ∨ sDb + 4 ≤ d) :
     Away3 L (slotR L d) := by
-  have e1 : sLo = 80 := rfl
-  have e2 : sC = 84 := rfl
-  have e3 : sDb = 88 := rfl
+  have e1 : sLo = 40 := rfl
+  have e2 : sC = 44 := rfl
+  have e3 : sDb = 48 := rfl
   exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega)⟩
 
 theorem away3_ctW {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :

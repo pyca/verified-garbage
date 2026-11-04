@@ -39,26 +39,28 @@ abbrev outv (P : EP) : List (BitVec 32) :=
 def Slots (P : EP) (m : Mem) (k : Nat) : Prop :=
   ∀ i < k, m.readW ((P.lay h.D).fr (4 * i)) 32 = (outv P).getD i 0
 
+/-- What the call needs of the checks: the parameters' slots are the call's
+arguments now. -/
+abbrev Kq (P : EP) (σ : State) (_m : Mem) : Prop := In h.D P σ ∧ fits h P ∧ True
+
 /-- During the call's arguments. -/
 abbrev A0 (P : EP) (σ s : State) (k : Nat) : Prop :=
-  Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧ Slots h P s.mem k
+  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧ Slots h P s.mem k
 
 /-- A word stored below the slots keeps what the encoding left. -/
-theorem keepSlot {P : EP} {σ : State} {m : Mem} {d : Nat} (hd : d + 4 ≤ sLo) (v : BitVec 32)
-    (hk : Kp h P σ m) (he : EMv P m (emF h P σ)) :
-    Kp h P σ (m.writeW ((P.lay h.D).fr d) v) ∧ EMv P (m.writeW ((P.lay h.D).fr d) v) (emF h P σ) := by
+theorem keepSlot {P : EP} {σ : State} {m : Mem} {d : Nat} (hd : d + 4 ≤ 80) (v : BitVec 32)
+    (hk : Kq h P σ m) (he : EMv P m (emF h P σ)) :
+    Kq h P σ (m.writeW ((P.lay h.D).fr d) v) ∧ EMv P (m.writeW ((P.lay h.D).fr d) v) (emF h P σ) := by
   have hg := hk.1.geo
   obtain ⟨σ', ok⟩ := hg.ok
   have hK := hk.1.k1024
   have fr := slot_frame (P.lay h.D) m d v
-  refine ⟨hk.keep h fr fun r hr => ?_, fun i hi => ?_⟩
-  · simp only [List.mem_singleton] at hr; subst hr
-    exact away3_slot (by unfold sLo at hd; unfold frameBytes; omega_arith) (.inl hd)
+  refine ⟨hk, fun i hi => ?_⟩
   · rw [← he i hi]
     exact fr _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hg.slot ok (o := oEm + i) (n := 1) (by unfold oEm oRsa; omega_arith)
-        (by rw [hg.F]; unfold sLo at hd; unfold frameBytes; omega_arith)).symm _ (Region.contains_self _ _)
+        (by rw [hg.F]; unfold frameBytes; omega_arith)).symm _ (Region.contains_self _ _)
 
 theorem slots_next {P : EP} {m : Mem} {i : Nat} (hs : Slots h P m i) (hi : i < 20) (v : BitVec 32)
     (hv : v = (outv P).getD i 0) : Slots h P (m.writeW ((P.lay h.D).fr (4 * i)) v) (i + 1) := by
@@ -79,7 +81,7 @@ theorem copySlot {P : EP} {σ s : State} {i j : Nat} (ha : A0 h P σ s i) (hi : 
   refine hc.wp_arg hg (sg_arg h hj) (by decide) (by decide) fun t1 c1 u1 =>
     c1.wp_st hg (d := 4 * i) (by unfold frameBytes; omega_arith) fun t2 c2 m2 => kk t2 ⟨c2, ?_⟩
   rw [m2.mem, u1.mem, u1.gpr]
-  have kp := keepSlot h (show 4 * i + 4 ≤ sLo by unfold sLo; omega_arith) (P.lay h.D |>.argv.getD j 0) hk he
+  have kp := keepSlot h (show 4 * i + 4 ≤ 80 by omega_arith) (P.lay h.D |>.argv.getD j 0) hk he
   exact ⟨kp.1, kp.2, slots_next h hs hi _ hv⟩
 
 /-- `scratch + o` to the call's argument `i`. -/
@@ -94,7 +96,7 @@ theorem scrSlot {P : EP} {σ s : State} {i o : Nat} (ha : A0 h P σ s i) (hi : i
   refine ((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).wp_st hg (d := 4 * i)
     (by unfold frameBytes; omega_arith) fun t3 c3 m3 => kk t3 ⟨c3, ?_⟩
   rw [m3.mem, u2.mem, u1.mem, u2.gpr, u1.gpr, hc.ebp]
-  have kp := keepSlot h (show 4 * i + 4 ≤ sLo by unfold sLo; omega_arith) (P.scr + BitVec.ofNat 32 o) hk he
+  have kp := keepSlot h (show 4 * i + 4 ≤ 80 by omega_arith) (P.scr + BitVec.ofNat 32 o) hk he
   exact ⟨kp.1, kp.2, slots_next h hs hi _ hv⟩
 
 theorem privArgs_eq : privArgs = copyArg 0 0 ++ copyArg 3 1 ++ copyArg 2 2 ++ copyArg 3 3 ++ copyArg 4 4 ++
@@ -106,7 +108,7 @@ theorem privArgs_eq : privArgs = copyArg 0 0 ++ copyArg 3 1 ++ copyArg 2 2 ++ co
 
 /-- Before the call. -/
 abbrev R1 (P : EP) (σ s : State) : Prop :=
-  Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧
+  Ctx (P.lay h.D) P.scr σ s ∧ Kq h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧
     PrivArgs s P.out P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv (P.scr + BitVec.ofNat 32 oRsa)
       P.K P.el P.pl P.ql (P.scl - 1024)
 
@@ -121,7 +123,7 @@ theorem pa_vp (P : EP) :
     have := hi.slK; unfold Spec.RsaPss.scratchWords at this; omega_arith
   rw [privArgs_eq]
   simp only [List.append_assoc]
-  have z0 : A0 h P σ s 0 := ⟨hc, hk, he, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
+  have z0 : A0 h P σ s 0 := ⟨hc, ⟨hk.1, hk.2.1, trivial⟩, he, fun _ hi => absurd hi (Nat.not_lt_zero _)⟩
   refine copySlot h z0 (by decide) (j := 0) (by decide) (by simp [EP.argv, outv, privArgv]) fun t1 z1 => ?_
   refine copySlot h z1 (by decide) (j := 3) (by decide) (by simp [EP.argv, outv, privArgv]) fun t2 z2 => ?_
   refine copySlot h z2 (by decide) (j := 2) (by decide) (by simp [EP.argv, outv, privArgv]) fun t3 z3 => ?_
@@ -151,7 +153,7 @@ theorem pa_vp (P : EP) :
   have v : t21.gpr .eax = BitVec.ofNat 32 (P.scl - 1024) := by
     rw [u21.gpr, u20.gpr]
     exact Offset.ofNat_sub_ofNat (w := 32) (d := 1024) hs1
-  have kp := keepSlot h (show 4 * 19 + 4 ≤ sLo by decide) (t21.gpr .eax) k19 e19
+  have kp := keepSlot h (show 4 * 19 + 4 ≤ 80 by decide) (t21.gpr .eax) k19 e19
   have sl := slots_next h s19 (by decide) _ (v.trans (by simp [outv, privArgv]))
   have m : t22.mem = t19.mem.writeW ((P.lay h.D).fr (4 * 19)) (t21.gpr .eax) := by
     rw [m22.mem, u21.mem, u20.mem]

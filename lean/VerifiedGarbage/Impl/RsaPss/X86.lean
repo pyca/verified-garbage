@@ -64,11 +64,11 @@ then the slots. -/
 def frameBytes : Nat := 144
 
 /-- `lo = k - emLen`, 0 or 1. -/
-def sLo : Nat := 80
+def sLo : Nat := 40
 /-- The mask `0xFF >> (8 emLen - emBits)` of `maskedDB`'s first byte. -/
-def sC : Nat := 84
+def sC : Nat := 44
 /-- `dbLen = emLen - hLen - 1`. -/
-def sDb : Nat := 88
+def sDb : Nat := 48
 /-- The length `ℓ` of the message `ctHash` hashes. -/
 def sL : Nat := 92
 /-- The number of its blocks `nbm`. -/
@@ -90,7 +90,7 @@ def sD : Nat := 124
 /-- The shift's passes left (verifying). -/
 def sPc : Nat := 128
 /-- 1 if `any_salt_len` is not zero (verifying). -/
-def sAny : Nat := 132
+def sAny : Nat := 52
 /-- The last block of the padded message `ctHash` hashes. -/
 def sLb : Nat := 136
 /-- The value of the first nonzero byte of `DB`'s padding (verifying). -/
