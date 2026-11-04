@@ -3,7 +3,7 @@ module
 -- separate module: its proofs (about 4 s) cost more than its imports, and its importer's
 -- changes need not re-check them
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
@@ -66,494 +66,6 @@ open VG.Proof.Mont (wordsVal Outside Outs)
 open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
 open Spec.Sha256 (bytesAt)
 
-/-- Reads registers through register writes (`Upd`), deciding which register
-each writes. -/
-macro "upd_simp" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
-  (set_option linter.unusedSimpArgs false in simp (disch := decide) only [$ls,*]))
-
-/-! ## The parts of a message -/
-
-/-- What a part's base register holds. -/
-def regV (s₀ : State) : Reg → Addr
-  | .s1 => s₀.sp
-  | .s3 => dk s₀
-  | _ => 0
-
-/-- Where a part is. -/
-def pA (s₀ : State) (p : Part) : Addr := regV s₀ p.1 + BitVec.ofNat 64 p.2.1
-
-/-- A part in the frame after the save area, or a prefix of `d`. -/
-def PartOk (P : Rfc) (p : Part) : Prop :=
-  (p.1 = .s1 ∧ 64 ≤ p.2.1 ∧ p.2.1 + p.2.2 ≤ P.c.frB) ∨ (p.1 = .s3 ∧ p.2.1 = 0 ∧ p.2.2 ≤ P.Q)
-
-theorem PartOk.len {P : Rfc} {p : Part} (h : PartOk P p) : p.2.2 ≤ 320 := by
-  have := (sizes P).Q
-  have := (sizes P).H
-  rcases h with ⟨-, h₁, h₂⟩ | ⟨-, -, h₂⟩ <;> omega
-
-theorem PartOk.off {P : Rfc} {p : Part} (h : PartOk P p) : p.2.1 < 2048 := by
-  rcases h with ⟨-, -, h₂⟩ | ⟨-, h₂, -⟩
-  · have := (sizes P).Q; have := (sizes P).H; omega
-  · omega
-
-theorem PartOk.reg {P : Rfc} {p : Part} (h : PartOk P p) : p.1 = .s1 ∨ p.1 = .s3 := by
-  rcases h with ⟨h', -⟩ | ⟨h', -⟩ <;> simp [h']
-
-/-- The message. -/
-def msgOf (m : Mem) (s₀ : State) : List Part → List Byte
-  | [] => []
-  | p :: ps => bytesAt m (pA s₀ p) p.2.2 ++ msgOf m s₀ ps
-
-theorem msgOf_length (m : Mem) (s₀ : State) : ∀ ps, (msgOf m s₀ ps).length = total ps
-  | [] => rfl
-  | p :: ps => by simp only [msgOf, List.length_append, bytesAt_length, msgOf_length m s₀ ps, total]
-
-/-- The states' region in `scratch`. -/
-abbrev stR (s₀ : State) : Region := cR s₀ 0 384
-
-/-- The key's bytes. -/
-abbrev kOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ fK) P.c.H.D
-
-/-- The key's block, for HMAC's pads. -/
-abbrev k0Of (P : Rfc) (s₀ : State) (m : Mem) : List Byte := blockKey P.hH.SH.H (kOf P s₀ m)
-
-theorem blockKey_length (P : Rfc) (k : List Byte) : (blockKey P.hH.SH.H k).length = P.c.H.B := by
-  have hB := P.hH.hB
-  have hDB : P.c.H.D ≤ P.c.H.B := by have := (sizes P).D; rcases P.hH.hB64 with h | h <;> omega
-  simp only [blockKey, hB, List.length_append, List.length_replicate]
-  split
-  · rw [P.hH.hashLen]; omega
-  · omega
-
-/-! ## What holds between the calls -/
-
-/-- From the start `s` of an HMAC: `KR`, and memory changed only in the
-states and the stack below the frame. -/
-structure St (P : Rfc) (s₀ s t : State) : Prop where
-  kr : KR P s₀ t
-  fr : Frame [stR s₀, stk P s₀] s.mem t.mem
-  pr : ∀ r ∈ preserved, t.gpr r = s.gpr r
-
-section
-variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
-include hp
-
-/-- Regions of the frame are apart from what the calls of an HMAC write. -/
-theorem fr_apart {o n : Nat} (h : o + n ≤ P.c.frB) : ∀ r ∈ [stR s₀, stk P s₀], Region.Disjoint (sR s₀ o n) r := by
-  have sub : Region.Sub (sR s₀ o n) (frR P s₀) := part_sub h
-  simp only [List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl)
-  · exact (hp.f_c.sub_left sub).sub_right (scr_sub (by omega))
-  · exact (f_s hp).sub_left sub
-
-theorem d_apart {n : Nat} (h : n ≤ P.Q) : ∀ r ∈ [stR s₀, stk P s₀], Region.Disjoint ⟨dk s₀, n⟩ r := by
-  have sub : Region.Sub ⟨dk s₀, n⟩ (dR P s₀) := Region.sub_prefix h
-  simp only [List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl)
-  · exact (hp.d_c.sub_left sub).sub_right (scr_sub (by omega))
-  · exact (hp.b_d.symm.sub_left sub)
-
-theorem PartOk.apart {p : Part} (h : PartOk P p) :
-    ∀ r ∈ [stR s₀, stk P s₀], Region.Disjoint ⟨pA s₀ p, p.2.2⟩ r := by
-  obtain ⟨r, o, n⟩ := p
-  rcases h with ⟨rfl, h₁, h₂⟩ | ⟨rfl, rfl, h₂⟩
-  · exact fr_apart hp (o := o) (n := n) h₂
-  · simp only [pA, regV, BitVec.add_zero]
-    exact d_apart hp h₂
-
-omit hp in
-/-- The bytes of a region apart from the states and the stack below the
-frame are those at the start. -/
-theorem St.bytes {s t : State} (h : St P s₀ s t) {a : Addr} {n : Nat}
-    (hd : ∀ r ∈ [stR s₀, stk P s₀], Region.Disjoint ⟨a, n⟩ r) (hn : n ≤ 2 ^ 64) :
-    bytesAt t.mem a n = bytesAt s.mem a n :=
-  Proof.Sha256.Stream.bytesAt_congr fun _ hi => h.fr.bytes (R := ⟨a, n⟩) hd hn hi
-
-theorem St.key {s t : State} (h : St P s₀ s t) : kOf P s₀ t.mem = kOf P s₀ s.mem :=
-  h.bytes (fr_apart hp (by have := (sizes P).D; simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega)) (by have := (sizes P).D; omega)
-
-theorem St.part {s t : State} (h : St P s₀ s t) {p : Part} (hp' : PartOk P p) :
-    bytesAt t.mem (pA s₀ p) p.2.2 = bytesAt s.mem (pA s₀ p) p.2.2 :=
-  h.bytes (hp'.apart hp) (by have := hp'.len; omega)
-
-theorem St.msg {s t : State} (h : St P s₀ s t) : ∀ {ps : List Part}, (∀ p ∈ ps, PartOk P p) →
-    msgOf t.mem s₀ ps = msgOf s.mem s₀ ps
-  | [], _ => rfl
-  | p :: ps, hps => by
-    simp only [msgOf]
-    rw [h.part hp (hps p (by simp)), h.msg (fun q hq => hps q (by simp [hq]))]
-
-omit hp in
-theorem St.refl {s : State} (h : KR P s₀ s) : St P s₀ s s := ⟨h, Frame.refl _ _, fun _ _ => rfl⟩
-
-/-- A call that writes the states and the stack below the frame keeps `St`. -/
-theorem St.call {s t t' : State} (h : St P s₀ s t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
-    (hsp : t'.sp = t.sp) (hcs : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {rs : List Region}
-    (hf : Frame rs t.mem t'.mem) (hw : ∀ r ∈ rs, Region.Sub r (stR s₀) ∨ ∃ n, r = below s₀.sp n ∧ n ≤ P.X) :
-    St P s₀ s t' := by
-  refine ⟨h.kr.call hp hrd hwr hsp hcs hf fun r hr => ?_, h.fr.trans (hf.sub fun r hr => ?_),
-    fun r hr => (hcs r hr).trans (h.pr r hr)⟩
-  · rcases hw r hr with h' | h'
-    · exact .inr (.inr (.inl (fun x hx => scr_sub (by omega) x (h' x hx))))
-    · exact .inr (.inr (.inr h'))
-  · rcases hw r hr with h' | ⟨n, rfl, hn⟩
-    · exact ⟨_, by simp, h'⟩
-    · exact ⟨_, by simp, below_stk hp hn⟩
-
-omit hp in
-theorem St.upd {s t t' : State} (h : St P s₀ s t) {d : Reg} (hd : d ∉ preserved) {v : BitVec 64}
-    (u : Upd t t' d v) : St P s₀ s t' :=
-  ⟨h.kr.upd (fun h' => hd (kregs_pres _ h')) u, by rw [u.mem]; exact h.fr,
-    fun r hr => (u.other r fun e => hd (e ▸ hr)).trans (h.pr r hr)⟩
-
-end
-
-/-! ## The regions of the calls -/
-
-section
-variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
-include hp
-
-theorem cov_fr {s : State} (hk : KR P s₀ s) {o n : Nat} (h : o + n ≤ P.c.frB) :
-    ∃ r' ∈ s.rd ++ s.wr, ∃ off, (sR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + (sR s₀ o n).len ≤ r'.len :=
-  ⟨frR P s₀, List.mem_append_right _ (fr_wr hp hk.wr), o, rfl, h⟩
-
-theorem covW_fr {s : State} (hk : KR P s₀ s) {o n : Nat} (h : o + n ≤ P.c.frB) :
-    ∃ r' ∈ s.wr, ∃ off, (sR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + (sR s₀ o n).len ≤ r'.len :=
-  ⟨frR P s₀, fr_wr hp hk.wr, o, rfl, h⟩
-
-theorem cov_scr {s : State} (hk : KR P s₀ s) {o n : Nat} (h : o + n ≤ 8192) :
-    ∃ r' ∈ s.rd ++ s.wr, ∃ off, (cR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + (cR s₀ o n).len ≤ r'.len :=
-  ⟨scrR s₀, List.mem_append_right _ (scr_wr hp hk.wr), o, rfl, h⟩
-
-theorem covW_scr {s : State} (hk : KR P s₀ s) {o n : Nat} (h : o + n ≤ 8192) :
-    ∃ r' ∈ s.wr, ∃ off, (cR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + (cR s₀ o n).len ≤ r'.len :=
-  ⟨scrR s₀, scr_wr hp hk.wr, o, rfl, h⟩
-
-theorem cov_part {s : State} (hk : KR P s₀ s) {p : Part} (h : PartOk P p) :
-    ∃ r' ∈ s.rd ++ s.wr, ∃ off, pA s₀ p = r'.base + BitVec.ofNat 64 off ∧ off + p.2.2 ≤ r'.len := by
-  obtain ⟨r, o, n⟩ := p
-  rcases h with ⟨rfl, -, h₂⟩ | ⟨rfl, rfl, h₂⟩
-  · exact cov_fr hp hk h₂
-  · exact ⟨dR P s₀, List.mem_append_left _ (by rw [hk.rd, hp.rd]; simp), 0, rfl, by simpa using h₂⟩
-
-/-- The states, apart from each other. -/
-theorem in_out : Region.Disjoint (cR s₀ sIn P.c.H.S) (cR s₀ sOut P.c.H.S) :=
-  scr_disj hp (.inl (by have := (sizes P).S192; simp only [sIn, sOut]; omega)) (by have := (sizes P).S192; simp only [sIn]; omega)
-    (by have := (sizes P).S192; simp only [sOut]; omega)
-
-omit hp in
-theorem st_in : Region.Sub (cR s₀ sIn P.c.H.S) (stR s₀) :=
-  Offset.sub _ (by simp only [sIn]; omega) (by have := (sizes P).S192; simp only [sIn]; omega)
-
-omit hp in
-theorem st_out : Region.Sub (cR s₀ sOut P.c.H.S) (stR s₀) :=
-  Offset.sub _ (by simp only [sOut]; omega) (by have := (sizes P).S192; simp only [sOut]; omega)
-
-/-- A part of the frame is apart from the states. -/
-theorem fr_st {o n : Nat} (h : o + n ≤ P.c.frB) {r : Region} (hr : Region.Sub r (stR s₀)) :
-    Region.Disjoint (sR s₀ o n) r :=
-  (hp.f_c.sub_left (part_sub h)).sub_right fun x hx => scr_sub (by omega) x (hr x hx)
-
-/-- The stack below the stack pointer is apart from the states and the frame. -/
-theorem below_st {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.X) {r : Region} (hr : Region.Sub r (stR s₀)) :
-    (below s.sp n).Disjoint r := by
-  rw [hk.sp]
-  exact (hp.b_c.sub_left (below_stk hp hn)).sub_right fun x hx => scr_sub (by omega) x (hr x hx)
-
-theorem below_fr {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.X) {o m : Nat} (h : o + m ≤ P.c.frB) :
-    (below s.sp n).Disjoint (sR s₀ o m) := by
-  rw [hk.sp]
-  exact ((f_s hp).sub_left (part_sub h)).symm.sub_left (below_stk hp hn)
-
-theorem below_part {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.X) {p : Part} (h : PartOk P p) :
-    (below s.sp n).Disjoint ⟨pA s₀ p, p.2.2⟩ := by
-  obtain ⟨r, o, m⟩ := p
-  rcases h with ⟨rfl, -, h₂⟩ | ⟨rfl, rfl, h₂⟩
-  · exact below_fr hp hk hn h₂
-  · rw [hk.sp]
-    simp only [pA, regV, BitVec.add_zero]
-    exact (hp.b_d.sub_left (below_stk hp hn)).sub_right (Region.sub_prefix h₂)
-
-theorem part_st {p : Part} (h : PartOk P p) {r : Region} (hr : Region.Sub r (stR s₀)) :
-    Region.Disjoint ⟨pA s₀ p, p.2.2⟩ r := by
-  obtain ⟨q, o, m⟩ := p
-  rcases h with ⟨rfl, -, h₂⟩ | ⟨rfl, rfl, h₂⟩
-  · exact fr_st hp h₂ hr
-  · simp only [pA, regV, BitVec.add_zero]
-    exact (hp.d_c.sub_left (Region.sub_prefix h₂)).sub_right fun x hx => scr_sub (by omega) x (hr x hx)
-
-end
-
-/-! ## HMAC's `init` -/
-
-/-- After `init`'s arguments. -/
-def HI (P : Rfc) (s₀ s t : State) : Prop :=
-  St P s₀ s t ∧ t.gpr .a0 = cA s₀ sIn ∧ t.gpr .a1 = cA s₀ sOut ∧ t.gpr .a2 = sA s₀ fK ∧
-    t.gpr .a3 = BitVec.ofNat 64 P.c.H.D
-
-/-- After `init`: the states of the key. -/
-def HK (P : Rfc) (s₀ s t : State) : Prop :=
-  St P s₀ s t ∧ P.hH.SH.Repr t.mem (cA s₀ sIn) (xorPad (k0Of P s₀ s.mem) ipad) ∧
-    P.hH.SH.Repr t.mem (cA s₀ sOut) (xorPad (k0Of P s₀ s.mem) opad)
-
-section
-variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
-include hp
-
-omit hp in
-theorem initArgs_ok {s : State} (h : KR P s₀ s) : WP isa (.block P.c.initArgs) s (HI P s₀ s) := by
-  unfold Cfg.initArgs
-  have hD := (sizes P).D
-  refine wp_addi (by simp only [sIn]; omega) fun s₁ u₁ => wp_addi (by simp only [sOut]; omega) fun s₂ u₂ =>
-    wp_addi (by simp only [fK]; have := (sizes P).H; have := (sizes P).Q; omega) fun s₃ u₃ => wp_li (by omega) fun s₄ u₄ => WP.block_nil ?_
-  have St₄ : St P s₀ s s₄ := ((((St.refl h).upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd
-    (by decide) u₄
-  refine ⟨St₄, ?_, ?_, ?_, ?_⟩
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.s0]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.s0]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.s1]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-
-theorem hi_args {s t : State} (h : HI P s₀ s t) : HiArgs P t (cA s₀ sIn) (cA s₀ sOut) (sA s₀ fK) P.c.H.D := by
-  obtain ⟨St, h0, h1, h2, h3⟩ := h
-  have hz := sizes P
-  have hzH := hz.H
-  have hX := hz.X
-  have hk : fK + P.c.H.D ≤ P.c.frB := by have := hz.D; simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega
-  refine ⟨h0, h1, h2, by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hz.D; omega)],
-    by rw [St.kr.sp]; exact hp.al, by rw [St.kr.sp]; have := hp.spX; omega, in_out hp,
-    fr_st hp hk ((st_in (P := P))), fr_st hp hk ((st_out (P := P))), below_st hp St.kr hX.1 ((st_in (P := P))),
-    below_st hp St.kr hX.1 ((st_out (P := P))), below_fr hp St.kr hX.1 hk, ?_, ?_⟩
-  · refine VG.Covers.of_sub fun r hr => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact cov_fr hp St.kr hk
-    · exact cov_scr hp St.kr (by have := hz.S192; simp only [sIn]; omega)
-    · exact cov_scr hp St.kr (by have := hz.S192; simp only [sOut]; omega)
-  · refine VG.Covers.of_sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact covW_scr hp St.kr (by have := hz.S192; simp only [sIn]; omega)
-    · exact covW_scr hp St.kr (by have := hz.S192; simp only [sOut]; omega)
-
-theorem init_ok {s t : State} (h : HI P s₀ s t) : WP isa (.call P.c.hiN P.c.H.init) t (HK P s₀ s) := by
-  have hz := sizes P
-  have hzH := hz.H
-  have hX := hz.X
-  refine hi_call (hi_args hp h) fun t' a hI hO => ?_
-  have St' : St P s₀ s t' := h.1.call hp a.rd a.wr a.sp a.cs a.frame fun r hr => by
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inl ((st_in (P := P)))
-    · exact .inl ((st_out (P := P)))
-    · exact .inr ⟨_, by rw [h.1.kr.sp], hX.1⟩
-  have hk : bytesAt t.mem (sA s₀ fK) P.c.H.D = kOf P s₀ s.mem := h.1.key hp
-  rw [hk] at hI hO
-  exact ⟨St', hI, hO⟩
-
-end
-
-/-! ## The streaming `update` -/
-
-/-- After the parts `pre` were absorbed. -/
-def HU (P : Rfc) (s₀ s : State) (pre : List Byte) (t : State) : Prop :=
-  St P s₀ s t ∧ P.hH.SH.Repr t.mem (cA s₀ sIn) (xorPad (k0Of P s₀ s.mem) ipad ++ pre) ∧
-    P.hH.SH.Repr t.mem (cA s₀ sOut) (xorPad (k0Of P s₀ s.mem) opad)
-
-/-- After `update`'s arguments for the part `p`. -/
-def HUA (P : Rfc) (s₀ s : State) (pre : List Byte) (p : Part) (t : State) : Prop :=
-  HU P s₀ s pre t ∧ t.gpr .a0 = cA s₀ sIn ∧ t.gpr .a1 = BitVec.ofNat 64 (P.c.H.B + pre.length) ∧
-    t.gpr .a2 = pA s₀ p ∧ t.gpr .a3 = BitVec.ofNat 64 p.2.2
-
-section
-variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
-include hp
-
-omit hp in
-theorem HK.hu {s t : State} (h : HK P s₀ s t) : HU P s₀ s [] t := by
-  obtain ⟨a, b, c⟩ := h
-  exact ⟨a, by rw [List.append_nil]; exact b, c⟩
-
-omit hp in
-theorem updArgs_ok {s t : State} {pre : List Byte} {p : Part} (h : HU P s₀ s pre t)
-    (hr : p.1 = .s1 ∨ p.1 = .s3) (hb : P.c.H.B + pre.length < 2048) (ho : p.2.1 < 2048) (hl : p.2.2 < 2048) :
-    WP isa (.block (P.c.updArgs pre.length p)) t (HUA P s₀ s pre p) := by
-  obtain ⟨q, o, n⟩ := p
-  simp only at hr ho hl
-  have hq : t.gpr q = regV s₀ q := by rcases hr with rfl | rfl; exacts [h.1.kr.s1, h.1.kr.s3]
-  have q0 : q ≠ .a0 := by rcases hr with rfl | rfl <;> decide
-  have q1 : q ≠ .a1 := by rcases hr with rfl | rfl <;> decide
-  unfold Cfg.updArgs
-  refine wp_addi (by simp only [sIn]; omega) fun s₁ u₁ => wp_li hb fun s₂ u₂ =>
-    wp_addi ho fun s₃ u₃ => wp_li hl fun s₄ u₄ => WP.block_nil ?_
-  have St₄ := ((((h.1).upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd (by decide) u₄
-  have mm : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine ⟨⟨St₄, by rw [mm]; exact h.2.1, by rw [mm]; exact h.2.2⟩, ?_, ?_, ?_, ?_⟩
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.1.kr.s0]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-  · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ q1, u₁.other _ q0, hq]; rfl
-  · exact u₄.gpr
-
-theorem updc_ok {s t : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t) (hpo : PartOk P p) :
-    WP isa P.c.H.callUpd t (HU P s₀ s (pre ++ bytesAt s.mem (pA s₀ p) p.2.2)) := by
-  obtain ⟨⟨hS, hi, ho⟩, h0, h1, h2, h3⟩ := h
-  have hz := sizes P
-  have hzH := hz.H
-  have hX := hz.X
-  have ha : UpdArgs P t (cA s₀ sIn) (pA s₀ p) p.2.2 := by
-    refine ⟨h0, h2, by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hpo.len; omega)], part_st hp hpo ((st_in (P := P))), by rw [hS.kr.sp]; exact hp.al,
-      by rw [hS.kr.sp]; have := hp.spX; omega, below_st hp hS.kr hX.2.2.1 ((st_in (P := P))),
-      below_part hp hS.kr hX.2.2.1 hpo, ?_, ?_⟩
-    · refine VG.Covers.of_sub fun r hr => ?_
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact cov_part hp hS.kr hpo
-      · exact cov_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
-    · refine VG.Covers.of_sub fun r hr => ?_
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl
-      exact covW_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
-  refine upd_call ha fun t' a hu => ?_
-  have St' : St P s₀ s t' := hS.call hp a.rd a.wr a.sp a.cs a.frame fun r hr => by
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact .inl ((st_in (P := P)))
-    · exact .inr ⟨_, by rw [hS.kr.sp], hX.2.2.1⟩
-  have hK := blockKey_length P (kOf P s₀ s.mem)
-  have e := hu _ hi (by rw [h1, List.length_append, xorPad_length, hK])
-  rw [List.append_assoc, hS.part hp hpo] at e
-  refine ⟨St', e, P.hH.congr t.mem t'.mem _ _ (fun i hi' => ?_) ho⟩
-  refine a.frame.bytes (R := cR s₀ sOut P.c.H.S) (fun r hr => ?_) (by show P.c.H.S ≤ 2 ^ 64; have := hz.S192; omega) hi'
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact (in_out hp).symm
-  · exact (below_st hp hS.kr hX.2.2.1 ((st_out (P := P)))).symm
-
-/-- The parts absorbed, one `update` each. -/
-theorem upds_ok {s : State} : ∀ (ps : List Part) {t : State} {pre : List Byte}, HU P s₀ s pre t →
-    (∀ p ∈ ps, PartOk P p) → P.c.H.B + pre.length + total ps < 2048 →
-    WP isa (P.c.upds pre.length ps) t (HU P s₀ s (pre ++ msgOf s.mem s₀ ps))
-  | [], t, pre, h, _, _ => WP.block_nil (by rw [msgOf, List.append_nil]; exact h)
-  | p :: ps, t, pre, h, hps, hb => by
-    have hpo : PartOk P p := hps p (by simp)
-    have hl : p.2.2 ≤ total (p :: ps) := by simp only [total]; omega
-    unfold Cfg.upds
-    refine WP.seq (WP.mono (WP.seq (WP.mono (updArgs_ok h hpo.reg (by omega) hpo.off (by omega)) fun t₁ h₁ =>
-      updc_ok hp h₁ hpo)) fun t₂ h₂ => ?_)
-    have e : pre.length + p.2.2 = (pre ++ bytesAt s.mem (pA s₀ p) p.2.2).length := by
-      rw [List.length_append, bytesAt_length]
-    rw [e]
-    refine WP.mono (upds_ok ps h₂ (fun q hq => hps q (by simp [hq])) (by
-      rw [List.length_append, bytesAt_length]; simp only [total] at hb; omega)) fun t₃ h₃ => ?_
-    rwa [List.append_assoc, ← msgOf.eq_2] at h₃
-
-end
-
-/-! ## HMAC's `finalize` -/
-
-/-- After `finalize`'s arguments, for the message `msg` and the MAC to `dst`. -/
-def HFA (P : Rfc) (s₀ s : State) (msg : List Byte) (dst : Nat) (t : State) : Prop :=
-  HU P s₀ s msg t ∧ t.gpr .a0 = cA s₀ sIn ∧ t.gpr .a1 = cA s₀ sOut ∧
-    t.gpr .a2 = BitVec.ofNat 64 (P.c.H.B + msg.length) ∧ t.gpr .a3 = sA s₀ dst
-
-/-- After an HMAC: the MAC at `dst`, and memory changed only in the states,
-the MAC and the stack below the frame. -/
-def HD (P : Rfc) (s₀ s : State) (msg : List Byte) (dst : Nat) (t : State) : Prop :=
-  KR P s₀ t ∧ bytesAt t.mem (sA s₀ dst) P.c.H.D = Spec.Hmac.hmac P.hH.SH.H (kOf P s₀ s.mem) msg ∧
-    Frame [stR s₀, sR s₀ dst P.c.H.D, stk P s₀] s.mem t.mem ∧ ∀ r ∈ preserved, t.gpr r = s.gpr r
-
-section
-variable {P : Rfc} {s₀ : State} (hp : Pre P s₀)
-include hp
-
-omit hp in
-theorem finArgs_ok {s t : State} {msg : List Byte} (h : HU P s₀ s msg t) (dst : Nat) (hb : P.c.H.B + msg.length < 2048)
-    (hd : dst < 2048) : WP isa (.block (P.c.finArgs msg.length dst)) t (HFA P s₀ s msg dst) := by
-  unfold Cfg.finArgs
-  refine wp_addi (by simp only [sIn]; omega) fun s₁ u₁ => wp_addi (by simp only [sOut]; omega) fun s₂ u₂ =>
-    wp_li hb fun s₃ u₃ => wp_addi hd fun s₄ u₄ => WP.block_nil ?_
-  have St₄ := ((((h.1).upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd (by decide) u₄
-  have mm : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine ⟨⟨St₄, by rw [mm]; exact h.2.1, by rw [mm]; exact h.2.2⟩, ?_, ?_, ?_, ?_⟩
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.1.kr.s0]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.1.kr.s0]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-  · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
-    rw [h.1.kr.s1]
-
-theorem hf_args {s t : State} {msg : List Byte} {dst : Nat} (hdst : 64 ≤ dst ∧ dst + P.c.H.D ≤ P.c.frB)
-    (h : HFA P s₀ s msg dst t) : HfArgs P t (cA s₀ sIn) (cA s₀ sOut) (sA s₀ dst) := by
-  obtain ⟨⟨St, -, -⟩, h0, h1, -, h3⟩ := h
-  have hz := sizes P
-  have hzH := hz.H
-  have hX := hz.X
-  refine ⟨h0, h1, h3, by rw [St.kr.sp]; exact hp.al, by rw [St.kr.sp]; have := hp.spX; omega, in_out hp,
-    (fr_st hp hdst.2 ((st_in (P := P)))).symm, (fr_st hp hdst.2 ((st_out (P := P)))).symm,
-    below_st hp St.kr hX.2.1 ((st_in (P := P))), below_st hp St.kr hX.2.1 ((st_out (P := P))),
-    below_fr hp St.kr hX.2.1 hdst.2, ?_, ?_⟩
-  · refine VG.Covers.of_sub fun r hr => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact cov_scr hp St.kr (by have := hz.S192; simp only [sOut]; omega)
-    · exact cov_scr hp St.kr (by have := hz.S192; simp only [sIn]; omega)
-    · exact cov_fr hp St.kr hdst.2
-  · refine VG.Covers.of_sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact covW_scr hp St.kr (by have := hz.S192; simp only [sIn]; omega)
-    · exact covW_fr hp St.kr hdst.2
-
-theorem fin_ok {s t : State} {msg : List Byte} {dst : Nat} (hdst : 64 ≤ dst ∧ dst + P.c.H.D ≤ P.c.frB)
-    (hm : P.c.H.B + msg.length < 2048) (h : HFA P s₀ s msg dst t) :
-    WP isa (.call P.c.hfN P.c.H.finalize) t (HD P s₀ s msg dst) := by
-  have hz := sizes P
-  have hzH := hz.H
-  have hX := hz.X
-  have St := h.1.1
-  refine hf_call (hf_args hp hdst h) fun t' a hf => ?_
-  have hK := blockKey_length P (kOf P s₀ s.mem)
-  refine ⟨St.kr.call hp a.rd a.wr a.sp a.cs a.frame fun r hr => ?_, ?_, ?_,
-    fun r hr => (a.cs r hr).trans (St.pr r hr)⟩
-  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inr (.inr (.inl (scr_sub (by have := hz.S192; simp only [sIn]; omega))))
-    · exact .inl ⟨_, _, rfl, hdst.1, hdst.2⟩
-    · exact .inr (.inr (.inr ⟨_, by rw [St.kr.sp], hX.2.1⟩))
-  · exact hf _ msg hK (by rw [hK]; omega) h.1.2.1 (by rw [h.2.2.2.1]) h.1.2.2
-  · refine (St.fr.sub fun r hr => ?_).trans (a.frame.sub fun r hr => ?_)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨stR s₀, by simp, fun x hx => hx⟩
-      · exact ⟨stk P s₀, by simp, fun x hx => hx⟩
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨stR s₀, by simp, (st_in (P := P))⟩
-    · exact ⟨sR s₀ dst P.c.H.D, by simp, fun x hx => hx⟩
-    · exact ⟨stk P s₀, by simp, by rw [St.kr.sp]; exact below_stk hp hX.2.1⟩
-
-/-- `HMAC_K(parts)` to `dst`. -/
-theorem hmac_ok {s : State} (h : KR P s₀ s) {ps : List Part} (hps : ∀ p ∈ ps, PartOk P p)
-    (hb : P.c.H.B + total ps < 2048) {dst : Nat} (hdst : 64 ≤ dst ∧ dst + P.c.H.D ≤ P.c.frB) :
-    WP isa (P.c.hmac ps dst) s (HD P s₀ s (msgOf s.mem s₀ ps) dst) := by
-  unfold Cfg.hmac
-  refine WP.seq (WP.mono (initArgs_ok h) fun t₁ h₁ => ?_)
-  refine WP.seq (WP.mono (init_ok hp h₁) fun t₂ h₂ => ?_)
-  refine WP.seq (WP.mono (upds_ok hp ps (pre := []) h₂.hu hps (by simpa using hb)) fun t₃ h₃ => ?_)
-  rw [List.nil_append] at h₃
-  have hl := msgOf_length s.mem s₀ ps
-  refine WP.seq (WP.mono (by rw [← hl]; exact finArgs_ok h₃ dst (by omega) (by have := (sizes P).Q; have := (sizes P).H; omega))
-    fun t₄ h₄ => ?_)
-  exact fin_ok hp hdst (by omega) h₄
-
-end
-
 variable {P : Rfc}
 
 theorem add_ofNat_add' (p : Addr) (a b : Nat) :
@@ -566,7 +78,7 @@ theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : bytesAt m 
 /-! ## The prologue -/
 
 theorem prologue_eq : Cfg.prologue = .addSp .t0 0 :: (Spill.saveCode .t0 saved ++
-    [mov .s1 .t0, mov .s2 .a0, mov .s3 .a1, mov .s4 .a2, mov .s0 .a3]) := rfl
+    [mov .s1 .t0, mov .s2 .a0, mov .s3 .a1, mov .s4 .a2, mov .s0 .a4, mov .s6 .a5]) := rfl
 
 section
 variable {s₀ : State} (hp : Pre P s₀)
@@ -580,39 +92,48 @@ theorem prologue_ok : WP isa (.block Cfg.prologue) s₀ (KR P s₀) := by
   refine Spill.save_ok (b := .t0) (by rw [t0]; omega_using [hp.al])
     (fun q hq => by
       simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
     (fun q hq => by
       rw [t0, u₁.wr]
       exact in_fr hp rfl (by have := saved_in q hq; have := (sizes P).Q; have := (sizes P).H; omega)) ?_
   refine wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_mv fun s₆ u₆ =>
-    WP.block_nil ?_
-  have mm : s₆.mem = Spill.saveMem s₁.mem s₀.sp s₁.gpr saved := by
-    rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
+    wp_mv fun s₇ u₇ => WP.block_nil ?_
+  have mm : s₇.mem = Spill.saveMem s₁.mem s₀.sp s₁.gpr saved := by
+    rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
     show Spill.saveMem s₁.mem (s₁.gpr .t0) s₁.gpr saved = _
     rw [t0]
-  have gg : ∀ r, r ∉ [Reg.s1, .s2, .s3, .s4, .s0] → s₆.gpr r = s₁.gpr r := by
+  have gg : ∀ r, r ∉ [Reg.s1, .s2, .s3, .s4, .s0, .s6] → s₇.gpr r = s₁.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨a, b, c, d, f⟩ := hr
-    exact (u₆.other r f).trans ((u₅.other r d).trans ((u₄.other r c).trans ((u₃.other r b).trans (u₂.other r a))))
-  have sv : Spill.Saved s₀.sp s₀.gpr saved s₆.mem := by
+    obtain ⟨a, b, c, d, f, g⟩ := hr
+    exact (u₇.other r g).trans ((u₆.other r f).trans ((u₅.other r d).trans ((u₄.other r c).trans
+      ((u₃.other r b).trans (u₂.other r a)))))
+  have sv : Spill.Saved s₀.sp s₀.gpr saved s₇.mem := by
     rw [mm]
     intro q hq
     rw [Spill.saveMem_saved saved_fits s₁.mem s₀.sp s₁.gpr q hq]
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact e₁ _ (by decide)
-  refine ⟨by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd]; exact u₁.rd,
-    by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact u₁.wr,
-    by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp]; exact u₁.sp, ?_, ?_, ?_, ?_, ?_, fun q hq => ?_, sv, ?_⟩
-  · upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact e₁ _ (by decide)
+  refine ⟨by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd]; exact u₁.rd,
+    by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact u₁.wr,
+    by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp]; exact u₁.sp, ?_, ?_, ?_, ?_, ?_, ?_, fun q hq => ?_, sv, ?_⟩
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
     exact e₁ _ (by decide)
-  · upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
     exact t0
-  · upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
     exact e₁ _ (by decide)
-  · upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
     exact e₁ _ (by decide)
-  · upd_simp [u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other]
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
+    exact e₁ _ (by decide)
+  · upd_simp [u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr,
+      u₂.other]
     exact e₁ _ (by decide)
   · rw [gg q (by revert q; decide), e₁ q (by revert q hq; decide)]
   · rw [mm, u₁.mem]
@@ -629,12 +150,12 @@ end
 integer, and `h`. -/
 abbrev dB (P : Rfc) (s₀ : State) : List Byte := bytesAt s₀.mem (dk s₀) P.Q
 abbrev xOf (P : Rfc) (s₀ : State) : Nat := Spec.Weierstrass.ofBytes (dB P s₀)
-abbrev hBOf (P : Rfc) (s₀ : State) : List Byte := bytesAt s₀.mem (dg s₀) P.c.H.D
+abbrev hBOf (P : Rfc) (s₀ : State) : List Byte := bytesAt s₀.mem (dg s₀) P.c.D
 abbrev eOf (P : Rfc) (s₀ : State) : Nat := Spec.Ecdsa.hashToInt P.kit.E.curve (hBOf P s₀)
 abbrev hSpec (P : Rfc) (s₀ : State) : List Byte := Spec.Ecdsa.Rfc6979.bits2octets P.kit.E.curve (hBOf P s₀)
 
 /-- `V` and `h` in the frame. -/
-abbrev vOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ fV) P.c.H.D
+abbrev vOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ fV) P.c.D
 abbrev hOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ P.c.fH) P.Q
 
 /-- Changes within the working space are changes within `scratch`. -/
@@ -724,7 +245,7 @@ theorem reduce_ok (hwd : P.c.wide = false) {s : State} (h : KR P s₀ s) :
   have hz := sizes P
   have hzH := hz.H
   have hn := P.kit.nw9
-  have hQD : P.Q ≤ P.c.H.D := hz.W.mp hwd
+  have hQD : P.Q ≤ P.c.D := hz.W.mp hwd
   have hQw : P.c.Q = 8 * P.c.nw ∨ (P.c.nw = 4 ∧ P.c.Q = 28) ∨ (P.c.nw = 4 ∧ P.c.Q = 24) := by
     rw [P.hQ, P.hnw]
     rcases P.kit.Qw with h | h | h | h
@@ -749,7 +270,7 @@ theorem reduce_ok (hwd : P.c.wide = false) {s : State} (h : KR P s₀ s) :
   simp only [Cfg.sZ, Cfg.sY]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadQ_ok P.c hQw hw (o := sX) (p := .s4) (off := 0) (n := P.c.H.D) (by decide)
+  refine WP.mono (loadQ_ok P.c hQw hw (o := sX) (p := .s4) (off := 0) (n := P.c.D) (by decide)
     (by decide) (by simp only [sX, P.hnw]; omega) (by rw [P.hnw]; omega)
     (by rw [h.s4]; exact List.mem_append_left _ (by rw [h.rd, hp.rd]; simp))
     (by rw [P.hQ]; simp only [Rfc.Q] at hQD; omega) (by have := hz.D; omega)
@@ -913,7 +434,7 @@ theorem reduceW_ok (hwd : P.c.wide = true) {s : State} (h : KR P s₀ s) :
   have hzH := hz.H
   have hzQ := hz.Q
   obtain ⟨hD1, hD2⟩ := hz.D
-  have hQD : P.c.H.D < P.Q := by
+  have hQD : P.c.D < P.Q := by
     have := hz.W
     rw [hwd] at this
     simp only [Bool.true_eq_false, false_iff, Nat.not_le] at this
@@ -929,11 +450,11 @@ theorem reduceW_ok (hwd : P.c.wide = true) {s : State} (h : KR P s₀ s) :
     omega
   unfold Cfg.reduce
   rw [ite_eq_left_of_eq_true _ _ (eq_true hwd), Cfg.reduceW, WP.block_append_iff, hcQ]
-  refine WP.mono (store_ok hp h (doff := P.c.fH) (bs := List.replicate (P.Q - P.c.H.D) 0)
+  refine WP.mono (store_ok hp h (doff := P.c.fH) (bs := List.replicate (P.Q - P.c.D) 0)
     (fun i hi => by simp only [List.length_replicate] at hi; simp [hi])
     (by simp only [List.length_replicate]; omega)) fun t₁ ⟨k₁, b₁, f₁, _⟩ => ?_
-  refine WP.mono (copyFr_ok hp k₁ (src := .s4) (by decide) (soff := 0) (doff := P.c.fH + (P.Q - P.c.H.D))
-    (n := P.c.H.D) (by omega) ⟨by omega, by omega⟩
+  refine WP.mono (copyFr_ok hp k₁ (src := .s4) (by decide) (soff := 0) (doff := P.c.fH + (P.Q - P.c.D))
+    (n := P.c.D) (by omega) ⟨by omega, by omega⟩
     (fun i hi => by
       rw [k₁.s4]
       exact ⟨dgR P s₀, List.mem_append_left _ (by rw [k₁.rd, hp.rd]; simp),
@@ -943,7 +464,7 @@ theorem reduceW_ok (hwd : P.c.wide = true) {s : State} (h : KR P s₀ s) :
       exact (hp.f_g.sub_left (part_sub (by omega))).symm _
         (Offset.contains_base _ (by omega) (by have := hp.ng; omega)))) fun t₂ ⟨k₂, b₂, f₂, _⟩ => ?_
   refine ⟨k₂, ?_, ?_⟩
-  · have hl : P.Q = (P.Q - P.c.H.D) + P.c.H.D := by omega
+  · have hl : P.Q = (P.Q - P.c.D) + P.c.D := by omega
     show bytesAt t₂.mem (sA s₀ P.c.fH) P.Q = _
     rw [hl, VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add', b₂, k₁.s4, BitVec.add_zero,
       k₁.dgBytes hp (Nat.le_refl _)]
@@ -983,8 +504,8 @@ variable {s₀ : State} (hp : Pre P s₀)
 include hp
 
 /-- A part of the frame apart from what an HMAC writes, the MAC at `dst` but. -/
-theorem hd_apart {o n dst : Nat} (h : o + n ≤ P.c.frB) (hd : o + n ≤ dst ∨ dst + P.c.H.D ≤ o) (hdst : dst + P.c.H.D ≤ P.c.frB) :
-    ∀ r ∈ [stR s₀, sR s₀ dst P.c.H.D, stk P s₀], Region.Disjoint (sR s₀ o n) r := by
+theorem hd_apart {o n dst : Nat} (h : o + n ≤ P.c.frB) (hd : o + n ≤ dst ∨ dst + P.c.D ≤ o) (hdst : dst + P.c.D ≤ P.c.frB) :
+    ∀ r ∈ [stR s₀, sR s₀ dst P.c.D, stk P s₀], Region.Disjoint (sR s₀ o n) r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact fr_st hp h (fun x hx => hx)
@@ -992,23 +513,23 @@ theorem hd_apart {o n dst : Nat} (h : o + n ≤ P.c.frB) (hd : o + n ≤ dst ∨
   · exact (f_s hp).sub_left (part_sub h)
 
 theorem initKV_ok {s : State} (h : KR P s₀ s) (hh : hOf P s₀ s.mem = hSpec P s₀) :
-    WP isa (.block P.c.initKV) s (KVH P s₀ (List.replicate P.c.H.D 0) (List.replicate P.c.H.D 1)) := by
+    WP isa (.block P.c.initKV) s (KVH P s₀ (List.replicate P.c.D 0) (List.replicate P.c.D 1)) := by
   have hz := sizes P
   have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   have hB := hz.B
   unfold Cfg.initKV
   rw [WP.block_append_iff]
-  refine WP.mono (store_ok hp h (doff := fK) (bs := List.replicate P.c.H.D 0) (fun i hi => by
+  refine WP.mono (store_ok hp h (doff := fK) (bs := List.replicate P.c.D 0) (fun i hi => by
       simp only [List.length_replicate] at hi; simp [List.getD_eq_getElem?_getD, hi])
     (by simp only [fK, List.length_replicate]; have := (sizes P).Q; have := (sizes P).H; omega)) fun t₁ ⟨k₁, b₁, f₁, _⟩ => ?_
-  refine WP.mono (store_ok hp k₁ (doff := fV) (bs := List.replicate P.c.H.D 1) (fun i hi => by
+  refine WP.mono (store_ok hp k₁ (doff := fV) (bs := List.replicate P.c.D 1) (fun i hi => by
       simp only [List.length_replicate] at hi; simp [List.getD_eq_getElem?_getD, hi])
     (by simp only [fV, List.length_replicate]; have := (sizes P).Q; have := (sizes P).H; omega)) fun t₂ ⟨k₂, b₂, f₂, _⟩ => ?_
   simp only [List.length_replicate, List.map_replicate] at b₁ b₂ f₁ f₂
-  have hn : P.c.H.D ≤ 2 ^ 64 := by omega
+  have hn : P.c.D ≤ 2 ^ 64 := by omega
   refine ⟨k₂, ?_, b₂, ?_⟩
-  · show bytesAt t₂.mem (sA s₀ fK) P.c.H.D = _
+  · show bytesAt t₂.mem (sA s₀ fK) P.c.D = _
     rw [fbytes f₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact part_disj (.inl (by simp only [fK, fV]; omega)) (by simp only [fK]; have := (sizes P).H; have := (sizes P).Q; omega) (by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega)) hn, b₁]
@@ -1027,13 +548,13 @@ theorem initKV_ok {s : State} (h : KR P s₀ s) (hh : hOf P s₀ s.mem = hSpec P
 /-- The separator `b` after `V`: the first part of the messages. -/
 theorem sep_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : Nat} (hb : b < 256) :
     WP isa (.block (P.c.sep b)) s fun t => KVH P s₀ K V t ∧
-      bytesAt t.mem (sA s₀ fV) (P.c.H.D + 1) = V ++ [BitVec.ofNat 8 b] ∧ ∀ r ∈ preserved, t.gpr r = s.gpr r := by
+      bytesAt t.mem (sA s₀ fV) (P.c.D + 1) = V ++ [BitVec.ofNat 8 b] ∧ ∀ r ∈ preserved, t.gpr r = s.gpr r := by
   have hz := sizes P
   have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
   have hB := hz.B
   unfold Cfg.sep
-  refine WP.mono (store_ok hp h.kr (doff := fV + P.c.H.D) (bs := [b]) (fun i hi => by
+  refine WP.mono (store_ok hp h.kr (doff := fV + P.c.D) (bs := [b]) (fun i hi => by
       simp only [List.length_singleton] at hi; obtain rfl : i = 0 := by omega
       simpa using hb)
     (by simp only [fV, List.length_singleton]; have := (sizes P).Q; have := (sizes P).H; omega)) fun t ⟨k, bt, f, pr⟩ => ?_
@@ -1054,11 +575,11 @@ theorem sep_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : Nat} (h
       simp only [List.mem_singleton] at hr; subst hr
       exact part_disj (.inr (by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega)) (by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; omega) (by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega))
       (by omega)
-  · rw [VG.Proof.Hmac.Common.bytesAt_add, show bytesAt t.mem (sA s₀ fV) P.c.H.D = V from hv]
-    rw [show sA s₀ fV + BitVec.ofNat 64 P.c.H.D = sA s₀ (fV + P.c.H.D) from add_ofNat_add' _ _ _, bt]
+  · rw [VG.Proof.Hmac.Common.bytesAt_add, show bytesAt t.mem (sA s₀ fV) P.c.D = V from hv]
+    rw [show sA s₀ fV + BitVec.ofNat 64 P.c.D = sA s₀ (fV + P.c.D) from add_ofNat_add' _ _ _, bt]
 
 /-- `V = HMAC_K(V)`. -/
-theorem hmacV_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
+theorem hmacV_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.syms = s₀.syms) :
     WP isa P.c.hmacV s fun t => KVH P s₀ K (Spec.Hmac.hmac P.hH.SH.H K V) t ∧
       ∀ r ∈ preserved, t.gpr r = s.gpr r := by
   have hz := sizes P
@@ -1066,25 +587,25 @@ theorem hmacV_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
   obtain ⟨hD1, hD2⟩ := hz.D
   have hB := hz.B
   unfold Cfg.hmacV
-  refine WP.mono (hmac_ok hp h.kr (ps := [(.s1, fV, P.c.H.D)]) (fun p hp' => by
+  refine WP.mono (hmac_ok hp h.kr hsy P.hD4 (ps := [(.s1, fV, P.c.D)]) (fun p hp' => by
       simp only [List.mem_singleton] at hp'; subst hp'
       exact .inl ⟨rfl, by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩)
     (by simp only [total]; rcases hz.B with h' | h' <;> omega)
-    (dst := fV) ⟨by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, hv, f, pr⟩ => ?_
-  have hm : msgOf s.mem s₀ [(.s1, fV, P.c.H.D)] = V := by
+    (dst := fV) ⟨by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, _, hv, f, pr⟩ => ?_
+  have hm : msgOf s.mem s₀ [(.s1, fV, P.c.D)] = V := by
     simp only [msgOf, List.append_nil]; exact h.v
   refine ⟨⟨k, ?_, ?_, ?_⟩, pr⟩
   · rw [← h.k]
     exact fbytes f (hd_apart hp (by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega) (.inl (by simp only [fK, fV]; omega))
       (by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega)) (by omega)
-  · show bytesAt t.mem (sA s₀ fV) P.c.H.D = _
+  · show bytesAt t.mem (sA s₀ fV) P.c.D = _
     rw [hv, hm, h.k]
   · rw [← h.h]
     exact fbytes f (hd_apart hp (by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; have := (sizes P).Q; have := (sizes P).H; omega) (.inr (by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega))
       (by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega)) (by omega)
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
-theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : Nat} (hb : b < 256) :
+theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.syms = s₀.syms) {b : Nat} (hb : b < 256) :
     WP isa (P.c.rekeyFull b) s fun t =>
       let K' := Spec.Hmac.hmac P.hH.SH.H K (V ++ BitVec.ofNat 8 b :: (dB P s₀ ++ hSpec P s₀))
       KVH P s₀ K' (Spec.Hmac.hmac P.hH.SH.H K' V) t := by
@@ -1094,8 +615,8 @@ theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : N
   have hB := hz.B
   unfold Cfg.rekeyFull
   rw [hz.Q.2.2.1]
-  refine WP.seq (WP.mono (sep_ok hp h hb) fun s₁ ⟨h₁, m₁, _⟩ => ?_)
-  refine WP.seq (WP.mono (hmac_ok hp h₁.kr (ps := [(.s1, fV, P.c.H.D + 1), (.s3, 0, P.Q), (.s1, P.c.fH, P.Q)])
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (sep_ok hp h hb) fun s₁ ⟨h₁, m₁, _⟩ y₁ => ?_)
+  refine WP.seq (WP.mono (hmac_ok hp h₁.kr (y₁.trans hsy) P.hD4 (ps := [(.s1, fV, P.c.D + 1), (.s3, 0, P.Q), (.s1, P.c.fH, P.Q)])
     (fun p hp' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl | rfl
@@ -1103,8 +624,8 @@ theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : N
       · exact .inr ⟨rfl, rfl, Nat.le_refl _⟩
       · exact .inl ⟨rfl, by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; omega, by (try dsimp only); have := (sizes P).H; have := (sizes P).Q; have := (sizes P).Q; have := (sizes P).H; omega⟩)
     (by simp only [total]; rcases hz.B with h' | h' <;> omega)
-    (dst := fK) ⟨by decide, by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, hk, f, pr⟩ => ?_)
-  have hm : msgOf s₁.mem s₀ [(.s1, fV, P.c.H.D + 1), (.s3, 0, P.Q), (.s1, P.c.fH, P.Q)] =
+    (dst := fK) ⟨by decide, by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, y, hk, f, pr⟩ => ?_)
+  have hm : msgOf s₁.mem s₀ [(.s1, fV, P.c.D + 1), (.s3, 0, P.Q), (.s1, P.c.fH, P.Q)] =
       V ++ BitVec.ofNat 8 b :: (dB P s₀ ++ hSpec P s₀) := by
     simp only [msgOf, List.append_nil, pA, regV]
     rw [m₁, BitVec.add_zero, h₁.kr.dBytes hp]
@@ -1113,8 +634,8 @@ theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : N
     rw [hh]
     simp
   refine WP.mono (hmacV_ok hp (K := Spec.Hmac.hmac P.hH.SH.H K (V ++ BitVec.ofNat 8 b :: (dB P s₀ ++ hSpec P s₀)))
-    (V := V) ⟨k, ?_, ?_, ?_⟩) fun u hu => hu.1
-  · show bytesAt t.mem (sA s₀ fK) P.c.H.D = _
+    (V := V) ⟨k, ?_, ?_, ?_⟩ y) fun u hu => hu.1
+  · show bytesAt t.mem (sA s₀ fK) P.c.D = _
     rw [hk, hm, h₁.k]
   · rw [← h₁.v]
     exact fbytes f (hd_apart hp (by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega) (.inr (by simp only [fK, fV]; omega))
@@ -1124,7 +645,7 @@ theorem rekeyFull_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : N
       (by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega)) (by omega)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
-theorem rekey_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
+theorem rekey_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.syms = s₀.syms) :
     WP isa P.c.rekey s (fun t => KVH P s₀ (Spec.Ecdsa.Rfc6979.next P.hH.SH.H K V).1
       (Spec.Ecdsa.Rfc6979.next P.hH.SH.H K V).2 t ∧ ∀ r ∈ preserved, t.gpr r = s.gpr r) := by
   have hz := sizes P
@@ -1132,16 +653,16 @@ theorem rekey_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
   obtain ⟨hD1, hD2⟩ := hz.D
   have hB := hz.B
   unfold Cfg.rekey
-  refine WP.seq (WP.mono (sep_ok hp h (b := 0) (by decide)) fun s₁ ⟨h₁, m₁, pr₁⟩ => ?_)
-  refine WP.seq (WP.mono (hmac_ok hp h₁.kr (ps := [(.s1, fV, P.c.H.D + 1)])
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (sep_ok hp h (b := 0) (by decide)) fun s₁ ⟨h₁, m₁, pr₁⟩ y₁ => ?_)
+  refine WP.seq (WP.mono (hmac_ok hp h₁.kr (y₁.trans hsy) P.hD4 (ps := [(.s1, fV, P.c.D + 1)])
     (fun p hp' => by
       simp only [List.mem_singleton] at hp'; subst hp'
       exact .inl ⟨rfl, by simp only [fV]; have := (sizes P).H; have := (sizes P).Q; omega, by simp only [fV]; have := (sizes P).Q; have := (sizes P).H; omega⟩)
     (by simp only [total]; rcases hz.B with h' | h' <;> omega)
-    (dst := fK) ⟨by decide, by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, hk, f, pr⟩ => ?_)
-  refine WP.mono (hmacV_ok hp (K := Spec.Hmac.hmac P.hH.SH.H K (V ++ [0])) (V := V) ⟨k, ?_, ?_, ?_⟩)
+    (dst := fK) ⟨by decide, by simp only [fK]; have := (sizes P).Q; have := (sizes P).H; omega⟩) fun t ⟨k, y, hk, f, pr⟩ => ?_)
+  refine WP.mono (hmacV_ok hp (K := Spec.Hmac.hmac P.hH.SH.H K (V ++ [0])) (V := V) ⟨k, ?_, ?_, ?_⟩ y)
     fun u hu => ⟨hu.1, fun r hr => (hu.2 r hr).trans ((pr r hr).trans (pr₁ r hr))⟩
-  · show bytesAt t.mem (sA s₀ fK) P.c.H.D = _
+  · show bytesAt t.mem (sA s₀ fK) P.c.D = _
     rw [hk]
     simp only [msgOf, List.append_nil, pA, regV]
     rw [m₁, h₁.k]
@@ -1156,7 +677,7 @@ theorem rekey_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
 
 /-- If `wide`, a candidate: `V₁ = HMAC_K(V)` to `fT`, `V₂ = HMAC_K(V₁)` to
 `V`'s place, and the first `Q - D` bytes of `V₂` after `V₁`. -/
-theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH P s₀ K V s) :
+theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.syms = s₀.syms) :
     WP isa P.c.candW s fun t =>
       KVH P s₀ K (Spec.Hmac.hmac P.hH.SH.H K (Spec.Hmac.hmac P.hH.SH.H K V)) t ∧
       bytesAt t.mem (sA s₀ P.c.fT) P.Q =
@@ -1168,7 +689,7 @@ theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH 
   obtain ⟨hD1, hD2⟩ := hz.D
   have hB := hz.B
   have hnu : P.c.nums = 2 := by rw [hz.nums, hwd]; rfl
-  have hQD : P.c.H.D < P.Q := by
+  have hQD : P.c.D < P.Q := by
     have := hz.W
     rw [hwd] at this
     simp only [Bool.true_eq_false, false_iff, Nat.not_le] at this
@@ -1181,12 +702,12 @@ theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH 
   unfold Cfg.candW
   rw [hcQ]
   -- `V₁ = HMAC_K(V)` to `fT`.
-  refine WP.seq (WP.mono (hmac_ok hp h.kr (ps := [(.s1, fV, P.c.H.D)]) (fun p hp' => by
+  refine WP.seq (WP.mono (hmac_ok hp h.kr hsy P.hD4 (ps := [(.s1, fV, P.c.D)]) (fun p hp' => by
       simp only [List.mem_singleton] at hp'; subst hp'
       exact .inl ⟨rfl, by (try dsimp only); simp only [fV]; omega, by (try dsimp only); simp only [fV]; omega⟩)
     (by simp only [total]; rcases hz.B with h' | h' <;> omega)
-    (dst := P.c.fT) ⟨by omega, by omega⟩) fun t₁ ⟨k₁, v₁, f₁, pr₁⟩ => ?_)
-  have hm₁ : msgOf s.mem s₀ [(.s1, fV, P.c.H.D)] = V := by simp only [msgOf, List.append_nil]; exact h.v
+    (dst := P.c.fT) ⟨by omega, by omega⟩) fun t₁ ⟨k₁, y₁, v₁, f₁, pr₁⟩ => ?_)
+  have hm₁ : msgOf s.mem s₀ [(.s1, fV, P.c.D)] = V := by simp only [msgOf, List.append_nil]; exact h.v
   rw [hm₁, h.k] at v₁
   have kk₁ : kOf P s₀ t₁.mem = K := by
     rw [← h.k]
@@ -1195,12 +716,12 @@ theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH 
     rw [← h.h]
     exact fbytes f₁ (hd_apart hp (by omega) (.inl (by omega)) (by omega)) (by omega)
   -- `V₂ = HMAC_K(V₁)` to `V`'s place.
-  refine WP.seq (WP.mono (hmac_ok hp k₁ (ps := [(.s1, P.c.fT, P.c.H.D)]) (fun p hp' => by
+  refine WP.seq (WP.mono (hmac_ok hp k₁ y₁ P.hD4 (ps := [(.s1, P.c.fT, P.c.D)]) (fun p hp' => by
       simp only [List.mem_singleton] at hp'; subst hp'
       exact .inl ⟨rfl, by (try dsimp only); omega, by (try dsimp only); omega⟩)
     (by simp only [total]; rcases hz.B with h' | h' <;> omega)
-    (dst := fV) ⟨by simp only [fV]; omega, by simp only [fV]; omega⟩) fun t₂ ⟨k₂, v₂, f₂, pr₂⟩ => ?_)
-  have hm₂ : msgOf t₁.mem s₀ [(.s1, P.c.fT, P.c.H.D)] = Spec.Hmac.hmac P.hH.SH.H K V := by
+    (dst := fV) ⟨by simp only [fV]; omega, by simp only [fV]; omega⟩) fun t₂ ⟨k₂, _, v₂, f₂, pr₂⟩ => ?_)
+  have hm₂ : msgOf t₁.mem s₀ [(.s1, P.c.fT, P.c.D)] = Spec.Hmac.hmac P.hH.SH.H K V := by
     simp only [msgOf, List.append_nil]; exact v₁
   rw [hm₂, kk₁] at v₂
   have kk₂ : kOf P s₀ t₂.mem = K := by
@@ -1210,29 +731,29 @@ theorem candW_ok (hwd : P.c.wide = true) {s : State} {K V : List Byte} (h : KVH 
   have hh₂ : hOf P s₀ t₂.mem = hSpec P s₀ := by
     rw [← hh₁]
     exact fbytes f₂ (hd_apart hp (by omega) (.inr (by simp only [fV]; omega)) (by simp only [fV]; omega)) (by omega)
-  have T₂ : bytesAt t₂.mem (sA s₀ P.c.fT) P.c.H.D = Spec.Hmac.hmac P.hH.SH.H K V := by
+  have T₂ : bytesAt t₂.mem (sA s₀ P.c.fT) P.c.D = Spec.Hmac.hmac P.hH.SH.H K V := by
     rw [← v₁]
     exact fbytes f₂ (hd_apart hp (by omega) (.inr (by simp only [fV]; omega)) (by simp only [fV]; omega)) (by omega)
   -- `V₂`'s first `Q - D` bytes after `V₁`.
-  refine WP.mono (copyFr_ok hp k₂ (src := .s1) (by decide) (soff := fV) (doff := P.c.fT + P.c.H.D)
-    (n := P.Q - P.c.H.D) (by simp only [fV]; omega) ⟨by omega, by omega⟩
+  refine WP.mono (copyFr_ok hp k₂ (src := .s1) (by decide) (soff := fV) (doff := P.c.fT + P.c.D)
+    (n := P.Q - P.c.D) (by simp only [fV]; omega) ⟨by omega, by omega⟩
     (fun i hi => by rw [k₂.s1]; exact in_fr' hp k₂.wr (o := fV + i) (n := 1) (by simp only [fV]; omega))
     (fun i hi => by
       rw [k₂.s1]
-      exact part_disj (s₀ := s₀) (a := fV + i) (m := 1) (b := P.c.fT + P.c.H.D) (n := P.Q - P.c.H.D)
+      exact part_disj (s₀ := s₀) (a := fV + i) (m := 1) (b := P.c.fT + P.c.D) (n := P.Q - P.c.D)
         (.inl (by simp only [fV]; omega)) (by simp only [fV]; omega) (by omega) _ (Region.contains_self _ _)))
     fun t₃ ⟨k₃, b₃, f₃, pr₃⟩ => ?_
-  have ap : ∀ {o n : Nat}, o + n ≤ P.c.fT + P.c.H.D → ∀ r ∈ [sR s₀ (P.c.fT + P.c.H.D) (P.Q - P.c.H.D)],
+  have ap : ∀ {o n : Nat}, o + n ≤ P.c.fT + P.c.D → ∀ r ∈ [sR s₀ (P.c.fT + P.c.D) (P.Q - P.c.D)],
       Region.Disjoint (sR s₀ o n) r := fun ho r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact part_disj (.inl ho) (by omega) (by omega)
-  have hV₁ : (Spec.Hmac.hmac P.hH.SH.H K V).length = P.c.H.D := by rw [← T₂, bytesAt_length]
+  have hV₁ : (Spec.Hmac.hmac P.hH.SH.H K V).length = P.c.D := by rw [← T₂, bytesAt_length]
   refine ⟨⟨k₃, ?_, ?_, ?_⟩, ?_, fun r hr => (pr₃ r hr).trans ((pr₂ r hr).trans (pr₁ r hr))⟩
   · rw [← kk₂]; exact fbytes f₃ (ap (by simp only [fK]; omega)) (by omega)
-  · show bytesAt t₃.mem (sA s₀ fV) P.c.H.D = _
+  · show bytesAt t₃.mem (sA s₀ fV) P.c.D = _
     rw [fbytes f₃ (ap (by simp only [fV]; omega)) (by omega)]; exact v₂
   · rw [← hh₂]; exact fbytes f₃ (ap (by omega)) (by omega)
-  · rw [show P.Q = P.c.H.D + (P.Q - P.c.H.D) by omega, VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add', b₃,
+  · rw [show P.Q = P.c.D + (P.Q - P.c.D) by omega, VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add', b₃,
       k₂.s1, fbytes f₃ (ap (Nat.le_refl _)) (by omega), T₂, List.take_append, hV₁,
       List.take_of_length_le (by omega), Nat.add_sub_cancel_left, ← v₂, ← bytesAt_take _ _ (by omega)]
 
@@ -1243,9 +764,9 @@ end
 /-- `K` and `V` after steps b–g, before candidate `i`, candidate `i`'s `V`,
 and its signature. -/
 abbrev kv0 (P : Rfc) (s₀ : State) : List Byte × List Byte :=
-  Spec.Ecdsa.Rfc6979.init P.kit.E.curve P.hH.SH.H P.c.H.D (xOf P s₀) (hBOf P s₀)
+  Spec.Ecdsa.Rfc6979.init P.kit.E.curve P.hH.SH.H P.c.D (xOf P s₀) (hBOf P s₀)
 /-- The `V`s a candidate takes. -/
-def nb (P : Rfc) : Nat := Spec.Ecdsa.Rfc6979.blocks P.kit.E.curve P.c.H.D
+def nb (P : Rfc) : Nat := Spec.Ecdsa.Rfc6979.blocks P.kit.E.curve P.c.D
 abbrev kvI (P : Rfc) (s₀ : State) (i : Nat) : List Byte × List Byte :=
   VG.Proof.Ecdsa.Rfc6979.kvAtB P.hH.SH.H (nb P) (kv0 P s₀).1 (kv0 P s₀).2 i
 abbrev candI (P : Rfc) (s₀ : State) (i : Nat) : List Byte :=
@@ -1267,7 +788,7 @@ theorem nb_eq (P : Rfc) : nb P = if P.c.wide then 2 else 1 := by
     simp only [Bool.false_eq_true, ↓reduceIte]
     simp only [Rfc.Q] at *
     exact Nat.div_eq_of_lt_le (by omega) (by omega)
-  · have : ¬ P.Q ≤ P.c.H.D := fun h => by rw [hz.W.mpr h] at hwd; exact absurd hwd (by decide)
+  · have : ¬ P.Q ≤ P.c.D := fun h => by rw [hz.W.mpr h] at hwd; exact absurd hwd (by decide)
     simp only [↓reduceIte]
     simp only [Rfc.Q] at *
     exact Nat.div_eq_of_lt_le (by omega) (by omega)
@@ -1322,7 +843,7 @@ theorem sg_eq (hwd : P.c.wide = false) {t : State} (hk : KR P s₀ t) {i : Nat}
     sgOf P.kit.E P.Q P.kit.G P.kit.sh t.mem (dk s₀) (dg s₀) (sA s₀ fV) = sigI P s₀ i := by
   have hz := sizes P
   have hzH := hz.H
-  have hD1 : P.Q ≤ P.c.H.D := hz.W.mp hwd
+  have hD1 : P.Q ≤ P.c.D := hz.W.mp hwd
   have hq : Spec.Ecdsa.nBits P.kit.E.curve = 8 * P.Q := P.nbits0 hwd
   have hc : candI P s₀ i = vOf P s₀ t.mem ++ [] := by
     rw [hv]; exact congrArg Prod.fst (genT_one P hwd _ _)
@@ -1347,7 +868,7 @@ theorem sg_eqW (hwd : P.c.wide = true) {t : State} (hk : KR P s₀ t) {i : Nat}
   simp only [sgOf, sigI]
   congr 1
   · exact congrArg _ (hk.dBytes hp)
-  · rw [eOf, hk.dgBytes hp (n := P.c.H.D) (Nat.le_refl _)]
+  · rw [eOf, hk.dgBytes hp (n := P.c.D) (Nat.le_refl _)]
   · rw [Spec.Ecdsa.Rfc6979.bits2int, VG.Proof.Ecdsa.Rfc6979.hashToInt_takeR (R := P.Q) (by omega) hl, ← hT,
       show 8 * P.Q - Spec.Ecdsa.nBits P.kit.E.curve = P.kit.sh by omega]
 
@@ -1371,7 +892,7 @@ theorem coreArgs_ok {t : State} {K V : List Byte} (h : KVH P s₀ K V t) (hsy : 
   have hz := sizes P
   have hzH := hz.H
   obtain ⟨hD1, hD2⟩ := hz.D
-  have hGD : P.kit.G ≤ P.c.H.D := by
+  have hGD : P.kit.G ≤ P.c.D := by
     rw [P.hG]; cases hwd : P.c.wide
     · exact hz.W.mp hwd
     · exact Nat.le_refl _
@@ -1529,7 +1050,7 @@ theorem tryRest_ok {t : State} {i : Nat} (hlt : i < P.c.tries) (hf : ∀ j < i, 
   have y₄' : t₄.syms = s₀.syms := y₄.trans y₃
   refine WP.ite _ e₄ (fun hg => ?_) fun hg => ?_
   · obtain ⟨hn, hlt'⟩ := of_decide_eq_true hg
-    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekey_ok hp k₄) fun t₅ ⟨k₅, p₅⟩ y₅ => ?_)
+    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekey_ok hp k₄ y₄') fun t₅ ⟨k₅, p₅⟩ y₅ => ?_)
     refine VG.Proof.Ecdsa.RISCV64.Comb.WP.of_syms (wp_li (imm := 1) (by decide) fun t₆ u₆ =>
       WP.block_nil fun y₆ => ⟨?_, fun _ => ?_, fun hn' => absurd ⟨hn, hlt'⟩ hn'⟩)
     · rw [VG.RISCV64.Steps.eval_nonzero, u₆.gpr, decide_eq_true ⟨hn, hlt'⟩]; rfl
@@ -1564,7 +1085,7 @@ theorem tryOne_ok {t : State} {i : Nat} (h : LoopInv P s₀ i t) :
   cases hwd : P.c.wide
   · rw [ite_eq_right_of_eq_false _ _ (eq_false (by decide)), ite_eq_right_of_eq_false _ _ (eq_false (by decide))]
     have hQD := hz.W.mp hwd
-    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (hmacV_ok hp h.kvh) fun t₁ ⟨k₁, p₁⟩ y₁ => ?_)
+    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (hmacV_ok hp h.kvh h.sy) fun t₁ ⟨k₁, p₁⟩ y₁ => ?_)
     refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (coreArgs_ok hp k₁ (y₁.trans h.sy) (ko := fV)
       ⟨by decide, by simp only [fV]; omega⟩) fun t₂ ⟨k₂, p₂, _, a₂⟩ y₂ => ?_)
     refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (coreCall_ok hp k₂ (sg_eq hp hwd k₂.kr k₂.v) a₂)
@@ -1578,7 +1099,7 @@ theorem tryOne_ok {t : State} {i : Nat} (h : LoopInv P s₀ i t) :
     have hfT : P.c.fT = P.c.fH + 8 * P.kit.nw := by rw [Cfg.fT, P.hnw]
     have hfr := hzQ.2.2.2.1.1
     rw [hnu] at hfr
-    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (candW_ok hp hwd h.kvh) fun t₁ ⟨k₁, T₁, p₁⟩ y₁ => ?_)
+    refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (candW_ok hp hwd h.kvh h.sy) fun t₁ ⟨k₁, T₁, p₁⟩ y₁ => ?_)
     refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (coreArgs_ok hp k₁ (y₁.trans h.sy) (ko := P.c.fT)
       ⟨by omega, by omega⟩) fun t₂ ⟨k₂, p₂, m₂, a₂⟩ y₂ => ?_)
     have hc : candI P s₀ i = Spec.Hmac.hmac P.hH.SH.H (kvI P s₀ i).1 (kvI P s₀ i).2 ++
@@ -1618,9 +1139,9 @@ theorem restorable : Spill.Restorable .s1 restList := by decide
 /-- RFC 6979's `K` and `V` after step g, from the code's. -/
 theorem kv0_eq (P : Rfc) (s₀ : State) :
     kv0 P s₀ =
-      let K₁ := Spec.Hmac.hmac P.hH.SH.H (List.replicate P.c.H.D 0)
-        (List.replicate P.c.H.D 1 ++ BitVec.ofNat 8 0 :: (dB P s₀ ++ hSpec P s₀))
-      let V₁ := Spec.Hmac.hmac P.hH.SH.H K₁ (List.replicate P.c.H.D 1)
+      let K₁ := Spec.Hmac.hmac P.hH.SH.H (List.replicate P.c.D 0)
+        (List.replicate P.c.D 1 ++ BitVec.ofNat 8 0 :: (dB P s₀ ++ hSpec P s₀))
+      let V₁ := Spec.Hmac.hmac P.hH.SH.H K₁ (List.replicate P.c.D 1)
       let K₂ := Spec.Hmac.hmac P.hH.SH.H K₁ (V₁ ++ BitVec.ofNat 8 1 :: (dB P s₀ ++ hSpec P s₀))
       (K₂, Spec.Hmac.hmac P.hH.SH.H K₂ V₁) := by
   have hi : Spec.Ecdsa.Rfc6979.int2octets P.kit.E.curve (xOf P s₀) = dB P s₀ := by
@@ -1685,9 +1206,9 @@ theorem main_ok : WP isa P.c.main s₀ fun u => (∀ r ∈ preserved, u.gpr r = 
   refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (prologue_ok hp) fun s₁ h₁ y₁ => ?_)
   refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (reduceAny_ok hp h₁) fun s₂ ⟨h₂, hh₂⟩ y₂ => ?_)
   refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (initKV_ok hp h₂ hh₂) fun s₃ h₃ y₃ => ?_)
-  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekeyFull_ok hp h₃ (b := 0) (by decide))
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekeyFull_ok hp h₃ (y₃.trans (y₂.trans y₁)) (b := 0) (by decide))
     fun s₄ h₄ y₄ => ?_)
-  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekeyFull_ok hp h₄ (b := 1) (by decide))
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (rekeyFull_ok hp h₄ (y₄.trans (y₃.trans (y₂.trans y₁))) (b := 1) (by decide))
     fun s₅ h₅ y₅ => ?_)
   refine WP.seq ?_
   unfold Cfg.initCnt
@@ -1717,14 +1238,14 @@ theorem main_ok : WP isa P.c.main s₀ fun u => (∀ r ∈ preserved, u.gpr r = 
     (by decide) restorable
     (fun q hq => in_fr' hp k₉.wr (by
       simp only [restList, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega))
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega))
     (k₉.saved.sub (by decide))) fun u hr => ⟨fun r hr' => ?_, ?_, by rw [hr.sp, k₉.sp], by rw [hr.wr, k₉.wr],
       i, x₇.lt, x₇.fails, x₇.last, ?_⟩
   · refine hr.gpr_of ?_
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [.inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide),
-      .inl (by decide), .inr (k₉.nv _ (by simp)), .inr (k₉.nv _ (by simp)), .inr (k₉.nv _ (by simp)),
+      .inl (by decide), .inl (by decide), .inr (k₉.nv _ (by simp)), .inr (k₉.nv _ (by simp)),
       .inr (k₉.nv _ (by simp)), .inr (k₉.nv _ (by simp)), .inr (k₉.nv _ (by simp))]
   · exact hr.gpr_of (.inl (by decide))
   · refine x₇.res.keep ?_ ?_
@@ -1738,14 +1259,15 @@ end
 /-! ## The frame -/
 
 /-- The state the frame's body starts in, from the contract's precondition. -/
-theorem pre_alloc {s : State} (hp : (rfcRC P.kit.K P.I P.N).pre s) : Pre P (allocd P.c.frB s) := by
+theorem pre_alloc {s : State} (hp : (rfcRC P.kit.K P.I P.H P.c.f P.N).pre s) : Pre P (allocd P.c.frB s) := by
   have hz := sizes P
   have hzH := hz.H
   have hX := hz.X
   have hlen : P.I.ecdsa.curve.len = P.Q := by rw [P.hE, P.kit.len]
   obtain ⟨hs, hk⟩ := hp
   simp only [rfcR, hlen, P.hD, stripConsts_gpr, stripConsts_sp, stripConsts_wr] at hs
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := hs
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+    h23, h24, h25⟩ := hs
   have hN : P.N = P.c.frB + P.X := rfl
   have hspN : (s.sp - BitVec.ofNat 64 P.c.frB).toNat = s.sp.toNat - P.c.frB :=
     VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by rw [hN] at h9; omega) (by have := hz.Q; omega)
@@ -1756,8 +1278,8 @@ theorem pre_alloc {s : State} (hp : (rfcRC P.kit.K P.I P.N).pre s) : Pre P (allo
     rwa [Nat.add_comm P.X, ← hN] at this
   refine ⟨?_, ?_, h3, h4, h5, h6, h7, h10.sub_left subF, h11.sub_left subF, h12.sub_left subF, h13.sub_left subF,
     h10.sub_left subS, h11.sub_left subS, h12.sub_left subS, h13.sub_left subS, ?_, ?_, ?_, h14, h15, h16, h17, h18,
-    hk.2.1, hk.2.2.2, fun t ht => (hk.2.2.1 t ht).1, ?_⟩
-  · have e1 : s.rd.take (s.rd.length - P.kit.K.length) = [⟨s.gpr .a1, P.Q⟩, ⟨s.gpr .a2, P.c.H.D⟩] := h1
+    hk.2.1, hk.2.2.2, fun t ht => (hk.2.2.1 t ht).1, ?_, ?_, h22, h23, h24, h25⟩
+  · have e1 : s.rd.take (s.rd.length - P.kit.K.length) = [⟨s.gpr .a1, P.Q⟩, ⟨s.gpr .a2, P.c.D⟩, ⟨s.gpr .a5, 40⟩] := h1
     have e := List.take_append_drop (s.rd.length - P.kit.K.length) s.rd
     rw [e1, hk.1] at e
     show s.rd = _
@@ -1783,12 +1305,19 @@ theorem pre_alloc {s : State} (hp : (rfcRC P.kit.K P.I P.N).pre s) : Pre P (allo
     · exact hw _ (by rw [h2]; exact List.mem_cons_self)
     · exact hw _ (by rw [h2]; exact List.mem_cons_of_mem _ List.mem_cons_self)
     · exact (d1.symm.sub_left subS).symm
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (h21.sub_left subF).symm
+    · exact h19
+    · exact h20
+    · exact (h21.sub_left subS).symm
 
 /-- The instance's signature and number of candidates, as the proof names its parts. -/
 theorem result_unfold (s₀ : State) :
     result P.I s₀.mem (dk s₀) (dg s₀) =
       if 1 ≤ xOf P s₀ ∧ xOf P s₀ < P.kit.E.curve.n then
-        Spec.Ecdsa.Rfc6979.search P.kit.E.curve P.hH.SH.H P.c.H.D (xOf P s₀) (eOf P s₀) (kv0 P s₀).1 (kv0 P s₀).2
+        Spec.Ecdsa.Rfc6979.search P.kit.E.curve P.hH.SH.H P.c.D (xOf P s₀) (eOf P s₀) (kv0 P s₀).1 (kv0 P s₀).2
           P.c.tries
       else (none, 0) := by
   simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.hct]
@@ -1817,8 +1346,8 @@ theorem result_eq (s₀ : State) {i : Nat} (hi : i < P.c.tries) (hf : ∀ j < i,
     · rfl
 
 /-- The function, in its frame. -/
-theorem correct {s : State} (hp : (rfcRC P.kit.K P.I P.N).pre s) :
-    WP isa P.c.sign s fun s' => abiPreserved s s' ∧ (rfcRC P.kit.K P.I P.N).post s s' := by
+theorem correct {s : State} (hp : (rfcRC P.kit.K P.I P.H P.c.f P.N).pre s) :
+    WP isa P.c.sign s fun s' => abiPreserved s s' ∧ (rfcRC P.kit.K P.I P.H P.c.f P.N).post s s' := by
   have hz := sizes P
   have hzH := hz.H
   have hsp : P.N ≤ s.sp.toNat := hp.1.2.2.2.2.2.2.2.2.1

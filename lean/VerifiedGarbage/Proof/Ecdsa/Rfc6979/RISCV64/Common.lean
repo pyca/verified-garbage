@@ -214,6 +214,7 @@ structure Rfc where
   hsh : c.wide = false → kit.sh = 0
   hQD : kit.Q ≤ c.D + 8
   hD64 : c.D ≤ 64
+  hD4 : c.D % 4 = 0
   hS : w.H.S ≤ 192
   hct : c.tries = I.tries
   hT : 1 ≤ c.tries
