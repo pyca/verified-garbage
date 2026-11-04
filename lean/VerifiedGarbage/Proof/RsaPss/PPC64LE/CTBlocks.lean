@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.TaintImm
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Impl.RsaPss.PPC64LE
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
 meta import VerifiedGarbage.Proof.RsaOaep.PPC64LE.TaintImm
@@ -30,7 +30,8 @@ first nonzero byte and the salt's length only masked.
 namespace VG.Proof.RsaPss.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE VG.Proof.RsaPkcs1Sig.PPC64LE
-open VG.Impl.RsaOaep.PPC64LE (save restore oSt oDig oW copyLoop zeroLoop)
+open VG.Impl.RsaOaep.PPC64LE (save restore oSt oDig oW copyLoop zeroLoop arg)
+open VG.Impl.MdStream.PPC64LE (Params)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.RsaOaep.PPC64LE (Hd zImm isSome_check_of_zImm)
 
@@ -97,47 +98,66 @@ theorem shift_taint (h : Pins Φ [.r14, .r21]) : RelCT isa (Two Φ) (shift H) fu
   two_taint [.r14, .r21] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14, .r21])
     (c := shift H) (c' := shift Hd) (by rfl) (by taint_decide))
 
-theorem copyN_taint (a b n : Nat) (h : Pins Φ [.r14]) : RelCT isa (Two Φ) (copyN a b n) fun _ _ => True :=
-  two_taint [.r14] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14])
-    (c := copyN a b n) (c' := copyN 0 0 0) (by rfl) (by taint_decide))
+/-- The taint checks of the blocks of `ctHash` that depend on the hash
+function's Merkle–Damgård code (its block size's shifts and its length
+field's code), which each instance decides. -/
+structure CtTaint (P : Params) : Prop where
+  lens : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs []) (.block (ctLens Hd P)) hc).isSome = true
+  pad : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs [.r14, .r28]) (pad80 P) hc).isSome = true
+  lenF : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs [.r14]) (.block (lenField P)) hc).isSome = true
+  lenL : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs [.r14, .r28]) (lenLoop P) hc).isSome = true
+  comp : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs []) (.block (compArgs P)) hc).isSome = true
+  sel : ∃ hc, (VG.Taint.check taint (VG.PPC64LE.Taint.ofRegs [.r14]) (selHash P) hc).isSome = true
 
-theorem select_taint (h : Pins Φ [.r14]) : RelCT isa (Two Φ) (select H) fun _ _ => True :=
-  two_taint [.r14] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14])
-    (c := select H) (c' := select Hd) (by rfl) (by taint_decide))
+section
+variable {P : Params} (ct : CtTaint P)
+include ct
 
-theorem fixUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)]) fun _ _ => True :=
+theorem ctLens_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (ctLens H P)) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.lens
   two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)])
-    (c' := .block [.li .r4 0, .addi .r5 .r14 0, .addi .r6 .r19 0]) (by rfl) (by taint_decide))
+    (c := .block (ctLens H P)) (c' := .block (ctLens Hd P)) (by rfl) hc)
 
-theorem fixFin_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r4 .r19 (8 + H.D)]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block [.addi .r4 .r19 (8 + H.D)]) (c' := .block [.addi .r4 .r19 0]) (by rfl) (by taint_decide))
+theorem pad80_taint (h : Pins Φ [.r14, .r28]) : RelCT isa (Two Φ) (pad80 P) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.pad; two_taint [.r14, .r28] h hc
 
-theorem anyUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.li .r4 0, .addi .r5 .r14 oY, .li .r6 (8 + H.D)]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block [.li .r4 0, .addi .r5 .r14 oY, .li .r6 (8 + H.D)])
-    (c' := .block [.li .r4 0, .addi .r5 .r14 0, .li .r6 0]) (by rfl) (by taint_decide))
+theorem lenField_taint (h : Pins Φ [.r14]) : RelCT isa (Two Φ) (.block (lenField P)) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.lenF; two_taint [.r14] h hc
 
-theorem loopInit_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.li .r26 0, Impl.AesGcm.PPC64LE.mov .r27 .r21]) fun _ _ => True :=
-  two_taint [] h (by taint_decide)
+theorem lenLoop_taint (h : Pins Φ [.r14, .r28]) : RelCT isa (Two Φ) (lenLoop P) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.lenL; two_taint [.r14, .r28] h hc
 
-theorem lr1_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r4 .r26 (8 + H.D)]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block [.addi .r4 .r26 (8 + H.D)]) (c' := .block [.addi .r4 .r26 0]) (by rfl) (by taint_decide))
+theorem compArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (compArgs P)) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.comp; two_taint [] h hc
 
-theorem lr2_taint (h : Pins Φ []) : RelCT isa (Two Φ)
-    (.block [.addi .r4 .r26 (8 + H.D), .addi .r5 .r14 (oY + 8 + H.D), .add .r5 .r5 .r26, .li .r6 1]) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
-    (c := .block [.addi .r4 .r26 (8 + H.D), .addi .r5 .r14 (oY + 8 + H.D), .add .r5 .r5 .r26, .li .r6 1])
-    (c' := .block [.addi .r4 .r26 0, .addi .r5 .r14 0, .add .r5 .r5 .r26, .li .r6 0]) (by rfl) (by taint_decide))
+theorem selHash_taint (h : Pins Φ [.r14]) : RelCT isa (Two Φ) (selHash P) fun _ _ => True :=
+  let ⟨_, hc⟩ := ct.sel; two_taint [.r14] h hc
 
-theorem lr3_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r26 .r26 1, .subi .r27 .r27 1])
+end
+
+theorem compStep_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r26 .r26 1, .subi .r28 .r28 1])
     fun _ _ => True :=
   two_taint [] h (by taint_decide)
+
+theorem compInit_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.li .r26 0]) fun _ _ => True :=
+  two_taint [] h (by taint_decide)
+
+theorem digArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r3 .r14 oSel, .addi .r4 .r14 oDig])
+    fun _ _ => True :=
+  two_taint [] h (by taint_decide)
+
+/-- The load of a stack argument into `r11`, from the state after the
+frame's push. -/
+theorem twA11_taint (j : Nat) (h : Pins Φ []) :
+    RelCT isa (Two Φ) (.block [.addSp .r11 0, .load .d .r11 .r11 (arg j)]) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block [.addSp .r11 0, .load .d .r11 .r11 (arg j)]) (c' := .block [.addSp .r11 0, .load .d .r11 .r11 0])
+    (by rfl) (by taint_decide))
+
+/-- The load of a table's word through `r11`. -/
+theorem twB11_taint (o : Nat) (h : Pins Φ [.r11]) : RelCT isa (Two Φ) (.block [.load .d .r11 .r11 o]) fun _ _ => True :=
+  two_taint [.r11] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r11])
+    (c := .block [.load .d .r11 .r11 o]) (c' := .block [.load .d .r11 .r11 0]) (by rfl) (by taint_decide))
 
 theorem updRegs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW])
     fun _ _ => True :=
