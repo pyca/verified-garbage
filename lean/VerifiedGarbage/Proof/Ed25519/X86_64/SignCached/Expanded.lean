@@ -17,9 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Complete Ed25519 signing with the seed's cached SHA-512 digest (x86-64)
 
-`codeExpanded` is `code` with its first step, `hashSeed`, replaced by `copyExpanded`: the
-digest at the second argument is copied to `stk 128`, where `hashSeed` leaves it. The rest is
-proven once, by `bodyFrom_ok` and `bodyFrom_sign_ct`, for both. -/
+`codeExpanded` is `bodyFrom copyExpanded` in its frame: the digest at the second argument is
+copied to `stk 128`, where `bodyFrom` reads it. The rest is proven by `bodyFrom_ok` and
+`bodyFrom_sign_ct`. -/
 
 @[expose] public section
 

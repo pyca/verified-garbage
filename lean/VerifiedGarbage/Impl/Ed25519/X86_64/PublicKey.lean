@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Spec.Ed25519
 
 /-!
@@ -27,7 +26,6 @@ SHA-512 streaming state (192 bytes) and the working space of `update` and
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
-open VG.Impl.Sha512.X86_64.Stream (Callee)
 
 /-- `[rsp + d]`, in the frame. -/
 def stk (d : Nat) : MemOp := { base := .rsp, disp := d }
@@ -85,7 +83,7 @@ def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
 def scalarBaseName (fs : String) : String := "vg_ed25519_scalar_base" ++ fs
 
 /-- The frame's body after `hash`, which leaves the seed's SHA-512 digest at
-`scratch + 1568` (`pkCopyExpanded`), calling the base-point multiplication `bs`. -/
+`scratch + 1568`, calling the base-point multiplication `bs`. -/
 def pkBodyFrom (hash : Prog isa) (bs : Prog isa) (fs : String) : Prog isa :=
   .seq hash
     (.seq (.block pkBaseArgs) (.seq (.block pkPrune)
