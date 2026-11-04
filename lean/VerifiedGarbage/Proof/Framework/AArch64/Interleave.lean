@@ -154,6 +154,7 @@ structure Frame (xb : Reg) (F : Fp) (s s' : State) : Prop where
   wr : s'.wr = s.wr
   unknowns : s'.unknowns = s.unknowns
   syms : s'.syms = s.syms
+  dit : s'.dit = s.dit
 
 
 /-! ## Bits -/
@@ -189,11 +190,11 @@ theorem testBit_range (off n o : Nat) : (range off n).testBit o = decide (off �
 
 theorem state_ext {s t : State} (hg : s.gpr = t.gpr) (hsp : s.sp = t.sp) (hc : s.flags = t.flags)
     (hv : s.v = t.v) (hm : s.mem = t.mem) (hrd : s.rd = t.rd) (hwr : s.wr = t.wr)
-    (hu : s.unknowns = t.unknowns) (hy : s.syms = t.syms) : s = t := by
+    (hu : s.unknowns = t.unknowns) (hy : s.syms = t.syms) (hd : s.dit = t.dit) : s = t := by
   cases s; cases t
-  simp only [State.flags, Prod.mk.injEq] at hg hsp hc hv hm hrd hwr hu hy
+  simp only [State.flags, Prod.mk.injEq] at hg hsp hc hv hm hrd hwr hu hy hd
   obtain ⟨h1, h2, h3, h4⟩ := hc
-  subst hg hsp h1 h2 h3 h4 hv hm hrd hwr hu hy; rfl
+  subst hg hsp h1 h2 h3 h4 hv hm hrd hwr hu hy hd; rfl
 
 theorem read_congr {m m' : Mem} {a : Addr} {n : Nat}
     (h : ∀ k < n, m (a + BitVec.ofNat 64 k) = m' (a + BitVec.ofNat 64 k)) : m.read a n = m'.read a n := by
@@ -236,6 +237,7 @@ theorem Frame.write {F : Fp} {s : State} (sz : Size) (d : Reg) (v : BitVec sz.bi
   wr := rfl
   unknowns := rfl
   syms := rfl
+  dit := rfl
 
 theorem Frame.awc {F : Fp} {s : State} (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool)
     (hd : F.gw.testBit d.ctorIdx = true) (hc : F.cw = true) : Frame xb F s (s.addWithCarry sz d a b c) where
@@ -248,6 +250,7 @@ theorem Frame.awc {F : Fp} {s : State} (sz : Size) (d : Reg) (a b : BitVec sz.bi
   wr := rfl
   unknowns := rfl
   syms := rfl
+  dit := rfl
 
 theorem Frame.setV {F : Fp} {s : State} (d : VReg) (x : BitVec 128)
     (hd : F.vw.testBit d.ctorIdx = true) : Frame xb F s (s.setV d x) where
@@ -262,6 +265,7 @@ theorem Frame.setV {F : Fp} {s : State} (d : VReg) (x : BitVec 128)
   wr := rfl
   unknowns := rfl
   syms := rfl
+  dit := rfl
 
 theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
     (hm : ∀ o, off ≤ o → o < off + n → F.mw.testBit o = true)
@@ -273,7 +277,7 @@ theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
       gpr := fun _ _ => rfl, v := fun _ _ => rfl, c := fun _ => rfl,
       mem := fun x hx => write_frame _ _ _ _ _ fun k hk e => hx (off + k) (hm _ (by omega) (by omega))
         (by rw [e, BitVec.add_assoc, BitVec.ofNat_add]),
-      sp := rfl, rd := rfl, wr := rfl, unknowns := rfl, syms := rfl }
+      sp := rfl, rd := rfl, wr := rfl, unknowns := rfl, syms := rfl, dit := rfl }
   · cases h
 
 
@@ -1160,6 +1164,7 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp xb i = some F) (hj : fp xb j
       · rw [f2.wr, f1.wr, g2.wr, g1.wr]
       · rw [f2.unknowns, f1.unknowns, g2.unknowns, g1.unknowns]
       · rw [f2.syms, f1.syms, g2.syms, g1.syms]
+      · rw [f2.dit, f1.dit, g2.dit, g1.dit]
 
 
 /-! ## Blocks -/

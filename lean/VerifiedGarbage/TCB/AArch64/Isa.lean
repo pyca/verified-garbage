@@ -61,8 +61,22 @@ Modelling choices:
   RBIT; the
   description of UMADDL, of which UMULL is an alias, says "This instruction is a
   data-independent-time instruction as described in About PSTATE.DIT": DDI
-  0602, A64 ISA XML 2025-12, `umaddl.xml`). The code does not set PSTATE.DIT,
-  for these as for the others.
+  0602, A64 ISA XML 2025-12, `umaddl.xml`). Arm guarantees their timing only
+  while PSTATE.DIT is 1, which verified code does not ensure itself (see
+  PSTATE.DIT below), for these as for the others.
+* PSTATE.DIT, `State.dit`: `mrsDit` (`mrs xt, DIT`) reads it and `msrDit`
+  (`msr DIT, xt`) writes it, both requiring FEAT_DIT; no other instruction
+  reads or writes it, and the semantics and the leakage (the addresses
+  accessed and the branch conditions) of every other instruction are the same
+  whatever its value. When it is 0, "The architecture makes no statement about
+  the timing properties of any instructions"; when it is 1, "The architecture
+  requires that the execution time of a data-independent-time sequence of
+  code must be independent of all data-independent-time values" (DDI 0601
+  2026-03, "DIT, Data Independent Timing", which lists the
+  data-independent-time instructions). So the leakage model's assumption that
+  the other instructions' timing depends on nothing but what they leak is what
+  Arm specifies for code run with PSTATE.DIT 1, and the model does not check
+  that it is. `Target.abiPreserved` says nothing about it.
 * Calls are `bl`, or indirect through a register, `blr` (`icall`, the
   instruction of an indirect call, `Code.icall`), and returns `ret` (DDI
   0487, C6.2 "BL", "BLR", "RET"). The return addresses are the next of the
@@ -151,7 +165,7 @@ Modelling choices:
   lanes: ADDV, SADDLV, SMAXV, SMINV, UADDLV, UMAXV, and UMINV.", and their
   descriptions in the A64 ISA XML 2026-09 say "This instruction is a
   data-independent-time instruction as described in About PSTATE.DIT". As
-  above, the code does not set PSTATE.DIT.
+  above, Arm guarantees this while PSTATE.DIT is 1.
 -/
 
 @[expose] public section
@@ -209,6 +223,9 @@ structure State where
   zf : Bool := false
   /-- PSTATE.V: signed overflow. -/
   vf : Bool := false
+  /-- PSTATE.DIT, data independent timing (FEAT_DIT): only `mrsDit` reads it
+  and only `msrDit` writes it. -/
+  dit : Bool := false
   /-- The SIMD and floating-point registers (`V[n]`, 128 bits). -/
   v : VReg → BitVec 128 := fun _ => 0
   mem : Mem
@@ -562,6 +579,12 @@ inductive Instr
   | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
+  /-- `mrs xt, DIT` (MRS of the system register DIT): PSTATE.DIT, in bit 24
+  of `t`, the other bits zero (see `exec`). -/
+  | mrsDit (t : Reg)
+  /-- `msr DIT, xt` (MSR (register) of the system register DIT): PSTATE.DIT
+  becomes bit 24 of `t` (see `exec`). -/
+  | msrDit (t : Reg)
   /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (NOP, `HINT
   #0`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no effect,
   accesses no memory and requires no feature (DDI 0487 C6.2, "NOP"; see
@@ -1270,6 +1293,13 @@ def exec : Instr → State → Option State
   -- DDI 0487 C6.2, "NOP": no effect but on the PC, which the model does not
   -- have.
   | .align _, s => some s
+  -- The system register DIT (DDI 0601 2026-03, "DIT, Data Independent
+  -- Timing"): bit 24 is PSTATE.DIT, bits 63:25 and 23:0 are RES0. Its
+  -- accessors are the same at every exception level, EL0 included: `MRS
+  -- <Xt>, DIT` is `X{64}(t) = Zeros{39} :: PSTATE.DIT :: Zeros{24}` and `MSR
+  -- DIT, <Xt>` is `PSTATE.DIT = X{64}(t)[24]`.
+  | .mrsDit t, s => some (s.write .x t (if s.dit then 0x1000000#64 else 0#64))
+  | .msrDit t, s => some { s with dit := (s.gpr t).getLsbD 24 }
   -- Frame delimiters execute only through `push` and `pop`, and the
   -- instruction of an indirect call only through `icall`.
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .blr _, _ => none
@@ -1399,7 +1429,12 @@ SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
 (Rust's `sha3`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
-FEAT_SVE). -/
+FEAT_SVE); FEAT_DIT for MRS and MSR of the system register DIT (DDI 0601
+2026-03, "DIT, Data Independent Timing": "This register is present only when
+FEAT_DIT is implemented and FEAT_AA64 is implemented. Otherwise, direct
+accesses to DIT are UNDEFINED", and both accessors begin `if
+!(IsFeatureImplemented(FEAT_DIT) && IsFeatureImplemented(FEAT_AA64)) then
+Undefined();`), Rust's `dit`. -/
 def Instr.requires : Instr → List String
   | .vop (.aese ..) | .vop (.aesd ..) | .vop (.aesmc ..) | .vop (.aesimc ..)
   | .vop (.pmull ..) => ["aes"]
@@ -1409,6 +1444,7 @@ def Instr.requires : Instr → List String
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
   | .vop (.xarS ..) => ["sve2"]
+  | .mrsDit _ | .msrDit _ => ["dit"]
   | _ => []
 
 /-- The address an indirect call instruction calls: DDI 0487, C6.2 "BLR":

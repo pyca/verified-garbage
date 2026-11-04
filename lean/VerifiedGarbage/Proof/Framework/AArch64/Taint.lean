@@ -81,6 +81,10 @@ def stepFn : Instr → Step
   | .ldrqTbl .. => ⟨fun τ => some τ⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
   | .align _ => ⟨fun τ => some τ⟩
+  -- PSTATE.DIT is not tracked, as the flags are not: a value read from it is
+  -- secret, and writing it changes no register.
+  | .mrsDit t => ⟨fun τ => some (set τ t false)⟩
+  | .msrDit _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -389,6 +393,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha⟩
+  | mrsDit t =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write .x t fun h => by cases h⟩
+  | msrDit t =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.1, ha.2⟩
 
 theorem cond_sound {τ : T} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (hc : condPub τ c = true) : eval c s₁ = eval c s₂ := by
