@@ -20,10 +20,13 @@ each candidate tried by calling `core`, the signature with a given `k`
 by `sh = 8 Q - qlen` bits).
 
 Which table `hash` is, is public, and so is the hash function's index in
-`Mgf1.hashes`, its word 3: `signT` moves `scratch` to `r6` and chooses by the
-index (`byIdx`, comparisons with each index of `idxs`) the code for that
-hash function's digest length `D` and block size `B` (`shapeOf`), `sign` of
-a `Cfg`, in which both are constants. Everything below is that code.
+`Mgf1.hashes`, its word 3: `signT`, in a frame that saves the return
+address, moves `scratch` to `r6` and chooses by the index (`byIdx`,
+comparisons with each index of `idxs`) the code for that hash function's
+digest length `D` and block size `B` (`shapeOf`), `sign` of a `Cfg`, in
+which both are constants, and calls it: each is a function of its own
+(`vg_ecdsa_<curve>_sign_d<D>b<B>`), so that the comparisons' branches, which
+reach 32 KiB at most, skip only calls. Everything below is that code.
 
 HMAC (`hmac`) is computed from the table's streaming functions: the key `K`
 (`D` bytes, in the frame) padded to a block and XORed with `ipad` (`padBlk`,
@@ -460,9 +463,18 @@ def byIdx (b : Nat → Prog isa) : List Nat → Prog isa
 to `r9`. -/
 def entry : List Instr := [.logic .or .r6 .r7 .r7, .load .d .r9 .r8 24]
 
-/-- `vg_ecdsa_<curve>_sign`: the signature with the code `cfg i` for the
-hash function of index `i` of the table `hash`. -/
-def signT (cfg : Nat → Cfg) : Prog isa :=
-  .seq (.block entry) (byIdx (fun i => (cfg i).sign) idxs)
+/-- The function of the code `c` for a hash function's sizes, for the
+signature `name`. -/
+def shapeName (name : String) (c : Cfg) : String := s!"{name}_d{c.D}b{c.B}"
+
+/-- `vg_ecdsa_<curve>_sign` (`name`): the signature with the code `cfg i` for
+the hash function of index `i` of the table `hash`, which it calls (a
+function of its own, `shapeName`, so that the comparisons' branches skip
+only calls), in a frame that saves the return address. -/
+def signT (name : String) (cfg : Nat → Cfg) : Prog isa :=
+  .seq (.block [.mflr .r0])
+    (.seq (.frame (.push .r0)
+        (.seq (.block entry) (byIdx (fun i => .call (shapeName name (cfg i)) (cfg i).sign) idxs)) (.pop .r0))
+      (.block [.mtlr .r0]))
 
 end VG.Impl.Ecdsa.Rfc6979.PPC64LE
