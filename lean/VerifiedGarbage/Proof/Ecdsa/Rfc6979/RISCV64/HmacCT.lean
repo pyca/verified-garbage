@@ -392,4 +392,145 @@ theorem finT_rel {o cnt : Nat} (ho : o + P.H.S ≤ 384) {base : Reg} {off : Nat}
 
 end
 
+/-! ## The pieces of an HMAC, in two runs -/
+
+/-- The taint checks HMAC's pieces need: the loads of the table's words and
+the padded keys. -/
+structure HCks (c : Cfg) : Prop where
+  tw0 : Ck [.s6] (.block (tword 0))
+  tw1 : Ck [.s6] (.block (tword 1))
+  tw2 : Ck [.s6] (.block (tword 2))
+  pi : Ck [.s0, .s1] (.block (c.padBlk ipadW))
+  po : Ck [.s0, .s1] (.block (c.padBlk opadW))
+
+section
+variable {s₀ s₀' : State} (hp : Pre P s₀) (hp' : Pre P s₀') (hq : PubEq P s₀ s₀') (hc : HCks P.c)
+include hp hp' hq hc
+
+theorem initCall_kk {o : Nat} (ho : o + P.H.S ≤ 384) :
+    RelCT isa (KK P s₀ s₀') (P.c.initCall o) (KK P s₀ s₀') := by
+  have ha : ∀ {σ : State}, ∀ t, KS P σ t → WP isa (.block [.addi .a0 .s0 o]) t (IA P σ o) := fun t h =>
+    WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => WP.block_nil fun sy =>
+      ⟨⟨h.1.upd (by decide) u₁, sy.trans h.2⟩, by rw [u₁.gpr, h.1.s0]⟩)
+  unfold Cfg.initCall
+  refine (rel_args (fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl) ha ha).seq
+    (rel_wp (initT_rel hp hp' hq ho hc.tw0) (fun t h => WP.mono (initT_ok hp (St.refl h.1.1) h.1.2 ho h.2)
+      fun _ x => ⟨x.1.kr, x.2.1⟩) fun t h => WP.mono (initT_ok hp' (St.refl h.1.1) h.1.2 ho h.2)
+      fun _ x => ⟨x.1.kr, x.2.1⟩)
+
+theorem updCall_kk {o cnt : Nat} (ho : o + P.H.S ≤ 384) (hcnt : cnt < 2048) {base : Reg} {off len : Nat}
+    (hd : DatOk P base off len) :
+    RelCT isa (KK P s₀ s₀') (P.c.updCall o cnt base off len) (KK P s₀ s₀') := by
+  obtain ⟨hoff, hlen⟩ := hd.off
+  have hbne : base ≠ .a0 ∧ base ≠ .a1 := by
+    rcases hd with h' | ⟨rfl, -⟩
+    · rcases h'.reg with e | e <;> (simp only at e; subst e; decide)
+    · decide
+  have ha : ∀ {σ : State}, ∀ t, KS P σ t → WP isa (.block (Cfg.updArgs o cnt base off len)) t
+      (UA P σ o cnt base off len) := fun {σ} t h => by
+    have hb := hd.reg h.1
+    unfold Cfg.updArgs
+    refine WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => wp_li (imm := cnt) hcnt fun t₂ u₂ =>
+      wp_addi (imm := off) hoff fun t₃ u₃ => wp_li (imm := len) (by omega) fun t₄ u₄ => WP.block_nil fun sy => ?_)
+    refine ⟨⟨(((h.1.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd (by decide) u₄, sy.trans h.2⟩,
+      ?_, ?_, ?_, ?_⟩
+    · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [h.1.s0]
+    · upd_simp [u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
+    · rw [u₄.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  unfold Cfg.updCall
+  refine (rel_args (fun i hi s => by
+      simp only [Cfg.updArgs, List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl <;> rfl) ha ha).seq
+    (rel_wp (updT_rel hp hp' hq ho hd hc.tw1)
+      (fun t h => WP.mono (updT_ok hp (St.refl h.1.1) h.1.2 ho hd h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2)
+        fun _ x => ⟨x.1.kr, x.2.1⟩)
+      fun t h => WP.mono (updT_ok hp' (St.refl h.1.1) h.1.2 ho hd h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2)
+        fun _ x => ⟨x.1.kr, x.2.1⟩)
+
+theorem finCall_kk {o cnt : Nat} (ho : o + P.H.S ≤ 384) (hcnt : cnt < 2048) {base : Reg} {off : Nat}
+    (hd : OutOk P base off) :
+    RelCT isa (KK P s₀ s₀') (P.c.finCall o cnt base off) (KK P s₀ s₀') := by
+  have hz := sizes P
+  have hzH := hz.H
+  have hzQ := hz.Q
+  have hoff : off < 2048 := by rcases hd with ⟨-, rfl⟩ | ⟨-, -, h₂⟩ <;> (try simp only [sTmp]) <;> omega
+  have hbne : base ≠ .a0 ∧ base ≠ .a1 := by rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+  have ha : ∀ {σ : State}, ∀ t, KS P σ t → WP isa (.block (Cfg.finArgs o cnt base off)) t
+      (FA P σ o cnt base off) := fun {σ} t h => by
+    have hb : t.gpr base = regV σ base := by
+      rcases hd with ⟨rfl, -⟩ | ⟨rfl, -⟩
+      · exact h.1.s0
+      · exact h.1.s1
+    unfold Cfg.finArgs
+    refine WP.of_syms (wp_addi (imm := o) (by omega) fun t₁ u₁ => wp_li (imm := cnt) hcnt fun t₂ u₂ =>
+      wp_addi (imm := off) hoff fun t₃ u₃ => WP.block_nil fun sy => ?_)
+    refine ⟨⟨((h.1.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃, sy.trans h.2⟩, ?_, ?_, ?_⟩
+    · upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]; rw [h.1.s0]
+    · upd_simp [u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    · rw [u₃.gpr, u₂.other _ hbne.2, u₁.other _ hbne.1, hb]; rfl
+  unfold Cfg.finCall
+  refine (rel_args (fun i hi s => by
+      simp only [Cfg.finArgs, List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl <;> rfl) ha ha).seq
+    (rel_wp (finT_rel hp hp' hq ho hd hc.tw2)
+      (fun t h => WP.mono (finT_ok hp h.1.1 h.1.2 ho hd h.2.1 h.2.2.1 h.2.2.2) fun _ x => ⟨x.1, x.2.1⟩)
+      fun t h => WP.mono (finT_ok hp' h.1.1 h.1.2 ho hd h.2.1 h.2.2.1 h.2.2.2) fun _ x => ⟨x.1, x.2.1⟩)
+
+omit hc in
+theorem padBlk_kk {b : Nat} (hb : b < 2048) {c : Byte} (hv : (padVal b).setWidth 32 = c ++ c ++ c ++ c)
+    (ck : Ck [.s0, .s1] (.block (P.c.padBlk (padWord b)))) :
+    RelCT isa (KK P s₀ s₀') (.block (P.c.padBlk (padWord b))) (KK P s₀ s₀') := by
+  have hw : ∀ {σ : State}, Pre P σ → ∀ t, KS P σ t → WP isa (.block (P.c.padBlk (padWord b))) t (KS P σ) :=
+    fun hσ t h => VG.Proof.Ecdsa.RISCV64.Comb.WP.mono_syms (padBlk_ok hσ (St.refl h.1) P.hD4 hb hv)
+      fun _ x sy => ⟨x.1.kr, sy.trans h.2⟩
+  exact rel_kr hq (by decide) (fun _ h => h.1) (fun _ h => h.1) ck (hw hp) (hw hp')
+
+theorem hinit_kk : RelCT isa (KK P s₀ s₀') P.c.hinit (KK P s₀ s₀') := by
+  have hz := sizes P
+  have hS := hz.S192
+  have hB := hz.B
+  unfold Cfg.hinit
+  exact (initCall_kk hp hp' hq hc (o := sIn) (by simp only [sIn]; omega)).seq
+    ((initCall_kk hp hp' hq hc (o := sOut) (by simp only [sOut]; omega)).seq
+    ((padBlk_kk hp hp' hq (b := 0x36) (by decide) padVal_ipad hc.pi).seq
+    ((updCall_kk hp hp' hq hc (o := sIn) (cnt := 0) (base := .s0) (off := sPad) (len := P.c.B) (by simp only [sIn]; omega) (by decide)
+      (.inr ⟨rfl, Nat.le_refl _, by simp only [sPad]; omega⟩)).seq
+    ((padBlk_kk hp hp' hq (b := 0x5c) (by decide) padVal_opad hc.po).seq
+    (updCall_kk hp hp' hq hc (o := sOut) (cnt := 0) (base := .s0) (off := sPad) (len := P.c.B) (by simp only [sOut]; omega) (by decide)
+      (.inr ⟨rfl, Nat.le_refl _, by simp only [sPad]; omega⟩))))))
+
+theorem upds_kk : ∀ (ps : List Part) (cnt : Nat), (∀ p ∈ ps, PartOk P p) → P.c.B + cnt + total ps < 2048 →
+    RelCT isa (KK P s₀ s₀') (P.c.upds cnt ps) (KK P s₀ s₀')
+  | [], _, _, _ => (rel_nil.wp (F₁ := KS P s₀) (F₂ := KS P s₀') fun s s' h =>
+      ⟨WP.block_nil h.1, WP.block_nil h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  | p :: ps, cnt, hps, hb => by
+    have hz := sizes P
+    have hS := hz.S192
+    have hpo : PartOk P p := hps p (by simp)
+    unfold Cfg.upds
+    exact (updCall_kk hp hp' hq hc (by simp only [sIn]; omega) (by simp only [total] at hb; omega) (.inl hpo)).seq
+      (upds_kk ps (cnt + p.2.2) (fun q hq' => hps q (by simp [hq'])) (by simp only [total] at hb; omega))
+
+theorem hfin_kk {len dst : Nat} (hdst : 64 ≤ dst ∧ dst + P.c.D ≤ P.c.frB) (hm : P.c.B + len < 2048) :
+    RelCT isa (KK P s₀ s₀') (P.c.hfin len dst) (KK P s₀ s₀') := by
+  have hz := sizes P
+  have hS := hz.S192
+  have hB := hz.B
+  obtain ⟨hD1, hD2⟩ := hz.D
+  unfold Cfg.hfin
+  exact (finCall_kk hp hp' hq hc (by simp only [sIn]; omega) hm (.inl ⟨rfl, rfl⟩)).seq
+    ((updCall_kk hp hp' hq hc (by simp only [sOut]; omega) (by omega)
+      (.inr ⟨rfl, by simp only [sTmp]; omega, by simp only [sTmp]; omega⟩)).seq
+    (finCall_kk hp hp' hq hc (by simp only [sOut]; omega) (by omega) (.inr ⟨rfl, hdst⟩)))
+
+/-- `HMAC_K(parts)` to `dst`, in two runs. -/
+theorem hmac_kk {ps : List Part} (hps : ∀ p ∈ ps, PartOk P p) (hb : P.c.B + total ps < 2048) {dst : Nat}
+    (hdst : 64 ≤ dst ∧ dst + P.c.D ≤ P.c.frB) :
+    RelCT isa (KK P s₀ s₀') (P.c.hmac ps dst) (KK P s₀ s₀') := by
+  unfold Cfg.hmac
+  exact (hinit_kk hp hp' hq hc).seq ((upds_kk hp hp' hq hc ps 0 hps (by omega)).seq (hfin_kk hp hp' hq hc hdst hb))
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
