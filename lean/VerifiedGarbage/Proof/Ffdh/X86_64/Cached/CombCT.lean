@@ -335,4 +335,107 @@ theorem step_ct (Mo : Mont) : RelCT isa (Two D0) (step Mo.mm) fun _ _ => True :=
     fun _ _ h => h.1.1.1) fun p t h => mm_d0 Mo (.inr rfl) h.1.1 h.2) ?_
   exact two_taint [.rdi] (pins_ce (fun p => p.1) fun _ _ h => h.1.1) (by taint_decide)
 
+/-! ## The comb -/
+
+/-- The comb's public data: its table, the scalar bytes' pointer and count, and `rsp`. -/
+abbrev CQ : Type := TabP × Addr × Nat × Addr
+
+def Q0 (q : CQ) (s : State) : Prop := ∃ xb, xb.length = q.2.2.1 ∧ CombIn q.1 q.2.1 xb s ∧ s.gpr .rsp = q.2.2.2
+
+def Q1 (q : CQ) (s₁ : State) : Prop :=
+  ∃ xb s, xb.length = q.2.2.1 ∧ CombIn q.1 q.2.1 xb s ∧ s.gpr .rsp = q.2.2.2 ∧ C1 q.1 s s₁
+
+def QH1 (q : CQ) (t : State) : Prop := ∃ xb s s₁, xb.length = q.2.2.1 ∧ CombIn q.1 q.2.1 xb s ∧
+  s.gpr .rsp = q.2.2.2 ∧ C1 q.1 s s₁ ∧ HI q.1.B q.1.Z q.1.o q.1.w q.1.mi q.1.P s₁ t ∧ t.gpr .rdx = q.1.cp
+
+def QH2 (q : CQ) (t : State) : Prop := ∃ xb s s₁, xb.length = q.2.2.1 ∧ CombIn q.1 q.2.1 xb s ∧
+  s.gpr .rsp = q.2.2.2 ∧ C1 q.1 s s₁ ∧ HI q.1.B q.1.Z q.1.o q.1.w q.1.mi q.1.P s₁ t ∧ t.gpr .rax = q.1.B ∧
+    word t.mem (off q.1.B q.1.o) (8 * iCtx) = q.1.cp ∧ word t.mem (off q.1.B q.1.o) (8 * iRows) = BitVec.ofNat 64 q.1.rows ∧
+    word t.mem (off q.1.B q.1.o) (8 * iI) = BitVec.ofNat 64 q.1.rows
+
+def QH3 (q : CQ) (t : State) : Prop := ∃ xb s s₁, xb.length = q.2.2.1 ∧ CombIn q.1 q.2.1 xb s ∧
+  s.gpr .rsp = q.2.2.2 ∧ C1 q.1 s s₁ ∧ HI q.1.B q.1.Z q.1.o q.1.w q.1.mi q.1.P s₁ t ∧ t.gpr .rax = q.1.B ∧
+    word t.mem (off q.1.B q.1.o) (8 * iCtx) = q.1.cp ∧ word t.mem (off q.1.B q.1.o) (8 * iRows) = BitVec.ofNat 64 q.1.rows ∧
+    word t.mem (off q.1.B q.1.o) (8 * iI) = BitVec.ofNat 64 q.1.rows ∧ word t.mem (off q.1.B q.1.o) (8 * iXp) = q.2.1
+
+/-- After `j` rows. -/
+def QL (q : CQ) (j : Nat) (t : State) : Prop := ∃ xb s₀, xb.length = q.2.2.1 ∧ CInv q.1 q.2.1 xb s₀ j t ∧
+  5 * q.1.rows < 2 ^ 31 ∧ 8 * q.2.2.1 < 2 ^ 32 ∧ Spec.Rsa.os2ip xb < 2 ^ q.1.bits
+
+theorem head_ct : RelCT isa (Two Q1) (.block ([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx,
+    .mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++
+    fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl))
+    (Two fun q t => 0 < q.1.rows ∧ QL q 0 t) := by
+  rw [head_eq]
+  refine RelCT.block_append (RelCT.seq (R := Two QH1) (two_piece [.rdi, .rsp]
+    (pins_of (fun q r => if r = .rdi then off q.1.B q.1.o else q.2.2.2) fun q t h r hr => by
+      obtain ⟨xb, s, _, hin, hsp, h₁⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h₁.1.sub.rdi
+      · exact (h₁.2.2.2.gpr (by decide)).trans hsp) (by taint_decide) fun q t h => ?_) ?_)
+  · obtain ⟨xb, s, hl, hin, hsp, h₁⟩ := h
+    obtain ⟨hsp₁, hCtx₁, _⟩ := h₁.head hin
+    exact WP.mono (head1_ok h₁.1 hsp₁ hCtx₁) fun u ⟨hu, hd⟩ => ⟨xb, s, t, hl, hin, hsp, h₁, hu, hd⟩
+  refine RelCT.block_append (RelCT.seq (R := Two QH2) (two_piece [.rdi, .rdx]
+    (pins_of (fun q r => if r = .rdi then off q.1.B q.1.o else q.1.cp) fun q t h r hr => by
+      obtain ⟨xb, s, s₁, _, _, _, _, hI, hd⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hI.1.sub.rdi
+      · exact hd) (by taint_decide) fun q t h => ?_) ?_)
+  · obtain ⟨xb, s, s₁, hl, hin, hsp, h₁, hI, hd⟩ := h
+    obtain ⟨_, _, _, _, hreg₁, hrows₁, _⟩ := h₁.head hin
+    exact WP.mono (head2_ok h₁.1 hreg₁ hrows₁ hI hd) fun u ⟨hu, hax, hC, hR, hII⟩ =>
+      ⟨xb, s, s₁, hl, hin, hsp, h₁, hu, hax, hC, hR, hII⟩
+  refine RelCT.block_append (RelCT.seq (R := Two QH3) (two_piece [.rdi, .rax]
+    (pins_of (fun q r => if r = .rdi then off q.1.B q.1.o else q.1.B) fun q t h r hr => by
+      obtain ⟨xb, s, s₁, _, _, _, _, hI, hax, _⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hI.1.sub.rdi
+      · exact hax) (by taint_decide) fun q t h => ?_) ?_)
+  · obtain ⟨xb, s, s₁, hl, hin, hsp, h₁, hI, hax, hC, hR, hII⟩ := h
+    obtain ⟨_, _, hX₁, _⟩ := h₁.head hin
+    exact WP.mono (head3_ok hX₁ hI hax) fun u ⟨hu, hax', hXp, ho⟩ =>
+      ⟨xb, s, s₁, hl, hin, hsp, h₁, hu, hax', by rw [ho _ (by decide) (by decide), hC],
+        by rw [ho _ (by decide) (by decide), hR], by rw [ho _ (by decide) (by decide), hII], hXp⟩
+  refine two_piece [.rdi, .rax]
+    (pins_of (fun q r => if r = .rdi then off q.1.B q.1.o else q.1.B) fun q t h r hr => by
+      obtain ⟨xb, s, s₁, _, _, _, _, hI, hax, _⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hI.1.sub.rdi
+      · exact hax) (by taint_decide) fun q t h => ?_
+  obtain ⟨xb, s, s₁, hl, hin, hsp, h₁, hI, hax, hC, hR, hII, hXp⟩ := h
+  obtain ⟨_, _, _, hXl₁, _⟩ := h₁.head hin
+  refine WP.mono (head4_ok hXl₁ hI hax) fun u ⟨hu, hXl, ho⟩ => ⟨hin.hr1, xb, u, hl, ?_, hin.hr, by rw [← hl]; exact hin.hL,
+    hin.hxb⟩
+  obtain ⟨hc₄, hin₄, hf₄, _, k₄⟩ := hu
+  exact head_cinv hin h₁ hc₄ (by rw [ho _ (by decide) (by decide), hC]) (by rw [ho _ (by decide) (by decide), hR])
+    (by rw [ho _ (by decide) (by decide), hII]) (by rw [ho _ (by decide) (by decide), hXp]) hXl hf₄ hin₄ k₄
+
+theorem comb_ct (Mo : Mont) : RelCT isa (Two Q0) (seqs (comb Mo.mm)) fun _ _ => True := by
+  unfold comb
+  simp only [seqs]
+  refine RelCT.seq (R := Two Q1) (two_post (two_map (Φ := Q0) (fun q => ceWs (q.1, q.2.1, q.2.2.1))
+    (fun q s h => by obtain ⟨_, _, hin, _⟩ := h; exact ⟨q.1.mi, hin.hc.sub.good, Nat.le_refl _⟩)
+    (Mo.ct (o := aY) (a := aR2) (b := aOne) (by unfold MmUse; decide))) fun q s h => ?_) ?_
+  · obtain ⟨xb, hl, hin, hsp⟩ := h
+    exact WP.mono (comb1_ok Mo hin) fun s₁ h₁ => ⟨xb, s, hl, hin, hsp, h₁⟩
+  refine RelCT.seq (R := Two fun q t => 0 < q.1.rows ∧ QL q 0 t) head_ct ?_
+  refine RelCT.seq (R := Two fun q t => QL q q.1.rows t) (two_loop (Φ := QL) (N := fun q => q.1.rows)
+    (two_map (fun p => ((p.1.1, p.1.2.1, p.1.2.2.1), p.1.1.rows - p.2 - 1)) (fun p t h => ?_) (step_ct Mo))
+    fun q j t hj h => ?_) ?_
+  · obtain ⟨hj, xb, s₀, hl, hI, hr, hL, _⟩ := h
+    obtain ⟨he, hiI, hy, _, _⟩ := hI
+    have hP : 0 < p.1.1.P := by have := he.mc.x1; omega
+    refine ⟨⟨⟨xb, hl, he⟩, by rw [hiI]; congr 1; omega, show p.1.1.rows - p.2 - 1 < p.1.1.rows by omega, hr, hL⟩,
+      by rw [hy]; exact p.1.1.M_lt hP _⟩
+  · obtain ⟨xb, s₀, hl, hI, hr, hL, hxb⟩ := h
+    exact WP.mono (combStep_ok Mo hr (by rw [hl]; exact hL) hj hI) fun u ⟨hz, hu⟩ =>
+      ⟨eval_ne_step hj hz, fun _ => ⟨xb, s₀, hl, hu, hr, hL, hxb⟩, fun e => ⟨xb, s₀, hl, e ▸ hu, hr, hL, hxb⟩⟩
+  exact mmc_ct Mo (.inr (.inr (.inr (.inr (.inr (.inl ⟨rfl, rfl, rfl⟩)))))) (fun q => (q.1, q.2.1, q.2.2.1))
+    fun q t h => by obtain ⟨xb, s₀, hl, hI, _⟩ := h; exact ⟨xb, hl, hI.1⟩
+
 end VG.Proof.Ffdh.X86_64.Cached
