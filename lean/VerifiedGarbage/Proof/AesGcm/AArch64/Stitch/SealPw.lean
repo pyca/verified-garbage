@@ -4,13 +4,13 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
