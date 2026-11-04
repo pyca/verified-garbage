@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes

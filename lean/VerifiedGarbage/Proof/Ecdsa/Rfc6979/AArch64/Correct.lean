@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Loop
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy

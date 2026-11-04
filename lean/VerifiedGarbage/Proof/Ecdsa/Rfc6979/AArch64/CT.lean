@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT

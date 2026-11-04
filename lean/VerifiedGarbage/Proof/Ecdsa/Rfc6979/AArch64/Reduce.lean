@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
@@ -162,7 +165,7 @@ theorem dgBase_ne : (cfgOf P).dgBase ≠ .x2 ∧ (cfgOf P).dgBase ≠ .x6 ∧ (c
   unfold Cfg.dgBase; split <;> decide
 
 /-- Word `j` of the number at `digest`, in `x8`, the flags kept. -/
-theorem loadWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hdn : P.Q ≤ dn) {u : State}
+theorem loadWord_ok (hA : P.wide = false) {t : State} (hc : Ctx L g m₀ t) (hdn : P.Q ≤ dn) {u : State}
     (hk : RK t u) (h1 : u.gpr .x1 = L.dg) (h13 : u.gpr (cfgOf P).dgBase = L.dg + BitVec.ofNat 64 (P.Q % 8))
     {j : Nat} (hj : j < P.w) :
     WP isa (.block ((cfgOf P).loadWord j)) u fun u' => u'.gpr .x8 = xw P L u.mem j ∧ u'.mem = u.mem ∧
@@ -209,7 +212,7 @@ theorem loadWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (h
 
 /-- Word `j`: of the number to `V`'s place, of the difference to `K`'s,
 with the carry `!b` in (the complement of the borrow `b`). -/
-theorem subWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : P.Q ≤ dn)
+theorem subWord_ok (hA : P.wide = false) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : P.Q ≤ dn)
     (h13 : t.gpr (cfgOf P).dgBase = L.dg + BitVec.ofNat 64 (P.Q % 8))
     {u : State} (hk : RK t u) (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16) {j : Nat} (hj : j < P.w)
     {b : Bool} (hb : (if j = 0 then true else u.c) = !b) :
@@ -308,7 +311,7 @@ private theorem borrow_step {a b r x y z c d Q : Nat} (hs : a + r = b + Q * c)
 
 /-- After `k` words: the number's in `V`'s place, and the difference in
 `K`'s, with the borrow `b`. -/
-theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = L.dg) (hdn : P.Q ≤ dn)
+theorem subs_ok (hA : P.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = L.dg) (hdn : P.Q ≤ dn)
     (h13 : t.gpr (cfgOf P).dgBase = L.dg + BitVec.ofNat 64 (P.Q % 8))
     (h15 : t.gpr .x15 = L.B + BitVec.ofNat 64 16) :
     ∀ k ≤ P.w, WP isa (.block ((List.range k).flatMap (cfgOf P).subWord)) t fun u =>
@@ -376,7 +379,7 @@ theorem hBase_ne : (cfgOf P).hBase ≠ .x2 ∧ (cfgOf P).hBase ≠ .x6 ∧ (cfgO
 /-- Where `h`'s `8 w` bytes are (from `hB + Q - 8 w`, its top word's zero
 bytes first): above `K` and `V`, in the frame, and below its pointers or
 above them. -/
-theorem hb_facts (hA : P.R.wide = false) (hLe : L.e = P.e) :
+theorem hb_facts (hA : P.wide = false) (hLe : L.e = P.e) :
     80 + 8 * P.w ≤ P.hB + P.Q - 8 * P.w ∧ 8 * P.w ≤ P.hB + P.Q ∧ P.hB + P.Q ≤ 240 + L.e ∧
       (P.hB + P.Q ≤ 200 ∨ 240 ≤ P.hB + P.Q - 8 * P.w) ∧ P.Q ≤ 8 * P.w ∧ 8 * P.w ≤ P.Q + 8 := by
   obtain ⟨hQ, h8, -⟩ := P.sizesA hA
@@ -387,13 +390,13 @@ theorem hb_facts (hA : P.R.wide = false) (hLe : L.e = P.e) :
   by_cases hw : P.R.E.n = 8
   · have hq := hF.1 hw
     simp only [hw, decide_true] at hh
-    simp only [RfcHash.hB, RfcHash.e, Impl.Ecdsa.Rfc6979.AArch64.extra, RfcHash.w, RfcHash.Q, hA, hh,
-      Bool.false_eq_true, ite_true, ite_false] at hq ⊢
+    simp only [RfcHash.hB, RfcHash.e, RfcHash.w, RfcHash.Q, hA, hh, Bool.false_eq_true, Bool.false_or, ite_true,
+      ite_false] at hq ⊢
     omega
   · have hq := hF.2 hw
     simp only [hw, decide_false] at hh
-    simp only [RfcHash.hB, RfcHash.e, Impl.Ecdsa.Rfc6979.AArch64.extra, RfcHash.w, RfcHash.Q, hA, hh,
-      Bool.false_eq_true, ite_false] at hQ hq ⊢
+    simp only [RfcHash.hB, RfcHash.e, RfcHash.w, RfcHash.Q, hA, hh, Bool.false_eq_true, Bool.false_or,
+      ite_false] at hQ hq ⊢
     rcases hQ with hQ | ⟨h4', hQ⟩ <;> omega
 
 theorem hB_ge (P : RfcHash) : 144 ≤ P.hB := by simp only [RfcHash.hB]; split <;> omega
@@ -401,7 +404,7 @@ theorem hB_ge (P : RfcHash) : 144 ≤ P.hB := by simp only [RfcHash.hB]; split <
 theorem hB_le (P : RfcHash) : P.hB ≤ 240 := by simp only [RfcHash.hB]; split <;> omega
 
 /-- Word `j` of the result, by the mask `x6`, to `h + Q - 8 (j + 1)`. -/
-theorem selWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
+theorem selWord_ok (hA : P.wide = false) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
     (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16)
     (h14 : u.gpr (cfgOf P).hBase = L.B + BitVec.ofNat 64 (16 + P.Q % 8)) {j : Nat} (hj : j < P.w) :
     WP isa (.block ((cfgOf P).selWord j)) u fun u' => RK u u' ∧ u'.gpr .x6 = u.gpr .x6 ∧
@@ -443,7 +446,7 @@ theorem selWord_ok (hA : P.R.wide = false) (hLe : L.e = P.e) {t : State} (hc : C
   simp only [RegUpd.gpr_write, a, c, ite_false]
 
 /-- After `k` words of the result, with the mask of the borrow `b` in `x6`. -/
-theorem sels_ok (hA : P.R.wide = false) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
+theorem sels_ok (hA : P.wide = false) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
     (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16)
     (h14 : u.gpr (cfgOf P).hBase = L.B + BitVec.ofNat 64 (16 + P.Q % 8)) {b : Bool}
     (hm : u.gpr .x6 = if b then BitVec.allOnes 64 else 0) :
@@ -483,16 +486,27 @@ theorem dg_ofBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {k : Nat} (hn :
   simp only [Spec.Sha256.bytesAt]
   exact List.map_congr_left fun i hi => (hc.dg_byte hL (by have := List.mem_range.mp hi; omega_arith)).symm
 
-/-- `digest` in `x1`. -/
+/-- `digest` in `x1`, and, if the hash is shorter than the scalars, `scratch` in `x0`. -/
 theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block Cfg.digestPtr) t (Upd L g m₀ t .x1 L.dg) := by
+    WP isa (.block (cfgOf P).digestPtr) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .x1 = L.dg ∧
+      (P.wide = true → t'.gpr .x0 = L.scr) := by
   have p := hc.inFr (d := 208) (by omega_arith) (by omega_arith)
+  have p' := hc.inFr (d := 200) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
-  simp only [Cfg.digestPtr, fDigest, runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod,
-    Nat.reduceLT, and_self, ite_true, State.load, hc.sp, Offset.add_add, Nat.reduceAdd, p, Option.map_some,
-    read8, hc.pDg, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
-    by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
+  cases hw : P.wide
+  · simp only [Cfg.digestPtr, cfgOf_wide, hw, Bool.false_eq_true, ite_false, List.append_nil, fDigest,
+      runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, State.load,
+      hc.sp, Offset.add_add, Nat.reduceAdd, p, Option.map_some, read8, hc.pDg, BitVec.setWidth_eq, Option.some.injEq,
+      exists_eq_left']
+    exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
+      by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun h => absurd h (by decide)⟩
+  · simp only [Cfg.digestPtr, cfgOf_wide, hw, ite_true, fDigest, fScratch, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self, State.load,
+      hc.sp, Offset.add_add, Nat.reduceAdd, p, p', Option.map_some, read8, hc.pDg, hc.pScr, BitVec.setWidth_eq,
+      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
+      reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
+    refine ⟨hc.regs hL rfl rfl rfl rfl (fun r hr _ => ?_) rfl, trivial, trivial, fun _ => trivial⟩
+    rw [RegUpd.gpr_write_of_ne _ _ _ (ne_cs hr (by decide)), RegUpd.gpr_write_of_ne _ _ _ (ne_cs hr (by decide))]
 
 /-- A callee-saved register is none of the registers `rs` the code writes. -/
 theorem not_pres {r : Reg} (hr : r ∈ preserved) (rs : List Reg) (h : ∀ q ∈ rs, q ∉ preserved) : r ∉ rs :=
@@ -542,7 +556,7 @@ theorem bases_ok {t : State} (h1 : t.gpr .x1 = L.dg) (h15 : t.gpr .x15 = L.B + B
 
 /-- `h`: the digest's leftmost `Q` bytes (at `x1`) modulo `n`, big-endian
 in the frame's `Q` bytes at `h` (at `hB`). -/
-theorem reduce_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg)
+theorem reduce_ok (hA : P.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg)
     (hdn : P.Q ≤ dn) :
     WP isa (.block (cfgOf P).reduce) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 16, 128⟩, ⟨L.B + BitVec.ofNat 64 (P.hB + P.Q - 8 * P.w), 8 * P.w⟩] t.mem t'.mem ∧
@@ -625,7 +639,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : Sta
   have hu : ∀ d, wordsVal u₂.mem L.B d P.w = wordsVal u₁.mem L.B d P.w := fun d => by rw [m₂]
   have hn : P.R.E.C.n % 2 ^ (64 * P.w) = P.R.E.C.n := Nat.mod_eq_of_lt P.R.n_lt
   rw [hn] at hs
-  have hN := (P.R.sizesA hA).2.2.2
+  have hN := (P.R.sizesA (P.curveA hA)).2.2.2
   have hXl : wordsVal u₁.mem L.B 80 P.w < 2 * P.R.E.C.n := by
     rw [hX]
     have := Rfc6979.ofBytes_lt (Spec.Ecdsa.bytesAt t.mem L.dg P.Q)
@@ -639,7 +653,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hLe : L.e = P.e) (hL : L.Ok) {t : Sta
     have := Nat.mod_lt (Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt t.mem L.dg P.Q)) (Nat.pos_of_ne_zero P.R.n_ne)
     have hb : P.R.E.C.n < 2 ^ (8 * P.R.E.C.len) := by
       have := Nat.lt_log2_self (n := P.R.E.C.n)
-      rwa [show P.R.E.C.n.log2 + 1 = 8 * P.R.E.C.len from (P.R.sizesA hA).2.2.1] at this
+      rwa [show P.R.E.C.n.log2 + 1 = 8 * P.R.E.C.len from (P.R.sizesA (P.curveA hA)).2.2.1] at this
     show _ < 2 ^ (8 * P.R.E.C.len)
     omega_arith
   have hsel' : Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 (P.hB + P.Q - 8 * P.w)) (8 * P.w) =

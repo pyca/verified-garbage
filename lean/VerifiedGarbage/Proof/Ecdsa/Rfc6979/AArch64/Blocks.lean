@@ -1,6 +1,10 @@
 module
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Core
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
@@ -160,38 +164,52 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## `core`'s arguments -/
 
-theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (wide : Bool) :
-    WP isa (.block (Cfg.coreArgs wide)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .x0 = L.out ∧
-      t'.gpr .x1 = L.d ∧ t'.gpr .x2 = (if wide then L.B + BitVec.ofNat 64 240 else L.dg) ∧
-      t'.gpr .x3 = L.B + BitVec.ofNat 64 (if wide then 312 else 80) ∧ t'.gpr .x4 = L.scr := by
+theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block (cfgOf P).coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .x0 = L.out ∧
+      t'.gpr .x1 = L.d ∧ t'.gpr .x2 = dgAddr P L ∧ t'.gpr .x3 = kAddr P L ∧ t'.gpr .x4 = L.scr := by
   have p0 := hc.inFr (d := 224) (by omega_arith) (by omega_arith)
   have p1 := hc.inFr (d := 216) (by omega_arith) (by omega_arith)
   have p2 := hc.inFr (d := 208) (by omega_arith) (by omega_arith)
   have p3 := hc.inFr (d := 200) (by omega_arith) (by omega_arith)
+  have hs : (cfgOf P).sh = P.R.sh := rfl
+  have cs : ∀ {t' : State}, (∀ r, r ∉ [Reg.x0, .x1, .x2, .x3, .x4] → t'.gpr r = t.gpr r) →
+      ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r := fun h r hr _ => h r (not_pres hr _ (by decide))
   apply WP.of_runBlock
-  cases wide
-  · simp only [Cfg.coreArgs, Cfg.fr, fOut, fD, fDigest, fV, fScratch, Bool.false_eq_true, ite_false,
+  simp only [dgAddr, kAddr]
+  cases hw : P.wide
+  · simp only [Cfg.coreArgs, cfgOf_wide, hw, Cfg.fr, fOut, fD, fDigest, fV, fScratch, Bool.false_eq_true, ite_false,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self, ite_true,
       State.load, RegUpd.gpr_write, RegUpd.sp_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write,
       reduceCtorEq, ite_false, hc.sp, Offset.add_add, Nat.reduceAdd, p0, p1, p2, p3, Option.map_some,
       read8, hc.pOut, hc.pD, hc.pDg, hc.pScr, BitVec.setWidth_eq, Option.some.injEq,
       exists_eq_left']
-    refine ⟨hc.regs hL rfl rfl rfl rfl (fun r hr h30 => ?_) rfl, trivial⟩
-    have h₁ : r ∉ [Reg.x0, .x1, .x2, .x3, .x4] := not_pres hr _ (by decide)
+    refine ⟨hc.regs hL rfl rfl rfl rfl (cs fun r h₁ => ?_) rfl, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
     simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2, ite_false]
-  · simp only [Cfg.coreArgs, Cfg.fr, fOut, fD, fX, fKb, fScratch, ite_true,
-      List.cons_append, List.nil_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self, ite_true,
-      State.load, RegUpd.gpr_write, RegUpd.sp_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write,
-      reduceCtorEq, ite_false, hc.sp, Offset.add_add, Nat.reduceAdd, p0, p1, p3, Option.map_some,
-      read8, hc.pOut, hc.pD, hc.pScr, BitVec.setWidth_eq, Option.some.injEq,
-      exists_eq_left']
-    refine ⟨hc.regs hL rfl rfl rfl rfl (fun r hr h30 => ?_) rfl, trivial⟩
-    have h₁ : r ∉ [Reg.x0, .x1, .x2, .x3, .x4] := not_pres hr _ (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
-    simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2, ite_false]
+  · cases hsh : decide (P.R.sh = 0)
+    · have hsh' : P.R.sh ≠ 0 := by simpa using hsh
+      simp only [Cfg.coreArgs, Cfg.fDg, cfgOf_wide, hw, hs, hsh', Cfg.fr, fOut, fD, fXc, fT, fScratch, ite_true,
+        ite_false, List.cons_append, List.nil_append,
+        runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self,
+        State.load, RegUpd.gpr_write, RegUpd.sp_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write,
+        reduceCtorEq, hc.sp, Offset.add_add, Nat.reduceAdd, p0, p1, p3, Option.map_some,
+        read8, hc.pOut, hc.pD, hc.pScr, BitVec.setWidth_eq, Option.some.injEq,
+        exists_eq_left']
+      refine ⟨hc.regs hL rfl rfl rfl rfl (cs fun r h₁ => ?_) rfl, trivial⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
+      simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2, ite_false]
+    · have hsh' : P.R.sh = 0 := by simpa using hsh
+      simp only [Cfg.coreArgs, Cfg.fDg, cfgOf_wide, hw, hs, hsh', Cfg.fr, fOut, fD, fX, fT, fScratch, ite_true,
+        List.cons_append, List.nil_append,
+        runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod, Nat.reduceLT, and_self,
+        State.load, RegUpd.gpr_write, RegUpd.sp_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write,
+        reduceCtorEq, ite_false, hc.sp, Offset.add_add, Nat.reduceAdd, p0, p1, p3, Option.map_some,
+        read8, hc.pOut, hc.pD, hc.pScr, BitVec.setWidth_eq, Option.some.injEq,
+        exists_eq_left']
+      refine ⟨hc.regs hL rfl rfl rfl rfl (cs fun r h₁ => ?_) rfl, trivial⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
+      simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2, ite_false]
 
 /-! ## Whether to go on -/
 
@@ -325,18 +343,19 @@ theorem zeroH_ok {u : State} (hwr : u.wr = [L.FR, L.LR, L.OUT, L.SCR]) (h15 : u.
       (Offset.contains _ (by simp only [fX]; omega_arith) (by simp only [fX]; omega_arith) (by omega_arith))
 
 /-- `K`, `V` and `h` cleared, and the words at the frame's top, keeping `x0`. -/
-theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {wide hHigh : Bool}
-    (hw : Impl.Ecdsa.Rfc6979.AArch64.extra wide hHigh = L.e) :
-    WP isa (.block (Cfg.wipe wide hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .x0 = t.gpr .x0 ∧
+theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block (cfgOf P).wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .x0 = t.gpr .x0 ∧
       Frame [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH] t.mem t'.mem := by
-  have h := Ctx.of_keep (Q := fun t' => t'.gpr .x0 = t.gpr .x0) hL hc (is := Cfg.wipe wide hHigh)
-    (ws := [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH]) ?_ (by cases wide <;> cases hHigh <;> rfl) fun r hr => by
+  have hx : (cfgOf P).extra = L.e := by rw [hLe]; exact extra_eq P
+  have h := Ctx.of_keep (Q := fun t' => t'.gpr .x0 = t.gpr .x0) hL hc (is := (cfgOf P).wipe)
+    (ws := [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH]) ?_ (by
+      rw [Cfg.wipe, hx]; rcases L.ew with h | h | h <;> rw [h] <;> rfl) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact safe_low L (by omega_arith)
       · exact safe_high L (by omega_arith) (by omega_arith)
   · exact WP.mono h fun _ ⟨hc', hf, ha⟩ => ⟨hc', ha, hf⟩
-  rw [Cfg.wipe, WP.block_append_iff, WP.block_append_iff]
+  rw [Cfg.wipe, hx, WP.block_append_iff, WP.block_append_iff]
   have h₁ : WP isa (.block [.addSp .x15 0, .movz .x .x14 0 0]) t fun u => u.rd = t.rd ∧
       u.wr = t.wr ∧ u.sp = t.sp ∧ u.mem = t.mem ∧ u.gpr .x0 = t.gpr .x0 ∧
       u.gpr .x15 = L.B + BitVec.ofNat 64 16 := by
@@ -347,7 +366,7 @@ theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {wide hHigh : Bool
     exact ⟨by atriv, by atriv, by atriv, by atriv, by atriv, by rw [BitVec.setWidth_eq, BitVec.add_zero]⟩
   refine WP.mono h₁ fun u ⟨hrd, hwr, hsp, hm, ha, h15⟩ => WP.mono (zeroN_ok (hwr.trans hc.wr) h15 22 (by omega_arith))
     fun u' ⟨hrd', hwr', _, hg, hf⟩ => WP.mono (zeroH_ok (((hwr'.trans hwr)).trans hc.wr) (by rw [hg, h15])
-      (extra wide hHigh / 8) (by rw [← hw, Impl.Ecdsa.Rfc6979.AArch64.extra]; split <;> (try split) <;> omega_arith))
+      (L.e / 8) (by omega_arith))
     fun u'' ⟨hrd'', hwr'', _, hg', hf'⟩ => ⟨hrd''.trans (hrd'.trans hrd), hwr''.trans (hwr'.trans hwr), ?_, by
       rw [hg', hg, ha]⟩
   rw [← hm]
