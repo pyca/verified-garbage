@@ -691,7 +691,7 @@ private theorem load_pins (a : SearchPublic × List Nat × Addr) (u : State) (h 
   have a2 := ha 2 (by decide)
   have a3 := ha 3 (by decide)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at a0 a1 a2 a3 hv
-  unfold entryLoad
+  unfold entryLoad LoadPins
   simp only [List.take_succ_cons, List.take_zero]
   prun [ldf, h31, a0, a1, a2, a3, hv]
 
