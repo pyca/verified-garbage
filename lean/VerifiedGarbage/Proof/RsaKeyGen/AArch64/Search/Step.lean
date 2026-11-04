@@ -448,4 +448,145 @@ theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSear
     rw [hres] at ho
     exact ho
 
+/-! ## Asking for more entropy -/
+
+theorem ofNat_toNat_lt {a : Nat} (h : a < 2 ^ 64) : (BitVec.ofNat 64 a).toNat = a := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
+theorem SearchLive.cap_le {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) : p.randLen ≤ primeEntropy p.len := by
+  rw [← h.input.2]; exact h.input.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+
+/-- The next tape's length, with the octets left in `x10` and the budget in
+`x11`. -/
+theorem request_value {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) (h10 : s.gpr .x10 = BitVec.ofNat 64 (p.randLen - used))
+    (h11 : s.gpr .x11 = BitVec.ofNat 64 (primeEntropy p.len)) :
+    WP isa (.block (request.take 7)) s fun t =>
+      (t.gpr .x10 = BitVec.ofNat 64 (primeRequest p.len (p.randLen - used)) ∧ t.mem = s.mem) ∧
+        Keep [.x10, .x11, .x12, .x13] s t := by
+  have hf := h.callFacts
+  have hL : p.len ≤ 512 := hf.len.2.1
+  have hcap := h.cap_le
+  have hE : primeEntropy p.len < 2 ^ 63 := by unfold primeEntropy; omega
+  have hv1 := h.slot (j := 1) (v := BitVec.ofNat 64 p.len) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at hv1
+  have e16 : BitVec.ofNat 64 p.len <<< 4 = BitVec.ofNat 64 (16 * p.len) := by
+    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+  refine WP.keep [.x10, .x11, .x12, .x13] ?_ (by decide) (by decide) (by decide +kernel)
+  unfold request
+  simp only [List.take_succ_cons, List.take_zero]
+  brun [ldf, h.x19, hv1, h.frame_ld' 8 (by decide), h10, h11, e16,
+    subs_ge (show p.randLen - used < 2 ^ 64 by omega) (show 16 * p.len < 2 ^ 64 by omega)]
+  unfold primeRequest Spec.Entropy.request
+  have hA : p.randLen - used ≤ primeEntropy p.len := by omega
+  generalize p.randLen - used = A at *
+  generalize primeEntropy p.len = E at *
+  by_cases h1 : 16 * p.len ≤ A
+  · simp only [h1, decide_true, ite_true, ← BitVec.ofNat_add,
+      subs_ge (show A + A < 2 ^ 64 by omega) (show E < 2 ^ 64 by omega)]
+    by_cases h2 : E ≤ A + A
+    · simp only [h2, decide_true, ite_true]
+      congr 1; omega
+    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]
+      congr 1; omega
+  · simp only [h1, decide_false, Bool.false_eq_true, ite_false, ← BitVec.ofNat_add,
+      subs_ge (show 16 * p.len + 16 * p.len < 2 ^ 64 by omega) (show E < 2 ^ 64 by omega)]
+    by_cases h2 : E ≤ 16 * p.len + 16 * p.len
+    · simp only [h2, decide_true, ite_true]
+      congr 1; omega
+    · simp only [h2, decide_false, Bool.false_eq_true, ite_false]
+      congr 1; omega
+
+def requestValues (p : SearchPublic) (used : Nat) : List (Nat × BitVec 64) :=
+  [(3, BitVec.ofNat 64 (primeRequest p.len (p.randLen - used))), (17, 0)]
+
+/-- `request`, with the octets left in `x10` and the budget in `x11`. -/
+theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) (h10 : s.gpr .x10 = BitVec.ofNat 64 (p.randLen - used))
+    (h11 : s.gpr .x11 = BitVec.ofNat 64 (primeEntropy p.len)) :
+    WP isa (.block request) s fun t =>
+      t.mem = writeFrame s.mem p.F (requestValues p used) ∧
+        Keep [.x10, .x11, .x12, .x13] s t := by
+  rw [show request = request.take 7 ++ request.drop 7 from (List.take_append_drop _ _).symm,
+    WP.block_append_iff]
+  refine WP.mono (request_value h h10 h11) fun v ⟨⟨hv10, hmv⟩, kv⟩ => ?_
+  have hv := h.keep kv hmv
+  have hs := hv.frame_st
+  refine WP.mono (WP.keep [.x12] (Q := fun t =>
+    t.mem = writeFrame v.mem p.F (requestValues p used)) ?_
+      (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, kt⟩ => ⟨by rw [hm, hmv], (kv.trans kt).mono⟩
+  unfold request writeFrame requestValues
+  simp only [List.drop_succ_cons, List.drop_zero, List.foldl_cons, List.foldl_nil]
+  brun [ldf, stf, hv.x19, hv10, imm64 (show 0 < 65536 by decide), hs 24 (by decide), hs 136 (by decide)]
+  rfl
+
+/-- The short tape's guard: whether the octets left reach the budget. -/
+theorem short_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) :
+    WP isa (.block [ldf .x10 13, ldf .x11 2, .subs .x .x12 .x10 .x11, movi .x13 0, movi .x14 1,
+        .csel .x .x12 .x14 .x13]) s fun t =>
+      ((t.gpr .x10 = BitVec.ofNat 64 (p.randLen - used) ∧ t.gpr .x11 = BitVec.ofNat 64 (primeEntropy p.len) ∧
+        t.mem = s.mem) ∧ Keep [.x10, .x11, .x12, .x13, .x14] s t) ∧
+        isa.eval (.zero .x .x12) t = some (decide (p.randLen - used < primeEntropy p.len)) := by
+  have hf := h.callFacts
+  have hL : p.len ≤ 512 := hf.len.2.1
+  have hv2 := h.slot (j := 2) (v := BitVec.ofNat 64 (primeEntropy p.len)) (by simp [SearchPublic.headers])
+  have hv13 := h.slot (j := 13) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv13
+  have hr := hf.rand64
+  have hE : primeEntropy p.len < 2 ^ 64 := by unfold primeEntropy; omega
+  refine WP.mono (WP.keep [.x10, .x11, .x12, .x13, .x14] (Q := fun t =>
+    (t.gpr .x10 = BitVec.ofNat 64 (p.randLen - used) ∧ t.gpr .x11 = BitVec.ofNat 64 (primeEntropy p.len) ∧
+      t.mem = s.mem) ∧
+    isa.eval (.zero .x .x12) t = some (decide (p.randLen - used < primeEntropy p.len))) ?_
+    (by decide) (by decide) (by decide +kernel)) fun _ ⟨⟨hv, he⟩, k⟩ => ⟨⟨hv, k⟩, he⟩
+  brun [ldf, h.x19, hv2, hv13, h.frame_ld' 16 (by decide), h.frame_ld' 104 (by decide),
+    imm64 (show 0 < 65536 by decide), imm64 (show 1 < 65536 by decide),
+    subs_ge (show p.randLen - used < 2 ^ 64 by omega) hE]
+  simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]
+  by_cases hb : primeEntropy p.len ≤ p.randLen - used
+  · simp only [hb, decide_true, ite_true, show ¬p.randLen - used < primeEntropy p.len by omega,
+      decide_false]
+    decide
+  · simp only [hb, decide_false, ite_false, show p.randLen - used < primeEntropy p.len by omega,
+      decide_true, Bool.false_eq_true]
+    decide
+
+theorem search_short {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining : Nat}
+    (h : SearchIter p original final used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s)
+    (hr : remaining ≠ 0)
+    (hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) = none) :
+    WP isa short s (SearchDone p original final) := by
+  obtain ⟨h, tr, hfinal⟩ := h
+  unfold tailOf at hfinal
+  rw [VG.Proof.RsaKeyGen.Search.search_short hr hres, List.length_drop, h.rand_length] at hfinal
+  unfold short
+  refine WP.seq (WP.mono (short_guard h) fun u ⟨⟨⟨h10, h11, hmu⟩, ku⟩, he⟩ => ?_)
+  have hu := h.keep ku hmu
+  refine WP.ite _ he (fun hb => ?_) (fun hb => ?_)
+  · have hb := of_decide_eq_true hb
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))] at hfinal
+    subst hfinal
+    refine WP.mono (request_ok hu h10 h11) fun t ⟨ht, kt⟩ => ?_
+    refine hu.done_after _ (by
+        simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
+        rintro _ (rfl | rfl) <;> dsimp only <;> decide) (by
+        simp only [requestValues, List.mem_cons, List.not_mem_nil, or_false]
+        rintro _ (rfl | rfl) <;> dsimp only <;> decide) ht kt (by decide) ?_ rfl ?_ rfl ?_
+    · simp only [frameValue, requestValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
+      rw [hu.slot (j := 0) (v := BitVec.ofNat 64 remaining) (by simp [SearchPublic.headers])]
+      rfl
+    · simp only [frameValue, requestValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
+      rw [hu.slot (j := 16) (v := BitVec.ofNat 64 used) (by simp [SearchPublic.headers])]
+      rfl
+    · have ho := hc.2.1
+      rw [hres] at ho
+      rw [hmu]
+      exact ho
+  · have hb := of_decide_eq_false hb
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))] at hfinal
+    exact search_exhausted hu (by rw [hfinal]; rfl)
+
 end VG.Proof.RsaKeyGen.AArch64.Search
