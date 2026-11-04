@@ -159,6 +159,168 @@ bx lr",
     )
 }
 
+/// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #328
+add r3, sp, #0
+mov r12, r3
+str r4, [r12, #160]
+str r5, [r12, #164]
+str r6, [r12, #168]
+str r7, [r12, #172]
+str r8, [r12, #176]
+str r9, [r12, #180]
+str r10, [r12, #184]
+str lr, [r12, #188]
+str r11, [r12, #192]
+mov r11, r12
+mov r8, r0
+mov r9, r1
+mov r5, r2
+movw r12, #196
+add r4, r11, r12
+mov r0, r4
+bl {vg_sha224_init}
+mov r0, r4
+mov r1, r8
+mov r7, r9
+mov r10, r11
+mov r2, #0
+mov r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+mov r0, r4
+mov r2, r9
+mov r3, #0
+movw r12, #292
+add r1, r11, r12
+mov r12, r11
+push {{r1, r12}}
+bl {vg_sha256_finalize_scratch}
+ldr r1, [sp], #8
+mov r8, #0
+movw r9, #28
+20:
+add r2, r11, r8
+ldrb r12, [r2, #292]
+add r2, r5, r8
+strb r12, [r2, #0]
+add r8, r8, #1
+subs r9, r9, #1
+bne 20b
+ldr r4, [r11, #160]
+ldr r5, [r11, #164]
+ldr r6, [r11, #168]
+ldr r7, [r11, #172]
+ldr r8, [r11, #176]
+ldr r9, [r11, #180]
+ldr r10, [r11, #184]
+ldr lr, [r11, #188]
+ldr r11, [r11, #192]
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+str r2, [r12, #312]
+str r2, [r12, #316]
+str r2, [r12, #320]
+str r2, [r12, #324]
+add sp, sp, #328
+bx lr",
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+    )
+}
+
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
@@ -465,6 +627,168 @@ ldr lr, [r3, #144]
 add sp, sp, #624
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+    )
+}
+
+/// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #328
+add r3, sp, #0
+mov r12, r3
+str r4, [r12, #160]
+str r5, [r12, #164]
+str r6, [r12, #168]
+str r7, [r12, #172]
+str r8, [r12, #176]
+str r9, [r12, #180]
+str r10, [r12, #184]
+str lr, [r12, #188]
+str r11, [r12, #192]
+mov r11, r12
+mov r8, r0
+mov r9, r1
+mov r5, r2
+movw r12, #196
+add r4, r11, r12
+mov r0, r4
+bl {vg_sha256_init}
+mov r0, r4
+mov r1, r8
+mov r7, r9
+mov r10, r11
+mov r2, #0
+mov r3, #0
+push {{r1, r7, r10, r12}}
+bl {vg_sha256_update_scratch}
+ldr r1, [sp], #16
+mov r0, r4
+mov r2, r9
+mov r3, #0
+movw r12, #292
+add r1, r11, r12
+mov r12, r11
+push {{r1, r12}}
+bl {vg_sha256_finalize_scratch}
+ldr r1, [sp], #8
+mov r8, #0
+movw r9, #32
+20:
+add r2, r11, r8
+ldrb r12, [r2, #292]
+add r2, r5, r8
+strb r12, [r2, #0]
+add r8, r8, #1
+subs r9, r9, #1
+bne 20b
+ldr r4, [r11, #160]
+ldr r5, [r11, #164]
+ldr r6, [r11, #168]
+ldr r7, [r11, #172]
+ldr r8, [r11, #176]
+ldr r9, [r11, #180]
+ldr r10, [r11, #184]
+ldr lr, [r11, #188]
+ldr r11, [r11, #192]
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+str r2, [r12, #312]
+str r2, [r12, #316]
+str r2, [r12, #320]
+str r2, [r12, #324]
+add sp, sp, #328
+bx lr",
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
 }
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MdStream.Arm.DigestInstances
 
 /-! # SHA-224 (FIPS 180-4) on ARMv7 -/
 
@@ -16,6 +17,10 @@ def artifacts : List Artifact := [
   Spec.Sha256.finalize224Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224
     stack := 624
-    verified := Proof.Sha256.Arm.Shared.finalize224 }]
+    verified := Proof.Sha256.Arm.Shared.finalize224 },
+  Spec.Sha256.digest224Api.artifact Arm.target {
+    code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha224H
+    stack := 16 + Impl.MdStream.Arm.Digest.dbytes Proof.Pbkdf2.Stream.Arm.sha224H
+    verified := Proof.MdStream.Arm.Digest.sha224_digest }]
 
 end VG.Artifacts.Sha224.Arm
