@@ -136,14 +136,22 @@ theorem w21 {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat
 
 variable (H dn f) in
 /-- The anchor fits `ctHash`, and the calls of `f` reach `H`'s functions. -/
-def HOk (a : HA) : Prop := RestOk n a.F a.rest ∧ 1 ≤ a.nbm ∧ a.nbm * H.P.B ≤ 2048 ∧ HTF H dn f a.sy
+def HOk (a : HA) : Prop := RestOk n a.F a.rest ∧ 1 ≤ a.nbm ∧ a.nbm * H.P.B ≤ 2048
+
+variable (H dn f) in
+/-- A run's symbols `sy'`: the calls of `f` reach `H`'s functions, whose
+addresses are the anchor's, `sy`. The runs agree on these names alone. -/
+def SyH (sy sy' : String → Addr) : Prop :=
+  HTF H dn f sy' ∧ sy' H.initN = sy H.initN ∧ sy' H.compN = sy H.compN ∧ sy' dn = sy dn
+
+theorem SyH.tr {sy s₁ s₂ : String → Addr} (h : SyH H dn f sy s₂) (e : s₁ = s₂) : SyH H dn f sy s₁ := e ▸ h
 
 variable (H dn f) in
 /-- At the start, and until the length field: the message's length `ℓ`
 (secret) fits in the blocks. -/
 def HE (a : HA) (t : State) : Prop :=
-  HOk H dn f n a ∧ Pub a.F a.S a.rest (hws H dn a) []
-    (fun _ W => ∃ ℓ, W 27 = BitVec.ofNat 64 ℓ ∧ ℓ + 1 + H.P.L ≤ a.nbm * H.P.B) t ∧ t.syms = a.sy
+  HOk H n a ∧ Pub a.F a.S a.rest (hws H dn a) []
+    (fun _ W => ∃ ℓ, W 27 = BitVec.ofNat 64 ℓ ∧ ℓ + 1 + H.P.L ≤ a.nbm * H.P.B) t ∧ SyH H dn f a.sy t.syms
 
 /-- The taint checks of the pieces that do not depend on the hash function. -/
 structure FixedChecks (n : Nat) : Prop where
@@ -343,26 +351,28 @@ theorem hws_w {a : HA} {W : Nat → BitVec 64} (hw : ∀ p ∈ hws H dn a, W p.1
   ⟨hw (21, a.S) (by simp [hws]), hw (28, BitVec.ofNat 64 a.nbm) (by simp [hws]), hw (10, a.sy dn) (by simp [hws])⟩
 
 /-- The slots of the table of `MdHash`, from `hws`. -/
-theorem hws_ht {a : HA} {W : Nat → BitVec 64} (hok : HTF H dn f a.sy) (hw : ∀ p ∈ hws H dn a, W p.1 = p.2) :
-    HT H dn f W a.sy :=
-  hok.ht (hw (8, _) (by simp [hws])) (hw (9, _) (by simp [hws])) (hw (10, _) (by simp [hws]))
+theorem hws_ht {a : HA} {sy : String → Addr} {W : Nat → BitVec 64} (hok : SyH H dn f a.sy sy)
+    (hw : ∀ p ∈ hws H dn a, W p.1 = p.2) : HT H dn f W sy :=
+  hok.1.ht ((hw (8, _) (by simp [hws])).trans hok.2.1.symm) ((hw (9, _) (by simp [hws])).trans hok.2.2.1.symm)
+    ((hw (10, _) (by simp [hws])).trans hok.2.2.2.symm)
 
 variable (H dn f) in
 /-- After the length field: the index of the last block (secret). -/
 def HF (a : HA) (t : State) : Prop :=
-  HOk H dn f n a ∧ Pub a.F a.S a.rest (hws H dn a) [] (fun _ W => ∃ fb, W 30 = BitVec.ofNat 64 fb ∧ fb < a.nbm) t ∧
-    t.syms = a.sy
+  HOk H n a ∧ Pub a.F a.S a.rest (hws H dn a) [] (fun _ W => ∃ fb, W 30 = BitVec.ofNat 64 fb ∧ fb < a.nbm) t ∧
+    SyH H dn f a.sy t.syms
 
 variable (H dn f) in
 /-- Before block `j`. -/
 def HL (a : HA) (j : Nat) (t : State) : Prop :=
-  HOk H dn f n a ∧ Pub a.F a.S a.rest (hws H dn a ++ [(29, BitVec.ofNat 64 j)]) []
-    (fun _ W => ∃ fb, W 30 = BitVec.ofNat 64 fb ∧ fb < a.nbm) t ∧ t.syms = a.sy
+  HOk H n a ∧ Pub a.F a.S a.rest (hws H dn a ++ [(29, BitVec.ofNat 64 j)]) []
+    (fun _ W => ∃ fb, W 30 = BitVec.ofNat 64 fb ∧ fb < a.nbm) t ∧ SyH H dn f a.sy t.syms
 
 variable (H dn f) in
 /-- After the blocks. -/
 def HD (a : HA) (t : State) : Prop :=
-  HOk H dn f n a ∧ Pub a.F a.S a.rest [(21, a.S), (10, a.sy dn)] [] (fun _ _ => True) t ∧ t.syms = a.sy
+  HOk H n a ∧ Pub a.F a.S a.rest [(21, a.S), (10, a.sy dn)] [] (fun _ _ => True) t ∧
+    SyH H dn f a.sy t.syms
 
 theorem hl_w {a : HA} {j : Nat} {W : Nat → BitVec 64}
     (hw : ∀ p ∈ hws H dn a ++ [(29, BitVec.ofNat 64 j)], W p.1 = p.2) :
@@ -381,16 +391,16 @@ theorem ctInit_ct (hfx : FixedChecks n) : RelCT isa (Two (HE H dn f n)) (ctInit 
         (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hs) fun a t h => ?_)
       (two_scall n (s := sIniH) (by decide) HA.F HA.S HA.rest (fun a => a.sy H.initN)
         (fun a t h => ⟨h.1.2.1.L, h.1.2.1.wr, h.1.1.1, pub_slot h.1.2.1 (k := 8) rfl (by decide) (by simp [hws]),
-          by rw [h.1.2.2], by rw [h.1.2.2]; exact h.1.1.2.2.2.fi⟩)
+          h.1.2.2.2.1, h.1.2.2.1.fi⟩)
         (hfx.ld _ (.inl rfl)) (init_rel hH fun s₁ s₂ ⟨a, ⟨t₁, h₁, k₁, hm₁, _⟩, ⟨t₂, h₂, k₂, hm₂, _⟩⟩ =>
           ⟨a.F, a.S, ⟨lay_keep11 h₁.1.2.1.L k₁ hm₁, (k₁.gpr (by decide)).trans h₁.2⟩,
             ⟨lay_keep11 h₂.1.2.1.L k₂ hm₂, (k₂.gpr (by decide)).trans h₂.2⟩⟩))) fun a t h => ?_
   · have L := h.2.1.L
     exact X86_64.WP.mono_syms (scr_ok L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u ⟨hdi, hm, hk⟩ sy =>
-      ⟨⟨h.1, h.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, sy.trans h.2.2⟩, hdi⟩
+      ⟨⟨h.1, h.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, h.2.2.tr sy⟩, hdi⟩
   · obtain ⟨V, W, R, hw, hx⟩ := h.2.1.W
-    exact X86_64.WP.mono_syms (ctInit_ok hH K h.2.1.L R (by rw [h.2.2]; exact hws_ht h.1.2.2.2 hw))
-      fun u ⟨L', _, hwr, _, R', _⟩ sy => ⟨h.1, h.2.1.next L' hwr R' hw hx, sy.trans h.2.2⟩
+    exact X86_64.WP.mono_syms (ctInit_ok hH K h.2.1.L R (hws_ht h.2.2 hw))
+      fun u ⟨L', _, hwr, _, R', _⟩ sy => ⟨h.1, h.2.1.next L' hwr R' hw hx, h.2.2.tr sy⟩
 
 include hH in
 theorem pad80_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HE H dn f n)) (pad80 H) (Two (HE H dn f n)) := by
@@ -398,9 +408,9 @@ theorem pad80_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HE H dn f n)) (pa
   refine two_post (two_pub n [21, 28, 8, 9, 10] [] HA.F HA.S HA.rest (hws H dn) (fun _ => [])
     (fun a t h => ⟨_, h.2.1⟩) (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun a t h => ?_
   obtain ⟨V, W, R, hw, ℓ, hl, hfit⟩ := h.2.1.W
-  obtain ⟨-, h1, hnb, -⟩ := h.1
+  obtain ⟨-, h1, hnb⟩ := h.1
   exact X86_64.WP.mono_syms (pad80_ok hH h.2.1.L R hl (hws_w hw).2.1 h1 hnb (by omega_arith)) fun u P sy =>
-    ⟨h.1, h.2.1.next P.L P.keep.2.2 P.R hw ⟨ℓ, hl, hfit⟩, sy.trans h.2.2⟩
+    ⟨h.1, h.2.1.next P.L P.keep.2.2 P.R hw ⟨ℓ, hl, hfit⟩, h.2.2.tr sy⟩
 
 include hH in
 theorem lenField_ct (hc : HashChecks H.P H.D n) :
@@ -410,11 +420,11 @@ theorem lenField_ct (hc : HashChecks H.P H.D n) :
     (fun a t h => ⟨_, h.2.1.sub (mem21 (by simp [hws])) (fun _ h => h) fun _ _ x => x⟩)
     (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun a t h => ?_
   obtain ⟨V, W, R, hw, ℓ, hl, hfit⟩ := h.2.1.W
-  obtain ⟨-, h1, hnb, -⟩ := h.1
+  obtain ⟨-, h1, hnb⟩ := h.1
   have hB0 := hH.B_pos
   refine X86_64.WP.mono_syms (lenField_ok hH h.2.1.L R hl (by omega_arith)) fun u ⟨L', hk, R'⟩ sy =>
     ⟨h.1, h.2.1.next L' hk.2.2 R' (ws_upd hw (by simp [hws]) _) ⟨RsaPss.lastBlk H.P.B H.P.L ℓ, by simp [upd], ?_⟩,
-      sy.trans h.2.2⟩
+      h.2.2.tr sy⟩
   exact (Nat.div_lt_iff_lt_mul hB0).mpr (by omega_arith)
 
 include hH in
@@ -423,10 +433,10 @@ theorem lenLoop_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HF H dn f n)) (
   refine two_post (two_pub n [21, 28, 8, 9, 10] [] HA.F HA.S HA.rest (hws H dn) (fun _ => [])
     (fun a t h => ⟨_, h.2.1⟩) (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun a t h => ?_
   obtain ⟨V, W, R, hw, fb, hf, hfb⟩ := h.2.1.W
-  obtain ⟨-, -, hnb, -⟩ := h.1
+  obtain ⟨-, -, hnb⟩ := h.1
   exact X86_64.WP.mono_syms (lenLoop_ok hH h.2.1.L R (len := (List.range H.P.L).map fun i => V (oLen + i))
     (fun i hi => by simp [List.getD_eq_getElem?_getD, hi]) hf (hws_w hw).2.1 hfb hnb) fun u O sy =>
-    ⟨h.1, h.2.1.next O.L O.keep.2.2 O.R hw ⟨fb, hf, hfb⟩, sy.trans h.2.2⟩
+    ⟨h.1, h.2.1.next O.L O.keep.2.2 O.R hw ⟨fb, hf, hfb⟩, h.2.2.tr sy⟩
 
 theorem startB_ct (hfx : FixedChecks n) :
     RelCT isa (Two (HF H dn f n)) (.block [.mov32 .rax (.imm 0), .store (sp sB) .rax])
@@ -444,7 +454,7 @@ theorem startB_ct (hfx : FixedChecks n) :
   rw [show off a.F (8 * 29) = off a.F sB from rfl, ← hm] at R0
   refine ⟨h.1.2.1, h.1, ⟨L.of_rep' R R0 (by simp [upd]) (hk.gpr (by decide)) hk.2.2, hk.2.2.trans h.2.1.wr,
     ⟨_, _, R0, fun p hp => ?_, (by obtain ⟨fb, hf, hfb⟩ := hx; exact ⟨fb, by simp [upd, hf], hfb⟩)⟩,
-    fun _ hp => by cases hp⟩, sy.trans h.2.2⟩
+    fun _ hp => by cases hp⟩, h.2.2.tr sy⟩
   rcases List.mem_append.mp hp with hp | hp
   · exact ws_upd hw (by simp [hws]) _ p hp
   · rw [List.mem_singleton.mp hp]; simp [upd]
@@ -454,7 +464,7 @@ variable (H dn f) in
 abbrev HB (p : HA × Nat) (t : State) : Prop := p.2 < p.1.nbm ∧ HL H dn f n p.1 p.2 t
 
 theorem hb_bound {p : HA × Nat} {t : State} (h : HB H dn f n p t) : H.P.B * p.2 + H.P.B ≤ 2048 := by
-  obtain ⟨hj, -, -, hnb, -⟩ := h.1, h.2.1
+  obtain ⟨hj, -, -, hnb⟩ := h.1, h.2.1
   rw [← Nat.mul_succ]
   exact Nat.le_trans (Nat.mul_le_mul_left _ hj) (by rw [Nat.mul_comm]; exact hnb)
 
@@ -477,7 +487,7 @@ theorem compA_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     (two_scall n (s := sCmpH) (by decide) (fun p => p.1.F) (fun p => p.1.S) (fun p => p.1.rest)
       (fun p => p.1.sy H.compN)
       (fun p t h => ⟨h.1.1, h.2.2.2.1.wr, h.2.2.1.1, pub_slot h.2.2.2.1 (k := 9) rfl (by decide) (by simp [hws]),
-        by rw [h.2.2.2.2], by rw [h.2.2.2.2]; exact h.2.2.1.2.2.2.fc⟩)
+        h.2.2.2.2.2.2.1, h.2.2.2.2.1.fc⟩)
       (hfx.ld _ (.inr (.inl rfl)))
       (comp_rel hH fun s₁ s₂ ⟨p, ⟨t₁, h₁, k₁, hm₁, _⟩, ⟨t₂, h₂, k₂, hm₂, _⟩⟩ =>
         ⟨p.1.F, p.1.S, p.2, h₁.1.keep11 k₁ hm₁, h₂.1.keep11 k₂ hm₂⟩))) fun p t h => ?_
@@ -487,11 +497,11 @@ theorem compA_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     have := Nat.le_mul_of_pos_left p.2 hH.B_pos
     exact X86_64.WP.mono_syms (compArgs_ok hH L R (b := p.2) (by omega_arith) (hl_w hw).2.2)
       fun u ⟨h1, h2, h3, h4, hm, hk⟩ sy => ⟨⟨L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm]), h1, h2, h3, h4, hbB⟩,
-        h.1, h.2.1, h.2.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, sy.trans h.2.2.2⟩
+        h.1, h.2.1, h.2.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, h.2.2.2.tr sy⟩
   · obtain ⟨V, W, R, hw, hx⟩ := h.2.2.1.W
     exact X86_64.WP.mono_syms (compCall_ok hH h.2.2.1.L R (hb_bound n h) (hl_w hw).2.2
-        (by rw [h.2.2.2]; exact hws_ht h.2.1.2.2.2 fun q hq => hw q (List.mem_append_left _ hq)))
-      fun u ⟨L', _, hwr, _, R', _⟩ sy => ⟨h.1, h.2.1, h.2.2.1.next L' hwr R' hw hx, sy.trans h.2.2.2⟩
+        (hws_ht h.2.2.2 fun q hq => hw q (List.mem_append_left _ hq)))
+      fun u ⟨L', _, hwr, _, R', _⟩ sy => ⟨h.1, h.2.1, h.2.2.1.next L' hwr R' hw hx, h.2.2.2.tr sy⟩
 
 include hH in
 theorem select_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HB H dn f n)) (select H) (Two (HB H dn f n)) := by
@@ -500,9 +510,9 @@ theorem select_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HB H dn f n)) (s
       (fun p => [(21, p.1.S), (29, BitVec.ofNat 64 p.2)]) (fun _ => []) (fun p t h => ⟨_, hb_pub n h⟩)
       (fun p t h => h.2.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun p t h => ?_
   obtain ⟨V, W, R, hw, fb, hf, hfb⟩ := h.2.2.1.W
-  have := Nat.le_trans (Nat.le_mul_of_pos_right _ hH.B_pos) h.2.1.2.2.1
+  have := Nat.le_trans (Nat.le_mul_of_pos_right _ hH.B_pos) h.2.1.2.2
   exact X86_64.WP.mono_syms (select_ok hH h.2.2.1.L R (hl_w hw).2.2 hf (by omega) (by omega)) fun u Sw sy =>
-    ⟨h.1, h.2.1, h.2.2.1.next Sw.L Sw.keep.2.2 Sw.R hw ⟨fb, hf, hfb⟩, sy.trans h.2.2.2⟩
+    ⟨h.1, h.2.1, h.2.2.1.next Sw.L Sw.keep.2.2 Sw.R hw ⟨fb, hf, hfb⟩, h.2.2.2.tr sy⟩
 
 theorem nextB_ct (hfx : FixedChecks n) : RelCT isa (Two (HB H dn f n)) (.block nextBlock) fun _ _ => True := by
   obtain ⟨_, hp⟩ := hfx.nextB
@@ -519,13 +529,13 @@ theorem body_wp {a : HA} {j : Nat} {t : State} (hj : j < a.nbm) (h : HL H dn f n
   obtain ⟨V, W, R, hw, fb, hf, hfb⟩ := h.2.1.W
   obtain ⟨w21, w28, w29⟩ := hl_w hw
   have w10 : W 10 = a.sy dn := hw (10, a.sy dn) (by simp [hws])
-  have hnbm : a.nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right a.nbm hH.B_pos) h.1.2.2.1
+  have hnbm : a.nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right a.nbm hH.B_pos) h.1.2.2
   refine WP.seq_assoc (WP.seq (X86_64.WP.mono_syms (compCall_ok hH h.2.1.L R hbB w29
-      (by rw [h.2.2]; exact hws_ht h.1.2.2.2 fun q hq => hw q (List.mem_append_left _ hq)))
+      (hws_ht h.2.2 fun q hq => hw q (List.mem_append_left _ hq)))
     fun v ⟨Lv, _, hwrv, _, Rv, _⟩ sv => ?_))
   refine WP.seq (X86_64.WP.mono_syms (select_ok hH Lv Rv (b := j) (fb := fb) w29 hf (by omega_arith)
     (by omega_arith)) fun w Sw sw => ?_)
-  have hsy : ∀ u : State, u.syms = w.syms → u.syms = a.sy := fun u su => su.trans (sw.trans (sv.trans h.2.2))
+  have hsy : ∀ u : State, u.syms = w.syms → SyH H dn f a.sy u.syms := fun u su => ((h.2.2.tr sv).tr sw).tr su
   refine X86_64.WP.mono_syms (nextBlock_ok Sw.L Sw.R (b := j) (nbm := a.nbm) w29 w28 (by omega_arith)
       (by omega_arith))
     fun u' ⟨hz, Lu', hk', Ru'⟩ su => ⟨eval_ne_cnt hj hz, fun _ => ⟨h.1, ⟨Lu', hk'.2.2.trans (Sw.keep.2.2.trans
@@ -557,14 +567,14 @@ theorem digestOut_ct (hfx : FixedChecks n) : RelCT isa (Two (HD H dn f n)) (dige
       (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun a t h => ?_)
     (two_scall n (s := sDigH) (by decide) HA.F HA.S HA.rest (fun a => a.sy dn)
       (fun a t h => ⟨h.1.1, h.2.2.1.wr, h.2.1.1, pub_slot h.2.2.1 (k := 10) rfl (by decide) (by simp),
-        by rw [h.2.2.2], by rw [h.2.2.2]; exact h.2.1.2.2.2.fd⟩)
+        h.2.2.2.2.2.2, h.2.2.2.1.fd⟩)
       (hfx.ld _ (.inr (.inr (.inl rfl))))
       (dig_rel hH hdk fun s₁ s₂ ⟨a, ⟨t₁, h₁, k₁, hm₁, _⟩, ⟨t₂, h₂, k₂, hm₂, _⟩⟩ =>
         ⟨a.F, a.S, oSel, h₁.1.keep11 k₁ hm₁, h₂.1.keep11 k₂ hm₂⟩))
   have L := h.2.1.L
   exact X86_64.WP.mono_syms (digArgs_ok L (src := oSel) (by decide)) fun u ⟨h1, h2, hm, hk⟩ sy =>
     ⟨⟨L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm]), h1, h2, by unfold oSel oDig; omega_arith⟩,
-      h.1, h.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, sy.trans h.2.2⟩
+      h.1, h.2.1.keepM (hk.gpr (by decide)) hk.2.2 hm, h.2.2.tr sy⟩
 
 include hH K hdk in
 /-- `ctHash` is constant time. -/
