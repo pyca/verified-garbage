@@ -95,18 +95,19 @@ def cfgS (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool) (sh D B : Nat) : Impl.Ecdsa.
 open Impl.Ecdsa.Rfc6979.X86_64 in
 /-- The blocks that depend on both the scalars' and the hash function's
 sizes, each addressing memory only from the registers that hold the frame's
-base and the pointers the code put there (the taint analysis). -/
+base and the pointers the code put there (the taint analysis): those that
+load `scratch` from the frame first (`Cfg.scrPtr`), from `rdi` after it. -/
 structure RfcT (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
   msgF : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg c.len c.D 0 true c.fHo)
   msgN : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg c.len c.D 0 false)
   prepW : c.wide = true → TaintOk [.rsp, .rsi, .rdi] c.prep
   coreArgs : TaintOk [.rsp] c.coreArgs
   keepV : TaintOk [.rsp] (c.keepV 0)
-  candTop : TaintOk [.rsp] c.candTop
+  candTop : c.sh ≠ 0 → TaintOk [.rsp, .rdi] (c.conv fT c.sh)
   wipe : TaintOk [.rsp] c.wipe
   digestPtr : TaintOk [.rsp] c.digestPtr
-  pad : TaintOk [.rsp] (c.padBlk 0)
-  hfinCopy : TaintOk [.rsp] (Cfg.scrPtr ++ Cfg.copyBytes c.D .rdi sTmp .rsp 0)
+  pad : TaintOk [.rsp, .rdi] (([.mov32 .rcx (.imm 0)] : List Instr) ++ (List.range (c.B / 4)).flatMap c.padW)
+  hfinCopy : TaintOk [.rsp, .rdi] (Cfg.copyBytes c.D .rdi sTmp .rsp 0)
 
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
