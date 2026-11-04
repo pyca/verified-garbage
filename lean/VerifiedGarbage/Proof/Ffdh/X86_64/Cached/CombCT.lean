@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.TableCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Comb
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
@@ -137,5 +138,95 @@ theorem digit_ct : RelCT isa (Two DgP) digit fun _ _ => True := by
         (RelCT.seq (tooth_ct (j := 3) (by decide) (by taint_decide) (by taint_decide))
           ((tooth_ct (j := 4) (by decide) (by taint_decide) (by taint_decide)).mono (fun _ _ h => h)
             fun _ _ _ => trivial))))
+
+/-! ## The selection -/
+
+/-- Entry `e` of the scan. -/
+def SA (T : TabP) (e : Nat) (t : State) : Prop :=
+  ∃ E d s, SelB T.B T.Z T.o T.w T.mi T.cp E d s ∧ SelO T.B T.o T.w E d s e t
+
+def SM (p : TabP × Nat) (t : State) : Prop := p.2 < 32 ∧ ∃ E d s, SelB p.1.B p.1.Z p.1.o p.1.w p.1.mi p.1.cp E d s ∧
+  SelO p.1.B p.1.o p.1.w E d s p.2 t ∧ t.gpr .rax = BitVec.ofNat 64 (p.2 + 2) ∧ t.gpr .rdx = eqMask p.2 d
+
+def SR (p : TabP × Nat) (t : State) : Prop := p.2 < 32 ∧ ∃ E d s, SelB p.1.B p.1.Z p.1.o p.1.w p.1.mi p.1.cp E d s ∧
+  SelO p.1.B p.1.o p.1.w E d s p.2 t ∧ t.gpr .rdx = eqMask p.2 d ∧
+    t.gpr .rsi = off p.1.cp (24 + 8 * p.1.w * (p.2 + 2)) ∧ t.gpr .rbx = off (off p.1.B p.1.o) (slot p.1.w aXm) ∧
+    t.gpr .r12 = BitVec.ofNat 64 p.1.w
+
+def SF (p : TabP × Nat) (t : State) : Prop := p.2 < 32 ∧ ∃ E d s, SelB p.1.B p.1.Z p.1.o p.1.w p.1.mi p.1.cp E d s ∧
+  SelF p.1.B p.1.o p.1.w E d s p.2 t
+
+theorem SelO.rdi {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : Addr} {E : Nat → Nat → BitVec 64} {d e : Nat}
+    {s t : State} (hb : SelB B Z o w mi cp E d s) (hI : SelO B o w E d s e t) : t.gpr .rdi = off B o :=
+  (hI.facts hb).1.rdi
+
+theorem SelF.rdi {B : Addr} {Z o w : Nat} {mi : BitVec 64} {cp : Addr} {E : Nat → Nat → BitVec 64} {d e : Nat}
+    {s t : State} (hb : SelB B Z o w mi cp E d s) (hF : SelF B o w E d s e t) : t.gpr .rdi = off B o :=
+  (hF.2.2.2.gpr (by decide)).trans hb.hc.rdi
+
+theorem selectStep_ct :
+    RelCT isa (Two fun (p : TabP × Nat) t => p.2 < 32 ∧ SA p.1 p.2 t) selectStep fun _ _ => True := by
+  rw [selectStep_eq]
+  refine RelCT.seq (R := Two SM) (two_piece [.rdi] (pins_rdiB (fun p => off p.1.B p.1.o) fun _ _ h => by
+      obtain ⟨_, E, d, s, hb, hI⟩ := h; exact hI.rdi hb) (by taint_decide) fun p t h => ?_) ?_
+  · obtain ⟨he, E, d, s, hb, hI⟩ := h
+    exact WP.mono (selMask_ok hb he hI) fun u ⟨hu, hax, hdx⟩ => ⟨he, E, d, s, hb, hu, hax, hdx⟩
+  refine RelCT.seq (R := Two SR) (two_piece [.rdi, .rax] (pins_of (fun p r => if r = .rdi then off p.1.B p.1.o
+      else BitVec.ofNat 64 (p.2 + 2)) fun p t h r hr => by
+        obtain ⟨_, E, d, s, hb, hI, hax, _⟩ := h
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hI.rdi hb
+        · exact hax) (by taint_decide) fun p t h => ?_) ?_
+  · obtain ⟨he, E, d, s, hb, hI, hax, hdx⟩ := h
+    exact WP.mono (selRow_ok hb hI hax hdx) fun u ⟨hu, hdx', hsi, hbx, h12⟩ => ⟨he, E, d, s, hb, hu, hdx', hsi, hbx, h12⟩
+  refine RelCT.seq (R := Two SF) (two_piece [.rdi, .rsi, .rbx, .r12] (pins_of (fun p r => if r = .rdi then off p.1.B p.1.o
+      else if r = .rsi then off p.1.cp (24 + 8 * p.1.w * (p.2 + 2)) else if r = .rbx then off (off p.1.B p.1.o) (slot p.1.w aXm)
+      else BitVec.ofNat 64 p.1.w) fun p t h r hr => by
+        obtain ⟨_, E, d, s, hb, hI, _, hsi, hbx, h12⟩ := h
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact hI.rdi hb
+        · exact hsi
+        · exact hbx
+        · exact h12) (by taint_decide) fun p t h => ?_) ?_
+  · obtain ⟨he, E, d, s, hb, hI, hdx, hsi, hbx, h12⟩ := h
+    exact WP.mono (selWords_ok hb he hI hdx hsi hbx h12) fun u hu => ⟨he, E, d, s, hb, hu⟩
+  exact two_taint [.rdi] (pins_rdiB (fun p => off p.1.B p.1.o) fun _ _ h => by
+    obtain ⟨_, E, d, s, hb, hF⟩ := h; exact hF.rdi hb) (by taint_decide)
+
+/-- The scan's start: the entries' words, the digit and `aXm`'s words zero. -/
+def SelStart (T : TabP) (s : State) : Prop := ∃ E d, SelB T.B T.Z T.o T.w T.mi T.cp E d s ∧
+  ∀ i < T.w, word s.mem (off T.B T.o) (slot T.w aXm + 8 * i) = 0#64
+
+theorem select_ct : RelCT isa (Two SelStart) select (Two fun (T : TabP) t => ∃ E d s,
+    SelB T.B T.Z T.o T.w T.mi T.cp E d s ∧ SelO T.B T.o T.w E d s 32 t) := by
+  unfold select
+  simp only [seqs]
+  refine RelCT.seq (R := Two fun (T : TabP) t => 0 < 32 ∧ SA T 0 t) (two_piece [.rdi]
+    (pins_rdiB (fun T => off T.B T.o) fun _ _ h => by obtain ⟨E, d, hb, _⟩ := h; exact hb.hc.rdi)
+    (by taint_decide) fun T s h => ?_) ?_
+  · obtain ⟨E, d, hb, hz⟩ := h
+    have hc := hb.hc
+    have hn := hc.scr.nowrap
+    have hi := hc.hi
+    have hlo := hc.lo
+    have hsx := slot_le (w := T.w) (show aXm < 8 by decide)
+    have hlE := hdr_lt_slot T.w 8 (show iE < 32 by decide)
+    have hsc := hc.good.scr
+    refine WP.mono (WP.keep [.rax] (Q := fun u =>
+        u.mem = s.mem.writeW (off (off T.B T.o) (8 * iE)) (BitVec.ofNat 64 0)) (by
+      xrun [State.ea, hdr, hc.good.rdi, hdrOff, hsc.st (d := 8 * iE) (by omega)]; rfl) rfl)
+      fun t₀ ⟨hm₀, k₀⟩ => ⟨by decide, E, d, s, hb, ?_⟩
+    have ho₀ := writeW_outside s.mem (off T.B T.o) (d := 8 * iE) (BitVec.ofNat 64 0) (by omega)
+    rw [← hm₀] at ho₀
+    exact ⟨Frm.of_outside ho₀ (by simp [selR]), by rw [hm₀]; exact word_writeW_self _ _ _ _,
+      fun i hi' => by
+        rw [ho₀.word (Or.inr (by have := hdr_lt_slot T.w aXm (show iE < 32 by decide); omega)) (by omega), hz i hi']
+        rfl, k₀.mono (by decide)⟩
+  refine two_loop (Φ := SA) (N := fun _ => 32) selectStep_ct ?_
+  intro T e t he ⟨E, d, s, hb, hI⟩
+  refine WP.mono (selectStep_ok hb he hI) fun u ⟨hz, hu⟩ =>
+    ⟨eval_ne_step he hz, fun _ => ⟨E, d, s, hb, hu⟩, fun h => ⟨E, d, s, hb, h ▸ hu⟩⟩
 
 end VG.Proof.Ffdh.X86_64.Cached
