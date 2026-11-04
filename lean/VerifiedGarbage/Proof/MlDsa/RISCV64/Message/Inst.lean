@@ -6,13 +6,14 @@ public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Inst
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# ML-DSA on RISC-V, `sign_message` and `verify_message`, with this library's functions on `μ`
+# ML-DSA on RISC-V, `sign_message`, `verify_message` and `verify_message_cached`, with this library's functions on `μ`
 
-`vg_mldsa*_sign_message` and `vg_mldsa*_verify_message` calling the
-RISCV64 `vg_mldsa*_sign` and `vg_mldsa*_verify` (`Sign/Inst.lean`,
-`Verify/Inst.lean`), verified with 1168 bytes of stack, whose frames use no
-more (`sign44Fn`, …): so the functions on messages are verified with 1168
-(`signMessage44_verified`, …).
+`vg_mldsa*_sign_message`, `vg_mldsa*_verify_message` and
+`vg_mldsa*_verify_message_cached` calling the RISCV64 `vg_mldsa*_sign` and
+`vg_mldsa*_verify` (`Sign/Inst.lean`, `Verify/Inst.lean`), verified with 1168
+bytes of stack, whose frames use no more (`sign44Fn`, …): so the functions on
+messages are verified with 1168 (`signMessage44_verified`,
+`verifyMessageCached44_verified`, …).
 -/
 
 @[expose] public section
@@ -48,6 +49,23 @@ theorem verifyMessage44_verified :
       (verifyMessageContract mlDsa44 RISCV64.abi 1168) :=
   verifyMessage_verified (.inl rfl) (by decide) verify44Fn _ verifyMessage44_sat
 
+/-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
+theorem verifyMessageCached44_sat :
+    (verifyMessageCachedContract mlDsa44 RISCV64.abi 1168).pre (mvcSat mlDsa44) := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs, mvcSat]
+  sig_and_intros
+  all_goals first
+    | exact mvcMem_tr (by decide)
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+
+theorem verifyMessageCached44_verified :
+    Verified RISCV64.target
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify44Api.name Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44)
+      (verifyMessageCachedContract mlDsa44 RISCV64.abi 1168) :=
+  verifyMessageCached_verified (.inl rfl) (by decide) verify44Fn _ verifyMessageCached44_sat
+
 theorem sign65Fn : Callee Impl.MlDsa.RISCV64.Sign.sign65 (fun stk => signContract mlDsa65 RISCV64.abi stk) 1168 :=
   ⟨⟨1168, Nat.le_refl _, Sign.sign65_verified⟩, by decide +kernel⟩
 
@@ -73,6 +91,23 @@ theorem verifyMessage65_verified :
       (verifyMessageContract mlDsa65 RISCV64.abi 1168) :=
   verifyMessage_verified (.inr (.inl rfl)) (by decide) verify65Fn _ verifyMessage65_sat
 
+/-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
+theorem verifyMessageCached65_sat :
+    (verifyMessageCachedContract mlDsa65 RISCV64.abi 1168).pre (mvcSat mlDsa65) := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs, mvcSat]
+  sig_and_intros
+  all_goals first
+    | exact mvcMem_tr (by decide)
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+
+theorem verifyMessageCached65_verified :
+    Verified RISCV64.target
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify65Api.name Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65)
+      (verifyMessageCachedContract mlDsa65 RISCV64.abi 1168) :=
+  verifyMessageCached_verified (.inr (.inl rfl)) (by decide) verify65Fn _ verifyMessageCached65_sat
+
 theorem sign87Fn : Callee Impl.MlDsa.RISCV64.Sign.sign87 (fun stk => signContract mlDsa87 RISCV64.abi stk) 1168 :=
   ⟨⟨1168, Nat.le_refl _, Sign.sign87_verified⟩, by decide +kernel⟩
 
@@ -97,5 +132,22 @@ theorem verifyMessage87_verified :
       (Impl.MlDsa.RISCV64.Message.verifyMessage verify87Api.name Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87)
       (verifyMessageContract mlDsa87 RISCV64.abi 1168) :=
   verifyMessage_verified (.inr (.inr rfl)) (by decide) verify87Fn _ verifyMessage87_sat
+
+/-- `tr` of `mvcSat` is `H` of its key by `mvcMem_tr`; the rest by evaluation. -/
+theorem verifyMessageCached87_sat :
+    (verifyMessageCachedContract mlDsa87 RISCV64.abi 1168).pre (mvcSat mlDsa87) := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs, mvcSat]
+  sig_and_intros
+  all_goals first
+    | exact mvcMem_tr (by decide)
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+
+theorem verifyMessageCached87_verified :
+    Verified RISCV64.target
+      (Impl.MlDsa.RISCV64.Message.verifyMessageCached verify87Api.name Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87)
+      (verifyMessageCachedContract mlDsa87 RISCV64.abi 1168) :=
+  verifyMessageCached_verified (.inr (.inr rfl)) (by decide) verify87Fn _ verifyMessageCached87_sat
 
 end VG.Proof.MlDsa.RISCV64.Message
