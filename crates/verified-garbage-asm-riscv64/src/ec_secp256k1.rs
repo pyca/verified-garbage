@@ -528,7 +528,7 @@ pub unsafe extern "C" fn vg_ec_secp256k1_public_key(out: *mut [u8; 65], d: *cons
 .insn 4, 0x0112f2b3
 .insn 4, 0x5c543023
 .insn 2, 0x8522
-call {vg_secp256k1_mul}
+call {vg_secp256k1_mul_g}
 .insn 2, 0x844e
 .insn 2, 0x8522
 .insn 4, 0x60000593
@@ -1660,7 +1660,7 @@ call {vg_secp256k1_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_secp256k1_mul = sym super::ec_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
+        vg_secp256k1_mul_g = sym super::ec_secp256k1::vg_secp256k1_mul_g::vg_secp256k1_mul_g,
         vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
     )
 }
@@ -1670,8 +1670,8 @@ call {vg_secp256k1_mul_mod_p}
 pub(crate) mod vg_secp256k1_add_mod_p;
 
 #[rustfmt::skip]
-#[path = "internal/vg_secp256k1_mul.rs"]
-pub(crate) mod vg_secp256k1_mul;
+#[path = "internal/vg_secp256k1_mul_g.rs"]
+pub(crate) mod vg_secp256k1_mul_g;
 
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_mul_mod_p.rs"]
