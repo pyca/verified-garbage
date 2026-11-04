@@ -258,7 +258,10 @@ impl Domain {
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value (the cached
     /// entry point of `vg_ffdh_generate_key`).
-    #[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")))]
+    #[cfg(all(
+        test,
+        any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")
+    ))]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
@@ -332,7 +335,10 @@ impl Domain {
     }
 }
 
-#[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")))]
+#[cfg(all(
+    test,
+    any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")
+))]
 mod cache_tests {
     use super::*;
 
