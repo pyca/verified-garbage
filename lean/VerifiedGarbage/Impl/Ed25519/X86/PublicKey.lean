@@ -48,10 +48,31 @@ def hash : Prog isa :=
   (.seq (callWith updateArgs "vg_sha512_update_scratch" Sha512.X86.Stream.update)
     (callWith finalizeArgs "vg_sha512_finalize_scratch" Sha512.X86.Stream.finalize))
 
-def body : Prog isa := .seq hash (.seq (.block prune)
+/-- The frame's body after `first`, which leaves the seed's SHA-512 digest at 192. -/
+def bodyFrom (first : Prog isa) : Prog isa := .seq first (.seq (.block prune)
   (.seq (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) (.block wipe)))
+
+def body : Prog isa := bodyFrom hash
 
 def publicKey : Prog isa :=
   .frame (.push (List.replicate 64 .eax)) body (.pop .eax 64)
+
+/-- The digest's address, the second argument, in ECX. -/
+def copyPtr : List Instr := [.mov .ecx (.mem (argument 1))]
+
+/-- Word `k` of the 64 bytes at ECX copied to the frame's digest at 192. -/
+def copyDigestWord (k : Nat) : List Instr :=
+  [.mov .eax (.mem { base := .ecx, disp := 4 * k }), .store (at_ (192 + 4 * k)) .eax]
+
+def copyDigestWords : List Instr := (List.range 16).flatMap copyDigestWord
+
+/-- The seed's cached SHA-512 digest, the second argument, copied to 192, where `hash`
+leaves it. -/
+def copyExpanded : Prog isa := .seq (.block copyPtr) (.block copyDigestWords)
+
+/-- `vg_ed25519_public_key_expanded`: `publicKey` from the seed's SHA-512 digest
+(`publicKeyExpandedContract`), copied rather than computed. -/
+def publicKeyExpanded : Prog isa :=
+  .frame (.push (List.replicate 64 .eax)) (bodyFrom copyExpanded) (.pop .eax 64)
 
 end VG.Impl.Ed25519.X86.PublicKey

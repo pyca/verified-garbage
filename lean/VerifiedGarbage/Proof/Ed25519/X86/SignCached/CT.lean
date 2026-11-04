@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -33,6 +34,7 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -277,15 +279,17 @@ open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
-theorem hashSeed_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem hashSeed_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
     WP isa hashSeed s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32) := by
   refine WP.seq (WP.mono (init_step hc hL ha) fun u ⟨hu, fu, ru⟩ => ?_)
   refine WP.seq (WP.mono (update_input hu hL ha 1 0 (by decide) (seed_input hL)
     (by decide) ru) fun v ⟨hv, fv, rv⟩ => ?_)
-  have hs := hu.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change 32 ≤ 2 ^ 64; decide)
-  change Spec.Ed25519.bytesAt u.mem (L.seed.setWidth 64) 32 = Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32 at hs
+  have hs := hu.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega)
+  change Spec.Ed25519.bytesAt u.mem (L.seed.setWidth 64) L.seedLen =
+    Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) L.seedLen at hs
+  rw [h32] at hs
   change Spec.Sha512.Repr _ v.mem _ ([] ++ Spec.Ed25519.bytesAt u.mem (L.seed.setWidth 64) 32) at rv
   rw [List.nil_append, hs] at rv
   refine WP.mono (finalize_step hv hL ha 32 (by decide) false
@@ -470,19 +474,28 @@ theorem saveSecret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) {expanded : List Byte}
 
 def expanded (L : Lay) (m : Mem) : List Byte :=
   Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m (L.seed.setWidth 64) 32)
-def scalar (L : Lay) (m : Mem) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune (expanded L m))
-def nonce (L : Lay) (m : Mem) : List Byte :=
+/-- The secret scalar of the digest `E`. -/
+def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
+/-- The nonce of the digest `E` and the message. -/
+def nonce (L : Lay) (m : Mem) (E : List Byte) : List Byte :=
   Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
-    ((expanded L m).drop 32 ++ Spec.Ed25519.bytesAt m (L.msg.setWidth 64) L.len.toNat))
+    (E.drop 32 ++ Spec.Ed25519.bytesAt m (L.msg.setWidth 64) L.len.toNat))
 
-structure SecretReady (L : Lay) (m : Mem) (t : State) : Prop where
-  scalar : Spec.Ed25519.bytesAt t.mem ((fp L 32).setWidth 64) 32 = scalar L m
-  prefixBytes : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 64) 32 = (expanded L m).drop 32
+structure SecretReady (L : Lay) (E : List Byte) (t : State) : Prop where
+  scalar : Spec.Ed25519.bytesAt t.mem ((fp L 32).setWidth 64) 32 = scalar E
+  prefixBytes : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 64) 32 = E.drop 32
 
-theorem secret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (.seq hashSeed (.block saveSecret)) s fun t => Ctx L g m₀ t ∧ SecretReady L m₀ t := by
-  refine WP.seq (WP.mono (hashSeed_ok hc hL ha) fun u ⟨hu, _, hd⟩ => ?_)
-  exact WP.mono (saveSecret_ok hu hL hd) fun t ⟨ht, hs, hp⟩ => ⟨ht, hs, hp⟩
+/-- The scalar and the prefix of the digest `E` that `first` leaves at 192. -/
+theorem secretFrom_ok {first : Prog isa} {E : List Byte}
+    (hh : WP isa first s fun t => Ctx L g m₀ t ∧ Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 = E)
+    (hL : L.Ok) :
+    WP isa (secretFrom first) s fun t => Ctx L g m₀ t ∧ SecretReady L E t :=
+  WP.seq (WP.mono hh fun _ ⟨hu, hd⟩ =>
+    WP.mono (saveSecret_ok hu hL hd) fun _ ⟨ht, hs, hp⟩ => ⟨ht, hs, hp⟩)
+
+theorem secret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
+    WP isa secretCode s fun t => Ctx L g m₀ t ∧ SecretReady L (expanded L m₀) t :=
+  secretFrom_ok (WP.mono (hashSeed_ok hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩) hL
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -491,14 +504,14 @@ namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
-structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
-  scalar : Spec.Ed25519.bytesAt t.mem ((fp L 32).setWidth 64) 32 = scalar L m
-  nonce : Spec.Ed25519.bytesAt t.mem ((fp L 96).setWidth 64) 32 = nonce L m
-  point : Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
+structure NonceReady (L : Lay) (m : Mem) (E : List Byte) (t : State) : Prop where
+  scalar : Spec.Ed25519.bytesAt t.mem ((fp L 32).setWidth 64) 32 = scalar E
+  nonce : Spec.Ed25519.bytesAt t.mem ((fp L 96).setWidth 64) 32 = nonce L m E
+  point : Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m E)
 
-theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+theorem nonce_ok {E : List Byte} (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L E s)
     (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
-    WP isa nonceCode s fun t => Ctx L g m₀ t ∧ NonceReady L m₀ t := by
+    WP isa nonceCode s fun t => Ctx L g m₀ t ∧ NonceReady L m₀ E t := by
   refine WP.seq (WP.mono_syms (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ yu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 32) (by decide) (by decide)).trans hs.scalar
@@ -513,12 +526,11 @@ theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs :
   · rw [nv] at pt
     exact pt
 
-theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : NonceReady L m₀ s)
-    (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)) :
+theorem challenge_ok {seed : List Byte} (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (hs : NonceReady L m₀ (Spec.Sha512.sha512 seed) s)
+    (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 = Spec.Ed25519.publicKey seed) :
     WP isa challengeCode s fun t => Ctx L g m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)
+      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) := by
   refine WP.seq (WP.mono (hashChallenge_ok hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
   rw [hs.point] at du
@@ -534,7 +546,7 @@ theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (
   rw [nv, cv, sv] at st
   have pt := (mul_out_bytes hL ft).trans pv
   rw [Proof.Ed25519.signatureBytes_split, pt]
-  change Spec.Ed25519.scalarBase (nonce L m₀) ++ Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64 + (32 : BitVec 64)) 32 = _
+  change Spec.Ed25519.scalarBase (nonce L m₀ (Spec.Sha512.sha512 seed)) ++ Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64 + (32 : BitVec 64)) 32 = _
   rw [st]
   exact Proof.Ed25519.sign_pipeline _ _ _ hk
 
@@ -548,18 +560,29 @@ theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
   exact (hL.ko.sub_left (fun p hp => Whole.frame_sub L.E p
     (Offset.sub_base _ (by decide : 4 * 8 + 4 * 56 ≤ 256) p hp))).symm
 
-theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+/-- The signature of `seed`, after any `first` that leaves its digest at 192. -/
+theorem bodyFrom_ok (hL : L.Ok) (ha : Arguments L m₀) {first : Prog isa} {seed : List Byte}
+    (hh : WP isa first s fun t => Ctx L g m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 = Spec.Sha512.sha512 seed)
+    (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 = Spec.Ed25519.publicKey seed)
+    (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
+    WP isa (bodyFrom first) s fun t => Ctx L g m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign seed
+        (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) := by
+  refine WP.seq (WP.mono_syms (secretFrom_ok hh hL) fun u ⟨hu, su⟩ yu => ?_)
+  refine WP.seq (WP.mono (nonce_ok hu hL ha su (by rw [yu]; exact hy)) fun v ⟨hv, nv⟩ => ?_)
+  refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
+  exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
+
+theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32)
     (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32))
     (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
     WP isa body s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign
         (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)
-        (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) := by
-  refine WP.seq (WP.mono_syms (secret_ok hc hL ha) fun u ⟨hu, su⟩ yu => ?_)
-  refine WP.seq (WP.mono (nonce_ok hu hL ha su (by rw [yu]; exact hy)) fun v ⟨hv, nv⟩ => ?_)
-  refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
-  exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
+        (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) :=
+  bodyFrom_ok hL ha (WP.mono (hashSeed_ok hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩) hk hy
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -817,8 +840,10 @@ open VG.Impl.Ed25519.X86.SignCached
 
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
-theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
+/-- Signing after any `first` whose runs are related. -/
+theorem bodyFrom_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) {first : Prog isa}
+    (hh : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True)) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) (bodyFrom first)
       (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
   have r96 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 96, .frame 192, .caller 5 0]
     (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
@@ -830,9 +855,14 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide))).seq (base_call_ct hL ha hb)
   have m := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]
     (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq (mul_call_ct hL)
-  exact (two_syms ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
+  exact (two_syms (hh.seq (saveSecret_ct hL))).seq
     (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
       (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))
+
+theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
+      (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) :=
+  bodyFrom_ct hL ha hb (hashSeed_ct hL ha hb)
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -857,11 +887,8 @@ private theorem noSp_finalize {n : Nat} {b : Bool} (h : NoSp (.block (finalizeAr
 private theorem noSp_reduce {n : Nat} (h : NoSp (.block (reduceArgs n))) : NoSp (reduce n) :=
   noSp_seq h Whole.reduce_nosp
 
-theorem body_nosp : NoSp body := by
+theorem bodyFrom_nosp {first : Prog isa} (hs : NoSp first) : NoSp (bodyFrom first) := by
   have ni : NoSp init := noSp_seq (NoSp.of_all (by decide +kernel)) Whole.init_nosp
-  have hs : NoSp hashSeed := noSp_seq ni (noSp_seq
-    (noSp_update (NoSp.of_all (by decide +kernel)))
-    (noSp_finalize (NoSp.of_all (by decide +kernel))))
   have hn : NoSp hashNonce := noSp_seq ni (noSp_seq
     (noSp_update (NoSp.of_all (by decide +kernel)))
     (noSp_seq (noSp_update (NoSp.of_all (by decide +kernel)))
@@ -877,33 +904,49 @@ theorem body_nosp : NoSp body := by
     (noSp_seq (noSp_seq hc (noSp_seq (noSp_reduce (NoSp.of_all (by decide +kernel)))
       (noSp_seq (NoSp.of_all (by decide +kernel)) mul_nosp))) (NoSp.of_all (by decide +kernel))))
 
-theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
-    WP isa code s fun t => abiPreserved s t ∧ signCachedLocal.post s t := by
-  have hL := lay_ok h
-  have hb := entry_bounds h
+theorem hashSeed_nosp : NoSp hashSeed :=
+  noSp_seq (noSp_seq (NoSp.of_all (by decide +kernel)) Whole.init_nosp) (noSp_seq
+    (noSp_update (NoSp.of_all (by decide +kernel)))
+    (noSp_finalize (NoSp.of_all (by decide +kernel))))
+
+variable {n : Nat} {key : State → Prop} {post : State → State → Prop} in
+/-- The frame around `bodyFrom first`, from the signature it leaves in `out`. -/
+theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).pre s) (sl : 32 ≤ n)
+    (hn : NoSp first)
+    {sig : List Byte}
+    (hb : WP isa (bodyFrom first) (pushed (List.replicate 64 .eax) s) fun u => Ctx (lay n s) s.gpr s.mem u ∧
+      Spec.Ed25519.bytesAt u.mem ((lay n s).out.setWidth 64) 64 = sig)
+    (hp : ∀ t, Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 64 = sig → post s t) :
+    WP isa (.frame (.push (List.replicate 64 .eax)) (bodyFrom first) (.pop .eax 64)) s
+      fun t => abiPreserved s t ∧ post s t := by
+  have hL := lay_ok h sl
+  have hb' := entry_bounds h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
-    (by simp only [List.length_replicate]; omega) body_nosp
-    (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_key h) rfl) fun u ⟨hu, ho⟩ => ?_)
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+    (by simp only [List.length_replicate]; omega) (bodyFrom_nosp hn)
+    (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
+  refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩
   · by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
   · rw [popped_mem]
-    refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
+    refine hu.frame.readW (r := (lay n s).RET) ?_ ?_ (by decide)
     · rw [lay_ret h]; exact Region.contains_self _ _
     · simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl)
       · exact hL.ro
       · exact hL.rc
-      · change (lay s).RET.Disjoint (lay s).STK
+      · change (lay n s).RET.Disjoint (lay n s).STK
         rw [lay_ret h, lay_stack h]
         exact (Offset.below_disjoint _ (by decide)).symm
-  · change Spec.Ed25519.bytesAt (popped .eax (List.replicate 64 .eax).length u).mem
-      ((arg s 0).setWidth 64) 64 = _
-    rw [popped_mem]
+  · rw [popped_mem]
     exact ho
+
+theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
+    WP isa code s fun t => abiPreserved s t ∧ signCachedLocal.post s t :=
+  frame_ok h (Nat.le_refl _) hashSeed_nosp
+    (body_ok (push_ctx h) (lay_ok h (Nat.le_refl _)) (lay_arguments h) rfl (entry_key h) rfl) fun _ h => h
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -911,21 +954,107 @@ end
 namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 
-theorem lay_eq {s t : State} (h : signCachedLocal.pub s t) : lay s = lay t := by
+variable {n : Nat} {key : State → Prop} {post : State → State → Prop}
+
+theorem lay_eq {s t : State} (h : signPub s t) : lay n s = lay n t := by
   obtain ⟨sp, a0, a1, a2, a3, a4, a5, sy⟩ := h
   simp only [lay, sp, a0, a1, a2, a3, a4, a5, sy]
 
-theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code := by
+/-- The frame around `bodyFrom first`, for any `first` whose runs are related. -/
+theorem frame_ct {first : Prog isa} (sl : 32 ≤ n)
+    (hh : ∀ {L : Lay} {g₁ g₂ m₁ m₂}, L.Ok → L.seedLen = n → Arguments L m₁ → Arguments L m₂ →
+      RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True)) :
+    ConstantTime isa (signLocalWith n key post).pre signPub
+      (.frame (.push (List.replicate 64 .eax)) (bodyFrom first) (.pop .eax 64)) := by
   apply RelCT.constantTime
   refine RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb a' b' ⟨s₁, s₂, ⟨p₁, p₂, hp⟩, rfl, rfl⟩ ea eb
-  have he := lay_eq hp
-  have h₂ : Ctx (lay s₁) s₂.gpr s₂.mem (pushed (List.replicate 64 .eax) s₂) :=
+  have he : lay n s₁ = lay n s₂ := lay_eq hp
+  have h₂ : Ctx (lay n s₁) s₂.gpr s₂.mem (pushed (List.replicate 64 .eax) s₂) :=
     by rw [he]; exact push_ctx p₂
-  have ha₂ : Arguments (lay s₁) s₂.mem := by rw [he]; exact lay_arguments p₂
-  have y₂ : Named (lay s₁) (pushed (List.replicate 64 .eax) s₂) := by
+  have ha₂ : Arguments (lay n s₁) s₂.mem := by rw [he]; exact lay_arguments p₂
+  have y₂ : Named (lay n s₁) (pushed (List.replicate 64 .eax) s₂) := by
     rw [he]; rfl
-  exact ⟨(body_ct (lay_ok p₁) (lay_arguments p₁) ha₂ _ _ _ _ _ _
-    ⟨push_ctx p₁, h₂, ⟨trivial, rfl⟩, ⟨trivial, y₂⟩⟩ ea eb).1, trivial⟩
+  exact ⟨(bodyFrom_ct (lay_ok p₁ sl) (lay_arguments p₁) ha₂ (hh (lay_ok p₁ sl) rfl (lay_arguments p₁) ha₂)
+    _ _ _ _ _ _ ⟨push_ctx p₁, h₂, ⟨trivial, rfl⟩, ⟨trivial, y₂⟩⟩ ea eb).1, trivial⟩
+
+theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code :=
+  frame_ct (Nat.le_refl _) fun hL _ ha hb => hashSeed_ct hL ha hb
+
+end VG.Proof.Ed25519.X86.SignCached
+
+/-! ## The copy of the cached digest -/
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
+
+variable {L : Lay}
+
+theorem seed64 (h64 : L.seedLen = 64) : L.SEED = ⟨L.seed.setWidth 64, 64⟩ := by
+  rw [Lay.SEED, h64]
+
+theorem seed64_mem (h64 : L.seedLen = 64) : (⟨L.seed.setWidth 64, 64⟩ : Region) ∈ L.inputs := by
+  rw [← seed64 h64]; simp [Lay.inputs]
+
+/-- The 64 bytes at the second argument, apart from the frame. -/
+theorem seed64_disjoint (hL : L.Ok) (h64 : L.seedLen = 64) :
+    Region.Disjoint ⟨L.seed.setWidth 64, 64⟩ ⟨L.E.setWidth 64 + BitVec.ofNat 64 192, 64⟩ := by
+  have hk := (hL.ks _ (seed64_mem h64)).symm
+  exact hk.sub_right fun p hp => Whole.frame_sub L.E p (Offset.sub_base _ (by decide) p hp)
+
+/-- The second argument's slot, readable, holds the digest's address. -/
+theorem copy_arg {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
+    (ha : Arguments L m₀) :
+    InRegions (t.rd ++ t.wr) (addr L.E 264) 4 ∧ t.mem.readW (addr L.E 264) 32 = L.seed := by
+  rw [addr_eq (by have := hL.top; omega)]
+  refine ⟨⟨L.ARGS, ?_, ?_⟩, (hc.arg_word hL (j := 1) (by decide)).trans (ha.1 1 (by decide))⟩
+  · rw [hc.rd]; exact List.mem_append_left _ (by simp [Lay.inputs])
+  · exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
+
+/-- `copyExpanded` leaves the caller's 64 bytes at the second argument at frame offset 192. -/
+theorem copy_ok {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
+    (ha : Arguments L m₀) (h64 : L.seedLen = 64) :
+    WP isa copyExpanded t fun u => Ctx L g m₀ u ∧
+      Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 192) 64 = Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 64 := by
+  obtain ⟨harg, hp⟩ := copy_arg hc hL ha
+  refine WP.mono (Whole.copyExpanded_ok hc (by have := hL.top; omega) harg hp
+    (by have := hL.ns; omega) (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64))
+    (seed64_disjoint hL h64)) fun u ⟨hu, hb⟩ => ⟨hu, hb.trans ?_⟩
+  have hs := hc.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega)
+  rw [seed64 h64] at hs
+  exact hs
+
+theorem copy_nosp : NoSp copyExpanded := NoSp.of_all (by decide +kernel)
+
+variable {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
+
+theorem copy_ct (hL : L.Ok) (h64 : L.seedLen = 64) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) copyExpanded (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+  have p : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block copyPtr)
+      (Two L g₁ g₂ m₁ m₂ fun u => u.gpr .ecx = L.seed) := by
+    refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
+    · intro t hc _
+      obtain ⟨harg, hp⟩ := copy_arg hc hL ha
+      exact WP.mono (Whole.copyPtr_ok hc harg) fun _ ⟨hu, _, he⟩ => ⟨hu, he.trans hp⟩
+    · intro t hc _
+      obtain ⟨harg, hp⟩ := copy_arg hc hL hb
+      exact WP.mono (Whole.copyPtr_ok hc harg) fun _ ⟨hu, _, he⟩ => ⟨hu, he.trans hp⟩
+  have w : RelCT isa (Two L g₁ g₂ m₁ m₂ fun u => u.gpr .ecx = L.seed) (.block copyDigestWords)
+      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    refine two_wp (RelCT.taint (A := taint) (τr [.esp, .ecx]) (fun a b h => agree_regs fun r hr => ?_)
+      (by native_taint_decide)) ?_ ?_
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact two_esp h
+      · exact h.2.2.1.trans h.2.2.2.symm
+    · intro t hc he
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+        (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
+        fun _ hu => ⟨hu.1, trivial⟩
+    · intro t hc he
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+        (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
+        fun _ hu => ⟨hu.1, trivial⟩
+  exact p.seq w
 
 end VG.Proof.Ed25519.X86.SignCached

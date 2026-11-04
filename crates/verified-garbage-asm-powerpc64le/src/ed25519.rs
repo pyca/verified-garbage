@@ -33,6 +33,28 @@ bl {vg_ed25519_scalar_base}
     )
 }
 
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "Uf8h+CAAwTimAgh8YACG+mgApvpwAMb6eADm+oAABvgAAIM6AACkOgAAxToAAOY6AAAV6QAAF/kIABXpCAAX+RAAFekQABf5GAAV6RgAF/kgABXpIAAX+SgAFekoABf5MAAV6TAAF/k4ABXpOAAX+QAAF+nC6Ah5JB8IeUAAF/kIABfpSAAX+RAAF+lQABf5GAAX6WQXCHmC8Ah5AEAgPcYHKXl4Swh9WAAX+QAAdDhAAJc4AAC2OA=="
+bl {vg_ed25519_scalar_base}
+.base64 "gAAX6GAAl+poALfqcADX6ngA9+qmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+bAAITggAIBO""#,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+    )
+}
+
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
 /// # Safety
@@ -57,6 +79,59 @@ bl {vg_sha512_update_scratch}
 .base64 "AAB4OCAAgDiAALk4wADYOA=="
 bl {vg_sha512_finalize_scratch}
 .base64 "gAAZ6cLoCHkkHwh5AAAZ+YgAGekIABn5kAAZ6RAAGfmYABnpZBcIeYLwCHkAQCA9xgcpeXhLCH0YABn5oAAZ6SAAGfmoABnpKAAZ+bAAGekwABn5uAAZ6TgAGfkAAHg4"
+bl {vg_sha512_init}
+.base64 "AAB4OAAAgDggALk4IADAOMAA+Dg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB4OCAAgDgAALY4AADXOMAA+Dg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB4OCAAlziAALk4wADYOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "QAB5OIAAmTgAALg4"
+bl {vg_ed25519_scalar_reduce}
+.base64 "AAB0OEAAmTgAALg4"
+bl {vg_ed25519_scalar_base}
+.base64 "AAB4OA=="
+bl {vg_sha512_init}
+.base64 "AAB4OAAAgDgAALQ4IADAOMAA+Dg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB4OCAAgDjAALk4IADAOMAA+Dg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB4OEAAgDgAALY4AADXOMAA+Dg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB4OEAAlziAALk4wADYOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "YAB5OIAAmTgAALg4"
+bl {vg_ed25519_scalar_reduce}
+.base64 "IAB0OEAAmThgALk4AADZOAAA+Dg="
+bl {vg_ed25519_scalar_mul_add}
+.base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4IACATg==""#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 368 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "wf4h+CAAITmmAgh84ACJ+ugAqfrwAMn6+ADp+gABCfsIASn7EAEJ+AAAgzoAAKQ6AADGOgAA5zoAAAg7AAApOwAABenAABn5CAAF6cgAGfkQAAXp0AAZ+RgABenYABn5AAAV6YAAGfkIABXpiAAZ+RAAFemQABn5GAAV6ZgAGfkgABXpoAAZ+SgAFemoABn5MAAV6bAAGfk4ABXpuAAZ+YAAGenC6Ah5JB8IeQAAGfmIABnpCAAZ+ZAAGekQABn5mAAZ6WQXCHmC8Ah5AEAgPcYHKXl4Swh9GAAZ+aAAGekgABn5qAAZ6SgAGfmwABnpMAAZ+bgAGek4ABn5AAB4OA=="
 bl {vg_sha512_init}
 .base64 "AAB4OAAAgDggALk4IADAOMAA+Dg="
 bl {vg_sha512_update_scratch}

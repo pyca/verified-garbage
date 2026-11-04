@@ -55,7 +55,14 @@ def nonceCode : Prog isa := .seq hashNonce (.seq (reduce 88)
   (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
 def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 120)
   (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
-def body : Prog isa := .seq secretCode (.seq nonceCode (.seq challengeCode (.block wipe)))
+/-- Signing after `secret`, which leaves the seed's SHA-512 digest at `frame 184`. -/
+def bodyFrom (secret : Prog isa) : Prog isa :=
+  .seq (.seq secret (.block saveSecret)) (.seq nonceCode (.seq challengeCode (.block wipe)))
+def body : Prog isa := bodyFrom hashSeed
 def code : Prog isa := wrap 6 body
+
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
+digest copied (`PublicKey.copyExpanded`) rather than computed. -/
+def codeExpanded : Prog isa := wrap 6 (bodyFrom PublicKey.copyExpanded)
 
 end VG.Impl.Ed25519.Arm.SignCached

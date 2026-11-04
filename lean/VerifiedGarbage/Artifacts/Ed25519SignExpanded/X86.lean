@@ -1,0 +1,26 @@
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
+
+/-! # Ed25519 signing with the seed's cached SHA-512 digest on x86 -/
+
+@[expose] public section
+
+namespace VG.Artifacts.Ed25519SignExpanded.X86
+
+def artifacts : List Artifact := [
+  Spec.Ed25519.signExpandedApi.artifact X86.target {
+    consts := Impl.Ed25519.X86.combConsts
+    code := Impl.Ed25519.X86.SignCached.codeExpanded
+    stack := 280
+    verified := Proof.Ed25519.X86.SignCached.signExpanded_verified }]
+
+end VG.Artifacts.Ed25519SignExpanded.X86

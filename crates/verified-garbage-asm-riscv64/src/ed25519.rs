@@ -94,6 +94,212 @@ call {vg_ed25519_scalar_base}
     )
 }
 
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7175
+.insn 2, 0x868a
+.insn 4, 0x0776b023
+.insn 4, 0x0786b423
+.insn 4, 0x0796b823
+.insn 4, 0x07a6bc23
+.insn 4, 0x0816b023
+.insn 2, 0x8baa
+.insn 2, 0x8c2e
+.insn 2, 0x8cb2
+.insn 2, 0x8d36
+.insn 4, 0x000c4783
+.insn 4, 0x00fd0023
+.insn 4, 0x001c4783
+.insn 4, 0x00fd00a3
+.insn 4, 0x002c4783
+.insn 4, 0x00fd0123
+.insn 4, 0x003c4783
+.insn 4, 0x00fd01a3
+.insn 4, 0x004c4783
+.insn 4, 0x00fd0223
+.insn 4, 0x005c4783
+.insn 4, 0x00fd02a3
+.insn 4, 0x006c4783
+.insn 4, 0x00fd0323
+.insn 4, 0x007c4783
+.insn 4, 0x00fd03a3
+.insn 4, 0x008c4783
+.insn 4, 0x00fd0423
+.insn 4, 0x009c4783
+.insn 4, 0x00fd04a3
+.insn 4, 0x00ac4783
+.insn 4, 0x00fd0523
+.insn 4, 0x00bc4783
+.insn 4, 0x00fd05a3
+.insn 4, 0x00cc4783
+.insn 4, 0x00fd0623
+.insn 4, 0x00dc4783
+.insn 4, 0x00fd06a3
+.insn 4, 0x00ec4783
+.insn 4, 0x00fd0723
+.insn 4, 0x00fc4783
+.insn 4, 0x00fd07a3
+.insn 4, 0x010c4783
+.insn 4, 0x00fd0823
+.insn 4, 0x011c4783
+.insn 4, 0x00fd08a3
+.insn 4, 0x012c4783
+.insn 4, 0x00fd0923
+.insn 4, 0x013c4783
+.insn 4, 0x00fd09a3
+.insn 4, 0x014c4783
+.insn 4, 0x00fd0a23
+.insn 4, 0x015c4783
+.insn 4, 0x00fd0aa3
+.insn 4, 0x016c4783
+.insn 4, 0x00fd0b23
+.insn 4, 0x017c4783
+.insn 4, 0x00fd0ba3
+.insn 4, 0x018c4783
+.insn 4, 0x00fd0c23
+.insn 4, 0x019c4783
+.insn 4, 0x00fd0ca3
+.insn 4, 0x01ac4783
+.insn 4, 0x00fd0d23
+.insn 4, 0x01bc4783
+.insn 4, 0x00fd0da3
+.insn 4, 0x01cc4783
+.insn 4, 0x00fd0e23
+.insn 4, 0x01dc4783
+.insn 4, 0x00fd0ea3
+.insn 4, 0x01ec4783
+.insn 4, 0x00fd0f23
+.insn 4, 0x01fc4783
+.insn 4, 0x00fd0fa3
+.insn 4, 0x020c4783
+.insn 4, 0x02fd0023
+.insn 4, 0x021c4783
+.insn 4, 0x02fd00a3
+.insn 4, 0x022c4783
+.insn 4, 0x02fd0123
+.insn 4, 0x023c4783
+.insn 4, 0x02fd01a3
+.insn 4, 0x024c4783
+.insn 4, 0x02fd0223
+.insn 4, 0x025c4783
+.insn 4, 0x02fd02a3
+.insn 4, 0x026c4783
+.insn 4, 0x02fd0323
+.insn 4, 0x027c4783
+.insn 4, 0x02fd03a3
+.insn 4, 0x028c4783
+.insn 4, 0x02fd0423
+.insn 4, 0x029c4783
+.insn 4, 0x02fd04a3
+.insn 4, 0x02ac4783
+.insn 4, 0x02fd0523
+.insn 4, 0x02bc4783
+.insn 4, 0x02fd05a3
+.insn 4, 0x02cc4783
+.insn 4, 0x02fd0623
+.insn 4, 0x02dc4783
+.insn 4, 0x02fd06a3
+.insn 4, 0x02ec4783
+.insn 4, 0x02fd0723
+.insn 4, 0x02fc4783
+.insn 4, 0x02fd07a3
+.insn 4, 0x030c4783
+.insn 4, 0x02fd0823
+.insn 4, 0x031c4783
+.insn 4, 0x02fd08a3
+.insn 4, 0x032c4783
+.insn 4, 0x02fd0923
+.insn 4, 0x033c4783
+.insn 4, 0x02fd09a3
+.insn 4, 0x034c4783
+.insn 4, 0x02fd0a23
+.insn 4, 0x035c4783
+.insn 4, 0x02fd0aa3
+.insn 4, 0x036c4783
+.insn 4, 0x02fd0b23
+.insn 4, 0x037c4783
+.insn 4, 0x02fd0ba3
+.insn 4, 0x038c4783
+.insn 4, 0x02fd0c23
+.insn 4, 0x039c4783
+.insn 4, 0x02fd0ca3
+.insn 4, 0x03ac4783
+.insn 4, 0x02fd0d23
+.insn 4, 0x03bc4783
+.insn 4, 0x02fd0da3
+.insn 4, 0x03cc4783
+.insn 4, 0x02fd0e23
+.insn 4, 0x03dc4783
+.insn 4, 0x02fd0ea3
+.insn 4, 0x03ec4783
+.insn 4, 0x02fd0f23
+.insn 4, 0x03fc4783
+.insn 4, 0x02fd0fa3
+.insn 4, 0x000d3783
+.insn 2, 0x838d
+.insn 2, 0x078e
+.insn 4, 0x04fd3023
+.insn 4, 0x008d3783
+.insn 4, 0x04fd3423
+.insn 4, 0x010d3783
+.insn 4, 0x04fd3823
+.insn 4, 0x018d3783
+.insn 2, 0x078a
+.insn 2, 0x8389
+.insn 2, 0x4805
+.insn 2, 0x187a
+.insn 4, 0x0107e7b3
+.insn 4, 0x04fd3c23
+.insn 2, 0x855e
+.insn 4, 0x040d0593
+.insn 2, 0x8666
+call {vg_ed25519_scalar_base}
+.insn 4, 0x080d3083
+.insn 4, 0x060d3b83
+.insn 4, 0x068d3c03
+.insn 4, 0x070d3c83
+.insn 4, 0x078d3d03
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 4, 0x05ff3823
+.insn 4, 0x05ff3c23
+.insn 4, 0x07ff3023
+.insn 4, 0x07ff3423
+.insn 4, 0x07ff3823
+.insn 4, 0x07ff3c23
+.insn 4, 0x09ff3023
+.insn 2, 0x6149
+.insn 2, 0x8082
+.option pop",
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+    )
+}
+
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
 /// # Safety
@@ -203,6 +409,359 @@ call {vg_sha512_update}
 .insn 4, 0x02000593
 .insn 4, 0x080d8613
 call {vg_sha512_finalize}
+.insn 4, 0x080db783
+.insn 2, 0x838d
+.insn 2, 0x078e
+.insn 4, 0x00fdb023
+.insn 4, 0x088db783
+.insn 4, 0x00fdb423
+.insn 4, 0x090db783
+.insn 4, 0x00fdb823
+.insn 4, 0x098db783
+.insn 2, 0x078a
+.insn 2, 0x8389
+.insn 2, 0x4805
+.insn 2, 0x187a
+.insn 4, 0x0107e7b3
+.insn 4, 0x00fdbc23
+.insn 4, 0x0a0db783
+.insn 4, 0x02fdb023
+.insn 4, 0x0a8db783
+.insn 4, 0x02fdb423
+.insn 4, 0x0b0db783
+.insn 4, 0x02fdb823
+.insn 4, 0x0b8db783
+.insn 4, 0x02fdbc23
+.insn 2, 0x856a
+call {vg_sha512_init}
+.insn 2, 0x856a
+.insn 2, 0x4581
+.insn 4, 0x020d8613
+.insn 4, 0x02000693
+call {vg_sha512_update}
+.insn 2, 0x856a
+.insn 4, 0x02000593
+.insn 2, 0x8662
+.insn 2, 0x86e6
+call {vg_sha512_update}
+.insn 2, 0x856a
+.insn 4, 0x020c8593
+.insn 4, 0x080d8613
+call {vg_sha512_finalize}
+.insn 4, 0x040d8513
+.insn 4, 0x080d8593
+.insn 2, 0x866a
+call {vg_ed25519_scalar_reduce}
+.insn 2, 0x855e
+.insn 4, 0x040d8593
+.insn 2, 0x866a
+call {vg_ed25519_scalar_base}
+.insn 2, 0x856a
+call {vg_sha512_init}
+.insn 2, 0x856a
+.insn 2, 0x4581
+.insn 2, 0x865e
+.insn 4, 0x02000693
+call {vg_sha512_update}
+.insn 2, 0x856a
+.insn 4, 0x02000593
+.insn 4, 0x0c0d8613
+.insn 4, 0x02000693
+call {vg_sha512_update}
+.insn 2, 0x856a
+.insn 4, 0x04000593
+.insn 2, 0x8662
+.insn 2, 0x86e6
+call {vg_sha512_update}
+.insn 2, 0x856a
+.insn 4, 0x040c8593
+.insn 4, 0x080d8613
+call {vg_sha512_finalize}
+.insn 4, 0x060d8513
+.insn 4, 0x080d8593
+.insn 2, 0x866a
+call {vg_ed25519_scalar_reduce}
+.insn 4, 0x020b8513
+.insn 4, 0x040d8593
+.insn 4, 0x060d8613
+.insn 2, 0x86ee
+.insn 2, 0x876a
+call {vg_ed25519_scalar_mul_add}
+.insn 4, 0x110db083
+.insn 4, 0x0e0db483
+.insn 4, 0x0e8dbb83
+.insn 4, 0x0f0dbc03
+.insn 4, 0x0f8dbc83
+.insn 4, 0x100dbd03
+.insn 4, 0x108dbd83
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 4, 0x05ff3823
+.insn 4, 0x05ff3c23
+.insn 4, 0x07ff3023
+.insn 4, 0x07ff3423
+.insn 4, 0x07ff3823
+.insn 4, 0x07ff3c23
+.insn 4, 0x09ff3023
+.insn 4, 0x09ff3423
+.insn 4, 0x09ff3823
+.insn 4, 0x09ff3c23
+.insn 4, 0x0bff3023
+.insn 4, 0x0bff3423
+.insn 4, 0x0bff3823
+.insn 4, 0x0bff3c23
+.insn 4, 0x0dff3023
+.insn 4, 0x0dff3423
+.insn 4, 0x0dff3823
+.insn 4, 0x0dff3c23
+.insn 2, 0x6115
+.insn 2, 0x8082
+.option pop",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 496 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x712d
+.insn 2, 0x880a
+.insn 4, 0x0e983023
+.insn 4, 0x0f783423
+.insn 4, 0x0f883823
+.insn 4, 0x0f983c23
+.insn 4, 0x11a83023
+.insn 4, 0x11b83423
+.insn 4, 0x10183823
+.insn 2, 0x8baa
+.insn 2, 0x84ae
+.insn 2, 0x8c36
+.insn 2, 0x8cba
+.insn 2, 0x8d3e
+.insn 2, 0x8dc2
+.insn 4, 0x00064783
+.insn 4, 0x0cfd8023
+.insn 4, 0x00164783
+.insn 4, 0x0cfd80a3
+.insn 4, 0x00264783
+.insn 4, 0x0cfd8123
+.insn 4, 0x00364783
+.insn 4, 0x0cfd81a3
+.insn 4, 0x00464783
+.insn 4, 0x0cfd8223
+.insn 4, 0x00564783
+.insn 4, 0x0cfd82a3
+.insn 4, 0x00664783
+.insn 4, 0x0cfd8323
+.insn 4, 0x00764783
+.insn 4, 0x0cfd83a3
+.insn 4, 0x00864783
+.insn 4, 0x0cfd8423
+.insn 4, 0x00964783
+.insn 4, 0x0cfd84a3
+.insn 4, 0x00a64783
+.insn 4, 0x0cfd8523
+.insn 4, 0x00b64783
+.insn 4, 0x0cfd85a3
+.insn 4, 0x00c64783
+.insn 4, 0x0cfd8623
+.insn 4, 0x00d64783
+.insn 4, 0x0cfd86a3
+.insn 4, 0x00e64783
+.insn 4, 0x0cfd8723
+.insn 4, 0x00f64783
+.insn 4, 0x0cfd87a3
+.insn 4, 0x01064783
+.insn 4, 0x0cfd8823
+.insn 4, 0x01164783
+.insn 4, 0x0cfd88a3
+.insn 4, 0x01264783
+.insn 4, 0x0cfd8923
+.insn 4, 0x01364783
+.insn 4, 0x0cfd89a3
+.insn 4, 0x01464783
+.insn 4, 0x0cfd8a23
+.insn 4, 0x01564783
+.insn 4, 0x0cfd8aa3
+.insn 4, 0x01664783
+.insn 4, 0x0cfd8b23
+.insn 4, 0x01764783
+.insn 4, 0x0cfd8ba3
+.insn 4, 0x01864783
+.insn 4, 0x0cfd8c23
+.insn 4, 0x01964783
+.insn 4, 0x0cfd8ca3
+.insn 4, 0x01a64783
+.insn 4, 0x0cfd8d23
+.insn 4, 0x01b64783
+.insn 4, 0x0cfd8da3
+.insn 4, 0x01c64783
+.insn 4, 0x0cfd8e23
+.insn 4, 0x01d64783
+.insn 4, 0x0cfd8ea3
+.insn 4, 0x01e64783
+.insn 4, 0x0cfd8f23
+.insn 4, 0x01f64783
+.insn 4, 0x0cfd8fa3
+.insn 4, 0x0004c783
+.insn 4, 0x08fd8023
+.insn 4, 0x0014c783
+.insn 4, 0x08fd80a3
+.insn 4, 0x0024c783
+.insn 4, 0x08fd8123
+.insn 4, 0x0034c783
+.insn 4, 0x08fd81a3
+.insn 4, 0x0044c783
+.insn 4, 0x08fd8223
+.insn 4, 0x0054c783
+.insn 4, 0x08fd82a3
+.insn 4, 0x0064c783
+.insn 4, 0x08fd8323
+.insn 4, 0x0074c783
+.insn 4, 0x08fd83a3
+.insn 4, 0x0084c783
+.insn 4, 0x08fd8423
+.insn 4, 0x0094c783
+.insn 4, 0x08fd84a3
+.insn 4, 0x00a4c783
+.insn 4, 0x08fd8523
+.insn 4, 0x00b4c783
+.insn 4, 0x08fd85a3
+.insn 4, 0x00c4c783
+.insn 4, 0x08fd8623
+.insn 4, 0x00d4c783
+.insn 4, 0x08fd86a3
+.insn 4, 0x00e4c783
+.insn 4, 0x08fd8723
+.insn 4, 0x00f4c783
+.insn 4, 0x08fd87a3
+.insn 4, 0x0104c783
+.insn 4, 0x08fd8823
+.insn 4, 0x0114c783
+.insn 4, 0x08fd88a3
+.insn 4, 0x0124c783
+.insn 4, 0x08fd8923
+.insn 4, 0x0134c783
+.insn 4, 0x08fd89a3
+.insn 4, 0x0144c783
+.insn 4, 0x08fd8a23
+.insn 4, 0x0154c783
+.insn 4, 0x08fd8aa3
+.insn 4, 0x0164c783
+.insn 4, 0x08fd8b23
+.insn 4, 0x0174c783
+.insn 4, 0x08fd8ba3
+.insn 4, 0x0184c783
+.insn 4, 0x08fd8c23
+.insn 4, 0x0194c783
+.insn 4, 0x08fd8ca3
+.insn 4, 0x01a4c783
+.insn 4, 0x08fd8d23
+.insn 4, 0x01b4c783
+.insn 4, 0x08fd8da3
+.insn 4, 0x01c4c783
+.insn 4, 0x08fd8e23
+.insn 4, 0x01d4c783
+.insn 4, 0x08fd8ea3
+.insn 4, 0x01e4c783
+.insn 4, 0x08fd8f23
+.insn 4, 0x01f4c783
+.insn 4, 0x08fd8fa3
+.insn 4, 0x0204c783
+.insn 4, 0x0afd8023
+.insn 4, 0x0214c783
+.insn 4, 0x0afd80a3
+.insn 4, 0x0224c783
+.insn 4, 0x0afd8123
+.insn 4, 0x0234c783
+.insn 4, 0x0afd81a3
+.insn 4, 0x0244c783
+.insn 4, 0x0afd8223
+.insn 4, 0x0254c783
+.insn 4, 0x0afd82a3
+.insn 4, 0x0264c783
+.insn 4, 0x0afd8323
+.insn 4, 0x0274c783
+.insn 4, 0x0afd83a3
+.insn 4, 0x0284c783
+.insn 4, 0x0afd8423
+.insn 4, 0x0294c783
+.insn 4, 0x0afd84a3
+.insn 4, 0x02a4c783
+.insn 4, 0x0afd8523
+.insn 4, 0x02b4c783
+.insn 4, 0x0afd85a3
+.insn 4, 0x02c4c783
+.insn 4, 0x0afd8623
+.insn 4, 0x02d4c783
+.insn 4, 0x0afd86a3
+.insn 4, 0x02e4c783
+.insn 4, 0x0afd8723
+.insn 4, 0x02f4c783
+.insn 4, 0x0afd87a3
+.insn 4, 0x0304c783
+.insn 4, 0x0afd8823
+.insn 4, 0x0314c783
+.insn 4, 0x0afd88a3
+.insn 4, 0x0324c783
+.insn 4, 0x0afd8923
+.insn 4, 0x0334c783
+.insn 4, 0x0afd89a3
+.insn 4, 0x0344c783
+.insn 4, 0x0afd8a23
+.insn 4, 0x0354c783
+.insn 4, 0x0afd8aa3
+.insn 4, 0x0364c783
+.insn 4, 0x0afd8b23
+.insn 4, 0x0374c783
+.insn 4, 0x0afd8ba3
+.insn 4, 0x0384c783
+.insn 4, 0x0afd8c23
+.insn 4, 0x0394c783
+.insn 4, 0x0afd8ca3
+.insn 4, 0x03a4c783
+.insn 4, 0x0afd8d23
+.insn 4, 0x03b4c783
+.insn 4, 0x0afd8da3
+.insn 4, 0x03c4c783
+.insn 4, 0x0afd8e23
+.insn 4, 0x03d4c783
+.insn 4, 0x0afd8ea3
+.insn 4, 0x03e4c783
+.insn 4, 0x0afd8f23
+.insn 4, 0x03f4c783
+.insn 4, 0x0afd8fa3
 .insn 4, 0x080db783
 .insn 2, 0x838d
 .insn 2, 0x078e
