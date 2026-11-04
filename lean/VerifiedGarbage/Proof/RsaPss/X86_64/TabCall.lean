@@ -66,6 +66,12 @@ theorem HT.upd {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {W : N
   ⟨(upd_ne' (Ne.symm hk.1) v).trans h.wi, (upd_ne' (Ne.symm hk.2.1) v).trans h.wc,
     (upd_ne' (Ne.symm hk.2.2) v).trans h.wd, h.fi, h.fc, h.fd⟩
 
+theorem HT.congr {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {W W' : Nat → BitVec 64}
+    {sy sy' : String → Addr} (h : HT H dn f W sy) (hsy : sy' = sy) (h8 : W' 8 = W 8) (h9 : W' 9 = W 9)
+    (h10 : W' 10 = W 10) : HT H dn f W' sy' := by
+  subst hsy
+  exact ⟨h8.trans h.wi, h9.trans h.wc, h10.trans h.wd, h.fi, h.fc, h.fd⟩
+
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and
 writes only `r8`, `r9`, `rbx`, `rbp` (which it restores) and `rax`. -/

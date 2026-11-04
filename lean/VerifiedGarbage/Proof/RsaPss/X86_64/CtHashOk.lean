@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
@@ -64,8 +66,9 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
     (hp : ∀ {u : State} {F' S' : Addr} {V' : Nat → Byte} {W' : Nat → BitVec 64},
       Lay u F' S' → Rep u.mem F' S' V' W' → W' 27 = BitVec.ofNat 64 ℓ →
-      W' 28 = BitVec.ofNat 64 nbm → WP isa padding u (PadResult u F' S' V' W' ℓ (nbm * H.P.B))) :
-    WP isa (ctHashWith H padding) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      W' 28 = BitVec.ofNat 64 nbm → WP isa padding u (PadResult u F' S' V' W' ℓ (nbm * H.P.B)))
+    {dn : String} {f : MdFns} (hT : HT H dn f W t.syms) (hdk : DigOK H) :
+    WP isa (ctHashWith f H padding) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
@@ -83,24 +86,26 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ hfb
   unfold ctHashWith seqs seqs seqs seqs seqs
   -- `init`.
-  refine WP.seq (WP.mono (ctInit_ok hH K L R) fun u1 ⟨L1, rd1, wr1, cs1, R1, iv1⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (ctInit_ok hH K L R hT) fun u1 ⟨L1, rd1, wr1, cs1, R1, iv1⟩ y1 => ?_)
   -- `0x80`.
-  refine WP.seq (WP.mono (hp L1 R1 hl hn) fun u2 P => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (hp L1 R1 hl hn) fun u2 P y2 => ?_)
   -- The length field.
-  refine WP.seq (WP.mono (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ y3 => ?_)
   -- Into the last block.
-  refine WP.seq (WP.mono (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
+  refine WP.seq (X86_64.WP.mono_syms (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
       simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega), Nat.add_sub_cancel_left])
-    (by simp [upd]) (by simp [upd, hn]) hfb hnb) fun u4 O => ?_)
+    (by simp [upd]) (by simp [upd, hn]) hfb hnb) fun u4 O y4 => ?_)
   -- Every block.
-  refine WP.seq (WP.mono (compLoop_ok hH O.L O.R ?_ (by simp [upd]) (by simp [upd, hn]) hfb hnb)
-    fun u5 ⟨L5, rd5, wr5, cs5, V5, R5, keep5, st5, sel5⟩ => ?_)
+  refine WP.seq (WP.mono (compLoop_ok hH O.L O.R ?_ (by simp [upd]) (by simp [upd, hn]) hfb hnb
+      (hT.congr (y4.trans (y3.trans (y2.trans y1))) (by simp [upd]) (by simp [upd]) (by simp [upd])))
+    fun u5 ⟨L5, rd5, wr5, cs5, y5, V5, R5, keep5, st5, sel5⟩ => ?_)
   · rw [← iv1]
     refine stateAt_rep hH R1 O.R (by unfold oSt oRsa; omega) fun i hi => ?_
     simp only [lenAt, lenV, v80]
     rw [ifn (by unfold oY oSt; omega), ifn (by unfold oLen oSt; omega), ifn (by unfold oY oSt; omega)]
   -- The digest.
-  refine WP.mono (digestOut_ok hH L5 R5) fun u6 ⟨L6, k6, R6⟩ => ?_
+  refine WP.mono (digestOut_ok hH L5 R5 (hT.congr (y5.trans (y4.trans (y3.trans (y2.trans y1))))
+      (by simp [upd]) (by simp [upd]) (by simp [upd])) hdk) fun u6 ⟨L6, k6, R6⟩ => ?_
   have hO : (if lastBlk H.P.B H.P.L ℓ < nbm then H.P.L else 0) = H.P.L := by rw [ifp hfb]
   have c1 : oY = 3584 := rfl
   have c2 : oLen = 2368 := rfl
@@ -116,7 +121,7 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have hcs : r ∈ calleeSaved := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have h1 : r ∉ [Reg.rbx, .rbp, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+    have h1 : r ∉ [Reg.rdi, .rsi, .r8, .r9, .r11, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h2 : r ∉ [Reg.rcx, .rsi, .rdx, .r10, .r8, .r11, .r9, .rax, .rdi] := by
       rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h3 : r ∉ [Reg.rbx, .r12, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
@@ -149,8 +154,9 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
 include K in
 theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) :
-    WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
+    {dn : String} {f : MdFns} (hT : HT H dn f W t.syms) (hdk : DigOK H) :
+    WP isa (ctHash f H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
@@ -158,38 +164,23 @@ theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
           (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
   have hfb : lastBlk H.P.B H.P.L ℓ < nbm :=
     (Nat.div_lt_iff_lt_mul hH.B_pos).mpr (by omega)
-  exact ctHashWith_gen hH K (pad80 H) L R hl hn hfit hnb fun L' R' hl' hn' =>
-    WP.mono (pad80_ok hH L' R' hl' hn' (by omega) hnb (by omega)) fun _ P => ⟨P.L, P.keep, P.R⟩
+  exact ctHashWith_gen hH K (pad80 H) L R hl hn hfit hnb (fun L' R' hl' hn' =>
+    WP.mono (pad80_ok hH L' R' hl' hn' (by omega) hnb (by omega)) fun _ P => ⟨P.L, P.keep, P.R⟩) hT hdk
 
 
 include K in
 theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hl : W 27 = BitVec.ofNat 64 msg.length)
     (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
-    WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) {dn : String} {f : MdFns} (hT : HT H dn f W t.syms)
+    (hdk : DigOK H) :
+    WP isa (ctHash f H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
         (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg :=
-  WP.mono (ctHash_gen hH K L R hl hn hfit hnb) fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
+  WP.mono (ctHash_gen hH K L R hl hn hfit hnb hT hdk) fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
     ⟨L', rd, wr, cs, V', W', R', hV, hW, hd msg rfl hY⟩
 
-
-include K in
-theorem mgfGenericHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hml : msg.length = H.D + 4) (hl : W 27 = BitVec.ofNat 64 msg.length)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
-    WP isa (mgfGenericHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
-      (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
-      ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
-        (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
-        (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
-  refine WP.mono (ctHashWith_gen hH K (fixedPad80 (H.D + 4)) L R hl hn hfit hnb ?_)
-    fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
-      ⟨L', rd, wr, cs, V', W', R', hV, hW, hd msg rfl hY⟩
-  intro u F' S' V' W' L' R' _ _
-  simpa only [hml] using fixedPad80_ok L' R' (ℓ := H.D + 4) (N := nbm * H.P.B) (by omega) hnb
 
 end VG.Proof.RsaPss.X86_64
