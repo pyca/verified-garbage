@@ -155,4 +155,47 @@ theorem status_lt (q : SearchPoint) {s : State} (h : CandCT q s) : q.status < 4 
   rw [SearchPoint.status, ← SearchCTL.leak ht hr, ← VG.Proof.RsaKeyGen.Search.status_of_leak]
   unfold Spec.RsaKeyGen.candidateStatus; split <;> decide
 
+/-! ## Accepting, asking for more, going on -/
+
+/-- `used`'s pointer, from the frame. -/
+theorem pin_up (p : SearchPublic) (s : State) (h : SearchAny p s) :
+    WP isa (.block [.mov .rcx (.mem (field 7))]) s fun t => SearchAny p t ∧ t.gpr .rcx = p.up := by
+  obtain ⟨original, used, remaining, h⟩ := h
+  obtain ⟨hl, -, -⟩ := h.frame_in (t := s) rfl
+  have h7 := h.slot (j := 7) (v := p.up) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h7
+  refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = p.up ∧ t.mem = s.mem) (by
+    xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, h.r12,
+      hl 56 (by decide), h7]) rfl) fun t ⟨⟨hc, hm⟩, k⟩ => ⟨⟨original, used, remaining, h.keep k hm (by decide)⟩, hc⟩
+
+theorem up_pins : Pins (fun p t => SearchAny p t ∧ t.gpr .rcx = p.up) [.r12, .rsp, .rcx] := by
+  intro p s t h₁ h₂ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact search_any_pins p s t h₁.1 h₂.1 .r12 (by simp)
+  · exact search_any_pins p s t h₁.1 h₂.1 .rsp (by simp)
+  · exact h₁.2.trans h₂.2.symm
+
+theorem search_accept_ct : RelCT isa (Two SearchAny) (.block accept) (fun _ _ => True) := by
+  change RelCT isa _ (.block ([.mov .rcx (.mem (field 7))] ++ ([.mov .rcx (.mem { base := .rcx })] ++
+    [.mov .rax (.mem (field 16)), .alu .add .rax (.reg .rcx), .store (field 16) .rax] ++ terminal 1))) _
+  exact RelCT.block_append (RelCT.seq (two_piece [.r12, .rsp] search_any_pins (by taint_decide) pin_up)
+    (two_taint [.r12, .rsp, .rcx] up_pins (by taint_decide)))
+
+theorem search_request_ct : RelCT isa (Two SearchAny) (.block request) (fun _ _ => True) :=
+  two_taint [.r12, .rsp] search_any_pins (by taint_decide)
+
+/-- The short tape's test, at the point. -/
+def ShortCT (q : SearchPoint) (s : State) : Prop :=
+  SearchAt q s ∧ eval .ae s = some (decide (Spec.RsaKeyGen.primeEntropy q.inputs.len ≤ q.inputs.randLen - q.used))
+
+theorem search_short_ct : RelCT isa (Two SearchAt) short (fun _ _ => True) := by
+  unfold short
+  refine RelCT.seq (two_piece (Ψ := ShortCT) [.r12, .rsp] search_at_pins (by taint_decide)
+    (fun q s ⟨o, h⟩ => WP.mono (short_guard h) fun t ⟨⟨_, he, hm⟩, k⟩ =>
+      ⟨⟨o, h.keep k hm (by decide)⟩, he⟩)) ?_
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+  · exact two_map (fun q => q.inputs) (fun _ _ h => let ⟨o, h⟩ := h.1.1; ⟨o, _, _, h⟩) search_exhausted_ct
+  · exact two_map (fun q => q.inputs) (fun _ _ h => let ⟨o, h⟩ := h.1.1; ⟨o, _, _, h⟩) search_request_ct
+
 end VG.Proof.RsaKeyGen.X86_64.Search
