@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86.Message
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Layout
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,8 +14,9 @@ import VerifiedGarbage.Proof.MlKem.X86.Leaf
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the preconditions and the layouts
 
 Untrusted: everything here is checked by Lean. The preconditions of
-`signMessageContract p X86.abi 136` and `verifyMessageContract p X86.abi
-132`, spelled out (`SPre`, `VPre`), the layouts of runs from states
+`signMessageContract p X86.abi 136`, `verifyMessageContract p X86.abi
+132` and `verifyMessageCachedContract p X86.abi 132`, spelled out (`SPre`,
+`VPre`, `CPre`), the layouts of runs from states
 satisfying them (`slay`, `vlay`), and what the contracts' public data say of
 two runs (`spub_of`, `vpub_of`).
 -/
@@ -156,49 +158,75 @@ theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 
 
 /-! ## Verification -/
 
-/-- The precondition of `verifyMessageContract p X86.abi 132`. -/
-structure VPre (p : Params) (s : State) : Prop where
+/-- The precondition of `verifyMessageContract p X86.abi 132` (`n = 7`, no
+`T`), and most of that of `verifyMessageCachedContract p X86.abi 132`
+(`n = 8`, `T` the cached `tr`): `n` arguments, and the read-only regions
+`T s` after the others. -/
+structure VPre (p : Params) (n : Nat) (T : State → List Region) (s : State) : Prop where
   sp : 132 ≤ (s.gpr .esp).toNat
-  spA : (s.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32
-  rd : s.rd = [aR s 0 p.pkLen, msgRg s, ctxRg s, aR s 5 p.sigLen]
-  wr : s.wr = [aR s 6 (mScrLen p), sArgs s 28]
+  spA : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32
+  rd : s.rd = [aR s 0 p.pkLen, msgRg s, ctxRg s, aR s 5 p.sigLen] ++ T s
+  wr : s.wr = [aR s 6 (mScrLen p), sArgs s (4 * n)]
   pkScr : (aR s 0 p.pkLen).Disjoint (aR s 6 (mScrLen p))
-  pkArgs : (aR s 0 p.pkLen).Disjoint (sArgs s 28)
+  pkArgs : (aR s 0 p.pkLen).Disjoint (sArgs s (4 * n))
   msgScr : (msgRg s).Disjoint (aR s 6 (mScrLen p))
-  msgArgs : (msgRg s).Disjoint (sArgs s 28)
+  msgArgs : (msgRg s).Disjoint (sArgs s (4 * n))
   ctxScr : (ctxRg s).Disjoint (aR s 6 (mScrLen p))
-  ctxArgs : (ctxRg s).Disjoint (sArgs s 28)
+  ctxArgs : (ctxRg s).Disjoint (sArgs s (4 * n))
   sigScr : (aR s 5 p.sigLen).Disjoint (aR s 6 (mScrLen p))
-  sigArgs : (aR s 5 p.sigLen).Disjoint (sArgs s 28)
-  scrArgs : (aR s 6 (mScrLen p)).Disjoint (sArgs s 28)
+  sigArgs : (aR s 5 p.sigLen).Disjoint (sArgs s (4 * n))
+  scrArgs : (aR s 6 (mScrLen p)).Disjoint (sArgs s (4 * n))
   rPk : (sRet s).Disjoint (aR s 0 p.pkLen)
   rMsg : (sRet s).Disjoint (msgRg s)
   rCtx : (sRet s).Disjoint (ctxRg s)
   rSig : (sRet s).Disjoint (aR s 5 p.sigLen)
   rScr : (sRet s).Disjoint (aR s 6 (mScrLen p))
-  rArgs : (sRet s).Disjoint (sArgs s 28)
+  rArgs : (sRet s).Disjoint (sArgs s (4 * n))
   kPk : (sStk s 132).Disjoint (aR s 0 p.pkLen)
   kMsg : (sStk s 132).Disjoint (msgRg s)
   kCtx : (sStk s 132).Disjoint (ctxRg s)
   kSig : (sStk s 132).Disjoint (aR s 5 p.sigLen)
   kScr : (sStk s 132).Disjoint (aR s 6 (mScrLen p))
-  kArgs : (sStk s 132).Disjoint (sArgs s 28)
+  kArgs : (sStk s 132).Disjoint (sArgs s (4 * n))
   nPk : (arg s 0).toNat + p.pkLen ≤ 2 ^ 32
   nMsg : (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32
   nCtx : (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32
   nSig : (arg s 5).toNat + p.sigLen ≤ 2 ^ 32
   nScr : (arg s 6).toNat + mScrLen p ≤ 2 ^ 32
+  hn : n = 7 ∨ n = 8
 
-theorem vPre_of {p : Params} {s : State} (h : (verifyMessageContract p X86.abi 132).pre s) : VPre p s := by
+theorem vPre_of {p : Params} {s : State} (h : (verifyMessageContract p X86.abi 132).pre s) :
+    VPre p 7 (fun _ => []) s := by
   sig_pre [verifyMessageContract, verifyMessageSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30⟩ := h
-  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30⟩
+  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, .inl rfl⟩
 
-/-- The layout of a run of `verify_message` from `s` (`sig` in the place of `rnd` too). -/
-def vlay (p : Params) (s : State) : Lay where
+/-- The cached `tr`. -/
+abbrev trRg (s : State) : List Region := [aR s 7 64]
+
+/-- The precondition of `verifyMessageCachedContract p X86.abi 132`. -/
+structure CPre (p : Params) (s : State) : Prop extends VPre p 8 trRg s where
+  scrTr : (aR s 6 (mScrLen p)).Disjoint (aR s 7 64)
+  trArgs : (aR s 7 64).Disjoint (sArgs s 32)
+  rTr : (sRet s).Disjoint (aR s 7 64)
+  kTr : (sStk s 132).Disjoint (aR s 7 64)
+  nTr : (arg s 7).toNat + 64 ≤ 2 ^ 32
+  tr : Spec.Sha3.bytesAt s.mem ((arg s 7).setWidth 64) 64 =
+    pkTr (Spec.Sha3.bytesAt s.mem ((arg s 0).setWidth 64) p.pkLen)
+
+theorem cPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86.abi 132).pre s) : CPre p s := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, X86.abi, X86.argSlots, X86.argVal,
+    X86.argBytes] at h
+  obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩ := h
+  exact ⟨⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a14, a16, a17, a18, a19, a20, a22, a23, a24, a25,
+    a26, a27, a29, a30, a31, a32, a33, a34, .inr rfl⟩, a13, a15, a21, a28, a35, a36⟩
+
+/-- The layout of a run of `verify_message` (`n = 7`) or `verify_message_cached`
+(`n = 8`) from `s` (`sig` in the place of `rnd` too). -/
+def vlay (p : Params) (n : Nat) (s : State) : Lay where
   SP := s.gpr .esp
   N := 132
-  nA := 7
+  nA := n
   key := arg s 0
   keyLen := p.pkLen
   msg := arg s 1
@@ -210,18 +238,21 @@ def vlay (p : Params) (s : State) : Lay where
   scr := arg s 6
   scrLen := mScrLen p
   E := oE p
-  argv := [arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, arg s 6]
+  argv := [arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, arg s 6] ++
+    (List.range (n - 7)).map fun i => arg s (7 + i)
   rd := s.rd
   wr := s.wr
 
-theorem vlay_ok {p : Params} (hp : p ∈ params) {s : State} (h : VPre p s) (h8 : (arg s 4).toNat < 256) :
-    (vlay p s).Ok := by
+theorem vlay_ok {p : Params} (hp : p ∈ params) {n : Nat} {T : State → List Region} {s : State} (h : VPre p n T s)
+    (h8 : (arg s 4).toNat < 256) : (vlay p n s).Ok := by
   have hk := stk_eq (s := s) (n := 132) h.sp
+  have hn := h.hn
   refine ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], pkLen_ge hp, by show 56 ≤ 132; decide, h.sp,
-    by show (s.gpr .esp).toNat + 4 + 4 * 7 ≤ _; have := h.spA; omega, h.nScr, by simp [vlay, h.wr], by simp [vlay, h.rd],
+    by show (s.gpr .esp).toNat + 4 + 4 * n ≤ _; have := h.spA; omega, h.nScr, by simp [vlay, h.wr], by simp [vlay, h.rd],
     by simp [vlay, h.rd], by simp [vlay, h.rd], h.pkScr.symm, h.msgScr.symm, h.ctxScr.symm, ?_, ?_,
     h.scrArgs.symm, by show _ ∈ s.wr; rw [h.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _),
-    rfl, by show 7 ≤ 8; decide, by show 5 ≤ 7; decide, rfl, rfl, rfl, rfl, rfl, h.nPk, h.nMsg, h.nCtx⟩
+    by simp only [vlay, List.length_append, List.length_cons, List.length_nil, List.length_map, List.length_range]; omega,
+    by show n ≤ 8; omega, by show 5 ≤ n; omega, rfl, rfl, rfl, rfl, rfl, h.nPk, h.nMsg, h.nCtx⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     show (below (s.gpr .esp) 132).Disjoint r

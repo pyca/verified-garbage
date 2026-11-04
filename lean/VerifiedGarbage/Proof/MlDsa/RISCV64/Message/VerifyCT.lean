@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Impl.MlDsa.RISCV64.Message
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Message
 
 /-!
-# ML-DSA on RISC-V, `verify_message`: constant time
+# ML-DSA on RISC-V, `verify_message` and `verify_message_cached`: constant time
 
 As signing's (`SignCT.lean`): two runs from states that satisfy `MVPre` and
 agree on the arguments in registers, the stack pointer and the inputs, the
@@ -32,7 +32,9 @@ leakage of `verifyMessageContract` (`MVPub`), leak the same trace
 (`verifyMessage_ct`). The two hashes are related by `hash_ct`, and the call
 of the verification function on `μ` by its own constant time, whose leakage
 is its inputs: the key and the signature, and `μ`, which both runs compute
-from the same inputs.
+from the same inputs (`verifyCall_ct`). Likewise with a cached `tr`, from
+states that satisfy `MVCPre` and agree on `MVCPub`, with one hash
+(`verifyMessageCached_ct`).
 -/
 
 @[expose] public section
@@ -42,7 +44,7 @@ namespace VG.Proof.MlDsa.RISCV64.Message
 open VG VG.RISCV64
 open VG.Impl.MlDsa.RISCV64.Message
 open VG.Impl.Sha3.RISCV64.Pieces (Piece hash)
-open VG.Proof.Sha3.RISCV64.Pieces (HashOk hashRegs hash_ct)
+open VG.Proof.Sha3.RISCV64.Pieces (HashOk PieceOk hashRegs hash_ct)
 open VG.RISCV64.Steps (Upd)
 open VG.Proof.MlDsa.RISCV64.KeyGen (Callee)
 open VG.Spec.MlDsa
@@ -71,43 +73,98 @@ theorem verifyV_eq {p : Params} {s₁ s₂ : State} (h : ∀ r ∈ vArgs, s₁.g
   show eAt p (s₁.gpr .a6) = eAt p (s₂.gpr .a6)
   rw [h .a6 (by decide)]
 
+/-- The registers `rs` agree in two runs whose invariants say they hold the same. -/
+theorem vinvG_regs {p : Params} {STK : Nat} {s₁ s₂ a b : State} {rs : List Reg} {V₁ V₂ : Reg → BitVec 64}
+    (h : ∀ r ∈ rs, V₁ r = V₂ r) (ha : VInvG p STK s₁ rs V₁ a) (hb : VInvG p STK s₂ rs V₂ b) :
+    ∀ r ∈ rs, a.gpr r = b.gpr r := fun r hr =>
+  (ha.regs r hr).trans ((h r hr).trans (hb.regs r hr).symm)
+
 theorem vinv_regs {p : Params} {STK : Nat} {s₁ s₂ a b : State} (h : ∀ r ∈ vArgs, s₁.gpr r = s₂.gpr r)
-    (ha : VInv p STK s₁ a) (hb : VInv p STK s₂ b) : ∀ r ∈ verifyRegs, a.gpr r = b.gpr r := fun r hr =>
-  (ha.regs r hr).trans ((verifyV_eq h r hr).trans (hb.regs r hr).symm)
+    (ha : VInv p STK s₁ a) (hb : VInv p STK s₂ b) : ∀ r ∈ verifyRegs, a.gpr r = b.gpr r :=
+  vinvG_regs (verifyV_eq h) ha hb
 
 section
-variable {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MVPre p STK s) (h48 : 1168 ≤ STK)
+variable {p : Params} {STK : Nat} {X : List Region} {s t : State} (hF : MFacts p) (hp : MVPre p STK X s)
+  (h48 : 1168 ≤ STK)
 include hF hp h48
 
-theorem mv1_hashOk (h : MV1 p STK s t) :
+theorem mv1_hashOk (h : MV1 p STK s verifyRegs (verifyV p s) t) :
     HashOk 840 64 .s8 .s8 oMU [(⟨.s0, 0, .imm 1024⟩ : Piece), ⟨.s0, 1024, .imm (p.pkLen - 1024)⟩] t := by
   have hi := h.inv
-  have g30 := v_e hi
+  have g30 := v_e (vl_verify p s) hi
   exact ⟨by decide, by decide, by decide, by decide, by simp, by rw [g30]; exact vke hp h48 hi,
     by rw [g30]; exact trHash_ins hF hp h48 hi, by rw [g30]; exact ve_cov hp hi.wr (by decide),
     by rw [g30]; exact (e_e0 (by decide) (by decide)).symm,
     by rw [g30, hi.sp]; exact (hp.bx.sub_left (vbelow48 hp h48)).sub_right (e_sub (by decide))⟩
 
 omit hF in
-theorem mv2_hashOk (h : MV2 p STK s t) :
-    HashOk 840 64 .s8 .s8 oMU ((⟨.s8, oMU, .imm 64⟩ : Piece) :: fmtPieces) t := by
-  have hi := h.inv
-  have g30 := v_e hi
+/-- The hash of `μ` may run, from the first piece `q₀`. -/
+theorem mu_hashOk {rs : List Reg} {V : Reg → BitVec 64} (hL : VL p s rs V) (hi : VInvG p STK s rs V t)
+    {q₀ : Piece} (h₀ : PieceOk 840 (eAt p (s.gpr .a6)) t q₀) :
+    HashOk 840 64 .s8 .s8 oMU (q₀ :: fmtPieces) t := by
+  have g30 := v_e hL hi
   exact ⟨by decide, by decide, by decide, by decide, by simp, by rw [g30]; exact vke hp h48 hi,
-    by rw [g30]; exact muHash_ins hp h48 hi, by rw [g30]; exact ve_cov hp hi.wr (by decide),
+    by rw [g30]; exact mu_ins hp h48 hL hi h₀, by rw [g30]; exact ve_cov hp hi.wr (by decide),
     by rw [g30]; exact (e_e0 (by decide) (by decide)).symm,
     by rw [g30, hi.sp]; exact (hp.bx.sub_left (vbelow48 hp h48)).sub_right (e_sub (by decide))⟩
 
+omit hF in
+theorem mv2_hashOk (h : MV2 p STK s t) :
+    HashOk 840 64 .s8 .s8 oMU ((⟨.s8, oMU, .imm 64⟩ : Piece) :: fmtPieces) t :=
+  mu_hashOk hp h48 (vl_verify p s) h.inv (muPiece_ok hp h48 (vl_verify p s) h.inv)
+
 end
+
+/-- The call of the verification function on `μ`, in two runs that agree on `MVPub`'s inputs, and whose
+invariants say the registers `rs` hold the same. -/
+theorem verifyCall_ct {p : Params} {STK S : Nat} {X₁ X₂ : List Region} {s₁ s₂ : State} {rs : List Reg}
+    {V₁ V₂ : Reg → BitVec 64} (hF : MFacts p) {f : Prog isa}
+    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String}
+    (hL₁ : VL p s₁ rs V₁) (hL₂ : VL p s₂ rs V₂) (hp₁ : MVPre p STK X₁ s₁) (hp₂ : MVPre p STK X₂ s₂) (psp : s₁.sp = s₂.sp)
+    (pr : ∀ r ∈ vArgs, s₁.gpr r = s₂.gpr r) (hV : ∀ r ∈ rs, V₁ r = V₂ r)
+    (ek : pkB p s₁ = pkB p s₂) (em : msgB s₁ = msgB s₂) (ec : ctxB s₁ = ctxB s₂) (eg : vsigB p s₁ = vsigB p s₂) :
+    RelCT isa (fun a b => MV3 p STK s₁ rs V₁ a ∧ MV3 p STK s₂ rs V₂ b) (.seq (.block verifyArgs) (.call n f))
+      fun _ _ => True := by
+  obtain ⟨stk, hstk, hver⟩ := hf.verified
+  have p7 : s₁.gpr .a4 = s₂.gpr .a4 := pr _ (by decide)
+  refine RelCT.seq (R := fun a b => VA p STK s₁ rs V₁ a ∧ VA p STK s₂ rs V₂ b)
+    (relct_wp (ct_prog [.s0, .s5, .s7, .s8] (fun a b hab => hab.1.inv.sp.trans (psp.trans hab.2.inv.sp.symm))
+      (fun a b hab r hr => vinvG_regs hV hab.1.inv hab.2.inv r (hL₁.regs r (by revert r hr; decide)).1)
+      (by taint_decide))
+      fun a b hab => ⟨verifyArgs_ok hL₁ hab.1, verifyArgs_ok hL₂ hab.2⟩) ?_
+  refine RelCT.call hver.1 hver.2.1 (vRd p s₁) (vWr p s₁) fun a b hab => ?_
+  have hpre₁ := verifyCall_pre hF hp₁ (Nat.le_trans hstk hS) hab.1
+  have hpre₂ := verifyCall_pre hF hp₂ (Nat.le_trans hstk hS) hab.2
+  have eRd : vRd p s₂ = vRd p s₁ := by simp only [vRd, pkR, vsigR, pr _ (by decide : Reg.a0 ∈ vArgs),
+    pr _ (by decide : Reg.a5 ∈ vArgs), pr _ (by decide : Reg.a6 ∈ vArgs)]
+  have eWr : vWr p s₂ = vWr p s₁ := by simp only [vWr, pr _ (by decide : Reg.a6 ∈ vArgs)]
+  rw [eRd, eWr] at hpre₂
+  refine ⟨hpre₁.1, hpre₂.1, ?_, hpre₁.2.1, hpre₁.2.2, hpre₂.2.1, hpre₂.2.2⟩
+  have k₁ := hab.1.ms.inv
+  have k₂ := hab.2.ms.inv
+  refine verify_pub (by simp only [State.withRegions_sp, State.callEntry_sp, k₁.sp, k₂.sp, psp]) ?_ ?_ ?_ ?_ ?_
+  · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a0, hab.2.a0, pr _ (by decide)]
+  · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a1, hab.2.a1, pr _ (by decide)]
+  · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a2, hab.2.a2, pr _ (by decide)]
+  · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a3, hab.2.a3, pr _ (by decide)]
+  · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.a0 ∉ linkRegs by decide),
+      ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
+      hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
+    rw [v_keep k₁ (R := pkR p s₁) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₁.kc hp₁.bk,
+      hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₁.gc hp₁.bg,
+      v_keep k₂ (R := pkR p s₂) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₂.kc hp₂.bk,
+      hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₂.gc hp₂.bg]
+    simp only [pkB, vsigB, fmtB, ctxB, msgB] at ek em ec eg ⊢
+    rw [ek, em, ec, eg, p7]
 
 theorem verifyMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
     (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} :
-    ConstantTime isa (MVPre p STK) (MVPub p) (verifyMessage n f p) := by
-  obtain ⟨stk, hstk, hver⟩ := hf.verified
+    ConstantTime isa (MVPre p STK []) (MVPub p) (verifyMessage n f p) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MVPre p STK x.1 ∧ MVPre p STK x.2 ∧
-    MVPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
-  by_cases hH : MVPre p STK s₁ ∧ MVPre p STK s₂ ∧ MVPub p s₁ s₂
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MVPre p STK [] x.1 ∧
+    MVPre p STK [] x.2 ∧ MVPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩)
+    (fun _ _ h => h)
+  by_cases hH : MVPre p STK [] s₁ ∧ MVPre p STK [] s₂ ∧ MVPub p s₁ s₂
   swap
   · exact RelCT.of_false fun a b h => hH h.2.2
   obtain ⟨hp₁, hp₂, psp, pl, pr⟩ := hH
@@ -128,7 +185,8 @@ theorem verifyMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 
   · have hu₁ := Upd.write s₁ .t1 (s₁.gpr .a4 >>> 8)
     have hu₂ := Upd.write s₂ .t1 (s₂.gpr .a4 >>> 8)
     -- The setup.
-    refine RelCT.seq (R := fun a b => MV1 p STK s₁ a ∧ MV1 p STK s₂ b)
+    refine RelCT.seq (R := fun a b => MV1 p STK s₁ verifyRegs (verifyV p s₁) a ∧
+        MV1 p STK s₂ verifyRegs (verifyV p s₂) b)
       (RelCT.mono (relct_wp (ct_prog vArgs (fun a b hab => by
           rw [hab.1.1, hab.1.2, hu₁.sp, hu₂.sp, psp]) (fun a b hab r hr => by
           rw [hab.1.1, hab.1.2, hu₁.other _ (by revert r; decide), hu₂.other _ (by revert r; decide)]
@@ -144,46 +202,20 @@ theorem verifyMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 
                 revert r hr; decide)⟩)
         fun a b hab => ⟨trHash_ok hF hp₁ h48 hab.1, trHash_ok hF hp₂ h48 hab.2⟩) ?_
     -- `μ`.
-    refine RelCT.seq (R := fun a b => MV3 p STK s₁ a ∧ MV3 p STK s₂ b)
+    refine RelCT.seq (R := fun a b => MV3 p STK s₁ verifyRegs (verifyV p s₁) a ∧
+        MV3 p STK s₂ verifyRegs (verifyV p s₂) b)
       (relct_wp (hash_ct (by taint_decide) fun a b h => ⟨mv2_hashOk hp₁ h48 h.1, mv2_hashOk hp₂ h48 h.2,
           h.1.inv.sp.trans (psp.trans h.2.inv.sp.symm), fun r hr => vinv_regs pr h.1.inv h.2.inv r
             (by revert r hr; decide)⟩)
         fun a b hab => ⟨verifyHash_ok hp₁ h48 hab.1, verifyHash_ok hp₂ h48 hab.2⟩) ?_
     -- The call.
     refine RelCT.seq (R := fun a b => VInv p STK s₁ a ∧ VInv p STK s₂ b)
-      (relct_wp ?_ fun a b hab => ⟨WP.mono (verifyCall_ok hF hp₁ hf hS hab.1) fun _ h => h.1,
-        WP.mono (verifyCall_ok hF hp₂ hf hS hab.2) fun _ h => h.1⟩)
+      (relct_wp ?_ fun a b hab => ⟨WP.mono (verifyCall_ok (vl_verify p s₁) hF hp₁ hf hS hab.1) fun _ h => h.1,
+        WP.mono (verifyCall_ok (vl_verify p s₂) hF hp₂ hf hS hab.2) fun _ h => h.1⟩)
       (ct_prog [.s8] (fun a b hab => hab.1.sp.trans (psp.trans hab.2.sp.symm))
         (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact vinv_regs pr hab.1 hab.2 _ (by decide))
         (by taint_decide))
-    refine RelCT.seq (R := fun a b => VA p STK s₁ a ∧ VA p STK s₂ b)
-      (relct_wp (ct_prog [.s0, .s5, .s7, .s8] (fun a b hab => hab.1.inv.sp.trans (psp.trans hab.2.inv.sp.symm))
-        (fun a b hab r hr => vinv_regs pr hab.1.inv hab.2.inv r (by revert r hr; decide)) (by taint_decide))
-        fun a b hab => ⟨verifyArgs_ok hab.1, verifyArgs_ok hab.2⟩) ?_
-    refine RelCT.call hver.1 hver.2.1 (vRd p s₁) (vWr p s₁) fun a b hab => ?_
-    have hpre₁ := verifyCall_pre hF hp₁ (Nat.le_trans hstk hS) hab.1
-    have hpre₂ := verifyCall_pre hF hp₂ (Nat.le_trans hstk hS) hab.2
-    have eRd : vRd p s₂ = vRd p s₁ := by simp only [vRd, pkR, vsigR, pr _ (by decide : Reg.a0 ∈ vArgs),
-      pr _ (by decide : Reg.a5 ∈ vArgs), pr _ (by decide : Reg.a6 ∈ vArgs)]
-    have eWr : vWr p s₂ = vWr p s₁ := by simp only [vWr, pr _ (by decide : Reg.a6 ∈ vArgs)]
-    rw [eRd, eWr] at hpre₂
-    refine ⟨hpre₁.1, hpre₂.1, ?_, hpre₁.2.1, hpre₁.2.2, hpre₂.2.1, hpre₂.2.2⟩
-    have k₁ := hab.1.ms.inv
-    have k₂ := hab.2.ms.inv
-    refine verify_pub (by simp only [State.withRegions_sp, State.callEntry_sp, k₁.sp, k₂.sp, psp]) ?_ ?_ ?_ ?_ ?_
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a0, hab.2.a0, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a1, hab.2.a1, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a2, hab.2.a2, pr _ (by decide)]
-    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), hab.1.a3, hab.2.a3, pr _ (by decide)]
-    · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.a0 ∉ linkRegs by decide),
-        ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
-        hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
-      rw [v_keep k₁ (R := pkR p s₁) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₁.kc hp₁.bk,
-        hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₁.gc hp₁.bg,
-        v_keep k₂ (R := pkR p s₂) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₂.kc hp₂.bk,
-        hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₂.gc hp₂.bg]
-      simp only [pkB, vsigB, fmtB, ctxB, msgB] at ek em ec eg ⊢
-      rw [ek, em, ec, eg, p7]
+    exact verifyCall_ct (n := n) hF hf hS (vl_verify p s₁) (vl_verify p s₂) hp₁ hp₂ psp pr (verifyV_eq pr) ek em ec eg
   · -- `ctx_len ≥ 256`.
     exact ct_prog [] (fun a b hab => by rw [hab.1.1, hab.1.2, (Upd.write _ _ _).sp, (Upd.write _ _ _).sp, psp])
       (fun _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide)

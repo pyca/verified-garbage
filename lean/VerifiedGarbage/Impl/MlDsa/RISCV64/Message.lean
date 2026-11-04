@@ -6,11 +6,13 @@ public import VerifiedGarbage.Impl.MlDsa.RISCV64.Arith
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# ML-DSA on RISC-V: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
+# ML-DSA on RISC-V: `vg_mldsa{44,65,87}_sign_message`, `_verify_message` and `_verify_message_cached`
 
 `sign_message(sk = a0, msg = a1, msg_len = a2, ctx = a3, ctx_len = a4,
-rnd = a5, sig = a6, scratch = a7) -> a0` and `verify_message(pk = a0,
-msg = a1, msg_len = a2, ctx = a3, ctx_len = a4, sig = a5, scratch = a6) -> a0`:
+rnd = a5, sig = a6, scratch = a7) -> a0`, `verify_message(pk = a0,
+msg = a1, msg_len = a2, ctx = a3, ctx_len = a4, sig = a5, scratch = a6) -> a0`
+and `verify_message_cached(pk = a0, msg = a1, msg_len = a2, ctx = a3,
+ctx_len = a4, sig = a5, scratch = a6, tr = a7) -> a0`:
 `ML-DSA.Sign` and `ML-DSA.Verify` (FIPS 204 Algorithms 2 and 3), as calls of
 the sponge functions (`hash`, `Impl/Sha3/RISCV64/Pieces.lean`) and of the
 functions on `μ` (`vg_mldsa*_sign`, `vg_mldsa*_verify`), named `n` and with
@@ -24,12 +26,16 @@ functions also have a working space there); `μ` (64 bytes); our caller's
 registers that we use and the return address (`saveRegs`, at `oSV`); and the
 two bytes `0 ‖ ctx_len` of the formatted message (at `oHdr`). They use no
 stack of their own; the functions they call use 1168 bytes below the stack
-pointer. The arguments stay in `s0`–`s7`, which the functions called keep.
+pointer. The arguments stay in `s0`–`s7`, which the functions called keep
+(verification with a cached `tr` keeps `tr` in `s6`, where signing keeps
+`sig`).
 
 * Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
   bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
 * Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
   `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
+* Verification with a cached `tr` (the caller's `H(pk, 64)`) computes `μ`
+  as signing does, from the 64 bytes at `tr`, and calls the same function.
 
 Every address and branch depends only on the pointers and the lengths, and
 the calls' own leakage.
@@ -122,5 +128,18 @@ def verifyMessage (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   .seq (muHash ⟨.s8, oMU, .imm 64⟩) <|
   .seq (.seq (.block [mov .a0 .s0, .addi .a1 .s8 oMU, mov .a2 .s5, mov .a3 .s7]) (.call n f))
     (.block (restoreRegs .s8 oSV verifyRegs))
+
+/-- The moves of verification with a cached `tr`: verification's, and `tr`
+into `s6`. It keeps the registers signing uses (`signRegs`). -/
+def cachedMs : List (Reg × Reg) :=
+  [(.s0, .a0), (.s1, .a1), (.s2, .a2), (.s3, .a3), (.s4, .a4), (.s5, .a5), (.s6, .a7), (.s7, .a6),
+    (.s8, .t2)]
+
+/-- `vg_mldsa*_verify_message_cached` for the parameter set `p`, calling the
+verification function on `μ` `f`, named `n`. -/
+def verifyMessageCached (n : String) (f : Prog isa) (p : Params) : Prog isa :=
+  top <| .seq (.block (enter .a6 p signRegs cachedMs)) <| .seq (muHash ⟨.s6, 0, .imm 64⟩) <|
+  .seq (.seq (.block [mov .a0 .s0, .addi .a1 .s8 oMU, mov .a2 .s5, mov .a3 .s7]) (.call n f))
+    (.block (restoreRegs .s8 oSV signRegs))
 
 end VG.Impl.MlDsa.RISCV64.Message

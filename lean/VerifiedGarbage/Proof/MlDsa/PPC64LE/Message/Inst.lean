@@ -4,15 +4,17 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Verified
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
-# ML-DSA on PPC64LE, `sign_message` and `verify_message`, with this library's functions on `μ`
+# ML-DSA on PPC64LE, `sign_message`, `verify_message` and `verify_message_cached`, with this library's functions on `μ`
 
-`vg_mldsa*_sign_message` and `vg_mldsa*_verify_message` calling the
-PPC64LE `vg_mldsa*_sign` and `vg_mldsa*_verify` (`Sign/Inst.lean`,
-`Verify/Inst.lean`), verified with 96 bytes of stack, whose frames use no
-more (`sign44Fn`, …): so the functions on messages are verified with 96
-(`signMessage44_verified`, …).
+`vg_mldsa*_sign_message`, `vg_mldsa*_verify_message` and
+`vg_mldsa*_verify_message_cached` calling the PPC64LE `vg_mldsa*_sign` and
+`vg_mldsa*_verify` (`Sign/Inst.lean`, `Verify/Inst.lean`), verified with 96
+bytes of stack, whose frames use no more (`sign44Fn`, …): so the functions
+on messages are verified with 96 (`signMessage44_verified`, …,
+`verifyMessageCached44_verified`, …).
 -/
 
 @[expose] public section
@@ -22,6 +24,17 @@ namespace VG.Proof.MlDsa.PPC64LE.Message
 open VG VG.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Callee)
 open VG.Spec.MlDsa
+
+/-- `mcSat` satisfies `verifyMessageCachedContract`'s precondition with 96 bytes of stack. -/
+theorem verifyMessageCached_sat {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    (verifyMessageCachedContract p PPC64LE.abi 96).pre (mcSat p) := by
+  rcases hp3 with rfl | rfl | rfl <;>
+    sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, PPC64LE.abi, PPC64LE.argRegs] <;> sig_and_intros
+  all_goals first
+    | exact mcSat_digest (by decide)
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
 theorem sign44Fn : Callee Impl.MlDsa.PPC64LE.Sign.sign44 (fun stk => signContract mlDsa44 PPC64LE.abi stk) 96 :=
   ⟨⟨96, Nat.le_refl _, Sign.sign44_verified⟩, by decide +kernel⟩
@@ -48,6 +61,12 @@ theorem verifyMessage44_verified :
       (verifyMessageContract mlDsa44 PPC64LE.abi 96) :=
   verifyMessage_verified (.inl rfl) (by decide) verify44Fn _ verifyMessage44_sat
 
+theorem verifyMessageCached44_verified :
+    Verified PPC64LE.target
+      (Impl.MlDsa.PPC64LE.Message.verifyMessageCached verify44Api.name Impl.MlDsa.PPC64LE.Verify.verify44 mlDsa44)
+      (verifyMessageCachedContract mlDsa44 PPC64LE.abi 96) :=
+  verifyMessageCached_verified (.inl rfl) (by decide) verify44Fn _ (verifyMessageCached_sat (.inl rfl))
+
 theorem sign65Fn : Callee Impl.MlDsa.PPC64LE.Sign.sign65 (fun stk => signContract mlDsa65 PPC64LE.abi stk) 96 :=
   ⟨⟨96, Nat.le_refl _, Sign.sign65_verified⟩, by decide +kernel⟩
 
@@ -73,6 +92,12 @@ theorem verifyMessage65_verified :
       (verifyMessageContract mlDsa65 PPC64LE.abi 96) :=
   verifyMessage_verified (.inr (.inl rfl)) (by decide) verify65Fn _ verifyMessage65_sat
 
+theorem verifyMessageCached65_verified :
+    Verified PPC64LE.target
+      (Impl.MlDsa.PPC64LE.Message.verifyMessageCached verify65Api.name Impl.MlDsa.PPC64LE.Verify.verify65 mlDsa65)
+      (verifyMessageCachedContract mlDsa65 PPC64LE.abi 96) :=
+  verifyMessageCached_verified (.inr (.inl rfl)) (by decide) verify65Fn _ (verifyMessageCached_sat (.inr (.inl rfl)))
+
 theorem sign87Fn : Callee Impl.MlDsa.PPC64LE.Sign.sign87 (fun stk => signContract mlDsa87 PPC64LE.abi stk) 96 :=
   ⟨⟨96, Nat.le_refl _, Sign.sign87_verified⟩, by decide +kernel⟩
 
@@ -97,5 +122,11 @@ theorem verifyMessage87_verified :
       (Impl.MlDsa.PPC64LE.Message.verifyMessage verify87Api.name Impl.MlDsa.PPC64LE.Verify.verify87 mlDsa87)
       (verifyMessageContract mlDsa87 PPC64LE.abi 96) :=
   verifyMessage_verified (.inr (.inr rfl)) (by decide) verify87Fn _ verifyMessage87_sat
+
+theorem verifyMessageCached87_verified :
+    Verified PPC64LE.target
+      (Impl.MlDsa.PPC64LE.Message.verifyMessageCached verify87Api.name Impl.MlDsa.PPC64LE.Verify.verify87 mlDsa87)
+      (verifyMessageCachedContract mlDsa87 PPC64LE.abi 96) :=
+  verifyMessageCached_verified (.inr (.inr rfl)) (by decide) verify87Fn _ (verifyMessageCached_sat (.inr (.inr rfl)))
 
 end VG.Proof.MlDsa.PPC64LE.Message
