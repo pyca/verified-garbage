@@ -1,0 +1,5 @@
+# No glob imports at all (the lint is denied in `Cargo.toml`'s
+# `[workspace.lints]`), not even `use super::*` in a test module or an
+# import of a module named `prelude`, which `clippy::wildcard_imports`
+# otherwise allows.
+warn-on-all-wildcard-imports = true

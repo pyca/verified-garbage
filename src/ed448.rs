@@ -294,7 +294,12 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Backend, backend};
+    #[cfg(target_arch = "x86_64")]
+    use super::{
+        VG_ED448_PUBLIC_KEY_ADX_FEATURES, VG_ED448_SIGN_CACHED_ADX_FEATURES,
+        VG_ED448_VERIFY_ADX_FEATURES,
+    };
 
     #[test]
     fn backends() {

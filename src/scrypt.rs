@@ -280,7 +280,7 @@ fn derive(
     any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")
 ))]
 mod tests {
-    use super::*;
+    use super::Sha256Backend;
     #[cfg(target_arch = "x86_64")]
     use crate::arch::scrypt::VG_SCRYPT_AVX2_FEATURES;
     #[cfg(target_arch = "aarch64")]
@@ -317,7 +317,7 @@ mod tests {
 
 #[cfg(test)]
 mod derive_tests {
-    use super::*;
+    use super::{PBKDF2_CHUNKS, Sha256Backend, chunks, derive, scrypt};
 
     /// The implementation selected for this CPU derives the same key as the
     /// baseline one (CI runs this on CPUs that select each of them).

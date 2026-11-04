@@ -97,7 +97,7 @@ pub(crate) fn serve<E>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Step, Stop, Vec, serve, vec};
 
     /// Each tape keeps the unconsumed suffix in order, and only the bytes
     /// after it are filled.

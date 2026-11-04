@@ -27,6 +27,9 @@ std = []
 # implementation on one machine. Reading the environment needs `std`.
 cpu-features-env = ["std"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Randomness from the operating system, for generating keys and for
 # randomized signing, encryption and encapsulation.
@@ -67,6 +70,14 @@ rust-version = "1.95"
 license = "Apache-2.0 OR BSD-3-Clause"
 repository = "https://github.com/pyca/verified-garbage"
 publish = false
+
+# The lints of the hand-written crates (`lints.workspace = true`), not the
+# generated ones. Every import names what it imports: no glob imports,
+# `use super::*` included (`warn-on-all-wildcard-imports` in `clippy.toml`).
+# Clippy skips this lint in test builds, so `ci/check_glob_imports.py`
+# checks the tests.
+[workspace.lints.clippy]
+wildcard_imports = "deny"
 
 [[test]]
 name = "tests"

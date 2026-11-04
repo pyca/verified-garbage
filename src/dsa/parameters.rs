@@ -14,7 +14,32 @@
 use alloc::{vec, vec::Vec};
 
 use super::{Error, Secret};
-use crate::arch::dsa::*;
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::dsa::vg_dsa_generate_parameters;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::dsa::{
+    VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES, vg_dsa_generate_parameters_1024,
+    vg_dsa_generate_parameters_1024_mr_adx, vg_dsa_generate_parameters_1024_sha1_shani,
+    vg_dsa_generate_parameters_1024_sha1_shani_mr_adx, vg_dsa_generate_parameters_2048,
+    vg_dsa_generate_parameters_2048_mr_adx, vg_dsa_generate_parameters_2048_sha256_avx2,
+    vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+    vg_dsa_generate_parameters_2048_sha256_shani,
+    vg_dsa_generate_parameters_2048_sha256_shani_mr_adx, vg_dsa_generate_parameters_3072,
+    vg_dsa_generate_parameters_3072_mr_adx, vg_dsa_generate_parameters_3072_sha256_avx2,
+    vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+    vg_dsa_generate_parameters_3072_sha256_shani,
+    vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::dsa::{
+    vg_dsa_generate_parameters_sha1_sha2, vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
+    vg_dsa_generate_parameters_sha256_sha2,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::dsa::{
+    vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
+    vg_dsa_generate_parameters_sha256_shani,
+};
 use crate::cpu::detected;
 use verified_garbage_cpu::Features;
 
@@ -273,6 +298,7 @@ fn select(features: Features, _p_len: usize) -> Generate {
     )
 ))]
 fn select(features: Features, _p_len: usize) -> Generate {
+    use crate::arch::dsa::VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES;
     select_backends(features.contains(VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES))
 }
 
@@ -287,6 +313,7 @@ fn select(features: Features, _p_len: usize) -> Generate {
     )
 ))]
 fn select_backends(umaal: bool) -> Generate {
+    use crate::arch::dsa::vg_dsa_generate_parameters_umaal;
     match umaal {
         false => vg_dsa_generate_parameters,
         true => vg_dsa_generate_parameters_umaal,

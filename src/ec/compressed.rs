@@ -270,8 +270,12 @@ codec!(
 #[cfg(test)]
 mod tests {
     #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
-    use super::*;
-    use crate::ec::*;
+    use super::{Backend, Features};
+    #[cfg(not(target_arch = "riscv64"))]
+    use crate::ec::P521;
+    use crate::ec::{
+        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, Secp256k1,
+    };
     use crate::ecdh::PrivateKey;
 
     #[cfg(target_arch = "x86_64")]

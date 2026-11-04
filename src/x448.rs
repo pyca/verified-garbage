@@ -197,7 +197,9 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    #[cfg(target_arch = "x86_64")]
+    use super::VG_X448_ADX_FEATURES;
+    use super::{BASE_POINT, Backend, Error, Features, PrivateKey, x448};
 
     /// A generated key agrees with itself: both sides compute the same
     /// secret.

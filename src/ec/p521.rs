@@ -83,7 +83,7 @@ pub(crate) fn public_key(d: &[u8; 66]) -> Option<[u8; 133]> {
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::*;
+    use super::{Features, Mul};
     use verified_garbage_cpu::feature;
 
     /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which

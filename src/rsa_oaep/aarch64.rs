@@ -8,8 +8,15 @@
 
 #![cfg(all(target_arch = "aarch64", feature = "alloc"))]
 
-use crate::arch::fn_tables::{self, *};
-use crate::arch::rsa_oaep::*;
+use crate::arch::fn_tables::{
+    self, VG_HASH_SHA1, VG_HASH_SHA1_SHA2, VG_HASH_SHA1_SHA2_FEATURES, VG_HASH_SHA224,
+    VG_HASH_SHA224_SHA2, VG_HASH_SHA224_SHA2_FEATURES, VG_HASH_SHA256, VG_HASH_SHA256_SHA2,
+    VG_HASH_SHA256_SHA2_FEATURES, VG_HASH_SHA384, VG_HASH_SHA384_SHA3,
+    VG_HASH_SHA384_SHA3_FEATURES, VG_HASH_SHA512, VG_HASH_SHA512_224, VG_HASH_SHA512_224_SHA3,
+    VG_HASH_SHA512_224_SHA3_FEATURES, VG_HASH_SHA512_256, VG_HASH_SHA512_256_SHA3,
+    VG_HASH_SHA512_256_SHA3_FEATURES, VG_HASH_SHA512_SHA3, VG_HASH_SHA512_SHA3_FEATURES,
+};
+use crate::arch::rsa_oaep::{vg_rsa_oaep_decrypt, vg_rsa_oaep_encrypt_precomputed};
 use crate::hashes::sha1::Sha1Backend;
 use crate::hashes::sha224::Sha224Backend;
 use crate::hashes::sha256::Sha256Backend;

@@ -320,6 +320,8 @@ jobs:
       - run: python3 ci/audit_base.py check
       - run: python3 ci/algorithms_table.py --check
       - run: python3 ci/check_arch_gates.py
+      # Clippy's `wildcard_imports` skips test builds: this covers them.
+      - run: python3 ci/check_glob_imports.py
       - run: python3 ci/check_variants.py
       - run: python3 ci/check_skills.py
       # `rust-cpu-features` sets it per line of a CPU's `runs`, inline.
