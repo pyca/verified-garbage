@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Impl.RsaPss.AArch64
 
@@ -96,18 +97,20 @@ theorem csetup_only {s t u : State} (hs : CSetup s t) (o : Only [.x16] t u) : CS
 
 /-- The call of the compression function, after its setup. -/
 theorem comp_call {name : String} {code : Prog isa} (hf : CompOk H so code) {s t : State}
-    {st scr src : Addr} (h : CallOk s N B so st scr src) (hs : CSetup s t) {Q : State → Prop}
+    {st scr src : Addr} (h : CallOk s N B so st scr src) (hs : CSetup s t)
+    (hv : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
       s'.sp = s.sp → Frame [⟨st, N⟩, ⟨scr, so⟩] s.mem s'.mem →
-      H.stateAt s'.mem st = H.compress (H.stateAt s.mem st) (H.blockAt s.mem src) → Q s') :
+      H.stateAt s'.mem st = H.compress (H.stateAt s.mem st) (H.blockAt s.mem src) →
+      (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) → Q s') :
     WP isa (.call name code) t Q := by
   have e := c2_eq (B := B) t hs.x2
   have hpre := call_pre (H := H) h hs
   rw [e] at hpre
-  refine WP.call (k := compK H so) hf.verified hpre ?_ ?_ ?_ hf.noFrames
+  refine WP.callV (k := compK H so) hf.verified hpre ?_ ?_ ?_ hf.noFrames
   · rw [hs.rd, hs.wr]; simpa using h.cov
   · rw [hs.wr]; exact h.covW
-  · intro s' hrd hwr hsp hfr hcs _ hpost
+  · intro s' hrd hwr hsp hfr hcs _ hvv hpost
     have c0 : t.callEntry.gpr .x0 = st := (State.callEntry_gpr _ (by decide)).trans (hs.x0.trans h.x19)
     have c1 : t.callEntry.gpr .x1 = src := (State.callEntry_gpr _ (by decide)).trans (hs.x1.trans h.x1)
     have c2 : (t.callEntry.gpr .x2).toNat = 1 := by
@@ -116,7 +119,7 @@ theorem comp_call {name : String} {code : Prog isa} (hf : CompOk H so code) {s t
       hs.mem] at hpost
     rw [hs.mem] at hfr
     refine hQ s' (hrd.trans hs.rd) (hwr.trans hs.wr) (fun r hr h30 => (hcs r hr h30).trans (hs.keep r hr))
-      (hsp.trans hs.sp) hfr ?_
+      (hsp.trans hs.sp) hfr ?_ fun r hr => (hvv r hr).trans (hv r hr)
     rw [hpost, Md.compressBlocks_one]
 
 /-- Compressing the block at `x1` into the hash value at `x19`, with scratch
@@ -128,12 +131,14 @@ theorem compT_ok (f : MdFns) {name : String} {code : Prog isa} (hf : CompOk H so
     (hfd : Finds f.comp s.syms (s.syms name) name code) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
       s'.sp = s.sp → Frame [⟨st, N⟩, ⟨scr, so⟩] s.mem s'.mem →
-      H.stateAt s'.mem st = H.compress (H.stateAt s.mem st) (H.blockAt s.mem src) → Q s') :
+      H.stateAt s'.mem st = H.compress (H.stateAt s.mem st) (H.blockAt s.mem src) →
+      (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) → Q s') :
     WP isa (compT f) s Q := by
   unfold compT
-  refine scall_wp (n := name) (c := code) (by decide) (WP.mono_syms (csetup_ok s) fun t hs sy => ?_)
+  refine scall_wp (n := name) (c := code) (by decide) (WP.mono_syms (WP.preservedV (csetup_ok s))
+    fun t ⟨hs, hv⟩ sy => ?_)
   refine ⟨by rw [hs.rd, hs.wr, hs.sp]; exact hin, by rw [hs.mem, hs.sp, sy]; exact hw, by rw [sy]; exact hfd,
-    fun u o _ => comp_call hf h (csetup_only hs o) hQ⟩
+    fun u o _ => comp_call hf h (csetup_only hs o) (fun r hr => (o.vcs r hr).trans (hv r hr)) hQ⟩
 
 /-- `compT` is constant time, in runs that call it on the same regions with
 the same address in the slot, of the same function. -/
@@ -307,5 +312,32 @@ theorem digT_rel (f : MdFns) {md : Md P.B P.N P.L} (hs : VG.Proof.Pbkdf2.AArch64
   exact ⟨trivial, trivial, trivial⟩
 
 end
+
+/-! ## The slots of the table of `MdHash` -/
+
+/-- The slots of the table of `MdHash` in the frame at `F`, in the memory
+`m`, hold the addresses `sy` gives `H`'s `init`, compression function and
+digest (`dn`, whose code is `digest H.P`), which the calls of `f` reach. -/
+structure HT (H : Impl.Pbkdf2.Md.AArch64.Hash) (dn : String) (f : MdFns) (F : Addr) (m : Mem)
+    (sy : String → Addr) : Prop where
+  wi : m.readW (off F sIniH) 64 = sy H.initN
+  wc : m.readW (off F sCmpH) 64 = sy H.compN
+  wd : m.readW (off F sDigH) 64 = sy dn
+  fi : Finds f.init sy (sy H.initN) H.initN H.initC
+  fc : Finds f.comp sy (sy H.compN) H.compN H.compC
+  fd : Finds f.dig sy (sy dn) dn (Impl.MdHashTable.AArch64.digest H.P)
+
+/-- The slots, after writes apart from the frame. -/
+theorem HT.keep {H : Impl.Pbkdf2.Md.AArch64.Hash} {dn : String} {f : MdFns} {F : Addr} {m m' : Mem}
+    {sy : String → Addr} (h : HT H dn f F m sy) {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨F, frameBytes⟩ r) : HT H dn f F m' sy := by
+  have k : ∀ d, d + 8 ≤ frameBytes → m'.readW (off F d) 64 = m.readW (off F d) 64 := fun d hd' =>
+    hf.readW (r := ⟨off F d, 8⟩) (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base F (by unfold frameBytes at *; omega))) (by decide)
+  exact ⟨(k _ (by decide)).trans h.wi, (k _ (by decide)).trans h.wc, (k _ (by decide)).trans h.wd, h.fi, h.fc,
+    h.fd⟩
+
+theorem HT.congr {H : Impl.Pbkdf2.Md.AArch64.Hash} {dn : String} {f : MdFns} {F : Addr} {m m' : Mem}
+    {sy : String → Addr} (h : HT H dn f F m sy) (hm : m' = m) : HT H dn f F m' sy := hm ▸ h
 
 end VG.Proof.RsaPss.AArch64
