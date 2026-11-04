@@ -8,14 +8,15 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on ARMv7
 
-`sign` and `verifyPrecomputed`, for a Merkle–Damgård hash function `H` as
-both the hash function and MGF1's, as on AArch64
-(`Impl/RsaPss/AArch64.lean`), whose design this follows: every hash is
+The pieces of `sign` and `verifyPrecomputed`, which `Impl/RsaPss/Arm/Table.lean`
+puts together with the hash function `H` and MGF1's given as tables, and
+which follow AArch64's design (`Impl/RsaPss/AArch64.lean`): every hash is
 computed by `ctHash`, from `H`'s streaming `init`, length field and digest
 code and its compression function, without revealing the length of the
 message; the RSA operation is `vg_rsa_private_checked` when signing and the
 precomputed public operation when verifying, called as the ARMv7 PKCS #1
-v1.5 functions call them (`Impl/RsaPkcs1Sig/Arm/`).
+v1.5 functions call them (`Impl/RsaPkcs1Sig/Arm/`). The pieces here depend
+on `H` only through its shape (`Sh`).
 
 Each function runs in the frames of `wrap` (`Impl/RsaPkcs1Sig/Arm/Wrap.lean`):
 a push of every register, and a frame of `frameBytes` bytes whose first 64
