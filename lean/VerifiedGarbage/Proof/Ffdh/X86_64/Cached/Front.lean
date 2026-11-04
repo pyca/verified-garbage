@@ -8,6 +8,9 @@ public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Impl.Ffdh.VettedGroups
+public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
+import VerifiedGarbage.Proof.Ffdh.VettedGroupFacts
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH's context on x86-64: the public scalar width -/
@@ -178,5 +181,24 @@ theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi 
     xrun [State.ea, hdr, hdi, hdrOff, hB8, hS8, hC8, hCtx, hax,
       execImul3, imul3_low, sx7, sx4, hrows, hCtx2, e7, at_, atOff, hw0, hw1, hw2]
     done) rfl) fun t ⟨h, k⟩ => ⟨h, k⟩
+
+theorem recognized_nonzero {a : Spec.Ffdh.Parameters} {bits : Nat}
+    (h : Spec.Ffdh.vettedExponentBits a = some bits) : bits ≠ 0 := by
+  unfold Spec.Ffdh.vettedExponentBits at h
+  repeat' split at h
+  all_goals cases h
+  all_goals decide
+
+/-- The width the code computes is `generationScalarBits`'s. -/
+theorem pick_spec {k : Nat} {dom : List Byte} (positive : 0 < k)
+    (size : dom.length = 2 * k ∨ dom.length = 3 * k)
+    (normalized : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ Spec.Rsa.os2ip (dom.take k)) :
+    pick (VG.Impl.Ffdh.VettedGroups.recognizeList VG.Impl.Ffdh.VettedGroups.groups k dom)
+      (bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom))) =
+      Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) := by
+  rw [VG.Proof.Ffdh.VettedGroupFacts.recognize_spec positive size normalized]
+  cases h : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf k dom) with
+  | none => simp only [Option.getD_none, pick, ite_true, Spec.Ffdh.generationScalarBits, h]
+  | some bits => simp only [Option.getD_some, pick, ite_eq_right (recognized_nonzero h), Spec.Ffdh.generationScalarBits, h]
 
 end VG.Proof.Ffdh.X86_64.Cached
