@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -35,8 +35,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # RSAES-OAEP decryption on AArch64: the decoding in constant time
 
 `decMain` from two runs in the same frame and working space, with the label,
-`out`, `*msg_len` and `k` the same in both (`DecX`): the label's hash and
-MGF1 as for any caller, the loops from the registers their heads fix
+`out`, `*msg_len` and `k` the same in both (`DecX`), and the tables of the
+label's hash function and of MGF1: the label's hash and MGF1 as for any caller, the loops from the registers their heads fix
 (`*_pin`), and the blocks by the taint analysis (`decMain_tr`). Between the
 scan and the shift, each run also keeps the index the scan found and the
 zeros after the buffer's first 1024 bytes, which the shift's correctness
@@ -195,8 +195,9 @@ include hH hG in
 theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D) (hGv : Proof.Mgf1.Valid Gs)
     {F S : Addr} {k : Nat} {lab : Addr} {labLen : Nat} {o ml : Addr} (hD : 2 * Hl.D + 2 ≤ k) (hk' : k ≤ 1024)
-    (hlen : labLen < 2 ^ 64) {p ai au af : Addr} :
-    RelCT isa (LR F S fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) (decMain Hl f)
+    (hlen : labLen < 2 ^ 64) {p ai au af pL aiL auL afL : Addr} :
+    RelCT isa (LR F S fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 16) F S p ai au af t) ∧
+      LabT Hl.stream f F S lab labLen pL aiL auL afL W t) (decMain Hl f)
       fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
@@ -210,19 +211,22 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   unfold decMain seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- The label's hash.
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
-    (hashLabel_tr hH hlen (.inr rfl) fun _ _ h => h.1.1)
-    fun t V W L R hx => WP.mono (Table.wp_sy (hashLabel_ok hH (Hs := Hs) hHh L R hx.1.1 (.inr rfl)))
-      fun u ⟨⟨Lu, Su, V', Ru, _, _⟩, sy⟩ => ⟨V', W, Lu, Ru, hx.1.step Su fun _ _ => rfl, hx.2.step Su sy⟩).seq ?_
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 16) F S p ai au af t)
+    ((hashLabelT_tr hH hlen (.inr rfl)).mono (fun _ _ ⟨⟨V₁, W₁, L₁, R₁, x₁⟩, ⟨V₂, W₂, L₂, R₂, x₂⟩⟩ =>
+      ⟨⟨V₁, W₁, L₁, R₁, x₁.2⟩, ⟨V₂, W₂, L₂, R₂, x₂.2⟩⟩) fun _ _ h => h)
+    fun t V W L R hx => by
+      obtain ⟨u₀, sA, T₀, st₀, sy₀⟩ := hx.2.2.2.tab
+      exact WP.mono (Table.wp_sy (hashLabelT_ok hH (Hs := Hs) hHh (T₀.step st₀ sy₀) L R hx.2.2.1 hx.2.1 (.inr rfl)))
+        fun u ⟨⟨Lu, Su, V', Ru, _, _⟩, sy⟩ => ⟨V', W, Lu, Ru, hx.1.1.step Su fun _ _ => rfl, hx.1.2.step Su sy⟩).seq ?_
   -- The seed unmasked.
-  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 16) F S p ai au af t) ∧
       MArgs W S (1 + Hl.D) (k - Hl.D - 1) 1 Hl.D)
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (seedArgs gH)) (by rfl)
       (by taint_decide)) nopin)
     fun t V W L R hx => WP.mono (Table.wp_sy (seedArgs_ok L R hx.1.2.2 hD (by omega_arith) hk' []))
       fun u ⟨⟨Lu, Su, Ru⟩, sy⟩ => ⟨V, _, Lu, Ru, ⟨hx.1.step Su (fun j hj => mW_eq _ _ _ _ _ _ (by omega_arith)),
         hx.2.step Su sy⟩, mW_args _ _ _ _ _ _⟩).seq ?_
-  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t)
+  refine (lr_wp (X' := fun W t => DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 16) F S p ai au af t)
     (Table.mgfXorT_tr hG (by decide) f2 (fun _ _ h => ⟨h.2, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, h.1.2.2.2.2⟩)
       (by taint_decide))
     fun t V W L R hx => WP.mono (Table.wp_sy (Table.mgfXorT_ok hG hGh hGl hGv (by decide) hx.1.2.1 L R f2 hx.2))
@@ -230,7 +234,7 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
         hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
           (by omega_arith), hx.1.2.step Su sy⟩).seq ?_
   -- `DB` unmasked.
-  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 15) F S p ai au af t) ∧
+  refine (lr_wp (X' := fun W t => (DecX F S k lab labLen o ml W t ∧ Table.TabX Gm f (arg 16) F S p ai au af t) ∧
       MArgs W S 1 Hl.D (1 + Hl.D) (k - Hl.D - 1))
     (lr_taint [] (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (dbArgs gH)) (by rfl)
       (by taint_decide)) nopin)
