@@ -1,9 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
@@ -54,6 +54,13 @@ theorem y_padded {B L fb : Nat} (msg len : List Byte) (hfb : fb = lastBlk B L ms
       · rw [ifn (by omega), ifn h3]
 
 variable {H : Hash} (hH : HashOK H) (K : Callees H)
+
+/-- The padding facts used by the remainder of the hash computation. -/
+structure PadResult (t : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64)
+    (ℓ N : Nat) (u : State) : Prop where
+  L : Lay u F S
+  keep : Keep [.rcx, .rdx, .r10, .r8, .rax, .r9] t u
+  R : Rep u.mem F S (v80 V ℓ N) W
 
 /-- Where `ctHash` may change our working space: below `oLen + 16`, and `Y`. -/
 def ctOut (o : Nat) : Prop := oLen + 16 ≤ o ∧ ¬ (oY ≤ o ∧ o < oY + 2048)

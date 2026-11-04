@@ -124,17 +124,6 @@ theorem copyWords64_safe (src dst : Reg) (so doff n : Nat) :
   intro j _
   rfl
 
-theorem directLen_safe : (directLen H).allInstrs safeI = true := by
-  unfold directLen
-  split
-  · simp only [Code.allInstrs, rec_all, copyWords64_safe, Bool.and_true]
-    rfl
-  · rfl
-
-theorem directLen_xd : (directLen H).x86_64Depth = 0 := by
-  unfold directLen
-  split <;> rfl
-
 theorem lenLast_safe : (lenLast H).allInstrs safeI = true := by
   unfold lenLast
   split

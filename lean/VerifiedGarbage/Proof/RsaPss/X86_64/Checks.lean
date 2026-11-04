@@ -43,8 +43,8 @@ def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
 functions to call. -/
 def ckH (P : Params) (D : Nat) : Hash := ⟨P, D, 0, "", .block [], "", .block [], "", "", "", "", ""⟩
 
-/-- The pieces of `ctHash` and `mgfXor` that depend on the hash function, with `n` writable regions after the
-frame. -/
+/-- The pieces of `ctHash` and `mgfXor` that depend on the hash function,
+with `n` writable regions after the frame. -/
 structure HashChecks (P : Params) (D : Nat) (n : Nat) : Prop where
   pad80 : ∃ hc, (taint.check (pT n [21, 28, 8, 9, 10] []) (pad80 (ckH P D)) hc).isSome = true
   lenField : ∃ hc, (taint.check (pT n [21] []) (.block (lenField (ckH P D))) hc).isSome = true
@@ -55,8 +55,6 @@ structure HashChecks (P : Params) (D : Nat) (n : Nat) : Prop where
   mgfHead : ∃ hc, (taint.check (pT n [21, 23, 24] [])
     (.block (mgfSeed (ckH P D) ++ [.mov32 .rax (.imm 0), .store (sp sCtr) .rax, .store (sp sDone) .rax])) hc).isSome
     = true
-  directLen : ∃ hc, (taint.check (pT n [21] []) (directLen (ckH P D)) hc).isSome = true
-  fixedPad80 : ∃ hc, (taint.check (pT n [21, 28, 8, 9, 10] []) (fixedPad80 (D + 4)) hc).isSome = true
   /-- `encode`'s and `checkEncoding`'s check of `emLen`. -/
   fit : ∃ hc, (taint.check (pT n [17] []) (.block (fitH (ckH P D))) hc).isSome = true
 

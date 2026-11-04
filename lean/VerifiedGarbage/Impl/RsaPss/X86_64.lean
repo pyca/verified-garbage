@@ -176,7 +176,7 @@ def oRsa : Nat := 8192
 `encode` and `checkEncoding` take the hash function as a table of the
 interface `MdHash` (`Spec/MdHashTable.lean`), their stack argument 2, and
 MGF1's as a table of `Hash` (`Spec/HashTable.lean`), their stack argument
-3. On entry they copy the words of the tables they use to slots (`tabSlots`,
+3. On entry they copy the words of the tables they use to slots (`hSlots`, `gSlots`,
 in the part of the frame that only their callers use for the RSA
 operation's arguments): the former's `init` (word 0), compression function
 (word 3) and digest of a hash value (word 4), and the latter's `init`,
@@ -201,15 +201,17 @@ def sUpdG : Nat := 96
 def sFinG : Nat := 104
 def sDG : Nat := 112
 
-/-- The `MdHash` table's words 0, 3 and 4, from our stack argument `j`, and
-the `Hash` table's words 0, 1, 2 and 4, from our stack argument `j + 1`, to
-their slots. -/
-def tabSlots (j : Nat) : List Instr :=
-  [.mov .r11 (.mem (arg j)), .mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) .rax,
-    .mov .rax (.mem (at_ .r11 24)), .store (sp sCmpH) .rax, .mov .rax (.mem (at_ .r11 32)), .store (sp sDigH) .rax,
-    .mov .r11 (.mem (arg (j + 1))), .mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax,
-    .mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax, .mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax,
-    .mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax]
+/-- The `MdHash` table's words 0, 3 and 4 (the table at `r11`) to their
+slots. -/
+def hSlots : List Instr :=
+  [.mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) .rax, .mov .rax (.mem (at_ .r11 24)), .store (sp sCmpH) .rax,
+    .mov .rax (.mem (at_ .r11 32)), .store (sp sDigH) .rax]
+
+/-- The `Hash` table's words 0, 1, 2 and 4 (the table at `r11`) to their
+slots. -/
+def gSlots : List Instr :=
+  [.mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax, .mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax,
+    .mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax, .mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax]
 
 /-- The call of the function whose address is in the slot `s`, among `ts`. -/
 def scall (s : Nat) (ts : List (String × Prog isa)) : Prog isa :=
@@ -310,23 +312,10 @@ def ctHashWith (padding : Prog isa) : Prog isa :=
 blocks (`sNb`), to `scratch + oDig`, without revealing `ℓ`. -/
 def ctHash : Prog isa := ctHashWith f H (pad80 H)
 
-/-- A fixed-length message needs one padding write, at a public offset. -/
-def fixedPad80 (ℓ : Nat) : Prog isa :=
-  .seq (.block (scr .rcx oY))
-    (.block [.movzx8 .rax (at_ .rcx ℓ), .alu .or .rax (.imm 0x80), .store8 (at_ .rcx ℓ) .rax])
-
-/-- The public one-block length field needs only one or two word copies. -/
-def directLen : Prog isa :=
-  .seq (.block (scr .rsi oLen ++ scr .rcx (oY + (H.P.B - H.P.L))))
-    (if H.P.L % 8 = 0 then .block (copyWords64 .rsi .rcx 0 0 (H.P.L / 8))
-    else .seq (.block [.mov32 .r8 (.imm 0)])
-      (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax]
-        (.imm (BitVec.ofNat 32 H.P.L))))
-
 /-! ## MGF1
 
 `Impl.Mgf1.X86_64`'s, with the hash function `G` of the table of `Hash`
-whose words `tabSlots` copied: its seed `H`, `hLen` bytes at `DB + dbLen`,
+whose words `gSlots` copied: its seed `H`, `hLen` bytes at `DB + dbLen`,
 and its mask `DB` (`dbLen` bytes at `sEb`), in the slots `sB` and `sFb`
 (free while MGF1 runs) and `sEb` and `sDb`; its state at `scratch + oSt`,
 the counter's bytes at `scratch + oLen`, the digest at `scratch + oDig`,

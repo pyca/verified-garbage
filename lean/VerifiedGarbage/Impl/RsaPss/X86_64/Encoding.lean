@@ -68,8 +68,7 @@ MGF1's `G` that the table of `Hash` `mgf1` names. -/
 /-- The arguments into their slots, and the mask. -/
 def encPrologue : List Instr :=
   saveRegs ++ ([.store (sp sOut) .rdi, .store (sp sK) .rsi, .store (sp sDig) .rdx, .store (sp sSalt) .rcx,
-    .store (sp sSaltLen) .r8, .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .r9 ++
-    tabSlots 2
+    .store (sp sSaltLen) .r8, .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .r9
 
 /-- The encoding's `emLen` bytes copied from `scratch + oEm` to `em`. -/
 def copyOut : Prog isa :=
@@ -81,7 +80,8 @@ def copyOut : Prog isa :=
 def encMain : Prog isa := seqs [signEnc f H g, copyOut, .block [.mov32 .rax (.imm 1)]]
 
 def encBody : Prog isa :=
-  seqs [.block (encPrologue ++ fitH H),
+  seqs [.block (encPrologue ++ [.mov .r11 (.mem (arg 2))]), .block (hSlots ++ [.mov .r11 (.mem (arg 3))]),
+    .block gSlots, .block (fitH H),
     .ite .b ret0 (seqs [.block (([.mov .rdx (.mem (sp sSaltLen))] : List Instr) ++ saltFits H),
       .ite .b ret0 (encMain f H g)]),
     .block restoreRegs]
@@ -98,7 +98,7 @@ last four on the stack, the tables as `encode`'s. -/
 /-- The arguments into their slots, and the mask. -/
 def chkPrologue : List Instr :=
   saveRegs ++ ([.store (sp sDig) .rdi, .store (sp sSig) .rsi, .store (sp sK) .rdx, .store (sp sSlen) .r8,
-    .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .rcx ++ tabSlots 2
+    .mov .rax (.mem (arg 0)), .store (sp sScr) .rax] : List Instr) ++ maskBits .rcx
 
 /-- The encoding's `emLen` bytes copied from `em` to `scratch + oEm`. -/
 def copyIn : Prog isa :=
@@ -120,7 +120,8 @@ def chkMain : Prog isa :=
 /-- The checks of the lengths: `emLen ≥ hLen + 2`, and the expected salt
 fits. -/
 def chkBody : Prog isa :=
-  seqs [.block chkPrologue, copyIn, anyReg, .block (fitH H),
+  seqs [.block (chkPrologue ++ [.mov .r11 (.mem (arg 2))]), .block (hSlots ++ [.mov .r11 (.mem (arg 3))]),
+    .block gSlots, copyIn, anyReg, .block (fitH H),
     .ite .b ret0 (seqs [.block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)), .alu .sub .rax (.reg .r8)] :
         List Instr) ++ saltFits H),
       .ite .b ret0 (chkMain f H g)]),
@@ -188,10 +189,8 @@ def chkName (i : Nat) : String := s!"vg_rsa_pss_check_encoding_{hashName i}"
 /-- The slot of the index of the hash function of the table of `MdHash`. -/
 def sIdx : Nat := 376
 
-/-- That index (the table's word 5), from our stack argument `j`, to its
-slot. -/
-def idxSlot (j : Nat) : List Instr :=
-  [.mov .r11 (.mem (arg j)), .mov .r11 (.mem (at_ .r11 40)), .store (sp sIdx) .r11]
+/-- That index (the table's word 5, the table at `r11`) to its slot. -/
+def idxSlot : List Instr := [.mov .r11 (.mem (at_ .r11 40)), .store (sp sIdx) .r11]
 
 /-- And from there to `r11`. -/
 def idxLoad : List Instr := [.mov .r11 (.mem (sp sIdx))]
@@ -208,7 +207,7 @@ variable (privN : String) (privC : Prog isa)
 /-- The checks on the modulus, the encoding, then the private-key
 operation. -/
 def signCBody : Prog isa :=
-  seqs [.block (signPrologue ++ idxSlot 16 ++ n0),
+  seqs [.block (signPrologue ++ n0 ++ [.mov .r11 (.mem (arg 16))]), .block idxSlot,
     .ite .e signFail (seqs [.block (emBitsB ++ encArgs ++ idxLoad),
       byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
       .block [.alu32 .test .rax (.reg .rax)],
@@ -246,7 +245,7 @@ def chkArgs : List Instr :=
 variable (pubN : String) (pubC : Prog isa)
 
 def verifyCBody : Prog isa :=
-  seqs [.block (verifyPrologue ++ idxSlot 8 ++ n0),
+  seqs [.block (verifyPrologue ++ n0 ++ [.mov .r11 (.mem (arg 8))]), .block idxSlot,
     .ite .e verifyFail (seqs [.block (emBitsB ++ pubArgsC), .call pubN pubC, .block (chkArgs ++ idxLoad),
       byIdx (fun i => .call (chkName i) (checkEncoding f (ofIdx i) g)) idxs,
       .block [.alu .and .rax (.mem (sp sAcc))]]),

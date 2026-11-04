@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # RSASSA-PSS on x86-64: hashing verification's input of a public length
@@ -190,7 +191,7 @@ theorem lenLast_ok {u : State} {F S : Addr} (L : Lay u F S)
 
 /-- Before block `b`, with no selection. -/
 def CA2 (t : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (n b : Nat) (u : State) : Prop :=
-  Lay u F S ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
+  Lay u F S ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧ u.syms = t.syms ∧
   ∃ V' : Nat → Byte, Rep u.mem F S V' (upd W 29 (BitVec.ofNat 64 b)) ∧
     (∀ o < oRsa, ¬ inR [(oSt, H.P.N), (0, H.P.so)] o → V' o = V o) ∧
     hH.md.stateAt u.mem (off S oSt) = hH.md.compressList hH.iv (yList V n) b
@@ -199,26 +200,28 @@ include hH in
 /-- Every block compressed. -/
 theorem compAll_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) (hiv : hH.md.stateAt t.mem (off S oSt) = hH.iv) {nbm : Nat}
-    (hn : W 28 = BitVec.ofNat 64 nbm) (h1 : 1 ≤ nbm) (hnb : nbm * H.P.B ≤ 2048) :
-    WP isa (compAll H) t (CA2 hH t F S V W (nbm * H.P.B) nbm) := by
+    (hn : W 28 = BitVec.ofNat 64 nbm) (h1 : 1 ≤ nbm) (hnb : nbm * H.P.B ≤ 2048) {dn : String} {f : MdFns}
+    (hT : HT H dn f W t.syms) :
+    WP isa (compAll f H) t (CA2 hH t F S V W (nbm * H.P.B) nbm) := by
   have hB := hH.B_le
   have hB0 := hH.B_pos
   have hN := hH.N_le
   have hso := hH.hso
   have hnbm : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB0) hnb
-  refine WP.seq (WP.mono (startZero_ok L R) fun u ⟨L0, hk, R0⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (startZero_ok L R) fun u ⟨L0, hk, R0⟩ sy0 => ?_)
   have hst0 : hH.md.stateAt u.mem (off S oSt) = hH.md.compressList hH.iv (yList V (nbm * H.P.B)) 0 := by
     rw [stateAt_rep hH R R0 (o := oSt) (by unfold oSt oRsa; omega_using [hN]) (fun _ _ => rfl), hiv]
     exact (MdStream.Md.compressList_zero _ _ _).symm
   refine wp_upto (a := 0) (N := nbm) (by omega_using [h1]) (CA2 hH t F S V W (nbm * H.P.B)) ?_ (fun _ h => h)
-    ⟨L0, hk.2.1, hk.2.2, fun r hr => hk.gpr (cs_keep hr (by decide)), V, R0, fun _ _ _ => rfl, hst0⟩
-  intro b _ hb u ⟨Lu, hrd, hwr, hcs, V', Ru, hkeep, hst⟩
+    ⟨L0, hk.2.1, hk.2.2, fun r hr => hk.gpr (cs_keep hr (by decide)), sy0, V, R0, fun _ _ _ => rfl, hst0⟩
+  intro b _ hb u ⟨Lu, hrd, hwr, hcs, hsy, V', Ru, hkeep, hst⟩
   have hbB : H.P.B * b + H.P.B ≤ 2048 := by
     rw [← Nat.mul_succ]; exact Nat.le_trans (Nat.mul_le_mul_left _ hb) (by rw [Nat.mul_comm]; exact hnb)
-  refine WP.seq_assoc (WP.seq (WP.mono (compCall_ok hH Lu Ru hbB (by simp [upd]))
-    fun v ⟨Lv, hrdv, hwrv, hcsv, Rv, hstv⟩ => ?_))
-  refine WP.mono (nextBlock_ok Lv Rv (b := b) (nbm := nbm) (by simp [upd]) (by simp [upd, hn])
-    (by omega_using [hnbm, hb]) (by omega_using [hnbm])) fun u' ⟨hz, Lu', hk', Ru'⟩ => ⟨hz, ?_⟩
+  refine WP.seq_assoc (WP.seq (X86_64.WP.mono_syms (compCall_ok hH Lu Ru hbB (by simp [upd])
+      (by rw [hsy]; exact hT.upd ⟨by decide, by decide, by decide⟩ _))
+    fun v ⟨Lv, hrdv, hwrv, hcsv, Rv, hstv⟩ syv => ?_))
+  refine X86_64.WP.mono_syms (nextBlock_ok Lv Rv (b := b) (nbm := nbm) (by simp [upd]) (by simp [upd, hn])
+    (by omega_using [hnbm, hb]) (by omega_using [hnbm])) fun u' ⟨hz, Lu', hk', Ru'⟩ syu => ⟨hz, ?_⟩
   rw [upd_upd] at Ru'
   have hY : ∀ i < 2048, V' (oY + i) = V (oY + i) := fun i hi => hkeep _ (by unfold oY oRsa; omega_using [hi]) (by
     simp only [inR_cons, inR_nil, or_false]; unfold oY oSt; omega_using [hN, hso])
@@ -230,7 +233,8 @@ theorem compAll_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
       yList_getD V (show H.P.B * b + k < nbm * H.P.B by
         have := Nat.mul_le_mul_right H.P.B hb; rw [Nat.succ_mul, Nat.mul_comm b] at this; omega_arith)]
   refine ⟨Lu', hk'.2.1.trans (hrdv.trans hrd), hk'.2.2.trans (hwrv.trans hwr),
-    fun r hr => (hk'.gpr (cs_keep hr (by decide))).trans ((hcsv r hr).trans (hcs r hr)), _, Ru',
+    fun r hr => (hk'.gpr (cs_keep hr (by decide))).trans ((hcsv r hr).trans (hcs r hr)),
+    syu.trans (syv.trans hsy), _, Ru',
     fun o ho hno => ?_, hst'⟩
   simp only [inR_cons, inR_nil, or_false, not_or] at hno
   simp only [inR_cons, inR_nil, or_false]
@@ -266,8 +270,9 @@ include hH K in
 (`sNb`) of their padding, whose `0x80` is already in place. -/
 theorem fixedHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hnbm : nbm = lastBlk H.P.B H.P.L ℓ + 1) (hnb : nbm * H.P.B ≤ 2048) :
-    WP isa (fixedHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hnbm : nbm = lastBlk H.P.B H.P.L ℓ + 1) (hnb : nbm * H.P.B ≤ 2048)
+    {dn : String} {f : MdFns} (hT : HT H dn f W t.syms) (hdk : DigOK H) :
+    WP isa (fixedHash f H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
@@ -289,22 +294,25 @@ theorem fixedHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte
     rw [Nat.succ_mul]; omega_arith
   unfold fixedHash seqs seqs seqs seqs
   -- `init`.
-  refine WP.seq (WP.mono (ctInit_ok hH K L R) fun u1 ⟨L1, rd1, wr1, cs1, R1, iv1⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (ctInit_ok hH K L R hT) fun u1 ⟨L1, rd1, wr1, cs1, R1, iv1⟩ s1 => ?_)
   -- The length field.
-  refine WP.seq (WP.mono (lenField_ok hH L1 R1 hl (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (lenField_ok hH L1 R1 hl (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ s3 => ?_)
   -- Into the last block.
-  refine WP.seq (WP.mono (lenLast_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
+  refine WP.seq (X86_64.WP.mono_syms (lenLast_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
       simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega_arith), Nat.add_sub_cancel_left])
-    (by simp [upd, hn]) h1 hnb) fun u4 ⟨L4, k4, R4⟩ => ?_)
+    (by simp [upd, hn]) h1 hnb) fun u4 ⟨L4, k4, R4⟩ s4 => ?_)
   -- Every block.
-  refine WP.seq (WP.mono (compAll_ok hH L4 R4 ?_ (by simp [upd, hn]) h1 hnb)
-    fun u5 ⟨L5, rd5, wr5, cs5, V5, R5, keep5, st5⟩ => ?_)
+  have T4 : HT H dn f (upd W 30 (BitVec.ofNat 64 (RsaPss.lastBlk H.P.B H.P.L ℓ))) u4.syms := by
+    rw [s4, s3, s1]; exact hT.upd ⟨by decide, by decide, by decide⟩ _
+  refine WP.seq (WP.mono (compAll_ok hH L4 R4 ?_ (by simp [upd, hn]) h1 hnb T4)
+    fun u5 ⟨L5, rd5, wr5, cs5, s5, V5, R5, keep5, st5⟩ => ?_)
   · rw [← iv1]
     refine stateAt_rep hH R1 R4 (by unfold oSt oRsa; omega_arith) fun i hi => ?_
     simp only [cpV, lenV]
     rw [ifn (by unfold oY oSt; omega_arith), ifn (by unfold oLen oSt; omega_arith)]
   -- The digest.
-  refine WP.mono (digestAt_ok hH L5 R5 (src := oSt) (by unfold oSt oDig; omega_arith)) fun u6 ⟨L6, k6, R6⟩ => ?_
+  refine WP.mono (digestAt_ok hH L5 R5 (src := oSt) (by unfold oSt oDig; omega_arith)
+      (by rw [s5]; exact T4.upd ⟨by decide, by decide, by decide⟩ _) hdk) fun u6 ⟨L6, k6, R6⟩ => ?_
   have c1 : oY = 3584 := rfl
   have c2 : oLen = 2368 := rfl
   have c3 : oDig = 2304 := rfl
@@ -315,7 +323,7 @@ theorem fixedHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have hcs : r ∈ calleeSaved := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have h1 : r ∉ [Reg.rbx, .rbp, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+    have h1 : r ∉ [Reg.rdi, .rsi, .r8, .r9, .r11, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h2 : r ∉ [Reg.rsi, .rcx, .rax, .r8] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h3 : r ∉ [Reg.rbx, .r12, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     rw [k6.gpr h1, cs5 r hcs, k4.gpr h2, k3.gpr h3, cs1 r hcs]
