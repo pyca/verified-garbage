@@ -88,14 +88,14 @@ end
 theorem main_of {G : Spec.Mgf1.Hash} {K : Nat} {s t : State} (hp : PreS G.len K s) (h0 : s.mem (s.gpr .x2) ≠ 0)
     (ht : AfterEnc G K s (ebS s) (elS s) (loS s) t) (hb : isa.eval (.zero .w .x0) t = some false) :
     ∃ e', Spec.RsaPss.encode G G (Spec.Rsa.bytesAt s.mem (stackArg s 8) G.len)
-      (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat) (ebS s) = some e' ∧
+      (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat) (ebS s) = some e' ∧
       Main K s (Spec.RsaPss.zeros (loS s) ++ e') t := by
   obtain ⟨-, -, hlok, hlo⟩ := eb_bounds hp h0
   rw [eval_zero_w] at hb
   have hres := ht.res
   revert hres
   cases Spec.RsaPss.encode G G (Spec.Rsa.bytesAt s.mem (stackArg s 8) G.len)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat) (ebS s) with
+    (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat) (ebS s) with
   | none => intro hres; rw [hres] at hb; exact absurd hb (by decide)
   | some e' =>
     intro hres
@@ -126,7 +126,7 @@ theorem main_ok {s u : State} (hp : PreS G.len K s) (hu : AtChk s u) (h0 : s.mem
     have hres := ht₂.res
     revert hres
     cases Spec.RsaPss.encode G G (Spec.Rsa.bytesAt s.mem (stackArg s 8) G.len)
-      (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat) (ebS s) with
+      (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat) (ebS s) with
     | none => intro _; exact r
     | some e' =>
       intro hres

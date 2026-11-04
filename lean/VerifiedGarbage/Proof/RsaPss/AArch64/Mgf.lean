@@ -466,6 +466,27 @@ theorem TabMem.keep {G : Impl.Pbkdf2.Md.AArch64.Stream} {sy : String → Addr} {
   ⟨(tabG_keep hf hd (d := 8 * 0) (by decide)).trans h.1, (tabG_keep hf hd (d := 8 * 1) (by decide)).trans h.2.1,
     (tabG_keep hf hd (d := 8 * 2) (by decide)).trans h.2.2⟩
 
+/-- A table, after writes apart from it. -/
+theorem held_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n * 8⟩ r) (hn : n * 8 ≤ 2 ^ 64) {ws : List (BitVec 64)}
+    (hl : ws.length = n) (h : Abi.tableHeld 64 m p ws) : Abi.tableHeld 64 m' p ws := fun i hi => by
+  rw [← h i hi]
+  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+
+/-- `TabsAt` in a later state, after writes apart from the tables. -/
+theorem TabsAt.frame {H : Hash} {dn : String} {f : MdFns} {G : Impl.Pbkdf2.Md.AArch64.Stream}
+    {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {pH pG : Addr} {s t : State} (h : TabsAt H dn f G g pH pG s)
+    {rs : List Region} (hf : Frame rs s.mem t.mem) (hdH : ∀ r ∈ rs, Region.Disjoint ⟨pH, 88⟩ r)
+    (hdG : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) (hsy : t.syms = s.syms) : TabsAt H dn f G g pH pG t := by
+  have kH : ∀ d, d + 8 ≤ 88 → t.mem.readW (pH + BitVec.ofNat 64 d) 64 = s.mem.readW (pH + BitVec.ofNat 64 d) 64 :=
+    fun d hd => hf.readW (r := ⟨pH, 88⟩) (Offset.contains_base _ hd (by omega)) hdH (by decide)
+  have k0 : t.mem.readW pH 64 = s.mem.readW pH 64 := by
+    have := kH 0 (by decide); rwa [BitVec.add_zero] at this
+  refine ⟨by rw [k0, hsy]; exact h.h0, by rw [kH 24 (by decide), hsy]; exact h.h3,
+    by rw [kH 32 (by decide), hsy]; exact h.h4, by rw [hsy]; exact h.fi, by rw [hsy]; exact h.fc,
+    by rw [hsy]; exact h.fd, by rw [hsy]; exact h.gok, by rw [hsy]; exact TabMem.keep h.gm hf hdG,
+    by rw [tabG_keep hf hdG (by decide)]; exact h.gD⟩
+
 /-- The functions the tables name: the hash function `H` (whose digest is
 `dn`) and MGF1's `G`, the calls' lists `f` and `g`, and the tables of the
 precondition. -/

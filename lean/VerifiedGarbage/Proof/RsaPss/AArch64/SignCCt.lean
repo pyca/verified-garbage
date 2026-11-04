@@ -79,22 +79,22 @@ end E
 theorem AfterEnc.x0 {G : Spec.Mgf1.Hash} {K : Nat} {s : State} {eb el lo : Nat} {t : State}
     (h : AfterEnc G K s eb el lo t) :
     (t.gpr .x0).setWidth 32 =
-      if G.len + (stackArg s 10).toNat + 2 ≤ Spec.RsaPss.emLength eb then (1 : BitVec 32) else 0 := by
+      if G.len + (stackArg s 11).toNat + 2 ≤ Spec.RsaPss.emLength eb then (1 : BitVec 32) else 0 := by
   have hi := RsaPss.encode_isSome G (mHash := Spec.Rsa.bytesAt s.mem (stackArg s 8) G.len)
-    (salt := Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat) (eb := eb)
+    (salt := Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat) (eb := eb)
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _)
   rw [VG.Proof.RsaPkcs1Sig.bytesAt_length] at hi
   have hr := h.res
   revert hr hi
   cases Spec.RsaPss.encode G G (Spec.Rsa.bytesAt s.mem (stackArg s 8) G.len)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 9) (stackArg s 10).toNat) eb with
+    (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 11).toNat) eb with
   | none =>
     intro hi hr
-    have hc : ¬ G.len + (stackArg s 10).toNat + 2 ≤ Spec.RsaPss.emLength eb := fun hc => by simp [hc] at hi
+    have hc : ¬ G.len + (stackArg s 11).toNat + 2 ≤ Spec.RsaPss.emLength eb := fun hc => by simp [hc] at hi
     rw [hr, ite_eq_right hc]
   | some e =>
     intro hi hr
-    have hc : G.len + (stackArg s 10).toNat + 2 ≤ Spec.RsaPss.emLength eb := by simpa using hi.symm
+    have hc : G.len + (stackArg s 11).toNat + 2 ≤ Spec.RsaPss.emLength eb := by simpa using hi.symm
     rw [hr.1, ite_eq_left hc]
 
 /-! ## A failed check -/
