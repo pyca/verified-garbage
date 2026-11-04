@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
@@ -197,23 +197,28 @@ def AttemptPost (p : GkP) (rb : List Byte) (s t : State) : Prop :=
     Spec.Rsa.bytesAt t.mem p.yp p.k = Spec.Rsa.i2osp (if resultStatus p rb = 1 then p.z rb else 0) p.k ∧
     (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ RunFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
+/-- The core of an attempt with any tail that computes the power from a
+checked scalar. -/
+theorem coreWith_ok {tl : List (Prog isa)}
     {p : GkP} {rb : List Byte} {s : State}
+    (htail : ∀ mi u, CheckPrivate.Work p.kp (p.xb rb) mi u → u.gpr .rdi = off p.B (inner p.w) →
+      Src u p.B p.Z p.xp (p.cut rb) → OutOk u p.B p.Z p.xp p.k → OutOk u p.B p.Z p.yp p.k →
+      InScr p.B p.Z s.mem u.mem → Keep (.rdi :: mmRegs) s u → WP isa (seqs tl) u (PowerPost p rb u))
     (h : CheckPrivate.Base p.kp (p.xb rb) s) (hd : s.gpr .rdi = p.B)
     (hG : word s.mem p.B (8 * sG) = off p.dp p.k) (hQ : word s.mem p.B (8 * sQ) = off p.dp (2 * p.k))
     (hm : p.mv = true) (hx : Src s p.B p.Z p.xp (p.cut rb))
     (hoX : OutOk s p.B p.Z p.xp p.k) (hoY : OutOk s p.B p.Z p.yp p.k)
     (ha : Apart p.xp p.k p.yp p.k) (hlen : (p.cut rb).length = p.k) (hld : p.ld < p.k) :
-    WP isa (seqs (core M.mm E.code (.seq (.block r2Head) R.code))) s (AttemptPost p rb s) := by
+    WP isa (seqs ([.block VG.Impl.Rsa.X86_64.head] ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl ++
+      VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ [.block [.alu .test .rax (.reg .rax)],
+        .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)])) s (AttemptPost p rb s) := by
   have hk : 64 ≤ p.k := h.k1
   have hodd := (valid_facts hm hk).1
-  unfold core
   simp only [List.append_assoc]
   refine wp_seqs_append
     (a := ([.block VG.Impl.Rsa.X86_64.head] ++ pSetup ++ VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl))
     (b := VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.scalarRange ++ [.block [.alu .test .rax (.reg .rax)],
-      .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2])
-        (seqs (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.tail M.mm E.code (.seq (.block r2Head) R.code)))])
+      .ite .e (seqs [.block [VG.Impl.Rsa.X86_64.Crt.leave], maskX, ret 2]) (seqs tl)])
     (by simp [pSetup]) (by simp)
     (WP.mono (CheckPrivate.setup_work h hd hG hQ hm) fun u₁ S₁ => ?_)
   obtain ⟨mi, hw₁, hd₁⟩ := S₁.1
@@ -250,7 +255,7 @@ theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
       have hH : word u₃.mem p.B (8 * i) = word s.mem p.B (8 * i) := H.2.2.1 i hi
       exact (hs i hi).trans hH
   · have hsv : p.sv = true := by cases h : p.sv <;> simp_all
-    refine WP.mono (tail_ok M E R hw₃ hd₃ hm hx₃ hox₃ hoy₃ ha hlen hld)
+    refine WP.mono (htail mi u₃ hw₃ hd₃ hx₃ hox₃ hoy₃ H.2.1 H.2.2.2)
       fun t ⟨hr, hd, hX, hY, hs, hf, kt⟩ => ?_
     have hres : resultStatus p rb = if p.fl rb then 1 else 3 := by
       simp only [resultStatus, hsv, Bool.true_eq_false, ↓reduceIte]
@@ -270,5 +275,17 @@ theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
     · intro i hi
       have hH : word u₃.mem p.B (8 * i) = word s.mem p.B (8 * i) := H.2.2.1 i hi
       exact (hs i hi).trans hH
+
+theorem core_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
+    {p : GkP} {rb : List Byte} {s : State}
+    (h : CheckPrivate.Base p.kp (p.xb rb) s) (hd : s.gpr .rdi = p.B)
+    (hG : word s.mem p.B (8 * sG) = off p.dp p.k) (hQ : word s.mem p.B (8 * sQ) = off p.dp (2 * p.k))
+    (hm : p.mv = true) (hx : Src s p.B p.Z p.xp (p.cut rb))
+    (hoX : OutOk s p.B p.Z p.xp p.k) (hoY : OutOk s p.B p.Z p.yp p.k)
+    (ha : Apart p.xp p.k p.yp p.k) (hlen : (p.cut rb).length = p.k) (hld : p.ld < p.k) :
+    WP isa (seqs (core M.mm E.code (.seq (.block r2Head) R.code))) s (AttemptPost p rb s) := by
+  unfold core
+  exact coreWith_ok
+    (fun _ u hw hd hx hox hoy _ _ => tail_ok M E R hw hd hm hx hox hoy ha hlen hld) h hd hG hQ hm hx hoX hoY ha hlen hld
 
 end VG.Proof.Ffdh.X86_64.GenerateKey
