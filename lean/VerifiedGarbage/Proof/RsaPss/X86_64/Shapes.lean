@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -171,5 +173,13 @@ theorem dig_shape : ∀ i ∈ idxs, DigOK (ckH (shapeOf i).1 0) := by
   · exact dig_sha512
   · exact dig_sha512
   · exact dig_sha512
+
+/-- The digest neither writes `rsp` nor loads MXCSR, and uses no stack, for
+the shape of each index. -/
+theorem dig_safe : ∀ i ∈ idxs, (Impl.MdHashTable.X86_64.digest (shapeOf i).1).allInstrs safeI = true ∧
+    (Impl.MdHashTable.X86_64.digest (shapeOf i).1).x86_64Depth ≤ 0 := by
+  intro i hi
+  simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by decide⟩
 
 end VG.Proof.RsaPss.X86_64
