@@ -12,10 +12,10 @@
 //! x86-64, `vg_sha256_update_shani` and `vg_sha256_finalize_shani`, then on
 //! x86-64 the `_avx2` ones; on AArch64, the `_sha2` ones.
 //!
-//! On AArch64, PPC64LE, RISC-V and x86-64, `digest` calls `vg_sha256_digest`,
-//! or its variant with the suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha256.digestContract`), which hashes the whole message in one
-//! call.
+//! On AArch64, ARMv7, PPC64LE, RISC-V and x86-64, `digest` calls
+//! `vg_sha256_digest`, or its variant with the suffix of the streaming
+//! functions chosen (contract `VG.Spec.Sha256.digestContract`), which hashes
+//! the whole message in one call.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -45,6 +45,7 @@ use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_init, vg_sha256_update};
 
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "x86_64",
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
@@ -76,6 +77,7 @@ super::streaming_hash!(
         },
         digests: #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "x86_64",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "riscv64"

@@ -9,9 +9,9 @@
 //! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
 //! digest.
 //!
-//! `vg_sha224_finalize` (and, on AArch64, PPC64LE, RISC-V and x86-64,
-//! `vg_sha224_digest`) has a variant for each of SHA-256's, chosen the same
-//! way (see `super::sha256`).
+//! `vg_sha224_finalize` (and, on AArch64, ARMv7, PPC64LE, RISC-V and
+//! x86-64, `vg_sha224_digest`) has a variant for each of SHA-256's, chosen the
+//! same way (see `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -38,6 +38,7 @@ use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
 
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "x86_64",
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
@@ -69,6 +70,7 @@ super::streaming_hash!(
         },
         digests: #[cfg(any(
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "x86_64",
             all(target_arch = "powerpc64", target_endian = "little"),
             target_arch = "riscv64"
