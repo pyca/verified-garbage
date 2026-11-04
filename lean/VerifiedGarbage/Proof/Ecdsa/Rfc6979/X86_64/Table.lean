@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.ByIdx
 public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Instrs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -13,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.ByIdx
 meta import VerifiedGarbage.Proof.HashTable.X86_64
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Instrs
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -435,5 +437,63 @@ theorem signT_ct (hC : CurveT R T) (hO : ∀ w ∈ vs, WOk w) : ConstantTime isa
           f₁.2.2.2.1 f₁.2.2.2.2.2.2)
         (pub_congr hpub (reg f₂) f₂.2.2.2.1 f₂.2.2.2.2.2.2)
     exact ⟨(k, u₁), ⟨q₁, pub_refl _, f₁.2.2.1.trans p₁.2⟩, ⟨q₂, pu, f₂.2.2.1.trans p₂.2⟩⟩
+
+
+/-! ## No instruction loads MXCSR, or writes `rsp` but the frames' -/
+
+/-- The blocks for index `i`'s sizes, which the curve's file checks. -/
+theorem rfcT_cfgT (R : RfcCurve) (tries : Nat) (vs : List MdHash) (i : Nat) : RfcT (cfgT R tries vs i) :=
+  let h := R.blkT _ _ (shapeOf_mem i)
+  { msgF := h.msgF, msgN := h.msgN, prepW := h.prepW, coreArgs := h.coreArgs, keepV := h.keepV,
+    candTop := h.candTop, wipe := h.wipe, digestPtr := h.digestPtr, pad := h.pad, hfinCopy := h.hfinCopy,
+    iMsgF₀ := h.iMsgF₀, iMsgF₁ := h.iMsgF₁, iMsgN := h.iMsgN, iPrep := h.iPrep, iCoreArgs := h.iCoreArgs,
+    iKeepV := h.iKeepV, iCandTop := h.iCandTop, iWipe := h.iWipe, iDigestPtr := h.iDigestPtr, iPadI := h.iPadI,
+    iPadO := h.iPadO, iCopyK := h.iCopyK, iCopyV := h.iCopyV, m8 := h.m8 }
+
+theorem core_okP (R : RfcCurve) : OkP R.coreC :=
+  VG.Proof.RsaOaep.X86_64.okI_all_of (Proof.Pbkdf2.Md.X86_64.nosp_of R.coreNs) R.coreMx
+
+theorem body_okP_cfgT (R : RfcCurve) (tries : Nat) (vs : List MdHash) (i : Nat) : OkP (cfgT R tries vs i).body :=
+  body_okP (rfcT_cfgT R tries vs i) (fnsGood_of vs) (core_okP R)
+
+theorem okP_all {c : Prog isa} (h : OkP c) {p : Instr → Bool}
+    (hp : ∀ i, VG.Proof.RsaOaep.X86_64.okI i = true → p i = true) : c.allInstrs p = true := by
+  have h' : c.allInstrs VG.Proof.RsaOaep.X86_64.okI = true := h
+  rw [Code.allInstrs_eq] at h' ⊢
+  exact List.all_eq_true.mpr fun i hi => hp i (List.all_eq_true.mp h' i hi)
+
+theorem sign_mxT (R : RfcCurve) (tries : Nat) (vs : List MdHash) (i : Nat) :
+    (cfgT R tries vs i).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hb := okP_all (body_okP_cfgT R tries vs i) (p := fun x => !loadsMxcsr x) fun x h => by
+    simp only [VG.Proof.RsaOaep.X86_64.okI, Bool.and_eq_true] at h; exact h.2
+  show (_ && _ && _) = true
+  rw [hb]; rfl
+
+theorem sign_spT (R : RfcCurve) (tries : Nat) (vs : List MdHash) (i : Nat) :
+    (cfgT R tries vs i).sign.all (fun i => !isa.writesSp i) = true := by
+  have hb : (cfgT R tries vs i).body.all (fun i => !isa.writesSp i) = true :=
+    Code.all_of_allInstrs (by
+      rw [Code.allInstrs_eq]
+      have hn : NoSp (cfgT R tries vs i).body := fun x hx => by
+        have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans (body_okP_cfgT R tries vs i)) x hx
+        simp only [VG.Proof.RsaOaep.X86_64.okI, Bool.and_eq_true, Bool.not_eq_true'] at this
+        exact this.1
+      exact List.all_eq_true.mpr fun x hx => by rw [VG.Proof.RsaOaep.X86_64.SpSafe.of_noSp hn x hx]; rfl)
+  show (_ && _ && _) = true
+  rw [hb]; rfl
+
+/-- No instruction of `vg_ecdsa_<curve>_sign`, or of the functions it calls, loads MXCSR. -/
+theorem signCode_mx (R : RfcCurve) (tries : Nat) (vs : List MdHash) :
+    (signCode R tries vs).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [signCode, signT, idxs, byIdx, Code.allInstrs]
+  simp only [sign_mxT R tries vs, Bool.and_true]
+  rfl
+
+/-- `rsp` is written only by the frames' push and pop. -/
+theorem signCode_sp (R : RfcCurve) (tries : Nat) (vs : List MdHash) :
+    (signCode R tries vs).all (fun i => !isa.writesSp i) = true := by
+  simp only [signCode, signT, idxs, byIdx, Code.all]
+  simp only [sign_spT R tries vs, Bool.and_true]
+  rfl
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

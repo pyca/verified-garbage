@@ -86,6 +86,10 @@ def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 
 abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
   ∃ hc, (taint.check (Taint.ofRegs rs) (.block is) hc).isSome = true
 
+/-- None of the instructions of the block `is` writes `rsp` or loads MXCSR. -/
+abbrev OkB (is : List Instr) : Prop :=
+  (Code.block is : Prog isa).allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i) = true
+
 /-- The code's blocks for scalars of `E` (with `h` above the frame's
 pointers if `hHigh`, and digests shifted by `sh` bits) and a hash function
 of output length `D` and block size `B`. -/
@@ -108,6 +112,22 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86_64.Cfg) : Prop where
   digestPtr : TaintOk [.rsp] c.digestPtr
   pad : TaintOk [.rsp, .rdi] (([.mov32 .rcx (.imm 0)] : List Instr) ++ (List.range (c.B / 4)).flatMap c.padW)
   hfinCopy : TaintOk [.rsp, .rdi] (Cfg.copyBytes c.D .rdi sTmp .rsp 0)
+  /-- None of their instructions writes `rsp` or loads MXCSR. -/
+  iMsgF₀ : OkB (Cfg.msg c.len c.D 0 true c.fHo)
+  iMsgF₁ : OkB (Cfg.msg c.len c.D 1 true c.fHo)
+  iMsgN : OkB (Cfg.msg c.len c.D 0 false)
+  iPrep : OkB c.prep
+  iCoreArgs : OkB c.coreArgs
+  iKeepV : ∀ j < 8, OkB (c.keepV j)
+  iCandTop : OkB c.candTop
+  iWipe : OkB c.wipe
+  iDigestPtr : OkB c.digestPtr
+  iPadI : OkB (c.padBlk ipad32)
+  iPadO : OkB (c.padBlk opad32)
+  iCopyK : OkB (Cfg.scrPtr ++ Cfg.copyBytes c.D .rdi sTmp .rsp fK)
+  iCopyV : OkB (Cfg.scrPtr ++ Cfg.copyBytes c.D .rdi sTmp .rsp fV)
+  /-- At most 8 `V`s make a candidate. -/
+  m8 : c.m ≤ 8
 
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
