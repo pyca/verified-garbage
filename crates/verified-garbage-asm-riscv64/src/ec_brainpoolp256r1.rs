@@ -528,7 +528,7 @@ pub unsafe extern "C" fn vg_ec_brainpoolp256r1_public_key(out: *mut [u8; 65], d:
 .insn 4, 0x0112f2b3
 .insn 4, 0x5c543023
 .insn 2, 0x8522
-call {vg_brainpoolp256r1_mul}
+call {vg_brainpoolp256r1_mul_g}
 .insn 2, 0x844e
 .insn 2, 0x8522
 .insn 4, 0x60000593
@@ -1520,7 +1520,7 @@ call {vg_brainpoolp256r1_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_brainpoolp256r1_mul = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
+        vg_brainpoolp256r1_mul_g = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_g::vg_brainpoolp256r1_mul_g,
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
     )
 }
@@ -1530,8 +1530,8 @@ call {vg_brainpoolp256r1_mul_mod_p}
 pub(crate) mod vg_brainpoolp256r1_add_mod_p;
 
 #[rustfmt::skip]
-#[path = "internal/vg_brainpoolp256r1_mul.rs"]
-pub(crate) mod vg_brainpoolp256r1_mul;
+#[path = "internal/vg_brainpoolp256r1_mul_g.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul_g;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp256r1_mul_mod_p.rs"]

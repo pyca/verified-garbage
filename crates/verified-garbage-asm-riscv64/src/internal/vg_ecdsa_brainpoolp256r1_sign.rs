@@ -841,7 +841,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_sign() {
 .insn 4, 0x0112f2b3
 .insn 4, 0x5c543023
 .insn 2, 0x8522
-call {vg_brainpoolp256r1_mul}
+call {vg_brainpoolp256r1_mul_g}
 .insn 2, 0x844e
 .insn 2, 0x8522
 .insn 4, 0x60000593
@@ -2650,7 +2650,7 @@ call {vg_brainpoolp256r1_mul_mod_n}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_brainpoolp256r1_mul = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
+        vg_brainpoolp256r1_mul_g = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_g::vg_brainpoolp256r1_mul_g,
         vg_brainpoolp256r1_mul_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_n = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_add_mod_n::vg_brainpoolp256r1_add_mod_n,
         vg_brainpoolp256r1_mul_mod_n = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_n::vg_brainpoolp256r1_mul_mod_n,
