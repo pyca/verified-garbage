@@ -62,7 +62,7 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.Secp256k1.secp256k1_sh
-  coreN := "vg_ecdsa_secp256k1_sign"
+  coreN := "vg_ecdsa_secp256k1_sign_k"
   coreC := Impl.Ecdsa.X86_64.signSecp256k1
   coreX := by rw [coreK_secp256k1]; exact Proof.Ecdsa.X86_64.Secp256k1.sign_call_x86 hL hI
   coreCT := by rw [coreK_secp256k1]; exact Proof.Ecdsa.X86_64.Secp256k1.sign_ct

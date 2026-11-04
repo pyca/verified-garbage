@@ -68,7 +68,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P224.p224_sh
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP224
   coreX := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_ct
