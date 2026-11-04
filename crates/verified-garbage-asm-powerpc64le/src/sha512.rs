@@ -414,6 +414,110 @@ beq %cr0, 20b
     )
 }
 
+/// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgQAob6GAKm+iACxvooAub6MAIG+zgCJvsAAKY6AADFOgAA4zoAAAQ7EAGGOgAAdDg="
+bl {vg_sha384_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB0OAAAmDjQAbU4AADVOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaREAKV6iAC1eooAvXqMAIV6zgCNesYArXqIAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlgAiE4IACATg==""#,
+        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+    )
+}
+
+/// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgQAob6GAKm+iACxvooAub6MAIG+zgCJvsAAKY6AADFOgAA4zoAAAQ7EAGGOgAAdDg="
+bl {vg_sha512_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB0OAAAmDjQAbU4AADVOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkfABFYEgABaR9AEVgSQAFpH4ARWBKAAWkfwBFYEsABaRAAIVgTAAFpEEAhWBNAAWkQgCFYE4ABaRDAIVgTwAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+WACITggAIBO""#,
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+    )
+}
+
+/// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgQAob6GAKm+iACxvooAub6MAIG+zgCJvsAAKY6AADFOgAA4zoAAAQ7EAGGOgAAdDg="
+bl {vg_sha512_224_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB0OAAAmDjQAbU4AADVOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpEQApXqIALV6igC9eowAhXrOAI16xgCteogAAHoMAAhOKYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+WACITggAIBO""#,
+        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+    )
+}
+
+/// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
+///
+/// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "of0h+CAAwTimAgh80f8h+CAAAfgQAob6GAKm+iACxvooAub6MAIG+zgCJvsAAKY6AADFOgAA4zoAAAQ7EAGGOgAAdDg="
+bl {vg_sha512_256_init}
+.base64 "AAB0OAAAgDgAALc4AADYOAAA9Tg="
+bl {vg_sha512_update_scratch}
+.base64 "AAB0OAAAmDjQAbU4AADVOA=="
+bl {vg_sha512_finalize_scratch}
+.base64 "0AEVgQAAFpHUARWBBAAWkdgBFYEIABaR3AEVgQwAFpHgARWBEAAWkeQBFYEUABaR6AEVgRgAFpHsARWBHAAWkRACleogAtXqKAL16jACFes4AjXrGAK16iAAAegwACE4pgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
