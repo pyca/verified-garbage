@@ -195,20 +195,18 @@ theorem args_rep {a : State} {F' S' : Addr} {D : Nat} (Ge : Proof.RsaOaep.AArch6
 section
 variable {G : Impl.Pbkdf2.Md.AArch64.Stream} (hG : VG.Proof.Pbkdf2.Md.AArch64.Calls.StreamOK G)
 
-include hG in
-/-- `DB ⊕= MGF1(H, dbLen)` for `H` the `hLen` bytes after `DB`, with MGF1's
-hash function `G`, that of the table whose address is in the slot
-`sMgfT`. -/
-theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
-    (hGv : Proof.Mgf1.Valid Gs) {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State} {F S p : Addr}
-    (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {e db : Nat} (hd : DbAt H.D e db)
+/-- MGF1's arguments to its slots, in its frame: OAEP's MGF1 then runs from
+the state reached, as OAEP's proofs need. -/
+theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State} {F S p : Addr}
+    (L : Lay t F S) {e db : Nat} (hd : DbAt H.D e db)
     (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (E : Env G g t F S p) :
-    WP isa (mgfXor H g) t fun t' => t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
-      (∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) ∧
-      (∀ r ∈ preservedV, (t'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) ∧
-      Frame (mgfWr F S) t.mem t'.mem ∧ t'.syms = t.syms ∧
-      ∀ o, oEm ≤ o → o < oY →
-        t'.mem (off S o) = mixV V (Spec.Mgf1.mgf1 Gs ((List.range H.D).map fun i => V (e + db + i)) db) e db o := by
+    WP isa (.block (mgfArgs H)) (allocated mgfFrame t) fun u => Keep [.x9, .x10] (allocated mgfFrame t) u ∧
+      u.syms = t.syms ∧ u.mem = argsMem t (mF F) H.D ∧ Proof.RsaOaep.AArch64.Lay u (mF F) (off S mgfOff) ∧
+      Proof.RsaOaep.AArch64.Rep u.mem (mF F) (off S mgfOff) (fun o => t.mem (off (off S mgfOff) o))
+        (argsW t (mF F) H.D) ∧
+      Proof.RsaOaep.AArch64.Table.Tab G g (mF F) (off S mgfOff) p (mgfFrame + sMgfT) u ∧
+      Proof.RsaOaep.AArch64.MFit (e + db - mgfOff) H.D (e - mgfOff) db ∧
+      Proof.RsaOaep.AArch64.MArgs (argsW t (mF F) H.D) (off S mgfOff) (e + db - mgfOff) H.D (e - mgfOff) db := by
   have hfit := hd.fit
   have he1 := hd.e1
   have hdb1 := hd.db1
@@ -216,9 +214,6 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
   have c7 : oEm = 2560 := rfl
   have hF := E.F288
   have Ge := E.geo
-  unfold mgfXor
-  refine WP.alloc (by decide) (by rw [L.sp, mgfFrame_eq]; rw [mgfFrame_eq] at hF; omega) ?_
-  refine WP.seq ?_
   have asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
   refine WP.mono_syms (args_ok H (by omega) asp fun d hd' => ⟨_, List.mem_cons_self, by
     rw [L.sp, mgfFrame_eq]; exact Offset.contains_base _ hd' (by omega)⟩) fun u ⟨K, hm⟩ syu => ?_
@@ -276,6 +271,39 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
       by show BitVec.ofNat 64 H.D = _; rfl,
       by show t.gpr .x24 = _; rw [h24, so _ (by unfold mgfOff; omega)],
       by show t.gpr .x25 = _; rw [h25]⟩
+  exact ⟨K, hsy, hum, L', R5, T, hMF, hMA⟩
+
+include hG in
+/-- `DB ⊕= MGF1(H, dbLen)` for `H` the `hLen` bytes after `DB`, with MGF1's
+hash function `G`, that of the table whose address is in the slot
+`sMgfT`. -/
+theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
+    (hGv : Proof.Mgf1.Valid Gs) {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State} {F S p : Addr}
+    (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {e db : Nat} (hd : DbAt H.D e db)
+    (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (E : Env G g t F S p) :
+    WP isa (mgfXor H g) t fun t' => t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) ∧
+      (∀ r ∈ preservedV, (t'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) ∧
+      Frame (mgfWr F S) t.mem t'.mem ∧ t'.syms = t.syms ∧
+      ∀ o, oEm ≤ o → o < oY →
+        t'.mem (off S o) = mixV V (Spec.Mgf1.mgf1 Gs ((List.range H.D).map fun i => V (e + db + i)) db) e db o := by
+  have hfit := hd.fit
+  have he1 := hd.e1
+  have hdb1 := hd.db1
+  have c1 : oY = 3584 := rfl
+  have c7 : oEm = 2560 := rfl
+  have hF := E.F288
+  unfold mgfXor
+  refine WP.alloc (by decide) (by rw [L.sp, mgfFrame_eq]; rw [mgfFrame_eq] at hF; omega) ?_
+  refine WP.seq ?_
+  have asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
+  refine WP.mono (setup_ok L hd h24 h25 E) fun u ⟨K, hsy, hum, L', R5, T, hMF, hMA⟩ => ?_
+  have hsu : u.sp = mF F := by rw [K.sp, asp]
+  have hwu : u.wr = ⟨mF F, 272⟩ :: t.wr := by rw [K.wr]; simp [allocated, L.sp, mF, mgfFrame_eq]
+  have hru : u.rd = t.rd := by rw [K.rd]; rfl
+  have fr0 : Frame [⟨mF F, 272⟩] t.mem u.mem := by rw [hum]; exact argsMem_frame t (mF F) H.D
+  have so : ∀ d, mgfOff ≤ d → off S d = off (off S mgfOff) (d - mgfOff) := fun d hd' => by
+    rw [off_off, Nat.add_sub_cancel' hd']
   refine WP.mono_syms (Proof.RsaOaep.AArch64.Table.mgfXorT_ok hG hGh hGl hGv (sArg := mgfFrame + sMgfT) (by decide)
     T L' R5 hMF hMA) fun u' ⟨_, st, V', W', R', _, hV'⟩ sy' => ?_
   have hsp' : u'.sp = mF F := st.sp.trans hsu
