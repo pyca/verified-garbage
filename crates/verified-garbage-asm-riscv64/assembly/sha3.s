@@ -105,6 +105,108 @@ vg_keccak_absorb:
 	ret
 	.option pop
 
+vg_keccak_absorb_scratch:
+	.option push
+	.option arch, +m, +c
+	addi t0, a5, 0
+	sd ra, 512(t0)
+	sd s2, 520(t0)
+	sd s3, 528(t0)
+	sd s4, 536(t0)
+	sd s5, 544(t0)
+	sd s6, 552(t0)
+	sd s7, 560(t0)
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s4, a2, 0
+	addi s5, a3, 0
+	addi s6, a4, 0
+	addi s7, a5, 0
+	beqz s6, 20f
+22:
+	add t2, s2, s4
+	or t1, t2, s4
+	andi t1, t1, 7
+	addi t4, zero, 8
+	sltu t3, s6, t4
+	or t1, t1, t3
+	andi t4, s5, 7
+	beqz t1, 23f
+	lbu t1, 0(s5)
+	add t2, s2, s4
+	lbu t3, 0(t2)
+	xor t1, t1, t3
+	sb t1, 0(t2)
+	addi s5, s5, 1
+	addi s4, s4, 1
+	addi s6, s6, -1
+	j 24f
+23:
+	beqz t4, 25f
+	lbu t1, 0(s5)
+	lbu t3, 1(s5)
+	slli t3, t3, 8
+	or t1, t1, t3
+	lbu t3, 2(s5)
+	slli t3, t3, 16
+	or t1, t1, t3
+	lbu t3, 3(s5)
+	slli t3, t3, 24
+	or t1, t1, t3
+	lbu t4, 4(s5)
+	lbu t3, 5(s5)
+	slli t3, t3, 8
+	or t4, t4, t3
+	lbu t3, 6(s5)
+	slli t3, t3, 16
+	or t4, t4, t3
+	lbu t3, 7(s5)
+	slli t3, t3, 24
+	or t4, t4, t3
+	slli t4, t4, 32
+	or t1, t1, t4
+	ld t3, 0(t2)
+	xor t1, t1, t3
+	sd t1, 0(t2)
+	addi s5, s5, 8
+	addi s4, s4, 8
+	addi s6, s6, -8
+	j 26f
+25:
+	ld t1, 0(s5)
+	ld t3, 0(t2)
+	xor t1, t1, t3
+	sd t1, 0(t2)
+	addi s5, s5, 8
+	addi s4, s4, 8
+	addi s6, s6, -8
+26:
+24:
+	sub t1, s4, s3
+	beqz t1, 27f
+	j 28f
+27:
+	addi s4, zero, 0
+	addi a0, s2, 0
+	addi a1, s7, 0
+	call {vg_keccak_f1600}
+28:
+	bnez s6, 22b
+	j 21f
+20:
+21:
+	addi a0, s4, 0
+	addi t0, s7, 0
+	ld ra, 512(t0)
+	ld s2, 520(t0)
+	ld s3, 528(t0)
+	ld s4, 536(t0)
+	ld s5, 544(t0)
+	ld s6, 552(t0)
+	ld s7, 560(t0)
+	ret
+	.option pop
+
 vg_keccak_pad:
 	.option push
 	.option arch, +m, +c

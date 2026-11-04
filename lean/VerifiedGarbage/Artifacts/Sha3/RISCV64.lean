@@ -16,6 +16,10 @@ def artifacts : List Artifact := [
     code := Impl.Sha3.RISCV64.Stream.absorb
     stack := 1168
     verified := Proof.Sha3.RISCV64.Stream.absorb_verified },
+  Spec.Sha3.absorbScratchApi.artifact RISCV64.target {
+    code := Impl.Sha3.RISCV64.Stream.absorbWs
+    stack := 608
+    verified := Proof.Sha3.RISCV64.Stream.absorbWs_verified },
   Spec.Sha3.padApi.artifact RISCV64.target {
     code := Impl.Sha3.RISCV64.Stream.pad
     stack := 1136
