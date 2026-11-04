@@ -824,11 +824,12 @@ theorem atOff' (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d :=
 `iI := rows`, `iXp` and `iXl`. -/
 theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
     (hc : ModCtx s B Z o w mi P) {cp xp : Addr} {L rows : Nat}
-    (hCtx : word s.mem B (8 * sCtx) = cp) (hX : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
+    (hsp : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * 6)) 8)
+    (hCtx : word s.mem (s.gpr .rsp) (8 * 6) = cp) (hX : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
     (hXl : word s.mem B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = BitVec.ofNat 64 L)
     (hreg : CtxRd s B Z cp (3 + 34 * w)) (hrows : word s.mem cp 16 = BitVec.ofNat 64 rows) :
-    WP isa (.block (fromOuter sCtx iCtx ++ [.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx,
-      .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
+    WP isa (.block ([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
+      .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++ fromOuter VG.Impl.Ffdh.X86_64.Domain.sX iXp ++
       fromOuter VG.Impl.Ffdh.X86_64.Domain.sXl iXl)) s fun t => ModCtx t B Z o w mi P ∧
       word t.mem (off B o) (8 * iCtx) = cp ∧ word t.mem (off B o) (8 * iRows) = BitVec.ofNat 64 rows ∧
       word t.mem (off B o) (8 * iI) = BitVec.ofNat 64 rows ∧ word t.mem (off B o) (8 * iXp) = xp ∧
@@ -837,11 +838,16 @@ theorem combHead_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : N
   have hlo := hc.sub.lo
   have hhi := hc.sub.hi
   have hn := hc.sub.scr.nowrap
-  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (fromOuter_ok hc (by decide) (by decide) hCtx) fun s₁ ⟨hm₁, hd₁, k₁⟩ => ?_
+  rw [List.append_assoc]
+  change WP isa (.block (([.mov .rdx (.mem (Crt.stk 6)), .store (hdr iCtx) .rdx] ++
+    ([.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx] ++ [.store (hdr iI) .rdx])) ++ _)) s _
+  rw [WP.block_append_iff, WP.block_append_iff]
+  have hg := hc.sub.good
+  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.mem = s.mem.writeW (off (off B o) (8 * iCtx)) cp ∧
+      t.gpr .rdx = cp) (by
+    xrun [State.ea, Crt.stk, hdr, hg.rdi, hdrOff, hsp, hCtx, hg.scr.st (d := 8 * iCtx) (hdr_lt_slot _ 8 (by decide))]) rfl)
+    fun s₁ ⟨⟨hm₁, hd₁⟩, k₁⟩ => ?_
   obtain ⟨hc₁, hf₁, hw₁, ho₁, hin₁, hb₁⟩ := hc.store (by decide) (by decide) hm₁ k₁.2.2 (k₁.gpr (by decide))
-  rw [WP.block_append_iff]
-  change WP isa (.block ([.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx] ++ [.store (hdr iI) .rdx])) s₁ _
   rw [WP.block_append_iff]
   have hg₁ := hc₁.sub.good
   have hr₁ : word s₁.mem cp 16 = BitVec.ofNat 64 rows := by rw [hreg.word hin₁ (by omega)]; exact hrows
@@ -906,7 +912,9 @@ theorem TabP.M_zero (T : TabP) (h1 : 1 < T.P) : T.M 0 = T.R % T.P := by
 /-- `aY := g^x mod p`, by the context's comb over its rows. -/
 theorem comb_ok (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s : State}
     (hc : ModCtx s T.B T.Z T.o T.w T.mi T.P)
-    (hCtx : word s.mem T.B (8 * sCtx) = T.cp) (hX : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
+    (hsp : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * 6)) 8)
+    (hspo : ∀ {m : Mem}, InScr T.B T.Z s.mem m → word m (s.gpr .rsp) (8 * 6) = word s.mem (s.gpr .rsp) (8 * 6))
+    (hCtx : word s.mem (s.gpr .rsp) (8 * 6) = T.cp) (hX : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sX) = xp)
     (hXl : word s.mem T.B (8 * VG.Impl.Ffdh.X86_64.Domain.sXl) = BitVec.ofNat 64 xb.length)
     (hreg : CtxRd s T.B T.Z T.cp T.n) (hrows : word s.mem T.cp 16 = BitVec.ofNat 64 T.rows)
     (hent : ∀ a < 32, row s.mem T.cp T.w (2 + a) = Spec.Rsa.toWords (T.entry a) T.w)
@@ -934,7 +942,8 @@ theorem comb_ok (Mo : Mont) {T : TabP} {xp : Addr} {xb : List Byte} {s : State}
   have hcw : 3 + 34 * T.w = T.n := rfl
   -- The header.
   refine wp_seqs_cons (by simp) (WP.mono (combHead_ok hc₁ (cp := T.cp) (xp := xp) (L := xb.length) (rows := T.rows)
-    (by rw [hh₁ _ (by decide)]; exact hCtx) (by rw [hh₁ _ (by decide)]; exact hX)
+    (by rw [k₁.2.1, k₁.2.2, k₁.gpr (by decide)]; exact hsp)
+    (by rw [k₁.gpr (by decide), hspo hin₁]; exact hCtx) (by rw [hh₁ _ (by decide)]; exact hX)
     (by rw [hh₁ _ (by decide)]; exact hXl) (hcw ▸ hreg.congr k₁.2.1 k₁.2.2)
     (by rw [hreg.word hin₁ (by unfold TabP.n; omega)]; exact hrows))
     fun s₂ ⟨hc₂, hC₂, hR₂, hI₂, hXp₂, hXl₂, hf₂, hin₂, k₂⟩ => ?_)

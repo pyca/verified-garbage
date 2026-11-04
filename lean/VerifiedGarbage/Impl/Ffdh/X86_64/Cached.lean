@@ -36,8 +36,9 @@ open Crt (ws stk leave loadArr zeroArr)
 
 /-! ## Header slots
 
-The outer header keeps `Domain`'s slots. The context's pointer is in `sCtx`,
-a slot neither the attempt nor the precomputation otherwise uses. The inner
+The outer header keeps `Domain`'s slots. The precomputation keeps the
+context's pointer in `sCtx`, a slot it does not otherwise use; the attempt
+reads it from its stack argument. The inner
 (Montgomery) header keeps `Crt.sLink` and, from `sFn 1`, the comb's public
 counters: none of the arithmetic writes the header. -/
 
@@ -161,14 +162,12 @@ namespace Generate
 
 open GenerateKey
 
-/-- `vg_ffdh_generate_key`'s entry, and the context (the sixth stack argument). -/
-def entry : List Instr := GenerateKey.entry ++
-  [.mov .rax (.mem (stk 6)), .store (hdr sCtx) .rax]
-
 /-- The context's public width: `sEl :=` its bytes, `sMsk :=` the mask of
-its first byte's bits, `255 >> (8 bytes - width)`. -/
+its first byte's bits, `255 >> (8 bytes - width)`. The context is the sixth
+stack argument: no stage of the attempt moves `rsp` or writes the stack
+arguments. -/
 def metaLoad : List Instr :=
-  [.mov .rax (.mem (hdr sCtx)), .mov .rsi (.mem (at_ .rax 0)), .mov .rdx (.mem (at_ .rax 8)),
+  [.mov .rax (.mem (stk 6)), .mov .rsi (.mem (at_ .rax 0)), .mov .rdx (.mem (at_ .rax 8)),
     .store (hdr sEl) .rdx, .shift .shl .rdx 3, .alu .sub .rdx (.reg .rsi), .mov .rcx (.reg .rdx),
     .mov32 .rax (.imm 255), .shiftCl .shr .rax, .store (hdr sMsk) .rax]
 
@@ -224,8 +223,8 @@ def step : Prog isa := seqs [mul aY aY aY, zeroArr aXm, digit, select, mul aY aY
 /-- `aY := g^x mod p`, by the context's comb over its rows. -/
 def comb : List (Prog isa) := [
   mul aY aR2 aOne,
-  .block (fromOuter sCtx iCtx ++ [.mov .rdx (.mem (at_ .rdx 16)), .store (hdr iRows) .rdx,
-    .store (hdr iI) .rdx] ++ fromOuter sX iXp ++ fromOuter sXl iXl),
+  .block ([.mov .rdx (.mem (stk 6)), .store (hdr iCtx) .rdx, .mov .rdx (.mem (at_ .rdx 16)),
+    .store (hdr iRows) .rdx, .store (hdr iI) .rdx] ++ fromOuter sX iXp ++ fromOuter sXl iXl),
   .loop (step mul) .ne,
   mul aY aY aOne]
 
@@ -238,7 +237,7 @@ def core : List (Prog isa) := [.block head] ++ pSetup ++ loadArr aXm sX sXl ++
 
 def main : Prog isa := seqs ([Keys.zeroOut sY sK] ++ scalar ++ core mul r2)
 
-def body : Prog isa := .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul r2))
+def body : Prog isa := .seq (.block (GenerateKey.entry ++ domHead)) (.ite .ne (ret 0) (main mul r2))
 
 def code : Prog isa := .seq (body mul r2) (.block exit)
 
