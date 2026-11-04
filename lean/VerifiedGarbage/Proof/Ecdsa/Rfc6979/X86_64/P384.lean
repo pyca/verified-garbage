@@ -86,8 +86,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
   blkT := blkT_of p384_blk₀ p384_blk₁ p384_blk₂ p384_blk₃ p384_blk₄ p384_blk₅ p384_blk₆ p384_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

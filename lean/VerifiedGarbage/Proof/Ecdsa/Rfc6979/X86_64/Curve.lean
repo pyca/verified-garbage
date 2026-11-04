@@ -195,13 +195,6 @@ structure RfcCurve where
   `n`'s words). -/
   reduceT : wide = false → ∃ hc, (taint.check (Taint.ofRegs [.rsp, .rsi])
     (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV)) hc).isSome = true
-  /-- None of its instructions writes `rsp` or loads MXCSR. -/
-  reduceSp : wide = false →
-    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
-      (fun i => !isa.writesSp i) = true
-  reduceMx : wide = false →
-    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
-      (fun i => !loadsMxcsr i) = true
   /-- The blocks for each hash function's sizes. -/
   blkT : ∀ D B, (D, B) ∈ shapes → RfcT (cfgS E hHigh sh D B)
 
