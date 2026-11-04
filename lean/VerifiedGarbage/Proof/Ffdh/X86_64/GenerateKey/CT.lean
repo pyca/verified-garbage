@@ -49,8 +49,9 @@ theorem gk_constantTime (M : Mont) (E : CrtExpL M) (R : R2Impl M) (hE : ExpCTL E
     rw [← keyStatus_scalar _ _, ← keyStatus_scalar _ _, hs]
   have hsv : (gkOf s₁).sv = (gkOf s₂).sv := by
     cases h₁ : (gkOf s₁).sv <;> cases h₂ : (gkOf s₂).sv <;> simp_all
-  simp only [gkOf, r0, r2, r4, r5, a0, a1, a3, a4, hsp, hdom]
+  have hA : gkA s₂ = gkA s₁ := by simp only [gkA, a0, hdom]
+  simp only [gkOf, r0, r2, r4, r5, a0, a1, a3, a4, hsp, hdom, hA]
   congr 1
-  simpa only [gkOf, r0, r1, r2, r3, r4, r5, a0, a1, a2, a3, a4, hsp, hdom] using hsv.symm
+  simpa only [gkOf, r0, r1, r2, r3, r4, r5, a0, a1, a2, a3, a4, hsp, hdom, hA] using hsv.symm
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

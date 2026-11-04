@@ -53,7 +53,7 @@ theorem Inputs.keep {p : GkP} {rb : List Byte} {s t : State} {rs : List Reg} (h 
     exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
 
 /-- Return the public leading byte and exponent length without changing inputs. -/
-theorem scan_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) :
+theorem scan_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hb : p.Bounded) :
     WP isa (seqs VG.Impl.Ffdh.X86_64.Domain.GenerateKey.bound) s fun t =>
       Inputs p rb t ∧ word t.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧
       t.gpr .rax = p.bc.setWidth 64 ∧ Frm p.B scanRanges s.mem t.mem ∧
@@ -68,13 +68,13 @@ theorem scan_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) :
     (h.base.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [GkP.headers])) h.base.dom)
     fun t ⟨hne, _, hn, hax, hf, k⟩ => ?_
   have hf' : Frm p.B scanRanges s.mem t.mem := hf.mono (by simp [scanRanges])
-  refine ⟨h.keep hf' k (by decide), hn, ?_, hf', k⟩
+  refine ⟨h.keep hf' k (by decide), by rw [GkP.n, hb.1]; exact hn, ?_, hf', k⟩
   rw [hax]
-  simp only [GkP.bc, List.getD_eq_getElem?_getD,
+  simp only [GkP.bc, hb.1, List.getD_eq_getElem?_getD,
     List.getElem?_eq_getElem (lead_lt hne), Option.getD_some]
 
 /-- Save the exact leading-byte mask, preserving the scanned length. -/
-theorem smear_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s)
+theorem smear_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hb : p.Bounded)
     (hn : word s.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n) (hax : s.gpr .rax = p.bc.setWidth 64) :
     WP isa (.block VG.Impl.Ffdh.X86_64.Domain.GenerateKey.smear) s fun t =>
       Inputs p rb t ∧ word t.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧
@@ -82,7 +82,7 @@ theorem smear_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s)
   have hZ := h.base.hZ
   refine WP.mono (smear_ok h.base.scr h.rdi (by omega) hax) fun t ⟨hm, hf, k⟩ => ?_
   have hf' : Frm p.B scanRanges s.mem t.mem := hf.mono (by simp [scanRanges])
-  refine ⟨h.keep hf' k (by decide), ?_, hm, hf', k⟩
+  refine ⟨h.keep hf' k (by decide), ?_, by rw [hb.2]; exact hm, hf', k⟩
   rw [hf.word_eq (by simp; decide) (by decide)]
   exact hn
 

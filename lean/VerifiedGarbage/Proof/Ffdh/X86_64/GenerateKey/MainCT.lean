@@ -33,7 +33,8 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X
 
 /-- A checked public modulus with uninitialized output buffers. -/
 def ZeroPre (p : GkP) (s : State) : Prop := ∃ rb, Base p rb s ∧ s.gpr .rdi = p.B ∧
-  word s.mem p.B (8 * sG) = off p.dp p.k ∧ word s.mem p.B (8 * sQ) = off p.dp (2 * p.k) ∧ p.mv = true
+  word s.mem p.B (8 * sG) = off p.dp p.k ∧ word s.mem p.B (8 * sQ) = off p.dp (2 * p.k) ∧ p.mv = true ∧
+    p.Bounded
 
 private def zeroLoads : List Instr :=
   [.mov .rsi (.mem (hdr sY)), .mov .rcx (.mem (hdr sK)), .mov32 .rax (.imm 0)]
@@ -61,12 +62,12 @@ private theorem zero_regs (p : GkP) (s : State) (h : ZeroPre p s) :
 
 private theorem zero_inputs (p : GkP) (s : State) (h : ZeroPre p s) :
     WP isa (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK) s (IV p) := by
-  obtain ⟨rb, hb, hd, hG, hQ, hm⟩ := h
+  obtain ⟨rb, hb, hd, hG, hQ, hm, hbd⟩ := h
   have hZ := hb.hZ
   refine WP.mono (zero_ok hb hd) fun t ⟨hb', hy, _, hh, k⟩ => ?_
   exact ⟨⟨rb, hb', (k.gpr (by decide)).trans hd, hy,
     (hh _ (by change 224 ≤ p.Z; omega)).trans hG,
-    (hh _ (by change 232 ≤ p.Z; omega)).trans hQ⟩, hm⟩
+    (hh _ (by change 232 ≤ p.Z; omega)).trans hQ⟩, hm, hbd⟩
 
 private theorem zero_ct : RelCT isa (Two ZeroPre) (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK) (Two IV) :=
   pin_ct [.rdi] [.rsi, .rcx] zeroVal (pins_rdiB GkP.B fun _ _ h => by obtain ⟨_, _, hd, _⟩ := h; exact hd)

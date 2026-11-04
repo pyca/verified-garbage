@@ -97,14 +97,14 @@ def ScalarPost (p : GkP) (rb : List Byte) (s t : State) : Prop :=
     word t.mem p.B (8 * sG) = off p.dp p.k ∧ word t.mem p.B (8 * sQ) = off p.dp (2 * p.k) ∧
     (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ RunFrame p s.mem t.mem ∧ Keep mmRegs s t
 
-theorem scalar_ok {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hm : p.mv = true) :
+theorem scalar_ok {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hm : p.mv = true) (hbd : p.Bounded) :
     WP isa (seqs scalar) s (ScalarPost p rb s) := by
   unfold scalar
   refine wp_seqs_append (a := VG.Impl.Ffdh.X86_64.Domain.GenerateKey.bound) (by simp [bound]) (by simp)
-    (WP.mono (scan_inputs h) fun u ⟨hu, hn, ha, hf, k₁⟩ => ?_)
+    (WP.mono (scan_inputs h hbd) fun u ⟨hu, hn, ha, hf, k₁⟩ => ?_)
   change WP isa (.seq (.block smear) (.seq (.block cutSetup)
     (.seq (.loop (.block cutBody) .ne) (.block cutFinish)))) u _
-  refine WP.seq (WP.mono (smear_inputs hu hn ha) fun v ⟨hv, hnv, hmask, hfv, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (smear_inputs hu hbd hn ha) fun v ⟨hv, hnv, hmask, hfv, k₂⟩ => ?_)
   refine WP.seq (WP.mono (cutSetup_ok hv hnv hmask) fun z ⟨⟨hr, hmz⟩, k₃⟩ => ?_)
   have hz : Inputs p rb z := hv.keep (by intro a _; rw [hmz]) k₃ (by decide)
   refine WP.seq (WP.mono (cut_inputs hz hr) fun a ⟨ha, hx, hh, h8, hf₄, k₄⟩ => ?_)
@@ -142,7 +142,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X
 theorem main_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
     {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hd : s.gpr .rdi = p.B)
     (hG : word s.mem p.B (8 * sG) = off p.dp p.k) (hQ : word s.mem p.B (8 * sQ) = off p.dp (2 * p.k))
-    (hm : p.mv = true) :
+    (hm : p.mv = true) (hbd : p.Bounded) :
     WP isa (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.main M.mm E.code (.seq (.block r2Head) R.code)) s
       (AttemptPost p rb s) := by
   have hk := h.k1
@@ -161,7 +161,7 @@ theorem main_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M)
     (b := VG.Impl.Ffdh.X86_64.Domain.GenerateKey.core M.mm E.code (.seq (.block r2Head) R.code))
     (by simp [VG.Impl.Ffdh.X86_64.Domain.GenerateKey.scalar])
     (by simp [VG.Impl.Ffdh.X86_64.Domain.GenerateKey.core, pSetup])
-    (WP.mono (scalar_ok ⟨hu, hdi, hy, hg, hq⟩ hm) fun v ⟨hb, hx, hdv, hgv, hqv, hs₂, hf₂, k₂⟩ => ?_)
+    (WP.mono (scalar_ok ⟨hu, hdi, hy, hg, hq⟩ hm hbd) fun v ⟨hb, hx, hdv, hgv, hqv, hs₂, hf₂, k₂⟩ => ?_)
   have hox : OutOk v p.B p.Z p.xp p.k :=
     ⟨fun i hi => by rw [k₂.2.2, k₁.2.2]; exact h.x.wr i hi, h.x.sep⟩
   have hoy : OutOk v p.B p.Z p.yp p.k :=
@@ -211,7 +211,7 @@ theorem body_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s : State} (hpre : gk
     rw [hm] at hm'
     contradiction
   · have hm : (gkOf s).mv = true := by simpa only [Bool.not_eq_false'] using hf
-    refine WP.mono (main_ok M E R hb' hd' hG hQ hm) fun t hh => ?_
+    refine WP.mono (main_ok M E R hb' hd' hG hQ hm (gkOf_bounded s)) fun t hh => ?_
     have hmain := hh
     obtain ⟨_, hdt, _, _, hsave, hframe, kk⟩ := hh
     refine ⟨?_, hdt, (RunFrame.of_scr H).trans hframe,
