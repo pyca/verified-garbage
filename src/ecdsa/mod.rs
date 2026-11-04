@@ -62,8 +62,8 @@ mod p224;
 mod p256;
 mod p384;
 mod p521;
-mod secp256k1;
 mod powerpc64;
+mod secp256k1;
 mod x86_64;
 
 pub use crate::ec::{

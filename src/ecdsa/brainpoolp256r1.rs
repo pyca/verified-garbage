@@ -15,10 +15,10 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 #[cfg(target_arch = "powerpc64")]
 use super::powerpc64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
+#[cfg(target_arch = "x86_64")]
+use super::x86_64::{SignFn as TableSignFn, TableHash, leftmost, sign_with as sign_table};
 use super::{BrainpoolP256r1, Error, SignatureHash, SigningKey, sealed};
 #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 use crate::arch::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign;

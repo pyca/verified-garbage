@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_ecdsa_secp256k1_sign.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
+// The functions of `src/internal/vg_ecdsa_brainpoolp256r1_sign_k.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_ecdsa_secp256k1_sign:
+vg_ecdsa_brainpoolp256r1_sign_k:
 	std %r14, 0(%r7)
 	std %r31, 8(%r7)
 	mflr %r0
@@ -47,53 +47,53 @@ vg_ecdsa_secp256k1_sign:
 	li %r9, 0
 	ldbrx %r8, %r5, %r9
 	std %r8, 1144(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 64559
+	lis %r11, 8046
+	ori %r11, %r11, 21367
 	stw %r11, 64(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
+	lis %r11, 8211
+	ori %r11, %r11, 18461
 	stw %r11, 68(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -10970
+	ori %r11, %r11, 8232
 	stw %r11, 72(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 28219
+	ori %r11, %r11, 63011
 	stw %r11, 76(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -25213
+	ori %r11, %r11, 36210
 	stw %r11, 80(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 15974
+	ori %r11, %r11, 2704
 	stw %r11, 84(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -24082
+	ori %r11, %r11, 43452
 	stw %r11, 88(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -22021
+	ori %r11, %r11, 22491
 	stw %r11, 92(%r3)
-	lis %r11, -12234
-	ori %r11, %r11, 16705
+	lis %r11, -26808
+	ori %r11, %r11, 22183
 	stw %r11, 96(%r3)
-	lis %r11, -16430
-	ori %r11, %r11, 24204
+	lis %r11, -28642
+	ori %r11, %r11, 3714
 	stw %r11, 100(%r3)
-	lis %r11, -20664
-	ori %r11, %r11, 41019
+	lis %r11, -19103
+	ori %r11, %r11, 42743
 	stw %r11, 104(%r3)
-	lis %r11, -17746
-	ori %r11, %r11, 56550
+	lis %r11, -29639
+	ori %r11, %r11, 31395
 	stw %r11, 108(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
+	lis %r11, -25213
+	ori %r11, %r11, 36209
 	stw %r11, 112(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 15974
+	ori %r11, %r11, 2704
 	stw %r11, 116(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -24082
+	ori %r11, %r11, 43452
 	stw %r11, 120(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -22021
+	ori %r11, %r11, 22491
 	stw %r11, 124(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
@@ -143,221 +143,221 @@ vg_ecdsa_secp256k1_sign:
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 220(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 977
+	lis %r11, -8047
+	ori %r11, %r11, 44169
 	stw %r11, 224(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
+	lis %r11, -8212
+	ori %r11, %r11, 47074
 	stw %r11, 228(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 10969
+	ori %r11, %r11, 57303
 	stw %r11, 232(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -28220
+	ori %r11, %r11, 2524
 	stw %r11, 236(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 25212
+	ori %r11, %r11, 29325
 	stw %r11, 240(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -15975
+	ori %r11, %r11, 62831
 	stw %r11, 244(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 24081
+	ori %r11, %r11, 22083
 	stw %r11, 248(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 22020
+	ori %r11, %r11, 43044
 	stw %r11, 252(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 26985
+	ori %r11, %r11, 25185
 	stw %r11, 256(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -10799
+	ori %r11, %r11, 36575
 	stw %r11, 260(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -15918
+	ori %r11, %r11, 3172
 	stw %r11, 264(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -22911
+	ori %r11, %r11, 9201
 	stw %r11, 268(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 25496
+	ori %r11, %r11, 21870
 	stw %r11, 272(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -27156
+	ori %r11, %r11, 7774
 	stw %r11, 276(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -10650
+	ori %r11, %r11, 48151
 	stw %r11, 280(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 7750
+	ori %r11, %r11, 30379
 	stw %r11, 284(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 20517
+	lis %r11, 16962
+	ori %r11, %r11, 55885
 	stw %r11, 288(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 21
+	lis %r11, 4470
+	ori %r11, %r11, 59480
 	stw %r11, 292(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 25845
+	ori %r11, %r11, 15883
 	stw %r11, 296(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 8265
+	ori %r11, %r11, 57053
 	stw %r11, 300(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 2008
+	ori %r11, %r11, 48523
 	stw %r11, 304(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 11871
+	ori %r11, %r11, 51642
 	stw %r11, 308(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -11285
+	ori %r11, %r11, 23483
 	stw %r11, 312(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 17054
+	ori %r11, %r11, 57442
 	stw %r11, 316(%r3)
-	lis %r11, 18558
-	ori %r11, %r11, 8343
+	lis %r11, 13599
+	ori %r11, %r11, 53516
 	stw %r11, 320(%r3)
-	lis %r11, -10442
-	ori %r11, %r11, 11866
+	lis %r11, 10176
+	ori %r11, %r11, 55597
 	stw %r11, 324(%r3)
-	lis %r11, 10684
-	ori %r11, %r11, 26331
+	lis %r11, -18052
+	ori %r11, %r11, 62218
 	stw %r11, 328(%r3)
-	lis %r11, 8990
-	ori %r11, %r11, 10579
+	lis %r11, -32546
+	ori %r11, %r11, 19866
 	stw %r11, 332(%r3)
-	lis %r11, 13309
-	ori %r11, %r11, 4764
+	lis %r11, 27529
+	ori %r11, %r11, 10963
 	stw %r11, 336(%r3)
-	lis %r11, -26721
-	ori %r11, %r11, 18624
+	lis %r11, 28748
+	ori %r11, %r11, 12573
 	stw %r11, 340(%r3)
-	lis %r11, -5880
-	ori %r11, %r11, 40776
+	lis %r11, -25071
+	ori %r11, %r11, 39903
 	stw %r11, 344(%r3)
-	lis %r11, -26239
-	ori %r11, %r11, 58947
+	lis %r11, -29153
+	ori %r11, %r11, 30330
 	stw %r11, 348(%r3)
-	lis %r11, -11301
-	ori %r11, %r11, 44002
+	lis %r11, -24431
+	ori %r11, %r11, 31255
 	stw %r11, 352(%r3)
-	lis %r11, -20130
-	ori %r11, %r11, 42706
+	lis %r11, -26033
+	ori %r11, %r11, 59720
 	stw %r11, 356(%r3)
-	lis %r11, 7965
-	ori %r11, %r11, 50765
+	lis %r11, -12907
+	ori %r11, %r11, 354
 	stw %r11, 360(%r3)
-	lis %r11, -29188
-	ori %r11, %r11, 23901
+	lis %r11, -23016
+	ori %r11, %r11, 62041
 	stw %r11, 364(%r3)
-	lis %r11, -21479
-	ori %r11, %r11, 49462
+	lis %r11, -8259
+	ori %r11, %r11, 35587
 	stw %r11, 368(%r3)
-	lis %r11, 28854
-	ori %r11, %r11, 46490
+	lis %r11, 5885
+	ori %r11, %r11, 63208
 	stw %r11, 372(%r3)
-	lis %r11, -11099
-	ori %r11, %r11, 33494
+	lis %r11, 622
+	ori %r11, %r11, 45218
 	stw %r11, 376(%r3)
-	lis %r11, -12481
-	ori %r11, %r11, 34079
+	lis %r11, 5355
+	ori %r11, %r11, 30918
 	stw %r11, 380(%r3)
-	lis %r11, 26583
-	ori %r11, %r11, 53568
+	lis %r11, 13074
+	ori %r11, %r11, 64678
 	stw %r11, 384(%r3)
-	lis %r11, -30356
-	ori %r11, %r11, 61972
+	lis %r11, -7720
+	ori %r11, %r11, 55518
 	stw %r11, 388(%r3)
-	lis %r11, 3708
-	ori %r11, %r11, 63608
+	lis %r11, 4404
+	ori %r11, %r11, 58528
 	stw %r11, 392(%r3)
-	lis %r11, 29716
-	ori %r11, %r11, 38594
+	lis %r11, -3235
+	ori %r11, %r11, 5994
 	stw %r11, 396(%r3)
-	lis %r11, 23501
-	ori %r11, %r11, 1990
+	lis %r11, 27777
+	ori %r11, %r11, 23728
 	stw %r11, 400(%r3)
-	lis %r11, -6505
-	ori %r11, %r11, 62948
+	lis %r11, -25729
+	ori %r11, %r11, 9703
 	stw %r11, 404(%r3)
-	lis %r11, -32314
-	ori %r11, %r11, 39877
+	lis %r11, -15581
+	ori %r11, %r11, 26466
 	stw %r11, 408(%r3)
-	lis %r11, -25241
-	ori %r11, %r11, 7381
+	lis %r11, 2853
+	ori %r11, %r11, 61881
 	stw %r11, 412(%r3)
-	lis %r11, 12233
-	ori %r11, %r11, 48831
+	lis %r11, 26807
+	ori %r11, %r11, 43353
 	stw %r11, 416(%r3)
-	lis %r11, 16429
-	ori %r11, %r11, 41331
+	lis %r11, 28641
+	ori %r11, %r11, 61821
 	stw %r11, 420(%r3)
-	lis %r11, 20663
-	ori %r11, %r11, 24516
+	lis %r11, 19102
+	ori %r11, %r11, 22792
 	stw %r11, 424(%r3)
-	lis %r11, 17745
-	ori %r11, %r11, 8985
+	lis %r11, 29638
+	ori %r11, %r11, 34140
 	stw %r11, 428(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
+	lis %r11, 25212
+	ori %r11, %r11, 29326
 	stw %r11, 432(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -15975
+	ori %r11, %r11, 62831
 	stw %r11, 436(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 24081
+	ori %r11, %r11, 22083
 	stw %r11, 440(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 22020
+	ori %r11, %r11, 43044
 	stw %r11, 444(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 64557
+	lis %r11, 8046
+	ori %r11, %r11, 21365
 	stw %r11, 448(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
+	lis %r11, 8211
+	ori %r11, %r11, 18461
 	stw %r11, 452(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -10970
+	ori %r11, %r11, 8232
 	stw %r11, 456(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 28219
+	ori %r11, %r11, 63011
 	stw %r11, 460(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -25213
+	ori %r11, %r11, 36210
 	stw %r11, 464(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 15974
+	ori %r11, %r11, 2704
 	stw %r11, 468(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -24082
+	ori %r11, %r11, 43452
 	stw %r11, 472(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -22021
+	ori %r11, %r11, 22491
 	stw %r11, 476(%r3)
-	lis %r11, -12234
-	ori %r11, %r11, 16703
+	lis %r11, -26808
+	ori %r11, %r11, 22181
 	stw %r11, 480(%r3)
-	lis %r11, -16430
-	ori %r11, %r11, 24204
+	lis %r11, -28642
+	ori %r11, %r11, 3714
 	stw %r11, 484(%r3)
-	lis %r11, -20664
-	ori %r11, %r11, 41019
+	lis %r11, -19103
+	ori %r11, %r11, 42743
 	stw %r11, 488(%r3)
-	lis %r11, -17746
-	ori %r11, %r11, 56550
+	lis %r11, -29639
+	ori %r11, %r11, 31395
 	stw %r11, 492(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
+	lis %r11, -25213
+	ori %r11, %r11, 36209
 	stw %r11, 496(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, 15974
+	ori %r11, %r11, 2704
 	stw %r11, 500(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -24082
+	ori %r11, %r11, 43452
 	stw %r11, 504(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
+	lis %r11, -22021
+	ori %r11, %r11, 22491
 	stw %r11, 508(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
@@ -383,29 +383,29 @@ vg_ecdsa_secp256k1_sign:
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 540(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 977
+	lis %r11, -8047
+	ori %r11, %r11, 44169
 	stw %r11, 544(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
+	lis %r11, -8212
+	ori %r11, %r11, 47074
 	stw %r11, 548(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 10969
+	ori %r11, %r11, 57303
 	stw %r11, 552(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -28220
+	ori %r11, %r11, 2524
 	stw %r11, 556(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 25212
+	ori %r11, %r11, 29325
 	stw %r11, 560(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, -15975
+	ori %r11, %r11, 62831
 	stw %r11, 564(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 24081
+	ori %r11, %r11, 22083
 	stw %r11, 568(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
+	lis %r11, 22020
+	ori %r11, %r11, 43044
 	stw %r11, 572(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
@@ -600,7 +600,7 @@ vg_ecdsa_secp256k1_sign:
 	std %r4, 3408(%r3)
 	ld %r4, 600(%r3)
 	std %r4, 3416(%r3)
-	bl {vg_secp256k1_point_a0_double}
+	bl {vg_brainpoolp256r1_point_double}
 	ld %r4, 3232(%r3)
 	std %r4, 3328(%r3)
 	ld %r4, 3240(%r3)
@@ -625,7 +625,7 @@ vg_ecdsa_secp256k1_sign:
 	std %r4, 3408(%r3)
 	ld %r4, 3320(%r3)
 	std %r4, 3416(%r3)
-	bl {vg_secp256k1_point_a0_add_affine}
+	bl {vg_brainpoolp256r1_point_add}
 	add %r4, %r3, %r31
 	lbz %r4, 4096(%r4)
 	li %r5, 0
@@ -718,11 +718,11 @@ vg_ecdsa_secp256k1_sign:
 	li %r4, 992
 	li %r5, 992
 	li %r6, 992
-	bl {vg_secp256k1_mul_mod_p}
+	bl {vg_brainpoolp256r1_mul_mod_p}
 	li %r4, 1024
 	li %r5, 992
 	li %r6, 576
-	bl {vg_secp256k1_mul_mod_p}
+	bl {vg_brainpoolp256r1_mul_mod_p}
 	add %r4, %r3, %r31
 	lbz %r4, 4352(%r4)
 	li %r5, 0
@@ -756,19 +756,19 @@ vg_ecdsa_secp256k1_sign:
 	li %r4, 1152
 	li %r5, 512
 	li %r6, 992
-	bl {vg_secp256k1_mul_mod_p}
+	bl {vg_brainpoolp256r1_mul_mod_p}
 	li %r4, 1184
 	li %r5, 1152
 	li %r6, 192
-	bl {vg_secp256k1_mul_mod_p}
+	bl {vg_brainpoolp256r1_mul_mod_p}
 	li %r4, 1216
 	li %r5, 1184
 	li %r6, 160
-	bl {vg_secp256k1_add_mod_n}
+	bl {vg_brainpoolp256r1_add_mod_n}
 	li %r4, 1248
 	li %r5, 1056
 	li %r6, 384
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r0, 0
 	ori %r0, %r0, 65535
 	oris %r0, %r0, 65535
@@ -941,11 +941,11 @@ vg_ecdsa_secp256k1_sign:
 	li %r4, 992
 	li %r5, 992
 	li %r6, 992
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1024
 	li %r5, 992
 	li %r6, 1248
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	add %r4, %r3, %r31
 	lbz %r4, 4608(%r4)
 	li %r5, 0
@@ -979,31 +979,31 @@ vg_ecdsa_secp256k1_sign:
 	li %r4, 1280
 	li %r5, 1216
 	li %r6, 384
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1312
 	li %r5, 1088
 	li %r6, 384
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1344
 	li %r5, 1120
 	li %r6, 384
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1376
 	li %r5, 1280
 	li %r6, 1312
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1376
 	li %r5, 1376
 	li %r6, 1344
-	bl {vg_secp256k1_add_mod_n}
+	bl {vg_brainpoolp256r1_add_mod_n}
 	li %r4, 1408
 	li %r5, 992
 	li %r6, 1376
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r4, 1440
 	li %r5, 1408
 	li %r6, 192
-	bl {vg_secp256k1_mul_mod_n}
+	bl {vg_brainpoolp256r1_mul_mod_n}
 	ld %r5, 1440(%r3)
 	ld %r4, 1448(%r3)
 	or %r5, %r5, %r4
