@@ -98,6 +98,16 @@ theorem shift_taint (h : Pins Φ [.r14, .r21]) : RelCT isa (Two Φ) (shift H) fu
   two_taint [.r14, .r21] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [.r14, .r21])
     (c := shift H) (c' := shift Hd) (by rfl) (by taint_decide))
 
+theorem fixUpd_taint (h : Pins Φ []) : RelCT isa (Two Φ)
+    (.block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)]) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)])
+    (c' := .block [.li .r4 0, .addi .r5 .r14 0, .addi .r6 .r19 0]) (by rfl) (by taint_decide))
+
+theorem fixFin_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block [.addi .r4 .r19 (8 + H.D)]) fun _ _ => True :=
+  two_taint [] h (isSome_check_of_zImm (τ := VG.PPC64LE.Taint.ofRegs [])
+    (c := .block [.addi .r4 .r19 (8 + H.D)]) (c' := .block [.addi .r4 .r19 0]) (by rfl) (by taint_decide))
+
 /-- The taint checks of the blocks of `ctHash` that depend on the hash
 function's Merkle–Damgård code (its block size's shifts and its length
 field's code), which each instance decides. -/
