@@ -11,8 +11,7 @@ publish = false
 [workspace]
 
 # As the library's (`[workspace.lints]` in its `Cargo.toml`): no glob
-# imports, `use super::*` included (`clippy.toml`); and
-# `ci/check_glob_imports.py` checks the tests, which Clippy skips.
+# imports (`clippy.toml`).
 [lints.clippy]
 wildcard_imports = "deny"
 

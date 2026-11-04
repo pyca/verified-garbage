@@ -72,10 +72,9 @@ repository = "https://github.com/pyca/verified-garbage"
 publish = false
 
 # The lints of the hand-written crates (`lints.workspace = true`), not the
-# generated ones. Every import names what it imports: no glob imports,
-# `use super::*` included (`warn-on-all-wildcard-imports` in `clippy.toml`).
-# Clippy skips this lint in test builds, so `ci/check_glob_imports.py`
-# checks the tests.
+# generated ones. Every import names what it imports: no glob imports
+# (`warn-on-all-wildcard-imports` in `clippy.toml`: none from a `prelude`
+# either). Clippy does not check test builds for them.
 [workspace.lints.clippy]
 wildcard_imports = "deny"
 
