@@ -9,9 +9,9 @@
 //! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
 //! digest.
 //!
-//! `vg_sha224_finalize` (and, on AArch64 and x86-64, `vg_sha224_digest`)
-//! has a variant for each of SHA-256's, chosen the same way (see
-//! `super::sha256`).
+//! `vg_sha224_finalize` (and, on AArch64, PPC64LE, RISC-V and x86-64,
+//! `vg_sha224_digest`) has a variant for each of SHA-256's, chosen the same
+//! way (see `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -36,7 +36,12 @@ use crate::arch::sha256::{vg_sha224_finalize_sha2, vg_sha256_update_sha2};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
 
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
 use crate::arch::sha256::vg_sha224_digest;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha256::vg_sha224_digest_sha2;
@@ -62,7 +67,12 @@ super::streaming_hash!(
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA224_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha256_update_avx2, vg_sha224_finalize_avx2),
         },
-        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
+        digests: #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "x86_64",
+            all(target_arch = "powerpc64", target_endian = "little"),
+            target_arch = "riscv64"
+        ))] {
             Scalar => vg_sha224_digest,
             #[cfg(target_arch = "aarch64")]
             Sha2 => vg_sha224_digest_sha2,
