@@ -1628,7 +1628,11 @@ call {vg_brainpoolp256r1_mul_mod_p}
 .insn 2, 0x8082
 .option pop",
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
-        vg_brainpoolp256r1_mul = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
+        vg_brainpoolp256r1_mul = sym super::ecdh_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_mul.rs"]
+pub(crate) mod vg_brainpoolp256r1_mul;
