@@ -9,9 +9,8 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 seed with SHA-512 for every signature; the digest depends on the seed alone.
 A caller may retain that 64-byte digest (the input to `expandSecret`: the
 secret scalar's bytes, then the nonce prefix) together with the public key
-derived in §5.1.5, rather than computing them again for each signature, as
-`signCachedContract` (`CachedSign.lean`) already lets it retain the public
-key. This contract requires both correspondences explicitly: some seed
+derived in §5.1.5, rather than computing them again for each signature.
+This contract requires both correspondences explicitly: some seed
 must have the digest at `expanded` and the public key at `pk`. It retains
 the complete `sign seed message` postcondition for every such seed: the
 signature is the one RFC 8032 specifies for the seed. It does not specify
@@ -20,7 +19,7 @@ of a seed.
 
 The seed itself is not a parameter: a signature depends on the seed only
 through its SHA-512 digest, which keeps the arguments in registers on
-every target. `signCachedContract` remains available unchanged. No buffer contents may affect timing, including the cached
+every target. No buffer contents may affect timing, including the cached
 digest and public key.
 -/
 
