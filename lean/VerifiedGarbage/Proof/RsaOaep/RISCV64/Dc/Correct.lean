@@ -6,6 +6,7 @@ module
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Out
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 public import VerifiedGarbage.Proof.HashTable.RISCV64
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.ByLen
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -31,9 +32,10 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 operation (`priv_ok`), the check of `k ≥ 2 hLen + 2` (public), then either
 zeros and the result `r = 2 ? 2 : 0` (`decFail_ok`, which is what `decOut`
 says for a too short `k`) or the decoding (`decMain_ok`), and the restores:
-RSAES-OAEP-DECRYPT (RFC 8017 §7.1.2), with MGF1's hash function the
-table's. `code_correct`: the function against its contract, for the tables
-of `vs` (`tab_ofD`: the table is one of them, whose hash function it
+RSAES-OAEP-DECRYPT (RFC 8017 §7.1.2), with the label's hash function and
+MGF1's those of the tables, the code for the label's digest length chosen by
+`byLen`. `code_correct`: the function against its contract, for the tables
+of `vs` (`tab_ofD`: each table is one of them, whose hash function it
 names).
 -/
 
@@ -80,7 +82,8 @@ theorem labB_eq {m : Mem} (hm : Frame [kD s, scR s] s.mem m) :
 theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) (hHF : H.F ≤ 208) (hGF : G.F ≤ 208)
     {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D)
     (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
-    (hGv : Proof.Mgf1.Valid Gs) {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {v : State}
+    (hGv : Proof.Mgf1.Valid Gs) {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16))
+    (TL : TabS H f 15 (SD s) s (stackArg s 15)) {v : State}
     (A : AfterPriv s v) (hsy : v.syms = s.syms) (hk : 2 * H.D + 2 ≤ kk s) :
     WP isa (decMain H f) v fun u => Saves s u ∧ u.rd = s.rd ∧
       Spec.RsaOaep.writtenDecrypt u.mem (s.gpr .a0) (s.gpr .a2) (kk s) ((u.gpr .a0).setWidth 32)
@@ -99,9 +102,9 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) (hHF : H.F ≤ 2
   unfold decMain
   -- `EM` unmasked.
   refine unmask_ok P hG hGF (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega) (by omega) b0 hsy
-    fun t₁ b₁ _ v₁ => ?_
-  -- The label's hash.
-  refine WP.seq (WP.mono (hashLabel_ok P hH hHF A.mem b₁) fun t₂ ⟨b₂, _, s₂, h₂⟩ => ?_)
+    fun t₁ b₁ y₁ v₁ => ?_
+  -- The label's hash, through its table.
+  refine WP.seq (WP.mono (hashLabelT_ok P hH hHF A.mem (tabS_wmL P TL A.mem) b₁ y₁) fun t₂ ⟨⟨b₂, _, s₂, h₂⟩, _⟩ => ?_)
   -- `lHash'` against `lHash`.
   refine WP.seq (WP.mono (accLh_ok P hD hD0 (by omega) (by omega) b₂) fun t₃ ⟨b₃, m₃, g₃, a₃⟩ => ?_)
   -- The scan.
@@ -230,6 +233,12 @@ theorem AfterPriv.only {s v v' : State} {rs : List Reg} (A : AfterPriv s v) (P :
   rw [← hm] at b
   exact ⟨b.only (fits P rfl rfl) o hrs, hm ▸ A.mem, hm ▸ A.em⟩
 
+/-- The tail for a digest length, which is all it uses of the hash
+function's shape. -/
+theorem decTail_D {G G' : Hash} (hD : G.D = G'.D) (f : Fns) : decTail G f = decTail G' f := by
+  simp only [Dec.decTail, Dec.decMain, chkK, Dec.accLh, Dec.scan, Dec.tArgs, Dec.copyT, Dec.decRet, seedArgs,
+    dbArgs, hD]
+
 /-- `EM` too short for the hash: what decryption returns, from the private
 operation's result. -/
 theorem decOut_short' {Hs Gs : Spec.Mgf1.Hash} {lab : List Byte} {o : Spec.Rsa.Outcome} {k : Nat}
@@ -243,10 +252,11 @@ variable {H G : Hash} (hH : HashOK H) (hG : HashOK G) (fH : H.F ≤ 208) (fG : G
   {Hs Gs : Spec.Mgf1.Hash}
   (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
   (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
-  {f : Fns} {s : State} (P : PreD s) (T : TabS G f 15 (SD s) s (stackArg s 15))
-include hH hG fH fG hHh hHl hHv hGh hGl hGv P T
+  {f : Fns} {s : State} (P : PreD s) (T : TabS G f 16 (SD s) s (stackArg s 16))
+  (TL : TabS H f 15 (SD s) s (stackArg s 15))
+include hH hG fH fG hHh hHl hHv hGh hGl hGv P T TL
 
-omit hH hG fH fG hHh hHv hGh hGl hGv T in
+omit hH hG fH fG hHh hHv hGh hGl hGv T TL in
 theorem fail_done {v : State} (A : AfterPriv s v) (hk : kk s < 2 * H.D + 2) :
     WP isa decFail v (Done Hs Gs s) := by
   have hrc := rcOf_le (privO s)
@@ -275,7 +285,7 @@ theorem fail_done {v : State} (A : AfterPriv s v) (hk : kk s < 2 * H.D + 2) :
   · rw [ifp h2]; exact ⟨by rw [h3, ifp h2]; decide, hout, hml⟩
   · rw [ifn h2]; exact ⟨by rw [h3, ifn h2]; decide, hout, hml⟩
 
-omit hH hG fH fG hHh hHl hHv hGh hGl hGv T in
+omit hH hG fH fG hHh hHl hHv hGh hGl hGv T TL in
 /-- The check of `k`: in `a0`, whether it is too short. -/
 theorem chk_ok (hD64 : H.D ≤ 64) {v : State} (A : AfterPriv s v) :
     WP isa (.block (chkK H)) v fun v' => AfterPriv s v' ∧ (v'.gpr .a0 != 0) = decide (kk s < 2 * H.D + 2) := by
@@ -293,77 +303,104 @@ theorem ite_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms)
     (r0 : (v.gpr .a0 != 0) = decide (kk s < 2 * H.D + 2)) :
     WP isa (.ite (.nonzero .a0) decFail (decMain H f)) v (Done Hs Gs s) :=
   WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P A (by rw [r0] at hc; simpa using hc))
-    (fun hc => WP.mono (decMain_ok P hH hG fH fG hHh hHl hHv hGh hGl hGv T A hsy
+    (fun hc => WP.mono (decMain_ok P hH hG fH fG hHh hHl hHv hGh hGl hGv T TL A hsy
       (by rw [r0] at hc; simp at hc; omega)) fun u ⟨sv, _, hw⟩ => ⟨sv, hw⟩)
 
 theorem checks_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms) :
     WP isa (.block (chkK H)) v fun v' =>
       WP isa (.ite (.nonzero .a0) decFail (decMain H f)) v' (Done Hs Gs s) :=
   WP.mono_syms (chk_ok P hH.hD64 A) fun _ ⟨A', r0⟩ y =>
-    ite_done hH hG fH fG hHh hHl hHv hGh hGl hGv P T A' (y.trans hsy) r0
+    ite_done hH hG fH fG hHh hHl hHv hGh hGl hGv P T TL A' (y.trans hsy) r0
 
-theorem code_ok : WP isa (decrypt H f) s (Post Hs Gs s) := by
+theorem code_ok (hl : H.D ∈ lens) : WP isa (decrypt f) s (Post Hs Gs s) := by
+  have hD64 := hH.hD64
   refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P E) fun v A y₂ => ?_)
-  refine WP.seq (WP.mono (checks_done hH hG fH fG hHh hHl hHv hGh hGl hGv P T A (y₂.trans y₁)) fun v' h =>
-    WP.seq (WP.mono h fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩))
-  show Spec.RsaOaep.writtenDecrypt w.mem _ _ _ ((w.gpr .a0).setWidth 32) _
-  rw [hm, h3]
-  exact res
+  -- The label's hash function's digest length to `a0`.
+  have TL' := tabS_wmL P TL A.mem
+  refine WP.seq (WP.of_syms ?_)
+  show WP isa (.block (tword .a0 15 4 ++ [])) v _
+  refine wp_tword TL' A.base (k := 4) (by decide) (d := .a0) fun v₁ o₁ e₁ => wp_nil fun y₃ => ?_
+  have e0 : v₁.gpr .a0 = BitVec.ofNat 64 H.D := e₁.trans TL'.d
+  -- The code for that length.
+  refine WP.seq (byLen_ok (D := H.D) (by omega)
+    (F := fun u => AfterPriv s u ∧ u.syms = s.syms ∧ u.gpr .a0 = BitVec.ofNat 64 H.D)
+    (fun _ h => h.2.2) (fun u u' ⟨A', y', r0'⟩ o y => ⟨A'.only P o, y.trans y', by rw [o.get .a0]; exact r0'⟩) ?_
+    hl (fun x hx => (lens_certs x hx).1) v₁ ⟨A.only P o₁, y₃.trans (y₂.trans y₁), e0⟩)
+  intro u ⟨A', y', _⟩
+  rw [decTail_D (G := ofLen H.D) (G' := H) rfl]
+  exact WP.seq (WP.mono (checks_done hH hG fH fG hHh hHl hHv hGh hGl hGv P T TL A' y') fun v' h => WP.mono h
+    fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, by
+      show Spec.RsaOaep.writtenDecrypt w.mem _ _ _ ((w.gpr .a0).setWidth 32) _
+      rw [hm, h3]; exact res⟩)
 
 end
 
-/-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
-theorem tabS_entryD {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
-    (h : (decSpec Hs (tables vs)).pre s) {w : TVar} (hw : w ∈ vs)
+/-- The label's hash function's table, on entry, if it is `w`'s: what its
+calls need of it. -/
+theorem tabS_entryDL {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
+    (hpw : (Proof.HashTable.RISCV64.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : TVar}
+    (hw : w ∈ vs)
     (hh : Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s (Proof.HashTable.RISCV64.tableOf w))) :
     TabS w.H (fnsOf vs) 15 (SD s) s (stackArg s 15) := by
-  have P := preD_of h
-  refine Proof.HashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.alt P.wt (A := aR s)
+  refine Proof.HashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.altl P.wtl (A := aR s)
     (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
-    (by rw [P.hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-        (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))))))))) (P.kt.sub_left kR_sub)
-    (P.st.sub_left (sc_sub P)) hc (spec_tabD h).2 hw hh
+    (by rw [P.hrd]; iterate 9 apply List.mem_cons_of_mem
+        exact List.mem_cons_self ..) (P.ktl.sub_left kR_sub)
+    (P.stl.sub_left (sc_sub P)) hc hpw hw hh
   rw [Proof.RsaOaep.RISCV64.stackArgAddr_eq]
   exact Offset.sub_base _ (by omega)
 
-/-- MGF1's table, on entry: one of the tables of `vs`, which holds what MGF1
-needs of it and names its hash function. -/
-theorem tab_ofD {Hs : Spec.Mgf1.Hash} {vs : List TVar} (hc : Coh vs) {s : State}
-    (h : (decSpec Hs (tables vs)).pre s) :
-    ∃ w ∈ vs, TabS w.H (fnsOf vs) 15 (SD s) s (stackArg s 15) ∧
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some w.l.G := by
-  obtain ⟨⟨T, hT, hh⟩, -⟩ := spec_tabD h
+/-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
+theorem tabS_entryD {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
+    (hpw : (Proof.HashTable.RISCV64.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : TVar}
+    (hw : w ∈ vs)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s (Proof.HashTable.RISCV64.tableOf w))) :
+    TabS w.H (fnsOf vs) 16 (SD s) s (stackArg s 16) := by
+  refine Proof.HashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.alt P.wt (A := aR s)
+    (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
+    (by rw [P.hrd]; iterate 10 apply List.mem_cons_of_mem
+        exact List.mem_cons_self ..) (P.kt.sub_left kR_sub)
+    (P.st.sub_left (sc_sub P)) hc hpw hw hh
+  rw [Proof.RsaOaep.RISCV64.stackArgAddr_eq]
+  exact Offset.sub_base _ (by omega)
+
+/-- The tables, on entry: each one of the tables of `vs`, which names its
+hash function and holds what the calls through it need. -/
+theorem tab_ofD {vs : List TVar} (hc : Coh vs) {s : State} (h : (decSpec (tables vs)).pre s) :
+    ∃ w₁ ∈ vs, ∃ w ∈ vs, Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some w₁.l.G ∧
+      Spec.HashTable.hashAt 64 s.mem (stackArg s 16) = some w.l.G ∧
+      TabS w₁.H (fnsOf vs) 15 (SD s) s (stackArg s 15) ∧ TabS w.H (fnsOf vs) 16 (SD s) s (stackArg s 16) := by
+  obtain ⟨⟨T₁, hT₁, hh₁⟩, ⟨T, hT, hh⟩, hpw⟩ := spec_tabD h
+  obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  exact ⟨w, hw, tabS_entryD hc h hw hh,
-    Proof.HashTable.RISCV64.hashAt_tableOf (Proof.HashTable.RISCV64.held_tableOf hh).2.1⟩
+  have hpw' := hpw.sublist (List.sublist_append_left _ _)
+  have P := preD_of h
+  exact ⟨w₁, hw₁, w, hw, Proof.HashTable.RISCV64.hashAt_tableOf (Proof.HashTable.RISCV64.held_tableOf hh₁).2.1,
+    Proof.HashTable.RISCV64.hashAt_tableOf (Proof.HashTable.RISCV64.held_tableOf hh).2.1,
+    tabS_entryDL hc P hpw' hw₁ hh₁, tabS_entryD hc P hpw' hw hh⟩
 
-section
-variable {H : Hash} (hH : HashOK H) (fH : H.F ≤ 208) {Hs : Spec.Mgf1.Hash}
-  (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
-include hH fH hHh hHl hHv
-
-/-- The correctness of `vg_rsa_oaep_<H>_mgf1_decrypt`, against its contract,
-for the tables of `vs`. -/
-theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (decSpec Hs (tables vs)).pre s) :
-    ∃ t s', Exec isa (decrypt H (fnsOf vs)) s t s' ∧ abiPreserved s s' ∧ (decSpec Hs (tables vs)).post s s' := by
-  obtain ⟨w, -, T, hT⟩ := tab_ofD hc h
+/-- The correctness of `vg_rsa_oaep_decrypt`, against its contract, for the
+tables of `vs`. -/
+theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (decSpec (tables vs)).pre s) :
+    ∃ t s', Exec isa (decrypt (fnsOf vs)) s t s' ∧ abiPreserved s s' ∧ (decSpec (tables vs)).post s s' := by
+  obtain ⟨w₁, -, w, -, hH, hG, TL, T⟩ := tab_ofD hc h
   have P : PreD s := preD_of h
-  obtain ⟨t, s', he, habi, hr⟩ := code_ok hH w.l.ok fH w.l.fits hHh hHl hHv w.l.hash w.l.len w.l.valid P T
+  obtain ⟨t, s', he, habi, hr⟩ := code_ok w₁.l.ok w.l.ok w₁.l.fits w.l.fits w₁.l.hash w₁.l.len w₁.l.valid
+    w.l.hash w.l.len w.l.valid P T TL w₁.l.lens_mem
   refine ⟨t, s', he, habi, ?_⟩
   have e : stackBytes = 3471 + 1 := rfl
   unfold decSpec
   rw [e]
-  sig_post [Spec.RsaOaep.decryptTableContract, Spec.RsaOaep.decryptTableSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
-  intro G hG
-  rw [hT] at hG
-  cases hG
+  sig_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.HashTable.param, Abi.withTables, abi, argRegs, stackArgs_seventeen, List.append_eq]
+  intro H' G' hH' hG'
+  rw [hH] at hH'
+  rw [hG] at hG'
+  cases hH'
+  cases hG'
   rw [Proof.RsaOaep.decrypt_eq (by rw [bytesAt_length, bytesAt_length])]
   exact hr
-
-end
 
 end VG.Proof.RsaOaep.RISCV64.Dec

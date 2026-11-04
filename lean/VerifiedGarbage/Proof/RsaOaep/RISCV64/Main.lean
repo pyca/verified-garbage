@@ -29,6 +29,7 @@ open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_li wp_addi wp_subi wp_mov 
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.RsaOaep (mixV srcB EmAt emOf em_mask)
 open VG.Proof.Mgf1 (ifp ifn)
+open VG.Impl.RsaOaep.RISCV64 (hashLabelT labU labF)
 
 /-- The seed's and the message's bytes, the label's, and the message's length,
 from the entry state. -/
@@ -49,20 +50,20 @@ variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
 /-- `EM` before masking: `encEm`, the label's hash and `copyLh`. -/
-theorem em_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {Hs : Spec.Mgf1.Hash}
-    (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hD : H.D = D) {t : State} (E : Entered s t)
-    (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa} {Q : State → Prop}
+theorem em_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {f : Fns} (TL : TabS H f 8 S s (stackArg s 8))
+    {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hD : H.D = D) {t : State} (E : Entered s t)
+    (hsy : t.syms = s.syms) (hk : 2 * D + 2 + mLen s ≤ kk s) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → t'.syms = t.syms →
       EmAt (view t'.mem (S s)) (kk s) D (seedB D s) (Hs.hash (labB s)) (msgB s) (mLen s) → WP isa rest t' Q) :
-    WP isa (.seq (encEm H) (.seq (hashLabel H) (.seq (copyLh H) rest))) t Q := by
+    WP isa (.seq (encEm H) (.seq (hashLabelT f 8 labU labF) (.seq (copyLh H) rest))) t Q := by
   have hD0 := hH.hD0
   have hD64 := hH.hD64
   have F := hfits hH
   obtain ⟨_, hSt, hDg, hCt, hRs⟩ := offs
   refine WP.seq (WP.mono_syms (encEm_ok P hD (by omega) (by omega) E hk) fun t₁ ⟨b₁, g6, g7, hp⟩ y₁ => ?_)
-  refine WP.seq (WP.mono_syms (hashLabel_ok P hH hF b₁ g6 g7) fun t₂ ⟨b₂, _, s₂, d₂⟩ y₂ => ?_)
+  refine WP.seq (WP.mono (hashLabelT_ok P hH hF TL b₁ (y₁.trans hsy) g6 g7) fun t₂ ⟨⟨b₂, _, s₂, d₂⟩, y₂⟩ => ?_)
   refine WP.seq (WP.mono_syms (copyLh_ok P hH hD b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ =>
-    k t₃ b₃ (y₃.trans (y₂.trans y₁)) ?_)
+    k t₃ b₃ (y₃.trans (y₂.trans hsy.symm)) ?_)
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, ← d₂, ← hD]
   refine emAt_of hp hk P.k2 fun o ho => ?_
@@ -78,14 +79,14 @@ theorem bytesAt_S (m : Mem) (S : Addr) (n : Nat) :
 /-- `DB` masked with MGF1 of the seed, then the seed with MGF1 of `maskedDB`:
 EME-OAEP's encoding at `S`. -/
 theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
-    (T : TabS G f 7 S s (stackArg s 7)) {Gs : Spec.Mgf1.Hash}
+    (T : TabS G f 9 S s (stackArg s 9)) {Gs : Spec.Mgf1.Hash}
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) (hD : H.D = D)
     (hD0 : 0 < D) (hD64 : D ≤ 64) {sd lh m : List Byte} (hsd : sd.length = D) (hlh : lh.length = D)
     (hm : m.length = mLen s) (hk : 2 * D + 2 + mLen s ≤ kk s) {t : State} (h : Base S vO s t)
     (hsy : t.syms = s.syms) (he : EmAt (view t.mem (S s)) (kk s) D sd lh m (mLen s)) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ t', Base S vO s t' → Spec.Rsa.bytesAt t'.mem (off (S s) 0) (kk s) = emOf Gs D (kk s) (mLen s) sd lh m →
       WP isa rest t' Q) :
-    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT f 7) (.seq (.block (seedArgs H)) (.seq (mgfXorT f 7) rest)))) t Q :=
+    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT f 9) (.seq (.block (seedArgs H)) (.seq (mgfXorT f 9) rest)))) t Q :=
     by
   obtain ⟨hE, hSt, hDg, hCt, hRs⟩ := offs
   have hk2 := P.k2
