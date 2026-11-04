@@ -63,7 +63,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_sh
-  coreN := "vg_ecdsa_brainpoolp512r1_sign"
+  coreN := "vg_ecdsa_brainpoolp512r1_sign_k"
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP512r1
   coreX := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.X86_64.BrainpoolP512r1.sign_call_x86 hL hI
   coreCT := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.X86_64.BrainpoolP512r1.sign_ct
