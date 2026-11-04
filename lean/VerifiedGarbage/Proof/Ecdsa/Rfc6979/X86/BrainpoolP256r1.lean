@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
@@ -10,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
@@ -47,6 +52,17 @@ theorem core_pre_256 {s : State} (h : (coreK Impl.Ecdsa.X86.brainpoolp256r1).pre
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem brainpoolp256r1_blk₀ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 16 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₁ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 20 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₂ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 28 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₃ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 32 64) := by rfcT_decide
+theorem brainpoolp256r1_blk₄ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 48 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₅ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 64 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₆ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 28 128) := by rfcT_decide
+theorem brainpoolp256r1_blk₇ : RfcT (cfgS Impl.Ecdsa.X86.brainpoolp256r1 false 0 32 128) := by rfcT_decide
+
 /-- brainpoolP256r1, with the group law `hL`. -/
 def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.X86.brainpoolp256r1
@@ -57,7 +73,7 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proo
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 0; rw [brainpoolp256r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp256r1_sign"
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
   coreC := Impl.Ecdsa.X86.signBrainpoolP256r1
   coreX := fun s h => Proof.Ecdsa.X86.BrainpoolP256r1.sign_x86 hL hI s (core_pre_256 h)
   coreCT := by
@@ -68,5 +84,15 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proo
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of brainpoolp256r1_blk₀ brainpoolp256r1_blk₁ brainpoolp256r1_blk₂ brainpoolp256r1_blk₃ brainpoolp256r1_blk₄ brainpoolp256r1_blk₅ brainpoolp256r1_blk₆ brainpoolp256r1_blk₇
+
+/-- `vg_ecdsa_brainpoolp256r1_sign`, with the tables of `vs`. -/
+theorem brainpoolp256r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proof.Weierstrass.X86.Inv.InvSounds)
+    (vs : List Proof.HashTable.X86.TVar) (h : OK vs) :
+    Verified X86.target (signCode (brainpoolp256r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Ecdsa.X86.brainpoolp256r1.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+
 
 end VG.Proof.Ecdsa.Rfc6979.X86

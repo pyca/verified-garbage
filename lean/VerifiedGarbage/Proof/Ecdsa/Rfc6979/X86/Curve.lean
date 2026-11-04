@@ -147,9 +147,10 @@ macro "rfcT_decide" : tactic => `(tactic| exact
   { msgF := ⟨_, by taint_decide⟩, msgF₁ := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, prepW := by exact (Function.const _ ⟨_, by taint_decide⟩),
     coreArgs := ⟨_, by taint_decide⟩,
     keepV := fun j hj => match j, hj with
-      | 0, _ => ⟨_, by taint_decide⟩ | 1, _ => ⟨_, by taint_decide⟩ | 2, _ => ⟨_, by taint_decide⟩
-      | 3, _ => ⟨_, by taint_decide⟩ | 4, _ => ⟨_, by taint_decide⟩ | 5, _ => ⟨_, by taint_decide⟩
-      | 6, _ => ⟨_, by taint_decide⟩ | 7, _ => ⟨_, by taint_decide⟩,
+      | 0, _ => by exact ⟨_, by taint_decide⟩ | 1, _ => by exact ⟨_, by taint_decide⟩
+      | 2, _ => by exact ⟨_, by taint_decide⟩ | 3, _ => by exact ⟨_, by taint_decide⟩
+      | 4, _ => by exact ⟨_, by taint_decide⟩ | 5, _ => by exact ⟨_, by taint_decide⟩
+      | 6, _ => by exact ⟨_, by taint_decide⟩ | 7, _ => by exact ⟨_, by taint_decide⟩,
     candTop := by exact (Function.const _ ⟨_, by taint_decide⟩),
     wipe := ⟨_, by taint_decide⟩, digestPtr := ⟨_, by taint_decide⟩, padI := ⟨_, by taint_decide⟩, padO := ⟨_, by taint_decide⟩,
     hfinCopyK := ⟨_, by taint_decide⟩, hfinCopyV := ⟨_, by taint_decide⟩, iMsgF₀ := by decide +kernel,

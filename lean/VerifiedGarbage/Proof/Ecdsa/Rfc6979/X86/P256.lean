@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.P256
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
@@ -10,6 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.P256
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
@@ -60,6 +65,17 @@ private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : Comb
   | 3, _ => exact a3
   | 4, _ => exact a4
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p256_blk₀ : RfcT (cfgS p256Comb false 0 16 64) := by rfcT_decide
+theorem p256_blk₁ : RfcT (cfgS p256Comb false 0 20 64) := by rfcT_decide
+theorem p256_blk₂ : RfcT (cfgS p256Comb false 0 28 64) := by rfcT_decide
+theorem p256_blk₃ : RfcT (cfgS p256Comb false 0 32 64) := by rfcT_decide
+theorem p256_blk₄ : RfcT (cfgS p256Comb false 0 48 128) := by rfcT_decide
+theorem p256_blk₅ : RfcT (cfgS p256Comb false 0 64 128) := by rfcT_decide
+theorem p256_blk₆ : RfcT (cfgS p256Comb false 0 28 128) := by rfcT_decide
+theorem p256_blk₇ : RfcT (cfgS p256Comb false 0 32 128) := by rfcT_decide
+
 /-- P-256, with the group law `hL`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcCurve where
   E := p256Comb
@@ -70,7 +86,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
-  coreN := "vg_ecdsa_p256_sign"
+  coreN := "vg_ecdsa_p256_sign_k"
   coreC := signP256Comb
   coreX := by
     intro s h
@@ -94,5 +110,17 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p256_blk₀ p256_blk₁ p256_blk₂ p256_blk₃ p256_blk₄ p256_blk₅ p256_blk₆ p256_blk₇
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`. -/
+theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds)
+    (vs : List Proof.HashTable.X86.TVar) (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HashTable.X86.names vs) :
+    Verified X86.target (signCode (p256 hL hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 p256Comb.combConsts vs) := by
+  have hsat : ∃ s, (specK Spec.Ecdsa.Rfc6979.Curves.p256 p256Comb.combConsts vs).pre s := by
+    rw [VG.Proof.Ecdsa.X86.p256Comb_consts]
+    exact sat_one h.1 h.2 (by rw [VG.Proof.Ecdsa.X86.p256W_length]; decide) (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
 
 end VG.Proof.Ecdsa.Rfc6979.X86

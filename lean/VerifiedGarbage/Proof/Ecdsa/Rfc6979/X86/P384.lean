@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P384
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
@@ -10,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.P384
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
@@ -47,6 +52,17 @@ theorem core_pre_384 {s : State} (h : (coreK Impl.Ecdsa.X86.p384).pre s) :
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p384_blk₀ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 16 64) := by rfcT_decide
+theorem p384_blk₁ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 20 64) := by rfcT_decide
+theorem p384_blk₂ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 28 64) := by rfcT_decide
+theorem p384_blk₃ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 32 64) := by rfcT_decide
+theorem p384_blk₄ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 48 128) := by rfcT_decide
+theorem p384_blk₅ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 64 128) := by rfcT_decide
+theorem p384_blk₆ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 28 128) := by rfcT_decide
+theorem p384_blk₇ : RfcT (cfgS Impl.Ecdsa.X86.p384 false 0 32 128) := by rfcT_decide
+
 /-- P-384, with the group law `hL`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p384
@@ -57,7 +73,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
-  coreN := "vg_ecdsa_p384_sign"
+  coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.X86.signP384
   coreX := fun s h => Proof.Ecdsa.X86.P384.sign_x86 hL s (core_pre_384 h)
   coreCT := by
@@ -68,5 +84,15 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p384_blk₀ p384_blk₁ p384_blk₂ p384_blk₃ p384_blk₄ p384_blk₅ p384_blk₆ p384_blk₇
+
+/-- `vg_ecdsa_p384_sign`, with the tables of `vs`. -/
+theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve)
+    (vs : List Proof.HashTable.X86.TVar) (h : OK vs) :
+    Verified X86.target (signCode (p384 hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.X86.p384.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p384) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+
 
 end VG.Proof.Ecdsa.Rfc6979.X86

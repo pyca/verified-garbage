@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P224
 import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
@@ -10,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSpec
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.P224
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
@@ -47,6 +52,17 @@ theorem core_pre_224 {s : State} (h : (coreK Impl.Ecdsa.X86.p224).pre s) :
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p224_blk₀ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 16 64) := by rfcT_decide
+theorem p224_blk₁ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 20 64) := by rfcT_decide
+theorem p224_blk₂ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 28 64) := by rfcT_decide
+theorem p224_blk₃ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 32 64) := by rfcT_decide
+theorem p224_blk₄ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 48 128) := by rfcT_decide
+theorem p224_blk₅ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 64 128) := by rfcT_decide
+theorem p224_blk₆ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 28 128) := by rfcT_decide
+theorem p224_blk₇ : RfcT (cfgS Impl.Ecdsa.X86.p224 false 0 32 128) := by rfcT_decide
+
 /-- P-224, with the group law `hL`. -/
 def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p224
@@ -57,7 +73,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 28 - Spec.Ecdsa.nBits Spec.P224.curve = 0; rw [p224_nBits]
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.X86.signP224
   coreX := fun s h => Proof.Ecdsa.X86.P224.sign_x86 hL s (core_pre_224 h)
   coreCT := by
@@ -68,5 +84,15 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blkT := blkT_of p224_blk₀ p224_blk₁ p224_blk₂ p224_blk₃ p224_blk₄ p224_blk₅ p224_blk₆ p224_blk₇
+
+/-- `vg_ecdsa_p224_sign`, with the tables of `vs`. -/
+theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve)
+    (vs : List Proof.HashTable.X86.TVar) (h : OK vs) :
+    Verified X86.target (signCode (p224 hL) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.X86.p224.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p224) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+
 
 end VG.Proof.Ecdsa.Rfc6979.X86
