@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.RISCV64
 
 /-! # ECDSA over brainpoolp256r1 on RISC-V: `vg_ecdsa_brainpoolp256r1_sign` and `vg_ecdsa_brainpoolp256r1_verify`
 
-Signing computes `[k]G` by the comb, `vg_brainpoolp256r1_mul_g`; verification's
-joint ladder adds by the complete addition for any `a` (`brainpoolp256r1.am3 =
-false`), and its `R = 4 R` is two Jacobian doublings by `dblJa`, for any `a`
-(`Impl/Ecdsa/RISCV64/VerifyJ.lean`). -/
+Signing computes `[k]G` by the comb, `vg_brainpoolp256r1_mul_g`; verification
+computes `[u]G + [v]Q` as `Impl/Ecdsa/RISCV64/VerifyComb.lean` does: `[v]Q` by
+the windows of `vg_brainpoolp256r1_mul`, `[u]G` by the comb, and their sum by
+the complete addition for any `a` (`brainpoolp256r1.am3 = false`). -/
 
 @[expose] public section
 
