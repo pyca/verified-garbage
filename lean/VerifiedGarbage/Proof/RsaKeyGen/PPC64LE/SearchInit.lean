@@ -362,7 +362,7 @@ theorem init_agree {s₁ s₂ : State} (h : initPub s₁ s₂) :
   obtain ⟨hsp, h3, h4, h5, h6⟩ := h
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem init_constantTime : ConstantTime isa (fun _ => True) initPub init :=
   RelCT.constantTime ((RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
