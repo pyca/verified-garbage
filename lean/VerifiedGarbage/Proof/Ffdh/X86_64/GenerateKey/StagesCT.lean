@@ -37,16 +37,16 @@ def E1 (p : GkP) (s : State) : Prop := ∃ rb, Base p rb s ∧ s.gpr .rdi = p.B 
 def CE (p : GkP) (s : State) : Prop := E1 p s ∧ s.zf = some p.mv ∧
   word s.mem p.B (8 * sG) = off p.dp p.k ∧ word s.mem p.B (8 * sQ) = off p.dp (2 * p.k)
 
-private def loads : List Instr :=
+def loads : List Instr :=
   [.mov .rax (.mem (stk 4)), .mov .r10 (.mem (stk 1)), .mov .r11 (.mem (stk 2))]
 
-private def entryTail : List Instr := save .rax ++
+def entryTail : List Instr := save .rax ++
   [.store (ws .rax sX) .rdi, .store (ws .rax sY) .rdx, .store (ws .rax sDom) .r8,
     .store (ws .rax sDomLen) .r9, .store (ws .rax sK) .r10, .store (ws .rax sRand) .r11, .mov .rdi (.reg .rax)]
 
-private def EL (p : GkP) (s : State) : Prop := s.gpr .rax = p.B ∧ WP isa (.block entryTail) s (E1 p)
+def EL (p : GkP) (s : State) : Prop := s.gpr .rax = p.B ∧ WP isa (.block entryTail) s (E1 p)
 
-private theorem loads_ok (s : State) (c : GkCtx s) : WP isa (.block loads) s
+theorem loads_ok (s : State) (c : GkCtx s) : WP isa (.block loads) s
     fun t => t.gpr .rax = stackArg s 3 := by
   have h3 : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 32) 8 := c.ha 3 (by decide)
   have h0 : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 8) 8 := c.ha 0 (by decide)

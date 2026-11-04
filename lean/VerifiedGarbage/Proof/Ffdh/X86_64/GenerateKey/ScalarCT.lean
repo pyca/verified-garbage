@@ -34,7 +34,7 @@ def IV (p : GkP) (s : State) : Prop := I p s ∧ p.mv = true ∧ p.Bounded
 private def BS (p : GkP) (s : State) : Prop := ∃ rb, Inputs p rb s ∧
   word s.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧ s.gpr .rax = p.bc.setWidth 64 ∧ p.mv = true ∧ p.Bounded
 
-private def MS (p : GkP) (s : State) : Prop := ∃ rb, Inputs p rb s ∧
+def MS (p : GkP) (s : State) : Prop := ∃ rb, Inputs p rb s ∧
   word s.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧ word s.mem p.B (8 * sMsk) = p.msk ∧ p.mv = true
 
 /-- The result is ready for the shared private-key setup and scalar-range check. -/
@@ -52,11 +52,11 @@ private theorem bs_ms (p : GkP) (s : State) (h : BS p s) :
   obtain ⟨rb, hi, hn, hax, hm, hb⟩ := h
   exact WP.mono (smear_inputs hi hb hn hax) fun t ⟨ht, hn, hmask, _⟩ => ⟨rb, ht, hn, hmask, hm⟩
 
-private def cutVal (p : GkP) : Reg → BitVec 64
+def cutVal (p : GkP) : Reg → BitVec 64
   | .rdi => p.B | .r8 => BitVec.ofNat 64 p.ld | .r10 => p.rp | .r11 => p.xp
   | .rcx => 0 | .r14 => BitVec.ofNat 64 p.k | _ => 0
 
-private theorem cut_regs (p : GkP) (s : State) (h : MS p s) :
+theorem cut_regs (p : GkP) (s : State) (h : MS p s) :
     WP isa (.block cutSetup) s fun t =>
       ∀ r ∈ [.rdi, .r8, .r10, .r11, .rcx, .r14], t.gpr r = cutVal p r := by
   obtain ⟨rb, hi, hn, hmask, _⟩ := h
@@ -70,7 +70,7 @@ private theorem cut_regs (p : GkP) (s : State) (h : MS p s) :
   · exact hcx
   · exact hk
 
-private theorem cut_stage (p : GkP) (s : State) (h : MS p s) :
+theorem cut_stage (p : GkP) (s : State) (h : MS p s) :
     WP isa (.seq (.block cutSetup) (.seq (.loop (.block cutBody) .ne) (.block cutFinish))) s (Sliced p) := by
   obtain ⟨rb, hi, hn, hmask, hm⟩ := h
   refine WP.seq (WP.mono (cutSetup_ok hi hn hmask) fun u ⟨⟨hr, hmem⟩, k₁⟩ => ?_)
