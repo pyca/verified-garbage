@@ -138,40 +138,44 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## `core`'s arguments -/
 
-/-- The digest and `k` `core` reads: the digest and `V`, or, if two `V`s
-make a candidate, the digest for `core` and the candidate at the frame's top. -/
-abbrev dgArg {dn : Nat} (L : Lay dn) : BitVec 32 := if L.wide then L.F + BitVec.ofNat 32 fX else L.a2
+/-- The digest and `k` `core` reads: the digest and `V`, or, if the hash is
+shorter than the scalars, `h` (or the digest for `core`, if `sh ≠ 0`) and
+the candidate at the frame's top. -/
+abbrev dgArg {dn : Nat} (L : Lay dn) (c : Cfg) : BitVec 32 := if L.wide then L.F + BitVec.ofNat 32 c.fDg else L.a2
 abbrev kArg {dn : Nat} (L : Lay dn) : BitVec 32 :=
-  if L.wide then L.F + BitVec.ofNat 32 fKb else L.F + BitVec.ofNat 32 fV
+  if L.wide then L.F + BitVec.ofNat 32 fT else L.F + BitVec.ofNat 32 fV
 
-theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.coreArgs L.wide L.hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
-      t'.gpr .esi = L.a1 ∧ t'.gpr .edx = dgArg L ∧ t'.gpr .ecx = kArg L ∧ t'.gpr .ebp = L.a3 := by
-  rcases Bool.eq_false_or_eq_true L.wide with hw | hw
-  · rw [show Cfg.coreArgs L.wide L.hHigh = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
-      (Cfg.fr .edx fX ++ (Cfg.fr .ecx fKb ++ [.mov .ebp (argM L.wide L.hHigh 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+theorem coreArgs_ok (hL : L.Ok) {c : Cfg} (hw : c.wide = L.wide) (hh : c.hHigh = L.hHigh) {t : State}
+    (hc : Ctx L g m₀ t) :
+    WP isa (.block c.coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
+      t'.gpr .esi = L.a1 ∧ t'.gpr .edx = dgArg L c ∧ t'.gpr .ecx = kArg L ∧ t'.gpr .ebp = L.a4 := by
+  rcases Bool.eq_false_or_eq_true L.wide with hw' | hw'
+  · rw [show c.coreArgs = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
+      (Cfg.fr .edx c.fDg ++ (Cfg.fr .ecx fT ++ [.mov .ebp (argM L.wide L.hHigh 4)]))) by
+        rw [Cfg.coreArgs, hw, hw']; simp only [Cfg.arg, hw, hh, hw']; rfl]
     refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega_arith)) fun u₁ h₁ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega_arith)) fun u₂ h₂ => ?_)
-    refine WP.block_append (WP.mono (fr_ok hL h₂.ctx (d := .edx) (by decide) fX) fun u₃ h₃ => ?_)
-    refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fKb) fun u₄ h₄ => ?_)
-    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 3) (by omega_arith)) fun u₅ h₅ => ?_
+    refine WP.block_append (WP.mono (fr_ok hL h₂.ctx (d := .edx) (by decide) c.fDg) fun u₃ h₃ => ?_)
+    refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fT) fun u₄ h₄ => ?_)
+    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 4) (by omega_arith)) fun u₅ h₅ => ?_
     refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]; rfl
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
-    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw]; rfl
-    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw]; rfl
-  · rw [show Cfg.coreArgs L.wide L.hHigh = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
-      ([.mov .edx (argM L.wide L.hHigh 2)] ++ (Cfg.fr .ecx fV ++ [.mov .ebp (argM L.wide L.hHigh 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw']; rfl
+    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw']; rfl
+  · rw [show c.coreArgs = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
+      ([.mov .edx (argM L.wide L.hHigh 2)] ++ (Cfg.fr .ecx fV ++ [.mov .ebp (argM L.wide L.hHigh 4)]))) by
+        rw [Cfg.coreArgs, hw, hw']; simp only [Cfg.arg, hw, hh, hw']; rfl]
     refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega_arith)) fun u₁ h₁ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega_arith)) fun u₂ h₂ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₂.ctx (d := .edx) (by decide) (i := 2) (by omega_arith)) fun u₃ h₃ => ?_)
     refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fV) fun u₄ h₄ => ?_)
-    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 3) (by omega_arith)) fun u₅ h₅ => ?_
+    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 4) (by omega_arith)) fun u₅ h₅ => ?_
     refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]; rfl
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
-    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw]; rfl
-    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw]; rfl
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw']; rfl
+    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw']; rfl
 
 /-! ## Whether to go on -/
 
@@ -270,9 +274,9 @@ theorem restoreOne_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {r : Reg} {d
 
 /-- Our caller's registers, restored. -/
 theorem restore_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
-    WP isa (.block Cfg.restore) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .eax = u.gpr .eax ∧
+    WP isa (.block restore) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .eax = u.gpr .eax ∧
       ∀ p ∈ saved, u'.gpr p.1 = g p.1 := by
-  rw [show Cfg.restore = [.mov .ebx (.mem (stk 180))] ++ ([.mov .esi (.mem (stk 184))] ++
+  rw [show restore = [.mov .ebx (.mem (stk 180))] ++ ([.mov .esi (.mem (stk 184))] ++
     ([.mov .edi (.mem (stk 188))] ++ [.mov .ebp (.mem (stk 192))])) from rfl]
   refine WP.block_append (WP.mono (restoreOne_ok hL hc (by decide) (by decide)) fun u₁ h₁ => ?_)
   refine WP.block_append (WP.mono (restoreOne_ok hL h₁.ctx (by decide) (by decide)) fun u₂ h₂ => ?_)
@@ -305,11 +309,12 @@ theorem zeroH_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ L.e,
 
 /-- `K`, `V` and `h` cleared, and the words at the frame's top (`eax`
 kept), and our caller's registers back. -/
-theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.wipe L.wide L.hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
+theorem wipe_ok (hL : L.Ok) {c : Cfg} (hw : c.wide = L.wide) (hh : c.hHigh = L.hHigh) {t : State}
+    (hc : Ctx L g m₀ t) :
+    WP isa (.block c.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
       Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩, ⟨L.B + BitVec.ofNat 64 272, 4 * L.e⟩] t.mem t'.mem ∧
       ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
-  rw [Cfg.wipe, ← L.ew]
+  rw [Cfg.wipe, hw, hh, ← L.ew]
   refine WP.block_append (WP.block_append (WP.block_append (wp_movi fun u₁ v₁ => WP.block_nil ?_)))
   have hc₁ := (Upd.of_wp hL hc (by decide) v₁).ctx
   refine WP.mono_syms (zeroN_ok hL hc₁ 44 (Nat.le_refl _)) fun u₂ ⟨hrd, hwr, hg, hf⟩ hsy => ?_

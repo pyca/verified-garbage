@@ -26,7 +26,9 @@ def Lay.a {dn : Nat} (L : Lay dn) : Nat → BitVec 32
   | 0 => L.a0
   | 1 => L.a1
   | 2 => L.a2
-  | _ => L.a3
+  | 3 => L.a3
+  | 4 => L.a4
+  | _ => L.a5
 
 /-- The bytes of a region a frame of writes misses. -/
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
@@ -57,19 +59,21 @@ theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
 /-- Our arguments, in the frame's body. -/
-theorem Ctx.argv {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
+theorem Ctx.argv {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 6) :
     u.mem.readW (L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i)) 32 = L.a i := by
   match i, hi with
   | 0, _ => rw [show 276 + 4 * L.e + 4 * 0 = 276 + 4 * L.e by omega]; exact hc.pOut
   | 1, _ => rw [show 276 + 4 * L.e + 4 * 1 = 280 + 4 * L.e by omega]; exact hc.pD
   | 2, _ => rw [show 276 + 4 * L.e + 4 * 2 = 284 + 4 * L.e by omega]; exact hc.pDg
-  | 3, _ => rw [show 276 + 4 * L.e + 4 * 3 = 288 + 4 * L.e by omega]; exact hc.pScr
+  | 3, _ => rw [show 276 + 4 * L.e + 4 * 3 = 288 + 4 * L.e by omega]; exact hc.pLen
+  | 4, _ => rw [show 276 + 4 * L.e + 4 * 4 = 292 + 4 * L.e by omega]; exact hc.pScr
+  | 5, _ => rw [show 276 + 4 * L.e + 4 * 5 = 296 + 4 * L.e by omega]; exact hc.pTab
 
 theorem argM_eq (wide hHigh : Bool) (i : Nat) : argM wide hHigh i = .mem ⟨.esp, 200 + 4 * extra wide hHigh + 4 * i⟩ := by
   simp only [argM, Impl.Ecdsa.Rfc6979.X86.frameBytes, stk]; congr 2; omega
 
 /-- `argM L.wide L.hHigh i` reads our argument `i`. -/
-theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
+theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 6) :
     readSrc u (argM L.wide L.hHigh i) = some (L.a i) := by
   have := L.he
   have e : addr L.F (200 + 4 * extra L.wide L.hHigh + 4 * i) = L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i) := by
@@ -104,10 +108,12 @@ theorem Upd.trans {u u' u'' : State} {d : Reg} {v w : BitVec 32} (hL : L.Ok) (hd
       (fun r hr => (h₂.other r hr).trans (h₁.other r hr)) (h₂.syms.trans h₁.syms),
     h₂.mem.trans h₁.mem, h₂.gpr, fun r hr => (h₂.other r hr).trans (h₁.other r hr)⟩
 
-/-- `d ← scratch + a`. -/
-theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) (a : Nat) :
-    WP isa (.block (Cfg.scr L.wide L.hHigh d a)) u (Upd L g m₀ u d (L.a3 + BitVec.ofNat 32 a)) := by
-  refine wp_movS (hc.readArg hL (i := 3) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
+/-- `d ← scratch + a`, for the code of a frame of this layout's size. -/
+theorem scr_ok (hL : L.Ok) {c : Cfg} (hw : c.wide = L.wide) (hh : c.hHigh = L.hHigh) {u : State} (hc : Ctx L g m₀ u)
+    {d : Reg} (hd : d ≠ .esp) (a : Nat) :
+    WP isa (.block (c.scr d a)) u (Upd L g m₀ u d (L.a4 + BitVec.ofNat 32 a)) := by
+  simp only [Cfg.scr, Cfg.arg, hw, hh]
+  refine wp_movS (hc.readArg hL (i := 4) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
   rw [v₁.gpr] at v₂
   exact Upd.trans hL hd v₁ v₂ hc
 
@@ -124,9 +130,15 @@ theorem movi_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
   wp_movi fun _ v₁ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- `d ← argument i`. -/
-theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 4) :
+theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 6) :
     WP isa (.block [.mov d (argM L.wide L.hHigh i)]) u (Upd L g m₀ u d (L.a i)) :=
   wp_movS (hc.readArg hL hi) fun _ v₁ _ => WP.block_nil (Upd.of_wp hL hc hd v₁)
+
+/-- `d ← argument i`, for the code of a frame of this layout's size. -/
+theorem argC_ok (hL : L.Ok) {c : Cfg} (hw : c.wide = L.wide) (hh : c.hHigh = L.hHigh) {u : State}
+    (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 6) :
+    WP isa (.block [.mov d (c.arg i)]) u (Upd L g m₀ u d (L.a i)) := by
+  simp only [Cfg.arg, hw, hh]; exact arg_ok hL hc hd hi
 
 /-- Two pieces of code, each setting one register. -/
 theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 32}
