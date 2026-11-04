@@ -9,8 +9,8 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import VerifiedGarbage.Proof.Ffdh.Lead
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Framework.Omega
@@ -186,6 +186,42 @@ theorem row_of_scr {p : PcP} {s : State} (h : MainPre p s) {m m' : Mem} (hm : In
     have e8 : 8 * p.w * j = 8 * (p.w * j) := Nat.mul_assoc _ _ _
     exact h.ctx.out (by rw [Nat.mul_add] at hj; omega))
 
+/-- The bound's first significant byte is not zero. -/
+theorem MainPre.lead_ne {p : PcP} {s : State} (h : MainPre p s) (hne : VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom ≠ []) :
+    (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)[VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)]'
+      (VG.Proof.Ffdh.lead_lt hne) ≠ 0 := by
+  have hk1 := h.k1
+  have hl := h.doml
+  have hmv := h.modValid
+  obtain ⟨hodd, h1p, hnorm⟩ := valid_facts hmv hk1
+  have size : p.dom.length = 2 * p.k ∨ p.dom.length = 3 * p.k := by rw [hl]; exact h.dl
+  have hbl := VG.Proof.Ffdh.KeyScalar.bnd_length size
+  have hld := VG.Proof.Ffdh.lead_lt hne
+  rw [hbl] at hld
+  have hbits := VG.Proof.Ffdh.KeyScalar.bound_bits (k := p.k) (dom := p.dom) (by omega) size
+    (fun _ => ⟨hodd, h1p⟩)
+  have hbnd : 2 ≤ Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom) := by
+    have hv := (VG.Proof.Ffdh.domainValid_iff p.k p.dom).mp h.valid
+    unfold Spec.Ffdh.scalarBound
+    cases hq : (Spec.Ffdh.domainOf p.k p.dom).q with
+    | none => simp only [Option.getD_none]; omega
+    | some q => have := (hv.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega
+  show (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)[VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)]'
+      (VG.Proof.Ffdh.lead_lt hne) ≠ 0
+  intro hb0
+  by_cases hlast : VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom) + 1 <
+      (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom).length
+  · exact VG.Proof.Ffdh.lead_nonzero hne hlast hb0
+  · rw [hb0] at hbits
+    have : Spec.RsaKeyGen.bitLength (0 : Byte).toNat = 0 := rfl
+    rw [this] at hbits
+    have hpos := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom) ≠ 0 by omega)).2
+    rw [hbits] at hpos
+    rw [hbl] at hlast
+    have : p.k - VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom) - 1 = 0 := by omega
+    rw [this] at hpos
+    omega
+
 theorem front_ok {p : PcP} {s : State} (h : MainPre p s) :
     WP isa (seqs (GenerateKey.bound ++ [Precompute.byteBits, .block (Precompute.width ++ Precompute.metadata)])) s
       (FrontPost p s) := by
@@ -207,27 +243,7 @@ theorem front_ok {p : PcP} {s : State} (h : MainPre p s) :
   rw [hbl] at hld
   have hbits := VG.Proof.Ffdh.KeyScalar.bound_bits (k := p.k) (dom := p.dom) (by omega) size
     (fun _ => ⟨hodd, h1p⟩)
-  have hbnd : 2 ≤ Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom) := by
-    have hv := (VG.Proof.Ffdh.domainValid_iff p.k p.dom).mp h.valid
-    unfold Spec.Ffdh.scalarBound
-    cases hq : (Spec.Ffdh.domainOf p.k p.dom).q with
-    | none => simp only [Option.getD_none]; omega
-    | some q => have := (hv.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega
-  have hbz : (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)[VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom)]'
-      (VG.Proof.Ffdh.lead_lt hne) ≠ 0 := by
-    intro hb0
-    by_cases hlast : VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom) + 1 <
-        (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom).length
-    · exact VG.Proof.Ffdh.lead_nonzero hne hlast hb0
-    · rw [hb0] at hbits
-      have : Spec.RsaKeyGen.bitLength (0 : Byte).toNat = 0 := rfl
-      rw [this] at hbits
-      have hpos := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom) ≠ 0 by omega)).2
-      rw [hbits] at hpos
-      rw [hbl] at hlast
-      have : p.k - VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom) - 1 = 0 := by omega
-      rw [this] at hpos
-      omega
+  have hbz := h.lead_ne hne
   simp only [seqs]
   refine WP.seq (WP.mono (byteBits_ok hbz hax₁) fun s₂ ⟨hcx₂, hm₂, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
@@ -262,14 +278,15 @@ theorem front_ok {p : PcP} {s : State} (h : MainPre p s) :
     congr 1
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (width_only hs₂ hdi₂ (by omega) hcx₂ hc8 hEl₂ (by omega) (by omega) hRec₂ (recognize_lt _ _))
-    fun s₃ ⟨hax₃, hm₃, k₃⟩ => ?_
+  refine WP.mono (width_only (cp := p.cp) hs₂ hdi₂ (by omega) hcx₂ hc8 hEl₂ (by omega) (by omega) hRec₂ (recognize_lt _ _)
+    (by rw [hfw _ (by decide) (by decide) (by decide)]; exact hCtx))
+    fun s₃ ⟨hax₃, hsi₃, hm₃, k₃⟩ => ?_
   rw [hpick] at hax₃
   have k13 := k12.trans k₃
   have hcw : ∀ i < 3, InRegions s₃.wr (off p.cp (8 * i)) 8 := fun i hi => by
     rw [k13.2.2]; exact h.ctx.wr i (by unfold PcP.n; omega)
   refine WP.mono (metadata_ok (hs₂.congr k₃.2.2) ((k₃.gpr (by decide)).trans hdi₂) (by omega) hax₃ h.bits_le
-    (by rw [hm₃, hfw _ (by decide) (by decide) (by decide)]; exact hCtx) hcw) fun t ⟨hmt, kt⟩ => ?_
+    hsi₃ hcw) fun t ⟨hmt, kt⟩ => ?_
   have hn := h.scr.nowrap
   obtain ⟨c0, c1, c2, co⟩ := ctx3 ((s₃.mem.writeW (off p.B (8 * sBits)) (BitVec.ofNat 64 p.bits)).writeW
     (off p.B (8 * sRows)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.bits))) p.cp (BitVec.ofNat 64 p.bits)

@@ -94,10 +94,10 @@ def afterScan : List Instr :=
 def byteBits : Prog isa := .seq (.block [.mov32 .rcx (.imm 0)])
   (.loop (.block [.shift .shr .rax 1, .alu .add .rcx (.imm 1), .alu .test .rax (.reg .rax)]) .ne)
 
-/-- `rax :=` the bound's bit length, then the recognized width if it is
-smaller and not zero. -/
+/-- `rsi :=` the context, then `rax :=` the bound's bit length, then the
+recognized width if it is smaller and not zero. -/
 def width : List Instr :=
-  [.mov .rax (.mem (hdr sEl)), .shift .shl .rax 3, .alu .sub .rax (.imm 8), .alu .add .rax (.reg .rcx),
+  [.mov .rsi (.mem (hdr sCtx)), .mov .rax (.mem (hdr sEl)), .shift .shl .rax 3, .alu .sub .rax (.imm 8), .alu .add .rax (.reg .rcx),
     .mov .rdx (.mem (hdr sRec)), .alu .test .rdx (.reg .rdx), .cmov .e .rdx (.reg .rax),
     .alu .cmp .rdx (.reg .rax), .cmov .b .rax (.reg .rdx)]
 
@@ -106,8 +106,7 @@ def width : List Instr :=
 def metadata : List Instr :=
   [.store (hdr sBits) .rax, .mov .rcx (.reg .rax), .alu .add .rcx (.imm 7), .shift .shr .rcx 3,
     .mov .rdx (.reg .rax), .alu .add .rdx (.imm 4), .imul3 .rdx .rdx 52429, .shift .shr .rdx 18,
-    .store (hdr sRows) .rdx, .mov .rsi (.mem (hdr sCtx)),
-    .store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .rcx, .store (at_ .rsi 16) .rdx]
+    .store (hdr sRows) .rdx, .store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .rcx, .store (at_ .rsi 16) .rdx]
 
 /-- `p` and `R² mod p` to the context's first two rows. -/
 def storePrefix : List (Prog isa) :=

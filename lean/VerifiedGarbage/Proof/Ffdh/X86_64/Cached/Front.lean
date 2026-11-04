@@ -102,12 +102,16 @@ theorem bb_eq {e c : Nat} (he1 : 1 ≤ e) (he2 : e ≤ 1024) :
   omega
 
 /-- The bound's width, or the recognized one if it is smaller and not zero, in `rax`. -/
-theorem width_only {s : State} {B : Addr} {Z c e r : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z)
+theorem width_only {s : State} {B cp : Addr} {Z c e r : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 c) (hc : c ≤ 8) (hEl : word s.mem B (8 * sEl) = BitVec.ofNat 64 e)
     (he1 : 1 ≤ e) (he2 : e ≤ 1024)
-    (hRec : word s.mem B (8 * sRec) = BitVec.ofNat 64 r) (hr : r < 2 ^ 32) :
+    (hRec : word s.mem B (8 * sRec) = BitVec.ofNat 64 r) (hr : r < 2 ^ 32)
+    (hCtx : word s.mem B (8 * sCtx) = cp) :
     WP isa (.block Precompute.width) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧ t.mem = s.mem ∧ Keep [.rax, .rdx] s t := by
+      t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧ t.gpr .rsi = cp ∧ t.mem = s.mem ∧
+        Keep [.rax, .rdx, .rsi] s t := by
+  have hC8 : InRegions (s.rd ++ s.wr) (off B (8 * sCtx)) 8 :=
+    hs.ld (by unfold sCtx VG.Impl.Ffdh.X86_64.Domain.sXe sFn; omega)
   have hR8 : InRegions (s.rd ++ s.wr) (off B (8 * sRec)) 8 := hs.ld (by unfold sRec VG.Impl.Ffdh.X86_64.Domain.sY sFn; omega)
   have hE8 : InRegions (s.rd ++ s.wr) (off B (8 * sEl)) 8 := hs.ld (by unfold sEl sFn; omega)
   have hz : (BitVec.ofNat 64 r &&& BitVec.ofNat 64 r == 0) = decide (r = 0) := by
@@ -121,22 +125,22 @@ theorem width_only {s : State} {B : Addr} {Z c e r : Nat} (hs : Scr s B Z) (hdi 
       Nat.mod_eq_of_lt (show 8 * e - 8 + c < 2 ^ 64 by omega)]
   by_cases h0 : r = 0
   · subst h0
-    refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick 0 (8 * e - 8 + c)) ∧
-        t.mem = s.mem) (by
+    refine WP.mono (WP.keep [.rax, .rdx, .rsi] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick 0 (8 * e - 8 + c)) ∧
+        t.gpr .rsi = cp ∧ t.mem = s.mem) (by
       unfold Precompute.width
-      xrun [State.ea, hdr, hdi, hdrOff, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, execCmov, readSrc, eval,
-        pick, Nat.lt_irrefl, decide_false]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+      xrun [State.ea, hdr, hdi, hdrOff, hC8, hCtx, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, execCmov, readSrc, eval,
+        pick, Nat.lt_irrefl, decide_false]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
   · by_cases hl : r < 8 * e - 8 + c
-    · refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧
-          t.mem = s.mem) (by
+    · refine WP.mono (WP.keep [.rax, .rdx, .rsi] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧
+          t.gpr .rsi = cp ∧ t.mem = s.mem) (by
         unfold Precompute.width
-        xrun [State.ea, hdr, hdi, hdrOff, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, h0, execCmov, readSrc,
-          eval, hlt, hl, pick, Nat.min_eq_left (Nat.le_of_lt hl)]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
-    · refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧
-          t.mem = s.mem) (by
+        xrun [State.ea, hdr, hdi, hdrOff, hC8, hCtx, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, h0, execCmov, readSrc,
+          eval, hlt, hl, pick, Nat.min_eq_left (Nat.le_of_lt hl)]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
+    · refine WP.mono (WP.keep [.rax, .rdx, .rsi] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧
+          t.gpr .rsi = cp ∧ t.mem = s.mem) (by
         unfold Precompute.width
-        xrun [State.ea, hdr, hdi, hdrOff, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, h0, execCmov, readSrc,
-          eval, hlt, hl, pick, Nat.min_eq_right (Nat.le_of_not_lt hl)]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+        xrun [State.ea, hdr, hdi, hdrOff, hC8, hCtx, hE8, hR8, hEl, hRec, hcx, bb_eq he1 he2, hz, h0, execCmov, readSrc,
+          eval, hlt, hl, pick, Nat.min_eq_right (Nat.le_of_not_lt hl)]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
 
 theorem atOff (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d := by
   rw [BitVec.ofInt_natCast]
@@ -144,15 +148,13 @@ theorem atOff (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d := 
 /-- The three public words to the context, the width and the rows to the header. -/
 theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z)
     (hax : s.gpr .rax = BitVec.ofNat 64 F) (hF : F ≤ 8192)
-    (hCtx : word s.mem B (8 * sCtx) = cp) (hcw : ∀ i < 3, InRegions s.wr (off cp (8 * i)) 8) :
+    (hrsi : s.gpr .rsi = cp) (hcw : ∀ i < 3, InRegions s.wr (off cp (8 * i)) 8) :
     WP isa (.block Precompute.metadata) s fun t =>
       t.mem = ((((s.mem.writeW (off B (8 * sBits)) (BitVec.ofNat 64 F)).writeW (off B (8 * sRows))
         (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows F))).writeW (off cp 0) (BitVec.ofNat 64 F)).writeW
           (off cp 8) (BitVec.ofNat 64 ((F + 7) / 8))).writeW (off cp 16)
             (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows F)) ∧
-      Keep [.rcx, .rdx, .rsi] s t := by
-  have hC8 : InRegions (s.rd ++ s.wr) (off B (8 * sCtx)) 8 :=
-    hs.ld (by unfold sCtx VG.Impl.Ffdh.X86_64.Domain.sXe sFn; omega)
+      Keep [.rcx, .rdx] s t := by
   have hw0 : InRegions s.wr cp 8 := by simpa [off] using hcw 0 (by decide)
   have hw1 := hcw 1 (by decide)
   have hw2 := hcw 2 (by decide)
@@ -161,12 +163,6 @@ theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi 
   have sx4 : BitVec.signExtend 64 (4 : BitVec 32) = 4 := by decide
   have hB8 : InRegions s.wr (off B (8 * sBits)) 8 := hs.st (by unfold sBits VG.Impl.Ffdh.X86_64.Domain.sXl sFn; omega)
   have hS8 : InRegions s.wr (off B (8 * sRows)) 8 := hs.st (by unfold sRows VG.Impl.Ffdh.X86_64.Domain.sOut sFn; omega)
-  have hCtx2 : ∀ v₁ v₂ : BitVec 64, ((s.mem.writeW (off B (8 * sBits)) v₁).writeW (off B (8 * sRows)) v₂).readW
-      (off B (8 * sCtx)) 64 = cp := fun v₁ v₂ => by
-    change word _ B (8 * sCtx) = cp
-    rw [(writeW_outside _ B (d := 8 * sRows) v₂ (by decide)).word (by decide) (by decide),
-      (writeW_outside _ B (d := 8 * sBits) v₁ (by decide)).word (by decide) (by decide)]
-    exact hCtx
   have hrows : ((BitVec.ofNat 64 F + 4) * BitVec.signExtend 64 (52429 : BitVec 32)) >>> 18 =
       BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows F) := by
     rw [← rows_mul hF, BitVec.ofNat_add]; rfl
@@ -176,10 +172,10 @@ theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi 
       show (7 : BitVec 64).toNat = 7 from rfl]
     rw [Nat.mod_eq_of_lt (show F < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show F + 7 < 2 ^ 64 by omega),
       Nat.mod_eq_of_lt (show (F + 7) / 8 < 2 ^ 64 by omega)]
-  refine WP.mono (WP.keep [.rcx, .rdx, .rsi] (Q := fun t => t.mem = _) (by
+  refine WP.mono (WP.keep [.rcx, .rdx] (Q := fun t => t.mem = _) (by
     unfold Precompute.metadata
-    xrun [State.ea, hdr, hdi, hdrOff, hB8, hS8, hC8, hCtx, hax,
-      execImul3, imul3_low, sx7, sx4, hrows, hCtx2, e7, at_, atOff, hw0, hw1, hw2]
+    xrun [State.ea, hdr, hdi, hdrOff, hB8, hS8, hrsi, hax,
+      execImul3, imul3_low, sx7, sx4, hrows, e7, at_, atOff, hw0, hw1, hw2]
     done) rfl) fun t ⟨h, k⟩ => ⟨h, k⟩
 
 theorem recognized_nonzero {a : Spec.Ffdh.Parameters} {bits : Nat}
