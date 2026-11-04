@@ -2,6 +2,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
+public import VerifiedGarbage.Proof.MdHashTable.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
@@ -76,8 +79,9 @@ theorem compArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
 include hH in
 /-- Compressing block `b` of `Y` into the hash value at `scratch + oSt`. -/
 theorem compCall_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {b : Nat} (hbB : H.P.B * b + H.P.B ≤ 2048) (hW : W 29 = BitVec.ofNat 64 b) :
-    WP isa (.seq (.block (compArgs H)) (.call H.compN H.compC)) u fun u' =>
+    (R : Rep u.mem F S V W) {b : Nat} (hbB : H.P.B * b + H.P.B ≤ 2048) (hW : W 29 = BitVec.ofNat 64 b)
+    {dn : String} {f : MdFns} (hT : HT H dn f W u.syms) :
+    WP isa (.seq (.block (compArgs H)) (scall sCmpH f.comp)) u fun u' =>
       Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r ∈ calleeSaved, u'.gpr r = u.gpr r) ∧
       Rep u'.mem F S (fun o => if inR [(oSt, H.P.N), (0, H.P.so)] o then u'.mem (off S o) else V o) W ∧
       hH.md.stateAt u'.mem (off S oSt) =
@@ -87,7 +91,20 @@ theorem compCall_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   have hN := hH.N_le
   have hso := hH.hso
   have hbb : b ≤ H.P.B * b := Nat.le_mul_of_pos_left b hB0
-  refine WP.seq (WP.mono (compArgs_ok hH L R (b := b) (by omega_using [hbB, hbb]) hW) fun v ⟨hdi, hsi, hdx, hcx, hm, hk⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (compArgs_ok hH L R (b := b) (by omega_using [hbB, hbb]) hW)
+    fun v₀ ⟨hdi₀, hsi₀, hdx₀, hcx₀, hm₀, hk₀⟩ y₀ => ?_)
+  have Lv₀ : Lay v₀ F S := L.congr (hk₀.gpr (by decide)) hk₀.2.2 (by rw [hm₀])
+  refine scall_ok Lv₀ (hm₀ ▸ R) (k := 9) rfl (by decide) (by decide) (by rw [y₀]; exact hT.wc) (by rw [y₀]; exact hT.fc)
+    fun v k₁ hm₁ _ => ?_
+  have hk : Keep [.rdi, .rsi, .rdx, .rcx, .r11] u v := ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [k₁.gpr (by simp [hr.2.2.2.2]), hk₀.gpr (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1])],
+    k₁.2.1.trans hk₀.2.1, k₁.2.2.trans hk₀.2.2⟩
+  have hm : v.mem = u.mem := hm₁.trans hm₀
+  have hdi : v.gpr .rdi = _ := (k₁.gpr (by decide)).trans hdi₀
+  have hsi : v.gpr .rsi = _ := (k₁.gpr (by decide)).trans hsi₀
+  have hdx : v.gpr .rdx = _ := (k₁.gpr (by decide)).trans hdx₀
+  have hcx : v.gpr .rcx = _ := (k₁.gpr (by decide)).trans hcx₀
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
   have cS0 : ∀ {o n : Nat}, o + n ≤ oRsa → Covers [⟨off S o, n⟩] v.wr := fun h => Lv.cov h
@@ -249,7 +266,7 @@ theorem upd_upd {α : Type} (f : Nat → α) (a : Nat) (v w : α) : upd (upd f a
 
 /-- Before block `b`. -/
 def CO (t : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (n fb b : Nat) (u : State) : Prop :=
-  Lay u F S ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
+  Lay u F S ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧ u.syms = t.syms ∧
   ∃ V' : Nat → Byte, Rep u.mem F S V' (upd W 29 (BitVec.ofNat 64 b)) ∧
     (∀ o < oRsa, ¬ inR [(oSt, H.P.N), (0, H.P.so), (oSel, H.P.N)] o → V' o = V o) ∧
     hH.md.stateAt u.mem (off S oSt) = hH.md.compressList hH.iv (yList V n) b ∧
@@ -266,15 +283,15 @@ include hH in
 theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) (hiv : hH.md.stateAt t.mem (off S oSt) = hH.iv) {fb nbm : Nat}
     (hf : W 30 = BitVec.ofNat 64 fb) (hn : W 28 = BitVec.ofNat 64 nbm) (hfb : fb < nbm)
-    (hnb : nbm * H.P.B ≤ 2048) :
-    WP isa (compLoop H) t (CO hH t F S V W (nbm * H.P.B) fb nbm) := by
+    (hnb : nbm * H.P.B ≤ 2048) {dn : String} {f : MdFns} (hT : HT H dn f W t.syms) :
+    WP isa (compLoop f H) t (CO hH t F S V W (nbm * H.P.B) fb nbm) := by
   have hB := hH.B_le
   have hB0 := hH.B_pos
   have hN := hH.N_le
   have hso := hH.hso
   have hnbm : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB0) hnb
-  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem.writeW (off F sB) (BitVec.ofNat 64 0))
-      ?_ rfl) fun u ⟨hm, hk⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keep [.rax] (Q := fun u => u.mem = t.mem.writeW (off F sB) (BitVec.ofNat 64 0))
+      ?_ rfl) fun u ⟨hm, hk⟩ y0 => ?_)
   · xrun [ea_sp, L.rsp, L.st (d := sB) (by decide)]
     rfl
   have R0 := R.wf L.geo (k := 29) (by decide) (BitVec.ofNat 64 0)
@@ -285,17 +302,18 @@ theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
     rw [stateAt_rep hH R R0 (o := oSt) (by unfold oSt oRsa; omega_using [hN]) (fun _ _ => rfl), hiv]
     exact (MdStream.Md.compressList_zero _ _ _).symm
   refine wp_upto (a := 0) (N := nbm) (by omega_using [hfb]) (CO hH t F S V W (nbm * H.P.B) fb) ?_ (fun _ h => h)
-    ⟨L0, hk.2.1, hk.2.2, fun r hr => hk.gpr (cs_keep hr (by decide)), V, R0, fun _ _ _ => rfl, hst0,
+    ⟨L0, hk.2.1, hk.2.2, fun r hr => hk.gpr (cs_keep hr (by decide)), y0, V, R0, fun _ _ _ => rfl, hst0,
       fun h => absurd h (by omega_using [])⟩
-  intro b _ hb u ⟨Lu, hrd, hwr, hcs, V', Ru, hkeep, hst, hsel⟩
+  intro b _ hb u ⟨Lu, hrd, hwr, hcs, hsy, V', Ru, hkeep, hst, hsel⟩
   have hbB : H.P.B * b + H.P.B ≤ 2048 := by
     rw [← Nat.mul_succ]; exact Nat.le_trans (Nat.mul_le_mul_left _ hb) (by rw [Nat.mul_comm]; exact hnb)
-  refine WP.seq_assoc (WP.seq (WP.mono (compCall_ok hH Lu Ru hbB (by simp [upd]))
-    fun v ⟨Lv, hrdv, hwrv, hcsv, Rv, hstv⟩ => ?_))
-  refine WP.seq (WP.mono (select_ok hH Lv Rv (b := b) (fb := fb) (by simp [upd]) (by simp [upd, hf])
-    (by omega_using [hnbm, hb]) (by omega_using [hfb, hnbm])) fun w Sw => ?_)
-  refine WP.mono (nextBlock_ok Sw.L Sw.R (b := b) (nbm := nbm) (by simp [upd]) (by simp [upd, hn])
-    (by omega_using [hnbm, hb]) (by omega_using [hnbm])) fun u' ⟨hz, Lu', hk', Ru'⟩ => ⟨hz, ?_⟩
+  refine WP.seq_assoc (WP.seq (X86_64.WP.mono_syms (compCall_ok hH Lu Ru hbB (by simp [upd])
+    (by rw [hsy]; exact hT.upd (by decide) _))
+    fun v ⟨Lv, hrdv, hwrv, hcsv, Rv, hstv⟩ yv => ?_))
+  refine WP.seq (X86_64.WP.mono_syms (select_ok hH Lv Rv (b := b) (fb := fb) (by simp [upd]) (by simp [upd, hf])
+    (by omega_using [hnbm, hb]) (by omega_using [hfb, hnbm])) fun w Sw yw => ?_)
+  refine X86_64.WP.mono_syms (nextBlock_ok Sw.L Sw.R (b := b) (nbm := nbm) (by simp [upd]) (by simp [upd, hn])
+    (by omega_using [hnbm, hb]) (by omega_using [hnbm])) fun u' ⟨hz, Lu', hk', Ru'⟩ yu => ⟨hz, ?_⟩
   rw [upd_upd] at Ru'
   have hY : ∀ i < 2048, V' (oY + i) = V (oY + i) := fun i hi => hkeep _ (by unfold oY oRsa; omega_using [hi]) (by
     simp only [inR_cons, inR_nil, or_false]; unfold oY oSt oSel; omega_using [hN, hso])
@@ -309,7 +327,8 @@ theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
         have := Nat.mul_le_mul_right H.P.B hb; rw [Nat.succ_mul, Nat.mul_comm b] at this; omega_arith)]
   refine ⟨Lu', hk'.2.1.trans (Sw.keep.2.1.trans (hrdv.trans hrd)), hk'.2.2.trans (Sw.keep.2.2.trans (hwrv.trans hwr)),
     fun r hr => (hk'.gpr (cs_keep hr (by decide))).trans ((Sw.keep.gpr (cs_keep hr (by decide))).trans
-      ((hcsv r hr).trans (hcs r hr))), _, Ru', fun o ho hno => ?_, hst', fun hfb' => ?_⟩
+      ((hcsv r hr).trans (hcs r hr))), yu.trans (yw.trans (yv.trans hsy)), _, Ru', fun o ho hno => ?_, hst',
+    fun hfb' => ?_⟩
   · simp only [inR_cons, inR_nil, or_false, not_or] at hno
     rw [selV_out (by omega_using [hno])]
     simp only [inR_cons, inR_nil, or_false]
@@ -330,50 +349,84 @@ theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
 /-! ## The digest -/
 
 include hH in
+/-- The digest of the hash value at `scratch + src`, by the table's digest
+(`digestK`), to `scratch + oDig`. -/
 theorem digestAt_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {src : Nat} (ho : src + H.P.N ≤ oDig) :
-    WP isa (.block (digestAt H src)) u fun u' => Lay u' F S ∧ Keep [.rbx, .rbp, .rax] u u' ∧
+    (R : Rep u.mem F S V W) {src : Nat} (ho : src + H.P.N ≤ oDig) {dn : String} {f : MdFns}
+    (hT : HT H dn f W u.syms) (hdk : DigOK H) :
+    WP isa (digestAt f src) u fun u' => Lay u' F S ∧ Keep [.rdi, .rsi, .r8, .r9, .r11, .rax] u u' ∧
       Rep u'.mem F S (fun o => if oDig ≤ o ∧ o < oDig + H.P.N then
         (hH.md.digest (hH.md.stateAt u.mem (off S src))).getD (o - oDig) 0 else V o) W := by
   have hN := hH.N_le
-  rw [digestAt, WP.block_append_iff]
-  refine WP.mono (WP.keep [.rbx, .rbp] (Q := fun v => v.gpr .rbx = off S src ∧ v.gpr .rbp = off S oDig ∧
-      v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, hm⟩, hk⟩ => ?_
+  refine WP.seq (X86_64.WP.mono_syms (WP.keep [.rdi, .rsi] (Q := fun v => v.gpr .rdi = off S src ∧
+      v.gpr .rsi = off S oDig ∧ v.mem = u.mem) ?_ rfl) fun v₀ ⟨⟨h₁, h₂, hm₀⟩, hk₀⟩ y₀ => ?_)
   · have hs := L.slot
     simp only [Bignum.word] at hs
     xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show src < 2 ^ 31 by unfold oDig at ho; omega_using [ho]),
       VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide)]
+  have Lv₀ : Lay v₀ F S := L.congr (hk₀.gpr (by decide)) hk₀.2.2 (by rw [hm₀])
+  refine scall_ok Lv₀ (hm₀ ▸ R) (k := 10) rfl (by decide) (by decide) (by rw [y₀]; exact hT.wd)
+    (by rw [y₀]; exact hT.fd) fun v k₁ hm₁ _ => ?_
+  have hm : v.mem = u.mem := hm₁.trans hm₀
+  have hdi : v.gpr .rdi = off S src := (k₁.gpr (by decide)).trans h₁
+  have hsi : v.gpr .rsi = off S oDig := (k₁.gpr (by decide)).trans h₂
+  have hk : Keep [.rdi, .rsi, .r11] u v := ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [k₁.gpr (by simp [hr.2.2]), hk₀.gpr (by simp [hr.1, hr.2.1])], k₁.2.1.trans hk₀.2.1, k₁.2.2.trans hk₀.2.2⟩
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
-  have i₁ : InRegions (v.rd ++ v.wr) (v.gpr .rbx) H.P.N := by
-    rw [h₁]
-    exact Covers.right (Lv.cov (o := src) (n := H.P.N) (by unfold oDig oRsa at *; omega_using [ho])) _ _
-      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  have i₂ : InRegions v.wr (v.gpr .rbp) H.P.N := by
-    rw [h₂]
-    exact Lv.cov (o := oDig) (n := H.P.N) (by unfold oDig oRsa; omega_using [hN]) _ _
-      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  have i₃ : Region.Disjoint ⟨v.gpr .rbx, H.P.N⟩ ⟨v.gpr .rbp, H.P.N⟩ := by
+  have Rv : Rep v.mem F S V W := hm ▸ R
+  have hsrc : src + H.P.N ≤ oRsa := by unfold oDig oRsa at *; omega_using [ho]
+  have hdg : oDig + H.P.N ≤ oRsa := by unfold oDig oRsa; omega_using [hN]
+  refine WP.call (k := Proof.MdHashTable.X86_64.digestK hH.md)
+    (Proof.MdHashTable.X86_64.digest_verified hH.shape hdk.mx) hdk.sp (by simp [Impl.MdHashTable.X86_64.digest, Code.depth])
+    (rd := [⟨off S src, H.P.N⟩]) (wr := [⟨off S oDig, H.P.N⟩]) ?_ ?_ (Lv.cov hdg) ?_
+  · simp only [Proof.MdHashTable.X86_64.digestK, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+      State.callEntry_rsp, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide),
+      State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide), hdi, hsi, Lv.rsp, true_and]
     have := Lv.Sw
-    rw [h₁, h₂]
-    exact Offset.disjoint S (by unfold oDig at *; omega_using [ho]) (by unfold oDig oRsa at *; omega_using [ho])
-      (by unfold oDig oRsa at *; omega_using [hN])
-  refine WP.mono (hH.shape.out v i₁ i₂ i₃) fun w ⟨hg, hrd, hwr, hmw⟩ => ?_
-  have Rw : Rep w.mem F S (fun o => if oDig ≤ o ∧ o < oDig + H.P.N then
-      (hH.md.digest (hH.md.stateAt u.mem (off S src))).getD (o - oDig) 0 else V o) W := by
-    rw [hmw, h₂, h₁, hm]
-    have := (hm ▸ R : Rep u.mem F S V W).wbs Lv.geo (o := oDig)
-      (xs := hH.md.digest (hH.md.stateAt u.mem (off S src))) (by rw [hH.md.digest_length]; unfold oDig oRsa; omega_using [hN])
-    rwa [hH.md.digest_length] at this
-  refine ⟨Lv.of_rep (hm ▸ R) Rw (hg .rsp (by decide)) hwr, ⟨fun r hr => ?_, hrd.trans hk.2.1, hwr.trans hk.2.2⟩, Rw⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  rw [hg r hr.2.2, hk.gpr (by simp [hr.1, hr.2.1])]
+    refine ⟨Offset.disjoint S (by unfold oDig at *; omega_using [ho]) (by unfold oDig oRsa at *; omega_using [ho, this])
+      (by unfold oDig oRsa at *; omega_using [hN, this]),
+      Region.Disjoint.sub_right L.dRS (Offset.sub_base S hsrc), Region.Disjoint.sub_right L.dRS (Offset.sub_base S hdg)⟩
+  · exact Covers.append_left (Covers.right (Lv.cov hsrc)) (Covers.right (Lv.cov hdg))
+  · intro u' hrd hwr hcs hF hnc ⟨s₂, hm₂, _, hpost⟩
+    simp only [Proof.MdHashTable.X86_64.digestK, State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
+      hdi, hsi] at hpost
+    simp only [Impl.MdHashTable.X86_64.digest, Code.depth] at hF
+    rw [Lv.rsp] at hF
+    obtain ⟨L', R'⟩ := Lv.after_call Rv (rgs := [(oDig, H.P.N)])
+      (by simp only [List.mem_singleton]; rintro p rfl; exact hdg) (by simpa [regs] using hF)
+      (hcs .rsp (by decide)) hwr
+    refine ⟨L', ⟨fun r hr => ?_, hrd.trans hk.2.1, hwr.trans hk.2.2⟩, ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      by_cases hb : r = .rbx ∨ r = .rbp
+      · rcases hb with rfl | rfl
+        all_goals rw [hcs _ (by decide), hk.gpr (by decide)]
+      · simp only [not_or] at hb
+        rw [hnc r (hdk.cl r (by simp [hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2, hb.1, hb.2])), hk.gpr (by simp [hr.1, hr.2.1, hr.2.2.2.2.1])]
+    · have RE := Rep.callEntry Lv Rv
+      have hst : hH.md.stateAt v.callEntry.mem (off S src) = hH.md.stateAt u.mem (off S src) := by
+        rw [stateAt_rep hH Rv RE (o := src) hsrc (fun _ _ => rfl), hm]
+      rw [hst] at hpost
+      refine (congrArg (fun V' => Rep u'.mem F S V' W) (funext fun o => ?_)).mp R'
+      by_cases hin : oDig ≤ o ∧ o < oDig + H.P.N
+      · have hl : (hH.md.digest (hH.md.stateAt u.mem (off S src))).length = H.P.N := hH.md.digest_length _
+        have hsub : (off S o - off S oDig).toNat = o - oDig := by
+          have e : off S o = off S oDig + BitVec.ofNat 64 (o - oDig) := by
+            show off S o = off (off S oDig) (o - oDig)
+            rw [off_off, Nat.add_sub_cancel' hin.1]
+          have hlt : o - oDig < 2 ^ 64 := by unfold oDig at hin; omega_using [hin, hN]
+          rw [e, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
+        simp only [inR_cons, inR_nil, or_false, hin, and_self, ite_true, ← hm₂, hpost, WriteBytes.writeBytes, hsub, hl,
+          show o - oDig < H.P.N by omega_using [hin], ite_true]
+      · simp only [inR_cons, inR_nil, or_false, hin, ite_false]
 
 theorem digestOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) :
-    WP isa (.block (digestOut H)) u fun u' => Lay u' F S ∧ Keep [.rbx, .rbp, .rax] u u' ∧
+    (R : Rep u.mem F S V W) {dn : String} {f : MdFns} (hT : HT H dn f W u.syms) (hdk : DigOK H) :
+    WP isa (digestOut f) u fun u' => Lay u' F S ∧ Keep [.rdi, .rsi, .r8, .r9, .r11, .rax] u u' ∧
       Rep u'.mem F S (fun o => if oDig ≤ o ∧ o < oDig + H.P.N then
         (hH.md.digest (hH.md.stateAt u.mem (off S oSel))).getD (o - oDig) 0 else V o) W :=
-  digestAt_ok hH L R (by have := hH.N_le; unfold oSel oDig; omega_using [this])
+  digestAt_ok hH L R (by have := hH.N_le; unfold oSel oDig; omega_using [this]) hT hdk
 
 end VG.Proof.RsaPss.X86_64
