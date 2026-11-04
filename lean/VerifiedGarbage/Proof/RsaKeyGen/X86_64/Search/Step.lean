@@ -303,4 +303,68 @@ theorem SearchLive.done_after {p : SearchPublic} {original s t : State} {used re
   · exact (hkeep 1 (by decide) fun e he => (hfix e he).1.symm).trans (h.slot (by simp [SearchPublic.headers]))
   · exact (hkeep 2 (by decide) fun e he => (hfix e he).2.1.symm).trans (h.slot (by simp [SearchPublic.headers]))
 
+/-! ## Accepting a prime -/
+
+theorem add_ofNat_ofNat (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
+  (BitVec.ofNat_add a b).symm
+
+theorem SearchLive.rand_length {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) : (searchRand original).length = p.randLen := by
+  rw [← h.input.2]; simp [searchRand, Spec.Rsa.bytesAt, searchOfState]
+
+theorem SearchLive.frame_in {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) {t : State} (hw : t.wr = s.wr) :
+    (∀ d, d + 8 ≤ 160 → InRegions (t.rd ++ t.wr) (p.F + BitVec.ofNat 64 d) 8) ∧
+      (∀ d, d + 8 ≤ 160 → InRegions t.wr (p.F + BitVec.ofNat 64 d) 8) ∧ InRegions t.wr p.F 8 := by
+  have scr := h.input.frame_scr (hw.trans h.wr)
+  refine ⟨fun d hd => let ⟨r, hr', hc⟩ := scr.st hd; ⟨r, List.mem_append_right _ hr', hc⟩,
+    fun d hd => scr.st hd, by simpa only [BitVec.add_zero] using scr.st (d := 0) (by decide)⟩
+
+/-- The accepted candidate's octets consumed, and the prime's status. -/
+theorem accept_tail_ok {p : SearchPublic} {original s u : State} {used remaining cu : Nat}
+    (h : SearchLive p original used remaining s) (hw : u.wr = s.wr)
+    (hr12 : u.gpr .r12 = p.F) (hm : u.mem = s.mem) (hrcx : u.gpr .rcx = BitVec.ofNat 64 cu) :
+    WP isa (.block ([.mov .rax (.mem (field 16)), .alu .add .rax (.reg .rcx), .store (field 16) .rax] ++
+      terminal 1)) u fun t =>
+      t.mem = writeFrame s.mem p.F [(16, BitVec.ofNat 64 used + BitVec.ofNat 64 cu), (0, 0), (3, 0),
+        (17, (BitVec.ofNat 32 1).setWidth 64)] ∧ Keep [.rax] u t := by
+  obtain ⟨hl, hs, hs0⟩ := h.frame_in hw
+  have h16 := h.slot (j := 16) (v := BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
+  simp only [Bignum.word, off, Nat.reduceMul] at h16
+  refine WP.keep [.rax] ?_ rfl
+  unfold terminal writeFrame
+  simp only [List.cons_append, List.nil_append, List.foldl_cons, List.foldl_nil]
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, BitVec.add_zero,
+    hr12, hm, hrcx, hl 128 (by decide), h16, hs0, hs 24 (by decide), hs 128 (by decide), hs 136 (by decide)]
+  rfl
+
+theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
+    {used remaining c : Nat} {rest : List Byte}
+    (h : SearchIter p original final used remaining s) (hc : CandPost p (searchP original) (searchRand original) used s)
+    (hr : remaining ≠ 0)
+    (hres : Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) =
+      some (.prime c, rest)) :
+    WP isa (.block accept) s (SearchDone p original final) := by
+  obtain ⟨h, tr, hfinal⟩ := h
+  rw [accept, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (search_load_used h hc) fun u ⟨⟨hrcx, hmu⟩, ku⟩ => ?_
+  have hr12 : u.gpr .r12 = p.F := (ku.gpr (by decide)).trans h.r12
+  refine WP.mono (accept_tail_ok h ku.2.2 hr12 hmu hrcx) fun t ⟨ht, kt⟩ => ?_
+  have hu : candUsed p original used = ((searchRand original).drop used).length - rest.length := by
+    simp only [candUsed, hres, List.length_drop, h.rand_length]
+  unfold tailOf at hfinal
+  rw [Search.search_prime hr hres, Spec.Entropy.Result.consume] at hfinal
+  subst hfinal
+  refine h.done_after _ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) ht (ku.trans kt)
+    (by intro r hr; cases r <;> simp_all [calleeSaved]) rfl rfl ?_ rfl ?_
+  · simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
+    rw [add_ofNat_ofNat, hu]
+  · have ho := hc.2.1
+    rw [hres] at ho
+    exact ho
+
 end VG.Proof.RsaKeyGen.X86_64.Search
