@@ -29,21 +29,21 @@ abbrev msgB (s : State) : List Byte := bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toN
 
 theorem msgB_length (s : State) : (msgB s).length = (s.gpr .r7).toNat := by simp [bytesAt]
 
-theorem sign_msg {s t : State} (hp : SignPre s) (h : SignInv s t) :
+theorem sign_msg {sn : Nat} {s t : State} (hp : SignPre sn s) (h : SignInv s t) :
     bytesAt t.mem (s.gpr .r6) (s.gpr .r7).toNat = msgB s :=
   sign_input h (s.gpr .r7).isLt hp.oM.symm hp.mC hp.mF hp.bM.symm
 
-theorem sign_msg_cov {s t : State} (hp : SignPre s) (h : SignInv s t) : Covers [msgR s] (t.rd ++ t.wr) :=
+theorem sign_msg_cov {sn : Nat} {s t : State} (hp : SignPre sn s) (h : SignInv s t) : Covers [msgR s] (t.rd ++ t.wr) :=
   fun a n hi => by
     obtain ⟨r, hr, hc⟩ := hi
     rw [h.rd, hp.rd]
     exact ⟨r, List.mem_append_left _ (by rw [List.mem_singleton.mp hr]; simp), hc⟩
 
 /-- The message fits beside the scratch space. -/
-theorem sign_len {s : State} (hp : SignPre s) : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64 :=
+theorem sign_len {sn : Nat} {s : State} (hp : SignPre sn s) : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64 :=
   len_add_le (Nat.le_of_lt (s.gpr .r7).isLt) (by decide) hp.mC
 
-theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre s) (h : SignInv s t) {P : List Byte}
+theorem signNonce_ok (C : ShaOK) (B : BaseOk) {sn : Nat} {s t : State} (hp : SignPre sn s) (h : SignInv s t) {P : List Byte}
     (hP : bytesAt t.mem (s.gpr .r9 + BitVec.ofNat 64 32) 32 = P) (hsy : t.syms combSym = s.syms combSym) :
     WP isa signNonce t fun t' => SignInv s t' ∧
       Frame [⟨s.gpr .r8, 8192⟩, ⟨s.gpr .r9 + BitVec.ofNat 64 64, 128⟩, below s.sp 48, ⟨s.gpr .r3, 32⟩]

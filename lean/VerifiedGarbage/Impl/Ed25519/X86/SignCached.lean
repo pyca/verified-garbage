@@ -73,14 +73,25 @@ def mulAddArgs : List Instr :=
 
 def wipe : List Instr := Whole.zeroWords 8 56
 
-def secretCode : Prog isa := .seq hashSeed (.block saveSecret)
+/-- The secret scalar and the nonce prefix saved, after `first` leaves the seed's
+SHA-512 digest at 192. -/
+def secretFrom (first : Prog isa) : Prog isa := .seq first (.block saveSecret)
+def secretCode : Prog isa := secretFrom hashSeed
 def nonceCode : Prog isa := .seq hashNonce (.seq (reduce 96)
   (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
 def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 128)
   (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
-def body : Prog isa := .seq secretCode (.seq nonceCode (.seq challengeCode (.block wipe)))
+/-- Signing after `first`, which leaves the seed's SHA-512 digest at 192. -/
+def bodyFrom (first : Prog isa) : Prog isa :=
+  .seq (secretFrom first) (.seq nonceCode (.seq challengeCode (.block wipe)))
+def body : Prog isa := bodyFrom hashSeed
 
 def code : Prog isa :=
   .frame (.push (List.replicate 64 .eax)) body (.pop .eax 64)
+
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
+digest, its second argument, copied rather than computed. -/
+def codeExpanded : Prog isa :=
+  .frame (.push (List.replicate 64 .eax)) (bodyFrom PublicKey.copyExpanded) (.pop .eax 64)
 
 end VG.Impl.Ed25519.X86.SignCached

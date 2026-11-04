@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `prune f d o` stores at `o(F)` the first half of the digest at `d(F)`
 pruned, four 64-bit words (`prune_ok`): the shifts clear the low word's 3
 low bits and the high word's top bit, and an `or` sets bit 254. `copy32` and
-`copyIn` copy 32 bytes word by word.
+`copyIn` copy 32 bytes word by word, and `copyIn64` 64 (`copy64_ok`).
 -/
 
 @[expose] public section
@@ -270,6 +270,63 @@ theorem copy_ok {t : State} {a b : Reg} {A B : Addr} {da db : Nat → Nat} {R : 
         Mem.readW_writeW_self64, v₃]
     · rw [rd' _ 2 3 _ (by omega_arith) (by omega_arith) (by omega_arith), Mem.readW_writeW_self64, v₅]
     · rw [Mem.readW_writeW_self64, v₇]
+
+/-- `copyIn64`: the 64 bytes at `A` copied to `o(B)`, as two copies of four words. -/
+theorem copy64_ok {t : State} {a b : Reg} {A B : Addr} {o : Nat} {rest : List Instr} {Q : State → Prop}
+    (ha0 : a ≠ .r0) (hb0 : b ≠ .r0) (ha8 : a ≠ .r8) (hb8 : b ≠ .r8)
+    (hA : t.gpr a = A) (hB : t.gpr b = B) (ho : o + 64 ≤ 2 ^ 15) (ho4 : o % 4 = 0)
+    (hr : ∀ k < 8, InRegions (t.rd ++ t.wr) (A + BitVec.ofNat 64 (8 * k)) 8)
+    (hw : ∀ k < 8, InRegions t.wr (B + BitVec.ofNat 64 (o + 8 * k)) 8)
+    (hd : Region.Disjoint ⟨A, 64⟩ ⟨B + BitVec.ofNat 64 o, 64⟩)
+    (k : ∀ u, Rest [.r8] t u → Frame [⟨B + BitVec.ofNat 64 o, 64⟩] t.mem u.mem →
+      Spec.Ed25519.bytesAt u.mem (B + BitVec.ofNat 64 o) 64 = Spec.Ed25519.bytesAt t.mem A 64 →
+      WP isa (.block rest) u Q) :
+    WP isa (.block (copyIn64 a b o ++ rest)) t Q := by
+  have hsplit : copyIn64 a b o =
+      ((List.range 4).flatMap fun k => [Instr.load .d .r8 a (8 * k), .store .d .r8 b (o + 8 * k)]) ++
+      ((List.range 4).flatMap fun k => [Instr.load .d .r8 a (8 * (4 + k)), .store .d .r8 b (o + 8 * (4 + k))]) := by
+    rw [copyIn64, show List.range 8 = List.range 4 ++ (List.range 4).map (4 + ·) from @List.range_add 4 4,
+      List.flatMap_append, List.flatMap_map]
+  have cB : ∀ j < 8, Region.Contains ⟨B + BitVec.ofNat 64 o, 64⟩ (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
+    fun j hj => Offset.contains _ (by omega) (by omega) (by omega)
+  have sAB : ∀ i < 8, ∀ j < 8, Mem.Sep (A + BitVec.ofNat 64 (8 * i)) 8 (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
+    fun i hi j hj => hd.sep (Offset.contains_base _ (by omega) (by omega)) (cB j hj)
+  have sBB : ∀ i < 8, ∀ j < 8, i ≠ j →
+      Mem.Sep (B + BitVec.ofNat 64 (o + 8 * i)) 8 (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
+    fun i hi j hj hij => Offset.sep _ (by omega) (by omega) (by omega)
+  rw [hsplit, List.append_assoc]
+  refine copy_ok (A := A) (B := B) (da := fun k => 8 * k) (db := fun k => o + 8 * k)
+    (R := ⟨B + BitVec.ofNat 64 o, 32⟩) ha0 hb0 ha8 hb8 hA hB (fun j hj => ⟨by omega, by omega⟩)
+    (fun j hj => ⟨by omega, by omega⟩) (fun j hj => hr j (by omega)) (fun j hj => hw j (by omega))
+    (fun j hj => Offset.contains _ (by omega) (by omega) (by omega))
+    (fun i hi j hj => sAB i (by omega) j (by omega)) (fun i hi j hj hij => sBB i (by omega) j (by omega) hij)
+    fun u hu hfu hwu => ?_
+  refine copy_ok (A := A) (B := B) (da := fun k => 8 * (4 + k)) (db := fun k => o + 8 * (4 + k))
+    (R := ⟨B + BitVec.ofNat 64 (o + 32), 32⟩) ha0 hb0 ha8 hb8 (by rw [hu.gpr _ (by simpa using ha8), hA])
+    (by rw [hu.gpr _ (by simpa using hb8), hB]) (fun j hj => ⟨by omega, by omega⟩)
+    (fun j hj => ⟨by omega, by omega⟩) (fun j hj => by rw [hu.rd, hu.wr]; exact hr _ (by omega))
+    (fun j hj => by rw [hu.wr]; exact hw _ (by omega))
+    (fun j hj => Offset.contains _ (by omega) (by omega) (by omega))
+    (fun i hi j hj => sAB _ (by omega) _ (by omega))
+    (fun i hi j hj hij => sBB _ (by omega) _ (by omega) (by omega)) fun v hv hfv hwv => ?_
+  have hsub : ∀ {d : Nat}, d ≤ 32 → ∀ r ∈ [(⟨B + BitVec.ofNat 64 (o + d), 32⟩ : Region)],
+      ∃ r' ∈ [(⟨B + BitVec.ofNat 64 o, 64⟩ : Region)], Region.Sub r r' := fun hd r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩
+  have fu : Frame [⟨B + BitVec.ofNat 64 o, 64⟩] t.mem u.mem :=
+    hfu.sub (by rw [show B + BitVec.ofNat 64 o = B + BitVec.ofNat 64 (o + 0) by rw [Nat.add_zero]] at *; exact hsub (by omega))
+  refine k v (hu.trans hv) (fu.trans (hfv.sub (hsub (by omega)))) ?_
+  refine Proof.Ed25519.bytesAt_of_words fun j hj => ?_
+  rw [Offset.add_add]
+  by_cases hj4 : j < 4
+  · rw [hfv.readW (r := ⟨B + BitVec.ofNat 64 (o + 8 * j), 8⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+    exact hwu j hj4
+  · have e := hwv (j - 4) (by omega)
+    rw [show 4 + (j - 4) = j by omega] at e
+    rw [e]
+    exact hfu.readW (r := ⟨A, 64⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hd.sub_right (Offset.sub _ (by omega) (by omega))) (by decide)
 
 /-- 32 zero bytes, from four zero words. -/
 theorem bytes32_zero {m : Mem} {p : Addr} (h : ∀ k < 4, m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = 0) :

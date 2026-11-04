@@ -213,13 +213,13 @@ namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole VG.Impl.Ed25519.Arm.SignCached
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
-theorem hashSeed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem hashSeed_ct (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (hashSeed)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hi : Input L (value L (.caller 1 0)) (value L (.const 32)) := by
     change Input L (L.seed + 0#32) 32#32
     rw [BitVec.add_zero]
-    exact seed_input hL
+    exact seed_input hL h32
   exact (init_ct hL ha hb).seq ((update_ct hL ha hb 0 (.caller 1 0) (.const 32)
     (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hi).seq
     (finalize_ct hL ha hb 32 (by decide) false))
@@ -417,17 +417,28 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by simp [Whole.valid]) (by decide) (by simp [Whole.valid]) (by simp [preserved])).seq
     (mul_call_ct hL)
 
-theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁)
+/-- Signing after a first step related to itself, as `hashSeed` and the copy of a cached
+digest are. -/
+theorem bodyFrom_ct {first : Prog isa}
+    (hfirst : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True))
+    (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁)
     (hw₂ : Tbl L m₂) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
-        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) body
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-  (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
+        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+      (bodyFrom first) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+  (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (hfirst.seq (saveSecret_ct hL))).seq
     (((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (hashNonce_ct hL ha hb)).seq
       ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (reduce_ct hL ha hb 88 (by decide))).seq
       (base_ct hL ha hb hw₁ hw₂))).seq
       (((hashChallenge_ct hL ha hb).seq ((reduce_ct hL ha hb 120 (by decide)).seq
         (mul_ct hL ha hb))).seq (wipe_ct hL)))
+
+theorem body_ct (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂) :
+    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
+        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) body
+      (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+  bodyFrom_ct (hashSeed_ct hL h32 ha hb) hL ha hb hw₁ hw₂
 
 end VG.Proof.Ed25519.Arm.SignCached
 end
@@ -463,10 +474,12 @@ def signCachedAbi : Contract isa where
     s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1
 
 
-def signCachedLocal : Contract isa where
+/-- Signing with `n` bytes read at the seed pointer (the seed, or its cached digest), `key`
+relating them to the public key, and the postcondition `post`. -/
+def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → Prop) : Contract isa where
   pre s :=
     let out : Region := ⟨State.addr (s.gpr .r0), 64⟩
-    let seed : Region := ⟨State.addr (s.gpr .r1), 32⟩
+    let seed : Region := ⟨State.addr (s.gpr .r1), n⟩
     let pk : Region := ⟨State.addr (s.gpr .r2), 32⟩
     let msg : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
     let scr : Region := ⟨State.addr (stackArg s 1), 8192⟩
@@ -477,36 +490,42 @@ def signCachedLocal : Contract isa where
       out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint msg ∧ out.Disjoint args ∧ out.Disjoint scr ∧
       seed.Disjoint scr ∧ pk.Disjoint scr ∧ msg.Disjoint scr ∧ args.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint scr ∧
-      (s.gpr .r0).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
+      (s.gpr .r0).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + n ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32 ∧
       (stackArg s 1).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
-      Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) ∧
+      key s ∧
       (s.syms VG.Impl.Ed25519.Arm.combSym).toNat + 98304 ≤ 2 ^ 32 ∧
       (∀ j < 64 * 192, s.mem.readW (State.addr (s.syms VG.Impl.Ed25519.Arm.combSym) +
         BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j) ∧
       tb.Disjoint out ∧ tb.Disjoint scr ∧ tb.Disjoint stk
-  post s t := Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
-    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat)
+  post := post
   pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
     s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1 ∧
     s.syms VG.Impl.Ed25519.Arm.combSym = t.syms VG.Impl.Ed25519.Arm.combSym
 
-def lay (s : State) : Lay :=
-  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, stackArg s 0, stackArg s 1, Whole.base s,
-    s.syms VG.Impl.Ed25519.Arm.combSym⟩
+def signCachedLocal : Contract isa := signLocalWith 32
+  (fun s => Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
+    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32))
+  (fun s t => Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign
+    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
+    (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat))
 
-theorem entry_below {s : State} (h : signCachedLocal.pre s) : 280 ≤ s.sp.toNat := by
+def lay (n : Nat) (s : State) : Lay :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, s.gpr .r3, stackArg s 0, stackArg s 1, Whole.base s,
+    s.syms VG.Impl.Ed25519.Arm.combSym, n⟩
+
+variable {n : Nat} {key : State → Prop} {post : State → State → Prop}
+
+theorem entry_below {s : State} (h : (signLocalWith n key post).pre s) : 280 ≤ s.sp.toNat := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb, _, _⟩ := h
   exact hb
 
-theorem entry_top {s : State} (h : signCachedLocal.pre s) : s.sp.toNat + 8 ≤ 2 ^ 32 := by
+theorem entry_top {s : State} (h : (signLocalWith n key post).pre s) : s.sp.toNat + 8 ≤ 2 ^ 32 := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ht, _⟩ := h
   exact ht
 
 theorem original_args {s : State} (hb : 280 ≤ s.sp.toNat) :
-    (lay s).ORIGINALARGS = ⟨State.addr s.sp,8⟩ := by
+    (lay n s).ORIGINALARGS = ⟨State.addr s.sp,8⟩ := by
   unfold Lay.ORIGINALARGS lay
   rw [Whole.base_addr hb]
   change (⟨State.addr s.sp - 280 + 280,8⟩ : Region) = _
@@ -517,7 +536,7 @@ theorem stack_eq {s : State} (hb : 280 ≤ s.sp.toNat) :
   unfold Whole.stack
   rw [Whole.base_addr hb]
 
-theorem entry_writes {s : State} (h : signCachedLocal.pre s) :
+theorem entry_writes {s : State} (h : (signLocalWith n key post).pre s) :
     ∀ r ∈ s.wr, (Whole.stack s).Disjoint r := by
   have hb := entry_below h
   obtain ⟨_, hw, _, _, _, _, _, _, _, _, _, ko, _, _, _, kc, _⟩ := h
@@ -529,7 +548,7 @@ theorem entry_writes {s : State} (h : signCachedLocal.pre s) :
   · exact ko
   · exact kc
 
-theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
+theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).Ok := by
   obtain ⟨_, _, os, op, om, oa, oc, sc, pc, mc, ac, ko, ks, kp, km, kc, no, ns, np, nm, nc, hb, _, _,
     tf, _, tout, tscr, tstk⟩ := h
   have fr : Region.Sub (Whole.FR (Whole.base s)) (Whole.stack s) := Region.sub_prefix (by decide)
@@ -565,25 +584,25 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
     · exact tstk.symm.sub_left fr
     · exact Offset.base_disjoint _ (by decide) (by decide)
 
-theorem entry_ctx {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
-    Ctx (lay s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
+theorem entry_ctx {s p : State} (h : (signLocalWith n key post).pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
+    Ctx (lay n s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
   have hc := Whole.saved_ctx hp
-  change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs _
+  change Whole.Ctx (Whole.base s) s.gpr p.mem (lay n s).inputs (lay n s).outputs _
   simp only [Lay.inputs, original_args (entry_below h)]
   simpa only [Whole.bodyRd, h.1, Whole.bodyWr, h.2.1, Lay.outputs,
     Lay.SEED, Lay.PK, Lay.MSG, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, Whole.ARGS, show BitVec.ofNat 64 248 = (248 : Addr) from rfl, lay,
     List.cons_append, List.nil_append] using hc
 
-theorem entry_regions {s : State} (h : signCachedLocal.pre s) :
-    (lay s).inputs = Whole.bodyRd s ∧ (lay s).outputs = s.wr := by
+theorem entry_regions {s : State} (h : (signLocalWith n key post).pre s) :
+    (lay n s).inputs = Whole.bodyRd s ∧ (lay n s).outputs = s.wr := by
   simp only [Lay.inputs, original_args (entry_below h)]
   simp only [Whole.bodyRd, h.1, Lay.outputs, h.2.1,
     Lay.SEED, Lay.PK, Lay.MSG, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, Whole.ARGS,
     show BitVec.ofNat 64 248 = (248 : Addr) from rfl, lay, List.cons_append, List.nil_append]
   exact ⟨trivial, trivial⟩
 
-theorem entry_args {s p : State} (h : signCachedLocal.pre s)
-    (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay s) p.mem := by
+theorem entry_args {s p : State} (h : (signLocalWith n key post).pre s)
+    (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay n s) p.mem := by
   intro j hj
   have hw := Whole.saved_words (entry_below h) (by decide : 6 ≤ 6) (entry_top h) hp hj
   have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
@@ -592,7 +611,7 @@ theorem entry_args {s p : State} (h : signCachedLocal.pre s)
       Nat.reduceSub, Nat.mul_zero, BitVec.add_zero, Lay.value, lay,
       stackArg, stackArgAddr] using hw
 
-theorem entry_read {s : State} (h : signCachedLocal.pre s) : ∀ j < 6, 4 ≤ j →
+theorem entry_read {s : State} (h : (signLocalWith n key post).pre s) : ∀ j < 6, 4 ≤ j →
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4*(j-4)))) 4 := by
   intro j hj h4
   have ht := entry_top h
@@ -600,7 +619,7 @@ theorem entry_read {s : State} (h : signCachedLocal.pre s) : ∀ j < 6, 4 ≤ j 
   exact ⟨⟨State.addr s.sp,8⟩, List.mem_append_left _ (by rw [h.1]; simp),
     Offset.contains_base _ (by omega) (by omega)⟩
 
-theorem entry_input {s : State} (h : signCachedLocal.pre s) {m : Mem}
+theorem entry_input {s : State} (h : (signLocalWith n key post).pre s) {m : Mem}
     (hf : Frame [Whole.stack s] s.mem m) {r : Region} (hr : r ∈ s.rd) (hn : r.len ≤ 2 ^ 64) :
     Spec.Ed25519.bytesAt m r.base r.len = Spec.Ed25519.bytesAt s.mem r.base r.len := by
   unfold Spec.Ed25519.bytesAt
@@ -616,13 +635,13 @@ theorem entry_input {s : State} (h : signCachedLocal.pre s) {m : Mem}
   · exact ks.symm
   · exact kp.symm
   · exact km.symm
-  · rw [← original_args hb]
+  · rw [← original_args (n := n) hb]
     exact (Offset.base_disjoint _ (by decide) (by decide)).symm
   · exact tstk
 
 theorem entry_key {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
-    Spec.Ed25519.bytesAt p.mem (State.addr (lay s).pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (State.addr (lay s).seed) 32) := by
+    Spec.Ed25519.bytesAt p.mem (State.addr (lay 32 s).pk) 32 =
+      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (State.addr (lay 32 s).seed) 32) := by
   have hk : Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) := by
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
@@ -636,8 +655,8 @@ theorem entry_key {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (W
   exact hk
 
 /-- The tables at the body's entry. -/
-theorem entry_tbl {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
-    Tbl (lay s) p.mem := fun j hj => by
+theorem entry_tbl {s p : State} (h : (signLocalWith n key post).pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
+    Tbl (lay n s) p.mem := fun j hj => by
   have hb := entry_below h
   have hf := Whole.saved_frame hb hp
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hw, _, _, tstk⟩ := h
@@ -656,7 +675,7 @@ section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
 
-theorem lay_eq {s t : State} (hp : signCachedLocal.pub s t) : lay s = lay t := by
+theorem lay_eq {n : Nat} {s t : State} (hp : signCachedLocal.pub s t) : lay n s = lay n t := by
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, hy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, h4, h5, hy]
 
@@ -666,17 +685,17 @@ theorem signCached_ct :
     (fun _ h => entry_below h) (fun _ h => entry_top h) (fun _ h => entry_read h) ?_ ?_
   · intro s hs p hp
     exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_key hs hp)
-      (entry_tbl hs hp) (congrFun hp.step.syms _)) fun _ _ => trivial
+      (entry_tbl hs hp) (congrFun hp.step.syms _) rfl) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq hp
-    have hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
+    have he := lay_eq (n := 32) hp
+    have hq : Ctx (lay 32 s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
-    have hqw : Tbl (lay s) q.mem := he ▸ entry_tbl ht hqb
+    have hqa : Arguments (lay 32 s) q.mem := he ▸ entry_args ht hqb
+    have hqw : Tbl (lay 32 s) q.mem := he ▸ entry_tbl ht hqb
     have hqy : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms VG.Impl.Ed25519.Arm.combSym =
-        (lay s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.2.2.2.symm
-    exact ⟨(body_ct (lay_ok hs) (entry_args hs hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
+        (lay 32 s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.2.2.2.symm
+    exact ⟨(body_ct (lay_ok hs) rfl (entry_args hs hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
       ⟨⟨entry_ctx hs hpa, hq, trivial, trivial⟩, congrFun hpa.step.syms _, hqy⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.Arm.SignCached
@@ -688,7 +707,7 @@ namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
 
 theorem body_noFrames : body.noFrames = true := by
-  simp only [body, secretCode, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
+  simp only [body, bodyFrom, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
     init, update, finalize, reduce, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames,
     Impl.Sha512.Arm.Stream.init, Bool.and_self]
   rw [reduce_noFrames, base_noFrames, mul_noFrames]
@@ -701,9 +720,9 @@ theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 32)
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r3)) (stackArg s 0).toNat))
     (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_key h hp)
-      (entry_tbl h hp) (congrFun hp.step.syms _))
+      (entry_tbl h hp) (congrFun hp.step.syms _) rfl)
       fun u ⟨hu, ho⟩ => ⟨by
-        change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs u at hu
+        change Whole.Ctx (Whole.base s) s.gpr p.mem (lay 32 s).inputs (lay 32 s).outputs u at hu
         rw [(entry_regions h).1, (entry_regions h).2] at hu
         exact hu, ho⟩)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩

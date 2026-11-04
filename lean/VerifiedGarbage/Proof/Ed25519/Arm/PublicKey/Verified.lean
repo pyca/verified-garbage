@@ -36,11 +36,13 @@ structure Lay where
   E : BitVec 32
   /-- The address of the comb's tables (`combSym`). -/
   T : BitVec 32
+  /-- The bytes read at `seed`: the seed (32), or its cached SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 variable (L : Lay)
 abbrev OUT : Region := ⟨State.addr L.out, 32⟩
-abbrev SEED : Region := ⟨State.addr L.seed, 32⟩
+abbrev SEED : Region := ⟨State.addr L.seed, L.seedLen⟩
 abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
 abbrev ARGS : Region := Whole.ARGS L.E
 abbrev FR : Region := Whole.FR L.E
@@ -58,7 +60,7 @@ structure Ok : Prop where
   ks : L.STK.Disjoint L.SEED
   kc : L.STK.Disjoint L.SCR
   no : L.out.toNat + 32 ≤ 2 ^ 32
-  ns : L.seed.toNat + 32 ≤ 2 ^ 32
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   tfit : L.T.toNat + 98304 ≤ 2 ^ 32
   tout : L.TB.Disjoint L.OUT
@@ -86,10 +88,19 @@ variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 theorem frame_sub (L : Lay) : Region.Sub L.FR L.STK := Region.sub_prefix (by decide : 248 ≤ 280)
 theorem args_sub (L : Lay) : Region.Sub L.ARGS L.STK := Offset.sub_base _ (by decide : 248 + 24 ≤ 280)
 
-theorem Ctx.seed_bytes (hc : Ctx L g m₀ t) (hL : L.Ok) :
+theorem Lay.Ok.sc32 (hL : L.Ok) (h32 : L.seedLen = 32) :
+    (⟨State.addr L.seed, 32⟩ : Region).Disjoint L.SCR := by
+  have := hL.sc; simp only [Lay.SEED, h32] at this; exact this
+
+theorem Lay.Ok.ns32 (hL : L.Ok) (h32 : L.seedLen = 32) : L.seed.toNat + 32 ≤ 2 ^ 32 := by
+  have := hL.ns; rw [h32] at this; exact this
+
+theorem Ctx.seed_bytes (hc : Ctx L g m₀ t) (hL : L.Ok) (h32 : L.seedLen = 32) :
     Spec.Ed25519.bytesAt t.mem (State.addr L.seed) 32 = Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32 := by
   unfold Spec.Ed25519.bytesAt
-  refine List.map_congr_left fun i hi => hc.frame.bytes (R := L.SEED) ?_ (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+  refine List.map_congr_left fun i hi => hc.frame.bytes (R := L.SEED) ?_
+    (by change L.seedLen ≤ 2 ^ 64; rw [h32]; decide)
+    (by change i < L.seedLen; rw [h32]; exact List.mem_range.mp hi)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact hL.os.symm
@@ -167,18 +178,20 @@ theorem init_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
   exact WP.mono (Whole.init_call hu (Whole.init_pre h0 hL.nc) (Whole.covers_writes hw) hw h0)
     fun v ⟨hv, _, hh⟩ => ⟨hv, hh⟩
 
-theorem update_covers (L : Lay) : Covers (Whole.updateRd L.E L.seed 32 ++ Whole.hashWr L.scr)
+theorem update_covers (L : Lay) (h32 : L.seedLen = 32) :
+    Covers (Whole.updateRd L.E L.seed 32 ++ Whole.hashWr L.scr)
     (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
   simp only [Whole.updateRd, Whole.hashWr, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨L.SEED, by simp [Lay.inputs], 0, (BitVec.add_zero _).symm, by change 0 + (32#32).toNat ≤ 32; decide⟩
+  · exact ⟨L.SEED, by simp [Lay.inputs], 0, (BitVec.add_zero _).symm, by
+      change 0 + (32#32).toNat ≤ L.seedLen; rw [h32]; decide⟩
   · exact ⟨L.FR, by simp, 0, (BitVec.add_zero _).symm, by change 0 + 12 ≤ 248; decide⟩
   · exact ⟨L.SCR, by simp [Lay.outputs], 0, (BitVec.add_zero _).symm, by change 0 + 192 ≤ 8192; decide⟩
   · exact ⟨L.SCR, by simp [Lay.outputs], 192, rfl, by change 192 + 272 ≤ 8192; decide⟩
 
-theorem update_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
+theorem update_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr) []) :
     WP isa (callWith updateArgs "vg_sha512_update_scratch" Impl.Sha512.Arm.Stream.update) t fun u =>
       Ctx L g m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (State.addr L.scr)
@@ -196,16 +209,16 @@ theorem update_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   have a2 := st 2 (by decide)
   simp only [argValue, Lay.value, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at h0 h2 h3 a0 a1 a2
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
-  have hp := Whole.update_pre hu.sp h0 a0 a1 a2 hL.sc
-    (hL.kc.sub_left (Region.sub_prefix (by decide : 12 ≤ 280))) hL.nc hL.ns
+  have hp := Whole.update_pre hu.sp h0 a0 a1 a2 (hL.sc32 h32)
+    (hL.kc.sub_left (Region.sub_prefix (by decide : 12 ≤ 280))) hL.nc (hL.ns32 h32)
     (by have := hL.top; omega)
   have count : Proof.Sha512.countArm u = BitVec.ofNat 64 ([] : List Byte).length := by
     rw [Proof.Sha512.countArm, h2, h3]
     rfl
-  refine WP.mono (Whole.update_call hu hp (update_covers L) hw h0 a0 a1 count (setup_repr hL hm hh))
+  refine WP.mono (Whole.update_call hu hp (update_covers L h32) hw h0 a0 a1 count (setup_repr hL hm hh))
     fun u' ⟨hu', _, hr⟩ => ⟨hu', ?_⟩
   change Spec.Sha512.Repr _ u'.mem _ ([] ++ Spec.Ed25519.bytesAt u.mem (State.addr L.seed) 32) at hr
-  rw [List.nil_append, hu.seed_bytes hL] at hr
+  rw [List.nil_append, hu.seed_bytes hL h32] at hr
   exact hr
 
 theorem digest_addr (hL : L.Ok) : State.addr (L.E + 184) = State.addr L.E + 184 :=
@@ -273,12 +286,12 @@ theorem finalize_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   rw [addr_add (k := 184) (by have := hL.top; omega)] at hd
   exact hd
 
-theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (h32 : L.seedLen = 32) :
     WP isa hash t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (State.addr L.E + 184) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
   exact WP.seq (WP.mono (init_step hc hL ha) fun t₁ ⟨h₁, hh₁⟩ =>
-    WP.seq (WP.mono (update_step h₁ hL ha hh₁) fun t₂ ⟨h₂, hh₂⟩ => finalize_step h₂ hL ha hh₂))
+    WP.seq (WP.mono (update_step h₁ hL ha h32 hh₁) fun t₂ ⟨h₂, hh₂⟩ => finalize_step h₂ hL ha hh₂))
 
 end VG.Proof.Ed25519.Arm.PublicKey
 end
@@ -413,31 +426,38 @@ section
 namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm
 
-def pkLocal : Contract isa where
+/-- The public key from `n` bytes read at the seed pointer (the seed, or its cached digest),
+with the postcondition `post`. -/
+def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
   pre s :=
     let out : Region := ⟨State.addr (s.gpr .r0), 32⟩
-    let seed : Region := ⟨State.addr (s.gpr .r1), 32⟩
+    let seed : Region := ⟨State.addr (s.gpr .r1), n⟩
     let scr : Region := ⟨State.addr (s.gpr .r2), 8192⟩
     let stk : Region := ⟨State.addr s.sp - 280, 280⟩
     let tb : Region := TBL (s.syms VG.Impl.Ed25519.Arm.combSym)
     s.rd = [seed, tb] ∧ s.wr = [out, scr] ∧
       out.Disjoint seed ∧ out.Disjoint scr ∧ seed.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint scr ∧
-      (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
+      (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + n ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ s.sp.toNat ∧
       (s.syms VG.Impl.Ed25519.Arm.combSym).toNat + 98304 ≤ 2 ^ 32 ∧
       (∀ j < 64 * 192, s.mem.readW (State.addr (s.syms VG.Impl.Ed25519.Arm.combSym) +
         BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j) ∧
       tb.Disjoint out ∧ tb.Disjoint scr ∧ tb.Disjoint stk
-  post s t := Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
+  post := post
   pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2 ∧
     s.syms VG.Impl.Ed25519.Arm.combSym = t.syms VG.Impl.Ed25519.Arm.combSym
 
-def lay (s : State) : Lay :=
-  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, Whole.base s, s.syms VG.Impl.Ed25519.Arm.combSym⟩
+def pkLocal : Contract isa := pkLocalWith 32 fun s t =>
+  Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 32 =
+    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
 
-theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
+def lay (n : Nat) (s : State) : Lay :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, Whole.base s, s.syms VG.Impl.Ed25519.Arm.combSym, n⟩
+
+variable {n : Nat} {post : State → State → Prop}
+
+theorem lay_ok {s : State} (h : (pkLocalWith n post).pre s) : (lay n s).Ok := by
   obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hb, tf, _, tout, tscr, tstk⟩ := h
   have he := Whole.base_addr hb
   have top := Whole.base_top hb
@@ -453,11 +473,11 @@ theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
   · change Region.Disjoint _ (⟨State.addr (Whole.base s), 280⟩ : Region)
     rw [he]; exact tstk
 
-theorem entry_below {s : State} (h : pkLocal.pre s) : 280 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.1
+theorem entry_below {s : State} (h : (pkLocalWith n post).pre s) : 280 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- The tables at the body's entry. -/
-theorem entry_tbl {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.entered s) 3 p) :
-    Tbl (lay s) p.mem := fun j hj => by
+theorem entry_tbl {s p : State} (h : (pkLocalWith n post).pre s) (hp : Whole.Saved (Whole.entered s) 3 p) :
+    Tbl (lay n s) p.mem := fun j hj => by
   have hf := Whole.saved_frame (entry_below h) hp
   have hw := h.2.2.2.2.2.2.2.2.2.2.2.2.2.1 j hj
   rw [← hw]
@@ -469,7 +489,7 @@ theorem entry_tbl {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.ent
   rw [Whole.base_addr (entry_below h)]
   exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
-theorem entry_writes {s : State} (h : pkLocal.pre s) :
+theorem entry_writes {s : State} (h : (pkLocalWith n post).pre s) :
     ∀ r ∈ s.wr, (Whole.stack s).Disjoint r := by
   intro r hr
   rw [h.2.1] at hr
@@ -478,13 +498,13 @@ theorem entry_writes {s : State} (h : pkLocal.pre s) :
   · exact (lay_ok h).ko
   · exact (lay_ok h).kc
 
-theorem entry_ctx {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.entered s) 3 p) :
-    Ctx (lay s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
+theorem entry_ctx {s p : State} (h : (pkLocalWith n post).pre s) (hp : Whole.Saved (Whole.entered s) 3 p) :
+    Ctx (lay n s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
   have hc := Whole.saved_ctx hp
   simpa only [Whole.bodyRd, h.1, Whole.bodyWr, h.2.1, Ctx, Lay.inputs, Lay.outputs,
     Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, lay, List.cons_append, List.nil_append] using hc
 
-theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Whole.entered s) 3 p) : Arguments (lay s) p.mem := by
+theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Whole.entered s) 3 p) : Arguments (lay n s) p.mem := by
   intro j hj
   have hw := Whole.saved_words hs (by decide : 3 ≤ 6)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt) hp hj
@@ -576,19 +596,31 @@ open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
-theorem body_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
+/-- The public key after a first step `first` that leaves a digest `D` at `frame 184`: the
+public key of every seed whose digest `D` is. -/
+theorem bodyFrom_ok {first : Prog isa} {D : List Byte}
+    (hfirst : WP isa first t fun u => Ctx L g m₀ u ∧
+      Spec.Ed25519.bytesAt u.mem (State.addr L.E + 184) 64 = D)
+    (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
     (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa body t fun u => Ctx L g m₀ u ∧
+    WP isa (bodyFrom first) t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
-  refine WP.seq (WP.mono_syms (hash_ok hc hL ha) fun u ⟨hu, hh⟩ syu => ?_)
+        Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul (Spec.Ed25519.prune D) Spec.Ed25519.basePoint) := by
+  refine WP.seq (WP.mono_syms hfirst fun u ⟨hu, hh⟩ syu => ?_)
   refine WP.seq (WP.mono_syms (prune_step hu hL hh) fun u' ⟨hu', hs⟩ syu' => ?_)
   refine WP.seq (WP.mono (base_step hu' hL ha hw (by rw [syu', syu]; exact hsy) hs)
     fun u'' ⟨hu'', hp⟩ => ?_)
   exact WP.mono (wipe_step hu'' hL) fun w ⟨hw, hm⟩ => ⟨hw, hm.trans hp⟩
 
+theorem body_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
+    (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) (h32 : L.seedLen = 32) :
+    WP isa body t fun u => Ctx L g m₀ u ∧
+      Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
+        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) :=
+  bodyFrom_ok (hash_ok hc hL ha h32) hL ha hw hsy
+
 theorem body_noFrames : body.noFrames = true := by
-  simp only [body, Impl.Ed25519.Arm.PublicKey.hash, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames,
+  simp only [body, bodyFrom, Impl.Ed25519.Arm.PublicKey.hash, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames,
     Impl.Sha512.Arm.Stream.init, Bool.and_self]
   rw [base_noFrames]
   rfl
@@ -601,7 +633,7 @@ theorem publicKey_ok {s : State} (h : pkLocal.pre s) :
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (State.addr (s.gpr .r0)) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 32))
     (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args (entry_below h) hp)
-      (entry_tbl h hp) (congrFun hp.step.syms _))
+      (entry_tbl h hp) (congrFun hp.step.syms _) rfl)
       fun u ⟨hu, ho⟩ => ⟨by
         simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
           Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
@@ -702,7 +734,8 @@ def init_ready (hL : L.Ok) (hs : Slots L initValues [] t) :
   have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   exact ⟨[], Whole.initWr L.scr, Whole.init_pre h0 hL.nc, Whole.covers_writes hw, hw⟩
 
-def update_ready (hL : L.Ok) (he : t.sp = L.E) (hs : Slots L updateValues updateStack t) :
+def update_ready (hL : L.Ok) (h32 : L.seedLen = 32) (he : t.sp = L.E)
+    (hs : Slots L updateValues updateStack t) :
     Whole.CallReady Proof.Sha512.updateArm L.E L.inputs L.outputs t := by
   have h0 := hs.1 (.r0, .caller 2 0) (by simp [updateValues])
   have a0 := hs.2 0 (by decide)
@@ -711,9 +744,9 @@ def update_ready (hL : L.Ok) (he : t.sp = L.E) (hs : Slots L updateValues update
   simp only [updateStack, argValue, Lay.value, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at h0 a0 a1 a2
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   exact ⟨Whole.updateRd L.E L.seed 32, Whole.hashWr L.scr,
-    Whole.update_pre he h0 a0 a1 a2 hL.sc
-      (hL.kc.sub_left (Region.sub_prefix (by decide : 12 ≤ 280))) hL.nc hL.ns
-      (by have := hL.top; omega), update_covers L, hw⟩
+    Whole.update_pre he h0 a0 a1 a2 (hL.sc32 h32)
+      (hL.kc.sub_left (Region.sub_prefix (by decide : 12 ≤ 280))) hL.nc (hL.ns32 h32)
+      (by have := hL.top; omega), update_covers L h32, hw⟩
 
 def finalize_ready (hL : L.Ok) (he : t.sp = L.E) (hs : Slots L finalizeValues finalizeStack t) :
     Whole.CallReady Proof.Sha512.finalizeArm L.E L.inputs L.outputs t := by
@@ -767,10 +800,10 @@ theorem init_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L init
     exact hg (.r0, .caller 2 0) (by simp [initValues])
   · simp [initValues, linkRegs]
 
-theorem update_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L updateValues updateStack))
+theorem update_ct (hL : L.Ok) (h32 : L.seedLen = 32) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L updateValues updateStack))
     (.call "vg_sha512_update_scratch" Impl.Sha512.Arm.Stream.update) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha512.Arm.Stream.Update.update_verified.1 Proof.Sha512.Arm.Stream.Update.update_verified.2.1
-    Whole.update_noFrames (fun _ he h => update_ready hL he h)
+    Whole.update_noFrames (fun _ he h => update_ready hL h32 he h)
   · intro a b ar aw br bw hsp hg ht
     exact ⟨hsp, hg (.r0, .caller 2 0) (by simp [updateValues]), hg (.r2, .const 0) (by simp [updateValues]), hg (.r3, .const 0) (by simp [updateValues]), ht 0 (by decide), ht 1 (by decide), ht 2 (by decide)⟩
   · simp [updateValues, linkRegs]
@@ -822,8 +855,28 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True
   · intro t ⟨hc, _⟩; exact WP.mono (wipe_step hc hL) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
   · intro t ⟨hc, _⟩; exact WP.mono (wipe_step hc hL) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
 
-theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁)
-    (hw₂ : Tbl L m₂) :
+/-- The public key after a first step related to itself, as `hash` and the copy of a cached
+digest are. -/
+theorem bodyFrom_ct {first : Prog isa}
+    (hfirst : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) first (Two L g₁ g₂ m₁ m₂ fun _ => True))
+    (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂) :
+    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
+      a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+      (bodyFrom first) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+  have b := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb baseValues []
+    (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
+    (by simp [baseValues, preserved]) (by decide) (by simp [Whole.valid])
+    (by simp)
+  have bc : RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (Slots L baseValues []) a b ∧
+      a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+      (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+    (base_ct hL).mono (fun a b ⟨⟨⟨hca, hsa⟩, ⟨hcb, hsb⟩⟩, sa, sb⟩ =>
+      ⟨⟨hca, hsa, sa, hca.tbl hL hw₁⟩, ⟨hcb, hsb, sb, hcb.tbl hL hw₂⟩⟩) fun _ _ h => h
+  exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T hfirst).seq
+    ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (prune_ct hL)).seq (((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T b).seq bc).seq (wipe_ct hL)))
+
+theorem body_ct (hL : L.Ok) (h32 : L.seedLen = 32) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
       a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
       body (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
@@ -839,19 +892,10 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw�
     (by decide) (by simp [finalizeValues, Whole.valid]) (by simp [finalizeValues])
     (by simp [finalizeValues, preserved]) (by decide) (by simp [finalizeStack, Whole.valid])
     (by simp [finalizeStack])
-  have b := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb baseValues []
-    (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
-    (by simp [baseValues, preserved]) (by decide) (by simp [Whole.valid])
-    (by simp)
-  have bc : RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (Slots L baseValues []) a b ∧
-      a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-    (base_ct hL).mono (fun a b ⟨⟨⟨hca, hsa⟩, ⟨hcb, hsb⟩⟩, sa, sb⟩ =>
-      ⟨⟨hca, hsa, sa, hca.tbl hL hw₁⟩, ⟨hcb, hsb, sb, hcb.tbl hL hw₂⟩⟩) fun _ _ h => h
-  exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T ((i.seq (init_ct hL)).seq ((u.seq (update_ct hL)).seq (f.seq (finalize_ct hL))))).seq
-    ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (prune_ct hL)).seq (((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T b).seq bc).seq (wipe_ct hL)))
+  exact bodyFrom_ct ((i.seq (init_ct hL)).seq ((u.seq (update_ct hL h32)).seq (f.seq (finalize_ct hL))))
+    hL ha hb hw₁ hw₂
 
-theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
+theorem lay_eq {n : Nat} {s t : State} (hp : pkLocal.pub s t) : lay n s = lay n t := by
   obtain ⟨sp, h0, h1, h2, hy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, hy]
 
@@ -863,17 +907,17 @@ theorem publicKey_ct : ConstantTime isa pkLocal.pre pkLocal.pub code := by
     exact Nat.le_of_lt s.sp.isLt
   · intro s hs p hp
     exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args (entry_below hs) hp)
-      (entry_tbl hs hp) (congrFun hp.step.syms _)) fun _ _ => trivial
+      (entry_tbl hs hp) (congrFun hp.step.syms _) rfl) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq hp
-    have hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
+    have he := lay_eq (n := 32) hp
+    have hq : Ctx (lay 32 s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay s) q.mem := he ▸ entry_args (entry_below ht) hqb
-    have hqw : Tbl (lay s) q.mem := he ▸ entry_tbl ht hqb
+    have hqa : Arguments (lay 32 s) q.mem := he ▸ entry_args (entry_below ht) hqb
+    have hqw : Tbl (lay 32 s) q.mem := he ▸ entry_tbl ht hqb
     have hqy : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms VG.Impl.Ed25519.Arm.combSym =
-        (lay s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.symm
-    exact ⟨(body_ct (lay_ok hs) (entry_args (entry_below hs) hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
+        (lay 32 s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.symm
+    exact ⟨(body_ct (lay_ok hs) rfl (entry_args (entry_below hs) hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
       ⟨⟨⟨entry_ctx hs hpa, trivial⟩, ⟨hq, trivial⟩⟩, congrFun hpa.step.syms _, hqy⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.Arm.PublicKey

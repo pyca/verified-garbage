@@ -35,8 +35,27 @@ def hash : Prog isa :=
     (.seq (callWith updateArgs "vg_sha512_update_scratch" Sha512.Arm.Stream.update)
       (callWith finalizeArgs "vg_sha512_finalize_scratch" Sha512.Arm.Stream.finalize))
 def wipe : List Instr := zeroWords 6 56
-def body : Prog isa := .seq hash (.seq (.block prune)
+/-- The body after `digest`, which leaves the seed's SHA-512 digest at `frame 184`. -/
+def bodyFrom (digest : Prog isa) : Prog isa := .seq digest (.seq (.block prune)
   (.seq (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) (.block wipe)))
+def body : Prog isa := bodyFrom hash
 def code : Prog isa := wrap 3 body
+
+/-- The pointers of the copy: the cached digest (the second argument) in `r1`, `frame 184`
+in `r2`. -/
+def copyArgs : List (Reg × Value) := [(.r1, .caller 1 0), (.r2, .frame 184)]
+
+/-- The sixteen words at `r1` copied to `r2`. Word loads need no alignment (`TCB/Arm/Isa.lean`),
+so the digest may be at any address. -/
+def copyWords : List Instr :=
+  (List.range 16).flatMap fun k => [.ldr .r0 .r1 (4 * k), .str .r0 .r2 (4 * k)]
+
+/-- The seed's cached SHA-512 digest (the second argument) copied to `frame 184`, where
+`hash` (and signing's `hashSeed`) leave the digest they compute. -/
+def copyExpanded : Prog isa := .seq (.block (setup copyArgs [])) (.block copyWords)
+
+/-- `vg_ed25519_public_key_expanded`: `code` from the seed's cached SHA-512 digest
+(`publicKeyExpandedContract`), copied rather than computed. -/
+def codeExpanded : Prog isa := wrap 3 (bodyFrom copyExpanded)
 
 end VG.Impl.Ed25519.Arm.PublicKey
