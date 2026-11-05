@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.FastCT
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.GatherSplit
@@ -17,8 +18,8 @@ open VG.Proof.Gather.PPC64LE (Eq2 TT rel_seq rel_taint rel_ite ct_of)
 
 
 theorem body_rel (hv : Gather.SealOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
-      (Spec.Gcm.sealContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
     (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
       (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
@@ -44,8 +45,8 @@ theorem body_rel (hv : Gather.SealOk)
 
 
 theorem sealGather_ct (hv : Gather.SealOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
-      (Spec.Gcm.sealContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
     (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
       (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode) :

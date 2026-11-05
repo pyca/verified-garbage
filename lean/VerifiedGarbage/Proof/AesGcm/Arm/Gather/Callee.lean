@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Spec.Gcm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
 calls `vg_aes_gcm_seal` as an artifact (`SealFn`), with its working space in
 a frame of its own, so what the proof needs of it is its shared contract
-(`Spec.Gcm.sealContract`, with 2600 bytes of stack): its precondition from
+(`Proof.AesGcm.sealRoundsContract`, with 2600 bytes of stack): its precondition from
 the layout the call gives it (`callPre`, `sealSpec_pre`), its postcondition
 (`sealSpec_post`) and its public data (`sealSpec_pub`).
 -/
@@ -32,7 +33,7 @@ open VG.Spec.Gcm (ctxCiph ctxH encryptWith)
 structure SealFn where
   name : String
   code : Prog isa
-  verified : Verified Arm.target code (Spec.Gcm.sealContract Arm.abi 2600)
+  verified : Verified Arm.target code (Proof.AesGcm.sealRoundsContract Arm.abi 2600)
   depth : armStack code ≤ 2600
 
 /-- What a call of `vg_aes_gcm_seal(ctx = r0, rounds = r1, nonce = r2,
@@ -57,34 +58,34 @@ def callPre (s : State) : Prop :=
     ((s.gpr .r1).toNat = 10 ∨ (s.gpr .r1).toNat = 12 ∨ (s.gpr .r1).toNat = 14)
 
 /-- The shared contract's precondition, from the layout the call gives. -/
-theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract Arm.abi 2600).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract Arm.abi 2600).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
   have a₂₅ := h
   clear h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, List.append_eq]
   exact ⟨a₂₃, a₂₄, a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀,
     a₂₁, a₂₂, a₂₅⟩
 
 /-- Its postcondition, for rounds of 10, 12 or 14. -/
-theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract Arm.abi 2600).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract Arm.abi 2600).post s s')
     (hR : (s.gpr .r1).toNat = 10 ∨ (s.gpr .r1).toNat = 12 ∨ (s.gpr .r1).toNat = 14) :
     encryptWith (ctxCiph s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat) (ctxH s.mem (State.addr (s.gpr .r0))) 16
         (bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
         (bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat)
         (bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat) =
       (bytesAt s'.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat, bytesAt s'.mem (State.addr (stackArg s 4)) 16) := by
-  sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, List.append_eq] at h
   exact h hR
 
 /-- Its public data, from the arguments. -/
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp ∧
-    ∀ i < 5, stackArg s₁ i = stackArg s₂ i) : (Spec.Gcm.sealContract Arm.abi 2600).pub s₁ s₂ := by
+    ∀ i < 5, stackArg s₁ i = stackArg s₂ i) : (Proof.AesGcm.sealRoundsContract Arm.abi 2600).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     List.append_eq]
   exact ⟨a₅, a₁, a₂, a₃, a₄, a₆ 0 (by decide), a₆ 1 (by decide), a₆ 2 (by decide), a₆ 3 (by decide),
     a₆ 4 (by decide)⟩

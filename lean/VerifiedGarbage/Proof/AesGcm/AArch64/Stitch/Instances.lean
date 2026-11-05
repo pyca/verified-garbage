@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
@@ -54,7 +55,7 @@ include hMK hP gh
 omit hP in
 theorem sealPwCode_framed (g : GhashWithImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g))
-      (Spec.Gcm.sealWithPowersContract AArch64.abi 2592) := by
+      (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi 2592) := by
   unfold sealPwCode
   split
   · exact Fast.sealPwS_framed v g hMK gh
@@ -63,7 +64,7 @@ theorem sealPwCode_framed (g : GhashWithImpl) :
 omit hP in
 theorem openPwCode_framed (g : GhashWithImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g))
-      (Spec.Gcm.openWithPowersContract AArch64.abi 2592) := by
+      (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi 2592) := by
   unfold openPwCode
   split
   · exact Fast.openPwS_framed v g hMK gh
@@ -71,7 +72,7 @@ theorem openPwCode_framed (g : GhashWithImpl) :
 
 theorem sealStCode_framed (g : GhashStoreImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealStCode v g))
-      (Spec.Gcm.sealStorePowersContract AArch64.abi 2592) := by
+      (Proof.AesGcm.sealStorePowersRoundsContract AArch64.abi 2592) := by
   unfold sealStCode
   split
   · exact Fast.sealStS_framed v g hMK hP gh
@@ -79,7 +80,7 @@ theorem sealStCode_framed (g : GhashStoreImpl) :
 
 theorem openStCode_framed (g : GhashStoreImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openStCode v g))
-      (Spec.Gcm.openStorePowersContract AArch64.abi 2592) := by
+      (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592) := by
   unfold openStCode
   split
   · exact Fast.openStS_framed v g hMK hP gh

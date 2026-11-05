@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Contract
@@ -17,7 +18,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 
 Untrusted: everything here is checked by Lean. The shared contract of
 `vg_aes_gcm_seal_gather`, with the 2832 bytes of stack below the stack
-pointer that its frame and its call use (`Spec.Gcm.sealGatherContract`),
+pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`),
 implies the one the proof is written against (`gatherPPC64LE`,
 `gather_implies`), and so the code, calling `vg_aes_gcm_seal` by its shared
 contract (`seal_framed`), is `Verified` against it (`sealGather_verified`).
@@ -34,9 +35,9 @@ open VG.Proof.ChaCha20Poly1305.PPC64LE.Gather (filter_true' filter_false' filter
 theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract PPC64LE.abi 2832).pre s) :
+theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).pre s) :
     gatherPre s := by
-  sig_pre [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
+  sig_pre [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq] at h
   simp only [List.map_append, List.filter_append, List.filter_map, List.map_map, List.filterMap_append,
     List.filterMap_map, List.map_cons, List.map_nil, List.filter_cons, List.filter_nil, Function.comp_def,
@@ -52,14 +53,14 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract PPC64LE.
     ods, ol, od, ot, w₁, by omega, hR, hg⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Spec.Gcm.sealGatherContract PPC64LE.abi 2832).post s s' := by
-  sig_post [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPost, PPC64LE.abi,
+    (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).post s s' := by
+  sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.Gcm.sealGatherContract PPC64LE.abi 2832).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
-  sig_pub [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
+  sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq] at hp
   obtain ⟨qsp, q3, q4, q5, q6, q7, q8, q9, q10, a0, a1, a2, hd⟩ := hp
   exact ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, a0, a1, a2, hd⟩
@@ -76,12 +77,12 @@ def gatherSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9060, 24⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 16⟩]
 
-theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract PPC64LE.abi 2832).pre s := by
-  sig_implies_sat [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
+theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).pre s := by
+  sig_implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq]
     [gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using gatherSat
 
-theorem gather_implies : gatherPPC64LE.Implies (Spec.Gcm.sealGatherContract PPC64LE.abi 2832) :=
+theorem gather_implies : gatherPPC64LE.Implies (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
 theorem sealGather_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
@@ -90,7 +91,7 @@ theorem sealGather_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE
   sealGather_wp seal_framed.1 hs
 
 theorem sealGather_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target sealGather (Spec.Gcm.sealGatherContract PPC64LE.abi 2832) :=
+    Verified PPC64LE.target sealGather (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832) :=
   Verified.of_correct (k := gatherPPC64LE) sealGather_correct (sealGather_ct seal_framed.1 seal_framed.2.1)
     gather_implies
 

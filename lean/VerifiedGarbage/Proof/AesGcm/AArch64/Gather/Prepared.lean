@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared8
 public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
@@ -63,7 +64,7 @@ theorem sealPreparedSpec_post {s s' : State} (h : (Proof.Gcm.sealPrepared8Contra
         (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
         (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
       (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
-  sig_post [Proof.Gcm.sealPrepared8Contract, Proof.Gcm.sealPrepared8Sig, Spec.Gcm.sealPost,
+  sig_post [Proof.Gcm.sealPrepared8Contract, Proof.Gcm.sealPrepared8Sig, Proof.AesGcm.sealRoundsPost,
     AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq] at h
   exact h hR
 
@@ -113,7 +114,7 @@ theorem gatherPre_of_specP {s : State} (h : (Proof.Gcm.sealGatherPrepared8Contra
 theorem gatherPost_ofP {s s' : State} (h : gatherPost s s') :
     (Proof.Gcm.sealGatherPrepared8Contract AArch64.abi 2592).post s s' := by
   sig_post [Proof.Gcm.sealGatherPrepared8Contract, Proof.Gcm.sealGatherPrepared8Sig,
-    Spec.Gcm.sealGatherPost, AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq]
+    Proof.AesGcm.sealGatherRoundsPost, AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq]
   exact fun _ _ => h
 
 theorem gatherPub_ofP {s₁ s₂ : State} (hp : (Proof.Gcm.sealGatherPrepared8Contract AArch64.abi 2592).pub s₁ s₂) :

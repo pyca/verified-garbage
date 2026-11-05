@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
@@ -38,7 +39,7 @@ def sealGatherPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) :
     (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
       Spec.Gcm.sealGatherPreparedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
-      Spec.Gcm.sealGatherPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
+      Proof.AesGcm.sealGatherRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (writeArgs := true) (stack := stack)
 
 variable (pb : Nat)

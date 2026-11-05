@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -154,28 +155,28 @@ theorem streamEncrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, streamEncryptRISCV64, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptRISCV64, streamCryptPre,
       streamCryptPub, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Spec.Gcm.streamDecryptPost, streamDecryptRISCV64, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptRISCV64, streamCryptPre,
       streamCryptPub, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamFinish (Proof.AesGcm.streamFinishScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
-      Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost, streamFinishRISCV64, finPre, rounds, RISCV64.abi,
+      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishRISCV64, finPre, rounds, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [finSat] using finSat)
 
 theorem streamVerify_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamVerify (Proof.AesGcm.streamVerifyScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
-      Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost, streamVerifyRISCV64, verPre, rounds, RISCV64.abi,
+      Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyRISCV64, verPre, rounds, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [verSat] using verSat)
 
 /-- `tag` at `0x5000` and the working space at `0x6000`, the stack arguments. -/
@@ -191,7 +192,7 @@ theorem seal_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target «seal» (Proof.AesGcm.sealScratchContract RISCV64.abi 2048) :=
   Verified.of_correct seal_correct seal_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealRISCV64, sealPre, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true,
+      Proof.AesGcm.sealRoundsPost, sealRISCV64, sealPre, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true,
       stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
@@ -220,7 +221,7 @@ theorem open_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
           stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         intro s s' _ h
-        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPost, RISCV64.abi,
+        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Proof.AesGcm.openRoundsPost, RISCV64.abi,
           RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
         simp only [openRISCV64] at h
         intro _
@@ -313,62 +314,62 @@ theorem streamAad_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
 `vg_aes_gcm_stream_decrypt`, without the working space. -/
 def streamCryptFrameSat : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract RISCV64.abi 4608).pre s := by
-  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamEncryptPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
+theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract RISCV64.abi 4608).pre s := by
+  implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamEncryptRoundsPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
 theorem streamEncrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamEncrypt)
-      (Spec.Gcm.streamEncryptContract RISCV64.abi 4608) :=
+      (Proof.AesGcm.streamEncryptRoundsContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre RISCV64.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
+    (post := Proof.AesGcm.streamEncryptRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
     (bytes := 2560) streamEncrypt_verified (by decide) (by decide) streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract RISCV64.abi 4608).pre s := by
-  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamDecryptPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
+theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract RISCV64.abi 4608).pre s := by
+  implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamDecryptRoundsPost, RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
 theorem streamDecrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamDecrypt)
-      (Spec.Gcm.streamDecryptContract RISCV64.abi 4608) :=
+      (Proof.AesGcm.streamDecryptRoundsContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre RISCV64.abi.ptrBits)
-    (post := Spec.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
+    (post := Proof.AesGcm.streamDecryptRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
     (bytes := 2560) streamDecrypt_verified (by decide) (by decide) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, without
 the working space. -/
 def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract RISCV64.abi 4608).pre s := by
-  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
-    Spec.Gcm.streamFinishPost, RISCV64.abi, RISCV64.argRegs] [finFrameSat, finSat] using finFrameSat
+theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract RISCV64.abi 4608).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, RISCV64.abi, RISCV64.argRegs] [finFrameSat, finSat] using finFrameSat
 
 theorem streamFinish_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 streamFinish)
-      (Spec.Gcm.streamFinishContract RISCV64.abi 4608) :=
+      (Proof.AesGcm.streamFinishRoundsContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre RISCV64.abi.ptrBits)
-    (post := Spec.Gcm.streamFinishPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
+    (post := Proof.AesGcm.streamFinishRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
     (bytes := 2560) streamFinish_verified (by decide) (by decide) finFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, without
 the working space. -/
 def verFrameSat : State := { verSat with wr := [⟨0x3000, 80⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract RISCV64.abi 4608).pre s := by
-  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
-    Spec.Gcm.streamVerifyPost, RISCV64.abi, RISCV64.argRegs] [verFrameSat, verSat] using verFrameSat
+theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract RISCV64.abi 4608).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, RISCV64.abi, RISCV64.argRegs] [verFrameSat, verSat] using verFrameSat
 
 theorem streamVerify_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamVerify)
-      (Spec.Gcm.streamVerifyContract RISCV64.abi 4608) :=
+      (Proof.AesGcm.streamVerifyRoundsContract RISCV64.abi 4608) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre RISCV64.abi.ptrBits)
-    (post := Spec.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
+    (post := Proof.AesGcm.streamVerifyRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
     (bytes := 2560) streamVerify_verified (by decide) (by decide) verFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
@@ -377,8 +378,8 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9000, 8⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract RISCV64.abi 4624).pre s := by
-  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost, RISCV64.abi,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost, RISCV64.abi,
     RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
 
@@ -386,9 +387,9 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract RISCV64.abi 4624).pre s
 working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
 theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 «seal»)
-      (Spec.Gcm.sealContract RISCV64.abi 4624) :=
+      (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Gcm.sealPre RISCV64.abi.ptrBits) (post := Spec.Gcm.sealPost RISCV64.abi.ptrBits)
+    (pre := Spec.Gcm.sealPre RISCV64.abi.ptrBits) (post := Proof.AesGcm.sealRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 2048) (bytes := 2576) (m := 1) seal_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _) sealFrameSat_pre
 
@@ -398,17 +399,17 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9000, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract RISCV64.abi 4640).pre s := by
-  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract RISCV64.abi 4640).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak,
     RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 /-- `open`, whose `tag` and `tag_len` arrive on the stack, as `seal`'s `tag` does. -/
 theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 «open»)
-      (Spec.Gcm.openContract RISCV64.abi 4640) :=
+      (Proof.AesGcm.openRoundsContract RISCV64.abi 4640) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Gcm.openPre RISCV64.abi.ptrBits) (post := Spec.Gcm.openPost RISCV64.abi.ptrBits)
+    (pre := Spec.Gcm.openPre RISCV64.abi.ptrBits) (post := Proof.AesGcm.openRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 2048) (bytes := 2592) (m := 2) (leak := some (Spec.Gcm.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesGcm.openPre_local _) (Proof.AesGcm.openPost_local _)
     openFrameSat_pre (hleak := Proof.AesGcm.openLeak_local _)

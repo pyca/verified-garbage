@@ -1,5 +1,6 @@
 module
 import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
@@ -59,7 +60,7 @@ theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
       (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (fastOpen_correct v hMK) (Fast.open_fast_ct v hMK) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+      Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
@@ -74,10 +75,10 @@ theorem openCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
 theorem openCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v))
-      (Spec.Gcm.openContract AArch64.abi 2592) :=
+      (Proof.AesGcm.openRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre AArch64.abi.ptrBits)
-    (post := Spec.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
     (openCode_verified v hMK) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
     (hleak := openLeak_local _)

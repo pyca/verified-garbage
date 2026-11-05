@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -124,32 +125,32 @@ stack argument, at `0x8008`. -/
 def crFrameSat : State :=
   { crSat with rd := [⟨0x1000, 256⟩, ⟨0x8008, 8⟩], wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract X86_64.abi 2608).pre s := by
-  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamEncryptPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
+theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s := by
+  implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamEncryptRoundsPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
 
 theorem streamEncrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncrypt v.callees))
-      (Spec.Gcm.streamEncryptContract X86_64.abi 2608) :=
+      (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncrypt_verified v) (by decide) (by decide) (by decide)
     (streamEncrypt_spSafe v) (streamEncrypt_xdepth v) (streamTextPre_local _) (streamEncryptPost_local _)
     streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract X86_64.abi 2608).pre s := by
-  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamDecryptPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
+theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s := by
+  implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamDecryptRoundsPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
 
 theorem streamDecrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecrypt v.callees))
-      (Spec.Gcm.streamDecryptContract X86_64.abi 2608) :=
+      (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamDecryptPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
     (streamDecrypt_spSafe v) (streamDecrypt_xdepth v) (streamTextPre_local _) (streamDecryptPost_local _)
     streamDecryptFrameSat_pre
@@ -188,17 +189,17 @@ theorem open_xdepth : («open» v.callees).x86_64Depth ≤ 24 := by
 the working space. -/
 def finFrameSat : State := { finSat with rd := [⟨0x1000, 256⟩], wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract X86_64.abi 2584).pre s := by
-  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
-    Spec.Gcm.streamFinishPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
+theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
 
 theorem streamFinish_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamFinish v.callees))
-      (Spec.Gcm.streamFinishContract X86_64.abi 2584) :=
+      (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamFinishPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2576) (streamFinish_verified v) (by decide) (by decide) (by decide)
     (streamFinish_spSafe v) (streamFinish_xdepth v) (streamFinishPre_local _)
     (streamFinishPost_local _) finFrameSat_pre
@@ -208,17 +209,17 @@ the working space. -/
 def verFrameSat : State :=
   { verSat with rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩, ⟨0x8008, 8⟩], wr := [⟨0x3000, 80⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract X86_64.abi 2592).pre s := by
-  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
-    Spec.Gcm.streamVerifyPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
+theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 2592).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
 
 theorem streamVerify_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamVerify v.callees))
-      (Spec.Gcm.streamVerifyContract X86_64.abi 2592) :=
+      (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 2592) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.streamVerifyPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2584) (streamVerify_verified v) (by decide) (by decide) (by decide)
     (streamVerify_spSafe v) (streamVerify_xdepth v) (streamVerifyPre_local _)
     (streamVerifyPost_local _) verFrameSat_pre
@@ -229,8 +230,8 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩],
                  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract X86_64.abi 2624).pre s := by
-  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract X86_64.abi 2624).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
 /-- `vg_aes_gcm_seal` in its frame, for any code that meets the contract
@@ -239,17 +240,17 @@ theorem sealCode_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.sealScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
-      (Spec.Gcm.sealContract X86_64.abi 2624) :=
+      (Proof.AesGcm.sealRoundsContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2600) hv (by decide) (by decide) (by decide)
     hsp hxd (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» v.callees))
-      (Spec.Gcm.sealContract X86_64.abi 2624) :=
+      (Proof.AesGcm.sealRoundsContract X86_64.abi 2624) :=
   sealCode_framed (seal_verified v) (seal_spSafe v) (seal_xdepth v)
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
@@ -258,8 +259,8 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 32⟩],
                  wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86_64.abi 2632).pre s := by
-  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract X86_64.abi 2632).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
 
 /-- `vg_aes_gcm_open` in its frame, for any code that meets the contract
@@ -268,10 +269,10 @@ theorem openCode_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
-      (Spec.Gcm.openContract X86_64.abi 2632) :=
+      (Proof.AesGcm.openRoundsContract X86_64.abi 2632) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
     (by decide) (by decide) (by decide) hsp hxd (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
@@ -279,7 +280,7 @@ theorem openCode_framed {c : Prog isa}
 theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callees))
-      (Spec.Gcm.openContract X86_64.abi 2632) :=
+      (Proof.AesGcm.openRoundsContract X86_64.abi 2632) :=
   openCode_framed (open_verified v) (open_spSafe v) (open_xdepth v)
 
 end VG.Proof.AesGcm.X86_64

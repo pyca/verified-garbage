@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
@@ -246,14 +247,14 @@ theorem sealSt_verified :
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
           Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.sealStorePowersPost, Spec.Gcm.sealPost,
+          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
           Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.sealStorePowersPost, Spec.Gcm.sealPost,
+          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_reduce [sealStAArch64, sealAArch64, AArch64.stackArg, AArch64.stackArgAddr] at h
@@ -262,7 +263,7 @@ theorem sealSt_verified :
       pub := by
         sig_implies_pub [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
           Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.sealStorePowersPost, Spec.Gcm.sealPost,
+          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨sealSatSt, by
@@ -285,11 +286,11 @@ def sealFrameSatSt : State :=
   { sealSatSt with rd := [⟨0x1000, 256⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
                    wr := [⟨0x4000, 0⟩, ⟨0, 16⟩, ⟨0x6000, 128⟩] }
 
-theorem sealFrameSatSt_pre : ∃ s, (Spec.Gcm.sealStorePowersContract AArch64.abi 2592).pre s := by
+theorem sealFrameSatSt_pre : ∃ s, (Proof.AesGcm.sealStorePowersRoundsContract AArch64.abi 2592).pre s := by
   refine ⟨sealFrameSatSt, ?_⟩
-  sig_pre [Spec.Gcm.sealStorePowersContract, Spec.Gcm.sealStorePowersSig, Spec.Gcm.sealSig,
-    Spec.Gcm.storePowersParam, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk, Spec.Gcm.sealStorePowersPost,
-    Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+  sig_pre [Proof.AesGcm.sealStorePowersRoundsContract, Spec.Gcm.sealStorePowersSig, Spec.Gcm.sealSig,
+    Spec.Gcm.storePowersParam, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk, Proof.AesGcm.sealStorePowersRoundsPost,
+    Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
     List.range.loop, List.cons_append, List.nil_append, sealFrameSatSt, sealSatSt, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read]
   sig_and_intros
@@ -301,10 +302,10 @@ theorem sealFrameSatSt_pre : ∃ s, (Spec.Gcm.sealStorePowersContract AArch64.ab
 theorem sealSt_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn))
-      (Spec.Gcm.sealStorePowersContract AArch64.abi 2592) :=
+      (Proof.AesGcm.sealStorePowersRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealStorePowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.sealStorePowersPreP AArch64.abi.ptrBits)
-    (post := Spec.Gcm.sealStorePowersPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.sealStorePowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealSt_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.sealStorePowersPre_local _)
     (Proof.AesGcm.sealStorePowersPost_local _) sealFrameSatSt_pre
 

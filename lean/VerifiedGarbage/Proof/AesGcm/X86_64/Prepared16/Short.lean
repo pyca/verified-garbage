@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 public import VerifiedGarbage.Impl.StackScratch.X86_64
@@ -26,7 +27,7 @@ variable (v : GcmImpl) (B : BlkFn CtxMode.prepared16)
 theorem sealSelPrepared16_framed (hF : Short.ShortFacts) (hs : v.short = false) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCodeP (v.withBlk B)))
-      (Spec.Gcm.sealPrepared16Contract X86_64.abi 2624) := by
+      (Proof.AesGcm.sealPrepared16RoundsContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCodeP; simp only [hs, Bool.false_eq_true, ↓reduceIte]; split
   · exact sealPrepared16Code_framed (sealPrepared16Code_verified (Short.sealFinP_correct v B hF)
       (SealFin.sealFMW_ct v B (FastSeal.sealSel_ok hF v B Short.finKsA_ksOk (SealFin.sealLongOk_mid v B hF))
@@ -38,7 +39,7 @@ theorem sealSelPrepared16_framed (hF : Short.ShortFacts) (hs : v.short = false) 
 theorem openSelPrepared16_framed (hF : Short.ShortFacts) (hs : v.short = false) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B)))
-      (Spec.Gcm.openPrepared16Contract X86_64.abi 2632) := by
+      (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632) := by
   unfold GcmImpl.openCodeP; simp only [hs, Bool.false_eq_true, ↓reduceIte]
   exact openPrepared16Code_framed (openPrepared16Code_verified (Short.openFinP_correct v B hF)
     (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel

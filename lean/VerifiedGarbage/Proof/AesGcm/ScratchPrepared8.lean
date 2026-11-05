@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
@@ -34,7 +35,7 @@ def sealPrepared8ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealPrepared8Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
-      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+      sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_open_prepared8` with `work: *mut [u64; 320]`. -/
@@ -51,7 +52,7 @@ def openPrepared8ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPrepared8Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
@@ -124,8 +125,8 @@ theorem openPrepared8Pre_local : ∀ vs m₁ m₂, vs.length = (openPrepared8Sig
 
 theorem sealPrepared8Post_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrepared8Sig.words pb).length →
     (∀ b ∈ Sig.bufs sealPrepared8Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealPrepared8Sig.words pb) (sealPost pb) vs m₁ m' r →
-      Curry.apply (sealPrepared8Sig.words pb) (sealPost pb) vs m₂ m' r := by
+    Curry.apply (sealPrepared8Sig.words pb) (sealRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealPrepared8Sig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
   replace hlen := Nat.succ.inj hlen
@@ -153,10 +154,10 @@ theorem sealPrepared8Post_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrepar
   have ha := agree_of hb.2.2.1
   have hd := agree_of hb.2.2.2.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₁ m' r at h
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, sealPost, ArgWord.ofRaw] at h ⊢
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hr
   have hr' := le15 hr
   have := Nat.mod_le nl.toNat (2 ^ pb)
@@ -173,8 +174,8 @@ theorem sealPrepared8Post_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrepar
 
 theorem openPrepared8Post_local : ∀ vs m₁ m₂ m' r, vs.length = (openPrepared8Sig.words pb).length →
     (∀ b ∈ Sig.bufs openPrepared8Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openPrepared8Sig.words pb) (openPost pb) vs m₁ m' r →
-      Curry.apply (openPrepared8Sig.words pb) (openPost pb) vs m₂ m' r := by
+    Curry.apply (openPrepared8Sig.words pb) (openRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openPrepared8Sig.words pb) (openRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -205,12 +206,12 @@ theorem openPrepared8Post_local : ∀ vs m₁ m₂ m' r, vs.length = (openPrepar
   have hD := agree_of hb.2.2.2.1
   have hT := agree_of hb.2.2.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₂ m' r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega)) hN hA hD hT,
