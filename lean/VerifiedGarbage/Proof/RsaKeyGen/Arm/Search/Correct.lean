@@ -183,7 +183,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   unfold code body
   refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (search_loop c (final := searchResult s) ⟨h1, [], (consume_zero _).symm⟩) fun s2 hd => ?_)
+  refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm) fun s2 hd => ?_)
   unfold finish
   refine WP.block_append (WP.mono (results_ok hd) fun s3 ⟨⟨h0, hm3⟩, k3⟩ => ?_)
   have hsv : Saved s3.mem p.S1 s := by

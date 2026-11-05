@@ -45,9 +45,8 @@ theorem SearchLive.step {p : SearchPublic} {o s t : State} {used k : Nat} (h : S
 
 /-- The candidate, or the short tape without it. -/
 theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
-    (h : SearchIter p o final used k s) (hk : k ≠ 0) :
-    WP isa (candidateStep c.call) s (StepPost p o final used) := by
-  obtain ⟨hl, tr, hfin⟩ := h
+    {tr : List Nat} (hl : SearchLive p o used k s) (hfin : final = (tailOf p o used k).consume used tr) (hk : k ≠ 0) :
+    WP isa (candidateStep c.call) s (StepPost p o final used k tr) := by
   have hi := hl.input
   have f := hi.facts
   have hv := f.valid
@@ -79,51 +78,79 @@ theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : Pr
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl
     rw [e]
-    exact WP.mono (short_ok ht.toSearchBase ht.r8 ht.r9 hu ht.remaining_le hz _) fun t ht => .inl ht
+    exact WP.mono (short_ok ht.toSearchBase ht.r8 ht.r9 hu ht.remaining_le hz _) fun t ht =>
+      done_post (fun hc => by have := hc.2.1; omega) ht
   · have z := of_decide_eq_false z
-    exact WP.seq (WP.mono (candidateRun_ok c hu' (by omega)) fun t ⟨ht, hp⟩ => classify_ok ht hp hk hfin)
+    exact WP.seq (WP.mono (candidateRun_ok c hu' (by omega)) fun t ⟨ht, hp⟩ => classify_ok ht hp hk hfin (by omega))
 
 theorem status_lt (r : PrimeSearchResult) : r.status < 4 ∧ r.status ≠ 2 := by
   unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
 
+/-- What an iteration leaves. -/
+def IterPost (p : SearchPublic) (o : State) (final : PrimeSearchResult) (used k : Nat) (tr : List Nat)
+    (t : State) : Prop :=
+  if Cont p o used k then
+    isa.eval .eq t = some true ∧ SearchLive p o (used + candUsed p o used) (nextK p o used k) t ∧
+      final = (tailOf p o (used + candUsed p o used) (nextK p o used k)).consume (used + candUsed p o used)
+        (tr ++ entryOf p o used)
+  else isa.eval .eq t = some false ∧ SearchDone p o final t
+
 /-- One iteration: the search ends (the status is not 4), or goes on from
 later in the tape (it is). -/
 theorem iteration_ok (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
-    (h : SearchIter p o final used k s) :
-    WP isa (iteration c.call) s fun t =>
-      (isa.eval .eq t = some false ∧ SearchDone p o final t) ∨
-        (isa.eval .eq t = some true ∧ ∃ u k', used < u ∧ u ≤ p.randLen ∧ SearchIter p o final u k' t) := by
-  obtain ⟨hl, tr, hfin⟩ := h
+    {tr : List Nat} (hl : SearchLive p o used k s) (hfin : final = (tailOf p o used k).consume used tr) :
+    WP isa (iteration c.call) s (IterPost p o final used k tr) := by
   have rem := hl.input.remaining_le
   have hk32 : k < 2 ^ 32 := by have := hl.remaining_le; omega
   unfold iteration
   refine WP.seq (WP.mono (cmp0_ok hl.r9 hk32) fun u ⟨⟨he, hm⟩, ku⟩ => ?_)
   have hu := hl.keep ku hm
-  refine WP.seq (WP.mono (Q := StepPost p o final used) (WP.ite _ he (fun z => ?_) (fun z => ?_)) fun t ht => ?_)
+  refine WP.seq (WP.mono (Q := StepPost p o final used k tr) (WP.ite _ he (fun z => ?_) (fun z => ?_)) fun t ht => ?_)
   · have z := of_decide_eq_true z
     subst z
     have e : final = ⟨.exhausted, used, tr ++ []⟩ := by rw [hfin, tailOf, Search.search_zero]; rfl
     rw [e]
-    exact WP.mono (exhausted_ok hu.toSearchBase hu.r8 hu.used_le _) fun t ht => .inl ht
-  · exact candidateStep_ok c ⟨hu, tr, hfin⟩ (of_decide_eq_false z)
-  rcases ht with hd | ⟨u', k', hlt, hle, hit⟩
-  · have st := status_lt final
-    refine WP.mono (cmp_ok (c := 4) hd.r11 (by omega) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ => .inl ⟨?_, ?_⟩
-    · rw [et, decide_eq_false (by omega)]
-    · exact ⟨hd.toSearchBase.keep kt hmt, (kt.gpr .r8 (by decide)).trans hd.r8,
-        (kt.gpr .r9 (by decide)).trans hd.r9, (kt.gpr .r10 (by decide)).trans hd.r10,
-        (kt.gpr .r11 (by decide)).trans hd.r11, by rw [hmt]; exact hd.output, hd.bounds⟩
-  · refine WP.mono (cmp_ok (c := 4) (n := 4) hit.1.r11 (by decide) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ =>
-      .inr ⟨et, u', k', hlt, hle, hit.1.keep kt hmt, hit.2⟩
+    exact WP.mono (exhausted_ok hu.toSearchBase hu.r8 hu.used_le _) fun t ht =>
+      done_post (fun hc => hc.1 rfl) ht
+  · exact candidateStep_ok c hu hfin (of_decide_eq_false z)
+  unfold StepPost at ht
+  unfold IterPost
+  split at ht
+  · rename_i hc
+    simp only [hc, ↓reduceIte]
+    refine WP.mono (cmp_ok (c := 4) (n := 4) ht.1.r11 (by decide) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ =>
+      ⟨et, ht.1.keep kt hmt, ht.2⟩
+  · rename_i hc
+    simp only [hc, ↓reduceIte]
+    have st := status_lt final
+    refine WP.mono (cmp_ok (c := 4) ht.r11 (by omega) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ => ⟨?_, ?_⟩
+    · change isa.eval .eq t = some false
+      rw [et, decide_eq_false (by omega)]
+    · exact ⟨ht.toSearchBase.keep kt hmt, (kt.gpr .r8 (by decide)).trans ht.r8,
+        (kt.gpr .r9 (by decide)).trans ht.r9, (kt.gpr .r10 (by decide)).trans ht.r10,
+        (kt.gpr .r11 (by decide)).trans ht.r11, by rw [hmt]; exact ht.output, ht.bounds⟩
+
+theorem candUsed_le {p : SearchPublic} {o : State} {used : Nat} (h : SearchInput p o) (hu : used ≤ p.randLen) :
+    used + candUsed p o used ≤ p.randLen := by
+  unfold candUsed
+  split
+  · rename_i x rest hop
+    obtain ⟨m, hm, -, hum, -⟩ := used_bound h hu hop
+    omega
+  · omega
 
 theorem search_loop (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
-    (h : SearchIter p o final used k s) :
+    {tr : List Nat} (hl : SearchLive p o used k s) (hfin : final = (tailOf p o used k).consume used tr) :
     WP isa (.loop (iteration c.call) .eq) s (SearchDone p o final) := by
-  refine WP.loop (fun m t => ∃ u k', m = p.randLen - u ∧ u ≤ p.randLen ∧ SearchIter p o final u k' t)
-    (fun m t ⟨u, k', hm, hle, ht⟩ => WP.mono (iteration_ok c ht) fun t' ht' => ?_) _ s
-    ⟨used, k, rfl, h.1.used_le, h⟩
-  rcases ht' with ⟨e, hd⟩ | ⟨e, u', k'', hlt, hle', hit⟩
-  · exact .inl ⟨e, hd⟩
-  · exact .inr ⟨e, _, by omega, u', k'', rfl, hle', hit⟩
+  refine WP.loop (fun m t => ∃ u k' tr', m = p.randLen - u ∧ u ≤ p.randLen ∧ SearchLive p o u k' t ∧
+      final = (tailOf p o u k').consume u tr')
+    (fun m t ⟨u, k', tr', hm, hle, ht, hf⟩ => WP.mono (iteration_ok c ht hf) fun t' ht' => ?_) _ s
+    ⟨used, k, tr, rfl, hl.used_le, hl, hfin⟩
+  unfold IterPost at ht'
+  split at ht'
+  · rename_i hc
+    have hb := candUsed_le hl.input hle
+    exact .inr ⟨ht'.1, _, by have := hc.2.2.2; omega, _, _, _, rfl, hb, ht'.2.1, ht'.2.2⟩
+  · exact .inl ht'
 
 end VG.Proof.RsaKeyGen.Arm.Search

@@ -34,9 +34,47 @@ def SearchIter (p : SearchPublic) (o : State) (final : PrimeSearchResult) (used 
     (s : State) : Prop :=
   SearchLive p o used remaining s ∧ ∃ tr, final = (tailOf p o used remaining).consume used tr
 
-/-- What a candidate leaves: the search finished, or going on from later. -/
-def StepPost (p : SearchPublic) (o : State) (final : PrimeSearchResult) (used : Nat) (t : State) : Prop :=
-  SearchDone p o final t ∨ ∃ u k, used < u ∧ u ≤ p.randLen ∧ SearchIter p o final u k t
+/-- The candidate from `used`. -/
+abbrev candOp (p : SearchPublic) (o : State) (used : Nat) : Option (Spec.RsaKeyGen.Candidate × List Byte) :=
+  candidateOp p.len p.eB (searchP o) ((searchRand o).drop used)
+
+/-- Its status, and the octets it consumed. -/
+def candStatus (p : SearchPublic) (o : State) (used : Nat) : Nat :=
+  Spec.RsaKeyGen.candidateStatus (candOp p o used)
+
+def candUsed (p : SearchPublic) (o : State) (used : Nat) : Nat :=
+  match candOp p o used with
+  | some (_, rest) => (p.randLen - used) - rest.length
+  | none => 0
+
+/-- Whether the search goes on past the candidate from `used`: one was run,
+rejected (too close, or counted), and it consumed something. -/
+def Cont (p : SearchPublic) (o : State) (used k : Nat) : Prop :=
+  k ≠ 0 ∧ used + p.len ≤ p.randLen ∧ (candStatus p o used = 2 ∨ candStatus p o used = 3) ∧
+    candUsed p o used ≠ 0
+
+instance (p : SearchPublic) (o : State) (used k : Nat) : Decidable (Cont p o used k) := by
+  unfold Cont; infer_instance
+
+/-- The counted candidates left past it. -/
+def nextK (p : SearchPublic) (o : State) (used k : Nat) : Nat := if candStatus p o used = 3 then k - 1 else k
+
+/-- Its entry in the trace. -/
+abbrev entryOf (p : SearchPublic) (o : State) (used : Nat) : List Nat :=
+  Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)
+
+/-- What a candidate leaves: the search going on from past it, or finished. -/
+def StepPost (p : SearchPublic) (o : State) (final : PrimeSearchResult) (used k : Nat) (tr : List Nat)
+    (t : State) : Prop :=
+  if Cont p o used k then
+    SearchLive p o (used + candUsed p o used) (nextK p o used k) t ∧
+      final = (tailOf p o (used + candUsed p o used) (nextK p o used k)).consume (used + candUsed p o used)
+        (tr ++ entryOf p o used)
+  else SearchDone p o final t
+
+theorem done_post {p : SearchPublic} {o t : State} {final : PrimeSearchResult} {used k : Nat} {tr : List Nat}
+    (hc : ¬Cont p o used k) (hd : SearchDone p o final t) : StepPost p o final used k tr t := by
+  unfold StepPost; rw [ite_eq_right hc]; exact hd
 
 theorem rand_length {p : SearchPublic} {o : State} (h : SearchInput p o) : (searchRand o).length = p.randLen := by
   rw [← h.2]; simp [searchRand, Spec.Rsa.bytesAt, searchOfState]
@@ -145,16 +183,17 @@ theorem used_bound {p : SearchPublic} {o : State} {used : Nat} {x : Spec.RsaKeyG
 
 /-- A rejected candidate, too close (2) or counted (3), of `m` octets. -/
 theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult} {used k m st : Nat}
-    {rest : List Byte} {e tr : List Nat}
+    {rest : List Byte} {tr : List Nat}
     (h : SearchLive p o used k u) (h0 : u.gpr .r0 = BitVec.ofNat 32 st) (hst : st = 2 ∨ st = 3)
     (h12 : u.gpr .r12 = BitVec.ofNat 32 m) (hk : k ≠ 0) (hum : used + m ≤ p.randLen)
     (hrest : rest = (searchRand o).drop (used + m)) (hm : m = (p.randLen - used) - rest.length)
     (htail : tailOf p o used k = if rest.length < ((searchRand o).drop used).length then
       (primeSearch p.len p.eB (searchP o) (if st = 3 then k - 1 else k) rest).consume
-        (((searchRand o).drop used).length - rest.length) e
-      else ⟨.exhausted, 0, e⟩)
-    (hfin : final = (tailOf p o used k).consume used tr) :
-    WP isa (.seq (.block [.cmp .r0 (.imm 0)]) (.ite .eq short reject)) u (StepPost p o final used) := by
+        (((searchRand o).drop used).length - rest.length) (entryOf p o used)
+      else ⟨.exhausted, 0, entryOf p o used⟩)
+    (hfin : final = (tailOf p o used k).consume used tr) (hcs : candStatus p o used = st)
+    (hcu : candUsed p o used = m) (hroom : used + p.len ≤ p.randLen) :
+    WP isa (.seq (.block [.cmp .r0 (.imm 0)]) (.ite .eq short reject)) u (StepPost p o final used k tr) := by
   have hlen := rand_length h.input
   have rl := h.input.facts.randLen
   have hlL := h.input.facts.valid
@@ -170,21 +209,25 @@ theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult}
   rw [List.length_drop, hlen] at htail
   refine WP.ite _ he3 (fun z => ?_) (fun z => ?_)
   · have z := of_decide_eq_true z
-    have e' : final = ⟨.exhausted, used, tr ++ e⟩ := by
+    have e' : final = ⟨.exhausted, used, tr ++ entryOf p o used⟩ := by
       rw [hfin, htail, ite_eq_right (by omega)]; rfl
     rw [e']
-    exact WP.mono (exhausted_ok hu3.toSearchBase hu3.r8 hu3.used_le _) fun t ht => .inl ht
+    exact WP.mono (exhausted_ok hu3.toSearchBase hu3.r8 hu3.used_le _) fun t ht =>
+      done_post (fun hc => hc.2.2.2 (by rw [hcu]; exact z)) ht
   · have z := of_decide_eq_false z
+    have hc : Cont p o used k := ⟨hk, hroom, by rw [hcs]; exact hst, by rw [hcu]; exact z⟩
     refine WP.mono (advance_ok hu3 ((k3.gpr .r12 (by decide)).trans ((k2.gpr .r12 (by decide)).trans h12))
       ((k3.gpr .r0 (by decide)).trans ((k2.gpr .r0 (by decide)).trans h0)) hst hk hum) fun t ht => ?_
-    refine .inr ⟨used + m, _, by omega, hum, ht, tr ++ e, ?_⟩
+    unfold StepPost nextK
+    rw [ite_eq_left hc, hcu, hcs]
+    refine ⟨ht, ?_⟩
     rw [hfin, htail, ite_eq_left (by omega), Search.consume_consume, ← hm, tailOf, ← hrest]
 
 /-- After a candidate, from `used`, with `k` counted candidates left. -/
 theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
     (h : SearchLive p o used k s) (hp : CandPost p (searchP o) (searchRand o) used s) (hk : k ≠ 0)
-    {tr : List Nat} (hfin : final = (tailOf p o used k).consume used tr) :
-    WP isa Impl.RsaKeyGen.Arm.Search.classify s (StepPost p o final used) := by
+    {tr : List Nat} (hfin : final = (tailOf p o used k).consume used tr) (hroom : used + p.len ≤ p.randLen) :
+    WP isa Impl.RsaKeyGen.Arm.Search.classify s (StepPost p o final used k tr) := by
   have hi := h.input
   have hu := h.used_le
   have hlen := rand_length hi
@@ -209,8 +252,10 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl
     rw [e]
+    have nc : ¬Cont p o used k := fun hc => by
+      have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega
     exact WP.mono (short_ok hu2.toSearchBase hu2.r8 hu2.r9 hu hu2.remaining_le (by rw [hm2, hm]; exact hout) _)
-      fun t ht => .inl ht
+      fun t ht => done_post nc ht
   | some pair =>
     obtain ⟨x, rest⟩ := pair
     obtain ⟨m, hm', hLm, hum, hrest⟩ := used_bound hi hu hop
@@ -226,20 +271,28 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
       have e : final = ⟨.accepted c, used + m, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
         rw [hfin, tailOf, Search.search_prime hk hop, List.length_drop, hlen, ← hn]; rfl
       rw [e]
-      exact WP.mono (accept_ok hu'.toSearchBase hu'.r8 h12 hum (by rw [hm]; exact hout) _) fun t ht => .inl ht
+      have nc : ¬Cont p o used k := fun hc => by
+        have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega
+      exact WP.mono (accept_ok hu'.toSearchBase hu'.r8 h12 hum (by rw [hm]; exact hout) _) fun t ht => done_post nc ht
     | close =>
       refine WP.seq (WP.mono (head_ok h hw (st := 2) (by decide) (status_ofNat h0')) fun u ⟨⟨h12, he, hm⟩, ku⟩ => ?_)
       have hu' := h.keep ku hm
       refine WP.ite _ he (fun c => by cases c) (fun _ => ?_)
       refine rejected_ok hu' ((ku.gpr .r0 (by decide)).trans (status_ofNat h0')) (.inl rfl) h12 hk hum hrest hm'
-        (e := Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)) ?_ hfin
-      rw [tailOf, Search.search_close hk hop]; rfl
+        ?_ hfin ?_ ?_ ?_
+      · rw [tailOf, Search.search_close hk hop]; rfl
+      · simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus]
+      · simp only [candUsed, candOp, hop, hn]
+      · exact hroom
     | rejected =>
       refine WP.seq (WP.mono (head_ok h hw (st := 3) (by decide) (status_ofNat h0')) fun u ⟨⟨h12, he, hm⟩, ku⟩ => ?_)
       have hu' := h.keep ku hm
       refine WP.ite _ he (fun c => by cases c) (fun _ => ?_)
       refine rejected_ok hu' ((ku.gpr .r0 (by decide)).trans (status_ofNat h0')) (.inr rfl) h12 hk hum hrest hm'
-        (e := Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)) ?_ hfin
-      rw [tailOf, Search.search_rejected hk hop]; rfl
+        ?_ hfin ?_ ?_ ?_
+      · rw [tailOf, Search.search_rejected hk hop]; rfl
+      · simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus]
+      · simp only [candUsed, candOp, hop, hn]
+      · exact hroom
 
 end VG.Proof.RsaKeyGen.Arm.Search
