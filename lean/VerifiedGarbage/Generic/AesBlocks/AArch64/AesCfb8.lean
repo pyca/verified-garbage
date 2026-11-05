@@ -16,12 +16,12 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCfb8.AArch64.encrypt v.enc
-    verified := encrypt_verified v
+    verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
     features := v.features },
   Spec.Cfb8.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCfb8.AArch64.decrypt v.enc
-    verified := decrypt_verified v
+    verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesCfb8

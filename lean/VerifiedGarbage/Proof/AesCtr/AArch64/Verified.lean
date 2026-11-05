@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCtr.AArch64
+public import VerifiedGarbage.Proof.AesCtr.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Proof.AesCtr.Spec
@@ -40,29 +41,29 @@ theorem crypt_correct (v : Ctr32Impl) (s : State) (hs : (modeAArch64 AesCtr.ctrM
   WP.withPreservedV (crypt_wp v hs) (crypt_keepsV v)
 
 theorem crypt_verified (v : Ctr32Impl) :
-    Verified AArch64.target (crypt v.callee) (Spec.Ctr.aesContract AArch64.abi) :=
+    Verified AArch64.target (crypt v.callee) (Proof.AesCtr.roundsContract AArch64.abi) :=
   Verified.of_correct (k := { modeAArch64 AesCtr.ctrMode with pub := ctrPub }) (crypt_correct v) (crypt_ct v)
-    { pre := by sig_implies_pre [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeAArch64,
+    { pre := by sig_implies_pre [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs]
       -- `ctrMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeAArch64, AesCtr.ctrMode, AArch64.abi,
+        sig_post [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeAArch64, AesCtr.ctrMode, AArch64.abi,
           AArch64.argRegs]
-        sig_reduce [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeAArch64, AesCtr.ctrMode, AArch64.abi,
+        sig_reduce [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeAArch64, AesCtr.ctrMode, AArch64.abi,
           AArch64.argRegs] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
       pub := by
-        have hm : ∀ s₁ s₂, (Spec.Ctr.aesContract AArch64.abi).pre s₁ → (Spec.Ctr.aesContract AArch64.abi).pre s₂ →
-            (Spec.Ctr.aesContract AArch64.abi).pub s₁ s₂ → (modeAArch64 AesCtr.ctrMode).pub s₁ s₂ := by
-          sig_implies_pub [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeAArch64, AArch64.abi, AArch64.argRegs]
+        have hm : ∀ s₁ s₂, (Proof.AesCtr.roundsContract AArch64.abi).pre s₁ → (Proof.AesCtr.roundsContract AArch64.abi).pre s₂ →
+            (Proof.AesCtr.roundsContract AArch64.abi).pub s₁ s₂ → (modeAArch64 AesCtr.ctrMode).pub s₁ s₂ := by
+          sig_implies_pub [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeAArch64, AArch64.abi, AArch64.argRegs]
         intro s₁ s₂ h₁ h₂ h
         refine ⟨hm s₁ s₂ h₁ h₂ h, ?_⟩
-        sig_pub [Spec.Ctr.aesContract, Spec.Ctr.aesSig, Spec.Ctr.ctrLeak, AArch64.abi, AArch64.argRegs] at h
+        sig_pub [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, Spec.Ctr.ctrLeak, AArch64.abi, AArch64.argRegs] at h
         sig_split h
         exact AesCtr.lo32_of_leak (Proof.Cmac.bytesAt_length _ _ _) (Proof.Cmac.bytesAt_length _ _ _)
           (by assumption)
-      sat := by sig_implies_sat [Spec.Ctr.aesContract, Spec.Ctr.aesSig, modeAArch64,
+      sat := by sig_implies_sat [Proof.AesCtr.roundsContract, Spec.Ctr.aesSig, modeAArch64,
         AArch64.abi, AArch64.argRegs] [sat] using sat }
 
 end VG.Proof.AesCtr.AArch64

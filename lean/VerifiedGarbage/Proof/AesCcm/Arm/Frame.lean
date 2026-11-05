@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Rounds
 public import VerifiedGarbage.Proof.AesCcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
@@ -29,18 +30,18 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩],
                  wr := [⟨0, 0⟩, ⟨0x3000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Ccm.sealContract Arm.abi 2608).pre s := by
-  implies_sat [Spec.Ccm.sealContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Spec.Ccm.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract Arm.abi 2608).pre s := by
+  implies_sat [Proof.AesCcm.sealRoundsContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [sealFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal»)
-      (Spec.Ccm.sealContract Arm.abi 2608) :=
+      (Proof.AesCcm.sealRoundsContract Arm.abi 2608) :=
   Arm.Verified.stackScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre Arm.abi.ptrBits)
-    (post := Spec.Ccm.sealPost Arm.abi.ptrBits) (wa := true) (stack := 16)
+    (post := Proof.AesCcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 6) seal_verified (by decide) (by decide) (by decide) (by decide)
     (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
@@ -50,18 +51,18 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0, 0⟩, ⟨0x3000, 4⟩, ⟨0x8000, 24⟩],
                  wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Ccm.openContract Arm.abi 2608).pre s := by
-  implies_sat [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Spec.Ccm.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract Arm.abi 2608).pre s := by
+  implies_sat [Proof.AesCcm.openRoundsContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
     Spec.Ccm.openLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [openFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
 theorem open_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
-      (Spec.Ccm.openContract Arm.abi 2608) :=
+      (Proof.AesCcm.openRoundsContract Arm.abi 2608) :=
   Arm.Verified.stackScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre Arm.abi.ptrBits)
-    (post := Spec.Ccm.openPost Arm.abi.ptrBits) (wa := true) (stack := 16)
+    (post := Proof.AesCcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Ccm.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
     (openPre_local _) (openPost_local _) openFrameSat_pre

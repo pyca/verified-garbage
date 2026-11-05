@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOfb.Rounds
 public import VerifiedGarbage.Impl.AesOfb.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesOfb.Spec
@@ -29,23 +30,23 @@ theorem crypt_correct (s : State) (hs : (modePPC64LE ofbMode).pre s) :
   obtain ⟨t, s', he, hg, hlr, hp⟩ := whole_wp body_ok hs
   exact ⟨t, s', he, ⟨hg, Exec.sp he, hlr⟩, hp⟩
 
-theorem crypt_verified : Verified PPC64LE.target crypt (Spec.Ofb.aesContract PPC64LE.abi) :=
+theorem crypt_verified : Verified PPC64LE.target crypt (Proof.AesOfb.roundsContract PPC64LE.abi) :=
   Verified.of_correct crypt_correct (whole_ct body_ok body_ct)
-    { pre := by sig_implies_pre [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
+    { pre := by sig_implies_pre [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
         PPC64LE.abi, PPC64LE.argRegs]
       -- `ofbMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
+        sig_post [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
           PPC64LE.argRegs]
-        sig_reduce [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
+        sig_reduce [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
           PPC64LE.argRegs] at h
-        sig_simp [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
+        sig_simp [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE, ofbMode, PPC64LE.abi,
           PPC64LE.argRegs] [] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
+      pub := by sig_implies_pub [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
         PPC64LE.abi, PPC64LE.argRegs]
-      sat := by sig_implies_sat [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
+      sat := by sig_implies_sat [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modePPC64LE,
         PPC64LE.abi, PPC64LE.argRegs] [sat] using sat }
 
 end VG.Proof.AesOfb.PPC64LE

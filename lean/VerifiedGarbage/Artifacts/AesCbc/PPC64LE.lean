@@ -15,9 +15,9 @@ open VG.Proof.AesCbc.PPC64LE
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact PPC64LE.target {
     code := Impl.AesCbc.PPC64LE.encrypt
-    verified := encrypt_verified },
+    verified := Proof.AesCbc.encrypt_keyed encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact PPC64LE.target {
     code := Impl.AesCbc.PPC64LE.decrypt
-    verified := decrypt_verified }]
+    verified := Proof.AesCbc.decrypt_keyed decrypt_verified }]
 
 end VG.Artifacts.AesCbc.PPC64LE

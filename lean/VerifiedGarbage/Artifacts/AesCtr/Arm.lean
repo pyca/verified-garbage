@@ -16,6 +16,6 @@ def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact Arm.target {
     code := Impl.AesCtr.Arm.crypt
     stack := 8
-    verified := crypt_verified }]
+    verified := Proof.AesCtr.keyed crypt_verified }]
 
 end VG.Artifacts.AesCtr.Arm

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
@@ -398,7 +399,7 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86 Spec.Aes.invCip
     (by taint_decide)
 
 theorem encryptBlocks_verified :
-    Verified X86.target Impl.Aes.X86.AesNi.encryptBlocks (Spec.Aes.encryptBlocksContract X86.abi) :=
+    Verified X86.target Impl.Aes.X86.AesNi.encryptBlocks (Proof.Aes.encryptBlocksRoundsContract X86.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct
     (by
       have a0 : arg blocksSat 0 = 0x1000 := by decide
@@ -408,11 +409,11 @@ theorem encryptBlocks_verified :
       have a4 : arg blocksSat 4 = 0x4000 := by decide
       have e : argAddr blocksSat 0 = 0x8004 := by decide
       have esp : blocksSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, X86.abi, X86.argSlots,
+      sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, Proof.Aes.blocksX86] [a0, a1, a2, a3, a4, e, esp] using blocksSat)
 
 theorem decryptBlocks_verified :
-    Verified X86.target Impl.Aes.X86.AesNi.decryptBlocks (Spec.Aes.decryptBlocksContract X86.abi) :=
+    Verified X86.target Impl.Aes.X86.AesNi.decryptBlocks (Proof.Aes.decryptBlocksRoundsContract X86.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct
     (by
       have a0 : arg blocksSat 0 = 0x1000 := by decide
@@ -422,7 +423,7 @@ theorem decryptBlocks_verified :
       have a4 : arg blocksSat 4 = 0x4000 := by decide
       have e : argAddr blocksSat 0 = 0x8004 := by decide
       have esp : blocksSat.gpr .esp = 0x8000 := rfl
-      sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, X86.abi, X86.argSlots,
+      sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, Proof.Aes.blocksX86] [a0, a1, a2, a3, a4, e, esp] using blocksSat)
 
 end VG.Proof.Aes.X86.AesNi

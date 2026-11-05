@@ -13,6 +13,6 @@ namespace VG.Artifacts.AesCtr.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact PPC64LE.target {
     code := Impl.AesCtr.PPC64LE.crypt
-    verified := Proof.AesCtr.PPC64LE.crypt_verified }]
+    verified := Proof.AesCtr.keyed Proof.AesCtr.PPC64LE.crypt_verified }]
 
 end VG.Artifacts.AesCtr.PPC64LE

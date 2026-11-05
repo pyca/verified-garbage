@@ -39,9 +39,9 @@ def artifacts : List Artifact := [
     verified := Proof.Aes.Arm.expandKey_framed },
   Spec.Aes.encryptBlocksApi.artifact Arm.target {
     code := Impl.Aes.Arm.encryptBlocks
-    verified := Proof.Aes.Arm.Ecb.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.Arm.Ecb.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact Arm.target {
     code := Impl.Aes.Arm.decryptBlocks
-    verified := Proof.Aes.Arm.Ecb.decryptBlocks_verified }]
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.Arm.Ecb.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.Arm

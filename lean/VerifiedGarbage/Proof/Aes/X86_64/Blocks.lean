@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.Ecb
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Contract
@@ -305,15 +306,15 @@ def blocksSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
 
 theorem encryptBlocks_verified :
-    Verified X86_64.target encryptBlocks (Spec.Aes.encryptBlocksContract X86_64.abi) :=
+    Verified X86_64.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
       X86_64.argRegs] [blocksSat] using blocksSat)
 
 theorem decryptBlocks_verified :
-    Verified X86_64.target decryptBlocks (Spec.Aes.decryptBlocksContract X86_64.abi) :=
+    Verified X86_64.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
       X86_64.argRegs] [blocksSat] using blocksSat)
 
 end VG.Proof.Aes.X86_64

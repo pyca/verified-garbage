@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
@@ -242,7 +243,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcChainedSig.Post X86_64.abi.ptrBits) :
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cbcEncryptChained)
-      (Spec.Cast5.cbcEncryptChainedContract (X86_64.abi.withConsts ecbConsts) 240) :=
+      (Proof.Cast5.cbcEncryptChainedRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
@@ -252,7 +253,7 @@ theorem cbcEncryptChained_framed :
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cbcDecryptChained)
-      (Spec.Cast5.cbcDecryptChainedContract (X86_64.abi.withConsts ecbConsts) 240) :=
+      (Proof.Cast5.cbcDecryptChainedRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)

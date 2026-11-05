@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
@@ -479,11 +480,11 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.inv
 
 theorem encryptBlocks_verified :
     Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.encryptBlocks
-      (Spec.Aes.encryptBlocksContract X86_64.abi) :=
+      (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct AesNi.encryptBlocks_implies
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Aes.encryptBlocksContract X86_64.abi).pre s)
+    (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
     (he : Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
   have hp := pre_of s (AesNi.encryptBlocks_implies.pre s hs)
@@ -493,9 +494,9 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
 
 theorem decryptBlocks_verified :
     Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.decryptBlocks
-      (Spec.Aes.decryptBlocksContract X86_64.abi) :=
+      (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
       X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat)
 
 end VG.Proof.Aes.X86_64.VaesBlocks

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -644,12 +645,12 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.inv
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem encryptBlocks_implies :
-    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).Implies (Spec.Aes.encryptBlocksContract X86_64.abi) := by
-  sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    (Proof.Aes.blocksX86_64 Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) := by
+  sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
     X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat
 
 theorem encryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.encryptBlocks (Spec.Aes.encryptBlocksContract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.encryptBlocks (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
 
 /-- A run of an encryption that changes memory only in the data writes none of
@@ -666,7 +667,7 @@ theorem written_of_frame {s s' : State} (hp : Ecb.Pre s) (hf : Frame [Ecb.dR s] 
   exact hp.d_scr _ hc (Offset.contains_base _ (by omega) (by omega))
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Aes.encryptBlocksContract X86_64.abi).pre s)
+    (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
     (he : Exec isa Impl.Aes.X86_64.AesNi.encryptBlocks s t s') :
     Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
   have hp := Ecb.pre_of s (encryptBlocks_implies.pre s hs)
@@ -675,9 +676,9 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   exact written_of_frame hp h.2.2
 
 theorem decryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.AesNi.decryptBlocks (Spec.Aes.decryptBlocksContract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.AesNi.decryptBlocks (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksX86_64, X86_64.abi,
       X86_64.argRegs] [Proof.Aes.X86_64.blocksSat] using Proof.Aes.X86_64.blocksSat)
 
 end VG.Proof.Aes.X86_64.AesNi
