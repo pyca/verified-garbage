@@ -9,16 +9,16 @@
 ))]
 
 // Hashing, primality tests, retries, generator selection and the final
-// validation are all verified code. On x86-64 the Rust refills one tape as the
-// search asks (`search`); elsewhere it supplies the three entropy tapes. It
+// validation are all verified code. On x86-64 and ARMv7 the Rust refills one
+// tape as the search asks (`search`); elsewhere it supplies the three entropy tapes. It
 // allocates the output and working space, and chooses the implementation.
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{Error, Secret};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::arch::dsa::vg_dsa_generate_parameters;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dsa::{
@@ -30,9 +30,9 @@ use crate::arch::dsa::{
     vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
     vg_dsa_generate_parameters_sha256_shani,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::cpu::detected;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use verified_garbage_cpu::Features;
 
 mod search;
@@ -89,9 +89,9 @@ impl Parameters {
             3072 => (384, 32),
             _ => return Err(Error::Length),
         };
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
         let packed = search::generate(p_len, q_len, random)?;
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
         let packed = tapes(p_len, q_len, random)?;
         Ok(Self {
             packed,
@@ -116,7 +116,7 @@ impl Parameters {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -134,7 +134,7 @@ type Generate = unsafe extern "C" fn(
 
 /// The finite search over three fixed tapes (`VG.Spec.Dsa.generateParametersBytes`),
 /// on the targets that do not have the refillable-tape search yet.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 fn tapes(
     p_len: usize,
     q_len: usize,
@@ -233,54 +233,4 @@ fn select(features: Features) -> Generate {
     match (H1::select(features), H256::select(features)) {
         (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
     }
-}
-
-/// The ARMv7 implementations: `vg_dsa_generate_parameters_umaal` where the
-/// operating system runs on A-profile cores alone, on CPUs with the features
-/// its `_FEATURES` constant names, else the baseline.
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-fn select(features: Features) -> Generate {
-    use crate::arch::dsa::VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES;
-    select_backends(features.contains(VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES))
-}
-
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-fn select_backends(umaal: bool) -> Generate {
-    use crate::arch::dsa::vg_dsa_generate_parameters_umaal;
-    match umaal {
-        false => vg_dsa_generate_parameters,
-        true => vg_dsa_generate_parameters_umaal,
-    }
-}
-
-#[cfg(all(
-    target_arch = "arm",
-    not(any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))
-))]
-fn select(_features: Features) -> Generate {
-    vg_dsa_generate_parameters
 }
