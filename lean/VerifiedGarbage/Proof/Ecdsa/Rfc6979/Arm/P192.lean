@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
@@ -19,7 +23,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 # Deterministic ECDSA on 32-bit ARM: P-192
 
 P-192 as the proof's curve (`p192`): scalars of 3 64-bit words, the order
-`n` of exactly 192 bits with `2^192 < 2 n`, and `vg_ecdsa_p192_sign`, proven
+`n` of exactly 192 bits with `2^192 < 2 n`, and `vg_ecdsa_p192_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at P-192's sizes, which is `Proof.Ecdsa.Arm.P192.signArm`).
 -/
@@ -41,12 +45,12 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p192
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
-  coreN := "vg_ecdsa_p192_sign"
+  coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.Arm.signP192
   coreConsts := []
   coreX := by
@@ -62,6 +66,13 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
     simpa only [coreK,coreSigOf,Spec.P192.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p192,Proof.Ecdsa.Arm.P192.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.P192.signArm] using Proof.Ecdsa.Arm.P192.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
+
+/-! ## With the tables of every hash function with HMAC -/
+
+theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified Arm.target (signCodeT (p192 hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 (p192 hL).coreConsts HmacTable.Arm.vars) :=
+  nilT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

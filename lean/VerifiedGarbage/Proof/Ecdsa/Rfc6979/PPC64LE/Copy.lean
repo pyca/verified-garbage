@@ -12,6 +12,10 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Loops
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # Deterministic ECDSA on PPC64LE: copying words
@@ -194,5 +198,40 @@ theorem copyN_ok {src dst : Reg} {S D : Addr} {so d n : Nat} (hsr : src ≠ .r0)
     · exact bytesAt_frame f₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hsep.sub_left (Offset.sub _ (by omega) (by omega))).sub_right (Region.sub_prefix h4)) (by omega)
+
+/-! ## A byte loop -/
+
+section
+
+open VG.Impl.RsaOaep.PPC64LE (copyLoop)
+
+variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {lr : Addr} {m₀ : Mem}
+
+
+/-- `n` bytes from `q` (`r4`) to `p` (`r5`), `n` in `r6`, by `copyLoop`:
+`Ctx` kept, for a destination the code may write apart from the source. -/
+theorem cp_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {p q : Addr} {n : Nat} (hn : 0 < n)
+    (hn' : n < 2 ^ 63) (h4 : u.gpr .r4 = q) (h5 : u.gpr .r5 = p) (h6 : u.gpr .r6 = BitVec.ofNat 64 n)
+    (hw : ∀ i < n, InRegions u.wr (p + BitVec.ofNat 64 i) 1) (hs : Safe L ⟨p, n⟩)
+    (hsrc : ∀ i < n, InRegions (u.rd ++ u.wr) (q + BitVec.ofNat 64 i) 1)
+    (hsep : Region.Disjoint ⟨q, n⟩ ⟨p, n⟩) (hpn : p.toNat + n ≤ 2 ^ 64) :
+    WP isa copyLoop u fun u' => Ctx L g lr m₀ u' ∧ Kp [.r4, .r5, .r6, .r7] u u' ∧
+      Frame [⟨p, n⟩] u.mem u'.mem ∧ Spec.Sha256.bytesAt u'.mem p n = Spec.Sha256.bytesAt u.mem q n := by
+  refine WP.mono_syms (Proof.RsaOaep.PPC64LE.copy_ok hn (by omega) h4 h5 h6 hsrc hw
+    (fun j hj i hi he => hsep (q + BitVec.ofNat 64 j) (Offset.contains_base _ (by omega) (by omega))
+      (he ▸ Offset.contains_base _ (by omega) (by omega)))) fun u' ⟨hk, hm⟩ hsy => ?_
+  have K : Kp [.r4, .r5, .r6, .r7] u u' := ⟨fun r hr => hk.gpr r (by simp_all), hk.rd, hk.wr, hk.sp, hk.lr⟩
+  have hlen : (Spec.Rsa.bytesAt u.mem q n).length = n := Proof.RsaPkcs1Sig.bytesAt_length _ _ _
+  have hf : Frame [⟨p, n⟩] u.mem u'.mem := by
+    rw [hm]; exact WriteBytes.writeBytes_frame _ _ _ (by rw [hlen]; exact Region.contains_self _ _)
+  refine ⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
+      intro h; simp at h; rcases h with rfl | rfl | rfl | rfl <;> simp [preserved] at hr)) hf
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs) hsy, K, hf, ?_⟩
+  rw [hm]
+  have := Proof.Hmac.Common.bytesAt_writeBytes_self u.mem p (Spec.Rsa.bytesAt u.mem q n) (by omega)
+  rw [hlen] at this
+  exact this
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

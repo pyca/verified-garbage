@@ -34,6 +34,7 @@ super::streaming_hash!(
             Scalar => {
                 hash: crate::arch::fn_tables::VG_HASH_MD5 [],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_MD5 [],
+                hmac: crate::arch::fn_tables::VG_HMAC_MD5 [],
             },
         },
     }

@@ -289,15 +289,7 @@ pub mod ecdsa_brainpoolp256r1;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ecdsa_brainpoolp256r1_sha256;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ecdsa_brainpoolp384r1;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod ecdsa_brainpoolp384r1_sha384;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
@@ -305,15 +297,7 @@ pub mod ecdsa_brainpoolp512r1;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ecdsa_brainpoolp512r1_sha512;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ecdsa_p192;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod ecdsa_p192_sha256;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
@@ -321,19 +305,7 @@ pub mod ecdsa_p224;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ecdsa_p224_sha224;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ecdsa_p256;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod ecdsa_p256_sha256;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod ecdsa_p256_sha384;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
@@ -341,23 +313,11 @@ pub mod ecdsa_p384;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ecdsa_p384_sha384;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ecdsa_p521;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
-pub mod ecdsa_p521_sha512;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
 pub mod ecdsa_secp256k1;
-
-#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
-#[rustfmt::skip]
-pub mod ecdsa_secp256k1_sha256;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
