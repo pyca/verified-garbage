@@ -22,7 +22,9 @@
 //! Unset or empty, it restricts nothing. It can only remove features, so it
 //! can never choose code the CPU cannot run, and it names only features
 //! this library knows and the CPU has: anything else panics, rather than
-//! quietly testing another configuration. On AArch64, standalone hashing
+//! quietly testing another configuration. On x86 and x86-64, BMI2 and ADX
+//! are detected only with AVX2, which every CPU that has them has, so
+//! `VG_CPU_FEATURES` naming either without `avx2` panics too. On AArch64, standalone hashing
 //! chooses FEAT_SHA3's Keccak on non-Apple targets only when this variable
 //! names `sha3`, since it is not faster there. ML-DSA and ML-KEM independently select their paired
 //! SHA3 implementations whenever the detected features support them.
@@ -134,6 +136,14 @@ fn allowed_by(names: &str, runtime: u32) -> u32 {
             lacking.join(",")
         );
     }
+    // BMI2 and ADX are detected only with AVX2 (`decode`): a configuration
+    // with them but not it is none any CPU runs.
+    if !names.is_empty()
+        && allowed & (feature::BMI2 | feature::ADX) != 0
+        && allowed & feature::AVX2 == 0
+    {
+        panic!("VG_CPU_FEATURES names bmi2 or adx without avx2, which no CPU has");
+    }
     allowed
 }
 
@@ -219,10 +229,14 @@ fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32
     let sha = (ebx >> 29) & 1;
     let avx2 = (ebx >> 5) & avx;
     let bmi1 = (ebx >> 3) & 1;
-    let bmi2 = (ebx >> 8) & 1;
+    // BMI2 and ADX only with AVX2: no CPU has them without it (Intel's
+    // came with Haswell's AVX2 and Broadwell, AMD's with Zen), so only a
+    // virtual machine or an operating system hiding AVX2 does, and it gets
+    // the baseline code rather than configurations of its own to test.
+    let bmi2 = (ebx >> 8) & avx2;
     let avx512f = (ebx >> 16) & avx & zmm;
     let sha512 = eax1 & avx;
-    let adx = (ebx >> 19) & 1;
+    let adx = (ebx >> 19) & avx2;
     let avx512ifma = (ebx >> 21) & avx & zmm;
     let avx512vl = (ebx >> 31) & avx & zmm;
     let vaes = (ecx7 >> 9) & avx;
@@ -440,6 +454,30 @@ mod tests {
         }
     }
 
+    /// BMI2 and ADX are reported only with AVX2: without it (leaf 7's bit 5
+    /// clear, or the `ymm` state not enabled), not at all.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_bmi2_adx_need_avx2() {
+        let mut leaves = [[0; 4]; 8];
+        leaves[0][0] = 7;
+        leaves[1][2] = 1 << 27 | 1 << 28;
+        // BMI2 and ADX, and AVX2 or not.
+        for (avx2, xcr0, want) in [
+            (
+                1 << 5,
+                0b111,
+                feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX,
+            ),
+            (0, 0b111, feature::AVX),
+            (1 << 5, 0b001, 0),
+        ] {
+            leaves[7][1] = 1 << 8 | 1 << 19 | avx2;
+            let f = decode(|leaf, _| leaves[leaf as usize], || xcr0);
+            assert_eq!(Features(f), Features(want));
+        }
+    }
+
     /// Detection returns the CPU's features, restricted as
     /// `VG_CPU_FEATURES` says.
     #[test]
@@ -462,6 +500,22 @@ mod tests {
     #[should_panic(expected = "VG_CPU_FEATURES names sha,avx, which this CPU does not have")]
     fn allowed_by_names_the_cpu_lacks() {
         allowed_by("aes,sha,avx", 0b101);
+    }
+
+    /// BMI2 or ADX without AVX2 is a configuration no CPU has.
+    #[cfg(feature = "cpu-features-env")]
+    #[test]
+    #[should_panic(expected = "VG_CPU_FEATURES names bmi2 or adx without avx2, which no CPU has")]
+    fn allowed_by_bmi2_adx_without_avx2() {
+        allowed_by("bmi2,adx", u32::MAX);
+    }
+
+    /// With AVX2, BMI2 and ADX are allowed.
+    #[cfg(feature = "cpu-features-env")]
+    #[test]
+    fn allowed_by_bmi2_adx_with_avx2() {
+        let f = feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX;
+        assert_eq!(allowed_by("avx,avx2,bmi2,adx", u32::MAX), f);
     }
 
     #[cfg(feature = "cpu-features-env")]
