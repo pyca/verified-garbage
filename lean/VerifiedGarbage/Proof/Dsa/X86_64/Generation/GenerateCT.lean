@@ -33,7 +33,7 @@ theorem nativeParameters_output (H : GenerationHashes) (M : Mont) (Sq : MontS) (
   · simp [h19, he]
 
 theorem generate_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart n pLen qLen))
       (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
   refine RelCT.seq (two_post (nativeParameters_ct (checkName := checkName) H M Sq T n hn pLen qLen sizes)

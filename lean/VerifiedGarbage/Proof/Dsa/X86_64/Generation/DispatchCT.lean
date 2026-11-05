@@ -73,7 +73,7 @@ theorem dispatch_check256 (n : Nat) :
     exact ⟨dispatchBefore_congr h he hk, hn, by simp only [eval, hz, ha]⟩
 
 theorem dispatch_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (DispatchBefore n)) (dispatch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (fun _ _ => True) := by
   unfold dispatch
   refine RelCT.seq (dispatch_check n) (two_ite (fun _ _ _ hs ht => hs.2.2.trans ht.2.2.symm) ?_ ?_)

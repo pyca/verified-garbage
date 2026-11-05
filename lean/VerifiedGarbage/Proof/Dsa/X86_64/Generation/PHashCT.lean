@@ -158,7 +158,7 @@ theorem contributionWrap_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count j : Nat)
   exact hw
 
 theorem pSeedHash_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (k len count j : Nat)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (k len count j : Nat)
     (hlen : len = 20 ∨ len = 32) (hj : j ≤ count) (hj' : j < 2 ^ 31) :
     RelCT isa (Two (ContributionBefore n H k len count))
       (Impl.Dsa.X86_64.Generation.pSeedHash G len j) (fun _ _ => True) := by

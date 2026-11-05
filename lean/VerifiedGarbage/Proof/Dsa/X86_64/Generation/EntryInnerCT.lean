@@ -47,7 +47,7 @@ theorem entryReady_ct (n : Nat) :
       hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, rfl, rfl⟩
 
 theorem entryBody_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (EntryBefore n)) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (fun _ _ => True) :=
   RelCT.seq (entryReady_ct n) (dispatch_ct (checkName := checkName) H M Sq T n hn)
 
@@ -98,7 +98,7 @@ theorem generationRegions_lengths {s : State} (h : GenerationABI s) :
 
 theorem generationRegions_header {s : State} (h : GenerationABI s) :
     PrimeHeaderLayout (stackArg s 4) (generationRegions s) := by
-  refine ⟨_, _, _, (stackArg s 5).toNat * 8, rfl, ?_, generationRegions_pairwise h, generationRegions_lengths h⟩
+  refine Or.inl ⟨_, _, _, (stackArg s 5).toNat * 8, rfl, ?_, generationRegions_pairwise h, generationRegions_lengths h⟩
   have hs := generation_scratch_size h
   change 28928 ≤ (stackArg s 5).toNat * 8
   change 40960 + 128 * (s.gpr .rdx).toNat ≤ (stackArg s 5).toNat * 8 at hs
@@ -248,7 +248,7 @@ theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeT
       have ha := entryInitial_ct hs ga ra wa fa
       have hb := entryInitial_ct ht gb rb wb fb
       rw [← hp.parameter (hs := hs) (ht := ht)] at hb
-      have traces := (entryBody_ct (checkName := checkName) H M Sq T 3 (Or.inr rfl) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
+      have traces := (entryBody_ct (checkName := checkName) H M Sq T 3 (Or.inr (Or.inl rfl)) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
       refine ⟨by simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using traces, ?_⟩
       rw [generation_free_rsp qa, generation_free_rsp qb, ga, gb]
       change s.gpr .rsp - BitVec.ofNat 64 48 = t.gpr .rsp - BitVec.ofNat 64 48

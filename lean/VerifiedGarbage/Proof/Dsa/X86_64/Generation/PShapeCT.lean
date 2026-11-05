@@ -82,7 +82,7 @@ theorem hashCopyArgs_ct (len count j : Nat) (hlen : len = 20 ∨ len = 32) (hc :
       fun _ ⟨a, b, c, d, _, _⟩ => ⟨a, b, c, d⟩
 
 theorem pHashOne_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (k len count j : Nat) (hlen : len = 20 ∨ len = 32) (hc : count ≤ 11) (hj : j ≤ count) :
     RelCT isa (Two (ContributionBefore n H k len count))
@@ -115,7 +115,7 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64
 
 theorem hashStep_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (len count k : Nat) (hlen : len = 20 ∨ len = 32) (hd : G.D = len)
     (hc : count ≤ 11) (hk : k ≤ count) :
@@ -134,7 +134,7 @@ theorem hashStep_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     ⟨⟨W, hw, ht, hf.congr (ht.layout.rsp.trans hs.layout.rsp.symm) wr⟩, he⟩
 
 theorem hashPrefix_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (len count k : Nat) (hlen : len = 20 ∨ len = 32) (hd : G.D = len)
     (hc : count ≤ 11) (hk : k ≤ count + 1) :
@@ -147,7 +147,7 @@ theorem hashPrefix_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     exact RelCT.seq (ih (by omega)) (hashStep_ct hG n hn H hmatch hsize len count k hlen hd hc (by omega))
 
 theorem pHashes_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (len count : Nat) (hlen : len = 20 ∨ len = 32) (hd : G.D = len) (hc : count ≤ 11) :
     RelCT isa (Two (ContributionBefore n H 0 len count))
@@ -227,7 +227,7 @@ theorem pShape_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count plen : Nat)
   · exact hs.2.2.2.trans ht.2.2.2.symm
 
 theorem pBuild_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x) (hsize : ∀ x, (H.hash x).length = G.D)
     (len count plen : Nat) (hlen : len = 20 ∨ len = 32) (hd : G.D = len)
     (hc : count ≤ 11) (hl : plen ≤ 1024) :

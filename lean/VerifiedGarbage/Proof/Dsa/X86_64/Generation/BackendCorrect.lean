@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashVariants
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundCode
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
 import Mathlib.Data.Nat.Basic
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -43,7 +43,7 @@ section
 
 /-! # Existing hash variants supply the generator's instruction and stack checks -/
 
-section
+public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Pbkdf2.Md.X86_64
 
@@ -89,7 +89,7 @@ section
 
 /-! # Search controllers inherit their bodies’ stack bounds -/
 
-section
+public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
@@ -195,7 +195,7 @@ section
 
 /-! # Bounded seed, prime, and generator controllers inherit their bodies' safety -/
 
-section
+public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
