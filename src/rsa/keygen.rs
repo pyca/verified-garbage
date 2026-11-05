@@ -795,7 +795,7 @@ mod tests {
         assert!(reloads(&key));
         assert_eq!(key.components()[4], COMPOSITE);
         assert_eq!(
-            crate::rsa::pkcs1_sig::sign(&key, &[0; 32], crate::rsa::pkcs1_sig::Hash::Sha256),
+            key.sign_pkcs1v15(&[0; 32], crate::rsa::pkcs1_sig::Hash::Sha256),
             Err(crate::rsa::pkcs1_sig::Error::Fault)
         );
     }
