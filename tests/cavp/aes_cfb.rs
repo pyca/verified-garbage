@@ -10,73 +10,40 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cfb::{AesCfb128, InvalidKeyLength};
+use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor, Error};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
-/// `AesCfb128::encrypt` or `AesCfb128::decrypt`.
-type Direction = fn(&AesCfb128, &mut [u8; 16], &mut [u8]);
-
-/// `CIPH_K` of the block before the `n`-th: the `n`-th plaintext block XOR
-/// the `n`-th ciphertext block.
-fn keystream_block(plaintext: &[u8], ciphertext: &[u8], n: usize) -> [u8; 16] {
-    let mut o = [0; 16];
-    for i in 0..16 {
-        o[i] = plaintext[16 * (n - 1) + i] ^ ciphertext[16 * (n - 1) + i];
-    }
-    o
-}
-
-/// Checks a vector in both directions, in one call; with `split`, also in
-/// two calls split at each block boundary, one call per block, and with the
-/// message cut short at each length in its last block (a partial last
-/// segment).
+/// Checks a vector in both directions, in one call; with `split`, also
+/// truncated (with a partial last segment) and in pieces
+/// (`crate::modes::check`).
 fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
     assert_eq!(plaintext.len(), ciphertext.len());
     assert_eq!(plaintext.len() % 16, 0);
-    let ctx = AesCfb128::new(key).unwrap();
     let iv: [u8; 16] = iv.try_into().unwrap();
-    let n = plaintext.len() / 16;
-    // The block to continue from after the message (no vector is empty),
-    // and after a partial last segment.
-    let last: [u8; 16] = ciphertext[ciphertext.len() - 16..].try_into().unwrap();
-    let partial = keystream_block(plaintext, ciphertext, n);
-    let directions: [(Direction, &[u8], &[u8]); 2] = [
-        (AesCfb128::encrypt, plaintext, ciphertext),
-        (AesCfb128::decrypt, ciphertext, plaintext),
-    ];
-    for (f, input, expected) in directions {
-        let mut output = input.to_vec();
-        let mut chain = iv;
-        f(&ctx, &mut chain, &mut output);
-        assert_eq!(output, expected);
-        assert_eq!(chain, last);
-        if split {
-            for offset in (0..=input.len()).step_by(16) {
-                let mut output = input.to_vec();
-                let mut chain = iv;
-                f(&ctx, &mut chain, &mut []);
-                assert_eq!(chain, iv);
-                f(&ctx, &mut chain, &mut output[..offset]);
-                f(&ctx, &mut chain, &mut output[offset..]);
-                assert_eq!(output, expected);
-                assert_eq!(chain, last);
-            }
-            let mut output = input.to_vec();
-            let mut chain = iv;
-            for block in output.chunks_mut(16) {
-                f(&ctx, &mut chain, block);
-            }
-            assert_eq!(output, expected);
-            assert_eq!(chain, last);
-            for len in input.len() - 15..input.len() {
-                let mut output = input[..len].to_vec();
-                let mut chain = iv;
-                f(&ctx, &mut chain, &mut output);
-                assert_eq!(output, expected[..len]);
-                assert_eq!(chain, partial);
-            }
-        }
+    let encryptor = |iv: &[u8; 16]| AesCfb128Encryptor::new(key, iv).unwrap();
+    let decryptor = |iv: &[u8; 16]| AesCfb128Decryptor::new(key, iv).unwrap();
+    if split {
+        crate::modes::check(
+            iv,
+            (plaintext, ciphertext),
+            &encryptor,
+            AesCfb128Encryptor::encrypt,
+            AesCfb128Encryptor::encrypt_final,
+        );
+        crate::modes::check(
+            iv,
+            (ciphertext, plaintext),
+            &decryptor,
+            AesCfb128Decryptor::decrypt,
+            AesCfb128Decryptor::decrypt_final,
+        );
+    } else {
+        let mut output = plaintext.to_vec();
+        encryptor(&iv).encrypt(&mut output).unwrap();
+        assert_eq!(output, ciphertext);
+        decryptor(&iv).decrypt_final(&mut output);
+        assert_eq!(output, plaintext);
     }
 }
 
@@ -186,34 +153,45 @@ fn nist_cfb128() {
 
 #[test]
 fn limits_and_lengths() {
+    let iv = [0x3c; 16];
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(AesCfb128::new(&key), Err(InvalidKeyLength)));
+            assert!(matches!(
+                AesCfb128Encryptor::new(&key, &iv),
+                Err(Error::InvalidKeyLength)
+            ));
+            assert!(matches!(
+                AesCfb128Decryptor::new(&key, &iv),
+                Err(Error::InvalidKeyLength)
+            ));
             continue;
         }
-        let ctx = AesCfb128::new(&key).unwrap();
-        let mut iv = [0x3c; 16];
-        ctx.encrypt(&mut iv, &mut []);
-        ctx.decrypt(&mut iv, &mut []);
-        assert_eq!(iv, [0x3c; 16]);
-        // Every length is a prefix of the longest message's ciphertext, and
-        // round-trips.
-        // Every length below 35 blocks, partial segments included, each
-        // decrypted in place at an offset of its length modulo 16, with guards.
+        // An empty call and a refused one change nothing: every length is a
+        // prefix of the longest message's output after them, and
+        // round-trips. Every length below 35 blocks, partial segments
+        // included, each decrypted in place at an offset of its length modulo
+        // 16, with guards.
+        let mut encryptor = AesCfb128Encryptor::new(&key, &iv).unwrap();
+        encryptor.encrypt(&mut []).unwrap();
+        let mut odd = [0x5a; 17];
+        assert_eq!(encryptor.encrypt(&mut odd), Err(Error::IncompleteBlock));
+        assert_eq!(odd, [0x5a; 17]);
         let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
         let mut ciphertext = message.clone();
-        ctx.encrypt(&mut iv, &mut ciphertext);
+        encryptor.encrypt_final(&mut ciphertext);
         for n in 0..message.len() {
-            let mut iv = [0x3c; 16];
             let mut buffer = message[..n].to_vec();
-            ctx.encrypt(&mut iv, &mut buffer);
+            AesCfb128Encryptor::new(&key, &iv)
+                .unwrap()
+                .encrypt_final(&mut buffer);
             assert_eq!(buffer, ciphertext[..n]);
-            let mut iv = [0x3c; 16];
             let offset = n % 16;
             let mut guarded = vec![0xa5; offset + n + 16];
             guarded[offset..offset + n].copy_from_slice(&buffer);
-            ctx.decrypt(&mut iv, &mut guarded[offset..offset + n]);
+            AesCfb128Decryptor::new(&key, &iv)
+                .unwrap()
+                .decrypt_final(&mut guarded[offset..offset + n]);
             assert_eq!(guarded[offset..offset + n], message[..n]);
             assert!(crate::bytes::all_equal(&guarded[..offset], 0xa5));
             assert!(crate::bytes::all_equal(&guarded[offset + n..], 0xa5));

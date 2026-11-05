@@ -24,7 +24,7 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::iv::FixedLength;
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::aes_cfb::AesCfb128;
+    use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
@@ -47,13 +47,15 @@ pub fn bench(c: &mut Criterion) {
                 let mut buffer = crate::InPlace::new(size, &data);
                 group.bench(BenchmarkId::new(VG, size), |b| {
                     b.iter(|| {
-                        let ctx = AesCfb128::new(black_box(key)).unwrap();
-                        let mut chain = black_box(iv);
                         buffer.copy_from_slice(black_box(&data));
                         if encrypt {
-                            ctx.encrypt(&mut chain, black_box(&mut buffer));
+                            let ctx =
+                                AesCfb128Encryptor::new(black_box(key), &black_box(iv)).unwrap();
+                            ctx.encrypt_final(black_box(&mut buffer));
                         } else {
-                            ctx.decrypt(&mut chain, black_box(&mut buffer));
+                            let ctx =
+                                AesCfb128Decryptor::new(black_box(key), &black_box(iv)).unwrap();
+                            ctx.decrypt_final(black_box(&mut buffer));
                         }
                         black_box(&buffer);
                     })

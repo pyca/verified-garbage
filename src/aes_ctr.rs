@@ -11,9 +11,9 @@
 //! its timing may depend on the last four bytes of the counter block (the
 //! 32-bit counter, public in OpenSSL, BoringSSL and aws-lc, which split the
 //! blocks where it wraps), but not on the rest of it, the key or the data.
-//! This module holds the key schedule and handles a partial last block (§6.5,
-//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
-//! them with the first bytes of the next output block.
+//! This module holds the key schedule and the counter block, and handles a
+//! partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes
+//! padded to a block XORs them with the first bytes of the next output block.
 //!
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).
@@ -99,12 +99,25 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// The key is not 16, 24 or 32 bytes long.
-pub use crate::error::InvalidKeyLength;
+/// Why an AES-CTR operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The key is not 16, 24 or 32 bytes long.
+    InvalidKeyLength,
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
 
-/// An expanded AES key for CTR, whose encryption and decryption are the same
-/// operation.
-pub struct AesCtr {
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES key length",
+        IncompleteBlock => "AES-CTR input is not a whole number of blocks",
+    }
+}
+
+/// An expanded AES key.
+struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
     schedule: [u8; 240],
     /// The number of rounds of AES: 10, 12 or 14.
@@ -113,11 +126,55 @@ pub struct AesCtr {
     backend: Backend,
 }
 
+/// AES-CTR of one message, whose encryption and decryption are the
+/// same operation.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the next counter block; the last,
+/// [`apply_keystream_final`](Self::apply_keystream_final), takes the rest
+/// of the message, of any length.
+pub struct AesCtr {
+    key: Key,
+    /// The counter block to continue from.
+    counter: [u8; 16],
+}
+
 impl AesCtr {
+    /// Expands a 16-, 24- or 32-byte key, to process a message from the
+    /// counter block `ctr`.
+    pub fn new(key: &[u8], ctr: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            counter: *ctr,
+        })
+    }
+
+    /// Encrypts or decrypts (the same operation) whole 16-byte blocks in
+    /// place, continuing the message. Returns an error without changing
+    /// anything if the buffer's length is not a multiple of 16: only
+    /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
+    /// last block.
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.apply_keystream(&mut self.counter, buffer);
+        Ok(())
+    }
+
+    /// Encrypts or decrypts (the same operation) the rest of the message in
+    /// place, of any length: its whole blocks, then a partial last block if
+    /// there is one (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`).
+    pub fn apply_keystream_final(mut self, buffer: &mut [u8]) {
+        self.key.apply_keystream(&mut self.counter, buffer);
+    }
+}
+
+impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(InvalidKeyLength);
+            return Err(Error::InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(
@@ -146,7 +203,7 @@ impl AesCtr {
     /// be processed in pieces of whole blocks, each continuing from the `ctr`
     /// the last left; a piece whose length is not a multiple of 16 bytes
     /// must end the message.
-    pub fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+    fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
         self.crypt(ctr, blocks);
@@ -192,7 +249,7 @@ impl AesCtr {
     }
 }
 
-impl Drop for AesCtr {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }
@@ -200,7 +257,7 @@ impl Drop for AesCtr {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCtr, select};
+    use super::{Key, select};
     use crate::cpu::detected;
 
     /// A new key uses the implementation chosen for the CPU's features.
@@ -208,7 +265,7 @@ mod tests {
     fn select_detected() {
         for len in [16, 24, 32] {
             assert_eq!(
-                AesCtr::new(&[0; 32][..len]).unwrap().backend,
+                Key::new(&[0; 32][..len]).unwrap().backend,
                 select(detected())
             );
         }

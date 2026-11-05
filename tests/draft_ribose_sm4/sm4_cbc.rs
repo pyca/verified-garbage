@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_cbc::{Error, Sm4Cbc};
+use verified_garbage::sm4_cbc::{Error, Sm4CbcDecryptor, Sm4CbcEncryptor};
 
 use super::{field, section};
 
@@ -37,63 +37,67 @@ fn examples() -> Vec<Example> {
 }
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
-/// at every block boundary, leaving the last ciphertext block as the
-/// chaining value.
-fn check(ctx: &Sm4Cbc, iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
-    let after: [u8; 16] = *ciphertext.last_chunk().unwrap();
+/// at every block boundary.
+fn check(key: &[u8; 16], iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
     for offset in (0..=plaintext.len()).step_by(16) {
-        let mut chain = iv;
         let mut buffer = plaintext.to_vec();
-        ctx.encrypt(&mut chain, &mut buffer[..offset]).unwrap();
-        ctx.encrypt(&mut chain, &mut buffer[offset..]).unwrap();
+        let mut encryptor = Sm4CbcEncryptor::new(key, &iv);
+        encryptor.encrypt(&mut buffer[..offset]).unwrap();
+        encryptor.encrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, ciphertext);
-        assert_eq!(chain, after);
-        let mut chain = iv;
-        ctx.decrypt(&mut chain, &mut buffer[..offset]).unwrap();
-        ctx.decrypt(&mut chain, &mut buffer[offset..]).unwrap();
+        let mut decryptor = Sm4CbcDecryptor::new(key, &iv);
+        decryptor.decrypt(&mut buffer[..offset]).unwrap();
+        decryptor.decrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, plaintext);
-        assert_eq!(chain, after);
     }
 }
 
 #[test]
 fn draft_examples() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        check(&Sm4Cbc::new(&key), iv, &plaintext, &ciphertext);
+        check(&key, iv, &plaintext, &ciphertext);
     }
 }
 
+/// A piece that is not a whole number of blocks is refused, changing neither
+/// it nor the chaining value.
 #[test]
 fn incomplete_blocks() {
-    let ctx = Sm4Cbc::new(&[0; 16]);
+    let mut encryptor = Sm4CbcEncryptor::new(&[0; 16], &[7; 16]);
+    let mut decryptor = Sm4CbcDecryptor::new(&[0; 16], &[7; 16]);
     for len in [1, 15, 17, 31] {
-        let mut chain = [7; 16];
         let mut buffer = vec![0x5a; len];
-        assert_eq!(
-            ctx.encrypt(&mut chain, &mut buffer),
-            Err(Error::IncompleteBlock)
-        );
-        assert_eq!(
-            ctx.decrypt(&mut chain, &mut buffer),
-            Err(Error::IncompleteBlock)
-        );
+        assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
-        assert_eq!(chain, [7; 16]);
     }
+    let mut buffer = [0x5a; 32];
+    let mut expected = buffer;
+    Sm4CbcEncryptor::new(&[0; 16], &[7; 16])
+        .encrypt(&mut expected)
+        .unwrap();
+    encryptor.encrypt(&mut buffer).unwrap();
+    assert_eq!(buffer, expected);
+    decryptor.decrypt(&mut buffer).unwrap();
+    assert_eq!(buffer, [0x5a; 32]);
 }
 
-/// The examples in place, at every offset of the data and the chaining
-/// value, leave the bytes around them unchanged.
+/// The examples in place, at every offset of the data, leave the bytes
+/// around them unchanged.
 #[test]
 fn unaligned_guarded() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        let ctx = Sm4Cbc::new(&key);
-        let after = ciphertext[ciphertext.len() - 16..].try_into().unwrap();
-        crate::modes::check_unaligned(iv, (&plaintext, &ciphertext), after, &|iv, b| {
-            ctx.encrypt(iv, b).unwrap()
-        });
-        crate::modes::check_unaligned(iv, (&ciphertext, &plaintext), after, &|iv, b| {
-            ctx.decrypt(iv, b).unwrap()
-        });
+        crate::modes::check_unaligned(
+            iv,
+            (&plaintext, &ciphertext),
+            &|iv| Sm4CbcEncryptor::new(&key, iv),
+            |mut c, b| c.encrypt(b).unwrap(),
+        );
+        crate::modes::check_unaligned(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| Sm4CbcDecryptor::new(&key, iv),
+            |mut c, b| c.decrypt(b).unwrap(),
+        );
     }
 }

@@ -8,10 +8,10 @@
 //! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕
 //! CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the key,
-//! the chaining value and the data. This module holds the key schedule and
-//! handles a partial last
-//! segment: CFB encryption of a zero block is `CIPH_K` of the block to continue
-//! from, whose first bytes it XORs into the rest of the input.
+//! the chaining value and the data. This module holds the key schedule and the
+//! chaining value, and handles a partial last segment: CFB encryption of a zero
+//! block is `CIPH_K` of the block to continue from, whose first bytes it XORs
+//! into the rest of the input.
 
 #![cfg(any(
     target_arch = "x86",
@@ -26,16 +26,129 @@ use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb::{vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_encrypt};
 use crate::zeroize::zeroize;
 
-/// The key does not contain 16 or 24 bytes.
-pub use crate::error::InvalidKeyLength;
+/// Why a Triple DES-CFB64 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The key does not contain 16 or 24 bytes.
+    InvalidKeyLength,
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
 
-/// An expanded Triple DES key for CFB64 encryption and decryption.
-///
-/// A 24-byte key encodes K1, K2 and K3. A 16-byte key encodes K1 and K2,
-/// with K3 repeating K1. Each byte's parity bit is ignored.
-pub struct TripleDesCfb64 {
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Triple DES key length",
+        IncompleteBlock => "Triple DES-CFB64 input is not a whole number of blocks",
+    }
+}
+
+/// An expanded Triple DES key.
+struct Key {
     /// The key schedule `vg_triple_des_expand_key` writes.
     schedule: [u8; 384],
+}
+
+/// A Triple DES-CFB64 encryption of one message.
+///
+/// Each call but the last takes whole 8-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`encrypt_final`](Self::encrypt_final), takes the rest of the message, of
+/// any length.
+pub struct TripleDesCfb64Encryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl TripleDesCfb64Encryptor {
+    /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
+    /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit
+    /// is ignored), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8: only [`encrypt_final`](Self::encrypt_final) takes
+    /// a partial last segment.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.encrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Encrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn encrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.encrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for TripleDesCfb64Encryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
+}
+
+/// A Triple DES-CFB64 decryption of one message.
+///
+/// Each call but the last takes whole 8-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`decrypt_final`](Self::decrypt_final), takes the rest of the message, of
+/// any length.
+pub struct TripleDesCfb64Decryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl TripleDesCfb64Decryptor {
+    /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
+    /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit
+    /// is ignored), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8: only [`decrypt_final`](Self::decrypt_final) takes
+    /// a partial last segment.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.decrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Decrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn decrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.decrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for TripleDesCfb64Decryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
 }
 
 /// The signature of `vg_triple_des_cfb64_encrypt` and `vg_triple_des_cfb64_decrypt`.
@@ -51,11 +164,11 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
 
-impl TripleDesCfb64 {
-    /// Expands a 16- or 24-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+impl Key {
+    /// Expands a 16- or 24-byte key.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !matches!(key.len(), 16 | 24) {
-            return Err(InvalidKeyLength);
+            return Err(Error::InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -70,7 +183,7 @@ impl TripleDesCfb64 {
     /// may be encrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_triple_des_cfb64_encrypt);
     }
 
@@ -80,7 +193,7 @@ impl TripleDesCfb64 {
     /// may be decrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_triple_des_cfb64_decrypt);
     }
 
@@ -117,7 +230,7 @@ impl TripleDesCfb64 {
     }
 }
 
-impl Drop for TripleDesCfb64 {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

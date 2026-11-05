@@ -10,7 +10,7 @@
 //! value at `iv`, and the chaining value with the one to continue from, the
 //! last ciphertext block, in constant time: their timing depends on none of the
 //! key, the chaining value and the data. This module checks the lengths and
-//! holds the key schedule.
+//! holds the key schedule and the chaining value.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -43,21 +43,75 @@ crate::error::impl_error! {
     }
 }
 
-/// An expanded Triple DES key for CBC encryption and decryption.
-///
-/// A 24-byte key encodes K1, K2 and K3. A 16-byte key encodes K1 and K2,
-/// with K3 repeating K1. Each byte's parity bit is ignored. No padding is
-/// added or removed: each operation takes whole eight-byte blocks. The
-/// chaining value is updated in place, so that a message may be processed
-/// in pieces, each continuing from the last.
-pub struct TripleDesCbc {
+/// An expanded Triple DES key, which serves both directions.
+struct Key {
     /// The key schedule `vg_triple_des_expand_key` writes.
     schedule: [u8; 384],
 }
 
-impl TripleDesCbc {
-    /// Expands a 16- or 24-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+/// A Triple DES-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct TripleDesCbcEncryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl TripleDesCbcEncryptor {
+    /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
+    /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit is
+    /// ignored), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.encrypt(&mut self.iv, buffer)
+    }
+}
+
+/// A Triple DES-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct TripleDesCbcDecryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl TripleDesCbcDecryptor {
+    /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
+    /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit is
+    /// ignored), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.decrypt(&mut self.iv, buffer)
+    }
+}
+
+impl Key {
+    /// Expands a 16- or 24-byte key.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !matches!(key.len(), 16 | 24) {
             return Err(Error::InvalidKeyLength);
         }
@@ -72,10 +126,10 @@ impl TripleDesCbc {
 
     /// Encrypts whole eight-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -96,10 +150,10 @@ impl TripleDesCbc {
 
     /// Decrypts whole eight-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -116,7 +170,7 @@ impl TripleDesCbc {
     }
 }
 
-impl Drop for TripleDesCbc {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

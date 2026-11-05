@@ -41,38 +41,31 @@ crate::error::impl_error! {
     }
 }
 
-/// An expanded IDEA key for CBC encryption and decryption: its encryption
-/// and decryption subkeys.
+/// An IDEA-CBC encryption of one message, without padding.
 ///
-/// No padding is added or removed: each operation takes whole eight-byte
-/// blocks. The chaining value is updated in place, so that a message may be
-/// processed in pieces, each continuing from the last.
-pub struct IdeaCbc {
-    encrypt: [u8; 104],
-    decrypt: [u8; 104],
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct IdeaCbcEncryptor {
+    /// The encryption subkeys.
+    schedule: [u8; 104],
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
 }
 
-impl IdeaCbc {
-    /// Expands a 16-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
-        let mut encrypt = [0; 104];
-        let mut decrypt = [0; 104];
-        // SAFETY: the key and both schedules are separate valid buffers of
-        // the required sizes.
-        unsafe {
-            vg_idea_expand_key(key, &mut encrypt);
-            vg_idea_invert_key(&encrypt, &mut decrypt);
-        }
-        Ok(Self { encrypt, decrypt })
+impl IdeaCbcEncryptor {
+    /// Expands a 16-byte key, to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            schedule: expand(key)?,
+            iv: *iv,
+        })
     }
 
-    /// Encrypts whole eight-byte blocks in place, chained from `iv`, and
-    /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
-    /// not a multiple of eight.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -82,29 +75,8 @@ impl IdeaCbc {
         // the callee's stack.
         unsafe {
             vg_idea_cbc_encrypt_chained(
-                &self.encrypt,
-                iv,
-                buffer.as_mut_ptr().cast(),
-                buffer.len() / 8,
-            );
-        }
-        Ok(())
-    }
-
-    /// Decrypts whole eight-byte blocks in place, chained from `iv`, and
-    /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
-    /// Returns an error without changing anything if the buffer's length is
-    /// not a multiple of eight.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
-        if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
-        }
-        // SAFETY: as in `encrypt`.
-        unsafe {
-            vg_idea_cbc_decrypt_chained(
-                &self.decrypt,
-                iv,
+                &self.schedule,
+                &mut self.iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
@@ -113,9 +85,68 @@ impl IdeaCbc {
     }
 }
 
-impl Drop for IdeaCbc {
+impl Drop for IdeaCbcEncryptor {
     fn drop(&mut self) {
-        zeroize(&mut self.encrypt);
-        zeroize(&mut self.decrypt);
+        zeroize(&mut self.schedule);
     }
+}
+
+/// An IDEA-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct IdeaCbcDecryptor {
+    /// The decryption subkeys.
+    schedule: [u8; 104],
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl IdeaCbcDecryptor {
+    /// Expands a 16-byte key, to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        let mut encrypt = expand(key)?;
+        let mut schedule = [0; 104];
+        // SAFETY: both schedules are separate valid buffers of the required
+        // sizes.
+        unsafe { vg_idea_invert_key(&encrypt, &mut schedule) };
+        zeroize(&mut encrypt);
+        Ok(Self { schedule, iv: *iv })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(Error::IncompleteBlock);
+        }
+        // SAFETY: as in `IdeaCbcEncryptor::encrypt`.
+        unsafe {
+            vg_idea_cbc_decrypt_chained(
+                &self.schedule,
+                &mut self.iv,
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
+            );
+        }
+        Ok(())
+    }
+}
+
+impl Drop for IdeaCbcDecryptor {
+    fn drop(&mut self) {
+        zeroize(&mut self.schedule);
+    }
+}
+
+/// The encryption subkeys of a 16-byte key.
+fn expand(key: &[u8]) -> Result<[u8; 104], Error> {
+    let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
+    let mut schedule = [0; 104];
+    // SAFETY: the key and the schedule are separate valid buffers of the
+    // required sizes.
+    unsafe { vg_idea_expand_key(key, &mut schedule) };
+    Ok(schedule)
 }

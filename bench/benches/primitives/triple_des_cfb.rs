@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::triple_des_cfb::TripleDesCfb64;
+    use verified_garbage::triple_des_cfb::{TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -39,13 +39,15 @@ pub fn bench(c: &mut Criterion) {
             let mut buffer = crate::InPlace::new(size, &data);
             group.bench(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    let ctx = TripleDesCfb64::new(black_box(&key)).unwrap();
-                    let mut chain = black_box(iv);
                     buffer.copy_from_slice(black_box(&data));
                     if encrypt {
-                        ctx.encrypt(&mut chain, black_box(&mut buffer));
+                        let ctx =
+                            TripleDesCfb64Encryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                        ctx.encrypt_final(black_box(&mut buffer));
                     } else {
-                        ctx.decrypt(&mut chain, black_box(&mut buffer));
+                        let ctx =
+                            TripleDesCfb64Decryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                        ctx.decrypt_final(black_box(&mut buffer));
                     }
                     black_box(&buffer);
                 })

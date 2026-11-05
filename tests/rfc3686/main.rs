@@ -14,43 +14,18 @@
 
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
-use verified_garbage::aes_ctr::{AesCtr, InvalidKeyLength};
+use verified_garbage::aes_ctr::{AesCtr, Error};
 
-/// Checks a message in one call, split at every block boundary, one call per
-/// block, and cut short at each length, with the counter block left after
-/// each.
-fn check(ctx: &AesCtr, ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
-    let blocks = input.len().div_ceil(16);
-    let mut output = input.to_vec();
-    let mut chain = *ctr;
-    ctx.apply_keystream(&mut chain, &mut output);
-    assert_eq!(output, expected);
-    assert_eq!(chain, counter_add(ctr, blocks));
-    for offset in (0..=input.len()).step_by(16) {
-        let mut output = input.to_vec();
-        let mut chain = *ctr;
-        ctx.apply_keystream(&mut chain, &mut []);
-        assert_eq!(chain, *ctr);
-        ctx.apply_keystream(&mut chain, &mut output[..offset]);
-        assert_eq!(chain, counter_add(ctr, offset / 16));
-        ctx.apply_keystream(&mut chain, &mut output[offset..]);
-        assert_eq!(output, expected);
-        assert_eq!(chain, counter_add(ctr, blocks));
-    }
-    let mut output = input.to_vec();
-    let mut chain = *ctr;
-    for block in output.chunks_mut(16) {
-        ctx.apply_keystream(&mut chain, block);
-    }
-    assert_eq!(output, expected);
-    assert_eq!(chain, counter_add(ctr, blocks));
-    for len in 0..input.len() {
-        let mut output = input[..len].to_vec();
-        let mut chain = *ctr;
-        ctx.apply_keystream(&mut chain, &mut output);
-        assert_eq!(output, expected[..len]);
-        assert_eq!(chain, counter_add(ctr, len.div_ceil(16)));
-    }
+/// Checks a message truncated, in pieces and with a partial last block
+/// (`crate::modes::check`).
+fn check(key: &[u8], ctr: &[u8; 16], input: &[u8], expected: &[u8]) {
+    crate::modes::check(
+        *ctr,
+        (input, expected),
+        &|c| AesCtr::new(key, c).unwrap(),
+        AesCtr::apply_keystream,
+        AesCtr::apply_keystream_final,
+    );
 }
 
 #[test]
@@ -67,14 +42,14 @@ fn rfc3686_test_vectors() {
         let plaintext = get(&fields, "plaintext");
         let ciphertext = get(&fields, "ciphertext");
         key_lens.push(key.len());
-        let ctx = AesCtr::new(key).unwrap();
-        check(&ctx, &ctr, plaintext, ciphertext);
-        check(&ctx, &ctr, ciphertext, plaintext);
+        check(key, &ctr, plaintext, ciphertext);
+        check(key, &ctr, ciphertext, plaintext);
         // The key stream is CTR of zeros, block by block from its counter block.
         let blocks = plaintext.len().div_ceil(16);
         let mut stream = vec![0; 16 * blocks];
-        let mut chain = ctr;
-        ctx.apply_keystream(&mut chain, &mut stream);
+        AesCtr::new(key, &ctr)
+            .unwrap()
+            .apply_keystream_final(&mut stream);
         for (j, block) in stream.chunks(16).enumerate() {
             assert_eq!(
                 get(&fields, &format!("counter block ({})", j + 1)),
@@ -101,24 +76,41 @@ fn counter_carries_and_wraps() {
     ];
     for key_len in [16, 24, 32] {
         let key: Vec<_> = crate::bytes::pattern(key_len, 29, 7);
-        let ctx = AesCtr::new(&key).unwrap();
         for start in starts {
-            crate::modes::check_counter(start.to_be_bytes(), 6, &|c, b| ctx.apply_keystream(c, b));
+            crate::modes::check_counter(
+                start.to_be_bytes(),
+                6,
+                &|c| AesCtr::new(&key, c).unwrap(),
+                AesCtr::apply_keystream,
+                AesCtr::apply_keystream_final,
+            );
         }
     }
 }
 
 #[test]
 fn limits_and_lengths() {
+    let ctr = [0x3c; 16];
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(AesCtr::new(&key), Err(InvalidKeyLength)));
+            assert!(matches!(
+                AesCtr::new(&key, &ctr),
+                Err(Error::InvalidKeyLength)
+            ));
             continue;
         }
-        let ctx = AesCtr::new(&key).unwrap();
-        let mut ctr = [0x3c; 16];
-        ctx.apply_keystream(&mut ctr, &mut []);
-        assert_eq!(ctr, [0x3c; 16]);
+        // An empty call, and a refused one, change nothing.
+        let mut ctx = AesCtr::new(&key, &ctr).unwrap();
+        ctx.apply_keystream(&mut []).unwrap();
+        let mut data = [0xa5; 20];
+        assert_eq!(ctx.apply_keystream(&mut data), Err(Error::IncompleteBlock));
+        assert_eq!(data, [0xa5; 20]);
+        let mut expected = data;
+        AesCtr::new(&key, &ctr)
+            .unwrap()
+            .apply_keystream_final(&mut expected);
+        ctx.apply_keystream_final(&mut data);
+        assert_eq!(data, expected);
     }
 }

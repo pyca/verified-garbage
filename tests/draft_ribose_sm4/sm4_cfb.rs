@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_cfb::Sm4Cfb128;
+use verified_garbage::sm4_cfb::{Sm4Cfb128Decryptor, Sm4Cfb128Encryptor};
 
 use super::{field, section};
 
@@ -39,28 +39,40 @@ fn examples() -> Vec<Example> {
 #[test]
 fn draft_examples() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        let ctx = Sm4Cfb128::new(&key);
         let vector = (&plaintext[..], &ciphertext[..]);
-        let cfb = crate::modes::Feedback::Ciphertext;
-        crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
-        crate::modes::check(cfb, iv, vector, (&ciphertext, &plaintext), &|iv, b| {
-            ctx.decrypt(iv, b)
-        });
+        crate::modes::check(
+            iv,
+            vector,
+            &|iv| Sm4Cfb128Encryptor::new(&key, iv),
+            Sm4Cfb128Encryptor::encrypt,
+            Sm4Cfb128Encryptor::encrypt_final,
+        );
+        crate::modes::check(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| Sm4Cfb128Decryptor::new(&key, iv),
+            Sm4Cfb128Decryptor::decrypt,
+            Sm4Cfb128Decryptor::decrypt_final,
+        );
     }
 }
 
-/// The examples in place, at every offset of the data and the chaining
-/// value, leave the bytes around them unchanged.
+/// The examples in place, at every offset of the data, leave the bytes
+/// around them unchanged.
 #[test]
 fn feedback_buffers_unaligned() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        let ctx = Sm4Cfb128::new(&key);
-        let after = ciphertext[ciphertext.len() - 16..].try_into().unwrap();
-        crate::modes::check_unaligned(iv, (&plaintext, &ciphertext), after, &|iv, b| {
-            ctx.encrypt(iv, b)
-        });
-        crate::modes::check_unaligned(iv, (&ciphertext, &plaintext), after, &|iv, b| {
-            ctx.decrypt(iv, b)
-        });
+        crate::modes::check_unaligned(
+            iv,
+            (&plaintext, &ciphertext),
+            &|iv| Sm4Cfb128Encryptor::new(&key, iv),
+            Sm4Cfb128Encryptor::encrypt_final,
+        );
+        crate::modes::check_unaligned(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| Sm4Cfb128Decryptor::new(&key, iv),
+            Sm4Cfb128Decryptor::decrypt_final,
+        );
     }
 }

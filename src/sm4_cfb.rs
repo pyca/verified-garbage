@@ -9,9 +9,10 @@
 //! blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! This module holds the key schedule and handles a partial last segment:
-//! CFB encryption of a zero block is `CIPH_K` of the block to continue from,
-//! whose first bytes it XORs into the rest of the input.
+//! This module holds the key schedule and the chaining value, and handles a
+//! partial last segment: CFB encryption of a zero block is `CIPH_K` of the
+//! block to continue from, whose first bytes it XORs into the rest of the
+//! input.
 
 #![cfg(any(
     target_arch = "x86",
@@ -26,10 +27,122 @@ use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cfb::{vg_sm4_cfb128_decrypt, vg_sm4_cfb128_encrypt};
 use crate::zeroize::zeroize;
 
-/// An expanded SM4 key for CFB128 encryption and decryption.
-pub struct Sm4Cfb128 {
+/// Why an SM4-CFB128 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        IncompleteBlock => "SM4-CFB128 input is not a whole number of blocks",
+    }
+}
+
+/// An expanded SM4 key.
+struct Key {
     /// The key schedule `vg_sm4_expand_key` writes.
     schedule: [u8; 128],
+}
+
+/// An SM4-CFB128 encryption of one message.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`encrypt_final`](Self::encrypt_final), takes the rest of the message, of
+/// any length.
+pub struct Sm4Cfb128Encryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl Sm4Cfb128Encryptor {
+    /// Expands a 16-byte key, to encrypt a message from `iv`.
+    pub fn new(key: &[u8; 16], iv: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
+            iv: *iv,
+        }
+    }
+
+    /// Encrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
+    /// a partial last segment.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.encrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Encrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn encrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.encrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for Sm4Cfb128Encryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
+}
+
+/// An SM4-CFB128 decryption of one message.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`decrypt_final`](Self::decrypt_final), takes the rest of the message, of
+/// any length.
+pub struct Sm4Cfb128Decryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl Sm4Cfb128Decryptor {
+    /// Expands a 16-byte key, to decrypt a message from `iv`.
+    pub fn new(key: &[u8; 16], iv: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
+            iv: *iv,
+        }
+    }
+
+    /// Decrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
+    /// a partial last segment.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.decrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Decrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn decrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.decrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for Sm4Cfb128Decryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
 }
 
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
@@ -45,9 +158,9 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
-impl Sm4Cfb128 {
-    /// Expands a 16-byte key for use in either direction.
-    pub fn new(key: &[u8; 16]) -> Self {
+impl Key {
+    /// Expands a 16-byte key.
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
@@ -61,7 +174,7 @@ impl Sm4Cfb128 {
     /// may be encrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
-    pub fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_sm4_cfb128_encrypt);
     }
 
@@ -71,7 +184,7 @@ impl Sm4Cfb128 {
     /// may be decrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
-    pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_sm4_cfb128_decrypt);
     }
 
@@ -108,7 +221,7 @@ impl Sm4Cfb128 {
     }
 }
 
-impl Drop for Sm4Cfb128 {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }
