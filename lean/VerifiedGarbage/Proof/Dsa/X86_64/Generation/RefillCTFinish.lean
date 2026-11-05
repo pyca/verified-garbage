@@ -223,8 +223,8 @@ theorem stateBlock_ct (n pLen qLen : Nat) (first : List Instr)
 theorem usedBlock_ct (n pLen qLen : Nat) (src : MemOp)
     (hsrc : src = Impl.Dsa.X86_64.Generation.Refill.ctl 3 ∨ src = sp 128) :
     RelCT isa (Two (DoneAt n pLen qLen))
-      (.block ([.mov .rax (.mem src), .mov .rcx (.mem (Impl.Dsa.X86_64.Generation.Refill.ctl 0))] ++
-        [.store (at0 .rcx) .rax])) (Two (DoneAt n pLen qLen)) := by
+      (.block (([.mov .rax (.mem src), .mov .rcx (.mem (Impl.Dsa.X86_64.Generation.Refill.ctl 0))] : List Instr) ++
+        ([.store (at0 .rcx) .rax] : List Instr))) (Two (DoneAt n pLen qLen)) := by
   have ts : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem src),
       .mov .rcx (.mem (Impl.Dsa.X86_64.Generation.Refill.ctl 0))]) hc).isSome = true := by
     rcases hsrc with rfl | rfl <;> exact ⟨_, by taint_decide⟩
