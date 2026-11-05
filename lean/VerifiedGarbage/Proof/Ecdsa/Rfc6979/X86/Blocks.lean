@@ -143,6 +143,17 @@ left by `sh` bits, at `fXc`) and `T`, in the frame. -/
 abbrev dgArg (P : RfcHash) {dn : Nat} (L : Lay dn) : BitVec 32 := L.F + BitVec.ofNat 32 (cfgOf P).fDg
 abbrev kArg {dn : Nat} (L : Lay dn) : BitVec 32 := L.F + BitVec.ofNat 32 fT
 
+/-- Where they are. -/
+abbrev dgAddr (P : RfcHash) {dn : Nat} (L : Lay dn) : Addr := L.B + BitVec.ofNat 64 (76 + (cfgOf P).fDg)
+abbrev kAddr {dn : Nat} (L : Lay dn) : Addr := L.B + BitVec.ofNat 64 (76 + fT)
+
+theorem fDg_le (P : RfcHash) : (cfgOf P).fDg ≤ 304 := by
+  simp only [Cfg.fDg]; split <;> decide
+
+theorem dgArg_w (hL : L.Ok) : (dgArg P L).setWidth 64 = dgAddr P L := hL.addrF (by have := fDg_le P; omega_arith)
+
+theorem kArg_w (hL : L.Ok) : (kArg L).setWidth 64 = kAddr L := hL.addrF (by decide)
+
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
       t'.gpr .esi = L.a1 ∧ t'.gpr .edx = dgArg P L ∧ t'.gpr .ecx = kArg L ∧ t'.gpr .ebp = L.sc := by

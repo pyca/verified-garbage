@@ -3,6 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Steps
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
 import VerifiedGarbage.Proof.Hmac.Common
@@ -32,9 +33,6 @@ variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : M
 
 /-- `T`'s length. -/
 abbrev tlen {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 32 := m.readW (L.B + BitVec.ofNat 64 (76 + fTlen)) 32
-
-/-- Where `T` is. -/
-abbrev kAddr {dn : Nat} (L : Lay dn) : Addr := L.B + BitVec.ofNat 64 (76 + fT)
 
 /-- `T`'s first `n` bytes. -/
 abbrev tOf {dn : Nat} (L : Lay dn) (m : Mem) (n : Nat) : List Byte := Spec.Sha256.bytesAt m (kAddr L) n
