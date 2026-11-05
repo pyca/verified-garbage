@@ -62,13 +62,13 @@ def stackT : Nat := 736
 `w`'s block size), of one of the digest lengths and block sizes the frame
 holds, and the states and working space of `w`'s HMAC fit those in `scratch`. -/
 def WOk (w : HVar) : Prop :=
-  (match Spec.HmacTable.hmacOf w.l.G with
+  (match Spec.HmacTable.hmacOf w.G with
     | some F => F.blockSize = w.H.B
     | none => False) ∧
   (w.H.D, w.H.B) ∈ shapes ∧ w.H.S ≤ 192 ∧ sWork + w.I.scratch * 8 ≤ sMsg ∧ sWork + w.H.W ≤ sMsg
 
 instance (w : HVar) : Decidable (WOk w) := by
-  unfold WOk; cases Spec.HmacTable.hmacOf w.l.G <;> infer_instance
+  unfold WOk; cases Spec.HmacTable.hmacOf w.G <;> infer_instance
 
 /-- What the registrations check of the variants whose tables the function
 takes. -/
@@ -76,13 +76,13 @@ def OK (vs : List HVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs �
 
 instance (vs : List HVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
-theorem _root_.VG.Proof.HmacTable.PPC64LE.HVar.mem (w : HVar) : w.l.G ∈ Spec.Mgf1.hashes := List.mem_of_getElem? w.idx
+theorem _root_.VG.Proof.HmacTable.PPC64LE.HVar.mem (w : HVar) : w.G ∈ Spec.Mgf1.hashes := List.mem_of_getElem? w.idx
 
 /-- The HMAC of `w`'s hash function. -/
-theorem WOk.hmac {w : HVar} (hw : WOk w) : Spec.HmacTable.hmacOf w.l.G = some w.l.ok.SH.H := by
+theorem WOk.hmac {w : HVar} (hw : WOk w) : Spec.HmacTable.hmacOf w.G = some w.ok.SH.H := by
   have h := hw.1
   revert h
-  cases hF : Spec.HmacTable.hmacOf w.l.G with
+  cases hF : Spec.HmacTable.hmacOf w.G with
   | none => intro h; exact h.elim
   | some F =>
     intro hb
@@ -90,17 +90,17 @@ theorem WOk.hmac {w : HVar} (hw : WOk w) : Spec.HmacTable.hmacOf w.l.G = some w.
     congr 1
     cases F
     rw [Spec.Hmac.HashFunction.mk.injEq]
-    exact ⟨hb.trans w.l.ok.hB.symm, funext fun x => (congrFun hh x).trans (w.l.hash x)⟩
+    exact ⟨hb.trans w.ok.hB.symm, funext fun x => (congrFun hh x).trans (w.hash x)⟩
 
 /-- HMAC's block size, as the table holds it. -/
-theorem WOk.blockSize {w : HVar} (hw : WOk w) : Spec.HmacTable.blockSize w.l.G = w.H.B := by
+theorem WOk.blockSize {w : HVar} (hw : WOk w) : Spec.HmacTable.blockSize w.G = w.H.B := by
   simp only [Spec.HmacTable.blockSize, hw.hmac, Option.map_some, Option.getD_some]
-  exact w.l.ok.hB
+  exact w.ok.hB
 
 /-- The instance with `w`'s hash function fixed. -/
 def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Spec.Ecdsa.Rfc6979.Instance where
   ecdsa := T.ecdsa
-  hash := w.l.ok.SH.H
+  hash := w.ok.SH.H
   hashLen := w.H.D
   hashName := ""
   hashTitle := ""
@@ -136,8 +136,8 @@ theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : Curv
 
 /-- RFC 6979's result with `w`'s hash function fixed is the table's. -/
 theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) (m : Mem) (d dg : Addr) :
-    (instOf T w).result m d dg = T.result w.l.G w.l.ok.SH.H m d dg := by
-  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.l.len]
+    (instOf T w).result m d dg = T.result w.G w.ok.SH.H m d dg := by
+  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.len]
 
 /-! ## The contract with whichever table `hmac` is -/
 
@@ -145,14 +145,14 @@ theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) (m : Mem) (
 written against, and the table's index. -/
 def PreW (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List HVar) (w : HVar) (s : State) : Prop :=
   (rfcPPC (instOf T w) stackT (tabFacts w (fnsOf vs)) (names vs)).pre s ∧
-    s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G)
+    s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.G)
 
 open Spec.Weierstrass Spec.Ecdsa in
 /-- The contract with whichever of the tables of `vs` the table at `r8` is. -/
 def tabK (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List HVar) : Contract isa where
   pre s := ∃ w ∈ vs, WOk w ∧ PreW T vs w s
   post s s' := ∀ w ∈ vs, WOk w → PreW T vs w s →
-    match (T.result w.l.G w.l.ok.SH.H s.mem (s.gpr .r4) (s.gpr .r5)).1 with
+    match (T.result w.G w.ok.SH.H s.mem (s.gpr .r4) (s.gpr .r5)).1 with
     | some rs => (s'.gpr .r3).setWidth 32 = 1 ∧
         bytesAt s'.mem (s.gpr .r3) (2 * T.ecdsa.curve.len) = encode T.ecdsa.curve rs
     | none => (s'.gpr .r3).setWidth 32 = 0 ∧
@@ -164,17 +164,17 @@ variable {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar}
 
 /-- Two variants whose tables have the same index have the same hash function. -/
 theorem same_hash {w w' : HVar} (hw : WOk w) (hw' : WOk w')
-    (h : BitVec.ofNat 64 (Spec.HashTable.index w'.l.G) = BitVec.ofNat 64 (Spec.HashTable.index w.l.G)) :
-    w'.l.G = w.l.G ∧ w'.l.ok.SH.H = w.l.ok.SH.H := by
-  have hl : ∀ v : HVar, Spec.HashTable.index v.l.G < Spec.Mgf1.hashes.length := fun v =>
+    (h : BitVec.ofNat 64 (Spec.HashTable.index w'.G) = BitVec.ofNat 64 (Spec.HashTable.index w.G)) :
+    w'.G = w.G ∧ w'.ok.SH.H = w.ok.SH.H := by
+  have hl : ∀ v : HVar, Spec.HashTable.index v.G < Spec.Mgf1.hashes.length := fun v =>
     (List.getElem?_eq_some_iff.mp v.idx).1
   have h₁ := hl w; have h₂ := hl w'
   have hlen : Spec.Mgf1.hashes.length < 2 ^ 64 := by decide
-  have e : Spec.HashTable.index w'.l.G = Spec.HashTable.index w.l.G := by
+  have e : Spec.HashTable.index w'.G = Spec.HashTable.index w.G := by
     have := congrArg BitVec.toNat h
     rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
     exact this
-  have hG : w'.l.G = w.l.G := Option.some.inj (w'.idx.symm.trans (e ▸ w.idx))
+  have hG : w'.G = w.G := Option.some.inj (w'.idx.symm.trans (e ▸ w.idx))
   refine ⟨hG, ?_⟩
   have h₁ := hw.hmac; have h₂ := hw'.hmac
   rw [hG] at h₂
@@ -255,7 +255,7 @@ theorem pre_facts (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} (h : (s
   obtain ⟨w₀, hv₀, rfl⟩ := List.mem_map.mp hTb
   refine ⟨⟨w₀, hv₀, hheld⟩, fun w hv hheld => ?_⟩
   have hh := held_tableOf hheld
-  have hlen : (s.gpr .r6).toNat = w.H.D := (hH _ (hashAt_tableOf hh.2.1)).1.trans w.l.len
+  have hlen : (s.gpr .r6).toNat = w.H.D := (hH _ (hashAt_tableOf hh.2.1)).1.trans w.len
   rw [hlen] at hrd og gc kg ng
   rw [hsw] at hwr oc dc gc ct kc nc
   rw [List.append_eq, List.append_nil] at hpw
@@ -353,8 +353,8 @@ def satT (vs : List HVar) (w : HVar) (Q : Nat) : State where
   lr := 0
   sp := 0x20000
   mem := put6 (fun _ => 0) 0x300000 (symT vs w.initN) (symT vs w.H.updN) (symT vs w.finN)
-    (BitVec.ofNat 64 (Spec.HashTable.index w.l.G)) (BitVec.ofNat 64 w.l.G.len)
-    (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.l.G))
+    (BitVec.ofNat 64 (Spec.HashTable.index w.G)) (BitVec.ofNat 64 w.G.len)
+    (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G))
   rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩]
   wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩]
   syms := symT vs
@@ -362,8 +362,8 @@ def satT (vs : List HVar) (w : HVar) (Q : Nat) : State where
 theorem satT_held (vs : List HVar) (w : HVar) (Q : Nat) :
     Abi.tableHeld 64 (satT vs w Q).mem 0x300000 (FnTable.words isa (satT vs w Q) (tableOf w)) :=
   put6_held (ws := [symT vs w.initN, symT vs w.H.updN, symT vs w.finN,
-    BitVec.ofNat 64 (Spec.HashTable.index w.l.G), BitVec.ofNat 64 w.l.G.len,
-    BitVec.ofNat 64 (Spec.HmacTable.blockSize w.l.G)]) rfl
+    BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
+    BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)]) rfl
 
 theorem symT_distinct {vs : List HVar} (hl : (names vs).length < 2 ^ 32) :
     (names vs).Pairwise fun f g => f ≠ g → symT vs f ≠ symT vs g :=
@@ -385,7 +385,7 @@ theorem sat_nil (hO : OK vs) (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWor
     simp only [shapes, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
     omega
   have hDn : (BitVec.ofNat 64 w.H.D).toNat = w.H.D := by rw [BitVec.toNat_ofNat]; omega
-  have hG : Spec.HmacTable.hashAt 64 (satT vs w T.ecdsa.curve.len).mem 0x300000 = some w.l.G :=
+  have hG : Spec.HmacTable.hashAt 64 (satT vs w T.ecdsa.curve.len).mem 0x300000 = some w.G :=
     hashAt_tableOf (held_tableOf (satT_held vs w _)).2.1
   simp only [hDn, hsw, satT] at hG ⊢
   sig_and_intros
@@ -399,7 +399,7 @@ theorem sat_nil (hO : OK vs) (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWor
     | bv_omega
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
-       exact ⟨w.l.len.symm, by rw [hw.hmac]; rfl⟩)
+       exact ⟨w.len.symm, by rw [hw.hmac]; rfl⟩)
 
 /-- `vg_ecdsa_<curve>_sign`, with the tables of `vs`, meets
 `TableInstance.signContract`. -/

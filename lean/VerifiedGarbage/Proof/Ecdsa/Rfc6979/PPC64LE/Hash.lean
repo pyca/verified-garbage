@@ -119,7 +119,7 @@ structure RfcHash where
   /-- The instance is of the curve, with this hash function's HMAC and its
   output length, and tries at least one candidate, as many as `li` loads. -/
   ecdsa : I.ecdsa = R.C.E
-  hash : I.hash = v.l.ok.SH.H
+  hash : I.hash = v.ok.SH.H
   len : I.hashLen = v.H.D
   tries_pos : 0 < I.tries
   tries_lt : I.tries < 2 ^ 15
@@ -135,15 +135,15 @@ variable (P : RfcHash)
 
 /-- What the proof of HMAC's steps needs of the hash function. -/
 def K : Kit :=
-  Kit.ofStream P.v.H P.v.l.ok P.v.I P.v.hIS P.v.initV P.v.finV P.v.l.ct.upd P.hScr P.hW P.hS
+  Kit.ofStream P.v.H P.v.ok P.v.I P.v.hIS P.v.initV P.v.finV P.v.ct.upd P.hScr P.hW P.hS
 
 @[simp] theorem K_H : P.K.H = P.v.H := rfl
-@[simp] theorem K_hH : P.K.hH = P.v.l.ok := rfl
+@[simp] theorem K_hH : P.K.hH = P.v.ok := rfl
 @[simp] theorem K_initC : P.K.initC = P.v.H.init := rfl
 @[simp] theorem K_finC : P.K.finC = P.v.H.finalize := rfl
 
 /-- HMAC with the hash function. -/
-abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.v.l.ok.SH.H K text
+abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.v.ok.SH.H K text
 
 /-- The words of the curve's scalars. -/
 abbrev w : Nat := P.R.w
@@ -195,3 +195,5 @@ def cfgOf (P : RfcHash) : Cfg where
   coreC := P.R.C.C
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
+-- separate module: the instance's structures (`RfcCurve`, `RfcHash`) and the code's configuration
+-- (`cfgOf`), which every proof of the function and each curve's file build on, apart from HMAC's steps.

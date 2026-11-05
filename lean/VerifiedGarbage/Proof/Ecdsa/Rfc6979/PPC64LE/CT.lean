@@ -103,10 +103,10 @@ theorem go_iff {P : RfcHash} {L : Lay P.I.hashLen} {m₀ : Mem} {i : Nat} (hi : 
     | none =>
       rw [Proof.Ecdsa.Rfc6979.searchB_fail (nV_eq P) hs]
       by_cases h7 : i + 1 < P.I.tries
-      · have := Proof.Ecdsa.Rfc6979.searchB_pos (C := P.R.C.E.curve) (H := P.v.l.ok.SH.H) (hlen := P.v.H.D)
+      · have := Proof.Ecdsa.Rfc6979.searchB_pos (C := P.R.C.E.curve) (H := P.v.ok.SH.H) (hlen := P.v.H.D)
           (d := xOf P L m₀) (e := eOf P L m₀) (n := P.I.tries - 2 - i)
-          (K := (stepB P.v.l.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
-          (V := (stepB P.v.l.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (nV_eq P)
+          (K := (stepB P.v.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
+          (V := (stepB P.v.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (nV_eq P)
         rw [show P.I.tries - 1 - i = P.I.tries - 2 - i + 1 by omega]
         simp only [true_and, h7]
         simp only [kvI] at this
@@ -418,7 +418,7 @@ theorem initAt {L : Lay P.I.hashLen} (hL : L.Ok) {u : State} (hcu : Ctx L g lr m
   refine ⟨initPre P.K (inner := L.scr + BitVec.ofNat 64 0) (outer := L.scr + BitVec.ofNat 64 192)
     (key := L.B + BitVec.ofNat 64 128) (scr := L.scr + BitVec.ofNat 64 384) (kl := P.v.H.D) h3 h4 h5
     (by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by nums)]) h7
-    (by show P.v.H.D ≤ P.v.I.S.H.blockSize; rw [P.v.hIS, P.v.l.ok.hB]; exact hDB)
+    (by show P.v.H.D ≤ P.v.I.S.H.blockSize; rw [P.v.hIS, P.v.ok.hB]; exact hDB)
     (dS (by nums) (by nums) (by nums)) (kS (by nums)).symm (dS (by nums) (by nums) (by nums))
     (kS (by nums)).symm (dS (by nums) (by nums) (by nums)) (kS (by nums))
     (by rw [hsp, hL.sp_toNat]; omega) (bS (by nums)) (bS (by nums))
@@ -454,7 +454,7 @@ abbrev updWr (P : RfcHash) (L : Lay P.I.hashLen) : List Region :=
 
 theorem updAt {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat} {L : Lay P.I.hashLen} (hL : L.Ok) {u : State}
     (hcu : Ctx L g lr m₀ u) (ha : UA P cnt da len L g lr m₀ u) (hd : DataOk L (da L) len) :
-    (Proof.Hmac.Stream.PPC64LE.updK P.v.H.S P.v.H.W P.v.l.ok.SH.Repr).pre
+    (Proof.Hmac.Stream.PPC64LE.updK P.v.H.S P.v.H.W P.v.ok.SH.Repr).pre
         (u.callEntry.withRegions (updRd da len L) (updWr P L)) ∧
       Covers (updRd da len L ++ updWr P L) (u.rd ++ u.wr) ∧ Covers (updWr P L) u.wr := by
   obtain ⟨h3, -, h5, h6, h7⟩ := ha
@@ -495,7 +495,7 @@ theorem updAt {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat} {L : Lay P
 theorem upd_call_ct {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat}
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len) :
     RelCT isa (Two P (UA P cnt da len)) (.call P.v.H.updN P.v.H.updC) fun _ _ => True :=
-  two_call P.v.l.ok.upd P.K.updCT (updRd da len) (updWr P)
+  two_call P.v.ok.upd P.K.updCT (updRd da len) (updWr P)
     (fun L _ _ _ _ hL _ hc ha => updAt hL hc ha (hd L hL)) fun L _ _ _ _ _ _ u₁ u₂ h => by
       simp only [Proof.Hmac.Stream.PPC64LE.updK, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
         State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),

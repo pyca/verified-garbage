@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 
 /-!
@@ -171,7 +172,7 @@ theorem genT_succ (H : Spec.Hmac.HashFunction) (K : List Byte) : ∀ (k : Nat) (
     simp
 
 theorem genT_length (P : RfcHash) (K : List Byte) : ∀ (k : Nat) (V : List Byte),
-    (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H K k V).1.length = k * P.v.H.D
+    (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H K k V).1.length = k * P.v.H.D
   | 0, V => by simp [Spec.Ecdsa.Rfc6979.genT]
   | k + 1, V => by
     rw [genT_succ, List.length_append, genT_length P K k V, mac_length]
@@ -188,9 +189,9 @@ structure CI (P : RfcHash) (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m�
   ctx : Ctx L g lr m₀ u
   frame : Frame (CW L) t₀.mem u.mem
   k : kOf P L u.mem = K
-  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H K j V₀).2
+  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H K j V₀).2
   len : tlen L u.mem = BitVec.ofNat 64 (j * P.v.H.D)
-  t : tOf L u.mem (j * P.v.H.D) = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H K j V₀).1
+  t : tOf L u.mem (j * P.v.H.D) = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H K j V₀).1
   saved : SavedK P L u.mem K
 
 /-- One more `V`. -/
@@ -401,10 +402,10 @@ theorem candTop_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g l
 theorem cand_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ t)
     (hS : SavedK P L t.mem (kOf P L t.mem)) :
     WP isa (cfgOf P).cand t fun u => Ctx L g lr m₀ u ∧ Frame (CW L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
-      vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).2 ∧
+      vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).2 ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (kArg P L) P.Q) =
         Spec.Ecdsa.Rfc6979.bits2int P.R.C.E.curve
-          (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 ∧
+          (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 ∧
       SavedK P L u.mem (kOf P L t.mem) := by
   have hs := P.sizes
   have hl := nBits_len P
@@ -415,10 +416,10 @@ theorem cand_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ t)
   have hTl := genT_length P (kOf P L t.mem) P.nV (vOf P L t.mem)
   have hsh : 8 * P.Q - Spec.Ecdsa.nBits P.R.C.E.curve = P.R.sh := by rw [P.R.sh_eq]
   have hbits : Spec.Ecdsa.Rfc6979.bits2int P.R.C.E.curve
-      (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
+      (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u₁.mem (kArg P L) P.Q) >>> P.R.sh := by
     rw [Spec.Ecdsa.Rfc6979.bits2int, Rfc6979.hashToInt_takeR (R := P.Q) hl.2 (by rw [hTl]; exact hQN),
-      show (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
+      show (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
         Spec.Sha256.bytesAt u₁.mem (kArg P L) (P.nV * P.v.H.D) from hI₁.t.symm,
       bytesAt_take _ _ hQN, hsh]
   cases hb : P.R.big

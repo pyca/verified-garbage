@@ -187,8 +187,8 @@ structure St (P : RfcHash) (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m�
   ctx : Ctx L g lr m₀ u
   klen : k0.length = P.v.H.B
   tlen : text.length ≤ 512
-  inner : P.v.l.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 0) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad ++ text)
-  outer : P.v.l.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 192) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
+  inner : P.v.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 0) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad ++ text)
+  outer : P.v.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 192) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
 
 /-- What HMAC's functions write: their states and working space, and the
 stack below the frame. -/
@@ -208,8 +208,8 @@ theorem xorPad_length (k : List Byte) (p : Byte) : (Spec.Hmac.xorPad k p).length
   List.length_map _
 
 theorem blockKey_length {k : List Byte} (hk : k.length = P.v.H.D) :
-    (Spec.Hmac.blockKey P.v.l.ok.SH.H k).length = P.v.H.B := by
-  have hB := P.v.l.ok.hB
+    (Spec.Hmac.blockKey P.v.ok.SH.H k).length = P.v.H.B := by
+  have hB := P.v.ok.hB
   have hDB : P.v.H.D < P.v.H.B := by nums
   simp only [Spec.Hmac.blockKey, hk, hB, show ¬ P.v.H.B < P.v.H.D by omega, ite_false, List.length_append,
     List.length_replicate]
@@ -246,7 +246,7 @@ theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
 
 /-- HMAC's `init` with the key `K` in the frame: HMAC's states for its block key. -/
 theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (cfgOf P).initK t fun u => St P L g lr m₀ (Spec.Hmac.blockKey P.v.l.ok.SH.H (keyOf P L t.mem)) [] u ∧
+    WP isa (cfgOf P).initK t fun u => St P L g lr m₀ (Spec.Hmac.blockKey P.v.ok.SH.H (keyOf P L t.mem)) [] u ∧
       Frame (W L) t.mem u.mem := by
   have hnB := hL.nB
   have hnc := hL.nc
@@ -276,7 +276,7 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
     (scr := L.scr + BitVec.ofNat 64 384) (kl := P.v.H.D)
     ((e _ (by simp)).trans h3) ((e _ (by simp)).trans h4) ((e _ (by simp)).trans h5)
     (by rw [(e _ (by simp)).trans h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by nums)]) ((e _ (by simp)).trans h7)
-    (by show P.v.H.D ≤ P.v.I.S.H.blockSize; rw [P.v.hIS, P.v.l.ok.hB]; exact hDB)
+    (by show P.v.H.D ≤ P.v.I.S.H.blockSize; rw [P.v.hIS, P.v.ok.hB]; exact hDB)
     (dS (by nums) (by nums) (by nums)) (kS (by nums)).symm (dS (by nums) (by nums) (by nums))
     (kS (by nums)).symm (dS (by nums) (by nums) (by nums)) (kS (by nums))
     (by rw [hsp, hL.sp_toNat]; omega) (bS (by nums)) (bS (by nums))
@@ -405,7 +405,7 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
   have hl := hd.len_le
   have hW := P.K.hW
   simp only [sWork, sMsg] at hW
-  refine WP.of_syms (P.v.l.ok.callUpd_ok (st := L.scr + BitVec.ofNat 64 0) (scr := L.scr + BitVec.ofNat 64 384)
+  refine WP.of_syms (P.v.ok.callUpd_ok (st := L.scr + BitVec.ofNat 64 0) (scr := L.scr + BitVec.ofNat 64 384)
     ((e _ (by simp)).trans h3) ((e _ (by simp)).trans h5)
     (by rw [(e _ (by simp)).trans h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) ((e _ (by simp)).trans h7)
     (dS (by nums) (by nums) (by nums)) (hd.scr hL (by nums)) (hd.scr hL (by nums))
@@ -441,7 +441,7 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
   · rw [← hmw, ← List.append_assoc]
     refine hupd _ (hmw ▸ hu.inner) ?_
     rw [(e _ (by simp)).trans h4, List.length_append, xorPad_length, hkl]
-  · refine P.v.l.ok.congr _ _ _ _ (fun i hi => ?_) (hmw ▸ hu.outer)
+  · refine P.v.ok.congr _ _ _ _ (fun i hi => ?_) (hmw ▸ hu.outer)
     refine Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 192, P.v.H.S⟩) h₄ (fun r hr => ?_)
       (by show P.v.H.S ≤ 2 ^ 64; nums) hi
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -521,7 +521,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
     WP isa ((cfgOf P).fin len dst) u fun u' => Ctx L g lr m₀ u' ∧
       Frame (W L ++ [⟨L.B + BitVec.ofNat 64 (96 + dst), P.v.H.D⟩]) u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.B + BitVec.ofNat 64 (96 + dst)) P.v.H.D =
-        Spec.Hmac.hmacBlockKey P.v.l.ok.SH.H k0 text := by
+        Spec.Hmac.hmacBlockKey P.v.ok.SH.H k0 text := by
   have hnB := hL.nB
   have hnc := hL.nc
   have hSc := P.K.hScr
@@ -582,7 +582,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by nums)⟩
     · exact ⟨⟨L.B, 96⟩, by simp, fun _ h => h⟩
   have hm : w₁.mem = u.mem := hm₁.trans hmw
-  have hbs : P.v.I.S.H.blockSize = P.v.H.B := by rw [P.v.hIS]; exact P.v.l.ok.hB
+  have hbs : P.v.I.S.H.blockSize = P.v.H.B := by rw [P.v.hIS]; exact P.v.ok.hB
   refine ⟨hc₁.keep hL h₁ h₂ h₃ hcs h₄ (fun r hr => ?_) hsy, hm ▸ h₄.sub hs, ?_⟩
   · obtain ⟨r', hr', hs'⟩ := hs r hr
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'

@@ -43,13 +43,13 @@ abbrev eOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat :=
 
 /-- `K` and `V` after steps b–g. -/
 abbrev kv0 (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte × List Byte :=
-  Spec.Ecdsa.Rfc6979.init P.R.C.E.curve P.v.l.ok.SH.H P.v.H.D (xOf P L m₀) (hBOf P L m₀)
+  Spec.Ecdsa.Rfc6979.init P.R.C.E.curve P.v.ok.SH.H P.v.H.D (xOf P L m₀) (hBOf P L m₀)
 
 /-- `K` and `V` before candidate `i`, candidate `i`'s `T`, and its signature. -/
 abbrev kvI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte × List Byte :=
-  kvAtB P.v.l.ok.SH.H P.nV (kv0 P L m₀).1 (kv0 P L m₀).2 i
+  kvAtB P.v.ok.SH.H P.nV (kv0 P L m₀).1 (kv0 P L m₀).2 i
 abbrev candI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte :=
-  candAtB P.v.l.ok.SH.H P.nV (kv0 P L m₀).1 (kv0 P L m₀).2 i
+  candAtB P.v.ok.SH.H P.nV (kv0 P L m₀).1 (kv0 P L m₀).2 i
 abbrev sigI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : Option (Nat × Nat) :=
   Spec.Ecdsa.signWith P.R.C.E.curve (xOf P L m₀) (eOf P L m₀)
     (Spec.Ecdsa.Rfc6979.bits2int P.R.C.E.curve (candI P L m₀ i))
@@ -276,7 +276,7 @@ theorem core_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t
 structure P₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
-  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
+  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
   cnt : cnt L u.mem = BitVec.ofNat 64 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
@@ -295,7 +295,7 @@ structure Args (P : RfcHash) {dn : Nat} (L : Lay dn) (u : State) : Prop where
 structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
-  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
+  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
   cnt : cnt L u.mem = BitVec.ofNat 64 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
@@ -305,7 +305,7 @@ structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : S
 structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < P.I.tries
   k : kOf P L u.mem = (kvI P L m₀ i).1
-  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.l.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
+  v : vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.v.ok.SH.H (kvI P L m₀ i).1 P.nV (kvI P L m₀ i).2).2
   cnt : cnt L u.mem = BitVec.ofNat 64 (P.I.tries - (i + 1))
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ u.mem
@@ -392,7 +392,7 @@ theorem branch_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t
   · refine WP.ite true (by rw [hi.dec, decide_eq_true hgo]) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.seq (WP.mono (rekey_ok hL hq hc) fun u₅ ⟨hc₅, hf₅, hk₅, hv₅, hS₅⟩ => ?_)
     refine again_ok fun u₆ k₆ m₆ v₆ s₆ => ⟨hc₅.kp hL k₆ m₆ s₆, .inr ⟨by rw [eval_nonzero, v₆]; rfl, ?_⟩⟩
-    have hkv : kvI P L m₀ (i + 1) = stepB P.v.l.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2 := rfl
+    have hkv : kvI P L m₀ (i + 1) = stepB P.v.ok.SH.H P.nV (kvI P L m₀ i).1 (kvI P L m₀ i).2 := rfl
     refine ⟨hgo.2, ?_, ?_, ?_, fun j hj => ?_, ?_, by rw [m₆]; exact hS₅⟩
     · rw [m₆, hk₅, hi.k, hi.v, hkv]; rfl
     · rw [m₆, hv₅, hk₅, hi.k, hi.v, hkv]; rfl

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Hashes
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTCalls
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 
 As on x86-64 (`Proof/HmacTable/X86_64.lean`), for the hash functions with
 HMAC on PPC64LE, MD5, SHA-1 and the SHA-2 family, one implementation of each
-(`vars`): the table of a hash function (`tableOf`, `VG_HMAC_<HASH>`) holds
+(`vars`, `PPC64LE/Vars.lean`): the table of a hash function (`tableOf`, `VG_HMAC_<HASH>`) holds
 the addresses of HMAC's `init` and `finalize` and of the streaming `update`,
 in the forms that take their working space as an argument (`_scratch`, in
 `r7`), then its data (`Spec.HmacTable.dataOf`: the hash function's index in
@@ -35,20 +35,25 @@ namespace VG.Proof.HmacTable.PPC64LE
 
 open VG VG.PPC64LE
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
+open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 open VG.Impl.RsaOaep.PPC64LE (Fns)
-open VG.Proof.RsaOaep.PPC64LE (Link)
 open VG.Proof.HashTable (pw_ne find_name)
 
-/-- A hash function's streaming functions (`H`, with what HMAC's and MGF1's
-proofs need of them, `l`), its place in `Spec.Mgf1.hashes`, and its HMAC
-`init` and `finalize` with their working space as an argument, verified
+/-- A hash function's streaming functions (`H`, with what HMAC's proofs need
+of them, `ok`, and their constant time, `ct`), the hash function of
+`Spec.Mgf1` they compute (`G`) and its place in `Spec.Mgf1.hashes`, and its
+HMAC `init` and `finalize` with their working space as an argument, verified
 against the shared contracts of HMAC's instance `I` with 96 bytes of stack. -/
 structure HVar where
   H : Hash
-  l : Link H
-  idx : Spec.Mgf1.hashes[Spec.HashTable.index l.G]? = some l.G
+  ok : HashOK H
+  ct : Proof.RsaOaep.PPC64LE.HashCT ok
+  G : Spec.Mgf1.Hash
+  hash : ∀ x, G.hash x = ok.SH.H.hash x
+  len : G.len = H.D
+  idx : Spec.Mgf1.hashes[Spec.HashTable.index G]? = some G
   I : Spec.Hmac.Instance
-  hIS : I.S = l.ok.SH
+  hIS : I.S = ok.SH
   initV : Verified PPC64LE.target H.init (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96)
   finV : Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96)
 
@@ -64,42 +69,12 @@ def finN : String := s!"vg_hmac_{w.I.rust}_finalize_scratch"
 
 end HVar
 
-open Proof.Hmac.Stream.PPC64LE in
-def md5V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.md5L, rfl, Spec.Hmac.md5I, rfl, Md5.initScratch, Md5.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha1V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha1L, rfl, Spec.Hmac.sha1I, rfl, Sha1.initScratch, Sha1.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha224V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha224L, rfl, Spec.Hmac.sha224I, rfl, Sha224.initScratch, Sha224.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha256V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha256L, rfl, Spec.Hmac.sha256I, rfl, Sha256.initScratch, Sha256.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha384V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha384L, rfl, Spec.Hmac.sha384I, rfl, Sha384.initScratch, Sha384.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha512V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha512L, rfl, Spec.Hmac.sha512I, rfl, Sha512.initScratch, Sha512.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha512_224V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha512_224L, rfl, Spec.Hmac.sha512_224I, rfl, Sha512_224.initScratch,
-    Sha512_224.finalizeScratch⟩
-open Proof.Hmac.Stream.PPC64LE in
-def sha512_256V : HVar :=
-  ⟨_, Proof.RsaOaep.PPC64LE.sha512_256L, rfl, Spec.Hmac.sha512_256I, rfl, Sha512_256.initScratch,
-    Sha512_256.finalizeScratch⟩
-
-/-- Every hash function with HMAC on PPC64LE. -/
-def vars : List HVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
-
 /-- The table of `w`'s HMAC, `VG_HMAC_<HASH>`. -/
 def tableOf (w : HVar) : FnTable where
-  name := s!"VG_HMAC_{w.l.G.rust.toUpper}"
+  name := s!"VG_HMAC_{w.G.rust.toUpper}"
   iface := Spec.HmacTable.iface
   fns := [w.initN, w.H.updN, w.finN]
-  data := Spec.HmacTable.dataOf w.l.G
+  data := Spec.HmacTable.dataOf w.G
 
 /-- The tables of `vs`. -/
 def tables (vs : List HVar) : List FnTable := vs.map tableOf
@@ -156,29 +131,29 @@ theorem tabOK_of {vs : List HVar} (hc : Coh vs) {sy : String → Addr}
 /-- The words of the table of `w`. -/
 theorem words_tableOf (s : State) (w : HVar) :
     FnTable.words isa s (tableOf w) = [s.syms w.initN, s.syms w.H.updN, s.syms w.finN,
-      BitVec.ofNat 64 (Spec.HashTable.index w.l.G), BitVec.ofNat 64 w.l.G.len,
-      BitVec.ofNat 64 (Spec.HmacTable.blockSize w.l.G)] := rfl
+      BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
+      BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)] := rfl
 
 /-- What the table of `w` at `p` holds: its functions' addresses, its index,
 its digest length and HMAC's block size. -/
 theorem held_tableOf {m : Mem} {p : Addr} {s : State} {w : HVar}
     (h : Abi.tableHeld 64 m p (FnTable.words isa s (tableOf w))) :
     TabMem w s.syms p m ∧
-      m.readW (p + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G) ∧
+      m.readW (p + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.G) ∧
       m.readW (p + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 w.H.D ∧
-      m.readW (p + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (Spec.HmacTable.blockSize w.l.G) := by
+      m.readW (p + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G) := by
   rw [words_tableOf] at h
   refine ⟨⟨h 0 (by simp), h 1 (by simp), h 2 (by simp)⟩, h 3 (by simp), ?_, h 5 (by simp)⟩
-  exact (h 4 (by simp)).trans (by rw [w.l.len]; rfl)
+  exact (h 4 (by simp)).trans (by rw [w.len]; rfl)
 
 /-- The hash function a table of `w` names. -/
 theorem hashAt_tableOf {m : Mem} {p : Addr} {w : HVar}
-    (h : m.readW (p + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G)) :
-    Spec.HmacTable.hashAt 64 m p = some w.l.G := by
+    (h : m.readW (p + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 (Spec.HashTable.index w.G)) :
+    Spec.HmacTable.hashAt 64 m p = some w.G := by
   simp only [Spec.HmacTable.hashAt, Spec.HmacTable.fns]
   rw [show p + BitVec.ofNat 64 (64 / 8 * 3) = p + BitVec.ofNat 64 24 from rfl, h,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-      have := List.findIdx_le_length (p := fun G => G.rust == w.l.G.rust) (xs := Spec.Mgf1.hashes)
+      have := List.findIdx_le_length (p := fun G => G.rust == w.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
       omega)]
   exact w.idx

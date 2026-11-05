@@ -47,7 +47,7 @@ theorem rlen_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.rlen P.R.C.E.curve = P.Q :=
 /-- RFC 6979's `K` and `V` after step g, from the code's. -/
 theorem kv0_eq (P : RfcHash) {x : Nat} {dB hB h : List Byte} (hd : dB.length = P.Q)
     (hx : x = Spec.Weierstrass.ofBytes dB) (hh : Spec.Ecdsa.Rfc6979.bits2octets P.R.C.E.curve hB = h) :
-    Spec.Ecdsa.Rfc6979.init P.R.C.E.curve P.v.l.ok.SH.H P.v.H.D x hB =
+    Spec.Ecdsa.Rfc6979.init P.R.C.E.curve P.v.ok.SH.H P.v.H.D x hB =
       let K₁ := P.mac (List.replicate P.v.H.D 0) (List.replicate P.v.H.D 1 ++ [BitVec.ofNat 8 0] ++ (dB ++ h))
       let V₁ := P.mac K₁ (List.replicate P.v.H.D 1)
       let K₂ := P.mac K₁ (V₁ ++ [BitVec.ofNat 8 1] ++ (dB ++ h))
@@ -305,7 +305,7 @@ theorem rest_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t) 
 theorem result_unfold :
     result P.I m₀ L.d L.dg =
       if 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.C.E.curve.n then
-        Spec.Ecdsa.Rfc6979.search P.R.C.E.curve P.v.l.ok.SH.H P.v.H.D (xOf P L m₀) (eOf P L m₀)
+        Spec.Ecdsa.Rfc6979.search P.R.C.E.curve P.v.ok.SH.H P.v.H.D (xOf P L m₀) (eOf P L m₀)
           (kv0 P L m₀).1 (kv0 P L m₀).2 P.I.tries
       else (none, 0) := by
   simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.ecdsa, P.hash, P.len,

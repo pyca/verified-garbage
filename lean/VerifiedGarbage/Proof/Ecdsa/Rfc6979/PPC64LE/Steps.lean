@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on PPC64LE: the steps on `K` and `V`
@@ -38,8 +39,8 @@ variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {lr : Add
 
 /-- A copy at `scratch + 3072` of HMAC's inner and outer states for the block key `k0`. -/
 def SavedB (P : RfcHash) (L : Lay dn) (m : Mem) (k0 : List Byte) : Prop :=
-  P.v.l.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3072) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
-    P.v.l.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3264) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
+  P.v.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3072) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
+    P.v.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3264) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
 
 /-- The copy's region. -/
 abbrev SaveR (L : Lay dn) : Region := ⟨L.scr + BitVec.ofNat 64 3072, 384⟩
@@ -62,10 +63,10 @@ theorem pad_mod {k0 : List Byte} (hk : k0.length = P.v.H.B) (p : Byte) :
 theorem SavedB.frame {m m' : Mem} {k0 : List Byte} (hk : k0.length = P.v.H.B) (hS : SavedB P L m k0)
     {ws : List Region} (hf : Frame ws m m') (hd : ∀ r ∈ ws, Region.Disjoint (SaveR L) r) : SavedB P L m' k0 := by
   have hle := n_le P
-  refine ⟨P.v.l.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3072, 192⟩) hf
+  refine ⟨P.v.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3072, 192⟩) hf
       (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega))) (by decide : (192 : Nat) ≤ 2 ^ 64)
       (show i < 192 by omega)) hS.1,
-    P.v.l.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3264, 192⟩) hf
+    P.v.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3264, 192⟩) hf
       (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega))) (by decide : (192 : Nat) ≤ 2 ^ 64)
       (show i < 192 by omega)) hS.2⟩
 
@@ -81,13 +82,13 @@ theorem W_save (hL : L.Ok) : ∀ r ∈ W L, Region.Disjoint (SaveR L) r := by
 theorem states_moved {m m' : Mem} {src dst : Nat} {k0 : List Byte} (hk : k0.length = P.v.H.B)
     (hb : Spec.Sha256.bytesAt m' (L.scr + BitVec.ofNat 64 dst) (8 * 48) =
       Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 src) (8 * 48))
-    (hi : P.v.l.ok.SH.Repr m (L.scr + BitVec.ofNat 64 src) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad))
-    (ho : P.v.l.ok.SH.Repr m (L.scr + BitVec.ofNat 64 (src + 192)) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)) :
-    P.v.l.ok.SH.Repr m' (L.scr + BitVec.ofNat 64 dst) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
-      P.v.l.ok.SH.Repr m' (L.scr + BitVec.ofNat 64 (dst + 192)) (Spec.Hmac.xorPad k0 Spec.Hmac.opad) := by
+    (hi : P.v.ok.SH.Repr m (L.scr + BitVec.ofNat 64 src) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad))
+    (ho : P.v.ok.SH.Repr m (L.scr + BitVec.ofNat 64 (src + 192)) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)) :
+    P.v.ok.SH.Repr m' (L.scr + BitVec.ofNat 64 dst) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
+      P.v.ok.SH.Repr m' (L.scr + BitVec.ofNat 64 (dst + 192)) (Spec.Hmac.xorPad k0 Spec.Hmac.opad) := by
   have hle := n_le P
-  refine ⟨P.v.l.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => byte_of_bytesAt hb (by omega)) hi,
-    P.v.l.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => ?_) ho⟩
+  refine ⟨P.v.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => byte_of_bytesAt hb (by omega)) hi,
+    P.v.ok.reloc _ _ _ _ _ (pad_mod hk _) (fun i hi => ?_) ho⟩
   have h := byte_of_bytesAt hb (i := 192 + i) (by omega)
   rw [Offset.add_add, Offset.add_add, ← Nat.add_assoc, ← Nat.add_assoc] at h
   rw [Offset.add_add, Offset.add_add]; exact h
@@ -122,8 +123,8 @@ theorem save_ok (hL : L.Ok) {k0 : List Byte} {u : State} (hu : St P L g lr m₀ 
         intro h; simp at h; rcases h with rfl | rfl | rfl <;> simp [preserved] at hr)) hf'
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by decide)) hsy,
     hu.klen, hu.tlen, ?_, ?_⟩, hmv, hf'⟩
-  · rw [List.append_nil]; exact P.v.l.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 0 (by decide) i hi) hin
-  · exact P.v.l.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 192 (by decide) i hi) hu.outer
+  · rw [List.append_nil]; exact P.v.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 0 (by decide) i hi) hin
+  · exact P.v.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 192 (by decide) i hi) hu.outer
 
 /-- The copy back: HMAC's states for the block key `k0`, and the copy kept. -/
 theorem restore_ok (hL : L.Ok) {k0 : List Byte} {t : State} (hc : Ctx L g lr m₀ t) (hS : SavedB P L t.mem k0)
@@ -155,14 +156,14 @@ abbrev vOf (P : RfcHash) (L : Lay dn) (m : Mem) : List Byte :=
 
 /-- A copy of HMAC's states for the key `K`. -/
 abbrev SavedK (P : RfcHash) (L : Lay dn) (m : Mem) (K : List Byte) : Prop :=
-  SavedB P L m (Spec.Hmac.blockKey P.v.l.ok.SH.H K)
+  SavedB P L m (Spec.Hmac.blockKey P.v.ok.SH.H K)
 
 /-- HMAC with a key is HMAC with its block key. -/
 theorem mac_eq (P : RfcHash) (K t : List Byte) :
-    P.mac K t = Spec.Hmac.hmacBlockKey P.v.l.ok.SH.H (Spec.Hmac.blockKey P.v.l.ok.SH.H K) t := rfl
+    P.mac K t = Spec.Hmac.hmacBlockKey P.v.ok.SH.H (Spec.Hmac.blockKey P.v.ok.SH.H K) t := rfl
 
 /-- HMAC's output is the hash function's. -/
-theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.v.H.D := P.v.l.ok.hashLen _
+theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.v.H.D := P.v.ok.hashLen _
 
 /-- What the steps change: `scratch`, the stack below the frame, `K` and `V`. -/
 abbrev KVW (L : Lay dn) : List Region := [L.SCR, ⟨L.B, 256⟩]
@@ -222,7 +223,7 @@ theorem vfin_ok (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu : S
     WP isa (.seq (cfgOf P).updV ((cfgOf P).fin 0 dst)) u fun u' => Ctx L g lr m₀ u' ∧
       Frame (W L ++ [⟨L.B + BitVec.ofNat 64 (96 + dst), P.v.H.D⟩]) u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.B + BitVec.ofNat 64 (96 + dst)) P.v.H.D =
-        Spec.Hmac.hmacBlockKey P.v.l.ok.SH.H k0 (vOf P L u.mem) := by
+        Spec.Hmac.hmacBlockKey P.v.ok.SH.H k0 (vOf P L u.mem) := by
   refine WP.seq (WP.mono (updV_step hL hT hu) fun w ⟨hw, hfw⟩ => ?_)
   refine WP.mono (fin_step hL hT hw (len := 0) (dst := dst) (by simp [Spec.Sha256.bytesAt]) (by decide) hdst)
     fun u' ⟨hc', hf', hm'⟩ => ⟨hc', ?_, hm'⟩
@@ -234,7 +235,7 @@ theorem vmfin_ok (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu : 
     (hlen : len ≤ 256) :
     WP isa (.seq (cfgOf P).updV (.seq ((cfgOf P).updM len) ((cfgOf P).fin len fK))) u fun u' =>
       Ctx L g lr m₀ u' ∧ Frame (W L ++ [⟨L.B + BitVec.ofNat 64 (96 + fK), P.v.H.D⟩]) u.mem u'.mem ∧
-      kOf P L u'.mem = Spec.Hmac.hmacBlockKey P.v.l.ok.SH.H k0
+      kOf P L u'.mem = Spec.Hmac.hmacBlockKey P.v.ok.SH.H k0
         (vOf P L u.mem ++ Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 2256) len) := by
   refine WP.seq (WP.mono (updV_step hL hT hu) fun w ⟨hw, hfw⟩ => ?_)
   refine WP.seq (WP.mono (updM_step hL hT hw (by simp [Spec.Sha256.bytesAt]) hlen) fun w' ⟨hw', hfw'⟩ => ?_)
@@ -323,7 +324,7 @@ theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
       Ctx L g lr m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧ vOf P L t'.mem = vOf P L t.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem)
         (vOf P L t.mem ++ Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
-  have post : ∀ {u : State}, St P L g lr m₀ (Spec.Hmac.blockKey P.v.l.ok.SH.H (kOf P L t.mem)) [] u →
+  have post : ∀ {u : State}, St P L g lr m₀ (Spec.Hmac.blockKey P.v.ok.SH.H (kOf P L t.mem)) [] u →
       ∀ {ws : List Region}, Frame ws t.mem u.mem → (∀ r ∈ ws, ∃ r' ∈ KVW L, Region.Sub r r') →
       (∀ r ∈ ws, Region.Disjoint ⟨L.B + BitVec.ofNat 64 192, P.v.H.D⟩ r) →
       (∀ r ∈ ws, Region.Disjoint ⟨L.scr + BitVec.ofNat 64 2256, len⟩ r) →
@@ -344,7 +345,7 @@ theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
       rw [hv, hmsg, mac_eq]
   cases fresh
   · refine WP.seq (WP.mono (restore_ok hL hc (hS rfl) (blockKey_length (keyOf_length _))) fun u ⟨hu, hfu, _⟩ => ?_)
-    have hu' : St P L g lr m₀ (Spec.Hmac.blockKey P.v.l.ok.SH.H (kOf P L t.mem)) [] u := hu
+    have hu' : St P L g lr m₀ (Spec.Hmac.blockKey P.v.ok.SH.H (kOf P L t.mem)) [] u := hu
     refine post hu' hfu (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) <;>
       simp only [List.mem_singleton] at hr <;> subst hr
     · exact ⟨L.SCR, by simp, Offset.sub_base _ (by decide)⟩
