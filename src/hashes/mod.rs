@@ -73,17 +73,42 @@ pub trait HashFunction: Clone {
 /// `_FEATURES` constants), best first. An object uses the first
 /// that the CPU can run, chosen when it is created (see `crate::cpu`).
 ///
-/// `digests`, on the targets its `cfg` names, gives every implementation's
-/// one-shot `digest(data: *const u8, len: usize, out: *mut [u8; OUTPUT])`,
-/// which `digest` calls: the match is exhaustive, so on those targets an
-/// implementation without one does not compile. Other targets compute
-/// `digest` with the streaming functions.
+/// `digests`, if given, is every implementation's one-shot
+/// `digest(data: *const u8, len: usize, out: *mut [u8; OUTPUT])`, which
+/// `digest` calls: the match is exhaustive, so an implementation without one
+/// does not compile. Without it, `digest` uses the streaming functions.
 ///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
 /// bytes).
 macro_rules! streaming_hash {
+    // `digest`, with the one-shot `digests`.
+    (@digest $backend:ident, $output:literal, { $($dvariant:ident)* }) => {
+        /// The digest of `data`, in one call.
+        pub fn digest(data: &[u8]) -> [u8; $output] {
+            let mut out = [0; $output];
+            // SAFETY: `data` is valid for reads of `data.len()` bytes and
+            // `out` for writes of its size; they are distinct objects, so
+            // they do not overlap each other, the return address or the
+            // arguments on the stack, and do not wrap around the end of the
+            // address space. The backend is selected for this CPU's
+            // features.
+            unsafe {
+                $backend::select($crate::cpu::detected()).digest(data.as_ptr(), data.len(), &mut out)
+            };
+            out
+        }
+    };
+    // `digest`, with the streaming functions.
+    (@digest $backend:ident, $output:literal) => {
+        /// The digest of `data`.
+        pub fn digest(data: &[u8]) -> [u8; $output] {
+            let mut h = Self::new();
+            h.update(data);
+            h.finalize()
+        }
+    };
     (
         $(#[$doc:meta])*
         $name:ident {
@@ -96,7 +121,7 @@ macro_rules! streaming_hash {
                 $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vupdate:path, $vfinalize:path))*
                 $(,)?
             }
-            $(, digests: #[cfg($dcfg:meta)] {
+            $(, digests: {
                 $($(#[$dattr:meta])* $dvariant:ident => $digest:path),* $(,)?
             })? $(,)?
         }
@@ -178,7 +203,6 @@ macro_rules! streaming_hash {
             ///
             /// As for the artifacts; the CPU must have the features of the
             /// implementation (as `select` guarantees).
-            #[cfg($dcfg)]
             pub(crate) unsafe fn digest(self, data: *const u8, len: usize, out: &mut [u8; $output]) {
                 // SAFETY: the caller's obligations.
                 unsafe {
@@ -281,30 +305,7 @@ macro_rules! streaming_hash {
                 out
             }
 
-            /// The digest of `data`: in one call on the targets with one-shot
-            /// `digests`, else by streaming.
-            #[allow(unreachable_code)]
-            pub fn digest(data: &[u8]) -> [u8; $output] {
-                $(
-                #[cfg($dcfg)]
-                {
-                    let mut out = [0; $output];
-                    // SAFETY: `data` is valid for reads of `data.len()` bytes
-                    // and `out` for writes of its size; they are distinct
-                    // objects, so they do not overlap each other or the
-                    // return address, and do not wrap around the end of the
-                    // address space. The backend is selected for this CPU's
-                    // features.
-                    unsafe {
-                        $backend::select($crate::cpu::detected()).digest(data.as_ptr(), data.len(), &mut out)
-                    };
-                    return out;
-                }
-                )?
-                let mut h = Self::new();
-                h.update(data);
-                h.finalize()
-            }
+            $crate::hashes::streaming_hash!(@digest $backend, $output $(, { $($dvariant)* })?);
 
             /// A computation whose streaming state is `state`, which must
             /// represent a message of `length` bytes (for HMAC, whose
