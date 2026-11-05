@@ -3,36 +3,50 @@
 //! `assembly/ecdsa_p384.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature verification over P-384 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (its leftmost 48 bytes, or, for a shorter hash, the hash padded on the left with zeros to 48 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+/// ECDSA signature verification over P-384 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 384 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 97 bytes.
-/// * `digest` must be valid for reads of 48 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `sig` must be valid for reads of 96 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p384_verify(public: *const [u8; 97], digest: *const [u8; 48], sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p384_verify(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "i0QkEIkYiXAEiXgIiWgMiceLXCQMi0MsD8iJhxAGAACLQygPyImHFAYAAItDJA/IiYcYBgAAi0MgD8iJhxwGAACLQxwPyImHIAYAAItDGA/IiYckBgAAi0MUD8iJhygGAACLQxAPyImHLAYAAItDDA/IiYcwBgAAi0MID8iJhzQGAACLQwQPyImHOAYAAIsDD8iJhzwGAACLXCQIi0MsD8iJh0AGAACLQygPyImHRAYAAItDJA/IiYdIBgAAi0MgD8iJh0wGAACLQxwPyImHUAYAAItDGA/IiYdUBgAAi0MUD8iJh1gGAACLQxAPyImHXAYAAItDDA/IiYdgBgAAi0MID8iJh2QGAACLQwQPyImHaAYAAIsDD8iJh2wGAACLXCQIi0MsD8iJh3AGAACLQygPyImHdAYAAItDJA/IiYd4BgAAi0MgD8iJh3wGAACLQxwPyImHgAYAAItDGA/IiYeEBgAAi0MUD8iJh4gGAACLQxAPyImHjAYAAItDDA/IiYeQBgAAi0MID8iJh5QGAACLQwQPyImHmAYAAIsDD8iJh5wGAAC4/////4lHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj+////iUdQuP////+JR1S4/////4lHWLj/////iUdcuP////+JR2C4/////4lHZLj/////iUdouP////+JR2y4cynFzIlHcLhqGezsiUd0uHqnsEiJR3i4sg0aWIlHfLjfLTf0iYeAAAAAuIFNY8eJh4QAAAC4/////4mHiAAAALj/////iYeMAAAAuP////+Jh5AAAAC4/////4mHlAAAALj/////iYeYAAAAuP////+Jh5wAAAC4AAAAAImH0AAAALgAAAAAiYfUAAAAuAAAAACJh9gAAAC4AAAAAImH3AAAALgAAAAAiYfgAAAAuAAAAACJh+QAAAC4AAAAAImH6AAAALgAAAAAiYfsAAAAuAAAAACJh/AAAAC4AAAAAImH9AAAALgAAAAAiYf4AAAAuAAAAACJh/wAAAC4AQAAAImHAAEAALgAAAAAiYcEAQAAuAAAAACJhwgBAAC4AAAAAImHDAEAALgAAAAAiYcQAQAAuAAAAACJhxQBAAC4AAAAAImHGAEAALgAAAAAiYccAQAAuAAAAACJhyABAAC4AAAAAImHJAEAALgAAAAAiYcoAQAAuAAAAACJhywBAAC4AQAAAImHMAEAALj/////iYc0AQAAuP////+JhzgBAAC4AAAAAImHPAEAALgBAAAAiYdAAQAAuAAAAACJh0QBAAC4AAAAAImHSAEAALgAAAAAiYdMAQAAuAAAAACJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/P///4mHYAEAALgDAAAAiYdkAQAAuAAAAACJh2gBAAC4/P///4mHbAEAALj7////iYdwAQAAuP////+Jh3QBAAC4/////4mHeAEAALj/////iYd8AQAAuP////+Jh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4ZonD14mHkAEAALhSmTQYiYeUAQAAuMSY5G6Jh5gBAAC4iwl95YmHnAEAALiOBmBLiYegAQAAuNFh1meJh6QBAAC4p6C6vYmHqAEAALjL46WpiYesAQAAuL5hBl2Jh7ABAAC43GWBIomHtAEAALjtP+8giYe4AQAAuOIzGGeJh7wBAAC4KLXASYmHwAEAALhmddA9iYfEAQAAuDjO1qCJh8gBAAC44njjIImHzAEAALhuTRtUiYfQAQAAuPw6nIeJh9QBAAC4/w6jWYmH2AEAALiEhlRkiYfcAQAAuCveTmGJh+ABAAC4I/cvgYmH5AEAALgTFZ4piYfoAQAAuMKtOk2Jh+wBAAC4/qQDS4mH8AEAALitPQQjiYf0AQAAuKyptHuJh/gBAAC4v6i/oYmH/AEAALhQsIMuiYcAAgAAuFbnrYuJhwQCAAC42f/0aImHCAIAALgZUsPGiYcMAgAAuECoaTmJhxACAAC4JgKA3YmHFAIAALjpxRVaiYcYAgAAuMKreCuJhxwCAAC4qQm0GYmHIAIAALgkmzEtiYckAgAAuBmkGt+JhygCAAC45YE9/4mHLAIAALhHKbj8iYcwAgAAuDpIPryJhzQCAAC4xRyrSomHOAIAALgXSQ3UiYc8AgAAuJVoJiiJh0ACAAC4eluwP4mHRAIAALghvzkriYdIAgAAuAHuhAyJh0wCAAC4jdY6M4mHUAIAALiV5hMTiYdUAgAAuIVYT7eJh1gCAAC4TfLlp4mHXAIAALgg0sgLiYdgAgAAuH6ynDiJh2QCAAC4AAAAAImHaAIAALgAAAAAiYdsAgAAuAAAAACJh3ACAAC4AAAAAImHdAIAALgAAAAAiYd4AgAAuAAAAACJh3wCAAC4/f///4mHgAIAALgAAAAAiYeEAgAAuAAAAACJh4gCAAC4/////4mHjAIAALj+////iYeQAgAAuP////+Jh5QCAAC4/////4mHmAIAALj/////iYecAgAAuP////+Jh6ACAAC4/////4mHpAIAALj/////iYeoAgAAuP////+Jh6wCAAC4cSnFzImHsAIAALhqGezsiYe0AgAAuHqnsEiJh7gCAAC4sg0aWImHvAIAALjfLTf0iYfAAgAAuIFNY8eJh8QCAAC4/////4mHyAIAALj/////iYfMAgAAuP////+Jh9ACAAC4/////4mH1AIAALj/////iYfYAgAAuP////+Jh9wCAAC4AAAAAImH4AIAALgAAAAAiYfkAgAAuAAAAACJh+gCAAC4AAAAAImH7AIAALgAAAAAiYfwAgAAuAAAAACJh/QCAAC4AAAAAImH+AIAALgAAAAAiYf8AgAAuAAAAACJhwADAAC4AAAAAImHBAMAALgAAAAAiYcIAwAAuAAAAACJhwwDAAC4AQAAAImHEAMAALj/////iYcUAwAAuP////+JhxgDAAC4AAAAAImHHAMAALgBAAAAiYcgAwAAuAAAAACJhyQDAAC4AAAAAImHKAMAALgAAAAAiYcsAwAAuAAAAACJhzADAAC4AAAAAImHNAMAALgAAAAAiYc4AwAAuAAAAACJhzwDAAC4AAAAAImHQAMAALgAAAAAiYdEAwAAuAAAAACJh0gDAAC4AAAAAImHTAMAALgAAAAAiYdQAwAAuAAAAACJh1QDAAC4AAAAAImHWAMAALgAAAAAiYdcAwAAuAAAAACJh2ADAAC4AAAAAImHZAMAALgAAAAAiYdoAwAAuAAAAACJh2wDAAC4/////4mHgAgAAL4wAAAA"
+        r#".base64 "jWQklItEJHCJRCQEi0QkdIlEJAiLRCR4iUQkDItEJHyJRCQQi4QkgAAAAIlEJBSJ4IPAHIlEJBiLRCQMg/gw"
+jb 20f
+.base64 "i0wkCA+2AYhEJBwPtkEBiEQkHQ+2QQKIRCQeD7ZBA4hEJB8PtkEEiEQkIA+2QQWIRCQhD7ZBBohEJCIPtkEHiEQkIw+2QQiIRCQkD7ZBCYhEJCUPtkEKiEQkJg+2QQuIRCQnD7ZBDIhEJCgPtkENiEQkKQ+2QQ6IRCQqD7ZBD4hEJCsPtkEQiEQkLA+2QRGIRCQtD7ZBEohEJC4PtkETiEQkLw+2QRSIRCQwD7ZBFYhEJDEPtkEWiEQkMg+2QReIRCQzD7ZBGIhEJDQPtkEZiEQkNQ+2QRqIRCQ2D7ZBG4hEJDcPtkEciEQkOA+2QR2IRCQ5D7ZBHohEJDoPtkEfiEQkOw+2QSCIRCQ8D7ZBIYhEJD0PtkEiiEQkPg+2QSOIRCQ/D7ZBJIhEJEAPtkEliEQkQQ+2QSaIRCRCD7ZBJ4hEJEMPtkEoiEQkRA+2QSmIRCRFD7ZBKohEJEYPtkEriEQkRw+2QSyIRCRID7ZBLYhEJEkPtkEuiEQkSg+2QS+IRCRL"
+jmp 21f
 20:
-.base64 "g+4BifgB8A+2gBAGAACJ8wHbAdsB2wH7icKD4gGIkwAQAACJwtHqg+IBiJMBEAAAicLB6gKD4gGIkwIQAACJwsHqA4PiAYiTAxAAAInCweoEg+IBiJMEEAAAicLB6gWD4gGIkwUQAACJwsHqBoPiAYiTBhAAAInCweoHg+IBiJMHEAAAhfY="
-jne 20b
-.base64 "vjAAAAA="
-21:
-.base64 "g+4BifgB8A+2gIACAACJ8wHbAdsB2wH7icKD4gGIk4QRAACJwtHqg+IBiJOFEQAAicLB6gKD4gGIk4YRAACJwsHqA4PiAYiThxEAAInCweoEg+IBiJOIEQAAicLB6gWD4gGIk4kRAACJwsHqBoPiAYiTihEAAInCweoHg+IBiJOLEQAAhfY="
-jne 21b
-.base64 "vjAAAAA="
+.base64 "uAAAAACJRCQciUQkIIlEJCSJRCQoiUQkLIlEJDCJRCQ0iUQkOIlEJDyJRCRAiUQkRIlEJEiJRCRMiUQkUIlEJFSJRCRYiUQkXIlEJGCLTCQIieKDwkyLRCQMKcKFwA=="
+je 22f
+24:
+.base64 "D7YBiAKDwQGDwgGJ0Cngg/hM"
+jne 24b
+jmp 23f
 22:
+23:
+21:
+.base64 "i0QkGIlEJAiLRCQQiUQkDItEJBSJRCQQi0QkEIkYiXAEiXgIiWgMiceLXCQMi0MsD8iJhxAGAACLQygPyImHFAYAAItDJA/IiYcYBgAAi0MgD8iJhxwGAACLQxwPyImHIAYAAItDGA/IiYckBgAAi0MUD8iJhygGAACLQxAPyImHLAYAAItDDA/IiYcwBgAAi0MID8iJhzQGAACLQwQPyImHOAYAAIsDD8iJhzwGAACLXCQIi0MsD8iJh0AGAACLQygPyImHRAYAAItDJA/IiYdIBgAAi0MgD8iJh0wGAACLQxwPyImHUAYAAItDGA/IiYdUBgAAi0MUD8iJh1gGAACLQxAPyImHXAYAAItDDA/IiYdgBgAAi0MID8iJh2QGAACLQwQPyImHaAYAAIsDD8iJh2wGAACLXCQIi0MsD8iJh3AGAACLQygPyImHdAYAAItDJA/IiYd4BgAAi0MgD8iJh3wGAACLQxwPyImHgAYAAItDGA/IiYeEBgAAi0MUD8iJh4gGAACLQxAPyImHjAYAAItDDA/IiYeQBgAAi0MID8iJh5QGAACLQwQPyImHmAYAAIsDD8iJh5wGAAC4/////4lHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj+////iUdQuP////+JR1S4/////4lHWLj/////iUdcuP////+JR2C4/////4lHZLj/////iUdouP////+JR2y4cynFzIlHcLhqGezsiUd0uHqnsEiJR3i4sg0aWIlHfLjfLTf0iYeAAAAAuIFNY8eJh4QAAAC4/////4mHiAAAALj/////iYeMAAAAuP////+Jh5AAAAC4/////4mHlAAAALj/////iYeYAAAAuP////+Jh5wAAAC4AAAAAImH0AAAALgAAAAAiYfUAAAAuAAAAACJh9gAAAC4AAAAAImH3AAAALgAAAAAiYfgAAAAuAAAAACJh+QAAAC4AAAAAImH6AAAALgAAAAAiYfsAAAAuAAAAACJh/AAAAC4AAAAAImH9AAAALgAAAAAiYf4AAAAuAAAAACJh/wAAAC4AQAAAImHAAEAALgAAAAAiYcEAQAAuAAAAACJhwgBAAC4AAAAAImHDAEAALgAAAAAiYcQAQAAuAAAAACJhxQBAAC4AAAAAImHGAEAALgAAAAAiYccAQAAuAAAAACJhyABAAC4AAAAAImHJAEAALgAAAAAiYcoAQAAuAAAAACJhywBAAC4AQAAAImHMAEAALj/////iYc0AQAAuP////+JhzgBAAC4AAAAAImHPAEAALgBAAAAiYdAAQAAuAAAAACJh0QBAAC4AAAAAImHSAEAALgAAAAAiYdMAQAAuAAAAACJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/P///4mHYAEAALgDAAAAiYdkAQAAuAAAAACJh2gBAAC4/P///4mHbAEAALj7////iYdwAQAAuP////+Jh3QBAAC4/////4mHeAEAALj/////iYd8AQAAuP////+Jh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4ZonD14mHkAEAALhSmTQYiYeUAQAAuMSY5G6Jh5gBAAC4iwl95YmHnAEAALiOBmBLiYegAQAAuNFh1meJh6QBAAC4p6C6vYmHqAEAALjL46WpiYesAQAAuL5hBl2Jh7ABAAC43GWBIomHtAEAALjtP+8giYe4AQAAuOIzGGeJh7wBAAC4KLXASYmHwAEAALhmddA9iYfEAQAAuDjO1qCJh8gBAAC44njjIImHzAEAALhuTRtUiYfQAQAAuPw6nIeJh9QBAAC4/w6jWYmH2AEAALiEhlRkiYfcAQAAuCveTmGJh+ABAAC4I/cvgYmH5AEAALgTFZ4piYfoAQAAuMKtOk2Jh+wBAAC4/qQDS4mH8AEAALitPQQjiYf0AQAAuKyptHuJh/gBAAC4v6i/oYmH/AEAALhQsIMuiYcAAgAAuFbnrYuJhwQCAAC42f/0aImHCAIAALgZUsPGiYcMAgAAuECoaTmJhxACAAC4JgKA3YmHFAIAALjpxRVaiYcYAgAAuMKreCuJhxwCAAC4qQm0GYmHIAIAALgkmzEtiYckAgAAuBmkGt+JhygCAAC45YE9/4mHLAIAALhHKbj8iYcwAgAAuDpIPryJhzQCAAC4xRyrSomHOAIAALgXSQ3UiYc8AgAAuJVoJiiJh0ACAAC4eluwP4mHRAIAALghvzkriYdIAgAAuAHuhAyJh0wCAAC4jdY6M4mHUAIAALiV5hMTiYdUAgAAuIVYT7eJh1gCAAC4TfLlp4mHXAIAALgg0sgLiYdgAgAAuH6ynDiJh2QCAAC4AAAAAImHaAIAALgAAAAAiYdsAgAAuAAAAACJh3ACAAC4AAAAAImHdAIAALgAAAAAiYd4AgAAuAAAAACJh3wCAAC4/f///4mHgAIAALgAAAAAiYeEAgAAuAAAAACJh4gCAAC4/////4mHjAIAALj+////iYeQAgAAuP////+Jh5QCAAC4/////4mHmAIAALj/////iYecAgAAuP////+Jh6ACAAC4/////4mHpAIAALj/////iYeoAgAAuP////+Jh6wCAAC4cSnFzImHsAIAALhqGezsiYe0AgAAuHqnsEiJh7gCAAC4sg0aWImHvAIAALjfLTf0iYfAAgAAuIFNY8eJh8QCAAC4/////4mHyAIAALj/////iYfMAgAAuP////+Jh9ACAAC4/////4mH1AIAALj/////iYfYAgAAuP////+Jh9wCAAC4AAAAAImH4AIAALgAAAAAiYfkAgAAuAAAAACJh+gCAAC4AAAAAImH7AIAALgAAAAAiYfwAgAAuAAAAACJh/QCAAC4AAAAAImH+AIAALgAAAAAiYf8AgAAuAAAAACJhwADAAC4AAAAAImHBAMAALgAAAAAiYcIAwAAuAAAAACJhwwDAAC4AQAAAImHEAMAALj/////iYcUAwAAuP////+JhxgDAAC4AAAAAImHHAMAALgBAAAAiYcgAwAAuAAAAACJhyQDAAC4AAAAAImHKAMAALgAAAAAiYcsAwAAuAAAAACJhzADAAC4AAAAAImHNAMAALgAAAAAiYc4AwAAuAAAAACJhzwDAAC4AAAAAImHQAMAALgAAAAAiYdEAwAAuAAAAACJh0gDAAC4AAAAAImHTAMAALgAAAAAiYdQAwAAuAAAAACJh1QDAAC4AAAAAImHWAMAALgAAAAAiYdcAwAAuAAAAACJh2ADAAC4AAAAAImHZAMAALgAAAAAiYdoAwAAuAAAAACJh2wDAAC4/////4mHgAgAAL4wAAAA"
+25:
+.base64 "g+4BifgB8A+2gBAGAACJ8wHbAdsB2wH7icKD4gGIkwAQAACJwtHqg+IBiJMBEAAAicLB6gKD4gGIkwIQAACJwsHqA4PiAYiTAxAAAInCweoEg+IBiJMEEAAAicLB6gWD4gGIkwUQAACJwsHqBoPiAYiTBhAAAInCweoHg+IBiJMHEAAAhfY="
+jne 25b
+.base64 "vjAAAAA="
+26:
+.base64 "g+4BifgB8A+2gIACAACJ8wHbAdsB2wH7icKD4gGIk4QRAACJwtHqg+IBiJOFEQAAicLB6gKD4gGIk4YRAACJwsHqA4PiAYiThxEAAInCweoEg+IBiJOIEQAAicLB6gWD4gGIk4kRAACJwsHqBoPiAYiTihEAAInCweoHg+IBiJOLEQAAhfY="
+jne 26b
+.base64 "vjAAAAA="
+27:
 .base64 "g+4BifgB8A+2gLACAACJ8wHbAdsB2wH7icKD4gGIkwgTAACJwtHqg+IBiJMJEwAAicLB6gKD4gGIkwoTAACJwsHqA4PiAYiTCxMAAInCweoEg+IBiJMMEwAAicLB6gWD4gGIkw0TAACJwsHqBoPiAYiTDhMAAInCweoHg+IBiJMPEwAAhfY="
-jne 22b
+jne 27b
 .base64 "i1wkDIPDMItDLA/IiYfgBQAAi0MoD8iJh+QFAACLQyQPyImH6AUAAItDIA/IiYfsBQAAi0McD8iJh/AFAACLQxgPyImH9AUAAItDFA/IiYf4BQAAi0MQD8iJh/wFAACLQwwPyImHAAYAAItDCA/IiYcEBgAAi0MED8iJhwgGAACLAw/IiYcMBgAAuAEAAACJh5AHAAC4/v///4mHlAcAALgAAAAAiYeYBwAAuAIAAACJh5wHAAC4AAAAAImHoAcAALj+////iYekBwAAuAAAAACJh6gHAAC4AgAAAImHrAcAALgBAAAAiYewBwAAuAAAAACJh7QHAAC4AAAAAImHuAcAALgAAAAAiYe8BwAAuMwtQZ2Jh8AHAAC4cYgRCImHxAcAALjsMkx6iYfIBwAAuNitKfeJh8wHAAC4LgIgGYmH0AcAALibIPJ3iYfUBwAAuOKKk5SJh9gHAAC47ks344mH3AcAALiUIAIfiYfgBwAAuPQhK7aJh+QHAAC4+b9PYImH6AcAALhLEQjNiYfsBwAAi1wkBIPDAYtDLA/IiYdwBgAAi0MoD8iJh3QGAACLQyQPyImHeAYAAItDIA/IiYd8BgAAi0McD8iJh4AGAACLQxgPyImHhAYAAItDFA/IiYeIBgAAi0MQD8iJh4wGAACLQwwPyImHkAYAAItDCA/IiYeUBgAAi0MED8iJh5gGAACLAw/IiYecBgAAg8Mwi0MsD8iJhwAHAACLQygPyImHBAcAAItDJA/IiYcIBwAAi0MgD8iJhwwHAACLQxwPyImHEAcAAItDGA/IiYcUBwAAi0MUD8iJhxgHAACLQxAPyImHHAcAAItDDA/IiYcgBwAAi0MID8iJhyQHAACLQwQPyImHKAcAAIsDD8iJhywHAACLXCQED7YTg/IEg+oBGdKLh4AIAAAh0ImHgAgAAIuXcAYAACtXQIuXdAYAABtXRIuXeAYAABtXSIuXfAYAABtXTIuXgAYAABtXUIuXhAYAABtXVIuXiAYAABtXWIuXjAYAABtXXIuXkAYAABtXYIuXlAYAABtXZIuXmAYAABtXaIuXnAYAABtXbBnAicKLh4AIAAAh0ImHgAgAAIuXAAcAACtXQIuXBAcAABtXRIuXCAcAABtXSIuXDAcAABtXTIuXEAcAABtXUIuXFAcAABtXVIuXGAcAABtXWIuXHAcAABtXXIuXIAcAABtXYIuXJAcAABtXZIuXKAcAABtXaIuXLAcAABtXbBnAicKLh4AIAAAh0ImHgAgAALiQBwAAuXAGAAC6oAYAAFBRUlc="
 call {vg_p384_mul_mod_p}
 .base64 "WFhYWLiQBwAAuQAHAAC60AYAAFBRUlc="
@@ -54,13 +68,13 @@ call {vg_p384_sub_mod_p}
 .base64 "WFhYWIuX8AcAAAuX9AcAAAuX+AcAAAuX/AcAAAuXAAgAAAuXBAgAAAuXCAgAAAuXDAgAAAuXEAgAAAuXFAgAAAuXGAgAAAuXHAgAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4+ACAAAi4fAAQAAi5egBgAAMcIhyjHQiYdgBwAAi4fEAQAAi5ekBgAAMcIhyjHQiYdkBwAAi4fIAQAAi5eoBgAAMcIhyjHQiYdoBwAAi4fMAQAAi5esBgAAMcIhyjHQiYdsBwAAi4fQAQAAi5ewBgAAMcIhyjHQiYdwBwAAi4fUAQAAi5e0BgAAMcIhyjHQiYd0BwAAi4fYAQAAi5e4BgAAMcIhyjHQiYd4BwAAi4fcAQAAi5e8BgAAMcIhyjHQiYd8BwAAi4fgAQAAi5fABgAAMcIhyjHQiYeABwAAi4fkAQAAi5fEBgAAMcIhyjHQiYeEBwAAi4foAQAAi5fIBgAAMcIhyjHQiYeIBwAAi4fsAQAAi5fMBgAAMcIhyjHQiYeMBwAAi4fwAQAAi5fQBgAAMcIhyjHQiYdQCAAAi4f0AQAAi5fUBgAAMcIhyjHQiYdUCAAAi4f4AQAAi5fYBgAAMcIhyjHQiYdYCAAAi4f8AQAAi5fcBgAAMcIhyjHQiYdcCAAAi4cAAgAAi5fgBgAAMcIhyjHQiYdgCAAAi4cEAgAAi5fkBgAAMcIhyjHQiYdkCAAAi4cIAgAAi5foBgAAMcIhyjHQiYdoCAAAi4cMAgAAi5fsBgAAMcIhyjHQiYdsCAAAi4cQAgAAi5fwBgAAMcIhyjHQiYdwCAAAi4cUAgAAi5f0BgAAMcIhyjHQiYd0CAAAi4cYAgAAi5f4BgAAMcIhyjHQiYd4CAAAi4ccAgAAi5f8BgAAMcIhyjHQiYd8CAAAi5cQBgAAK1dwi5cUBgAAG1d0i5cYBgAAG1d4i5ccBgAAG1d8i5cgBgAAG5eAAAAAi5ckBgAAG5eEAAAAi5coBgAAG5eIAAAAi5csBgAAG5eMAAAAi5cwBgAAG5eQAAAAi5c0BgAAG5eUAAAAi5c4BgAAG5eYAAAAi5c8BgAAG5ecAAAAGcCJw4uXEAYAAAuXFAYAAAuXGAYAAAuXHAYAAAuXIAYAAAuXJAYAAAuXKAYAAAuXLAYAAAuXMAYAAAuXNAYAAAuXOAYAAAuXPAYAALkAAAAAKdEZ0iHai4eACAAAIdCJh4AIAACLl+AFAAArV3CLl+QFAAAbV3SLl+gFAAAbV3iLl+wFAAAbV3yLl/AFAAAbl4AAAACLl/QFAAAbl4QAAACLl/gFAAAbl4gAAACLl/wFAAAbl4wAAACLlwAGAAAbl5AAAACLlwQGAAAbl5QAAACLlwgGAAAbl5gAAACLlwwGAAAbl5wAAAAZwInDi5fgBQAAC5fkBQAAC5foBQAAC5fsBQAAC5fwBQAAC5f0BQAAC5f4BQAAC5f8BQAAC5cABgAAC5cEBgAAC5cIBgAAC5cMBgAAuQAAAAAp0RnSIdqLh4AIAAAh0ImHgAgAALggAgAAueAFAAC6MAcAAFBRUlc="
 call {vg_p384_mul_mod_n}
 .base64 "WFhYWIuHUAIAAImHsAUAAIuHVAIAAImHtAUAAIuHWAIAAImHuAUAAIuHXAIAAImHvAUAAIuHYAIAAImHwAUAAIuHZAIAAImHxAUAAIuHaAIAAImHyAUAAIuHbAIAAImHzAUAAIuHcAIAAImH0AUAAIuHdAIAAImH1AUAAIuHeAIAAImH2AUAAIuHfAIAAImH3AUAAL6AAQAA"
-23:
+28:
 .base64 "g+4BuLAFAAC5sAUAALqwBQAAUFFSVw=="
 call {vg_p384_mul_mod_n}
 .base64 "WFhYWLgwBwAAubAFAAC64AUAAFBRUlc="
 call {vg_p384_mul_mod_n}
 .base64 "WFhYWIn4AfAPtoAIEwAAuQAAAAApwYuHsAUAAIuX4AUAADHCIcox0ImHsAUAAIuHtAUAAIuX5AUAADHCIcox0ImHtAUAAIuHuAUAAIuX6AUAADHCIcox0ImHuAUAAIuHvAUAAIuX7AUAADHCIcox0ImHvAUAAIuHwAUAAIuX8AUAADHCIcox0ImHwAUAAIuHxAUAAIuX9AUAADHCIcox0ImHxAUAAIuHyAUAAIuX+AUAADHCIcox0ImHyAUAAIuHzAUAAIuX/AUAADHCIcox0ImHzAUAAIuH0AUAAIuXAAYAADHCIcox0ImH0AUAAIuH1AUAAIuXBAYAADHCIcox0ImH1AUAAIuH2AUAAIuXCAYAADHCIcox0ImH2AUAAIuH3AUAAIuXDAYAADHCIcox0ImH3AUAAIX2"
-jne 23b
+jne 28b
 .base64 "uCACAAC5QAYAALrABwAAUFFSVw=="
 call {vg_p384_mul_mod_n}
 .base64 "WFhYWLggAgAAuRAGAAC6kAcAAFBRUlc="
@@ -158,13 +172,13 @@ call {vg_p384_mul_mod_p}
 .base64 "WFhYWLiQBAAAudADAAC60AMAAFBRUlc="
 call {vg_p384_add_mod_p}
 .base64 "WFhYWIuHcAMAAImH4AIAAIuHdAMAAImH5AIAAIuHeAMAAImH6AIAAIuHfAMAAImH7AIAAIuHgAMAAImH8AIAAIuHhAMAAImH9AIAAIuHiAMAAImH+AIAAIuHjAMAAImH/AIAAIuHkAMAAImHAAMAAIuHlAMAAImHBAMAAIuHmAMAAImHCAMAAIuHnAMAAImHDAMAAIuHoAMAAImHEAMAAIuHpAMAAImHFAMAAIuHqAMAAImHGAMAAIuHrAMAAImHHAMAAIuHsAMAAImHIAMAAIuHtAMAAImHJAMAAIuHuAMAAImHKAMAAIuHvAMAAImHLAMAAIuHwAMAAImHMAMAAIuHxAMAAImHNAMAAIuHyAMAAImHOAMAAIuHzAMAAImHPAMAAIuH0AMAAImHQAMAAIuH1AMAAImHRAMAAIuH2AMAAImHSAMAAIuH3AMAAImHTAMAAIuH4AMAAImHUAMAAIuH5AMAAImHVAMAAIuH6AMAAImHWAMAAIuH7AMAAImHXAMAAIuH8AMAAImHYAMAAIuH9AMAAImHZAMAAIuH+AMAAImHaAMAAIuH/AMAAImHbAMAAIuHMAEAAImHsAUAAIuHNAEAAImHtAUAAIuHOAEAAImHuAUAAIuHPAEAAImHvAUAAIuHQAEAAImHwAUAAIuHRAEAAImHxAUAAIuHSAEAAImHyAUAAIuHTAEAAImHzAUAAIuHUAEAAImH0AUAAIuHVAEAAImH1AUAAIuHWAEAAImH2AUAAIuHXAEAAImH3AUAAL6AAQAA"
-24:
+29:
 .base64 "g+4BuLAFAAC5sAUAALqwBQAAUFFSVw=="
 call {vg_p384_mul_mod_p}
 .base64 "WFhYWLhAAwAAubAFAAC64AUAAFBRUlc="
 call {vg_p384_mul_mod_p}
 .base64 "WFhYWIn4AfAPtoCEEQAAuQAAAAApwYuHsAUAAIuX4AUAADHCIcox0ImHsAUAAIuHtAUAAIuX5AUAADHCIcox0ImHtAUAAIuHuAUAAIuX6AUAADHCIcox0ImHuAUAAIuHvAUAAIuX7AUAADHCIcox0ImHvAUAAIuHwAUAAIuX8AUAADHCIcox0ImHwAUAAIuHxAUAAIuX9AUAADHCIcox0ImHxAUAAIuHyAUAAIuX+AUAADHCIcox0ImHyAUAAIuHzAUAAIuX/AUAADHCIcox0ImHzAUAAIuH0AUAAIuXAAYAADHCIcox0ImH0AUAAIuH1AUAAIuXBAYAADHCIcox0ImH1AUAAIuH2AUAAIuXCAYAADHCIcox0ImH2AUAAIuH3AUAAIuXDAYAADHCIcox0ImH3AUAAIX2"
-jne 24b
+jne 29b
 .base64 "uLAFAAC54AIAALqgBgAAUFFSVw=="
 call {vg_p384_mul_mod_p}
 .base64 "WFhYWLgAAQAAuaAGAAC60AYAAFBRUlc="
@@ -173,7 +187,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_n}
 .base64 "WFhYWLiQBwAAuWAHAAC6wAcAAFBRUlc="
 call {vg_p384_sub_mod_n}
-.base64 "WFhYWIuXQAMAAAuXRAMAAAuXSAMAAAuXTAMAAAuXUAMAAAuXVAMAAAuXWAMAAAuXXAMAAAuXYAMAAAuXZAMAAAuXaAMAAAuXbAMAALkAAAAAKdEZ0ouHgAgAACHQiYeACAAAi5fABwAAC5fEBwAAC5fIBwAAC5fMBwAAC5fQBwAAC5fUBwAAC5fYBwAAC5fcBwAAC5fgBwAAC5fkBwAAC5foBwAAC5fsBwAAuQAAAAAp0RnSg/L/i4eACAAAIdCJh4AIAACLj4AIAACJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuXQAMAAAuXRAMAAAuXSAMAAAuXTAMAAAuXUAMAAAuXVAMAAAuXWAMAAAuXXAMAAAuXYAMAAAuXZAMAAAuXaAMAAAuXbAMAALkAAAAAKdEZ0ouHgAgAACHQiYeACAAAi5fABwAAC5fEBwAAC5fIBwAAC5fMBwAAC5fQBwAAC5fUBwAAC5fYBwAAC5fcBwAAC5fgBwAAC5fkBwAAC5foBwAAC5fsBwAAuQAAAAAp0RnSg/L/i4eACAAAIdCJh4AIAACLj4AIAACJyIPgAYn6ixqLcgSLagyLegiNZCRsww=="
 .p2align 6"#,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
@@ -261,6 +275,110 @@ jne 24b
 pub(crate) mod vg_ecdsa_p384_sign_k;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_scratch.rs"]
+pub(crate) mod vg_hmac_md5_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_finalize_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha1_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha1_init_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha224_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_finalize_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha224_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha224_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha224_init_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha256_init_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha384_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha384_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_224_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_224_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_init_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_init_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_compress.rs"]
+pub(crate) mod vg_md5_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_finalize_scratch.rs"]
+pub(crate) mod vg_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_init.rs"]
+pub(crate) mod vg_md5_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_update_scratch.rs"]
+pub(crate) mod vg_md5_update_scratch;
+
+#[rustfmt::skip]
 #[path = "internal/vg_p384_add_mod_n.rs"]
 pub(crate) mod vg_p384_add_mod_n;
 
@@ -271,3 +389,91 @@ pub(crate) mod vg_p384_mul_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_p384_sub_mod_n.rs"]
 pub(crate) mod vg_p384_sub_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_compress.rs"]
+pub(crate) mod vg_sha1_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_compress_shani.rs"]
+pub(crate) mod vg_sha1_compress_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_finalize_scratch.rs"]
+pub(crate) mod vg_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_finalize_scratch_shani.rs"]
+pub(crate) mod vg_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init.rs"]
+pub(crate) mod vg_sha1_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_update_scratch.rs"]
+pub(crate) mod vg_sha1_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_update_scratch_shani.rs"]
+pub(crate) mod vg_sha1_update_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha224_init.rs"]
+pub(crate) mod vg_sha224_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_compress.rs"]
+pub(crate) mod vg_sha256_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_compress_shani.rs"]
+pub(crate) mod vg_sha256_compress_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_scratch.rs"]
+pub(crate) mod vg_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_scratch_shani.rs"]
+pub(crate) mod vg_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_init.rs"]
+pub(crate) mod vg_sha256_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_scratch.rs"]
+pub(crate) mod vg_sha256_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_scratch_shani.rs"]
+pub(crate) mod vg_sha256_update_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha384_init.rs"]
+pub(crate) mod vg_sha384_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_224_init.rs"]
+pub(crate) mod vg_sha512_224_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_256_init.rs"]
+pub(crate) mod vg_sha512_256_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress.rs"]
+pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_init.rs"]
+pub(crate) mod vg_sha512_init;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch.rs"]
+pub(crate) mod vg_sha512_update_scratch;

@@ -111,6 +111,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over secp256k1 (FIPS 186-5) on x86 (32-bit) -/
@@ -120,9 +121,10 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Generic.Secp256k1.X86.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyApi.artifact X86.target {
-    code := Impl.Ecdsa.Verify.X86.verifySecp256k1
-    stack := 28
-    verified := Proof.Ecdsa.Verify.X86.Secp256k1.verify_verified h.law h.inv }]
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86.target {
+    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+      Impl.Ecdsa.Verify.X86.verifySecp256k1
+    stack := 136
+    verified := Proof.Ecdsa.Verify.X86.Secp256k1.verifyHash_verified h.law h.inv }]
 
 end VG.Generic.Secp256k1.X86.EcdsaSecp256k1

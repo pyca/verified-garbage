@@ -108,6 +108,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over brainpoolP384r1 (FIPS 186-5) on x86 (32-bit) -/
@@ -117,9 +118,10 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Generic.BrainpoolP384r1.X86.EcdsaBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact X86.target {
-    code := Impl.Ecdsa.Verify.X86.verifyBrainpoolP384r1
-    stack := 28
-    verified := Proof.Ecdsa.Verify.X86.BrainpoolP384r1.verify_verified h.law }]
+  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86.target {
+    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
+      Impl.Ecdsa.Verify.X86.verifyBrainpoolP384r1
+    stack := 136
+    verified := Proof.Ecdsa.Verify.X86.BrainpoolP384r1.verifyHash_verified h.law }]
 
 end VG.Generic.BrainpoolP384r1.X86.EcdsaBrainpoolP384r1

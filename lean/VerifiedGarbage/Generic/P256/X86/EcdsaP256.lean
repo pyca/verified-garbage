@@ -183,6 +183,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit) -/
@@ -192,10 +193,11 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Generic.P256.X86.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  Spec.Ecdsa.P256.verifyApi.artifact X86.target {
-    code := Proof.Ecdsa.Verify.X86.vCombCode
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86.target {
+    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
-    stack := 20
-    verified := Proof.Ecdsa.Verify.X86.vComb_verified h.law h.inv }]
+    stack := 128
+    verified := Proof.Ecdsa.Verify.X86.vCombHash_verified h.law h.inv }]
 
 end VG.Generic.P256.X86.EcdsaP256

@@ -1,10 +1,16 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+public meta import VerifiedGarbage.Spec.Ecdsa.P256
 
 /-! # Verified P-256 signature verification using the x86 comb -/
 
@@ -97,5 +103,55 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
         show 1+2*p256Comb.C.len=65 from rfl,show 2*p256Comb.C.len=64 from rfl] using key
     · simpa only [State.withRegions_mem,ptr,arg_withRegions,
         show 1+2*p256Comb.C.len=65 from rfl,show 2*p256Comb.C.len=64 from rfl] using parts.2
+
+/-- A state satisfying `verifyHashContract`'s precondition: `vCombSatState`'s
+memory and table, with five arguments, `0x3000` bytes of hash at `0x2000`. -/
+def vCombHashSatState : State := { combSatState with
+  rd := [⟨0x1000, 65⟩, ⟨0x2000, 0x3000⟩, ⟨0x4000, 64⟩, ⟨0x100000, 151552⟩]
+  wr := [⟨0x8000, 8192⟩, ⟨0x20004, 20⟩] }
+
+theorem vCombHashSat_pre :
+    (Spec.Ecdsa.P256.inst.verifyHashContract (X86.abi.withConsts p256Comb.combConsts)
+      (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vCombHashSatState := by
+  have a0 : arg vCombHashSatState 0 = 0x1000 := (combSat_arg 0 (by decide)).trans (by decide)
+  have a1 : arg vCombHashSatState 1 = 0x2000 := (combSat_arg 1 (by decide)).trans (by decide)
+  have a2 : arg vCombHashSatState 2 = 0x3000 := (combSat_arg 2 (by decide)).trans (by decide)
+  have a3 : arg vCombHashSatState 3 = 0x4000 := (combSat_arg 3 (by decide)).trans (by decide)
+  have a4 : arg vCombHashSatState 4 = 0x8000 := (combSat_arg 4 (by decide)).trans (by decide)
+  have held : ∀ i < p256W.length, vCombHashSatState.mem.readW
+      ((vCombHashSatState.syms "VG_P256_COMB").setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 :=
+    combSatMem_held
+  generalize e : vCombHashSatState = s
+  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyHashContract,
+    Spec.Ecdsa.Instance.verifyHashSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  refine ⟨by decide, by decide, ?_, held, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [p256W_length]; rfl
+  · rw [p256W_length]; decide
+  · rw [p256W_length]
+    intro r hr
+    change r ∈ [⟨0x8000, 8192⟩, ⟨0x20004, 20⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · rw [p256W_length]; exact Region.disjoint_of_sep (by decide)
+  · rw [p256W_length]; exact Region.disjoint_of_sep (by decide)
+  · decide
+  · rw [a0, a1, a2, a3, a4]
+    refine ⟨rfl, rfl, ?_⟩
+    repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
+
+/-- `vg_ecdsa_p256_verify`, taking the hash function's output: the comb's
+verification, run on the `len` bytes of the hash, in a frame of `frameBytes`
+more bytes of stack (`Hash.verifyHash_verifiedC`, for its table). -/
+theorem vCombHash_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
+    Verified X86.target
+      (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false vCombCode)
+      (Spec.Ecdsa.P256.inst.verifyHashContract (X86.abi.withConsts p256Comb.combConsts)
+        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+  Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.p256_len (by decide) (vComb_verified hL hI)
+    vComb_sp.1 vComb_sp.2 (by taint_decide) ⟨_, vCombHashSat_pre⟩
 
 end VG.Proof.Ecdsa.Verify.X86
