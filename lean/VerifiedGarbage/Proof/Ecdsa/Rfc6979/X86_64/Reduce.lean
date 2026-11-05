@@ -56,7 +56,6 @@ theorem frame_of_outside {base : Addr} {d n : Nat} {m m' : Mem} (h : Outside bas
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
 
-theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
 /-- Word `j` of the number at `digest`, least significant first: a top
 word of four bytes is zero-extended. -/
