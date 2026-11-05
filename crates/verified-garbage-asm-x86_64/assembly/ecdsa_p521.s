@@ -5,6 +5,633 @@
 // gives.
 
 vg_ecdsa_p521_verify:
+	lea rsp, [rsp-88]
+	mov r9, rsp
+	add r9, 8
+	cmp rdx, 66
+	jb 20f
+	movzx r10d, BYTE PTR [rsi]
+	mov BYTE PTR [r9], r10b
+	movzx r10d, BYTE PTR [rsi+1]
+	mov BYTE PTR [r9+1], r10b
+	movzx r10d, BYTE PTR [rsi+2]
+	mov BYTE PTR [r9+2], r10b
+	movzx r10d, BYTE PTR [rsi+3]
+	mov BYTE PTR [r9+3], r10b
+	movzx r10d, BYTE PTR [rsi+4]
+	mov BYTE PTR [r9+4], r10b
+	movzx r10d, BYTE PTR [rsi+5]
+	mov BYTE PTR [r9+5], r10b
+	movzx r10d, BYTE PTR [rsi+6]
+	mov BYTE PTR [r9+6], r10b
+	movzx r10d, BYTE PTR [rsi+7]
+	mov BYTE PTR [r9+7], r10b
+	movzx r10d, BYTE PTR [rsi+8]
+	mov BYTE PTR [r9+8], r10b
+	movzx r10d, BYTE PTR [rsi+9]
+	mov BYTE PTR [r9+9], r10b
+	movzx r10d, BYTE PTR [rsi+10]
+	mov BYTE PTR [r9+10], r10b
+	movzx r10d, BYTE PTR [rsi+11]
+	mov BYTE PTR [r9+11], r10b
+	movzx r10d, BYTE PTR [rsi+12]
+	mov BYTE PTR [r9+12], r10b
+	movzx r10d, BYTE PTR [rsi+13]
+	mov BYTE PTR [r9+13], r10b
+	movzx r10d, BYTE PTR [rsi+14]
+	mov BYTE PTR [r9+14], r10b
+	movzx r10d, BYTE PTR [rsi+15]
+	mov BYTE PTR [r9+15], r10b
+	movzx r10d, BYTE PTR [rsi+16]
+	mov BYTE PTR [r9+16], r10b
+	movzx r10d, BYTE PTR [rsi+17]
+	mov BYTE PTR [r9+17], r10b
+	movzx r10d, BYTE PTR [rsi+18]
+	mov BYTE PTR [r9+18], r10b
+	movzx r10d, BYTE PTR [rsi+19]
+	mov BYTE PTR [r9+19], r10b
+	movzx r10d, BYTE PTR [rsi+20]
+	mov BYTE PTR [r9+20], r10b
+	movzx r10d, BYTE PTR [rsi+21]
+	mov BYTE PTR [r9+21], r10b
+	movzx r10d, BYTE PTR [rsi+22]
+	mov BYTE PTR [r9+22], r10b
+	movzx r10d, BYTE PTR [rsi+23]
+	mov BYTE PTR [r9+23], r10b
+	movzx r10d, BYTE PTR [rsi+24]
+	mov BYTE PTR [r9+24], r10b
+	movzx r10d, BYTE PTR [rsi+25]
+	mov BYTE PTR [r9+25], r10b
+	movzx r10d, BYTE PTR [rsi+26]
+	mov BYTE PTR [r9+26], r10b
+	movzx r10d, BYTE PTR [rsi+27]
+	mov BYTE PTR [r9+27], r10b
+	movzx r10d, BYTE PTR [rsi+28]
+	mov BYTE PTR [r9+28], r10b
+	movzx r10d, BYTE PTR [rsi+29]
+	mov BYTE PTR [r9+29], r10b
+	movzx r10d, BYTE PTR [rsi+30]
+	mov BYTE PTR [r9+30], r10b
+	movzx r10d, BYTE PTR [rsi+31]
+	mov BYTE PTR [r9+31], r10b
+	movzx r10d, BYTE PTR [rsi+32]
+	mov BYTE PTR [r9+32], r10b
+	movzx r10d, BYTE PTR [rsi+33]
+	mov BYTE PTR [r9+33], r10b
+	movzx r10d, BYTE PTR [rsi+34]
+	mov BYTE PTR [r9+34], r10b
+	movzx r10d, BYTE PTR [rsi+35]
+	mov BYTE PTR [r9+35], r10b
+	movzx r10d, BYTE PTR [rsi+36]
+	mov BYTE PTR [r9+36], r10b
+	movzx r10d, BYTE PTR [rsi+37]
+	mov BYTE PTR [r9+37], r10b
+	movzx r10d, BYTE PTR [rsi+38]
+	mov BYTE PTR [r9+38], r10b
+	movzx r10d, BYTE PTR [rsi+39]
+	mov BYTE PTR [r9+39], r10b
+	movzx r10d, BYTE PTR [rsi+40]
+	mov BYTE PTR [r9+40], r10b
+	movzx r10d, BYTE PTR [rsi+41]
+	mov BYTE PTR [r9+41], r10b
+	movzx r10d, BYTE PTR [rsi+42]
+	mov BYTE PTR [r9+42], r10b
+	movzx r10d, BYTE PTR [rsi+43]
+	mov BYTE PTR [r9+43], r10b
+	movzx r10d, BYTE PTR [rsi+44]
+	mov BYTE PTR [r9+44], r10b
+	movzx r10d, BYTE PTR [rsi+45]
+	mov BYTE PTR [r9+45], r10b
+	movzx r10d, BYTE PTR [rsi+46]
+	mov BYTE PTR [r9+46], r10b
+	movzx r10d, BYTE PTR [rsi+47]
+	mov BYTE PTR [r9+47], r10b
+	movzx r10d, BYTE PTR [rsi+48]
+	mov BYTE PTR [r9+48], r10b
+	movzx r10d, BYTE PTR [rsi+49]
+	mov BYTE PTR [r9+49], r10b
+	movzx r10d, BYTE PTR [rsi+50]
+	mov BYTE PTR [r9+50], r10b
+	movzx r10d, BYTE PTR [rsi+51]
+	mov BYTE PTR [r9+51], r10b
+	movzx r10d, BYTE PTR [rsi+52]
+	mov BYTE PTR [r9+52], r10b
+	movzx r10d, BYTE PTR [rsi+53]
+	mov BYTE PTR [r9+53], r10b
+	movzx r10d, BYTE PTR [rsi+54]
+	mov BYTE PTR [r9+54], r10b
+	movzx r10d, BYTE PTR [rsi+55]
+	mov BYTE PTR [r9+55], r10b
+	movzx r10d, BYTE PTR [rsi+56]
+	mov BYTE PTR [r9+56], r10b
+	movzx r10d, BYTE PTR [rsi+57]
+	mov BYTE PTR [r9+57], r10b
+	movzx r10d, BYTE PTR [rsi+58]
+	mov BYTE PTR [r9+58], r10b
+	movzx r10d, BYTE PTR [rsi+59]
+	mov BYTE PTR [r9+59], r10b
+	movzx r10d, BYTE PTR [rsi+60]
+	mov BYTE PTR [r9+60], r10b
+	movzx r10d, BYTE PTR [rsi+61]
+	mov BYTE PTR [r9+61], r10b
+	movzx r10d, BYTE PTR [rsi+62]
+	mov BYTE PTR [r9+62], r10b
+	movzx r10d, BYTE PTR [rsi+63]
+	mov BYTE PTR [r9+63], r10b
+	movzx r10d, BYTE PTR [rsi+64]
+	mov BYTE PTR [r9+64], r10b
+	movzx r10d, BYTE PTR [rsi+65]
+	mov BYTE PTR [r9+65], r10b
+	jmp 21f
+20:
+	mov r10d, 0
+	mov BYTE PTR [r9], r10b
+	mov BYTE PTR [r9+1], r10b
+	mov BYTE PTR [r9+2], r10b
+	mov BYTE PTR [r9+3], r10b
+	mov BYTE PTR [r9+4], r10b
+	mov BYTE PTR [r9+5], r10b
+	mov BYTE PTR [r9+6], r10b
+	mov BYTE PTR [r9+7], r10b
+	mov BYTE PTR [r9+8], r10b
+	mov BYTE PTR [r9+9], r10b
+	mov BYTE PTR [r9+10], r10b
+	mov BYTE PTR [r9+11], r10b
+	mov BYTE PTR [r9+12], r10b
+	mov BYTE PTR [r9+13], r10b
+	mov BYTE PTR [r9+14], r10b
+	mov BYTE PTR [r9+15], r10b
+	mov BYTE PTR [r9+16], r10b
+	mov BYTE PTR [r9+17], r10b
+	mov BYTE PTR [r9+18], r10b
+	mov BYTE PTR [r9+19], r10b
+	mov BYTE PTR [r9+20], r10b
+	mov BYTE PTR [r9+21], r10b
+	mov BYTE PTR [r9+22], r10b
+	mov BYTE PTR [r9+23], r10b
+	mov BYTE PTR [r9+24], r10b
+	mov BYTE PTR [r9+25], r10b
+	mov BYTE PTR [r9+26], r10b
+	mov BYTE PTR [r9+27], r10b
+	mov BYTE PTR [r9+28], r10b
+	mov BYTE PTR [r9+29], r10b
+	mov BYTE PTR [r9+30], r10b
+	mov BYTE PTR [r9+31], r10b
+	mov BYTE PTR [r9+32], r10b
+	mov BYTE PTR [r9+33], r10b
+	mov BYTE PTR [r9+34], r10b
+	mov BYTE PTR [r9+35], r10b
+	mov BYTE PTR [r9+36], r10b
+	mov BYTE PTR [r9+37], r10b
+	mov BYTE PTR [r9+38], r10b
+	mov BYTE PTR [r9+39], r10b
+	mov BYTE PTR [r9+40], r10b
+	mov BYTE PTR [r9+41], r10b
+	mov BYTE PTR [r9+42], r10b
+	mov BYTE PTR [r9+43], r10b
+	mov BYTE PTR [r9+44], r10b
+	mov BYTE PTR [r9+45], r10b
+	mov BYTE PTR [r9+46], r10b
+	mov BYTE PTR [r9+47], r10b
+	mov BYTE PTR [r9+48], r10b
+	mov BYTE PTR [r9+49], r10b
+	mov BYTE PTR [r9+50], r10b
+	mov BYTE PTR [r9+51], r10b
+	mov BYTE PTR [r9+52], r10b
+	mov BYTE PTR [r9+53], r10b
+	mov BYTE PTR [r9+54], r10b
+	mov BYTE PTR [r9+55], r10b
+	mov BYTE PTR [r9+56], r10b
+	mov BYTE PTR [r9+57], r10b
+	mov BYTE PTR [r9+58], r10b
+	mov BYTE PTR [r9+59], r10b
+	mov BYTE PTR [r9+60], r10b
+	mov BYTE PTR [r9+61], r10b
+	mov BYTE PTR [r9+62], r10b
+	mov BYTE PTR [r9+63], r10b
+	mov BYTE PTR [r9+64], r10b
+	mov BYTE PTR [r9+65], r10b
+	mov BYTE PTR [r9+66], r10b
+	mov BYTE PTR [r9+67], r10b
+	mov BYTE PTR [r9+68], r10b
+	mov BYTE PTR [r9+69], r10b
+	mov BYTE PTR [r9+70], r10b
+	mov BYTE PTR [r9+71], r10b
+	mov r11, r9
+	add r11, 66
+	sub r11, rdx
+	test rdx, rdx
+	je 22f
+24:
+	movzx r10d, BYTE PTR [rsi]
+	mov BYTE PTR [r11], r10b
+	add rsi, 1
+	add r11, 1
+	sub rdx, 1
+	jne 24b
+	jmp 23f
+22:
+23:
+	movzx r10d, BYTE PTR [r9]
+	movzx r11d, BYTE PTR [r9+1]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9], r10b
+	movzx r10d, BYTE PTR [r9+1]
+	movzx r11d, BYTE PTR [r9+2]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+1], r10b
+	movzx r10d, BYTE PTR [r9+2]
+	movzx r11d, BYTE PTR [r9+3]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+2], r10b
+	movzx r10d, BYTE PTR [r9+3]
+	movzx r11d, BYTE PTR [r9+4]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+3], r10b
+	movzx r10d, BYTE PTR [r9+4]
+	movzx r11d, BYTE PTR [r9+5]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+4], r10b
+	movzx r10d, BYTE PTR [r9+5]
+	movzx r11d, BYTE PTR [r9+6]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+5], r10b
+	movzx r10d, BYTE PTR [r9+6]
+	movzx r11d, BYTE PTR [r9+7]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+6], r10b
+	movzx r10d, BYTE PTR [r9+7]
+	movzx r11d, BYTE PTR [r9+8]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+7], r10b
+	movzx r10d, BYTE PTR [r9+8]
+	movzx r11d, BYTE PTR [r9+9]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+8], r10b
+	movzx r10d, BYTE PTR [r9+9]
+	movzx r11d, BYTE PTR [r9+10]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+9], r10b
+	movzx r10d, BYTE PTR [r9+10]
+	movzx r11d, BYTE PTR [r9+11]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+10], r10b
+	movzx r10d, BYTE PTR [r9+11]
+	movzx r11d, BYTE PTR [r9+12]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+11], r10b
+	movzx r10d, BYTE PTR [r9+12]
+	movzx r11d, BYTE PTR [r9+13]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+12], r10b
+	movzx r10d, BYTE PTR [r9+13]
+	movzx r11d, BYTE PTR [r9+14]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+13], r10b
+	movzx r10d, BYTE PTR [r9+14]
+	movzx r11d, BYTE PTR [r9+15]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+14], r10b
+	movzx r10d, BYTE PTR [r9+15]
+	movzx r11d, BYTE PTR [r9+16]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+15], r10b
+	movzx r10d, BYTE PTR [r9+16]
+	movzx r11d, BYTE PTR [r9+17]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+16], r10b
+	movzx r10d, BYTE PTR [r9+17]
+	movzx r11d, BYTE PTR [r9+18]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+17], r10b
+	movzx r10d, BYTE PTR [r9+18]
+	movzx r11d, BYTE PTR [r9+19]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+18], r10b
+	movzx r10d, BYTE PTR [r9+19]
+	movzx r11d, BYTE PTR [r9+20]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+19], r10b
+	movzx r10d, BYTE PTR [r9+20]
+	movzx r11d, BYTE PTR [r9+21]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+20], r10b
+	movzx r10d, BYTE PTR [r9+21]
+	movzx r11d, BYTE PTR [r9+22]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+21], r10b
+	movzx r10d, BYTE PTR [r9+22]
+	movzx r11d, BYTE PTR [r9+23]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+22], r10b
+	movzx r10d, BYTE PTR [r9+23]
+	movzx r11d, BYTE PTR [r9+24]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+23], r10b
+	movzx r10d, BYTE PTR [r9+24]
+	movzx r11d, BYTE PTR [r9+25]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+24], r10b
+	movzx r10d, BYTE PTR [r9+25]
+	movzx r11d, BYTE PTR [r9+26]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+25], r10b
+	movzx r10d, BYTE PTR [r9+26]
+	movzx r11d, BYTE PTR [r9+27]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+26], r10b
+	movzx r10d, BYTE PTR [r9+27]
+	movzx r11d, BYTE PTR [r9+28]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+27], r10b
+	movzx r10d, BYTE PTR [r9+28]
+	movzx r11d, BYTE PTR [r9+29]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+28], r10b
+	movzx r10d, BYTE PTR [r9+29]
+	movzx r11d, BYTE PTR [r9+30]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+29], r10b
+	movzx r10d, BYTE PTR [r9+30]
+	movzx r11d, BYTE PTR [r9+31]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+30], r10b
+	movzx r10d, BYTE PTR [r9+31]
+	movzx r11d, BYTE PTR [r9+32]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+31], r10b
+	movzx r10d, BYTE PTR [r9+32]
+	movzx r11d, BYTE PTR [r9+33]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+32], r10b
+	movzx r10d, BYTE PTR [r9+33]
+	movzx r11d, BYTE PTR [r9+34]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+33], r10b
+	movzx r10d, BYTE PTR [r9+34]
+	movzx r11d, BYTE PTR [r9+35]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+34], r10b
+	movzx r10d, BYTE PTR [r9+35]
+	movzx r11d, BYTE PTR [r9+36]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+35], r10b
+	movzx r10d, BYTE PTR [r9+36]
+	movzx r11d, BYTE PTR [r9+37]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+36], r10b
+	movzx r10d, BYTE PTR [r9+37]
+	movzx r11d, BYTE PTR [r9+38]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+37], r10b
+	movzx r10d, BYTE PTR [r9+38]
+	movzx r11d, BYTE PTR [r9+39]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+38], r10b
+	movzx r10d, BYTE PTR [r9+39]
+	movzx r11d, BYTE PTR [r9+40]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+39], r10b
+	movzx r10d, BYTE PTR [r9+40]
+	movzx r11d, BYTE PTR [r9+41]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+40], r10b
+	movzx r10d, BYTE PTR [r9+41]
+	movzx r11d, BYTE PTR [r9+42]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+41], r10b
+	movzx r10d, BYTE PTR [r9+42]
+	movzx r11d, BYTE PTR [r9+43]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+42], r10b
+	movzx r10d, BYTE PTR [r9+43]
+	movzx r11d, BYTE PTR [r9+44]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+43], r10b
+	movzx r10d, BYTE PTR [r9+44]
+	movzx r11d, BYTE PTR [r9+45]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+44], r10b
+	movzx r10d, BYTE PTR [r9+45]
+	movzx r11d, BYTE PTR [r9+46]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+45], r10b
+	movzx r10d, BYTE PTR [r9+46]
+	movzx r11d, BYTE PTR [r9+47]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+46], r10b
+	movzx r10d, BYTE PTR [r9+47]
+	movzx r11d, BYTE PTR [r9+48]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+47], r10b
+	movzx r10d, BYTE PTR [r9+48]
+	movzx r11d, BYTE PTR [r9+49]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+48], r10b
+	movzx r10d, BYTE PTR [r9+49]
+	movzx r11d, BYTE PTR [r9+50]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+49], r10b
+	movzx r10d, BYTE PTR [r9+50]
+	movzx r11d, BYTE PTR [r9+51]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+50], r10b
+	movzx r10d, BYTE PTR [r9+51]
+	movzx r11d, BYTE PTR [r9+52]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+51], r10b
+	movzx r10d, BYTE PTR [r9+52]
+	movzx r11d, BYTE PTR [r9+53]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+52], r10b
+	movzx r10d, BYTE PTR [r9+53]
+	movzx r11d, BYTE PTR [r9+54]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+53], r10b
+	movzx r10d, BYTE PTR [r9+54]
+	movzx r11d, BYTE PTR [r9+55]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+54], r10b
+	movzx r10d, BYTE PTR [r9+55]
+	movzx r11d, BYTE PTR [r9+56]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+55], r10b
+	movzx r10d, BYTE PTR [r9+56]
+	movzx r11d, BYTE PTR [r9+57]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+56], r10b
+	movzx r10d, BYTE PTR [r9+57]
+	movzx r11d, BYTE PTR [r9+58]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+57], r10b
+	movzx r10d, BYTE PTR [r9+58]
+	movzx r11d, BYTE PTR [r9+59]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+58], r10b
+	movzx r10d, BYTE PTR [r9+59]
+	movzx r11d, BYTE PTR [r9+60]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+59], r10b
+	movzx r10d, BYTE PTR [r9+60]
+	movzx r11d, BYTE PTR [r9+61]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+60], r10b
+	movzx r10d, BYTE PTR [r9+61]
+	movzx r11d, BYTE PTR [r9+62]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+61], r10b
+	movzx r10d, BYTE PTR [r9+62]
+	movzx r11d, BYTE PTR [r9+63]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+62], r10b
+	movzx r10d, BYTE PTR [r9+63]
+	movzx r11d, BYTE PTR [r9+64]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+63], r10b
+	movzx r10d, BYTE PTR [r9+64]
+	movzx r11d, BYTE PTR [r9+65]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+64], r10b
+	movzx r10d, BYTE PTR [r9+65]
+	movzx r11d, BYTE PTR [r9+66]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+65], r10b
+21:
+	mov rsi, r9
+	mov rdx, rcx
+	mov rcx, r8
 	mov r8, rcx
 	mov r9, rdi
 	mov rcx, rdx
@@ -455,7 +1082,7 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+3232], rax
 	mov rsi, r14
 	mov ebx, 0
-20:
+25:
 	movzx eax, BYTE PTR [rdi+rbx*1+2296]
 	mov rdx, rax
 	and rdx, 1
@@ -490,9 +1117,9 @@ vg_ecdsa_p521_verify:
 	mov BYTE PTR [rdi+rbx*8+3311], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 20b
+	jne 25b
 	mov ebx, 0
-21:
+26:
 	movzx eax, BYTE PTR [rdi+rbx*1+928]
 	mov rdx, rax
 	and rdx, 1
@@ -527,9 +1154,9 @@ vg_ecdsa_p521_verify:
 	mov BYTE PTR [rdi+rbx*8+3895], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 21b
+	jne 26b
 	mov ebx, 0
-22:
+27:
 	movzx eax, BYTE PTR [rdi+rbx*1+1000]
 	mov rdx, rax
 	and rdx, 1
@@ -564,7 +1191,7 @@ vg_ecdsa_p521_verify:
 	mov BYTE PTR [rdi+rbx*8+4479], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 22b
+	jne 27b
 	mov rax, QWORD PTR [r10+58]
 	bswap rax
 	mov QWORD PTR [rdi+2224], rax
@@ -939,19 +1566,19 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+3872], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+3880], rax
-23:
+28:
 	mov rcx, r8
 	and rcx, 1
 	test rcx, rcx
-	je 24f
+	je 29f
 	mov rcx, r8
 	and rcx, 127
 	cmp rcx, 64
-	jb 26f
+	jb 211f
 	sub rcx, 128
-	jmp 27f
-26:
-27:
+	jmp 212f
+211:
+212:
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -1005,8 +1632,8 @@ vg_ecdsa_p521_verify:
 	or rbp, rax
 	shr rsi, 7
 	add rbx, 7
-	jmp 25f
-24:
+	jmp 210f
+29:
 	shr r8, 1
 	mov rax, r9
 	shl rax, 63
@@ -1045,9 +1672,9 @@ vg_ecdsa_p521_verify:
 	or rbp, rax
 	shr rsi, 1
 	add rbx, 1
-25:
+210:
 	cmp rbx, 577
-	jb 23b
+	jb 28b
 	mov r8, QWORD PTR [rdi+2584]
 	mov r9, QWORD PTR [rdi+2592]
 	mov r10, QWORD PTR [rdi+2600]
@@ -1205,19 +1832,19 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+5888], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+5896], rax
-28:
+213:
 	mov rcx, r8
 	and rcx, 1
 	test rcx, rcx
-	je 29f
+	je 214f
 	mov rcx, r8
 	and rcx, 31
 	cmp rcx, 16
-	jb 211f
+	jb 216f
 	sub rcx, 32
-	jmp 212f
-211:
-212:
+	jmp 217f
+216:
+217:
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -1271,8 +1898,8 @@ vg_ecdsa_p521_verify:
 	or rbp, rax
 	shr rsi, 5
 	add rbx, 5
-	jmp 210f
-29:
+	jmp 215f
+214:
 	shr r8, 1
 	mov rax, r9
 	shl rax, 63
@@ -1311,9 +1938,9 @@ vg_ecdsa_p521_verify:
 	or rbp, rax
 	shr rsi, 1
 	add rbx, 1
-210:
+215:
 	cmp rbx, 577
-	jb 28b
+	jb 213b
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 424
@@ -4482,7 +5109,7 @@ vg_ecdsa_p521_verify:
 	mov rax, QWORD PTR [rdi+488]
 	mov QWORD PTR [rdi+1280], rax
 	mov ebx, 1
-213:
+218:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -4493,7 +5120,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 214f
+	je 219f
 	mov rdx, QWORD PTR [rdi+7984]
 	or rdx, QWORD PTR [rdi+7992]
 	or rdx, QWORD PTR [rdi+8000]
@@ -4504,7 +5131,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+8040]
 	or rdx, QWORD PTR [rdi+8048]
 	test rdx, rdx
-	je 216f
+	je 221f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -7177,7 +7804,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 218f
+	je 223f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -8109,8 +8736,8 @@ vg_ecdsa_p521_verify:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p}
 	mov rsi, r12
-	jmp 219f
-218:
+	jmp 224f
+223:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -8121,7 +8748,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 220f
+	je 225f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -8176,8 +8803,8 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 221f
-220:
+	jmp 226f
+225:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -8713,10 +9340,10 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+226:
+224:
+	jmp 222f
 221:
-219:
-	jmp 217f
-216:
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -8771,9 +9398,9 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1280]
 	mov QWORD PTR [rdi+1496], rax
-217:
-	jmp 215f
-214:
+222:
+	jmp 220f
+219:
 	mov rax, QWORD PTR [rdi+7840]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+7848]
@@ -8828,7 +9455,7 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+8048]
 	mov QWORD PTR [rdi+1496], rax
-215:
+220:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -8919,7 +9546,7 @@ vg_ecdsa_p521_verify:
 	movdqu XMMWORD PTR [rdx+200], xmm13
 	add rbx, 1
 	cmp rbx, 8
-	jb 213b
+	jb 218b
 	mov ebx, 0
 	mov rax, rbx
 	mov ecx, 216
@@ -9408,10 +10035,10 @@ vg_ecdsa_p521_verify:
 	movabs rax, 0
 	mov QWORD PTR [rdi+1280], rax
 	mov ebx, 577
-222:
+227:
 	sub rbx, 1
 	cmp rbx, 576
-	je 223f
+	je 228f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -10001,14 +10628,14 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 224f
-223:
-224:
+	jmp 229f
+228:
+229:
 	movzx r8d, BYTE PTR [rdi+rbx*1+5320]
 	test r8, r8
-	je 225f
+	je 230f
 	cmp r8, 128
-	jb 227f
+	jb 232f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -10118,8 +10745,8 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1576
-	jmp 228f
-227:
+	jmp 233f
+232:
 	mov rax, r8
 	sub rax, 1
 	shr rax, 1
@@ -10181,7 +10808,7 @@ vg_ecdsa_p521_verify:
 	movdqu XMMWORD PTR [rdi+6080], xmm7
 	movdqu xmm8, XMMWORD PTR [rdx+128]
 	movdqu XMMWORD PTR [rdi+6096], xmm8
-228:
+233:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -10192,7 +10819,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 229f
+	je 234f
 	mov rdx, QWORD PTR [rdi+1648]
 	or rdx, QWORD PTR [rdi+1656]
 	or rdx, QWORD PTR [rdi+1664]
@@ -10203,7 +10830,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1704]
 	or rdx, QWORD PTR [rdi+1712]
 	test rdx, rdx
-	je 231f
+	je 236f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -11656,7 +12283,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 233f
+	je 238f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -11930,8 +12557,8 @@ vg_ecdsa_p521_verify:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p}
 	mov rsi, r12
-	jmp 234f
-233:
+	jmp 239f
+238:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -11942,7 +12569,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 235f
+	je 240f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -11997,8 +12624,8 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 236f
-235:
+	jmp 241f
+240:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -12534,10 +13161,10 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+241:
+239:
+	jmp 237f
 236:
-234:
-	jmp 232f
-231:
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -12592,9 +13219,9 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1280]
 	mov QWORD PTR [rdi+1496], rax
-232:
-	jmp 230f
-229:
+237:
+	jmp 235f
+234:
 	mov rax, QWORD PTR [rdi+1504]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1512]
@@ -12649,7 +13276,7 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1712]
 	mov QWORD PTR [rdi+1496], rax
-230:
+235:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -12704,14 +13331,14 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 226f
-225:
-226:
+	jmp 231f
+230:
+231:
 	movzx r8d, BYTE PTR [rdi+rbx*1+3304]
 	test r8, r8
-	je 237f
+	je 242f
 	cmp r8, 128
-	jb 239f
+	jb 244f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -12802,8 +13429,8 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1576
-	jmp 240f
-239:
+	jmp 245f
+244:
 	mov rax, r8
 	sub rax, 1
 	mov ecx, 144
@@ -12846,7 +13473,7 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1704], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1712], rax
-240:
+245:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -12857,7 +13484,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 241f
+	je 246f
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1864], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -13018,7 +13645,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 243f
+	je 248f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -13286,8 +13913,8 @@ vg_ecdsa_p521_verify:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p}
 	mov rsi, r12
-	jmp 244f
-243:
+	jmp 249f
+248:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -13298,7 +13925,7 @@ vg_ecdsa_p521_verify:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 245f
+	je 250f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -13353,8 +13980,8 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 246f
-245:
+	jmp 251f
+250:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -13890,10 +14517,10 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+251:
+249:
+	jmp 247f
 246:
-244:
-	jmp 242f
-241:
 	mov rax, QWORD PTR [rdi+1504]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1512]
@@ -13948,7 +14575,7 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1712]
 	mov QWORD PTR [rdi+1496], rax
-242:
+247:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -14003,11 +14630,11 @@ vg_ecdsa_p521_verify:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 238f
-237:
-238:
+	jmp 243f
+242:
+243:
 	test rbx, rbx
-	jne 222b
+	jne 227b
 	mov r12, rsi
 	mov esi, 1216
 	mov edx, 1216
@@ -14951,10 +15578,638 @@ vg_ecdsa_p521_verify:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	lea rsp, [rsp+88]
 	ret
 	.p2align 6
 
 vg_ecdsa_p521_verify_adx:
+	lea rsp, [rsp-88]
+	mov r9, rsp
+	add r9, 8
+	cmp rdx, 66
+	jb 20f
+	movzx r10d, BYTE PTR [rsi]
+	mov BYTE PTR [r9], r10b
+	movzx r10d, BYTE PTR [rsi+1]
+	mov BYTE PTR [r9+1], r10b
+	movzx r10d, BYTE PTR [rsi+2]
+	mov BYTE PTR [r9+2], r10b
+	movzx r10d, BYTE PTR [rsi+3]
+	mov BYTE PTR [r9+3], r10b
+	movzx r10d, BYTE PTR [rsi+4]
+	mov BYTE PTR [r9+4], r10b
+	movzx r10d, BYTE PTR [rsi+5]
+	mov BYTE PTR [r9+5], r10b
+	movzx r10d, BYTE PTR [rsi+6]
+	mov BYTE PTR [r9+6], r10b
+	movzx r10d, BYTE PTR [rsi+7]
+	mov BYTE PTR [r9+7], r10b
+	movzx r10d, BYTE PTR [rsi+8]
+	mov BYTE PTR [r9+8], r10b
+	movzx r10d, BYTE PTR [rsi+9]
+	mov BYTE PTR [r9+9], r10b
+	movzx r10d, BYTE PTR [rsi+10]
+	mov BYTE PTR [r9+10], r10b
+	movzx r10d, BYTE PTR [rsi+11]
+	mov BYTE PTR [r9+11], r10b
+	movzx r10d, BYTE PTR [rsi+12]
+	mov BYTE PTR [r9+12], r10b
+	movzx r10d, BYTE PTR [rsi+13]
+	mov BYTE PTR [r9+13], r10b
+	movzx r10d, BYTE PTR [rsi+14]
+	mov BYTE PTR [r9+14], r10b
+	movzx r10d, BYTE PTR [rsi+15]
+	mov BYTE PTR [r9+15], r10b
+	movzx r10d, BYTE PTR [rsi+16]
+	mov BYTE PTR [r9+16], r10b
+	movzx r10d, BYTE PTR [rsi+17]
+	mov BYTE PTR [r9+17], r10b
+	movzx r10d, BYTE PTR [rsi+18]
+	mov BYTE PTR [r9+18], r10b
+	movzx r10d, BYTE PTR [rsi+19]
+	mov BYTE PTR [r9+19], r10b
+	movzx r10d, BYTE PTR [rsi+20]
+	mov BYTE PTR [r9+20], r10b
+	movzx r10d, BYTE PTR [rsi+21]
+	mov BYTE PTR [r9+21], r10b
+	movzx r10d, BYTE PTR [rsi+22]
+	mov BYTE PTR [r9+22], r10b
+	movzx r10d, BYTE PTR [rsi+23]
+	mov BYTE PTR [r9+23], r10b
+	movzx r10d, BYTE PTR [rsi+24]
+	mov BYTE PTR [r9+24], r10b
+	movzx r10d, BYTE PTR [rsi+25]
+	mov BYTE PTR [r9+25], r10b
+	movzx r10d, BYTE PTR [rsi+26]
+	mov BYTE PTR [r9+26], r10b
+	movzx r10d, BYTE PTR [rsi+27]
+	mov BYTE PTR [r9+27], r10b
+	movzx r10d, BYTE PTR [rsi+28]
+	mov BYTE PTR [r9+28], r10b
+	movzx r10d, BYTE PTR [rsi+29]
+	mov BYTE PTR [r9+29], r10b
+	movzx r10d, BYTE PTR [rsi+30]
+	mov BYTE PTR [r9+30], r10b
+	movzx r10d, BYTE PTR [rsi+31]
+	mov BYTE PTR [r9+31], r10b
+	movzx r10d, BYTE PTR [rsi+32]
+	mov BYTE PTR [r9+32], r10b
+	movzx r10d, BYTE PTR [rsi+33]
+	mov BYTE PTR [r9+33], r10b
+	movzx r10d, BYTE PTR [rsi+34]
+	mov BYTE PTR [r9+34], r10b
+	movzx r10d, BYTE PTR [rsi+35]
+	mov BYTE PTR [r9+35], r10b
+	movzx r10d, BYTE PTR [rsi+36]
+	mov BYTE PTR [r9+36], r10b
+	movzx r10d, BYTE PTR [rsi+37]
+	mov BYTE PTR [r9+37], r10b
+	movzx r10d, BYTE PTR [rsi+38]
+	mov BYTE PTR [r9+38], r10b
+	movzx r10d, BYTE PTR [rsi+39]
+	mov BYTE PTR [r9+39], r10b
+	movzx r10d, BYTE PTR [rsi+40]
+	mov BYTE PTR [r9+40], r10b
+	movzx r10d, BYTE PTR [rsi+41]
+	mov BYTE PTR [r9+41], r10b
+	movzx r10d, BYTE PTR [rsi+42]
+	mov BYTE PTR [r9+42], r10b
+	movzx r10d, BYTE PTR [rsi+43]
+	mov BYTE PTR [r9+43], r10b
+	movzx r10d, BYTE PTR [rsi+44]
+	mov BYTE PTR [r9+44], r10b
+	movzx r10d, BYTE PTR [rsi+45]
+	mov BYTE PTR [r9+45], r10b
+	movzx r10d, BYTE PTR [rsi+46]
+	mov BYTE PTR [r9+46], r10b
+	movzx r10d, BYTE PTR [rsi+47]
+	mov BYTE PTR [r9+47], r10b
+	movzx r10d, BYTE PTR [rsi+48]
+	mov BYTE PTR [r9+48], r10b
+	movzx r10d, BYTE PTR [rsi+49]
+	mov BYTE PTR [r9+49], r10b
+	movzx r10d, BYTE PTR [rsi+50]
+	mov BYTE PTR [r9+50], r10b
+	movzx r10d, BYTE PTR [rsi+51]
+	mov BYTE PTR [r9+51], r10b
+	movzx r10d, BYTE PTR [rsi+52]
+	mov BYTE PTR [r9+52], r10b
+	movzx r10d, BYTE PTR [rsi+53]
+	mov BYTE PTR [r9+53], r10b
+	movzx r10d, BYTE PTR [rsi+54]
+	mov BYTE PTR [r9+54], r10b
+	movzx r10d, BYTE PTR [rsi+55]
+	mov BYTE PTR [r9+55], r10b
+	movzx r10d, BYTE PTR [rsi+56]
+	mov BYTE PTR [r9+56], r10b
+	movzx r10d, BYTE PTR [rsi+57]
+	mov BYTE PTR [r9+57], r10b
+	movzx r10d, BYTE PTR [rsi+58]
+	mov BYTE PTR [r9+58], r10b
+	movzx r10d, BYTE PTR [rsi+59]
+	mov BYTE PTR [r9+59], r10b
+	movzx r10d, BYTE PTR [rsi+60]
+	mov BYTE PTR [r9+60], r10b
+	movzx r10d, BYTE PTR [rsi+61]
+	mov BYTE PTR [r9+61], r10b
+	movzx r10d, BYTE PTR [rsi+62]
+	mov BYTE PTR [r9+62], r10b
+	movzx r10d, BYTE PTR [rsi+63]
+	mov BYTE PTR [r9+63], r10b
+	movzx r10d, BYTE PTR [rsi+64]
+	mov BYTE PTR [r9+64], r10b
+	movzx r10d, BYTE PTR [rsi+65]
+	mov BYTE PTR [r9+65], r10b
+	jmp 21f
+20:
+	mov r10d, 0
+	mov BYTE PTR [r9], r10b
+	mov BYTE PTR [r9+1], r10b
+	mov BYTE PTR [r9+2], r10b
+	mov BYTE PTR [r9+3], r10b
+	mov BYTE PTR [r9+4], r10b
+	mov BYTE PTR [r9+5], r10b
+	mov BYTE PTR [r9+6], r10b
+	mov BYTE PTR [r9+7], r10b
+	mov BYTE PTR [r9+8], r10b
+	mov BYTE PTR [r9+9], r10b
+	mov BYTE PTR [r9+10], r10b
+	mov BYTE PTR [r9+11], r10b
+	mov BYTE PTR [r9+12], r10b
+	mov BYTE PTR [r9+13], r10b
+	mov BYTE PTR [r9+14], r10b
+	mov BYTE PTR [r9+15], r10b
+	mov BYTE PTR [r9+16], r10b
+	mov BYTE PTR [r9+17], r10b
+	mov BYTE PTR [r9+18], r10b
+	mov BYTE PTR [r9+19], r10b
+	mov BYTE PTR [r9+20], r10b
+	mov BYTE PTR [r9+21], r10b
+	mov BYTE PTR [r9+22], r10b
+	mov BYTE PTR [r9+23], r10b
+	mov BYTE PTR [r9+24], r10b
+	mov BYTE PTR [r9+25], r10b
+	mov BYTE PTR [r9+26], r10b
+	mov BYTE PTR [r9+27], r10b
+	mov BYTE PTR [r9+28], r10b
+	mov BYTE PTR [r9+29], r10b
+	mov BYTE PTR [r9+30], r10b
+	mov BYTE PTR [r9+31], r10b
+	mov BYTE PTR [r9+32], r10b
+	mov BYTE PTR [r9+33], r10b
+	mov BYTE PTR [r9+34], r10b
+	mov BYTE PTR [r9+35], r10b
+	mov BYTE PTR [r9+36], r10b
+	mov BYTE PTR [r9+37], r10b
+	mov BYTE PTR [r9+38], r10b
+	mov BYTE PTR [r9+39], r10b
+	mov BYTE PTR [r9+40], r10b
+	mov BYTE PTR [r9+41], r10b
+	mov BYTE PTR [r9+42], r10b
+	mov BYTE PTR [r9+43], r10b
+	mov BYTE PTR [r9+44], r10b
+	mov BYTE PTR [r9+45], r10b
+	mov BYTE PTR [r9+46], r10b
+	mov BYTE PTR [r9+47], r10b
+	mov BYTE PTR [r9+48], r10b
+	mov BYTE PTR [r9+49], r10b
+	mov BYTE PTR [r9+50], r10b
+	mov BYTE PTR [r9+51], r10b
+	mov BYTE PTR [r9+52], r10b
+	mov BYTE PTR [r9+53], r10b
+	mov BYTE PTR [r9+54], r10b
+	mov BYTE PTR [r9+55], r10b
+	mov BYTE PTR [r9+56], r10b
+	mov BYTE PTR [r9+57], r10b
+	mov BYTE PTR [r9+58], r10b
+	mov BYTE PTR [r9+59], r10b
+	mov BYTE PTR [r9+60], r10b
+	mov BYTE PTR [r9+61], r10b
+	mov BYTE PTR [r9+62], r10b
+	mov BYTE PTR [r9+63], r10b
+	mov BYTE PTR [r9+64], r10b
+	mov BYTE PTR [r9+65], r10b
+	mov BYTE PTR [r9+66], r10b
+	mov BYTE PTR [r9+67], r10b
+	mov BYTE PTR [r9+68], r10b
+	mov BYTE PTR [r9+69], r10b
+	mov BYTE PTR [r9+70], r10b
+	mov BYTE PTR [r9+71], r10b
+	mov r11, r9
+	add r11, 66
+	sub r11, rdx
+	test rdx, rdx
+	je 22f
+24:
+	movzx r10d, BYTE PTR [rsi]
+	mov BYTE PTR [r11], r10b
+	add rsi, 1
+	add r11, 1
+	sub rdx, 1
+	jne 24b
+	jmp 23f
+22:
+23:
+	movzx r10d, BYTE PTR [r9]
+	movzx r11d, BYTE PTR [r9+1]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9], r10b
+	movzx r10d, BYTE PTR [r9+1]
+	movzx r11d, BYTE PTR [r9+2]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+1], r10b
+	movzx r10d, BYTE PTR [r9+2]
+	movzx r11d, BYTE PTR [r9+3]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+2], r10b
+	movzx r10d, BYTE PTR [r9+3]
+	movzx r11d, BYTE PTR [r9+4]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+3], r10b
+	movzx r10d, BYTE PTR [r9+4]
+	movzx r11d, BYTE PTR [r9+5]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+4], r10b
+	movzx r10d, BYTE PTR [r9+5]
+	movzx r11d, BYTE PTR [r9+6]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+5], r10b
+	movzx r10d, BYTE PTR [r9+6]
+	movzx r11d, BYTE PTR [r9+7]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+6], r10b
+	movzx r10d, BYTE PTR [r9+7]
+	movzx r11d, BYTE PTR [r9+8]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+7], r10b
+	movzx r10d, BYTE PTR [r9+8]
+	movzx r11d, BYTE PTR [r9+9]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+8], r10b
+	movzx r10d, BYTE PTR [r9+9]
+	movzx r11d, BYTE PTR [r9+10]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+9], r10b
+	movzx r10d, BYTE PTR [r9+10]
+	movzx r11d, BYTE PTR [r9+11]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+10], r10b
+	movzx r10d, BYTE PTR [r9+11]
+	movzx r11d, BYTE PTR [r9+12]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+11], r10b
+	movzx r10d, BYTE PTR [r9+12]
+	movzx r11d, BYTE PTR [r9+13]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+12], r10b
+	movzx r10d, BYTE PTR [r9+13]
+	movzx r11d, BYTE PTR [r9+14]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+13], r10b
+	movzx r10d, BYTE PTR [r9+14]
+	movzx r11d, BYTE PTR [r9+15]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+14], r10b
+	movzx r10d, BYTE PTR [r9+15]
+	movzx r11d, BYTE PTR [r9+16]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+15], r10b
+	movzx r10d, BYTE PTR [r9+16]
+	movzx r11d, BYTE PTR [r9+17]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+16], r10b
+	movzx r10d, BYTE PTR [r9+17]
+	movzx r11d, BYTE PTR [r9+18]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+17], r10b
+	movzx r10d, BYTE PTR [r9+18]
+	movzx r11d, BYTE PTR [r9+19]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+18], r10b
+	movzx r10d, BYTE PTR [r9+19]
+	movzx r11d, BYTE PTR [r9+20]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+19], r10b
+	movzx r10d, BYTE PTR [r9+20]
+	movzx r11d, BYTE PTR [r9+21]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+20], r10b
+	movzx r10d, BYTE PTR [r9+21]
+	movzx r11d, BYTE PTR [r9+22]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+21], r10b
+	movzx r10d, BYTE PTR [r9+22]
+	movzx r11d, BYTE PTR [r9+23]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+22], r10b
+	movzx r10d, BYTE PTR [r9+23]
+	movzx r11d, BYTE PTR [r9+24]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+23], r10b
+	movzx r10d, BYTE PTR [r9+24]
+	movzx r11d, BYTE PTR [r9+25]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+24], r10b
+	movzx r10d, BYTE PTR [r9+25]
+	movzx r11d, BYTE PTR [r9+26]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+25], r10b
+	movzx r10d, BYTE PTR [r9+26]
+	movzx r11d, BYTE PTR [r9+27]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+26], r10b
+	movzx r10d, BYTE PTR [r9+27]
+	movzx r11d, BYTE PTR [r9+28]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+27], r10b
+	movzx r10d, BYTE PTR [r9+28]
+	movzx r11d, BYTE PTR [r9+29]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+28], r10b
+	movzx r10d, BYTE PTR [r9+29]
+	movzx r11d, BYTE PTR [r9+30]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+29], r10b
+	movzx r10d, BYTE PTR [r9+30]
+	movzx r11d, BYTE PTR [r9+31]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+30], r10b
+	movzx r10d, BYTE PTR [r9+31]
+	movzx r11d, BYTE PTR [r9+32]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+31], r10b
+	movzx r10d, BYTE PTR [r9+32]
+	movzx r11d, BYTE PTR [r9+33]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+32], r10b
+	movzx r10d, BYTE PTR [r9+33]
+	movzx r11d, BYTE PTR [r9+34]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+33], r10b
+	movzx r10d, BYTE PTR [r9+34]
+	movzx r11d, BYTE PTR [r9+35]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+34], r10b
+	movzx r10d, BYTE PTR [r9+35]
+	movzx r11d, BYTE PTR [r9+36]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+35], r10b
+	movzx r10d, BYTE PTR [r9+36]
+	movzx r11d, BYTE PTR [r9+37]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+36], r10b
+	movzx r10d, BYTE PTR [r9+37]
+	movzx r11d, BYTE PTR [r9+38]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+37], r10b
+	movzx r10d, BYTE PTR [r9+38]
+	movzx r11d, BYTE PTR [r9+39]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+38], r10b
+	movzx r10d, BYTE PTR [r9+39]
+	movzx r11d, BYTE PTR [r9+40]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+39], r10b
+	movzx r10d, BYTE PTR [r9+40]
+	movzx r11d, BYTE PTR [r9+41]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+40], r10b
+	movzx r10d, BYTE PTR [r9+41]
+	movzx r11d, BYTE PTR [r9+42]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+41], r10b
+	movzx r10d, BYTE PTR [r9+42]
+	movzx r11d, BYTE PTR [r9+43]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+42], r10b
+	movzx r10d, BYTE PTR [r9+43]
+	movzx r11d, BYTE PTR [r9+44]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+43], r10b
+	movzx r10d, BYTE PTR [r9+44]
+	movzx r11d, BYTE PTR [r9+45]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+44], r10b
+	movzx r10d, BYTE PTR [r9+45]
+	movzx r11d, BYTE PTR [r9+46]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+45], r10b
+	movzx r10d, BYTE PTR [r9+46]
+	movzx r11d, BYTE PTR [r9+47]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+46], r10b
+	movzx r10d, BYTE PTR [r9+47]
+	movzx r11d, BYTE PTR [r9+48]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+47], r10b
+	movzx r10d, BYTE PTR [r9+48]
+	movzx r11d, BYTE PTR [r9+49]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+48], r10b
+	movzx r10d, BYTE PTR [r9+49]
+	movzx r11d, BYTE PTR [r9+50]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+49], r10b
+	movzx r10d, BYTE PTR [r9+50]
+	movzx r11d, BYTE PTR [r9+51]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+50], r10b
+	movzx r10d, BYTE PTR [r9+51]
+	movzx r11d, BYTE PTR [r9+52]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+51], r10b
+	movzx r10d, BYTE PTR [r9+52]
+	movzx r11d, BYTE PTR [r9+53]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+52], r10b
+	movzx r10d, BYTE PTR [r9+53]
+	movzx r11d, BYTE PTR [r9+54]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+53], r10b
+	movzx r10d, BYTE PTR [r9+54]
+	movzx r11d, BYTE PTR [r9+55]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+54], r10b
+	movzx r10d, BYTE PTR [r9+55]
+	movzx r11d, BYTE PTR [r9+56]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+55], r10b
+	movzx r10d, BYTE PTR [r9+56]
+	movzx r11d, BYTE PTR [r9+57]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+56], r10b
+	movzx r10d, BYTE PTR [r9+57]
+	movzx r11d, BYTE PTR [r9+58]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+57], r10b
+	movzx r10d, BYTE PTR [r9+58]
+	movzx r11d, BYTE PTR [r9+59]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+58], r10b
+	movzx r10d, BYTE PTR [r9+59]
+	movzx r11d, BYTE PTR [r9+60]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+59], r10b
+	movzx r10d, BYTE PTR [r9+60]
+	movzx r11d, BYTE PTR [r9+61]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+60], r10b
+	movzx r10d, BYTE PTR [r9+61]
+	movzx r11d, BYTE PTR [r9+62]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+61], r10b
+	movzx r10d, BYTE PTR [r9+62]
+	movzx r11d, BYTE PTR [r9+63]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+62], r10b
+	movzx r10d, BYTE PTR [r9+63]
+	movzx r11d, BYTE PTR [r9+64]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+63], r10b
+	movzx r10d, BYTE PTR [r9+64]
+	movzx r11d, BYTE PTR [r9+65]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+64], r10b
+	movzx r10d, BYTE PTR [r9+65]
+	movzx r11d, BYTE PTR [r9+66]
+	shl r10, 7
+	shr r11, 1
+	add r10, r11
+	mov BYTE PTR [r9+65], r10b
+21:
+	mov rsi, r9
+	mov rdx, rcx
+	mov rcx, r8
 	mov r8, rcx
 	mov r9, rdi
 	mov rcx, rdx
@@ -15405,7 +16660,7 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+3232], rax
 	mov rsi, r14
 	mov ebx, 0
-20:
+25:
 	movzx eax, BYTE PTR [rdi+rbx*1+2296]
 	mov rdx, rax
 	and rdx, 1
@@ -15440,9 +16695,9 @@ vg_ecdsa_p521_verify_adx:
 	mov BYTE PTR [rdi+rbx*8+3311], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 20b
+	jne 25b
 	mov ebx, 0
-21:
+26:
 	movzx eax, BYTE PTR [rdi+rbx*1+928]
 	mov rdx, rax
 	and rdx, 1
@@ -15477,9 +16732,9 @@ vg_ecdsa_p521_verify_adx:
 	mov BYTE PTR [rdi+rbx*8+3895], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 21b
+	jne 26b
 	mov ebx, 0
-22:
+27:
 	movzx eax, BYTE PTR [rdi+rbx*1+1000]
 	mov rdx, rax
 	and rdx, 1
@@ -15514,7 +16769,7 @@ vg_ecdsa_p521_verify_adx:
 	mov BYTE PTR [rdi+rbx*8+4479], dl
 	add rbx, 1
 	cmp rbx, 72
-	jne 22b
+	jne 27b
 	mov rax, QWORD PTR [r10+58]
 	bswap rax
 	mov QWORD PTR [rdi+2224], rax
@@ -15889,19 +17144,19 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+3872], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+3880], rax
-23:
+28:
 	mov rcx, r8
 	and rcx, 1
 	test rcx, rcx
-	je 24f
+	je 29f
 	mov rcx, r8
 	and rcx, 127
 	cmp rcx, 64
-	jb 26f
+	jb 211f
 	sub rcx, 128
-	jmp 27f
-26:
-27:
+	jmp 212f
+211:
+212:
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -15955,8 +17210,8 @@ vg_ecdsa_p521_verify_adx:
 	or rbp, rax
 	shr rsi, 7
 	add rbx, 7
-	jmp 25f
-24:
+	jmp 210f
+29:
 	shr r8, 1
 	mov rax, r9
 	shl rax, 63
@@ -15995,9 +17250,9 @@ vg_ecdsa_p521_verify_adx:
 	or rbp, rax
 	shr rsi, 1
 	add rbx, 1
-25:
+210:
 	cmp rbx, 577
-	jb 23b
+	jb 28b
 	mov r8, QWORD PTR [rdi+2584]
 	mov r9, QWORD PTR [rdi+2592]
 	mov r10, QWORD PTR [rdi+2600]
@@ -16155,19 +17410,19 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+5888], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+5896], rax
-28:
+213:
 	mov rcx, r8
 	and rcx, 1
 	test rcx, rcx
-	je 29f
+	je 214f
 	mov rcx, r8
 	and rcx, 31
 	cmp rcx, 16
-	jb 211f
+	jb 216f
 	sub rcx, 32
-	jmp 212f
-211:
-212:
+	jmp 217f
+216:
+217:
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -16221,8 +17476,8 @@ vg_ecdsa_p521_verify_adx:
 	or rbp, rax
 	shr rsi, 5
 	add rbx, 5
-	jmp 210f
-29:
+	jmp 215f
+214:
 	shr r8, 1
 	mov rax, r9
 	shl rax, 63
@@ -16261,9 +17516,9 @@ vg_ecdsa_p521_verify_adx:
 	or rbp, rax
 	shr rsi, 1
 	add rbx, 1
-210:
+215:
 	cmp rbx, 577
-	jb 28b
+	jb 213b
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 424
@@ -18195,7 +19450,7 @@ vg_ecdsa_p521_verify_adx:
 	mov rax, QWORD PTR [rdi+488]
 	mov QWORD PTR [rdi+1280], rax
 	mov ebx, 1
-213:
+218:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -18206,7 +19461,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 214f
+	je 219f
 	mov rdx, QWORD PTR [rdi+7984]
 	or rdx, QWORD PTR [rdi+7992]
 	or rdx, QWORD PTR [rdi+8000]
@@ -18217,7 +19472,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+8040]
 	or rdx, QWORD PTR [rdi+8048]
 	test rdx, rdx
-	je 216f
+	je 221f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -19653,7 +20908,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 218f
+	je 223f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -20265,8 +21520,8 @@ vg_ecdsa_p521_verify_adx:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p_adx}
 	mov rsi, r12
-	jmp 219f
-218:
+	jmp 224f
+223:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -20277,7 +21532,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 220f
+	je 225f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -20332,8 +21587,8 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 221f
-220:
+	jmp 226f
+225:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -20869,10 +22124,10 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+226:
+224:
+	jmp 222f
 221:
-219:
-	jmp 217f
-216:
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -20927,9 +22182,9 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1280]
 	mov QWORD PTR [rdi+1496], rax
-217:
-	jmp 215f
-214:
+222:
+	jmp 220f
+219:
 	mov rax, QWORD PTR [rdi+7840]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+7848]
@@ -20984,7 +22239,7 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+8048]
 	mov QWORD PTR [rdi+1496], rax
-215:
+220:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -21075,7 +22330,7 @@ vg_ecdsa_p521_verify_adx:
 	movdqu XMMWORD PTR [rdx+200], xmm13
 	add rbx, 1
 	cmp rbx, 8
-	jb 213b
+	jb 218b
 	add rdi, 6256
 	xor eax, eax
 	mov QWORD PTR [rdi-2232], rax
@@ -26115,10 +27370,10 @@ vg_ecdsa_p521_verify_adx:
 	movabs rax, 0
 	mov QWORD PTR [rdi+1280], rax
 	mov ebx, 577
-222:
+227:
 	sub rbx, 1
 	cmp rbx, 576
-	je 223f
+	je 228f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -26708,14 +27963,14 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 224f
-223:
-224:
+	jmp 229f
+228:
+229:
 	movzx r8d, BYTE PTR [rdi+rbx*1+5320]
 	test r8, r8
-	je 225f
+	je 230f
 	cmp r8, 128
-	jb 227f
+	jb 232f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -26825,8 +28080,8 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1576
-	jmp 228f
-227:
+	jmp 233f
+232:
 	mov rax, r8
 	sub rax, 1
 	shr rax, 1
@@ -26888,7 +28143,7 @@ vg_ecdsa_p521_verify_adx:
 	movdqu XMMWORD PTR [rdi+6080], xmm7
 	movdqu xmm8, XMMWORD PTR [rdx+128]
 	movdqu XMMWORD PTR [rdi+6096], xmm8
-228:
+233:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -26899,7 +28154,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 229f
+	je 234f
 	mov rdx, QWORD PTR [rdi+1648]
 	or rdx, QWORD PTR [rdi+1656]
 	or rdx, QWORD PTR [rdi+1664]
@@ -26910,7 +28165,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1704]
 	or rdx, QWORD PTR [rdi+1712]
 	test rdx, rdx
-	je 231f
+	je 236f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -27723,7 +28978,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 233f
+	je 238f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -27997,8 +29252,8 @@ vg_ecdsa_p521_verify_adx:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p_adx}
 	mov rsi, r12
-	jmp 234f
-233:
+	jmp 239f
+238:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -28009,7 +29264,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 235f
+	je 240f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -28064,8 +29319,8 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 236f
-235:
+	jmp 241f
+240:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -28601,10 +29856,10 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+241:
+239:
+	jmp 237f
 236:
-234:
-	jmp 232f
-231:
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -28659,9 +29914,9 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1280]
 	mov QWORD PTR [rdi+1496], rax
-232:
-	jmp 230f
-229:
+237:
+	jmp 235f
+234:
 	mov rax, QWORD PTR [rdi+1504]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1512]
@@ -28716,7 +29971,7 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1712]
 	mov QWORD PTR [rdi+1496], rax
-230:
+235:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -28771,14 +30026,14 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 226f
-225:
-226:
+	jmp 231f
+230:
+231:
 	movzx r8d, BYTE PTR [rdi+rbx*1+3304]
 	test r8, r8
-	je 237f
+	je 242f
 	cmp r8, 128
-	jb 239f
+	jb 244f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -28869,8 +30124,8 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1576
-	jmp 240f
-239:
+	jmp 245f
+244:
 	mov rax, r8
 	sub rax, 1
 	mov ecx, 144
@@ -28913,7 +30168,7 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1704], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1712], rax
-240:
+245:
 	mov rdx, QWORD PTR [rdi+1216]
 	or rdx, QWORD PTR [rdi+1224]
 	or rdx, QWORD PTR [rdi+1232]
@@ -28924,7 +30179,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1272]
 	or rdx, QWORD PTR [rdi+1280]
 	test rdx, rdx
-	je 241f
+	je 246f
 	mov rax, QWORD PTR [rdi+1072]
 	mov QWORD PTR [rdi+1864], rax
 	mov rax, QWORD PTR [rdi+1080]
@@ -29085,7 +30340,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+1992]
 	or rdx, QWORD PTR [rdi+2000]
 	test rdx, rdx
-	je 243f
+	je 248f
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1936
@@ -29353,8 +30608,8 @@ vg_ecdsa_p521_verify_adx:
 	mov ecx, 1936
 	call {vg_p521_mul_mod_p_adx}
 	mov rsi, r12
-	jmp 244f
-243:
+	jmp 249f
+248:
 	mov rdx, QWORD PTR [rdi+2080]
 	or rdx, QWORD PTR [rdi+2088]
 	or rdx, QWORD PTR [rdi+2096]
@@ -29365,7 +30620,7 @@ vg_ecdsa_p521_verify_adx:
 	or rdx, QWORD PTR [rdi+2136]
 	or rdx, QWORD PTR [rdi+2144]
 	test rdx, rdx
-	je 245f
+	je 250f
 	movabs rax, 0
 	mov QWORD PTR [rdi+1288], rax
 	movabs rax, 0
@@ -29420,8 +30675,8 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+1496], rax
-	jmp 246f
-245:
+	jmp 251f
+250:
 	mov r12, rsi
 	mov esi, 1720
 	mov edx, 1216
@@ -29957,10 +31212,10 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+56], r14
 	mov QWORD PTR [rdi+64], r15
 	sub rdi, 1360
+251:
+249:
+	jmp 247f
 246:
-244:
-	jmp 242f
-241:
 	mov rax, QWORD PTR [rdi+1504]
 	mov QWORD PTR [rdi+1288], rax
 	mov rax, QWORD PTR [rdi+1512]
@@ -30015,7 +31270,7 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1488], rax
 	mov rax, QWORD PTR [rdi+1712]
 	mov QWORD PTR [rdi+1496], rax
-242:
+247:
 	mov rax, QWORD PTR [rdi+1288]
 	mov QWORD PTR [rdi+1072], rax
 	mov rax, QWORD PTR [rdi+1296]
@@ -30070,11 +31325,11 @@ vg_ecdsa_p521_verify_adx:
 	mov QWORD PTR [rdi+1272], rax
 	mov rax, QWORD PTR [rdi+1496]
 	mov QWORD PTR [rdi+1280], rax
-	jmp 238f
-237:
-238:
+	jmp 243f
+242:
+243:
 	test rbx, rbx
-	jne 222b
+	jne 227b
 	mov r12, rsi
 	mov esi, 1216
 	mov edx, 1216
@@ -30698,6 +31953,7 @@ vg_ecdsa_p521_verify_adx:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	lea rsp, [rsp+88]
 	ret
 	.p2align 6
 
