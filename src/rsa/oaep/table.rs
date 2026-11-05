@@ -1,13 +1,5 @@
-//! The hash functions as the verified functions take them, tables of
-//! functions of the interface `Hash` (`crate::arch::fn_tables`): one
-//! `vg_rsa_oaep_encrypt_precomputed` and one `vg_rsa_oaep_decrypt`, with
-//! the label's hash function and MGF1's each any of the hash functions,
-//! rather than one for each hash function or pair of them.
-//!
-//! `table` chooses a hash function's table, as the backends of the hash
-//! functions choose their implementations (`crate::hashes::tables`); each
-//! architecture's file (`x86_64.rs`, …) names its verified functions for
-//! each implementation of the RSA operations (`oaep_functions!`).
+//! The hash functions as the tables of functions that RSAES-OAEP's verified
+//! functions take.
 
 use crate::hashes::tables::TableHash;
 use crate::rsa::pkcs1_sig::Hash;

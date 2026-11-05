@@ -1,18 +1,12 @@
-//! Finite-field Diffie–Hellman, for the component API used by cryptography.
+//! Finite-field Diffie–Hellman, with the components API of pyca/cryptography:
+//! parameter and key generation, public-key validation and the exchange.
 //!
-//! Public-key validation and exchange call the verified FFDH operations.
-//! Exchange secret exponentiation follows a fixed schedule over the public encoding
-//! length supplied at import, or the public sampling bound for generated keys.
-//! All domain arithmetic and secret exponentiation run in verified code.
-//! Private-key generation samples and validates the scalar in verified code,
-//! which also retries rejected attempts and asks for the random bytes they
-//! need. Rust obtains random bytes and packs inputs and results. Parameter
-//! generation runs entirely in verified code, including its attempt limit
-//! and entropy requests; Rust allocates and fills the random tape it asks
-//! for. Parameter generation is available on every supported architecture.
-//! Imported parameters receive structural and algebraic checks; callers must
-//! establish primality/provenance. Optional q enables subgroup checks.
-//! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
+//! Imported parameters are checked for structure and consistency, not
+//! primality: their source must be trusted. With `q` given, public keys are
+//! also checked to be in its subgroup. The exchange returns exactly ⌈bits(p)/8⌉
+//! bytes, not passed through a KDF; its timing depends on the length of the
+//! public encoding the private key was imported with (for a generated key, the
+//! public sampling bound), not on the private key's value.
 
 #![cfg(all(
     any(
@@ -24,6 +18,11 @@
     ),
     feature = "alloc"
 ))]
+
+// Every operation, parameter and key generation included (their candidates,
+// retries, attempt limits and requests for random bytes), is verified code;
+// the Rust here lays out and pads the values, allocates the working space,
+// serves the random bytes (`crate::entropy`) and chooses the implementation.
 
 mod arithmetic;
 mod domain;

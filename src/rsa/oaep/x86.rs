@@ -1,9 +1,4 @@
-//! RSAES-OAEP's verified functions on 32-bit x86: `vg_rsa_oaep_encrypt_precomputed`
-//! and `vg_rsa_oaep_decrypt` (contracts
-//! `VG.Spec.RsaOaep.encryptTablesContract` and `decryptTablesContract`),
-//! which take the label's hash function and MGF1's as tables, for each
-//! implementation of the RSA operations (`crate::rsa::Backend`), which
-//! `table::oaep_functions!` chooses from.
+//! RSAES-OAEP's verified functions on 32-bit x86.
 
 #![cfg(all(target_arch = "x86", feature = "alloc"))]
 

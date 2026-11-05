@@ -1,12 +1,5 @@
-//! HMAC (FIPS 198-1, RFC 2104), for any hash function with a verified HMAC
-//! implementation.
-//!
-//! The construction is the same for every hash function `H` ([`HmacHash`]);
-//! what each one provides, in a module of its own here, is verified
-//! assembly for a key of any length, which computes
-//! `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`): a key
-//! longer than a block is hashed by the verified `init` itself (FIPS 198-1
-//! §4, steps 1–3).
+//! HMAC (FIPS 198-1, RFC 2104) with keys of any length, over MD5, SHA-1 or a
+//! SHA-2 hash function ([`HmacHash`]).
 
 #![cfg(any(
     target_arch = "x86_64",

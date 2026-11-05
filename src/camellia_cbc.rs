@@ -1,15 +1,7 @@
-//! Camellia-CBC (SP 800-38A §6.2, with Camellia as in RFC 3713) with 128-,
-//! 192- and 256-bit keys, in place and without padding.
+//! Camellia-CBC (SP 800-38A §6.2, with Camellia as in RFC 3713) with 128-, 192-
+//! and 256-bit keys, in place and without padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_camellia_expand_key` (contract `VG.Spec.Camellia.expandKeyContract`)
-//! writes the subkeys, and `vg_camellia_cbc_encrypt_chained` and
-//! `vg_camellia_cbc_decrypt_chained` (`VG.Spec.Camellia.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the key schedule and the chaining
-//! value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

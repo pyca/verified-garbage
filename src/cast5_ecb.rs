@@ -1,11 +1,8 @@
-//! CAST5 (CAST-128, RFC 2144) ECB, in place and without padding.
+//! CAST5-ECB (CAST-128, RFC 2144) with 5- to 16-byte keys (§2.5), in place and
+//! without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives
-//! (`VG.Spec.Cast5.expandKeyContract`, `ecbEncryptContract` and
-//! `ecbDecryptContract`), whose timing depends on neither the key nor the
-//! data. Keys contain 5 to 16 bytes (40 to 128 bits, RFC 2144 §2.5); a key of
-//! up to 10 bytes is used with 12 rounds, a longer one with 16. Each
-//! operation accepts complete eight-byte blocks, including empty input.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

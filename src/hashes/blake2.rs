@@ -1,14 +1,4 @@
-//! The Rust types of BLAKE2b and BLAKE2s (RFC 7693), shared by `blake2b` and
-//! `blake2s`.
-//!
-//! `vg_blake2{b,s}_init`, `vg_blake2{b,s}_update` and
-//! `vg_blake2{b,s}_finalize` for the target architecture (contracts
-//! `VG.Spec.Blake2.initBContract`, … `finalizeSContract`) maintain a
-//! streaming state that represents the data absorbed so far
-//! (`VG.Spec.Blake2.Repr`: the hash state after all its blocks but the last,
-//! followed by that last block, which the final compression needs to know
-//! about). The Rust types only keep that state together with the length of
-//! the data, which the contracts take as an argument.
+//! What BLAKE2b and BLAKE2s (RFC 7693) share.
 
 #![cfg(any(
     target_arch = "x86_64",

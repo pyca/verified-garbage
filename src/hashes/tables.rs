@@ -1,14 +1,6 @@
-//! The hash functions as the verified functions that take one at run time
-//! take it: a table of functions (`crate::arch::fn_tables`), of the
-//! interface `Hash` (its streaming functions, as RSAES-OAEP's label and
-//! MGF1 use it), `MdHash` (with its compression function, as RSASSA-PSS
-//! uses it) or `Hmac` (HMAC over it, as deterministic ECDSA uses it).
-//!
-//! Each hash function's module names the tables of each of its
-//! implementations (`streaming_hash!`'s `tables`), on each architecture; the
-//! table for a CPU is that of the implementation the hash function runs on
-//! it (its backend's `select`), so a table's functions are those the hash
-//! function would call itself.
+//! The hash functions as tables of functions, for the verified functions that
+//! take a hash function at run time (RSAES-OAEP, RSASSA-PSS, deterministic
+//! ECDSA).
 
 use crate::arch::fn_tables;
 use crate::hashes::md5::Md5Backend;

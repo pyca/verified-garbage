@@ -1,16 +1,7 @@
-//! SEED-CBC (SP 800-38A §6.2, with SEED as in RFC 4269), in place and
-//! without padding.
+//! SEED-CBC (SP 800-38A §6.2, with SEED as in RFC 4269), in place and without
+//! padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_seed_expand_key` (contract `VG.Spec.Seed.expandKeyContract`) writes
-//! the key schedule, and `vg_seed_cbc_encrypt_chained` and
-//! `vg_seed_cbc_decrypt_chained` (`VG.Spec.Seed.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, and the chaining value with
-//! the one to continue from, the last ciphertext block, in constant time:
-//! their timing depends on none of the key, the chaining value and the data.
-//! This module checks the lengths and holds the key schedule and the chaining
-//! value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

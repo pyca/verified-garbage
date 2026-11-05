@@ -1,8 +1,4 @@
-//! ECDSA over P-256: deterministic signatures with HMAC over any hash function
-//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p256_sign`),
-//! and verification (`vg_ecdsa_p256_verify`), and their variants on CPUs with
-//! the features their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on
-//! ARMv7.
+//! ECDSA over P-256.
 
 #![cfg(any(
     target_arch = "x86_64",

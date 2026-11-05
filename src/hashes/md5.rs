@@ -1,13 +1,7 @@
 //! MD5 (RFC 1321).
 //!
-//! MD5 is broken as a collision-resistant hash function: use it only where
-//! an existing protocol or file format requires it.
-//!
-//! `vg_md5_init`, `vg_md5_update` and `vg_md5_finalize` (contracts
-//! `VG.Spec.Md5.initContract`, `updateContract` and `finalizeContract`)
-//! maintain a streaming state that represents the message absorbed so far
-//! (`VG.Spec.Md5.Repr`: the MD buffer after its whole blocks, and its
-//! remaining bytes), and pad it and output the digest.
+//! MD5 is broken as a collision-resistant hash function: use it only where an
+//! existing protocol or file format requires it.
 
 #![cfg(any(
     target_arch = "x86_64",

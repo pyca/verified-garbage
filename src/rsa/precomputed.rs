@@ -1,8 +1,5 @@
-//! The values of a public key's modulus that its operations take
-//! (`VG.Spec.Rsa.publicPrecompute`), computed by the verified
-//! `vg_rsa_public_precompute` at the key's first operation, as OpenSSL and
-//! AWS-LC set up their Montgomery values at a key's first operation: loading
-//! a key only checks it.
+//! A public key's precomputed modulus values, computed at the key's first
+//! operation.
 
 use super::{Backend, public_scratch_words};
 use alloc::{boxed::Box, vec, vec::Vec};

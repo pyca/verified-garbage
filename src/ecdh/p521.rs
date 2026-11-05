@@ -1,5 +1,4 @@
-//! ECDH over P-521 (`vg_ecdh_p521`), and its `_adx` variant on x86-64 CPUs with
-//! the features its `_FEATURES` constant names.
+//! ECDH over P-521.
 
 #![cfg(any(
     target_arch = "x86_64",

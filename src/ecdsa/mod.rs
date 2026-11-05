@@ -1,35 +1,12 @@
-//! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
+//! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2), over
+//! the curves of [`ec`](crate::ec), with MD5, SHA-1 or a SHA-2 hash function
+//! ([`SignatureHash<C>`]).
 //!
-//! A [`SigningKey<C>`] holds a private key on a curve `C` of
-//! [`ec`](crate::ec), and signs with a hash
-//! function `H` that the curve has signatures with ([`SignatureHash<C>`]), as
-//! in `key.sign::<Sha256>(message)`.
-//!
-//! Every curve signs with every hash function with HMAC: MD5, SHA-1 and the
-//! SHA-2 family. Each signature is one call of verified code for the curve,
-//! `vg_ecdsa_<curve>_sign` (contract
-//! `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which takes HMAC
-//! over the hash function as a table of the interface `Hmac`
-//! (`crate::arch::fn_tables`, chosen by `crate::hashes::tables`): the table
-//! of the implementation of the hash function that this CPU runs; and its
-//! variants for the curve's multiplications (`_adx` with BMI2 and ADX on
-//! x86-64, `_umaal` on ARMv7), on CPUs with the features their `_FEATURES`
-//! constants name.
-//!
-//! The verified code derives the per-message secret number `k` from the key
-//! and the hash with HMAC, as RFC 6979 does, and signs with it. It checks
-//! the key, and tries further candidates for `k` when one is unsuitable.
-//!
-//! Signing is constant time except for the number of candidates for `k`
-//! that it tries, almost always one.
-//!
-//! A [`PublicKey<C>`] checks a signature with a hash function `H`
-//! (`key.verify::<Sha256>(message, signature)`) by one
-//! call of verified code (`vg_ecdsa_<curve>_verify`, contract
-//! `VG.Spec.Ecdsa.Instance.verifyContract`) with the hash's leftmost bits,
-//! as many as the curve's order has (FIPS 186-5 §6.4.2), which also checks
-//! that the key is valid (SP 800-56A §5.6.2.3.3). It runs in constant time,
-//! although nothing it handles is secret.
+//! Signing's timing may depend on how many candidates for the per-message
+//! secret `k` it tries (almost always one), but not otherwise on the key or the
+//! message. Verification with a [`PublicKey<C>`] uses as many of the hash's
+//! leftmost bits as the curve's order has (FIPS 186-5 §6.4.2), and validates
+//! the key (SP 800-56A §5.6.2.3.3).
 
 #![cfg(any(
     target_arch = "x86_64",

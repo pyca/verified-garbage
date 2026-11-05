@@ -1,17 +1,4 @@
 //! SHA-384 (FIPS 180-4).
-//!
-//! SHA-384 is SHA-512 from another initial hash value, with its digest the
-//! first 48 bytes of the final hash value. `vg_sha384_init` (contract
-//! `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`) makes a SHA-512
-//! streaming state represent the empty message, hashed from SHA-384's
-//! initial hash value (`VG.Spec.Sha512.Repr`); SHA-512's `vg_sha512_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha384_finalize` (`finalizeDigestContract` for
-//! `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`) outputs its digest, the
-//! result of the whole algorithm.
-//!
-//! The implementations of `update` and `finalize` are chosen as SHA-512's
-//! (see `super::sha512`).
 
 #![cfg(any(
     target_arch = "x86_64",

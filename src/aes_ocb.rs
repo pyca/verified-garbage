@@ -1,28 +1,10 @@
-//! AES-OCB (OCB3, RFC 7253) with 128-, 192- and 256-bit AES keys.
+//! AES-OCB (OCB3, RFC 7253) with 128-, 192- and 256-bit keys.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_ocb_init` (contract
-//! `VG.Spec.Ocb.initContract`) writes the key context (the key schedule and
-//! `L_*`), and `vg_aes_ocb_seal` and `vg_aes_ocb_open` (`sealContract`,
-//! `openContract`) are `OCB-ENCRYPT` and `OCB-DECRYPT` (§4.2, §4.3) in one
-//! call each, HASH of the associated data included, in constant time. `open`
-//! checks the tag in constant time and overwrites the data with zeros when it
-//! is wrong. This module checks the nonce's length, which the assembly does
-//! not, and holds the key context.
-//!
-//! # Tags
-//!
-//! The length of the tag is a parameter of OCB: it is part of the nonce's
-//! first block (§4.2). It is a type parameter here, `T` in
-//! [`AesOcb::encrypt_in_place`] and [`AesOcb::decrypt_in_place`], so that it
-//! is fixed in the caller's code and never comes from a message (see
-//! `crate::aes_gcm`): 1 to 16 bytes, checked at compile time. §3.1 defines
-//! the AEADs with tags of 16, 12 and 8 bytes.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones; on x86, the `_aesni` ones; on AArch64, the `_aes`
-//! ones.
+//! A nonce must never be used twice with the same key. The tag length, 1 to 16
+//! bytes, is a type parameter, `T` in [`AesOcb::encrypt_in_place`] and
+//! [`AesOcb::decrypt_in_place`], so that it is fixed in the caller's code and
+//! never taken from a message (see `crate::aes_gcm`); RFC 7253 §3.1 defines the
+//! AEADs with tags of 16, 12 and 8 bytes.
 
 #![cfg(any(
     target_arch = "x86",

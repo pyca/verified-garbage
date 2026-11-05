@@ -1,61 +1,17 @@
-//! The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also the
-//! signature verification primitive RSAVP1 (§5.2.2), and the private-key
-//! operation: RSADP (§5.1.2), which is also the signature primitive RSASP1
-//! (§5.2.1), without any padding.
+//! Raw RSA (RFC 8017): the public-key operation RSAEP, which is also RSAVP1
+//! (§5.1.1, §5.2.2), and the private-key operation RSADP, which is also RSASP1
+//! (§5.1.2, §5.2.1), without padding; and, in its submodules, key generation
+//! and the padding schemes.
 //!
-//! A key's first operation runs the verified `vg_rsa_public_precompute`
-//! (contract `VG.Spec.Rsa.publicPrecomputeContract`), which checks the
-//! modulus and computes what Montgomery multiplication needs of it, once for
-//! the key, as OpenSSL and AWS-LC set up their Montgomery values at a key's
-//! first operation: loading the key only checks the modulus as it does. The
-//! operation is the verified `vg_rsa_public_precomputed_checked` (contract
-//! `VG.Spec.Rsa.publicPrecomputedCheckedContract`), which checks the public
-//! exponent within BoringSSL's limits (odd, from 3 to `2^33 - 1`) and the
-//! input, computes `input^e mod n`, and writes it out. Their timing may
-//! depend on the public key (`n` and `e`) but not on the input.
-//!
-//! The private-key operation, with a key in the Chinese remainder form
-//! `(p, q, dP, dQ, qInv)` (§3.2) and its public exponent `e`, is the verified
-//! `vg_rsa_private_checked` (contract `VG.Spec.Rsa.privateCheckedContract`),
-//! which checks the key and the input, computes the result `m` of §5.1.2's
-//! step 2.b, and releases it only if `m^e mod n` is the input, as BoringSSL
-//! does: a fault in the computation, or a key whose values do not match, is
-//! never released ([`Error::Fault`]). Its timing may depend on the public key
-//! and the lengths of `p` and `q`, but not on the input or on the private
-//! key's values.
-//!
-//! A private key can also be loaded from its modulus, its exponents and its
-//! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
-//! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
-//! computes, or from `(n, e, d)` alone, whose primes the verified
-//! `vg_rsa_recover_primes_det` (contract
-//! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers by SP 800-56B Rev. 2
-//! Appendix C.2. The timing of the first may depend on `n` but not on the
-//! private key; that of the second on `n` and `e` only.
-//!
-//! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
-//! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
-//! `VG.Spec.Rsa.checkKeyContract`): `d < n`, `p q = n`, `d` and the CRT
-//! exponents inverse to `e` modulo `p - 1` and `q - 1`, `qInv < p` and
-//! `q qInv ≡ 1 (mod p)`. Its timing may depend on the public key and the
-//! lengths of the private values, but not on their values. Loading a key does
-//! not run it.
-//!
-//! The variants of `vg_rsa_public_precompute`,
-//! `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, with
-//! the same contracts, are chosen with `Backend::select`, on CPUs with the features their `_FEATURES` constants
-//! (and those of the functions built on them) name: on x86-64, the
-//! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
-//! `vg_rsa_private_checked` (with the `_adx` ones of the others), then the
-//! `_adx` ones; on ARMv7 under Linux, Android and the BSDs, the `_umaal`
-//! ones.
-//!
-//! This module only checks the lengths, the form of the modulus and the
-//! public exponent, and allocates the memory they work in.
-//!
-//! This is a primitive for building padding schemes (OAEP, PSS, PKCS #1
-//! v1.5) on: raw RSA on its own is not a secure encryption or signature
-//! scheme.
+//! Raw RSA is not a secure encryption or signature scheme: use the padding
+//! schemes, [`oaep`], [`pss`], [`pkcs1_sig`] or (for compatibility only)
+//! [`pkcs1_enc`]. Public exponents are odd, from 3 to `2^33 - 1` (BoringSSL's
+//! limits). The private-key operation releases its result only if raising it to
+//! `e` gives back the input, so a fault, or a key whose values do not match, is
+//! never released ([`Error::Fault`]). Loading a key checks only its modulus;
+//! [`PrivateKey::check_key`] checks the rest, as BoringSSL's `RSA_check_key`
+//! does. The timing may depend on the public key and the lengths of the private
+//! values, but not on the input or the private values themselves.
 
 #![cfg(all(
     any(

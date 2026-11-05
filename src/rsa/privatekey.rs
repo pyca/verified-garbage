@@ -1,7 +1,4 @@
-//! The RSA private-key operation (RSADP with the CRT, checked against the
-//! public exponent), the loading of a private key from its CRT values, from
-//! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
-//! parent module.
+//! The RSA private key: its loading, its check and its operation.
 
 #![cfg(any(
     target_arch = "x86_64",

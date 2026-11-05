@@ -1,17 +1,7 @@
-//! Camellia-CFB128 (SP 800-38A §6.3 with 128-bit segments, with Camellia as
-//! in RFC 3713) with 128-, 192- and 256-bit keys, in place.
+//! Camellia-CFB128 (SP 800-38A §6.3 with 128-bit segments, with Camellia as in
+//! RFC 3713) with 128-, 192- and 256-bit keys, in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_camellia_expand_key` (contract `VG.Spec.Camellia.expandKeyContract`)
-//! writes the subkeys, and `vg_camellia_cfb128_encrypt` and
-//! `vg_camellia_cfb128_decrypt` (`VG.Spec.Camellia.cfbEncryptContract`,
-//! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or
-//! `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the last
-//! ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. This module holds the subkeys and the
-//! chaining value, and handles a partial last segment: CFB encryption of a zero
-//! block is `CIPH_K` of the block to continue from, whose first bytes it XORs
-//! into the rest of the input.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

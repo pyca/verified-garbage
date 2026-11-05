@@ -1,19 +1,8 @@
-//! AES-ECB (SP 800-38A §6.1) with 128-, 192- and 256-bit keys, in place
-//! and without padding.
+//! AES-ECB (SP 800-38A §6.1) with 128-, 192- and 256-bit keys, in place and
+//! without padding.
 //!
-//! ECB is the block cipher applied to each block on its own, so the whole
-//! mode is verified assembly: `vg_aes_expand_key` (contract
-//! `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`
-//! (`encryptBlocksContract`, `decryptBlocksContract`) replace each block
-//! with its `CIPHER` or `INVCIPHER`, in constant time. This module checks
-//! the lengths, which the assembly does not, and holds the key schedule.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

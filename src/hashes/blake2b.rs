@@ -1,11 +1,5 @@
-//! BLAKE2b (RFC 7693): digests of 1 to 64 bytes, unkeyed or keyed with up
-//! to 64 bytes, over 64-bit words (see `blake2` for how the verified
-//! functions are used).
-//!
-//! The variants of `vg_blake2b_update` and `vg_blake2b_finalize`, with the
-//! same contracts, are chosen on x86-64 CPUs with the features their
-//! `_FEATURES` constants name, in this order: the `_avx512` ones, then the
-//! `_avx2` ones.
+//! BLAKE2b (RFC 7693): digests of 1 to 64 bytes, unkeyed or keyed with up to 64
+//! bytes.
 
 #![cfg(any(
     target_arch = "x86_64",

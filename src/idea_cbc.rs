@@ -1,16 +1,7 @@
-//! IDEA-CBC (SP 800-38A §6.2, with IDEA as in Lai, 1992), in place and
-//! without padding.
+//! IDEA-CBC (SP 800-38A §6.2, with IDEA as in Lai, 1992), in place and without
+//! padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_idea_expand_key` and `vg_idea_invert_key` (contracts
-//! `VG.Spec.Idea.expandKeyContract`, `invertKeyContract`) write the encryption
-//! and decryption subkeys, and `vg_idea_cbc_encrypt_chained` and
-//! `vg_idea_cbc_decrypt_chained` (`VG.Spec.Idea.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, and the chaining value with the
-//! one to continue from, the last ciphertext block, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the subkeys.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

@@ -1,26 +1,4 @@
 //! Wiping secrets from memory the library owns.
-//!
-//! What is wiped:
-//!
-//! * ML-KEM, ML-DSA, Ed25519, Ed448, ECDSA, ECDH, DSA, X25519, X448, RSA
-//!   and FFDH wipe their private keys when they are dropped, and the
-//!   intermediate values and working space of each operation (FIPS 203
-//!   §3.3, FIPS 204 §3.6.3). X25519 and X448 also wipe their shared secrets
-//!   (`SharedSecret`) when they are dropped.
-//! * Every other object holding key material (the ciphers, AEADs and MACs,
-//!   and the hash functions, whose state represents the key under HMAC,
-//!   PBKDF2 or keyed BLAKE2) wipes it when it is dropped.
-//! * The password KDFs' `verify` functions wipe the key they derive once
-//!   they have compared it with the expected one.
-//!
-//! What is not: the working space (`scratch`) of the symmetric algorithms'
-//! calls; the stack the verified functions use, which their contracts do not
-//! promise to wipe (but RC4's, `VG.Spec.Rc4`); and the copies of states the
-//! Rust code makes on the stack when it moves or copies them (e.g. the context
-//! of each ChaCha20-Poly1305 call, which holds the key, or the blocks of PBKDF2
-//! and scrypt), which the next calls overwrite; and anything once it has been
-//! returned to the caller (e.g. a MAC, a derived key or another shared secret),
-//! whose wiping is the caller's.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -30,6 +8,20 @@
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
+
+// What is wiped: every object holding key material (private keys, and the
+// ciphers', AEADs', MACs' and hash functions' states, which hold the key under
+// HMAC, PBKDF2 or keyed BLAKE2) when it is dropped, and so are X25519's and
+// X448's `SharedSecret`s; the asymmetric operations' intermediate values and
+// working space (FIPS 203 §3.3, FIPS 204 §3.6.3); and the key the password
+// KDFs' `verify` functions derive, once compared.
+//
+// What is not: the symmetric algorithms' `scratch`; the verified functions'
+// stack, which their contracts do not promise to wipe (but RC4's); copies of
+// states the Rust code makes on the stack when it moves them (e.g. each
+// ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
+// calls overwrite; and what is returned to the caller (a MAC, a derived key or
+// another shared secret).
 
 mod sealed {
     pub trait Sealed {}

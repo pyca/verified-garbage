@@ -1,8 +1,4 @@
-//! P-384's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses, on CPUs with the features their
-//! `_FEATURES` constants name, the `_adx` variants on x86-64 and the
-//! `_umaal` ones on ARMv7.
+//! P-384's multiplications and public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",

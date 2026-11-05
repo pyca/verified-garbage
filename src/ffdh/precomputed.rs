@@ -1,6 +1,8 @@
-//! Immutable public key-generation data, initialized once after domain checking.
-//! The representation and metadata are written by verified code; Rust neither
-//! recognizes groups nor derives an exponent width from private bytes.
+//! A domain's public key-generation data, computed once after the domain is
+//! checked.
+
+// Verified code writes the representation and its metadata: the Rust neither
+// recognizes groups nor derives an exponent width from private bytes.
 
 use super::arithmetic::Backend;
 use crate::cpu::detected;

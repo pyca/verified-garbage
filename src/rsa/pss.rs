@@ -1,37 +1,11 @@
-//! RSASSA-PSS (RFC 8017 §8.1) of a hash value, with the keys of
-//! [`crate::rsa`].
+//! RSASSA-PSS (RFC 8017 §8.1) of a hash value, with the keys of [`crate::rsa`],
+//! and with MD5, SHA-1 or a SHA-2 hash function for the message and for MGF1.
 //!
-//! [`sign`] is the verified `vg_rsa_pss_sign` (contract
-//! `VG.Spec.RsaPss.signTableContract`): EMSA-PSS's encoding of the hash value
-//! with a salt of random bytes (RFC 8017 §9.1.1), then the private-key
-//! operation checked against the public exponent
-//! (`VG.Spec.Rsa.privateChecked`), which releases the signature only if it
-//! passes the check, as BoringSSL's `RSA_sign_pss_mgf1` does. Its timing
-//! may depend on the public key, the hash functions and the lengths, but not
-//! on the hash value, the salt or the private key.
-//!
-//! [`verify`] is the verified `vg_rsa_pss_verify_precomputed` (contract
-//! `VG.Spec.RsaPss.verifyPrecomputedTableContract`): RSAVP1, then
-//! EMSA-PSS-VERIFY (RFC 8017 §9.1.2), expecting a salt of a given length or
-//! of any length ([`SaltLength::Any`], BoringSSL's `RSA_PSS_SALTLEN_AUTO`),
-//! as BoringSSL's `RSA_verify_pss_mgf1` does. Its timing may depend on the
-//! public key, the hash functions, the lengths and the expected salt length,
-//! but not on the signature, the hash value or anything computed from them
-//! but the result. Verification reuses the public-key values cached by
-//! [`PublicKey::new`].
-//!
-//! The hash function and MGF1's are any of MD5, SHA-1, SHA-224, SHA-256,
-//! SHA-384, SHA-512, SHA-512/224 and SHA-512/256: the verified functions
-//! take the hash function as a table of functions of the interface `MdHash`
-//! and MGF1's as one of `Hash` (`table.rs`). The variants of each function,
-//! with the same contract, are one for each implementation of the RSA
-//! operations that [`rsa`](crate::rsa) chooses, and each hash function's
-//! tables are those of the implementation its backend in
-//! [`hashes`](crate::hashes) chooses. Each architecture's file (`x86_64.rs`,
-//! `aarch64.rs`) names its tables and its verified functions (`pss_functions!`).
-//!
-//! This module only checks the lengths, draws the salt and allocates the
-//! memory the functions work in.
+//! [`sign`] releases a signature only if it verifies with the public exponent.
+//! [`verify`] expects a salt of a given length or of any length
+//! ([`SaltLength::Any`]). The timing may depend on the public key, the hash
+//! functions, the lengths and the expected salt length, but not on the hash
+//! value, the salt, the signature or the private key.
 
 #![cfg(all(
     any(

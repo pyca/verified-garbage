@@ -1,18 +1,7 @@
 //! Blowfish-CFB64 (SP 800-38A §6.3 with 64-bit segments, with Blowfish as in
 //! Schneier, FSE 1994), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
-//! writes the schedule, and `vg_blowfish_cfb64_encrypt` and
-//! `vg_blowfish_cfb64_decrypt` (`VG.Spec.Blowfish.cfbEncryptContract`,
-//! `cfbDecryptContract`) replace whole blocks with their CFB encryption or
-//! decryption from the block at `iv`, which they replace with the last
-//! ciphertext block, in constant time: their timing depends on none of the key,
-//! the chaining value and the data. This module holds the schedule and the
-//! chaining value, and handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
-//! MSB_u(CIPH_K(Cₙ₋₁))`): CFB encryption of a zero block gives `CIPH_K` of the
-//! block to continue from, whose first bytes it XORs into the rest of the
-//! input.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

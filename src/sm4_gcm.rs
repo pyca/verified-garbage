@@ -1,42 +1,23 @@
 //! SM4-GCM: GCM (NIST SP 800-38D) with SM4 (GB/T 32907-2016, transcribed in
-//! the Internet-Draft draft-ribose-cfrg-sm4-10) as its block cipher, the
-//! `AEAD_SM4_GCM` of RFC 8998 §3.5.1, with 16-byte keys.
+//! draft-ribose-cfrg-sm4-10), the `AEAD_SM4_GCM` of RFC 8998 §3.5.1, with
+//! 16-byte keys, for whole messages and incrementally.
 //!
-//! Key setup, in-place AEAD and the streaming operations are verified
-//! assembly, with the contracts of `VG.Spec.Sm4.Gcm`: `vg_sm4_gcm_init`
-//! (`initContract`) writes the key context (SM4's key schedule and the hash
-//! subkey `H`, in AES-GCM's layout), `vg_sm4_gcm_seal` and `vg_sm4_gcm_open`
-//! (`sealContract`, `openContract`) are GCM-AE and GCM-AD (§7), and
-//! `vg_sm4_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
-//! `_verify` keep a streaming state (`VG.Spec.Gcm.StreamRepr`). `open` and
-//! `verify` check the tag, in constant time, and `open` decrypts only if it
-//! matches. This module checks the lengths of §5.2.1.1, which the assembly
-//! does not, and holds the key context and the state.
-//!
-//! An [`Sm4Gcm`] is a key: it encrypts and decrypts whole messages at once,
-//! and starts incremental ones with [`Sm4Gcm::encryptor`] and
-//! [`Sm4Gcm::decryptor`], which borrow it. **An [`Sm4GcmDecryptor`]'s
-//! `update` returns plaintext that has not been authenticated yet**: nothing
-//! may act on it before its `finalize` has succeeded. When the whole message
-//! fits in memory, [`Sm4Gcm::decrypt_in_place`] checks the tag before it
-//! decrypts.
-//!
-//! The functions but `init` have variants, with the same contracts, chosen
-//! on CPUs with the features of `seal`'s `_FEATURES` constants (which are
-//! every other function's): on x86-64, the `_vpclmul` ones, then the
-//! `_pclmul` ones; on x86, the `_pclmul` ones; on AArch64, the `_aes` ones.
-//! Which one a key calls depends only on the CPU.
+//! A nonce must never be used twice with the same key. **An
+//! [`Sm4GcmDecryptor`]'s `update` returns plaintext that has not been
+//! authenticated**: act on none of it before its `finalize` succeeds, or, when
+//! the message fits in memory, use [`Sm4Gcm::decrypt_in_place`], which checks
+//! the tag before it decrypts.
 //!
 //! # Tags
 //!
-//! Encryption returns the full 16-byte tag (RFC 8998's length); a protocol
-//! that sends a shorter one sends its first bytes. Decryption takes a
-//! `&[u8; 16]` ([`Sm4Gcm::decrypt_in_place`], [`Sm4GcmDecryptor::finalize`]),
-//! or, for a protocol that truncates the tag, a `&[u8; N]` whose length `N`
-//! is a type parameter ([`Sm4Gcm::decrypt_in_place_truncated`],
-//! [`Sm4GcmDecryptor::finalize_truncated`]): 4 through 16 bytes, checked at
-//! compile time, as AES-GCM's (see [`crate::aes_gcm`]'s documentation for
-//! why the length is never taken from a slice).
+//! Encryption returns the full 16-byte tag (RFC 8998's length); a protocol that
+//! sends a shorter one sends its first bytes. Decryption takes a `&[u8; 16]`
+//! ([`Sm4Gcm::decrypt_in_place`], [`Sm4GcmDecryptor::finalize`]) or, for a
+//! truncated tag, a `&[u8; N]` with `N` from 4 to 16 fixed at compile time
+//! ([`Sm4Gcm::decrypt_in_place_truncated`],
+//! [`Sm4GcmDecryptor::finalize_truncated`]), as AES-GCM's does: see
+//! [`crate::aes_gcm`] for why the length is never a slice's, and for which
+//! lengths SP 800-38D allows.
 
 #![cfg(any(
     target_arch = "x86",

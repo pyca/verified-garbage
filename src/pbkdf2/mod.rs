@@ -1,8 +1,5 @@
-//! PBKDF2 (RFC 8018 §5.2), with HMAC as the pseudorandom function: a module
-//! here for each hash function with a verified implementation.
-//!
-//! [`pbkdf2_hmac`] is one call of the hash's verified `vg_pbkdf2_hmac_<hash>`,
-//! which derives the whole key.
+//! PBKDF2 (RFC 8018 §5.2) with HMAC over MD5, SHA-1 or a SHA-2 hash function as
+//! its pseudorandom function.
 
 #![cfg(any(
     target_arch = "x86_64",

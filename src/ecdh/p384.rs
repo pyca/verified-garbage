@@ -1,5 +1,4 @@
-//! ECDH over P-384 (`vg_ecdh_p384`), and its variants on CPUs with the features
-//! their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on ARMv7.
+//! ECDH over P-384.
 
 #![cfg(any(
     target_arch = "x86_64",

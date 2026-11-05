@@ -1,7 +1,4 @@
-//! ECDSA over P-521: deterministic signatures with HMAC over any hash function
-//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p521_sign`),
-//! and verification (`vg_ecdsa_p521_verify`), and their variants on CPUs with
-//! the features their `_FEATURES` constants name: `_adx` on x86-64.
+//! ECDSA over P-521.
 
 #![cfg(any(
     target_arch = "x86_64",

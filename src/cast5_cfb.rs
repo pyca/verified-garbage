@@ -1,16 +1,7 @@
-//! CAST5-CFB64 (SP 800-38A §6.3 with 64-bit segments, with CAST5 as in
-//! RFC 2144), in place.
+//! CAST5-CFB64 (SP 800-38A §6.3 with 64-bit segments, with CAST5 as in RFC
+//! 2144), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_cast5_expand_key` (contract `VG.Spec.Cast5.expandKeyContract`) writes
-//! the subkeys, and `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`
-//! (`VG.Spec.Cast5.cfbEncryptContract`, `cfbDecryptContract`) replace whole
-//! blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at
-//! `iv`, which they replace with the last ciphertext block, in constant time:
-//! their timing depends on none of the key, the chaining value and the data.
-//! This module holds the subkeys and the chaining value, and handles a partial
-//! last segment: CFB encryption of a zero block is `CIPH_K` of the block to
-//! continue from, whose first bytes it XORs into the rest of the input.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

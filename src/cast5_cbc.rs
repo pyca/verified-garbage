@@ -1,16 +1,7 @@
-//! CAST5-CBC (SP 800-38A §6.2, with CAST5 as in RFC 2144), in place and
-//! without padding.
+//! CAST5-CBC (SP 800-38A §6.2, with CAST5 as in RFC 2144), in place and without
+//! padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_cast5_expand_key` (contract `VG.Spec.Cast5.expandKeyContract`) writes
-//! the subkeys, and `vg_cast5_cbc_encrypt_chained` and
-//! `vg_cast5_cbc_decrypt_chained` (`VG.Spec.Cast5.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, and the chaining value with the
-//! one to continue from, the last ciphertext block, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the key schedule and the chaining
-//! value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

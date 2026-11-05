@@ -1,22 +1,8 @@
-//! X25519 (RFC 7748), Diffie-Hellman on Curve25519.
+//! X25519 (RFC 7748 §5), Diffie-Hellman on Curve25519.
 //!
-//! The whole function is the verified `vg_x25519` (contract
-//! `VG.Spec.X25519.x25519Contract`): `X25519(k, u)` of RFC 7748 §5, the
-//! scalar decoded (clamped) and the u-coordinate's top bit masked as the RFC
-//! specifies, in constant time. This module gives it working space, and
-//! destroys what it leaves there.
-//!
-//! [`public_key`](PrivateKey::public_key) is the verified `vg_x25519_base`
-//! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`.
-//!
-//! The variants of both, with the same contracts, are chosen by
-//! `Backend::select` on CPUs with the features their `_FEATURES` constants
-//! name: on x86-64, the `_ifma` ones, then the `_adx` ones; on ARMv7,
-//! `vg_x25519_umaal`.
-//!
-//! [`exchange`](PrivateKey::exchange) is `vg_x25519` of the private key and
-//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
-//! public key of small order gives (RFC 7748 §6.1), in constant time.
+//! [`exchange`](PrivateKey::exchange) rejects the all-zero shared secret that a
+//! public key of small order gives (§6.1), and returns the shared secret raw,
+//! not passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",

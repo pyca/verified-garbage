@@ -1,18 +1,8 @@
-//! TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) with two- and three-key TDEA
-//! (16- and 24-byte keys) and the full 8-byte MAC.
+//! TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) with two- and three-key TDEA (16- and
+//! 24-byte keys) and the full 8-byte MAC.
 //!
-//! The computation is the verified assembly for the target architecture,
-//! on a streaming state this module holds without looking into it:
-//! `vg_cmac_triple_des_stream_init` (contract
-//! `VG.Spec.Cmac.tdesStreamInitContract`) expands the key into the state,
-//! `vg_cmac_triple_des_absorb` (`VG.Spec.Cmac.tdesAbsorbContract`) absorbs
-//! data, holding back the message's last bytes, and
-//! `vg_cmac_triple_des_finish` (`VG.Spec.Cmac.tdesFinishContract`) writes the
-//! MAC. This module keeps the length of the message so far, which the state
-//! does not store, and compares MACs.
-//!
-//! TDEA's 64-bit block makes it a poor choice for new protocols (see NIST
-//! SP 800-131A): this is for interoperating with existing ones.
+//! TDEA's 64-bit block makes it a poor choice for new protocols (NIST SP
+//! 800-131A): this is for interoperating with existing ones.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,14 +1,8 @@
-//! Blowfish-ECB (Schneier, FSE 1994), without padding:
-//! [`BlowfishEcbEncryptor`] and [`BlowfishEcbDecryptor`].
+//! Blowfish-ECB (Schneier, FSE 1994), incrementally and without padding:
+//! `finalize` rejects a trailing partial block.
 //!
-//! Key expansion and the encryption and decryption of whole blocks are the
-//! verified primitives (`VG.Spec.Blowfish.expandKeyContract`,
-//! `VG.Spec.Blowfish.ecbEncryptContract` and
-//! `VG.Spec.Blowfish.ecbDecryptContract`). This wrapper checks the key's
-//! length before key expansion and keeps the bytes of a partial block until
-//! the next update completes it; updates write the whole blocks they
-//! complete to the caller's buffer, so nothing is allocated; finalization
-//! rejects a trailing partial block.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86",

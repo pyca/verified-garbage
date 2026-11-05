@@ -1,4 +1,4 @@
-//! ECDH over P-192 (`vg_ecdh_p192`).
+//! ECDH over P-192.
 
 #![cfg(any(
     target_arch = "x86_64",

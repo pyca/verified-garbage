@@ -1,7 +1,4 @@
-//! P-521's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses the `_adx` variants on x86-64 CPUs with
-//! the features their `_FEATURES` constants name.
+//! P-521's multiplications and public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",

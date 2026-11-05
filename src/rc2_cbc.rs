@@ -1,13 +1,7 @@
-//! RC2-CBC (RFC 2268), without padding: [`Rc2CbcEncryptor`] and
-//! [`Rc2CbcDecryptor`].
-//!
-//! Initialization and updates are the verified streaming primitives
-//! (`VG.Spec.Rc2.cbcInitContract` and `VG.Spec.Rc2.cbcUpdateContract`),
-//! which keep the key schedule, chaining value and pending partial block in
-//! an opaque context. This wrapper keeps only the number of pending bytes;
-//! the direction is the type. Updates write the whole blocks they complete
-//! to the caller's buffer, so nothing is allocated; finalization rejects a
+//! RC2-CBC (RFC 2268), incrementally and without padding: `finalize` rejects a
 //! trailing partial block.
+//!
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",

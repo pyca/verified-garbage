@@ -1,4 +1,4 @@
-//! Public arithmetic for FFDH, and the selection of its implementations.
+//! FFDH's public arithmetic, and the choice of its implementation.
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
     VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,

@@ -1,22 +1,7 @@
 //! AES-CFB128 (SP 800-38A §6.3, with 128-bit segments) with 128-, 192- and
 //! 256-bit keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`
-//! (`VG.Spec.Cfb.aesEncryptContract`, `aesDecryptContract`) replace whole
-//! blocks with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the
-//! block at `iv`, which they replace with the last ciphertext block, in
-//! constant time. This module holds the key schedule and the chaining value,
-//! and handles a partial last segment: CFB encryption of a zero block is
-//! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
-//! rest of the input, in either direction.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",

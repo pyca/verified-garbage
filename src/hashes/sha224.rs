@@ -1,17 +1,4 @@
 //! SHA-224 (FIPS 180-4).
-//!
-//! SHA-224 is SHA-256 from another initial hash value, with its digest the
-//! first 28 bytes of the final hash value. `vg_sha224_init` (contract
-//! `VG.Spec.Sha256.init224Contract`) makes a SHA-256 streaming state
-//! represent the empty message, hashed from SHA-224's initial hash value
-//! (`VG.Spec.Sha256.ReprFrom`); SHA-256's `vg_sha256_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
-//! digest.
-//!
-//! `vg_sha224_finalize` and `vg_sha224_digest`, which hashes the whole
-//! message in one call (contract `VG.Spec.Sha256.digestContract`), have a
-//! variant for each of SHA-256's, chosen the same way (see `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",

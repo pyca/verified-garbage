@@ -1,16 +1,7 @@
-//! Triple DES-CBC (SP 800-38A §6.2, with Triple DES as in FIPS 46-3), in
-//! place and without padding.
+//! Triple DES-CBC (SP 800-38A §6.2, with Triple DES as in FIPS 46-3), in place
+//! and without padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_triple_des_expand_key` (contract `VG.Spec.TripleDes.expandKeyContract`)
-//! writes the key schedule, and `vg_triple_des_cbc_encrypt_chained` and
-//! `vg_triple_des_cbc_decrypt_chained`
-//! (`VG.Spec.TripleDes.cbcEncryptChainedContract`, `cbcDecryptChainedContract`)
-//! replace each block with its CBC encryption or decryption from the chaining
-//! value at `iv`, and the chaining value with the one to continue from, the
-//! last ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. This module checks the lengths and
-//! holds the key schedule and the chaining value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
