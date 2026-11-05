@@ -12,24 +12,31 @@ functions of `Impl/Sha3/RISCV64/Stream.lean`, which run in frames on the
 stack and take no working space.
 
 `vg_mlkem_sample_ntt(seed = a0, a = a1, scratch = a2) -> a0`: the 2048
-bytes of `scratch` hold the Keccak state (`[0, 200)`), the 840 bytes of XOF
-output (`[840, 1680)`), and our caller's `s7`–`s9` and our return address
-(`[1680, 1712)`). `s7`, `s8` and `s9` keep `seed`, `a` and `scratch`
-across the calls (the callees preserve them). The state is zeroed (the
-empty message), the 34 bytes of the seed absorbed with rate 168, the SHAKE
-padding (`0x1f`) absorbed, and 840 bytes squeezed: 280 chunks of three
+bytes of `scratch` hold the Keccak state (`[0, 200)`), up to 840 bytes of
+XOF output (`[840, 1680)`), and our caller's `s7`–`s9` and our return
+address (`[1680, 1712)`). `s7`, `s8` and `s9` keep `seed`, `a` and
+`scratch` across the calls (the callees preserve them).
+
+A try with `N` chunks (`sampleTry N`): the state zeroed (the empty
+message), the 34 bytes of the seed absorbed with rate 168, the SHAKE
+padding (`0x1f`) absorbed, and `3 N` bytes squeezed: `N` chunks of three
 bytes, which the loop of Algorithm 7 then goes through (`rejBody`), with
 `a0` the next chunk, `a1` the next coefficient of `a`, `a2` the number `j`
 of coefficients accepted, `a3` the chunks left and `q` in `t3`. A candidate
 `d` is accepted if `d < q` and `j < 256`: the AND of the sign bits of
-`d - q` and `j - 256` is not zero. It returns `j >> 8`: 1 if `j = 256`.
+`d - q` and `j - 256` is not zero.
+
+Three blocks (504 bytes, 168 chunks) almost always give 256 coefficients,
+so the function tries `N = 168` first, and only if that leaves `j < 256`
+tries again from the start with `N = 280` (840 bytes), as on AArch64
+(`Impl/MlKem/AArch64/Sample.lean`). It returns `j >> 8`: 1 if `j = 256`.
 
 The function has no stack frame of its own; the sponge functions' frames
 use the 1168 bytes below the stack pointer.
 
-The loop's branches depend on the XOF output, a function of the seed, which
-the contract lets the function leak; every address depends only on the
-pointers and on `j`, likewise.
+The loop's branches, and whether the second try runs, depend on the XOF
+output, a function of the seed, which the contract lets the function leak;
+every address depends only on the pointers and on `j`, likewise.
 -/
 
 @[expose] public section
@@ -44,10 +51,10 @@ def zeroState (b : Reg) : List Instr :=
   [.li .t0 0] ++ (List.range 25).flatMap fun k => [.store .d .t0 b (8 * k)]
 
 /-- Our caller's registers and our return address saved, the arguments
-moved to `s7`–`s9`, the state zeroed. -/
-def sampleSetup : List Instr :=
+moved to `s7`–`s9`. -/
+def sampleSave : List Instr :=
   [.store .d .s7 .a2 1680, .store .d .s8 .a2 1688, .store .d .s9 .a2 1696, .store .d .ra .a2 1704,
-    mov .s7 .a0, mov .s8 .a1, mov .s9 .a2] ++ zeroState .s9
+    mov .s7 .a0, mov .s8 .a1, mov .s9 .a2]
 
 /-- `absorb(state, 168, 0, seed, 34)`. -/
 def absorbSeedArgs : List Instr := [mov .a0 .s9, .li .a1 168, .li .a2 0, mov .a3 .s7, .li .a4 34]
@@ -55,8 +62,9 @@ def absorbSeedArgs : List Instr := [mov .a0 .s9, .li .a1 168, .li .a2 0, mov .a3
 /-- `pad(state, 168, pos, 0x1f)`, with `pos` from `absorb`. -/
 def padArgs : List Instr := [mov .a2 .a0, mov .a0 .s9, .li .a1 168, .li .a3 0x1f]
 
-/-- `squeeze(state, 168, 0, scratch + 840, 840)`. -/
-def squeezeArgs : List Instr := [mov .a0 .s9, .li .a1 168, .li .a2 0, .addi .a3 .s9 840, .li .a4 840]
+/-- `squeeze(state, 168, 0, scratch + 840, len)`. -/
+def squeezeArgs (len : Nat) : List Instr :=
+  [mov .a0 .s9, .li .a1 168, .li .a2 0, .addi .a3 .s9 840, .li .a4 len]
 
 /-- `t2 = 0` unless the candidate `d` is accepted: `d < q` (`q` in `t3`) and
 `j = a2 < 256`. -/
@@ -88,12 +96,22 @@ def sampleEnd : List Instr :=
   [.shift .srl .d .a0 .a2 8, .load .d .ra .s9 1704, .load .d .s7 .s9 1680, .load .d .s8 .s9 1688,
     .load .d .s9 .s9 1696]
 
-def sampleNTT : Prog isa :=
-  .seq (.block sampleSetup)
+/-- The loop's registers, for `N` chunks. -/
+def loopInit (N : Nat) : List Instr := [.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 N] ++ liq .t3 3329
+
+/-- A try: SHAKE128 of the seed from the zero state, `3 N` bytes of it, and
+`N` iterations on them. -/
+def sampleTry (N : Nat) : Prog isa :=
+  .seq (.block (zeroState .s9))
   (.seq (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb))
   (.seq (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad))
-  (.seq (.seq (.block squeezeArgs) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
-  (.seq (.block ([.addi .a0 .s9 840, mov .a1 .s8, .li .a2 0, .li .a3 280] ++ liq .t3 3329))
-  (.seq (.loop rejBody (.nonzero .a3)) (.block sampleEnd))))))
+  (.seq (.seq (.block (squeezeArgs (3 * N))) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
+  (.seq (.block (loopInit N)) (.loop rejBody (.nonzero .a3))))))
+
+def sampleNTT : Prog isa :=
+  .seq (.block sampleSave)
+  (.seq (sampleTry 168)
+  (.seq (.block [.shift .srl .d .t0 .a2 8])
+  (.seq (.ite (.zero .t0) (sampleTry 280) (.block [])) (.block sampleEnd))))
 
 end VG.Impl.MlKem.RISCV64
