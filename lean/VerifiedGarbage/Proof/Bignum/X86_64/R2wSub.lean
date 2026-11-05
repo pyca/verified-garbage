@@ -70,22 +70,22 @@ theorem sbbSt_ok (s : State) {aX aD : Addr} {c : Bool}
 /-- After words `0, …, j - 1` of `mulSub` from `s₀`, for `q̂` in `rcx`: the
 words `T_j` of `t`, the carry `r9` and the borrow `b`:
 `T_j + q̂ M_j = X_(j-1) 2^64 + 2^(64 j) (r9 + b)`. -/
-structure MsInv (s₀ : State) (B : Addr) (Z ex em et q : Nat) (j : Nat) (t : State) : Prop where
+structure MsInv (s₀ : State) (B : Addr) (Z ex em et q : Nat) (j : Nat) (t : State) (digit : Nat := 0) : Prop where
   scr : Scr t B Z
   keep : Keep [.rax, .rdx, .rbp, .r9, .r14] s₀ t
   r14 : t.gpr .r14 = BitVec.ofNat 64 j
   out : Outside B et (8 * j) s₀.mem t.mem
   val : ∃ b : Bool, t.gpr .rbp = mask b ∧
-    wv t.mem B et j + q * wv s₀.mem B em j = wv s₀.mem B ex (j - 1) * 2 ^ 64 + 2 ^ (64 * j) * ((t.gpr .r9).toNat + b.toNat)
+    wv t.mem B et j + q * wv s₀.mem B em j = wv s₀.mem B ex (j - 1) * 2 ^ 64 + digit + 2 ^ (64 * j) * ((t.gpr .r9).toNat + b.toNat)
 
-theorem msStep_ok {s₀ : State} {B : Addr} {Z w ex em et : Nat}
+theorem msStep_ok {s₀ : State} {B : Addr} {Z w ex em et digit : Nat}
     (hbx : s₀.gpr .rbx = off B ex) (h10 : s₀.gpr .r10 = off B em) (h8 : s₀.gpr .r8 = off B et)
     (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w) (hw : w < 2 ^ 31) (hX : ex + 8 * w ≤ Z) (hM : em + 8 * w ≤ Z)
     (hT : et + 8 * (w + 1) ≤ Z)
     (sX : et + 8 * (w + 1) ≤ ex ∨ ex + 8 * w ≤ et) (sM : et + 8 * (w + 1) ≤ em ∨ em + 8 * w ≤ et)
-    {j : Nat} (hj1 : 1 ≤ j) (hj : j < w) {t : State} (hI : MsInv s₀ B Z ex em et (s₀.gpr .rcx).toNat j t) :
+    {j : Nat} (hj1 : 1 ≤ j) (hj : j < w) {t : State} (hI : MsInv s₀ B Z ex em et (s₀.gpr .rcx).toNat j t digit) :
     WP isa (.block (subBody ++ ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t fun t' =>
-      t'.zf = some (decide (j + 1 = w)) ∧ MsInv s₀ B Z ex em et (s₀.gpr .rcx).toNat (j + 1) t' := by
+      t'.zf = some (decide (j + 1 = w)) ∧ MsInv s₀ B Z ex em et (s₀.gpr .rcx).toNat (j + 1) t' digit := by
   have hn := hI.scr.nowrap
   have tbx : t.gpr .rbx = off B ex := (hI.keep.gpr (by decide)).trans hbx
   have t10 : t.gpr .r10 = off B em := (hI.keep.gpr (by decide)).trans h10

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 
 -- separate module: `cvMain_ok` uses the inverse, whose proofs import algebra, and `CvMain` is imported by many modules
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
+import VerifiedGarbage.Proof.Rsa.X86_64.WordChoice
 import VerifiedGarbage.Proof.Rsa.X86_64.CvInv
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -63,7 +64,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   have hf : I.P * I.Q = I.N → I.P % 2 = 1 ∧ 1 < I.P ∧ I.Q % 2 = 1 ∧ 1 < I.Q :=
     factors_of hNo hlo hPl hQl L.pl2 L.ql2
   -- `qInv` and `gcd(q, p) = 1`.
-  refine wp_seqs_append (by simp [invPart]) (by simp [divisor]) (WP.mono (cvInv_ok h₃ L m₃ (by rw [vP₃]; exact hPl) (by rw [vQ₃]; exact hQl) (fun hc => by
+  refine wp_seqs_append (by simp [invPart]) (by simp) (WP.mono (cvInv_ok h₃ L m₃ (by rw [vP₃]; exact hPl) (by rw [vQ₃]; exact hQl) (fun hc => by
     rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
   rw [vP₃, vQ₃] at m₄ i₄
   have vP₄ : wv s₄.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₄ aP (.inl rfl), vP₃]
@@ -74,13 +75,14 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   rw [hok] at m₄
   have hokP : I.ok = true → I.P * I.Q = I.N ∧ Nat.gcd I.Q I.P = 1 := fun hc => of_decide_eq_true hc
   -- `dP` into `aV`.
-  refine wp_seqs_append (by simp [divisor]) (by simp) (WP.mono (cvDivPart_ok h₄ L (j := aP) (.inl rfl))
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (cvWordChoice_ok h₄ L (j := aP) (.inl rfl) vP₄ vQ₄
+    (fun hm => (hokP ((mask_true_iff _).mp (m₄.symm.trans hm))).1) hv)
     fun s₅ ⟨h₅, m₅, d₅, p₅⟩ => ?_)
   rw [vP₄, vD₄] at d₅
   -- `dP` into `aX₁`.
   have hZ' := h₅.ws.hZ
   have hn' := h₅.ws.scr.nowrap
-  refine wp_seqs_append (by simp) (by simp [divisor]) ?_
+  refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   refine WP.seq (WP.mono (zeroA_ok h₅.ws (j := aX₁) (by decide)) fun s₆ ⟨_, o₆, k₆⟩ => ?_)
   have h₆ := h₅.arr (by decide) (Nat.le_refl _) o₆ k₆ (by decide)
@@ -103,7 +105,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
   have dP₇ : I.ok = true → wv s₇.mem I.B (slot (wk I.k) aX₁) (wk I.k) = I.D % (I.P - 1) := fun hc => by
     obtain ⟨hpq, -⟩ := hokP hc
     have hfp := hf hpq
-    have e := d₅ hfp.1 hfp.2.1
+    have e := d₅ (by rw [m₄, hc])
     rw [c₇, ot o₆ (Nat.le_refl _) (by decide) (by decide)]
     rw [← e]
     refine wv_low_of_lt (by omega_arith) ?_
@@ -111,9 +113,11 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     have : I.D % (I.P - 1) < I.P - 1 := Nat.mod_lt _ (by omega_arith)
     omega_arith
   -- `dQ` into `aV`.
+  have vP₇ : wv s₇.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [pr₇ aP (by simp), vP₄]
   have vQ₇ : wv s₇.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [pr₇ aQ (by simp), vQ₄]
   have vD₇ : wv s₇.mem I.B (slot (wk I.k) aD) (wk I.k) = I.D := by rw [pr₇ aD (by simp), vD₄]
-  refine wp_seqs_append (by simp [divisor]) (by simp [storeA]) (WP.mono (cvDivPart_ok h₇ L (j := aQ) (.inr rfl))
+  refine wp_seqs_append (by simp) (by simp [storeA]) (WP.mono (cvWordChoice_ok h₇ L (j := aQ) (.inr rfl) vP₇ vQ₇
+    (fun hm => (hokP ((mask_true_iff _).mp (m₇.symm.trans hm))).1) hv)
     fun s₈ ⟨h₈, m₈, d₈, p₈⟩ => ?_)
   rw [vQ₇, vD₇] at d₈
   rw [m₇] at m₈
@@ -162,7 +166,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     · rfl
     · obtain ⟨hpq, -⟩ := hokP hc
       have hfp := hf hpq
-      have e := d₈ hfp.2.2.1 hfp.2.2.2
+      have e := d₈ (by rw [m₇, hc])
       have := pow256_le_wk I.ql
       have : I.D % (I.Q - 1) < I.Q - 1 := Nat.mod_lt _ (by omega_arith)
       simp only [ite_true]
