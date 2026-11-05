@@ -7,6 +7,9 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Derive.Verified
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 import Mathlib.Tactic.Finiteness.Attr
