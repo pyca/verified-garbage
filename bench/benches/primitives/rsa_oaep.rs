@@ -43,7 +43,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::oaep::Hash;
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -111,7 +111,8 @@ pub fn bench(c: &mut Criterion) {
         for key in sizes {
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let k = n.len();
-            let vg_key = PublicKey::new(&n, &e).unwrap();
+            let vg_key =
+                PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e)).unwrap();
             let openssl_key = PKey::from_rsa(
                 Rsa::from_public_components(
                     BigNum::from_slice(&n).unwrap(),
@@ -142,14 +143,14 @@ pub fn bench(c: &mut Criterion) {
                 // verified-garbage decrypts aws-lc-rs's ciphertext.
                 let ct = aws_key.encrypt(alg, &msg, &mut out, None).unwrap();
                 let vg_private = PrivateKey::from_crt(
-                    &n,
-                    &e,
-                    &key.d().to_vec(),
-                    &key.p().unwrap().to_vec(),
-                    &key.q().unwrap().to_vec(),
-                    &key.dmp1().unwrap().to_vec(),
-                    &key.dmq1().unwrap().to_vec(),
-                    &key.iqmp().unwrap().to_vec(),
+                    BigUint::from_be_bytes(&n),
+                    BigUint::from_be_bytes(&e),
+                    BigUint::from_be_bytes(&key.d().to_vec()),
+                    BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                    BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
                 )
                 .unwrap();
                 assert_eq!(vg_private.decrypt_oaep(ct, *h, *g, b"").unwrap(), msg);
@@ -173,14 +174,14 @@ pub fn bench(c: &mut Criterion) {
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let k = n.len();
             let vg_key = PrivateKey::from_crt(
-                &n,
-                &e,
-                &key.d().to_vec(),
-                &key.p().unwrap().to_vec(),
-                &key.q().unwrap().to_vec(),
-                &key.dmp1().unwrap().to_vec(),
-                &key.dmq1().unwrap().to_vec(),
-                &key.iqmp().unwrap().to_vec(),
+                BigUint::from_be_bytes(&n),
+                BigUint::from_be_bytes(&e),
+                BigUint::from_be_bytes(&key.d().to_vec()),
+                BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
             )
             .unwrap();
             let pkey = PKey::from_rsa(key.clone()).unwrap();
@@ -188,7 +189,7 @@ pub fn bench(c: &mut Criterion) {
             dec.set_rsa_padding(Padding::PKCS1_OAEP).unwrap();
             dec.set_rsa_oaep_md(h_md).unwrap();
             dec.set_rsa_mgf1_md(g_md).unwrap();
-            let ct = PublicKey::new(&n, &e)
+            let ct = PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e))
                 .unwrap()
                 .encrypt_oaep(&msg, *h, *g, b"")
                 .unwrap();

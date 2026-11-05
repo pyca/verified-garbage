@@ -40,7 +40,7 @@ use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
 use crate::arch::rsa_keygen::vg_rsa_prime_search_umaal;
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey};
+use crate::rsa::{Backend, BigUint, PrivateKey};
 
 /// Why a key was not generated.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -365,11 +365,11 @@ fn generate_once(
 
 /// A two-prime RSA private key with a modulus of `bits` bits, rounded down
 /// to a multiple of 128 (from 512 to 8192 bits), and the public exponent
-/// `e` (big-endian, odd, from 3 to `2^32 - 1`, with any number of leading
+/// `e` (odd, from 3 to `2^32 - 1`; its bytes may have any number of leading
 /// zero bytes), from the operating system's random number generator, as
 /// BoringSSL's `RSA_generate_key_ex` makes it (`VG.Spec.RsaKeyGen.generate`).
-pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error> {
-    generate_from(bits, public_exponent, fill_random)
+pub fn generate(bits: usize, public_exponent: BigUint<'_>) -> Result<PrivateKey, Error> {
+    generate_from(bits, public_exponent.as_be_bytes(), fill_random)
 }
 
 /// [`generate`], with its random octets drawn from `random` instead of the
@@ -382,10 +382,10 @@ pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error
 #[doc(hidden)]
 pub fn generate_with_rng(
     bits: usize,
-    public_exponent: &[u8],
+    public_exponent: BigUint<'_>,
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<PrivateKey, Error> {
-    generate_from(bits, public_exponent, random)
+    generate_from(bits, public_exponent.as_be_bytes(), random)
 }
 
 /// [`generate`], with its random octets drawn from `random`.
@@ -417,7 +417,8 @@ fn generate_with(
 #[cfg(test)]
 mod tests {
     use super::{
-        Error, PrivateKey, Random, Vec, fill_random, generate, generate_with, key_from_primes, vec,
+        BigUint, Error, PrivateKey, Random, Vec, fill_random, generate, generate_with,
+        key_from_primes, vec,
     };
 
     /// The source of a [`Random`] in [`stream`].
@@ -479,8 +480,8 @@ mod tests {
     /// Whether `key` loads again from its CRT values: whether BoringSSL's
     /// `RSA_check_key` accepts it (`PrivateKey::from_crt`).
     pub(super) fn reloads(key: &PrivateKey) -> bool {
-        let c = key.components();
-        PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).is_ok()
+        let c = key.components().map(BigUint::as_be_bytes);
+        PrivateKey::from_crt_bytes(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).is_ok()
     }
 
     /// A prime of `bits` bits for `e`, from the operating system's random
@@ -575,7 +576,7 @@ mod tests {
             assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 4);
             let (hi, lo) = if p > q { (&p, &q) } else { (&q, &p) };
-            let [_, e, _, kp, kq, ..] = key.components();
+            let [_, e, _, kp, kq, ..] = key.components().map(BigUint::as_be_bytes);
             assert_eq!((e, kp, kq), (&[1, 0, 1][..], &hi[..], &lo[..]));
         }
     }
@@ -584,12 +585,15 @@ mod tests {
     fn generate_invalid() {
         for bits in [0, 384, 511, 8192 + 1, 8192 + 128] {
             assert_eq!(
-                generate(bits, &[1, 0, 1]).unwrap_err(),
+                generate(bits, BigUint::from_be_bytes(&[1, 0, 1])).unwrap_err(),
                 Error::InvalidModulusLength
             );
         }
         for e in [&[][..], &[0], &[1], &[2], &[0, 4], &[1, 0, 0, 0, 1]] {
-            assert_eq!(generate(512, e).unwrap_err(), Error::InvalidExponent);
+            assert_eq!(
+                generate(512, BigUint::from_be_bytes(e)).unwrap_err(),
+                Error::InvalidExponent
+            );
         }
     }
 
@@ -598,10 +602,10 @@ mod tests {
     #[test]
     fn generate_keys() {
         for (bits, e) in [(512, &[3][..]), (639, &[0, 0, 3]), (1024, &[1, 0, 1])] {
-            let key = generate(bits, e).unwrap();
+            let key = generate(bits, BigUint::from_be_bytes(e)).unwrap();
             assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 128 * 16);
-            assert_eq!(key.components()[1], crate::rsa::trim(e));
+            assert_eq!(key.components()[1].as_be_bytes(), crate::rsa::trim(e));
         }
     }
 
@@ -749,7 +753,7 @@ mod tests {
         let key = key.unwrap();
         assert_eq!(read, rand.len());
         assert!(reloads(&key));
-        let [_, _, _, p, q, ..] = key.components();
+        let [_, _, _, p, q, ..] = key.components().map(BigUint::as_be_bytes);
         assert_eq!((p, q), (&SMALL_D_Q[..], &PRIME[..]));
     }
 
@@ -767,7 +771,7 @@ mod tests {
         let key = key.unwrap();
         assert_eq!(read, rand.len());
         assert!(reloads(&key));
-        assert_eq!(key.components()[4], COMPOSITE);
+        assert_eq!(key.components()[4].as_be_bytes(), COMPOSITE);
         assert_eq!(
             key.sign_pkcs1v15(&[0; 32], crate::rsa::pkcs1_sig::Hash::Sha256),
             Err(crate::rsa::pkcs1_sig::Error::Fault)

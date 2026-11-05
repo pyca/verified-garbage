@@ -15,7 +15,7 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::rsa::{Error, PublicKey};
+use verified_garbage::rsa::{BigUint, Error, PublicKey};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -35,7 +35,10 @@ fn rsadp_component() {
         let e = field("e").unwrap();
         let e = unhex(&format!("{}{e}", "0".repeat(e.len() % 2)));
         assert!(e.len() > 5);
-        assert_eq!(PublicKey::new(&n, &e), Err(Error::InvalidExponent));
+        assert_eq!(
+            PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e)),
+            Err(Error::InvalidExponent)
+        );
         count += 1;
     }
     assert_eq!(count, 60);

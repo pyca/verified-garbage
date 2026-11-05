@@ -26,7 +26,7 @@
 use crate::json_struct;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::rsa::oaep::{Error, Hash};
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 use verified_garbage::rsa::{pkcs1_sig, pss};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
@@ -71,17 +71,24 @@ fn hash(name: &str) -> Hash {
 fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
     let n = trim_zeros(&k.modulus.0);
     let key = PrivateKey::from_crt(
-        n,
-        &k.public_exponent.0,
-        &k.private_exponent.0,
-        &k.prime1.0,
-        &k.prime2.0,
-        &k.exponent1.0,
-        &k.exponent2.0,
-        &k.coefficient.0,
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+        BigUint::from_be_bytes(&k.private_exponent.0),
+        BigUint::from_be_bytes(&k.prime1.0),
+        BigUint::from_be_bytes(&k.prime2.0),
+        BigUint::from_be_bytes(&k.exponent1.0),
+        BigUint::from_be_bytes(&k.exponent2.0),
+        BigUint::from_be_bytes(&k.coefficient.0),
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
-    (key, PublicKey::new(n, &k.public_exponent.0).unwrap())
+    (
+        key,
+        PublicKey::new(
+            BigUint::from_be_bytes(n),
+            BigUint::from_be_bytes(&k.public_exponent.0),
+        )
+        .unwrap(),
+    )
 }
 
 /// Checks every vector of the file `name` with a key that

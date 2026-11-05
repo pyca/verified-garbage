@@ -26,7 +26,7 @@ use verified_garbage::hashes::{
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::pss::{Hash, SaltLength};
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup, RsaPublicKey, SigCase};
@@ -49,17 +49,21 @@ json_struct! {
 fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
     let n = trim_zeros(&k.modulus.0);
     let private = PrivateKey::from_crt(
-        n,
-        &k.public_exponent.0,
-        &k.private_exponent.0,
-        &k.prime1.0,
-        &k.prime2.0,
-        &k.exponent1.0,
-        &k.exponent2.0,
-        &k.coefficient.0,
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+        BigUint::from_be_bytes(&k.private_exponent.0),
+        BigUint::from_be_bytes(&k.prime1.0),
+        BigUint::from_be_bytes(&k.prime2.0),
+        BigUint::from_be_bytes(&k.exponent1.0),
+        BigUint::from_be_bytes(&k.exponent2.0),
+        BigUint::from_be_bytes(&k.coefficient.0),
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
-    let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
+    let public = PublicKey::new(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(&k.public_exponent.0),
+    )
+    .unwrap();
     (private, public)
 }
 
@@ -107,8 +111,11 @@ fn rsa_pss_test() {
         let (accepted, rejected) = (Count::default(), Count::default());
         let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(trim_zeros(&p.modulus.0), &p.public_exponent.0)
-                .unwrap_or_else(|e| panic!("{name}: {e}"))
+            PublicKey::new(
+                BigUint::from_be_bytes(trim_zeros(&p.modulus.0)),
+                BigUint::from_be_bytes(&p.public_exponent.0),
+            )
+            .unwrap_or_else(|e| panic!("{name}: {e}"))
         };
         file.par_tests_with(keys, |group, key, test| {
             let p = &group.params;

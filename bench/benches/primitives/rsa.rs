@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::bn::{BigNum, BigNumContext, BigNumRef};
     use openssl::pkey::Private;
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa::PrivateKey;
+    use verified_garbage::rsa::{BigUint, PrivateKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -136,8 +136,17 @@ pub fn bench(c: &mut Criterion) {
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let v = black_box(&v);
-                PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
-                    .unwrap()
+                PrivateKey::from_crt(
+                    BigUint::from_be_bytes(&v[0]),
+                    BigUint::from_be_bytes(&v[1]),
+                    BigUint::from_be_bytes(&v[2]),
+                    BigUint::from_be_bytes(&v[3]),
+                    BigUint::from_be_bytes(&v[4]),
+                    BigUint::from_be_bytes(&v[5]),
+                    BigUint::from_be_bytes(&v[6]),
+                    BigUint::from_be_bytes(&v[7]),
+                )
+                .unwrap()
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
@@ -180,11 +189,11 @@ pub fn bench(c: &mut Criterion) {
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 PrivateKey::from_primes(
-                    black_box(&n),
-                    black_box(&e),
-                    black_box(&d),
-                    black_box(&p),
-                    black_box(&q),
+                    BigUint::from_be_bytes(black_box(&n)),
+                    BigUint::from_be_bytes(black_box(&e)),
+                    BigUint::from_be_bytes(black_box(&d)),
+                    BigUint::from_be_bytes(black_box(&p)),
+                    BigUint::from_be_bytes(black_box(&q)),
                 )
                 .unwrap()
             })
@@ -219,7 +228,12 @@ pub fn bench(c: &mut Criterion) {
         let k = n.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
-                PrivateKey::from_components(black_box(&n), black_box(&e), black_box(&d)).unwrap()
+                PrivateKey::from_components(
+                    BigUint::from_be_bytes(black_box(&n)),
+                    BigUint::from_be_bytes(black_box(&e)),
+                    BigUint::from_be_bytes(black_box(&d)),
+                )
+                .unwrap()
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {

@@ -57,7 +57,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::rsa::{Padding, Rsa};
     use openssl::sign::RsaPssSaltlen;
     use verified_garbage::rsa::pss::{Hash, SaltLength};
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -106,17 +106,21 @@ pub fn bench(c: &mut Criterion) {
         .map(|bits| {
             let key = Rsa::generate(bits).unwrap();
             let vg_private = PrivateKey::from_crt(
-                &key.n().to_vec(),
-                &key.e().to_vec(),
-                &key.d().to_vec(),
-                &key.p().unwrap().to_vec(),
-                &key.q().unwrap().to_vec(),
-                &key.dmp1().unwrap().to_vec(),
-                &key.dmq1().unwrap().to_vec(),
-                &key.iqmp().unwrap().to_vec(),
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+                BigUint::from_be_bytes(&key.d().to_vec()),
+                BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
             )
             .unwrap();
-            let vg_public = PublicKey::new(&key.n().to_vec(), &key.e().to_vec()).unwrap();
+            let vg_public = PublicKey::new(
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+            )
+            .unwrap();
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let aws_private = RsaKeyPair::from_components(&KeyPairComponents {
                 public_key: RsaPublicKeyComponents { n: &n, e: &e },

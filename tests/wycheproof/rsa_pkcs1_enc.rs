@@ -25,7 +25,7 @@
 ))]
 
 use verified_garbage::rsa::pkcs1_enc::Error;
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation, TestFile, TestGroup};
 use super::schema::{EncryptCase, RsaPrivateKeyGroup};
@@ -41,17 +41,24 @@ fn check(name: &str) -> (usize, usize, usize) {
         let k = &group.params.private_key;
         let n = trim_zeros(&k.modulus.0);
         let key = PrivateKey::from_crt(
-            n,
-            &k.public_exponent.0,
-            &k.private_exponent.0,
-            &k.prime1.0,
-            &k.prime2.0,
-            &k.exponent1.0,
-            &k.exponent2.0,
-            &k.coefficient.0,
+            BigUint::from_be_bytes(n),
+            BigUint::from_be_bytes(&k.public_exponent.0),
+            BigUint::from_be_bytes(&k.private_exponent.0),
+            BigUint::from_be_bytes(&k.prime1.0),
+            BigUint::from_be_bytes(&k.prime2.0),
+            BigUint::from_be_bytes(&k.exponent1.0),
+            BigUint::from_be_bytes(&k.exponent2.0),
+            BigUint::from_be_bytes(&k.coefficient.0),
         )
         .unwrap_or_else(|e| panic!("{name}: {e}"));
-        (key, PublicKey::new(n, &k.public_exponent.0).unwrap())
+        (
+            key,
+            PublicKey::new(
+                BigUint::from_be_bytes(n),
+                BigUint::from_be_bytes(&k.public_exponent.0),
+            )
+            .unwrap(),
+        )
     };
     file.par_tests_with(keys, |group, (key, public), test| {
         let n = trim_zeros(&group.params.private_key.modulus.0);
