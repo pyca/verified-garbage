@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Entry
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
@@ -147,14 +148,14 @@ theorem SInput.tail_eq {p : SPub} {s : State} (h : SInput p s) : searchResult s 
 theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     (hx : t.gpr .r31 = p.control)
     (hm : t.mem = Proof.Ffdh.Control.writeController s.mem p.control (entryValues s))
-    (k : Keep entryRegs s t) :
+    (k : Keep entryRegs s t) (hy : t.syms = s.syms) :
     WP isa (search c.call) t fun u =>
       SDone p s (searchResult s) u ∧ u.lr = s.lr ∧ u.sp = s.sp := by
   unfold search
-  refine WP.seq (WP.mono (WP.keep [.r0] (Q := fun t₁ => t₁.gpr .r0 = t.lr ∧ t₁.mem = t.mem) (by
-    prun [exec_mflr]) (by decide)) fun t₁ ⟨⟨h0, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (WP.keep [.r0] (Q := fun t₁ => t₁.gpr .r0 = t.lr ∧ t₁.mem = t.mem) (by
+    prun [exec_mflr]) (by decide)) fun t₁ ⟨⟨h0, hm₁⟩, k₁⟩ hy₁ => ?_)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
-  have hl := search_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k'
+  have hl := search_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k' (hy₁.trans hy)
   have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega
   refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
     (Q := fun u => SDone p s (searchResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
@@ -184,8 +185,8 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   let p := sOfState s
   have hp : SInput p s := ⟨h, rfl⟩
   unfold code
-  refine WP.seq (WP.mono (entry_ok hp) fun t ⟨⟨hx, hm⟩, k⟩ => ?_)
-  refine WP.seq (WP.mono (search_body c hp hx hm k) fun u ⟨hd, hlr, hsp⟩ => ?_)
+  refine WP.seq (WP.mono_syms (entry_ok hp) fun t ⟨⟨hx, hm⟩, k⟩ hy => ?_)
+  refine WP.seq (WP.mono (search_body c hp hx hm k hy) fun u ⟨hd, hlr, hsp⟩ => ?_)
   refine WP.mono (search_finish hd) fun q ⟨hr, hg, hqsp, hqlr⟩ => ?_
   exact ⟨hr.post, hg, hqsp.trans hsp, hqlr.trans hlr⟩
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Call
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -21,7 +22,7 @@ open VG.Impl.Ffdh.PPC64LE.Generation.Search
 
 /-- The candidate at octet `used` of the tape. -/
 abbrev SPub.cand (p : SPub) (used : Nat) : Option (Option Nat × List Byte) :=
-  parameterCandidate p.bits p.gen (p.rand.drop used)
+  sievedParameterCandidate p.bits p.gen (p.rand.drop used)
 
 /-- The octets the candidate at `used` reads. -/
 def SPub.read (p : SPub) (used : Nat) : Nat :=
@@ -72,16 +73,16 @@ theorem search_head {p : SPub} {original s : State} {used k : Nat}
   have hst := status_lt (p.cand used)
   have h9 := low32 hp.1
   have hb : ∀ st < 3, (BitVec.ofNat 64 st - BitVec.ofNat 64 1 == 0) = decide (st = 1) := by decide
-  refine WP.mono (WP.keep [.r9, .r10, .r11, .r12] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r9, .r10, .r11, .r12] (Q := fun t =>
     (t.gpr .r9 = BitVec.ofNat 64 (candidateStatus (p.cand used)) ∧
       t.gpr .r10 = BitVec.ofNat 64 (p.read used) ∧
       isa.eval (.zero .d .r12) t = some (decide (candidateStatus (p.cand used) = 1))) ∧ t.mem = s.mem) ?_
-    (by decide)) fun t ⟨⟨⟨h9, h10, he⟩, hm⟩, k⟩ => ?_
+    (by decide)) fun t ⟨⟨⟨h9, h10, he⟩, hm⟩, k⟩ hy => ?_
   · unfold head
     prun [ldf, h.r31, hv7, a.ld 56 (by decide), hu, hw, h9]
     refine (eval_zero _ _).trans ?_
     rw [RegUpd.gpr_write_self, hb _ hst]
-  · refine ⟨h.keep k hm, ?_, h9, h10, he⟩
+  · refine ⟨h.keep k hm hy, ?_, h9, h10, he⟩
     unfold CandPost at hp ⊢
     rw [hm, k.gpr .r3 (by decide)]
     exact hp
@@ -215,9 +216,9 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
     rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
   have e0 := ofNat_pred (Nat.pos_of_ne_zero hk) hkl
-  refine WP.mono (WP.keep [.r3, .r4, .r5, .r11, .r12] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r3, .r4, .r5, .r11, .r12] (Q := fun t =>
     t.mem = writeController s.mem p.control (rejectValues p (used + p.read used) (k - 1))) ?_
-      (by decide)) fun t ⟨hm, kt⟩ => ?_
+      (by decide)) fun t ⟨hm, kt⟩ hy => ?_
   · unfold reject writeController rejectValues
     simp only [List.foldl_cons, List.foldl_nil]
     prun [ldf, stf, h.r31, h10, hv0, hv10, hv11, hv12, e0, e10, e11, e12,
@@ -235,7 +236,7 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
       first | rfl | exact h.header (by simp [SPub.headers])
   refine ⟨h.update hle (by have := h.k_le; omega_arith) _ hb (by
       simp only [rejectValues, List.mem_cons, List.not_mem_nil, or_false]
-      rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) hm kt.mono hh, ?_⟩
+      rintro _ (rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) hm kt.mono hh hy, ?_⟩
   rw [show (112 : Nat) = 8 * 14 from rfl, hm, writeController_word _ _ _ hb 14 (by decide)]
   simp only [controllerValue, rejectValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
     ite_true, ite_false]
@@ -325,8 +326,8 @@ theorem search_request {p : SPub} {original s : State} {used k : Nat}
     WP isa (.block request) s (SDone p original (p.tail used k)) := by
   rw [show request = request.take 19 ++ request.drop 19 from (List.take_append_drop _ _).symm,
     WP.block_append_iff]
-  refine WP.mono (request_value h) fun v ⟨⟨h7, hmv⟩, kv⟩ => ?_
-  have hv := h.keep kv hmv
+  refine WP.mono_syms (request_value h) fun v ⟨⟨h7, hmv⟩, kv⟩ hyv => ?_
+  have hv := h.keep kv hmv hyv
   have a := hv.access
   refine WP.mono (WP.keep [.r8] (Q := fun t =>
     t.mem = writeController v.mem p.control (requestValues p used)) ?_
@@ -380,9 +381,9 @@ theorem short_guard {p : SPub} {original s : State} {used k : Nat} (h : SLive p 
   have hE : parameterEntropy p.bits < 2 ^ 63 := by
     have := h.input.bits_bounds; unfold parameterEntropy; omega_arith
   have hs := sign_sub (x := p.randLen - used) (y := parameterEntropy p.bits) (by omega_arith) hE
-  refine WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r3, .r4, .r5] (Q := fun t =>
     isa.eval (.zero .d .r5) t = some (decide (parameterEntropy p.bits ≤ p.randLen - used)) ∧ t.mem = s.mem) ?_
-    (by decide)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨⟨h.keep k hm, hm⟩, he⟩
+    (by decide)) fun _ ⟨⟨he, hm⟩, k⟩ hy => ⟨⟨h.keep k hm hy, hm⟩, he⟩
   prun [ldf, h.r31, hv2, hv11, a.ld 16 (by decide), a.ld 88 (by decide), hs]
   refine (eval_zero _ _).trans ?_
   rw [RegUpd.gpr_write_self]
@@ -435,11 +436,11 @@ theorem search_classify {p : SPub} {original s : State} {used k : Nat}
   | none =>
     simp only [hc, candidateStatus] at he h9
     refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
-    refine WP.seq (WP.mono (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ => ?_)
+    refine WP.seq (WP.mono_syms (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ hyv => ?_)
     refine WP.ite false he2 (fun hf => by cases hf) fun _ => ?_
     have hout := hpu.2.1
     simp only [hc] at hout
-    have hs := search_short (hu.keep kv hmv) hk hc (by rw [hmv]; exact hout)
+    have hs := search_short (hu.keep kv hmv hyv) hk hc (by rw [hmv]; exact hout)
     refine WP.mono hs fun t ht => ?_
     simp only [SClassified, hc, candidateStatus, Nat.reduceEqDiff, ite_false]
     exact ht
@@ -455,9 +456,9 @@ theorem search_classify {p : SPub} {original s : State} {used k : Nat}
     | none =>
       simp only [hc, candidateStatus] at he h9
       refine WP.ite false he (fun hf => by cases hf) fun _ => ?_
-      refine WP.seq (WP.mono (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ => ?_)
+      refine WP.seq (WP.mono_syms (test_two h9 (by decide)) fun v ⟨⟨he2, hmv⟩, kv⟩ hyv => ?_)
       refine WP.ite true he2 (fun _ => ?_) (fun hf => by cases hf)
-      have hv := hu.keep kv hmv
+      have hv := hu.keep kv hmv hyv
       refine WP.mono (search_reject hv hk ((kv.gpr .r10 (by decide)).trans h10)) fun t ht => ?_
       simp only [SClassified, hc, candidateStatus, ite_true]
       exact ht

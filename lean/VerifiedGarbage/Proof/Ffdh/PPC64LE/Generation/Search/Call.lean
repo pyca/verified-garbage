@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.Contract
@@ -16,8 +17,9 @@ public import VerifiedGarbage.Proof.Ffdh.Contract
 /-! # One candidate of the parameter search (PPC64LE)
 
 In its frame of 112 bytes, the controller passes
-`vg_ffdh_parameter_candidate` the rest of the tape. The candidate's buffers
-are the controller's (`out`, `used`, the tape's rest and the working space),
+`vg_ffdh_parameter_candidate_sieved` the rest of the tape. The candidate's
+buffers are the controller's (`out`, `used`, the tape's rest and the working
+space, and the table of trial division it reads),
 and its stack argument is at offset 96 of the candidate's frame, in the 336
 bytes of stack below the controller's stack pointer on entry, which no buffer
 overlaps. The candidate keeps the controller's state, and leaves its status,
@@ -47,6 +49,7 @@ abbrev rU (p : SPub) : Region := ⟨p.up, 8⟩
 abbrev rR (p : SPub) (used : Nat) : Region := ⟨p.rp + BitVec.ofNat 64 used, p.randLen - used⟩
 abbrev rS (p : SPub) : Region := ⟨p.B, p.Z⟩
 abbrev rA (p : SPub) : Region := ⟨callSp p + BitVec.ofNat 64 96, 8⟩
+abbrev rT (p : SPub) : Region := ⟨p.T, 8192⟩
 /-- The stack the candidate may use. -/
 abbrev rB (p : SPub) : Region := below (callSp p) 176
 
@@ -88,6 +91,9 @@ structure CallFacts (p : SPub) (used : Nat) : Prop where
   scratch : Spec.Rsa.scratchWords p.len ≤ p.Z / 8
   z8 : p.Z / 8 * 8 = p.Z
   randLen : p.randLen < 2 ^ 64
+  nt : p.T.toNat + 8192 ≤ 2 ^ 64
+  to : (rT p).Disjoint (rO p)
+  ts : (rT p).Disjoint (rS p)
 
 private theorem nowrap_tape {r : Addr} {n used len : Nat} (hn : r.toNat + n ≤ 2 ^ 64)
     (hu : used + len ≤ n) : (r + BitVec.ofNat 64 used).toNat + len ≤ 2 ^ 64 := by
@@ -110,9 +116,9 @@ theorem SLive.callFacts {p : SPub} {original s : State} {used k : Nat}
     forall_eq_or_imp, forall_eq, List.cons_append, List.nil_append, List.Pairwise.nil,
     and_true] at hnw hpw hwr hstk
   obtain ⟨⟨pou, pos, -⟩, ⟨pus, -⟩, -⟩ := hpw
-  obtain ⟨⟨wor, -⟩, ⟨wur, -⟩, ⟨wsr, -⟩, -⟩ := hwr
+  obtain ⟨⟨wor, -, wot⟩, ⟨wur, -⟩, ⟨wsr, -, wst⟩, -⟩ := hwr
   obtain ⟨bo, bu, bs, -, br, -⟩ := hstk
-  obtain ⟨no, nu, ns, -, nr, -⟩ := hnw
+  obtain ⟨no, nu, ns, -, nr, -, nt⟩ := hnw
   have hR : Region.Sub (rR (sOfState original) used) (inRand original) :=
     Offset.sub_base _ hroom
   have hA := rA_sub (sOfState original)
@@ -122,7 +128,8 @@ theorem SLive.callFacts {p : SPub} {original s : State} {used k : Nat}
   refine ⟨by rw [hsp']; exact hsp, pou, wor.sub_right hR, pos, bo.symm.sub_right hA,
     wur.sub_right hR, pus, bu.symm.sub_right hA, (wsr.sub_right hR).symm,
     bs.symm.sub_right hA, bo.sub_left hB, bu.sub_left hB, (br.sub_left hB).sub_right hR, bs.sub_left hB,
-    (rA_rB _).symm, no, nu, nowrap_tape nr hroom, ns, ⟨hb1, hb2⟩, hl, hg, ?_, ?_, BitVec.isLt _⟩
+    (rA_rB _).symm, no, nu, nowrap_tape nr hroom, ns, ⟨hb1, hb2⟩, hl, hg, ?_, ?_, BitVec.isLt _, nt,
+    wot.symm, wst.symm⟩
   · simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
     exact hscr
   · simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
@@ -199,9 +206,10 @@ theorem search_arguments_ok {p : SPub} {original s : State} {used k : Nat}
     hl 72 (by decide), hl 80 (by decide), hl 88 (by decide), hl 104 (by decide), hl 120 (by decide), hw0,
     hv5, hv6, hv7, hv8, hv9, hv10, hv11, hv13, hv15]
 
-/-- The regions the candidate reads: the tape's rest and its stack argument;
+/-- The regions the candidate reads: the tape's rest, its stack argument
+and the table;
 those it writes: `out`, `used` and the working space. -/
-def callRd (p : SPub) (used : Nat) : List Region := [rR p used, rA p]
+def callRd (p : SPub) (used : Nat) : List Region := [rR p used, rA p, rT p]
 def callWr (p : SPub) : List Region := [rO p, rU p, rS p]
 
 /-- The callee's entry, as the call makes it. -/
@@ -231,7 +239,9 @@ theorem gen_setWidth {g : Nat} (h : g = 2 ∨ g = 5) : ((BitVec.ofNat 64 g).setW
 
 theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : CallFacts p used)
     (hu : u.sp = callSp p) (ha : SArgs p used u)
-    (hm : u.mem = writeController m (callSp p) (callValues p)) :
+    (hm : u.mem = writeController m (callSp p) (callValues p))
+    (hy : u.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = p.T)
+    (ht : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T u.mem) :
     pcPre (callState p used u) := by
   have h0 := call_arg hu hm
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
@@ -248,7 +258,9 @@ theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : C
   have hst : stackArg (callState p used u) 0 = stackArg u 0 := rfl
   have hsa : stackArgAddr (callState p used u) 0 = callSp p + BitVec.ofNat 64 96 := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hu]
+  have hys : (callState p used u).syms VG.Impl.RsaKeyGen.TrialTable32.symbol = p.T := hy
   unfold pcPre
+  simp only [ParameterCandidate.tabR, ParameterCandidate.PcTab, hys]
   simp only [call_gpr (by decide : Reg.r3 ∉ linkRegs), call_gpr (by decide : Reg.r4 ∉ linkRegs),
     call_gpr (by decide : Reg.r5 ∉ linkRegs), call_gpr (by decide : Reg.r6 ∉ linkRegs),
     call_gpr (by decide : Reg.r7 ∉ linkRegs), call_gpr (by decide : Reg.r8 ∉ linkRegs),
@@ -257,12 +269,13 @@ theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : C
     gen_setWidth hf.gen, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
     State.callEntry_sp, hu]
   exact ⟨by omega_arith, by omega_arith, rfl, rfl, hf.ou, hf.or, hf.os, hf.oa, hf.ur, hf.us, hf.ua, hf.rs, hf.sa,
-    hf.bo, hf.bu, hf.br, hf.bs, hf.ba, hf.no, hf.nu, hf.nr, hf.ns, hb.1, hb.2, hf.len, hf.gen, hf.scratch⟩
+    hf.bo, hf.bu, hf.br, hf.bs, hf.ba, hf.no, hf.nu, hf.nr, hf.ns, hb.1, hb.2, hf.len, hf.gen, hf.scratch,
+    hf.nt, ht, hf.to, hf.ts⟩
 
 /-- What the candidate at `used` leaves: its status, p or zeros at `out`,
 and the octets it read at `used`. -/
 def CandPost (p : SPub) (used : Nat) (t : State) : Prop :=
-  let res := parameterCandidate p.bits p.gen (p.rand.drop used)
+  let res := sievedParameterCandidate p.bits p.gen (p.rand.drop used)
   ((t.gpr .r3).setWidth 32).toNat = candidateStatus res ∧
     Spec.Rsa.bytesAt t.mem p.op p.len =
       (match res with
@@ -301,7 +314,7 @@ theorem call_covers_reads (h : SLive p original used k s)
   have e0 : s.sp - BitVec.ofNat 64 112 = callSp p := by rw [h.sp]; exact callSp_eq p
   intro r hr
   simp only [callRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · refine ⟨inRand original, ?_, used, ?_, ?_⟩
     · rw [hrd]; exact List.mem_append_left _ (by
         change inRand original ∈ s.rd; rw [h.rd, hrd']; simp [inReads])
@@ -311,6 +324,10 @@ theorem call_covers_reads (h : SLive p original used k s)
     · rw [hw]; exact List.mem_append_right _ (List.mem_cons_self ..)
     · show callSp p + BitVec.ofNat 64 96 = s.sp - BitVec.ofNat 64 112 + 32 + BitVec.ofNat 64 64
       rw [e0, BitVec.add_assoc]; rfl
+  · refine ⟨inTab original, ?_, 0, ?_, by show 0 + 8192 ≤ 8192; decide⟩
+    · rw [hrd]; exact List.mem_append_left _ (by
+        change inTab original ∈ s.rd; rw [h.rd, hrd']; simp [inReads])
+    · cases hi.2; show _ = _ + BitVec.ofNat 64 0; rw [BitVec.add_zero]; rfl
 
 /-- What the candidate writes, as the controller sees it. -/
 theorem candidate_frame (h : SLive p original used k s) {u t : State}
@@ -366,12 +383,17 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     rw [h.sp, h48]
     omega_arith
   unfold candidateRun
-  refine WP.alloc (by decide) hroom' ?_
-  refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, ku⟩ => ?_)
+  refine WP.of_syms (WP.alloc (by decide) hroom' ?_)
+  refine WP.seq (WP.mono_syms (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, ku⟩ syu => ?_)
   have hu : u.sp = callSp p := ku.sp.trans e0
-  refine WP.callAny (k := ParameterCandidate.pcContract) c.correct (call_candidate_pre hf hu ha hm)
+  have hT : original.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = p.T := by rw [← h.input.2]; rfl
+  have hy : u.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = p.T := by
+    rw [syu]; show s.syms _ = _; rw [h.syms]; exact hT
+  have htu : VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt p.T u.mem :=
+    h.input.table_frame (frame_of_callChanges original (candidate_frame (t := u) h hm (fun _ _ => rfl))) h.table
+  refine WP.callAny (k := ParameterCandidate.pcContract) c.correct (call_candidate_pre hf hu ha hm hy htu)
     (call_covers_reads h ku.rd ku.wr) (call_covers_writes h ku.wr) ?_ (by have := c.stack; omega_arith)
-  intro t hrd hwr hsp hfr hcs hpost
+  intro t hrd hwr hsp hfr hcs hpost hyt
   have hfr' : Frame (callWr p ++ [below (callSp p) 176]) u.mem t.mem := by
     rw [hu] at hfr
     exact hfr.sub fun r hr => by
@@ -390,6 +412,7 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     · intro r hr
       exact (hcs r hr).trans (ku.gpr r (by revert r hr; decide))
     · exact candidate_frame h hm hfr'
+    · exact hyt
   · -- The candidate's status and outputs.
     have hrand := call_rand h hm ha
     obtain ⟨r3, r4, r5, r6, r7, -, r9, -⟩ := ha
