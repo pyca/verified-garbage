@@ -29,6 +29,8 @@ foreign-types = { version = "0.3", optional = true }
 # On a supported host, use `cargo bench --features openssl-argon2` and
 # `cargo test --features openssl-argon2 --test argon2` for the comparison.
 openssl-argon2 = []
+# OpenSSL 3.2+ supplies AES-GCM-SIV.
+openssl-gcm-siv = []
 # OpenSSL 3.5+ supplies ML-DSA; enable its benchmark comparisons on a supported host.
 openssl-mldsa = []
 # OpenSSL 3.5+ supplies ML-KEM.
