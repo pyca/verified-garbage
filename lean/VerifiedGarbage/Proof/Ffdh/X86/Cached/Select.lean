@@ -49,7 +49,7 @@ abbrev ctxBytes (len : Nat) : Nat := 24 + bc len .wide * 34
 /-- `r :=` the address of row `j` of the context, `ctx + 24 + B j`. -/
 theorem rowAt_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes len args s) {r : Reg} {j : Nat}
     (hj : j ≤ 34) (heax : s.gpr .eax = BitVec.ofNat 32 j)
-    (k : ∀ u, Keeps [.eax, .edx, r] s u → u.mem = s.mem →
+    (k : ∀ u, Keeps [.eax, .ecx, .edx, r] s u → u.mem = s.mem →
       PtrAt u (ctxAddr args) r (24 + bc len .wide * j) → WP isa (.block is) u Q) :
     WP isa (.block (rowAt r ++ is)) s Q := by
   have hb := bc_le h.upper' .wide
@@ -59,15 +59,18 @@ theorem rowAt_ok {is : List Instr} {Q : State → Prop} (h : In Ex base bytes le
   have h₁ := h.regs K₁ m₁
   have h₂ := h₁.regs ⟨fun q hq => U₂.other q (by simp at hq; exact hq.1) (by simp at hq; exact hq.2), U₂.rd,
     U₂.wr⟩ U₂.mem (rs := [.eax, .edx])
-  refine wp_addS (h₂.arg (i := ctxArg) (by decide)) fun s₃ U₃ _ => wp_addS rfl fun s₄ U₄ _ =>
-    wp_mov fun u U => ?_
-  refine k u ?_ (by rw [U.mem, U₄.mem, U₃.mem, U₂.mem, m₁]) ?_
-  · refine ⟨fun q hq => ?_, by rw [U.rd, U₄.rd, U₃.rd, U₂.rd, K₁.2.1], by rw [U.wr, U₄.wr, U₃.wr, U₂.wr, K₁.2.2]⟩
+  refine wp_movS (h₂.arg (i := ctxArg) (by decide)) fun s₃' U₃' _ => wp_addS rfl fun s₃ U₃ _ =>
+    wp_addS rfl fun s₄ U₄ _ => wp_mov fun u U => ?_
+  refine k u ?_ (by rw [U.mem, U₄.mem, U₃.mem, U₃'.mem, U₂.mem, m₁]) ?_
+  · refine ⟨fun q hq => ?_, by rw [U.rd, U₄.rd, U₃.rd, U₃'.rd, U₂.rd, K₁.2.1],
+      by rw [U.wr, U₄.wr, U₃.wr, U₃'.wr, U₂.wr, K₁.2.2]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-    rw [U.other q hq.2.2, U₄.other q hq.1, U₃.other q hq.1, U₂.other q hq.1 hq.2.1, K₁.1 q (by simpa using hq.2.1)]
+    rw [U.other q hq.2.2.2, U₄.other q hq.1, U₃.other q hq.1, U₃'.other q hq.2.1, U₂.other q hq.1 hq.2.2.1,
+      K₁.1 q (by simpa using hq.2.2.1)]
   · have ea : (s₁.gpr .eax).toNat = j := by
       rw [K₁.1 _ (by decide), heax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    rw [PtrAt, U.gpr, U₄.gpr, U₃.gpr, U₂.eax, e₁, ea, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [PtrAt, U.gpr, U₄.gpr, U₃.gpr, U₃'.gpr, U₃'.other _ (by decide), U₂.eax, e₁, ea, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega)]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, ctxAddr, byteAddr, BitVec.toNat_setWidth]
     have a32 := (args ctxArg).isLt
     rw [Nat.mod_eq_of_lt (a := (args ctxArg).toNat) (by omega)]
@@ -192,7 +195,7 @@ theorem select_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len ar
   have K₁₃ : Keeps [.eax, .ecx, .edx, .ebp] s s₃ :=
     (K₁.trans (U₂.keeps.mono (by decide))).trans (K₃.mono (by decide))
   have m₁₃ : s₃.mem = s₁.mem := by rw [m₃, U₂.mem]
-  have h₃ := h₁.regs ((U₂.keeps.mono (by decide)).trans (K₃.mono (by decide)) : Keeps [.eax, .edx, .ebp] s₁ s₃)
+  have h₃ := h₁.regs ((U₂.keeps.mono (by decide)).trans (K₃.mono (by decide)) : Keeps [.eax, .ecx, .edx, .ebp] s₁ s₃)
     m₁₃
   have C₀ : CtxRd base bytes len args s₃ := C.keep K₁₃
   -- The context did not change: only slot 7 did.

@@ -57,8 +57,8 @@ def ctxArg : Nat := 13
 
 /-- `r :=` the context's row in `eax` (public): `ctx + 24 + B row`; `eax` and `edx` change. -/
 def rowAt (r : Reg) : List Instr :=
-  widthC 0 .wide .edx ++ [.mul .edx, .alu .add .eax (.mem (argAt 0 ctxArg)), .alu .add .eax (.imm 24),
-    .mov r (.reg .eax)]
+  widthC 0 .wide .edx ++ [.mul .edx, .mov .ecx (.mem (argAt 0 ctxArg)), .alu .add .eax (.reg .ecx),
+    .alu .add .eax (.imm 24), .mov r (.reg .eax)]
 
 /-- Slot `a` to the context's row that `idx` leaves in `eax`. -/
 def storeRow (idx : List Instr) (a : Nat) : Prog isa :=
