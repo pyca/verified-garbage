@@ -139,9 +139,9 @@ theorem min_val (D Q : Nat) (hD : D < 2 ^ 32) (hQ : Q < 2 ^ 32) :
 theorem min_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u) {is : List Instr} {Q' : State → Prop}
     (k : ∀ u', Ctx L g m₀ u' → u'.mem = u.mem → u'.gpr .r3 = BitVec.ofNat 32 (min P.F.H.D P.Q) →
       (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r7 → r ≠ .r12 → u'.gpr r = u.gpr r) → WP isa (.block is) u' Q') :
-    WP isa (.block ([.ldr .r3 .r6 tD, .movw .r0 (BitVec.ofNat 16 P.Q), .subs .r12 .r3 (.reg .r0),
+    WP isa (.block (([.ldr .r3 .r6 tD, .movw .r0 (BitVec.ofNat 16 P.Q), .subs .r12 .r3 (.reg .r0),
       .mov .r7 (imm 0), .adc .r7 .r7 (imm 0), .dp .sub .r7 .r7 (imm 1), .dp .and .r12 .r12 (.reg .r7),
-      .dp .add .r3 .r0 (.reg .r12)] ++ is)) u Q' := by
+      .dp .add .r3 .r0 (.reg .r12)] : List Instr) ++ is)) u Q' := by
   simp only [List.cons_append, List.nil_append]
   have hD : P.F.H.D < 2 ^ 32 := by anums
   have hQ : P.Q < 2 ^ 16 := by anums

@@ -13,25 +13,25 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::table::{HmacHash, leftmost, sign_with};
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
+use super::table::{HmacHash, SignFn, leftmost, sign_with};
 use super::{BrainpoolP384r1, Error, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::ecdsa_brainpoolp384r1::{
+    vg_ecdsa_brainpoolp384r1_sign_umaal, vg_ecdsa_brainpoolp384r1_verify_umaal,
+};
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_sha3;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp384r1_sha384::vg_ecdsa_brainpoolp384r1_sha384_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::brainpoolp384r1::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP384r1> {
@@ -71,11 +71,18 @@ fn verify_with(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), E
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
-        // SAFETY: `vg_ecdsa_brainpoolp384r1_sign` needs no CPU feature.
-        unsafe { sign_with::<H, 48, 96>(vg_ecdsa_brainpoolp384r1_sign, detected(), d, digest) }
+        let f = detected();
+        let sign: SignFn<48, 96> = match Mul::select(f) {
+            Mul::Baseline => vg_ecdsa_brainpoolp384r1_sign,
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => vg_ecdsa_brainpoolp384r1_sign_umaal,
+        };
+        // SAFETY: `sign` needs no CPU feature that the multiplications
+        // selected for this CPU do not.
+        unsafe { sign_with::<H, 48, 96>(sign, f, d, digest) }
     }
 
     /// `e` is the leftmost 384 bits of the hash (FIPS 186-5 §6.4.2): its
@@ -85,10 +92,10 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> SignatureHash<BrainpoolP384r1> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl sealed::Functions<BrainpoolP384r1> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
@@ -96,8 +103,6 @@ impl sealed::Functions<BrainpoolP384r1> for Sha384 {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_brainpoolp384r1_sha384_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_brainpoolp384r1_sha384_sign_sha3,
-            #[cfg(target_arch = "arm")]
-            (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_brainpoolp384r1_sha384_sign_umaal,
         };
         let mut out = [0; 96];
         let mut scratch = [0u64; 1024];
@@ -122,5 +127,31 @@ impl sealed::Functions<BrainpoolP384r1> for Sha384 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl SignatureHash<BrainpoolP384r1> for Sha384 {}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod umaal_tests {
+    use super::Mul;
+    use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES;
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
+
+    /// The CPU features of the signature with the multiplications `m`.
+    fn required(m: Mul) -> Features {
+        match m {
+            Mul::Baseline => Features(0),
+            Mul::Umaal => VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES,
+        }
+    }
+
+    /// The signature needs no CPU feature that the multiplications are not
+    /// selected for: on every set of features that selects them.
+    #[test]
+    fn whole_algorithm_features() {
+        for bits in 0..1u32 << NAMES.len() {
+            let f = Features(bits);
+            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
+        }
+    }
+}

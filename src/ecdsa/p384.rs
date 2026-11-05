@@ -13,27 +13,25 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use super::table::{HmacHash, SignFn, leftmost, sign_with};
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
+use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign;
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_umaal;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::{
-    vg_ecdsa_p384_sign, vg_ecdsa_p384_sign_adx, vg_ecdsa_p384_verify_adx,
-};
-#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::ecdsa_p384::{vg_ecdsa_p384_sign_adx, vg_ecdsa_p384_verify_adx};
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p384::{vg_ecdsa_p384_sign_umaal, vg_ecdsa_p384_verify_umaal};
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::p384::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P384> {
@@ -75,13 +73,16 @@ fn verify_with(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), E
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> sealed::Functions<P384> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
         let f = detected();
         let sign: SignFn<48, 96> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p384_sign,
+            #[cfg(target_arch = "x86_64")]
             Mul::Adx => vg_ecdsa_p384_sign_adx,
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => vg_ecdsa_p384_sign_umaal,
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
@@ -95,10 +96,10 @@ impl<H: HmacHash> sealed::Functions<P384> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> SignatureHash<P384> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl sealed::Functions<P384> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
@@ -106,8 +107,6 @@ impl sealed::Functions<P384> for Sha384 {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_p384_sha384_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_sha3,
-            #[cfg(target_arch = "arm")]
-            (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_p384_sha384_sign_umaal,
         };
         let mut out = [0; 96];
         let mut scratch = [0u64; 1024];
@@ -132,7 +131,7 @@ impl sealed::Functions<P384> for Sha384 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl SignatureHash<P384> for Sha384 {}
 
 #[cfg(all(test, target_arch = "x86_64"))]
@@ -147,6 +146,32 @@ mod tests {
         match m {
             Mul::Baseline => Features(0),
             Mul::Adx => VG_ECDSA_P384_SIGN_ADX_FEATURES,
+        }
+    }
+
+    /// The signature needs no CPU feature that the multiplications are not
+    /// selected for: on every set of features that selects them.
+    #[test]
+    fn whole_algorithm_features() {
+        for bits in 0..1u32 << NAMES.len() {
+            let f = Features(bits);
+            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod umaal_tests {
+    use super::Mul;
+    use crate::arch::ecdsa_p384::VG_ECDSA_P384_SIGN_UMAAL_FEATURES;
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
+
+    /// The CPU features of the signature with the multiplications `m`.
+    fn required(m: Mul) -> Features {
+        match m {
+            Mul::Baseline => Features(0),
+            Mul::Umaal => VG_ECDSA_P384_SIGN_UMAAL_FEATURES,
         }
     }
 

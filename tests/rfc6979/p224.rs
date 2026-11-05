@@ -1,5 +1,5 @@
 //! RFC 6979 §A.2.4: P-224, with SHA-224,
-//! and on x86-64 with the RFC's other hash functions.
+//! and on x86-64 and ARMv7 with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -13,13 +13,13 @@
 use verified_garbage::ecdsa::{Error, P224, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha224::Sha224;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use verified_garbage::hashes::sha1::Sha1;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use verified_garbage::hashes::sha256::Sha256;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use verified_garbage::hashes::sha384::Sha384;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
@@ -134,8 +134,8 @@ fn p224_keys() {
     }
 }
 
-/// The signatures with SHA-1, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-1, which the curve also signs with on x86-64 and ARMv7.
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[test]
 fn p224_sha1() {
     super::sign_with::<P224, Sha1, 28, 57, 56>(
@@ -144,8 +144,8 @@ fn p224_sha1() {
     );
 }
 
-/// The signatures with SHA-256, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-256, which the curve also signs with on x86-64 and ARMv7.
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[test]
 fn p224_sha256() {
     super::sign_with::<P224, Sha256, 28, 57, 56>(
@@ -154,8 +154,8 @@ fn p224_sha256() {
     );
 }
 
-/// The signatures with SHA-384, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-384, which the curve also signs with on x86-64 and ARMv7.
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[test]
 fn p224_sha384() {
     super::sign_with::<P224, Sha384, 28, 57, 56>(
@@ -164,8 +164,8 @@ fn p224_sha384() {
     );
 }
 
-/// The signatures with SHA-512, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-512, which the curve also signs with on x86-64 and ARMv7.
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 #[test]
 fn p224_sha512() {
     super::sign_with::<P224, Sha512, 28, 57, 56>(

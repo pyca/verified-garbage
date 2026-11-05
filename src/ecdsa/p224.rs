@@ -13,27 +13,25 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use super::table::{HmacHash, leftmost, sign_with};
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
+use super::table::{HmacHash, SignFn, leftmost, sign_with};
 use super::{Error, P224, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_sign;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::ecdsa_p224::{vg_ecdsa_p224_sign_umaal, vg_ecdsa_p224_verify_umaal};
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_sha2;
 #[cfg(target_arch = "x86")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_shani;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::p224::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::hashes::sha224::{Sha224, Sha224Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P224> {
@@ -71,11 +69,18 @@ fn verify_with(q: &[u8; 57], e: &[u8; 28], signature: &[u8; 56]) -> Result<(), E
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> sealed::Functions<P224> for H {
     fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], Error> {
-        // SAFETY: `vg_ecdsa_p224_sign` needs no CPU feature.
-        unsafe { sign_with::<H, 28, 56>(vg_ecdsa_p224_sign, detected(), d, digest) }
+        let f = detected();
+        let sign: SignFn<28, 56> = match Mul::select(f) {
+            Mul::Baseline => vg_ecdsa_p224_sign,
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => vg_ecdsa_p224_sign_umaal,
+        };
+        // SAFETY: `sign` needs no CPU feature that the multiplications
+        // selected for this CPU do not.
+        unsafe { sign_with::<H, 28, 56>(sign, f, d, digest) }
     }
 
     /// `e` is the leftmost 224 bits of the hash (FIPS 186-5 §6.4.2): its
@@ -85,10 +90,10 @@ impl<H: HmacHash> sealed::Functions<P224> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 impl<H: HmacHash> SignatureHash<P224> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl sealed::Functions<P224> for Sha224 {
     fn sign(d: &[u8; 28], digest: &[u8; 28]) -> Result<[u8; 56], Error> {
         let f = detected();
@@ -98,8 +103,6 @@ impl sealed::Functions<P224> for Sha224 {
             (Sha224Backend::Sha2, Mul::Baseline) => vg_ecdsa_p224_sha224_sign_sha2,
             #[cfg(target_arch = "x86")]
             (Sha224Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p224_sha224_sign_shani,
-            #[cfg(target_arch = "arm")]
-            (Sha224Backend::Scalar, Mul::Umaal) => vg_ecdsa_p224_sha224_sign_umaal,
         };
         let mut out = [0; 56];
         let mut scratch = [0u64; 1024];
@@ -124,5 +127,31 @@ impl sealed::Functions<P224> for Sha224 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
 impl SignatureHash<P224> for Sha224 {}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod umaal_tests {
+    use super::Mul;
+    use crate::arch::ecdsa_p224::VG_ECDSA_P224_SIGN_UMAAL_FEATURES;
+    use crate::cpu::NAMES;
+    use verified_garbage_cpu::Features;
+
+    /// The CPU features of the signature with the multiplications `m`.
+    fn required(m: Mul) -> Features {
+        match m {
+            Mul::Baseline => Features(0),
+            Mul::Umaal => VG_ECDSA_P224_SIGN_UMAAL_FEATURES,
+        }
+    }
+
+    /// The signature needs no CPU feature that the multiplications are not
+    /// selected for: on every set of features that selects them.
+    #[test]
+    fn whole_algorithm_features() {
+        for bits in 0..1u32 << NAMES.len() {
+            let f = Features(bits);
+            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
+        }
+    }
+}
