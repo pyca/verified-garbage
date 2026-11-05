@@ -15,7 +15,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P384, SignatureHash, VerifyingKey};
+use verified_garbage::ec::{P384, PublicKey};
+use verified_garbage::ecdsa::{Error, SignatureHash};
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
 
@@ -45,7 +46,7 @@ fn check<H: SignatureHash<P384>>(file: &str, sha: &str) {
         let q: [u8; 97] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
-        let key = VerifyingKey::<P384>::from_bytes(&q);
+        let key = PublicKey::<P384>::from_bytes(&q);
         let Ok(sig) = <[u8; 96]>::try_from(&test.case.sig.0[..]) else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;

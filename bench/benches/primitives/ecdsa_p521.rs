@@ -36,7 +36,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{P521, SigningKey};
+    use verified_garbage::ec::P521;
+    use verified_garbage::ecdsa::SigningKey;
     use verified_garbage::hashes::sha512::Sha512;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -82,7 +83,10 @@ pub fn bench(c: &mut Criterion) {
             .compute_public_key()
             .unwrap()
             .as_ref(),
-        SigningKey::<P521>::from_bytes(&d).public_key().unwrap()
+        SigningKey::<P521>::from_bytes(&d)
+            .public_key()
+            .unwrap()
+            .as_bytes()
     );
     g.bench(BenchmarkId::new(AWS_LC, 133), |b| {
         b.iter(|| {
@@ -108,7 +112,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P521>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -127,7 +131,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{P521, SigningKey, VerifyingKey};
+    use verified_garbage::ec::P521;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
@@ -139,8 +144,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P521>
     public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
     let openssl_key =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<P521>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let aws_lc_key =
         aws_lc_sign.map(|alg| EcdsaKeyPair::from_private_key_and_public_key(alg, d, &q).unwrap());
     // Ignored: aws-lc-rs draws `k` from AWS-LC's own generator.

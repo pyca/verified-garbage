@@ -132,7 +132,7 @@ pub mod chacha20poly1305;
 pub mod cmac;
 mod ct;
 pub mod dsa;
-mod ec;
+pub mod ec;
 pub mod ecdh;
 pub mod ecdsa;
 pub mod ed25519;

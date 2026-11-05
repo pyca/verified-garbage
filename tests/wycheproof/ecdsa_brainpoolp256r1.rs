@@ -13,7 +13,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{BrainpoolP256r1, Error, VerifyingKey};
+use verified_garbage::ec::{BrainpoolP256r1, PublicKey};
+use verified_garbage::ecdsa::Error;
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::harness::{self, Count, Expectation};
@@ -31,7 +32,7 @@ fn ecdsa_brainpoolp256r1_sha256_p1363_test() {
         let q: [u8; 65] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
-        let key = VerifyingKey::<BrainpoolP256r1>::from_bytes(&q);
+        let key = PublicKey::<BrainpoolP256r1>::from_bytes(&q);
         let Ok(sig) = <[u8; 64]>::try_from(&test.case.sig.0[..]) else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;

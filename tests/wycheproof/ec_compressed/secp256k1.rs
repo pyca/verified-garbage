@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::Secp256k1;
+use verified_garbage::ec::Secp256k1;
 
 public_keys!(
     secp256k1,

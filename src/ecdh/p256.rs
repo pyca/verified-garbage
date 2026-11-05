@@ -1,5 +1,4 @@
-//! ECDH over P-256 (`vg_ecdh_p256`), and public keys
-//! (`vg_ec_p256_public_key`), and their variants on CPUs with the features
+//! ECDH over P-256 (`vg_ecdh_p256`), and its variants on CPUs with the features
 //! their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on ARMv7.
 
 #![cfg(any(
@@ -11,60 +10,39 @@
     target_arch = "riscv64"
 ))]
 
-use super::{Error, P256, PrivateKey};
 use crate::arch::ecdh_p256::vg_ecdh_p256;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p256::vg_ecdh_p256_adx;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_p256::vg_ecdh_p256_umaal;
 use crate::cpu::detected;
-use crate::ec::p256::{Mul, public_key};
+use crate::ec::P256;
+use crate::ec::p256::Mul;
+use crate::ec::sealed::Exchange;
 use crate::zeroize::zeroize;
 
-impl PrivateKey<P256> {
-    /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
-    /// `04 ‖ x ‖ y`, each coordinate 32 bytes, most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<[u8; 65], Error> {
-        public_key(&self.d).ok_or(Error::InvalidKey)
-    }
-
-    /// The shared secret with the peer whose public key is `peer`
-    /// (uncompressed, `04 ‖ x ‖ y`): the x-coordinate of `dQ`, 32 bytes,
-    /// most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
-    /// is not a valid public key (SP 800-56A §5.6.2.3.3).
-    pub fn exchange(&self, peer: &[u8; 65]) -> Result<[u8; 32], Error> {
+impl Exchange for P256 {
+    fn exchange(d: &[u8; 32], peer: &[u8; 65]) -> Option<[u8; 32]> {
         let mut out = [0; 32];
         let mut scratch = [0u64; 1024];
         let ok = match Mul::select(detected()) {
             // SAFETY: `out` is valid for reads and writes of 32 bytes,
-            // `self.d` for reads of 32, `peer` for reads of 65 and `scratch`
+            // `d` for reads of 32, `peer` for reads of 65 and `scratch`
             // for reads and writes of 8192; `out` and `scratch` are distinct
             // objects from each other and the others, so none overlaps
             // another or the call's stack frame, and, as Rust objects, none
             // wraps around the address space.
-            Mul::Baseline => unsafe { vg_ecdh_p256(&mut out, &self.d, peer, &mut scratch) },
+            Mul::Baseline => unsafe { vg_ecdh_p256(&mut out, d, peer, &mut scratch) },
             // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
             // (`Mul::select`).
             #[cfg(target_arch = "x86_64")]
-            Mul::Adx => unsafe { vg_ecdh_p256_adx(&mut out, &self.d, peer, &mut scratch) },
+            Mul::Adx => unsafe { vg_ecdh_p256_adx(&mut out, d, peer, &mut scratch) },
             // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
             // (`Mul::select`).
             #[cfg(target_arch = "arm")]
-            Mul::Umaal => unsafe { vg_ecdh_p256_umaal(&mut out, &self.d, peer, &mut scratch) },
+            Mul::Umaal => unsafe { vg_ecdh_p256_umaal(&mut out, d, peer, &mut scratch) },
         };
         zeroize(&mut scratch);
-        if ok == 1 {
-            Ok(out)
-        } else {
-            Err(Error::InvalidKey)
-        }
+        (ok == 1).then_some(out)
     }
 }

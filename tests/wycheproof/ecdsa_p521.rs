@@ -13,7 +13,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P521, VerifyingKey};
+use verified_garbage::ec::{P521, PublicKey};
+use verified_garbage::ecdsa::Error;
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation};
@@ -31,7 +32,7 @@ fn ecdsa_secp521r1_sha512_p1363_test() {
         let q: [u8; 133] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
-        let key = VerifyingKey::<P521>::from_bytes(&q);
+        let key = PublicKey::<P521>::from_bytes(&q);
         let Ok(sig) = <[u8; 132]>::try_from(&test.case.sig.0[..]) else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;

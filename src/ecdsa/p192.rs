@@ -1,7 +1,6 @@
-//! ECDSA over P-192: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_p192_sign`), public keys (`vg_ec_p192_public_key`), and
-//! verification (`vg_ecdsa_p192_verify`).
+//! ECDSA over P-192: deterministic signatures with HMAC over any hash function
+//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p192_sign`),
+//! and verification (`vg_ecdsa_p192_verify`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -13,36 +12,10 @@
 ))]
 
 use super::table::{HmacHash, leftmost, sign_with};
-use super::{Error, P192, SignatureHash, SigningKey, sealed};
-use crate::arch::ec_p192::vg_ec_p192_public_key;
+use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_sign;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
-use crate::zeroize::zeroize;
-
-impl SigningKey<P192> {
-    /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
-    /// `04 ‖ x ‖ y`, each coordinate 24 bytes, most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<[u8; 49], Error> {
-        let mut out = [0; 49];
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `out` is valid for reads and writes of 49 bytes, `self.d`
-        // for reads of 24 and `scratch` for reads and writes of 8192; `out`
-        // and `scratch` are distinct objects from each other and `self.d`,
-        // so none overlaps another or the call's stack frame, and, as Rust
-        // objects, none wraps around the address space.
-        let ok = unsafe { vg_ec_p192_public_key(&mut out, &self.d, &mut scratch) };
-        zeroize(&mut scratch);
-        if ok == 1 {
-            Ok(out)
-        } else {
-            Err(Error::InvalidKey)
-        }
-    }
-}
+use crate::ec::P192;
 
 /// Whether `signature` verifies with `q` for the hash whose leftmost 24
 /// bytes are `e`.

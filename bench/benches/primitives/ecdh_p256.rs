@@ -23,14 +23,16 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ecdh::{P256, PrivateKey};
+    use verified_garbage::ec::{P256, PublicKey};
+    use verified_garbage::ecdh::PrivateKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     let d = [0x42; 32];
-    let peer = PrivateKey::<P256>::from_bytes(&[0x24; 32])
+    let peer = *PrivateKey::<P256>::from_bytes(&[0x24; 32])
         .public_key()
-        .unwrap();
+        .unwrap()
+        .as_bytes();
     let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(&d).unwrap();
@@ -56,12 +58,16 @@ pub fn bench(c: &mut Criterion) {
     };
     assert_eq!(
         aws_lc_agree(&aws_lc_private, &peer),
-        vg_private.exchange(&peer).unwrap()
+        vg_private.exchange(&PublicKey::from_bytes(&peer)).unwrap()
     );
     let mut g = c.benchmark_group("ecdh_p256");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 32), |b| {
-        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
+        b.iter(|| {
+            black_box(&vg_private)
+                .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                .unwrap()
+        })
     });
     g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
@@ -104,7 +110,10 @@ pub fn bench(c: &mut Criterion) {
             .compute_public_key()
             .unwrap()
             .as_ref(),
-        PrivateKey::<P256>::from_bytes(&d).public_key().unwrap()
+        PrivateKey::<P256>::from_bytes(&d)
+            .public_key()
+            .unwrap()
+            .as_bytes()
     );
     g.bench(BenchmarkId::new(AWS_LC, 65), |b| {
         b.iter(|| {
@@ -134,7 +143,11 @@ pub fn bench(c: &mut Criterion) {
         one[31] = 1;
         let key = PrivateKey::<P256>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 65), |b| {
-            b.iter(|| black_box(&key).exchange(black_box(&peer)).is_ok())
+            b.iter(|| {
+                black_box(&key)
+                    .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                    .is_ok()
+            })
         });
         g.finish();
     }
