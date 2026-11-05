@@ -325,15 +325,7 @@ pub mod ecdsa_brainpoolp256r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ecdsa_brainpoolp256r1_sha256;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ecdsa_brainpoolp384r1;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ecdsa_brainpoolp384r1_sha384;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
@@ -341,15 +333,7 @@ pub mod ecdsa_brainpoolp512r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ecdsa_brainpoolp512r1_sha512;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ecdsa_p192;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ecdsa_p192_sha256;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
@@ -357,19 +341,7 @@ pub mod ecdsa_p224;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ecdsa_p224_sha224;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ecdsa_p256;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ecdsa_p256_sha256;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ecdsa_p256_sha384;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
@@ -377,23 +349,11 @@ pub mod ecdsa_p384;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ecdsa_p384_sha384;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ecdsa_p521;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
-pub mod ecdsa_p521_sha512;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
 pub mod ecdsa_secp256k1;
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
-#[rustfmt::skip]
-pub mod ecdsa_secp256k1_sha256;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
