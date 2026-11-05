@@ -302,6 +302,33 @@ theorem loop_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} 
 
 /-! ## The candidate -/
 
+/-- `T` empty: no `V`s yet. -/
+theorem tInit_ci (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (kOf P L t.mem)) :
+    WP isa (.block Cfg.tInit) t (CI P L g m₀ t (kOf P L t.mem) (vOf P L t.mem) 0) := by
+  have he := L.he
+  obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, hQ8, hQ66, -, -⟩ := P.sizes
+  refine WP.mono (tInit_ok hL hc) fun u₀ ⟨hc₀, hf₀, hl₀⟩ => ?_
+  have kv0 : ∀ {o : Nat}, 24 ≤ o → o + P.H.D ≤ 152 →
+      Spec.Sha256.bytesAt u₀.mem (L.B + BitVec.ofNat 64 o) P.H.D =
+        Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 o) P.H.D := fun h₁ h₂ =>
+    bytesAt_frame hf₀ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint _ (.inl (by simp only [fTlen]; omega)) (by omega) (by simp only [fTlen]; omega))
+      (by omega)
+  exact
+    { ctx := hc₀
+      frame := hf₀.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨⟨L.B, 160⟩, by simp, Offset.sub_base _ (by decide)⟩
+      k := kv0 (by decide) (by omega)
+      v := kv0 (by decide) (by omega)
+      len := by rw [hl₀, Nat.zero_mul]
+      t := by simp [Spec.Sha256.bytesAt, Spec.Ecdsa.Rfc6979.genT]
+      saved := hS.frame hf₀ fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (hL.stk_scr (by simp only [fTlen]; omega) (by decide)).symm }
+
+
 theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p n).length = n := by
   simp [Spec.Sha256.bytesAt]
 
@@ -320,26 +347,7 @@ theorem cand_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
   have hl := P.R.nBits_len
   obtain ⟨-, hND, hQN⟩ := nV_facts P
   rw [Cfg.cand]
-  refine WP.seq (WP.mono (tInit_ok hL hc) fun u₀ ⟨hc₀, hf₀, hl₀⟩ => ?_)
-  have kv0 : ∀ {o : Nat}, 24 ≤ o → o + P.H.D ≤ 152 →
-      Spec.Sha256.bytesAt u₀.mem (L.B + BitVec.ofNat 64 o) P.H.D =
-        Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 o) P.H.D := fun h₁ h₂ =>
-    bytesAt_frame hf₀ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by simp only [fTlen]; omega)) (by omega) (by simp only [fTlen]; omega))
-      (by omega)
-  have hI0 : CI P L g m₀ t (kOf P L t.mem) (vOf P L t.mem) 0 u₀ :=
-    { ctx := hc₀
-      frame := hf₀.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨L.B, 160⟩, by simp, Offset.sub_base _ (by decide)⟩
-      k := kv0 (by decide) (by omega)
-      v := kv0 (by decide) (by omega)
-      len := by rw [hl₀, Nat.zero_mul]
-      t := by simp [Spec.Sha256.bytesAt, Spec.Ecdsa.Rfc6979.genT]
-      saved := hS.frame hf₀ fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact (hL.stk_scr (by simp only [fTlen]; omega) (by decide)).symm }
+  refine WP.seq (WP.mono (tInit_ci hL hc hS) fun u₀ hI0 => ?_)
   refine WP.seq (WP.mono (loop_ok hL hT hI0) fun u₁ hI₁ => ?_)
   have hTl := genT_length P (kOf P L t.mem) P.nV (vOf P L t.mem)
   have hbits : Spec.Ecdsa.Rfc6979.bits2int P.R.E.C

@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Proof.Framework.ICall
 import VerifiedGarbage.Proof.Framework.KernelList
 meta import VerifiedGarbage.Proof.Framework.KernelList
 import VerifiedGarbage.Proof.Framework.RelSplit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
@@ -485,5 +487,321 @@ theorem rekeyFull_piece {Φ : Pr P} (b : Nat) : Piece P Φ ((cfgOf P).rekeyFull 
 theorem rekey_piece {Φ : Pr P} : Piece P Φ (cfgOf P).rekey (Tt P) := by
   unfold Cfg.rekey
   exact msgPtrs_piece.seq ((msg_piece (by exact (rT P).msgN)).seq ((hmacK_piece (by decide) _).seq hmacVS_piece))
+
+/-- `Ctx` with other callee-saved values, which are the same. -/
+theorem Ctx.regen {dn : Nat} {L : Lay dn} {g g' : Reg → BitVec 64} {m₀ : Mem} {u : State} (hc : Ctx L g' m₀ u)
+    (h : ∀ r ∈ calleeSaved, r ≠ .rsp → g' r = g r) : Ctx L g m₀ u :=
+  { hc with cs := fun r hr hr' => (hc.cs r hr hr').trans (h r hr hr') }
+
+/-! ## The byte loops -/
+
+theorem cpLoop_taint : ∃ hc, (taint.check (Taint.ofRegs [.rsi, .rdi, .rcx, .r8]) Cfg.cpLoop hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- A byte copy's registers. -/
+abbrev CpA (P : RfcHash) (p q : Lay P.I.hashLen → Addr) (n : Nat) : Pr P := fun L _ u =>
+  u.gpr .rsi = q L ∧ u.gpr .rdi = p L ∧ u.gpr .rcx = BitVec.ofNat 64 n ∧ u.gpr .r8 = BitVec.ofNat 64 0
+
+/-- The byte loop, from registers that agree. -/
+theorem cp_ct {Φ : Pr P} {p q : Lay P.I.hashLen → Addr} {n : Nat} (h : ∀ L m₀ u, Φ L m₀ u → CpA P p q n L m₀ u) :
+    RelCT isa (Two P Φ) Cfg.cpLoop fun _ _ => True :=
+  two_prog [.rsi, .rdi, .rcx, .r8] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
+    obtain ⟨a₁, b₁, c₁, d₁⟩ := h _ _ _ f₁; obtain ⟨a₂, b₂, c₂, d₂⟩ := h _ _ _ f₂
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact a₁.trans a₂.symm
+    · exact b₁.trans b₂.symm
+    · exact c₁.trans c₂.symm
+    · exact d₁.trans d₂.symm) cpLoop_taint
+
+/-! ## The candidate -/
+
+/-- After `j` of the candidate's `V`s, from some `K` and `V`. -/
+abbrev CJ (P : RfcHash) (j : Nat) : Pr P := fun L m₀ u => ∃ g' t₀ K V₀, CI P L g' m₀ t₀ K V₀ j u
+
+/-- `T`'s length, `j` blocks. -/
+abbrev TL (P : RfcHash) (j : Nat) : Pr P := fun L _ u => tlen L u.mem = BitVec.ofNat 64 (j * P.H.D)
+
+/-- The arguments of the copy of `V` to `T`'s end, and `j` blocks. -/
+abbrev KA (P : RfcHash) (j : Nat) : Pr P := fun L m₀ u =>
+  CpA P (fun L => L.B + BitVec.ofNat 64 (24 + fT + j * P.H.D)) (fun L => L.B + BitVec.ofNat 64 (24 + fV)) P.H.D
+    L m₀ u ∧ TL P j L m₀ u
+
+/-- One `V`'s blocks and calls leak the same in both runs. -/
+theorem candStep_trace {j : Nat} (hj : j < P.nV) :
+    RelCT isa (Two P (CJ P j)) (cfgOf P).candStep fun _ _ => True := by
+  obtain ⟨-, hND, -⟩ := nV_facts P
+  obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
+  have hb : (j + 1) * P.H.D ≤ 136 :=
+    Nat.le_trans (Nat.mul_le_mul (show j + 1 ≤ P.nV by omega) (Nat.le_refl P.H.D)) (by omega)
+  have hjD : (j + 1) * P.H.D = j * P.H.D + P.H.D := Nat.succ_mul _ _
+  refine (two_wp (Ψ := TL P j) (hmacVR_piece.rel fun _ _ _ _ => trivial) fun L g m₀ t hL hk hc hJ => ?_).seq
+    ((two_wp (Ψ := KA P j) (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩) fun L g m₀ t hL hk hc hl =>
+      WP.mono (keepArgs_ok hL hk.tabL hc hl) fun u ⟨c, hm, si, di, cx, r8⟩ =>
+        ⟨c, ⟨si, di, cx, r8⟩, by show tlen L u.mem = _; rw [hm]; exact hl⟩).seq
+    ((two_wp (Ψ := TL P j) (cp_ct fun _ _ _ h => h.1) fun L g m₀ t hL hk hc ⟨⟨si, di, cx, r8⟩, hl⟩ => ?_).seq
+      (two_blk [.rsp] rspOnly (by exact (rT P).tStep))))
+  · obtain ⟨_, _, _, _, hI⟩ := hJ
+    have hS : SavedK P L t.mem (kOf P L t.mem) := by rw [hI.k]; exact hI.saved
+    refine WP.mono (hmacVR_ok hL hk.tabL hc hS) fun u ⟨hc₁, hf₁, _⟩ => ⟨hc₁, ?_⟩
+    show tlen L u.mem = _
+    rw [← hI.len]
+    exact hf₁.readW (Region.contains_self _ _) (fun r hr => by
+      have := L.he
+      simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hL.stk_SCR (by simp only [fTlen]; omega)
+      · exact Offset.disjoint_base _ (by simp only [fTlen]; omega) (by simp only [fTlen]; omega)) (by decide)
+  · have he := L.he
+    have hnb := hL.nb
+    refine WP.mono (cp_ok hL hc (p := L.B + BitVec.ofNat 64 (24 + fT + j * P.H.D))
+        (q := L.B + BitVec.ofNat 64 (24 + fV)) (n := P.H.D) (by omega) (by omega) cx di si r8 ?_
+        (hc.inFrW (by omega) (by simp only [fT]; omega))
+        (safe_high L (by simp only [fT]; omega) (by simp only [fT]; omega))
+        (fun i hi => by
+          obtain ⟨R, hR, h⟩ := hc.inFrW (d := 24 + fV + i) (n := 1) (by omega) (by simp only [fV]; omega)
+          exact ⟨R, List.mem_append_right _ hR, by rw [Offset.add_add]; exact h⟩)
+        (fun i hi h => Offset.disjoint L.B (d := 24 + fV + i) (n := 1) (e := 24 + fT + j * P.H.D) (k := P.H.D)
+          (.inl (by simp only [fV, fT]; omega)) (by simp only [fV]; omega) (by simp only [fT]; omega) _
+          (by rw [← Offset.add_add]; exact Region.contains_self _ _) h)) fun u ⟨hcu, _, hf, _⟩ => ⟨hcu, ?_⟩
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 24 + fT + _) (by simp only [fT]; omega),
+        Nat.mod_eq_of_lt (by simp only [fT]; omega)]
+      simp only [fT]; omega
+    · show tlen L u.mem = _
+      rw [← hl]
+      exact hf.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint _ (.inl (by simp only [fTlen, fT]; omega)) (by simp only [fTlen]; omega)
+          (by simp only [fT]; omega)) (by decide)
+
+/-- The loop of the candidate's `V`s, in two runs: at the same block. -/
+theorem candLoop_ct :
+    RelCT isa (Two P (CJ P 0)) (.loop (cfgOf P).candStep .b) (Two P (CJ P P.nV)) := by
+  obtain ⟨hN1, hND, -⟩ := nV_facts P
+  obtain ⟨-, -, -, -, -, -, -, hD64, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
+  have h := VG.RelCT.loop (M := isa) (c := .b) (Q := Two P (CJ P P.nV))
+    (fun n => fun s₁ s₂ => 0 < n ∧ n ≤ P.nV ∧ Two P (CJ P (P.nV - n)) s₁ s₂) (n := P.nV) (body := (cfgOf P).candStep)
+    (fun n => by
+      refine fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨hn0, hnN, hp⟩ e₁ e₂ => ?_
+      have hj : P.nV - n < P.nV := by omega
+      have hb : (P.nV - n + 1) * P.H.D ≤ 136 :=
+        Nat.le_trans (Nat.mul_le_mul (show P.nV - n + 1 ≤ P.nV by omega) (Nat.le_refl P.H.D)) (by omega)
+      obtain ⟨ht, hq⟩ := (two_wp (Ψ := fun L m₀ u => CJ P (P.nV - n + 1) L m₀ u ∧
+          u.cf = some (decide ((P.nV - n + 1) * P.H.D < P.Q))) (candStep_trace hj)
+        fun L g m₀ t hL hk hc ⟨g', t₀, K, V₀, hI⟩ => WP.mono (step_ok hL hk.tabL hb hI)
+          fun u ⟨hI', hcf⟩ => ⟨hI'.ctx.regen fun r h h' => (hI.ctx.cs r h h').symm.trans (hc.cs r h h'),
+            ⟨g', t₀, K, V₀, hI'⟩, hcf⟩) s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+      refine ⟨ht, ?_, ?_, ?_⟩
+      · obtain ⟨_, _, _, _, _, _, f₁, f₂⟩ := hq
+        show s₁'.cf = s₂'.cf; rw [f₁.2, f₂.2]
+      · intro hf
+        obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := hq
+        have : ¬ (P.nV - n + 1) * P.H.D < P.Q := by
+          intro h'; have := f₁.2; rw [decide_eq_true h'] at this; exact absurd (this.symm.trans hf) (by decide)
+        have hNn : P.nV - n + 1 = P.nV := by
+          have : ¬ P.nV - n + 1 < P.nV := fun h => this ((nV_lt P _).mp h)
+          omega
+        exact ⟨e, hL, hk, hx, c₁, c₂, hNn ▸ f₁.1, hNn ▸ f₂.1⟩
+      · intro hf
+        obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := hq
+        have h' : (P.nV - n + 1) * P.H.D < P.Q := by
+          by_contra h'; have := f₁.2; rw [decide_eq_false h'] at this; exact absurd (this.symm.trans hf) (by decide)
+        have hlt := (nV_lt P (P.nV - n)).mpr h'
+        refine ⟨n - 1, by omega, by omega, by omega, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;>
+          rw [show P.nV - (n - 1) = P.nV - n + 1 by omega]
+        · exact f₁.1
+        · exact f₂.1)
+  exact h.mono (fun s₁ s₂ hp => ⟨hN1, Nat.le_refl _, by rwa [Nat.sub_self]⟩) fun _ _ h => h
+
+
+theorem candTop_ct {Φ : Pr P} : RelCT isa (Two P Φ) (.block (cfgOf P).candTop) fun _ _ => True := by
+  cases hb : P.R.big
+  · rw [show (cfgOf P).candTop = [] by
+      simp only [Cfg.candTop, show (cfgOf P).big = false from hb, Bool.false_eq_true, ite_false]]
+    exact two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩
+  · rw [show (cfgOf P).candTop = Cfg.scrPtr ++ (cfgOf P).conv fT (cfgOf P).sh by
+      simp only [Cfg.candTop, show (cfgOf P).big = true from hb, ite_true]]
+    exact (RelCT.block_append (scrPtr_piece.ct.seq
+      (two_blk [.rsp, .rdi] (scrRegs fun _ _ _ h => h) (by exact (rT P).convT hb)))).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
+
+/-- The candidate: its calls, blocks and loops leak the same in both runs. -/
+theorem cand_ct :
+    RelCT isa (Two P fun L _ t => SavedK P L t.mem (kOf P L t.mem)) (cfgOf P).cand fun _ _ => True := by
+  unfold Cfg.cand
+  exact (two_wp (Ψ := CJ P 0) (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩) fun L g m₀ t hL hk hc hS =>
+    WP.mono (tInit_ci hL hc hS) fun u hI => ⟨hI.ctx, _, _, _, _, hI⟩).seq (candLoop_ct.seq candTop_ct)
+
+theorem ce_rsp_two {dn : Nat} {L : Lay dn} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem}
+    (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) (rd₁ wr₁ rd₂ wr₂ : List Region) :
+    (t₁.callEntry.withRegions rd₁ wr₁).gpr .rsp = (t₂.callEntry.withRegions rd₂ wr₂).gpr .rsp := by
+  rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, rsp_two c₁ c₂]
+
+theorem ce_two {t₁ t₂ : State} {r : Reg} (hr : r ≠ .rsp) {x : BitVec 64} (h₁ : t₁.gpr r = x) (h₂ : t₂.gpr r = x)
+    (rd₁ wr₁ rd₂ wr₂ : List Region) :
+    (t₁.callEntry.withRegions rd₁ wr₁).gpr r = (t₂.callEntry.withRegions rd₂ wr₂).gpr r := by
+  rw [ce_gpr _ _ _ hr, ce_gpr _ _ _ hr, h₁, h₂]
+
+
+/-- `core`, with arguments that agree. -/
+theorem core_ct {i : Nat} :
+    RelCT isa (Two P fun L m₀ u => P₁ P L m₀ i u ∧ Args P L u) (.call (cfgOf P).coreN (cfgOf P).coreC)
+      fun _ _ => True :=
+  RelCT.callEx (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2)
+    (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => P.R.coreCT s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1)
+    fun _ _ ⟨⟨L, _, _, _, _⟩, hL, hk, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
+    ⟨coreRd P L, coreWr P L, coreRd P L, coreWr P L,
+      ⟨core_pre hL hk c₁ a₁.rdi a₁.rsi a₁.rdx a₁.rcx a₁.r8, core_clear hL hk c₁⟩,
+      ⟨core_pre hL hk c₂ a₂.rdi a₂.rsi a₂.rdx a₂.rcx a₂.r8, core_clear hL hk c₂⟩,
+      ⟨ce_rsp_two c₁ c₂ _ _ _ _, ce_two (by decide) a₁.rdi a₂.rdi _ _ _ _, ce_two (by decide) a₁.rsi a₂.rsi _ _ _ _,
+        ce_two (by decide) a₁.rdx a₂.rdx _ _ _ _, ce_two (by decide) a₁.rcx a₂.rcx _ _ _ _,
+        ce_two (by decide) a₁.r8 a₂.r8 _ _ _ _, fun c hc => by
+          have hc' : c ∈ L.cs := by rw [hk.2.1]; exact hc
+          exact (c₁.sy c hc').trans (c₂.sy c hc').symm⟩,
+      core_covers hk hL c₁, core_coversW hk.1 c₁, core_covers hk hL c₂, core_coversW hk.1 c₂, rsp_two c₁ c₂⟩
+
+/-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
+theorem dec_two {L : Lay P.I.hashLen} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P L m₁ = exitAt P L m₂) {u₁ u₂ : State}
+    (h₁ : Mid P L m₁ i u₁) (h₂ : Mid P L m₂ i u₂) : isa.eval .ne u₁ = isa.eval .ne u₂ := by
+  rw [h₁.dec, h₂.dec]
+  refine congrArg some (decide_eq_decide.mpr ?_)
+  rw [go_iff h₁.lt h₁.fails, go_iff h₂.lt h₂.fails, hx]
+
+/-- What one candidate leaves: the end, or the next candidate. -/
+def After (P : RfcHash) (i : Nat) (L : Lay P.I.hashLen) (m₀ : Mem) (t : State) : Prop :=
+  (isa.eval .ne t = some false ∧ Exit P L m₀ i t) ∨ (isa.eval .ne t = some true ∧ LoopInv P L m₀ (i + 1) t)
+
+theorem tryOne_trace {i : Nat} :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun _ _ => True := by
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u)
+    (cand_ct.mono (fun _ _ h => Two.mono (fun _ _ _ hi => hi.saved) h) fun _ _ h => h)
+    fun _ _ _ _ hL hk hc hi => try₁_ok hL hk hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u ∧ Args P L u) (two_blk [.rsp] rspOnly (by exact (rT P).coreArgs))
+    fun _ _ _ _ hL hk hc hi => try₂_ok hL hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₃ P L m₀ i u) core_ct fun _ _ _ _ hL hk hc hi =>
+    try₃_ok hL hk hc hi.1 hi.2).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => Mid P L m₀ i u) (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩)
+    fun _ _ _ _ hL hk hc hi => try₄_ok hL hk hc hi).seq ?_
+  refine VG.RelCT.ite (fun _ _ ⟨_, _, _, hx, _, _, f₁, f₂⟩ => dec_two hx f₁ f₂) ?_ ?_
+  · exact (rekey_piece.ct.seq (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩)).mono (fun _ _ h => h.1) fun _ _ h => h
+  · exact (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩).mono (fun _ _ h => h.1) fun _ _ h => h
+
+/-- One candidate: both runs end, or both go on. -/
+theorem tryOne_ct {i : Nat} :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun s₁ s₂ =>
+      isa.eval .ne s₁ = isa.eval .ne s₂ ∧ (isa.eval .ne s₁ = some false → Two P (Exit P · · i) s₁ s₂) ∧
+        (isa.eval .ne s₁ = some true → Two P (LoopInv P · · (i + 1)) s₁ s₂) := by
+  refine (two_wp (Ψ := After P i) tryOne_trace fun _ _ _ _ hL hk hc hi => tryOne_ok hL hk hc hi).mono
+    (fun _ _ h => h) fun s₁ s₂ ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ => ?_
+  -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
+  have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
+      LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
+    rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
+    rcases hE.last with h | h
+    · exact h hgo.1
+    · omega
+  rcases f₁ with ⟨d₁, x₁⟩ | ⟨d₁, x₁⟩ <;> rcases f₂ with ⟨d₂, x₂⟩ | ⟨d₂, x₂⟩
+  · exact ⟨d₁.trans d₂.symm, fun _ => ⟨e, hL, hk, hx, c₁, c₂, x₁, x₂⟩, fun h => absurd (h.symm.trans d₁) (by decide)⟩
+  · exact (mixed _ _ _ _ hx x₁ x₂).elim
+  · exact (mixed _ _ _ _ hx.symm x₂ x₁).elim
+  · exact ⟨d₁.trans d₂.symm, fun h => absurd (h.symm.trans d₁) (by decide), fun _ => ⟨e, hL, hk, hx, c₁, c₂, x₁, x₂⟩⟩
+
+/-! ## The loop -/
+
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
+  ⟨by omega, by omega⟩
+
+theorem tries_ct :
+    RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) :=
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
+
+/-! ## The frame's body -/
+
+theorem initCnt_taint (c : Cfg) : TaintOk [.rsp] c.initCnt :=
+  taintOk_erase (is₀ := [.mov32 .rax (.imm (BitVec.ofNat 32 0)), .store (stk fCnt) .rax]) ⟨_, by taint_decide⟩ rfl
+
+theorem prepX_ct : RelCT isa (Two P (Tt P)) (cfgOf P).prepX (Two P (QX P)) := by
+  refine two_wp ?_ fun L g m₀ t hL hk hc _ => stageX_ok hL hk hc
+  rw [Cfg.prepX]
+  exact (two_wp (Ψ := CpA P (fun L => L.B + BitVec.ofNat 64 (24 + fX + (P.Q - min P.H.D P.Q))) (fun L => L.dg)
+      (min P.H.D P.Q)) (two_blk [.rsp] rspOnly (by exact (rT P).xArgs)) fun L g m₀ t hL hk hc _ =>
+    WP.mono (xArgs_ok hL hk.tabL hc) fun _ ⟨c, _, _, cx, di, si, r8⟩ => ⟨c, si, di, cx, r8⟩).seq
+    (cp_ct fun _ _ _ h => h)
+
+theorem prepH_ct : RelCT isa (Two P (QX P)) (cfgOf P).prepH (Two P (QA P)) := by
+  refine two_wp ?_ fun L g m₀ t hL hk hc hx => stageH_ok hL hk hc hx
+  cases hb : P.R.big
+  · rw [show (cfgOf P).prepH = .block (cfgOf P).reduce by
+      simp only [Cfg.prepH, show (cfgOf P).big = false from hb, Bool.false_eq_true, ite_false]]
+    exact two_blk [.rsp] rspOnly (by exact (rT P).reduce hb)
+  · rw [show (cfgOf P).prepH = (cfgOf P).prepC by
+      simp only [Cfg.prepH, show (cfgOf P).big = true from hb, ite_true], Cfg.prepC]
+    refine RelCT.assoc ((two_wp (Ψ := Tt P) ((two_wp (Ψ := CpA P
+        (fun L => L.B + BitVec.ofNat 64 (24 + fXc + (P.Q - 1 - P.H.D))) (fun L => L.dg) P.H.D)
+        (two_blk [.rsp] rspOnly (by exact (rT P).xcArgs hb)) fun L g m₀ t hL hk hc _ =>
+          WP.mono (xcArgs_ok hL hk.tabL hb hc) fun _ ⟨c, cx, di, si, r8⟩ => ⟨c, si, di, cx, r8⟩).seq
+        (cp_ct fun _ _ _ h => h)) fun L g m₀ t hL hk hc _ =>
+          WP.mono (xcCopy_ok hL hk.tabL hb (Nat.le_of_eq P.len.symm) hc) fun _ h => ⟨h, trivial⟩).seq ?_)
+    exact (RelCT.block_append (scrPtr_piece.ct.seq
+      (two_blk [.rsp, .rdi] (scrRegs fun _ _ _ h => h) (by exact (rT P).convC hb)))).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
+
+theorem body_ct :
+    RelCT isa (Two P (Tt P)) (cfgOf P).body (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
+  rw [Cfg.body]
+  refine prepX_ct.seq (prepH_ct.seq ?_)
+  refine (two_wp (Ψ := QB P) (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩)
+    fun _ _ _ _ hL _ hc h => stageB_ok hL hc h).seq ?_
+  refine (two_wp (Ψ := QC P) ((rekeyFull_piece 0).rel fun _ _ _ _ => trivial)
+    fun _ _ _ _ hL hk hc h => stageC_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := QD P) ((rekeyFull_piece 1).rel fun _ _ _ _ => trivial)
+    fun _ _ _ _ hL hk hc h => stageD_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [.rsp] rspOnly (initCnt_taint _))
+    fun _ _ _ _ hL _ hc h => stageE_ok (P := P) hL hc h).seq ?_
+  refine tries_ct.seq ?_
+  exact two_wp (two_blk [.rsp] rspOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
+    WP.mono (stageG_ok hL hk hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
+
+/-! ## The whole function -/
+
+/-- Runs whose public data agree (with the addresses of the hash function's
+HMAC functions among `ns`) have the same layout, and stop at the same
+candidate. -/
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
+    ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
+  rw [sign_eq]
+  refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_)
+  refine body_ct.mono (fun a b ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, h9, hres, hsy, hns'⟩, ea, eb⟩ => ?_)
+    fun _ _ _ => trivial
+  subst ea eb
+  have hsy' : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₁.syms n else 0) =
+      fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0 := funext fun n => by
+    split
+    · next h => obtain ⟨c, hc, rfl⟩ := List.mem_map.mp h; exact hsy c hc
+    · rfl
+  have hfa : (fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₁.syms n else 0) =
+      fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₂.syms n else 0 :=
+    funext fun n => by
+      split
+      · next h => exact hns' n (hns n h)
+      · rfl
+  have hl : layOf P s₁ = layOf P s₂ := by
+    unfold layOf lay; rw [hsp, hdi, hsi, hdx, hcx, h9, hsy', hfa]
+  have hr : (result P.I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 = (result P.I s₂.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 := by
+    rw [hres, hsi, hdx]
+  refine ⟨⟨layOf P s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok rfl p₁, coreOk_lay P s₁,
+    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr,
+    push_ctx rfl p₁, by rw [hl]; exact push_ctx rfl p₂, trivial, trivial⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
