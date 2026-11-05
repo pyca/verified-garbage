@@ -168,15 +168,19 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 abbrev dgArg (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr :=
   if P.R.big then L.B + BitVec.ofNat 64 (16 + fXc) else L.B + BitVec.ofNat 64 (16 + fX)
 
+/-- Where `core` reads the candidate `k`: `T`. -/
+abbrev kArg (_P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr :=
+  L.B + BitVec.ofNat 64 (16 + fT)
+
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .x0 = L.out ∧
       t'.gpr .x1 = L.d ∧ t'.gpr .x2 = dgArg P L ∧
-      t'.gpr .x3 = L.B + BitVec.ofNat 64 (16 + fT) ∧ t'.gpr .x4 = L.scr := by
+      t'.gpr .x3 = kArg P L ∧ t'.gpr .x4 = L.scr := by
   have p0 := hc.inFr (d := 224) (by omega_arith) (by omega_arith)
   have p1 := hc.inFr (d := 216) (by omega_arith) (by omega_arith)
   have p3 := hc.inFr (d := 200) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
-  simp only [dgArg]
+  simp only [dgArg, kArg]
   cases hb : P.R.big
   · simp only [Cfg.coreArgs, Cfg.fDg, cfgOf, hb, Cfg.fr, fOut, fD, fX, fT, fScratch, Bool.false_eq_true, ite_false,
       List.cons_append, List.nil_append,

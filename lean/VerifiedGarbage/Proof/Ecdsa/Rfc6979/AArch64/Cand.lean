@@ -3,6 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -42,10 +43,6 @@ abbrev tlen {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : B
 /-- `T`'s first `n` bytes. -/
 abbrev tOf {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) (n : Nat) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 (16 + fT)) n
-
-/-- Where `core` reads the candidate `k`: `T`. -/
-abbrev kArg (_P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Addr :=
-  L.B + BitVec.ofNat 64 (16 + fT)
 
 /-! ## The blocks -/
 
