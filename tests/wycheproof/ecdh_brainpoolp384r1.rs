@@ -1,7 +1,7 @@
 //! ECDH over brainpoolP384r1 (`EcdhTest` vectors of
 //! `ecdh_brainpoolP384r1_test.json`, public keys as DER `SubjectPublicKeyInfo`).
 //!
-//! [`PrivateKey::diffie_hellman`] takes an uncompressed public key, so a
+//! [`PrivateKey::exchange`] takes an uncompressed public key, so a
 //! vector's key is passed only if it is the DER encoding of an uncompressed
 //! point with brainpoolP384r1's named curve parameters: a valid vector must
 //! give its shared secret, and an invalid or acceptable one must be refused
@@ -71,10 +71,10 @@ fn ecdh_brainpoolp384r1_test() {
             one[last] = 1;
             let reference = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
             let valid = BrainpoolP384r1::validate_public_key(&public);
-            let expected = reference.diffie_hellman(&public).is_ok();
+            let expected = reference.exchange(&public).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
-        let result = key.diffie_hellman(&public).map(|z| z.to_vec());
+        let result = key.exchange(&public).map(|z| z.to_vec());
         let shared = Ok(test.case.shared.0.clone());
         match test.result {
             Expectation::Valid => {

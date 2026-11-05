@@ -1,7 +1,7 @@
 //! ECDH over P-384 (`EcdhEcpointTest` vectors of
 //! `ecdh_secp384r1_ecpoint_test.json`, public keys as SEC 1 octet strings).
 //!
-//! [`PrivateKey::diffie_hellman`] takes an uncompressed public key: a valid
+//! [`PrivateKey::exchange`] takes an uncompressed public key: a valid
 //! vector must give its shared secret, an invalid one must be refused (or,
 //! if not 97 bytes, cannot be passed), and the acceptable ones are
 //! compressed keys, which cannot be passed either.
@@ -42,7 +42,7 @@ fn ecdh_secp384r1_ecpoint_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
-        let result = key.diffie_hellman(&public);
+        let result = key.exchange(&public);
         #[cfg(target_arch = "x86_64")]
         {
             // A scalar of one makes ECDH an independent reference for the
@@ -52,7 +52,7 @@ fn ecdh_secp384r1_ecpoint_test() {
             one[last] = 1;
             let reference = PrivateKey::<P384>::from_bytes(&one);
             let valid = P384::validate_public_key(&public);
-            let expected = reference.diffie_hellman(&public).is_ok();
+            let expected = reference.exchange(&public).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         match test.result {

@@ -45,11 +45,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ecdh_secp256k1");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 32), |b| {
-        b.iter(|| {
-            black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
-                .unwrap()
-        })
+        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
     });
     g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
@@ -80,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
         one[31] = 1;
         let key = PrivateKey::<Secp256k1>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 65), |b| {
-            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+            b.iter(|| black_box(&key).exchange(black_box(&peer)).is_ok())
         });
         g.finish();
     }

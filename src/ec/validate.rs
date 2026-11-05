@@ -191,7 +191,7 @@ mod tests {
                             q[i] = byte;
                             assert_eq!(
                                 $curve::validate_public_key(&q),
-                                reference.diffie_hellman(&q).is_ok()
+                                reference.exchange(&q).is_ok()
                             );
                         }
                     }

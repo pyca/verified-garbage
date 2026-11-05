@@ -36,8 +36,8 @@ fn ecdh() {
     );
     assert_eq!(a.public_key(), Ok(qa));
     assert_eq!(b.public_key(), Ok(qb));
-    assert_eq!(a.diffie_hellman(&qb), Ok(z));
-    assert_eq!(b.diffie_hellman(&qa), Ok(z));
+    assert_eq!(a.exchange(&qb), Ok(z));
+    assert_eq!(b.exchange(&qa), Ok(z));
 }
 
 /// An invalid peer key, and private keys out of range.
@@ -48,13 +48,13 @@ fn invalid_keys() {
     let mut invalid = qa;
     invalid[0] = 0;
     assert_eq!(
-        PrivateKey::<BrainpoolP256r1>::from_bytes(&da).diffie_hellman(&invalid),
+        PrivateKey::<BrainpoolP256r1>::from_bytes(&da).exchange(&invalid),
         Err(Error::InvalidKey)
     );
     // 0 and 2²⁵⁶ − 1 (above n) are not in [1, n − 1].
     for d in [[0; 32], [0xff; 32]] {
         let bad = PrivateKey::<BrainpoolP256r1>::from_bytes(&d);
         assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(bad.diffie_hellman(&qa), Err(Error::InvalidKey));
+        assert_eq!(bad.exchange(&qa), Err(Error::InvalidKey));
     }
 }
