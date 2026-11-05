@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Impl.Ffdh.RISCV64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.KeyGeneration.Data
 public import VerifiedGarbage.Proof.Ffdh.Contract
@@ -127,9 +128,10 @@ def searchPost (s t : State) : Prop :=
         | .accepted p _ => i2osp p (genLen s)
         | _ => List.replicate (genLen s) 0) ∧
     wordsAt t.mem (s.gpr .a2) 1 = [BitVec.ofNat 64 (searchResult s).used] ∧
-    wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
+    ∃ requested, wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
-      BitVec.ofNat 64 (searchResult s).requested]
+      BitVec.ofNat 64 requested] ∧
+      (searchResult s).Requests (parameterEntropy (genBits s)) requested
 
 /-- What timing may depend on: the arguments, the tape, the controller's
 public words and the table's address. -/
@@ -237,7 +239,7 @@ def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
 /-- The controller's four public words for a finished search. -/
 def SPub.policy (p : SPub) (result : ParameterSearchResult) : List (BitVec 64) :=
   [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.len,
-    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 result.requested]
+    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.bits result)]
 
 /-- A finished search, before `finish` stores `used` and restores `s0`. -/
 structure SDone (p : SPub) (original : State) (result : ParameterSearchResult) (s : State) : Prop where
@@ -623,7 +625,7 @@ theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used
 theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
     (hc : p.cand used = none) :
     p.tail used k = if parameterEntropy p.bits ≤ p.randLen - used then .exhausted used
-      else .entropy k (parameterRequest p.bits (p.randLen - used)) used := by
+      else .entropy k (p.randLen - used) used := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   simp only [SPub.cand] at hc
   simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
