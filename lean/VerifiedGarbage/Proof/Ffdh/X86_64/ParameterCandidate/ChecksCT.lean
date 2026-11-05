@@ -29,9 +29,13 @@ structure CheckPub where
 
 def CheckHeader (q : CheckPub) (s : State) : Prop := KW q.B q.wr ∧ HP q.B q.wr (gvs q.B q.w) s
 
-theorem sieve_ct : RelCT isa (Two CheckHeader) sieve fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+/-- The sieve, its count chosen by the requested width in RDX. -/
+theorem sieve_ct : RelCT isa (Two fun (a : CheckPub × BitVec 64) s => CheckHeader a.1 s ∧ s.gpr .rdx = a.2)
+    sieve fun _ _ => True :=
+  kt_ct (fun a => a.1.B) (fun a => a.1.wr) gS (fun a => gvs a.1.B a.1.w) [.rdx] (by decide)
+    (fun a => gvs_fst a.1.B a.1.w) (fun _ _ h => h.1)
+    (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁.2.trans h₂.2.symm)
+    (by taint_decide)
 
 theorem generator2_ct : RelCT isa (Two CheckHeader) generator2 fun _ _ => True :=
   kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
