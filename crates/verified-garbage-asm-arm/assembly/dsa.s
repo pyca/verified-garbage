@@ -16060,7 +16060,77 @@ vg_dsa_verify_prevalidated:
 	ldr lr, [r12, #160]
 	bx lr
 
-vg_dsa_generate_parameters:
+vg_dsa_parameter_search_init:
+	cmp r1, #128
+	beq 20f
+	cmp r1, #256
+	beq 22f
+	cmp r1, #384
+	beq 24f
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+	b 25f
+24:
+	mov r12, #0
+	str r12, [r0, #4]
+	str r12, [r0, #12]
+	str r12, [r0, #20]
+	str r12, [r0, #28]
+	str r1, [r0, #8]
+	lsl r12, r1, #15
+	add r12, r12, r1
+	str r12, [r0, #16]
+	lsl r12, r1, #9
+	str r12, [r0, #24]
+	movw r12, #4096
+	str r12, [r0, #0]
+	mov r0, #1
+25:
+	b 23f
+22:
+	mov r12, #0
+	str r12, [r0, #4]
+	str r12, [r0, #12]
+	str r12, [r0, #20]
+	str r12, [r0, #28]
+	str r1, [r0, #8]
+	lsl r12, r1, #15
+	add r12, r12, r1
+	str r12, [r0, #16]
+	lsl r12, r1, #9
+	str r12, [r0, #24]
+	movw r12, #4096
+	str r12, [r0, #0]
+	mov r0, #1
+23:
+	b 21f
+20:
+	mov r12, #0
+	str r12, [r0, #4]
+	str r12, [r0, #12]
+	str r12, [r0, #20]
+	str r12, [r0, #28]
+	str r1, [r0, #8]
+	lsl r12, r1, #15
+	add r12, r12, r1
+	str r12, [r0, #16]
+	lsl r12, r1, #9
+	str r12, [r0, #24]
+	movw r12, #4096
+	str r12, [r0, #0]
+	mov r0, #1
+21:
+	bx lr
+
+vg_dsa_parameter_search:
 	sub sp, sp, #128
 	add r12, sp, #0
 	str r4, [r12, #0]
@@ -16073,20 +16143,22 @@ vg_dsa_generate_parameters:
 	str r11, [r12, #28]
 	str lr, [r12, #32]
 	str r0, [r12, #40]
-	str r1, [r12, #44]
+	str r2, [r12, #44]
+	str r3, [r12, #96]
 	ldr r1, [sp, #128]
-	str r1, [r12, #48]
-	ldr r1, [sp, #132]
-	str r1, [r12, #52]
-	ldr r1, [sp, #144]
-	str r1, [r12, #96]
-	ldr r1, [sp, #148]
 	str r1, [r12, #100]
-	ldr r1, [sp, #152]
+	ldr r1, [sp, #132]
 	str r1, [r12, #84]
+	ldr r1, [sp, #140]
+	str r1, [r12, #68]
 	mov r1, #0
-	str r1, [r12, #56]
+	str r1, [r12, #116]
 	str r1, [r12, #80]
+	ldr r1, [sp, #140]
+	ldr r2, [r1, #8]
+	ldr r1, [r1, #0]
+	add r12, sp, #0
+	str r1, [r12, #52]
 	cmp r2, #128
 	beq 20f
 	cmp r2, #256
@@ -16126,17 +16198,34 @@ vg_dsa_generate_parameters:
 	ldr r0, [sp, #52]
 	cmp r0, #0
 	beq 25f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #32
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 27f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #32
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-27:
+29:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 27b
+	bne 29b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16209,13 +16298,13 @@ vg_dsa_generate_parameters:
 	movw r12, #49792
 	sub r0, r8, r12
 	movw lr, #32
-28:
+210:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 28b
+	bne 210b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -16227,34 +16316,34 @@ vg_dsa_generate_parameters:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 29f
-	b 210f
-29:
+	beq 211f
+	b 212f
+211:
 	ldr r2, [sp, #96]
-210:
+212:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 211f
+	beq 213f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 212f
-211:
-212:
+	b 214f
+213:
+214:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 213f
+	beq 215f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 215f
-	b 216f
-215:
+	beq 217f
+	b 218f
+217:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -16264,31 +16353,31 @@ vg_dsa_generate_parameters:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-217:
+219:
 	ldr r1, [sp, #48]
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-218:
+220:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 218b
+	bne 220b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #32
-219:
+221:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 219b
+	bne 221b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16352,26 +16441,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-220:
+222:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 220b
+	bne 222b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #32
-221:
+223:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 221b
+	bne 223b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16435,26 +16524,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-222:
+224:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 222b
+	bne 224b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #32
-223:
+225:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 223b
+	bne 225b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16518,26 +16607,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-224:
+226:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 224b
+	bne 226b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #32
-225:
+227:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 225b
+	bne 227b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16601,26 +16690,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-226:
+228:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 226b
+	bne 228b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #32
-227:
+229:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 227b
+	bne 229b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16684,26 +16773,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-228:
+230:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 228b
+	bne 230b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #32
-229:
+231:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 229b
+	bne 231b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16767,26 +16856,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-230:
+232:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 230b
+	bne 232b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #32
-231:
+233:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 231b
+	bne 233b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16850,26 +16939,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-232:
+234:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 232b
+	bne 234b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #7
 	mov r2, #32
-233:
+235:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 233b
+	bne 235b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -16933,26 +17022,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-234:
+236:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 234b
+	bne 236b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #8
 	mov r2, #32
-235:
+237:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 235b
+	bne 237b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -17016,26 +17105,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-236:
+238:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 236b
+	bne 238b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #9
 	mov r2, #32
-237:
+239:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 237b
+	bne 239b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -17099,26 +17188,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-238:
+240:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 238b
+	bne 240b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #10
 	mov r2, #32
-239:
+241:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 239b
+	bne 241b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -17182,26 +17271,26 @@ vg_dsa_generate_parameters:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-240:
+242:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 240b
+	bne 242b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #11
 	mov r2, #32
-241:
+243:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 241b
+	bne 243b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -17272,11 +17361,11 @@ vg_dsa_generate_parameters:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-242:
+244:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 242b
+	bne 244b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17286,31 +17375,6 @@ vg_dsa_generate_parameters:
 	sub r4, r8, r12
 	movw r6, #384
 	add r0, r8, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-243:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 243b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-244:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 244b
-	movw r12, #53696
-	sub r4, r8, r12
-	movw r6, #384
-	mov r0, #4
-	mla r0, r0, r7, r8
-	add r0, r0, #160
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
@@ -17330,10 +17394,10 @@ vg_dsa_generate_parameters:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 246b
-	movw r12, #53760
+	movw r12, #53696
 	sub r4, r8, r12
-	movw r6, #32
-	mov r0, #2
+	movw r6, #384
+	mov r0, #4
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	mov r5, r0
@@ -17355,6 +17419,31 @@ vg_dsa_generate_parameters:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 248b
+	movw r12, #53760
+	sub r4, r8, r12
+	movw r6, #32
+	mov r0, #2
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
+249:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 249b
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
+250:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 250b
 	add r1, r8, #160
 	str r1, [r8, #0]
 	add r1, r8, r7
@@ -17372,36 +17461,36 @@ vg_dsa_generate_parameters:
 	ldr lr, [r8, #16]
 	add lr, lr, #1
 	mov r3, #0
-249:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 249b
-	ldr r6, [r8, #16]
-	lsl r6, r6, #5
-250:
-	ldr r0, [r8, #0]
-	ldr lr, [r8, #16]
-	mov r11, #0
 251:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
 	bne 251b
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
+	ldr r6, [r8, #16]
+	lsl r6, r6, #5
 252:
+	ldr r0, [r8, #0]
+	ldr lr, [r8, #16]
+	mov r11, #0
+253:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 252b
+	bne 253b
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+254:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 254b
 	ldr r0, [r8, #12]
 	ldr r10, [r8, #4]
 	ldr r12, [r8, #8]
@@ -17409,61 +17498,6 @@ vg_dsa_generate_parameters:
 	ldr r7, [r8, #16]
 	add r7, r7, #1
 	mov lr, r7
-	mov r11, #0
-253:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 253b
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-254:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 254b
-	ldr r0, [r8, #0]
-	ldr r3, [r0, #0]
-	eor r11, r11, #1
-	add r3, r3, r11
-	str r3, [r0, #0]
-	subs r6, r6, #1
-	bne 250b
-	mov r9, #96
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #5
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #4
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	add r12, r8, r7
-	add r12, r12, #160
-	mov lr, r9
 	mov r11, #0
 255:
 	ldr r1, [r10, #0]
@@ -17480,21 +17514,12 @@ vg_dsa_generate_parameters:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 255b
-	add r0, r8, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #120]
-	mov r0, #6
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #2
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #120]
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
 256:
@@ -17509,14 +17534,23 @@ vg_dsa_generate_parameters:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 256b
-	mov r0, #7
+	ldr r0, [r8, #0]
+	ldr r3, [r0, #0]
+	eor r11, r11, #1
+	add r3, r3, r11
+	str r3, [r0, #0]
+	subs r6, r6, #1
+	bne 252b
+	mov r9, #96
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #5
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #5
+	mov r10, #4
 	mla r10, r10, r7, r8
 	add r10, r10, #160
-	mov r12, #6
-	mla r12, r12, r7, r8
+	add r12, r8, r7
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
@@ -17535,6 +17569,61 @@ vg_dsa_generate_parameters:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 257b
+	add r0, r8, #160
+	ldr r1, [r0, #0]
+	and r1, r1, #1
+	str r1, [r8, #120]
+	mov r0, #6
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #2
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	ldr r11, [r8, #120]
+	mov r4, #0
+	sub r4, r4, r11
+258:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 258b
+	mov r0, #7
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #5
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #6
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+259:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 259b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17548,14 +17637,14 @@ vg_dsa_generate_parameters:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-258:
+260:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 258b
+	bne 260b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17571,14 +17660,14 @@ vg_dsa_generate_parameters:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-259:
+261:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 259b
+	bne 261b
 	mov r0, #9
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17594,31 +17683,31 @@ vg_dsa_generate_parameters:
 	movw r12, #53312
 	sub r0, r8, r12
 	movw lr, #384
-260:
+262:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 260b
+	bne 262b
 	movw r12, #53312
 	sub r0, r8, r12
 	ldrb r1, [r0, #0]
 	and r1, r1, #128
 	cmp r1, #0
-	beq 261f
+	beq 263f
 	movw r12, #53312
 	sub r1, r8, r12
 	movw r12, #49792
 	sub r0, r8, r12
 	movw lr, #384
-263:
+265:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 263b
+	bne 265b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -17630,52 +17719,52 @@ vg_dsa_generate_parameters:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 264f
-	b 265f
-264:
+	beq 266f
+	b 267f
+266:
 	ldr r2, [sp, #96]
-265:
+267:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 266f
+	beq 268f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 267f
-266:
-267:
-	ldr r0, [sp, #104]
-	cmp r0, #0
-	beq 268f
-	ldr r0, [sp, #104]
-	cmp r0, #1
-	beq 270f
-	b 271f
-270:
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #108]
-271:
 	b 269f
 268:
-	mov r1, #0
-	add r12, sp, #0
-	str r1, [r12, #108]
 269:
-	b 262f
-261:
-262:
-	ldr r0, [sp, #108]
-	cmp r0, #4
+	ldr r0, [sp, #104]
+	cmp r0, #0
+	beq 270f
+	ldr r0, [sp, #104]
+	cmp r0, #1
 	beq 272f
 	b 273f
 272:
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #108]
+273:
+	b 271f
+270:
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #108]
+271:
+	b 264f
+263:
+264:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 274f
+	b 275f
+274:
 	ldr r1, [sp, #60]
 	add r1, r1, #1
 	add r12, sp, #0
@@ -17686,38 +17775,63 @@ vg_dsa_generate_parameters:
 	str r2, [r12, #64]
 	movw r2, #12288
 	cmp r1, r2
-	beq 274f
-	b 275f
-274:
+	beq 276f
+	b 277f
+276:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #108]
+277:
 275:
-273:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 217b
+	beq 219b
 	ldr r0, [sp, #108]
 	cmp r0, #0
-	beq 276f
+	beq 278f
 	ldr r0, [sp, #108]
 	cmp r0, #1
-	beq 278f
-	b 279f
-278:
-	ldr r1, [sp, #136]
+	beq 280f
+	b 281f
+280:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #49152
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 282f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 283f
+282:
+	add r12, sp, #0
+	str r0, [r12, #124]
+283:
+	ldr r1, [sp, #120]
 	add r12, sp, #0
 	str r1, [r12, #72]
-	ldr r1, [sp, #140]
+	ldr r1, [sp, #124]
 	add r12, sp, #0
 	str r1, [r12, #76]
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #112]
-280:
+284:
 	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 281f
+	movw r1, #384
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 285f
 	ldr r4, [sp, #72]
 	movw r6, #384
 	mov r0, #10
@@ -17726,22 +17840,22 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-283:
+287:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 283b
+	bne 287b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-284:
+288:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 284b
+	bne 288b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17753,7 +17867,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-285:
+289:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -17767,7 +17881,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 285b
+	bne 289b
 	str r11, [r8, #124]
 	mov r0, #14
 	mla r0, r0, r7, r8
@@ -17780,7 +17894,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-286:
+290:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -17794,7 +17908,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 286b
+	bne 290b
 	str r11, [r8, #128]
 	ldr r1, [r8, #124]
 	ldr r2, [r8, #128]
@@ -17802,46 +17916,46 @@ vg_dsa_generate_parameters:
 	str r1, [r8, #124]
 	ldr r1, [r8, #124]
 	cmp r1, #0
-	beq 287f
+	beq 291f
 	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #49536
 	sub r0, r8, r12
 	movw lr, #384
-289:
+293:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 289b
+	bne 293b
 	mov r1, #10
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #46400
 	sub r0, r8, r12
 	movw lr, #384
-290:
+294:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 290b
+	bne 294b
 	mov r1, #9
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #45224
 	sub r0, r8, r12
 	movw lr, #356
-291:
+295:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 291b
+	bne 295b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -17852,13 +17966,13 @@ vg_dsa_generate_parameters:
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	movw lr, #384
-292:
+296:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 292b
+	bne 296b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -17870,7 +17984,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-293:
+297:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -17884,11 +17998,11 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 293b
+	bne 297b
 	str r11, [r8, #136]
 	ldr r1, [r8, #136]
 	cmp r1, #0
-	beq 294f
+	beq 298f
 	mov r1, #12
 	mla r1, r1, r7, r8
 	add r1, r1, #160
@@ -17897,22 +18011,22 @@ vg_dsa_generate_parameters:
 	movw r12, #52160
 	sub r0, r8, r12
 	movw lr, #384
-296:
+2100:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 296b
+	bne 2100b
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #112]
-	b 295f
-294:
-295:
-	b 288f
-287:
-288:
+	b 299f
+298:
+299:
+	b 292f
+291:
+292:
 	ldr r1, [sp, #72]
 	movw r2, #384
 	add r1, r1, r2
@@ -17922,56 +18036,75 @@ vg_dsa_generate_parameters:
 	sub r1, r1, r2
 	add r12, sp, #0
 	str r1, [r12, #76]
-	b 282f
-281:
+	b 286f
+285:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #112]
-282:
+286:
 	ldr r0, [sp, #112]
 	cmp r0, #4
-	beq 280b
+	beq 284b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
 	ldr r0, [sp, #112]
 	cmp r0, #1
-	beq 297f
-	b 298f
-297:
+	beq 2101f
+	ldr r0, [sp, #124]
+	movw r1, #49152
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2103f
+	b 2104f
+2103:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2104:
+	b 2102f
+2101:
 	movw r12, #53312
 	sub r1, r8, r12
 	movw r12, #51776
 	sub r0, r8, r12
 	movw lr, #384
-299:
+2105:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 299b
+	bne 2105b
 	movw r12, #53760
 	sub r1, r8, r12
 	movw r12, #51392
 	sub r0, r8, r12
 	movw lr, #32
-2100:
+2106:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2100b
+	bne 2106b
 	movw r12, #52160
 	sub r1, r8, r12
 	movw r12, #51360
 	sub r0, r8, r12
 	movw lr, #384
-2101:
+2107:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2101b
+	bne 2107b
 	movw r12, #51776
 	sub r0, r8, r12
 	movw r1, #800
@@ -17984,39 +18117,50 @@ vg_dsa_generate_parameters:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2102f
-	b 2103f
-2102:
+	beq 2108f
+	b 2109f
+2108:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2103:
-298:
+2109:
+2102:
+281:
+	b 279f
+278:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
 279:
-	b 277f
-276:
+218:
+	b 216f
+215:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-277:
 216:
-	b 214f
-213:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2110f
+	b 2111f
+2110:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2111:
+	b 28f
+27:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-214:
-	ldr r1, [sp, #48]
-	add r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #52]
+28:
 	b 26f
 25:
-	mov r1, #2
+	mov r1, #3
 	add r12, sp, #0
 	str r1, [r12, #80]
 26:
@@ -18025,31 +18169,138 @@ vg_dsa_generate_parameters:
 	beq 24b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2104f
+	beq 2112f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2114f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2115f
+2114:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #384
+	movt r1, #192
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2116f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2117f
+2116:
+	movw r1, #32768
+	movt r1, #1
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2118f
+	b 2119f
+2118:
+	mov r0, r1
+2119:
+	add r0, r0, r0
+	movw r1, #384
+	movt r1, #192
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2120f
+	mov r0, r1
+	b 2121f
+2120:
+2121:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2117:
+2115:
+	b 2113f
+2112:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2113:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2122f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #800
-2106:
+2124:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2106b
-	mov r0, #0
-	b 2105f
-2104:
+	bne 2124b
+	b 2123f
+2122:
 	ldr r0, [sp, #40]
 	movw r12, #51776
 	sub r1, r8, r12
 	movw lr, #800
-2107:
+2125:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2107b
-	mov r0, #1
-2105:
+	bne 2125b
+2123:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 	b 23f
 22:
 	ldr r8, [sp, #84]
@@ -18083,21 +18334,38 @@ vg_dsa_generate_parameters:
 	strb r1, [r0, #62]
 	mov r1, #0
 	strb r1, [r0, #63]
-2108:
+2126:
 	ldr r0, [sp, #52]
 	cmp r0, #0
-	beq 2109f
+	beq 2127f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #32
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2129f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #32
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2111:
+2131:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2111b
+	bne 2131b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18170,13 +18438,13 @@ vg_dsa_generate_parameters:
 	movw r12, #33408
 	sub r0, r8, r12
 	movw lr, #32
-2112:
+2132:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2112b
+	bne 2132b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -18188,34 +18456,34 @@ vg_dsa_generate_parameters:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2113f
-	b 2114f
-2113:
+	beq 2133f
+	b 2134f
+2133:
 	ldr r2, [sp, #96]
-2114:
+2134:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2115f
+	beq 2135f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2116f
-2115:
-2116:
+	b 2136f
+2135:
+2136:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2117f
+	beq 2137f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2119f
-	b 2120f
-2119:
+	beq 2139f
+	b 2140f
+2139:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -18225,31 +18493,31 @@ vg_dsa_generate_parameters:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-2121:
+2141:
 	ldr r1, [sp, #48]
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2122:
+2142:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2122b
+	bne 2142b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #32
-2123:
+2143:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2123b
+	bne 2143b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18313,26 +18581,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2124:
+2144:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2124b
+	bne 2144b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #32
-2125:
+2145:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2125b
+	bne 2145b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18396,26 +18664,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2126:
+2146:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2126b
+	bne 2146b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #32
-2127:
+2147:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2127b
+	bne 2147b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18479,26 +18747,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2128:
+2148:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2128b
+	bne 2148b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #32
-2129:
+2149:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2129b
+	bne 2149b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18562,26 +18830,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2130:
+2150:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2130b
+	bne 2150b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #32
-2131:
+2151:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2131b
+	bne 2151b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18645,26 +18913,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2132:
+2152:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2132b
+	bne 2152b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #32
-2133:
+2153:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2133b
+	bne 2153b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18728,26 +18996,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2134:
+2154:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2134b
+	bne 2154b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #32
-2135:
+2155:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2135b
+	bne 2155b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18811,26 +19079,26 @@ vg_dsa_generate_parameters:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2136:
+2156:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2136b
+	bne 2156b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #7
 	mov r2, #32
-2137:
+2157:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2137b
+	bne 2157b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -18901,11 +19169,11 @@ vg_dsa_generate_parameters:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-2138:
+2158:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2138b
+	bne 2158b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -18918,22 +19186,22 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2139:
+2159:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2139b
+	bne 2159b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2140:
+2160:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2140b
+	bne 2160b
 	movw r12, #37312
 	sub r4, r8, r12
 	movw r6, #256
@@ -18943,22 +19211,22 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2141:
+2161:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2141b
+	bne 2161b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2142:
+2162:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2142b
+	bne 2162b
 	movw r12, #37376
 	sub r4, r8, r12
 	movw r6, #32
@@ -18968,22 +19236,22 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2143:
+2163:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2143b
+	bne 2163b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2144:
+2164:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2144b
+	bne 2164b
 	add r1, r8, #160
 	str r1, [r8, #0]
 	add r1, r8, r7
@@ -19001,36 +19269,36 @@ vg_dsa_generate_parameters:
 	ldr lr, [r8, #16]
 	add lr, lr, #1
 	mov r3, #0
-2145:
+2165:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2145b
+	bne 2165b
 	ldr r6, [r8, #16]
 	lsl r6, r6, #5
-2146:
+2166:
 	ldr r0, [r8, #0]
 	ldr lr, [r8, #16]
 	mov r11, #0
-2147:
+2167:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2147b
+	bne 2167b
 	ldr r0, [r8, #4]
 	ldr lr, [r8, #16]
 	add lr, lr, #1
-2148:
+2168:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2148b
+	bne 2168b
 	ldr r0, [r8, #12]
 	ldr r10, [r8, #4]
 	ldr r12, [r8, #8]
@@ -19039,7 +19307,7 @@ vg_dsa_generate_parameters:
 	add r7, r7, #1
 	mov lr, r7
 	mov r11, #0
-2149:
+2169:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19053,7 +19321,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2149b
+	bne 2169b
 	mov r12, r10
 	mov r10, r0
 	sub r12, r12, r7, lsl #2
@@ -19062,7 +19330,7 @@ vg_dsa_generate_parameters:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2150:
+2170:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -19073,14 +19341,14 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2150b
+	bne 2170b
 	ldr r0, [r8, #0]
 	ldr r3, [r0, #0]
 	eor r11, r11, #1
 	add r3, r3, r11
 	str r3, [r0, #0]
 	subs r6, r6, #1
-	bne 2146b
+	bne 2166b
 	mov r9, #64
 	add r7, r9, #2
 	lsl r7, r7, #2
@@ -19094,7 +19362,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2151:
+2171:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19108,7 +19376,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2151b
+	bne 2171b
 	add r0, r8, #160
 	ldr r1, [r0, #0]
 	and r1, r1, #1
@@ -19126,7 +19394,7 @@ vg_dsa_generate_parameters:
 	ldr r11, [r8, #120]
 	mov r4, #0
 	sub r4, r4, r11
-2152:
+2172:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -19137,7 +19405,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2152b
+	bne 2172b
 	mov r0, #7
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19149,7 +19417,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2153:
+2173:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19163,7 +19431,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2153b
+	bne 2173b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19177,14 +19445,14 @@ vg_dsa_generate_parameters:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2154:
+2174:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2154b
+	bne 2174b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19200,14 +19468,14 @@ vg_dsa_generate_parameters:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2155:
+2175:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2155b
+	bne 2175b
 	mov r0, #9
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19223,31 +19491,31 @@ vg_dsa_generate_parameters:
 	movw r12, #36928
 	sub r0, r8, r12
 	movw lr, #256
-2156:
+2176:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2156b
+	bne 2176b
 	movw r12, #36928
 	sub r0, r8, r12
 	ldrb r1, [r0, #0]
 	and r1, r1, #128
 	cmp r1, #0
-	beq 2157f
+	beq 2177f
 	movw r12, #36928
 	sub r1, r8, r12
 	movw r12, #33408
 	sub r0, r8, r12
 	movw lr, #256
-2159:
+2179:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2159b
+	bne 2179b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -19259,52 +19527,52 @@ vg_dsa_generate_parameters:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2160f
-	b 2161f
-2160:
+	beq 2180f
+	b 2181f
+2180:
 	ldr r2, [sp, #96]
-2161:
+2181:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2162f
+	beq 2182f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2163f
-2162:
-2163:
+	b 2183f
+2182:
+2183:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2164f
+	beq 2184f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2166f
-	b 2167f
-2166:
+	beq 2186f
+	b 2187f
+2186:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #108]
-2167:
-	b 2165f
-2164:
+2187:
+	b 2185f
+2184:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #108]
-2165:
-	b 2158f
-2157:
-2158:
+2185:
+	b 2178f
+2177:
+2178:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 2168f
-	b 2169f
-2168:
+	beq 2188f
+	b 2189f
+2188:
 	ldr r1, [sp, #60]
 	add r1, r1, #1
 	add r12, sp, #0
@@ -19315,38 +19583,63 @@ vg_dsa_generate_parameters:
 	str r2, [r12, #64]
 	movw r2, #8192
 	cmp r1, r2
-	beq 2170f
-	b 2171f
-2170:
+	beq 2190f
+	b 2191f
+2190:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #108]
-2171:
-2169:
+2191:
+2189:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 2121b
+	beq 2141b
 	ldr r0, [sp, #108]
 	cmp r0, #0
-	beq 2172f
+	beq 2192f
 	ldr r0, [sp, #108]
 	cmp r0, #1
-	beq 2174f
-	b 2175f
-2174:
-	ldr r1, [sp, #136]
+	beq 2194f
+	b 2195f
+2194:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2196f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 2197f
+2196:
+	add r12, sp, #0
+	str r0, [r12, #124]
+2197:
+	ldr r1, [sp, #120]
 	add r12, sp, #0
 	str r1, [r12, #72]
-	ldr r1, [sp, #140]
+	ldr r1, [sp, #124]
 	add r12, sp, #0
 	str r1, [r12, #76]
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #112]
-2176:
+2198:
 	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 2177f
+	movw r1, #256
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2199f
 	ldr r4, [sp, #72]
 	movw r6, #256
 	mov r0, #10
@@ -19355,22 +19648,22 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2179:
+2201:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2179b
+	bne 2201b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2180:
+2202:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2180b
+	bne 2202b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19382,7 +19675,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2181:
+2203:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19396,7 +19689,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2181b
+	bne 2203b
 	str r11, [r8, #124]
 	mov r0, #14
 	mla r0, r0, r7, r8
@@ -19409,7 +19702,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2182:
+2204:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19423,7 +19716,7 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2182b
+	bne 2204b
 	str r11, [r8, #128]
 	ldr r1, [r8, #124]
 	ldr r2, [r8, #128]
@@ -19431,46 +19724,46 @@ vg_dsa_generate_parameters:
 	str r1, [r8, #124]
 	ldr r1, [r8, #124]
 	cmp r1, #0
-	beq 2183f
+	beq 2205f
 	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #33152
 	sub r0, r8, r12
 	movw lr, #256
-2185:
+2207:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2185b
+	bne 2207b
 	mov r1, #10
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #31040
 	sub r0, r8, r12
 	movw lr, #256
-2186:
+2208:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2186b
+	bne 2208b
 	mov r1, #9
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #30248
 	sub r0, r8, r12
 	movw lr, #228
-2187:
+2209:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2187b
+	bne 2209b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -19481,13 +19774,13 @@ vg_dsa_generate_parameters:
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	movw lr, #256
-2188:
+2210:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2188b
+	bne 2210b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -19499,7 +19792,7 @@ vg_dsa_generate_parameters:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2189:
+2211:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -19513,11 +19806,11 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2189b
+	bne 2211b
 	str r11, [r8, #136]
 	ldr r1, [r8, #136]
 	cmp r1, #0
-	beq 2190f
+	beq 2212f
 	mov r1, #12
 	mla r1, r1, r7, r8
 	add r1, r1, #160
@@ -19526,22 +19819,22 @@ vg_dsa_generate_parameters:
 	movw r12, #35776
 	sub r0, r8, r12
 	movw lr, #256
-2192:
+2214:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2192b
+	bne 2214b
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #112]
-	b 2191f
-2190:
-2191:
-	b 2184f
-2183:
-2184:
+	b 2213f
+2212:
+2213:
+	b 2206f
+2205:
+2206:
 	ldr r1, [sp, #72]
 	movw r2, #256
 	add r1, r1, r2
@@ -19551,56 +19844,75 @@ vg_dsa_generate_parameters:
 	sub r1, r1, r2
 	add r12, sp, #0
 	str r1, [r12, #76]
-	b 2178f
-2177:
+	b 2200f
+2199:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #112]
-2178:
+2200:
 	ldr r0, [sp, #112]
 	cmp r0, #4
-	beq 2176b
+	beq 2198b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
 	ldr r0, [sp, #112]
 	cmp r0, #1
-	beq 2193f
-	b 2194f
-2193:
+	beq 2215f
+	ldr r0, [sp, #124]
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2217f
+	b 2218f
+2217:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2218:
+	b 2216f
+2215:
 	movw r12, #36928
 	sub r1, r8, r12
 	movw r12, #35392
 	sub r0, r8, r12
 	movw lr, #256
-2195:
+2219:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2195b
+	bne 2219b
 	movw r12, #37376
 	sub r1, r8, r12
 	movw r12, #35136
 	sub r0, r8, r12
 	movw lr, #32
-2196:
+2220:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2196b
+	bne 2220b
 	movw r12, #35776
 	sub r1, r8, r12
 	movw r12, #35104
 	sub r0, r8, r12
 	movw lr, #256
-2197:
+2221:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2197b
+	bne 2221b
 	movw r12, #35392
 	sub r0, r8, r12
 	movw r1, #544
@@ -19613,72 +19925,190 @@ vg_dsa_generate_parameters:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2198f
-	b 2199f
-2198:
+	beq 2222f
+	b 2223f
+2222:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2199:
-2194:
-2175:
-	b 2173f
-2172:
+2223:
+2216:
+2195:
+	b 2193f
+2192:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2173:
-2120:
-	b 2118f
-2117:
+2193:
+2140:
+	b 2138f
+2137:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2118:
-	ldr r1, [sp, #48]
-	add r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #52]
-	b 2110f
-2109:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #80]
-2110:
+2138:
 	ldr r0, [sp, #80]
 	cmp r0, #0
-	beq 2108b
+	beq 2224f
+	b 2225f
+2224:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2225:
+	b 2130f
+2129:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2130:
+	b 2128f
+2127:
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #80]
+2128:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2126b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2200f
+	beq 2226f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2228f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2229f
+2228:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #256
+	movt r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2230f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2231f
+2230:
+	movw r1, #0
+	movt r1, #1
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2232f
+	b 2233f
+2232:
+	mov r0, r1
+2233:
+	add r0, r0, r0
+	movw r1, #256
+	movt r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2234f
+	mov r0, r1
+	b 2235f
+2234:
+2235:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2231:
+2229:
+	b 2227f
+2226:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2227:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2236f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #544
-2202:
+2238:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2202b
-	mov r0, #0
-	b 2201f
-2200:
+	bne 2238b
+	b 2237f
+2236:
 	ldr r0, [sp, #40]
 	movw r12, #35392
 	sub r1, r8, r12
 	movw lr, #544
-2203:
+2239:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2203b
-	mov r0, #1
-2201:
+	bne 2239b
+2237:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 23:
 	b 21f
 20:
@@ -19713,21 +20143,38 @@ vg_dsa_generate_parameters:
 	strb r1, [r0, #62]
 	mov r1, #160
 	strb r1, [r0, #63]
-2204:
+2240:
 	ldr r0, [sp, #52]
 	cmp r0, #0
-	beq 2205f
+	beq 2241f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #20
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2243f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #20
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2207:
+2245:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2207b
+	bne 2245b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -19782,13 +20229,13 @@ vg_dsa_generate_parameters:
 	movw r12, #17024
 	sub r0, r8, r12
 	movw lr, #20
-2208:
+2246:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2208b
+	bne 2246b
 	movw r12, #17024
 	sub r0, r8, r12
 	movw r1, #2128
@@ -19800,34 +20247,34 @@ vg_dsa_generate_parameters:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2209f
-	b 2210f
-2209:
+	beq 2247f
+	b 2248f
+2247:
 	ldr r2, [sp, #96]
-2210:
+2248:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2211f
+	beq 2249f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2212f
-2211:
-2212:
+	b 2250f
+2249:
+2250:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2213f
+	beq 2251f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2215f
-	b 2216f
-2215:
+	beq 2253f
+	b 2254f
+2253:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -19837,31 +20284,31 @@ vg_dsa_generate_parameters:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-2217:
+2255:
 	ldr r1, [sp, #48]
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2218:
+2256:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2218b
+	bne 2256b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #20
-2219:
+2257:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2219b
+	bne 2257b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -19907,26 +20354,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2220:
+2258:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2220b
+	bne 2258b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #20
-2221:
+2259:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2221b
+	bne 2259b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -19972,26 +20419,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2222:
+2260:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2222b
+	bne 2260b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #20
-2223:
+2261:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2223b
+	bne 2261b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -20037,26 +20484,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2224:
+2262:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2224b
+	bne 2262b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #20
-2225:
+2263:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2225b
+	bne 2263b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -20102,26 +20549,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2226:
+2264:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2226b
+	bne 2264b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #20
-2227:
+2265:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2227b
+	bne 2265b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -20167,26 +20614,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2228:
+2266:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2228b
+	bne 2266b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #20
-2229:
+2267:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2229b
+	bne 2267b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -20232,26 +20679,26 @@ vg_dsa_generate_parameters:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2230:
+2268:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2230b
+	bne 2268b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #20
-2231:
+2269:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2231b
+	bne 2269b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -20304,11 +20751,11 @@ vg_dsa_generate_parameters:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-2232:
+2270:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2232b
+	bne 2270b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -20321,438 +20768,26 @@ vg_dsa_generate_parameters:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2233:
+2271:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2233b
+	bne 2271b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2234:
+2272:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2234b
+	bne 2272b
 	movw r12, #20928
 	sub r4, r8, r12
 	movw r6, #128
 	mov r0, #4
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-2235:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2235b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-2236:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2236b
-	movw r12, #20992
-	sub r4, r8, r12
-	movw r6, #20
-	mov r0, #2
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-2237:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2237b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-2238:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2238b
-	add r1, r8, #160
-	str r1, [r8, #0]
-	add r1, r8, r7
-	add r1, r1, #160
-	str r1, [r8, #4]
-	mov r1, #2
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	str r1, [r8, #8]
-	mov r1, #3
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	str r1, [r8, #12]
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
-	mov r3, #0
-2239:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2239b
-	ldr r6, [r8, #16]
-	lsl r6, r6, #5
-2240:
-	ldr r0, [r8, #0]
-	ldr lr, [r8, #16]
-	mov r11, #0
-2241:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2241b
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
-2242:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2242b
-	ldr r0, [r8, #12]
-	ldr r10, [r8, #4]
-	ldr r12, [r8, #8]
-	mov r9, r10
-	ldr r7, [r8, #16]
-	add r7, r7, #1
-	mov lr, r7
-	mov r11, #0
-2243:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2243b
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2244:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2244b
-	ldr r0, [r8, #0]
-	ldr r3, [r0, #0]
-	eor r11, r11, #1
-	add r3, r3, r11
-	str r3, [r0, #0]
-	subs r6, r6, #1
-	bne 2240b
-	mov r9, #32
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #5
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #4
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	add r12, r8, r7
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2245:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2245b
-	add r0, r8, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #120]
-	mov r0, #6
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #2
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #120]
-	mov r4, #0
-	sub r4, r4, r11
-2246:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2246b
-	mov r0, #7
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #5
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #6
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2247:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2247b
-	mov r0, #8
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #7
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #7
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2248:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2248b
-	mov r0, #8
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	orr r1, r1, #1
-	str r1, [r0, #0]
-	mov r0, #9
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2249:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2249b
-	mov r0, #9
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	orr r1, r1, #1
-	eor r1, r1, #1
-	str r1, [r0, #0]
-	mov r1, #8
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r2, #127
-	add r1, r1, r2
-	movw r12, #20544
-	sub r0, r8, r12
-	movw lr, #128
-2250:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2250b
-	movw r12, #20544
-	sub r0, r8, r12
-	ldrb r1, [r0, #0]
-	and r1, r1, #128
-	cmp r1, #0
-	beq 2251f
-	movw r12, #20544
-	sub r1, r8, r12
-	movw r12, #17024
-	sub r0, r8, r12
-	movw lr, #128
-2253:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2253b
-	movw r12, #17024
-	sub r0, r8, r12
-	movw r1, #2128
-	movw r5, #1024
-	ldr r4, [sp, #56]
-	ldr r2, [sp, #96]
-	ldr r3, [sp, #100]
-	add r2, r2, r4
-	sub r3, r3, r4
-	add r4, sp, #88
-	cmp r3, #0
-	beq 2254f
-	b 2255f
-2254:
-	ldr r2, [sp, #96]
-2255:
-	push {r4, r5, r6, r7, r8, r9, r10, r11}
-	bl {vg_dsa_probable_prime}
-	ldr r4, [sp], #32
-	add r12, sp, #0
-	str r0, [r12, #104]
-	cmp r0, #0
-	beq 2256f
-	ldr r1, [sp, #88]
-	ldr r2, [sp, #56]
-	add r2, r2, r1
-	add r12, sp, #0
-	str r2, [r12, #56]
-	b 2257f
-2256:
-2257:
-	ldr r0, [sp, #104]
-	cmp r0, #0
-	beq 2258f
-	ldr r0, [sp, #104]
-	cmp r0, #1
-	beq 2260f
-	b 2261f
-2260:
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #108]
-2261:
-	b 2259f
-2258:
-	mov r1, #0
-	add r12, sp, #0
-	str r1, [r12, #108]
-2259:
-	b 2252f
-2251:
-2252:
-	ldr r0, [sp, #108]
-	cmp r0, #4
-	beq 2262f
-	b 2263f
-2262:
-	ldr r1, [sp, #60]
-	add r1, r1, #1
-	add r12, sp, #0
-	str r1, [r12, #60]
-	ldr r2, [sp, #64]
-	add r2, r2, #7
-	add r12, sp, #0
-	str r2, [r12, #64]
-	movw r2, #4096
-	cmp r1, r2
-	beq 2264f
-	b 2265f
-2264:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #108]
-2265:
-2263:
-	ldr r0, [sp, #108]
-	cmp r0, #4
-	beq 2217b
-	ldr r0, [sp, #108]
-	cmp r0, #0
-	beq 2266f
-	ldr r0, [sp, #108]
-	cmp r0, #1
-	beq 2268f
-	b 2269f
-2268:
-	ldr r1, [sp, #136]
-	add r12, sp, #0
-	str r1, [r12, #72]
-	ldr r1, [sp, #140]
-	add r12, sp, #0
-	str r1, [r12, #76]
-	mov r1, #4
-	add r12, sp, #0
-	str r1, [r12, #112]
-2270:
-	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 2271f
-	ldr r4, [sp, #72]
-	movw r6, #128
-	mov r0, #10
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	mov r5, r0
@@ -20774,45 +20809,87 @@ vg_dsa_generate_parameters:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 2274b
-	mov r0, #14
+	movw r12, #20992
+	sub r4, r8, r12
+	movw r6, #20
+	mov r0, #2
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #11
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #10
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
 2275:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
 	str r3, [r0, #0]
-	add r10, r10, #4
 	add r0, r0, #4
-	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2275b
-	str r11, [r8, #124]
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #10
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #7
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
 2276:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2276b
+	add r1, r8, #160
+	str r1, [r8, #0]
+	add r1, r8, r7
+	add r1, r1, #160
+	str r1, [r8, #4]
+	mov r1, #2
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	str r1, [r8, #8]
+	mov r1, #3
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	str r1, [r8, #12]
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+	mov r3, #0
+2277:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2277b
+	ldr r6, [r8, #16]
+	lsl r6, r6, #5
+2278:
+	ldr r0, [r8, #0]
+	ldr lr, [r8, #16]
+	mov r11, #0
+2279:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2279b
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+2280:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2280b
+	ldr r0, [r8, #12]
+	ldr r10, [r8, #4]
+	ldr r12, [r8, #8]
+	mov r9, r10
+	ldr r7, [r8, #16]
+	add r7, r7, #1
+	mov lr, r7
+	mov r11, #0
+2281:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -20826,79 +20903,44 @@ vg_dsa_generate_parameters:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2276b
-	str r11, [r8, #128]
-	ldr r1, [r8, #124]
-	ldr r2, [r8, #128]
-	and r1, r1, r2
-	str r1, [r8, #124]
-	ldr r1, [r8, #124]
-	cmp r1, #0
-	beq 2277f
-	mov r1, #8
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #16768
-	sub r0, r8, r12
-	movw lr, #128
-2279:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2279b
-	mov r1, #10
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #15680
-	sub r0, r8, r12
-	movw lr, #128
-2280:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2280b
-	mov r1, #9
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #15272
-	sub r0, r8, r12
-	movw lr, #112
-2281:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
 	bne 2281b
-	movw r12, #17024
-	sub r0, r8, r12
-	movw r1, #2128
-	bl {vg_dsa_pow_16_28}
-	movw r12, #15544
-	sub r1, r8, r12
-	mov r0, #12
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	movw lr, #128
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
 2282:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2282b
-	mov r0, #14
+	ldr r0, [r8, #0]
+	ldr r3, [r0, #0]
+	eor r11, r11, #1
+	add r3, r3, r11
+	str r3, [r0, #0]
+	subs r6, r6, #1
+	bne 2278b
+	mov r9, #32
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #5
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #11
+	mov r10, #4
 	mla r10, r10, r7, r8
 	add r10, r10, #160
-	mov r12, #12
-	mla r12, r12, r7, r8
+	add r12, r8, r7
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
@@ -20917,84 +20959,136 @@ vg_dsa_generate_parameters:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2283b
-	str r11, [r8, #136]
-	ldr r1, [r8, #136]
-	cmp r1, #0
-	beq 2284f
-	mov r1, #12
+	add r0, r8, #160
+	ldr r1, [r0, #0]
+	and r1, r1, #1
+	str r1, [r8, #120]
+	mov r0, #6
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #2
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	ldr r11, [r8, #120]
+	mov r4, #0
+	sub r4, r4, r11
+2284:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2284b
+	mov r0, #7
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #5
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #6
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2285:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2285b
+	mov r0, #8
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #7
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #7
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2286:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2286b
+	mov r0, #8
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r0, #0]
+	orr r1, r1, #1
+	str r1, [r0, #0]
+	mov r0, #9
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2287:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2287b
+	mov r0, #9
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r0, #0]
+	orr r1, r1, #1
+	eor r1, r1, #1
+	str r1, [r0, #0]
+	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r2, #127
 	add r1, r1, r2
-	movw r12, #19392
+	movw r12, #20544
 	sub r0, r8, r12
 	movw lr, #128
-2286:
+2288:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2286b
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #112]
-	b 2285f
-2284:
-2285:
-	b 2278f
-2277:
-2278:
-	ldr r1, [sp, #72]
-	movw r2, #128
-	add r1, r1, r2
-	add r12, sp, #0
-	str r1, [r12, #72]
-	ldr r1, [sp, #76]
-	sub r1, r1, r2
-	add r12, sp, #0
-	str r1, [r12, #76]
-	b 2272f
-2271:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #112]
-2272:
-	ldr r0, [sp, #112]
-	cmp r0, #4
-	beq 2270b
-	ldr r0, [sp, #112]
-	cmp r0, #1
-	beq 2287f
-	b 2288f
-2287:
+	bne 2288b
+	movw r12, #20544
+	sub r0, r8, r12
+	ldrb r1, [r0, #0]
+	and r1, r1, #128
+	cmp r1, #0
+	beq 2289f
 	movw r12, #20544
 	sub r1, r8, r12
-	movw r12, #19008
-	sub r0, r8, r12
-	movw lr, #128
-2289:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2289b
-	movw r12, #20992
-	sub r1, r8, r12
-	movw r12, #18880
-	sub r0, r8, r12
-	movw lr, #20
-2290:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2290b
-	movw r12, #19392
-	sub r1, r8, r12
-	movw r12, #18860
+	movw r12, #17024
 	sub r0, r8, r12
 	movw lr, #128
 2291:
@@ -21004,6 +21098,403 @@ vg_dsa_generate_parameters:
 	add r1, r1, #1
 	subs lr, lr, #1
 	bne 2291b
+	movw r12, #17024
+	sub r0, r8, r12
+	movw r1, #2128
+	movw r5, #1024
+	ldr r4, [sp, #56]
+	ldr r2, [sp, #96]
+	ldr r3, [sp, #100]
+	add r2, r2, r4
+	sub r3, r3, r4
+	add r4, sp, #88
+	cmp r3, #0
+	beq 2292f
+	b 2293f
+2292:
+	ldr r2, [sp, #96]
+2293:
+	push {r4, r5, r6, r7, r8, r9, r10, r11}
+	bl {vg_dsa_probable_prime}
+	ldr r4, [sp], #32
+	add r12, sp, #0
+	str r0, [r12, #104]
+	cmp r0, #0
+	beq 2294f
+	ldr r1, [sp, #88]
+	ldr r2, [sp, #56]
+	add r2, r2, r1
+	add r12, sp, #0
+	str r2, [r12, #56]
+	b 2295f
+2294:
+2295:
+	ldr r0, [sp, #104]
+	cmp r0, #0
+	beq 2296f
+	ldr r0, [sp, #104]
+	cmp r0, #1
+	beq 2298f
+	b 2299f
+2298:
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #108]
+2299:
+	b 2297f
+2296:
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #108]
+2297:
+	b 2290f
+2289:
+2290:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 2300f
+	b 2301f
+2300:
+	ldr r1, [sp, #60]
+	add r1, r1, #1
+	add r12, sp, #0
+	str r1, [r12, #60]
+	ldr r2, [sp, #64]
+	add r2, r2, #7
+	add r12, sp, #0
+	str r2, [r12, #64]
+	movw r2, #4096
+	cmp r1, r2
+	beq 2302f
+	b 2303f
+2302:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #108]
+2303:
+2301:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 2255b
+	ldr r0, [sp, #108]
+	cmp r0, #0
+	beq 2304f
+	ldr r0, [sp, #108]
+	cmp r0, #1
+	beq 2306f
+	b 2307f
+2306:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #16384
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2308f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 2309f
+2308:
+	add r12, sp, #0
+	str r0, [r12, #124]
+2309:
+	ldr r1, [sp, #120]
+	add r12, sp, #0
+	str r1, [r12, #72]
+	ldr r1, [sp, #124]
+	add r12, sp, #0
+	str r1, [r12, #76]
+	mov r1, #4
+	add r12, sp, #0
+	str r1, [r12, #112]
+2310:
+	ldr r0, [sp, #76]
+	movw r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2311f
+	ldr r4, [sp, #72]
+	movw r6, #128
+	mov r0, #10
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
+2313:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2313b
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
+2314:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2314b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #10
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2315:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2315b
+	str r11, [r8, #124]
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #10
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #7
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2316:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2316b
+	str r11, [r8, #128]
+	ldr r1, [r8, #124]
+	ldr r2, [r8, #128]
+	and r1, r1, r2
+	str r1, [r8, #124]
+	ldr r1, [r8, #124]
+	cmp r1, #0
+	beq 2317f
+	mov r1, #8
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #16768
+	sub r0, r8, r12
+	movw lr, #128
+2319:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2319b
+	mov r1, #10
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #15680
+	sub r0, r8, r12
+	movw lr, #128
+2320:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2320b
+	mov r1, #9
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #15272
+	sub r0, r8, r12
+	movw lr, #112
+2321:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2321b
+	movw r12, #17024
+	sub r0, r8, r12
+	movw r1, #2128
+	bl {vg_dsa_pow_16_28}
+	movw r12, #15544
+	sub r1, r8, r12
+	mov r0, #12
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	movw lr, #128
+2322:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2322b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #12
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2323:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2323b
+	str r11, [r8, #136]
+	ldr r1, [r8, #136]
+	cmp r1, #0
+	beq 2324f
+	mov r1, #12
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r2, #127
+	add r1, r1, r2
+	movw r12, #19392
+	sub r0, r8, r12
+	movw lr, #128
+2326:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2326b
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #112]
+	b 2325f
+2324:
+2325:
+	b 2318f
+2317:
+2318:
+	ldr r1, [sp, #72]
+	movw r2, #128
+	add r1, r1, r2
+	add r12, sp, #0
+	str r1, [r12, #72]
+	ldr r1, [sp, #76]
+	sub r1, r1, r2
+	add r12, sp, #0
+	str r1, [r12, #76]
+	b 2312f
+2311:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #112]
+2312:
+	ldr r0, [sp, #112]
+	cmp r0, #4
+	beq 2310b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
+	ldr r0, [sp, #112]
+	cmp r0, #1
+	beq 2327f
+	ldr r0, [sp, #124]
+	movw r1, #16384
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2329f
+	b 2330f
+2329:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2330:
+	b 2328f
+2327:
+	movw r12, #20544
+	sub r1, r8, r12
+	movw r12, #19008
+	sub r0, r8, r12
+	movw lr, #128
+2331:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2331b
+	movw r12, #20992
+	sub r1, r8, r12
+	movw r12, #18880
+	sub r0, r8, r12
+	movw lr, #20
+2332:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2332b
+	movw r12, #19392
+	sub r1, r8, r12
+	movw r12, #18860
+	sub r0, r8, r12
+	movw lr, #128
+2333:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2333b
 	movw r12, #19008
 	sub r0, r8, r12
 	movw r1, #276
@@ -21016,72 +21507,190 @@ vg_dsa_generate_parameters:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2292f
-	b 2293f
-2292:
+	beq 2334f
+	b 2335f
+2334:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2293:
-2288:
-2269:
-	b 2267f
-2266:
+2335:
+2328:
+2307:
+	b 2305f
+2304:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2267:
-2216:
-	b 2214f
-2213:
+2305:
+2254:
+	b 2252f
+2251:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2214:
-	ldr r1, [sp, #48]
-	add r1, r1, #20
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #20
-	add r12, sp, #0
-	str r1, [r12, #52]
-	b 2206f
-2205:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #80]
-2206:
+2252:
 	ldr r0, [sp, #80]
 	cmp r0, #0
-	beq 2204b
+	beq 2336f
+	b 2337f
+2336:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2337:
+	b 2244f
+2243:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2244:
+	b 2242f
+2241:
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #80]
+2242:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2240b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2294f
+	beq 2338f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2340f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2341f
+2340:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #128
+	movt r1, #64
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2342f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2343f
+2342:
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2344f
+	b 2345f
+2344:
+	mov r0, r1
+2345:
+	add r0, r0, r0
+	movw r1, #128
+	movt r1, #64
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2346f
+	mov r0, r1
+	b 2347f
+2346:
+2347:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2343:
+2341:
+	b 2339f
+2338:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2339:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2348f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #276
-2296:
+2350:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2296b
-	mov r0, #0
-	b 2295f
-2294:
+	bne 2350b
+	b 2349f
+2348:
 	ldr r0, [sp, #40]
 	movw r12, #19008
 	sub r1, r8, r12
 	movw lr, #276
-2297:
+2351:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2297b
-	mov r0, #1
-2295:
+	bne 2351b
+2349:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 21:
 	ldr r4, [sp, #0]
 	ldr r5, [sp, #4]
@@ -21095,7 +21704,7 @@ vg_dsa_generate_parameters:
 	add sp, sp, #128
 	bx lr
 
-vg_dsa_generate_parameters_umaal:
+vg_dsa_parameter_search_umaal:
 	sub sp, sp, #128
 	add r12, sp, #0
 	str r4, [r12, #0]
@@ -21108,20 +21717,22 @@ vg_dsa_generate_parameters_umaal:
 	str r11, [r12, #28]
 	str lr, [r12, #32]
 	str r0, [r12, #40]
-	str r1, [r12, #44]
+	str r2, [r12, #44]
+	str r3, [r12, #96]
 	ldr r1, [sp, #128]
-	str r1, [r12, #48]
-	ldr r1, [sp, #132]
-	str r1, [r12, #52]
-	ldr r1, [sp, #144]
-	str r1, [r12, #96]
-	ldr r1, [sp, #148]
 	str r1, [r12, #100]
-	ldr r1, [sp, #152]
+	ldr r1, [sp, #132]
 	str r1, [r12, #84]
+	ldr r1, [sp, #140]
+	str r1, [r12, #68]
 	mov r1, #0
-	str r1, [r12, #56]
+	str r1, [r12, #116]
 	str r1, [r12, #80]
+	ldr r1, [sp, #140]
+	ldr r2, [r1, #8]
+	ldr r1, [r1, #0]
+	add r12, sp, #0
+	str r1, [r12, #52]
 	cmp r2, #128
 	beq 20f
 	cmp r2, #256
@@ -21161,17 +21772,34 @@ vg_dsa_generate_parameters_umaal:
 	ldr r0, [sp, #52]
 	cmp r0, #0
 	beq 25f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #32
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 27f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #32
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-27:
+29:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 27b
+	bne 29b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21244,13 +21872,13 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #49792
 	sub r0, r8, r12
 	movw lr, #32
-28:
+210:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 28b
+	bne 210b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -21262,34 +21890,34 @@ vg_dsa_generate_parameters_umaal:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 29f
-	b 210f
-29:
+	beq 211f
+	b 212f
+211:
 	ldr r2, [sp, #96]
-210:
+212:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime_umaal}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 211f
+	beq 213f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 212f
-211:
-212:
+	b 214f
+213:
+214:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 213f
+	beq 215f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 215f
-	b 216f
-215:
+	beq 217f
+	b 218f
+217:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -21299,31 +21927,31 @@ vg_dsa_generate_parameters_umaal:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-217:
+219:
 	ldr r1, [sp, #48]
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-218:
+220:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 218b
+	bne 220b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #32
-219:
+221:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 219b
+	bne 221b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21387,26 +22015,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-220:
+222:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 220b
+	bne 222b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #32
-221:
+223:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 221b
+	bne 223b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21470,26 +22098,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-222:
+224:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 222b
+	bne 224b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #32
-223:
+225:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 223b
+	bne 225b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21553,26 +22181,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-224:
+226:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 224b
+	bne 226b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #32
-225:
+227:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 225b
+	bne 227b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21636,26 +22264,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-226:
+228:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 226b
+	bne 228b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #32
-227:
+229:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 227b
+	bne 229b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21719,26 +22347,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-228:
+230:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 228b
+	bne 230b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #32
-229:
+231:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 229b
+	bne 231b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21802,26 +22430,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-230:
+232:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 230b
+	bne 232b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #32
-231:
+233:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 231b
+	bne 233b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21885,26 +22513,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-232:
+234:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 232b
+	bne 234b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #7
 	mov r2, #32
-233:
+235:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 233b
+	bne 235b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -21968,26 +22596,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-234:
+236:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 234b
+	bne 236b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #8
 	mov r2, #32
-235:
+237:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 235b
+	bne 237b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -22051,26 +22679,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-236:
+238:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 236b
+	bne 238b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #9
 	mov r2, #32
-237:
+239:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 237b
+	bne 239b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -22134,26 +22762,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-238:
+240:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 238b
+	bne 240b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #10
 	mov r2, #32
-239:
+241:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 239b
+	bne 241b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -22217,26 +22845,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53888
 	sub r0, r8, r12
 	movw lr, #32
-240:
+242:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 240b
+	bne 242b
 	movw r12, #53857
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #11
 	mov r2, #32
-241:
+243:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 241b
+	bne 243b
 	movw r12, #53824
 	sub r0, r8, r12
 	movw r1, #58983
@@ -22307,11 +22935,11 @@ vg_dsa_generate_parameters_umaal:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-242:
+244:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 242b
+	bne 244b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22321,31 +22949,6 @@ vg_dsa_generate_parameters_umaal:
 	sub r4, r8, r12
 	movw r6, #384
 	add r0, r8, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-243:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 243b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-244:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 244b
-	movw r12, #53696
-	sub r4, r8, r12
-	movw r6, #384
-	mov r0, #4
-	mla r0, r0, r7, r8
-	add r0, r0, #160
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
@@ -22365,10 +22968,10 @@ vg_dsa_generate_parameters_umaal:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 246b
-	movw r12, #53760
+	movw r12, #53696
 	sub r4, r8, r12
-	movw r6, #32
-	mov r0, #2
+	movw r6, #384
+	mov r0, #4
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	mov r5, r0
@@ -22390,6 +22993,31 @@ vg_dsa_generate_parameters_umaal:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 248b
+	movw r12, #53760
+	sub r4, r8, r12
+	movw r6, #32
+	mov r0, #2
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
+249:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 249b
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
+250:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 250b
 	add r1, r8, #160
 	str r1, [r8, #0]
 	add r1, r8, r7
@@ -22407,36 +23035,36 @@ vg_dsa_generate_parameters_umaal:
 	ldr lr, [r8, #16]
 	add lr, lr, #1
 	mov r3, #0
-249:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 249b
-	ldr r6, [r8, #16]
-	lsl r6, r6, #5
-250:
-	ldr r0, [r8, #0]
-	ldr lr, [r8, #16]
-	mov r11, #0
 251:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
 	bne 251b
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
+	ldr r6, [r8, #16]
+	lsl r6, r6, #5
 252:
+	ldr r0, [r8, #0]
+	ldr lr, [r8, #16]
+	mov r11, #0
+253:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 252b
+	bne 253b
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+254:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 254b
 	ldr r0, [r8, #12]
 	ldr r10, [r8, #4]
 	ldr r12, [r8, #8]
@@ -22444,61 +23072,6 @@ vg_dsa_generate_parameters_umaal:
 	ldr r7, [r8, #16]
 	add r7, r7, #1
 	mov lr, r7
-	mov r11, #0
-253:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 253b
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-254:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 254b
-	ldr r0, [r8, #0]
-	ldr r3, [r0, #0]
-	eor r11, r11, #1
-	add r3, r3, r11
-	str r3, [r0, #0]
-	subs r6, r6, #1
-	bne 250b
-	mov r9, #96
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #5
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #4
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	add r12, r8, r7
-	add r12, r12, #160
-	mov lr, r9
 	mov r11, #0
 255:
 	ldr r1, [r10, #0]
@@ -22515,21 +23088,12 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 255b
-	add r0, r8, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #120]
-	mov r0, #6
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #2
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #120]
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
 256:
@@ -22544,14 +23108,23 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 256b
-	mov r0, #7
+	ldr r0, [r8, #0]
+	ldr r3, [r0, #0]
+	eor r11, r11, #1
+	add r3, r3, r11
+	str r3, [r0, #0]
+	subs r6, r6, #1
+	bne 252b
+	mov r9, #96
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #5
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #5
+	mov r10, #4
 	mla r10, r10, r7, r8
 	add r10, r10, #160
-	mov r12, #6
-	mla r12, r12, r7, r8
+	add r12, r8, r7
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
@@ -22570,6 +23143,61 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 257b
+	add r0, r8, #160
+	ldr r1, [r0, #0]
+	and r1, r1, #1
+	str r1, [r8, #120]
+	mov r0, #6
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #2
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	ldr r11, [r8, #120]
+	mov r4, #0
+	sub r4, r4, r11
+258:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 258b
+	mov r0, #7
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #5
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #6
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+259:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 259b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22583,14 +23211,14 @@ vg_dsa_generate_parameters_umaal:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-258:
+260:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 258b
+	bne 260b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22606,14 +23234,14 @@ vg_dsa_generate_parameters_umaal:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-259:
+261:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 259b
+	bne 261b
 	mov r0, #9
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22629,31 +23257,31 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #53312
 	sub r0, r8, r12
 	movw lr, #384
-260:
+262:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 260b
+	bne 262b
 	movw r12, #53312
 	sub r0, r8, r12
 	ldrb r1, [r0, #0]
 	and r1, r1, #128
 	cmp r1, #0
-	beq 261f
+	beq 263f
 	movw r12, #53312
 	sub r1, r8, r12
 	movw r12, #49792
 	sub r0, r8, r12
 	movw lr, #384
-263:
+265:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 263b
+	bne 265b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -22665,52 +23293,52 @@ vg_dsa_generate_parameters_umaal:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 264f
-	b 265f
-264:
+	beq 266f
+	b 267f
+266:
 	ldr r2, [sp, #96]
-265:
+267:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime_umaal}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 266f
+	beq 268f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 267f
-266:
-267:
-	ldr r0, [sp, #104]
-	cmp r0, #0
-	beq 268f
-	ldr r0, [sp, #104]
-	cmp r0, #1
-	beq 270f
-	b 271f
-270:
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #108]
-271:
 	b 269f
 268:
-	mov r1, #0
-	add r12, sp, #0
-	str r1, [r12, #108]
 269:
-	b 262f
-261:
-262:
-	ldr r0, [sp, #108]
-	cmp r0, #4
+	ldr r0, [sp, #104]
+	cmp r0, #0
+	beq 270f
+	ldr r0, [sp, #104]
+	cmp r0, #1
 	beq 272f
 	b 273f
 272:
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #108]
+273:
+	b 271f
+270:
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #108]
+271:
+	b 264f
+263:
+264:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 274f
+	b 275f
+274:
 	ldr r1, [sp, #60]
 	add r1, r1, #1
 	add r12, sp, #0
@@ -22721,38 +23349,63 @@ vg_dsa_generate_parameters_umaal:
 	str r2, [r12, #64]
 	movw r2, #12288
 	cmp r1, r2
-	beq 274f
-	b 275f
-274:
+	beq 276f
+	b 277f
+276:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #108]
+277:
 275:
-273:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 217b
+	beq 219b
 	ldr r0, [sp, #108]
 	cmp r0, #0
-	beq 276f
+	beq 278f
 	ldr r0, [sp, #108]
 	cmp r0, #1
-	beq 278f
-	b 279f
-278:
-	ldr r1, [sp, #136]
+	beq 280f
+	b 281f
+280:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #49152
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 282f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 283f
+282:
+	add r12, sp, #0
+	str r0, [r12, #124]
+283:
+	ldr r1, [sp, #120]
 	add r12, sp, #0
 	str r1, [r12, #72]
-	ldr r1, [sp, #140]
+	ldr r1, [sp, #124]
 	add r12, sp, #0
 	str r1, [r12, #76]
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #112]
-280:
+284:
 	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 281f
+	movw r1, #384
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 285f
 	ldr r4, [sp, #72]
 	movw r6, #384
 	mov r0, #10
@@ -22761,22 +23414,22 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-283:
+287:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 283b
+	bne 287b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-284:
+288:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 284b
+	bne 288b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22788,7 +23441,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-285:
+289:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -22802,7 +23455,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 285b
+	bne 289b
 	str r11, [r8, #124]
 	mov r0, #14
 	mla r0, r0, r7, r8
@@ -22815,7 +23468,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-286:
+290:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -22829,7 +23482,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 286b
+	bne 290b
 	str r11, [r8, #128]
 	ldr r1, [r8, #124]
 	ldr r2, [r8, #128]
@@ -22837,46 +23490,46 @@ vg_dsa_generate_parameters_umaal:
 	str r1, [r8, #124]
 	ldr r1, [r8, #124]
 	cmp r1, #0
-	beq 287f
+	beq 291f
 	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #49536
 	sub r0, r8, r12
 	movw lr, #384
-289:
+293:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 289b
+	bne 293b
 	mov r1, #10
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #46400
 	sub r0, r8, r12
 	movw lr, #384
-290:
+294:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 290b
+	bne 294b
 	mov r1, #9
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #45224
 	sub r0, r8, r12
 	movw lr, #356
-291:
+295:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 291b
+	bne 295b
 	movw r12, #49792
 	sub r0, r8, r12
 	movw r1, #6224
@@ -22887,13 +23540,13 @@ vg_dsa_generate_parameters_umaal:
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	movw lr, #384
-292:
+296:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 292b
+	bne 296b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -22905,7 +23558,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-293:
+297:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -22919,11 +23572,11 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 293b
+	bne 297b
 	str r11, [r8, #136]
 	ldr r1, [r8, #136]
 	cmp r1, #0
-	beq 294f
+	beq 298f
 	mov r1, #12
 	mla r1, r1, r7, r8
 	add r1, r1, #160
@@ -22932,22 +23585,22 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #52160
 	sub r0, r8, r12
 	movw lr, #384
-296:
+2100:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 296b
+	bne 2100b
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #112]
-	b 295f
-294:
-295:
-	b 288f
-287:
-288:
+	b 299f
+298:
+299:
+	b 292f
+291:
+292:
 	ldr r1, [sp, #72]
 	movw r2, #384
 	add r1, r1, r2
@@ -22957,56 +23610,75 @@ vg_dsa_generate_parameters_umaal:
 	sub r1, r1, r2
 	add r12, sp, #0
 	str r1, [r12, #76]
-	b 282f
-281:
+	b 286f
+285:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #112]
-282:
+286:
 	ldr r0, [sp, #112]
 	cmp r0, #4
-	beq 280b
+	beq 284b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
 	ldr r0, [sp, #112]
 	cmp r0, #1
-	beq 297f
-	b 298f
-297:
+	beq 2101f
+	ldr r0, [sp, #124]
+	movw r1, #49152
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2103f
+	b 2104f
+2103:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2104:
+	b 2102f
+2101:
 	movw r12, #53312
 	sub r1, r8, r12
 	movw r12, #51776
 	sub r0, r8, r12
 	movw lr, #384
-299:
+2105:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 299b
+	bne 2105b
 	movw r12, #53760
 	sub r1, r8, r12
 	movw r12, #51392
 	sub r0, r8, r12
 	movw lr, #32
-2100:
+2106:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2100b
+	bne 2106b
 	movw r12, #52160
 	sub r1, r8, r12
 	movw r12, #51360
 	sub r0, r8, r12
 	movw lr, #384
-2101:
+2107:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2101b
+	bne 2107b
 	movw r12, #51776
 	sub r0, r8, r12
 	movw r1, #800
@@ -23019,39 +23691,50 @@ vg_dsa_generate_parameters_umaal:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2102f
-	b 2103f
-2102:
+	beq 2108f
+	b 2109f
+2108:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2103:
-298:
+2109:
+2102:
+281:
+	b 279f
+278:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
 279:
-	b 277f
-276:
+218:
+	b 216f
+215:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-277:
 216:
-	b 214f
-213:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2110f
+	b 2111f
+2110:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2111:
+	b 28f
+27:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-214:
-	ldr r1, [sp, #48]
-	add r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #52]
+28:
 	b 26f
 25:
-	mov r1, #2
+	mov r1, #3
 	add r12, sp, #0
 	str r1, [r12, #80]
 26:
@@ -23060,31 +23743,138 @@ vg_dsa_generate_parameters_umaal:
 	beq 24b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2104f
+	beq 2112f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2114f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2115f
+2114:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #384
+	movt r1, #192
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2116f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2117f
+2116:
+	movw r1, #32768
+	movt r1, #1
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2118f
+	b 2119f
+2118:
+	mov r0, r1
+2119:
+	add r0, r0, r0
+	movw r1, #384
+	movt r1, #192
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2120f
+	mov r0, r1
+	b 2121f
+2120:
+2121:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2117:
+2115:
+	b 2113f
+2112:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2113:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2122f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #800
-2106:
+2124:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2106b
-	mov r0, #0
-	b 2105f
-2104:
+	bne 2124b
+	b 2123f
+2122:
 	ldr r0, [sp, #40]
 	movw r12, #51776
 	sub r1, r8, r12
 	movw lr, #800
-2107:
+2125:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2107b
-	mov r0, #1
-2105:
+	bne 2125b
+2123:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 	b 23f
 22:
 	ldr r8, [sp, #84]
@@ -23118,21 +23908,38 @@ vg_dsa_generate_parameters_umaal:
 	strb r1, [r0, #62]
 	mov r1, #0
 	strb r1, [r0, #63]
-2108:
+2126:
 	ldr r0, [sp, #52]
 	cmp r0, #0
-	beq 2109f
+	beq 2127f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #32
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2129f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #32
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2111:
+2131:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2111b
+	bne 2131b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23205,13 +24012,13 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #33408
 	sub r0, r8, r12
 	movw lr, #32
-2112:
+2132:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2112b
+	bne 2132b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -23223,34 +24030,34 @@ vg_dsa_generate_parameters_umaal:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2113f
-	b 2114f
-2113:
+	beq 2133f
+	b 2134f
+2133:
 	ldr r2, [sp, #96]
-2114:
+2134:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime_umaal}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2115f
+	beq 2135f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2116f
-2115:
-2116:
+	b 2136f
+2135:
+2136:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2117f
+	beq 2137f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2119f
-	b 2120f
-2119:
+	beq 2139f
+	b 2140f
+2139:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -23260,31 +24067,31 @@ vg_dsa_generate_parameters_umaal:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-2121:
+2141:
 	ldr r1, [sp, #48]
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2122:
+2142:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2122b
+	bne 2142b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #32
-2123:
+2143:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2123b
+	bne 2143b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23348,26 +24155,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2124:
+2144:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2124b
+	bne 2144b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #32
-2125:
+2145:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2125b
+	bne 2145b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23431,26 +24238,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2126:
+2146:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2126b
+	bne 2146b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #32
-2127:
+2147:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2127b
+	bne 2147b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23514,26 +24321,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2128:
+2148:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2128b
+	bne 2148b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #32
-2129:
+2149:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2129b
+	bne 2149b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23597,26 +24404,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2130:
+2150:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2130b
+	bne 2150b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #32
-2131:
+2151:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2131b
+	bne 2151b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23680,26 +24487,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2132:
+2152:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2132b
+	bne 2152b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #32
-2133:
+2153:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2133b
+	bne 2153b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23763,26 +24570,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2134:
+2154:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2134b
+	bne 2154b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #32
-2135:
+2155:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2135b
+	bne 2155b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23846,26 +24653,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #37504
 	sub r0, r8, r12
 	movw lr, #32
-2136:
+2156:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2136b
+	bne 2156b
 	movw r12, #37473
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #7
 	mov r2, #32
-2137:
+2157:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2137b
+	bne 2157b
 	movw r12, #37440
 	sub r0, r8, r12
 	movw r1, #58983
@@ -23936,11 +24743,11 @@ vg_dsa_generate_parameters_umaal:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-2138:
+2158:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2138b
+	bne 2158b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -23953,22 +24760,22 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2139:
+2159:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2139b
+	bne 2159b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2140:
+2160:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2140b
+	bne 2160b
 	movw r12, #37312
 	sub r4, r8, r12
 	movw r6, #256
@@ -23978,22 +24785,22 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2141:
+2161:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2141b
+	bne 2161b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2142:
+2162:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2142b
+	bne 2162b
 	movw r12, #37376
 	sub r4, r8, r12
 	movw r6, #32
@@ -24003,22 +24810,22 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2143:
+2163:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2143b
+	bne 2163b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2144:
+2164:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2144b
+	bne 2164b
 	add r1, r8, #160
 	str r1, [r8, #0]
 	add r1, r8, r7
@@ -24036,36 +24843,36 @@ vg_dsa_generate_parameters_umaal:
 	ldr lr, [r8, #16]
 	add lr, lr, #1
 	mov r3, #0
-2145:
+2165:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2145b
+	bne 2165b
 	ldr r6, [r8, #16]
 	lsl r6, r6, #5
-2146:
+2166:
 	ldr r0, [r8, #0]
 	ldr lr, [r8, #16]
 	mov r11, #0
-2147:
+2167:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2147b
+	bne 2167b
 	ldr r0, [r8, #4]
 	ldr lr, [r8, #16]
 	add lr, lr, #1
-2148:
+2168:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2148b
+	bne 2168b
 	ldr r0, [r8, #12]
 	ldr r10, [r8, #4]
 	ldr r12, [r8, #8]
@@ -24074,7 +24881,7 @@ vg_dsa_generate_parameters_umaal:
 	add r7, r7, #1
 	mov lr, r7
 	mov r11, #0
-2149:
+2169:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24088,7 +24895,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2149b
+	bne 2169b
 	mov r12, r10
 	mov r10, r0
 	sub r12, r12, r7, lsl #2
@@ -24097,7 +24904,7 @@ vg_dsa_generate_parameters_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2150:
+2170:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -24108,14 +24915,14 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2150b
+	bne 2170b
 	ldr r0, [r8, #0]
 	ldr r3, [r0, #0]
 	eor r11, r11, #1
 	add r3, r3, r11
 	str r3, [r0, #0]
 	subs r6, r6, #1
-	bne 2146b
+	bne 2166b
 	mov r9, #64
 	add r7, r9, #2
 	lsl r7, r7, #2
@@ -24129,7 +24936,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2151:
+2171:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24143,7 +24950,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2151b
+	bne 2171b
 	add r0, r8, #160
 	ldr r1, [r0, #0]
 	and r1, r1, #1
@@ -24161,7 +24968,7 @@ vg_dsa_generate_parameters_umaal:
 	ldr r11, [r8, #120]
 	mov r4, #0
 	sub r4, r4, r11
-2152:
+2172:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -24172,7 +24979,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2152b
+	bne 2172b
 	mov r0, #7
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24184,7 +24991,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2153:
+2173:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24198,7 +25005,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2153b
+	bne 2173b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24212,14 +25019,14 @@ vg_dsa_generate_parameters_umaal:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2154:
+2174:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2154b
+	bne 2174b
 	mov r0, #8
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24235,14 +25042,14 @@ vg_dsa_generate_parameters_umaal:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2155:
+2175:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2155b
+	bne 2175b
 	mov r0, #9
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24258,31 +25065,31 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #36928
 	sub r0, r8, r12
 	movw lr, #256
-2156:
+2176:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2156b
+	bne 2176b
 	movw r12, #36928
 	sub r0, r8, r12
 	ldrb r1, [r0, #0]
 	and r1, r1, #128
 	cmp r1, #0
-	beq 2157f
+	beq 2177f
 	movw r12, #36928
 	sub r1, r8, r12
 	movw r12, #33408
 	sub r0, r8, r12
 	movw lr, #256
-2159:
+2179:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2159b
+	bne 2179b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -24294,52 +25101,52 @@ vg_dsa_generate_parameters_umaal:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2160f
-	b 2161f
-2160:
+	beq 2180f
+	b 2181f
+2180:
 	ldr r2, [sp, #96]
-2161:
+2181:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime_umaal}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2162f
+	beq 2182f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2163f
-2162:
-2163:
+	b 2183f
+2182:
+2183:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2164f
+	beq 2184f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2166f
-	b 2167f
-2166:
+	beq 2186f
+	b 2187f
+2186:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #108]
-2167:
-	b 2165f
-2164:
+2187:
+	b 2185f
+2184:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #108]
-2165:
-	b 2158f
-2157:
-2158:
+2185:
+	b 2178f
+2177:
+2178:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 2168f
-	b 2169f
-2168:
+	beq 2188f
+	b 2189f
+2188:
 	ldr r1, [sp, #60]
 	add r1, r1, #1
 	add r12, sp, #0
@@ -24350,38 +25157,63 @@ vg_dsa_generate_parameters_umaal:
 	str r2, [r12, #64]
 	movw r2, #8192
 	cmp r1, r2
-	beq 2170f
-	b 2171f
-2170:
+	beq 2190f
+	b 2191f
+2190:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #108]
-2171:
-2169:
+2191:
+2189:
 	ldr r0, [sp, #108]
 	cmp r0, #4
-	beq 2121b
+	beq 2141b
 	ldr r0, [sp, #108]
 	cmp r0, #0
-	beq 2172f
+	beq 2192f
 	ldr r0, [sp, #108]
 	cmp r0, #1
-	beq 2174f
-	b 2175f
-2174:
-	ldr r1, [sp, #136]
+	beq 2194f
+	b 2195f
+2194:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2196f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 2197f
+2196:
+	add r12, sp, #0
+	str r0, [r12, #124]
+2197:
+	ldr r1, [sp, #120]
 	add r12, sp, #0
 	str r1, [r12, #72]
-	ldr r1, [sp, #140]
+	ldr r1, [sp, #124]
 	add r12, sp, #0
 	str r1, [r12, #76]
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #112]
-2176:
+2198:
 	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 2177f
+	movw r1, #256
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2199f
 	ldr r4, [sp, #72]
 	movw r6, #256
 	mov r0, #10
@@ -24390,22 +25222,22 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2179:
+2201:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2179b
+	bne 2201b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2180:
+2202:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2180b
+	bne 2202b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24417,7 +25249,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2181:
+2203:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24431,7 +25263,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2181b
+	bne 2203b
 	str r11, [r8, #124]
 	mov r0, #14
 	mla r0, r0, r7, r8
@@ -24444,7 +25276,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2182:
+2204:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24458,7 +25290,7 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2182b
+	bne 2204b
 	str r11, [r8, #128]
 	ldr r1, [r8, #124]
 	ldr r2, [r8, #128]
@@ -24466,46 +25298,46 @@ vg_dsa_generate_parameters_umaal:
 	str r1, [r8, #124]
 	ldr r1, [r8, #124]
 	cmp r1, #0
-	beq 2183f
+	beq 2205f
 	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #33152
 	sub r0, r8, r12
 	movw lr, #256
-2185:
+2207:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2185b
+	bne 2207b
 	mov r1, #10
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #31040
 	sub r0, r8, r12
 	movw lr, #256
-2186:
+2208:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2186b
+	bne 2208b
 	mov r1, #9
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r12, #30248
 	sub r0, r8, r12
 	movw lr, #228
-2187:
+2209:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2187b
+	bne 2209b
 	movw r12, #33408
 	sub r0, r8, r12
 	movw r1, #4176
@@ -24516,13 +25348,13 @@ vg_dsa_generate_parameters_umaal:
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	movw lr, #256
-2188:
+2210:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2188b
+	bne 2210b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -24534,7 +25366,7 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2189:
+2211:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -24548,11 +25380,11 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2189b
+	bne 2211b
 	str r11, [r8, #136]
 	ldr r1, [r8, #136]
 	cmp r1, #0
-	beq 2190f
+	beq 2212f
 	mov r1, #12
 	mla r1, r1, r7, r8
 	add r1, r1, #160
@@ -24561,22 +25393,22 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #35776
 	sub r0, r8, r12
 	movw lr, #256
-2192:
+2214:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2192b
+	bne 2214b
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #112]
-	b 2191f
-2190:
-2191:
-	b 2184f
-2183:
-2184:
+	b 2213f
+2212:
+2213:
+	b 2206f
+2205:
+2206:
 	ldr r1, [sp, #72]
 	movw r2, #256
 	add r1, r1, r2
@@ -24586,56 +25418,75 @@ vg_dsa_generate_parameters_umaal:
 	sub r1, r1, r2
 	add r12, sp, #0
 	str r1, [r12, #76]
-	b 2178f
-2177:
+	b 2200f
+2199:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #112]
-2178:
+2200:
 	ldr r0, [sp, #112]
 	cmp r0, #4
-	beq 2176b
+	beq 2198b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
 	ldr r0, [sp, #112]
 	cmp r0, #1
-	beq 2193f
-	b 2194f
-2193:
+	beq 2215f
+	ldr r0, [sp, #124]
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2217f
+	b 2218f
+2217:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2218:
+	b 2216f
+2215:
 	movw r12, #36928
 	sub r1, r8, r12
 	movw r12, #35392
 	sub r0, r8, r12
 	movw lr, #256
-2195:
+2219:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2195b
+	bne 2219b
 	movw r12, #37376
 	sub r1, r8, r12
 	movw r12, #35136
 	sub r0, r8, r12
 	movw lr, #32
-2196:
+2220:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2196b
+	bne 2220b
 	movw r12, #35776
 	sub r1, r8, r12
 	movw r12, #35104
 	sub r0, r8, r12
 	movw lr, #256
-2197:
+2221:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2197b
+	bne 2221b
 	movw r12, #35392
 	sub r0, r8, r12
 	movw r1, #544
@@ -24648,72 +25499,190 @@ vg_dsa_generate_parameters_umaal:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2198f
-	b 2199f
-2198:
+	beq 2222f
+	b 2223f
+2222:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2199:
-2194:
-2175:
-	b 2173f
-2172:
+2223:
+2216:
+2195:
+	b 2193f
+2192:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2173:
-2120:
-	b 2118f
-2117:
+2193:
+2140:
+	b 2138f
+2137:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2118:
-	ldr r1, [sp, #48]
-	add r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #32
-	add r12, sp, #0
-	str r1, [r12, #52]
-	b 2110f
-2109:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #80]
-2110:
+2138:
 	ldr r0, [sp, #80]
 	cmp r0, #0
-	beq 2108b
+	beq 2224f
+	b 2225f
+2224:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2225:
+	b 2130f
+2129:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2130:
+	b 2128f
+2127:
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #80]
+2128:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2126b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2200f
+	beq 2226f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2228f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2229f
+2228:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #256
+	movt r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2230f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2231f
+2230:
+	movw r1, #0
+	movt r1, #1
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2232f
+	b 2233f
+2232:
+	mov r0, r1
+2233:
+	add r0, r0, r0
+	movw r1, #256
+	movt r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2234f
+	mov r0, r1
+	b 2235f
+2234:
+2235:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2231:
+2229:
+	b 2227f
+2226:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2227:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2236f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #544
-2202:
+2238:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2202b
-	mov r0, #0
-	b 2201f
-2200:
+	bne 2238b
+	b 2237f
+2236:
 	ldr r0, [sp, #40]
 	movw r12, #35392
 	sub r1, r8, r12
 	movw lr, #544
-2203:
+2239:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2203b
-	mov r0, #1
-2201:
+	bne 2239b
+2237:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 23:
 	b 21f
 20:
@@ -24748,21 +25717,38 @@ vg_dsa_generate_parameters_umaal:
 	strb r1, [r0, #62]
 	mov r1, #160
 	strb r1, [r0, #63]
-2204:
+2240:
 	ldr r0, [sp, #52]
 	cmp r0, #0
-	beq 2205f
+	beq 2241f
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #20
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2243f
+	ldr r0, [sp, #96]
+	ldr r1, [sp, #116]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #48]
+	add r1, r1, #20
+	add r12, sp, #0
+	str r1, [r12, #56]
 	ldr r1, [sp, #48]
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2207:
+2245:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2207b
+	bne 2245b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -24817,13 +25803,13 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #17024
 	sub r0, r8, r12
 	movw lr, #20
-2208:
+2246:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2208b
+	bne 2246b
 	movw r12, #17024
 	sub r0, r8, r12
 	movw r1, #2128
@@ -24835,34 +25821,34 @@ vg_dsa_generate_parameters_umaal:
 	sub r3, r3, r4
 	add r4, sp, #88
 	cmp r3, #0
-	beq 2209f
-	b 2210f
-2209:
+	beq 2247f
+	b 2248f
+2247:
 	ldr r2, [sp, #96]
-2210:
+2248:
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
 	bl {vg_dsa_probable_prime_umaal}
 	ldr r4, [sp], #32
 	add r12, sp, #0
 	str r0, [r12, #104]
 	cmp r0, #0
-	beq 2211f
+	beq 2249f
 	ldr r1, [sp, #88]
 	ldr r2, [sp, #56]
 	add r2, r2, r1
 	add r12, sp, #0
 	str r2, [r12, #56]
-	b 2212f
-2211:
-2212:
+	b 2250f
+2249:
+2250:
 	ldr r0, [sp, #104]
 	cmp r0, #0
-	beq 2213f
+	beq 2251f
 	ldr r0, [sp, #104]
 	cmp r0, #1
-	beq 2215f
-	b 2216f
-2215:
+	beq 2253f
+	b 2254f
+2253:
 	mov r1, #0
 	add r12, sp, #0
 	str r1, [r12, #60]
@@ -24872,31 +25858,31 @@ vg_dsa_generate_parameters_umaal:
 	mov r1, #4
 	add r12, sp, #0
 	str r1, [r12, #108]
-2217:
+2255:
 	ldr r1, [sp, #48]
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2218:
+2256:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2218b
+	bne 2256b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #0
 	mov r2, #20
-2219:
+2257:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2219b
+	bne 2257b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -24942,26 +25928,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2220:
+2258:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2220b
+	bne 2258b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #1
 	mov r2, #20
-2221:
+2259:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2221b
+	bne 2259b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25007,26 +25993,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2222:
+2260:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2222b
+	bne 2260b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #2
 	mov r2, #20
-2223:
+2261:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2223b
+	bne 2261b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25072,26 +26058,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2224:
+2262:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2224b
+	bne 2262b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #3
 	mov r2, #20
-2225:
+2263:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2225b
+	bne 2263b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25137,26 +26123,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2226:
+2264:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2226b
+	bne 2264b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #4
 	mov r2, #20
-2227:
+2265:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2227b
+	bne 2265b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25202,26 +26188,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2228:
+2266:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2228b
+	bne 2266b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #5
 	mov r2, #20
-2229:
+2267:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2229b
+	bne 2267b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25267,26 +26253,26 @@ vg_dsa_generate_parameters_umaal:
 	movw r12, #21120
 	sub r0, r8, r12
 	movw lr, #20
-2230:
+2268:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2230b
+	bne 2268b
 	movw r12, #21101
 	sub r0, r8, r12
 	ldr r1, [sp, #64]
 	add r1, r1, #6
 	mov r2, #20
-2231:
+2269:
 	ldrb r3, [r0, #0]
 	add r3, r3, r1
 	strb r3, [r0, #0]
 	lsr r1, r3, #8
 	sub r0, r0, #1
 	subs r2, r2, #1
-	bne 2231b
+	bne 2269b
 	movw r12, #21056
 	sub r0, r8, r12
 	movw r1, #8961
@@ -25339,11 +26325,11 @@ vg_dsa_generate_parameters_umaal:
 	mul lr, lr, r7
 	lsr lr, lr, #2
 	mov r3, #0
-2232:
+2270:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2232b
+	bne 2270b
 	mov r0, #11
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -25356,438 +26342,26 @@ vg_dsa_generate_parameters_umaal:
 	mov r5, r0
 	add lr, r9, #2
 	mov r3, #0
-2233:
+2271:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2233b
+	bne 2271b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2234:
+2272:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2234b
+	bne 2272b
 	movw r12, #20928
 	sub r4, r8, r12
 	movw r6, #128
 	mov r0, #4
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-2235:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2235b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-2236:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2236b
-	movw r12, #20992
-	sub r4, r8, r12
-	movw r6, #20
-	mov r0, #2
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r5, r0
-	add lr, r9, #2
-	mov r3, #0
-2237:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2237b
-	mov r0, r5
-	add r1, r4, r6
-	sub r1, r1, #1
-	mov lr, r6
-2238:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2238b
-	add r1, r8, #160
-	str r1, [r8, #0]
-	add r1, r8, r7
-	add r1, r1, #160
-	str r1, [r8, #4]
-	mov r1, #2
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	str r1, [r8, #8]
-	mov r1, #3
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	str r1, [r8, #12]
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
-	mov r3, #0
-2239:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2239b
-	ldr r6, [r8, #16]
-	lsl r6, r6, #5
-2240:
-	ldr r0, [r8, #0]
-	ldr lr, [r8, #16]
-	mov r11, #0
-2241:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2241b
-	ldr r0, [r8, #4]
-	ldr lr, [r8, #16]
-	add lr, lr, #1
-2242:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2242b
-	ldr r0, [r8, #12]
-	ldr r10, [r8, #4]
-	ldr r12, [r8, #8]
-	mov r9, r10
-	ldr r7, [r8, #16]
-	add r7, r7, #1
-	mov lr, r7
-	mov r11, #0
-2243:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2243b
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2244:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2244b
-	ldr r0, [r8, #0]
-	ldr r3, [r0, #0]
-	eor r11, r11, #1
-	add r3, r3, r11
-	str r3, [r0, #0]
-	subs r6, r6, #1
-	bne 2240b
-	mov r9, #32
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #5
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #4
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	add r12, r8, r7
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2245:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2245b
-	add r0, r8, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #120]
-	mov r0, #6
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #2
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #120]
-	mov r4, #0
-	sub r4, r4, r11
-2246:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2246b
-	mov r0, #7
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #5
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #6
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2247:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2247b
-	mov r0, #8
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #7
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #7
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2248:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2248b
-	mov r0, #8
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	orr r1, r1, #1
-	str r1, [r0, #0]
-	mov r0, #9
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2249:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2249b
-	mov r0, #9
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	orr r1, r1, #1
-	eor r1, r1, #1
-	str r1, [r0, #0]
-	mov r1, #8
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r2, #127
-	add r1, r1, r2
-	movw r12, #20544
-	sub r0, r8, r12
-	movw lr, #128
-2250:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	sub r1, r1, #1
-	subs lr, lr, #1
-	bne 2250b
-	movw r12, #20544
-	sub r0, r8, r12
-	ldrb r1, [r0, #0]
-	and r1, r1, #128
-	cmp r1, #0
-	beq 2251f
-	movw r12, #20544
-	sub r1, r8, r12
-	movw r12, #17024
-	sub r0, r8, r12
-	movw lr, #128
-2253:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2253b
-	movw r12, #17024
-	sub r0, r8, r12
-	movw r1, #2128
-	movw r5, #1024
-	ldr r4, [sp, #56]
-	ldr r2, [sp, #96]
-	ldr r3, [sp, #100]
-	add r2, r2, r4
-	sub r3, r3, r4
-	add r4, sp, #88
-	cmp r3, #0
-	beq 2254f
-	b 2255f
-2254:
-	ldr r2, [sp, #96]
-2255:
-	push {r4, r5, r6, r7, r8, r9, r10, r11}
-	bl {vg_dsa_probable_prime_umaal}
-	ldr r4, [sp], #32
-	add r12, sp, #0
-	str r0, [r12, #104]
-	cmp r0, #0
-	beq 2256f
-	ldr r1, [sp, #88]
-	ldr r2, [sp, #56]
-	add r2, r2, r1
-	add r12, sp, #0
-	str r2, [r12, #56]
-	b 2257f
-2256:
-2257:
-	ldr r0, [sp, #104]
-	cmp r0, #0
-	beq 2258f
-	ldr r0, [sp, #104]
-	cmp r0, #1
-	beq 2260f
-	b 2261f
-2260:
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #108]
-2261:
-	b 2259f
-2258:
-	mov r1, #0
-	add r12, sp, #0
-	str r1, [r12, #108]
-2259:
-	b 2252f
-2251:
-2252:
-	ldr r0, [sp, #108]
-	cmp r0, #4
-	beq 2262f
-	b 2263f
-2262:
-	ldr r1, [sp, #60]
-	add r1, r1, #1
-	add r12, sp, #0
-	str r1, [r12, #60]
-	ldr r2, [sp, #64]
-	add r2, r2, #7
-	add r12, sp, #0
-	str r2, [r12, #64]
-	movw r2, #4096
-	cmp r1, r2
-	beq 2264f
-	b 2265f
-2264:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #108]
-2265:
-2263:
-	ldr r0, [sp, #108]
-	cmp r0, #4
-	beq 2217b
-	ldr r0, [sp, #108]
-	cmp r0, #0
-	beq 2266f
-	ldr r0, [sp, #108]
-	cmp r0, #1
-	beq 2268f
-	b 2269f
-2268:
-	ldr r1, [sp, #136]
-	add r12, sp, #0
-	str r1, [r12, #72]
-	ldr r1, [sp, #140]
-	add r12, sp, #0
-	str r1, [r12, #76]
-	mov r1, #4
-	add r12, sp, #0
-	str r1, [r12, #112]
-2270:
-	ldr r0, [sp, #76]
-	cmp r0, #0
-	beq 2271f
-	ldr r4, [sp, #72]
-	movw r6, #128
-	mov r0, #10
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	mov r5, r0
@@ -25809,45 +26383,87 @@ vg_dsa_generate_parameters_umaal:
 	sub r1, r1, #1
 	subs lr, lr, #1
 	bne 2274b
-	mov r0, #14
+	movw r12, #20992
+	sub r4, r8, r12
+	movw r6, #20
+	mov r0, #2
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #11
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #10
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
 2275:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
 	str r3, [r0, #0]
-	add r10, r10, #4
 	add r0, r0, #4
-	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2275b
-	str r11, [r8, #124]
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #10
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #7
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
 2276:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2276b
+	add r1, r8, #160
+	str r1, [r8, #0]
+	add r1, r8, r7
+	add r1, r1, #160
+	str r1, [r8, #4]
+	mov r1, #2
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	str r1, [r8, #8]
+	mov r1, #3
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	str r1, [r8, #12]
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+	mov r3, #0
+2277:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2277b
+	ldr r6, [r8, #16]
+	lsl r6, r6, #5
+2278:
+	ldr r0, [r8, #0]
+	ldr lr, [r8, #16]
+	mov r11, #0
+2279:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2279b
+	ldr r0, [r8, #4]
+	ldr lr, [r8, #16]
+	add lr, lr, #1
+2280:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2280b
+	ldr r0, [r8, #12]
+	ldr r10, [r8, #4]
+	ldr r12, [r8, #8]
+	mov r9, r10
+	ldr r7, [r8, #16]
+	add r7, r7, #1
+	mov lr, r7
+	mov r11, #0
+2281:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -25861,79 +26477,44 @@ vg_dsa_generate_parameters_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2276b
-	str r11, [r8, #128]
-	ldr r1, [r8, #124]
-	ldr r2, [r8, #128]
-	and r1, r1, r2
-	str r1, [r8, #124]
-	ldr r1, [r8, #124]
-	cmp r1, #0
-	beq 2277f
-	mov r1, #8
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #16768
-	sub r0, r8, r12
-	movw lr, #128
-2279:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2279b
-	mov r1, #10
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #15680
-	sub r0, r8, r12
-	movw lr, #128
-2280:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2280b
-	mov r1, #9
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	movw r12, #15272
-	sub r0, r8, r12
-	movw lr, #112
-2281:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
 	bne 2281b
-	movw r12, #17024
-	sub r0, r8, r12
-	movw r1, #2128
-	bl {vg_dsa_pow_16_28}
-	movw r12, #15544
-	sub r1, r8, r12
-	mov r0, #12
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	movw lr, #128
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
 2282:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2282b
-	mov r0, #14
+	ldr r0, [r8, #0]
+	ldr r3, [r0, #0]
+	eor r11, r11, #1
+	add r3, r3, r11
+	str r3, [r0, #0]
+	subs r6, r6, #1
+	bne 2278b
+	mov r9, #32
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #5
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #11
+	mov r10, #4
 	mla r10, r10, r7, r8
 	add r10, r10, #160
-	mov r12, #12
-	mla r12, r12, r7, r8
+	add r12, r8, r7
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
@@ -25952,84 +26533,136 @@ vg_dsa_generate_parameters_umaal:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2283b
-	str r11, [r8, #136]
-	ldr r1, [r8, #136]
-	cmp r1, #0
-	beq 2284f
-	mov r1, #12
+	add r0, r8, #160
+	ldr r1, [r0, #0]
+	and r1, r1, #1
+	str r1, [r8, #120]
+	mov r0, #6
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #2
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	ldr r11, [r8, #120]
+	mov r4, #0
+	sub r4, r4, r11
+2284:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2284b
+	mov r0, #7
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #5
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #6
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2285:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2285b
+	mov r0, #8
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #7
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #7
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2286:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2286b
+	mov r0, #8
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r0, #0]
+	orr r1, r1, #1
+	str r1, [r0, #0]
+	mov r0, #9
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2287:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2287b
+	mov r0, #9
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r0, #0]
+	orr r1, r1, #1
+	eor r1, r1, #1
+	str r1, [r0, #0]
+	mov r1, #8
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	movw r2, #127
 	add r1, r1, r2
-	movw r12, #19392
+	movw r12, #20544
 	sub r0, r8, r12
 	movw lr, #128
-2286:
+2288:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2286b
-	mov r1, #1
-	add r12, sp, #0
-	str r1, [r12, #112]
-	b 2285f
-2284:
-2285:
-	b 2278f
-2277:
-2278:
-	ldr r1, [sp, #72]
-	movw r2, #128
-	add r1, r1, r2
-	add r12, sp, #0
-	str r1, [r12, #72]
-	ldr r1, [sp, #76]
-	sub r1, r1, r2
-	add r12, sp, #0
-	str r1, [r12, #76]
-	b 2272f
-2271:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #112]
-2272:
-	ldr r0, [sp, #112]
-	cmp r0, #4
-	beq 2270b
-	ldr r0, [sp, #112]
-	cmp r0, #1
-	beq 2287f
-	b 2288f
-2287:
+	bne 2288b
+	movw r12, #20544
+	sub r0, r8, r12
+	ldrb r1, [r0, #0]
+	and r1, r1, #128
+	cmp r1, #0
+	beq 2289f
 	movw r12, #20544
 	sub r1, r8, r12
-	movw r12, #19008
-	sub r0, r8, r12
-	movw lr, #128
-2289:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2289b
-	movw r12, #20992
-	sub r1, r8, r12
-	movw r12, #18880
-	sub r0, r8, r12
-	movw lr, #20
-2290:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2290b
-	movw r12, #19392
-	sub r1, r8, r12
-	movw r12, #18860
+	movw r12, #17024
 	sub r0, r8, r12
 	movw lr, #128
 2291:
@@ -26039,6 +26672,403 @@ vg_dsa_generate_parameters_umaal:
 	add r1, r1, #1
 	subs lr, lr, #1
 	bne 2291b
+	movw r12, #17024
+	sub r0, r8, r12
+	movw r1, #2128
+	movw r5, #1024
+	ldr r4, [sp, #56]
+	ldr r2, [sp, #96]
+	ldr r3, [sp, #100]
+	add r2, r2, r4
+	sub r3, r3, r4
+	add r4, sp, #88
+	cmp r3, #0
+	beq 2292f
+	b 2293f
+2292:
+	ldr r2, [sp, #96]
+2293:
+	push {r4, r5, r6, r7, r8, r9, r10, r11}
+	bl {vg_dsa_probable_prime_umaal}
+	ldr r4, [sp], #32
+	add r12, sp, #0
+	str r0, [r12, #104]
+	cmp r0, #0
+	beq 2294f
+	ldr r1, [sp, #88]
+	ldr r2, [sp, #56]
+	add r2, r2, r1
+	add r12, sp, #0
+	str r2, [r12, #56]
+	b 2295f
+2294:
+2295:
+	ldr r0, [sp, #104]
+	cmp r0, #0
+	beq 2296f
+	ldr r0, [sp, #104]
+	cmp r0, #1
+	beq 2298f
+	b 2299f
+2298:
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #108]
+2299:
+	b 2297f
+2296:
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #108]
+2297:
+	b 2290f
+2289:
+2290:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 2300f
+	b 2301f
+2300:
+	ldr r1, [sp, #60]
+	add r1, r1, #1
+	add r12, sp, #0
+	str r1, [r12, #60]
+	ldr r2, [sp, #64]
+	add r2, r2, #7
+	add r12, sp, #0
+	str r2, [r12, #64]
+	movw r2, #4096
+	cmp r1, r2
+	beq 2302f
+	b 2303f
+2302:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #108]
+2303:
+2301:
+	ldr r0, [sp, #108]
+	cmp r0, #4
+	beq 2255b
+	ldr r0, [sp, #108]
+	cmp r0, #0
+	beq 2304f
+	ldr r0, [sp, #108]
+	cmp r0, #1
+	beq 2306f
+	b 2307f
+2306:
+	ldr r1, [sp, #56]
+	ldr r0, [sp, #96]
+	add r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #120]
+	ldr r0, [sp, #100]
+	sub r0, r0, r1
+	movw r1, #16384
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2308f
+	add r12, sp, #0
+	str r1, [r12, #124]
+	b 2309f
+2308:
+	add r12, sp, #0
+	str r0, [r12, #124]
+2309:
+	ldr r1, [sp, #120]
+	add r12, sp, #0
+	str r1, [r12, #72]
+	ldr r1, [sp, #124]
+	add r12, sp, #0
+	str r1, [r12, #76]
+	mov r1, #4
+	add r12, sp, #0
+	str r1, [r12, #112]
+2310:
+	ldr r0, [sp, #76]
+	movw r1, #128
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2311f
+	ldr r4, [sp, #72]
+	movw r6, #128
+	mov r0, #10
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r5, r0
+	add lr, r9, #2
+	mov r3, #0
+2313:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2313b
+	mov r0, r5
+	add r1, r4, r6
+	sub r1, r1, #1
+	mov lr, r6
+2314:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2314b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #10
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2315:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2315b
+	str r11, [r8, #124]
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #10
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #7
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2316:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2316b
+	str r11, [r8, #128]
+	ldr r1, [r8, #124]
+	ldr r2, [r8, #128]
+	and r1, r1, r2
+	str r1, [r8, #124]
+	ldr r1, [r8, #124]
+	cmp r1, #0
+	beq 2317f
+	mov r1, #8
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #16768
+	sub r0, r8, r12
+	movw lr, #128
+2319:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2319b
+	mov r1, #10
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #15680
+	sub r0, r8, r12
+	movw lr, #128
+2320:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2320b
+	mov r1, #9
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r12, #15272
+	sub r0, r8, r12
+	movw lr, #112
+2321:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2321b
+	movw r12, #17024
+	sub r0, r8, r12
+	movw r1, #2128
+	bl {vg_dsa_pow_16_28}
+	movw r12, #15544
+	sub r1, r8, r12
+	mov r0, #12
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	movw lr, #128
+2322:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2322b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #12
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2323:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2323b
+	str r11, [r8, #136]
+	ldr r1, [r8, #136]
+	cmp r1, #0
+	beq 2324f
+	mov r1, #12
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	movw r2, #127
+	add r1, r1, r2
+	movw r12, #19392
+	sub r0, r8, r12
+	movw lr, #128
+2326:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	sub r1, r1, #1
+	subs lr, lr, #1
+	bne 2326b
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #112]
+	b 2325f
+2324:
+2325:
+	b 2318f
+2317:
+2318:
+	ldr r1, [sp, #72]
+	movw r2, #128
+	add r1, r1, r2
+	add r12, sp, #0
+	str r1, [r12, #72]
+	ldr r1, [sp, #76]
+	sub r1, r1, r2
+	add r12, sp, #0
+	str r1, [r12, #76]
+	b 2312f
+2311:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #112]
+2312:
+	ldr r0, [sp, #112]
+	cmp r0, #4
+	beq 2310b
+	ldr r0, [sp, #72]
+	ldr r1, [sp, #96]
+	sub r0, r0, r1
+	add r12, sp, #0
+	str r0, [r12, #56]
+	ldr r0, [sp, #112]
+	cmp r0, #1
+	beq 2327f
+	ldr r0, [sp, #124]
+	movw r1, #16384
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2329f
+	b 2330f
+2329:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2330:
+	b 2328f
+2327:
+	movw r12, #20544
+	sub r1, r8, r12
+	movw r12, #19008
+	sub r0, r8, r12
+	movw lr, #128
+2331:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2331b
+	movw r12, #20992
+	sub r1, r8, r12
+	movw r12, #18880
+	sub r0, r8, r12
+	movw lr, #20
+2332:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2332b
+	movw r12, #19392
+	sub r1, r8, r12
+	movw r12, #18860
+	sub r0, r8, r12
+	movw lr, #128
+2333:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2333b
 	movw r12, #19008
 	sub r0, r8, r12
 	movw r1, #276
@@ -26051,72 +27081,190 @@ vg_dsa_generate_parameters_umaal:
 	bl {vg_dsa_check_parameters}
 	ldr r4, [sp], #32
 	cmp r0, #1
-	beq 2292f
-	b 2293f
-2292:
+	beq 2334f
+	b 2335f
+2334:
 	mov r1, #1
 	add r12, sp, #0
 	str r1, [r12, #80]
-2293:
-2288:
-2269:
-	b 2267f
-2266:
+2335:
+2328:
+2307:
+	b 2305f
+2304:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2267:
-2216:
-	b 2214f
-2213:
+2305:
+2254:
+	b 2252f
+2251:
 	mov r1, #2
 	add r12, sp, #0
 	str r1, [r12, #80]
-2214:
-	ldr r1, [sp, #48]
-	add r1, r1, #20
-	add r12, sp, #0
-	str r1, [r12, #48]
-	ldr r1, [sp, #52]
-	sub r1, r1, #20
-	add r12, sp, #0
-	str r1, [r12, #52]
-	b 2206f
-2205:
-	mov r1, #2
-	add r12, sp, #0
-	str r1, [r12, #80]
-2206:
+2252:
 	ldr r0, [sp, #80]
 	cmp r0, #0
-	beq 2204b
+	beq 2336f
+	b 2337f
+2336:
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #116]
+	ldr r0, [sp, #52]
+	sub r0, r0, #1
+	add r12, sp, #0
+	str r0, [r12, #52]
+2337:
+	b 2244f
+2243:
+	mov r1, #2
+	add r12, sp, #0
+	str r1, [r12, #80]
+2244:
+	b 2242f
+2241:
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #80]
+2242:
+	ldr r0, [sp, #80]
+	cmp r0, #0
+	beq 2240b
 	ldr r0, [sp, #80]
 	cmp r0, #1
-	beq 2294f
+	beq 2338f
+	ldr r0, [sp, #80]
+	cmp r0, #2
+	beq 2340f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2341f
+2340:
+	ldr r0, [sp, #100]
+	ldr r1, [sp, #116]
+	sub r0, r0, r1
+	movw r1, #128
+	movt r1, #64
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2342f
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #3
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+	b 2343f
+2342:
+	movw r1, #32768
+	movt r1, #0
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2344f
+	b 2345f
+2344:
+	mov r0, r1
+2345:
+	add r0, r0, r0
+	movw r1, #128
+	movt r1, #64
+	subs r12, r0, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 2346f
+	mov r0, r1
+	b 2347f
+2346:
+2347:
+	mov r3, r0
+	ldr r2, [sp, #52]
+	ldr r0, [sp, #116]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #0
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2343:
+2341:
+	b 2339f
+2338:
+	mov r2, #0
+	mov r3, #0
+	ldr r0, [sp, #56]
+	add r12, sp, #0
+	str r0, [r12, #60]
+	mov r1, #1
+	add r12, sp, #0
+	str r1, [r12, #64]
+	add r12, sp, #0
+	str r2, [r12, #108]
+	add r12, sp, #0
+	str r3, [r12, #112]
+2339:
+	ldr r0, [sp, #80]
+	cmp r0, #1
+	beq 2348f
 	ldr r0, [sp, #40]
 	mov r3, #0
 	movw lr, #276
-2296:
+2350:
 	strb r3, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2296b
-	mov r0, #0
-	b 2295f
-2294:
+	bne 2350b
+	b 2349f
+2348:
 	ldr r0, [sp, #40]
 	movw r12, #19008
 	sub r1, r8, r12
 	movw lr, #276
-2297:
+2351:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2297b
-	mov r0, #1
-2295:
+	bne 2351b
+2349:
+	ldr r1, [sp, #68]
+	ldr r0, [sp, #108]
+	mov r2, #0
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #112]
+	str r0, [r1, #24]
+	str r2, [r1, #28]
+	ldr r1, [sp, #44]
+	ldr r0, [sp, #60]
+	str r0, [r1, #0]
+	str r2, [r1, #4]
+	ldr r0, [sp, #64]
 21:
 	ldr r4, [sp, #0]
 	ldr r5, [sp, #4]
