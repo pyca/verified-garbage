@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM-SIV on x86-64: the code a variant's artifacts run
@@ -255,5 +256,55 @@ theorem openCode_spSafe (v : GcmImpl) : (openCode v).all (fun i => !X86_64.isa.w
   unfold openCode; split
   · exact openS_spSafe v (ecbOf v) (sivWide v)
   · exact open_spSafe v (ecbOf v) (sivWide v)
+
+/-- The copy/XOR variant, using the stitched implementation whenever its
+callees already enable it. These are aliases of the ordinary wide variants. -/
+def wideSealCode (v : GcmImpl) : Prog X86_64.isa :=
+  if sivWide v then sealCode v else Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) true
+
+def wideOpenCode (v : GcmImpl) : Prog X86_64.isa :=
+  if sivWide v then openCode v else Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) true
+
+theorem wideSeal_framed (v : GcmImpl) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v))
+      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
+  unfold wideSealCode; split
+  · exact sealCode_framed v
+  · exact seal_framed v (ecbOf v) true
+
+theorem wideOpen_framed (v : GcmImpl) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v))
+      (Spec.GcmSiv.openContract X86_64.abi 3856) := by
+  unfold wideOpenCode; split
+  · exact openCode_framed v
+  · exact open_framed v (ecbOf v) true
+
+theorem wideSeal_spSafe (v : GcmImpl) : (wideSealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold wideSealCode; split
+  · exact sealCode_spSafe v
+  · exact seal_spSafe v (ecbOf v) true
+
+theorem wideOpen_spSafe (v : GcmImpl) : (wideOpenCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold wideOpenCode; split
+  · exact openCode_spSafe v
+  · exact open_spSafe v (ecbOf v) true
+
+/-- Add an AVX2 copy/XOR instance for every combination of callees, so that
+all their variants reach both the ordinary and the AVX2-copy callers. -/
+def withWideArtifacts (v : GcmImpl) (base : List Artifact) : List Artifact := base ++ [
+    Spec.GcmSiv.sealApi.artifact X86_64.target {
+      suffix := v.suffix ++ "_avx2"
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
+      stack := 3856
+      verified := wideSeal_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
+      features := (features v ++ ["avx", "avx2"]).dedup },
+    Spec.GcmSiv.openApi.artifact X86_64.target {
+      suffix := v.suffix ++ "_avx2"
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
+      stack := 3856
+      verified := wideOpen_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
+      features := (features v ++ ["avx", "avx2"]).dedup }]
 
 end VG.Proof.AesGcmSiv.X86_64
