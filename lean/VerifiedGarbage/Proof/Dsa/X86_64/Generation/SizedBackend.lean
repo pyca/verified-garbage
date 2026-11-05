@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-public import VerifiedGarbage.Spec.Dsa.GenerationSized
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 
 /-! # One active hash backend for each restricted generation helper
 
@@ -37,7 +37,7 @@ theorem large_width {p : Nat} (h : p ∈ ([256, 384] : List Nat)) : p = 256 ∨ 
 theorem sha1_verified (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha1") :
     Verified target (Impl.Dsa.X86_64.Generation.Sized.single (checkName := checkName) 128 h.H.stream
       VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run)
-      (Spec.Dsa.GenerationSized.contract 128 abi 536) := by
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 128 abi 536) := by
   have hv := verified (checkName := checkName) h.H.stream sha256Witness.H.stream VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm
     (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run (backend_verified (checkName := checkName) h sha256Witness v hh rfl) 128 (Or.inl rfl)
   rw [← single128] at hv
@@ -55,7 +55,7 @@ theorem sha256_verified (h : MdHash) (v : RoundImpl) (hh : h.mgf.G.rust = "sha25
     (pBytes : Nat) (hp : pBytes = 256 ∨ pBytes = 384) :
     Verified target (Impl.Dsa.X86_64.Generation.Sized.single (checkName := checkName) pBytes h.H.stream
       VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run)
-      (Spec.Dsa.GenerationSized.contract pBytes abi 536) := by
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract pBytes abi 536) := by
   have hv := verified (checkName := checkName) sha1Witness.H.stream h.H.stream VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm
     (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run (backend_verified (checkName := checkName) sha1Witness h v rfl hh) pBytes (Or.inr hp)
   rcases hp with rfl | rfl

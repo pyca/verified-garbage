@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Widths
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sized
-public import VerifiedGarbage.Spec.Dsa.GenerationSized
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 
 /-! # Parameter generation by the public modulus width, on x86-64
 
@@ -28,7 +27,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 `p_len`'s width, whose code is the restricted generation body
 (`Sized.single`), forwarding its arguments (`Verified.forward`): it is
 verified against the complete generation contract from the restricted
-helpers' (`Spec.Dsa.GenerationSized`), each the complete contract with the
+helpers' (`Sized.contract`), each the complete contract with the
 width fixed, by choosing on entry (`Verified.entryBranch`).
 -/
 
@@ -82,11 +81,11 @@ theorem setWidth_ptr (x : BitVec 64) : (BitVec.setWidth abi.ptrBits x).toNat = x
   congrArg BitVec.toNat (BitVec.setWidth_eq x)
 
 theorem forward_sized (p : Nat) {name : String} {body : Prog isa}
-    (h : Verified target body (Spec.Dsa.GenerationSized.contract p abi 536))
+    (h : Verified target body (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 536))
     (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 536)
-    (hsat : ∃ s, (Spec.Dsa.GenerationSized.contract p abi 600).pre s) :
+    (hsat : ∃ s, (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 600).pre s) :
     Verified target (Impl.Dsa.X86_64.Generation.Widths.width name body)
-      (Spec.Dsa.GenerationSized.contract p abi 600) := by
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 600) := by
   refine Verified.forward (sig := Spec.Dsa.generateParametersSig) (bytes := 56) h (by decide) (by decide)
     (by decide) (by decide) hsp hd ?_ ?_ hsat ?_
   · intro vs m₁ m₂ hl _ _ hpr
@@ -188,12 +187,12 @@ def largeContract (stack : Nat := 0) : Contract isa :=
         (bytesAt m witnesses witnessesLen.toNat).map (·.toNat))
 
 theorem sized_of_full {p : Nat} {s : State} (h : (Spec.Dsa.generateParametersContract abi 600).pre s)
-    (hw : (s.gpr .rdx).toNat = p) : (Spec.Dsa.GenerationSized.contract p abi 600).pre s := by
+    (hw : (s.gpr .rdx).toNat = p) : (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 600).pre s := by
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   sig_and_intros
   all_goals with_reducible assumption
 
@@ -210,12 +209,12 @@ theorem large_of_full {s : State} (h : (Spec.Dsa.generateParametersContract abi 
     | (simp only [Spec.Dsa.generationLengthsValid] at *; omega)
 
 theorem sized_of_large {p : Nat} {s : State} (h : (largeContract 600).pre s)
-    (hw : (s.gpr .rdx).toNat = p) : (Spec.Dsa.GenerationSized.contract p abi 600).pre s := by
+    (hw : (s.gpr .rdx).toNat = p) : (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 600).pre s := by
   sig_pre [largeContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_pre [largeContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   sig_and_intros
   all_goals with_reducible assumption
 
@@ -229,11 +228,11 @@ theorem satArgs (p : Nat) :
   decide +kernel
 
 theorem sized_sat (p : Nat) (hp : p = 128 ∨ p = 256 ∨ p = 384) :
-    ∃ s, (Spec.Dsa.GenerationSized.contract p abi 600).pre s := by
+    ∃ s, (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 600).pre s := by
   have hargs := satArgs p
   refine ⟨Sized.sizedSatState p, ?_⟩
   rcases hp with rfl | rfl | rfl
-  all_goals sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  all_goals sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   all_goals sig_and_intros
   all_goals try simp only [hargs.1, hargs.2.1, hargs.2.2.1, hargs.2.2.2.1,
     hargs.2.2.2.2.1, hargs.2.2.2.2.2]
@@ -277,9 +276,9 @@ theorem width_of_large {s : State} (h : (largeContract 600).pre s) :
 
 theorem large_verified {n₂₅₆ n₃₈₄ : String} {c₂₅₆ c₃₈₄ : Prog isa}
     (h₂₅₆ : Verified target (Impl.Dsa.X86_64.Generation.Widths.width n₂₅₆ c₂₅₆)
-      (Spec.Dsa.GenerationSized.contract 256 abi 600))
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 256 abi 600))
     (h₃₈₄ : Verified target (Impl.Dsa.X86_64.Generation.Widths.width n₃₈₄ c₃₈₄)
-      (Spec.Dsa.GenerationSized.contract 384 abi 600)) :
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 384 abi 600)) :
     Verified target (Impl.Dsa.X86_64.Generation.Widths.large n₂₅₆ n₃₈₄ c₂₅₆ c₃₈₄) (largeContract 600) := by
   refine Verified.entryBranch (p := fun s => s.gpr .rdx == 256) (fun _ => []) h₂₅₆ h₃₈₄
     (fun s hs => ⟨_, rfl, ?_, fun hp => ⟨sized_of_large hs ?_, fun s' a q => ⟨a, q⟩⟩,
@@ -304,11 +303,11 @@ theorem large_verified {n₂₅₆ n₃₈₄ : String} {c₂₅₆ c₃₈₄ :
 
 theorem widths_verified {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
     (h₁₂₈ : Verified target (Impl.Dsa.X86_64.Generation.Widths.width n₁₂₈ c₁₂₈)
-      (Spec.Dsa.GenerationSized.contract 128 abi 600))
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 128 abi 600))
     (h₂₅₆ : Verified target (Impl.Dsa.X86_64.Generation.Widths.width n₂₅₆ c₂₅₆)
-      (Spec.Dsa.GenerationSized.contract 256 abi 600))
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 256 abi 600))
     (h₃₈₄ : Verified target (Impl.Dsa.X86_64.Generation.Widths.width n₃₈₄ c₃₈₄)
-      (Spec.Dsa.GenerationSized.contract 384 abi 600)) :
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract 384 abi 600)) :
     Verified target (Impl.Dsa.X86_64.Generation.Widths.widths n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
       (Spec.Dsa.generateParametersContract abi 600) := by
   refine Verified.entryBranch (p := fun s => s.gpr .rdx == 128) (fun _ => []) h₁₂₈
@@ -335,9 +334,9 @@ theorem widths_verified {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ 
 /-- The complete generation, by the restricted bodies for each width, each
 verified against its restricted contract. -/
 theorem generation_verified {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
-    (h₁₂₈ : Verified target c₁₂₈ (Spec.Dsa.GenerationSized.contract 128 abi 536))
-    (h₂₅₆ : Verified target c₂₅₆ (Spec.Dsa.GenerationSized.contract 256 abi 536))
-    (h₃₈₄ : Verified target c₃₈₄ (Spec.Dsa.GenerationSized.contract 384 abi 536))
+    (h₁₂₈ : Verified target c₁₂₈ (VG.Proof.Dsa.X86_64.Generation.Sized.contract 128 abi 536))
+    (h₂₅₆ : Verified target c₂₅₆ (VG.Proof.Dsa.X86_64.Generation.Sized.contract 256 abi 536))
+    (h₃₈₄ : Verified target c₃₈₄ (VG.Proof.Dsa.X86_64.Generation.Sized.contract 384 abi 536))
     (s₁₂₈ : c₁₂₈.all (fun i => !isa.writesSp i) = true) (s₂₅₆ : c₂₅₆.all (fun i => !isa.writesSp i) = true)
     (s₃₈₄ : c₃₈₄.all (fun i => !isa.writesSp i) = true)
     (d₁₂₈ : c₁₂₈.x86_64Depth ≤ 536) (d₂₅₆ : c₂₅₆.x86_64Depth ≤ 536) (d₃₈₄ : c₃₈₄.x86_64Depth ≤ 536) :
@@ -369,7 +368,7 @@ def body (h : MdHash) (v : RoundImpl) (p : Nat) : Prog isa :=
 
 /-- The name the restricted body for width `p` is emitted as, its hash tagged `tag`. -/
 def name (tag : String) (h : MdHash) (v : RoundImpl) (p : Nat) : String :=
-  (Spec.Dsa.GenerationSized.api p).name ++ Emit.qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
+  s!"vg_dsa_generation_{8 * p}" ++ Emit.qualifiedName "" [(tag, h.suffix), ("mr", v.suffix)]
 
 /-- The complete generation with the hashes `v1` and `v256` and Miller–Rabin `v`. -/
 def code (v1 v256 : MdHash) (v : RoundImpl) : Prog isa :=
