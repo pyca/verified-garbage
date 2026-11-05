@@ -77,30 +77,24 @@ theorem arg_contains {p : SearchPublic} {o : State} (h : SearchInput p o) {i : N
   rw [ai, show aR o = ⟨argAddr o 0, 48⟩ from rfl, a0]
   exact Offset.contains _ (by omega) (by omega) (by omega)
 
-theorem results_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} (h : SearchDone p o final s) :
-    WP isa (.block results) s fun t =>
-      (t.gpr .eax = BitVec.ofNat 32 final.status ∧ t.mem = finished p s.mem final) ∧
-        Keep [.eax, .ecx, .edx] s t ∧ t.syms = s.syms := by
+/-- The state's words. -/
+theorem results_head_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} (h : SearchDone p o final s) :
+    WP isa (.block (results.take 13)) s fun u =>
+      (u.gpr .eax = 0 ∧ u.mem = writes s.mem (p.stp.setWidth 64) (stateWords p final) ∧ SearchBase p o u) ∧
+        Keep [.eax, .ecx, .edx] s u ∧ u.syms = s.syms := by
   have hi := h.input
   have A := hi.abi
   have hb := h.toSearchBase
   have hv := hi.len_valid
   have hs : p.stp = arg o 11 := by rw [← hi.2]; rfl
-  have hu : p.up = arg o 2 := by rw [← hi.2]; rfl
   have WSe (k : Nat) (hk : k < 32) :
       (arg o 11 + BitVec.ofNat 32 k).setWidth 64 = (arg o 11).setWidth 64 + BitVec.ofNat 64 k :=
     VG.Proof.MlKem.X86.ea_off (by have := A.sBound; omega)
   have WSi (k : Nat) (hk : k + 4 ≤ 32) : InRegions s.wr ((arg o 11).setWidth 64 + BitVec.ofNat 64 k) 4 :=
     ⟨sR o, by rw [hb.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  have WU (k : Nat) (hk : k < 8) : (arg o 2 + BitVec.ofNat 32 k).setWidth 64 = (arg o 2).setWidth 64 + BitVec.ofNat 64 k :=
-    VG.Proof.MlKem.X86.ea_off (by have := A.uBound; omega)
-  have WUi (k : Nat) (hk : k + 4 ≤ 8) : InRegions s.wr ((arg o 2).setWidth 64 + BitVec.ofNat 64 k) 4 :=
-    ⟨uR o, by rw [hb.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  -- the state's words, then `used`
-  rw [show results = (results.take 13) ++ (results.drop 13) from (List.take_append_drop _ _).symm]
-  refine WP.block_append (WP.mono (WP.blockKeep [.eax, .ecx, .edx]
+  refine WP.mono (WP.blockKeep [.eax, .ecx, .edx]
     (Q := fun u => u.gpr .eax = 0 ∧ u.mem = writes s.mem (p.stp.setWidth 64) (stateWords p final)) ?_ (by rfl))
-    fun u ⟨⟨ha, hm⟩, ku, sy⟩ => ?_)
+    fun u ⟨⟨ha, hm⟩, ku, sy⟩ => ⟨⟨ha, hm, ?_⟩, ku, sy⟩
   · simp only [results, List.take, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd]
     xrun [State.ea, at_, hb.arg_ea (i := 1) (d := 24) rfl, hb.arg_ea (i := 11) (d := 64) rfl,
       hb.arg_in (i := 1) (by decide), hb.arg_in (i := 11) (by decide), hb.arg_val (i := 1) (by decide),
@@ -113,10 +107,28 @@ theorem results_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} 
       WSi 12 (by decide), WSi 16 (by decide), WSi 20 (by decide),
       WSi 24 (by decide), WSi 28 (by decide)]
     simp only [writes, stateWords, hs, Nat.reduceMul, Nat.mul_comm 32769]
+  · have hfu : Frame [sR o] s.mem u.mem := by
+      rw [hm, hs]; exact writes_frame' _ _ 32 (by decide) _ (stateWords_bound p final)
+    exact hb.keep ku (by decide) sy (frame_apart hi A.lowS hfu hb.saved)
+      (hfu.sub fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact ⟨sR o, by simp [changes], fun _ h => h⟩)
+
+theorem results_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} (h : SearchDone p o final s) :
+    WP isa (.block results) s fun t =>
+      (t.gpr .eax = BitVec.ofNat 32 final.status ∧ t.mem = finished p s.mem final) ∧
+        Keep [.eax, .ecx, .edx] s t ∧ t.syms = s.syms := by
+  have hi := h.input
+  have A := hi.abi
+  have hb := h.toSearchBase
+  have hs : p.stp = arg o 11 := by rw [← hi.2]; rfl
+  have hu : p.up = arg o 2 := by rw [← hi.2]; rfl
+  have WU (k : Nat) (hk : k < 8) : (arg o 2 + BitVec.ofNat 32 k).setWidth 64 = (arg o 2).setWidth 64 + BitVec.ofNat 64 k :=
+    VG.Proof.MlKem.X86.ea_off (by have := A.uBound; omega)
+  have WUi (k : Nat) (hk : k + 4 ≤ 8) : InRegions s.wr ((arg o 2).setWidth 64 + BitVec.ofNat 64 k) 4 :=
+    ⟨uR o, by rw [hb.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+  rw [show results = (results.take 13) ++ (results.drop 13) from (List.take_append_drop _ _).symm]
+  refine WP.block_append (WP.mono (results_head_ok h) fun u ⟨⟨ha, hm, hbu⟩, ku, sy⟩ => ?_)
   have hfu : Frame [sR o] s.mem u.mem := by
     rw [hm, hs]; exact writes_frame' _ _ 32 (by decide) _ (stateWords_bound p final)
-  have hbu := hb.keep ku (by decide) sy (frame_apart hi A.lowS hfu hb.saved)
-    (hfu.sub fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact ⟨sR o, by simp [changes], fun _ h => h⟩)
   have v2 : u.mem.readW (argAddr o 2) 32 = arg o 2 := by
     rw [hfu.readW (arg_contains hi (i := 2) (by decide)) (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact A.sa.symm) (by decide)]

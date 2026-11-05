@@ -119,6 +119,41 @@ theorem below_call {p : SearchPublic} {o u : State} (h : SearchInput p o) (he : 
   simp only [addr, BitVec.add_zero] at e
   rw [e, show 216 - (60 + n) + 0 = 156 - n by omega]
 
+/-- What the candidate reads, on its entry, with its return address
+written: the search's. -/
+theorem entry_read {p : SearchPublic} {o s₀ u : State} (F : Fr p o s₀ u) (v : BitVec 32) {r : Region}
+    (hr : r = eR o ∨ r = pR o ∨ r = rR o) (hlr : (lowR o).Disjoint r) (hn : r.len ≤ 2 ^ 64) :
+    Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) v) r.base r.len = Spec.Rsa.bytesAt o.mem r.base r.len := by
+  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 152, 4⟩ (lowR o) := low_sub (by decide)
+  have fe : Frame [⟨low o + BitVec.ofNat 64 152, 4⟩] u.mem (u.mem.writeW (low o + 152#64) v) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have e1 : Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) v) r.base r.len =
+      Spec.Rsa.bytesAt u.mem r.base r.len := by
+    simp only [Spec.Rsa.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact fe.bytes (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hlr.sub_left Rs).symm) hn
+      (List.mem_range.mp hi)
+  rw [e1, F.input.bytes_frame hr hn F.frame]
+
+/-- `e`, `p` and the rest of the tape, as the candidate reads them. -/
+theorem entry_bytes {p : SearchPublic} {o s₀ u : State} {used : Nat} (F : Fr p o s₀ u)
+    (hu : used < (arg o 8).toNat) (v : BitVec 32) :
+    Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) v) ((arg o 3).setWidth 64) (arg o 4).toNat = searchE o ∧
+    Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) v) ((arg o 5).setWidth 64) (arg o 6).toNat = searchP o ∧
+    Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) v)
+      ((arg o 7 + BitVec.ofNat 32 used).setWidth 64) (arg o 8 - BitVec.ofNat 32 used).toNat =
+        (searchRand o).drop used := by
+  have A := F.input.abi
+  have rB := A.rBound
+  have hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega)]
+    have := (arg o 8).isLt; omega
+  have eRand := entry_read F v (r := rR o) (.inr (.inr rfl)) A.lowRand (by change (arg o 8).toNat ≤ _; omega)
+  refine ⟨entry_read F v (r := eR o) (.inl rfl) A.lowE (by have := A.eBound; change (arg o 4).toNat ≤ _; omega),
+    entry_read F v (r := pR o) (.inr (.inl rfl)) A.lowP (by have := A.pBound; change (arg o 6).toNat ≤ _; omega), ?_⟩
+  rw [hlen, win_base A hu, bytesAt_drop]
+  exact congrArg (List.drop used) eRand
+
 theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remaining : Nat}
     (h : SearchLive p o used remaining s) (hroom : used + p.len ≤ p.randLen) :
     WP isa (candidateRun c.call) s fun t =>
@@ -157,30 +192,10 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega)]
     have := (arg o 8).isLt; omega
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 152, 4⟩ (lowR o) := low_sub (by decide)
-  have fe : Frame [⟨low o + BitVec.ofNat 64 152, 4⟩] u.mem (u.mem.writeW (low o + 152#64) (u.unknowns 0)) :=
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have read (r : Region) (hr : r = eR o ∨ r = pR o ∨ r = rR o) (hlr : (lowR o).Disjoint r) (hn : r.len ≤ 2 ^ 64) :
-      Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) (u.unknowns 0)) r.base r.len =
-        Spec.Rsa.bytesAt o.mem r.base r.len := by
-    have e1 : Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) (u.unknowns 0)) r.base r.len =
-        Spec.Rsa.bytesAt u.mem r.base r.len := by
-      simp only [Spec.Rsa.bytesAt]
-      refine List.map_congr_left fun i hi => ?_
-      exact fe.bytes (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hlr.sub_left Rs).symm) hn
-        (List.mem_range.mp hi)
-    rw [e1, hi.bytes_frame hr hn F.frame]
-  have eE := read (eR o) (.inl rfl) A.lowE (by have := A.eBound; change (arg o 4).toNat ≤ _; omega)
-  have eP := read (pR o) (.inr (.inl rfl)) A.lowP (by have := A.pBound; change (arg o 6).toNat ≤ _; omega)
-  have eRand := read (rR o) (.inr (.inr rfl)) A.lowRand (by change (arg o 8).toNat ≤ _; omega)
-  have eW : Spec.Rsa.bytesAt (u.mem.writeW (low o + 152#64) (u.unknowns 0))
-      ((arg o 7 + BitVec.ofNat 32 used).setWidth 64) (arg o 8 - BitVec.ofNat 32 used).toNat =
-        (searchRand o).drop used := by
-    rw [hlen, win_base A (by omega), bytesAt_drop]
-    exact congrArg (List.drop used) eRand
+  obtain ⟨eE, eP, eW⟩ := entry_bytes F (used := used) (by omega) (u.unknowns 0)
   simp only [eE, eP, eW] at hp
   have hpl : p.len = (arg o 1).toNat := by rw [← hi.2]; rfl
-  have heB : p.eB = Spec.Rsa.bytesAt o.mem ((arg o 3).setWidth 64) (arg o 4).toNat := by rw [← hi.2]; rfl
+  have heB : p.eB = searchE o := by rw [← hi.2]; rfl
   have hop : p.op = arg o 0 := by rw [← hi.2]; rfl
   have hup : p.up = arg o 2 := by rw [← hi.2]; rfl
   rw [← hpl, ← heB, hlen, ← hpr] at hp
