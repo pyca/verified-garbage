@@ -17,7 +17,10 @@ implementation's calls and frames use.
 
 The Rust wrapper rejects invalid key lengths before key expansion, chooses
 the number of rounds from the key's length (`rounds`), and rejects input
-that is not a whole number of blocks. It does not add or remove padding.
+that is not a whole number of blocks. The contracts of the functions that
+read subkeys are stated for every key whose subkeys are in memory with the
+number of rounds they are given (`KeySchedule`): they are CAST5 with that
+key, with the number of rounds of its length. It does not add or remove padding.
 Empty ECB input is supported.
 -/
 
@@ -66,13 +69,18 @@ def ecbSig : Sig where
 def ecbPre (pb : Nat) : Curry (ecbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _data _n _scratch _ => rounds.toNat = 12 ∨ rounds.toNat = 16
 
+/-- For every key `key` whose subkeys are at `schedule` with `rounds` rounds
+(`KeySchedule`): the `n` blocks at `data` are replaced with their CAST5 ECB
+encryption or decryption under `key`. -/
 def ecbPost (direction : Direction) (pb : Nat) : ecbSig.Post pb :=
   fun schedule rounds data n _scratch m m' _ =>
-    blocksAt m' data n.toNat =
-      ecb (scheduleAt m schedule) rounds.toNat direction (blocksAt m data n.toNat)
+    ∀ key, KeySchedule m schedule rounds.toNat key →
+      blocksAt m' data n.toNat =
+        ecb (expandKey key) (Cast5.rounds key.length) direction (blocksAt m data n.toNat)
 
-/-- For `rounds` of 12 or 16: replaces the `n` blocks at `data` with their
-encryption or decryption under the subkeys at `schedule`. -/
+/-- For `rounds` of 12 or 16, and every key `K` whose subkeys are at
+`schedule` with `rounds` rounds (`KeySchedule`): replaces the `n` blocks at
+`data` with their encryption or decryption under `K`. -/
 def ecbContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) : Contract M :=
   ecbSig.contract A (pre := ecbPre A.ptrBits) (post := ecbPost direction A.ptrBits)
     (stack := stack)

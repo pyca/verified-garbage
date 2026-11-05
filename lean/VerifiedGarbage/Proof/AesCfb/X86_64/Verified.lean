@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCfb.X86_64
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
@@ -54,15 +55,15 @@ theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (modeX86_64 (cfbMode 
   exact ⟨t, s', he, abiPreserved_of_exec (decrypt_mx v) he hg, hp⟩
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (encrypt v.enc) (Spec.Cfb.aesEncryptContract X86_64.abi 8) :=
+    Verified X86_64.target (encrypt v.enc) (Proof.AesCfb.encryptRoundsContract X86_64.abi 8) :=
   Verified.of_correct (encrypt_correct v) (whole_ct (encBody_ok v) (encBody_ct v)) (by
-    sig_implies [Spec.Cfb.aesEncryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeX86_64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeX86_64, cfbMode, cfb, cts,
       X86_64.abi, X86_64.argRegs] [sat] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (decrypt v.enc) (Spec.Cfb.aesDecryptContract X86_64.abi 8) :=
+    Verified X86_64.target (decrypt v.enc) (Proof.AesCfb.decryptRoundsContract X86_64.abi 8) :=
   Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
-    sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeX86_64, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeX86_64, cfbMode, cfb, cts,
       X86_64.abi, X86_64.argRegs] [sat] using sat)
 
 end VG.Proof.AesCfb.X86_64

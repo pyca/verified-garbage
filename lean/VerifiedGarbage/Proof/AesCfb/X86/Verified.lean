@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesCfb.X86
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Spec.Cfb.Contract
 
@@ -39,7 +40,7 @@ theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.enc).all (fun i => !isa.wri
   decide +kernel
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (encrypt v.enc) (Spec.Cfb.aesEncryptContract X86.abi 24) :=
+    Verified X86.target (encrypt v.enc) (Proof.AesCfb.encryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (encBody_ok v) hs) (whole_ct (encBody_ok v) (encBody_ct v)) (by
     have a0 : arg sat 0 = 0x1000 := by decide
     have a1 : arg sat 1 = 10 := by decide
@@ -49,11 +50,11 @@ theorem encrypt_verified (v : BlocksImpl) :
     have a5 : arg sat 5 = 0x4000 := by decide
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cfb.aesEncryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, modeX86, cfbMode, cfb, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt v.enc) (Spec.Cfb.aesDecryptContract X86.abi 24) :=
+    Verified X86.target (decrypt v.enc) (Proof.AesCfb.decryptRoundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (decBody_ok v) hs) (whole_ct (decBody_ok v) (decBody_ct v)) (by
     have a0 : arg sat 0 = 0x1000 := by decide
     have a1 : arg sat 1 = 10 := by decide
@@ -63,7 +64,7 @@ theorem decrypt_verified (v : BlocksImpl) :
     have a5 : arg sat 5 = 0x4000 := by decide
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, modeX86, cfbMode, cfb, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 end VG.Proof.AesCfb.X86

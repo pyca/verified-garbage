@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.Arm
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.TCB.Arm.Target
@@ -38,16 +39,16 @@ def sat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x8000, 8⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0, 2176⟩]
 
-theorem encrypt_verified : Verified Arm.target encrypt (Spec.Cbc.aesEncryptContract Arm.abi 8) :=
+theorem encrypt_verified : Verified Arm.target encrypt (Proof.AesCbc.encryptRoundsContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp encBody_ok hs) (whole_ct encBody_ok encBody_ct) (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
+    sig_implies [Proof.AesCbc.encryptRoundsContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
       ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)
 
-theorem decrypt_verified : Verified Arm.target decrypt (Spec.Cbc.aesDecryptContract Arm.abi 8) :=
+theorem decrypt_verified : Verified Arm.target decrypt (Proof.AesCbc.decryptRoundsContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp decBody_ok hs) (whole_ct decBody_ok decBody_ct) (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
+    sig_implies [Proof.AesCbc.decryptRoundsContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
       ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)

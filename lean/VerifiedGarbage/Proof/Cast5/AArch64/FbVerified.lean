@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
@@ -336,7 +337,7 @@ theorem fbFrame_sat (post : Spec.Cast5.ofbSig.Post AArch64.abi.ptrBits) :
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 ofb)
-      (Spec.Cast5.ofbContract (AArch64.abi.withConsts ecbConsts) 112) :=
+      (Proof.Cast5.ofbRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
   AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
     (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.ofbPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.ofbPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
@@ -345,7 +346,7 @@ theorem ofb_framed :
 /-- CFB64 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 cfbEncrypt)
-      (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts ecbConsts) 112) :=
+      (Proof.Cast5.cfbEncryptRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
   AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.cfbPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
@@ -354,7 +355,7 @@ theorem cfbEncrypt_framed :
 /-- CFB64 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 cfbDecrypt)
-      (Spec.Cast5.cfbDecryptContract (AArch64.abi.withConsts ecbConsts) 112) :=
+      (Proof.Cast5.cfbDecryptRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
   AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.cfbPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCcm.Rounds
 import VerifiedGarbage.Proof.AesCcm.AArch64.OpenCT
 import VerifiedGarbage.Proof.AesCcm.AArch64.SealCT
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -73,7 +74,7 @@ def openSat : State :=
 theorem seal_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target («seal» v.callee v.ctr.callee) (Proof.AesCcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre, Spec.Ccm.sealPost,
+    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
       sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
       AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
@@ -81,7 +82,7 @@ theorem seal_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
 theorem open_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target («open» v.callee v.ctr.callee) (Proof.AesCcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (open_correct v) (open_ct v) (by
-    sig_implies [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre, Spec.Ccm.openPost,
+    sig_implies [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
       Spec.Ccm.openLeak, openAArch64, openPre, oneLay, onePub, openRes, openLeak, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)

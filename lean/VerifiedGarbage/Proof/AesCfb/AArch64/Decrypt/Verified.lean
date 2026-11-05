@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Correct
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Lit
@@ -38,15 +39,15 @@ theorem ct : ConstantTime isa (modeAArch64 (cfbMode false)).pre (modeAArch64 (cf
   simp only [VG.AArch64.Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem implies : (modeAArch64 (cfbMode false)).Implies (Spec.Cfb.aesDecryptContract AArch64.abi) := by
-  sig_implies [Spec.Cfb.aesDecryptContract,Spec.Cfb.aesSig,Spec.Cbc.aesSig,modeAArch64,cfbMode,cfb,cts,AArch64.abi,AArch64.argRegs] [sat] using sat
+theorem implies : (modeAArch64 (cfbMode false)).Implies (Proof.AesCfb.decryptRoundsContract AArch64.abi) := by
+  sig_implies [Proof.AesCfb.decryptRoundsContract,Spec.Cfb.aesSig,Spec.Cbc.aesSig,modeAArch64,cfbMode,cfb,cts,AArch64.abi,AArch64.argRegs] [sat] using sat
 
-theorem verified : Verified AArch64.target code (Spec.Cfb.aesDecryptContract AArch64.abi) :=
+theorem verified : Verified AArch64.target code (Proof.AesCfb.decryptRoundsContract AArch64.abi) :=
   Verified.of_correct correct ct implies
 
 /-- This path never writes scratch; no scratch bytes require clearing afterwards. -/
 theorem written (s : State) (tr : List Leak) (t : State)
-    (hp : (Spec.Cfb.aesDecryptContract AArch64.abi).pre s) (he : Exec isa code s tr t) :
+    (hp : (Proof.AesCfb.decryptRoundsContract AArch64.abi).pre s) (he : Exec isa code s tr t) :
     Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Cfb.aesSig [("scratch",0)] s t := by
   have h := UPre.of (implies.pre s hp)
   obtain ⟨tr',t',he',_,hf⟩ := code_ok h

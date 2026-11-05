@@ -17,14 +17,14 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesCfb.X86_64.encrypt v.enc
     stack := 8
-    verified := encrypt_verified v
+    verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
     spSafe := encrypt_spSafe v
     features := v.features },
   Spec.Cfb.aesDecryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.AesCfb.X86_64.decrypt v.enc
     stack := 8
-    verified := decrypt_verified v
+    verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
     spSafe := decrypt_spSafe v
     features := v.features }]
 

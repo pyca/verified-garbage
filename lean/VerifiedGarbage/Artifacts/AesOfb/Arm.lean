@@ -16,6 +16,6 @@ def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact Arm.target {
     code := Impl.AesOfb.Arm.crypt
     stack := 8
-    verified := crypt_verified }]
+    verified := Proof.AesOfb.keyed crypt_verified }]
 
 end VG.Artifacts.AesOfb.Arm
