@@ -23,8 +23,8 @@ theorem ofNat_toNat64' (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by
   apply BitVec.eq_of_toNat_eq; simp
 
 /-- `hStat` into `r3`. -/
-theorem statLoad_ok {p : PP} {mb N : Nat} {s : State} (M : MSt p mb N s) :
-    WP isa (.block [ldh .r3 hStat]) s fun t => MSt p mb N t ∧ t.gpr .r3 = word s.mem p.B 160 ∧ t.mem = s.mem ∧
+theorem statLoad_ok {C : Nat} {p : PP} {mb N : Nat} {s : State} (M : MSt p mb N C s) :
+    WP isa (.block [ldh .r3 hStat]) s fun t => MSt p mb N C t ∧ t.gpr .r3 = word s.mem p.B 160 ∧ t.mem = s.mem ∧
       Keep [.r3] s t := by
   have l160 : InRegions (s.rd ++ s.wr) (p.B + BitVec.ofNat 64 160) 8 := M.st.ld (d := 160) (by decide)
   refine WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = word s.mem p.B 160 ∧ t.mem = s.mem)
@@ -33,8 +33,8 @@ theorem statLoad_ok {p : PP} {mb N : Nat} {s : State} (M : MSt p mb N s) :
     (k.gpr _ (by decide)) (k.gpr _ (by decide)), t3, tm, k⟩
 
 /-- After p's test. -/
-theorem pResult_ok {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List Byte)}
-    (hE : MrEnd p p.bits c resP s) (hc : c < 2 ^ p.bits) :
+theorem pResult_ok {C : Nat} {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List Byte)}
+    (hE : MrEnd p p.bits c C resP s) (hc : c < 2 ^ p.bits) :
     WP isa pResult s (CEnd p (resP.map fun x => (if x.1 then some c else none, x.2))) := by
   obtain ⟨M, hnone, hsome⟩ := hE
   unfold pResult
@@ -52,7 +52,7 @@ theorem pResult_ok {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List B
         (fun _ => ?_)
       refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = BitVec.ofNat 64 1 ∧ v.mem = t.mem)
         (by prun [t3, hS]; rfl) (by decide)) fun v ⟨⟨v3, vm⟩, k⟩ => ?_)
-      have Mv : MSt p p.bits c v := Mt.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) k (by decide)
+      have Mv : MSt p p.bits c C v := Mt.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) k (by decide)
         (k.gpr _ (by decide)) (k.gpr _ (by decide)) (k.gpr _ (by decide))
       refine WP.ite false (eval_zero_ofNat v .r3 (k := 1) (by decide) v3) (fun h => absurd h (by decide))
         (fun _ => ?_)
@@ -63,7 +63,7 @@ theorem pResult_ok {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List B
         (fun _ => ?_)
       refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = BitVec.ofNat 64 0 ∧ v.mem = t.mem)
         (by prun [t3, hS]; rfl) (by decide)) fun v ⟨⟨v3, vm⟩, k⟩ => ?_)
-      have Mv : MSt p p.bits c v := Mt.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) k (by decide)
+      have Mv : MSt p p.bits c C v := Mt.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) k (by decide)
         (k.gpr _ (by decide)) (k.gpr _ (by decide)) (k.gpr _ (by decide))
       refine WP.ite true (eval_zero_ofNat v .r3 (k := 0) (by decide) v3) (fun _ => ?_) (fun h => absurd h (by decide))
       have hn : Mont.val32 v.mem p.B 256 (2 * wOf p.bits) = c := by
@@ -74,8 +74,8 @@ theorem pResult_ok {p : PP} {s : State} {c : Nat} {resP : Option (Bool × List B
       exact pEnd Mv.st Mv.ph hn hc (by rw [vm]; exact hU') hul
 
 /-- After a failed test of q. -/
-theorem qResult_ok {p : PP} {s : State} {mb N : Nat} {resQ : Option (Bool × List Byte)}
-    (hE : MrEnd p mb N resQ s) (hq : ∀ rest, resQ ≠ some (true, rest)) :
+theorem qResult_ok {C : Nat} {p : PP} {s : State} {mb N : Nat} {resQ : Option (Bool × List Byte)}
+    (hE : MrEnd p mb N C resQ s) (hq : ∀ rest, resQ ≠ some (true, rest)) :
     WP isa qResult s (CEnd p (resQ.map fun x => (none, x.2))) := by
   obtain ⟨M, hnone, hsome⟩ := hE
   unfold qResult

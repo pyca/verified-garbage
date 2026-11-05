@@ -110,7 +110,7 @@ theorem word_of_ws {p : PP} {m m' : Mem} (hm : ∀ x, ofs p.B x < p.Z → m' x =
     (by omega_arith)
 
 /-- p to `out`, then `finish` with the status 1. -/
-theorem pEnd {p : PP} {s : State} {c u : Nat} (h : St p s) (hp : Ph p p.bits s)
+theorem pEnd {C : Nat} {p : PP} {s : State} {c u : Nat} (h : St p s) (hp : Ph p p.bits C s)
     (hn : Mont.val32 s.mem p.B 256 (2 * wOf p.bits) = c) (hc : c < 2 ^ p.bits)
     (hv : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
     WP isa (.seq writeP (.block (finish 1))) s (CEnd p (some (some c, p.r.drop u))) := by

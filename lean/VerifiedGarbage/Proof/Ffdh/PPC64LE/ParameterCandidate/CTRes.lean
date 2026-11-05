@@ -72,14 +72,14 @@ def statOf : Option (Bool × List Byte) → Nat
 theorem statOf_le (r : Option (Bool × List Byte)) : statOf r ≤ 2 := by
   rcases r with _ | ⟨_ | _, _⟩ <;> simp [statOf]
 
-theorem MrEnd.stat {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {s : State}
-    (h : MrEnd p mb N res s) : word s.mem p.B 160 = BitVec.ofNat 64 (statOf res) := by
+theorem MrEnd.stat {C : Nat} {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {s : State}
+    (h : MrEnd p mb N C res s) : word s.mem p.B 160 = BitVec.ofNat 64 (statOf res) := by
   obtain ⟨_, hn, hs⟩ := h
   rcases res with _ | ⟨b, rest⟩
   · exact hn rfl
   · exact (hs b rest rfl).1
 
-theorem MSt.fs {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N s) : FS p s := h.st.fs
+theorem MSt.fs {C : Nat} {p : PP} {mb N : Nat} {s : State} (h : MSt p mb N C s) : FS p s := h.st.fs
 
 theorem pins_ME : Pins ME [.r31] := by
   rintro a s₁ s₂ ⟨_, _, h₁, -⟩ ⟨_, _, h₂, -⟩ r hr
@@ -88,7 +88,7 @@ theorem pins_ME : Pins ME [.r31] := by
 
 /-- With a test's status in `r3`. -/
 def SL (a : MrD) (t : State) : Prop :=
-  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N t) ∧ t.gpr .r3 = BitVec.ofNat 64 (statOf a.res)
+  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K t) ∧ t.gpr .r3 = BitVec.ofNat 64 (statOf a.res)
 
 theorem pins_SL : Pins SL [.r3, .r31] := by
   rintro a s₁ s₂ ⟨⟨_, _, M₁⟩, a3⟩ ⟨⟨_, _, M₂⟩, b3⟩ r hr
@@ -102,7 +102,7 @@ theorem statLoad_ct : RelCT isa (Two ME) (.block [ldh .r3 hStat]) (Two SL) :=
     WP.mono (statLoad_ok hE.1) fun _ ⟨Mt, t3, _⟩ => ⟨⟨sv, toc, Mt⟩, t3.trans hE.stat⟩
 
 theorem finSL_ct {r : Nat} (hr : r = 0 ∨ r = 1 ∨ r = 2) {Φ : MrD → State → Prop}
-    (h : ∀ a s, Φ a s → ∃ sv toc, MSt (a.q.with sv toc) a.mb a.N s) :
+    (h : ∀ a s, Φ a s → ∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K s) :
     RelCT isa (Two Φ) (.block (finish r)) fun _ _ => True :=
   two_map MrD.q (fun a s hs => let ⟨_, _, M⟩ := h a s hs; M.fs) (finish_ct hr)
 
@@ -116,10 +116,10 @@ theorem qResult_ct : RelCT isa (Two ME) qResult fun _ _ => True := by
 
 /-- With a test's status less one in `r3`. -/
 def SL1 (a : MrD) (t : State) : Prop :=
-  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N t) ∧ t.gpr .r3 = BitVec.ofNat 64 (statOf a.res) - BitVec.ofNat 64 1
+  (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K t) ∧ t.gpr .r3 = BitVec.ofNat 64 (statOf a.res) - BitVec.ofNat 64 1
 
 /-- In a modulus's working space. -/
-def MS (a : MrD) (t : State) : Prop := ∃ sv toc, MSt (a.q.with sv toc) a.mb a.N t
+def MS (a : MrD) (t : State) : Prop := ∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K t
 
 theorem pins_MS {Φ : MrD → State → Prop} (h : ∀ a s, Φ a s → MS a s) : Pins Φ [.r31] := by
   intro a s₁ s₂ h₁ h₂ r hr
