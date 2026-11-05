@@ -41,6 +41,9 @@ variable {checkName : String}
 
 /-! ## The restricted bodies' depth -/
 
+theorem maxLe {a b c d : Nat} (h₁ : a ≤ c) (h₂ : b ≤ d) : max a b ≤ max c d :=
+  Nat.max_le.mpr ⟨Nat.le_trans h₁ (Nat.le_max_left _ _), Nat.le_trans h₂ (Nat.le_max_right _ _)⟩
+
 theorem sized_depth_le (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream) (sq : Prog isa)
     (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) (pBytes : Nat) :
     (Impl.Dsa.X86_64.Generation.Sized.code (checkName := checkName) pBytes G1 G256 sq mul round).x86_64Depth ≤
@@ -48,8 +51,11 @@ theorem sized_depth_le (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream) (sq : Prog isa)
   unfold Impl.Dsa.X86_64.Generation.Sized.code Impl.Dsa.X86_64.Generation.Sized.entryBody
     Impl.Dsa.X86_64.Generation.Sized.dispatch Impl.Dsa.X86_64.Generation.code
     Impl.Dsa.X86_64.Generation.entryBody Impl.Dsa.X86_64.Generation.dispatch
-  simp only [Code.x86_64Depth, Instr.frameBytes]
-  split <;> split <;> split <;> (try simp only [Code.x86_64Depth]) <;> omega
+  simp only [Code.x86_64Depth]
+  refine Nat.add_le_add_right (maxLe (Nat.le_refl _) (maxLe
+    (Nat.add_le_add_right (maxLe (Nat.le_refl _) (maxLe (Nat.le_refl _) (maxLe ?_
+      (maxLe (Nat.le_refl _) (maxLe ?_ ?_))))) _) (Nat.le_refl _))) _
+  all_goals (split <;> [exact Nat.le_refl _; exact Nat.zero_le _])
 
 theorem single_depth (h : MdHash) (v : RoundImpl) (pBytes : Nat) :
     (Impl.Dsa.X86_64.Generation.Sized.single (checkName := checkName) pBytes h.H.stream

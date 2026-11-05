@@ -190,7 +190,13 @@ fn backend_combinations() {
     // instructions share feature requirements. Check the complete dispatch
     // table against the emitted feature sets, at every width.
     let cases: &[(H1, H256, bool, Generate, Features)] = &[
-        (H1::Scalar, H256::Scalar, false, vg_dsa_generate_parameters, Features(0)),
+        (
+            H1::Scalar,
+            H256::Scalar,
+            false,
+            vg_dsa_generate_parameters,
+            Features(0),
+        ),
         (
             H1::Scalar,
             H256::Scalar,
@@ -511,7 +517,7 @@ fn backend_combinations() {
     for &(umaal, expected, required) in cases {
         let selected = select_backends(umaal);
         assert!(core::ptr::fn_addr_eq(selected, expected));
-        assert!(core::ptr::fn_addr_eq(select(required, 128), expected));
+        assert!(core::ptr::fn_addr_eq(select(required), expected));
         if detected().contains(required) {
             check_empty_tapes(selected, 128);
         }
@@ -525,7 +531,7 @@ fn backend_combinations() {
     // Neither hash has a variant on PPC64LE: every CPU takes the baseline.
     for features in [Features(0), detected()] {
         assert!(core::ptr::fn_addr_eq(
-            select(features, 128),
+            select(features),
             vg_dsa_generate_parameters as Generate
         ));
     }

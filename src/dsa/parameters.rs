@@ -204,9 +204,7 @@ fn select_backends(
         (H1::ShaNi, H256::Avx2, false) => vg_dsa_generate_parameters_sha1_shani_sha256_avx2,
         (H1::ShaNi, H256::Avx2, true) => vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx,
         (H1::ShaNi, H256::ShaNi, false) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-        (H1::ShaNi, H256::ShaNi, true) => {
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx
-        }
+        (H1::ShaNi, H256::ShaNi, true) => vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx,
     }
 }
 
