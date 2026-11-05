@@ -28,7 +28,8 @@ fn matches_openssl() {
         let k = AesGcmSiv::new(&key).unwrap();
         for &n in &sizes {
             let nonce = [0x24; 12];
-            let aad: Vec<u8> = (0..n % 65).map(|i| (i * 31) as u8).collect();
+            let aad_len = [n % 65, 127, 128, 129][n % 4];
+            let aad: Vec<u8> = (0..aad_len).map(|i| (i * 31) as u8).collect();
             let plain: Vec<u8> = (0..n).map(|i| (i * 73 + n) as u8).collect();
             let mut expected = plain.clone();
             let tag = oracle::seal(&cipher, &key, &nonce, &aad, &mut expected);
