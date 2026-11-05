@@ -153,7 +153,7 @@ controller's words. `state` is the second stack argument. -/
 def entryHeader (pLen qLen : Nat) : List Instr :=
   [.store (sp 48) .rdi, .store (sp 56) .rsi, .store (ctl 0) .rdx,
    .store (sp 64) .rcx, .store (sp 72) .r8, .store (sp 104) .rcx, .store (sp 120) .r8,
-   .store (sp 88) .rcx, .mov32 .rax (.imm 0), .store (sp 96) .rax,
+   .store (sp 88) .rcx, .mov32 .rax (.imm 0), .store (sp 96) .rax, .store (sp 80) .rax,
    .store (sp 40) .r9,
    .mov32 .rax (.imm (BitVec.ofNat 32 pLen)), .store (sp 136) .rax,
    .mov32 .rax (.imm (BitVec.ofNat 32 qLen)), .store (sp 144) .rax, .store (sp 224) .rax,
