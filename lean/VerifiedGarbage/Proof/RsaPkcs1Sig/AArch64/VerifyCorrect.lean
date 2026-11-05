@@ -37,7 +37,7 @@ theorem verifyId_true_iff (nB eB H sig : List Byte) (x : BitVec 32) :
   unfold Spec.RsaPkcs1Sig.verifyId encodeId
   cases hid : Spec.RsaPkcs1Sig.Hash.ofId x.toNat with
   | none => simp
-  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_eq_verifyRfc, Proof.RsaPkcs1Sig.verifyRfc_true]
+  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_true]
 
 /-- What the function returns, from its entry state. -/
 def verOut (s : State) : Bool :=
