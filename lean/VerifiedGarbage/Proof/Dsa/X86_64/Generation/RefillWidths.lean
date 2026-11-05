@@ -183,6 +183,7 @@ theorem Agree.args {u s : State} (h : Agree u s) {ws : List Nat} {f : State → 
   · cases e
     exact List.map_congr_left fun r hr => h.gpr r (argRegs_ne r (List.mem_of_mem_take hr))
   · cases e
+    dsimp only
     rw [List.map_congr_left fun r hr => h.gpr r (argRegs_ne r hr),
       List.map_congr_left fun i _ => h.stackArg i]
 
@@ -236,7 +237,7 @@ theorem agree_flags (s : State) (c o z n : Option Bool) : Agree (s.setFlags c o 
 abbrev widthWord (s : State) : BitVec 64 := s.mem.readW (stackArg s 1 + 8) 64
 
 theorem sub_beq_zero (a b : BitVec 64) : (a - b == 0) = (a == b) :=
-  Bool.eq_iff_iff.mpr (by simp only [beq_iff_eq, BitVec.sub_eq_zero_iff_eq])
+  Bool.eq_iff_iff.mpr (by simp only [beq_iff_eq]; bv_omega)
 
 theorem widthOf_run (n : Nat) (hn : BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n)
     (s : State) (h₁ : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8)
@@ -250,8 +251,9 @@ theorem widthOf_run (n : Nat) (hn : BitVec.signExtend 64 (BitVec.ofNat 32 n) = B
   have ea₂ : (s.setReg .rax (stackArg s 1)).ea { base := .rax, disp := 8 } = stackArg s 1 + 8 := rfl
   have e₂ : exec (.mov .rax (.mem { base := .rax, disp := 8 })) (s.setReg .rax (stackArg s 1)) =
       some ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)) := by
-    simp only [exec, readSrc, State.load64, ea₂]
-    rw [if_pos h₂]; rfl
+    have h₂' : InRegions ((s.setReg .rax (stackArg s 1)).rd ++ (s.setReg .rax (stackArg s 1)).wr)
+        (stackArg s 1 + 8) 8 := h₂
+    simp only [exec, readSrc, State.load64, ea₂, h₂', ite_true, Option.map_some]; rfl
   obtain ⟨u, e₃⟩ : ∃ u, exec (.alu .cmp .rax (.imm (BitVec.ofNat 32 n)))
       ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)) = some u := ⟨_, rfl⟩
   have hu : u = ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)).setFlags _ _
@@ -267,5 +269,228 @@ theorem widthOf_run (n : Nat) (hn : BitVec.signExtend 64 (BitVec.ofNat 32 n) = B
   · rw [hu]
     show some ((widthWord s - BitVec.signExtend 64 (BitVec.ofNat 32 n)) == 0) = _
     rw [hn, sub_beq_zero]
+
+theorem cmp_run (v : BitVec 32) (s : State) :
+    ∃ u, execBlock isa [.alu .cmp .rax (.imm v)] s = some (u, []) ∧ Agree u s ∧
+      isa.eval .e u = some ((s.gpr .rax - BitVec.signExtend 64 v) == 0) :=
+  ⟨_, rfl, agree_flags s _ _ _ _, rfl⟩
+
+/-! ## The contracts the choice passes through -/
+
+/-- The search's contract for the two larger widths, with the width in `rax`. -/
+def largeContract (S : Nat) : Contract isa where
+  pre s := (Spec.Dsa.parameterSearchContract abi S).pre s ∧ s.gpr .rax = widthWord s ∧
+    (widthWord s).toNat ≠ 128
+  post := (Spec.Dsa.parameterSearchContract abi S).post
+  pub := (Spec.Dsa.parameterSearchContract abi S).pub
+
+theorem refill_of_search {p S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s)
+    (hw : (widthWord s).toNat = p) : (Refill.contract p abi S).pre s := by
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_split h
+  sig_pre [Refill.contract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
+  sig_pre [Refill.contract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
+  sig_and_intros
+  all_goals with_reducible assumption
+
+theorem valid_of_search {S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s) :
+    Spec.Dsa.generationPLenValid (widthWord s).toNat = true := by
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_split h
+  with_reducible assumption
+
+theorem search_in {S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s) :
+    InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8 ∧ InRegions (s.rd ++ s.wr) (stackArg s 1 + 8) 8 := by
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_split h
+  refine ⟨⟨⟨stackArgAddr s 0, 16⟩, ?_, ?_⟩, ⟨⟨stackArg s 1, 32⟩, ?_, ?_⟩⟩
+  · rw [‹s.rd = _›]
+    exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  · have e : stackArgAddr s 1 = stackArgAddr s 0 + BitVec.ofNat 64 8 := by
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    rw [e]
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  · rw [‹s.wr = _›]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ List.mem_cons_self)))
+  · exact Offset.contains_base (stackArg s 1) (d := 8) (n := 8) (k := 32) (by omega_arith) (by omega_arith)
+
+theorem wordsAt_four (m : Mem) (p : Addr) : (wordsAt m p 4).map (·.toNat) =
+    [(m.readW (p + BitVec.ofNat 64 0) 64).toNat, (m.readW (p + 8) 64).toNat, (m.readW (p + 16) 64).toNat,
+      (m.readW (p + 24) 64).toNat] := rfl
+
+theorem search_pub {S : Nat} {s s' : State} (h : (Spec.Dsa.parameterSearchContract abi S).pub s s') :
+    s.gpr .rsp = s'.gpr .rsp ∧ stackArg s 1 = stackArg s' 1 ∧ widthWord s = widthWord s' := by
+  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  obtain ⟨hsp, hl, -, -, -, -, -, -, -, h₇⟩ := h
+  have hst : stackArg s 1 = stackArg s' 1 := h₇
+  refine ⟨hsp, hst, ?_⟩
+  rw [wordsAt_four, wordsAt_four] at hl
+  have hw := (List.append_inj hl rfl).1
+  simp only [List.cons.injEq] at hw
+  exact BitVec.eq_of_toNat_eq hw.2.1
+
+/-! ## The choice -/
+
+theorem large_verified (S : Nat) {n₂₅₆ n₃₈₄ : String} {c₂₅₆ c₃₈₄ : Prog isa}
+    (h₂₅₆ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width n₂₅₆ c₂₅₆) (Refill.contract 256 abi S))
+    (h₃₈₄ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width n₃₈₄ c₃₈₄) (Refill.contract 384 abi S))
+    (hsat : ∃ s, (largeContract S).pre s) :
+    Verified target (.seq (.block [.alu .cmp .rax (.imm 256)])
+      (Code.iteCold .e (Impl.Dsa.X86_64.ParameterSearch.width n₂₅₆ c₂₅₆)
+        (Impl.Dsa.X86_64.ParameterSearch.width n₃₈₄ c₃₈₄))) (largeContract S) := by
+  refine Verified.entryBranch (p := fun s => s.gpr .rax == 256) (fun _ => []) h₂₅₆ h₃₈₄
+    (fun s hs => ?_) ?_ hsat
+  · obtain ⟨u, e, ag, ev⟩ := cmp_run 256 s
+    obtain ⟨hk, hrax, h128⟩ := hs
+    refine ⟨u, e, ?_, fun hp => ⟨ag.pre.mpr (refill_of_search hk ?_), fun s' a q => ⟨ag.abiPreserved a, ag.post.mp q⟩⟩,
+      fun hp => ⟨ag.pre.mpr (refill_of_search hk ?_), fun s' a q => ⟨ag.abiPreserved a, ag.post.mp q⟩⟩⟩
+    · rw [ev, show BitVec.signExtend 64 (256 : BitVec 32) = 256 from by decide, sub_beq_zero]
+    · rw [← hrax, beq_iff_eq.mp hp]; rfl
+    · have hv := valid_of_search hk
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
+      have h256 : (widthWord s).toNat ≠ 256 := fun h => by
+        rw [← hrax] at h
+        have : s.gpr .rax = 256 := BitVec.eq_of_toNat_eq h
+        simp [this] at hp
+      omega_arith
+  · intro s s' u u' hs hs' hq e e'
+    obtain ⟨u₀, e₀, ag, -⟩ := cmp_run 256 s
+    obtain ⟨u₀', e₀', ag', -⟩ := cmp_run 256 s'
+    rw [e₀] at e; rw [e₀'] at e'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
+    have pu : (Spec.Dsa.parameterSearchContract abi S).pub u₀ u₀' := (ag.pub ag').mpr hq
+    obtain ⟨-, -, hw⟩ := search_pub (S := S) hq
+    exact ⟨rfl, by simp only [hs.2.1, hs'.2.1, hw], fun _ => pu, fun _ => pu⟩
+
+theorem widths_verified (S : Nat) {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
+    (h₁₂₈ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width n₁₂₈ c₁₂₈) (Refill.contract 128 abi S))
+    (h₂₅₆ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width n₂₅₆ c₂₅₆) (Refill.contract 256 abi S))
+    (h₃₈₄ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width n₃₈₄ c₃₈₄) (Refill.contract 384 abi S))
+    (hsatL : ∃ s, (largeContract S).pre s)
+    (hsat : ∃ s, (Spec.Dsa.parameterSearchContract abi S).pre s) :
+    Verified target (Impl.Dsa.X86_64.ParameterSearch.widths n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
+      (Spec.Dsa.parameterSearchContract abi S) := by
+  refine Verified.entryBranch (p := fun s => widthWord s == 128)
+    (fun s => [.addr (stackArgAddr s 1), .addr (stackArg s 1 + 8)]) h₁₂₈
+    (large_verified S h₂₅₆ h₃₈₄ hsatL) (fun s hs => ?_) ?_ hsat
+  · obtain ⟨i₁, i₂⟩ := search_in hs
+    obtain ⟨u, e, ag, hrax, ev⟩ := widthOf_run 128 (by decide) s i₁ i₂
+    have hw : widthWord u = widthWord s := by simp only [widthWord, ag.mem, ag.stackArg]
+    refine ⟨u, e, ev, fun hp => ⟨ag.pre.mpr (refill_of_search hs ?_), fun s' a q => ⟨ag.abiPreserved a, ag.post.mp q⟩⟩,
+      fun hp => ⟨⟨ag.pre.mpr hs, by rw [hrax, hw], ?_⟩, fun s' a q => ⟨ag.abiPreserved a, ag.post.mp q⟩⟩⟩
+    · rw [beq_iff_eq.mp hp]; rfl
+    · rw [hw]
+      intro h
+      have : widthWord s = 128 := BitVec.eq_of_toNat_eq h
+      simp [this] at hp
+  · intro s s' u u' hs hs' hq e e'
+    obtain ⟨i₁, i₂⟩ := search_in hs
+    obtain ⟨i₁', i₂'⟩ := search_in hs'
+    obtain ⟨u₀, e₀, ag, -, -⟩ := widthOf_run 128 (by decide) s i₁ i₂
+    obtain ⟨u₀', e₀', ag', -, -⟩ := widthOf_run 128 (by decide) s' i₁' i₂'
+    rw [e₀] at e; rw [e₀'] at e'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
+    have pu : (Spec.Dsa.parameterSearchContract abi S).pub u₀ u₀' := (ag.pub ag').mpr hq
+    obtain ⟨hsp, hst, hw⟩ := search_pub hq
+    exact ⟨by simp only [stackArgAddr, hsp, hst], by simp only [hw], fun _ => pu, fun _ => pu⟩
+
+/-! ## Satisfiable with the forwarding frame's stack -/
+
+/-- The memory of `satState`: `scratch_len` and `state` on the stack, and
+`state`'s words `[0, p, 32769 p, 0]`. -/
+def satMem (p : Nat) : Mem :=
+  Mem.writeW (Mem.writeW (Mem.writeW (Mem.writeW (fun _ => 0) (0x1000000000008 : Addr) (25600 : BitVec 64))
+    (0x1000000000010 : Addr) (0x4000 : BitVec 64)) (0x4008 : Addr) (BitVec.ofNat 64 p))
+    (0x4010 : Addr) (BitVec.ofNat 64 (Spec.Dsa.parameterEntropy p))
+
+/-- A search for width `p`, with the width in `rax` too. -/
+def satState (p : Nat) : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => BitVec.ofNat 64 (2 * p + Spec.Dsa.generationQLen p) | .rdx => 0x2000
+    | .rcx => 0x3000 | .r9 => 0x10000 | .rsp => 0x1000000000000 | .rax => BitVec.ofNat 64 p | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem := satMem p
+  rd := [⟨0x3000, 0⟩, ⟨0x1000000000008, 16⟩]
+  wr := [⟨0x1000, 2 * p + Spec.Dsa.generationQLen p⟩, ⟨0x2000, 8⟩, ⟨0x10000, 204800⟩, ⟨0x4000, 32⟩]
+
+/-- The stack below `satState`'s return address is apart from every region
+below `2 ^ 47` or above the return address. -/
+theorem below_disjoint {S : Nat} (hS : S ≤ 2 ^ 40) {r : Region}
+    (hr : decide (r.base.toNat + r.len ≤ 2 ^ 47 ∨
+      (2 ^ 48 ≤ r.base.toNat ∧ r.base.toNat + r.len ≤ 2 ^ 64)) = true) :
+    Region.Disjoint ⟨(0x1000000000000 : Addr) - BitVec.ofNat 64 (S + 63 + 1), S + 63 + 1⟩ r := by
+  have hr := of_decide_eq_true hr
+  have ht : ((0x1000000000000 : Addr) - BitVec.ofNat 64 (S + 63 + 1)).toNat = 2 ^ 48 - (S + 64) := by
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (0x1000000000000 : Addr).toNat = 2 ^ 48 from rfl]
+    omega_arith
+  refine Region.disjoint_of_le ?_ ?_ ?_
+  · simp only [ht]
+    omega_arith
+  · simp only [ht]
+    omega_arith
+  · omega_arith
+
+theorem search_sat {p S : Nat} (hp : p = 128 ∨ p = 256 ∨ p = 384) (hS : S ≤ 2 ^ 40) :
+    (Spec.Dsa.parameterSearchContract abi (S + 64)).pre (satState p) := by
+  rcases hp with rfl | rfl | rfl
+  all_goals sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
+  all_goals sig_and_intros
+  all_goals first
+    | decide +kernel
+    | exact Region.disjoint_of_sep (by decide +kernel)
+    | exact below_disjoint hS (by decide +kernel)
+    | exact Nat.le_trans (Nat.add_le_add_right hS 64) (by decide +kernel)
+
+theorem refill_sat {p S : Nat} (hp : p = 128 ∨ p = 256 ∨ p = 384) (hS : S ≤ 2 ^ 40) :
+    ∃ s, (Refill.contract p abi (S + 64)).pre s :=
+  ⟨satState p, refill_of_search (search_sat hp hS) (by rcases hp with rfl | rfl | rfl <;> decide +kernel)⟩
+
+theorem large_sat {S : Nat} (hS : S ≤ 2 ^ 40) : ∃ s, (largeContract (S + 64)).pre s :=
+  ⟨satState 256, search_sat (.inr (.inl rfl)) hS, by decide +kernel, by decide +kernel⟩
+
+theorem full_sat {S : Nat} (hS : S ≤ 2 ^ 40) : ∃ s, (Spec.Dsa.parameterSearchContract abi (S + 64)).pre s :=
+  ⟨satState 128, search_sat (.inl rfl) hS⟩
+
+/-! ## The search -/
+
+/-- `vg_dsa_parameter_search` by the functions for each width, each verified
+against the search's contract with its width fixed and `S` octets of stack:
+the choice and the forwarding frame (56 octets and the return address) need
+64 more. -/
+theorem refillWidths_verified (S : Nat) (hS : S ≤ 2 ^ 40) {n₁₂₈ n₂₅₆ n₃₈₄ : String}
+    {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
+    (h₁₂₈ : Verified target c₁₂₈ (Refill.contract 128 abi S))
+    (h₂₅₆ : Verified target c₂₅₆ (Refill.contract 256 abi S))
+    (h₃₈₄ : Verified target c₃₈₄ (Refill.contract 384 abi S))
+    (s₁₂₈ : c₁₂₈.all (fun i => !isa.writesSp i) = true) (s₂₅₆ : c₂₅₆.all (fun i => !isa.writesSp i) = true)
+    (s₃₈₄ : c₃₈₄.all (fun i => !isa.writesSp i) = true)
+    (d₁₂₈ : c₁₂₈.x86_64Depth ≤ S) (d₂₅₆ : c₂₅₆.x86_64Depth ≤ S) (d₃₈₄ : c₃₈₄.x86_64Depth ≤ S) :
+    Verified target (Impl.Dsa.X86_64.ParameterSearch.widths n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
+      (Spec.Dsa.parameterSearchContract abi (S + 64)) :=
+  have hS' : S + 72 ≤ 2 ^ 64 := by omega_arith
+  widths_verified (S + 64)
+    (forward_refill 128 S hS' h₁₂₈ s₁₂₈ d₁₂₈ (refill_sat (.inl rfl) hS))
+    (forward_refill 256 S hS' h₂₅₆ s₂₅₆ d₂₅₆ (refill_sat (.inr (.inl rfl)) hS))
+    (forward_refill 384 S hS' h₃₈₄ s₃₈₄ d₃₈₄ (refill_sat (.inr (.inr rfl)) hS))
+    (large_sat hS) (full_sat hS)
+
+/-- The choice writes `rsp` only in frames and calls, if its bodies do. -/
+theorem refillWidths_spSafe {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
+    (s₁₂₈ : c₁₂₈.all (fun i => !isa.writesSp i) = true) (s₂₅₆ : c₂₅₆.all (fun i => !isa.writesSp i) = true)
+    (s₃₈₄ : c₃₈₄.all (fun i => !isa.writesSp i) = true) :
+    (Impl.Dsa.X86_64.ParameterSearch.widths n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄).all
+      (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.Dsa.X86_64.ParameterSearch.widths, Impl.Dsa.X86_64.ParameterSearch.width, Code.iteCold,
+    Code.all, forward_spSafe s₁₂₈, forward_spSafe s₂₅₆, forward_spSafe s₃₈₄, Bool.and_true]
+  rfl
 
 end VG.Proof.Dsa.X86_64.Generation.RefillWidths
