@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 # Deterministic ECDSA on x86 (32-bit): P-256
 
 P-256 as the proof's curve (`p256`): scalars of 4 64-bit words, the order
-`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_p256_sign`, proven
+`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_p256_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at P-256's sizes). Its seven-bit comb reads the same immutable
 table as public-key generation and verification, using four bytes of stack
@@ -65,12 +65,12 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   E := p256Comb
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
-  coreN := "vg_ecdsa_p256_sign"
+  coreN := "vg_ecdsa_p256_sign_k"
   coreC := signP256Comb
   coreX := by
     intro s h
@@ -93,6 +93,6 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.X86

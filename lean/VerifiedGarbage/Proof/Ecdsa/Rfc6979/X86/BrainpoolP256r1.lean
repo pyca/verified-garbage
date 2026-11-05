@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 # Deterministic ECDSA on x86 (32-bit): brainpoolP256r1
 
 brainpoolP256r1 as the proof's curve (`brainpoolp256r1`): scalars of 4 64-bit words, the order
-`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_brainpoolp256r1_sign`, proven
+`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_brainpoolp256r1_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at brainpoolP256r1's sizes, which is `Proof.Ecdsa.X86.BrainpoolP256r1.signX86`).
 -/
@@ -52,12 +52,12 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proo
   E := Impl.Ecdsa.X86.brainpoolp256r1
   inst := Spec.Ecdsa.BrainpoolP256r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, brainpoolp256r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.BrainpoolP256r1.curve = 0; rw [brainpoolp256r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp256r1_sign"
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
   coreC := Impl.Ecdsa.X86.signBrainpoolP256r1
   coreX := fun s h => Proof.Ecdsa.X86.BrainpoolP256r1.sign_x86 hL hI s (core_pre_256 h)
   coreCT := by
@@ -67,6 +67,6 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Proo
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.X86

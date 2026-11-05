@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
 # Deterministic ECDSA on x86 (32-bit): secp256k1
 
 secp256k1 as the proof's curve (`secp256k1`): scalars of 4 64-bit words, the order
-`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_secp256k1_sign`, proven
+`n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_secp256k1_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at secp256k1's sizes, which is `Proof.Ecdsa.X86.Secp256k1.signX86`).
 -/
@@ -52,12 +52,12 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstras
   E := Impl.Ecdsa.X86.secp256k1
   inst := Spec.Ecdsa.Secp256k1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inl rfl, secp256k1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
-  coreN := "vg_ecdsa_secp256k1_sign"
+  coreN := "vg_ecdsa_secp256k1_sign_k"
   coreC := Impl.Ecdsa.X86.signSecp256k1
   coreX := fun s h => Proof.Ecdsa.X86.Secp256k1.sign_x86 hL hI s (secp256k1_core_pre h)
   coreCT := by
@@ -67,6 +67,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstras
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.X86

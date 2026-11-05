@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
 # Deterministic ECDSA on x86 (32-bit): P-192
 
 P-192 as the proof's curve (`p192`): scalars of 3 64-bit words, the order
-`n` of exactly 192 bits with `2^192 < 2 n`, and `vg_ecdsa_p192_sign`, proven
+`n` of exactly 192 bits with `2^192 < 2 n`, and `vg_ecdsa_p192_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at P-192's sizes, which is `Proof.Ecdsa.X86.P192.signX86`).
 -/
@@ -52,12 +52,12 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p192
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
-  coreN := "vg_ecdsa_p192_sign"
+  coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.X86.signP192
   coreX := fun s h => Proof.Ecdsa.X86.P192.sign_x86 hL s (core_pre_192 h)
   coreCT := by
@@ -67,6 +67,6 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.X86

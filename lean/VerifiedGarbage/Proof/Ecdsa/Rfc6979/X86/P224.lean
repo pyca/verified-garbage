@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
 # Deterministic ECDSA on x86 (32-bit): P-224
 
 P-224 as the proof's curve (`p224`): scalars of 28 bytes in 4 64-bit words, the order
-`n` of exactly 224 bits with `2^224 < 2 n`, and `vg_ecdsa_p224_sign`, proven
+`n` of exactly 224 bits with `2^224 < 2 n`, and `vg_ecdsa_p224_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at P-224's sizes, which is `Proof.Ecdsa.X86.P224.signX86`).
 -/
@@ -52,12 +52,12 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p224
   inst := Spec.Ecdsa.P224.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inr ⟨rfl, rfl⟩, p224_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 28 - Spec.Ecdsa.nBits Spec.P224.curve = 0; rw [p224_nBits]
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.X86.signP224
   coreX := fun s h => Proof.Ecdsa.X86.P224.sign_x86 hL s (core_pre_224 h)
   coreCT := by
@@ -67,6 +67,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.X86

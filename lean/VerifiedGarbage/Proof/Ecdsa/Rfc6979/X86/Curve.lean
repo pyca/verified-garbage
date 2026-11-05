@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
@@ -11,15 +12,15 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
 What the proof needs of the curve (`RfcCurve`), as on x86-64
 (`Proof/Ecdsa/Rfc6979/X86_64/Curve.lean`): the code of
-`vg_ecdsa_<curve>_sign` for curves of `n` 64-bit words
+`vg_ecdsa_<curve>_sign_k` for curves of `n` 64-bit words
 (`Impl.Ecdsa.X86.Cfg`, `n` 3, 4, 6 or 8), the instance of ECDSA it is, that the
 order `n` of its base point has exactly `64 n` bits and `2^(64 n) < 2 n` (so
 that `bits2octets` is one conditional subtraction), and what is proven of the
 code: that it meets the contract the proof of each curve is written against
 (`coreK`, including any comb tables), in constant time, that it never
 writes `esp` and uses at most 20 stack bytes (its calls of the field
-arithmetic's functions), and the taint check of
-the block computing `bits2octets`, which holds `n`'s words as immediates.
+arithmetic's functions), and the taint checks of the code's blocks that
+depend on the curve (`RfcT`, by evaluating them, `rfcT_decide`).
 Each curve's file builds one, so that the heavy algebra of its proof stays
 out of the modules generic over the curve and the hash function.
 -/
@@ -70,44 +71,91 @@ def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4 ∧ ∀ c ∈ E.combConsts, s₁.syms c.1 = s₂.syms c.1
 
-/-- The code's blocks that depend on neither the hash function nor the
-functions it calls, for scalars of `E` (with `h` at the frame's top if
-`hHigh`). -/
-def cfgC (E : Impl.Ecdsa.X86.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.X86.Cfg where
-  F := ⟨⟨0, 0, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩, 0, "", .block [], "", .block [], "",
-    .block []⟩
+/-- The code's blocks for scalars of `E` (with `h = X` and `core`'s digest
+shifted if `big`, by `sh` bits), without the functions it calls. -/
+def cfgC (E : Impl.Ecdsa.X86.Cfg) (big : Bool) (sh : Nat) : Impl.Ecdsa.Rfc6979.X86.Cfg where
+  f := ⟨[], [], []⟩
   w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
+  len := E.C.len
+  big := big
+  sh := sh
   n := E.C.n
   tries := 8
   coreN := ""
   coreC := .block []
-  hHigh := hHigh
+
+/-- The taint check of a block whose addresses depend only on `rs`. -/
+abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
+  ∃ hc, (VG.Taint.check taint (τr rs) (.block is) hc).isSome = true
+
+/-- None of the instructions of the block `is` writes `esp`. -/
+abbrev OkB (is : List Instr) : Prop :=
+  (Code.block is : Prog isa).allInstrs (fun i => !Taint.clobbers i .esp) = true
+
+open Impl.Ecdsa.Rfc6979.X86 in
+/-- The blocks whose contents depend on the curve: each addresses memory
+only from `esp` and the pointers an earlier block loaded (the taint
+analysis), and none of their instructions writes `esp`. -/
+structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
+  xArgs : TaintOk [.esp] c.xArgs
+  reduce : c.big = false → TaintOk [.esp] c.reduce
+  msgF : TaintOk [.esp, .edi, .esi] (c.msg 0 true)
+  msgN : TaintOk [.esp, .edi, .esi] (c.msg 0 false)
+  updM : TaintOk [.esp] (Cfg.updMArgs (1 + 2 * c.len))
+  finM : TaintOk [.esp] (Cfg.finArgs (1 + 2 * c.len) fK)
+  tStep : TaintOk [.esp] c.tStep
+  coreArgs : TaintOk [.esp] c.coreArgs
+  xcArgs : c.big = true → TaintOk [.esp] c.xcArgs
+  convC : c.big = true → TaintOk [.esp, .edi] (c.conv fXc (8 - c.sh))
+  convT : c.big = true → TaintOk [.esp, .edi] (c.conv fT c.sh)
+  iXArgs : OkB c.xArgs
+  iReduce : OkB c.reduce
+  iMsgF₀ : OkB (c.msg 0 true)
+  iMsgF₁ : OkB (c.msg 1 true)
+  iMsgN : OkB (c.msg 0 false)
+  iUpdM : OkB (Cfg.updMArgs (1 + 2 * c.len))
+  iFinM : OkB (Cfg.finArgs (1 + 2 * c.len) fK)
+  iTStep : OkB c.tStep
+  iCoreArgs : OkB c.coreArgs
+  iXcArgs : OkB c.xcArgs
+  iConvC : OkB (c.conv fXc (8 - c.sh))
+  iConvT : OkB (c.conv fT c.sh)
+
+/-- `RfcT` of a curve's blocks, by evaluating them. -/
+macro "rfcT_decide" : tactic => `(tactic| exact
+  { xArgs := ⟨_, by taint_decide⟩, reduce := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, updM := ⟨_, by taint_decide⟩,
+    finM := ⟨_, by taint_decide⟩, tStep := ⟨_, by taint_decide⟩, coreArgs := ⟨_, by taint_decide⟩,
+    xcArgs := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    convC := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    convT := by exact (Function.const _ ⟨_, by taint_decide⟩),
+    iXArgs := by decide +kernel, iReduce := by decide +kernel, iMsgF₀ := by decide +kernel,
+    iMsgF₁ := by decide +kernel, iMsgN := by decide +kernel, iUpdM := by decide +kernel,
+    iFinM := by decide +kernel, iTStep := by decide +kernel,
+    iCoreArgs := by decide +kernel, iXcArgs := by decide +kernel, iConvC := by decide +kernel,
+    iConvT := by decide +kernel })
 
 /-- A curve, for RFC 6979 on x86. -/
 structure RfcCurve where
-  /-- The curve, as the code of `vg_ecdsa_<curve>_sign` has it. -/
+  /-- The curve, as the code of `vg_ecdsa_<curve>_sign_k` has it. -/
   E : Impl.Ecdsa.X86.Cfg
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Whether the scalars are longer than any hash function's output, so
-  that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86.Cfg.wide`). -/
-  wide : Bool
+  /-- Whether the scalars are longer than any hash function's output and
+  `n` has fewer bits than they do (P-521's), so that `h` is the digest's
+  integer and `core` takes it shifted (`Impl.Ecdsa.Rfc6979.X86.Cfg.big`). -/
+  big : Bool
   /-- Scalars of 3, 4, 6 or 8 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
   bits, with `2^(64 n) < 2 n`; or P-224, 28 bytes in 4 words;
-  or, if `wide`, of 9 words and 66 bytes, and
-  `n` of 521 bits. -/
-  sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
+  or, if `big`, of 9 words and 66 bytes, and `n` of 521 bits. -/
+  sizes : if big then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
     else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
-  /-- Whether `h` is kept at the frame's top
-  (`Impl.Ecdsa.Rfc6979.X86.Cfg.hHigh`): for scalars of 8 words. -/
-  hHigh : Bool := false
-  hHigh_eq : hHigh = decide (E.n = 8) := by decide
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
-  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct and constant time. -/
+  /-- `vg_ecdsa_<curve>_sign_k`, its name, and that it is correct and constant time. -/
   coreN : String
   coreC : Prog isa
   coreX : ∀ s, (coreK E).pre s → ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
@@ -115,37 +163,34 @@ structure RfcCurve where
   /-- It never writes `esp`, and uses at most 20 stack bytes (its calls'). -/
   coreNs : NoSp coreC
   coreStack : stackUse coreC ≤ E.stk
-  /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
-  memory only from `esp` and `esi` (the taint analysis, of the block for
-  `n`'s words). -/
-  reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr [.esp, .esi])
-    (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86.Cfg.initKV)) hc).isSome = true
+  /-- The taint checks and instruction facts of the curve's blocks. -/
+  blk : RfcT (cfgC E big sh)
 
 namespace RfcCurve
 
 variable (R : RfcCurve)
 
-theorem sizesA (h : R.wide = false) :
+theorem sizesA (h : R.big = false) :
     (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6 ∨ R.E.n = 8) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧ nBits R.E.C = 8 * R.E.C.len ∧
       2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
-theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C = 521 := by
+theorem sizesW (h : R.big = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C = 521 := by
   have := R.sizes; rw [h] at this; exact this
 
 theorem n3 : 3 ≤ R.E.n := by
-  cases h : R.wide
+  cases h : R.big
   · rcases (R.sizesA h).1 with h | h | h | h <;> omega
   · rw [(R.sizesW h).1]; omega
 
 theorem n9 : R.E.n ≤ 9 := by
-  cases h : R.wide
+  cases h : R.big
   · rcases (R.sizesA h).1 with h | h | h | h <;> omega
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last at least in part. -/
 theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n < R.E.C.len + 8 ∧ R.E.C.len ≤ 8 * R.E.n := by
-  cases h : R.wide
+  cases h : R.big
   · have := R.sizesA h; have := R.n3; omega
   · have := R.sizesW h; omega
 
@@ -153,7 +198,7 @@ theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n < R.E.C.len + 8 ∧ R.E.C.len 
 theorem nBits_len : 8 * R.E.C.len < nBits R.E.C + 8 ∧ nBits R.E.C ≤ 8 * R.E.C.len ∧
     R.sh = 8 * R.E.C.len - nBits R.E.C := by
   rw [← R.sh_eq]
-  cases h : R.wide
+  cases h : R.big
   · have := R.sizesA h; exact ⟨by omega, by omega, rfl⟩
   · have := R.sizesW h; exact ⟨by omega, by omega, rfl⟩
 

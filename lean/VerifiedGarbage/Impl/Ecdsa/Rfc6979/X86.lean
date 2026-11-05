@@ -78,8 +78,9 @@ states for `K`.
 `core` writes the signature or zeros to `out`, and its return value is ours.
 
 A block addresses memory only at `esp`, at `esp` plus a constant, or at a
-pointer it or an earlier block loaded from our arguments (`msgPtrs`,
-`scrPtr`, the table's address in `entry` and `tcall`), plus public offsets:
+pointer an earlier block loaded from our arguments (`msgPtrs`, `scrPtr`, the
+table's address in `entry` and `tcall`), never one it loads itself, plus
+public offsets:
 the taint analysis of each block, once for each curve, knows its addresses
 are public.
 -/
@@ -188,10 +189,11 @@ def scrPtr : List Instr := [.mov .edi (argM 4)]
 
 /-- Our caller's registers into the frame, and `D` and `B`, the table's
 words of data 4 and 5, from it. -/
-def entry : List Instr :=
-  saved.map (fun (r, d) => .store (stk d) r) ++
-    [.mov .eax (argM 5), .mov .ecx (.mem (at_ .eax 16)), .store (stk fDl) .ecx, .mov .ecx (.mem (at_ .eax 20)),
-      .store (stk fBl) .ecx]
+def entry : List Instr := saved.map (fun (r, d) => .store (stk d) r) ++ [.mov .eax (argM 5)]
+
+/-- `D` and `B` from the table, at `eax`, to the frame. -/
+def tabDB : List Instr :=
+  [.mov .ecx (.mem (at_ .eax 16)), .store (stk fDl) .ecx, .mov .ecx (.mem (at_ .eax 20)), .store (stk fBl) .ecx]
 
 /-- Our caller's registers back. -/
 def restoreRegs : List Instr := saved.map fun (r, d) => .mov r (.mem (stk d))
@@ -202,8 +204,8 @@ def restoreRegs : List Instr := saved.map fun (r, d) => .mov r (.mem (stk d))
 pushing `rs` (its arguments): the table's address into `ebx`, its word `j`
 into `ebx`, then `call ebx`. -/
 def tcall (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) : Prog isa :=
-  .seq (.block [.mov .ebx (argM 5), .mov .ebx (.mem (at_ .ebx (4 * j)))])
-    (.frame (.push rs) (Code.icalls (.callr .ebx) ts) (.pop .eax rs.length))
+  .seq (.block [.mov .ebx (argM 5)]) (.seq (.block [.mov .ebx (.mem (at_ .ebx (4 * j)))])
+    (.frame (.push rs) (Code.icalls (.callr .ebx) ts) (.pop .eax rs.length)))
 
 /-- The arguments of HMAC's `init`: the states (`edi`, `esi`), the key `K`
 of `D` bytes (`edx`, `ecx`), the working space (`ebp`). -/
@@ -369,7 +371,7 @@ def xcArgs : List Instr :=
 /-- If `big`: `core`'s digest, `Q - 1 - D` zero bytes, the digest and a zero
 byte, shifted right by `8 - sh` bits: the digest's integer shifted left by
 `sh` bits. -/
-def prepC : Prog isa := .seq (.block c.xcArgs) (.seq cpLoop (.block (scrPtr ++ c.conv fXc (8 - c.sh))))
+def prepC : Prog isa := .seq (.block c.xcArgs) (.seq cpLoop (.seq (.block scrPtr) (.block (c.conv fXc (8 - c.sh)))))
 
 /-- `h`: `reduce`, or, if `big`, `X` itself, with `core`'s digest. -/
 def prepH : Prog isa := if c.big then c.prepC else .block c.reduce
@@ -403,12 +405,12 @@ def tStep : List Instr :=
 def candStep : Prog isa := .seq c.hmacVR (.seq (.block keepArgs) (.seq cpLoop (.block c.tStep)))
 
 /-- If `big`: `T`'s first `Q` bytes shifted right by `sh` bits. -/
-def candTop : List Instr := if c.big then scrPtr ++ c.conv fT c.sh else []
+def candTop : Prog isa := if c.big then .seq (.block scrPtr) (.block (c.conv fT c.sh)) else .block []
 
 /-- The candidate: `T`, the `V`s of successive `V = HMAC_K(V)` while it is
 shorter than `Q` bytes, its leftmost `Q` bytes shifted right by `sh` bits if
 `big`. -/
-def cand : Prog isa := .seq (.block tInit) (.seq (.loop c.candStep .b) (.block c.candTop))
+def cand : Prog isa := .seq (.block tInit) (.seq (.loop c.candStep .b) c.candTop)
 
 /-- `core(out, d, digest, k, scratch)`'s arguments: `edi`, `esi`, `edx`,
 `ecx`, `ebp`, with the digest `X` (or, if `big`, the one at `fXc`) and
@@ -451,6 +453,7 @@ def wipe : List Instr :=
 /-- The frame's body. -/
 def body : Prog isa :=
   .seq (.block entry)
+  (.seq (.block tabDB)
   (.seq c.prepX
   (.seq c.prepH
   (.seq (.block initKV)
@@ -458,7 +461,7 @@ def body : Prog isa :=
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne .ne)
-    (.block wipe))))))))
+    (.block wipe)))))))))
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def sign : Prog isa := .frame (.alloc frameBytes) c.body (.free frameBytes)
