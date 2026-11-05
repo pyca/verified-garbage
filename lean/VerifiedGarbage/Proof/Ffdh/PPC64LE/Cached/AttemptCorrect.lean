@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.VettedPolicy
+import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
@@ -278,5 +280,306 @@ theorem ctx_facts {m : Mem} {C : Addr} {k : Nat} {dom : List Byte}
     unfold ent
     rw [show rowOff w (a + 2) = 8 * (3 + (2 + a) * w) by unfold rowOff; rw [Nat.mul_comm w, Nat.add_comm a 2]; omega]
     exact ctx_val hfit (Nat.lt_of_lt_of_le (Nat.mod_lt _ hP) (Nat.le_of_lt hpw)) ee
+
+/-! ## The width -/
+
+theorem recognized_nonzero {a : Spec.Ffdh.Parameters} {bits : Nat}
+    (h : Spec.Ffdh.vettedExponentBits a = some bits) : bits ≠ 0 := by
+  unfold Spec.Ffdh.vettedExponentBits at h
+  repeat' split at h
+  all_goals cases h
+  all_goals decide
+
+theorem bitLength_le_of_lt {x n : Nat} (h : x < 2 ^ n) : Spec.RsaKeyGen.bitLength x ≤ n := by
+  by_cases hx : x = 0
+  · subst hx; unfold Spec.RsaKeyGen.bitLength; simp
+  · have hb := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds hx).1
+    by_contra hc
+    have : 2 ^ n ≤ 2 ^ (Spec.RsaKeyGen.bitLength x - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+
+/-- The public scalar width of valid parameters: at least 1 and at most
+p's bits. -/
+theorem genBits_facts {k : Nat} {dom : List Byte} (hv : Spec.Ffdh.domainValid k dom = true) :
+    1 ≤ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) ∧
+      Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) ≤ 8 * k := by
+  have hv' := (VG.Proof.Ffdh.domainValid_iff k dom).mp hv
+  have hbnd : 2 ≤ Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) := by
+    unfold Spec.Ffdh.scalarBound
+    cases hq : (Spec.Ffdh.domainOf k dom).q with
+    | none => simp only [Option.getD_none]; omega
+    | some q => have := (hv'.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega
+  have hle : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≤ (Spec.Ffdh.domainOf k dom).p := by
+    unfold Spec.Ffdh.scalarBound
+    cases hq : (Spec.Ffdh.domainOf k dom).q with
+    | none => simp only [Option.getD_none]; omega
+    | some q => have := (hv'.2.2 q hq).1.2.2; simp only [Option.getD_some]; omega
+  have hp : (Spec.Ffdh.domainOf k dom).p < 2 ^ (8 * k) := by
+    have h1 := VG.Proof.Bignum.os2ip_lt (dom.take k)
+    have h2 : 256 ^ (dom.take k).length ≤ 2 ^ (8 * k) := by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
+    change Spec.Rsa.os2ip (dom.take k) < _
+    omega
+  have hb := VG.Proof.Ffdh.VettedPolicy.bits_le_bound (Spec.Ffdh.domainOf k dom)
+  have hbl : 1 ≤ Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) := by
+    have := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds
+      (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≠ 0 by omega)).2
+    by_contra hc
+    have e : Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) = 0 := by omega
+    rw [e] at this; omega
+  refine ⟨?_, Nat.le_trans hb (bitLength_le_of_lt (Nat.lt_of_le_of_lt hle hp))⟩
+  unfold Spec.Ffdh.generationScalarBits
+  cases he : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf k dom) with
+  | none => simpa using hbl
+  | some b => have := recognized_nonzero he; simp only; omega
+
+/-! ## Correctness -/
+
+theorem wordsAt_congr {m m' : Mem} {C : Addr} {n : Nat}
+    (h : ∀ i < 8 * n, m' (C + BitVec.ofNat 64 i) = m (C + BitVec.ofNat 64 i)) :
+    Spec.Rsa.wordsAt m' C n = Spec.Rsa.wordsAt m C n := by
+  unfold Spec.Rsa.wordsAt
+  refine List.map_congr_left fun i hi => Mem.readW_congr fun b hb => ?_
+  have hi' := List.mem_range.mp hi
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  exact h _ (by omega)
+
+theorem byte_of_bytesAt {m m' : Mem} {Q : Addr} {n : Nat} (h : Spec.Rsa.bytesAt m' Q n = Spec.Rsa.bytesAt m Q n)
+    {i : Nat} (hi : i < n) : m' (Q + BitVec.ofNat 64 i) = m (Q + BitVec.ofNat 64 i) := by
+  have := congrArg (fun l => l[i]?) h
+  simpa [Spec.Rsa.bytesAt, hi] using this
+
+private theorem cg_pres_not_written : ∀ r ∈ preserved, (∀ i < 18, r ≠ Impl.Ffdh.PPC64LE.Domain.saved i) →
+    r ∉ cgFrontRegs ++ ([.r0, .r6, .r12, .r14, .r15, .r16, .r17, .r18] : List Reg) ++
+      (bodyRegs ++ ([.r3] : List Reg)) := by
+  decide
+
+theorem ret_st (n : Nat) (hn : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 32).toNat = n := by
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
+theorem cg_correct (s : State) (h : cgContract.pre s) :
+    ∃ tr t, Exec isa Generate.code s tr t ∧ abiPreserved s t ∧ cgContract.post s t := by
+  show WP isa Generate.code s fun t => abiPreserved s t ∧ cgContract.post s t
+  have hpre := h
+  obtain ⟨-, hrd, hwr, dXY, dXD, dXR, dXS, dXC, -, dYD, -, dYS, dYC, -, dDS, dRS, dSC, -, nwX, nwY, -, nwR, nwS, nwC,
+    ⟨hk64, hk1024⟩, hL, hxl, hyl, hrl, hsl, hdv, hctx⟩ := h
+  simp only [Spec.Rsa.scratchWords] at hsl
+  rw [hxl] at hwr dXY dXD dXR dXS dXC nwX
+  rw [hyl] at hwr dXY dYD dYS dYC nwY
+  rw [hrl] at hrd dXR dRS nwR
+  have hcl : (stackArg s 4).toNat = 3 + 34 * (((s.gpr .r9).toNat + 7) / 8) := by
+    rw [hctx.1]
+    simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
+      Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth, Spec.Rsa.modulusWords]
+    omega
+  have hctxw := hctx.2
+  rw [hcl] at hrd dXC dYC dSC nwC hctxw
+  generalize hkd : (s.gpr .r9).toNat = k at hk64 hk1024 hL hxl hyl hrl hsl hwr dXY dXD dXR dXS dYD dYS dRS hrd nwR
+  generalize hkd' : (s.gpr .r9).toNat = k' at nwX nwY dXC dYC dSC nwC hctxw hdv hcl
+  rw [hkd] at hkd'; subst hkd'
+  have hin : ∀ i < 18, InRegions s.wr (off (Domain.savW (stackArg s 1)) (8 * i)) 8 := fun i hi =>
+    ⟨⟨stackArg s 1, (stackArg s 2).toNat * 8⟩, by rw [hwr]; simp, by
+      rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+  -- The arguments apart.
+  have sepXS := sep_of_disjoint dXS (by omega)
+  have sepSX : ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → k ≤ ofs (s.gpr .r3) y :=
+    Pub.sep_of_disjoint dXS.symm
+  have sepRX := sep_of_disjoint dXR.symm (by omega)
+  have sepDX := sep_of_disjoint dXD.symm (by omega)
+  have sepXO := sep_of_disjoint dXY (by omega)
+  have sepOX := sep_of_disjoint dXY.symm (by omega)
+  have sepOS : ∀ x, ofs (s.gpr .r5) x < k → (stackArg s 2).toNat * 8 ≤ ofs (stackArg s 1) x :=
+    Pub.sep_of_disjoint dYS
+  have sepSO : ∀ x, ofs (stackArg s 1) x < (stackArg s 2).toNat * 8 → k ≤ ofs (s.gpr .r5) x :=
+    Pub.sep_of_disjoint dYS.symm
+  have sepRS := sep_of_disjoint dRS (by omega)
+  have sepCX : ∀ y, ofs (stackArg s 3) y < (3 + 34 * ((k + 7) / 8)) * 8 → k ≤ ofs (s.gpr .r3) y :=
+    Pub.sep_of_disjoint dXC.symm
+  have sepCS : ∀ y, ofs (stackArg s 3) y < (3 + 34 * ((k + 7) / 8)) * 8 →
+      (stackArg s 2).toNat * 8 ≤ ofs (stackArg s 1) y := Pub.sep_of_disjoint dSC.symm
+  have sepCSi := sep_of_disjoint dSC.symm (by omega)
+  have h4 : s.gpr .r4 = BitVec.ofNat 64 k := by rw [← hxl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  unfold Generate.code
+  refine WP.seq (WP.mono (cg_front hpre) fun s₁ ⟨hb, w8, w9, w10, w11, hsav, wc0, wc8, wc16, wc24, hby, k1⟩ => ?_)
+  have ek : (gcOf s).k = k := hkd
+  have hk := hb.k64
+  have hk' := hb.k1024
+  have hLk := hb.hL
+  have hZ := hb.env.hZ
+  have hnw := hb.env.hs.nowrap
+  rw [ek] at hk hk' hLk
+  have e0 := Domain.slot_eq (gcOf s).w 0
+  have e28 := Domain.slot_eq (gcOf s).w 28
+  refine WP.seq (WP.mono (loadP_ok hb.env hb.r21 (by rw [hb.r28, ek]) rfl (by rw [ek]; omega) (by rw [ek]; omega)
+    (fun i hi => hb.rdD i (by omega)) (fun i hi => hb.sepD i (by omega))) fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_)
+  have hb2 := hb.keep k2 b2
+  have k12 := k1.trans k2
+  -- The bytes apart from the working space.
+  have hsep : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off Q i ≠ y) →
+      Spec.Rsa.bytesAt s₂.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hq => by
+    rw [b2.bytesAt hZ hq]; exact hby Q n hq
+  have sepD : ∀ i < (s.gpr .r8).toNat, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off (s.gpr .r7) i ≠ y :=
+    hb.sepD
+  rw [show (gcOf s).D = s.gpr .r7 from rfl, ek, hby _ _ fun i hi => sepD i (by
+    rcases hLk with h | h <;> simp only [gcOf] at h <;> omega)] at p2 c2
+  generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) k) = p at p2 c2
+  have hpk : p < 256 ^ k := by
+    rw [← hp]; have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (s.gpr .r7) k)
+    rwa [VG.Proof.Bignum.bytesAt_length] at this
+  have hw2 : ∀ d, d + 8 ≤ 256 → word s₂.mem (stackArg s 1) d = word s₁.mem (stackArg s 1) d := fun d hd => by
+    have b2' : Body (stackArg s 1) (gcOf s).w s₁.mem s₂.mem := b2
+    rw [Outside.word b2' (by omega) (by omega)]
+  have hL' : (s.gpr .r8).toNat = 2 * k ∨ (s.gpr .r8).toNat = 3 * k := hLk
+  rw [show (gcOf s).S = stackArg s 1 from rfl, show (gcOf s).w = (k + 7) / 8 by simp only [gcOf, CD.w]; rw [hkd]] at p2
+  -- The context, as `s₂` has it.
+  have hcm : ∀ i < 8 * (3 + 34 * ((k + 7) / 8)), s₂.mem (stackArg s 3 + BitVec.ofNat 64 i) =
+      s.mem (stackArg s 3 + BitVec.ofNat 64 i) := fun i hi =>
+    byte_of_bytesAt (hsep _ (8 * (3 + 34 * ((k + 7) / 8))) fun j hj => sepCSi j (by omega)) hi
+  have hlenD : k ≤ (cgDom s).length := by
+    rw [VG.Proof.Bignum.bytesAt_length]; rcases hL' with h | h <;> omega
+  have hmod := VG.Proof.Ffdh.domainValid_mod hdv
+  have hwv : Spec.Rsa.wordsAt s.mem (stackArg s 3) (3 + 34 * ((k + 7) / 8)) =
+      VG.Proof.Ffdh.generationValues k (cgDom s) := by
+    have e := VG.Proof.Ffdh.generationPrecompute_eq hlenD hmod
+    rw [hctxw] at e; exact Option.some.inj e
+  have hwv2 : Spec.Rsa.wordsAt s₂.mem (stackArg s 3) (3 + 34 * ((k + 7) / 8)) =
+      VG.Proof.Ffdh.generationValues k (cgDom s) := by rw [wordsAt_congr hcm, hwv]
+  have hpd : (Spec.Ffdh.domainOf k (cgDom s)).p = p := by
+    rw [VG.Proof.Ffdh.domainOf_p _ _ (by rcases hL' with h | h <;> omega), hp]
+  rw [hpd] at hmod
+  have hf := modulus_facts hmod
+  have hpw : p < 2 ^ (64 * ((k + 7) / 8)) := Nat.lt_of_lt_of_le hpk (by
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
+  obtain ⟨cb, cy, cr, -, -⟩ := ctx_facts hwv (by rw [hpd]; omega) (by rw [hpd]; exact hpw)
+  obtain ⟨-, -, -, cr2, cent⟩ := ctx_facts hwv2 (by rw [hpd]; omega) (by rw [hpd]; exact hpw)
+  rw [hpd] at cr2 cent
+  have hbits := genBits_facts hdv
+  generalize hbd : Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k (cgDom s)) = bits at cb cy cr cent hbits
+  have hg : (Spec.Ffdh.domainOf k (cgDom s)).g = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off (s.gpr .r7) k) k) := by
+    rw [VG.Proof.Ffdh.domainOf_g _ _ (by rcases hL' with h | h <;> omega), hsep _ _ fun i hi => by
+      rw [off_off']; exact sepD _ (by rcases hL' with h | h <;> omega)]
+  rw [hg] at cent
+  generalize hD : s.gpr .r7 = D at hp sepD hsep hL' sepDX dYD dXD hrd cent hg ⊢
+  generalize hL'' : (s.gpr .r8).toNat = L at hL' sepD sepDX dYD dXD hrd ⊢
+  have sepG : ∀ i < k, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off (off D k) i ≠ y :=
+    fun i hi => by rw [off_off']; exact sepD _ (by omega)
+  -- The arguments, as the code reads them.
+  generalize hS : stackArg s 1 = S at hsep sepG sepD sepXS sepSX sepRS sepOS sepSO hw2 hsav hin p2 sepCS ⊢
+  generalize hS' : stackArg s 1 = S' at sepCSi hcm wc0 wc8 wc16 wc24 w8 w9 w10 w11
+  rw [hS] at hS'; subst hS'
+  generalize hZd : (stackArg s 2).toNat * 8 = Z at hsep sepG sepD sepXS sepSX sepRS sepOS sepSO sepCS sepCSi
+  have g23 : s₂.gpr .r23 = S := hb2.r23.trans hS
+  have e2 : VG.Proof.MillerRabin.PPC64LE.Env s₂ S Z ((k + 7) / 8) := by
+    have := hb2.env; rw [show (gcOf s).S = stackArg s 1 from rfl, hS] at this
+    simp only [gcOf, CD.w] at this; rw [hkd, hZd] at this; exact this
+  have hc2 : CtxRd s₂ S Z (stackArg s 3) ((k + 7) / 8) := by
+    refine ⟨by rw [show hCtx = 0 from rfl]; exact (hw2 0 (by omega)).trans wc0, by have := nwC; unfold ctxWords; omega,
+      fun d hd => ?_, fun x hx => by have := sepCS x (by unfold ctxWords at hx; omega); omega⟩
+    rw [k12.rd, k12.wr]
+    exact ⟨⟨stackArg s 3, (3 + 34 * ((k + 7) / 8)) * 8⟩, List.mem_append_left _ (by rw [hrd]; simp),
+      Offset.contains_base _ (by unfold ctxWords at hd; omega) (by unfold ctxWords at hd; omega)⟩
+  have hite : WP isa (.ite (.zero .d .r0) body (.block [.li .r3 0])) s₂ fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt
+          (Spec.Rsa.os2ip (VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k)
+            (k - (bits + 7) / 8) (tbOf bits)))
+          (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off D k) k)) p (Derive.bnd s₂.mem D k L p)) ∧
+        Spec.Rsa.bytesAt t.mem (s.gpr .r5) k = (if VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt
+            (Spec.Rsa.os2ip (VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k)
+              (k - (bits + 7) / 8) (tbOf bits)))
+            (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off D k) k)) p (Derive.bnd s₂.mem D k L p) = 1 then
+          Spec.Rsa.i2osp (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off D k) k) ^
+            Spec.Rsa.os2ip (VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k)
+              (k - (bits + 7) / 8) (tbOf bits)) % p) k else List.replicate k 0) ∧
+        Spec.Rsa.bytesAt t.mem (s.gpr .r3) k = (if VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt
+            (Spec.Rsa.os2ip (VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k)
+              (k - (bits + 7) / 8) (tbOf bits)))
+            (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off D k) k)) p (Derive.bnd s₂.mem D k L p) = 1 then
+          VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k) (k - (bits + 7) / 8) (tbOf bits)
+          else List.replicate k 0)) ∧
+      (∀ i < 18, word t.mem S (112 + 8 * i) = word s₂.mem S (112 + 8 * i)) ∧
+      Keep (bodyRegs ++ ([.r3] : List Reg)) s₂ t := by
+    refine WP.ite (s₂.gpr .r0 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
+    · have rdR : ∀ i < k, InRegions (s₂.rd ++ s₂.wr) (off (s.gpr .r10) i) 1 := by
+        rw [k12.rd, k12.wr]
+        exact rd_of_mem (s := s) (D := s.gpr .r10) (L := k) (by rw [hrd]; simp) (by omega)
+      refine WP.mono (bodyC_ok (s := s₂) (Z := Z) (w := (k + 7) / 8) (k := k) (L := L) (p := p) (B := S) (D := D)
+        (X := s.gpr .r3) (O := s.gpr .r5) (R := s.gpr .r10) (C := stackArg s 3) (bits := bits) e2 g23
+        (by rw [hb2.r21]; exact hD) (by rw [hb2.r27, ← hL'']; rfl) (by rw [hb2.r28, ek]) rfl hk hk' hL'
+        (by show word s₂.mem S 64 = _; rw [hw2 64 (by omega), w8]; simp [off])
+        (by show word s₂.mem S 72 = _; rw [hw2 72 (by omega), w9, h4])
+        (by show word s₂.mem S 80 = _; rw [hw2 80 (by omega), w10]; simp [off])
+        (by show word s₂.mem S 88 = _; rw [hw2 88 (by omega), w11]; simp [off])
+        (by show word s₂.mem S 8 = _; rw [hw2 8 (by omega), wc8]; exact cb)
+        (by show word s₂.mem S 16 = _; rw [hw2 16 (by omega), wc16]; exact cy)
+        (by show word s₂.mem S 24 = _; rw [hw2 24 (by omega), wc24]; exact cr)
+        hc2 (fun y hy => sepCX y (by unfold ctxWords at hy; omega)) cent cr2 hbits.1 hbits.2
+        (fun i hi => by
+          have := hb2.rdD i (show i < (s.gpr .r8).toNat by omega)
+          rwa [show (gcOf s).D = s.gpr .r7 from rfl, hD] at this)
+        sepD rdR
+        (Scr.of_mem (by rw [k12.wr, hwr]; simp) nwX) sepXS sepSX sepRX sepDX sepXO sepOX
+        (Scr.of_mem (by rw [k12.wr, hwr]; simp) nwY) sepOS sepSO p2 hf.1 hf.2 hpk)
+        fun t ⟨⟨t3, ty, tx, tw⟩, kt⟩ => ⟨⟨t3, ty, tx⟩, fun i hi => tw _ (.inr (by omega)) (by omega),
+          kt.mono fun r hr => List.mem_append_left _ hr⟩
+    · exact absurd (c2.mpr hmod) (by simpa using hz)
+  refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)
+  have kall := k12.trans k5
+  have hsav' : ∀ i < 18, t₅.mem.readW (off (Domain.savW S) (8 * i)) 64 =
+      s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i) := fun i hi => by
+    have ea : off (Domain.savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
+    rw [ea]
+    show word t₅.mem S (112 + 8 * i) = _
+    rw [tw i hi, hw2 _ (by omega)]
+    exact hsav i hi
+  refine WP.mono (Domain.restore_ok t₅ ((k5.gpr .r23 (by decide)).trans g23) (by rw [kall.wr]; exact hin) hsav')
+    fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, by rw [usp, kall.sp], by rw [ulr, kall.lr]⟩, ?_⟩
+  · by_cases hs' : ∃ i < 18, r = Impl.Ffdh.PPC64LE.Domain.saved i
+    · obtain ⟨i, hi, rfl⟩ := hs'
+      exact urs i hi
+    · have hn : ∀ i < 18, r ≠ Impl.Ffdh.PPC64LE.Domain.saved i := fun i hi e => hs' ⟨i, hi, e⟩
+      rw [uot r hn, kall.gpr r (cg_pres_not_written r hr hn)]
+  · -- The bytes the code read, as the arguments' bytes.
+    have eR : Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) k = Spec.Rsa.bytesAt s.mem (s.gpr .r10) k := hsep _ _ sepRS
+    have eg : Spec.Rsa.bytesAt s₂.mem (off D k) k = Spec.Rsa.bytesAt s.mem (off D k) k := hsep _ _ sepG
+    have eb : Derive.bnd s₂.mem D k L p = Derive.bnd s.mem D k L p := by
+      unfold Derive.bnd
+      by_cases hq : L = 3 * k
+      · rw [ite_eq_left hq, ite_eq_left hq, hsep _ _ fun i hi => by rw [off_off']; exact sepD _ (by omega)]
+      · rw [ite_eq_right hq, ite_eq_right hq]
+    rw [eR, eg, eb] at tpost
+    obtain ⟨t3, ty, tx⟩ := tpost
+    have hlen : (Spec.Rsa.bytesAt s.mem (s.gpr .r10) k).length = k := VG.Proof.Bignum.bytesAt_length _ _ _
+    have hxv := scalarC_value hlen hbits.1 hbits.2
+    have hlen' : (VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s.mem (s.gpr .r10) k) (k - (bits + 7) / 8)
+        (tbOf bits)).length = k := by rw [VG.Proof.Ffdh.KeyScalar.cut_length _ (by omega), hlen]
+    generalize hxo : VG.Proof.Ffdh.KeyScalar.cut (Spec.Rsa.bytesAt s.mem (s.gpr .r10) k) (k - (bits + 7) / 8)
+      (tbOf bits) = xo at t3 ty tx hxv hlen'
+    have hbd' : Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k (Spec.Rsa.bytesAt s.mem D L)) = bits := by
+      rw [← hD, ← hL'']; exact hbd
+    have hdv' : Spec.Ffdh.domainValid k (Spec.Rsa.bytesAt s.mem D L) = true := by rw [← hD, ← hL'']; exact hdv
+    dsimp only [cgContract, cgScalar, cgA, cgDom]
+    rw [hD, hL'', hkd, hrl, Spec.Ffdh.vettedScalarOfOctets, hbd', ← hxv]
+    rw [Derive.keyStatus_dom (by omega) hL' hdv', VG.Proof.Ffdh.domainOf_g _ _ (by omega),
+      VG.Proof.Ffdh.domainOf_p _ _ (by omega), hp, VG.Proof.Bignum.powMod_eq]
+    rw [um, uot .r3 (by decide), t3, ret_st _ (by
+      unfold VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt; split <;> [decide; split <;> decide])]
+    rw [ty, tx]
+    refine ⟨rfl, ?_⟩
+    by_cases h1 : VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt (Spec.Rsa.os2ip xo)
+        (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) p (Derive.bnd s.mem D k L p) = 1
+    · rw [ite_eq_left h1, ite_eq_left h1]
+      simp only [VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt] at h1 ⊢
+      rw [ite_eq_left h1]
+      refine ⟨?_, trivial⟩
+      have e := VG.Proof.Rsa.i2osp_os2ip xo
+      rw [hlen'] at e
+      exact e.symm
+    · rw [ite_eq_right h1, ite_eq_right h1]
+      simp only [VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt] at h1 ⊢
+      rw [ite_eq_right h1]
+      exact ⟨trivial, trivial⟩
 
 end VG.Proof.Ffdh.PPC64LE.Cached
