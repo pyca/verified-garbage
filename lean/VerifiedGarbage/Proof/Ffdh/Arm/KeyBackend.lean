@@ -21,7 +21,7 @@ structure KeyBackend (policy : VG.Proof.Ffdh.GenerationPolicy := .full) where
 
 def KeyBackend.keyName {policy : VG.Proof.Ffdh.GenerationPolicy} (b : KeyBackend policy) : String :=
   (match policy with
-  | .full => Spec.Ffdh.generateKeyApi.name
+  | .full => "vg_ffdh_generate_key"
   | .vetted => Spec.Ffdh.vettedGenerateKeyApi.name
   | .cached => Spec.Ffdh.cachedGenerateKeyApi.name) ++ b.suffix
 
