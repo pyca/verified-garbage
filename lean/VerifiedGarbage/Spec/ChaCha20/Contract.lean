@@ -20,7 +20,10 @@ the keystream and a partly used block. `init` makes the state represent the
 whole keystream of a key and nonce, `set_nonce` that of another nonce with
 the same key, and `apply` XORs the next bytes of it into data, or, if fewer
 are left (the block counter would pass 2³² − 1), returns 0 and changes
-nothing: so the caller keeps no count of its own.
+nothing: so the caller keeps no count of its own. That keystream is RFC
+8439's: `keystreamOf_eq` states that it is `encrypt` (§2.4.1) of the
+64 × (2³² − c) zero bytes, and `encrypt_eq_keystreamOf` that `encrypt` of
+any message not longer is that message XORed with its first bytes.
 
 The key, the nonce, the keystream and the data are secret. The number of
 bytes of keystream left (`leftAt`) is not: `apply` may leak it (`leak`),
