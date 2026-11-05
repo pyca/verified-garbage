@@ -135,6 +135,22 @@ class SourceInfo(Project):
         self.assertIsNone(vis["VerifiedGarbage.Spec.A"])
 
 
+    def test_worker_processes_read_sources_as_one_process_does(self):
+        for i in range(30):
+            text = (f"module\n\npublic import VerifiedGarbage.Spec.A\n" if i % 3 else "import VerifiedGarbage.Spec.A\n")
+            text += "".join(f"meta import VerifiedGarbage.Many.M{j}\n" for j in range(i % 4))
+            path = self.lean / f"VerifiedGarbage/Many/M{i}.lean"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        mods = shards.modules()
+        results = []
+        for threshold in (10 ** 9, 0):
+            sizes, modes = {}, {}
+            with mock.patch.object(shards, "PARALLEL_SOURCES", threshold):
+                info = shards.source_info(mods, sizes, modes)
+            results.append([list(x.items()) for x in (*info, sizes, modes)])
+        self.assertEqual(results[0], results[1])
+
 class Diagnostics(Project):
     def test_cli_retains_inputs_and_still_produces_a_usable_plan(self):
         self.manifest["times"] = {"VerifiedGarbage.Spec.A": 17.5}
@@ -632,6 +648,8 @@ class RebuildFrontier(unittest.TestCase):
         closure = shards.closures(imps)
         self.assertEqual(shards.rebuild_targets({"A", "C", "D"}, closure), ["C", "D"])
         self.assertEqual(shards.rebuild_targets(set(), closure), [])
+        self.assertEqual(shards.rebuild_targets({"A", "C", "D"}, closure, imps), ["C", "D"])
+        self.assertEqual(shards.rebuild_targets(set(), closure, imps), [])
 
     def test_private_rebuilds_are_not_bundled_by_an_unchanged_importer(self):
         imps = {"unchanged": ["L", "R"]}

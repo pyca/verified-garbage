@@ -213,13 +213,14 @@ def library_members(lib: dict, closure: dict[str, frozenset[str]]) -> set[str]:
     return out
 
 
-def build_requirements(closure, libraries):
+def build_requirements(closure, libraries, modules=None):
     """Add whole native libraries exactly as the selective cache restore does.
 
     Importing one native module can link its whole library, including modules
     outside the ordinary import closure. Scheduling and restoration must agree
     on those dependencies. Expand library groups once, rather than walking
-    their imports again for every sink and candidate shard count.
+    their imports again for every sink and candidate shard count. Only the
+    `modules` given (default: every module) get their requirements.
     """
     expanded = {name: set().union(*(closure[m] for m in members))
                 for name, members in libraries.items()}
@@ -231,8 +232,8 @@ def build_requirements(closure, libraries):
                 if part & members and not expanded[other] <= part:
                     part.update(expanded[other])
                     changed = True
-    return {m: part.union(*(expanded[name] for name, members in libraries.items() if part & members))
-            for m, part in closure.items()}
+    return {m: closure[m].union(*(expanded[name] for name, members in libraries.items() if closure[m] & members))
+            for m in (closure if modules is None else modules)}
 
 
 def needed(targets: list[str], closure: dict[str, frozenset[str]]) -> set[str]:
@@ -338,23 +339,55 @@ def visibilities(mods: dict[str, pathlib.Path]) -> dict[str, tuple[list[str], li
     return {m: visibility(f.read_text(), mods) for m, f in mods.items()}
 
 
+# Fewer sources are read faster than worker processes start.
+PARALLEL_SOURCES = 2000
+# What `_read_sources`' worker processes read: set before they start.
+_SOURCES = None
+
+
+def _read_sources(names):
+    """Each of the modules `names`' hash, size, imports, visibility and
+    import modes, from one read of its source."""
+    mods = _SOURCES
+    out = []
+    for m in names:
+        data = mods[m].read_bytes()
+        text = data.decode("utf-8")
+        if "\r" in text:
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
+        out.append((m, hashlib.sha256(data).hexdigest(), len(data), *parse_imports(text, mods)))
+    return out
+
+
 def source_info(mods, source_bytes=None, import_modes=None):
     """Read/hash each source once and share one import scan between graphs.
 
     Hash the original bytes, but normalize newlines for parsing just as
     Path.read_text does. Sources, imports, and visibility describe the same
-    read of each file, including for the final `edited` list.
+    read of each file, including for the final `edited` list. Many sources
+    are read by worker processes (forked), in parts, merged in order.
     """
+    global _SOURCES
+    _SOURCES = mods
+    names = list(mods)
+    cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
+    try:
+        if (len(names) < PARALLEL_SOURCES or cpus < 2
+                or "fork" not in multiprocessing.get_all_start_methods()):
+            rows = _read_sources(names)
+        else:
+            step = -(-len(names) // (4 * cpus))
+            with multiprocessing.get_context("fork").Pool(cpus) as pool:
+                rows = [r for part in pool.map(_read_sources, [names[i:i + step] for i in range(0, len(names), step)])
+                        for r in part]
+    finally:
+        _SOURCES = None
     imps, vis, hashes = {}, {}, {}
-    for m, path in mods.items():
-        data = path.read_bytes()
-        hashes[m] = hashlib.sha256(data).hexdigest()
+    for m, digest_, size, imported, visible, modes in rows:
+        hashes[m] = digest_
         if source_bytes is not None:
-            source_bytes[m] = len(data)
-        text = data.decode("utf-8")
-        if "\r" in text:
-            text = text.replace("\r\n", "\n").replace("\r", "\n")
-        imps[m], vis[m], modes = parse_imports(text, mods)
+            source_bytes[m] = size
+        imps[m], vis[m] = imported, visible
         if import_modes is not None and modes:
             import_modes[m] = modes
     return imps, vis, hashes
@@ -629,16 +662,27 @@ class _BuildGraph:
         return elapsed
 
 
-def rebuild_targets(stale: set[str], closure: dict[str, frozenset[str]]) -> list[str]:
+def rebuild_targets(stale: set[str], closure: dict[str, frozenset[str]], imps=None) -> list[str]:
     """The maximal stale modules under the *full* import relation.
 
     Private imports limit invalidation, not what a build needs. Targeting
     these modules covers every stale module without bundling independent
-    rebuilds together through an unchanged downstream importer.
+    rebuilds together through an unchanged downstream importer. With the
+    imports `imps` (whose closures are `closure`), the modules a stale
+    module imports, directly or not, are found in one walk of them.
     """
+    if imps is None:
+        covered = set()
+        for m in sorted(stale):
+            covered.update((closure[m] & stale) - {m})
+        return sorted(stale - covered)
     covered = set()
-    for m in sorted(stale):
-        covered.update((closure[m] & stale) - {m})
+    stack = [i for m in stale for i in imps[m]]
+    while stack:
+        m = stack.pop()
+        if m not in covered:
+            covered.add(m)
+            stack += imps[m]
     return sorted(stale - covered)
 
 
@@ -717,7 +761,9 @@ class _Packings:
         _PACKING = (sinks, closure, cost, path, prepared, simulator)
         self.pool = None
         cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
-        self.workers = min(len(REUSE_WEIGHTS), cpus)
+        # One per weight, even on fewer CPUs: a count's packings then take
+        # one round of the workers, not two with one of them alone.
+        self.workers = len(REUSE_WEIGHTS) if cpus > 1 else 1
         if (len(sinks) < self.PARALLEL_SINKS
                 or "fork" not in multiprocessing.get_all_start_methods()):
             self.workers = 1
@@ -888,8 +934,10 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None, simulate=No
             # longer what they gained.
             lost, gained = removed[t], closure[t] - built[dst]
             for u, add in adding.items():
-                add[src] += math.fsum(map(cost.__getitem__, lost & closure[u]))
-                add[dst] -= math.fsum(map(cost.__getitem__, gained & closure[u]))
+                if common := lost & closure[u]:
+                    add[src] += math.fsum(map(cost.__getitem__, common))
+                if common := gained & closure[u]:
+                    add[dst] -= math.fsum(map(cost.__getitem__, common))
             built[src], loads[src], built[dst], loads[dst] = from_part, from_time, to_part, to_time
             for i in (src, dst):
                 work[i] = math.fsum(map(cost.__getitem__, built[i]))
@@ -1047,7 +1095,7 @@ def schedule(
     work = math.fsum(cost[m] for m in stale)
     path = paths(imps, cost)
     required = requirements if requirements is not None else closure
-    total = {m: math.fsum(cost[x] for x in required[m]) for m in rebuild_targets(stale, closure)}
+    total = {m: math.fsum(cost[x] for x in required[m]) for m in rebuild_targets(stale, closure, imps)}
     sinks = sorted(total, key=lambda m: (-total[m], m))
     needed = set().union(*(required[m] for m in sinks))
     prepared = _Sinks(sinks, required, cost)
@@ -1188,11 +1236,18 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
     else:
         changed = set(mods)
     libraries = precompiled_libraries(closure)
-    read = reads(imps, closure, vis, import_modes)
     trace_modules = native_trace_modules(closure)
-    native = native_reads(imps, closure, libraries, trace_modules)
-    stale = stale_of(changed, {m: read[m] | native[m] for m in imps})
-    required = build_requirements(closure, libraries)
+    if changed == set(imps):
+        # Everything is rebuilt: nothing to propagate.
+        stale = set(changed)
+    else:
+        # Only whether a module reads a changed one matters: traces of the
+        # changed modules alone are enough.
+        among = frozenset(changed)
+        read = reads(imps, closures(imps, among), vis, import_modes, among)
+        native = native_reads(imps, closure, libraries, trace_modules)
+        stale = stale_of(changed, {m: read[m] | native[m] for m in imps})
+    required = build_requirements(closure, libraries, rebuild_targets(stale, closure, imps))
     if diagnostics is not None:
         diagnostics["precompiled_libraries"] = {name: sorted(ms) for name, ms in libraries.items()}
         diagnostics["native_trace_modules"] = sorted(trace_modules)
