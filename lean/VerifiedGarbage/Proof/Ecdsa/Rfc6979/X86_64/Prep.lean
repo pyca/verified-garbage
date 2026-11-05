@@ -264,6 +264,24 @@ theorem xcArgs_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) {t : State} 
   rw [hcx₂, sub_min _ (by omega), hx] at hdi₃
   exact ⟨hc₃, by rw [hg₃ _ (by decide) (by decide) (by decide), hcx₂], hdi₃, hsi₃, h8₃⟩
 
+/-- If `big`: the digest copied for `core`, with `Ctx` kept. -/
+theorem xcCopy_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.H.D ≤ dn) {t : State}
+    (hc : Ctx L g m₀ t) : WP isa (.seq (.block (cfgOf P).xcArgs) Cfg.cpLoop) t (Ctx L g m₀) := by
+  have he := L.he
+  have hnb := hL.nb
+  obtain ⟨-, hQ66, hQD⟩ := P.sizesW hW
+  obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, -, -, -, -⟩ := P.sizes
+  refine WP.seq (WP.mono (xcArgs_ok hL hT hW hc) fun u ⟨hcu, hcx, hdi, hsi, h8⟩ => ?_)
+  refine WP.mono (cp_ok hL hcu (p := L.B + BitVec.ofNat 64 (24 + fXc + (P.Q - 1 - P.H.D))) (q := L.dg)
+      (n := P.H.D) (by omega) (by omega) hcx hdi hsi h8 ?_ (hcu.inFrW (by omega) (by simp only [fXc]; omega))
+      (safe_high L (by simp only [fXc]; omega) (by simp only [fXc]; omega))
+      (fun i hi => hcu.inDg (o := i) (n := 1) (by omega) (by omega))
+      (fun i hi hcon => hL.kg _ (Offset.sub_base L.B (k := 248 + 8 * L.e) (by simp only [fXc]; omega) _ hcon)
+        (Offset.contains_base L.dg (d := i) (n := 1) (k := dn) (by omega) (by omega)))) fun _ h => h.1
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 24 + fXc + _) (by simp only [fXc]; omega),
+    Nat.mod_eq_of_lt (by simp only [fXc]; omega)]
+  simp only [fXc]; omega
+
 /-- If `big`: the digest for `core`, the digest's number shifted left by
 `sh` bits, in `Q` bytes at `fXc`. -/
 theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.H.D ≤ dn) {t : State}
