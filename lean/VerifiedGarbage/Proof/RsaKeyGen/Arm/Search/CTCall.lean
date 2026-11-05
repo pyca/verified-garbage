@@ -120,7 +120,7 @@ theorem argWord_ct (p : SearchPublic) (T : List Nat) {j : Nat} (hj : j < 7) {adj
       WP isa (.block adjust) t fun t' => (t'.gpr .r12 = f used (t.gpr .r12) ∧ t'.mem = t.mem) ∧ Rest [.r12] t t')
     (hv : ∀ o used, SearchInput p o → (callArgs p used)[j]? = some (j, f used (stackArg o j)))
     {hc : VG.Taint.Hint VG.Arm.Taint.T}
-    (htaint : (taint.check (Taint.ofRegs [.lr]) (.block (adjust ++ [.str .r12 .lr (4 * j)])) hc).isSome = true) :
+    (htaint : (taint.check (Taint.ofRegs [.lr]) (.block (adjust ++ ([.str .r12 .lr (4 * j)] : List Instr))) hc).isSome = true) :
     RelCT isa (Two (ArgCT p T j)) (.block (argWord j adjust)) (Two (ArgCT p T (j + 1))) := by
   refine two_post ?_ fun q u ⟨o, s, hT, hl, hf, hk, hr, c, r⟩ =>
     WP.mono (argWord_ok hj (hadj q.1) (hv o q.1 hl.input) c) fun t ⟨c', k⟩ => ⟨o, s, hT, hl, hf, hk, hr, c', r.keep k⟩

@@ -174,7 +174,8 @@ def argHead : List Instr :=
   [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .mov .r3 (.reg .r7), .addSp .lr 0]
 
 theorem arguments_eq : arguments = argHead ++ (argWord 0 [] ++ (argWord 1 [] ++ (argWord 2 [] ++
-    (argWord 3 [.dp .add .r12 .r12 (.reg .r8)] ++ (argWord 4 [.dp .sub .r12 .r12 (.reg .r8)] ++
+    (argWord 3 ([.dp .add .r12 .r12 (.reg .r8)] : List Instr) ++
+      (argWord 4 ([.dp .sub .r12 .r12 (.reg .r8)] : List Instr) ++
       (argWord 5 [] ++ argWord 6 [])))))) := by
   simp only [arguments, argHead, List.append_assoc]
 

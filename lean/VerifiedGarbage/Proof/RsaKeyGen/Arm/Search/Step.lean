@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-! # One candidate of the search (ARMv7)
 
 `classify`, after a candidate: the search ends (`SearchDone`), or goes on

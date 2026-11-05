@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-! # A candidate call (ARMv7)
 
 `candidateRun`: the candidate's frame, its arguments, and the call of

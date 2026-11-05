@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
+
 /-! # The search's leaves (ARMv7): its terminal states, and zeros at `out` -/
 
 @[expose] public section
