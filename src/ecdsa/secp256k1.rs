@@ -80,29 +80,3 @@ impl<H: HmacHash> sealed::Functions<Secp256k1> for H {
 }
 
 impl<H: HmacHash> SignatureHash<Secp256k1> for H {}
-
-#[cfg(all(test, target_arch = "arm"))]
-mod umaal_tests {
-    use super::Mul;
-    use crate::arch::ecdsa_secp256k1::VG_ECDSA_SECP256K1_SIGN_UMAAL_FEATURES;
-    use crate::cpu::feature_sets;
-    use verified_garbage_cpu::Features;
-
-    /// The CPU features of the signature with the multiplications `m`.
-    fn required(m: Mul) -> Features {
-        match m {
-            Mul::Baseline => Features(0),
-            Mul::Umaal => VG_ECDSA_SECP256K1_SIGN_UMAAL_FEATURES,
-        }
-    }
-
-    /// The signature needs no CPU feature that the multiplications are not
-    /// selected for: on every set of features that selects them.
-    #[test]
-    fn whole_algorithm_features() {
-        for f in feature_sets() {
-            let bits = f.0;
-            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
-        }
-    }
-}

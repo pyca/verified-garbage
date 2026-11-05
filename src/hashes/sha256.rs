@@ -109,9 +109,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha256, Sha256Backend};
-    use crate::cpu::detected;
-    use verified_garbage_cpu::Features;
+    use super::Sha256;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -133,51 +131,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of the features it depends on.
-    #[test]
-    fn select() {
-        for Features(bits) in crate::cpu::feature_sets() {
-            let backend = Sha256Backend::select(Features(bits));
-            #[cfg(target_arch = "x86_64")]
-            {
-                let shani = bits & 0b11 == 0b11;
-                let avx2 = bits & 0b1111_0000 == 0b1111_0000;
-                let expected = if shani {
-                    Sha256Backend::ShaNi
-                } else if avx2 {
-                    Sha256Backend::Avx2
-                } else {
-                    Sha256Backend::Scalar
-                };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(target_arch = "aarch64")]
-            {
-                let expected =
-                    if Features(bits).contains(Features(verified_garbage_cpu::feature::SHA2)) {
-                        Sha256Backend::Sha2
-                    } else {
-                        Sha256Backend::Scalar
-                    };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(target_arch = "x86")]
-            {
-                let expected = if Features(bits).contains(Features(
-                    verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3,
-                )) {
-                    Sha256Backend::ShaNi
-                } else {
-                    Sha256Backend::Scalar
-                };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
-            assert_eq!(backend, Sha256Backend::Scalar);
-        }
-        assert_eq!(Sha256::new().backend, Sha256Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.

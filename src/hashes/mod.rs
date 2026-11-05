@@ -81,8 +81,9 @@ pub trait HashFunction: Clone {
 ///
 /// `tables`, if given, is every implementation's tables of functions
 /// (`crate::arch::fn_tables`), each with the generated constants of the CPU
-/// features it needs (none for the baseline ISA's), which `tables` returns
-/// for the verified functions that take a hash function as a table
+/// features it needs (none for the baseline ISA's: it fails to compile if
+/// they are not all among those `select` requires to choose that
+/// implementation), which `tables` returns for the verified functions that take a hash function as a table
 /// (`tables::TableHash`): its table of `Hash`, its table of `MdHash` and,
 /// on the architectures with tables of `Hmac` (`tables::Tables`), its table
 /// of `Hmac`. The match is exhaustive, so an implementation without its
@@ -156,11 +157,27 @@ macro_rules! streaming_hash {
         }
 
         impl $backend {
+            /// The CPU features `select` requires to choose each
+            /// implementation, by its discriminant (none for the baseline):
+            /// every CPU it is chosen for has them, so a function chosen
+            /// with it may need no other, which its caller checks when it
+            /// compiles (`assert!` in a `const`). (A hash function with no
+            /// implementation but the baseline, and no tables, does not use
+            /// it.)
+            #[allow(dead_code)]
+            pub(crate) const REQUIRES: &[verified_garbage_cpu::Features] = &[
+                verified_garbage_cpu::Features(0),
+                $(
+                    $(#[$attr])*
+                    verified_garbage_cpu::Features::all(&[$($req),*]),
+                )*
+            ];
+
             /// The best implementation a CPU with the features `f` can run.
             pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
                 $(
                     $(#[$attr])*
-                    if f.contains(const { verified_garbage_cpu::Features::all(&[$($req),*]) }) {
+                    if f.contains(Self::REQUIRES[Self::$variant as usize]) {
                         return Self::$variant;
                     }
                 )*
@@ -232,18 +249,29 @@ macro_rules! streaming_hash {
         }
 
         $(
+        // Each implementation's tables need no CPU feature that `select`
+        // does not require to choose it.
+        $(
+            $(#[$tattr])*
+            const _: () = assert!(
+                $backend::REQUIRES[$backend::$tvariant as usize].contains(
+                    verified_garbage_cpu::Features::all(&[$($threq,)* $($tmreq,)* $($($thmreq),*)?])
+                ),
+                "a table needs a CPU feature its implementation is not chosen for"
+            );
+        )*
+
         impl $backend {
-            /// The tables of functions of this implementation, each with
-            /// the CPU features its functions need.
+            /// The tables of functions of this implementation.
             pub(crate) fn tables(self) -> $crate::hashes::tables::Tables {
                 match self {
                     $($(#[$tattr])* Self::$tvariant => $crate::hashes::tables::Tables {
                         #[cfg(feature = "alloc")]
-                        hash: (&$thash, verified_garbage_cpu::Features::all(&[$($threq),*])),
+                        hash: &$thash,
                         #[cfg(feature = "alloc")]
-                        md_hash: (&$tmd, verified_garbage_cpu::Features::all(&[$($tmreq),*])),
+                        md_hash: &$tmd,
                         $(
-                        hmac: (&$thmac, verified_garbage_cpu::Features::all(&[$($thmreq),*])),
+                        hmac: &$thmac,
                         )?
                     },)*
                 }

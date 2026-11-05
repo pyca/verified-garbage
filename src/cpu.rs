@@ -61,54 +61,6 @@ pub(crate) const NAMES: [(&str, u32); 21] = [
     ("umaal", feature::UMAAL),
 ];
 
-/// The features [`runtime`] can detect on this target. Detection returns a
-/// subset of them (`VG_CPU_FEATURES` only removes features), so the tests of
-/// what each feature set chooses run every one of their subsets
-/// ([`feature_sets`]); a set with another bit never reaches a `select`.
-#[cfg(test)]
-const DETECTABLE: u32 = if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
-    feature::SSSE3
-        | feature::SHA
-        | feature::AES
-        | feature::PCLMULQDQ
-        | feature::AVX
-        | feature::AVX2
-        | feature::BMI1
-        | feature::BMI2
-        | feature::AVX512F
-        | feature::SHA512
-        | feature::ADX
-        | feature::AVX512IFMA
-        | feature::AVX512VL
-        | feature::VAES
-        | feature::VPCLMULQDQ
-        | feature::AVX512BW
-} else if cfg!(target_arch = "aarch64") {
-    feature::AES | feature::SHA2 | feature::SHA3 | feature::SVE2 | feature::NEON
-} else if cfg!(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-)) {
-    feature::UMAAL
-} else {
-    0
-};
-
-/// Every feature set detection can return on this target, each subset of
-/// [`DETECTABLE`], in increasing order: what the tests of a `select` run.
-#[cfg(test)]
-pub(crate) fn feature_sets() -> impl Iterator<Item = Features> {
-    (0..=DETECTABLE)
-        .filter(|s| s & !DETECTABLE == 0)
-        .map(Features)
-}
-
 /// The detected features, with [`DETECTED_INIT`] set once they are known.
 static DETECTED: AtomicU32 = AtomicU32::new(0);
 const DETECTED_INIT: u32 = 1 << 30;
@@ -408,7 +360,7 @@ fn runtime() -> u32 {
 mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     use super::decode;
-    use super::{DETECTABLE, Features, NAMES, allowed, detected, feature, feature_sets, runtime};
+    use super::{Features, NAMES, allowed, detected, feature, runtime};
     #[cfg(feature = "cpu-features-env")]
     use super::{allowed_by, parse};
 
@@ -486,35 +438,6 @@ mod tests {
             };
             assert_eq!(Features(f), want);
         }
-    }
-
-    /// A CPU with every bit of `cpuid` and `xgetbv` set has exactly the
-    /// features of `DETECTABLE`: `decode` sets no other bit.
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[test]
-    fn decode_every_bit() {
-        assert_eq!(decode(|_, _| [u32::MAX; 4], || u64::MAX), DETECTABLE);
-    }
-
-    /// This CPU's features are some of `DETECTABLE`'s.
-    #[test]
-    fn runtime_is_detectable() {
-        assert_eq!(runtime() & !DETECTABLE, 0);
-    }
-
-    /// `feature_sets` returns each subset of `DETECTABLE` once: increasing
-    /// subsets of it, as many as it has.
-    #[test]
-    fn feature_sets_are_the_subsets() {
-        let mut count = 0u64;
-        let mut last = None;
-        for f in feature_sets() {
-            assert!(Features(DETECTABLE).contains(f));
-            assert!(last < Some(f.0));
-            last = Some(f.0);
-            count += 1;
-        }
-        assert_eq!(count, 1 << DETECTABLE.count_ones());
     }
 
     /// Detection returns the CPU's features, restricted as

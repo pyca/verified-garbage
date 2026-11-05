@@ -60,30 +60,30 @@ enum Field {
 }
 
 impl Field {
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant: every CPU it is chosen for has them.
+    #[cfg(target_arch = "x86_64")]
+    const REQUIRES: &[Features] = &{
+        let adx = Features::all(&[
+            VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+            VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
+            VG_ED25519_VERIFY_ADX_FEATURES,
+        ]);
+        let ifma = Features::all(&[
+            adx,
+            VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+            VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
+            VG_ED25519_VERIFY_IFMA_FEATURES,
+        ]);
+        [Features(0), adx, ifma]
+    };
+
     /// The fastest field multiplications a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Field {
-        let adx = f.contains(
-            const {
-                Features::all(&[
-                    VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
-                    VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
-                    VG_ED25519_VERIFY_ADX_FEATURES,
-                ])
-            },
-        );
-        let ifma = f.contains(
-            const {
-                Features::all(&[
-                    VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
-                    VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
-                    VG_ED25519_VERIFY_IFMA_FEATURES,
-                ])
-            },
-        );
-        if adx && ifma {
+        if f.contains(Self::REQUIRES[Field::Ifma as usize]) {
             Field::Ifma
-        } else if adx {
+        } else if f.contains(Self::REQUIRES[Field::Adx as usize]) {
             Field::Adx
         } else {
             Field::Baseline
@@ -97,6 +97,121 @@ impl Field {
         Field::Baseline
     }
 }
+
+/// Fails to compile unless the operations run with SHA-512's implementation
+/// `$s` and the field's `$f` need no CPU feature, of the constants `$req`,
+/// that their `select`s do not require to choose them.
+#[cfg(target_arch = "x86_64")]
+macro_rules! assert_pair {
+    ($s:ident, $f:ident, [$($req:ident),*]) => {
+        const _: () = assert!(
+            Features::all(&[
+                Sha512Backend::REQUIRES[Sha512Backend::$s as usize],
+                Field::REQUIRES[Field::$f as usize],
+            ])
+            .contains(Features::all(&[$(crate::arch::ed25519::$req),*])),
+            concat!(
+                "an Ed25519 operation needs a CPU feature SHA-512's ",
+                stringify!($s),
+                " and the field's ",
+                stringify!($f),
+                " are not chosen for"
+            )
+        );
+    };
+}
+
+// Key derivation, signing and verification (with the key derivation of the
+// field's implementation, which does not hash) for each pair.
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    Scalar,
+    Adx,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
+        VG_ED25519_VERIFY_ADX_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    Scalar,
+    Ifma,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_VERIFY_IFMA_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    ShaNi,
+    Baseline,
+    [
+        VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES,
+        VG_ED25519_VERIFY_SHANI_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    ShaNi,
+    Adx,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES,
+        VG_ED25519_VERIFY_SHANI_ADX_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    ShaNi,
+    Ifma,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES,
+        VG_ED25519_VERIFY_SHANI_IFMA_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    Avx2,
+    Baseline,
+    [
+        VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES,
+        VG_ED25519_VERIFY_AVX2_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    Avx2,
+    Adx,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES,
+        VG_ED25519_VERIFY_AVX2_ADX_FEATURES
+    ]
+);
+#[cfg(target_arch = "x86_64")]
+assert_pair!(
+    Avx2,
+    Ifma,
+    [
+        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES,
+        VG_ED25519_VERIFY_AVX2_IFMA_FEATURES
+    ]
+);
+
+// Signing and verification with SHA-512's `_sha3` need no CPU feature that
+// its `select` does not require to choose it.
+#[cfg(target_arch = "aarch64")]
+const _: () = assert!(
+    Sha512Backend::REQUIRES[Sha512Backend::Sha3 as usize].contains(Features::all(&[
+        crate::arch::ed25519::VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES,
+        crate::arch::ed25519::VG_ED25519_VERIFY_SHA3_FEATURES,
+    ])),
+    "an Ed25519 operation needs a CPU feature SHA-512's _sha3 is not chosen for"
+);
 
 /// Why signature verification failed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -320,111 +435,18 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
     signature
 }
 
-#[cfg(all(test, target_arch = "aarch64"))]
-mod tests {
-    use super::Sha512Backend;
-    use crate::arch::ed25519::{
-        VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES,
-    };
-    use crate::cpu::feature_sets;
-    use verified_garbage_cpu::Features;
-
-    /// Every feature set selecting SHA-512's optimized backend also supports
-    /// each complete Ed25519 operation that uses that backend.
-    #[test]
-    fn whole_algorithm_features() {
-        for features in feature_sets() {
-            match Sha512Backend::select(features) {
-                Sha512Backend::Scalar => {}
-                Sha512Backend::Sha3 => {
-                    assert!(features.contains(Features::all(&[
-                        VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES,
-                        VG_ED25519_VERIFY_SHA3_FEATURES,
-                    ])));
-                }
-            }
-        }
-    }
-}
-
 #[cfg(all(test, target_arch = "x86_64"))]
 mod x86_64_tests {
     use super::{
-        Features, Field, Sha512Backend, VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
-        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES, VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
-        VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES, VG_ED25519_VERIFY_ADX_FEATURES,
+        Features, Field, Sha512Backend, VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
         VG_ED25519_VERIFY_IFMA_FEATURES,
     };
     use crate::arch::ed25519::{
         VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES, VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES,
         VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES, VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES,
         VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES, VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES,
-        VG_ED25519_VERIFY_AVX2_ADX_FEATURES, VG_ED25519_VERIFY_AVX2_FEATURES,
-        VG_ED25519_VERIFY_AVX2_IFMA_FEATURES, VG_ED25519_VERIFY_SHANI_ADX_FEATURES,
-        VG_ED25519_VERIFY_SHANI_FEATURES, VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
     };
-    use crate::cpu::feature_sets;
     use verified_garbage_cpu::feature;
-
-    /// The CPU features of the three operations with SHA-512's backend `s`
-    /// and the field multiplications `f`.
-    fn required(s: Sha512Backend, f: Field) -> [Features; 3] {
-        match (s, f) {
-            (Sha512Backend::Scalar, Field::Baseline) => [Features(0); 3],
-            (Sha512Backend::Scalar, Field::Adx) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
-                VG_ED25519_VERIFY_ADX_FEATURES,
-            ],
-            (Sha512Backend::ShaNi, Field::Baseline) => [
-                Features(0),
-                VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES,
-                VG_ED25519_VERIFY_SHANI_FEATURES,
-            ],
-            (Sha512Backend::ShaNi, Field::Adx) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES,
-                VG_ED25519_VERIFY_SHANI_ADX_FEATURES,
-            ],
-            (Sha512Backend::Avx2, Field::Baseline) => [
-                Features(0),
-                VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES,
-                VG_ED25519_VERIFY_AVX2_FEATURES,
-            ],
-            (Sha512Backend::Avx2, Field::Adx) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES,
-                VG_ED25519_VERIFY_AVX2_ADX_FEATURES,
-            ],
-            (Sha512Backend::Scalar, Field::Ifma) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
-                VG_ED25519_VERIFY_IFMA_FEATURES,
-            ],
-            (Sha512Backend::ShaNi, Field::Ifma) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES,
-                VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
-            ],
-            (Sha512Backend::Avx2, Field::Ifma) => [
-                VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
-                VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES,
-                VG_ED25519_VERIFY_AVX2_IFMA_FEATURES,
-            ],
-        }
-    }
-
-    /// Each complete Ed25519 operation needs no CPU feature that SHA-512's
-    /// backend and the field's are not selected for: on every set of
-    /// features that selects them.
-    #[test]
-    fn whole_algorithm_features() {
-        for f in feature_sets() {
-            let bits = f.0;
-            let r = required(Sha512Backend::select(f), Field::select(f));
-            assert!(f.contains(Features::all(&r)), "{bits:#b}");
-        }
-    }
 
     /// The implementations chosen with exactly the features of each one,
     /// with only one of BMI2 and ADX, which `_adx` needs both of, with both

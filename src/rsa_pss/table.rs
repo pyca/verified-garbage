@@ -44,8 +44,8 @@ pub(super) fn table(hash: Hash, f: Features) -> super::Table {
 /// The verified functions: `functions`, which chooses, for a CPU with the
 /// features `f`, the implementation of the RSA operations it runs best
 /// (`crate::rsa::Backend`), and returns signing and verification calling
-/// them; and a test that each needs no CPU feature that was not required to
-/// choose it.
+/// them; it does not compile if one needs a CPU feature that RSA's
+/// `select` does not require to choose its implementation.
 ///
 /// Each arm names, for one of RSA's backends on the architecture, signing
 /// or verification, with the generated constants of the CPU features it
@@ -55,6 +55,25 @@ macro_rules! pss_functions {
         sign: {$($(#[$sattr:meta])* $sb:ident => $sign:path [$($sreq:path),*]),* $(,)?},
         verify: {$($(#[$vattr:meta])* $vb:ident => $verify:path [$($vreq:path),*]),* $(,)?} $(,)?
     ) => {
+        // Each function needs no CPU feature that RSA's `select` does not
+        // require to choose the implementation it is listed for.
+        $(
+            $(#[$sattr])*
+            const _: () = assert!(
+                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$sb as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($sreq),*])),
+                "a signature needs a CPU feature its implementation is not chosen for"
+            );
+        )*
+        $(
+            $(#[$vattr])*
+            const _: () = assert!(
+                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$vb as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($vreq),*])),
+                "a verification needs a CPU feature its implementation is not chosen for"
+            );
+        )*
+
         /// The functions, `(sign, verify)`, for the implementation that a
         /// CPU with the features `f` runs best.
         pub(in crate::rsa_pss) fn functions(
@@ -69,28 +88,6 @@ macro_rules! pss_functions {
                     $($(#[$vattr])* crate::rsa::Backend::$vb => $verify,)*
                 },
             )
-        }
-
-        #[cfg(test)]
-        mod function_tests {
-            /// Each function needs no CPU feature that the implementations
-            /// it calls were not chosen for: on every set of features.
-            #[test]
-            fn backend_features() {
-                for f in crate::cpu::feature_sets() {
-                    let bits = f.0;
-                    let rsa = crate::rsa::Backend::select(f);
-                    let sign = match rsa {
-                        $($(#[$sattr])* crate::rsa::Backend::$sb =>
-                            verified_garbage_cpu::Features::all(&[$($sreq),*]),)*
-                    };
-                    let verify = match rsa {
-                        $($(#[$vattr])* crate::rsa::Backend::$vb =>
-                            verified_garbage_cpu::Features::all(&[$($vreq),*]),)*
-                    };
-                    assert!(f.contains(sign) && f.contains(verify), "{bits:#b}");
-                }
-            }
         }
     };
 }

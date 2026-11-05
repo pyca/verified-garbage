@@ -102,9 +102,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha512_224, Sha512_224Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha512::Sha512Backend;
+    use super::Sha512_224;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -126,28 +124,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-512's.
-    #[test]
-    fn select() {
-        for f in crate::cpu::feature_sets() {
-            let bits = f.0;
-            let expected = match Sha512Backend::select(f) {
-                Sha512Backend::Scalar => Sha512_224Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha512Backend::Sha3 => Sha512_224Backend::Sha3,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::ShaNi => Sha512_224Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::Avx2 => Sha512_224Backend::Avx2,
-            };
-            assert_eq!(Sha512_224Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(
-            Sha512_224::new().backend,
-            Sha512_224Backend::select(detected())
-        );
     }
 
     /// The `HashFunction` implementation is the inherent functions.

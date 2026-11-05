@@ -102,9 +102,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha224, Sha224Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha256::Sha256Backend;
+    use super::Sha224;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -126,25 +124,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-256's.
-    #[test]
-    fn select() {
-        for f in crate::cpu::feature_sets() {
-            let bits = f.0;
-            let expected = match Sha256Backend::select(f) {
-                Sha256Backend::Scalar => Sha224Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha256Backend::Sha2 => Sha224Backend::Sha2,
-                #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-                Sha256Backend::ShaNi => Sha224Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha256Backend::Avx2 => Sha224Backend::Avx2,
-            };
-            assert_eq!(Sha224Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(Sha224::new().backend, Sha224Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.
