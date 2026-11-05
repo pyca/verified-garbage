@@ -21,7 +21,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-! # The parameter search's timing depends on its public data (RISC-V)
 
@@ -88,9 +90,9 @@ private theorem zero_header (p : SPub) (s : State) (h : SAny p s) :
   have hv := h.header (j := 5) (v := p.op) (by simp [SPub.headers])
   have hv6 := h.header (j := 6) (v := BitVec.ofNat 64 p.len) (by simp [SPub.headers])
   simp only [Bignum.word, Nat.reduceMul] at hv hv6
-  refine WP.mono (KeyGeneration.WP.ctl (Q := fun t => (t.gpr .t0 = p.op ∧
+  refine WP.mono_syms (KeyGeneration.WP.ctl (Q := fun t => (t.gpr .t0 = p.op ∧
     t.gpr .t1 = BitVec.ofNat 64 p.len) ∧ t.mem = s.mem) ?_ (by rfl))
-    fun _ ⟨⟨hr, hm⟩, k, hsp⟩ => ⟨⟨original, used, _, h.keep k hsp hm⟩, hr⟩
+    fun _ ⟨⟨hr, hm⟩, k, hsp⟩ hy => ⟨⟨original, used, _, h.keep k hsp hm hy⟩, hr⟩
   brun [ldf, h.s0, hv, hv6, a.ld 40 (by decide), a.ld 48 (by decide), a.al 40 (by decide) (by decide),
     a.al 48 (by decide) (by decide), fin64_exec_li_zero]
 
@@ -135,7 +137,7 @@ def SCallCT (S : Nat) (q : SPoint) (u : State) : Prop :=
   q.inputs.S = S ∧ ∃ original s, SLive q.inputs original q.used q.k s ∧
     SArgs q.inputs q.used u ∧
     u.mem = writeController (allocd 16 s).mem (callSp q.inputs) (callValues q.inputs) ∧
-    Keep tmpRegs (allocd 16 s) u ∧ u.sp = (allocd 16 s).sp
+    Keep tmpRegs (allocd 16 s) u ∧ u.sp = (allocd 16 s).sp ∧ u.syms = s.syms
 
 /-- After the candidate. -/
 def SRan (S : Nat) (q : SPoint) (t : State) : Prop :=
@@ -151,16 +153,23 @@ theorem allocated_pins (S : Nat) : Pins (SAllocated S) [.s0] := by
 private theorem arguments_ready (S : Nat) (q : SPoint) (u : State) (h : SAllocated S q u) :
     WP isa (.block arguments) u (SCallCT S q) := by
   obtain ⟨s, ⟨⟨hS, original, h⟩, _⟩, rfl⟩ := h
-  exact WP.mono (search_arguments_ok h) fun _ ⟨⟨ha, hm⟩, k, hsp⟩ => ⟨hS, original, s, h, ha, hm, k, hsp⟩
+  exact WP.mono_syms (search_arguments_ok h) fun _ ⟨⟨ha, hm⟩, k, hsp⟩ hy => ⟨hS, original, s, h, ha, hm, k, hsp, hy⟩
 
 theorem cand_pub {p : SPub} {used : Nat} {t₁ t₂ : State} (hf : CallFacts p used)
     (he₁ : CandEntry p used t₁) (he₂ : CandEntry p used t₂)
     (hr₁ : bytesAt t₁.mem (p.rp + BitVec.ofNat 64 used) (p.randLen - used) = p.rand.drop used)
     (hr₂ : bytesAt t₂.mem (p.rp + BitVec.ofNat 64 used) (p.randLen - used) = p.rand.drop used) {S : Nat} :
-    (Proof.Ffdh.parameterCandidateContract abi S).pub t₁ t₂ := by
+    (candK S).pub t₁ t₂ := by
   have hrl : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used :=
     toNat_ofNat_lt (by have := hf.randLen; omega)
-  sig_pub [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs,
+  unfold candK Proof.Ffdh.sievedParameterCandidateContract
+  rw [show tables = [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] from rfl]
+  refine pub_consts.mpr ⟨?_, fun c hc => ?_⟩
+  swap
+  · rw [List.mem_singleton] at hc
+    subst hc
+    exact he₁.sy.trans he₂.sy.symm
+  sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs,
     stackArgs_one, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero, he₁.a0, he₁.a1, he₁.a2, he₁.a3, he₁.a4, he₁.a5,
     he₁.a6, he₁.a7, he₁.sp, he₁.arg, he₂.a0, he₂.a1, he₂.a2, he₂.a3, he₂.a4, he₂.a5, he₂.a6, he₂.a7,
@@ -172,14 +181,18 @@ private theorem call_ready {S : Nat} {q : SPoint} {u : State} (h : SCallCT S q u
         (q.inputs.randLen - q.used) = q.inputs.rand.drop q.used ∧
       Covers (callRd q.inputs q.used ++ callWr q.inputs) (u.rd ++ u.wr) ∧
       Covers (callWr q.inputs) u.wr := by
-  obtain ⟨_, original, s, h, ha, hm, k, husp⟩ := h
+  obtain ⟨_, original, s, h, ha, hm, k, husp, hyu⟩ := h
   have hu : u.sp = callSp q.inputs := husp.trans (allocd_sp h)
-  exact ⟨h.callFacts, call_entry hu ha hm, by
+  have hT : TabAt q.inputs.T u.mem := h.input.table_frame (frame_of_callChanges q.inputs.S original
+    (candidate_frame (t := u) (d := 0) h (Nat.zero_le _) hm (fun _ _ => rfl))) h.table
+  have hy : u.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = q.inputs.T := by
+    rw [hyu, h.syms, ← h.input.2]; rfl
+  exact ⟨h.callFacts, call_entry hu ha hm hy hT, by
     simp only [State.withRegions_mem, State.callEntry_mem]; exact call_rand h hm,
     call_covers_reads h k.2.1 k.2.2, call_covers_writes h k.2.2⟩
 
 theorem cand_call_ct (c : Cand) : RelCT isa (Two (SCallCT c.S)) c.call (fun _ _ => True) := by
-  refine RelCT.callEx c.verified.1 c.verified.2.1 fun u₁ u₂ ⟨q, h₁, h₂, _⟩ => ?_
+  refine RelCT.callEx c.correct c.ct fun u₁ u₂ ⟨q, h₁, h₂, _⟩ => ?_
   obtain ⟨hf, e₁, r₁, c₁, w₁⟩ := call_ready h₁
   obtain ⟨_, e₂, r₂, c₂, w₂⟩ := call_ready h₂
   have hS : q.inputs.S = c.S := h₁.1
@@ -224,12 +237,12 @@ private theorem head_pointer (S : Nat) (q : SPoint) (s : State) (h : SRan S q s)
   have a := h.access
   have hv7 := h.header (j := 7) (v := q.inputs.up) (by simp [SPub.headers])
   simp only [Bignum.word, Nat.reduceMul] at hv7
-  refine WP.mono (WP.rdwr (WP.keep [.t0, .t2] (Q := fun t => t.gpr .t2 = q.inputs.up ∧ t.mem = s.mem) ?_
-    (by rfl) rfl)) fun t ⟨⟨⟨h2, hm⟩, k⟩, _, _, hsp⟩ => ?_
+  refine WP.mono_syms (WP.rdwr (WP.keep [.t0, .t2] (Q := fun t => t.gpr .t2 = q.inputs.up ∧ t.mem = s.mem) ?_
+    (by rfl) rfl)) fun t ⟨⟨⟨h2, hm⟩, k⟩, _, _, hsp⟩ hy => ?_
   · unfold head test
     simp only [List.cons_append, List.nil_append, List.take_succ_cons, List.take_zero]
     brun [ldf, h.s0, hv7, a.ld 56 (by decide), a.al 56 (by decide) (by decide)]
-  refine ⟨⟨hS, hk, original, h.keep k hsp hm, ?_⟩, h2⟩
+  refine ⟨⟨hS, hk, original, h.keep k hsp hm hy, ?_⟩, h2⟩
   unfold CandPost at hp ⊢
   rw [hm, k.gpr (by decide)]
   exact hp
@@ -258,8 +271,8 @@ private theorem next_ready (S : Nat) (q : SPoint) (s : State)
     (h : SGuard S 1 q s ∧ isa.eval (.zero .t1) s = some false) :
     WP isa (.block (test 2)) s (SGuard S 2 q) := by
   obtain ⟨⟨⟨hS, o, hl⟩, hk, h0, _, hp, h2⟩, _⟩ := h
-  refine WP.mono (test_ok h0 (status_lt _) (.inr rfl)) fun t ⟨⟨he, hm⟩, kt, hsp⟩ => ?_
-  refine ⟨⟨hS, o, hl.keep kt hsp hm⟩, hk, (kt.gpr (by decide)).trans h0, he, ?_, (kt.gpr (by decide)).trans h2⟩
+  refine WP.mono_syms (test_ok h0 (status_lt _) (.inr rfl)) fun t ⟨⟨he, hm⟩, kt, hsp⟩ hy => ?_
+  refine ⟨⟨hS, o, hl.keep kt hsp hm hy⟩, hk, (kt.gpr (by decide)).trans h0, he, ?_, (kt.gpr (by decide)).trans h2⟩
   unfold CandPost at hp ⊢
   rw [hm, kt.gpr (by decide)]
   exact hp
@@ -474,18 +487,19 @@ private theorem entry_ct (S : Nat) : RelCT isa (Two (SStart S)) (.block entry) (
 /-- After the entry: the controller's words written. -/
 def SEntered (S : Nat) (p : SPub) (t : State) : Prop :=
   ∃ s, SStart S p s ∧ t.gpr .s0 = p.control ∧
-    t.mem = writeController s.mem p.control (entryValues s) ∧ Keep entryRegs s t ∧ t.sp = s.sp
+    t.mem = writeController s.mem p.control (entryValues s) ∧ Keep entryRegs s t ∧ t.sp = s.sp ∧
+    t.syms = s.syms
 
 private theorem entry_ready (S : Nat) (p : SPub) (s : State) (h : SStart S p s) :
     WP isa (.block entry) s (SEntered S p) :=
-  WP.mono (entry_ok h.1) fun _ ⟨⟨hx, hm⟩, k, hsp⟩ => ⟨s, h, hx, hm, k, hsp⟩
+  WP.mono_syms (entry_ok h.1) fun _ ⟨⟨hx, hm⟩, k, hsp⟩ hy => ⟨s, h, hx, hm, k, hsp, hy⟩
 
 private def initialPoint (p : SPub) : SPoint := ⟨p, 0, p.attempts⟩
 
 private theorem entered_ctl {S : Nat} {p : SPub} {t : State} (h : SEntered S p t) :
     SCTL S (initialPoint p) (framed .ra t) := by
-  obtain ⟨s, ⟨hi, hS⟩, hx, hm, k, hsp⟩ := h
-  exact ⟨hS, s, search_start hi hx hm k hsp⟩
+  obtain ⟨s, ⟨hi, hS⟩, hx, hm, k, hsp, hy⟩ := h
+  exact ⟨hS, s, search_start hi hx hm k hsp hy⟩
 
 def SCTDone (p : SPub) (s : State) : Prop := ∃ original r, SDone p original r s
 
@@ -506,8 +520,8 @@ private theorem search_ct (c : Cand) : RelCT isa (Two (SEntered c.S)) (search c.
 
 private theorem search_ready (c : Cand) (q : SPub) (t : State) (h : SEntered c.S q t) :
     WP isa (search c.call) t (SCTDone q) := by
-  obtain ⟨s, ⟨hi, hS⟩, hx, hm, k, hsp⟩ := h
-  exact WP.mono (search_body c hS hi hx hm k hsp) fun _ ⟨hd, _, _⟩ => ⟨s, _, hd⟩
+  obtain ⟨s, ⟨hi, hS⟩, hx, hm, k, hsp, hy⟩ := h
+  exact WP.mono (search_body c hS hi hx hm k hsp hy) fun _ ⟨hd, _, _⟩ => ⟨s, _, hd⟩
 
 private theorem finish_pointer (p : SPub) (s : State) (h : SCTDone p s) :
     WP isa (.block (finish.take 3)) s fun t => t.gpr .t0 = p.up ∧ t.gpr .s0 = p.control := by
@@ -538,7 +552,7 @@ theorem code_ct (c : Cand) : RelCT isa (Two (SStart c.S)) (code c.call) (fun _ _
     (RelCT.seq (two_post (search_ct c) (search_ready c)) (two_map id (fun _ _ h => h) finish_ct))
 
 theorem public_data {S : Nat} {s t : State} (h : searchPub s t) : sOfState S s = sOfState S t := by
-  obtain ⟨hsp, hr, hw, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1⟩ := h
+  obtain ⟨hsp, hr, hw, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, hsy⟩ := h
   change [word s.mem (stackArg s 1) 0, word s.mem (stackArg s 1) 8, word s.mem (stackArg s 1) 16,
     word s.mem (stackArg s 1) 24] = [word t.mem (stackArg t 1) 0, word t.mem (stackArg t 1) 8,
       word t.mem (stackArg t 1) 16, word t.mem (stackArg t 1) 24] at hw
@@ -550,7 +564,7 @@ theorem public_data {S : Nat} {s t : State} (h : searchPub s t) : sOfState S s =
     exact (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hr
   unfold sOfState
   rw [genAttempts, genAttempts, h0, hrand, hsp, r0, r2, r5, r7, genLen, genLen, r1, genBits, genBits, r3,
-    genGen, genGen, r4, r6, a0, a1]
+    genGen, genGen, r4, r6, a0, a1, hsy]
 
 theorem search_constantTime (c : Cand) :
     ConstantTime isa (searchContract c.S).pre (searchContract c.S).pub (code c.call) := by

@@ -3,21 +3,24 @@ module
 public import VerifiedGarbage.Impl.Ffdh.RISCV64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.KeyGeneration.Data
 public import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
+public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
-import VerifiedGarbage.Proof.Ffdh.GenerationTape
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-! # The parameter search's contract, public data, loop states and writes (RISC-V)
 
 As on PPC64LE (`Proof/Ffdh/PPC64LE/Generation/Search/`): `searchContract` is
 the controller on the machine, for a candidate (`Cand`) verified against
-`vg_ffdh_parameter_candidate`'s contract with `S` bytes of stack; `SPub` is
+`vg_ffdh_parameter_candidate_sieved`'s contract with `S` bytes of stack; `SPub` is
 everything two constant-time runs share, the tape included; a loop state
 (`SLive`) is at an offset into the tape with attempts left, in the frame
 saving `ra`, and the search from there (`SPub.tail`) is what the controller
@@ -45,13 +48,24 @@ open VG.Impl.Ffdh.RISCV64.Generation.Search
 
 /-! ## The contract on the machine -/
 
+/-- RSA's table of trial division, which the candidate reads. -/
+abbrev tables : List (String × List (BitVec 64)) := VG.Impl.RsaKeyGen.TrialTable32.consts
+
+/-- The table in memory `m` at `T`. -/
+def TabAt (T : Addr) (m : Mem) : Prop :=
+  ∀ i < 1024, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 =
+    BitVec.ofNat 64 (VG.Impl.RsaKeyGen.TrialTable32.entry i)
+
 /-- The stack the controller uses below the stack pointer, for a candidate
 using `S` bytes. -/
 abbrev stackUse (S : Nat) : Nat := S + 32
 
-/-- An implementation of `vg_ffdh_parameter_candidate`, as the controller
-calls it: its name, its code, the stack it uses, and its proof against the
-candidate's contract with that stack. -/
+/-- The candidate's internal contract with `S` bytes of stack, and the table. -/
+abbrev candK (S : Nat) : Contract isa := Proof.Ffdh.sievedParameterCandidateContract (abi.withConsts tables) S
+
+/-- An implementation of `vg_ffdh_parameter_candidate_sieved`, as the
+controller calls it: its name, its code, the stack it uses, and its proofs
+against the candidate's contract with that stack. -/
 structure Cand where
   name : String
   code : Prog isa
@@ -59,7 +73,8 @@ structure Cand where
   pos : 0 < S
   small : S ≤ 2 ^ 16
   stack : sdepth code ≤ S
-  verified : Verified target code (Proof.Ffdh.parameterCandidateContract abi S)
+  correct : ∀ s, (candK S).pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (candK S).post s s'
+  ct : ConstantTime isa (candK S).pre (candK S).pub code
 
 /-- The candidate, as the controller calls it. -/
 abbrev Cand.call (c : Cand) : Prog isa := .call c.name c.code
@@ -70,10 +85,12 @@ def inRand (s : State) : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
 def inScr (s : State) : Region := ⟨s.gpr .a7, (stackArg s 0).toNat * 8⟩
 def inCtl (s : State) : Region := ⟨stackArg s 1, 128⟩
 def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
+/-- The table of trial division, where the state names it. -/
+def inTab (s : State) : Region := ⟨s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol, 8192⟩
 
 /-- The buffers the controller writes, and those it only reads. -/
 def inWrites (s : State) : List Region := [inOut s, inUsed s, inScr s, inCtl s]
-def inReads (s : State) : List Region := [inRand s, inArgs s]
+def inReads (s : State) : List Region := [inRand s, inArgs s, inTab s]
 
 /-- The width, the bits, the generator, the tape and the attempts on entry. -/
 abbrev genLen (s : State) : Nat := (s.gpr .a1).toNat
@@ -96,10 +113,12 @@ def searchPre (S : Nat) (s : State) : Prop :=
     genAttempts s ≤ parameterAttempts (genBits s) ∧
     s.mem.readW (stackArg s 1 + 8) 64 = BitVec.ofNat 64 (genLen s) ∧
     s.mem.readW (stackArg s 1 + 16) 64 = BitVec.ofNat 64 (parameterEntropy (genBits s)) ∧
-    (s.gpr .a6).toNat ≤ parameterEntropy (genBits s)
+    (s.gpr .a6).toNat ≤ parameterEntropy (genBits s) ∧
+    (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).toNat % 64 = 0 ∧
+    TabAt (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) s.mem
 
 def searchResult (s : State) : ParameterSearchResult :=
-  parameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
+  sievedParameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
 
 def searchPost (s t : State) : Prop :=
   ((t.gpr .a0).setWidth 32).toNat = (searchResult s).status ∧
@@ -112,14 +131,15 @@ def searchPost (s t : State) : Prop :=
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
       BitVec.ofNat 64 (searchResult s).requested]
 
-/-- What timing may depend on: the arguments, the tape and the controller's
-public words. -/
+/-- What timing may depend on: the arguments, the tape, the controller's
+public words and the table's address. -/
 def searchPub (s t : State) : Prop :=
   s.sp = t.sp ∧ (genRand s).map (·.toNat) = (genRand t).map (·.toNat) ∧
     wordsAt s.mem (stackArg s 1) 4 = wordsAt t.mem (stackArg t 1) 4 ∧
     s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1 ∧ s.gpr .a2 = t.gpr .a2 ∧ s.gpr .a3 = t.gpr .a3 ∧
     (s.gpr .a4).setWidth 32 = (t.gpr .a4).setWidth 32 ∧ s.gpr .a5 = t.gpr .a5 ∧ s.gpr .a6 = t.gpr .a6 ∧
-    s.gpr .a7 = t.gpr .a7 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1
+    s.gpr .a7 = t.gpr .a7 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1 ∧
+    s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def searchContract (S : Nat) : Contract isa where
   pre := searchPre S
@@ -144,6 +164,8 @@ structure SPub where
   /-- The stack the candidate uses. -/
   S : Nat
   rand : List Byte
+  /-- The table of trial division. -/
+  T : Addr
 
 def sOfState (S : Nat) (s : State) : SPub where
   op := s.gpr .a0
@@ -160,6 +182,7 @@ def sOfState (S : Nat) (s : State) : SPub where
   attempts := genAttempts s
   S := S
   rand := genRand s
+  T := s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def SInput (p : SPub) (s : State) : Prop := searchPre p.S s ∧ sOfState p.S s = p
 
@@ -168,7 +191,7 @@ def Slots (m : Mem) (B : Addr) (L : List (Nat × BitVec 64)) : Prop := ∀ p ∈
 
 /-- The search from octet `used` of the tape, with `k` attempts left. -/
 def SPub.tail (p : SPub) (used k : Nat) : ParameterSearchResult :=
-  (parameterSearch p.bits p.gen k (p.rand.drop used)).consume used
+  (sievedParameterSearch p.bits p.gen k (p.rand.drop used)).consume used
 
 /-- The controller's words while it searches. -/
 def SPub.headers (p : SPub) (used k : Nat) : List (Nat × BitVec 64) :=
@@ -201,6 +224,8 @@ structure SLive (p : SPub) (original : State) (used k : Nat) (s : State) : Prop 
   savedS0 : word s.mem p.control 32 = original.gpr .s0
   random : bytesAt s.mem p.rp p.randLen = p.rand
   headers : Slots s.mem p.control (p.headers used k)
+  syms : s.syms = original.syms
+  table : TabAt p.T s.mem
 
 /-- The output of a finished search. -/
 def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
@@ -331,8 +356,16 @@ theorem entropy_word (h : SInput p s) :
   exact he
 
 theorem randLen_le (h : SInput p s) : p.randLen ≤ parameterEntropy p.bits := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr⟩ := h.1
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr, -⟩ := h.1
   rw [← h.2]; exact hr
+
+theorem table (h : SInput p s) : TabAt p.T s.mem := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ht⟩ := h.1
+  rw [← h.2]; exact ht
+
+theorem tab_al (h : SInput p s) : p.T.toNat % 64 = 0 := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1
+  rw [← h.2]; exact ha
 
 theorem randLen_lt (h : SInput p s) : p.randLen < 2 ^ 64 := by
   rw [← h.2]; exact BitVec.isLt _
@@ -367,6 +400,17 @@ theorem random_frame (h : SInput p s) {m m' : Mem} (hf : Frame (changes p.S s) m
     bytesAt m' p.rp p.randLen = bytesAt m p.rp p.randLen := by
   rw [← h.2]
   exact h.bytes_frame (r := inRand s) (by simp [inReads]) hf
+
+/-- The table's entries survive writes the controller may make. -/
+theorem table_frame (h : SInput p s) {m m' : Mem} (hf : Frame (changes p.S s) m m') (ht : TabAt p.T m) :
+    TabAt p.T m' := by
+  have hn := h.nowrap (r := inTab s) (by simp [inReads])
+  have hd := h.read_disjoint (r := inTab s) (by simp [inReads])
+  rw [← h.2] at ht ⊢
+  intro i hi
+  rw [← ht i hi]
+  exact hf.readW (r := inTab s) (Offset.contains_base _ (by simp only [inTab] at hn; omega_using [hn, hi])
+    (by omega_using [hi])) hd (by decide)
 
 theorem control_frame (h : SInput p s) {m m' : Mem} (hf : Frame (callChanges p.S s) m m')
     (j : Nat) (hj : j < 16) : word m' p.control (8 * j) = word m p.control (8 * j) := by
@@ -461,23 +505,24 @@ stack. -/
 theorem restore (h : SLive p original used k s)
     (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
     (hg : ∀ r ∈ preserved, t.gpr r = s.gpr r)
-    (hf : Frame (callChanges p.S original) s.mem t.mem) :
+    (hf : Frame (callChanges p.S original) s.mem t.mem) (hy : t.syms = s.syms) :
     SLive p original used k t := by
   have hc := h.input.control_frame hf
   have hf' := frame_of_callChanges p.S original hf
   refine ⟨h.input, h.used_le, h.k_le, hr.trans h.rd, hw.trans h.wr,
     hsp.trans h.sp, (hg .s0 (by decide)).trans h.s0,
-    fun r hr h0 => (hg r hr).trans (h.saved r hr h0), ?_, ?_, ?_⟩
+    fun r hr h0 => (hg r hr).trans (h.saved r hr h0), ?_, ?_, ?_, hy.trans h.syms,
+    h.input.table_frame hf' h.table⟩
   · exact (hc 4 (by decide)).trans h.savedS0
   · exact (h.input.random_frame hf').trans h.random
   · intro e he
     exact (hc e.1 (SPub.headers_index he)).trans (h.headers e he)
 
 theorem keep (h : SLive p original used k s) {rs : List Reg}
-    (kp : Keep rs s t) (hsp : t.sp = s.sp) (hm : t.mem = s.mem)
+    (kp : Keep rs s t) (hsp : t.sp = s.sp) (hm : t.mem = s.mem) (hy : t.syms = s.syms)
     (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
     SLive p original used k t := by
-  apply h.restore kp.2.1 kp.2.2 hsp (fun reg hr => kp.gpr (hregs reg hr))
+  apply h.restore kp.2.1 kp.2.2 hsp (fun reg hr => kp.gpr (hregs reg hr)) _ hy
   rw [hm]
   exact Frame.refl _ _
 
@@ -488,7 +533,7 @@ theorem update (h : SLive p original used k s) {u k' : Nat}
     (h4 : ∀ e ∈ values, 4 ≠ e.1)
     (hm : t.mem = writeController s.mem p.control values)
     (kp : Keep tmpRegs s t) (hsp : t.sp = s.sp)
-    (hh : Slots t.mem p.control (p.headers u k')) : SLive p original u k' t := by
+    (hh : Slots t.mem p.control (p.headers u k')) (hy : t.syms = s.syms) : SLive p original u k' t := by
   have hf : Frame (changes p.S original) s.mem t.mem := by
     rw [hm]
     apply (writeController_frame s.mem p.control values hb).sub
@@ -500,7 +545,8 @@ theorem update (h : SLive p original used k s) {u k' : Nat}
   have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr (by revert r hr; decide)
   refine ⟨h.input, hu, hk, kp.2.1.trans h.rd, kp.2.2.trans h.wr,
     hsp.trans h.sp, (hg .s0 (by decide)).trans h.s0,
-    fun reg hreg h0 => (hg reg hreg).trans (h.saved reg hreg h0), ?_, ?_, hh⟩
+    fun reg hreg h0 => (hg reg hreg).trans (h.saved reg hreg h0), ?_, ?_, hh, hy.trans h.syms,
+    h.input.table_frame hf h.table⟩
   · rw [hm]
     change word (writeController s.mem p.control values) p.control (8 * 4) = _
     rw [writeController_word _ _ _ hb 4 (by decide), controllerValue_unchanged _ _ _ h4]
@@ -557,7 +603,7 @@ theorem SDone.keep {p : SPub} {original s t : State} {result : ParameterSearchRe
 
 /-- The candidate at octet `used` of the tape. -/
 abbrev SPub.cand (p : SPub) (used : Nat) : Option (Option Nat × List Byte) :=
-  parameterCandidate p.bits p.gen (p.rand.drop used)
+  sievedParameterCandidate p.bits p.gen (p.rand.drop used)
 
 /-- The octets the candidate at `used` reads. -/
 def SPub.read (p : SPub) (used : Nat) : Nat :=
@@ -572,7 +618,7 @@ theorem SPub.read_le {p : SPub} {original s : State} {used k : Nat} (h : SLive p
   split <;> omega
 
 theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used := by
-  simp only [SPub.tail, parameterSearch, ParameterSearchResult.consume, Nat.add_zero]
+  simp only [SPub.tail, sievedParameterSearch, ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
     (hc : p.cand used = none) :
@@ -580,7 +626,7 @@ theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.le
       else .entropy k (parameterRequest p.bits (p.randLen - used)) used := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   simp only [SPub.cand] at hc
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
   split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_accept {p : SPub} {used k q : Nat} {rest : List Byte} (hk : k ≠ 0)
@@ -588,12 +634,12 @@ theorem SPub.tail_accept {p : SPub} {used k q : Nat} {rest : List Byte} (hk : k 
     p.tail used k = .accepted q (used + ((p.randLen - used) - rest.length)) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   simp only [SPub.cand] at hc
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
 
 theorem SPub.tail_reject {p : SPub} {used k : Nat} {rest : List Byte} (hk : k ≠ 0)
     (hl : p.rand.length = p.randLen) (hc : p.cand used = some (none, rest)) :
     p.tail used k = p.tail (used + ((p.randLen - used) - rest.length)) (k - 1) := by
-  have := Proof.Ffdh.Generation.search_reject (Nat.pos_of_ne_zero hk) hc
+  have := Proof.Ffdh.SievedGeneration.search_reject (Nat.pos_of_ne_zero hk) hc
   simp only [List.length_drop, hl] at this
   exact this
 
@@ -631,7 +677,7 @@ theorem terminal_live {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) {status : Nat} (hst : status = 1 ∨ status = 3) :
     WP isa (.block (terminal status)) s fun t =>
       SLive p original used 0 t ∧ t.mem = writeController s.mem p.control (terminalValues status) := by
-  refine WP.mono (terminal_ok h.access h.s0 hst) fun t ⟨hm, k, hsp⟩ => ?_
+  refine WP.mono_syms (terminal_ok h.access h.s0 hst) fun t ⟨hm, k, hsp⟩ hy => ?_
   have hh : Slots t.mem p.control (p.headers used 0) := by
     refine headers_after _ (terminalValues_bound status) hm ?_
     intro e he
@@ -643,7 +689,7 @@ theorem terminal_live {p : SPub} {original s : State} {used k : Nat}
   refine ⟨h.update (u := used) (k' := 0) h.used_le (Nat.zero_le _) _
     (terminalValues_bound status) (by
       simp only [terminalValues, List.mem_cons, List.not_mem_nil, or_false]
-      rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k hsp hh, hm⟩
+      rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k hsp hh hy, hm⟩
 
 /-- The words of a terminal status written over a loop state. -/
 theorem terminal_words {p : SPub} {original s t : State} {used k : Nat}
@@ -695,18 +741,19 @@ theorem search_zero_out {p : SPub} {original s : State} {used k : Nat}
     ⟨⟨p.op, p.len⟩, by rw [h.wr, h.input.wr_eq]; exact h.input.out_mem,
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hk])⟩
   unfold zeroOut
-  refine WP.seq (WP.mono (WP.rdwr (WP.keep [.t0, .t1, .t2] (Q := fun t => t.gpr .t0 = p.op ∧
+  refine WP.seq (WP.mono_syms (WP.rdwr (WP.keep [.t0, .t1, .t2] (Q := fun t => t.gpr .t0 = p.op ∧
       t.gpr .t1 = BitVec.ofNat 64 p.len ∧ t.gpr .t2 = 0 ∧ t.mem = s.mem) (by
     brun [ldf, h.s0, hv, hv6, a.ld 40 (by decide), a.ld 48 (by decide),
       a.al 40 (by decide) (by decide), a.al 48 (by decide) (by decide), fin64_exec_li_zero]) (by rfl)))
-    fun s₁ ⟨⟨⟨h3, h4, h5, hm₁⟩, k₁⟩, _, _, hsp₁⟩ => ?_)
-  refine WP.mono (WP.rdwr (KeyGeneration.zeroLoop_ok (by omega) (by omega)
+    fun s₁ ⟨⟨⟨h3, h4, h5, hm₁⟩, k₁⟩, _, _, hsp₁⟩ hy₁ => ?_)
+  refine WP.mono_syms (WP.rdwr (KeyGeneration.zeroLoop_ok (by omega) (by omega)
       (fun i hi => by rw [k₁.2.2]; exact hout i hi) h3 h4 h5))
-    fun t ⟨⟨⟨tb, tout⟩, kt⟩, _, _, hspt⟩ => ?_
+    fun t ⟨⟨⟨tb, tout⟩, kt⟩, _, _, hspt⟩ hyt => ?_
   have kk := k₁.trans kt
   have tout' : Mont.Outside p.op 0 p.len s.mem t.mem := by rw [← hm₁]; exact tout
   have hfr := zero_frame h.input tout'
-  refine ⟨h.restore kk.2.1 kk.2.2 (hspt.trans hsp₁) (fun r hr => kk.gpr (by revert r hr; decide)) hfr, ?_,
+  refine ⟨h.restore kk.2.1 kk.2.2 (hspt.trans hsp₁) (fun r hr => kk.gpr (by revert r hr; decide)) hfr
+    (hyt.trans hy₁), ?_,
     fun j hj => h.input.control_frame hfr j hj⟩
   refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
   intro b hb
@@ -742,9 +789,9 @@ theorem attempts_guard {p : SPub} {original s : State} {used k : Nat}
   have hw := h.header (j := 0) (v := BitVec.ofNat 64 k) (by simp [SPub.headers])
   simp only [Bignum.word, Nat.reduceMul] at hw
   have hk : k < 2 ^ 64 := by have := h.k_le; have := h.input.attempts_lt; omega
-  refine WP.mono (KeyGeneration.WP.ctl (Q := fun t =>
+  refine WP.mono_syms (KeyGeneration.WP.ctl (Q := fun t =>
     isa.eval (.zero .t0) t = some (decide (k = 0)) ∧ t.mem = s.mem) ?_ (by rfl))
-    fun _ ⟨⟨he, hm⟩, kt, hsp⟩ => ⟨h.keep kt hsp hm, he⟩
+    fun _ ⟨⟨he, hm⟩, kt, hsp⟩ hy => ⟨h.keep kt hsp hm hy, he⟩
   brun [ldf, h.s0, hw, a.ld 0 (by decide), a.al 0 (by decide) (by decide), KeyGeneration.eval_zero',
     ofNat_beq_zero hk]
 
@@ -772,7 +819,7 @@ theorem live_loop_guard {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) (hs : word s.mem p.control 112 = 4) :
     WP isa (.block [ldf .t0 14, .addi .t0 .t0 (-4)]) s fun t =>
       isa.eval (.zero .t0) t = some true ∧ SLive p original used k t :=
-  WP.mono (status_guard (st := 4) h.access h.s0 hs (by decide))
-    fun _ ⟨⟨he, hm⟩, k, hsp⟩ => ⟨he, h.keep k hsp hm⟩
+  WP.mono_syms (status_guard (st := 4) h.access h.s0 hs (by decide))
+    fun _ ⟨⟨he, hm⟩, k, hsp⟩ hy => ⟨he, h.keep k hsp hm hy⟩
 
 end VG.Proof.Ffdh.RISCV64.Generation

@@ -7,7 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
+public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
@@ -23,10 +24,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 As on PPC64LE (`Proof/Ffdh/PPC64LE/ParameterCandidate/{Contract,Base,Phase}.lean`):
 
-* `pcContract`: `vg_ffdh_parameter_candidate(out = a0, out_len = a1,
+* `pcContract`: `vg_ffdh_parameter_candidate_sieved(out = a0, out_len = a1,
   used = a2, bits = a3, generator = a4, rand = a5, rand_len = a6,
   scratch = a7, scratch_len)`, the last on the stack, with 96 bytes of stack
-  below `sp` for the round it calls (`pc_implies`).
+  below `sp` for the round it calls, and RSA's table of trial division
+  (`VG_RSA_KEYGEN_TRIAL32`, `TabAt`) readable, aligned, and apart from `out`
+  and `scratch`.
 * `PP`: what the candidate's run depends on, all of it public; `Args`: the
   header words holding the arguments; `mutR`: the ranges of the working
   space the pieces may change (header word 1, words 6–15 and 19–31, and the
@@ -48,6 +51,22 @@ open VG.Spec.Rsa (bytesAt wordsAt i2osp)
 
 /-! ## The contract -/
 
+/-- RSA's table of trial division in memory `m` at `T`. -/
+def TabAt (T : Addr) (m : Mem) : Prop :=
+  ∀ i < 1024, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 =
+    BitVec.ofNat 64 (VG.Impl.RsaKeyGen.TrialTable32.entry i)
+
+/-- The table's region, where the state names it. -/
+abbrev tabR (s : State) : Region := ⟨s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol, 8192⟩
+
+/-- The table: in memory, fitting, aligned, and apart from `out` and
+`scratch`. -/
+def PcTab (s : State) : Prop :=
+  (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).toNat + 8192 ≤ 2 ^ 64 ∧
+    (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).toNat % 8 = 0 ∧
+    TabAt (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) s.mem ∧
+    (tabR s).Disjoint ⟨s.gpr .a0, (s.gpr .a1).toNat⟩ ∧ (tabR s).Disjoint ⟨s.gpr .a7, (stackArg s 0).toNat * 8⟩
+
 def pcPre (s : State) : Prop :=
   let out : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
   let used : Region := ⟨s.gpr .a2, 8⟩
@@ -56,7 +75,7 @@ def pcPre (s : State) : Prop :=
   let args : Region := ⟨stackArgAddr s 0, 8⟩
   let below : Region := ⟨s.sp - BitVec.ofNat 64 96, 96⟩
   96 ≤ s.sp.toNat ∧ s.sp.toNat % 16 = 0 ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧
-    s.rd = [rand, args] ∧ s.wr = [out, used, scr] ∧
+    s.rd = [rand, args, tabR s] ∧ s.wr = [out, used, scr] ∧
     out.Disjoint used ∧ out.Disjoint rand ∧ out.Disjoint scr ∧ out.Disjoint args ∧
     used.Disjoint rand ∧ used.Disjoint scr ∧ used.Disjoint args ∧
     rand.Disjoint scr ∧ scr.Disjoint args ∧
@@ -68,12 +87,12 @@ def pcPre (s : State) : Prop :=
     512 ≤ (s.gpr .a3).toNat ∧ (s.gpr .a3).toNat ≤ 8192 ∧
     (s.gpr .a1).toNat = ((s.gpr .a3).toNat + 7) / 8 ∧
     (((s.gpr .a4).setWidth 32).toNat = 2 ∨ ((s.gpr .a4).setWidth 32).toNat = 5) ∧
-    Spec.Rsa.scratchWords (s.gpr .a1).toNat ≤ (stackArg s 0).toNat
+    Spec.Rsa.scratchWords (s.gpr .a1).toNat ≤ (stackArg s 0).toNat ∧ PcTab s
 
 abbrev pcRand (s : State) : List Byte := bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat
 
 def pcResult (s : State) : Option (Option Nat × Spec.RsaKeyGen.Rand) :=
-  parameterCandidate (s.gpr .a3).toNat ((s.gpr .a4).setWidth 32).toNat (pcRand s)
+  sievedParameterCandidate (s.gpr .a3).toNat ((s.gpr .a4).setWidth 32).toNat (pcRand s)
 
 def pcPost (s t : State) : Prop :=
   ((t.gpr .a0).setWidth 32).toNat = Proof.Ffdh.candidateStatus (pcResult s) ∧
@@ -90,55 +109,13 @@ def pcPub (s t : State) : Prop :=
   s.sp = t.sp ∧ (pcRand s).map (·.toNat) = (pcRand t).map (·.toNat) ∧
     s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1 ∧ s.gpr .a2 = t.gpr .a2 ∧
     s.gpr .a3 = t.gpr .a3 ∧ (s.gpr .a4).setWidth 32 = (t.gpr .a4).setWidth 32 ∧ s.gpr .a5 = t.gpr .a5 ∧
-    s.gpr .a6 = t.gpr .a6 ∧ s.gpr .a7 = t.gpr .a7 ∧ stackArg s 0 = stackArg t 0
+    s.gpr .a6 = t.gpr .a6 ∧ s.gpr .a7 = t.gpr .a7 ∧ stackArg s 0 = stackArg t 0 ∧
+    s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def pcContract : Contract isa where
   pre := pcPre
   post := pcPost
   pub := pcPub
-
-theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
-
-/-- A state meeting the precondition: a 64-byte p of 512 bits, no randomness,
-the working space at `0xA000`, its length on the stack at `0x9000`. -/
-def pcSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 64 | .a2 => 0x2000 | .a3 => 512 | .a4 => 2 | .a5 => 0x3000
-    | .a7 => 0xA000 | _ => 0
-  sp := 0x9000
-  mem a := bif Nat.beq a.toNat 0x9000 then 0x20 else bif Nat.beq a.toNat 0x9001 then 0x04 else 0
-  rd := [⟨0x3000, 0⟩, ⟨0x9000, 8⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0xA000, 1056 * 8⟩]
-
-theorem pc_implies : pcContract.Implies (Proof.Ffdh.parameterCandidateContract abi 96) where
-  pre := by
-    intro s h
-    sig_pre [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_one, List.append_eq] at h
-    sig_pre [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_one, List.append_eq] at h
-    sig_split h
-    sig_reduce [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_one, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals first
-      | with_reducible assumption
-      | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-  post := by
-    sig_implies_post [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs,
-      pcContract, pcPost, pcResult, pcRand, stackArgs_one, List.append_eq]
-  pub := by
-    intro s t _ _ h
-    sig_pub [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs, stackArgs_one,
-      List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    exact h
-  sat := by
-    sig_implies_sat [Proof.Ffdh.parameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi, argRegs,
-      stackBelow, pcContract, pcPre, stackArgs_one, List.append_eq]
-      [pcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using pcSat
 
 /-! ## The public data and the invariant -/
 
@@ -366,8 +343,8 @@ theorem rw_off (m : Mem) (B : Addr) {a b : Nat} (v : BitVec 64) (hab : a + 8 ≤
 /-- The working space of a modulus of `mb` bits: `w = ⌈mb / 64⌉`. -/
 abbrev wOf (mb : Nat) : Nat := (mb + 63) / 64
 
-/-- The header and the registers after `phase`. -/
-structure Ph (p : PP) (mb : Nat) (s : State) : Prop where
+/-- The header and the registers after `phase`, with `K` witnesses to test. -/
+structure Ph (p : PP) (mb K : Nat) (s : State) : Prop where
   a7 : s.gpr .a7 = off p.B (slot (wOf mb) 0)
   t0 : s.gpr .t0 = BitVec.ofNat 64 (wOf mb)
   s5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (wOf mb + 2))
@@ -376,7 +353,9 @@ structure Ph (p : PP) (mb : Nat) (s : State) : Prop where
   wW : word s.mem p.B (8 * hW) = BitVec.ofNat 64 (wOf mb)
   strideW : word s.mem p.B (8 * hStride) = BitVec.ofNat 64 (8 * (wOf mb + 2))
   arrW : ∀ j < 8, word s.mem p.B (8 * (8 + j)) = off p.B (slot (wOf mb) j)
-  checksW : word s.mem p.B (8 * hChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks mb)
+  checksW : word s.mem p.B (8 * hChecks) = BitVec.ofNat 64 K
+  k1 : 1 ≤ K
+  k2 : K ≤ 128
   topW : word s.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1)
 
 /-- The bit length of the modulus: `bits − 1` for q, `bits` for p. -/
@@ -568,7 +547,8 @@ theorem phRanges_mut (n : Nat) : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], InMut n 
 
 /-- `phase`: `Ph` for the modulus of `mbOf p q` bits. -/
 theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
-    WP isa (phase q) s fun t => ((St p t ∧ Ph p (mbOf p q) t ∧ Frm p.B (phRanges ++ [(8 * hTop, 8)]) s.mem t.mem) ∧
+    WP isa (phase q) s fun t => ((St p t ∧ Ph p (mbOf p q) (Spec.Ffdh.primeChecks (mbOf p q)) t ∧
+      Frm p.B (phRanges ++ [(8 * hTop, 8)]) s.mem t.mem) ∧
       Keep phRegs s t) ∧ t.sp = s.sp := by
   unfold phase
   refine WP.rdwr (WP.seq (WP.mono (WP.rdwr (phaseHead_ok h q))
@@ -585,7 +565,8 @@ theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
     (kt.gpr (by decide)).trans u5, (e (by simp only [hMb]; omega_arith)).trans um,
     (e (by simp only [hK]; omega_arith)).trans uk, (e (by simp only [hW]; omega_arith)).trans uw,
     (e (by simp only [hStride]; omega_arith)).trans us, fun j hj => (e (by omega_arith)).trans (ua j hj),
-    (e (by simp only [hChecks]; omega_arith)).trans uc, tt⟩,
+    (e (by simp only [hChecks]; omega_arith)).trans uc, by unfold Spec.Ffdh.primeChecks; split <;> decide,
+    by unfold Spec.Ffdh.primeChecks; split <;> decide, tt⟩,
     (uf.mono fun r hr => List.mem_append_left _ hr).trans (tf.mono fun r hr => List.mem_append_right _ hr)⟩,
     (ku.trans kt).mono (by decide)⟩
 
