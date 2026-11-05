@@ -29,6 +29,29 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Contract
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointErased
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`

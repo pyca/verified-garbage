@@ -28,6 +28,27 @@ import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointErased
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
+meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
+meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 /-! The joint implementation satisfies the unchanged shared verification contract. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointCT.lean`, which only this module imported.
