@@ -8,9 +8,10 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
 The sampling functions `vg_mldsa_rej_ntt_poly`, `vg_mldsa_rej_bounded_poly`,
 `vg_mldsa_expand_mask_poly` and `vg_mldsa_sample_in_ball` share a layout and
 a prologue. Each keeps its working space `scratch` (2048 bytes) in `rbx`, its
-output polynomial in `rbp` and its parameter (`eta`, `gamma1` or `tau`) in
-`r12`, whose caller's values it saves in `scratch[2024..2048)` (`save`) and
-restores at the end (`epi`); the functions it calls preserve them. `scratch`
+output polynomial in `rbp`. `r12` holds the sampler parameter (`eta`,
+`gamma1` or `tau`) where needed, or the SHAKE position in streaming samplers.
+The caller's values are saved in `scratch[2024..2048)` (`save`) and
+restored at the end (`epi`); subcalls preserve the layout registers. `scratch`
 holds, from byte 0, the Keccak state (200 bytes), the working space of the
 sponge functions (640 bytes) and, from byte 840, the XOF output.
 
@@ -18,8 +19,9 @@ sponge functions (640 bytes) and, from byte 840, the XOF output.
 state (the empty message), absorbs the message with `vg_keccak_absorb`, pads
 it with `vg_keccak_pad` (SHAKE's suffix `0x1f`) from the position absorbing
 returns, and squeezes `outlen` bytes to `scratch + 840` with
-`vg_keccak_squeeze`: whole blocks of the rate, so that no permutation is
-wasted. Its addresses and branches depend only on the pointers and the length.
+`vg_keccak_squeeze`. Its returned position permits subsequent output to
+continue within the same block. Its addresses and branches depend only on
+the pointers and the length.
 -/
 
 @[expose] public section
@@ -69,6 +71,32 @@ def sponge (rate outlen : BitVec 32) : Prog isa :=
         (.seq (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
           (.seq (.block (sqzArgs rate outlen))
             (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)))))
+
+/-- Retain the squeeze position in the sampler parameter register. -/
+def savePosition : List Instr := [.mov .r12 (.reg .rax)]
+
+/-- Initial SHAKE output, retaining the state and the returned position. -/
+def spongeStream (rate outlen : BitVec 32) : Prog isa :=
+  .seq (sponge rate outlen) (.block savePosition)
+
+/-- Append output from the existing state and position, without absorbing or
+padding again. `offset` is the destination offset within scratch. -/
+def moreArgs (rate offset outlen : BitVec 32) : List Instr :=
+  [.mov .rdi (.reg .rbx), .mov32 .rsi (.imm rate), .mov .rdx (.reg .r12),
+    .mov .rcx (.reg .rbx), .alu .add .rcx (.imm offset), .mov32 .r8 (.imm outlen),
+    .mov .r9 (.reg .rbx), .alu .add .r9 (.imm 200)]
+
+def squeezeMore (rate offset outlen : BitVec 32) : Prog isa :=
+  .seq (.block (moreArgs rate offset outlen))
+    (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)
+
+/-- Save the accepted coefficient count across a squeeze. -/
+def saveCount : List Instr := [.store (at_ .rbx 2016) .rdi]
+
+/-- Resume parsing with the previous coefficient count. -/
+def resumeArgs (offset count : BitVec 32) : List Instr :=
+  [.mov .rdi (.mem (at_ .rbx 2016)), .mov .rsi (.reg .rbx),
+    .alu .add .rsi (.imm offset), .mov32 .rcx (.imm count)]
 
 /-- `rbp`, `r12` and `rbx` restored. -/
 def epi : List Instr :=

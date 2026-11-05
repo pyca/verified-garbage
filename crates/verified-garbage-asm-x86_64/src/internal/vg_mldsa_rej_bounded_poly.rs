@@ -11,15 +11,15 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_bounded_poly() {
     core::arch::naked_asm!(
-        r#".base64 "SImZ6AcAAEiJqfAHAABMiaH4BwAASInLSInVQYn0SIn5ScfAQgAAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfvogAAAC6AAAAAEmJ2UmBwcgAAAA="
+        r#".base64 "g/4C"
+je 20f
+.base64 "SImZ6AcAAEiJqfAHAABMiaH4BwAASInLSInVSIn5QbhCAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid++iAAAALoAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_absorb_scratch}
 .base64 "SInfvogAAABIicK5HwAAAEmJ2EmBwMgAAAA="
 call {vg_keccak_pad_scratch}
-.base64 "SInfvogAAAC6AAAAAEiJ2UiBwUgDAABBuCACAABJidlJgcHIAAAA"
+.base64 "SInfvogAAAC6AAAAAEiJ2UiBwUgDAABBuBABAABJidlJgcHIAAAA"
 call {vg_keccak_squeeze_scratch}
-.base64 "QYP8Ag=="
-je 20f
-.base64 "SIneSIHGSAMAAL8AAAAAuSACAAA="
+.base64 "SYnESIneSIHGSAMAAL8AAAAAuRABAAA="
 22:
 .base64 "D7YGicKD4g9Igf8AAQAA"
 jb 23f
@@ -45,36 +45,112 @@ jmp 210f
 24:
 .base64 "SIPGAUiD6QE="
 jne 22b
-jmp 21f
-20:
-.base64 "SIneSIHGSAMAAL8AAAAAuSACAAA="
-211:
+.base64 "SIH/AAEAAA=="
+je 211f
+.base64 "SIm74AcAAEiJ376IAAAATIniSInZSIHBWAQAAEG4EAEAAEmJ2UmBwcgAAAA="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIu74AcAAEiJ3kiBxlgEAAC5EAEAAEG8BAAAAA=="
+213:
 .base64 "D7YGicKD4g9Igf8AAQAA"
-jb 212f
-jmp 213f
-212:
-.base64 "g/oP"
 jb 214f
 jmp 215f
 214:
-.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
-215:
-.base64 "wegEicJIgf8AAQAA"
+.base64 "g/oJ"
 jb 216f
 jmp 217f
 216:
-.base64 "g/oP"
+.base64 "QbgEAAAAQSnQGdKB4gHgfwBBAdBEiUS9AEiDxwE="
+217:
+.base64 "wegEicJIgf8AAQAA"
 jb 218f
 jmp 219f
 218:
-.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
+.base64 "g/oJ"
+jb 220f
+jmp 221f
+220:
+.base64 "QbgEAAAAQSnQGdKB4gHgfwBBAdBEiUS9AEiDxwE="
+221:
 219:
-217:
-213:
+215:
 .base64 "SIPGAUiD6QE="
-jne 211b
+jne 213b
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+jmp 212f
+211:
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+212:
+jmp 21f
+20:
+.base64 "SImZ6AcAAEiJqfAHAABMiaH4BwAASInLSInVSIn5QbhCAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid++iAAAALoAAAAASYnZSYHByAAAAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SInfvogAAABIicK5HwAAAEmJ2EmBwMgAAAA="
+call {vg_keccak_pad_scratch}
+.base64 "SInfvogAAAC6AAAAAEiJ2UiBwUgDAABBuBABAABJidlJgcHIAAAA"
+call {vg_keccak_squeeze_scratch}
+.base64 "SYnESIneSIHGSAMAAL8AAAAAuRABAAA="
+222:
+.base64 "D7YGicKD4g9Igf8AAQAA"
+jb 223f
+jmp 224f
+223:
+.base64 "g/oP"
+jb 225f
+jmp 226f
+225:
+.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
+226:
+.base64 "wegEicJIgf8AAQAA"
+jb 227f
+jmp 228f
+227:
+.base64 "g/oP"
+jb 229f
+jmp 230f
+229:
+.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
+230:
+228:
+224:
+.base64 "SIPGAUiD6QE="
+jne 222b
+.base64 "SIH/AAEAAA=="
+je 231f
+.base64 "SIm74AcAAEiJ376IAAAATIniSInZSIHBWAQAAEG4EAEAAEmJ2UmBwcgAAAA="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIu74AcAAEiJ3kiBxlgEAAC5EAEAAEG8AgAAAA=="
+233:
+.base64 "D7YGicKD4g9Igf8AAQAA"
+jb 234f
+jmp 235f
+234:
+.base64 "g/oP"
+jb 236f
+jmp 237f
+236:
+.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
+237:
+.base64 "wegEicJIgf8AAQAA"
+jb 238f
+jmp 239f
+238:
+.base64 "g/oP"
+jb 240f
+jmp 241f
+240:
+.base64 "g+oKRRnAQYPgCkQBwoPqBUUZwEGD4AVEAcJBuAIAAABBKdAZ0oHiAeB/AEEB0ESJRL0ASIPHAQ=="
+241:
+239:
+235:
+.base64 "SIPGAUiD6QE="
+jne 233b
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+jmp 232f
+231:
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+232:
 21:
-.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAMM="
+.base64 "ww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
