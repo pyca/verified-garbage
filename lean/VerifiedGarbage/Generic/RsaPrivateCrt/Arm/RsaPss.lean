@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # RSASSA-PSS on ARMv7, with the hash function and MGF1's as tables -/
 

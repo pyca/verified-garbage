@@ -152,8 +152,8 @@ class SplitTests(unittest.TestCase):
 
 # What the stand-in `cargo` lists, for the library and the test binary.
 LIB_TESTS = ["aes_gcm::tests::round_trip", "aes_gcm_siv::tests::errors", "cpu::tests::of_names",
-             "rsa_pkcs1_enc::tests::padding", "rsa_pss::tests::sign", "x25519::tests::agreement"]
-TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
+             "rsa::pkcs1_enc::tests::padding", "rsa::pss::tests::sign", "x25519::tests::agreement"]
+TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
 
 
 class StepTests(unittest.TestCase):
@@ -216,10 +216,10 @@ class StepTests(unittest.TestCase):
         # Its groups' tests by exact name, in each binary that has any.
         self.assertEqual(calls[1:], [
             "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- -Z unstable-options --report-time --exact "
-            "cpu::tests::of_names rsa_pkcs1_enc::tests::padding rsa_pss::tests::sign "
+            "cpu::tests::of_names rsa::pkcs1_enc::tests::padding rsa::pss::tests::sign "
             "x25519::tests::agreement",
             "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- -Z unstable-options --report-time --exact "
-            "wycheproof::rsa::rsa_oaep_test wycheproof::x25519::x25519_test",
+            "wycheproof::rsa_oaep::rsa_oaep_test wycheproof::x25519::x25519_test",
         ])
         # Every line's groups, not only this shard's, and the CPU's tests.
         self.assertEqual(self.tests_record["cpu"], "icx")
@@ -247,7 +247,7 @@ class StepTests(unittest.TestCase):
         self.assertEqual(len(lines), 6)
 
     def test_reduces_only_sde_jobs_on_hosts_without_ifma(self):
-        lib = LIB_TESTS + ["rsa_keygen::tests::primes", "rsa_pss::sha256::tests::backend_features"]
+        lib = LIB_TESTS + ["rsa::keygen::tests::primes", "rsa::pss::sha256::tests::backend_features"]
         tests = TESTS_TESTS + ["wycheproof::rsa_pss::rsa_pss_every_hash"]
         for chip, full_group, reduced_group in [("icx", "rsa", "rsa_ifma"),
                                                  ("dmr", "rsa", "rsa_ifma"),
@@ -260,7 +260,7 @@ class StepTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     expected = full_group if host_ifma else reduced_group
                     self.assertEqual(self.tests_record["groups"], sorted(["cpu", expected]))
-                    selector_ran = any("rsa_pss::sha256::tests::backend_features" in c for c in calls)
+                    selector_ran = any("rsa::pss::sha256::tests::backend_features" in c for c in calls)
                     self.assertEqual(selector_ran, host_ifma or chip == "native")
 
     def test_all_runs_every_test(self):

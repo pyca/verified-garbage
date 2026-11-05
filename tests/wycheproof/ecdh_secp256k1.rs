@@ -11,7 +11,8 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::ecdh::{Error, PrivateKey, Secp256k1};
+use verified_garbage::ec::{PublicKey, Secp256k1};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation, Hex};
 use super::schema::CurveGroup;
@@ -80,17 +81,17 @@ fn ecdh_secp256k1_webcrypto_test() {
             one[31] = 1;
             let reference = PrivateKey::<Secp256k1>::from_bytes(&one);
             let valid = Secp256k1::validate_public_key(&peer);
-            let expected = reference.diffie_hellman(&peer).is_ok();
+            let expected = reference.exchange(&PublicKey::from_bytes(&peer)).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
-        let result = key.diffie_hellman(&peer);
+        let result = key.exchange(&PublicKey::from_bytes(&peer));
         match test.result {
             Expectation::Valid => {
                 let shared = result.map(|z| z.to_vec());
                 let expected = Ok(test.case.shared.0.clone());
                 assert_eq!(shared, expected, "tcId {}", test.tc_id);
                 assert_eq!(
-                    key.public_key().unwrap().as_slice(),
+                    key.public_key().unwrap().as_bytes().as_slice(),
                     public(&test.case.private.public)
                 );
                 checked.add();

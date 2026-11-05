@@ -1,4 +1,4 @@
-//! Public arithmetic for FFDH, and the selection of its implementations.
+//! FFDH's public arithmetic, and the choice of its implementation.
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
     VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
@@ -12,8 +12,7 @@ use crate::arch::ffdh::{
     VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES, VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES,
     VG_FFDH_EXCHANGE_UMAAL_FEATURES, VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES,
     VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES,
-    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES,
-    VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES,
+    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES, VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES,
 };
 use alloc::{vec, vec::Vec};
 use verified_garbage_cpu::Features;
@@ -78,7 +77,7 @@ impl Backend {
                     VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES,
                     VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES,
                     VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES,
-                    VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES,
+                    VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES,
                 ])
             },
         ) {

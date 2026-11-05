@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on ARMv7 -/
 

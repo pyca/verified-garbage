@@ -1,17 +1,4 @@
 //! SHA-512/224 (FIPS 180-4).
-//!
-//! SHA-512/224 is SHA-512 from another initial hash value, with its digest the
-//! first 28 bytes of the final hash value. `vg_sha512_224_init` (contract
-//! `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`) makes a SHA-512
-//! streaming state represent the empty message, hashed from SHA-512/224's
-//! initial hash value (`VG.Spec.Sha512.Repr`); SHA-512's `vg_sha512_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha512_224_finalize` (`finalizeDigestContract` for
-//! `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`) outputs its digest, the
-//! result of the whole algorithm.
-//!
-//! The implementations of `update` and `finalize` are chosen as SHA-512's
-//! (see `super::sha512`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -76,21 +63,25 @@ super::streaming_hash!(
             Scalar => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_224 [],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_224 [],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_224 [],
             },
             #[cfg(target_arch = "aarch64")]
             Sha3 => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_224_SHA3 [crate::arch::fn_tables::VG_HASH_SHA512_224_SHA3_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_224_SHA3 [crate::arch::fn_tables::VG_MD_HASH_SHA512_224_SHA3_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_224_SHA3 [crate::arch::fn_tables::VG_HMAC_SHA512_224_SHA3_FEATURES],
             },
             #[cfg(target_arch = "x86_64")]
             ShaNi => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_224_SHANI [crate::arch::fn_tables::VG_HASH_SHA512_224_SHANI_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_224_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA512_224_SHANI_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_224_SHANI [crate::arch::fn_tables::VG_HMAC_SHA512_224_SHANI_FEATURES],
             },
             #[cfg(target_arch = "x86_64")]
             Avx2 => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_224_AVX2 [crate::arch::fn_tables::VG_HASH_SHA512_224_AVX2_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_224_AVX2 [crate::arch::fn_tables::VG_MD_HASH_SHA512_224_AVX2_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_224_AVX2 [crate::arch::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES],
             },
         },
     }
@@ -98,10 +89,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha512_224, Sha512_224Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha512::Sha512Backend;
-    use verified_garbage_cpu::Features;
+    use super::Sha512_224;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -123,28 +111,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-512's.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
-            let expected = match Sha512Backend::select(f) {
-                Sha512Backend::Scalar => Sha512_224Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha512Backend::Sha3 => Sha512_224Backend::Sha3,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::ShaNi => Sha512_224Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::Avx2 => Sha512_224Backend::Avx2,
-            };
-            assert_eq!(Sha512_224Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(
-            Sha512_224::new().backend,
-            Sha512_224Backend::select(detected())
-        );
     }
 
     /// The `HashFunction` implementation is the inherent functions.

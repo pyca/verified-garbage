@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Camellia-CTR artifacts on baseline AArch64 -/
 

@@ -6,13 +6,32 @@ public import VerifiedGarbage.Spec.Ecdsa.P192
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P192
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: P-192's kit
 
 P-192's scalars (24 bytes in four words), the functions of its order, and
-`vg_ecdsa_p192_sign`, which reads no table: its calls against `signRV` (`WP.call`, since it pushes no
+`vg_ecdsa_p192_sign_k` (the signature with a given `k`), which reads no table: its calls against `signRV` (`WP.call`, since it pushes no
 frames), from what `CoreArgs` gives.
+
+Then `vg_ecdsa_p192_sign`, with HMAC as a table: the curve for the body
+(`curveT`), the taint checks of its pieces (`checksP`), which the kernel
+evaluates, and its verification against `TableInstance.signContract` with
+the tables of `vs` (`verifiedT`).
 -/
 
 @[expose] public section
@@ -89,5 +108,43 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) : Kit where
   K := []
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL fun s s' hp => let ⟨a, a', e, _⟩ := h s s' hp; ⟨a, a', e⟩
+
+/-! ## `vg_ecdsa_p192_sign`, with HMAC as a table -/
+
+/-- P-192 as the body's curve, for its group law `hL`. -/
+def curveT (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) : CurveT where
+  kit := kit hL
+  coreN := "vg_ecdsa_p192_sign_k"
+  big := false
+  hbig := (by decide : (false = true ↔ 64 < 24))
+  hGv := rfl
+  hsh := fun _ => rfl
+
+/-- The body's configuration without the tables, which the taint checks see. -/
+def cfgP : Impl.Ecdsa.Rfc6979.RISCV64.Cfg where
+  f := Proof.HmacTable.RISCV64.fnsOf []
+  FN := Impl.Ecdsa.RISCV64.p192Order
+  coreN := "vg_ecdsa_p192_sign_k"
+  coreC := Impl.Ecdsa.RISCV64.P192.signP192
+  tries := Spec.Ecdsa.Rfc6979.Curves.p192.tries
+  nw := 4
+  Q := 24
+  big := false
+  G := 24
+
+theorem checksP : Checks cfgP := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> refine ⟨?_, ?_⟩
+  taint_decide_all
+
+theorem checksT (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) :
+    Checks (cfgT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries []) := checksP
+
+/-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
+theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.P192.curve) (vs : List Proof.HmacTable.RISCV64.HVar)
+    (h : OK vs) :
+    Verified RISCV64.target (signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 (kit hL).K vs) := by
+  exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h (sat_nil h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P192

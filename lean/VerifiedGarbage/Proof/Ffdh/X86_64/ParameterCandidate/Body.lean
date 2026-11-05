@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 /-! # FFDH parameter generation on x86-64: the complete callable body -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/ResultBridge.lean`, which only this module imported.
@@ -25,44 +26,53 @@ open VG.Proof.Ffdh.ParameterCandidate
 
 theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : CandidateBase p s)
     (havail : p.k ≤ p.rand.length) :
-    Spec.Ffdh.parameterCandidate p.bits p.gen p.rand =
+    Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand =
       (candidateTail p (p.rand.drop p.k)).map (fun x => (if x.1 then some p.P else none, x.2)) := by
-  rw [← checkedCandidate_eq]
-  unfold checkedCandidate
+  unfold Spec.Ffdh.sievedParameterCandidate
   rw [← h.len, draw_of_le havail]
   simp only [bind, Option.bind_some]
   change (do
-    if !(Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P && Spec.Ffdh.primeShape p.Q) then
+    if !(Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P && Spec.Ffdh.primeShape p.Q &&
+        !Spec.RsaKeyGen.obviouslyComposite p.bits p.P && !Spec.RsaKeyGen.obviouslyComposite p.bits p.Q) then
       return (none, p.rand.drop p.k)
-    let (pass, rest) ← checkWitnesses p.Q (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength p.Q)) (p.rand.drop p.k)
-    if !pass then return (none, rest)
-    let (pass, rest) ← checkWitnesses p.P (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength p.P)) rest
+    let (pass, rest) ← Spec.Ffdh.screenedParameterWitnesses p.P p.Q (p.rand.drop p.k)
     return (if pass then some p.P else none, rest)) = _
   have hpodd : p.P % 2 = 1 :=
     (candidate_shape (bits := p.bits) (by omega_using [h.bits1]) _).1
   have hpbits : Spec.RsaKeyGen.bitLength p.P = p.phaseBits false := (h.phase_bitLength false hpodd).1
-  by_cases hgp : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P) = true
-  · by_cases hq : Spec.Ffdh.primeShape p.Q = true
-    · have hqodd : p.Q % 2 = 1 := by
-        have hh := hq
-        unfold Spec.Ffdh.primeShape at hh
-        exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp hh).1).2
+  have hcond : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P &&
+      Spec.Ffdh.primeShape p.Q && !Spec.RsaKeyGen.obviouslyComposite p.bits p.P &&
+      !Spec.RsaKeyGen.obviouslyComposite p.bits p.Q) =
+      ((Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) && p.sieved p.Q) := by
+    unfold CandidateP.sieved
+    cases Spec.Ffdh.generationShape p.bits p.gen p.P <;> cases Spec.Ffdh.primeShape p.P <;>
+      cases Spec.Ffdh.primeShape p.Q <;> cases Spec.RsaKeyGen.obviouslyComposite p.bits p.P <;>
+      cases Spec.RsaKeyGen.obviouslyComposite p.bits p.Q <;> rfl
+  rw [hcond]
+  by_cases hgp : (Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) = true
+  · by_cases hq : p.sieved p.Q = true
+    · have hqodd : p.Q % 2 = 1 := odd_of_sieved hq
       have hqbits : Spec.RsaKeyGen.bitLength p.Q = p.phaseBits true := (h.phase_bitLength true hqodd).1
+      have hpshape : Spec.Ffdh.primeShape p.P = true := by
+        unfold CandidateP.sieved at hgp
+        exact ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp hgp).2).1
+      have hqshape : Spec.Ffdh.primeShape p.Q = true := by
+        unfold CandidateP.sieved at hq
+        exact ((Bool.and_eq_true _ _).mp hq).1
+      have hpol : policyFirst p (p.rand.drop p.k) =
+          Spec.Ffdh.screenedParameterWitnesses p.P p.Q (p.rand.drop p.k) := by
+        rw [← screenedChecks_eq hpshape hqshape]
+        unfold policyFirst policyQ policyRest CandidateP.phaseChecks
+        rw [← hqbits, ← hpbits]
+        rfl
       simp only [hgp, hq, Bool.and_self, Bool.not_true, Bool.false_eq_true, ite_false,
-        candidateTail, ite_true, qPolicy, hqbits, hpbits]
-      cases he : checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop p.k) with
+        candidateTail, ite_true, sievedPolicy, hpol]
+      cases Spec.Ffdh.screenedParameterWitnesses p.P p.Q (p.rand.drop p.k) with
       | none => rfl
-      | some ar =>
-        obtain ⟨pass, rest⟩ := ar
-        cases pass
-        · rfl
-        · simp only [bind, Option.bind_some, Bool.not_true, Bool.false_eq_true, ite_false]
-          cases checkWitnesses p.P (Spec.Ffdh.primeChecks (p.phaseBits false)) rest with
-          | none => rfl
-          | some ar => obtain ⟨pass, rest'⟩ := ar; cases pass <;> rfl
-    · have hqf : Spec.Ffdh.primeShape p.Q = false := Bool.eq_false_iff.mpr hq
-      simp [candidateTail, qPolicy, hgp, hqf]
-  · have hgpf : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P) = false :=
+      | some ar => obtain ⟨pass, rest⟩ := ar; cases pass <;> rfl
+    · have hqf : p.sieved p.Q = false := Bool.eq_false_iff.mpr hq
+      simp [candidateTail, sievedPolicy, hgp, hqf]
+  · have hgpf : (Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) = false :=
       Bool.eq_false_iff.mpr hgp
     simp [candidateTail, hgpf]
 
@@ -84,7 +94,7 @@ open VG VG.Proof.Bignum VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.Ffdh.ParameterCandidate
 
 def NativeResult (p : CandidateP) (used : Nat) (m : Mem) : Prop :=
-  let r := Spec.Ffdh.parameterCandidate p.bits p.gen p.rand
+  let r := Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand
   word m p.B (8 * oStatus) = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus r) ∧
     (match r with | none => True | some (_, rest) => rest = p.rand.drop used) ∧
     (∀ n rest, r = some (some n, rest) → n = p.P)
@@ -107,9 +117,8 @@ theorem CandidateBase.nativeResult {p : CandidateP} {s : VG.X86_64.State} {n : N
 
 theorem CandidateBase.short_result {p : CandidateP} {s : VG.X86_64.State}
     (h : CandidateBase p s) (hshort : p.rand.length < p.k) :
-    Spec.Ffdh.parameterCandidate p.bits p.gen p.rand = none := by
-  rw [← checkedCandidate_eq]
-  unfold checkedCandidate
+    Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand = none := by
+  unfold Spec.Ffdh.sievedParameterCandidate
   rw [← h.len, draw_of_short hshort]
   rfl
 

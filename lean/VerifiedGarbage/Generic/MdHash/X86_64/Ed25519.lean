@@ -14,6 +14,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Ed25519 (RFC 8032) on x86-64, over SHA-512 -/
 

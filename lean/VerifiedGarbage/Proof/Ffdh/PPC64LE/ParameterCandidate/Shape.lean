@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Prep
 /-!
 # An FFDH parameter candidate on PPC64LE: the candidate p
 
-`shapeP_ok`: in p's working space (`Ph p bits`), the first `out_len` octets
+`shapeP_ok`: in p's working space (`Ph p bits C`), the first `out_len` octets
 of the tape into array 0 (`loadN_ok`), its top word cut to `bits` bits with
 its top bit set, and its low bit set: `candidateOf bits` of their number
 (`wv_shape`).
@@ -42,7 +42,7 @@ theorem shapeHead_ok {p : PP} {s : State} (h : St p s) :
   prun [h.r31, h.ld (d := 136) (by decide), h.ld (d := 24) (by decide), h.args.rand', h.args.len',
     BitVec.add_zero]
 
-theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : p.L ≤ p.r.length) :
+theorem shapeP_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) (hrl : p.L ≤ p.r.length) :
     WP isa shapeP s fun t =>
       (wv t.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) =
           Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) ∧

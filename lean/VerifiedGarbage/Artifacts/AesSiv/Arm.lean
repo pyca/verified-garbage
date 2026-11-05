@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
 public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-SIV (RFC 5297) on ARMv7 -/
 

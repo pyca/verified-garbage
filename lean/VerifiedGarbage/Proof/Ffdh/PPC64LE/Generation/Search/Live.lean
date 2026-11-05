@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
-import VerifiedGarbage.Proof.Ffdh.GenerationTape
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
+import VerifiedGarbage.Proof.Ffdh.SievedTape
 
 /-! # What keeps the parameter search's loop state (PPC64LE), and where the search goes -/
 
@@ -57,22 +57,24 @@ and the stack. -/
 theorem restore (h : SLive p original used k s)
     (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
     (hg : ∀ r ∈ preserved, t.gpr r = s.gpr r)
-    (hf : Frame (SInput.callChanges original) s.mem t.mem) :
+    (hf : Frame (SInput.callChanges original) s.mem t.mem) (hy : t.syms = s.syms) :
     SLive p original used k t := by
   have hc := h.input.control_frame hf
   have hf' := frame_of_callChanges original hf
   refine ⟨h.input, h.used_le, h.k_le, hr.trans h.rd, hw.trans h.wr,
     hsp.trans h.sp, (hg .r31 (by decide)).trans h.r31,
-    fun r hr h31 => (hg r hr).trans (h.saved r hr h31), ?_, ?_, ?_⟩
+    fun r hr h31 => (hg r hr).trans (h.saved r hr h31), ?_, ?_, ?_, hy.trans h.syms,
+    h.input.table_frame hf' h.table⟩
   · exact (hc 4 (by decide)).trans h.savedR31
   · exact (h.input.random_frame hf').trans h.random
   · intro e he
     exact (hc e.1 (SPub.headers_index he)).trans (h.headers e he)
 
 theorem keep (h : SLive p original used k s) {rs : List Reg}
-    (kp : Keep rs s t) (hm : t.mem = s.mem) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
+    (kp : Keep rs s t) (hm : t.mem = s.mem) (hy : t.syms = s.syms)
+    (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
     SLive p original used k t := by
-  apply h.restore kp.rd kp.wr kp.sp (fun reg hr => kp.gpr reg (hregs reg hr))
+  apply h.restore kp.rd kp.wr kp.sp (fun reg hr => kp.gpr reg (hregs reg hr)) _ hy
   rw [hm]
   exact Frame.refl _ _
 
@@ -83,7 +85,7 @@ theorem update (h : SLive p original used k s) {u k' : Nat}
     (h4 : ∀ e ∈ values, 4 ≠ e.1)
     (hm : t.mem = writeController s.mem p.control values)
     (kp : Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] s t)
-    (hh : Slots t.mem p.control (p.headers u k')) : SLive p original u k' t := by
+    (hh : Slots t.mem p.control (p.headers u k')) (hy : t.syms = s.syms) : SLive p original u k' t := by
   have hf : Frame (SInput.changes original) s.mem t.mem := by
     rw [hm]
     apply (writeController_frame s.mem p.control values hb).sub
@@ -95,7 +97,8 @@ theorem update (h : SLive p original used k s) {u k' : Nat}
   have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr r (by revert r hr; decide)
   refine ⟨h.input, hu, hk, kp.rd.trans h.rd, kp.wr.trans h.wr,
     kp.sp.trans h.sp, (hg .r31 (by decide)).trans h.r31,
-    fun reg hreg h31 => (hg reg hreg).trans (h.saved reg hreg h31), ?_, ?_, hh⟩
+    fun reg hreg h31 => (hg reg hreg).trans (h.saved reg hreg h31), ?_, ?_, hh, hy.trans h.syms,
+    h.input.table_frame hf h.table⟩
   · rw [hm]
     change word (writeController s.mem p.control values) p.control (8 * 4) = _
     rw [writeController_word _ _ _ hb 4 (by decide), controllerValue_unchanged _ _ _ h4]
@@ -130,37 +133,37 @@ theorem SDone.keep {p : SPub} {original s t : State} {result : ParameterSearchRe
 /-! ## Where the search goes from a loop state -/
 
 theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used := by
-  simp only [SPub.tail, parameterSearch, ParameterSearchResult.consume, Nat.add_zero]
+  simp only [SPub.tail, sievedParameterSearch, ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = none) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = none) :
     p.tail used k = if parameterEntropy p.bits ≤ p.randLen - used then .exhausted used
       else .entropy k (parameterRequest p.bits (p.randLen - used)) used := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
   split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_accept {p : SPub} {used k q : Nat} {rest : List Byte} (hk : k ≠ 0)
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (some q, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (some q, rest)) :
     p.tail used k = .accepted q (used + ((p.randLen - used) - rest.length)) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
 
 theorem SPub.tail_reject {p : SPub} {used k : Nat} {rest : List Byte} (hk : k ≠ 0)
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (none, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (none, rest)) :
     p.tail used k = p.tail (used + ((p.randLen - used) - rest.length)) (k - 1) := by
-  have := Proof.Ffdh.Generation.search_reject (Nat.pos_of_ne_zero hk) hc
+  have := Proof.Ffdh.SievedGeneration.search_reject (Nat.pos_of_ne_zero hk) hc
   simp only [List.length_drop, hl] at this
   exact this
 
 /-- The octets a candidate reads are in the tape. -/
 theorem candidate_used_le {p : SPub} {used : Nat} {value : Option Nat} {rest : List Byte}
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (value, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (value, rest)) :
     rest.length ≤ p.randLen - used := by
-  obtain ⟨n, _, hr⟩ := Proof.Ffdh.Generation.candidate_suffix hc
+  obtain ⟨n, _, hr⟩ := Proof.Ffdh.SievedGeneration.candidate_suffix hc
   rw [hr]
   simp only [List.length_drop, hl]
   omega

@@ -3,10 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p256`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p256`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p256_sha256",
-    "ecdsa_p256_sha384",
     "ecdsa_p256",
+    "fn_tables",
     "ec_p256",
     "hmac_sha256",
     "hmac_sha384",
@@ -66,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P256>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -85,7 +87,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{P256, SigningKey, VerifyingKey};
+    use verified_garbage::ec::P256;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
@@ -97,8 +100,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
     let openssl_key =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<P256>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let aws_lc_key =
         aws_lc_sign.map(|alg| EcdsaKeyPair::from_private_key_and_public_key(alg, d, &q).unwrap());
     // Ignored: aws-lc-rs draws `k` from AWS-LC's own generator.

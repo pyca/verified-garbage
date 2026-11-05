@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Sat
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RSASSA-PSS verification on AArch64 with a precomputed key, with the hash functions as tables -/
 

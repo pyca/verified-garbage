@@ -15,7 +15,7 @@ pub const USES: &[&str] = &["ec_brainpoolp512r1_compressed"];
 pub fn bench(c: &mut Criterion) {
     crate::ec_compressed::ec_compressed_bench!(
         c,
-        verified_garbage::ecdh::BrainpoolP512r1,
+        verified_garbage::ec::BrainpoolP512r1,
         "brainpoolp512r1",
         64,
         BRAINPOOL_P512R1

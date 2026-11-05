@@ -21,16 +21,18 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ecdh::{P224, PrivateKey};
+    use verified_garbage::ec::{P224, PublicKey};
+    use verified_garbage::ecdh::PrivateKey;
 
     use crate::{BenchDyn, OPENSSL, VG};
 
     // Keys below P-224's order.
     let d = [0x42; 28];
     let peer_d = [0x24; 28];
-    let peer = PrivateKey::<P224>::from_bytes(&peer_d)
+    let peer = *PrivateKey::<P224>::from_bytes(&peer_d)
         .public_key()
-        .unwrap();
+        .unwrap()
+        .as_bytes();
     let group = EcGroup::from_curve_name(Nid::SECP224R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(&d).unwrap();
@@ -47,7 +49,7 @@ pub fn bench(c: &mut Criterion) {
     g.bench(BenchmarkId::new(VG, 28), |b| {
         b.iter(|| {
             black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
+                .exchange(&PublicKey::from_bytes(black_box(&peer)))
                 .unwrap()
         })
     });
@@ -80,7 +82,11 @@ pub fn bench(c: &mut Criterion) {
         one[27] = 1;
         let key = PrivateKey::<P224>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 57), |b| {
-            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+            b.iter(|| {
+                black_box(&key)
+                    .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                    .is_ok()
+            })
         });
         g.finish();
     }

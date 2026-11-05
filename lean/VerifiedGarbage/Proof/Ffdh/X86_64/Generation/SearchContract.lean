@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
-public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
@@ -43,7 +43,7 @@ def searchPre (s : State) : Prop :=
     (stackArg s 0).toNat ≤ Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat
 
 def searchResult (s : State) : Spec.Ffdh.ParameterSearchResult :=
-  Spec.Ffdh.parameterSearch (s.gpr .rcx).toNat ((s.gpr .r8).setWidth 32).toNat
+  Spec.Ffdh.sievedParameterSearch (s.gpr .rcx).toNat ((s.gpr .r8).setWidth 32).toNat
     (s.mem.readW (stackArg s 3) 64).toNat (pcRand s)
 
 def searchPost (s t : State) : Prop :=

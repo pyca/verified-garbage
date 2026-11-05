@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P224.RISCV64
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Lit
 
 /-! # P-224 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on RISC-V -/

@@ -51,6 +51,7 @@ public import VerifiedGarbage.Proof.X448.X86.Restore
 public import VerifiedGarbage.Proof.X448.X86.Select
 public import VerifiedGarbage.Proof.X448.X86.Small
 public import VerifiedGarbage.Proof.X448.X86.Step
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Impl.Sha256.X86.Stream
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed448.DecodeBytes

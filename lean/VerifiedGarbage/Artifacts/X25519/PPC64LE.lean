@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Verified
 public import VerifiedGarbage.Proof.X25519.PPC64LE.BaseVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # X25519 (RFC 7748) on PPC64LE -/
 

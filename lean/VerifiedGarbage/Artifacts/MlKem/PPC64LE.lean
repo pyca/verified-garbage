@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.EncapsCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecapsCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # ML-KEM (FIPS 203) on PPC64LE -/
 

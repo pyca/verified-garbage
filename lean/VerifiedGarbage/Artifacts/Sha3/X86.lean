@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86.Shared
 public import VerifiedGarbage.Proof.Sha3.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86 -/

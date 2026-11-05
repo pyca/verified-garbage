@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # SHA-1 (FIPS 180-4) on x86, for every x86 SHA-1 backend -/
 

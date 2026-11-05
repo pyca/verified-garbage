@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks

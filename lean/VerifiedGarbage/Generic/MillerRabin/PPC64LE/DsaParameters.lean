@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # DSA parameter generation on PPC64LE, calling the probable-prime tests over each Miller–Rabin round -/
 

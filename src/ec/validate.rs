@@ -1,4 +1,4 @@
-//! Standalone public-key validation, in one call of a verified function.
+//! Public-key validation on its own.
 
 #![cfg(target_arch = "x86_64")]
 
@@ -144,10 +144,11 @@ validate!(
 #[cfg(test)]
 mod tests {
     use super::{Backend, Features};
-    use crate::ecdh::{
-        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521,
-        PrivateKey, Secp256k1,
+    use crate::ec::{
+        BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PublicKey,
+        Secp256k1,
     };
+    use crate::ecdh::PrivateKey;
     use verified_garbage_cpu::feature;
 
     #[test]
@@ -172,9 +173,10 @@ mod tests {
                 for d in 1..=8 {
                     let mut private = one;
                     private[$len - 1] = d;
-                    let public = PrivateKey::<$curve>::from_bytes(&private)
+                    let public = *PrivateKey::<$curve>::from_bytes(&private)
                         .public_key()
-                        .unwrap();
+                        .unwrap()
+                        .as_bytes();
                     assert!($curve::validate_public_key(&public));
                     // Check every tag, including compressed and hybrid
                     // forms, against the uncompressed encoding requirement.
@@ -191,7 +193,7 @@ mod tests {
                             q[i] = byte;
                             assert_eq!(
                                 $curve::validate_public_key(&q),
-                                reference.diffie_hellman(&q).is_ok()
+                                reference.exchange(&PublicKey::from_bytes(&q)).is_ok()
                             );
                         }
                     }

@@ -58,6 +58,8 @@ theorem generatorHead_ct : RelCT isa (Two LinkHeader)
     (.block [.mov .rax (.mem (VG.Impl.Bignum.X86_64.hdr sLink)),
       .mov .rdx (.mem (VG.Impl.Rsa.X86_64.Crt.ws .rax oGen))]) fun _ _ => True := link_ct (by taint_decide)
 
+theorem sieveBits_ct : RelCT isa (Two LinkHeader) (.block sieveBits) fun _ _ => True := link_ct (by taint_decide)
+
 theorem leave_ct : RelCT isa (Two LinkHeader) (.block [VG.Impl.Rsa.X86_64.Crt.leave]) fun _ _ => True :=
   link_ct (by taint_decide)
 

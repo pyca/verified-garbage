@@ -10,8 +10,9 @@
 ))]
 
 use crate::json_struct;
+use verified_garbage::ec::{PublicKey, Secp256k1};
 use verified_garbage::ecdh::PrivateKey;
-use verified_garbage::ecdsa::{Error, Secp256k1, SigningKey, VerifyingKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha256::Sha256;
 
 json_struct! {
@@ -58,8 +59,7 @@ fn deterministic_sha256_batch(batch: usize) {
             borrow = i16::from(difference < 0);
         }
         assert!(actual == signature || actual == alternate);
-        let public = key.public_key().unwrap();
-        let verifier = VerifyingKey::<Secp256k1>::from_bytes(&public);
+        let verifier = key.public_key().unwrap();
         assert_eq!(
             verifier.verify_prehashed::<Sha256>(&digest, &actual),
             Ok(())
@@ -92,8 +92,8 @@ fn messages_and_keys() {
     let cases = vectors();
     let d = hex(&cases[0].d);
     let key = SigningKey::<Secp256k1>::from_bytes(&d);
-    let public = key.public_key().unwrap();
-    let verifier = VerifyingKey::<Secp256k1>::from_bytes(&public);
+    let verifier = key.public_key().unwrap();
+    let public = *verifier.as_bytes();
     let message = b"secp256k1 API message";
     let sig = key.clone().sign::<Sha256>(message).unwrap();
     assert_eq!(
@@ -106,14 +106,11 @@ fn messages_and_keys() {
         Err(Error::InvalidSignature)
     );
     let private = PrivateKey::<Secp256k1>::from_bytes(&d);
-    assert_eq!(private.public_key(), Ok(public));
+    assert_eq!(private.public_key(), Ok(PublicKey::from_bytes(&public)));
     let peer = PrivateKey::<Secp256k1>::from_bytes(&hex(&cases[1].d));
     let peer_public = peer.public_key().unwrap();
-    assert_eq!(
-        private.diffie_hellman(&peer_public),
-        peer.diffie_hellman(&public)
-    );
-    assert_eq!(verifier.to_bytes(), public);
+    assert_eq!(private.exchange(&peer_public), peer.exchange(&verifier));
+    assert_eq!(PublicKey::from_bytes(&public), verifier);
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
 
     // The second published vector's key is n-1; the next integer is invalid.
@@ -134,18 +131,18 @@ fn messages_and_keys() {
             Err(verified_garbage::ecdh::Error::InvalidKey)
         );
         assert_eq!(
-            bad.diffie_hellman(&public),
+            bad.exchange(&verifier),
             Err(verified_garbage::ecdh::Error::InvalidKey)
         );
     }
     let mut invalid = public;
     invalid[0] = 0;
     assert_eq!(
-        private.diffie_hellman(&invalid),
+        private.exchange(&PublicKey::from_bytes(&invalid)),
         Err(verified_garbage::ecdh::Error::InvalidKey)
     );
     assert_eq!(
-        VerifyingKey::<Secp256k1>::from_bytes(&invalid).verify::<Sha256>(message, &sig),
+        PublicKey::<Secp256k1>::from_bytes(&invalid).verify::<Sha256>(message, &sig),
         Err(Error::InvalidSignature)
     );
 }

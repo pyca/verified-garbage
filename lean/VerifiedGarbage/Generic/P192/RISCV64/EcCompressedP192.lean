@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P192.RISCV64
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P192.Lit
 
 /-! # P-192 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on RISC-V -/

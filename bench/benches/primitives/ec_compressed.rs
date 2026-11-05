@@ -12,17 +12,17 @@
 ))]
 
 /// Runs, in `$c`, the compression and decompression benchmarks of the curve
-/// `verified_garbage::ecdh::$curve`, in groups named `ec_<$name>_compress`
+/// `verified_garbage::ec::$curve`, in groups named `ec_<$name>_compress`
 /// and `ec_<$name>_decompress`, from the key `7G`.
 macro_rules! ec_compressed_bench {
-    ($c:expr, verified_garbage::ecdh::$curve:ident, $name:literal, $len:literal, $nid:ident) => {{
+    ($c:expr, verified_garbage::ec::$curve:ident, $name:literal, $len:literal, $nid:ident) => {{
         use std::hint::black_box;
 
         use criterion::BenchmarkId;
         use openssl::bn::{BigNum, BigNumContext};
         use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
         use openssl::nid::Nid;
-        use verified_garbage::ecdh::$curve;
+        use verified_garbage::ec::$curve;
 
         use crate::{BenchDyn, OPENSSL, VG};
 

@@ -5,9 +5,9 @@ public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 
 /-! # Exact controller contract for RSA-sieved safe-prime generation
 
-Trusted. Buffer requirements, public timing data, initialization and search
-bounds match the original APIs. Separate names preserve their exact tape
-semantics for existing implementations.
+Trusted. `vg_ffdh_generate_parameters`: buffer requirements, public timing
+data, initialization and search bounds as `parameterSearchSig` and
+`parameterInitApi` set them.
 -/
 
 @[expose] public section
@@ -39,16 +39,27 @@ def sievedParameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
     (leak := some fun _out _outLen _used _bits _generator rand randLen _scratch _scratchLen state m =>
       (bytesAt m rand randLen.toNat).map (·.toNat) ++ (wordsAt m state 4).map (·.toNat))
 
-def sievedParameterSearchApi : Api := { parameterSearchApi with
-  name := "vg_ffdh_generate_parameters_sieved"
+def sievedParameterSearchApi : Api where
+  module := "ffdh"
+  name := "vg_ffdh_generate_parameters"
+  sig := parameterSearchSig
+  writeArgs := true
   contracts := some fun A stack => sievedParameterSearchContract A stack
-  summary := "Run native FFDH parameter generation with RSA's trial-division sieve. The routine \
-    owns candidate retries, witness selection, all primality rounds, attempt limits \
-    and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns \
-    1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes \
-    and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero \
-    for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. \
-    Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the \
-    public tape and the first four controller words." }
+  summary := "Run native finite-field Diffie–Hellman parameter generation, with RSA's \
+    trial-division sieve. The routine owns candidate retries, attempt limits, witness \
+    selection, primality rounds and entropy budgets. Initialize with \
+    `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, \
+    3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard \
+    `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at \
+    least `state[3]` bytes before calling again. `state[1]` is the output width and \
+    `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q \
+    pass the full 64/128 independent witness counts. Contract: \
+    `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape \
+    and the first four controller words."
+  safety := ["`state` must be initialized by `vg_ffdh_parameter_generation_init` for the \
+      supplied `bits` and `generator`, or be the state returned by this routine.",
+    "`out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.",
+    "`scratch_len` must be at least `16 * out_len + 32`.",
+    "The last twelve controller words and the scratch contents are private workspace."]
 
 end VG.Spec.Ffdh

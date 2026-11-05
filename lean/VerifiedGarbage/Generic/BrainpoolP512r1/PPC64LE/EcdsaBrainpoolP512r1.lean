@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Lit
 

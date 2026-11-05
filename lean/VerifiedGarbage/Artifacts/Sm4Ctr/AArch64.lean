@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM4-CTR artifacts on baseline AArch64 -/
 

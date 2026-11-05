@@ -54,6 +54,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P384.AArch64
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer

@@ -1,10 +1,5 @@
-//! The FFDH operations, entirely in verified code: the domain, public-key
-//! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
-//! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search_cached`, from the public context
-//! `vg_ffdh_generate_key_precompute` computes once per domain).
-//! Rust lays out the domain, pads the values to the modulus' width,
-//! allocates the working space and selects the implementation for the CPU.
+//! The FFDH operations: the domain, public-key and key-pair checks, key
+//! generation and the exchange.
 
 use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{

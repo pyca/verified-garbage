@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ChecksCT
@@ -31,6 +33,8 @@ meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.halve_ok
 #assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.sieve_entries
 #assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieve_ok
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieve_shape
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.primeCheck_ok
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.generatorCheck_ok
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieve_ct

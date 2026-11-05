@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RSA (RFC 8017) on AArch64 -/
 

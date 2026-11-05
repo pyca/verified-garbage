@@ -2920,7 +2920,7 @@ beq %cr0, 20b
     )
 }
 
-/// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+/// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
 /// # Safety
 ///
@@ -2943,7 +2943,7 @@ pub unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usiz
 .base64 "AAA/6QAAKSg="
 beq %cr0, 21f
 .base64 "kf8h+CgAf+gwAJ/oOAC/6EAA3+hIAP/oUAAf6VgAP+loAF/peACf6WAAYTkAAIv5"
-bl {vg_ffdh_parameter_candidate}
+bl {vg_ffdh_parameter_candidate_sieved}
 .base64 "cAAhOMYHaXgiACl5OAB/6QAAS+n//4k5AAAsKA=="
 beq %cr0, 23f
 .base64 "/v+JOQAALCg="
@@ -2976,10 +2976,10 @@ bne %cr0, 210b
 .base64 "cAA/6fz/KTkAACko"
 beq %cr0, 20b
 .base64 "IAAB6DAAITimAwh8OACf6GAAv+hwAH/oAACk+CAA/+sgAIBO""#,
-        vg_ffdh_parameter_candidate = sym super::ffdh::vg_ffdh_parameter_candidate::vg_ffdh_parameter_candidate,
+        vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_ffdh_parameter_candidate.rs"]
-pub(crate) mod vg_ffdh_parameter_candidate;
+#[path = "internal/vg_ffdh_parameter_candidate_sieved.rs"]
+pub(crate) mod vg_ffdh_parameter_candidate_sieved;

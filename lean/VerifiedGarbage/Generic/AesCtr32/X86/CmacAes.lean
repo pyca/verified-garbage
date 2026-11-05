@@ -18,6 +18,7 @@ public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem

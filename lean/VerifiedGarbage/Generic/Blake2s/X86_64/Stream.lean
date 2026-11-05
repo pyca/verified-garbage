@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified

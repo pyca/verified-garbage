@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
 import VerifiedGarbage.Proof.Framework.Omega
@@ -81,16 +82,40 @@ theorem CandidateBase.phase_table_room {p : CandidateP} {s : State} (h : Candida
   change 256 + 11 * (8 * (p.phaseWords q + 2)) + 2048 ≤ p.Z - 256
   omega_using [hw, hk, hz]
 
-structure PhaseHeader (p : CandidateP) (q : Bool) (s : State) : Prop where
+/-- The witnesses a phase draws, of the `n` its modulus needs. -/
+def checksCount : Checks → Nat → Nat
+  | .all, n => n
+  | .first, _ => 1
+  | .rest, n => n - 1
+
+theorem checksCount_pos (c : Checks) (bits : Nat) :
+    0 < checksCount c (Spec.Ffdh.primeChecks bits) ∧ checksCount c (Spec.Ffdh.primeChecks bits) < 2 ^ 31 := by
+  cases c <;> by_cases h : bits ≤ 2048 <;> simp [checksCount, Spec.Ffdh.primeChecks, h]
+
+/-- The witnesses phase `q` draws, as `c` chooses. -/
+def CandidateP.phaseChecks (p : CandidateP) (q : Bool) (c : Checks) : Nat :=
+  checksCount c (Spec.Ffdh.primeChecks (p.phaseBits q))
+
+/-- The sieved shape of a modulus: `primeShape`, and not `obviouslyComposite`
+for the requested width. -/
+def CandidateP.sieved (p : CandidateP) (v : Nat) : Bool :=
+  Spec.Ffdh.primeShape v && !Spec.RsaKeyGen.obviouslyComposite p.bits v
+
+theorem odd_of_sieved {p : CandidateP} {v : Nat} (h : p.sieved v = true) : v % 2 = 1 := by
+  unfold CandidateP.sieved Spec.Ffdh.primeShape at h
+  exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp
+    ((Bool.and_eq_true _ _).mp h).1).1).2
+
+structure PhaseHeader (p : CandidateP) (q : Bool) (c : Checks) (s : State) : Prop where
   bits : word s.mem p.B (8 * oWitnessBits) = BitVec.ofNat 64 (p.phaseBits q)
   len : word s.mem p.B (8 * oWitnessLen) = BitVec.ofNat 64 (p.phaseLen q)
-  checks : word s.mem p.B (8 * oChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks (p.phaseBits q))
+  checks : word s.mem p.B (8 * oChecks) = BitVec.ofNat 64 (p.phaseChecks q c)
   link : word s.mem (off p.B 256) (8 * VG.Impl.Rsa.X86_64.Crt.sLink) = p.B
 
-theorem PhaseHeader.of_inner {p : CandidateP} {q : Bool} {s t : State} {rs : List (Nat × Nat)}
-    (h : PhaseHeader p q s) (hb : CandidateBase p s) (hf : Frm (off p.B 256) rs s.mem t.mem)
+theorem PhaseHeader.of_inner {p : CandidateP} {q : Bool} {c : Checks} {s t : State} {rs : List (Nat × Nat)}
+    (h : PhaseHeader p q c s) (hb : CandidateBase p s) (hf : Frm (off p.B 256) rs s.mem t.mem)
     (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z - 256)
-    (hl : ∀ r ∈ rs, 136 ≤ r.1 ∨ r.1 + r.2 ≤ 128) : PhaseHeader p q t := by
+    (hl : ∀ r ∈ rs, 136 ≤ r.1 ∨ r.1 + r.2 ≤ 128) : PhaseHeader p q c t := by
   have hh := hb.inner_header hf hrs
   refine ⟨(hh _ (by decide)).trans h.bits, (hh _ (by decide)).trans h.len,
     (hh _ (by decide)).trans h.checks, ?_⟩

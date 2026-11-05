@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::BrainpoolP512r1;
+use verified_garbage::ec::BrainpoolP512r1;
 
 public_keys!(
     brainpoolp512r1,

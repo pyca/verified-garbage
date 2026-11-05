@@ -1,21 +1,7 @@
-//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place
-//! and without padding.
+//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place and
+//! without padding.
 //!
-//! The whole mode is verified assembly: `vg_aes_expand_key` (contract
-//! `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`VG.Spec.Cbc.aesEncryptContract`,
-//! `aesDecryptContract`) replace each block with its CBC encryption or
-//! decryption and the chaining value with the last ciphertext block, in
-//! constant time. This module checks the lengths, which the assembly does
-//! not, and holds the key schedule.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones, and for decryption
-//! `vg_aes_cbc_decrypt_aes_sha3` instead of `vg_aes_cbc_decrypt_aes` on CPUs
-//! with the features `VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES` names.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -135,12 +121,8 @@ crate::error::impl_error! {
     }
 }
 
-/// An expanded AES key for CBC encryption and decryption.
-///
-/// No padding is added or removed: each operation takes whole 16-byte
-/// blocks. The chaining value is updated in place, so that a message may be
-/// processed in pieces, each continuing from the last.
-pub struct AesCbc {
+/// An expanded AES key, which serves both directions.
+struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
     schedule: [u8; 240],
     /// The number of rounds of AES: 10, 12 or 14.
@@ -149,9 +131,65 @@ pub struct AesCbc {
     backend: Backend,
 }
 
-impl AesCbc {
-    /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+/// An AES-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 16-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct AesCbcEncryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl AesCbcEncryptor {
+    /// Expands a 16-, 24- or 32-byte key, to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.encrypt(&mut self.iv, buffer)
+    }
+}
+
+/// An AES-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 16-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct AesCbcDecryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl AesCbcDecryptor {
+    /// Expands a 16-, 24- or 32-byte key, to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.decrypt(&mut self.iv, buffer)
+    }
+}
+
+impl Key {
+    /// Expands a 16-, 24- or 32-byte key.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
@@ -177,10 +215,10 @@ impl AesCbc {
 
     /// Encrypts whole 16-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
         let f = instance!(
             self.backend,
             vg_aes_cbc_encrypt,
@@ -200,10 +238,10 @@ impl AesCbc {
 
     /// Decrypts whole 16-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
         #[cfg(target_arch = "aarch64")]
         if self.backend == Backend::Aes && detected().contains(VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES)
         {
@@ -287,7 +325,7 @@ type Cbc = unsafe extern "C" fn(
     *mut [u64; 272],
 );
 
-impl Drop for AesCbc {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }
@@ -295,7 +333,7 @@ impl Drop for AesCbc {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCbc, select};
+    use super::{Key, select};
     use crate::cpu::detected;
 
     /// A new key uses the implementation chosen for the CPU's features.
@@ -303,7 +341,7 @@ mod tests {
     fn select_detected() {
         for len in [16, 24, 32] {
             assert_eq!(
-                AesCbc::new(&[0; 32][..len]).unwrap().backend,
+                Key::new(&[0; 32][..len]).unwrap().backend,
                 select(detected())
             );
         }

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
 public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ML-KEM (FIPS 203) on 32-bit ARM -/
 

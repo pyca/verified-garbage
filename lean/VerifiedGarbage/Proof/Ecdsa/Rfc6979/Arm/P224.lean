@@ -41,12 +41,12 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p224
   inst := Spec.Ecdsa.P224.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inl rfl), .inr ⟨rfl, rfl⟩, p224_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 28 - Spec.Ecdsa.nBits Spec.P224.curve = 0; rw [p224_nBits]
-  coreN := "vg_ecdsa_p224_sign"
+  coreN := "vg_ecdsa_p224_sign_k"
   coreC := Impl.Ecdsa.Arm.signP224
   coreConsts := []
   coreX := by
@@ -62,6 +62,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
     simpa only [coreK,coreSigOf,Spec.P224.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p224,Impl.Ecdsa.Arm.p224With,Proof.Ecdsa.Arm.P224.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.P224.signArm] using Proof.Ecdsa.Arm.P224.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

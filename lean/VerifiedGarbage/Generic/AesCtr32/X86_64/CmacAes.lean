@@ -49,6 +49,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # AES-CMAC (NIST SP 800-38B) on x86-64 -/
 

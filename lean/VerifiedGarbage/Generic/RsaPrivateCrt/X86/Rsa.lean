@@ -107,6 +107,7 @@ public import VerifiedGarbage.Proof.Rsa.ZeroTest32
 public import VerifiedGarbage.Proof.RsaPss.Params
 public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86.ByteOps
 import VerifiedGarbage.Proof.Bignum.X86.CopyByteStep

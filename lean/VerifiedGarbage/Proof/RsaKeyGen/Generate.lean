@@ -9,10 +9,10 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 For every key `RsaKeyGen.generate` returns, whatever the randomness
 (`generate_ok`):
 
-* it passes the key check (`keyValid`, what `RSA_check_key` checks) and the
-  pairwise consistency test (`pairwiseOk`), and has the public exponent it
-  was asked for and a modulus of `nlen` bits, the size it was asked for
-  rounded down to a multiple of 128 bits, from 512 to 8192;
+* it passes the key check (`keyValid`, what `RSA_check_key` checks), and
+  has the public exponent it was asked for and a modulus of `nlen` bits, the
+  size it was asked for rounded down to a multiple of 128 bits, from 512 to
+  8192;
 * its primes have `nlen / 2` bits, of which the two most significant are set
   (so they are above `√2 · 2^(nlen/2 − 1)`), and are odd (`PrimeShape`);
 * `p > q`, and `p − q > 2^(nlen/2 − 100)`;
@@ -224,7 +224,7 @@ theorem params_ok {bits e nlen : Nat} (h : params bits e = some nlen) :
   · cases h
 
 theorem generate_attempts_ok {nlen e : Nat} {k : Key} :
-    ∀ left r, generate.attempts e nlen left r = some (.ok k) → KeyOk nlen e k ∧ pairwiseOk k = true
+    ∀ left r, generate.attempts e nlen left r = some (.ok k) → KeyOk nlen e k
   | 0, _, h => by simp [generate.attempts] at h
   | left + 1, r, h => by
     unfold generate.attempts at h
@@ -233,13 +233,11 @@ theorem generate_attempts_ok {nlen e : Nat} {k : Key} :
     · exact generate_attempts_ok left _ h
     · cases h
     · rename_i hk
-      split at h
-      · cases h
-        exact ⟨generateOnce_ok hk, by assumption⟩
-      · cases h
+      cases h
+      exact generateOnce_ok hk
 
-/-- Every key `generate` returns passes the key check and the pairwise
-consistency test, has the public exponent asked for, a modulus of the size
+/-- Every key `generate` returns passes the key check, has the public
+exponent asked for, a modulus of the size
 asked for rounded down to a multiple of 128 bits (from 512 to 8192), primes
 of half that size with their two most significant bits set, more than
 `2^(nlen/2 − 100)` apart, and `d > 2^(nlen/2)` an inverse of `e` modulo
@@ -247,7 +245,7 @@ of half that size with their two most significant bits set, more than
 theorem generate_ok {bits e : Nat} {rand : Rand} {k : Key}
     (h : generate bits e rand = some (.ok k)) :
     ∃ nlen, params bits e = some nlen ∧ exponentValid e = true ∧ minBits ≤ nlen ∧
-      nlen ≤ maxBits ∧ nlen % 128 = 0 ∧ nlen ≤ bits ∧ KeyOk nlen e k ∧ pairwiseOk k = true := by
+      nlen ≤ maxBits ∧ nlen % 128 = 0 ∧ nlen ≤ bits ∧ KeyOk nlen e k := by
   unfold generate at h
   split at h
   · cases h

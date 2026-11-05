@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcVerified
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86 -/
 

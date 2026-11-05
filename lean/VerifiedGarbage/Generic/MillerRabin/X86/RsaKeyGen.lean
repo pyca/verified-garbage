@@ -23,6 +23,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Verified
 public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # The RSA prime search on i686, its candidates calling each shared Miller–Rabin implementation -/
 

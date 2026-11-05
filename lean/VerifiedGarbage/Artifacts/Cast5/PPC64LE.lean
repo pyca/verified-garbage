@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.Lit
 
 /-! # CAST5 key expansion and ECB on PPC64LE -/

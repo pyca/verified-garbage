@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P384.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.P384.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P384
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.P384.Lit
 
 /-! # ECDH over P-384 (SP 800-56A §5.7.1.2) on PPC64LE -/

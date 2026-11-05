@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ML-DSA (FIPS 204) verification on RISC-V -/
 

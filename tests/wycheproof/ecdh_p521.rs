@@ -1,7 +1,7 @@
 //! ECDH over P-521 (`EcdhEcpointTest` vectors of
 //! `ecdh_secp521r1_ecpoint_test.json`, public keys as SEC 1 octet strings).
 //!
-//! [`PrivateKey::diffie_hellman`] takes an uncompressed public key: a valid
+//! [`PrivateKey::exchange`] takes an uncompressed public key: a valid
 //! vector must give its shared secret, an invalid one must be refused (or,
 //! if not 133 bytes, cannot be passed), and the acceptable ones are
 //! compressed keys, which cannot be passed either.
@@ -15,7 +15,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{Error, P521, PrivateKey};
+use verified_garbage::ec::{P521, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -42,7 +43,7 @@ fn ecdh_secp521r1_ecpoint_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
-        let result = key.diffie_hellman(&public);
+        let result = key.exchange(&PublicKey::from_bytes(&public));
         #[cfg(target_arch = "x86_64")]
         {
             // A scalar of one makes ECDH an independent reference for the
@@ -52,7 +53,7 @@ fn ecdh_secp521r1_ecpoint_test() {
             one[last] = 1;
             let reference = PrivateKey::<P521>::from_bytes(&one);
             let valid = P521::validate_public_key(&public);
-            let expected = reference.diffie_hellman(&public).is_ok();
+            let expected = reference.exchange(&PublicKey::from_bytes(&public)).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         match test.result {

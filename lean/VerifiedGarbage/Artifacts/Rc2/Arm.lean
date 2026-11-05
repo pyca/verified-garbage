@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # RC2 artifacts on baseline ARMv7 -/
 

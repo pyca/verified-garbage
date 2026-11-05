@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.EcdhLit
 
 /-! # ECDH over brainpoolP384r1 (SP 800-56A §5.7.1.2) on RISC-V -/

@@ -1,16 +1,7 @@
-//! Blowfish-CBC (SP 800-38A §6.2, with Blowfish as in Schneier, FSE 1994),
-//! in place and without padding.
+//! Blowfish-CBC (SP 800-38A §6.2, with Blowfish as in Schneier, FSE 1994), in
+//! place and without padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
-//! writes the schedule, which serves both directions, and
-//! `vg_blowfish_cbc_encrypt_chained` and `vg_blowfish_cbc_decrypt_chained`
-//! (`VG.Spec.Blowfish.cbcEncryptChainedContract`, `cbcDecryptChainedContract`)
-//! replace each block with its CBC encryption or decryption from the chaining
-//! value at `iv`, and the chaining value with the one to continue from, the
-//! last ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. This module checks the lengths and
-//! holds the schedule.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -41,21 +32,73 @@ crate::error::impl_error! {
     }
 }
 
-/// An expanded Blowfish key for CBC encryption and decryption, which use the
-/// same schedule.
-///
-/// No padding is added or removed: each operation takes whole eight-byte
-/// blocks. The chaining value is updated in place, so that a message may be
-/// processed in pieces, each continuing from the last.
-pub struct BlowfishCbc {
+/// An expanded Blowfish key, which serves both directions.
+struct Key {
     /// The schedule `vg_blowfish_expand_key` writes.
     schedule: [u8; 4168],
 }
 
-impl BlowfishCbc {
-    /// Expands a key of 4..=56 bytes (32 to 448 bits) for use in either
-    /// direction. Weak keys are accepted.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+/// A Blowfish-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct BlowfishCbcEncryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl BlowfishCbcEncryptor {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits; weak keys are
+    /// accepted), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.encrypt(&mut self.iv, buffer)
+    }
+}
+
+/// A Blowfish-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct BlowfishCbcDecryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl BlowfishCbcDecryptor {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits; weak keys are
+    /// accepted), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.decrypt(&mut self.iv, buffer)
+    }
+}
+
+impl Key {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are accepted.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !(4..=56).contains(&key.len()) {
             return Err(Error::InvalidKeyLength);
         }
@@ -68,10 +111,10 @@ impl BlowfishCbc {
 
     /// Encrypts whole eight-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -92,10 +135,10 @@ impl BlowfishCbc {
 
     /// Decrypts whole eight-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -112,7 +155,7 @@ impl BlowfishCbc {
     }
 }
 
-impl Drop for BlowfishCbc {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

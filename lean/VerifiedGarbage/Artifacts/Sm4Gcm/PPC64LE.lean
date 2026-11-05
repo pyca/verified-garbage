@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 

@@ -39,6 +39,7 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Proof.GcmSiv.Words32
 public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load

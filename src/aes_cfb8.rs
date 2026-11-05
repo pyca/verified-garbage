@@ -1,19 +1,7 @@
-//! AES-CFB8 (SP 800-38A §6.3, with 8-bit segments) with 128-, 192- and
-//! 256-bit keys, in place.
+//! AES-CFB8 (SP 800-38A §6.3, with 8-bit segments) with 128-, 192- and 256-bit
+//! keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`
-//! (`VG.Spec.Cfb8.aesEncryptContract`, `aesDecryptContract`) replace each
-//! byte with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))` or `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`
-//! from the input block at `iv`, which they replace with the one to
-//! continue from, in constant time.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -118,8 +106,8 @@ fn select(f: Features) -> Backend {
 /// The key is not 16, 24 or 32 bytes long.
 pub use crate::error::InvalidKeyLength;
 
-/// An expanded AES key for CFB8 encryption and decryption.
-pub struct AesCfb8 {
+/// An expanded AES key, which serves both directions.
+struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
     schedule: [u8; 240],
     /// The number of rounds of AES: 10, 12 or 14.
@@ -128,9 +116,61 @@ pub struct AesCfb8 {
     backend: Backend,
 }
 
-impl AesCfb8 {
-    /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+/// An AES-CFB8 encryption of one message.
+///
+/// A message may be encrypted in pieces of any lengths, each continuing
+/// where the last ended.
+pub struct AesCfb8Encryptor {
+    key: Key,
+    /// The input block to continue from: the IV, then its last bytes
+    /// followed by the ciphertext so far.
+    iv: [u8; 16],
+}
+
+impl AesCfb8Encryptor {
+    /// Expands a 16-, 24- or 32-byte key, to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts `buffer` in place, continuing the message.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) {
+        self.key.encrypt(&mut self.iv, buffer);
+    }
+}
+
+/// An AES-CFB8 decryption of one message.
+///
+/// A message may be decrypted in pieces of any lengths, each continuing
+/// where the last ended.
+pub struct AesCfb8Decryptor {
+    key: Key,
+    /// The input block to continue from: the IV, then its last bytes
+    /// followed by the ciphertext so far.
+    iv: [u8; 16],
+}
+
+impl AesCfb8Decryptor {
+    /// Expands a 16-, 24- or 32-byte key, to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts `buffer` in place, continuing the message.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) {
+        self.key.decrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Key {
+    /// Expands a 16-, 24- or 32-byte key.
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -156,10 +196,8 @@ impl AesCfb8 {
 
     /// Encrypts `buffer` in place, from the input block `iv`, which it
     /// replaces with the one to continue from: its last `16 - n` bytes
-    /// followed by the last `n` (up to 16) ciphertext bytes. A message may
-    /// be encrypted in pieces of any length, each continuing from the `iv`
-    /// the last left.
-    pub fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    /// followed by the last `n` (up to 16) ciphertext bytes.
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         let f = instance!(
             self.backend,
             vg_aes_cfb8_encrypt,
@@ -172,10 +210,8 @@ impl AesCfb8 {
 
     /// Decrypts `buffer` in place, from the input block `iv`, which it
     /// replaces with the one to continue from: its last `16 - n` bytes
-    /// followed by the last `n` (up to 16) ciphertext bytes. A message may
-    /// be decrypted in pieces of any length, each continuing from the `iv`
-    /// the last left.
-    pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    /// followed by the last `n` (up to 16) ciphertext bytes.
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         let f = instance!(
             self.backend,
             vg_aes_cfb8_decrypt,
@@ -229,7 +265,7 @@ type Cfb8 = unsafe extern "sysv64" fn(
 type Cfb8 =
     unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], *mut u8, usize, *mut [u64; 272]);
 
-impl Drop for AesCfb8 {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }
@@ -237,7 +273,7 @@ impl Drop for AesCfb8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCfb8, select};
+    use super::{Key, select};
     use crate::cpu::detected;
 
     /// A new key uses the implementation chosen for the CPU's features.
@@ -245,7 +281,7 @@ mod tests {
     fn select_detected() {
         for len in [16, 24, 32] {
             assert_eq!(
-                AesCfb8::new(&[0; 32][..len]).unwrap().backend,
+                Key::new(&[0; 32][..len]).unwrap().backend,
                 select(detected())
             );
         }

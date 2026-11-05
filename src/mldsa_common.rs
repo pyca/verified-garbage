@@ -1,6 +1,5 @@
-//! What ML-DSA-44, ML-DSA-65 and ML-DSA-87 (`crate::mldsa44`,
-//! `crate::mldsa65`, `crate::mldsa87`) share: their API, defined once by
-//! `ml_dsa!` for each parameter set's verified functions and sizes.
+//! What ML-DSA-44, ML-DSA-65 and ML-DSA-87 share: their API, defined once by
+//! `ml_dsa!`.
 
 #![cfg(any(
     target_arch = "x86_64",

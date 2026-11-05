@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_256
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # HMAC-SHA-512/256 (RFC 2104) on PPC64LE -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 @[expose] public section
 

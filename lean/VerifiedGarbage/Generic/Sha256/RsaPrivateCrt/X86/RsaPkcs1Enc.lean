@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86 -/
 

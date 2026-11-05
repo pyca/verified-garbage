@@ -1,13 +1,8 @@
-//! SM4 ECB (GB/T 32907-2016, as transcribed in draft-ribose-cfrg-sm4-10;
-//! SP 800-38A §6.1), in place and without padding.
+//! SM4-ECB (GB/T 32907-2016, as transcribed in draft-ribose-cfrg-sm4-10; SP
+//! 800-38A §6.1), in place and without padding.
 //!
-//! ECB is the block cipher applied to each block on its own, so the whole
-//! mode is verified assembly: `vg_sm4_expand_key` (contract
-//! `VG.Spec.Sm4.expandKeyContract`) writes the key schedule, and
-//! `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` (`ecbEncryptContract`,
-//! `ecbDecryptContract`) replace each block with its encryption or
-//! decryption, in constant time. Each operation accepts complete 16-byte
-//! blocks, including empty input.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

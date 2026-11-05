@@ -11,9 +11,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 and what the prime search (`GenerationContract.lean`) is built on: a
 candidate for a prime (`RsaKeyGen.candidateStep`) from the random octets
 given (`candidateOp`), its status and what its timing may depend on. The
-Rust that calls them supplies the randomness, counts the generations and
-runs the pairwise consistency test with `vg_rsa_private_checked` and
-`vg_rsa_public_precomputed_checked`.
+Rust that calls them supplies the randomness and counts the generations.
 
 Every number is a slice of octets, most significant first, with a length of
 its own. A prime is `p_len` octets (`out_len` for a candidate), a multiple of

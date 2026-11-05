@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # i686 public PKCS #1 signature operations -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 @[expose] public section
 

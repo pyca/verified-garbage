@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.GenerateVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-! # DSA on ARMv7 -/

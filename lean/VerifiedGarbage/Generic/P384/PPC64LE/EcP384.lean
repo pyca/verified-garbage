@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.P384.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.P384.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P384
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P384.Lit
 
 /-! # P-384 public keys (FIPS 186-5 §A.2) on PPC64LE -/

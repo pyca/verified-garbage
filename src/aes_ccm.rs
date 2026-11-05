@@ -1,33 +1,11 @@
-//! AES-CCM (NIST SP 800-38C, with the formatting and counter generation of
-//! its Appendix A, as RFC 3610) with 128-, 192- and 256-bit AES keys.
+//! AES-CCM (NIST SP 800-38C, with the formatting and counter generation of its
+//! Appendix A, as RFC 3610) with 128-, 192- and 256-bit keys.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_ccm_seal` and
-//! `vg_aes_ccm_open` (contracts `VG.Spec.Ccm.sealContract` and
-//! `openContract`) are generation-encryption and decryption-verification
-//! (§6.1, §6.2) in one call each, from the AES key schedule that
-//! `vg_aes_expand_key` writes. `open` checks the MAC in constant time and
-//! overwrites the data with zeros when it is wrong. This module checks the
-//! lengths of Appendix A.1, which the assembly does not, and holds the key
-//! schedule.
-//!
-//! # Tags
-//!
-//! The length of the tag (the encrypted MAC) is a parameter of CCM: it is
-//! part of the first block the MAC is computed over. It is a type parameter
-//! here, `T` in [`AesCcm::encrypt_in_place`] and
-//! [`AesCcm::decrypt_in_place`], so that it is fixed in the caller's code
-//! and never comes from a message (see `crate::aes_gcm`): one of the lengths
-//! Appendix A.1 allows, 4, 6, 8, 10, 12, 14 or 16 bytes, checked at compile
-//! time.
-//!
-//! Their variants, with the same contracts, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones
-//! (both with `vg_aes_expand_key_aesni`); on x86, the `_aesni` ones; on
-//! AArch64, the `_aes` ones. On x86-64 and AArch64, when the associated data
-//! and the payload are longer than 32 bytes together (`cbc`), the
-//! `_aesni_cbc` ones (with either x86-64 backend) or the `_aes_cbc` ones run
-//! instead, whose features `select` checks too.
+//! A nonce must never be used twice with the same key. The tag length, 4, 6, 8,
+//! 10, 12, 14 or 16 bytes (Appendix A.1), is a type parameter, `T` in
+//! [`AesCcm::encrypt_in_place`] and [`AesCcm::decrypt_in_place`], so that it is
+//! fixed in the caller's code and never taken from a message (see
+//! `crate::aes_gcm`).
 
 #![cfg(any(
     target_arch = "x86",

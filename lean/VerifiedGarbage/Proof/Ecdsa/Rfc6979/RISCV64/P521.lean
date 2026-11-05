@@ -6,15 +6,34 @@ public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.P521
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: P-521's kit
 
 P-521's scalars (66 bytes in nine words, of which `n`'s 521 bits are the
-leftmost), the functions of its order, and `vg_ecdsa_p521_sign`, which reads
+leftmost), the functions of its order, and `vg_ecdsa_p521_sign_k` (the signature with a given `k`), which reads
 SHA-512's 64-byte digest and no table: its calls against `signRV`
 (`WP.call`, since it pushes no frames), from what `CoreArgsG` gives; the
 candidate it reads as `k` is its 66 bytes' leftmost 521 bits (`hash_eq`).
+
+Then `vg_ecdsa_p521_sign`, with HMAC as a table: the curve for the body
+(`curveT`), the taint checks of its pieces (`checksP`), which the kernel
+evaluates, and its verification against `TableInstance.signContract` with
+the tables of `vs` (`verifiedT`).
 -/
 
 @[expose] public section
@@ -94,5 +113,43 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) : Kit where
     rwa [show VG.Proof.Ecdsa.RISCV64.P521.sg s.mem d g k = sgOf Spec.Ecdsa.P521.inst 66 64 7 s.mem d g k by
       simp only [VG.Proof.Ecdsa.RISCV64.P521.sg, sgOf, VG.Proof.Ecdsa.RISCV64.P521.hash_eq]; rfl] at hp)
   core_rel h := core_rel hL fun s s' hp => let ⟨a, a', e, _⟩ := h s s' hp; ⟨a, a', e⟩
+
+/-! ## `vg_ecdsa_p521_sign`, with HMAC as a table -/
+
+/-- P-521 as the body's curve, for its group law `hL`. -/
+def curveT (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) : CurveT where
+  kit := kit hL
+  coreN := "vg_ecdsa_p521_sign_k"
+  big := true
+  hbig := (by decide : (true = true ↔ 64 < 66))
+  hGv := rfl
+  hsh := fun h => nomatch h
+
+/-- The body's configuration without the tables, which the taint checks see. -/
+def cfgP : Impl.Ecdsa.Rfc6979.RISCV64.Cfg where
+  f := Proof.HmacTable.RISCV64.fnsOf []
+  FN := Impl.Ecdsa.RISCV64.p521Order
+  coreN := "vg_ecdsa_p521_sign_k"
+  coreC := Impl.Ecdsa.RISCV64.P521.signP521
+  tries := Spec.Ecdsa.Rfc6979.Curves.p521.tries
+  nw := 9
+  Q := 66
+  big := true
+  G := 64
+
+theorem checksP : Checks cfgP := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> refine ⟨?_, ?_⟩
+  taint_decide_all
+
+theorem checksT (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) :
+    Checks (cfgT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries []) := checksP
+
+/-- `vg_ecdsa_p521_sign`, with the tables of `vs`. -/
+theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.P521.curve) (vs : List Proof.HmacTable.RISCV64.HVar)
+    (h : OK vs) :
+    Verified RISCV64.target (signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 (kit hL).K vs) := by
+  exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h (sat_nil h (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P521

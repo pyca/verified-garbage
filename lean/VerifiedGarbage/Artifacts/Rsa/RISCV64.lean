@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCkV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCckV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # RSA (RFC 8017) on RISC-V -/
 

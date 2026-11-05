@@ -1,18 +1,10 @@
-//! Elliptic curve Diffie-Hellman: the ECC CDH primitive of NIST SP 800-56A
-//! Rev. 3, §5.7.1.2.
+//! Elliptic-curve Diffie-Hellman: the ECC CDH primitive of NIST SP 800-56A Rev.
+//! 3 §5.7.1.2, over the curves of [`ec`](crate::ec).
 //!
-//! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far [`P256`],
-//! [`P384`], [`P521`], [`P224`], [`P192`], [`BrainpoolP256r1`],
-//! [`BrainpoolP384r1`], [`BrainpoolP512r1`] and [`Secp256k1`]). Each exchange
-//! is one call of verified code (`vg_ecdh_<curve>`, contract
-//! `VG.Spec.Ecdh.Instance.exchangeContract`): it validates the peer's public
-//! key as SP 800-56A §5.6.2.3.3 requires (the uncompressed form of SEC 1
-//! §2.3.3, both coordinates below `p`, on the curve), checks the private key,
-//! and returns the x-coordinate of `dQ`, in constant time. The public key is
-//! one call too (`vg_ec_<curve>_public_key`).
-//!
-//! On x86-64, `P256::validate_public_key` (and the same method on each
-//! curve) validates an uncompressed public key as an exchange does.
+//! An exchange validates the peer's [`PublicKey<C>`] as SP 800-56A §5.6.2.3.3
+//! requires (the uncompressed form of SEC 1 §2.3.3, both coordinates below `p`,
+//! on the curve) and returns the x-coordinate of the shared point, which is not
+//! passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -33,11 +25,7 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-pub use crate::ec::{
-    BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, P192, P224, P256, P384, P521,
-    Secp256k1,
-};
-
+use crate::ec::{Curve, PublicKey};
 use crate::zeroize::zeroize;
 
 /// Why an operation failed.
@@ -71,6 +59,26 @@ impl<C: Curve> PrivateKey<C> {
     /// operation checks that it is in `[1, n − 1]`.
     pub fn from_bytes(d: &C::PrivateKey) -> Self {
         Self { d: d.clone() }
+    }
+
+    /// The public key `Q = dG`.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
+    pub fn public_key(&self) -> Result<PublicKey<C>, Error> {
+        PublicKey::derive(&self.d).ok_or(Error::InvalidKey)
+    }
+
+    /// The shared secret with the peer whose public key is `peer`: the
+    /// x-coordinate of `dQ`, most significant byte first.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
+    /// is not a valid public key (SP 800-56A §5.6.2.3.3).
+    pub fn exchange(&self, peer: &PublicKey<C>) -> Result<C::SharedSecret, Error> {
+        C::exchange(&self.d, &peer.q).ok_or(Error::InvalidKey)
     }
 }
 

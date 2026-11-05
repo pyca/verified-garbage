@@ -1,9 +1,7 @@
-//! IDEA in ECB mode (Lai, 1992), in place and without padding.
+//! IDEA-ECB (Lai, 1992), in place and without padding.
 //!
-//! Key expansion, the decryption subkeys and ECB use verified primitives:
-//! IDEA decrypts with the encryption function under the decryption
-//! subkeys, so both directions run the same ECB primitive. Each operation
-//! accepts complete eight-byte blocks, including empty input.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

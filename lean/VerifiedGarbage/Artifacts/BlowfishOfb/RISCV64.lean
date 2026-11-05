@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
 
 /-! # Blowfish-OFB artifacts on baseline RISC-V -/

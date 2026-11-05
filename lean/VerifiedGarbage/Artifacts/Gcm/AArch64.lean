@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # GHASH on AArch64 -/
 

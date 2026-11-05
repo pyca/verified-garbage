@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # Intel-syntax printer for the x86 (32-bit) model
@@ -180,5 +181,18 @@ def printer : Printer isa where
   unencodable
     | .symPush .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
+
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- The model's baseline is i686 with SSE2 (`TCB/X86/Isa.lean`), which the
+  -- `i586-*` targets and `i686-unknown-uefi` lack.
+  rustCfg := "all(target_arch = \"x86\", target_feature = \"sse2\")"
+  rustAbi := "C"
+  argAreaDoc ws := if argBytes ws = 0 then none else some ("the arguments on the stack", true)
+  reservedDoc n := some (if n = 0 then "the return address on the stack" else
+    s!"the return address on the stack or the {n} bytes of stack below it")
 
 end VG.X86

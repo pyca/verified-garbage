@@ -10,41 +10,53 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cbc::{AesCbc, Error};
+use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor, Error};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
-type Operation = fn(&AesCbc, &mut [u8; 16], &mut [u8]) -> Result<(), Error>;
+/// Encrypts (or decrypts) `buffer` with `key` from `iv`, in the pieces
+/// `lens` gives (the rest in a last piece), each a whole number of blocks.
+fn run(key: &[u8], iv: &[u8; 16], encrypt: bool, buffer: &mut [u8], lens: &[usize]) {
+    let mut encryptor = AesCbcEncryptor::new(key, iv).unwrap();
+    let mut decryptor = AesCbcDecryptor::new(key, iv).unwrap();
+    let mut rest = buffer;
+    for &len in lens.iter().chain([&usize::MAX]) {
+        let (piece, tail) = rest.split_at_mut(len.min(rest.len()));
+        if encrypt {
+            encryptor.encrypt(piece).unwrap();
+        } else {
+            decryptor.decrypt(piece).unwrap();
+        }
+        rest = tail;
+    }
+}
 
 /// Checks a vector in both directions, in one call; with `split`, also in
-/// two calls split at each block boundary and one call per block, each
-/// continuing from the chaining value the last left.
+/// two calls split at each block boundary (after an empty one) and one call
+/// per block, each continuing the message, and in one call at every
+/// alignment, with guards around the output.
 fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
     assert_eq!(plaintext.len(), ciphertext.len());
-    let ctx = AesCbc::new(key).unwrap();
     let iv: [u8; 16] = iv.try_into().unwrap();
-    // The chaining value after the message: its last ciphertext block (no
-    // vector is empty).
-    let last: [u8; 16] = ciphertext[ciphertext.len() - 16..].try_into().unwrap();
-    for (operation, input, expected) in [
-        (AesCbc::encrypt as Operation, plaintext, ciphertext),
-        (AesCbc::decrypt as Operation, ciphertext, plaintext),
+    for (encrypt, input, expected) in [
+        (true, plaintext, ciphertext),
+        (false, ciphertext, plaintext),
     ] {
         let mut output = input.to_vec();
-        let mut chain = iv;
-        operation(&ctx, &mut chain, &mut output).unwrap();
+        run(key, &iv, encrypt, &mut output, &[]);
         assert_eq!(output, expected);
-        assert_eq!(chain, last);
         if split {
-            // The published multi-block vectors at every alignment, with
-            // guards around the output.
             for offset in 0..16 {
                 let mut storage = vec![0xa5; offset + input.len() + 16];
                 storage[offset..offset + input.len()].copy_from_slice(input);
-                let mut chain = iv;
-                operation(&ctx, &mut chain, &mut storage[offset..offset + input.len()]).unwrap();
+                run(
+                    key,
+                    &iv,
+                    encrypt,
+                    &mut storage[offset..offset + input.len()],
+                    &[],
+                );
                 assert_eq!(&storage[offset..offset + input.len()], expected);
-                assert_eq!(chain, last);
                 assert!(crate::bytes::all_equal(&storage[..offset], 0xa5));
                 assert!(crate::bytes::all_equal(
                     &storage[offset + input.len()..],
@@ -53,21 +65,12 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
             }
             for offset in (0..=input.len()).step_by(16) {
                 let mut output = input.to_vec();
-                let mut chain = iv;
-                operation(&ctx, &mut chain, &mut []).unwrap();
-                assert_eq!(chain, iv);
-                operation(&ctx, &mut chain, &mut output[..offset]).unwrap();
-                operation(&ctx, &mut chain, &mut output[offset..]).unwrap();
+                run(key, &iv, encrypt, &mut output, &[0, offset]);
                 assert_eq!(output, expected);
-                assert_eq!(chain, last);
             }
             let mut output = input.to_vec();
-            let mut chain = iv;
-            for block in output.chunks_mut(16) {
-                operation(&ctx, &mut chain, block).unwrap();
-            }
+            run(key, &iv, encrypt, &mut output, &vec![16; input.len() / 16]);
             assert_eq!(output, expected);
-            assert_eq!(chain, last);
         }
     }
 }
@@ -178,42 +181,47 @@ fn nist_cbc() {
 
 #[test]
 fn limits_and_empty_input() {
+    let iv = [0x3c; 16];
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(AesCbc::new(&key), Err(Error::InvalidKeyLength)));
+            assert!(matches!(
+                AesCbcEncryptor::new(&key, &iv),
+                Err(Error::InvalidKeyLength)
+            ));
+            assert!(matches!(
+                AesCbcDecryptor::new(&key, &iv),
+                Err(Error::InvalidKeyLength)
+            ));
             continue;
         }
-        let ctx = AesCbc::new(&key).unwrap();
-        let mut iv = [0x3c; 16];
-        ctx.encrypt(&mut iv, &mut []).unwrap();
-        ctx.decrypt(&mut iv, &mut []).unwrap();
-        assert_eq!(iv, [0x3c; 16]);
+        let mut encryptor = AesCbcEncryptor::new(&key, &iv).unwrap();
+        let mut decryptor = AesCbcDecryptor::new(&key, &iv).unwrap();
+        encryptor.encrypt(&mut []).unwrap();
+        decryptor.decrypt(&mut []).unwrap();
         for n in 1usize..48 {
             if n.is_multiple_of(16) {
                 continue;
             }
             let mut buffer = vec![0x5a; n];
-            assert_eq!(
-                ctx.encrypt(&mut iv, &mut buffer),
-                Err(Error::IncompleteBlock)
-            );
+            assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
-            assert_eq!(
-                ctx.decrypt(&mut iv, &mut buffer),
-                Err(Error::IncompleteBlock)
-            );
+            assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
-            assert_eq!(iv, [0x3c; 16]);
         }
-        // Many blocks in one call round-trip, and equal blocks encrypt to
-        // different blocks.
+        // The calls before changed nothing: many blocks in one call encrypt
+        // as from a new encryptor, equal blocks to different blocks, and
+        // round-trip; and a further call continues the message.
         let mut buffer = vec![0xa5; 16 * 67];
-        ctx.encrypt(&mut iv, &mut buffer).unwrap();
+        encryptor.encrypt(&mut buffer).unwrap();
+        let mut whole = vec![0xa5; 16 * 68];
+        run(&key, &iv, true, &mut whole, &[]);
+        assert_eq!(buffer, whole[..16 * 67]);
         assert!(buffer.chunks(16).skip(1).all(|b| b != &buffer[..16]));
-        assert_eq!(&iv[..], &buffer[16 * 66..]);
-        let mut iv = [0x3c; 16];
-        ctx.decrypt(&mut iv, &mut buffer).unwrap();
+        let mut last = [0xa5; 16];
+        encryptor.encrypt(&mut last).unwrap();
+        assert_eq!(last, whole[16 * 67..]);
+        decryptor.decrypt(&mut buffer).unwrap();
         assert_eq!(buffer, vec![0xa5; 16 * 67]);
     }
 }

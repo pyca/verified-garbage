@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # BLAKE2b (RFC 7693) on PPC64LE -/
 

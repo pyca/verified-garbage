@@ -1,15 +1,7 @@
-//! Triple DES ECB (FIPS 46-3), in place and without padding.
+//! Triple DES-ECB (FIPS 46-3), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives:
-//! `vg_triple_des_expand_key`, `vg_triple_des_ecb_encrypt` and
-//! `vg_triple_des_ecb_decrypt` (`VG.Spec.TripleDes.expandKeyContract`,
-//! `ecbEncryptContract`, `ecbDecryptContract`). Each operation accepts
-//! complete eight-byte blocks, including empty input.
-//!
-//! The variants of ECB encryption and decryption, with the same contracts,
-//! are chosen by `Backend::select` on CPUs with the features their
-//! `_FEATURES` constants name: on x86-64, `vg_triple_des_ecb_encrypt_avx512`
-//! and `vg_triple_des_ecb_decrypt_avx512`, then the `_avx2` ones.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

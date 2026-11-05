@@ -1,6 +1,5 @@
-//! DSA key generation (FIPS 186-4 B.1.2): x sampled uniformly from
-//! `[1, q)` by rejection, then `y = g^x mod p`, for a domain the caller
-//! assures is prime.
+//! DSA key generation (FIPS 186-4 Appendix B.1.2), for a domain the caller
+//! vouches is prime.
 
 #![cfg(any(
     target_arch = "x86",

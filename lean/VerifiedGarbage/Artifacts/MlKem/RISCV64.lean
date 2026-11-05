@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MlKem.RISCV64.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem.RISCV64.EncapsCT
 public import VerifiedGarbage.Proof.MlKem.RISCV64.DecapsCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ML-KEM (FIPS 203) on RISC-V -/
 

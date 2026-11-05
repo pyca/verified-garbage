@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 

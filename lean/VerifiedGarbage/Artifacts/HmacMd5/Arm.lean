@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # HMAC-MD5 (RFC 2104) on ARMv7 -/
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP384r1.Lit
 
 /-! # ECDH over brainpoolP384r1 (SP 800-56A §5.7.1.2) on PPC64LE -/

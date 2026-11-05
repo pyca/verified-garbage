@@ -1,6 +1,5 @@
-//! What ML-KEM-768 and ML-KEM-1024 (`crate::mlkem768`, `crate::mlkem1024`)
-//! share: their `Error`, and their API, defined once by `ml_kem!` for each
-//! parameter set's verified functions and sizes.
+//! What ML-KEM-768 and ML-KEM-1024 share: their `Error`, and their API, defined
+//! once by `ml_kem!`.
 
 #![cfg(any(
     target_arch = "x86_64",

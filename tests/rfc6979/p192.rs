@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.3: P-192, with SHA-256.
+//! RFC 6979 §A.2.3: P-192, with SHA-256,
+//! and with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -9,8 +10,14 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P192, SigningKey, VerifyingKey};
+use verified_garbage::ec::{P192, PublicKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha256::Sha256;
+
+use verified_garbage::hashes::sha1::Sha1;
+use verified_garbage::hashes::sha224::Sha224;
+use verified_garbage::hashes::sha384::Sha384;
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
 
@@ -28,7 +35,7 @@ fn sign(key: &SigningKey<P192>, message: &[u8]) -> [Result<[u8; 48], Error>; 2] 
 }
 
 /// Whether `rs` verifies for `message`, of the message and of its hash.
-fn verify(key: &VerifyingKey<P192>, message: &[u8], rs: &[u8; 48]) -> [Result<(), Error>; 2] {
+fn verify(key: &PublicKey<P192>, message: &[u8], rs: &[u8; 48]) -> [Result<(), Error>; 2] {
     [
         key.verify::<Sha256>(message, rs),
         key.verify_prehashed::<Sha256>(&Sha256::digest(message), rs),
@@ -53,12 +60,11 @@ fn p192_sha256() {
 #[test]
 fn p192_verify() {
     let (_, x, u, signatures) = p192();
-    let key = VerifyingKey::<P192>::from_bytes(&u);
-    assert_eq!(key.to_bytes(), u);
+    let key = PublicKey::<P192>::from_bytes(&u);
+    assert_eq!(key.as_bytes(), &u);
     let other = SigningKey::<P192>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let other = VerifyingKey::<P192>::from_bytes(&other);
     let bad = Err(Error::InvalidSignature);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), message.as_bytes(), rs);
@@ -75,7 +81,10 @@ fn p192_verify() {
 #[test]
 fn p192_public_key() {
     let (_, x, u, _) = p192();
-    assert_eq!(SigningKey::<P192>::from_bytes(&x).public_key(), Ok(u));
+    assert_eq!(
+        SigningKey::<P192>::from_bytes(&x).public_key(),
+        Ok(PublicKey::from_bytes(&u))
+    );
 }
 
 /// A key outside `[1, n − 1]` is refused; those at its ends sign, and have
@@ -93,4 +102,40 @@ fn p192_keys() {
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve also signs with.
+#[test]
+fn p192_sha1() {
+    super::sign_with::<P192, Sha1, 24, 49, 48>(
+        "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-224, which the curve also signs with.
+#[test]
+fn p192_sha224() {
+    super::sign_with::<P192, Sha224, 24, 49, 48>(
+        "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// The signatures with SHA-384, which the curve also signs with.
+#[test]
+fn p192_sha384() {
+    super::sign_with::<P192, Sha384, 24, 49, 48>(
+        "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n",
+        "SHA-384",
+    );
+}
+
+/// The signatures with SHA-512, which the curve also signs with.
+#[test]
+fn p192_sha512() {
+    super::sign_with::<P192, Sha512, 24, 49, 48>(
+        "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }

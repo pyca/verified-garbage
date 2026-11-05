@@ -47,6 +47,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.Sign

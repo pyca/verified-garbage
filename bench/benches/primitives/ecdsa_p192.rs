@@ -2,9 +2,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p192`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p192`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p192_sha256",
     "ecdsa_p192",
+    "fn_tables",
     "ec_p192",
     "hmac_sha256",
     "sha256",
@@ -30,7 +33,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{P192, SigningKey};
+    use verified_garbage::ec::P192;
+    use verified_garbage::ecdsa::SigningKey;
     use verified_garbage::hashes::sha256::Sha256;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -72,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P192>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P192>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -87,7 +91,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P192>
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{P192, SigningKey, VerifyingKey};
+    use verified_garbage::ec::P192;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -117,8 +122,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P192>
     }
     g.finish();
 
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<P192>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let digest = H::digest(&[0x5a; 24]);
     let ec_private = openssl_key.ec_key().unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_p192_{name}_sign_prehashed"));

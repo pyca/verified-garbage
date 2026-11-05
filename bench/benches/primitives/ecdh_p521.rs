@@ -23,7 +23,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ecdh::{P521, PrivateKey};
+    use verified_garbage::ec::{P521, PublicKey};
+    use verified_garbage::ecdh::PrivateKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -32,9 +33,10 @@ pub fn bench(c: &mut Criterion) {
     d[0] = 1;
     let mut peer_d = [0x24; 66];
     peer_d[0] = 1;
-    let peer = PrivateKey::<P521>::from_bytes(&peer_d)
+    let peer = *PrivateKey::<P521>::from_bytes(&peer_d)
         .public_key()
-        .unwrap();
+        .unwrap()
+        .as_bytes();
     let group = EcGroup::from_curve_name(Nid::SECP521R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(&d).unwrap();
@@ -60,14 +62,14 @@ pub fn bench(c: &mut Criterion) {
     };
     assert_eq!(
         aws_lc_agree(&aws_lc_private, &peer),
-        vg_private.diffie_hellman(&peer).unwrap()
+        vg_private.exchange(&PublicKey::from_bytes(&peer)).unwrap()
     );
     let mut g = c.benchmark_group("ecdh_p521");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 66), |b| {
         b.iter(|| {
             black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
+                .exchange(&PublicKey::from_bytes(black_box(&peer)))
                 .unwrap()
         })
     });
@@ -103,7 +105,11 @@ pub fn bench(c: &mut Criterion) {
         one[65] = 1;
         let key = PrivateKey::<P521>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 133), |b| {
-            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+            b.iter(|| {
+                black_box(&key)
+                    .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                    .is_ok()
+            })
         });
         g.finish();
     }

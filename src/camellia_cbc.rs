@@ -1,14 +1,7 @@
-//! Camellia-CBC (SP 800-38A §6.2, with Camellia as in RFC 3713) with 128-,
-//! 192- and 256-bit keys, in place and without padding.
+//! Camellia-CBC (SP 800-38A §6.2, with Camellia as in RFC 3713) with 128-, 192-
+//! and 256-bit keys, in place and without padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_camellia_expand_key` (contract `VG.Spec.Camellia.expandKeyContract`)
-//! writes the subkeys, and `vg_camellia_cbc_encrypt_chained` and
-//! `vg_camellia_cbc_decrypt_chained` (`VG.Spec.Camellia.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the subkeys.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -39,21 +32,74 @@ crate::error::impl_error! {
     }
 }
 
-/// An expanded Camellia key for CBC encryption and decryption.
-///
-/// Keys of 16 bytes use 18 rounds; keys of 24 or 32 bytes, 24. No padding is
-/// added or removed: each operation takes whole 16-byte blocks. The chaining
-/// value is updated in place, so that a message may be processed in pieces,
-/// each continuing from the last.
-pub struct CamelliaCbc {
+/// An expanded Camellia key, which serves both directions.
+struct Key {
     /// The subkeys `vg_camellia_expand_key` writes.
     schedule: [u8; 272],
     rounds: usize,
 }
 
-impl CamelliaCbc {
-    /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+/// A Camellia-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 16-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct CamelliaCbcEncryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl CamelliaCbcEncryptor {
+    /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
+    /// 32-byte keys, 24), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.encrypt(&mut self.iv, buffer)
+    }
+}
+
+/// A Camellia-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 16-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct CamelliaCbcDecryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl CamelliaCbcDecryptor {
+    /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
+    /// 32-byte keys, 24), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.decrypt(&mut self.iv, buffer)
+    }
+}
+
+impl Key {
+    /// Expands a 16-, 24- or 32-byte key.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
@@ -70,10 +116,10 @@ impl CamelliaCbc {
 
     /// Encrypts whole 16-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
@@ -96,10 +142,10 @@ impl CamelliaCbc {
 
     /// Decrypts whole 16-byte blocks in place, chained from `iv`, and
     /// replaces `iv` with the last ciphertext block (leaving it unchanged
-    /// for empty input), so that a further call continues the message.
+    /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
@@ -117,7 +163,7 @@ impl CamelliaCbc {
     }
 }
 
-impl Drop for CamelliaCbc {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

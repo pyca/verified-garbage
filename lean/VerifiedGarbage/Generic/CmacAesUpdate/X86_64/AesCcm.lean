@@ -48,6 +48,7 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 import VerifiedGarbage.Impl.Gcm.X86_64
 import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul

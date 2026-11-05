@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
 

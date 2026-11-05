@@ -27,6 +27,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.Framework.EntryBranch
 import VerifiedGarbage.Proof.Framework.OffsetBelow

@@ -5,9 +5,9 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
 /-! # The native FFDH parameter-search controller on PPC64LE
 
 As on AArch64 (`Impl/Ffdh/AArch64/Generation/Search.lean`): repeats
-`vg_ffdh_parameter_candidate` on the tape until a candidate is accepted,
-the attempts run out, or the tape does, consuming the octets of each
-rejected candidate. The first four state words are the attempts left, the
+`vg_ffdh_parameter_candidate_sieved` on the tape until a candidate is
+accepted, the attempts run out, or the tape does, consuming the octets of
+each rejected candidate. The first four state words are the attempts left, the
 width, the entropy cap and the next request; the rest are private working
 space, whose base is kept in the callee-saved `r31` (the caller's `r31`
 saved in word 4). The loop runs in a frame saving the link register, which
@@ -15,8 +15,8 @@ the calls change; each candidate in a frame of 112 bytes holding its stack
 argument at offset 96. The comparisons are the sign bits of differences of
 numbers below `2^63`, without the carry bit.
 
-`vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5, bits = r6,
-generator = r7, rand = r8, rand_len = r9, scratch = r10,
+`vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5,
+bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
 scratch_len = [sp + 96], state = [sp + 104])`.
 -/
 
@@ -40,7 +40,7 @@ def entry : List Instr :=
     stf .r3 5, stf .r4 6, stf .r5 7, stf .r6 8, .lsr .w .r7 .r7 0, stf .r7 9, stf .r8 10, stf .r9 11, .li .r0 0,
     stf .r0 12, stf .r10 13, stf .r11 15]
 
-/-- `vg_ffdh_parameter_candidate`'s arguments, for the tape's current
+/-- `vg_ffdh_parameter_candidate_sieved`'s arguments, for the tape's current
 pointer and length: its stack argument at offset 96 of the frame. -/
 def arguments : List Instr :=
   [ldf .r3 5, ldf .r4 6, ldf .r5 7, ldf .r6 8, ldf .r7 9, ldf .r8 10, ldf .r9 11, ldf .r10 13, ldf .r12 15,
@@ -94,7 +94,7 @@ def classify : Prog isa := .seq (.block (head ++ [.subi .r12 .r9 1]))
 
 variable (candidate : Prog isa)
 
-/-- The candidate, a call of `vg_ffdh_parameter_candidate`, in a frame of
+/-- The candidate, a call of `vg_ffdh_parameter_candidate_sieved`, in a frame of
 its stack argument. -/
 def candidateRun : Prog isa := .frame (.alloc 112) (.seq (.block arguments) candidate) (.free 112)
 

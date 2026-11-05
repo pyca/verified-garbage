@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.CombMain
 public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 

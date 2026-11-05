@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::blowfish_ofb::{BlowfishOfb, InvalidKeyLength};
+use verified_garbage::blowfish_ofb::{BlowfishOfb, Error};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -28,12 +28,15 @@ fn pyca_vectors() {
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
-        let ctx = BlowfishOfb::new(&key).unwrap();
         let vector = (&plaintext[..], &ciphertext[..]);
         for io in [vector, (&ciphertext[..], &plaintext[..])] {
-            crate::modes::check(crate::modes::Feedback::Output, iv, vector, io, &|iv, b| {
-                ctx.apply_keystream(iv, b)
-            });
+            crate::modes::check(
+                iv,
+                io,
+                &|iv| BlowfishOfb::new(&key, iv).unwrap(),
+                BlowfishOfb::apply_keystream,
+                BlowfishOfb::apply_keystream_final,
+            );
         }
     }
     assert_eq!(key_lens, [16]);
@@ -43,8 +46,8 @@ fn pyca_vectors() {
 fn errors() {
     for len in [0, 1, 3, 57, 64] {
         assert_eq!(
-            BlowfishOfb::new(&vec![0; len]).err(),
-            Some(InvalidKeyLength)
+            BlowfishOfb::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
         );
     }
 }

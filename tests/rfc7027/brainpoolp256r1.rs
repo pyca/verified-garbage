@@ -9,7 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{BrainpoolP256r1, Error, PrivateKey};
+use verified_garbage::ec::{BrainpoolP256r1, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use super::value;
 
@@ -34,10 +35,10 @@ fn ecdh() {
         PrivateKey::<BrainpoolP256r1>::from_bytes(&da),
         PrivateKey::<BrainpoolP256r1>::from_bytes(&db),
     );
-    assert_eq!(a.public_key(), Ok(qa));
-    assert_eq!(b.public_key(), Ok(qb));
-    assert_eq!(a.diffie_hellman(&qb), Ok(z));
-    assert_eq!(b.diffie_hellman(&qa), Ok(z));
+    assert_eq!(a.public_key(), Ok(PublicKey::from_bytes(&qa)));
+    assert_eq!(b.public_key(), Ok(PublicKey::from_bytes(&qb)));
+    assert_eq!(a.exchange(&PublicKey::from_bytes(&qb)), Ok(z));
+    assert_eq!(b.exchange(&PublicKey::from_bytes(&qa)), Ok(z));
 }
 
 /// An invalid peer key, and private keys out of range.
@@ -48,13 +49,16 @@ fn invalid_keys() {
     let mut invalid = qa;
     invalid[0] = 0;
     assert_eq!(
-        PrivateKey::<BrainpoolP256r1>::from_bytes(&da).diffie_hellman(&invalid),
+        PrivateKey::<BrainpoolP256r1>::from_bytes(&da).exchange(&PublicKey::from_bytes(&invalid)),
         Err(Error::InvalidKey)
     );
     // 0 and 2²⁵⁶ − 1 (above n) are not in [1, n − 1].
     for d in [[0; 32], [0xff; 32]] {
         let bad = PrivateKey::<BrainpoolP256r1>::from_bytes(&d);
         assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(bad.diffie_hellman(&qa), Err(Error::InvalidKey));
+        assert_eq!(
+            bad.exchange(&PublicKey::from_bytes(&qa)),
+            Err(Error::InvalidKey)
+        );
     }
 }

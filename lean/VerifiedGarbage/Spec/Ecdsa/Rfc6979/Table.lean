@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.HmacTable
 
 /-!
@@ -8,21 +9,32 @@ public import VerifiedGarbage.Spec.HmacTable
 
 **Trusted** (as every file in `Spec/`). A `TableInstance` is a curve's
 `Ecdsa.Instance` and the bound on candidates: `vg_ecdsa_<curve>_sign`, in
-the module `ecdsa_<curve>`, signs as `vg_ecdsa_<curve>_<hash>_sign`
-(`Spec/Ecdsa/Rfc6979/Generic.lean`) does, with the hash function not fixed
-but given at run time: a last parameter `hmac`, a table of the interface
-`Hmac` (`Spec/HmacTable.lean`), naming the hash function `H`
+the module `ecdsa_<curve>`, signs as RFC 6979 does (`Rfc6979.sign`), with
+the hash function given at run time: a last parameter `hmac`, a table of
+the interface `Hmac` (`Spec/HmacTable.lean`), naming the hash function `H`
 (`HmacTable.hashAt`) whose output `digest` is, and the HMAC over it
 (`HmacTable.hmacOf H`, with `H`'s block size) that RFC 6979 uses, through
 the table's functions. So one function serves every hash function, with
 every implementation of its HMAC, rather than a function for each.
 
-The digest is a slice of `digest_len` octets, which must be `H`'s length (a
+It takes the private key `d` (`len` octets, most significant first) and the
+hash `digest`, a slice of `digest_len` octets, which must be `H`'s length (a
 precondition, on a public length: which table `hmac` is is public,
-`Abi.withTables`). Everything else, the timing guarantee included, is that
-of the contract with `H` fixed: the number of candidates tried may affect
-timing (`leak`), and which table `hmac` is; the table's own memory is
-read-only.
+`Abi.withTables`). It returns 1 and writes the signature (`encode`), or
+returns 0 and writes zeros if `d` is not in `[1, n-1]` or none of the first
+`tries` candidates is suitable.
+
+The signature determines memory validity, separation and that the pointers
+are public, through `Sig.contract`; the contents of every buffer are secret,
+and the table's own memory is read-only. The number of candidates tried may
+affect timing (`leak`), and which table `hmac` is: an implementation may
+stop at the first suitable candidate. That number is 0 for an invalid key
+and almost always 1 otherwise; the key and the hash may not affect timing
+in any other way. `scratch` is `8 * scratchWords` bytes of working space
+(8 KiB by default), whose contents on return are unspecified. `stack` is the
+number of bytes below the stack pointer that an implementation's calls and
+frames use. The function may overwrite its arguments passed in memory,
+where the calling convention allows it (`writeArgs`).
 -/
 
 @[expose] public section
@@ -70,10 +82,9 @@ def tried (ptrBits : Nat) (m : Mem) (d digest hmac : Addr) : Nat :=
     | none => 0
   | none => 0
 
-/-- `Instance.signContract` for the hash function `hmac` names: the
-deterministic signature of `digest` with the private key `d`, if there is
-one; then the function returns 1 and writes it (`encode`) to `out`;
-otherwise it returns 0 and writes zeros to `out`. Constant time but for the
+/-- For the hash function `hmac` names, the deterministic signature of
+`digest` with the private key `d`, if there is one (`Rfc6979.sign`): then
+the function returns 1 and writes it (`encode`) to `out`; otherwise it returns 0 and writes zeros to `out`. Constant time but for the
 number of candidates tried and which table `hmac` is. -/
 def signContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   I.signSig.contract A

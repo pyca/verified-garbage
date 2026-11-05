@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -100,9 +100,6 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .r3
-  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
-    some ("the arguments on the stack", false)
-  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
@@ -111,10 +108,7 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "powerpc64le"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
-  rustCfg := "all(target_arch = \"powerpc64\", target_endian = \"little\")"
-  rustAbi := "C"
   abi := abi
 
 end VG.PPC64LE

@@ -37,6 +37,9 @@ macro "atriv" : tactic => `(tactic| first | trivial | rfl)
 theorem ne_cs {r d : Reg} (hr : r ∈ preserved) (hd : d ∉ preserved) : r ≠ d :=
   fun e => hd (e ▸ hr)
 
+theorem not_pres {r : Reg} (hr : r ∈ preserved) (rs : List Reg) (h : ∀ q ∈ rs, q ∉ preserved) : r ∉ rs :=
+  fun h' => h r h' hr
+
 /-- The bytes of a region a frame of writes misses. -/
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :

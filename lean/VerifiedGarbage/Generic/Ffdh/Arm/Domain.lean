@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Emit every native ARMv7 FFDH backend and propagate its exact CPU features -/
 

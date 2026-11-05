@@ -12,7 +12,7 @@ compose. Only the callers' contracts, in `Spec/`, are trusted.
 
 `vg_ecdsa_<name>_sign` is the signature with a given per-message secret
 number `k`, which the deterministic signatures of
-`Spec/Ecdsa/Rfc6979/Generic.lean` call once they have derived `k`.
+`Spec/Ecdsa/Rfc6979/Table.lean` call once they have derived `k`.
 
 `sign` takes the private key `d`, the hash and the per-message secret
 number `k`, each as `len` octets, most significant first. The hash is

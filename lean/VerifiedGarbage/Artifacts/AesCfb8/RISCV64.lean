@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb8.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCfb8.RISCV64.Lit
 
 /-! # AES-CFB8 (NIST SP 800-38A §6.3) on RISC-V -/

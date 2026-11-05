@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.TCB.Print
 public import VerifiedGarbage.TCB.Sig
 public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract

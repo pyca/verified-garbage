@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Inst
 public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # RSAES-OAEP on RISC-V, with both hash functions as tables -/
 

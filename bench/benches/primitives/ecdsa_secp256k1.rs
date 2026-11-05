@@ -4,9 +4,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_secp256k1`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_secp256k1`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_secp256k1_sha256",
     "ecdsa_secp256k1",
+    "fn_tables",
     "ec_secp256k1",
     "hmac_sha256",
     "sha256",
@@ -33,7 +36,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{Secp256k1, SigningKey};
+    use verified_garbage::ec::Secp256k1;
+    use verified_garbage::ecdsa::SigningKey;
     use verified_garbage::hashes::sha256::Sha256;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -84,7 +88,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp256k1>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::Secp256k1>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -103,7 +107,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{Secp256k1, SigningKey, VerifyingKey};
+    use verified_garbage::ec::Secp256k1;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
@@ -115,8 +120,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
     public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
     let openssl_key =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<Secp256k1>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let aws_lc_key = EcdsaKeyPair::from_private_key_and_public_key(aws_lc_sign, d, &q).unwrap();
     // Ignored: aws-lc-rs draws `k` from AWS-LC's own generator.
     let rng = SystemRandom::new();

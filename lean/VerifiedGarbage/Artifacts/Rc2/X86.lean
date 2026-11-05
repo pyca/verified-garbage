@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rc2.X86.Key
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 
 /-! # RC2 artifacts on baseline x86 -/

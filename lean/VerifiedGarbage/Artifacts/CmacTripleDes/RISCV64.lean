@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on RISC-V -/
 

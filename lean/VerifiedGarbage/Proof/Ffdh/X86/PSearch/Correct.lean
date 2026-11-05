@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 
 The entry, the loop from its first state and the finish run the search from
 the tape's start (`operation_ok`), which is `sievedParameterSearch`; so the
-code meets `vg_ffdh_generate_parameters_sieved`'s contract (`correct`).
+code meets `vg_ffdh_generate_parameters`'s contract (`correct`).
 -/
 
 @[expose] public section

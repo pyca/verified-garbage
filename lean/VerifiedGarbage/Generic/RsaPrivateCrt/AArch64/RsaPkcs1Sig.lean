@@ -10,6 +10,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

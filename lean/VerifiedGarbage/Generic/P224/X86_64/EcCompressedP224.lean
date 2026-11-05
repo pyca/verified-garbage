@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P224
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P224Decompress
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Standalone P224 public-point compression on x86-64 -/
 

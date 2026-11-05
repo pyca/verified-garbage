@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyLit
 

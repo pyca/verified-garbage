@@ -43,7 +43,7 @@ def pcPre (s : State) : Prop :=
 abbrev pcRand (s : State) : List Byte := bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat
 
 def pcResult (s : State) : Option (Option Nat × Spec.RsaKeyGen.Rand) :=
-  parameterCandidate (s.gpr .rcx).toNat ((s.gpr .r8).setWidth 32).toNat (pcRand s)
+  sievedParameterCandidate (s.gpr .rcx).toNat ((s.gpr .r8).setWidth 32).toNat (pcRand s)
 
 def pcPost (s t : State) : Prop :=
   ((t.gpr .rax).setWidth 32).toNat = candidateStatus (pcResult s) ∧
@@ -82,30 +82,30 @@ private def satState : State where
   rd := [⟨0x3000, 0⟩, ⟨0x6008, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩]
 
-theorem pc_implies : pcContract.Implies (parameterCandidateContract abi 128) where
+theorem pc_implies : pcContract.Implies (sievedParameterCandidateContract abi 128) where
   pre := by
     intro s h
-    sig_pre [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
+    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
       pcContract, pcPre, stackArgs_three, List.append_eq] at h
-    sig_pre [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
+    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
       pcContract, pcPre, stackArgs_three, List.append_eq] at h
     sig_split h
-    sig_reduce [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
+    sig_reduce [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
       pcContract, pcPre, stackArgs_three, List.append_eq]
     sig_and_intros
     sig_close
     all_goals first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›
   post := by
-    sig_implies_post [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract,
+    sig_implies_post [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract,
       pcPost, pcResult, pcRand, stackArgs_three, List.append_eq]
   pub := by
     intro s t _ _ h
-    sig_pub [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackArgs_three,
+    sig_pub [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackArgs_three,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     exact h
   sat := by
-    sig_implies_sat [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
+    sig_implies_sat [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
       pcContract, pcPre, stackArgs_three, List.append_eq]
       [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 

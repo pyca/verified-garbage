@@ -31,6 +31,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
 public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Mmx

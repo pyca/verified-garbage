@@ -1,23 +1,5 @@
-//! AES-CMAC (NIST SP 800-38B, RFC 4493) with 128-, 192- and 256-bit AES
-//! keys and the full 16-byte MAC.
-//!
-//! The computation is the verified assembly for the target architecture,
-//! on a streaming state this module holds without looking into it:
-//! `vg_cmac_aes_init` (contract `VG.Spec.Cmac.aesInitContract`) expands the
-//! key into the state, `vg_cmac_aes_absorb` (`VG.Spec.Cmac.aesAbsorbContract`)
-//! absorbs data, holding back the message's last bytes, and
-//! `vg_cmac_aes_finish` (`VG.Spec.Cmac.aesFinishContract`) writes the MAC.
-//! This module keeps the number of rounds and the length of the message so
-//! far, which the state does not store, and compares MACs.
-//!
-//! Their variants, with the same contracts, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones; on
-//! x86, the `_aesni` ones; on AArch64, the `_aes` ones. On x86-64 and
-//! AArch64, an update longer than 32 bytes (`chains_long`) calls
-//! `vg_cmac_aes_absorb_aesni_cbc` (with either x86-64 backend) or
-//! `vg_cmac_aes_absorb_aes_cbc` instead, whose features `select` checks
-//! too.
+//! AES-CMAC (NIST SP 800-38B, RFC 4493) with 128-, 192- and 256-bit keys and
+//! the full 16-byte MAC.
 
 #![cfg(any(
     target_arch = "x86_64",

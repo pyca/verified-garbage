@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Streaming Merkle–Damgård hash functions on X86_64 -/
 

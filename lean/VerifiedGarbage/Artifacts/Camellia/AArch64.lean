@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 @[expose] public section
 

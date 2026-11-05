@@ -147,6 +147,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
 public import VerifiedGarbage.Proof.RsaPss.Params
 public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Bignum.FrameOutside
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets

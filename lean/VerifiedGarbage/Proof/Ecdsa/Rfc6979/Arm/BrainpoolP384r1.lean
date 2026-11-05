@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
@@ -19,7 +23,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 # Deterministic ECDSA on 32-bit ARM: brainpoolP384r1
 
 brainpoolP384r1 as the proof's curve (`brainpoolp384r1`): scalars of 6 64-bit words, the order
-`n` of exactly 384 bits with `2^384 < 2 n`, and `vg_ecdsa_brainpoolp384r1_sign`, proven
+`n` of exactly 384 bits with `2^384 < 2 n`, and `vg_ecdsa_brainpoolp384r1_sign_k`, proven
 correct (given the group law) and constant time against its contract
 (`coreK` at brainpoolP384r1's sizes, which is `Proof.Ecdsa.Arm.BrainpoolP384r1.signArm`).
 -/
@@ -41,12 +45,12 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
   E := Impl.Ecdsa.Arm.brainpoolp384r1
   inst := Spec.Ecdsa.BrainpoolP384r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, brainpoolp384r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 0; rw [brainpoolp384r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp384r1_sign"
+  coreN := "vg_ecdsa_brainpoolp384r1_sign_k"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP384r1
   coreConsts := []
   coreX := by
@@ -62,7 +66,7 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
     simpa only [coreK,coreSigOf,Spec.BrainpoolP384r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Proof.Ecdsa.Arm.BrainpoolP384r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP384r1.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
 
 /-- `brainpoolp384r1`, calling `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
@@ -70,12 +74,12 @@ def brainpoolp384r1U (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurv
   E := Impl.Ecdsa.Arm.brainpoolp384r1
   inst := Spec.Ecdsa.BrainpoolP384r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, brainpoolp384r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 0; rw [brainpoolp384r1_nBits]
-  coreN := "vg_ecdsa_brainpoolp384r1_sign" ++ "_umaal"
+  coreN := "vg_ecdsa_brainpoolp384r1_sign_k" ++ "_umaal"
   coreC := Impl.Ecdsa.Arm.signBrainpoolP384r1U
   coreConsts := []
   coreX := by
@@ -91,7 +95,19 @@ def brainpoolp384r1U (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurv
     simpa only [coreK,coreSigOf,Spec.BrainpoolP384r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Proof.Ecdsa.Arm.BrainpoolP384r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP384r1.signU_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  blk := by rfcT_decide
 
+
+/-! ## With the tables of every hash function with HMAC -/
+
+theorem brainpoolp384r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target (signCodeT (brainpoolp384r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 (brainpoolp384r1 hL).coreConsts HmacTable.Arm.vars) :=
+  nilT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl
+
+theorem brainpoolp384r1UT_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target (signCodeT (brainpoolp384r1U hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries HmacTable.Arm.vars)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 (brainpoolp384r1U hL).coreConsts HmacTable.Arm.vars) :=
+  nilT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

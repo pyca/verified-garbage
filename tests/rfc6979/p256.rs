@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.5: P-256, with SHA-256 and SHA-384.
+//! RFC 6979 §A.2.5: P-256, with SHA-256 and SHA-384,
+//! and with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -9,9 +10,14 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P256, SigningKey, VerifyingKey};
+use verified_garbage::ec::{P256, PublicKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
+
+use verified_garbage::hashes::sha1::Sha1;
+use verified_garbage::hashes::sha224::Sha224;
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
 
@@ -41,7 +47,7 @@ fn sign(key: &SigningKey<P256>, hash: &str, message: &[u8]) -> [Result<[u8; 64],
 /// Whether `rs` verifies for `message` with `hash`, of the message and of
 /// its hash.
 fn verify(
-    key: &VerifyingKey<P256>,
+    key: &PublicKey<P256>,
     hash: &str,
     message: &[u8],
     rs: &[u8; 64],
@@ -89,12 +95,11 @@ fn p256_sha384() {
 #[test]
 fn p256_verify() {
     let (_, x, u, signatures) = p256();
-    let key = VerifyingKey::<P256>::from_bytes(&u);
-    assert_eq!(key.to_bytes(), u);
+    let key = PublicKey::<P256>::from_bytes(&u);
+    assert_eq!(key.as_bytes(), &u);
     let other = SigningKey::<P256>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let other = VerifyingKey::<P256>::from_bytes(&other);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), hash, message.as_bytes(), rs);
         assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
@@ -109,13 +114,16 @@ fn p256_verify() {
         assert_eq!(verify(&key, other_hash, message.as_bytes(), rs), [bad; 2]);
     }
     assert_ne!(key, other);
-    assert!(format!("{key:?}").starts_with("VerifyingKey"));
+    assert!(format!("{key:?}").starts_with("PublicKey"));
 }
 
 #[test]
 fn p256_public_key() {
     let (_, x, u, _) = p256();
-    assert_eq!(SigningKey::<P256>::from_bytes(&x).public_key(), Ok(u));
+    assert_eq!(
+        SigningKey::<P256>::from_bytes(&x).public_key(),
+        Ok(PublicKey::from_bytes(&u))
+    );
 }
 
 /// A key outside `[1, n − 1]` is refused; those at its ends sign, and have
@@ -137,4 +145,31 @@ fn p256_keys() {
         }
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve also signs with.
+#[test]
+fn p256_sha1() {
+    super::sign_with::<P256, Sha1, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-224, which the curve also signs with.
+#[test]
+fn p256_sha224() {
+    super::sign_with::<P256, Sha224, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// The signatures with SHA-512, which the curve also signs with.
+#[test]
+fn p256_sha512() {
+    super::sign_with::<P256, Sha512, 32, 65, 64>(
+        "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }

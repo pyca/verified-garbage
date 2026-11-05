@@ -1,20 +1,5 @@
 //! SHA3-224, SHA3-256, SHA3-384 and SHA3-512, and the extendable-output
 //! functions SHAKE128 and SHAKE256 (FIPS 202).
-//!
-//! `vg_keccak_absorb_scratch` (with its working space on the Rust stack),
-//! `vg_keccak_pad` and `vg_keccak_squeeze` for the target architecture
-//! (contracts `VG.Spec.Sha3.absorbScratchContract`, `padContract` and
-//! `squeezeContract`) maintain a
-//! Keccak state that represents the message absorbed so far
-//! (`VG.Spec.Sha3.Repr`: the state after its whole blocks, with its
-//! remaining bytes XORed in), pad it and squeeze the output. The Rust types
-//! only keep that state together with the position in the current block,
-//! which the contracts take as an argument.
-//!
-//! On AArch64, the `_sha3` variants of the three, with the same contracts,
-//! are chosen by `Backend::select` on CPUs with the features their
-//! `_FEATURES` constants name, only for `target_vendor = "apple"` (or, with
-//! the `cpu-features-env` feature, when `VG_CPU_FEATURES` names `sha3`).
 
 #![cfg(any(
     target_arch = "x86_64",

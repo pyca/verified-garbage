@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Comb -- shake: keep (proof bi
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P256.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ECDSA over P-256 (FIPS 186-5) on 32-bit ARM -/
 

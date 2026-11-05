@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.CtrVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Camellia-CTR artifacts on baseline ARMv7 -/
 

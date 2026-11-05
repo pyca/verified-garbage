@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # ML-DSA (FIPS 204) on x86-64: verifying messages -/
 

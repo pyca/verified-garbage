@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # RSASSA-PSS signing on x86-64, with the hash functions as tables -/
 

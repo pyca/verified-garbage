@@ -26858,7 +26858,7 @@ vg_ffdh_parameter_generation_init:
 	ret
 	.p2align 6
 
-vg_ffdh_generate_parameters_sieved:
+vg_ffdh_generate_parameters:
 	mov eax, DWORD PTR [esp+40]
 	mov DWORD PTR [eax+32], esi
 	mov esi, eax

@@ -1,17 +1,7 @@
-//! Camellia-CFB128 (SP 800-38A §6.3 with 128-bit segments, with Camellia as
-//! in RFC 3713) with 128-, 192- and 256-bit keys, in place.
+//! Camellia-CFB128 (SP 800-38A §6.3 with 128-bit segments, with Camellia as in
+//! RFC 3713) with 128-, 192- and 256-bit keys, in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_camellia_expand_key` (contract `VG.Spec.Camellia.expandKeyContract`)
-//! writes the subkeys, and `vg_camellia_cfb128_encrypt` and
-//! `vg_camellia_cfb128_decrypt` (`VG.Spec.Camellia.cfbEncryptContract`,
-//! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or
-//! `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the last
-//! ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. This module holds the subkeys and
-//! handles a partial last segment: CFB encryption of a zero block is
-//! `CIPH_K` of the block to continue from, whose first bytes it XORs into
-//! the rest of the input.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -26,15 +16,129 @@ use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_cfb::{vg_camellia_cfb128_decrypt, vg_camellia_cfb128_encrypt};
 use crate::zeroize::zeroize;
 
-/// The key is not 16, 24 or 32 bytes long.
-pub use crate::error::InvalidKeyLength;
+/// Why a Camellia-CFB128 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The key is not 16, 24 or 32 bytes long.
+    InvalidKeyLength,
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
 
-/// An expanded Camellia key for CFB128 encryption and decryption.
-pub struct CamelliaCfb128 {
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Camellia key length",
+        IncompleteBlock => "Camellia-CFB128 input is not a whole number of blocks",
+    }
+}
+
+/// An expanded Camellia key.
+struct Key {
     /// The subkeys `vg_camellia_expand_key` writes.
     schedule: [u8; 272],
     /// The number of rounds: 18 or 24.
     rounds: usize,
+}
+
+/// A Camellia-CFB128 encryption of one message.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`encrypt_final`](Self::encrypt_final), takes the rest of the message, of
+/// any length.
+pub struct CamelliaCfb128Encryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl CamelliaCfb128Encryptor {
+    /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
+    /// 32-byte keys, 24), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
+    /// a partial last segment.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.encrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Encrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn encrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.encrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for CamelliaCfb128Encryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
+}
+
+/// A Camellia-CFB128 decryption of one message.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`decrypt_final`](Self::decrypt_final), takes the rest of the message, of
+/// any length.
+pub struct CamelliaCfb128Decryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 16],
+}
+
+impl CamelliaCfb128Decryptor {
+    /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
+    /// 32-byte keys, 24), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 16-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
+    /// a partial last segment.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.decrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Decrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn decrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.decrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for CamelliaCfb128Decryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
 }
 
 /// The signature of `vg_camellia_cfb128_encrypt` and `vg_camellia_cfb128_decrypt`.
@@ -50,13 +154,13 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 272], usize, *mut [u8; 16], *mu
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 272], usize, *mut [u8; 16], *mut [u8; 16], usize);
 
-impl CamelliaCfb128 {
-    /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+impl Key {
+    /// Expands a 16-, 24- or 32-byte key.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
-            _ => return Err(InvalidKeyLength),
+            _ => return Err(Error::InvalidKeyLength),
         };
         let mut schedule = [0; 272];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -71,7 +175,7 @@ impl CamelliaCfb128 {
     /// may be encrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
-    pub fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_camellia_cfb128_encrypt);
     }
 
@@ -81,7 +185,7 @@ impl CamelliaCfb128 {
     /// may be decrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
-    pub fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_camellia_cfb128_decrypt);
     }
 
@@ -120,7 +224,7 @@ impl CamelliaCfb128 {
     }
 }
 
-impl Drop for CamelliaCfb128 {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

@@ -40,14 +40,14 @@ theorem OuterState.header {d : CandidatePublic} {s : State} (h : OuterState d s)
 def OuterValue (q : Bool) (d : CandidatePublic) (s : State) : Prop :=
   OuterState d s ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.phaseValue q
 
-def PhaseSet (q : Bool) (d : CandidatePublic) (s : State) : Prop :=
+def PhaseSet (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Prop :=
   CandidateState d s ∧ ∃ mi,
-    Good s (off d.p.B 256) (d.p.Z - 256) (d.p.phaseWords q) mi ∧ PhaseHeader d.p q s ∧
+    Good s (off d.p.B 256) (d.p.Z - 256) (d.p.phaseWords q) mi ∧ PhaseHeader d.p q c s ∧
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.phaseValue q
 
-def PhaseLoaded (q : Bool) (d : CandidatePublic) (s : State) : Prop :=
+def PhaseLoaded (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Prop :=
   CandidateState d s ∧ ∃ mi,
-    Good s (off d.p.B 256) (d.p.Z - 256) (d.p.phaseWords q) mi ∧ PhaseHeader d.p q s ∧
+    Good s (off d.p.B 256) (d.p.Z - 256) (d.p.phaseWords q) mi ∧ PhaseHeader d.p q c s ∧
       wv s.mem (off d.p.B 256) (slot (d.p.phaseWords q) aN) (d.p.phaseWords q) = d.p.phaseValue q
 
 def CandidatePublic.inner (d : CandidatePublic) (q : Bool) : InnerPublic :=
@@ -56,7 +56,7 @@ def CandidatePublic.inner (d : CandidatePublic) (q : Bool) : InnerPublic :=
 def CandidatePublic.prep (d : CandidatePublic) (q : Bool) : PreparePublic :=
   ⟨d.p.B, d.p.Z, d.p.phaseWords q, d.p.phaseValue q, d.wr⟩
 
-theorem PhaseLoaded.prepare {q : Bool} {d : CandidatePublic} {s : State} (h : PhaseLoaded q d s)
+theorem PhaseLoaded.prepare {q : Bool} {c : Checks} {d : CandidatePublic} {s : State} (h : PhaseLoaded q c d s)
     (ho : d.p.phaseValue q % 2 = 1) : PrepareBefore (d.prep q) s := by
   obtain ⟨mi, hg, _, hn⟩ := h.2
   refine ⟨⟨mi, hg, h.1.1.base.phase_dims q, ?_, h.1.2.1, h.1.2.2⟩, hn, ho, ?_,

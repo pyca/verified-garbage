@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::blowfish_cfb::{BlowfishCfb64, InvalidKeyLength};
+use verified_garbage::blowfish_cfb::{BlowfishCfb64Decryptor, BlowfishCfb64Encryptor, Error};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -28,13 +28,21 @@ fn pyca_vectors() {
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
-        let ctx = BlowfishCfb64::new(&key).unwrap();
         let vector = (&plaintext[..], &ciphertext[..]);
-        let cfb = crate::modes::Feedback::Ciphertext;
-        crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
-        crate::modes::check(cfb, iv, vector, (&ciphertext, &plaintext), &|iv, b| {
-            ctx.decrypt(iv, b)
-        });
+        crate::modes::check(
+            iv,
+            vector,
+            &|iv| BlowfishCfb64Encryptor::new(&key, iv).unwrap(),
+            BlowfishCfb64Encryptor::encrypt,
+            BlowfishCfb64Encryptor::encrypt_final,
+        );
+        crate::modes::check(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| BlowfishCfb64Decryptor::new(&key, iv).unwrap(),
+            BlowfishCfb64Decryptor::decrypt,
+            BlowfishCfb64Decryptor::decrypt_final,
+        );
     }
     assert_eq!(key_lens, [16]);
 }
@@ -43,8 +51,12 @@ fn pyca_vectors() {
 fn errors() {
     for len in [0, 1, 3, 57, 64] {
         assert_eq!(
-            BlowfishCfb64::new(&vec![0; len]).err(),
-            Some(InvalidKeyLength)
+            BlowfishCfb64Encryptor::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
+        );
+        assert_eq!(
+            BlowfishCfb64Decryptor::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
         );
     }
 }

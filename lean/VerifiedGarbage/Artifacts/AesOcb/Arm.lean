@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.Init
 public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-OCB (RFC 7253) on ARMv7 -/
 

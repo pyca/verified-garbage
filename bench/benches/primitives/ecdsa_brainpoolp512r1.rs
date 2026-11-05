@@ -3,9 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_brainpoolp512r1`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_brainpoolp512r1`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_brainpoolp512r1_sha512",
     "ecdsa_brainpoolp512r1",
+    "fn_tables",
     "ec_brainpoolp512r1",
     "hmac_sha512",
     "sha512",
@@ -31,7 +34,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{BrainpoolP512r1, SigningKey};
+    use verified_garbage::ec::BrainpoolP512r1;
+    use verified_garbage::ecdsa::SigningKey;
     use verified_garbage::hashes::sha512::Sha512;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -73,7 +77,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::BrainpoolP512r1>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::BrainpoolP512r1>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -88,7 +92,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{BrainpoolP512r1, SigningKey, VerifyingKey};
+    use verified_garbage::ec::BrainpoolP512r1;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -118,8 +123,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Brain
     }
     g.finish();
 
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<BrainpoolP512r1>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let digest = H::digest(&[0x5a; 32]);
     let ec_private = openssl_key.ec_key().unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_brainpoolp512r1_{name}_sign_prehashed"));

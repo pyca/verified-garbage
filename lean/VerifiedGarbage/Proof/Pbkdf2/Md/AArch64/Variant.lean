@@ -120,6 +120,15 @@ structure MdHash where
   pbkdf2F : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame I) .x7 H.pbkdf2)
     (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I))
+  /-- What the kernel checked of the code HMAC and PBKDF2 add to the hash
+  function's (`CoreOK`), and that the instance's streaming hash function is
+  the code's (its state's representation and its working space): what a
+  function generic over the variant that calls HMAC's `_scratch` functions
+  needs (deterministic ECDSA's, through a table of `Hmac`,
+  `Proof/HmacTable/AArch64.lean`). -/
+  C : CoreOK (core H)
+  hSH : ok.SH = I.S
+  hW : H.W = I.scratch
   /-- What the names of the functions emitted for it end with (nothing for
   the baseline implementation). -/
   suffix : String
@@ -137,16 +146,6 @@ structure MdHash where
   made (`Generic/MdHash/AArch64/Scrypt.lean`); `none` for the other hash
   functions. -/
   sha256 : Option Proof.Sha256.AArch64.Compress := none
-  /-- For SHA-384's variants, the implementation of SHA-512's compression
-  function, from which the functions built on SHA-384 alone (deterministic
-  ECDSA's) are made (`Generic/MdHash/P256/AArch64/EcdsaP256Sha384.lean`); `none`
-  for the other hash functions. -/
-  sha384 : Option Proof.Sha512.AArch64.Compress := none
-  /-- For SHA-224's variants, the implementation of SHA-256's compression
-  function, from which the functions built on SHA-224 alone (deterministic
-  ECDSA's) are made (`Generic/MdHash/P224/AArch64/EcdsaP224Sha224.lean`); `none`
-  for the other hash functions. -/
-  sha224 : Option Proof.Sha256.AArch64.Compress := none
 
 namespace MdHash
 
@@ -279,6 +278,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   hmacInitF := MdHash.hmacInitF_of hH C hSH hW A hsI hs hsIF hsA ha hR hB hsAF
   hmacFinF := MdHash.hmacFinF_of hH C hSH hW hsF hs hsFF
   pbkdf2F := MdHash.pbkdf2F_of hH C hSH hW hsI hsF hsT hsP hp hsPF
+  C := C
+  hSH := hSH
+  hW := hW
   suffix := suffix
   features := features
   stream := stream

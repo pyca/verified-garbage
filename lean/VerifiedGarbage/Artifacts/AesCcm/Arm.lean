@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CCM (NIST SP 800-38C) on ARMv7 -/
 

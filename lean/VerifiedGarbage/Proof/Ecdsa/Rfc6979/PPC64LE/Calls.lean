@@ -67,10 +67,6 @@ namespace Kit
 
 variable (P : Kit)
 
-/-- The code's HMAC. -/
-def hm : Impl.Ecdsa.Rfc6979.PPC64LE.Hm :=
-  ⟨P.H.B, P.H.D, s!"vg_hmac_{P.I.rust}_init_scratch", P.initC, P.H.updN, P.H.updC, s!"vg_hmac_{P.I.rust}_finalize_scratch", P.finC⟩
-
 theorem hStates : P.I.S.stateBytes = P.H.S := by rw [P.hIS]; exact P.hH.hS
 
 theorem hDigest : P.I.S.digestBytes = P.H.D := by rw [P.hIS]; exact P.hH.hD
@@ -104,7 +100,7 @@ theorem initPre (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
 
 /-- The call of HMAC's `init` with the key of `kl` bytes at `key`, the
 states at `inner` and `outer` and the working space at `scr`. -/
-theorem initCall (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
+theorem initCall (P : Kit) {n : String} {s : State} {inner outer key scr : Addr} {kl : Nat}
     (h3 : s.gpr .r3 = inner) (h4 : s.gpr .r4 = outer) (h5 : s.gpr .r5 = key)
     (h6 : (s.gpr .r6).toNat = kl) (h7 : s.gpr .r7 = scr) (hkl : kl ≤ P.I.S.H.blockSize)
     (d₁ : Region.Disjoint ⟨inner, P.H.S⟩ ⟨outer, P.H.S⟩) (d₂ : Region.Disjoint ⟨inner, P.H.S⟩ ⟨key, kl⟩)
@@ -127,7 +123,7 @@ theorem initCall (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
       P.I.S.Repr s'.mem outer
           (Spec.Hmac.xorPad (Spec.Hmac.blockKey P.I.S.H (Spec.Sha256.bytesAt s.mem key kl)) Spec.Hmac.opad) →
       Q s') :
-    WP isa (.call P.hm.initN P.hm.initC) s Q := by
+    WP isa (.call n P.initC) s Q := by
   have hS := P.hStates
   have hk := P.hkI
   refine WP.callAny (k := Proof.Hmac.Instance.initScratchContract P.I PPC64LE.abi (P.kI + 1)) P.initV (rd := [⟨key, kl⟩])
@@ -167,7 +163,7 @@ theorem finPre (P : Kit) {s : State} {inner outer out scr : Addr}
 
 /-- The call of HMAC's `finalize` with the states at `inner` and `outer`,
 the count `cnt`, the MAC to `out` and the working space at `scr`. -/
-theorem finCall (P : Kit) {s : State} {inner outer out scr : Addr}
+theorem finCall (P : Kit) {n : String} {s : State} {inner outer out scr : Addr}
     (h3 : s.gpr .r3 = inner) (h4 : s.gpr .r4 = outer) (h6 : s.gpr .r6 = out) (h7 : s.gpr .r7 = scr)
     (d₁ : Region.Disjoint ⟨inner, P.H.S⟩ ⟨outer, P.H.S⟩) (d₂ : Region.Disjoint ⟨inner, P.H.S⟩ ⟨out, P.H.D⟩)
     (d₃ : Region.Disjoint ⟨inner, P.H.S⟩ ⟨scr, P.I.scratch * 8⟩)
@@ -189,7 +185,7 @@ theorem finCall (P : Kit) {s : State} {inner outer out scr : Addr}
         s.gpr .r5 = BitVec.ofNat 64 (P.I.S.H.blockSize + text.length) →
         P.I.S.Repr s.mem outer (Spec.Hmac.xorPad k0 Spec.Hmac.opad) →
         Spec.Sha256.bytesAt s'.mem out P.H.D = Spec.Hmac.hmacBlockKey P.I.S.H k0 text) → Q s') :
-    WP isa (.call P.hm.finN P.hm.finC) s Q := by
+    WP isa (.call n P.finC) s Q := by
   have hS := P.hStates
   have hD := P.hDigest
   have hk := P.hkF

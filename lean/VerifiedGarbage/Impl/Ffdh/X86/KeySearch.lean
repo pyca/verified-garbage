@@ -90,7 +90,7 @@ def argsBytes : Nat := 44
 
 /-- The attempt, a call of `vg_ffdh_generate_key`, in a frame of its arguments. -/
 def attempt : Prog isa :=
-  .frame (.alloc argsBytes) (.seq (.block arguments) (.call Spec.Ffdh.generateKeyApi.name GenerateKey.code))
+  .frame (.alloc argsBytes) (.seq (.block arguments) (.call "vg_ffdh_generate_key" GenerateKey.code))
     (.free argsBytes)
 
 /-- The status to `edx`, and the attempt's `p_len` octets consumed. -/

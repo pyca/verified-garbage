@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Poly1305.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 
 /-! # Poly1305 (RFC 8439 §2.5) on RISC-V -/

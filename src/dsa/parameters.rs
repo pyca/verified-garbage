@@ -1,7 +1,4 @@
-//! Parameter generation for the three supported FIPS 186-4 generation sizes.
-//! Hashing, primality tests, candidate retries, generator selection and final
-//! validation all run in verified assembly. Rust supplies the three entropy
-//! tapes, allocates output and scratch, and selects the CPU implementation.
+//! DSA parameter generation, for the three FIPS 186-4 generation sizes.
 
 #![cfg(any(
     target_arch = "x86",
@@ -10,6 +7,11 @@
     target_arch = "arm",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
+
+// Hashing, primality tests, retries, generator selection and the final
+// validation are all verified code. On x86-64 the Rust refills one tape as the
+// search asks (`search`); elsewhere it supplies the three entropy tapes. It
+// allocates the output and working space, and chooses the implementation.
 
 #[cfg(not(target_arch = "x86_64"))]
 use alloc::vec;

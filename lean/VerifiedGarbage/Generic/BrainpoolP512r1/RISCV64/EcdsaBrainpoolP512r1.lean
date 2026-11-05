@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.VerifyLit
 

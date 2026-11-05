@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Pbkdf2.Scratch

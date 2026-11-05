@@ -1,4 +1,4 @@
-//! Validated SEC 1 conversion, each in one call of a verified function.
+//! SEC 1 point compression and decompression, with validation.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -308,9 +308,10 @@ mod tests {
                 for d in 1..=8 {
                     let mut private = [0; $len];
                     private[$len - 1] = d;
-                    let public = PrivateKey::<$curve>::from_bytes(&private)
+                    let public = *PrivateKey::<$curve>::from_bytes(&private)
                         .public_key()
-                        .unwrap();
+                        .unwrap()
+                        .as_bytes();
                     let compressed = $curve::compress_public_key(&public).unwrap();
                     assert_eq!(compressed[0], 2 | (public[2 * $len] & 1));
                     assert_eq!(&compressed[1..], &public[1..1 + $len]);

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P224.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Lit
 
 /-! # P-224 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/

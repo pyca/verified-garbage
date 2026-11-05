@@ -1,0 +1,523 @@
+//! RSAES-PKCS1-v1_5 (RFC 8017 §7.2), with the implicit rejection of
+//! draft-irtf-cfrg-rsa-guidance-10 §7.2.
+//!
+//! **RSAES-PKCS1-v1_5 is deprecated** (RFC 8017, draft-irtf-cfrg-rsa-guidance):
+//! new protocols should use RSAES-OAEP, or better, a key encapsulation
+//! mechanism. [`decrypt`] **never reports an invalid padding**: it returns,
+//! instead, a message derived from the private key and the ciphertext, the same
+//! each time, which looks random to anyone without the key. So a successful
+//! decryption does not prove the ciphertext genuine, and the caller must check
+//! the message (its length, and its contents if it can) in constant time.
+//! Decryption's timing does not depend on whether the padding is valid, on the
+//! message's length, or on which of the two messages it returns.
+
+#![cfg(all(
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "powerpc64",
+        target_arch = "riscv64"
+    ),
+    feature = "alloc"
+))]
+
+use alloc::vec;
+use alloc::vec::Vec;
+use core::fmt;
+
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_pkcs1_enc::{
+    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
+    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+    vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx, vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
+    vg_rsa_pkcs1_encrypt_precomputed_adx, vg_rsa_pkcs1_encrypt_precomputed_ifma,
+};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pkcs1_enc::{
+    vg_rsa_pkcs1_decrypt_umaal, vg_rsa_pkcs1_encrypt_precomputed_umaal,
+};
+use crate::cpu::detected;
+use crate::hashes::sha256::Sha256Backend;
+use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words, trim};
+use crate::zeroize::zeroize;
+
+/// Why an encryption or a decryption was refused. An invalid padding is
+/// never one of them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The message is longer than the modulus' length less 11 bytes.
+    MessageTooLong,
+    /// The ciphertext is not as long as the modulus.
+    InvalidLength,
+    /// The ciphertext, as a number, is not less than the modulus.
+    InputOutOfRange,
+    /// The private-key operation's result failed its check against the
+    /// public exponent (a factor of the key is not prime, or the computation
+    /// was faulted) and is not released.
+    Fault,
+    /// The operating system's random number generator failed.
+    Randomness,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Error::MessageTooLong => "RSA PKCS #1 v1.5 message too long for the modulus",
+            Error::InvalidLength => "RSA ciphertext length is not the modulus length",
+            Error::InputOutOfRange => "RSA ciphertext is not less than the modulus",
+            Error::Fault => {
+                "RSA private-key operation failed its check against the public exponent"
+            }
+            Error::Randomness => "the random number generator failed",
+        })
+    }
+}
+
+impl core::error::Error for Error {}
+
+/// Fills `ps` with nonzero bytes from `draw`, which fills a buffer with
+/// random bytes: all at once, then each zero byte again until it is not.
+fn fill_nonzero(
+    ps: &mut [u8],
+    mut draw: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<(), Error> {
+    draw(ps)?;
+    for b in ps.iter_mut() {
+        while *b == 0 {
+            draw(core::slice::from_mut(b))?;
+        }
+    }
+    Ok(())
+}
+
+/// The operating system's random bytes.
+fn os_random(buf: &mut [u8]) -> Result<(), Error> {
+    getrandom::fill(buf).map_err(|_| Error::Randomness)
+}
+
+/// RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1): encrypts `plaintext`, of at
+/// most [`modulus_len`](PublicKey::modulus_len)` - 11` bytes, with `key`,
+/// with a padding string of random nonzero bytes, and returns the
+/// ciphertext ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian).
+/// The timing may depend on the public key and the plaintext's length, not
+/// on its contents.
+///
+/// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
+pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+    encrypt_with_rng(key, plaintext, os_random)
+}
+
+/// [`encrypt`], with its padding string drawn from `random` instead of the
+/// operating system.
+///
+/// Not part of the API: it lets benchmarks compare implementations on
+/// identical work, from fixed tapes. The ciphertext is secure only if
+/// `random` supplies uniformly random bytes, never reused.
+#[doc(hidden)]
+pub fn encrypt_with_rng(
+    key: &PublicKey,
+    plaintext: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
+    let k = key.modulus_len();
+    if plaintext.len() + 11 > k {
+        return Err(Error::MessageTooLong);
+    }
+    let mut ps = vec![0u8; k - plaintext.len() - 3];
+    fill_nonzero(&mut ps, random)?;
+    let c = encrypt_with(key, plaintext, &ps);
+    zeroize(&mut ps);
+    Ok(c)
+}
+
+/// `vg_rsa_pkcs1_encrypt_precomputed` of `plaintext` with the padding string `ps`, of
+/// `k - plaintext.len() - 3` nonzero bytes.
+fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
+    let k = key.modulus_len();
+    let mut out = vec![0u8; k];
+    let mut scratch = vec![0u64; public_scratch_words(k)];
+    let pre = key.pre(&mut scratch);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
+        // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
+        Backend::Adx => vg_rsa_pkcs1_encrypt_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_encrypt_precomputed_umaal,
+    };
+    // SAFETY: each pointer is valid for its length (`out` and `scratch` for
+    // writes), and none overlaps another or wraps around, as they are
+    // distinct Rust allocations; `PublicKey::new` and `encrypt` give
+    // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
+    // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
+    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the verified
+    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
+    // CPU supports the selected function's features.
+    let r = unsafe {
+        f(
+            out.as_mut_ptr(),
+            k,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            plaintext.as_ptr(),
+            plaintext.len(),
+            ps.as_ptr(),
+            ps.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
+        )
+    };
+    // The working space holds powers of the encoded message.
+    zeroize(&mut scratch);
+    // `PublicKey::new` checked `n` and `e`, and `PS` has no zero byte.
+    assert_eq!(r, 1, "precomputed encryption refused a valid key");
+    out
+}
+
+/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
+#[cfg(target_arch = "x86_64")]
+type DecryptFn = unsafe extern "sysv64" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+) -> u32;
+/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
+type DecryptFn = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+) -> u32;
+
+/// The implementation of `vg_rsa_pkcs1_decrypt` for the implementations of
+/// SHA-256 and of the private-key operation chosen.
+fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
+    match (sha, crt) {
+        (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_pkcs1_decrypt,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_crt_adx,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_crt_ifma,
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_shani,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::ShaNi, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_avx2,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx,
+        #[cfg(target_arch = "x86_64")]
+        (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+        #[cfg(target_arch = "aarch64")]
+        (Sha256Backend::Sha2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_sha2,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        (Sha256Backend::Scalar, Backend::Umaal) => vg_rsa_pkcs1_decrypt_umaal,
+    }
+}
+
+/// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection
+/// (draft-irtf-cfrg-rsa-guidance-10 §7.2): decrypts `ciphertext`
+/// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`,
+/// and returns the message: the encoded one if its padding is valid, and
+/// otherwise one derived from `d` and the ciphertext, of at most
+/// [`modulus_len`](PrivateKey::modulus_len)` - 11` bytes. **An invalid
+/// padding is never an error** (see the [module](self) documentation): the
+/// errors are a ciphertext of the wrong length or not below the modulus,
+/// and a fault of the private-key operation. The timing may depend on the public key and the lengths of
+/// the primes, not on the ciphertext, the private key, the validity of the
+/// padding or the message (but for the length of the message returned).
+///
+/// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
+pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+    let k = key.modulus_len();
+    if ciphertext.len() != k {
+        return Err(Error::InvalidLength);
+    }
+    // Loading the key checked that `0 < d < n` (`RSA_check_key`).
+    let d = trim(&key.d);
+    let f = decrypt_fn(
+        Sha256Backend::select(detected()),
+        Backend::select(detected()),
+    );
+    let mut out = vec![0u8; k];
+    let mut len = [0u64; 1];
+    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+    // SAFETY: each pointer is valid for its length (`out`, `len` and
+    // `scratch` for writes), and none overlaps another or wraps around, as
+    // they are distinct Rust allocations; loading the key and the check
+    // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
+    // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
+    // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
+    // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
+    // implementations of SHA-256 and of the private-key operation that
+    // `Sha256Backend::select` and `Backend::select` chose, which are those
+    // of `f`.
+    let r = unsafe {
+        f(
+            out.as_mut_ptr(),
+            k,
+            &mut len,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            d.as_ptr(),
+            d.len(),
+            ciphertext.as_ptr(),
+            k,
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+        )
+    };
+    // `PrivateKey::from_crt` checked `n`, `e` and the key, so a refusal
+    // means the ciphertext is not below the modulus.
+    match r {
+        1 => {
+            // The function returns at most `n_len - 11` bytes.
+            let l = len[0] as usize;
+            out.drain(..k - l);
+            Ok(out)
+        }
+        2 => Err(Error::Fault),
+        _ => Err(Error::InputOutOfRange),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        Backend, Error, Sha256Backend, Vec, decrypt, decrypt_fn, encrypt_with_rng, fill_nonzero,
+        os_random, vec,
+    };
+    use crate::rsa::tests::composite_key;
+    use alloc::string::ToString;
+
+    /// With `composite_key`'s key, whose factors are not prime, the result
+    /// for 2 fails its check against `e`.
+    #[test]
+    fn decrypt_fault() {
+        let (private, _) = composite_key();
+        let mut two = vec![0; 64];
+        two[63] = 2;
+        assert_eq!(decrypt(&private, &two), Err(Error::Fault));
+    }
+
+    /// The same padding string gives the same ciphertext, as the fixed-tape
+    /// benchmark relies on.
+    #[test]
+    fn encryption_from_a_fixed_tape_is_deterministic() {
+        let (_, public) = composite_key();
+        let encrypt = |byte| {
+            encrypt_with_rng(&public, &[7; 53], |buf| {
+                buf.fill(byte);
+                Ok(())
+            })
+            .unwrap()
+        };
+        assert_eq!(encrypt(1), encrypt(1));
+        assert_ne!(encrypt(1), encrypt(2));
+    }
+
+    #[test]
+    fn nonzero_padding() {
+        // Zeros come back from the first draw at the first, second and last
+        // bytes, and again from the second draw of the first byte.
+        let mut draws = 0;
+        let mut ps = [0u8; 5];
+        fill_nonzero(&mut ps, |buf| {
+            draws += 1;
+            match draws {
+                1 => buf.copy_from_slice(&[0, 0, 7, 9, 0]),
+                2 => buf[0] = 0,
+                _ => buf[0] = draws,
+            }
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(ps, [3, 4, 7, 9, 5]);
+        assert_eq!(
+            fill_nonzero(&mut ps, |_| Err(Error::Randomness)),
+            Err(Error::Randomness)
+        );
+        let mut ps = [0u8; 2];
+        let mut first = true;
+        let r = fill_nonzero(&mut ps, |buf| {
+            if first {
+                first = false;
+                buf.fill(0);
+                Ok(())
+            } else {
+                Err(Error::Randomness)
+            }
+        });
+        assert_eq!(r, Err(Error::Randomness));
+        let mut ps = [0u8; 64];
+        os_random(&mut ps).unwrap();
+    }
+
+    /// Every pair of implementations has its instance (each is tested end
+    /// to end on a CPU that chooses it).
+    #[test]
+    fn rsa_pkcs1_backends() {
+        #[cfg(target_arch = "x86_64")]
+        let (shas, crts) = (
+            [
+                Sha256Backend::Scalar,
+                Sha256Backend::ShaNi,
+                Sha256Backend::Avx2,
+            ]
+            .as_slice(),
+            [Backend::Baseline, Backend::Adx, Backend::Ifma].as_slice(),
+        );
+        #[cfg(target_arch = "x86")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar, Sha256Backend::ShaNi].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
+        #[cfg(target_arch = "aarch64")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
+        #[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar].as_slice(),
+            [Backend::Baseline, Backend::Umaal].as_slice(),
+        );
+        let mut fns = Vec::new();
+        for &sha in shas {
+            for &crt in crts {
+                fns.push(decrypt_fn(sha, crt) as usize);
+            }
+        }
+        fns.sort_unstable();
+        fns.dedup();
+        assert_eq!(fns.len(), shas.len() * crts.len());
+    }
+
+    #[test]
+    fn errors_display() {
+        for e in [
+            Error::MessageTooLong,
+            Error::InvalidLength,
+            Error::InputOutOfRange,
+            Error::Fault,
+            Error::Randomness,
+        ] {
+            assert!(!e.to_string().is_empty());
+        }
+    }
+}

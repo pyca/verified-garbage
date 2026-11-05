@@ -1,12 +1,7 @@
-//! SEED ECB (RFC 4269, SP 800-38A §6.1), in place and without padding.
+//! SEED-ECB (RFC 4269, SP 800-38A §6.1), in place and without padding.
 //!
-//! ECB is the block cipher applied to each block on its own, so the whole
-//! mode is verified assembly: `vg_seed_expand_key` (contract
-//! `VG.Spec.Seed.expandKeyContract`) writes the key schedule, and
-//! `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` (`ecbEncryptContract`,
-//! `ecbDecryptContract`) replace each block with its encryption or
-//! decryption, in constant time. Each operation accepts complete 16-byte
-//! blocks, including empty input.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P192
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.VerifyLit
 
 /-! # ECDSA verification over P-192 (FIPS 186-5 §6.4.2) on RISC-V -/

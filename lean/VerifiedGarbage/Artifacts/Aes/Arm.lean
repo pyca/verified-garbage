@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Aes.Ct32.Layers
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.CallF

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SEC 1 point conversion with P192's existing field backend -/
 

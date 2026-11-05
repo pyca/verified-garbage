@@ -1,7 +1,5 @@
-//! brainpoolp384r1's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses the `_umaal` variants on ARMv7 CPUs with
-//! the features their `_FEATURES` constants name.
+//! brainpoolP384r1's multiplications and public keys, which ECDSA and ECDH
+//! share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -20,9 +18,9 @@ use crate::arch::ec_brainpoolp384r1::{
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_brainpoolp384r1::VG_ECDH_BRAINPOOLP384R1_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES;
+use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp384r1_sha384::VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_UMAAL_FEATURES;
+use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -46,7 +44,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_BRAINPOOLP384R1_PUBLIC_KEY_UMAAL_FEATURES,
                     VG_ECDH_BRAINPOOLP384R1_UMAAL_FEATURES,
-                    VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES,
                     VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES,
                 ])
             },

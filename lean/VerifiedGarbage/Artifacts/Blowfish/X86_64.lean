@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Blowfish.X86_64.Frame
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 @[expose] public section
 

@@ -1,7 +1,4 @@
-//! P-521's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses the `_adx` variants on x86-64 CPUs with
-//! the features their `_FEATURES` constants name.
+//! P-521's multiplications and public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -18,9 +15,7 @@ use crate::arch::ec_p521::{VG_EC_P521_PUBLIC_KEY_ADX_FEATURES, vg_ec_p521_public
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p521::VG_ECDH_P521_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521::VG_ECDSA_P521_VERIFY_ADX_FEATURES;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521_sha512::VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES;
+use crate::arch::ecdsa_p521::{VG_ECDSA_P521_SIGN_ADX_FEATURES, VG_ECDSA_P521_VERIFY_ADX_FEATURES};
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -44,7 +39,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P521_PUBLIC_KEY_ADX_FEATURES,
                     VG_ECDH_P521_ADX_FEATURES,
-                    VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P521_SIGN_ADX_FEATURES,
                     VG_ECDSA_P521_VERIFY_ADX_FEATURES,
                 ])
             },

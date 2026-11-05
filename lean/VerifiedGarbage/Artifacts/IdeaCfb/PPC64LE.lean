@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Idea.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Idea.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 
 /-! # IDEA-CFB64 artifacts on baseline PPC64LE -/

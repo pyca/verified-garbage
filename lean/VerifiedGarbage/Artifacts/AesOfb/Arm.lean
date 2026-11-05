@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on ARMv7 -/
 

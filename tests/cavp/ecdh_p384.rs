@@ -12,7 +12,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{Error, P384, PrivateKey};
+use verified_garbage::ec::{P384, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -37,9 +38,13 @@ fn vectors() -> Vec<Vector> {
 fn ecdh_p384() {
     for (peer, d, public, shared) in vectors() {
         let key = PrivateKey::<P384>::from_bytes(&d);
-        assert_eq!(key.public_key(), Ok(public));
-        assert_eq!(key.diffie_hellman(&peer), Ok(shared));
-        assert!(key.clone().diffie_hellman(&public).is_ok());
+        assert_eq!(key.public_key(), Ok(PublicKey::from_bytes(&public)));
+        assert_eq!(key.exchange(&PublicKey::from_bytes(&peer)), Ok(shared));
+        assert!(
+            key.clone()
+                .exchange(&PublicKey::from_bytes(&public))
+                .is_ok()
+        );
     }
 }
 
@@ -69,7 +74,10 @@ fn ecdh_p384_invalid() {
     bad.push(big_y);
     bad.push([0; 97]);
     for p in &bad {
-        assert_eq!(key.diffie_hellman(p), Err(Error::InvalidKey));
+        assert_eq!(
+            key.exchange(&PublicKey::from_bytes(p)),
+            Err(Error::InvalidKey)
+        );
     }
     let n = unhex(
         "ffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973",
@@ -77,7 +85,10 @@ fn ecdh_p384_invalid() {
     for d in [[0; 48], n.try_into().unwrap(), [0xff; 48]] {
         let key = PrivateKey::<P384>::from_bytes(&d);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
-        assert_eq!(key.diffie_hellman(&peer), Err(Error::InvalidKey));
+        assert_eq!(
+            key.exchange(&PublicKey::from_bytes(&peer)),
+            Err(Error::InvalidKey)
+        );
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
     assert_eq!(Error::InvalidKey.to_string(), "invalid ECDH key");

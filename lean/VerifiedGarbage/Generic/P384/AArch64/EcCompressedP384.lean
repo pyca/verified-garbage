@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P384Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SEC 1 point conversion with P384's existing field backend -/
 

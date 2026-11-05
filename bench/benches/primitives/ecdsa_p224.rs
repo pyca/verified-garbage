@@ -2,9 +2,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p224`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p224`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p224_sha224",
     "ecdsa_p224",
+    "fn_tables",
     "ec_p224",
     "hmac_sha224",
     "sha256",
@@ -30,7 +33,8 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ecdsa::{P224, SigningKey};
+    use verified_garbage::ec::P224;
+    use verified_garbage::ecdsa::SigningKey;
     use verified_garbage::hashes::sha224::Sha224;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -72,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>>(
+fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P224>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -87,7 +91,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ecdsa::{P224, SigningKey, VerifyingKey};
+    use verified_garbage::ec::P224;
+    use verified_garbage::ecdsa::SigningKey;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -117,8 +122,8 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P224>
     }
     g.finish();
 
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<P224>::from_bytes(&q);
+    let verifying_key = key.public_key().unwrap();
+    let q = *verifying_key.as_bytes();
     let mut g = c.benchmark_group(format!("ecdsa_p224_{name}_verify"));
     for size in SIZES {
         let message = vec![0x5a; size];

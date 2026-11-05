@@ -27,6 +27,7 @@ public import VerifiedGarbage.Proof.Aes.X86.Keys
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
 import VerifiedGarbage.Proof.Aes.X86.AesNi.CT

@@ -10,19 +10,28 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_cfb::{InvalidKeyLength, TripleDesCfb64};
+use verified_garbage::triple_des_cfb::{Error, TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, truncated and
 /// split (`crate::modes::check`).
-fn check(ctx: &TripleDesCfb64, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
+fn check(key: &[u8], iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
     let vector = (plaintext, ciphertext);
-    let cfb = crate::modes::Feedback::Ciphertext;
-    crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
-    crate::modes::check(cfb, iv, vector, (ciphertext, plaintext), &|iv, b| {
-        ctx.decrypt(iv, b)
-    });
+    crate::modes::check(
+        iv,
+        vector,
+        &|iv| TripleDesCfb64Encryptor::new(key, iv).unwrap(),
+        TripleDesCfb64Encryptor::encrypt,
+        TripleDesCfb64Encryptor::encrypt_final,
+    );
+    crate::modes::check(
+        iv,
+        (ciphertext, plaintext),
+        &|iv| TripleDesCfb64Decryptor::new(key, iv).unwrap(),
+        TripleDesCfb64Decryptor::decrypt,
+        TripleDesCfb64Decryptor::decrypt_final,
+    );
 }
 
 fn check_file(text: &str) -> usize {
@@ -34,19 +43,9 @@ fn check_file(text: &str) -> usize {
         let iv: [u8; 8] = unhex(fields["IV"]).try_into().unwrap();
         let plaintext = unhex(fields["PLAINTEXT"]);
         let ciphertext = unhex(fields["CIPHERTEXT"]);
-        check(
-            &TripleDesCfb64::new(&key).unwrap(),
-            iv,
-            &plaintext,
-            &ciphertext,
-        );
+        check(&key, iv, &plaintext, &ciphertext);
         if key[..8] == key[16..] {
-            check(
-                &TripleDesCfb64::new(&key[..16]).unwrap(),
-                iv,
-                &plaintext,
-                &ciphertext,
-            );
+            check(&key[..16], iv, &plaintext, &ciphertext);
         }
         count += 1;
     }
@@ -73,8 +72,12 @@ fn cavp_mmt() {
 fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert_eq!(
-            TripleDesCfb64::new(&vec![0; len]).err(),
-            Some(InvalidKeyLength)
+            TripleDesCfb64Encryptor::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
+        );
+        assert_eq!(
+            TripleDesCfb64Decryptor::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
         );
     }
 }

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # AES-CMAC (NIST SP 800-38B) on PPC64LE -/
 

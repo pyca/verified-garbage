@@ -1,21 +1,9 @@
 //! SM4-CTR (SP 800-38A §6.5, with SM4 as in GB/T 32907-2016, transcribed in
-//! the Internet-Draft draft-ribose-cfrg-sm4-10),
-//! in place, with the standard incrementing function of Appendix B.1 on the
-//! whole counter block (a 128-bit big-endian number, wrapping modulo `2¹²⁸`,
-//! as OpenSSL's SM4-CTR).
+//! draft-ribose-cfrg-sm4-10), in place, incrementing the whole counter block as
+//! a 128-bit big-endian number modulo `2¹²⁸` (Appendix B.1, as OpenSSL's
+//! SM4-CTR does).
 //!
-//! The block cipher work is verified assembly: `vg_sm4_expand_key`
-//! (contract `VG.Spec.Sm4.expandKeyContract`) writes the key schedule, and
-//! `vg_sm4_ctr` (`VG.Spec.Sm4.ctrContract`) XORs whole blocks with the
-//! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
-//! replaces with the counter block to continue from, in constant time: its
-//! timing depends on none of the key, the counter block and the data. This
-//! module holds the key schedule and handles a partial last block (§6.5,
-//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
-//! them with the first bytes of the next output block.
-//!
-//! The caller chooses the initial counter block, and must never use a
-//! counter block twice with the same key (Appendix B.2).
+//! A counter block must never be used twice with the same key (Appendix B.2).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -30,16 +18,73 @@ use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_ctr::vg_sm4_ctr;
 use crate::zeroize::zeroize;
 
-/// An expanded SM4 key for CTR, whose encryption and decryption are the same
-/// operation.
-pub struct Sm4Ctr {
+/// Why an SM4-CTR operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        IncompleteBlock => "SM4-CTR input is not a whole number of blocks",
+    }
+}
+
+/// An expanded SM4 key.
+struct Key {
     /// The key schedule `vg_sm4_expand_key` writes.
     schedule: [u8; 128],
 }
 
+/// SM4-CTR of one message, whose encryption and decryption are the
+/// same operation.
+///
+/// Each call but the last takes whole 16-byte blocks and continues the
+/// message from the next counter block; the last,
+/// [`apply_keystream_final`](Self::apply_keystream_final), takes the rest
+/// of the message, of any length.
+pub struct Sm4Ctr {
+    key: Key,
+    /// The counter block to continue from.
+    counter: [u8; 16],
+}
+
 impl Sm4Ctr {
+    /// Expands a 16-byte key, to process a message from the counter block
+    /// `ctr`.
+    pub fn new(key: &[u8; 16], ctr: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
+            counter: *ctr,
+        }
+    }
+
+    /// Encrypts or decrypts (the same operation) whole 16-byte blocks in
+    /// place, continuing the message. Returns an error without changing
+    /// anything if the buffer's length is not a multiple of 16: only
+    /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
+    /// last block.
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(16) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.apply_keystream(&mut self.counter, buffer);
+        Ok(())
+    }
+
+    /// Encrypts or decrypts (the same operation) the rest of the message in
+    /// place, of any length: its whole blocks, then a partial last block if
+    /// there is one (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`).
+    pub fn apply_keystream_final(mut self, buffer: &mut [u8]) {
+        self.key.apply_keystream(&mut self.counter, buffer);
+    }
+}
+
+impl Key {
     /// Expands a 16-byte key.
-    pub fn new(key: &[u8; 16]) -> Self {
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
@@ -56,7 +101,7 @@ impl Sm4Ctr {
     /// be processed in pieces of whole blocks, each continuing from the `ctr`
     /// the last left; a piece whose length is not a multiple of 16 bytes
     /// must end the message.
-    pub fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+    fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
         self.crypt(ctr, blocks);
@@ -88,7 +133,7 @@ impl Sm4Ctr {
     }
 }
 
-impl Drop for Sm4Ctr {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

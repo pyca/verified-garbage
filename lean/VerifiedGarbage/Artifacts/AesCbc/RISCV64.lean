@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on RISC-V -/

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
 public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
 public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 /-! # AES (FIPS 197) on RISC-V -/

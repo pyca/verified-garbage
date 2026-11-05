@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Generic stream registrations for every x86 SHA-256 backend -/
 

@@ -47,6 +47,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.Octets

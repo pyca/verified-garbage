@@ -1,8 +1,4 @@
-//! P-384's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses, on CPUs with the features their
-//! `_FEATURES` constants name, the `_adx` variants on x86-64 and the
-//! `_umaal` ones on ARMv7.
+//! P-384's multiplications and public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -22,14 +18,12 @@ use crate::arch::ec_p384::{VG_EC_P384_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_p384_publ
 use crate::arch::ecdh_p384::VG_ECDH_P384_ADX_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdsa_p384::VG_ECDSA_P384_SIGN_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384::VG_ECDSA_P384_VERIFY_UMAAL_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384_sha384::VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p384_sha384::VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES;
+use crate::arch::ecdsa_p384::{VG_ECDSA_P384_SIGN_ADX_FEATURES, VG_ECDSA_P384_VERIFY_ADX_FEATURES};
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
@@ -56,7 +50,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P384_PUBLIC_KEY_ADX_FEATURES,
                     VG_ECDH_P384_ADX_FEATURES,
-                    VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P384_SIGN_ADX_FEATURES,
                     VG_ECDSA_P384_VERIFY_ADX_FEATURES,
                 ])
             },
@@ -72,7 +66,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P384_PUBLIC_KEY_UMAAL_FEATURES,
                     VG_ECDH_P384_UMAAL_FEATURES,
-                    VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES,
+                    VG_ECDSA_P384_SIGN_UMAAL_FEATURES,
                     VG_ECDSA_P384_VERIFY_UMAAL_FEATURES,
                 ])
             },

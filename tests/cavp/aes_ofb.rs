@@ -10,64 +10,40 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_ofb::{AesOfb, InvalidKeyLength};
+use verified_garbage::aes_ofb::{AesOfb, Error};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
-/// The block to continue from after `n` whole blocks of the vector's
-/// message: the `n`-th output block, the input XOR the output's last block.
-fn output_block(input: &[u8], output: &[u8], n: usize) -> [u8; 16] {
-    let mut o = [0; 16];
-    for i in 0..16 {
-        o[i] = input[16 * (n - 1) + i] ^ output[16 * (n - 1) + i];
-    }
-    o
-}
-
-/// Checks a vector in both directions, in one call; with `split`, also in
-/// two calls split at each block boundary, one call per block, and with the
-/// message cut short at each length in its last block (§6.4's partial last
-/// block).
+/// Checks a vector in both directions, in one call; with `split`, also
+/// truncated (with a partial last block) and in pieces
+/// (`crate::modes::check`).
 fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
     assert_eq!(plaintext.len(), ciphertext.len());
     assert_eq!(plaintext.len() % 16, 0);
-    let ctx = AesOfb::new(key).unwrap();
     let iv: [u8; 16] = iv.try_into().unwrap();
-    let n = plaintext.len() / 16;
-    // The block to continue from after the message (no vector is empty).
-    let last = output_block(plaintext, ciphertext, n);
-    for (input, expected) in [(plaintext, ciphertext), (ciphertext, plaintext)] {
-        let mut output = input.to_vec();
-        let mut chain = iv;
-        ctx.apply_keystream(&mut chain, &mut output);
-        assert_eq!(output, expected);
-        assert_eq!(chain, last);
-        if split {
-            for offset in (0..=input.len()).step_by(16) {
-                let mut output = input.to_vec();
-                let mut chain = iv;
-                ctx.apply_keystream(&mut chain, &mut []);
-                assert_eq!(chain, iv);
-                ctx.apply_keystream(&mut chain, &mut output[..offset]);
-                ctx.apply_keystream(&mut chain, &mut output[offset..]);
-                assert_eq!(output, expected);
-                assert_eq!(chain, last);
-            }
-            let mut output = input.to_vec();
-            let mut chain = iv;
-            for block in output.chunks_mut(16) {
-                ctx.apply_keystream(&mut chain, block);
-            }
-            assert_eq!(output, expected);
-            assert_eq!(chain, last);
-            for len in input.len() - 15..input.len() {
-                let mut output = input[..len].to_vec();
-                let mut chain = iv;
-                ctx.apply_keystream(&mut chain, &mut output);
-                assert_eq!(output, expected[..len]);
-                assert_eq!(chain, last);
-            }
-        }
+    let encryptor = |iv: &[u8; 16]| AesOfb::new(key, iv).unwrap();
+    let decryptor = |iv: &[u8; 16]| AesOfb::new(key, iv).unwrap();
+    if split {
+        crate::modes::check(
+            iv,
+            (plaintext, ciphertext),
+            &encryptor,
+            AesOfb::apply_keystream,
+            AesOfb::apply_keystream_final,
+        );
+        crate::modes::check(
+            iv,
+            (ciphertext, plaintext),
+            &decryptor,
+            AesOfb::apply_keystream,
+            AesOfb::apply_keystream_final,
+        );
+    } else {
+        let mut output = plaintext.to_vec();
+        encryptor(&iv).apply_keystream(&mut output).unwrap();
+        assert_eq!(output, ciphertext);
+        decryptor(&iv).apply_keystream_final(&mut output);
+        assert_eq!(output, plaintext);
     }
 }
 
@@ -177,29 +153,47 @@ fn nist_ofb() {
 
 #[test]
 fn limits_and_lengths() {
+    let iv = [0x3c; 16];
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(AesOfb::new(&key), Err(InvalidKeyLength)));
+            assert!(matches!(
+                AesOfb::new(&key, &iv),
+                Err(Error::InvalidKeyLength)
+            ));
             continue;
         }
-        let ctx = AesOfb::new(&key).unwrap();
-        let mut iv = [0x3c; 16];
-        ctx.apply_keystream(&mut iv, &mut []);
-        assert_eq!(iv, [0x3c; 16]);
-        // Every length is a prefix of the longest message's keystream, and
-        // round-trips.
-        let mut stream = vec![0; 16 * 5];
-        ctx.apply_keystream(&mut iv, &mut stream);
-        for n in 0..stream.len() {
-            let mut iv = [0x3c; 16];
-            let mut buffer = vec![0x5a; n];
-            ctx.apply_keystream(&mut iv, &mut buffer);
-            let expected: Vec<_> = stream[..n].iter().map(|b| b ^ 0x5a).collect();
-            assert_eq!(buffer, expected);
-            let mut iv = [0x3c; 16];
-            ctx.apply_keystream(&mut iv, &mut buffer);
-            assert_eq!(buffer, vec![0x5a; n]);
+        // An empty call and a refused one change nothing: every length is a
+        // prefix of the longest message's output after them, and
+        // round-trips. Every length below 35 blocks, partial blocks
+        // included, each decrypted in place at an offset of its length modulo
+        // 16, with guards.
+        let mut encryptor = AesOfb::new(&key, &iv).unwrap();
+        encryptor.apply_keystream(&mut []).unwrap();
+        let mut odd = [0x5a; 17];
+        assert_eq!(
+            encryptor.apply_keystream(&mut odd),
+            Err(Error::IncompleteBlock)
+        );
+        assert_eq!(odd, [0x5a; 17]);
+        let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
+        let mut ciphertext = message.clone();
+        encryptor.apply_keystream_final(&mut ciphertext);
+        for n in 0..message.len() {
+            let mut buffer = message[..n].to_vec();
+            AesOfb::new(&key, &iv)
+                .unwrap()
+                .apply_keystream_final(&mut buffer);
+            assert_eq!(buffer, ciphertext[..n]);
+            let offset = n % 16;
+            let mut guarded = vec![0xa5; offset + n + 16];
+            guarded[offset..offset + n].copy_from_slice(&buffer);
+            AesOfb::new(&key, &iv)
+                .unwrap()
+                .apply_keystream_final(&mut guarded[offset..offset + n]);
+            assert_eq!(guarded[offset..offset + n], message[..n]);
+            assert!(crate::bytes::all_equal(&guarded[..offset], 0xa5));
+            assert!(crate::bytes::all_equal(&guarded[offset + n..], 0xa5));
         }
     }
 }

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # CAST5-OFB artifacts on baseline AArch64 -/
 

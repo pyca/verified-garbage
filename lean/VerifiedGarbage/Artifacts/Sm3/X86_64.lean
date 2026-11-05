@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.X86_64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sm3.X86_64.Lit
 
 /-! # SM3 (GB/T 32905-2016) on x86-64 -/

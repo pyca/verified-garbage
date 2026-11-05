@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 
 public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
 

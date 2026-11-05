@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ct.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # SHA-224 (FIPS 180-4) on RISC-V -/
 

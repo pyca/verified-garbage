@@ -16,14 +16,14 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64.Crt VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
 
-theorem generatorCheck_state_ok {p : CandidateP} {used : Nat} {s : State} {mi : BitVec 64}
+theorem generatorCheck_state_ok {p : CandidateP} {used : Nat} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords false) mi)
-    (hp : PhaseHeader p false s)
+    (hp : PhaseHeader p false c s)
     (hn : wv s.mem (off p.B 256) (slot (p.phaseWords false) aN) (p.phaseWords false) = p.P) :
     WP isa (.seq (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck) s
       fun t => CandidateTape p used t ∧
-        Good t (off p.B 256) (p.Z - 256) (p.phaseWords false) mi ∧ PhaseHeader p false t ∧
+        Good t (off p.B 256) (p.Z - 256) (p.phaseWords false) mi ∧ PhaseHeader p false c t ∧
         wv t.mem (off p.B 256) (slot (p.phaseWords false) aN) (p.phaseWords false) = p.P ∧
         t.zf = some (Spec.Ffdh.generationShape p.bits p.gen p.P) ∧
         t.mem = s.mem ∧ Keep mmRegs s t := by

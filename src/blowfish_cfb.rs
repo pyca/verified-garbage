@@ -1,18 +1,7 @@
 //! Blowfish-CFB64 (SP 800-38A §6.3 with 64-bit segments, with Blowfish as in
 //! Schneier, FSE 1994), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
-//! writes the schedule, and `vg_blowfish_cfb64_encrypt` and
-//! `vg_blowfish_cfb64_decrypt` (`VG.Spec.Blowfish.cfbEncryptContract`,
-//! `cfbDecryptContract`) replace whole blocks with their CFB encryption or
-//! decryption from the block at `iv`, which they replace with the last
-//! ciphertext block, in constant time: their timing depends on none of the key,
-//! the chaining value and the data. This module holds the schedule and
-//! handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
-//! MSB_u(CIPH_K(Cₙ₋₁))`): CFB encryption of a zero block gives `CIPH_K` of the
-//! block to continue from, whose first bytes it XORs into the rest of the
-//! input.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -27,14 +16,127 @@ use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_cfb::{vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_encrypt};
 use crate::zeroize::zeroize;
 
-/// The key length is outside 4..=56 bytes (32 to 448 bits).
-pub use crate::error::InvalidKeyLength;
+/// Why a Blowfish-CFB64 operation failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The key length is outside 4..=56 bytes (32 to 448 bits).
+    InvalidKeyLength,
+    /// The input of a call that does not end the message is not a whole
+    /// number of blocks.
+    IncompleteBlock,
+}
 
-/// An expanded Blowfish key for CFB64 encryption and decryption, both of
-/// which use Blowfish encryption.
-pub struct BlowfishCfb64 {
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Blowfish key length",
+        IncompleteBlock => "Blowfish-CFB64 input is not a whole number of blocks",
+    }
+}
+
+/// An expanded Blowfish key.
+struct Key {
     /// The schedule `vg_blowfish_expand_key` writes.
     schedule: [u8; 4168],
+}
+
+/// A Blowfish-CFB64 encryption of one message.
+///
+/// Each call but the last takes whole 8-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`encrypt_final`](Self::encrypt_final), takes the rest of the message, of
+/// any length.
+pub struct BlowfishCfb64Encryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl BlowfishCfb64Encryptor {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits; weak keys are
+    /// accepted), to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8: only [`encrypt_final`](Self::encrypt_final) takes
+    /// a partial last segment.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.encrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Encrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn encrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.encrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for BlowfishCfb64Encryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
+}
+
+/// A Blowfish-CFB64 decryption of one message.
+///
+/// Each call but the last takes whole 8-byte blocks and continues the
+/// message from the last ciphertext block of the call before; the last,
+/// [`decrypt_final`](Self::decrypt_final), takes the rest of the message, of
+/// any length.
+pub struct BlowfishCfb64Decryptor {
+    key: Key,
+    /// The block to continue from: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl BlowfishCfb64Decryptor {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits; weak keys are
+    /// accepted), to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8: only [`decrypt_final`](Self::decrypt_final) takes
+    /// a partial last segment.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(Error::IncompleteBlock);
+        }
+        self.key.decrypt(&mut self.iv, buffer);
+        Ok(())
+    }
+
+    /// Decrypts the rest of the message in place, of any length: its whole
+    /// blocks, then a partial last segment if there is one (§6.3,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    pub fn decrypt_final(mut self, buffer: &mut [u8]) {
+        self.key.decrypt(&mut self.iv, buffer);
+    }
+}
+
+impl Drop for BlowfishCfb64Decryptor {
+    /// Wipes the block to continue from, which after a partial last segment
+    /// is keystream.
+    fn drop(&mut self) {
+        zeroize(&mut self.iv);
+    }
 }
 
 /// The signature of `vg_blowfish_cfb64_encrypt` and
@@ -51,12 +153,11 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
-impl BlowfishCfb64 {
-    /// Expands a key of 4..=56 bytes (32 to 448 bits) for use in either
-    /// direction. Weak keys are accepted.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+impl Key {
+    /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are accepted.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         if !(4..=56).contains(&key.len()) {
-            return Err(InvalidKeyLength);
+            return Err(Error::InvalidKeyLength);
         }
         let mut schedule = [0; 4168];
         // SAFETY: the key has a length in 4..=56; the key and the schedule
@@ -71,7 +172,7 @@ impl BlowfishCfb64 {
     /// may be encrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_blowfish_cfb64_encrypt);
     }
 
@@ -81,7 +182,7 @@ impl BlowfishCfb64 {
     /// may be decrypted in pieces of whole blocks, each continuing from the
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
         self.crypt(iv, buffer, vg_blowfish_cfb64_decrypt);
     }
 
@@ -118,7 +219,7 @@ impl BlowfishCfb64 {
     }
 }
 
-impl Drop for BlowfishCfb64 {
+impl Drop for Key {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
     }

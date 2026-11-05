@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -85,7 +86,7 @@ theorem terminal_live {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) {status : Nat} (hst : status = 1 ∨ status = 3) :
     WP isa (.block (terminal status)) s fun t =>
       SLive p original used 0 t ∧ t.mem = writeController s.mem p.control (terminalValues status) := by
-  refine WP.mono (terminal_ok h.access h.r31 hst) fun t ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (terminal_ok h.access h.r31 hst) fun t ⟨hm, k⟩ hy => ?_
   have hh : Slots t.mem p.control (p.headers used 0) := by
     refine headers_after _ (terminalValues_bound status) hm ?_
     intro e he
@@ -97,7 +98,7 @@ theorem terminal_live {p : SPub} {original s : State} {used k : Nat}
   refine ⟨h.update (u := used) (k' := 0) h.used_le (Nat.zero_le _) _
     (terminalValues_bound status) (by
       simp only [terminalValues, List.mem_cons, List.not_mem_nil, or_false]
-      rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.mono hh, hm⟩
+      rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.mono hh hy, hm⟩
 
 /-- The words of a terminal status written over a loop state. -/
 theorem terminal_words {p : SPub} {original s t : State} {used k : Nat}
@@ -186,11 +187,11 @@ theorem search_zero_out {p : SPub} {original s : State} {used k : Nat}
     ⟨⟨p.op, p.len⟩, by rw [h.wr, h.input.1.2.2.2.1]; exact h.input.out_mem,
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hk])⟩
   unfold zeroOut
-  refine WP.seq (WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun t => t.gpr .r3 = p.op ∧
+  refine WP.seq (WP.mono_syms (WP.keep [.r3, .r4, .r5] (Q := fun t => t.gpr .r3 = p.op ∧
       t.gpr .r4 = BitVec.ofNat 64 p.len ∧ t.gpr .r5 = BitVec.ofNat 64 0 ∧ t.mem = s.mem) (by
-    prun [ldf, h.r31, hl, hl6, hv, hv6]) (by decide)) fun s₁ ⟨⟨h3, h4, h5, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (zeroLoop_ok (fun i hi => by rw [k₁.wr]; exact hout i hi) (by omega) (by omega) h3 h4 h5)
-    fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
+    prun [ldf, h.r31, hl, hl6, hv, hv6]) (by decide)) fun s₁ ⟨⟨h3, h4, h5, hm₁⟩, k₁⟩ hy₁ => ?_)
+  refine WP.mono_syms (zeroLoop_ok (fun i hi => by rw [k₁.wr]; exact hout i hi) (by omega) (by omega) h3 h4 h5)
+    fun t ⟨⟨tb, tout⟩, kt⟩ hy₂ => ?_
   have hf : ∀ x, (∀ i < p.len, x ≠ p.op + BitVec.ofNat 64 i) → t.mem x = s.mem x := by
     intro x hx
     rw [tout x (Or.inr ?_), hm₁]
@@ -199,7 +200,7 @@ theorem search_zero_out {p : SPub} {original s : State} {used k : Nat}
       (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
   have kk := k₁.trans kt
   have hfr := zero_frame h.input hf
-  refine ⟨h.restore kk.rd kk.wr kk.sp (fun r hr => kk.gpr r (by revert r hr; decide)) hfr, ?_,
+  refine ⟨h.restore kk.rd kk.wr kk.sp (fun r hr => kk.gpr r (by revert r hr; decide)) hfr (hy₂.trans hy₁), ?_,
     fun j hj => h.input.control_frame hfr j hj⟩
   refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
   intro b hb

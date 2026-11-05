@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Secp256k1
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Standalone Secp256k1 public-key validation on x86-64 -/
 

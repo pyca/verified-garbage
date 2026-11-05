@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # GHASH on x86-64 -/
 

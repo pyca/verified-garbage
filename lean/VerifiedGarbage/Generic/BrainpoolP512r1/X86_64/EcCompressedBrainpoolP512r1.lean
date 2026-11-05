@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP512r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP512r1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Standalone BrainpoolP512r1 public-point compression on x86-64 -/
 

@@ -25,6 +25,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
