@@ -180,7 +180,7 @@ theorem genT_length (P : RfcHash) (K : List Byte) : ∀ (k : Nat) (V : List Byte
 /-- What the candidate's loop changes: `scratch`, the stack below the
 frame's pointers, and `T`. -/
 abbrev CW (L : Lay dn) : List Region :=
-  [L.SCR, ⟨L.B, 272⟩, ⟨L.B + BitVec.ofNat 64 (96 + fT), 136⟩]
+  [L.SCR, ⟨L.B, 264⟩, ⟨L.B + BitVec.ofNat 64 (96 + fT), 136⟩]
 
 /-- After `j` of the candidate's `V`s, from `V₀` with the key `K`. -/
 structure CI (P : RfcHash) (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ : Mem) (t₀ : State)
@@ -260,11 +260,11 @@ theorem step_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} 
     · simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-      · exact ⟨⟨L.B, 272⟩, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨L.B, 264⟩, by simp, Region.sub_prefix (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨L.B + BitVec.ofNat 64 (96 + fT), 136⟩, by simp, Offset.sub _ (by omega) (by omega)⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨L.B, 272⟩, by simp, Offset.sub_base _ (by simp only [fTlen]; omega)⟩
+      exact ⟨⟨L.B, 264⟩, by simp, Offset.sub_base _ (by simp only [fTlen]; omega)⟩
   · rw [show vOf P L u₄.mem = Spec.Sha256.bytesAt u₄.mem (L.B + BitVec.ofNat 64 192) P.v.H.D from rfl,
       kp (by decide) (by simp only [fTlen]; omega), genT_succ]
     show vOf P L u₁.mem = _
@@ -369,7 +369,7 @@ theorem tInit_ci (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) (hS : SavedK P
     { ctx := hc₀
       frame := hf₀.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨L.B, 272⟩, by simp, Offset.sub_base _ (by decide)⟩
+        exact ⟨⟨L.B, 264⟩, by simp, Offset.sub_base _ (by decide)⟩
       k := kv0 (by decide) (by omega)
       v := kv0 (by decide) (by omega)
       len := by rw [hl₀, Nat.zero_mul]
