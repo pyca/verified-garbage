@@ -169,10 +169,27 @@ def ArgDone (p : SearchPublic) (o a : State) (used : Nat) (u : State) : Prop :=
   ArgCtx p o a used 7 u ∧ u.gpr .r0 = p.op ∧ u.gpr .r1 = BitVec.ofNat 32 p.len ∧ u.gpr .r2 = p.up ∧
     u.gpr .r3 = p.ep
 
-theorem arguments_ok {p : SearchPublic} {o s : State} {used remaining : Nat}
+/-- The argument registers, and `lr` the candidate frame's base. -/
+def argHead : List Instr :=
+  [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .mov .r3 (.reg .r7), .addSp .lr 0]
+
+theorem arguments_eq : arguments = argHead ++ (argWord 0 [] ++ (argWord 1 [] ++ (argWord 2 [] ++
+    (argWord 3 [.dp .add .r12 .r12 (.reg .r8)] ++ (argWord 4 [.dp .sub .r12 .r12 (.reg .r8)] ++
+      (argWord 5 [] ++ argWord 6 [])))))) := by
+  simp only [arguments, argHead, List.append_assoc]
+
+/-- The candidate's argument registers. -/
+def ArgRegs (p : SearchPublic) (u : State) : Prop :=
+  u.gpr .r0 = p.op ∧ u.gpr .r1 = BitVec.ofNat 32 p.len ∧ u.gpr .r2 = p.up ∧ u.gpr .r3 = p.ep
+
+theorem ArgRegs.keep {p : SearchPublic} {u t : State} (h : ArgRegs p u) (k : Rest [.r12] u t) : ArgRegs p t :=
+  ⟨(k.gpr .r0 (by decide)).trans h.1, (k.gpr .r1 (by decide)).trans h.2.1, (k.gpr .r2 (by decide)).trans h.2.2.1,
+    (k.gpr .r3 (by decide)).trans h.2.2.2⟩
+
+theorem argHead_ok {p : SearchPublic} {o s : State} {used remaining : Nat}
     (h : SearchLive p o used remaining s) :
-    WP isa (.block arguments) (allocated 32 s) fun u =>
-      ArgDone p o (allocated 32 s) used u ∧ Rest [.r0, .r1, .r2, .r3, .r12, .lr] (allocated 32 s) u := by
+    WP isa (.block argHead) (allocated 32 s) fun u =>
+      (ArgCtx p o (allocated 32 s) used 0 u ∧ ArgRegs p u) ∧ Rest [.r0, .r1, .r2, .r3, .lr] (allocated 32 s) u := by
   have hi := h.input
   have hS2 : (allocated 32 s).sp = p.S2 := by
     change s.sp - BitVec.ofNat 32 32 = p.S2
@@ -183,40 +200,42 @@ theorem arguments_ok {p : SearchPublic} {o s : State} {used remaining : Nat}
   have hargs : ∀ j < 8, (allocated 32 s).mem.readW (stackArgAddr o j) 32 = stackArg o j := fun j hj => by
     change s.mem.readW _ 32 = _
     rw [hi.arg_frame h.frame hj]; rfl
-  have hv (j : Nat) (hj : j < 7) (f : BitVec 32 → BitVec 32) (e : (callArgs (searchOfState o) used)[j]? = some (j, f (stackArg o j))) :
-      (callArgs p used)[j]? = some (j, f (stackArg o j)) := by rw [← hi.2]; exact e
-  rw [show arguments = [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .mov .r3 (.reg .r7),
-      .addSp .lr 0] ++ (argWord 0 [] ++ (argWord 1 [] ++ (argWord 2 [] ++ (argWord 3 [.dp .add .r12 .r12 (.reg .r8)] ++
-      (argWord 4 [.dp .sub .r12 .r12 (.reg .r8)] ++ (argWord 5 [] ++ argWord 6 [])))))) by
-    simp only [arguments, List.append_assoc]]
-  refine WP.block_append (WP.mono (withRest_all (c := .block [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5),
-      .mov .r2 (.reg .r6), .mov .r3 (.reg .r7), .addSp .lr 0]) [.r0, .r1, .r2, .r3, .lr]
+  refine WP.mono (withRest_all [.r0, .r1, .r2, .r3, .lr]
     (Q := fun t => t.gpr .r0 = p.op ∧ t.gpr .r1 = BitVec.ofNat 32 p.len ∧ t.gpr .r2 = p.up ∧ t.gpr .r3 = p.ep ∧
-      t.gpr .lr = p.S2 ∧ t.mem = (allocated 32 s).mem) ?_ (by rfl) (by rfl)) fun u0 ⟨⟨h0, h1, h2, h3, hlr, hm⟩, k0⟩ => ?_)
-  · have ag : (allocated 32 s).gpr = s.gpr := rfl
-    ffrun [hS2, ag, h.r4, h.r5, h.r6, h.r7, BitVec.add_zero]
-  have c0 : ArgCtx p o (allocated 32 s) used 0 u0 :=
-    ⟨hi, hlr, (k0.gpr .r8 (by decide)).trans h.r8, k0.sp.trans hS2, k0.rd.trans h.rd, k0.wr.trans hw, hw,
-      hargs, hm⟩
-  have regs : ∀ {t : State}, Rest [.r12] u0 t → t.gpr .r0 = p.op ∧ t.gpr .r1 = BitVec.ofNat 32 p.len ∧
-      t.gpr .r2 = p.up ∧ t.gpr .r3 = p.ep := fun k =>
-    ⟨(k.gpr .r0 (by decide)).trans h0, (k.gpr .r1 (by decide)).trans h1, (k.gpr .r2 (by decide)).trans h2,
-      (k.gpr .r3 (by decide)).trans h3⟩
+      t.gpr .lr = p.S2 ∧ t.mem = (allocated 32 s).mem) ?_ (by rfl) (by rfl)) fun u0 ⟨⟨h0, h1, h2, h3, hlr, hm⟩, k0⟩ =>
+    ⟨⟨⟨hi, hlr, (k0.gpr .r8 (by decide)).trans h.r8, k0.sp.trans hS2, k0.rd.trans h.rd, k0.wr.trans hw, hw,
+      hargs, hm⟩, h0, h1, h2, h3⟩, k0⟩
+  have ag : (allocated 32 s).gpr = s.gpr := rfl
+  unfold argHead
+  ffrun [hS2, ag, h.r4, h.r5, h.r6, h.r7, BitVec.add_zero]
+
+theorem hv_of {p : SearchPublic} {o : State} (hi : SearchInput p o) (used j : Nat) (f : BitVec 32 → BitVec 32)
+    (e : (callArgs (searchOfState o) used)[j]? = some (j, f (stackArg o j))) :
+    (callArgs p used)[j]? = some (j, f (stackArg o j)) := by rw [← hi.2]; exact e
+
+theorem arguments_ok {p : SearchPublic} {o s : State} {used remaining : Nat}
+    (h : SearchLive p o used remaining s) :
+    WP isa (.block arguments) (allocated 32 s) fun u =>
+      ArgDone p o (allocated 32 s) used u ∧ Rest [.r0, .r1, .r2, .r3, .r12, .lr] (allocated 32 s) u := by
+  have hi := h.input
+  have hv := hv_of hi used
+  rw [arguments_eq]
+  refine WP.block_append (WP.mono (argHead_ok h) fun u0 ⟨⟨c0, r0⟩, k0⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 0) (f := id) (by decide) (adjust_none used)
-    (hv 0 (by decide) id (by simp [callArgs, searchOfState])) c0) fun u1 ⟨c1, k1⟩ => ?_)
+    (hv 0 id (by simp [callArgs, searchOfState])) c0) fun u1 ⟨c1, k1⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 1) (f := id) (by decide) (adjust_none used)
-    (hv 1 (by decide) id (by simp [callArgs, searchOfState])) c1) fun u2 ⟨c2, k2⟩ => ?_)
+    (hv 1 id (by simp [callArgs, searchOfState])) c1) fun u2 ⟨c2, k2⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 2) (f := id) (by decide) (adjust_none used)
-    (hv 2 (by decide) id (by simp [callArgs, searchOfState])) c2) fun u3 ⟨c3, k3⟩ => ?_)
+    (hv 2 id (by simp [callArgs, searchOfState])) c2) fun u3 ⟨c3, k3⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 3) (f := (· + BitVec.ofNat 32 used)) (by decide) (adjust_add used)
-    (hv 3 (by decide) (· + BitVec.ofNat 32 used) (by simp [callArgs, searchOfState])) c3) fun u4 ⟨c4, k4⟩ => ?_)
+    (hv 3 (· + BitVec.ofNat 32 used) (by simp [callArgs, searchOfState])) c3) fun u4 ⟨c4, k4⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 4) (f := (· - BitVec.ofNat 32 used)) (by decide) (adjust_sub used)
-    (hv 4 (by decide) (· - BitVec.ofNat 32 used) (by simp [callArgs, searchOfState])) c4) fun u5 ⟨c5, k5⟩ => ?_)
+    (hv 4 (· - BitVec.ofNat 32 used) (by simp [callArgs, searchOfState])) c4) fun u5 ⟨c5, k5⟩ => ?_)
   refine WP.block_append (WP.mono (argWord_ok (j := 5) (f := id) (by decide) (adjust_none used)
-    (hv 5 (by decide) id (by simp [callArgs, searchOfState])) c5) fun u6 ⟨c6, k6⟩ => ?_)
+    (hv 5 id (by simp [callArgs, searchOfState])) c5) fun u6 ⟨c6, k6⟩ => ?_)
   refine WP.mono (argWord_ok (j := 6) (f := id) (by decide) (adjust_none used)
-    (hv 6 (by decide) id (by simp [callArgs, searchOfState])) c6) fun u7 ⟨c7, k7⟩ => ?_
+    (hv 6 id (by simp [callArgs, searchOfState])) c6) fun u7 ⟨c7, k7⟩ => ?_
   have k := k1.trans (k2.trans (k3.trans (k4.trans (k5.trans (k6.trans k7)))))
-  exact ⟨⟨c7, regs k⟩, (k0.mono (by decide)).trans (k.mono (by decide))⟩
+  exact ⟨⟨c7, r0.keep k⟩, (k0.mono (by decide)).trans (k.mono (by decide))⟩
 
 end VG.Proof.RsaKeyGen.Arm.Search

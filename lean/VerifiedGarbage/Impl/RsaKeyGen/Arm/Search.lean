@@ -39,8 +39,8 @@ def arg (t : Reg) (extra j : Nat) : Instr := .ldrSp t (pushBytes + extra + 4 * j
 /-- The arguments saved; the counted candidates left, the low half of the
 state's first word; nothing consumed, no request, and the search goes on. -/
 def entry : List Instr := [
-  .mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r7 (.reg .r3),
-  arg .r12 0 7, .ldr .r9 .r12 0, .mov .r8 (.imm 0), .mov .r10 (.imm 0), .mov .r11 (.imm 4)]
+  arg .r12 0 7, .ldr .r9 .r12 0, .mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
+  .mov .r7 (.reg .r3), .mov .r8 (.imm 0), .mov .r10 (.imm 0), .mov .r11 (.imm 4)]
 
 /-- The candidate's stack argument `j`: the search's, `adjust`ed. -/
 def argWord (j : Nat) (adjust : List Instr) : List Instr :=
