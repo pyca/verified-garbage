@@ -337,4 +337,222 @@ theorem main_pins {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) 
     fun s₇ ⟨⟨a30, k7⟩, hMr⟩ => ⟨⟨bv6.keep k7, a30, (k7.gpr .r18 (by decide)).trans a18⟩, ?_⟩
   exact WP.mono hMr fun t ⟨⟨t30, t24, _⟩, kt⟩ => ⟨⟨(bv.keep k24).keep kt, t30, t24⟩, trivial⟩
 
+/-! ## Constant time -/
+
+/-- On entry, with the public data `q`. -/
+def P0 (q : PQ) (s : State) : Prop := pcContract.pre s ∧ pqOf s = q
+
+theorem P0.geo {q : PQ} {s : State} (h : P0 q s) : Geo q s := h.2 ▸ geo_of_pre h.1
+
+def F1 (q : PQ) (s : State) : Prop := ∃ s₀, P0 q s₀ ∧ St1 q s₀ s
+def F2 (q : PQ) (s : State) : Prop := ∃ s₀, P0 q s₀ ∧ St2 q s₀ s
+def F3 (q : PQ) (s : State) : Prop := ∃ s₀, P0 q s₀ ∧ St3 q s₀ s
+def F4 (q : PQ) (s : State) : Prop := ∃ s₀, P0 q s₀ ∧ St4 q s₀ s
+def F5 (q : PQ) (s : State) : Prop := ∃ s₀, P0 q s₀ ∧ St5 q s₀ s
+
+/-- A stage of `main`: the registers `V` fixes, what the later pieces read
+(`C`), and the rest `R` of `main` to come. -/
+def MS (V C : PQ → State → Prop) (R : Prog isa) (q : PQ) (s : State) : Prop :=
+  V q s ∧ C q s ∧ ∃ s₀, P0 q s₀ ∧ WP isa R s (St5 q s₀)
+
+theorem ms_rel {V V' C' : PQ → State → Prop} {a R : Prog isa} (rs : List Reg) (hp : Pins V rs)
+    {hc : VG.Taint.Hint T} (ht : (taint.check (ofRegs rs) a hc).isSome = true) :
+    RelCT isa (Two (MS V (fun q s => WP isa a s fun t => V' q t ∧ C' q t) (.seq a R))) a (Two (MS V' C' R)) :=
+  two_post (two_taint rs (fun q s₁ s₂ h₁ h₂ => hp q s₁ s₂ h₁.1 h₂.1) ht) fun q s ⟨_, hc, s₀, h0, hw⟩ => by
+    rw [WP.seq_iff] at hw
+    exact WP.mono (WP.and hc hw) fun t ⟨⟨hv, hc'⟩, hr⟩ => ⟨hv, hc', s₀, h0, hr⟩
+
+theorem ms_last {V : PQ → State → Prop} {a : Prog isa} (rs : List Reg) (hp : Pins V rs)
+    {hc : VG.Taint.Hint T} (ht : (taint.check (ofRegs rs) a hc).isSome = true) :
+    RelCT isa (Two (MS V (fun _ _ => True) a)) a (Two F5) :=
+  two_post (two_taint rs (fun q s₁ s₂ h₁ h₂ => hp q s₁ s₂ h₁.1 h₂.1) ht) fun _ _ ⟨_, _, s₀, h0, hw⟩ =>
+    WP.mono hw fun _ ht => ⟨s₀, h0, ht⟩
+
+theorem pins_BV : Pins BV baseRegs := fun _ _ _ h₁ h₂ => BV.pins h₁ h₂
+
+theorem pins_V1 : Pins V1 [.r14, .r15, .r23] := by
+  rintro q s₁ s₂ ⟨a, b, c⟩ ⟨a', b', c'⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [a, a']
+  · rw [b, b']
+  · rw [c, c']
+
+theorem pins_V2 : Pins V2 [.r23] := by
+  rintro q s₁ s₂ a a' r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; rw [a, a']
+
+theorem pins_V3 : Pins V3 [.r8, .r9, .r16, .r23] := by
+  rintro q s₁ s₂ ⟨a, b, c, d⟩ ⟨a', b', c', d'⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [a, a']
+  · rw [b, b']
+  · rw [c, c']
+  · rw [d, d']
+
+theorem pins_V4 : Pins V4 [.r16, .r23] := by
+  rintro q s₁ s₂ ⟨a, b⟩ ⟨a', b'⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [a, a']
+  · rw [b, b']
+
+theorem pins_V6 : Pins V6 (baseRegs ++ [.r18]) := by
+  rintro q s₁ s₂ ⟨a, b⟩ ⟨a', b'⟩ r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact a.pins a' r hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; rw [b, b']
+
+theorem pins_V7 : Pins V7 (baseRegs ++ [.r30, .r18]) := by
+  rintro q s₁ s₂ ⟨a, b, c⟩ ⟨a', b', c'⟩ r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact a.pins a' r hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [b, b']
+    · rw [c, c']
+
+theorem pins_V8 : Pins V8 (baseRegs ++ [.r30, .r24]) := by
+  rintro q s₁ s₂ ⟨a, b, c⟩ ⟨a', b', c'⟩ r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact a.pins a' r hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [b, b']
+    · rw [c, c']
+
+theorem mainG_rel : RelCT isa (Two (MS BV C0 mainG)) mainG (Two F5) := by
+  unfold mainG
+  exact RelCT.seq (ms_rel (V' := V1) (C' := C1) _ pins_BV (by taint_decide))
+    (RelCT.seq (ms_rel (V' := V2) (C' := C2) _ pins_V1 (by taint_decide))
+      (RelCT.seq (ms_rel (V' := V3) (C' := C3) _ pins_V2 (by taint_decide))
+        (RelCT.seq (ms_rel (V' := V4) (C' := C4) _ pins_V3 (by taint_decide))
+          (RelCT.seq (ms_rel (V' := V4) (C' := C5) _ pins_V4 (by taint_decide))
+            (RelCT.seq (ms_rel (V' := V6) (C' := C6) _ pins_V4 (by taint_decide))
+              (RelCT.seq (ms_rel (V' := V7) (C' := C7) _ pins_V6 (by taint_decide))
+                (RelCT.seq (ms_rel (V' := V8) (C' := fun _ _ => True) _ pins_V7 (by taint_decide))
+                  (ms_last _ pins_V8 (by taint_decide)))))))))
+
+/-- `main`'s entry: p valid. -/
+def M0 (q : PQ) (s : State) : Prop := F4 q s ∧ s.gpr .r0 = 0
+
+theorem main_rel : RelCT isa (Two M0) main (Two F5) :=
+  RelCT.of_exec (fun _ _ _ e => exec_main e) (mainG_rel.mono (fun _ _ ⟨q, ⟨⟨a, ha, h₁⟩, _⟩, ⟨⟨b, hb, h₂⟩, _⟩, hsp⟩ =>
+    ⟨q, ⟨BV.of_base h₁.1.1, main_pins ha.geo h₁, a, ha, WP.main_G (pc_main ha.geo h₁)⟩,
+      ⟨BV.of_base h₂.1.1, main_pins hb.geo h₂, b, hb, WP.main_G (pc_main hb.geo h₂)⟩, hsp⟩) fun _ _ h => h)
+
+theorem pins_P0 : Pins P0 [.r3, .r4, .r5, .r6, .r7, .r8, .r9] := by
+  rintro q s₁ s₂ h₁ h₂ r hr
+  have g₁ := h₁.geo
+  have g₂ := h₂.geo
+  obtain ⟨_, e₁⟩ := h₁
+  obtain ⟨_, e₂⟩ := h₂
+  have z₁ := congrArg PQ.Z e₁
+  have z₂ := congrArg PQ.Z e₂
+  simp only [pqOf] at z₁ z₂
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [g₁.r3, g₂.r3]
+  · exact BitVec.eq_of_toNat_eq (g₁.r4.trans g₂.r4.symm)
+  · rw [g₁.r5, g₂.r5]
+  · exact BitVec.eq_of_toNat_eq (g₁.r6.trans g₂.r6.symm)
+  · exact BitVec.eq_of_toNat_eq (g₁.r7.trans g₂.r7.symm)
+  · rw [g₁.r8, g₂.r8]
+  · exact BitVec.eq_of_toNat_eq (by omega)
+
+theorem front_rel : RelCT isa (Two P0) (.block front) (Two F1) :=
+  two_post (two_taint _ pins_P0 (by taint_decide)) fun _ s h => WP.mono (pc_s1 h.geo) fun _ ht => ⟨s, h, ht⟩
+
+theorem rec_rel : RelCT isa (Two F1) VG.Impl.Ffdh.PPC64LE.VettedValidation.recognize (Two F2) := by
+  refine two_post ?_ fun _ _ ⟨s₀, h0, h1⟩ => WP.mono (pc_s2 h0.geo h1) fun _ ht => ⟨s₀, h0, ht⟩
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, ⟨a, ha, h₁⟩, ⟨b, hb, h₂⟩, _⟩ e₁ e₂
+  exact VettedValidation.recognize_ct' q.D q.k q.db q.T q.sp s₁ s₂ t₁ t₂ s₁' s₂'
+    ⟨h₁.ri ha.geo, h₂.ri hb.geo⟩ e₁ e₂
+
+theorem pins_F2 : Pins F2 [.r3, .r4, .r5, .r23] := by
+  rintro q s₁ s₂ ⟨_, _, a, ha, -, -, ka⟩ ⟨_, _, b, hb, -, -, kb⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · rw [ka.gpr .r3 (by decide), kb.gpr .r3 (by decide), ha.r3, hb.r3]
+  · rw [ka.gpr .r4 (by decide), kb.gpr .r4 (by decide), ha.r4, hb.r4]
+  · rw [ka.gpr .r5 (by decide), kb.gpr .r5 (by decide), ha.r5, hb.r5]
+  · rw [ka.gpr .r23 (by decide), kb.gpr .r23 (by decide), ha.r23, hb.r23]
+
+theorem setup_rel :
+    RelCT isa (Two F2) (.block ([sth .r8 hCap] ++ VG.Impl.Ffdh.PPC64LE.Domain.setup)) (Two F3) :=
+  two_post (two_taint _ pins_F2 (by taint_decide)) fun _ _ ⟨s₀, h0, h2⟩ =>
+    WP.mono (pc_s3 h0.geo h2) fun _ ht => ⟨s₀, h0, ht⟩
+
+/-- In p's check, with what is left of it. -/
+def L1 (q : PQ) (s : State) : Prop :=
+  E1a q.cd s ∧ ∃ s₀, P0 q s₀ ∧
+    WP isa (.seq VG.Impl.Bignum.PPC64LE.Precompute.loadN VG.Impl.Bignum.PPC64LE.Precompute.check) s (St4 q s₀)
+def L2 (q : PQ) (s : State) : Prop :=
+  E2 q.cd s ∧ ∃ s₀, P0 q s₀ ∧ WP isa VG.Impl.Bignum.PPC64LE.Precompute.check s (St4 q s₀)
+def L3 (q : PQ) (s : State) : Prop :=
+  E3 q.cd s ∧ ∃ s₀, P0 q s₀ ∧ WP isa VG.Impl.Bignum.PPC64LE.Precompute.check2 s (St4 q s₀)
+
+theorem L1_of {q : PQ} {s : State} (h : F3 q s) :
+    WP isa (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) s (L1 q) := by
+  obtain ⟨s₀, h0, h3⟩ := h
+  have w := pc_s4 h0.geo h3
+  unfold loadP at w
+  rw [WP.seq_iff] at w
+  exact WP.mono (WP.and (DA h3.1) w) fun _ ⟨e, r⟩ => ⟨e, s₀, h0, r⟩
+
+theorem L2_of {q : PQ} {s : State} (h : L1 q s) : WP isa VG.Impl.Bignum.PPC64LE.Precompute.loadN s (L2 q) := by
+  obtain ⟨e, s₀, h0, w⟩ := h
+  rw [WP.seq_iff] at w
+  exact WP.mono (WP.and (DL e) w) fun _ ⟨e', r⟩ => ⟨e', s₀, h0, r⟩
+
+theorem L3_of {q : PQ} {s : State} (h : L2 q s) :
+    WP isa (.block VG.Impl.Bignum.PPC64LE.Precompute.check1) s (L3 q) := by
+  obtain ⟨e, s₀, h0, w⟩ := h
+  unfold VG.Impl.Bignum.PPC64LE.Precompute.check at w
+  rw [WP.seq_iff] at w
+  exact WP.mono (WP.and (DC1 e) w) fun _ ⟨e', r⟩ => ⟨e', s₀, h0, r⟩
+
+theorem loadP_rel : RelCT isa (Two F3) loadP (Two F4) := by
+  unfold loadP VG.Impl.Bignum.PPC64LE.Precompute.check
+  exact RelCT.seq (two_post (two_taint baseRegs (fun _ _ _ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ => h₁.1.pins h₂.1) (by taint_decide))
+      fun _ _ h => L1_of h)
+    (RelCT.seq (two_post (two_taint _ (fun q s₁ s₂ h₁ h₂ => pins_E1a (fun _ _ h => h) q.cd s₁ s₂ h₁.1 h₂.1)
+      (by taint_decide)) fun _ _ h => L2_of h)
+      (RelCT.seq (two_post (two_taint _ (fun q s₁ s₂ h₁ h₂ => pins_E1a (fun _ _ h => h.1) q.cd s₁ s₂ h₁.1 h₂.1)
+        (by taint_decide)) fun _ _ h => L3_of h)
+        (two_post (two_taint _ (fun q s₁ s₂ h₁ h₂ => pins_E3 q.cd s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+          fun _ _ ⟨_, s₀, h0, w⟩ => WP.mono w fun _ ht => ⟨s₀, h0, ht⟩)))
+
+theorem ite_rel : RelCT isa (Two F4) (.ite (.zero .d .r0) main (.block [.li .r3 0])) (Two F5) :=
+  two_ite (Φ := F4) (fun _ _ _ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ => h₁.1.2.2.trans h₂.1.2.2.symm) main_rel
+    (RelCT.of_false fun _ _ ⟨_, ⟨⟨_, h0, h4⟩, hne⟩, _⟩ => hne (h4.1.2.2.mpr h0.geo.hmod))
+
+theorem pins_F5 : Pins F5 [.r23] := by
+  rintro q s₁ s₂ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; rw [h₁.r23, h₂.r23]
+
+theorem pc_rel : RelCT isa (Two P0) Precompute.code fun _ _ => True := by
+  unfold Precompute.code
+  exact RelCT.seq front_rel (RelCT.seq rec_rel (RelCT.seq setup_rel (RelCT.seq loadP_rel
+    (RelCT.seq ite_rel (two_taint _ pins_F5 (by taint_decide))))))
+
+theorem pqOf_eq {s t : State} (h : pcContract.pub s t) : pqOf s = pqOf t := by
+  obtain ⟨⟨hsp, hdom, h3, h4, h5, h6, h7, h8, h9⟩, hsym⟩ := h
+  have hb := (List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp hdom
+  simp only [pcDom] at hb
+  rw [h5, h6] at hb
+  simp only [pqOf, h3, h5, h6, h7, h8, h9, hsym, hsp, hb]
+
+theorem pc_ct : ConstantTime isa pcContract.pre pcContract.pub Precompute.code :=
+  RelCT.constantTime (pc_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
+    ⟨pqOf s, ⟨hs, rfl⟩, ⟨ht, (pqOf_eq hp).symm⟩, hp.1.1⟩) fun _ _ h => h)
+
+theorem pc_verified :
+    Verified target Precompute.code (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts)) :=
+  Verified.of_correct pc_correct pc_ct pc_implies
+
 end VG.Proof.Ffdh.PPC64LE.Cached
