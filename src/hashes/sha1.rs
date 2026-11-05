@@ -14,10 +14,9 @@
 //! `vg_sha1_update_shani` and `vg_sha1_finalize_shani`; on AArch64, the
 //! `_sha2` ones.
 //!
-//! On AArch64, ARMv7, PPC64LE, RISC-V and x86-64, `digest` calls
-//! `vg_sha1_digest`, or its variant with the suffix of the streaming functions
-//! chosen (contract `VG.Spec.Sha1.digestContract`), which hashes the whole
-//! message in one call.
+//! On every target, `digest` calls `vg_sha1_digest`, or its variant with the
+//! suffix of the streaming functions chosen (contract
+//! `VG.Spec.Sha1.digestContract`), which hashes the whole message in one call.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -40,17 +39,10 @@ use crate::arch::sha1::{
 };
 use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86_64",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
 use crate::arch::sha1::vg_sha1_digest;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha1::vg_sha1_digest_sha2;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha1::vg_sha1_digest_shani;
 
 super::streaming_hash!(
@@ -69,17 +61,11 @@ super::streaming_hash!(
             ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
                 (vg_sha1_update_shani, vg_sha1_finalize_shani),
         },
-        digests: #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "x86_64",
-            all(target_arch = "powerpc64", target_endian = "little"),
-            target_arch = "riscv64"
-        ))] {
+        digests: {
             Scalar => vg_sha1_digest,
             #[cfg(target_arch = "aarch64")]
             Sha2 => vg_sha1_digest_sha2,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi => vg_sha1_digest_shani,
         },
     }

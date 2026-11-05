@@ -9,9 +9,9 @@
 //! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
 //! digest.
 //!
-//! `vg_sha224_finalize` (and, on AArch64, ARMv7, PPC64LE, RISC-V and
-//! x86-64, `vg_sha224_digest`) has a variant for each of SHA-256's, chosen the
-//! same way (see `super::sha256`).
+//! `vg_sha224_finalize` and `vg_sha224_digest`, which hashes the whole
+//! message in one call (contract `VG.Spec.Sha256.digestContract`), have a
+//! variant for each of SHA-256's, chosen the same way (see `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -36,18 +36,13 @@ use crate::arch::sha256::{vg_sha224_finalize_sha2, vg_sha256_update_sha2};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86_64",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
 use crate::arch::sha256::vg_sha224_digest;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha256::vg_sha224_digest_avx2;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha256::vg_sha224_digest_sha2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{vg_sha224_digest_avx2, vg_sha224_digest_shani};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::sha256::vg_sha224_digest_shani;
 
 super::streaming_hash!(
     /// An incremental SHA-224 computation (FIPS 180-4 §6.3).
@@ -68,17 +63,11 @@ super::streaming_hash!(
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA224_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha256_update_avx2, vg_sha224_finalize_avx2),
         },
-        digests: #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "x86_64",
-            all(target_arch = "powerpc64", target_endian = "little"),
-            target_arch = "riscv64"
-        ))] {
+        digests: {
             Scalar => vg_sha224_digest,
             #[cfg(target_arch = "aarch64")]
             Sha2 => vg_sha224_digest_sha2,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi => vg_sha224_digest_shani,
             #[cfg(target_arch = "x86_64")]
             Avx2 => vg_sha224_digest_avx2,

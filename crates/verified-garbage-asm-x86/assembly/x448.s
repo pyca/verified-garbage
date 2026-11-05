@@ -3508,3 +3508,52 @@ vg_x448:
 	mov edi, DWORD PTR [eax+8]
 	ret
 	.p2align 6
+
+vg_x448_base:
+	mov eax, 0
+	mov edx, 5
+	push ebx
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push eax
+	push edx
+	mov ebx, esp
+	mov eax, DWORD PTR [esp+64]
+	mov ecx, DWORD PTR [esp+68]
+	mov edx, DWORD PTR [esp+72]
+	push edx
+	push ebx
+	push ecx
+	push eax
+	call {vg_x448}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	ret
+	.p2align 6

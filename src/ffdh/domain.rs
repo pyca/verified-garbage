@@ -1,12 +1,13 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
 //! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARMv7/AArch64).
+//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARMv7,
+//! AArch64 and x86-64).
 //! Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
-#[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")))]
 use crate::arch::ffdh::vg_ffdh_generate_key_search;
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
@@ -15,7 +16,7 @@ use crate::arch::ffdh::{
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
     vg_ffdh_check_domain_adx, vg_ffdh_check_private_adx, vg_ffdh_check_public_adx,
-    vg_ffdh_derive_public_adx, vg_ffdh_exchange_adx, vg_ffdh_generate_key_search_adx,
+    vg_ffdh_derive_public_adx, vg_ffdh_exchange_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -30,7 +31,7 @@ fn scratch(p_len: usize) -> Scratch {
 pub(super) struct Domain {
     bytes: alloc::vec::Vec<u8>,
     p_len: usize,
-    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
     precomputed: super::precomputed::Precomputed,
 }
 
@@ -73,17 +74,17 @@ impl Domain {
         if ok != 1 {
             return None;
         }
-        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
         let precomputed = super::precomputed::Precomputed::new(&bytes, p_len, &mut ws);
         Some(Self {
             bytes,
             p_len,
-            #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+            #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
             precomputed,
         })
     }
 
-    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
     pub(super) fn exponent_len(&self) -> usize {
         self.precomputed.exponent_len()
     }
@@ -196,8 +197,8 @@ impl Domain {
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request.
-    /// ARMv7 and AArch64 call `vg_ffdh_generate_key_search_cached`, given the
-    /// public context `new` computed; other architectures
+    /// ARMv7, AArch64 and x86-64 call `vg_ffdh_generate_key_search_cached`,
+    /// given the public context `new` computed; other architectures
     /// `vg_ffdh_generate_key_search`.
     pub(super) fn key_search(
         &self,
@@ -208,17 +209,17 @@ impl Domain {
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_search_cached,
             #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_adx,
         };
-        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => vg_ffdh_generate_key_search,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_generate_key_search_adx,
         };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
@@ -244,9 +245,9 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
                 state,
-                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
                 self.precomputed.words().as_ptr(),
-                #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+                #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
                 self.precomputed.words().len(),
             )
         };
@@ -257,7 +258,10 @@ impl Domain {
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value (the cached
     /// entry point of `vg_ffdh_generate_key`).
-    #[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64")))]
+    #[cfg(all(
+        test,
+        any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")
+    ))]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
@@ -265,6 +269,8 @@ impl Domain {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
             #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
         };
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
         // `ws` and the variant as in `check_public`; all are distinct
@@ -329,10 +335,13 @@ impl Domain {
     }
 }
 
-#[cfg(all(test, any(target_arch = "arm", target_arch = "aarch64")))]
+#[cfg(all(
+    test,
+    any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")
+))]
 mod cache_tests {
     use super::Domain;
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
     use super::{Backend, detected, scratch};
 
     #[test]
@@ -360,12 +369,17 @@ mod cache_tests {
         }
     }
 
-    #[cfg(target_arch = "arm")]
+    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
     #[test]
     fn canonical_context_crosses_arithmetic_backends() {
-        // Feature-forced baseline CI runs take the first path; UMAAL runs
-        // also exercise both directions with the actual generated functions.
-        if Backend::ffdh(detected()) != Backend::Umaal {
+        // Feature-forced baseline CI runs take the first path; UMAAL and ADX
+        // runs also exercise both directions with the actual generated
+        // functions.
+        #[cfg(target_arch = "arm")]
+        let variant = Backend::Umaal;
+        #[cfg(target_arch = "x86_64")]
+        let variant = Backend::Adx;
+        if Backend::ffdh(detected()) != variant {
             return;
         }
         let mut p = alloc::vec![0; 64];
@@ -383,23 +397,26 @@ mod cache_tests {
                 &mut ws,
                 Backend::Baseline,
             );
-            let umaal = super::super::precomputed::Precomputed::new_with_backend(
+            let other = super::super::precomputed::Precomputed::new_with_backend(
                 &domain.bytes,
                 domain.p_len,
                 &mut ws,
-                Backend::Umaal,
+                variant,
             );
             // Every word of the context is the same.
-            assert_eq!(baseline.words(), umaal.words());
+            assert_eq!(baseline.words(), other.words());
             let mut draw = alloc::vec![0; domain.p_len];
             draw[domain.p_len - 1] = 3;
             let (mut expected_x, mut expected_y) =
                 (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
             let expected = domain.generate_key(&draw, &mut expected_x, &mut expected_y);
-            for (context, backend) in [(&baseline, Backend::Umaal), (&umaal, Backend::Baseline)] {
+            for (context, backend) in [(&baseline, variant), (&other, Backend::Baseline)] {
                 let f = match backend {
                     Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
+                    #[cfg(target_arch = "arm")]
                     Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
+                    #[cfg(target_arch = "x86_64")]
+                    Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
                 };
                 let (mut x, mut y) = (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
                 // SAFETY: domain was checked, context was initialized for these

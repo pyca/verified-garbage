@@ -23,6 +23,10 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.encaps
     stack := 8
     verified := Proof.MlKem.Arm.Encaps.verified },
+  Spec.MlKem.encapsHApi.artifact Arm.target {
+    code := Impl.MlKem.Arm.encapsH
+    stack := 8
+    verified := Proof.MlKem.Arm.Encaps.verifiedH },
   Spec.MlKem.decapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.decaps
     stack := 8

@@ -6009,6 +6009,590 @@ jne 2194b
     )
 }
 
+/// The CPU features `vg_dsa_generate_parameters_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_mr_adx,
+        vg_dsa_generate_parameters_2048_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_mr_adx,
+        vg_dsa_generate_parameters_1024_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_mr_adx,
+    )
+}
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072 = sym super::dsa::vg_dsa_generate_parameters_3072,
+        vg_dsa_generate_parameters_2048 = sym super::dsa::vg_dsa_generate_parameters_2048,
+        vg_dsa_generate_parameters_1024 = sym super::dsa::vg_dsa_generate_parameters_1024,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha256_avx2_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_1024_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha256_avx2` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_avx2}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_avx2}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_avx2 = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_avx2,
+        vg_dsa_generate_parameters_2048_sha256_avx2 = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_avx2,
+        vg_dsa_generate_parameters_1024 = sym super::dsa::vg_dsa_generate_parameters_1024,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha256_shani_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+        vg_dsa_generate_parameters_2048_sha256_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_shani_mr_adx,
+        vg_dsa_generate_parameters_1024_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha256_shani` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_shani}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_shani}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_shani = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_shani,
+        vg_dsa_generate_parameters_2048_sha256_shani = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_shani,
+        vg_dsa_generate_parameters_1024 = sym super::dsa::vg_dsa_generate_parameters_1024,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_mr_adx,
+        vg_dsa_generate_parameters_2048_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_mr_adx,
+        vg_dsa_generate_parameters_1024_sha1_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072 = sym super::dsa::vg_dsa_generate_parameters_3072,
+        vg_dsa_generate_parameters_2048 = sym super::dsa::vg_dsa_generate_parameters_2048,
+        vg_dsa_generate_parameters_1024_sha1_shani = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx,
+        vg_dsa_generate_parameters_1024_sha1_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani_sha256_avx2` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_avx2}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_avx2}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_avx2 = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_avx2,
+        vg_dsa_generate_parameters_2048_sha256_avx2 = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_avx2,
+        vg_dsa_generate_parameters_1024_sha1_shani = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani_mr_adx}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_shani_mr_adx,
+        vg_dsa_generate_parameters_2048_sha256_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_shani_mr_adx,
+        vg_dsa_generate_parameters_1024_sha1_shani_mr_adx = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani_mr_adx,
+    )
+}
+
+/// The CPU features `vg_dsa_generate_parameters_sha1_shani_sha256_shani` requires (`Artifact.features`).
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `seeds` must be valid for reads of `seeds_len` bytes.
+/// * `hs` must be valid for reads of `hs_len` bytes.
+/// * `witnesses` must be valid for reads of `witnesses_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,32), or (384,32).
+/// * out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; hs_len must be a multiple of p_len.
+/// * scratch_len must be at least 64*p_len + 1024 words.
+/// * The three tapes must contain independent uniform random bytes. They are not secret under this contract and must never be reused for private scalars or nonces.
+/// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_sha1_shani_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIH6gAAAAA=="
+je 20f
+.base64 "SIH6AAEAAA=="
+je 22f
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_3072_sha256_shani}
+.base64 "SI1kJDg="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_2048_sha256_shani}
+.base64 "SI1kJDg="
+jmp 23b
+20:
+.base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQISItEJFBIiUQkEEiLRCRYSIlEJBhIi0QkYEiJRCQgSItEJGhIiUQkKA=="
+call {vg_dsa_generate_parameters_1024_sha1_shani}
+.base64 "SI1kJDg="
+jmp 21b
+.p2align 6"#,
+        vg_dsa_generate_parameters_3072_sha256_shani = sym super::dsa::vg_dsa_generate_parameters_3072_sha256_shani,
+        vg_dsa_generate_parameters_2048_sha256_shani = sym super::dsa::vg_dsa_generate_parameters_2048_sha256_shani,
+        vg_dsa_generate_parameters_1024_sha1_shani = sym super::dsa::vg_dsa_generate_parameters_1024_sha1_shani,
+    )
+}
+
 /// The CPU features `vg_dsa_generate_parameters_1024_mr_adx` requires (`Artifact.features`).
 pub const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 

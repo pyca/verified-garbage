@@ -50,7 +50,7 @@ theorem zero_ok {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hd : s
   refine ⟨⟨h.k1, h.k2, h.dl, h.doml, h.rl, h.hZ, h.scr.congr k.2.2, hdom, hrand,
     ⟨fun i hi => by rw [k.2.2]; exact h.x.wr i hi, h.x.sep⟩,
     ⟨fun i hi => by rw [k.2.2]; exact h.y.wr i hi, h.y.sep⟩,
-    h.xy, h.xd, h.xr, h.yd, h.yr, ?_, h.valid⟩, ?_, hf, hh, k⟩
+    h.xy, h.xd, h.xr, h.yd, h.yr, ?_, h.valid, h.ldk, h.cutv⟩, ?_, hf, hh, k⟩
   · intro e he
     rw [hh _ (by
       simp only [GkP.headers, List.mem_cons, List.not_mem_nil, or_false] at he

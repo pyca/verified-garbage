@@ -111,29 +111,29 @@ theorem accept_ct {d : Reg} (hd : d = .a7 ∨ d = .t1) {P : State → State → 
     · exact taint_block [.a1] (fun a b hab => hsp a b hab.1) h4' (by taint_decide)
     · exact taint_block [.a1] (fun a b hab => hsp a b hab.1) h4' (by taint_decide)
 
-theorem body_ct {t : Nat} (ht : t < 280) :
-    RelCT isa (fun a b => Inv s₁ t a ∧ Inv s₂ t b) rejBody fun a b =>
-      (Inv s₁ (t + 1) a ∧ (a.gpr .a3 != 0) = decide (t + 1 ≠ 280)) ∧
-      (Inv s₂ (t + 1) b ∧ (b.gpr .a3 != 0) = decide (t + 1 ≠ 280)) := by
+theorem body_ct {N t : Nat} (ht : t < N) :
+    RelCT isa (fun a b => Inv N s₁ t a ∧ Inv N s₂ t b) rejBody fun a b =>
+      (Inv N s₁ (t + 1) a ∧ (a.gpr .a3 != 0) = decide (t + 1 ≠ N)) ∧
+      (Inv N s₂ (t + 1) b ∧ (b.gpr .a3 != 0) = decide (t + 1 ≠ N)) := by
   have hp₁ := h.hp₁
   have hp₂ := h.hp₂
-  have sp : ∀ {a b : State} {L₁ L₂ : List Zq}, LS s₁ L₁ a → LS s₂ L₂ b → a.sp = b.sp :=
+  have sp : ∀ {a b : State} {L₁ L₂ : List Zq}, LS N s₁ L₁ a → LS N s₂ L₂ b → a.sp = b.sp :=
     fun l₁ l₂ => by rw [l₁.env.sp, l₂.env.sp, h.sp]
   refine relct_wp ?_ fun a b hab => ⟨body_ok hp₁ ht hab.1, body_ok hp₂ ht hab.2⟩
-  refine RelCT.seq (R := fun a b => P1 s₁ t a ∧ P1 s₂ t b) (relct_wp ?_ fun a b hab =>
+  refine RelCT.seq (R := fun a b => P1 N s₁ t a ∧ P1 N s₂ t b) (relct_wp ?_ fun a b hab =>
     ⟨piece1 hp₁ ht hab.1, piece1 hp₂ ht hab.2⟩) ?_
   · exact taint_block [.a0] (fun a b hab => sp hab.1.ls hab.2.ls) (fun a b hab r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [hab.1.a0, hab.2.a0, S, S, h.scr]) (by taint_decide)
-  refine RelCT.seq (R := fun a b => P2 s₁ t a ∧ P2 s₂ t b) (relct_wp ?_ fun a b hab =>
+  refine RelCT.seq (R := fun a b => P2 N s₁ t a ∧ P2 N s₂ t b) (relct_wp ?_ fun a b hab =>
     ⟨piece2 hp₁ hab.1, piece2 hp₂ hab.2⟩) ?_
   · refine accept_ct (.inl rfl) (fun a b hab => sp hab.1.ls hab.2.ls)
       (fun a b hab => by rw [hab.1.t2, hab.2.t2, D1_eq h, Ls_eq h]) fun a b hab => ?_
     rw [hab.1.ls.a1, hab.2.ls.a1, A, A, h.a, Ls_eq h]
-  refine RelCT.seq (R := fun a b => P3 s₁ t a ∧ P3 s₂ t b) (relct_wp ?_ fun a b hab =>
+  refine RelCT.seq (R := fun a b => P3 N s₁ t a ∧ P3 N s₂ t b) (relct_wp ?_ fun a b hab =>
     ⟨piece3 hp₁ hab.1, piece3 hp₂ hab.2⟩) ?_
   · exact taint_block [] (fun a b hab => sp hab.1.ls hab.2.ls) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
       (by taint_decide)
-  refine RelCT.seq (R := fun a b => P4 s₁ t a ∧ P4 s₂ t b) (relct_wp ?_ fun a b hab =>
+  refine RelCT.seq (R := fun a b => P4 N s₁ t a ∧ P4 N s₂ t b) (relct_wp ?_ fun a b hab =>
     ⟨piece4 hp₁ hab.1, piece4 hp₂ hab.2⟩) ?_
   · refine accept_ct (.inr rfl) (fun a b hab => sp hab.1.p2.ls hab.2.p2.ls)
       (fun a b hab => by rw [hab.1.t2, hab.2.t2, D1_eq h, D2_eq h, Ls_eq h]) fun a b hab => ?_
@@ -141,28 +141,28 @@ theorem body_ct {t : Nat} (ht : t < 280) :
   · exact taint_block [] (fun a b hab => sp hab.1.ls hab.2.ls) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
       (by taint_decide)
 
-theorem loop_ct :
-    RelCT isa (fun a b => Inv s₁ 0 a ∧ Inv s₂ 0 b) (.loop rejBody (.nonzero .a3)) fun a b =>
-      Inv s₁ 280 a ∧ Inv s₂ 280 b := by
+theorem loop_ct {N : Nat} (h0 : 0 < N) :
+    RelCT isa (fun a b => Inv N s₁ 0 a ∧ Inv N s₂ 0 b) (.loop rejBody (.nonzero .a3)) fun a b =>
+      Inv N s₁ N a ∧ Inv N s₂ N b := by
   refine RelCT.mono (RelCT.loop (M := isa) (body := rejBody) (c := .nonzero .a3)
-    (Q := fun a b => Inv s₁ 280 a ∧ Inv s₂ 280 b)
-    (fun n a b => ∃ t, t < 280 ∧ n = 280 - t ∧ Inv s₁ t a ∧ Inv s₂ t b) (fun n => ?_) 280)
-    (fun a b hab => ⟨0, by decide, rfl, hab⟩) (fun _ _ h => h)
-  refine RelCT.mono (P := fun a b => ∃ t, t < 280 ∧ n = 280 - t ∧ Inv s₁ t a ∧ Inv s₂ t b)
+    (Q := fun a b => Inv N s₁ N a ∧ Inv N s₂ N b)
+    (fun n a b => ∃ t, t < N ∧ n = N - t ∧ Inv N s₁ t a ∧ Inv N s₂ t b) (fun n => ?_) N)
+    (fun a b hab => ⟨0, h0, rfl, hab⟩) (fun _ _ h => h)
+  refine RelCT.mono (P := fun a b => ∃ t, t < N ∧ n = N - t ∧ Inv N s₁ t a ∧ Inv N s₂ t b)
     (RelCT.exists_ fun t => ?_) (fun _ _ hab => hab) (fun _ _ h => h)
-  by_cases ht : t < 280
-  · by_cases hn : n = 280 - t
-    · refine RelCT.mono (P := fun a b => Inv s₁ t a ∧ Inv s₂ t b) (body_ct h ht) (fun _ _ hab => hab.2.2)
+  by_cases ht : t < N
+  · by_cases hn : n = N - t
+    · refine RelCT.mono (P := fun a b => Inv N s₁ t a ∧ Inv N s₂ t b) (body_ct h ht) (fun _ _ hab => hab.2.2)
         fun a b ⟨⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩ => ⟨?_, fun e => ?_, fun e => ?_⟩
       · rw [Steps.eval_nonzero, Steps.eval_nonzero, z₁, z₂]
-      · have : t + 1 = 280 := by
+      · have : t + 1 = N := by
           have e' : (a.gpr .a3 != 0) = false := by rw [Steps.eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
         rw [this] at i₁ i₂; exact ⟨i₁, i₂⟩
-      · have : t + 1 ≠ 280 := by
+      · have : t + 1 ≠ N := by
           have e' : (a.gpr .a3 != 0) = true := by rw [Steps.eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨280 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨N - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
@@ -178,8 +178,8 @@ abbrev FP (s₀ t : State) : Prop :=
   SEnv s₀ t ∧ Proof.Sha3.RISCV64.Stream.PadArgs t (S s₀) 168 34 ∧ t.gpr .a3 = BitVec.ofNat 64 0x1f
 
 /-- `squeeze`'s arguments. -/
-abbrev FS (s₀ t : State) : Prop :=
-  SEnv s₀ t ∧ Proof.Sha3.RISCV64.Stream.SqueezeArgs t (S s₀) (S s₀ + BitVec.ofNat 64 840) 168 0 840
+abbrev FS (len : Nat) (s₀ t : State) : Prop :=
+  SEnv s₀ t ∧ Proof.Sha3.RISCV64.Stream.SqueezeArgs t (S s₀) (S s₀ + BitVec.ofNat 64 840) 168 0 len
 
 section
 variable {s₁ s₂ : State} (h : Two s₁ s₂)
@@ -232,29 +232,31 @@ theorem padPhase_ct :
   rw [eS h] at ab cb
   exact ⟨env_sp h ea eb, aa, ab, ca.1, ca.2, cb.1, cb.2⟩
 
-theorem squeezePhase_ct :
+theorem squeezePhase_ct {len : Nat} (hl' : len = 504 ∨ len = 840) :
     RelCT isa (fun a b =>
       (SEnv s₁ a ∧ stateAt a.mem (S s₁) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₁)) ∧
       (SEnv s₂ b ∧ stateAt b.mem (S s₂) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₂)))
-      (.seq (.block squeezeArgs) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
+      (.seq (.block (squeezeArgs len)) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
       fun _ _ => True := by
-  have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block squeezeArgs) s (FS s₀) := fun s₀ s hp hs =>
-    WP.mono (squeezeArgs_ok hp hs) fun _ ⟨ht, _, ha⟩ => ⟨ht, ha⟩
-  refine RelCT.seq (R := fun a b => FS s₁ a ∧ FS s₂ b) (relct_wp ?_ fun a b hab =>
+  have hl : len ≤ 840 := by omega
+  have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block (squeezeArgs len)) s (FS len s₀) := fun s₀ s hp hs =>
+    WP.mono (squeezeArgs_ok hp hl hs) fun _ ⟨ht, _, ha⟩ => ⟨ht, ha⟩
+  refine RelCT.seq (R := fun a b => FS len s₁ a ∧ FS len s₂ b) (relct_wp ?_ fun a b hab =>
     ⟨hw _ _ h.hp₁ hab.1.1, hw _ _ h.hp₂ hab.2.1⟩) ?_
-  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
-      (by taint_decide)
-  have wq : ∀ {s₀ : State} {r : Region}, r ∈ [(⟨S s₀, 200⟩ : Region), ⟨S s₀ + BitVec.ofNat 64 840, 840⟩] →
+  · rcases hl' with rfl | rfl <;>
+      exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+        (by taint_decide)
+  have wq : ∀ {s₀ : State} {r : Region}, r ∈ [(⟨S s₀, 200⟩ : Region), ⟨S s₀ + BitVec.ofNat 64 840, len⟩] →
       ∃ o n, o + n ≤ 1680 ∧ r = ⟨S s₀ + BitVec.ofNat 64 o, n⟩ := fun hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact lowS
-    · exact ⟨840, 840, by decide, rfl⟩
-  refine squeezeCall_ct (st := S s₁) (pa := S s₁ + BitVec.ofNat 64 840) (rate := 168) (pos := 0) (pl := 840)
+    · exact ⟨840, len, by omega, rfl⟩
+  refine squeezeCall_ct (st := S s₁) (pa := S s₁ + BitVec.ofNat 64 840) (rate := 168) (pos := 0) (pl := len)
     fun a b ⟨⟨ea, aa⟩, ⟨eb, ab⟩⟩ => ?_
-  have ca := call_covers h.hp₁ ea (rd := []) (wr := [⟨S s₁, 200⟩, ⟨S s₁ + BitVec.ofNat 64 840, 840⟩])
+  have ca := call_covers h.hp₁ ea (rd := []) (wr := [⟨S s₁, 200⟩, ⟨S s₁ + BitVec.ofNat 64 840, len⟩])
     (fun r hr => absurd hr List.not_mem_nil) (fun r hr => wq hr)
-  have cb := call_covers h.hp₂ eb (rd := []) (wr := [⟨S s₂, 200⟩, ⟨S s₂ + BitVec.ofNat 64 840, 840⟩])
+  have cb := call_covers h.hp₂ eb (rd := []) (wr := [⟨S s₂, 200⟩, ⟨S s₂ + BitVec.ofNat 64 840, len⟩])
     (fun r hr => absurd hr List.not_mem_nil) (fun r hr => wq hr)
   rw [eS h] at ab cb
   exact ⟨env_sp h ea eb, aa, ab, ca.1, ca.2, cb.1, cb.2⟩
@@ -266,29 +268,57 @@ abbrev E1 (s₀ s : State) : Prop := SEnv s₀ s ∧ stateAt s.mem (S s₀) = Sp
 abbrev E2 (s₀ s : State) : Prop := SEnv s₀ s ∧ Spec.Sha3.Repr s.mem (S s₀) 168 (B s₀) ∧ (s.gpr .a0).toNat = 34
 abbrev E3 (s₀ s : State) : Prop :=
   SEnv s₀ s ∧ stateAt s.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀)
-abbrev E4 (s₀ s : State) : Prop :=
-  SEnv s₀ s ∧ Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) 840 = xof (B s₀) 840
+abbrev E4 (len : Nat) (s₀ s : State) : Prop :=
+  SEnv s₀ s ∧ Spec.Sha3.bytesAt s.mem (S s₀ + BitVec.ofNat 64 840) len = xof (B s₀) len
 
-theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sampleNTT fun _ _ => True := by
+/-- A try with `N` chunks, in both runs. -/
+theorem try_ct {N : Nat} (hN' : N = 168 ∨ N = 280) :
+    RelCT isa (fun a b => SEnv s₁ a ∧ SEnv s₂ b) (sampleTry N) fun a b => Inv N s₁ N a ∧ Inv N s₂ N b := by
   have hp₁ := h.hp₁
   have hp₂ := h.hp₂
+  have hN : N ≤ 280 := by omega
+  have h0 : 0 < N := by omega
   refine RelCT.seq (R := fun a b => E1 s₁ a ∧ E1 s₂ b) (relct_wp ?_ fun a b hab =>
-    ⟨by rw [hab.1]; exact setup_ok hp₁, by rw [hab.2]; exact setup_ok hp₂⟩) ?_
-  · exact taint_block [.a2] (fun a b hab => by rw [hab.1, hab.2]; exact h.sp) (fun a b hab r hr => by
-      rw [List.mem_singleton] at hr; subst hr; rw [hab.1, hab.2]; exact h.scr) (by taint_decide)
+    ⟨zero_ok hp₁ hab.1, zero_ok hp₂ hab.2⟩) ?_
+  · exact taint_block [.s9] (fun a b hab => env_sp h hab.1 hab.2) (fun a b hab r hr => by
+      rw [List.mem_singleton] at hr; subst hr; rw [hab.1.g9, hab.2.g9, S, S, h.scr]) (by taint_decide)
   refine RelCT.seq (R := fun a b => E2 s₁ a ∧ E2 s₂ b) (relct_wp (absorbPhase_ct h) fun a b hab =>
     ⟨absorb_phase hp₁ hab.1.1 hab.1.2, absorb_phase hp₂ hab.2.1 hab.2.2⟩) ?_
   refine RelCT.seq (R := fun a b => E3 s₁ a ∧ E3 s₂ b) (relct_wp (padPhase_ct h) fun a b hab =>
     ⟨pad_phase hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, pad_phase hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
-  refine RelCT.seq (R := fun a b => E4 s₁ a ∧ E4 s₂ b) (relct_wp (squeezePhase_ct h) fun a b hab =>
-    ⟨squeeze_phase hp₁ hab.1.1 hab.1.2, squeeze_phase hp₂ hab.2.1 hab.2.2⟩) ?_
-  refine RelCT.seq (R := fun a b => Inv s₁ 0 a ∧ Inv s₂ 0 b) (relct_wp ?_ fun a b hab =>
-    ⟨init_ok hp₁ hab.1.1 hab.1.2, init_ok hp₂ hab.2.1 hab.2.2⟩) ?_
-  · exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
+  refine RelCT.seq (R := fun a b => E4 (3 * N) s₁ a ∧ E4 (3 * N) s₂ b)
+    (relct_wp (squeezePhase_ct h (by omega)) fun a b hab =>
+      ⟨squeeze_phase hp₁ (by omega) hab.1.1 hab.1.2, squeeze_phase hp₂ (by omega) hab.2.1 hab.2.2⟩) ?_
+  refine RelCT.seq (R := fun a b => Inv N s₁ 0 a ∧ Inv N s₂ 0 b) (relct_wp ?_ fun a b hab =>
+    ⟨init_ok hp₁ hN hab.1.1 hab.1.2, init_ok hp₂ hN hab.2.1 hab.2.2⟩) (loop_ct h h0)
+  rcases hN' with rfl | rfl <;>
+    exact taint_block [] (fun a b hab => env_sp h hab.1.1 hab.2.1) (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
       (by taint_decide)
-  refine RelCT.seq (R := fun a b => Inv s₁ 280 a ∧ Inv s₂ 280 b) (loop_ct h) ?_
-  exact taint_block [.s9] (fun a b hab => env_sp h hab.1.ls.env hab.2.ls.env) (fun a b hab r hr => by
-    rw [List.mem_singleton] at hr; subst hr; rw [hab.1.ls.env.g9, hab.2.ls.env.g9, S, S, h.scr])
+
+theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sampleNTT fun _ _ => True := by
+  have hp₁ := h.hp₁
+  have hp₂ := h.hp₂
+  refine RelCT.seq (R := fun a b => SEnv s₁ a ∧ SEnv s₂ b) (relct_wp ?_ fun a b hab =>
+    ⟨by rw [hab.1]; exact save_env hp₁, by rw [hab.2]; exact save_env hp₂⟩) ?_
+  · exact taint_block [.a2] (fun a b hab => by rw [hab.1, hab.2]; exact h.sp) (fun a b hab r hr => by
+      rw [List.mem_singleton] at hr; subst hr; rw [hab.1, hab.2]; exact h.scr) (by taint_decide)
+  refine RelCT.seq (R := fun a b => Inv 168 s₁ 168 a ∧ Inv 168 s₂ 168 b) (try_ct h (.inl rfl)) ?_
+  -- The test, alike in both runs: their samples agree.
+  refine RelCT.seq (R := fun (a b : State) => (Inv 168 s₁ 168 a ∧ (a.gpr .t0 == 0) = decide ((Ls s₁ 168).length ≠ 256)) ∧
+      (Inv 168 s₂ 168 b ∧ (b.gpr .t0 == 0) = decide ((Ls s₂ 168).length ≠ 256)))
+    (relct_wp ?_ fun a b hab => ⟨test_ok hp₁ hab.1, test_ok hp₂ hab.2⟩) ?_
+  · exact taint_block [] (fun a b hab => env_sp h hab.1.ls.env hab.2.ls.env)
+      (fun _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide)
+  refine RelCT.seq (R := fun a b => SEnv s₁ a ∧ SEnv s₂ b) ?_ ?_
+  · refine RelCT.ite (fun a b hab => by rw [Steps.eval_zero, Steps.eval_zero, hab.1.2, hab.2.2, Ls_eq h]) ?_ ?_
+    · exact RelCT.mono (P := fun a b => SEnv s₁ a ∧ SEnv s₂ b)
+        (Q := fun a b => Inv 280 s₁ 280 a ∧ Inv 280 s₂ 280 b) (try_ct h (.inr rfl))
+        (fun a b hab => ⟨hab.1.1.1.ls.env, hab.1.2.1.ls.env⟩) fun a b hab => ⟨hab.1.ls.env, hab.2.ls.env⟩
+    · exact relct_wp (taint_block [] (fun a b hab => env_sp h hab.1.1.1.ls.env hab.1.2.1.ls.env)
+          (fun _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide))
+        fun a b hab => ⟨WP.block_nil hab.1.1.1.ls.env, WP.block_nil hab.1.2.1.ls.env⟩
+  exact taint_block [.s9] (fun a b hab => env_sp h hab.1 hab.2) (fun a b hab r hr => by
+    rw [List.mem_singleton] at hr; subst hr; rw [hab.1.g9, hab.2.g9, S, S, h.scr])
     (by taint_decide)
 
 end

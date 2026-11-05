@@ -61,12 +61,12 @@ call {vg_keccak_pad}
 .insn 4, 0x0a800593
 .insn 2, 0x4601
 .insn 4, 0x348c8693
-.insn 4, 0x34800713
+.insn 4, 0x1f800713
 call {vg_keccak_squeeze}
 .insn 4, 0x348c8513
 .insn 2, 0x85e2
 .insn 2, 0x4601
-.insn 4, 0x11800693
+.insn 4, 0x0a800693
 .insn 2, 0x6e05
 .insn 4, 0xd01e0e13
 20:
@@ -106,6 +106,97 @@ j 24f
 .insn 2, 0x050d
 .insn 2, 0x16fd
 bnez a3, 20b
+.insn 4, 0x00865293
+beqz t0, 25f
+j 26f
+25:
+.insn 2, 0x4281
+.insn 4, 0x005cb023
+.insn 4, 0x005cb423
+.insn 4, 0x005cb823
+.insn 4, 0x005cbc23
+.insn 4, 0x025cb023
+.insn 4, 0x025cb423
+.insn 4, 0x025cb823
+.insn 4, 0x025cbc23
+.insn 4, 0x045cb023
+.insn 4, 0x045cb423
+.insn 4, 0x045cb823
+.insn 4, 0x045cbc23
+.insn 4, 0x065cb023
+.insn 4, 0x065cb423
+.insn 4, 0x065cb823
+.insn 4, 0x065cbc23
+.insn 4, 0x085cb023
+.insn 4, 0x085cb423
+.insn 4, 0x085cb823
+.insn 4, 0x085cbc23
+.insn 4, 0x0a5cb023
+.insn 4, 0x0a5cb423
+.insn 4, 0x0a5cb823
+.insn 4, 0x0a5cbc23
+.insn 4, 0x0c5cb023
+.insn 2, 0x8566
+.insn 4, 0x0a800593
+.insn 2, 0x4601
+.insn 2, 0x86de
+.insn 4, 0x02200713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x8566
+.insn 4, 0x0a800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x8566
+.insn 4, 0x0a800593
+.insn 2, 0x4601
+.insn 4, 0x348c8693
+.insn 4, 0x34800713
+call {vg_keccak_squeeze}
+.insn 4, 0x348c8513
+.insn 2, 0x85e2
+.insn 2, 0x4601
+.insn 4, 0x11800693
+.insn 2, 0x6e05
+.insn 4, 0xd01e0e13
+27:
+.insn 4, 0x00054703
+.insn 4, 0x00154783
+.insn 4, 0x00254803
+.insn 4, 0x03c79893
+.insn 4, 0x0348d893
+.insn 2, 0x98ba
+.insn 4, 0x0047d313
+.insn 4, 0x00481393
+.insn 2, 0x931e
+.insn 4, 0x41c883b3
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060713
+.insn 2, 0x937d
+.insn 4, 0x00e3f3b3
+beqz t2, 28f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 29f
+28:
+29:
+.insn 4, 0x41c303b3
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060713
+.insn 2, 0x937d
+.insn 4, 0x00e3f3b3
+beqz t2, 210f
+.insn 4, 0x0065a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 211f
+210:
+211:
+.insn 2, 0x050d
+.insn 2, 0x16fd
+bnez a3, 27b
+26:
 .insn 4, 0x00865513
 .insn 4, 0x6a8cb083
 .insn 4, 0x690cbb83

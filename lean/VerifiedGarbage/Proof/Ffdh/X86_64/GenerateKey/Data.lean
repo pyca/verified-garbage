@@ -81,6 +81,13 @@ structure GkP where
   rp : Addr
   sp : Addr
   sv : Bool
+  /-- The scalar's first significant byte: the bound's (`lead`), or the
+  context's width's. -/
+  ld : Nat
+  /-- The mask of its bits. -/
+  msk : BitVec 64
+  /-- The scalar the attempt samples from the random bytes. -/
+  sf : List Byte → Nat
 
 abbrev GkP.w (p : GkP) : Nat := (p.k + 7) / 8
 abbrev GkP.params (p : GkP) : Spec.Ffdh.Parameters := Spec.Ffdh.domainOf p.k p.dom
@@ -88,13 +95,14 @@ abbrev GkP.pb (p : GkP) : List Byte := p.dom.take p.k
 abbrev GkP.P (p : GkP) : Nat := Spec.Rsa.os2ip p.pb
 abbrev GkP.mv (p : GkP) : Bool := Spec.Rsa.modulusValid p.P p.k
 abbrev GkP.bb (p : GkP) : List Byte := KeyScalar.bnd p.k p.dom
-abbrev GkP.ld (p : GkP) : Nat := lead p.bb
 abbrev GkP.n (p : GkP) : Nat := p.k - p.ld
 abbrev GkP.bc (p : GkP) : Byte := p.bb.getD p.ld 0
-abbrev GkP.msk (p : GkP) : BitVec 64 := smear64 p.bc
 abbrev GkP.cut (p : GkP) (rb : List Byte) : List Byte := KeyScalar.cut rb p.ld (p.msk.setWidth 8)
 abbrev GkP.xb (p : GkP) (rb : List Byte) : List Byte := (p.cut rb).drop p.ld
-abbrev GkP.scalar (p : GkP) (rb : List Byte) : Nat := Spec.Ffdh.scalarOfOctets p.params rb
+abbrev GkP.scalar (p : GkP) (rb : List Byte) : Nat := p.sf rb
+
+/-- `vg_ffdh_generate_key`'s cut: at the bound's first significant byte. -/
+def GkP.Bounded (p : GkP) : Prop := p.ld = lead p.bb ∧ p.msk = smear64 p.bc
 
 /-- Arguments saved before the scalar output is populated. -/
 def GkP.headers (p : GkP) : List (Nat × BitVec 64) :=
@@ -125,6 +133,8 @@ structure Base (p : GkP) (rb : List Byte) (s : State) : Prop where
   yr : Apart p.yp p.k p.rp p.k
   hdr : Slots s.mem p.B p.headers
   valid : Spec.Ffdh.privateValid p.params (p.scalar rb) = p.sv
+  ldk : p.ld < p.k
+  cutv : p.mv = true → Spec.Rsa.os2ip (p.cut rb) = p.scalar rb
 
 theorem Base.plen {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.pb.length = p.k := by
   simp only [GkP.pb, List.length_take, h.doml]
@@ -133,12 +143,7 @@ theorem Base.plen {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.p
 theorem Base.bb_length {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.bb.length = p.k :=
   KeyScalar.bnd_length (by rw [h.doml]; exact h.dl)
 
-theorem Base.ld_lt {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.ld < p.k := by
-  have hl := h.bb_length
-  have hk := h.k1
-  have hn : p.bb ≠ [] := by intro he; rw [he] at hl; simp at hl; omega
-  have := lead_lt hn
-  rwa [hl] at this
+theorem Base.ld_lt {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.ld < p.k := h.ldk
 
 theorem Base.keep {p : GkP} {rb : List Byte} {s t : State} {rs : List Reg} (h : Base p rb s)
     (hf : InScr p.B p.Z s.mem t.mem) (k : Keep rs s t)
@@ -147,7 +152,7 @@ theorem Base.keep {p : GkP} {rb : List Byte} {s t : State} {rs : List Reg} (h : 
     h.dom.congrK hf k, h.rand.congrK hf k,
     ⟨fun i hi => by rw [k.2.2]; exact h.x.wr i hi, h.x.sep⟩,
     ⟨fun i hi => by rw [k.2.2]; exact h.y.wr i hi, h.y.sep⟩,
-    h.xy, h.xd, h.xr, h.yd, h.yr, fun e he => (hh e he).trans (h.hdr e he), h.valid⟩
+    h.xy, h.xd, h.xr, h.yd, h.yr, fun e he => (hh e he).trans (h.hdr e he), h.valid, h.ldk, h.cutv⟩
 
 /-- The full output buffers retained beside the significant scalar slice. -/
 structure Buffers (p : GkP) (rb : List Byte) (s : State) : Prop where

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86 -/
@@ -45,6 +46,26 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 1400 4
       (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_224)
     stack := 20 + 1400
-    verified := Proof.Sha512.X86.Shared.finalize512_224 }]
+    verified := Proof.Sha512.X86.Shared.finalize512_224 },
+  Spec.Sha512.digest384Api.artifact X86.target {
+    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha384H
+    stack := 48 + Impl.MdStream.X86.Digest.dframe Proof.Pbkdf2.Stream.X86.sha384H
+    verified := Proof.MdStream.X86.Digest.sha384_digest
+    spSafe := Proof.MdStream.X86.Digest.sha384_digestSp },
+  Spec.Sha512.digest512Api.artifact X86.target {
+    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512H'
+    stack := 48 + Impl.MdStream.X86.Digest.dframe Proof.Pbkdf2.Stream.X86.sha512H'
+    verified := Proof.MdStream.X86.Digest.sha512_digest
+    spSafe := Proof.MdStream.X86.Digest.sha512_digestSp },
+  Spec.Sha512.digest512_224Api.artifact X86.target {
+    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512_224H
+    stack := 48 + Impl.MdStream.X86.Digest.dframe Proof.Pbkdf2.Stream.X86.sha512_224H
+    verified := Proof.MdStream.X86.Digest.sha512_224_digest
+    spSafe := Proof.MdStream.X86.Digest.sha512_224_digestSp },
+  Spec.Sha512.digest512_256Api.artifact X86.target {
+    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512_256H
+    stack := 48 + Impl.MdStream.X86.Digest.dframe Proof.Pbkdf2.Stream.X86.sha512_256H
+    verified := Proof.MdStream.X86.Digest.sha512_256_digest
+    spSafe := Proof.MdStream.X86.Digest.sha512_256_digestSp }]
 
 end VG.Artifacts.Sha512.X86
