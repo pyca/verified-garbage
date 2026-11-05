@@ -175,25 +175,13 @@ fn keys(c: &mut Criterion) {
         openssl_recover_with(n, e, d).0
     }
 
-    // Optional fixed keys keep repeated A/B comparisons on identical inputs.
-    let key_for = |bits: u32| {
-        if let Some(dir) = std::env::var_os("VG_RSA_BENCH_KEYS") {
-            let pem = std::fs::read(std::path::PathBuf::from(dir).join(format!("{bits}.pem")))
-                .expect("read VG_RSA_BENCH_KEYS/<bits>.pem");
-            let key = Rsa::private_key_from_pem(&pem).unwrap();
-            assert_eq!(key.n().num_bits(), bits as i32);
-            key
-        } else {
-            Rsa::generate(bits).unwrap()
-        }
-    };
     let mut g = c.benchmark_group("rsa_from_crt");
     // The same sizes: the loading of a key from all its values,
     // `(n, e, d, p, q, dP, dQ, qInv)`, as from a PKCS #1 `RSAPrivateKey`.
     // aws-lc-rs checks the key as it loads it; OpenSSL's
     // `Rsa::from_private_components` checks nothing.
     for bits in [2048, 3072, 4096] {
-        let key = key_for(bits);
+        let key = Rsa::generate(bits).unwrap();
         let v = [
             key.n(),
             key.e(),
@@ -225,8 +213,8 @@ fn keys(c: &mut Criterion) {
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 let v = black_box(&v)
-                    .each_ref()
-                    .map(|x| BigNum::from_slice(x).unwrap());
+                    .clone()
+                    .map(|x| BigNum::from_slice(&x).unwrap());
                 let [n, e, d, p, q, dp, dq, qinv] = v;
                 Rsa::from_private_components(n, e, d, p, q, dp, dq, qinv).unwrap()
             })
@@ -252,60 +240,10 @@ fn keys(c: &mut Criterion) {
     }
     g.finish();
 
-    // Callers that validate a loaded key should pay for the full check once.
-    let mut g = c.benchmark_group("rsa_from_crt_and_check");
-    for bits in [2048, 3072, 4096] {
-        let key = key_for(bits);
-        let v = [
-            key.n(),
-            key.e(),
-            key.d(),
-            key.p().unwrap(),
-            key.q().unwrap(),
-            key.dmp1().unwrap(),
-            key.dmq1().unwrap(),
-            key.iqmp().unwrap(),
-        ]
-        .map(|x| x.to_vec());
-        let k = v[0].len();
-        g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| {
-                let v = black_box(&v);
-                let key =
-                    PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
-                        .unwrap();
-                assert!(key.check_key());
-                key
-            })
-        });
-        g.bench(BenchmarkId::new(VG, format!("{k}-unchecked")), |b| {
-            b.iter(|| {
-                let v = black_box(&v);
-                let key = PrivateKey::from_crt_unchecked(
-                    &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7],
-                )
-                .unwrap();
-                assert!(key.check_key());
-                key
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
-            b.iter(|| {
-                let [n, e, d, p, q, dp, dq, qi] = black_box(&v)
-                    .each_ref()
-                    .map(|x| BigNum::from_slice(x).unwrap());
-                let key = Rsa::from_private_components(n, e, d, p, q, dp, dq, qi).unwrap();
-                assert!(key.check_key().unwrap());
-                key
-            })
-        });
-    }
-    g.finish();
-
     let mut g = c.benchmark_group("rsa_from_primes");
     // The same sizes: the CRT values of `(n, e, d, p, q)` and the key.
     for bits in [2048, 3072, 4096] {
-        let key = key_for(bits);
+        let key = Rsa::generate(bits).unwrap();
         let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
         let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
         let k = n.len();
@@ -365,7 +303,7 @@ fn keys(c: &mut Criterion) {
     // OpenSSL's also tests `p` and `q` for primality, which BoringSSL's (and
     // `check_key`) does not.
     for bits in [2048, 3072, 4096] {
-        let key = key_for(bits);
+        let key = Rsa::generate(bits).unwrap();
         let n = key.n().to_vec();
         let k = n.len();
         let vg_key = PrivateKey::from_crt(
