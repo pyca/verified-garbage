@@ -108,18 +108,79 @@ def encrypt (key : List Byte) (counter : Word) (nonce : List Byte) (m : List Byt
 
 /-- The whole keystream for the 256-bit key `key` (32 bytes) and the 16-byte
 `nonce`: state words 12–15 (§2.3), i.e. the initial 32-bit block counter `c`
-(bytes 0–3, little-endian) followed by the 96-bit nonce (bytes 4–15). It is
-the keystream of §2.4.1, the concatenation of
-`chacha20_block(key, c + j, nonce)` for `j = 0, 1, …`, up to the last 32-bit
-block counter, 2³² − 1: the 32-bit block counter of §2.3 does not go further
-(the `P_MAX` of §2.8, 2³⁸ − 64 bytes, is this length for `c = 1`). So it is
-64 × (2³² − c) bytes long, and `encrypt key c n m` (`c` and `n` the counter
-and nonce of `nonce`) XORs `m` with its first `m.length` bytes, for any
-message `m` that is not longer. -/
+(bytes 0–3, little-endian) followed by the 96-bit nonce (bytes 4–15): the
+concatenation of `chacha20_block(key, c + j, nonce)` for `j = 0, 1, …`, up to
+the last 32-bit block counter, 2³² − 1, since the 32-bit block counter of §2.3
+does not go further (the `P_MAX` of §2.8, 2³⁸ − 64 bytes, is this length for
+`c = 1`). `keystreamOf_eq` below states it in terms of §2.4.1's `encrypt`:
+it is the encryption of the 64 × (2³² − c) zero bytes, and
+`encrypt_eq_keystreamOf` that `encrypt` XORs any message that is not longer
+with its first bytes. -/
 def keystreamOf (key nonce : List Byte) : List Byte :=
   let c := wordLE nonce 0
   (List.range (2 ^ 32 - c.toNat)).flatMap fun j =>
     chacha20Block key (c + BitVec.ofNat 32 j) (nonce.drop 4)
+
+/-! ### `keystreamOf` is RFC 8439's keystream
+
+The streaming contracts (`Spec/ChaCha20/Contract.lean`) are stated with
+`keystreamOf`. These theorems state what it is in terms of §2.4.1's
+`encrypt` alone, including where it stops: a reviewer need not match its
+definition against the RFC. -/
+
+private theorem length_flatMap_const {α β : Type} (f : α → List β) {n : Nat}
+    (hf : ∀ a, (f a).length = n) (l : List α) : (l.flatMap f).length = n * l.length := by
+  induction l with
+  | nil => simp
+  | cons a l ih => rw [List.flatMap_cons, List.length_append, ih, hf, List.length_cons,
+      Nat.mul_add_one, Nat.add_comm]
+
+private theorem length_chacha20Block (key : List Byte) (counter : Word) (nonce : List Byte) :
+    (chacha20Block key counter nonce).length = 64 := by
+  rw [chacha20Block, serialize, length_flatMap_const _ (n := 4) (fun _ => rfl),
+    Vector.length_toList]
+
+/-- `List.zipWith` with a list that has `ks` as a prefix, for a first list
+not longer than `ks`, is `List.zipWith` with `ks`. -/
+private theorem zipWith_append_of_le (m ks rest : List Byte) (h : m.length ≤ ks.length) :
+    List.zipWith (· ^^^ ·) m (ks ++ rest) = List.zipWith (· ^^^ ·) m ks := by
+  apply List.ext_getElem
+  · simp only [List.length_zipWith, List.length_append]; omega
+  · intro i h₁ h₂
+    simp only [List.getElem_zipWith]
+    rw [List.getElem_append_left]
+
+/-- §2.4.1's `encrypt`, from the initial block counter and nonce of the
+16-byte `nonce`, XORs a message of at most 64 × (2³² − c) bytes (`c` that
+counter: at most the blocks up to the counter 2³² − 1) with `keystreamOf`. -/
+theorem encrypt_eq_keystreamOf (key nonce m : List Byte)
+    (hm : m.length ≤ 64 * (2 ^ 32 - (wordLE nonce 0).toNat)) :
+    encrypt key (wordLE nonce 0) (nonce.drop 4) m =
+      List.zipWith (· ^^^ ·) m (keystreamOf key nonce) := by
+  simp only [encrypt, keystreamOf]
+  generalize 2 ^ 32 - (wordLE nonce 0).toNat = N at hm
+  have ha : (m.length + 63) / 64 ≤ N := by omega
+  rw [show N = (m.length + 63) / 64 + (N - (m.length + 63) / 64) by omega, List.range_add,
+    List.flatMap_append, zipWith_append_of_le]
+  rw [length_flatMap_const _ (n := 64) (fun _ => length_chacha20Block _ _ _), List.length_range]
+  omega
+
+/-- `keystreamOf key nonce` is §2.4.1's encryption, from the initial block
+counter `c` and nonce of the 16-byte `nonce`, of 64 × (2³² − c) zero bytes:
+every block from the counter `c` to 2³² − 1, and no more. -/
+theorem keystreamOf_eq (key nonce : List Byte) :
+    keystreamOf key nonce =
+      encrypt key (wordLE nonce 0) (nonce.drop 4)
+        (List.replicate (64 * (2 ^ 32 - (wordLE nonce 0).toNat)) 0) := by
+  rw [encrypt_eq_keystreamOf _ _ _ (Nat.le_of_eq List.length_replicate)]
+  have hl : (keystreamOf key nonce).length = 64 * (2 ^ 32 - (wordLE nonce 0).toNat) := by
+    rw [keystreamOf, length_flatMap_const _ (n := 64) (fun _ => length_chacha20Block _ _ _),
+      List.length_range]
+  apply List.ext_getElem
+  · simp only [List.length_zipWith, List.length_replicate, hl, Nat.min_self]
+  · intro i h₁ h₂
+    rw [List.getElem_zipWith, List.getElem_replicate]
+    exact BitVec.zero_xor.symm
 
 /-! ## The block function on memory
 
