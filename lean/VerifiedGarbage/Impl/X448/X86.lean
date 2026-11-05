@@ -338,4 +338,28 @@ def finish : Prog isa :=
 def x448 : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert finish
 
+/-! ## `vg_x448_base` -/
+
+/-- The frame of `vg_x448_base`, pushed first to last: the caller's `ebx`
+(the highest word, which the frame's pop restores), then the base point's
+u-coordinate, 5, as 14 words (13 zeros from `eax`, then 5 from `edx`, at the
+lowest address). -/
+def baseFrame : List Reg := .ebx :: (List.replicate 13 .eax ++ [.edx])
+
+/-- `vg_x448`'s arguments, read from `vg_x448_base`'s (`out = [esp + 64]`,
+`scalar = [esp + 68]` and `scratch = [esp + 72]` below the frame of 60
+bytes), with the u-coordinate in the frame (`ebx = esp`). -/
+def baseArgs : List Instr :=
+  [.mov .ebx (.reg .esp), .mov .eax (.mem (at_ .esp 64)), .mov .ecx (.mem (at_ .esp 68)),
+    .mov .edx (.mem (at_ .esp 72))]
+
+/-- `vg_x448_base(out = [esp + 4], scalar = [esp + 8], scratch = [esp + 12])`:
+`vg_x448(out, scalar, point, scratch)` with the base point's u-coordinate, 5,
+at `point`, in a frame of its own. -/
+def x448Base : Prog isa :=
+  .seq (.block [.mov .eax (.imm 0), .mov .edx (.imm 5)]) <|
+    .frame (.push baseFrame)
+      (.seq (.block baseArgs) (.frame (.push [.edx, .ebx, .ecx, .eax]) (.call "vg_x448" x448) (.pop .eax 4)))
+      (.pop .ebx 15)
+
 end VG.Impl.X448.X86
