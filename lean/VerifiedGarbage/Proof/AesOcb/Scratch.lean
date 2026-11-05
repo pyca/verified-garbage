@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -60,7 +61,7 @@ def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_ocb_open` with `work: *mut [u64; 320]`. -/
@@ -77,7 +78,7 @@ def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
@@ -95,7 +96,7 @@ def sealWorkContract {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Co
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_ocb_open` with `work: *mut [u64; words]`. -/
@@ -112,7 +113,7 @@ def openWorkContract {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Co
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
@@ -189,8 +190,8 @@ theorem sealPre_local : ∀ vs m₁ m₂, vs.length = (sealSig.words pb).length 
 
 theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealSig.words pb) (sealPost pb) vs m₁ m' r →
-      Curry.apply (sealSig.words pb) (sealPost pb) vs m₂ m' r := by
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -216,12 +217,12 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealRoundsPost pb) _
     m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (sealRoundsPost pb) _
     m₂ m' r
-  dsimp only [Curry.apply, sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   obtain ⟨e₁, -, e₃, e₄, e₅, e₆, -⟩ := inputs_local (pb := pb) (tag := tag) (tl := tl) (le15 hr)
     (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
@@ -244,8 +245,8 @@ theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length 
 
 theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openSig.words pb) (openPost pb) vs m₁ m' r →
-      Curry.apply (openSig.words pb) (openPost pb) vs m₂ m' r := by
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -271,12 +272,12 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPost pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openRoundsPost pb) _
     m₂ m' r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := inputs_local (pb := pb) (le15 hr)
     (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)

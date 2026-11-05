@@ -20,10 +20,10 @@ def artifacts : List Artifact := [
   Spec.Siv.encryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.encrypt
     stack := 2608
-    verified := encrypt_framed },
+    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
   Spec.Siv.decryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.decrypt
     stack := 2608
-    verified := decrypt_framed }]
+    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
 
 end VG.Artifacts.AesSiv.PPC64LE

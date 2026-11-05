@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Verified
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -45,32 +46,32 @@ theorem init_framed (v : Ctr32Impl) :
 working space. -/
 def encFrameSat : State := { encSat with wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract AArch64.abi 2576).pre s := by
-  implies_sat [Spec.Siv.encryptContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, AArch64.abi, AArch64.argRegs]
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract AArch64.abi 2576).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, AArch64.abi, AArch64.argRegs]
     [encFrameSat, encSat] using encFrameSat
 
 theorem encrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2576 .x7 (encrypt v.callee v.ctr.callee v.ctr.suffix))
-      (Spec.Siv.encryptContract AArch64.abi 2576) :=
+      (Proof.AesSiv.encryptRoundsContract AArch64.abi 2576) :=
   AArch64.Verified.stackScratch (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.encryptPre AArch64.abi.ptrBits) (post := Spec.Siv.encryptPost AArch64.abi.ptrBits)
+    (pre := Spec.Siv.encryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (encrypt_verified v) (by decide) (by decide) encFrameSat_pre
 
 /-- A state satisfying `vg_aes_siv_decrypt`'s precondition, without the
 working space. -/
 def decFrameSat : State := { decSat with wr := [⟨0x3000, 0⟩] }
 
-theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract AArch64.abi 2576).pre s := by
-  implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract AArch64.abi 2576).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, AArch64.abi, AArch64.argRegs] [decFrameSat, decSat, encSat] using decFrameSat
 
 theorem decrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2576 .x7 (decrypt v.callee v.ctr.callee v.ctr.suffix))
-      (Spec.Siv.decryptContract AArch64.abi 2576) :=
+      (Proof.AesSiv.decryptRoundsContract AArch64.abi 2576) :=
   AArch64.Verified.stackScratch (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.decryptPre AArch64.abi.ptrBits) (post := Spec.Siv.decryptPost AArch64.abi.ptrBits)
+    (pre := Spec.Siv.decryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak AArch64.abi.ptrBits))
     (decrypt_verified v) (by decide) (by decide) decFrameSat_pre
 

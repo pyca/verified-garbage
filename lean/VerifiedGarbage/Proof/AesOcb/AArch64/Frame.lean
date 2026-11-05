@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Verified
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -48,8 +49,8 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Ocb.sealContract AArch64.abi 2592).pre s := by
-  implies_sat [Spec.Ocb.sealContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Spec.Ocb.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost,
     AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
@@ -57,10 +58,10 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Ocb.sealContract AArch64.abi 2592).pre s
 theorem seal_framed (v : BlocksImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («seal» (callees v)))
-      (Spec.Ocb.sealContract AArch64.abi 2592) :=
+      (Proof.AesOcb.sealRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
-    (post := Spec.Ocb.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (seal_verified v) (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
     sealFrameSat_pre
 
@@ -70,8 +71,8 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Ocb.openContract AArch64.abi 2592).pre s := by
-  implies_sat [Spec.Ocb.openContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Spec.Ocb.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost,
     Spec.Ocb.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
@@ -79,10 +80,10 @@ theorem openFrameSat_pre : ∃ s, (Spec.Ocb.openContract AArch64.abi 2592).pre s
 theorem open_framed (v : BlocksImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» (callees v)))
-      (Spec.Ocb.openContract AArch64.abi 2592) :=
+      (Proof.AesOcb.openRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.openPre AArch64.abi.ptrBits)
-    (post := Spec.Ocb.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))
     (open_verified v) (by decide) (by decide) (Proof.AesOcb.openPre_local _)
     (Proof.AesOcb.openPost_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)

@@ -21,10 +21,10 @@ def artifacts : List Artifact := [
   Spec.Ocb.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«seal»
     stack := 2592
-    verified := seal_framed },
+    verified := Proof.AesOcb.seal_keyed seal_framed },
   Spec.Ocb.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«open»
     stack := 2592
-    verified := open_framed }]
+    verified := Proof.AesOcb.open_keyed open_framed }]
 
 end VG.Artifacts.AesOcb.RISCV64

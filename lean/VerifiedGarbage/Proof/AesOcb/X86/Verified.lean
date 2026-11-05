@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 import VerifiedGarbage.Proof.AesOcb.X86.SealCT
 import VerifiedGarbage.Proof.AesOcb.X86.Init
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -74,7 +75,7 @@ theorem seal_verified (v : BlocksImpl) :
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e⟩ := sealSat_args
     have esp : sealSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Spec.Ocb.sealPost, sealX86, sealPre, oneLay, onePub, ctxR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
+      Proof.AesOcb.sealRoundsPost, sealX86, sealPre, oneLay, onePub, ctxR, nonceR, aadR, dataR, tagR, workR, argsR', retR,
       stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp] using sealSat)
 
@@ -84,7 +85,7 @@ theorem open_verified (v : BlocksImpl) :
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e⟩ := openSat_args
     have esp : openSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-      Spec.Ocb.openPost, Spec.Ocb.openLeak, openX86, openPost, openResult, openPre, oneLay, onePub, ctxR, nonceR,
+      Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openX86, openPost, openResult, openPre, oneLay, onePub, ctxR, nonceR,
       aadR, dataR, tagR, workR, argsR', retR, stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp] using openSat)
 

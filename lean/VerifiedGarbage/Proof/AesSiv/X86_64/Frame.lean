@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -78,17 +79,17 @@ working space. -/
 def encFrameSat : State :=
   { encSat with rd := [⟨0x1000, 512⟩, ⟨0x2000, 0⟩, ⟨0x8008, 8⟩], wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract X86_64.abi 2616).pre s := by
-  implies_sat [Spec.Siv.encryptContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, X86_64.abi, X86_64.argRegs,
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86_64.abi 2616).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop]
     [encFrameSat, encSat, Mem.readW, Mem.read] using encFrameSat
 
 theorem encrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.ctr.callee v.ctr.suffix))
-      (Spec.Siv.encryptContract X86_64.abi 2616) :=
+      (Proof.AesSiv.encryptRoundsContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Spec.Siv.encryptPost X86_64.abi.ptrBits)
+    (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (encrypt_verified v) (by decide) (by decide) (by decide)
     (encrypt_spSafe v) (encrypt_xdepth v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _)
     encFrameSat_pre
@@ -98,17 +99,17 @@ working space. -/
 def decFrameSat : State :=
   { encSat with rd := [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩, ⟨0x8008, 8⟩], wr := [⟨0x3000, 0⟩] }
 
-theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract X86_64.abi 2616).pre s := by
-  implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86_64.abi 2616).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range,
     List.range.loop] [decFrameSat, encSat, Mem.readW, Mem.read] using decFrameSat
 
 theorem decrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.ctr.callee v.ctr.suffix))
-      (Spec.Siv.decryptContract X86_64.abi 2616) :=
+      (Proof.AesSiv.decryptRoundsContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Spec.Siv.decryptPost X86_64.abi.ptrBits)
+    (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decrypt_verified v) (by decide) (by decide) (by decide) (decrypt_spSafe v) (decrypt_xdepth v)
     (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _) decFrameSat_pre

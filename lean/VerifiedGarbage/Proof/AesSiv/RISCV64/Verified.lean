@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Dec
 import VerifiedGarbage.Proof.AesSiv.RISCV64.TopCT
 public import VerifiedGarbage.Proof.AesSiv.RISCV64.MacCT
@@ -138,7 +139,7 @@ theorem encrypt_correct (s : State) (hs : (Proof.AesSiv.encryptScratchContract R
   obtain ⟨Ar, hA, hV⟩ := encPre_of hs
   obtain ⟨t, s', he, hab, hq⟩ := encrypt_wp Ar hA hV
   refine ⟨t, s', he, hab, ?_⟩
-  sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPost,
+  sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Proof.AesSiv.encryptRoundsPost,
     RISCV64.abi, RISCV64.argRegs, List.getD]
   exact fun _ => hq
 
@@ -148,7 +149,7 @@ theorem decrypt_correct (s : State) (hs : (Proof.AesSiv.decryptScratchContract R
   obtain ⟨Ar, hA⟩ := decPre_of hs
   obtain ⟨t, s', he, hab, hr, hd⟩ := decrypt_wp Ar hA
   refine ⟨t, s', he, hab, ?_⟩
-  sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPost,
+  sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Proof.AesSiv.decryptRoundsPost,
     RISCV64.abi, RISCV64.argRegs, List.getD]
   intro _
   simp only [cxOf] at hr hd
@@ -197,13 +198,13 @@ theorem decSat_pre : ∃ s, (Proof.AesSiv.decryptScratchContract RISCV64.abi 0).
     Spec.Siv.decryptLeak, RISCV64.abi, RISCV64.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x4000, 2576⟩]
 
-theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract RISCV64.abi 2576).pre s := by
-  implies_sat [Spec.Siv.encryptContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Spec.Siv.encryptPost,
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract RISCV64.abi 2576).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Proof.AesSiv.encryptRoundsPost,
     RISCV64.abi, RISCV64.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩]
 
-theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract RISCV64.abi 2576).pre s := by
-  implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract RISCV64.abi 2576).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, RISCV64.abi, RISCV64.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩]
 
@@ -255,16 +256,16 @@ theorem decrypt_verified : Verified RISCV64.target Impl.AesSiv.RISCV64.decrypt
 
 /-- `encrypt` with its working space in a frame of 2576 bytes. -/
 theorem encrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
-    Impl.AesSiv.RISCV64.encrypt) (Spec.Siv.encryptContract RISCV64.abi 2576) :=
+    Impl.AesSiv.RISCV64.encrypt) (Proof.AesSiv.encryptRoundsContract RISCV64.abi 2576) :=
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.encryptPre RISCV64.abi.ptrBits) (post := Spec.Siv.encryptPost RISCV64.abi.ptrBits)
+    (pre := Spec.Siv.encryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide) encFrameSat_pre
 
 /-- `decrypt` with its working space in a frame of 2576 bytes. -/
 theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
-    Impl.AesSiv.RISCV64.decrypt) (Spec.Siv.decryptContract RISCV64.abi 2576) :=
+    Impl.AesSiv.RISCV64.decrypt) (Proof.AesSiv.decryptRoundsContract RISCV64.abi 2576) :=
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.decryptPre RISCV64.abi.ptrBits) (post := Spec.Siv.decryptPost RISCV64.abi.ptrBits)
+    (pre := Spec.Siv.decryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak RISCV64.abi.ptrBits))
     decrypt_verified (by decide) (by decide) decFrameSat_pre
 

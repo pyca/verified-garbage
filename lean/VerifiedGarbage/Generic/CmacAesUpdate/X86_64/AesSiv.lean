@@ -86,7 +86,7 @@ def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (Impl.AesSiv.X86_64.encrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2616
-    verified := encrypt_framed v
+    verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe v)
     features := v.ctr.features },
   Spec.Siv.decryptApi.artifact X86_64.target {
@@ -94,7 +94,7 @@ def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (Impl.AesSiv.X86_64.decrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2616
-    verified := decrypt_framed v
+    verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe v)
     features := v.ctr.features }]
 
