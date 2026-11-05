@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
