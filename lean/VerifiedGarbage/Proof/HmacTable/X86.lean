@@ -8,6 +8,10 @@ public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
 import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Md5.Md
+import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.Sha256.Md
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -47,29 +51,47 @@ structure HVar where
   G : Spec.Mgf1.Hash
   hash : ∀ x, G.hash x = ok.hH.SH.H.hash x
   glen : G.len = F.H.D
+  /-- Its digests have `F.H.D` bytes. -/
+  hlen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
   suffix : String
   features : List String
   idx : Spec.Mgf1.hashes[Spec.HashTable.index G]? = some G
 
 open Proof.Pbkdf2.Whole.X86 in
-def md5V : HVar := ⟨md5F, md5OKF, Spec.Mgf1.md5, fun _ => rfl, rfl, "", [], rfl⟩
+def md5V : HVar := ⟨md5F, md5OKF, Spec.Mgf1.md5, fun _ => rfl, rfl, fun x => by
+  show (Spec.Md5.hash x).length = 16; rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _, "", [], rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha1V (b : Proof.Sha1.X86.Variants.Backend) : HVar :=
-  ⟨b.F, sha1OKF b, Spec.Mgf1.sha1, fun _ => rfl, rfl, b.stream.suffix, b.features, rfl⟩
+  ⟨b.F, sha1OKF b, Spec.Mgf1.sha1, fun _ => rfl, rfl, fun x => by
+    show (Spec.Sha1.hash x).length = 20; rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _,
+    b.stream.suffix, b.features, rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha224V (b : Proof.Sha256.X86.Variants.Backend) : HVar :=
-  ⟨b.F224, sha224OKF b, Spec.Mgf1.sha224, fun _ => rfl, rfl, b.stream.suffix, b.features, rfl⟩
+  ⟨b.F224, sha224OKF b, Spec.Mgf1.sha224, fun _ => rfl, rfl, fun x => by
+    show (Spec.Sha256.sha224 x).length = 28
+    simp [Spec.Sha256.sha224, Spec.Sha256.finalHash, Spec.Sha256.wordBytes, List.length_flatMap, List.map_const'],
+    b.stream.suffix, b.features, rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha256V (b : Proof.Sha256.X86.Variants.Backend) : HVar :=
-  ⟨b.F, sha256OKF b, Spec.Mgf1.sha256, fun _ => rfl, rfl, b.stream.suffix, b.features, rfl⟩
+  ⟨b.F, sha256OKF b, Spec.Mgf1.sha256, fun _ => rfl, rfl, fun x => by
+    show (Spec.Sha256.hash x).length = 32; rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _,
+    b.stream.suffix, b.features, rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
-def sha384V : HVar := ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, fun _ => rfl, rfl, "", [], rfl⟩
+def sha384V : HVar := ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, fun _ => rfl, rfl, fun x => by
+  show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
-def sha512V : HVar := ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, fun _ => rfl, rfl, "", [], rfl⟩
+def sha512V : HVar := ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, fun _ => rfl, rfl, fun x => by
+  show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
+  rw [Proof.Hmac.Generic.Common.finalHash_length], "", [], rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
-def sha512_224V : HVar := ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, fun _ => rfl, rfl, "", [], rfl⟩
+def sha512_224V : HVar := ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, fun _ => rfl, rfl, fun x => by
+  show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_224 x).take 28).length = 28
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
 open Proof.Pbkdf2.Whole.X86 in
-def sha512_256V : HVar := ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, fun _ => rfl, rfl, "", [], rfl⟩
+def sha512_256V : HVar := ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, fun _ => rfl, rfl, fun x => by
+  show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_256 x).take 32).length = 32
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
 
 /-- Every variant: MD5's, SHA-1's with the backends `vs1`, SHA-224's and
 SHA-256's with `vs256`, and the SHA-512 family's. -/

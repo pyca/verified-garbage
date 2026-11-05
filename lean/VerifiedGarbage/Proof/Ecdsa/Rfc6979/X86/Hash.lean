@@ -56,6 +56,8 @@ structure RfcHash where
   ecdsa : I.ecdsa = R.inst
   hash : I.hash = ok.hH.SH.H
   len : I.hashLen = F.H.D
+  /-- The hash function's digests have `F.H.D` bytes. -/
+  macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
   tries_pos : 0 < I.tries
   tries_lt : I.tries < 2 ^ 32
   /-- The sizes the frame and `scratch` hold. -/
