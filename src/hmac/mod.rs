@@ -243,8 +243,7 @@ macro_rules! streaming_hmac {
             fn backend_features() {
                 $(
                     $(#[$attr])*
-                    for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                        let f = verified_garbage_cpu::Features(bits);
+                    for f in $crate::cpu::feature_sets() {
                         if super::$backend::select(f) == super::$backend::$variant {
                             assert!(f.contains(verified_garbage_cpu::Features::all(&[$(super::$req),*])));
                         }

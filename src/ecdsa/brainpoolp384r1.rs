@@ -87,7 +87,7 @@ impl<H: HmacHash> SignatureHash<BrainpoolP384r1> for H {}
 mod umaal_tests {
     use super::Mul;
     use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES;
-    use crate::cpu::NAMES;
+    use crate::cpu::feature_sets;
     use verified_garbage_cpu::Features;
 
     /// The CPU features of the signature with the multiplications `m`.
@@ -102,8 +102,8 @@ mod umaal_tests {
     /// selected for: on every set of features that selects them.
     #[test]
     fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
+        for f in feature_sets() {
+            let bits = f.0;
             assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
         }
     }

@@ -135,7 +135,7 @@ mod tests {
     /// The implementation chosen for each set of the features it depends on.
     #[test]
     fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
+        for Features(bits) in crate::cpu::feature_sets() {
             let backend = Sha512Backend::select(Features(bits));
             #[cfg(target_arch = "x86_64")]
             {

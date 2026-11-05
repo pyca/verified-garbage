@@ -121,7 +121,7 @@ mod tests {
     /// The implementation chosen for each set of the features it depends on.
     #[test]
     fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
+        for Features(bits) in crate::cpu::feature_sets() {
             let backend = Sha1Backend::select(Features(bits));
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             assert_eq!(backend == Sha1Backend::ShaNi, bits & 0b11 == 0b11);

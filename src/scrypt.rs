@@ -287,7 +287,7 @@ mod tests {
     use crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES;
     #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     use crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES;
-    use crate::cpu::NAMES;
+    use crate::cpu::feature_sets;
     use verified_garbage_cpu::Features;
 
     /// Each implementation of `vg_scrypt` needs no CPU feature that the
@@ -305,8 +305,7 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         let variants = [(Sha256Backend::Sha2, VG_SCRYPT_SHA2_FEATURES)];
         for (backend, req) in variants {
-            for bits in 0..1u32 << NAMES.len() {
-                let f = Features(bits);
+            for f in feature_sets() {
                 if Sha256Backend::select(f) == backend {
                     assert!(f.contains(Features::all(&[req])));
                 }

@@ -494,8 +494,7 @@ mod tests {
     /// AVX-512 backend with G's scalar or AVX2 implementation.
     #[test]
     fn select_pairs() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
+        for f in crate::cpu::feature_sets() {
             let pair = (Blake2bBackend::select(f), CompressBackend::select(f));
             #[cfg(target_arch = "x86_64")]
             {
@@ -505,7 +504,7 @@ mod tests {
                     (Blake2bBackend::Avx512, CompressBackend::Scalar),
                     (Blake2bBackend::Avx512, CompressBackend::Avx2),
                 ];
-                assert!(!never.contains(&pair), "{bits:#b}");
+                assert!(!never.contains(&pair), "{:#b}", f.0);
             }
             #[cfg(not(target_arch = "x86_64"))]
             assert_eq!(pair, (Blake2bBackend::Scalar, CompressBackend::Scalar));

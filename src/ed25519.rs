@@ -326,15 +326,14 @@ mod tests {
     use crate::arch::ed25519::{
         VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES,
     };
-    use crate::cpu::NAMES;
+    use crate::cpu::feature_sets;
     use verified_garbage_cpu::Features;
 
     /// Every feature set selecting SHA-512's optimized backend also supports
     /// each complete Ed25519 operation that uses that backend.
     #[test]
     fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let features = Features(bits);
+        for features in feature_sets() {
             match Sha512Backend::select(features) {
                 Sha512Backend::Scalar => {}
                 Sha512Backend::Sha3 => {
@@ -364,7 +363,7 @@ mod x86_64_tests {
         VG_ED25519_VERIFY_AVX2_IFMA_FEATURES, VG_ED25519_VERIFY_SHANI_ADX_FEATURES,
         VG_ED25519_VERIFY_SHANI_FEATURES, VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
     };
-    use crate::cpu::NAMES;
+    use crate::cpu::feature_sets;
     use verified_garbage_cpu::feature;
 
     /// The CPU features of the three operations with SHA-512's backend `s`
@@ -420,8 +419,8 @@ mod x86_64_tests {
     /// features that selects them.
     #[test]
     fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
+        for f in feature_sets() {
+            let bits = f.0;
             let r = required(Sha512Backend::select(f), Field::select(f));
             assert!(f.contains(Features::all(&r)), "{bits:#b}");
         }

@@ -105,7 +105,6 @@ mod tests {
     use super::{Sha224, Sha224Backend};
     use crate::cpu::detected;
     use crate::hashes::sha256::Sha256Backend;
-    use verified_garbage_cpu::Features;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -132,8 +131,8 @@ mod tests {
     /// The implementation chosen for each set of features is SHA-256's.
     #[test]
     fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
+        for f in crate::cpu::feature_sets() {
+            let bits = f.0;
             let expected = match Sha256Backend::select(f) {
                 Sha256Backend::Scalar => Sha224Backend::Scalar,
                 #[cfg(target_arch = "aarch64")]

@@ -97,7 +97,7 @@ impl TableHash {
 
 #[cfg(test)]
 mod tests {
-    use super::{Features, TableHash};
+    use super::TableHash;
 
     /// Each table's functions need no CPU feature that was not required to
     /// choose it, on every set of features; a table of `Hash` holds the hash
@@ -117,8 +117,8 @@ mod tests {
             (TableHash::Sha512_224, 28, 128),
             (TableHash::Sha512_256, 32, 128),
         ];
-        for bits in 0..1u32 << crate::cpu::NAMES.len() {
-            let f = Features(bits);
+        for f in crate::cpu::feature_sets() {
+            let bits = f.0;
             for (i, (h, len, block)) in all.into_iter().enumerate() {
                 let t = h.tables(f);
                 #[cfg(feature = "alloc")]

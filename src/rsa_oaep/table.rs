@@ -78,8 +78,8 @@ macro_rules! oaep_functions {
             /// it calls were not chosen for: on every set of features.
             #[test]
             fn backend_features() {
-                for bits in 0..1u32 << crate::cpu::NAMES.len() {
-                    let f = verified_garbage_cpu::Features(bits);
+                for f in crate::cpu::feature_sets() {
+                    let bits = f.0;
                     let rsa = crate::rsa::Backend::select(f);
                     let encrypt = match rsa {
                         $($(#[$eattr])* crate::rsa::Backend::$eb =>
