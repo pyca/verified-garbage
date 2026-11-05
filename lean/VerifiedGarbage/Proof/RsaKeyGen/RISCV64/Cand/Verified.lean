@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-!
 # `vg_rsa_keygen_candidate` on RISC-V: the contract
@@ -38,7 +39,7 @@ theorem packed_length : TrialTable32.packed.length = 1024 := by
 theorem consts_eq : TrialTable32.consts = [(TrialTable32.symbol, TrialTable32.packed)] := rfl
 
 /-- The contract, with the table. -/
-abbrev contract : Contract isa := Spec.RsaKeyGen.candidateContract (abi.withConsts TrialTable32.consts) stackBytes
+abbrev contract : Contract isa := Proof.RsaKeyGen.candidateContract (abi.withConsts TrialTable32.consts) stackBytes
 
 theorem cin_strip {s : State} (h : CIn (stripConsts TrialTable32.consts s)) : CIn s :=
   ⟨h.sp16, h.spLo, h.spHi, List.mem_of_mem_take h.rE, List.mem_of_mem_take h.rP, List.mem_of_mem_take h.rR,
@@ -63,17 +64,17 @@ theorem tab_of {s : State} (hc : CIn s) (h : ConstsOk TrialTable32.consts stackB
   · exact hr _ (by simp [abi, stackBelow, cF, stackBytes])
 
 theorem pre_facts {s : State} (h : contract.pre s) : CIn s ∧ TabOk s := by
-  unfold contract Spec.RsaKeyGen.candidateContract at h
+  unfold contract Proof.RsaKeyGen.candidateContract at h
   rw [consts_eq] at h
   obtain ⟨h₁, h₂⟩ := pre_consts.mp h
   have hc := cin_strip (cin_of_pre _ h₁)
   exact ⟨hc, tab_of hc (consts_eq ▸ h₂)⟩
 
 theorem post_of {s s' : State} (hq : CQ s (s'.gpr .a0) s'.mem) : contract.post s s' := by
-  unfold contract Spec.RsaKeyGen.candidateContract
+  unfold contract Proof.RsaKeyGen.candidateContract
   rw [consts_eq]
   refine post_consts.mpr ?_
-  sig_post [Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq]
+  sig_post [Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq]
   obtain ⟨h1, h2, h3⟩ := hq
   refine ⟨?_, h2, h3⟩
   have hs : Spec.RsaKeyGen.candidateStatus (cOp s) < 4 := by
@@ -91,10 +92,10 @@ theorem cand_correct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) :
   exact ⟨t, s', he, ha, post_of hq⟩
 
 theorem pub_of {s₁ s₂ : State} (hp : contract.pub s₁ s₂) : s₁.sp = s₂.sp ∧ pubOf s₁ = pubOf s₂ := by
-  unfold contract Spec.RsaKeyGen.candidateContract at hp
+  unfold contract Proof.RsaKeyGen.candidateContract at hp
   rw [consts_eq] at hp
   obtain ⟨hp, hsy⟩ := pub_consts.mp hp
-  sig_pub [Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq] at hp
+  sig_pub [Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
   obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2⟩ := hp
   have hlen : (List.map (fun x => BitVec.toNat x) (eB s₁)).length =
@@ -165,15 +166,15 @@ theorem sat_arg1 : stackArg satState 1 = 0x10000 :=
 theorem sat_arg2 : stackArg satState 2 = 544 :=
   (satMem_arg 2 (by decide)).trans (by decide)
 
-theorem sat_base : (Spec.RsaKeyGen.candidateContract abi stackBytes).pre (stripConsts TrialTable32.consts satState) := by
+theorem sat_base : (Proof.RsaKeyGen.candidateContract abi stackBytes).pre (stripConsts TrialTable32.consts satState) := by
   have a0 : stackArg (stripConsts TrialTable32.consts satState) 0 = 0 := sat_arg0
   have a1 : stackArg (stripConsts TrialTable32.consts satState) 1 = 0x10000 := sat_arg1
   have a2 : stackArg (stripConsts TrialTable32.consts satState) 2 = 544 := sat_arg2
   have e : stackBytes = 287 + 1 := rfl
   rw [e]
-  unfold Spec.RsaKeyGen.candidateContract
+  unfold Proof.RsaKeyGen.candidateContract
   refine Sig.contract_pre_of_check (by decide +kernel) ?_
-  sig_reduce [Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq, a0, a1, a2]
+  sig_reduce [Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three, List.append_eq, a0, a1, a2]
   sig_and_intros
   all_goals first
     | trivial
@@ -209,7 +210,7 @@ theorem sat_consts : ConstsOk TrialTable32.consts stackBytes satState := by
     decide
 
 theorem sat : contract.pre satState := by
-  unfold contract Spec.RsaKeyGen.candidateContract
+  unfold contract Proof.RsaKeyGen.candidateContract
   rw [consts_eq]
   have h₁ := sat_base
   have h₂ := sat_consts

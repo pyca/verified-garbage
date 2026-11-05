@@ -129,7 +129,7 @@ theorem search_verified_of (c : Cand) :
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : Cand where
-  name := Spec.RsaKeyGen.candidateApi.name ++ v.suffix
+  name := "vg_rsa_keygen_candidate" ++ v.suffix
   code := Impl.RsaKeyGen.Arm.Candidate.code v.name v.code
   verified := Proof.RsaKeyGen.Arm.Cand.cand_verified v
   stack := cand_stack v

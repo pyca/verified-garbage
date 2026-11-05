@@ -15,34 +15,29 @@
 //!
 //! [`generate_prime`] draws candidates from the operating system's random
 //! number generator until one is a probable prime, as BoringSSL's
-//! `generate_prime` does (`VG.Spec.RsaKeyGen.generatePrime`): each candidate
-//! is the verified `vg_rsa_keygen_candidate` (contract
-//! `VG.Spec.RsaKeyGen.candidateContract`), which reads the candidate's
+//! `generate_prime` does (`VG.Spec.RsaKeyGen.generatePrime`), with the
+//! verified `vg_rsa_prime_search` (contract
+//! `VG.Spec.RsaKeyGen.primeSearchContract`). It reads each candidate's
 //! octets, sets its two most significant bits and its least significant
 //! bit, rejects it if it is too close to the other prime (if any), or
 //! divisible by a small prime, or if `gcd(c - 1, e) ≠ 1`, and otherwise
 //! tests it with Miller–Rabin, with witnesses read after it. A candidate too
 //! close to the other prime does not count; after `5 bits` (`8 bits` for
-//! `e = 3`) rejected candidates, the generation fails. Its timing may depend
-//! on the lengths, `e`, the rejected candidates (which are discarded), and
-//! the number of random octets the accepted candidate's Miller–Rabin test
-//! read, but not on the prime or on the other prime. Its variants, with the
-//! same contract, are chosen with `crate::rsa::Backend`:
-//! `vg_rsa_keygen_candidate_adx` for its `Adx` and `Ifma`, and
-//! `vg_rsa_keygen_candidate_umaal` for its `Umaal`.
+//! `e = 3`) rejected candidates, the generation fails. The search counts the
+//! rejected candidates and chooses how many random octets to ask for when
+//! they run out, from the state `vg_rsa_prime_search_init` makes
+//! (`VG.Spec.RsaKeyGen.primeInitContract`). A candidate may read at most the
+//! search's entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream,
+//! past which the generation fails as with too many rejected candidates. Its
+//! timing may depend on the lengths, `e`, the rejected candidates (which are
+//! discarded), and the number of random octets the accepted candidate's
+//! Miller–Rabin test read, but not on the prime or on the other prime. Its
+//! variants, with the same contract, are chosen with `crate::rsa::Backend`:
+//! `vg_rsa_prime_search_adx` for its `Adx` and `Ifma` on x86-64, and
+//! `vg_rsa_prime_search_umaal` for its `Umaal` on ARMv7.
 //!
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
-//!
-//! The verified `vg_rsa_prime_search` (contract
-//! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
-//! rejected ones and chooses how many random octets to ask for when they run
-//! out, from the state `vg_rsa_prime_search_init` makes
-//! (`VG.Spec.RsaKeyGen.primeInitContract`); on x86-64,
-//! `vg_rsa_prime_search_adx` is its variant for `Adx` and `Ifma`, and on
-//! ARMv7, `vg_rsa_prime_search_umaal` for `Umaal`. A candidate may read at most the search's
-//! entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream, past which
-//! the generation fails as with too many rejected candidates.
 //!
 //! [`key_from_primes`] derives the private key from its two primes and the
 //! public exponent, as BoringSSL's `rsa_generate_key_impl` does after
