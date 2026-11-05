@@ -28,8 +28,7 @@ controller, which also passes the context.
 
 The context's pointer is synthetic argument 13. The header words past the
 callee-saved registers keep the public counters: the recognized width
-(48), the width (52), the rows (56), the tooth's entry (60), the product's
-entry (64) and the row (68).
+(48), the width (52), the rows (56) and the row (68).
 -/
 
 @[expose] public section
@@ -48,8 +47,6 @@ def seqs (xs : List (Prog isa)) : Prog isa := xs.foldr .seq (.block [])
 def recOff : Nat := 48
 def bitsOff : Nat := 52
 def rowsOff : Nat := 56
-def dOff : Nat := 60
-def jOff : Nat := 64
 def iOff : Nat := 68
 
 /-- The synthetic argument of the context's pointer. -/
@@ -127,23 +124,17 @@ def squares : Prog isa := .seq (.block [.mov .eax (.mem (sc rowsOff)), .store (s
   (.loop (.seq (mul .wide 7 7 7)
     (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax])) .ne)
 
-/-- Entry `d + j :=` entry `j` times entry `d` (slot 7), for `0 < j < d`. -/
-def product : Prog isa :=
-  .seq (loadRow (rowWord jOff 2) 5) <| .seq (mul .wide 8 5 7) <|
-  .seq (storeRow ([.mov .eax (.mem (sc jOff)), .alu .add .eax (.mem (sc dOff)), .alu .add .eax (.imm 2)]) 8)
-    (.block [.mov .eax (.mem (sc jOff)), .alu .add .eax (.imm 1), .store (sc jOff) .eax,
-      .alu .cmp .eax (.mem (sc dOff))])
+/-- Entry `d + j :=` entry `j` times entry `d` (slot 7). -/
+def product (d j : Nat) : Prog isa :=
+  .seq (loadRow (rowImm (j + 2)) 5) <| .seq (mul .wide 8 5 7) (storeRow (rowImm (d + j + 2)) 8)
 
-/-- The tooth `d := 2 d`: its entry, and the entries it adds to the ones below it. -/
-def column : Prog isa :=
-  .seq squares <|
-  .seq (.block [.mov .eax (.mem (sc dOff)), .alu .add .eax (.reg .eax), .store (sc dOff) .eax]) <|
-  .seq (storeRow (rowWord dOff 2) 7) <|
-  .seq (.block [.mov .eax (.imm 1), .store (sc jOff) .eax]) <|
-  .seq (.loop product .ne) (.block [.mov .eax (.mem (sc dOff)), .alu .cmp .eax (.imm 16)])
+/-- The tooth `d = 2^(k+1)`: its entry, from the last tooth's, and the entries it adds to the
+ones below it. -/
+def column (k : Nat) : Prog isa :=
+  .seq squares <| .seq (storeRow (rowImm (2 ^ (k + 1) + 2)) 7) <|
+  seqs ((List.range (2 ^ (k + 1) - 1)).map fun j => product (2 ^ (k + 1)) (j + 1))
 
-def table : Prog isa :=
-  .seq (seqs initial) (.seq (.block [.mov .eax (.imm 1), .store (sc dOff) .eax]) (.loop column .ne))
+def table : Prog isa := .seq (seqs initial) (seqs ((List.range 4).map column))
 
 /-- The width (the recognized width capped by the bound's bit length) and the metadata, p's
 context, `p` and `R² mod p`, and the table; 1. -/
