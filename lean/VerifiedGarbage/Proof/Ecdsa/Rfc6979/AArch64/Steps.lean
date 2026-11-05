@@ -80,8 +80,8 @@ theorem W_save (hL : L.Ok) : ∀ r ∈ W L, Region.Disjoint (SaveR L) r := by
 
 /-- The arguments of the copy of 384 bytes from `scratch + a` to `scratch + d`. -/
 theorem copyArgs_ok (hL : L.Ok) {a d : Nat} (ha : a < 4096) (hd : d < 4096) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++ [.addImm .x .x12 .x9 d] ++
-      [.movz .x .x13 (BitVec.ofNat 16 384) 0])) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
+    WP isa (.block (([.ldrSp .x9 fScratch] : List Instr) ++ ([.addImm .x .x11 .x9 a] : List Instr) ++
+      ([.addImm .x .x12 .x9 d] : List Instr) ++ ([.movz .x .x13 (BitVec.ofNat 16 384) 0] : List Instr))) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
         u.gpr .x11 = L.scr + BitVec.ofNat 64 a ∧ u.gpr .x12 = L.scr + BitVec.ofNat 64 d ∧
         u.gpr .x13 = BitVec.ofNat 64 384 := by
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -96,8 +96,8 @@ theorem copyArgs_ok (hL : L.Ok) {a d : Nat} (ha : a < 4096) (hd : d < 4096) {t :
 `cpLoop`, from `x11 = scratch + a`, `x12 = scratch + d` and `x13 = 384`. -/
 theorem copy384_ok (hL : L.Ok) {a d : Nat} (ha : a < 4096) (hd : d < 4096) (hsep : a + 384 ≤ d ∨ d + 384 ≤ a)
     (hd₂ : d + 384 ≤ 8192) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.seq (.block ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++ [.addImm .x .x12 .x9 d] ++
-      [.movz .x .x13 (BitVec.ofNat 16 384) 0])) Cfg.cpLoop) t fun u => Ctx L g m₀ u ∧
+    WP isa (.seq (.block (([.ldrSp .x9 fScratch] : List Instr) ++ ([.addImm .x .x11 .x9 a] : List Instr) ++
+      ([.addImm .x .x12 .x9 d] : List Instr) ++ ([.movz .x .x13 (BitVec.ofNat 16 384) 0] : List Instr))) Cfg.cpLoop) t fun u => Ctx L g m₀ u ∧
       Frame [⟨L.scr + BitVec.ofNat 64 d, 384⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 d) 384 =
         Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 a) 384 := by

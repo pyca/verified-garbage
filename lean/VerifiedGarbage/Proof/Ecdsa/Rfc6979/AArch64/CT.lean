@@ -441,10 +441,10 @@ theorem cp_ct {Φ : Pr P} {p q : Lay P.I.hashLen P.R.E → Addr} {n : Nat}
 
 /-- The copy of the 384 bytes at `scratch + a` to `scratch + d`, apart. -/
 theorem copy384_piece {Φ : Pr P} {a d : Nat} (ha : a < 4096) (hd : d < 4096) (hsep : a + 384 ≤ d ∨ d + 384 ≤ a)
-    (hd₂ : d + 384 ≤ 8192) (ht : TaintOk [] ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++
-      [.addImm .x .x12 .x9 d] ++ [.movz .x .x13 (BitVec.ofNat 16 384) 0])) :
-    Piece P Φ (.seq (.block ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++ [.addImm .x .x12 .x9 d] ++
-      [.movz .x .x13 (BitVec.ofNat 16 384) 0])) Cfg.cpLoop) (Tt P) :=
+    (hd₂ : d + 384 ≤ 8192) (ht : TaintOk [] (([.ldrSp .x9 fScratch] : List Instr) ++ ([.addImm .x .x11 .x9 a] : List Instr) ++
+      ([.addImm .x .x12 .x9 d] : List Instr) ++ ([.movz .x .x13 (BitVec.ofNat 16 384) 0] : List Instr))) :
+    Piece P Φ (.seq (.block (([.ldrSp .x9 fScratch] : List Instr) ++ ([.addImm .x .x11 .x9 a] : List Instr) ++
+      ([.addImm .x .x12 .x9 d] : List Instr) ++ ([.movz .x .x13 (BitVec.ofNat 16 384) 0] : List Instr))) Cfg.cpLoop) (Tt P) :=
   Piece.of ((two_wp (Ψ := CpA P (fun L => L.scr + BitVec.ofNat 64 d) (fun L => L.scr + BitVec.ofNat 64 a) 384)
       (two_blk [] spOnly ht) fun _ _ _ _ hL _ hc _ =>
         WP.mono (copyArgs_ok hL ha hd hc) fun _ ⟨c, _, h11, h12, h13⟩ => ⟨c, h11, h12, h13⟩).seq

@@ -2215,7 +2215,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2235,7 +2235,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2255,7 +2255,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2275,7 +2275,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2295,7 +2295,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2315,7 +2315,7 @@ yours to keep:
 
 <td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2335,7 +2335,7 @@ yours to keep:
 
 <td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2355,7 +2355,7 @@ yours to keep:
 
 <td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2375,7 +2375,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
