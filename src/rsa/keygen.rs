@@ -1,59 +1,10 @@
-//! RSA key generation (FIPS 186-5 Appendix A.1.3, as BoringSSL does it): a
-//! key, one of a key's primes, and the key from its two primes.
+//! RSA key generation (FIPS 186-5 Appendix A.1.3, as BoringSSL does it): a key,
+//! one of a key's primes, and the key from its two primes.
 //!
-//! [`generate`] makes a two-prime key as BoringSSL's `RSA_generate_key_ex`
-//! does, and then tests it as its `RSA_check_fips` does
-//! (`VG.Spec.RsaKeyGen.generate`): it generates `p`, then `q` not too close
-//! to it, with [`generate_prime`]'s verified function, derives the key from
-//! them with [`key_from_primes`]'s, and generates both primes again while
-//! `d` is too small; it starts again, up to four times in all, when a prime
-//! took too many candidates; and it refuses a key that fails the pairwise
-//! consistency test, a signature by the verified, checked private-key
-//! operation ([`PrivateKey::private_op`]) that must verify with the public
-//! key ([`PublicKey::public_op`]). [`generate_from`] does the same with given
-//! random octets, read as one stream.
-//!
-//! [`generate_prime`] draws candidates from the operating system's random
-//! number generator until one is a probable prime, as BoringSSL's
-//! `generate_prime` does (`VG.Spec.RsaKeyGen.generatePrime`), with the
-//! verified `vg_rsa_prime_search` (contract
-//! `VG.Spec.RsaKeyGen.primeSearchContract`). It reads each candidate's
-//! octets, sets its two most significant bits and its least significant
-//! bit, rejects it if it is too close to the other prime (if any), or
-//! divisible by a small prime, or if `gcd(c - 1, e) ≠ 1`, and otherwise
-//! tests it with Miller–Rabin, with witnesses read after it. A candidate too
-//! close to the other prime does not count; after `5 bits` (`8 bits` for
-//! `e = 3`) rejected candidates, the generation fails. The search counts the
-//! rejected candidates and chooses how many random octets to ask for when
-//! they run out, from the state `vg_rsa_prime_search_init` makes
-//! (`VG.Spec.RsaKeyGen.primeInitContract`). A candidate may read at most the
-//! search's entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream,
-//! past which the generation fails as with too many rejected candidates. Its
-//! timing may depend on the lengths, `e`, the rejected candidates (which are
-//! discarded), and the number of random octets the accepted candidate's
-//! Miller–Rabin test read, but not on the prime or on the other prime. Its
-//! variants, with the same contract, are chosen with `crate::rsa::Backend`:
-//! `vg_rsa_prime_search_adx` for its `Adx` and `Ifma` on x86-64, and
-//! `vg_rsa_prime_search_umaal` for its `Umaal` on ARMv7.
-//!
-//! [`generate_prime_from`] does the same with given random octets, which it
-//! reads as one stream, each candidate from where the last one stopped.
-//!
-//! [`key_from_primes`] derives the private key from its two primes and the
-//! public exponent, as BoringSSL's `rsa_generate_key_impl` does after
-//! generating them (`VG.Spec.RsaKeyGen.keyFromPrimes`), with the verified
-//! `vg_rsa_keygen_key` (contract `VG.Spec.RsaKeyGen.keyContract`): it makes
-//! `p` the larger, computes `d = e⁻¹ mod lcm(p - 1, q - 1)`, refuses a `d`
-//! of at most half the modulus' bits (for which BoringSSL generates both
-//! primes again), computes `n`, `dP`, `dQ` and `qInv`, and checks the key as
-//! BoringSSL's `RSA_check_key` does. Its timing may depend on the lengths,
-//! `e`, and whether the key was refused for its small `d`, but not on the
+//! The timing may depend on the lengths, `e`, the rejected candidates (which
+//! are discarded), how many random octets the accepted candidates' Miller–Rabin
+//! tests read, and whether a key was refused for its small `d`, but not on the
 //! primes or the key.
-//!
-//! This module only checks the lengths and the exponent, allocates the
-//! memory the candidates and the key are computed in, gives the search its
-//! random octets, counts the generations, and compares the pairwise test's
-//! result with its message.
 
 #![cfg(all(
     any(

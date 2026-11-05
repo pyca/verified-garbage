@@ -1,7 +1,5 @@
-//! What the modules' errors share: the one `InvalidKeyLength`, which each
-//! module whose constructor can fail only on the key's length re-exports,
-//! and `impl_error!`, which implements `Display` and `core::error::Error`
-//! for an error enum.
+//! What the modules' errors share: `InvalidKeyLength`, and `impl_error!`, which
+//! implements `Display` and `core::error::Error` for an error enum.
 
 #![cfg(any(
     target_arch = "x86_64",

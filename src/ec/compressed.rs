@@ -1,4 +1,4 @@
-//! Validated SEC 1 conversion, each in one call of a verified function.
+//! SEC 1 point compression and decompression, with validation.
 
 #![cfg(any(
     target_arch = "x86_64",

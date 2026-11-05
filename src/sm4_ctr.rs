@@ -1,21 +1,9 @@
 //! SM4-CTR (SP 800-38A §6.5, with SM4 as in GB/T 32907-2016, transcribed in
-//! the Internet-Draft draft-ribose-cfrg-sm4-10),
-//! in place, with the standard incrementing function of Appendix B.1 on the
-//! whole counter block (a 128-bit big-endian number, wrapping modulo `2¹²⁸`,
-//! as OpenSSL's SM4-CTR).
+//! draft-ribose-cfrg-sm4-10), in place, incrementing the whole counter block as
+//! a 128-bit big-endian number modulo `2¹²⁸` (Appendix B.1, as OpenSSL's
+//! SM4-CTR does).
 //!
-//! The block cipher work is verified assembly: `vg_sm4_expand_key`
-//! (contract `VG.Spec.Sm4.expandKeyContract`) writes the key schedule, and
-//! `vg_sm4_ctr` (`VG.Spec.Sm4.ctrContract`) XORs whole blocks with the
-//! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
-//! replaces with the counter block to continue from, in constant time: its
-//! timing depends on none of the key, the counter block and the data. This
-//! module holds the key schedule and the counter block, and handles a partial
-//! last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to
-//! a block XORs them with the first bytes of the next output block.
-//!
-//! The caller chooses the initial counter block, and must never use a
-//! counter block twice with the same key (Appendix B.2).
+//! A counter block must never be used twice with the same key (Appendix B.2).
 
 #![cfg(any(
     target_arch = "x86_64",

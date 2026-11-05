@@ -1,38 +1,15 @@
-//! RSAES-PKCS1-v1_5 encryption and decryption (RFC 8017 §7.2), with the
-//! implicit rejection of draft-irtf-cfrg-rsa-guidance-10 §7.2.
+//! RSAES-PKCS1-v1_5 (RFC 8017 §7.2), with the implicit rejection of
+//! draft-irtf-cfrg-rsa-guidance-10 §7.2.
 //!
-//! **RSAES-PKCS1-v1_5 is deprecated.** RFC 8017 keeps it only for
-//! compatibility with existing applications, and draft-irtf-cfrg-rsa-guidance
-//! recommends against it in new protocols: use RSAES-OAEP, or better, a key
-//! encapsulation mechanism, instead. It is here for interoperating with
-//! protocols and data that require it.
-//!
-//! [`encrypt`] is the verified `vg_rsa_pkcs1_encrypt_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`), given the public key's
-//! precomputed modulus values and a padding string of nonzero bytes from the
-//! operating system's generator. Its variants, with the same contract, are
-//! the ones with the suffix of the implementation `crate::rsa::Backend`
-//! chooses (`_adx`, `_ifma`, `_umaal`).
-//!
-//! [`decrypt`] is the verified `vg_rsa_pkcs1_decrypt` (contract
-//! `VG.Spec.RsaPkcs1Enc.decryptContract`), which computes the encoded
-//! message as [`PrivateKey::private_op`] does, and **never reports an invalid
-//! padding**: for a ciphertext whose padding is not valid it returns a
-//! message derived from the private exponent `d` and the ciphertext (with
-//! SHA-256 and HMAC-SHA-256), which is the same every time the same key
-//! decrypts the same ciphertext and looks random to anyone without the key.
-//! So an attacker learns nothing from which ciphertexts decrypt, a
-//! protocol using it must not treat a successful decryption as proof that
-//! the ciphertext is genuine, and must check the message (its length, and
-//! its contents if it can) in constant time. Whether the padding is valid,
-//! the length of the message and which of the two messages is returned do
-//! not affect the timing of the verified function. Its variants, with the
-//! same contract, are one for each pair of the implementations of SHA-256
-//! and of the private-key operation that
-//! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) choose.
-//!
-//! This module only checks the lengths, draws the padding string and
-//! allocates the memory the functions work in.
+//! **RSAES-PKCS1-v1_5 is deprecated** (RFC 8017, draft-irtf-cfrg-rsa-guidance):
+//! new protocols should use RSAES-OAEP, or better, a key encapsulation
+//! mechanism. [`decrypt`] **never reports an invalid padding**: it returns,
+//! instead, a message derived from the private key and the ciphertext, the same
+//! each time, which looks random to anyone without the key. So a successful
+//! decryption does not prove the ciphertext genuine, and the caller must check
+//! the message (its length, and its contents if it can) in constant time.
+//! Decryption's timing does not depend on whether the padding is valid, on the
+//! message's length, or on which of the two messages it returns.
 
 #![cfg(all(
     any(

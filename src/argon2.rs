@@ -1,23 +1,9 @@
-//! Argon2 version 1.3 (RFC 9106).
+//! Argon2d, Argon2i and Argon2id, version 1.3 (RFC 9106).
 //!
-//! The complete derivation is the verified `vg_argon2`
-//! (`VG.Spec.Argon2.deriveContract`). On x86-64, its variants, with the same
-//! contract, are one for each pair of a backend that `Blake2b` chooses (see
-//! `crate::hashes::blake2b`) and one that `CompressBackend::select` chooses
-//! (`_g_avx512`, then `_g_avx2`, on CPUs with the features their
-//! `VG_ARGON2_G_<SUFFIX>_FEATURES` name): `vg_argon2_blake2b_<b>_g_<g>`,
-//! without the part of a baseline backend. Rust only validates arguments,
-//! checks the memory limit and allocates the matrix and scratch (and, for
-//! [`verify`] and [`verify_keyed`], compares the derived key with the
-//! expected one).
-//!
-//! The costs are the named fields of [`Params`], so that none can be passed
-//! in another's place. Lanes are evaluated serially: [`Params::lanes`] is the
-//! algorithm's parallelism input `p`, which changes the key, not a number of
-//! threads.
-//!
-//! Argon2i leaks no input contents. Argon2d and Argon2id permit the
-//! data-dependent reference indices specified by `VG.Spec.Argon2.references`.
+//! Lanes are computed one after another: [`Params::lanes`] is the algorithm's
+//! parallelism `p`, which changes the key, not a number of threads. Argon2d's
+//! and Argon2id's memory accesses, and so their timing, depend on the password,
+//! as those algorithms define them; Argon2i's depend on no secret.
 
 #![cfg(all(
     any(

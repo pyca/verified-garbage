@@ -1,21 +1,7 @@
-//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place
-//! and without padding.
+//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place and
+//! without padding.
 //!
-//! The whole mode is verified assembly: `vg_aes_expand_key` (contract
-//! `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`VG.Spec.Cbc.aesEncryptContract`,
-//! `aesDecryptContract`) replace each block with its CBC encryption or
-//! decryption and the chaining value with the last ciphertext block, in
-//! constant time. This module checks the lengths, which the assembly does
-//! not, and holds the key schedule and the chaining value.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones, and for decryption
-//! `vg_aes_cbc_decrypt_aes_sha3` instead of `vg_aes_cbc_decrypt_aes` on CPUs
-//! with the features `VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES` names.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",

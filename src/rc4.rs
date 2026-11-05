@@ -1,10 +1,8 @@
 //! Raw RC4 (ARCFOUR), with an incremental keystream and no initial discard.
 //!
-//! RC4 is obsolete and insecure; this module exists for legacy compatibility.
-//! It provides no nonce or authentication. Initialization and in-place XOR
-//! are the verified primitives (`VG.Spec.Rc4.initContract` and
-//! `VG.Spec.Rc4.applyContract`). Only pointers, lengths and the stream
-//! position modulo 256 may affect the leakage trace.
+//! RC4 is insecure: use it only for compatibility with legacy protocols. It
+//! takes no nonce and does not authenticate. Its timing may depend on the
+//! position in the keystream, but not on the key or the data.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,25 +1,4 @@
 //! SHA-512 (FIPS 180-4).
-//!
-//! `vg_sha512_init`, `vg_sha512_update` and `vg_sha512_finalize` for the
-//! target architecture (contracts `VG.Spec.Sha512.initContract`,
-//! `updateContract` and `finalizeContract`) maintain a streaming state that
-//! represents the message absorbed so far (`VG.Spec.Sha512.Repr`: the hash
-//! value of its whole blocks, from the function's initial hash value, and its
-//! remaining bytes), and pad it and output the digest. SHA-384, SHA-512/224
-//! and SHA-512/256 share that state and these `update` and `finalize`, and
-//! differ only in their initial hash value and in how much of the final hash
-//! value is their digest (see `super::sha384`, `super::sha512_224` and
-//! `super::sha512_256`).
-//!
-//! Their variants, with the same contracts, are chosen on CPUs with the
-//! features their `_FEATURES` constants name, in this order: on x86-64,
-//! `vg_sha512_update_shani` and `vg_sha512_finalize_shani`, then the `_avx2`
-//! ones; on AArch64, the `_sha3` ones.
-//!
-//! On every target, `digest` calls `vg_sha512_digest`, or its variant with the
-//! suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha512.digestContract`), which hashes the whole message in one
-//! call, as do SHA-384's, SHA-512/224's and SHA-512/256's.
 
 #![cfg(any(
     target_arch = "x86_64",

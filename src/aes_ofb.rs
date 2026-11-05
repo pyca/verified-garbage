@@ -1,19 +1,6 @@
 //! AES-OFB (SP 800-38A §6.4) with 128-, 192- and 256-bit keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_ofb` (`VG.Spec.Ofb.aesContract`) XORs whole blocks with the
-//! output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it
-//! replaces with the last output block, in constant time. This module holds the
-//! key schedule and the output block, and handles a partial last block (§6.4,
-//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
-//! whose first bytes it XORs into the rest of the input.
-//!
-//! The variants of `vg_aes_ofb`, with the same contract, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, `vg_aes_ofb_vaes`,
-//! then `vg_aes_ofb_aesni` (both with `vg_aes_expand_key_aesni`); on x86,
-//! `vg_aes_ofb_aesni`; on AArch64, `vg_aes_ofb_aes`.
+//! The IV must be unique to each message under a key (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,16 +1,4 @@
-//! HMAC-SHA-512/256: `vg_hmac_sha512_256_init`, `vg_sha512_update` and
-//! `vg_hmac_sha512_256_finalize` (contracts
-//! `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_256I`,
-//! `VG.Spec.Sha512.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
-//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
-//! keeping the two SHA-512/256 streaming states.
-//!
-//! Their variants, with the same contracts, run with the hash function's
-//! backend of the same name, which `Sha512_256` chooses (see
-//! `crate::hashes::sha512_256`): on x86-64, `vg_hmac_sha512_256_init_shani` and
-//! `vg_hmac_sha512_256_finalize_shani`, then the `_avx2` ones; on AArch64, the
-//! `_sha3` ones.
+//! HMAC-SHA-512/256.
 
 #![cfg(any(
     target_arch = "x86_64",

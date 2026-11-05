@@ -1,15 +1,7 @@
-//! Blowfish-OFB (SP 800-38A §6.4, with Blowfish as in Schneier, FSE 1994),
-//! in place.
+//! Blowfish-OFB (SP 800-38A §6.4, with Blowfish as in Schneier, FSE 1994), in
+//! place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
-//! writes the schedule, and `vg_blowfish_ofb` (`VG.Spec.Blowfish.ofbContract`)
-//! XORs whole blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block
-//! at `iv`, which it replaces with the last output block, in constant time: its
-//! timing depends on none of the key, the chaining value and the data. This
-//! module holds the schedule and the output block, and handles a partial last
-//! block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next
-//! output block, whose first bytes it XORs into the rest of the input.
+//! The IV must be unique to each message under a key (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

@@ -1,32 +1,9 @@
-//! RSAES-OAEP encryption and decryption (RFC 8017 §7.1).
+//! RSAES-OAEP (RFC 8017 §7.1), with SHA-1 or a SHA-2 hash function for the
+//! label and for MGF1.
 //!
-//! [`encrypt`] is the verified `vg_rsa_oaep_encrypt_precomputed` (contract
-//! `VG.Spec.RsaOaep.encryptTablesContract`), given the public key's
-//! precomputed modulus values and a seed from the operating system's
-//! generator.
-//!
-//! [`decrypt`] is the verified `vg_rsa_oaep_decrypt` (contract
-//! `VG.Spec.RsaOaep.decryptTablesContract`), which computes the encoded
-//! message as [`PrivateKey::private_op`] does, then decodes it in constant
-//! time: whether the decoding succeeds, where the message starts and its
-//! length do not affect the timing of the verified function, and every
-//! failure (of the ciphertext, not below the modulus, or of its decoding)
-//! is the one error [`Error::Decryption`]. The message is returned, and
-//! with it its length.
-//!
-//! The hash functions are any of SHA-1, SHA-224, SHA-256, SHA-384,
-//! SHA-512, SHA-512/224 and SHA-512/256, and MGF1 is over any of them: the
-//! verified functions take the label's hash function and MGF1's each as a
-//! table of functions (`table.rs`). Other choices are refused
-//! ([`Error::UnsupportedHash`]). The variants of each function, with the
-//! same contract, are one for each choice of the implementations of the
-//! RSA operations that [`rsa`](crate::rsa) makes, and each hash function's
-//! table is the one its backend in [`hashes`](crate::hashes) chooses. Each
-//! architecture's file (`x86_64.rs`, …) names its tables and its verified
-//! functions for each choice (`oaep_functions!`).
-//!
-//! This module only checks the lengths, draws the seed and allocates the
-//! memory the functions work in.
+//! Every decryption failure is the one error [`Error::Decryption`], and
+//! decryption's timing does not depend on whether the decoding succeeded, nor
+//! on where the message starts or its length.
 
 #![cfg(all(
     any(

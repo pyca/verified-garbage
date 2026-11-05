@@ -1,28 +1,11 @@
 //! AES-CTR (SP 800-38A §6.5) with 128-, 192- and 256-bit keys, in place,
-//! with the standard incrementing function of Appendix B.1 on the whole
-//! counter block (a 128-bit big-endian number, wrapping modulo `2¹²⁸`, as
-//! OpenSSL's and aws-lc's AES-CTR).
+//! incrementing the whole counter block as a 128-bit big-endian number modulo
+//! `2¹²⁸` (Appendix B.1, as OpenSSL's and aws-lc's AES-CTR do).
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_ctr` (`VG.Spec.Ctr.aesContract`) XORs whole blocks with the
-//! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
-//! replaces with the counter block to continue from, in constant time:
-//! its timing may depend on the last four bytes of the counter block (the
-//! 32-bit counter, public in OpenSSL, BoringSSL and aws-lc, which split the
-//! blocks where it wraps), but not on the rest of it, the key or the data.
-//! This module holds the key schedule and the counter block, and handles a
-//! partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes
-//! padded to a block XORs them with the first bytes of the next output block.
-//!
-//! The caller chooses the initial counter block, and must never use a
-//! counter block twice with the same key (Appendix B.2).
-//!
-//! The variants of `vg_aes_ctr`, with the same contract, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, `vg_aes_ctr_vaes`,
-//! then `vg_aes_ctr_aesni` (both with `vg_aes_expand_key_aesni`); on x86,
-//! `vg_aes_ctr_aesni`; on AArch64, `vg_aes_ctr_aes`.
+//! A counter block must never be used twice with the same key (Appendix B.2).
+//! The timing may depend on the counter block's last four bytes (the 32-bit
+//! counter, which OpenSSL, BoringSSL and aws-lc also treat as public), but not
+//! on the rest of it, the key or the data.
 
 #![cfg(any(
     target_arch = "x86_64",

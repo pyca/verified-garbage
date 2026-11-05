@@ -1,19 +1,12 @@
-//! Elliptic curves: those [`ecdsa`](crate::ecdsa) signs over and
-//! [`ecdh`](crate::ecdh) exchanges keys on, and their public keys.
+//! Elliptic curves for [`ecdsa`](crate::ecdsa) and [`ecdh`](crate::ecdh):
+//! [`P192`], [`P224`], [`P256`], [`P384`], [`P521`], [`Secp256k1`],
+//! [`BrainpoolP256r1`], [`BrainpoolP384r1`] and [`BrainpoolP512r1`] (each a
+//! [`Curve`]), and their public keys ([`PublicKey<C>`]).
 //!
-//! Each curve is a type that implements [`Curve`]: [`P192`], [`P224`],
-//! [`P256`], [`P384`], [`P521`], [`Secp256k1`], [`BrainpoolP256r1`],
-//! [`BrainpoolP384r1`] and [`BrainpoolP512r1`]. A [`PublicKey<C>`] is a
-//! public key on the curve `C`: the one that
-//! [`ecdh::PrivateKey::public_key`](crate::ecdh::PrivateKey::public_key) and
-//! [`ecdsa::SigningKey::public_key`](crate::ecdsa::SigningKey::public_key)
-//! derive (`vg_ec_<curve>_public_key`, contract
-//! `VG.Spec.EcKey.Instance.publicKeyContract`, in constant time), the peer's
-//! in an ECDH exchange, and the one that verifies an ECDSA signature.
-//!
-//! Each curve has `compress_public_key` and `decompress_public_key`, and on
-//! x86-64 `validate_public_key`: each validates the SEC 1 point in one call
-//! of a verified function.
+//! Each curve converts a SEC 1 public key between its compressed and
+//! uncompressed forms, validating it (`compress_public_key`,
+//! `decompress_public_key`), and on x86-64 validates one on its own
+//! (`validate_public_key`).
 
 #![cfg(any(
     target_arch = "x86_64",

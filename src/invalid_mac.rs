@@ -1,5 +1,4 @@
-//! The error of every MAC check: HMAC's, CMAC's, Poly1305's and keyed
-//! BLAKE2's, which their modules re-export.
+//! The error of every MAC check, which the MAC modules re-export.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,19 +1,12 @@
-//! DSA parameter and key generation, and signing and verification of prehashed messages,
-//! with fixed-width big-endian `r || s` signatures (FIPS 186-4).
+//! DSA (FIPS 186-4): parameter and key generation, and signing and verification
+//! of prehashed messages, with fixed-width big-endian `r || s` signatures.
 //!
-//! The verified operations check domain and key algebraic consistency and
-//! scalar ranges. As with this crate's RSA operations, they do not prove
-//! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. `Parameters::generate` runs
-//! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
-//!
-//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
-//! `(256, 32)` and `(384, 32)` bytes. The 2048/160 pair is a legacy
-//! interoperability extension to the FIPS 186-4 sizes. Leading-zero padding is accepted;
-//! the actual domain must have one of the supported bit lengths. Digests
-//! may have any length and are truncated to the subgroup's actual bit length.
-//! Keys own their components, so each operation's buffers are disjoint.
-//! Private keys, nonces and scratch are wiped when their owners are dropped.
+//! FIPS 186-5 keeps DSA only for verifying existing signatures. Domain
+//! parameters are checked for consistency, not primality: take them from a
+//! trusted source or validate them separately. `p` and `q` are 128 and 20, 256
+//! and 20, 256 and 28, 256 and 32, or 384 and 32 bytes wide, leading zeros
+//! allowed (2048 and 160 bits is an extension to FIPS 186-4's sizes); a digest
+//! of any length is truncated to the bit length of `q`.
 
 #![cfg(all(
     any(

@@ -1,5 +1,4 @@
-//! ECDH over P-224 (`vg_ecdh_p224`), and its `_umaal` variant on ARMv7 CPUs
-//! with the features its `_FEATURES` constant names.
+//! ECDH over P-224.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,6 +1,4 @@
-//! ECDSA over P-192: deterministic signatures with HMAC over any hash function
-//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p192_sign`),
-//! and verification (`vg_ecdsa_p192_verify`).
+//! ECDSA over P-192.
 
 #![cfg(any(
     target_arch = "x86_64",

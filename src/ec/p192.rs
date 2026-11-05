@@ -1,5 +1,4 @@
-//! P-192's public keys, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) both compute.
+//! P-192's public keys, which ECDSA and ECDH share.
 
 #![cfg(any(
     target_arch = "x86_64",

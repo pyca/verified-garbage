@@ -1,17 +1,8 @@
 //! scrypt (RFC 7914 §6).
 //!
-//! The whole derivation is the verified `vg_scrypt` (contract
-//! `VG.Spec.Scrypt.scryptContract`). Its variants, with the same contract,
-//! are chosen with the backend `Sha256` chooses (see
-//! `crate::hashes::sha256`): on x86-64 and x86, `vg_scrypt_shani`, then on
-//! x86-64 `vg_scrypt_avx2`; on AArch64, `vg_scrypt_sha2`. This module only
-//! checks the parameters and allocates the memory scrypt works in (and, for
-//! [`verify`], compares the derived key with the expected one).
-//!
-//! scryptROMix reads its table `V` at indices derived from the password, so
-//! its memory accesses (and hence its timing, through the caches) depend on
-//! them. That is inherent to scrypt; the contracts declare that scrypt leaks
-//! these indices and nothing else secret.
+//! scryptROMix reads its table `V` at indices derived from the password, so its
+//! memory accesses, and so its timing through the caches, depend on them, as is
+//! inherent to scrypt; nothing else secret affects them.
 
 #![cfg(all(
     any(

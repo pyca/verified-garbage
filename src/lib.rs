@@ -1,11 +1,12 @@
 //! An experimental, formally verified cryptography library, implemented
 //! entirely by LLMs.
 //!
-//! The cryptographic primitives are assembly that has been formally verified
-//! in Lean (see `lean/README.md` for what is proven and what has to be
-//! trusted). They live in naked functions in the generated crate of each
-//! target, `crates/verified-garbage-asm-<target>/`, and the public APIs
-//! compose them.
+//! Each primitive is assembly proven in Lean to be correct, memory safe and
+//! constant time, and the public APIs are Rust that composes them. The README
+//! says what the constant-time guarantee assumes, and a module's or item's
+//! documentation says when an operation's timing may depend on more than its
+//! public inputs; `lean/README.md` says what is proven and what has to be
+//! trusted.
 
 #![no_std]
 #![deny(missing_docs)]

@@ -1,22 +1,7 @@
 //! SHA-1 (FIPS 180-4).
 //!
-//! SHA-1 is broken as a collision-resistant hash function: use it only where
-//! an existing protocol or file format requires it.
-//!
-//! `vg_sha1_init`, `vg_sha1_update` and `vg_sha1_finalize` for the target
-//! architecture (contracts `VG.Spec.Sha1.initContract`, `updateContract` and
-//! `finalizeContract`) maintain a streaming state that represents the
-//! message absorbed so far (`VG.Spec.Sha1.Repr`: the hash value of its whole
-//! blocks, and its remaining bytes), and pad it and output the digest.
-//!
-//! Their variants, with the same contracts, are chosen on CPUs with the
-//! features their `_FEATURES` constants name: on x86 and x86-64,
-//! `vg_sha1_update_shani` and `vg_sha1_finalize_shani`; on AArch64, the
-//! `_sha2` ones.
-//!
-//! On every target, `digest` calls `vg_sha1_digest`, or its variant with the
-//! suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha1.digestContract`), which hashes the whole message in one call.
+//! SHA-1 is broken as a collision-resistant hash function: use it only where an
+//! existing protocol or file format requires it.
 
 #![cfg(any(
     target_arch = "x86_64",

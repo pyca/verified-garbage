@@ -1,20 +1,8 @@
 //! AES-GCM-SIV (RFC 8452) with 128- and 256-bit keys: nonce-misuse-resistant
 //! authenticated encryption.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_gcm_siv_seal` and
-//! `vg_aes_gcm_siv_open` (contracts `VG.Spec.GcmSiv.sealContract` and
-//! `openContract`) are encryption and decryption (§4, §5) in one call each,
-//! the per-nonce key derivation included, from the AES key schedule of the
-//! key-generating key that `vg_aes_expand_key` writes. `open` checks the tag
-//! in constant time and overwrites the data with zeros when it is wrong.
-//! This module checks the lengths of §6, which the assembly does not, and
-//! holds the key schedule.
-//!
-//! Their variants, with the same contracts, are one for each of AES-GCM's
-//! backends, with its suffix, and are chosen as AES-GCM's are
-//! (`crate::aes_gcm`). x86-64, x86,
-//! AArch64, 32-bit ARM, PPC64LE and RISC-V (the baseline ISA's
-//! implementations alone on the last three) have implementations so far.
+//! Repeating a nonce under one key reveals only whether two messages with the
+//! same associated data are equal.
 
 #![cfg(any(
     target_arch = "x86_64",

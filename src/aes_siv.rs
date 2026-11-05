@@ -1,27 +1,7 @@
-//! AES-SIV (RFC 5297) with 256-, 384- and 512-bit keys (AES-128, AES-192
-//! and AES-256 for each half): deterministic authenticated encryption, and
+//! AES-SIV (RFC 5297) with 256-, 384- and 512-bit keys (AES-128, AES-192 and
+//! AES-256 for each half): deterministic authenticated encryption, and
 //! nonce-based when the caller passes a nonce as the last associated-data
-//! component (RFC 5297 §3).
-//!
-//! The whole AEAD is verified assembly: `vg_aes_siv_init` (contract
-//! `VG.Spec.Siv.initContract`) writes the key context (the key schedule of
-//! `K1` and its CMAC subkeys, and the key schedule of `K2`), and
-//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` (`encryptContract`,
-//! `decryptContract`) are `SIV-ENCRYPT` and `SIV-DECRYPT` in one call each,
-//! S2V over the associated-data components included, in constant time.
-//! `decrypt` overwrites the data with zeros when the synthetic IV is wrong.
-//! This module checks the number of components (RFC 5297 §2.6 allows at most
-//! 126 besides the plaintext), which the assembly does not count, lists them
-//! for the assembly as `[address, length]` pairs, and holds the key context.
-//!
-//! Their variants, with the same contracts, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones; on
-//! x86, the `_aesni` ones; on AArch64, the `_aes` ones. On x86-64 and
-//! AArch64, when the associated-data components and the data total more
-//! than 32 bytes (`chains_long`), `encrypt` and `decrypt` run their
-//! `_aesni_cbc` variants (with either x86-64 backend) or their `_aes_cbc`
-//! ones instead, whose features `select` checks too.
+//! component (§3).
 
 #![cfg(any(
     target_arch = "x86",

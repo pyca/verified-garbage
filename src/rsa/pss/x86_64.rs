@@ -1,9 +1,4 @@
-//! RSASSA-PSS's verified functions on x86-64: `vg_rsa_pss_sign` and
-//! `vg_rsa_pss_verify_precomputed` (contracts
-//! `VG.Spec.RsaPss.signTableContract` and `verifyPrecomputedTableContract`),
-//! which take the hash function and MGF1's as tables, for each
-//! implementation of the RSA operations (`crate::rsa::Backend`), which
-//! `table::pss_functions!` chooses from.
+//! RSASSA-PSS's verified functions on x86-64.
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 

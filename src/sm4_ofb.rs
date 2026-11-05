@@ -1,15 +1,7 @@
 //! SM4-OFB (SP 800-38A §6.4, with SM4 as in GB/T 32907-2016, transcribed in
-//! the Internet-Draft draft-ribose-cfrg-sm4-10), in place.
+//! draft-ribose-cfrg-sm4-10), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_sm4_expand_key` (contract `VG.Spec.Sm4.expandKeyContract`) writes the
-//! key schedule, and `vg_sm4_ofb` (`VG.Spec.Sm4.ofbContract`) XORs whole
-//! blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`,
-//! which it replaces with the last output block, in constant time: its
-//! timing depends on none of the key, the chaining value and the data. This
-//! module holds the key schedule and the output block, and handles a partial
-//! last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next
-//! output block, whose first bytes it XORs into the rest of the input.
+//! The IV must be unique to each message under a key (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",

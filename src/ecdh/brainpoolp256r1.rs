@@ -1,5 +1,4 @@
-//! ECDH over brainpoolP256r1 (`vg_ecdh_brainpoolp256r1`), and its `_umaal`
-//! variant on ARMv7 CPUs with the features its `_FEATURES` constant names.
+//! ECDH over brainpoolP256r1.
 
 #![cfg(any(
     target_arch = "x86_64",

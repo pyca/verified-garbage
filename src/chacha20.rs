@@ -1,31 +1,12 @@
-//! ChaCha20 (RFC 8439), with the 16-byte nonce of OpenSSL and
-//! pyca/cryptography.
+//! ChaCha20 (RFC 8439 §2.4), with the 16-byte nonce of OpenSSL and
+//! pyca/cryptography: the 4-byte little-endian initial block counter, then RFC
+//! 8439's 12-byte nonce.
 //!
-//! The cipher is the verified assembly of the target architecture, on an
-//! opaque streaming state that holds the key, the position in the keystream
-//! and a partly used block: `vg_chacha20_init` (contract
-//! `VG.Spec.ChaCha20.initContract`) starts the keystream of a key and nonce,
-//! `vg_chacha20_set_nonce` (`VG.Spec.ChaCha20.setNonceContract`) restarts it
-//! for another nonce, and `vg_chacha20_apply`
-//! (`VG.Spec.ChaCha20.applyContract`) XORs the next bytes of it into data.
-//!
-//! The 16-byte nonce is the initial block counter (4 bytes, little-endian)
-//! followed by the 12-byte RFC 8439 nonce, i.e. state words 12–15. As in
-//! RFC 8439 (and pyca/cryptography), the block counter is word 12 alone, so
-//! a keystream starting at block counter `c` is 2³² − `c` blocks long:
-//! applying more of it panics, rather than wrapping the counter around or
-//! carrying it into word 13, the first word of the nonce, as OpenSSL does
-//! (the keystream past that point would be another nonce's, e.g. after
-//! 64 bytes from `c = 0xffffffff`). `vg_chacha20_apply` checks this itself,
-//! and leaves the data and the keystream unchanged if it fails.
-//!
-//! The variants of `vg_chacha20_apply`, with the same contract, are chosen
-//! by `Backend::select` on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, `vg_chacha20_apply_ifma` (with AVX512_IFMA
-//! too), `vg_chacha20_apply_avx512vl`, `vg_chacha20_apply_avx512` and
-//! `vg_chacha20_apply_avx2`, in this order; on x86,
-//! `vg_chacha20_apply_ssse3`; on AArch64, `vg_chacha20_apply_sve2` (with
-//! AdvSIMD), then `vg_chacha20_apply_neon` on CPUs with AdvSIMD.
+//! A nonce must never be used twice with the same key. As in RFC 8439, the
+//! block counter is 32 bits, so a keystream that starts at block counter `c` is
+//! 2³² − `c` blocks long: applying more of it panics, leaving the data
+//! unchanged, rather than wrapping the counter or carrying it into the nonce as
+//! OpenSSL does.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -281,6 +262,8 @@ impl ChaCha20 {
         // do not wrap around the end of the address space. The CPU has the
         // features of the implementation selected.
         let ok = unsafe { f(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        // `apply` checks the block counter itself, and leaves the data and the
+        // state unchanged when it would overflow.
         assert!(ok == 1, "ChaCha20 block counter would overflow");
     }
 }

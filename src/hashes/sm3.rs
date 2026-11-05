@@ -1,10 +1,4 @@
 //! SM3 (GB/T 32905-2016, as transcribed in draft-sca-cfrg-sm3-02).
-//!
-//! `vg_sm3_init`, `vg_sm3_update` and `vg_sm3_finalize` (contracts
-//! `VG.Spec.Sm3.initContract`, `updateContract` and `finalizeContract`)
-//! maintain a streaming state that represents the message absorbed so far
-//! (`VG.Spec.Sm3.Repr`: the hash value after its whole blocks, and its
-//! remaining bytes), and pad it and output the hash value.
 
 #![cfg(any(
     target_arch = "x86_64",

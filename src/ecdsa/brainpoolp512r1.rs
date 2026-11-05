@@ -1,8 +1,4 @@
-//! ECDSA over brainpoolP512r1: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_brainpoolp512r1_sign`), and verification
-//! (`vg_ecdsa_brainpoolp512r1_verify`), and their variants on CPUs with the
-//! features their `_FEATURES` constants name: `_umaal` on ARMv7.
+//! ECDSA over brainpoolP512r1.
 
 #![cfg(any(
     target_arch = "x86_64",

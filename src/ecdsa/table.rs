@@ -1,14 +1,5 @@
-//! ECDSA's signatures with HMAC as a table: one verified function for each
-//! curve (`vg_ecdsa_<curve>_sign`, and its variants for the curves'
-//! multiplications: `_adx` with BMI2 and ADX on x86-64, `_umaal` on ARMv7;
-//! contract
-//! `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which takes HMAC
-//! over the hash function as a table of the interface `Hmac`
-//! (`crate::arch::fn_tables`), so that a curve signs with every hash
-//! function that has HMAC: MD5, SHA-1 and the SHA-2 family ([`HmacHash`]).
-//! Each hash function's table is the one for the implementation its backend
-//! chooses for this CPU, as with its other uses
-//! (`crate::hashes::tables::TableHash::hmac_table`).
+//! HMAC over each hash function ([`HmacHash`]) as the table of functions that
+//! deterministic ECDSA's signing takes.
 
 use super::Error;
 use crate::hashes::HashFunction;

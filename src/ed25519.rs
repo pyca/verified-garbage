@@ -1,17 +1,4 @@
-//! Ed25519 (RFC 8032), deterministic signatures from 32-byte seeds.
-//!
-//! Key derivation, signing, and verification each call one verified
-//! function, including SHA-512 (but for key derivation, below), on every
-//! supported architecture. On x86-64 and AArch64, their variants, with the
-//! same contracts, are one for each pair of the implementations of SHA-512
-//! (`Sha512Backend`) and of the field (`Field`) this CPU runs; on x86-64,
-//! `Field::select` chooses the `_ifma` variants, then the `_adx` ones, on
-//! CPUs with the features their `_FEATURES` constants name. [`SigningKey`]
-//! keeps the seed's SHA-512 digest, computed once in
-//! [`SigningKey::from_seed`] with the verified SHA-512, and key derivation
-//! (`vg_ed25519_public_key_expanded`) and signing
-//! (`vg_ed25519_sign_expanded`) read it rather than hashing the seed again.
-//! Secret scratch values are cleared after use.
+//! Ed25519 (RFC 8032 §5.1), deterministic signatures from 32-byte seeds.
 
 #![cfg(any(
     target_arch = "x86_64",

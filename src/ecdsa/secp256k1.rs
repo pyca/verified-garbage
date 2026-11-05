@@ -1,8 +1,4 @@
-//! ECDSA over secp256k1: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_secp256k1_sign`), and verification (`vg_ecdsa_secp256k1_verify`),
-//! and their variants on CPUs with the features their `_FEATURES` constants
-//! name: `_umaal` on ARMv7.
+//! ECDSA over secp256k1.
 
 #![cfg(any(
     target_arch = "x86_64",

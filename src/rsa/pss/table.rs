@@ -1,14 +1,5 @@
-//! The hash functions as the verified functions take them: the hash
-//! function as a table of functions of the interface `MdHash`, and MGF1's as
-//! one of `Hash` (`crate::arch::fn_tables`): one `vg_rsa_pss_sign` and one
-//! `vg_rsa_pss_verify_precomputed`, with each of the hash functions any of
-//! them, rather than one for each pair of them.
-//!
-//! `md_table` and `table` choose a hash function's tables, as the backends
-//! of the hash functions choose their implementations
-//! (`crate::hashes::tables`); each architecture's file (`x86_64.rs`, …)
-//! names its verified functions for each implementation of the RSA
-//! operations (`pss_functions!`).
+//! The hash functions as the tables of functions that RSASSA-PSS's verified
+//! functions take.
 
 use super::Hash;
 use crate::hashes::tables::TableHash;

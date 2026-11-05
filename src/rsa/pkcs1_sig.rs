@@ -1,31 +1,12 @@
 //! RSASSA-PKCS1-v1_5 (RFC 8017 §8.2) of a hash value, with the keys of
 //! [`crate::rsa`].
 //!
-//! [`sign`] is the verified `vg_rsa_pkcs1_sign` (contract
-//! `VG.Spec.RsaPkcs1Sig.signContract`): EMSA-PKCS1-v1_5's encoding of the hash
-//! value (RFC 8017 §9.2) to the modulus' length, then the private-key
-//! operation checked against the public exponent
-//! (`VG.Spec.Rsa.privateChecked`), which releases the signature only if it
-//! passes the check, as BoringSSL's `RSA_sign` does. Its timing may depend
-//! on the public key, the hash function and the lengths, but not on the hash
-//! value or the private key.
-//!
-//! [`verify`] is the verified `vg_rsa_pkcs1_verify_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`), which accepts a signature exactly
-//! when `s^e mod n` is the encoding of the hash value, as BoringSSL's
-//! `RSA_verify` does, given the public key's precomputed modulus values.
-//! [`recover`] is `vg_rsa_pkcs1_recover_precomputed` (contract
-//! `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`), given them too, which
-//! returns the hash value a signature signs, as BoringSSL's
-//! `EVP_PKEY_verify_recover` does. Everything they read is public and their
-//! timing may depend on it.
-//!
-//! The variants of the three, with the same contracts, are the ones with
-//! the suffix of the implementation [`crate::rsa`]'s `Backend` chooses
-//! (`_adx`, `_ifma`, `_umaal`).
-//!
-//! This module only checks the lengths and allocates the memory the
-//! functions work in.
+//! [`sign`] releases a signature only if it verifies with the public exponent,
+//! and its timing may depend on the public key, the hash function and the
+//! lengths, but not on the hash value or the private key. [`verify`] and
+//! [`recover`] (which returns the hash value a signature signs, as BoringSSL's
+//! `EVP_PKEY_verify_recover` does) read only public values, and their timing
+//! may depend on them.
 
 #![cfg(all(
     any(

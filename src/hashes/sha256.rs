@@ -1,21 +1,4 @@
 //! SHA-256 (FIPS 180-4).
-//!
-//! `vg_sha256_init`, `vg_sha256_update` and `vg_sha256_finalize` for the
-//! target architecture (contracts `VG.Spec.Sha256.initContract`,
-//! `updateContract` and `finalizeContract`) maintain a streaming state that
-//! represents the message absorbed so far (`VG.Spec.Sha256.Repr`: the hash
-//! value of its whole blocks, and its remaining bytes), and pad it and output
-//! the digest.
-//!
-//! Their variants, with the same contracts, are chosen on CPUs with the
-//! features their `_FEATURES` constants name, in this order: on x86 and
-//! x86-64, `vg_sha256_update_shani` and `vg_sha256_finalize_shani`, then on
-//! x86-64 the `_avx2` ones; on AArch64, the `_sha2` ones.
-//!
-//! On every target, `digest` calls `vg_sha256_digest`, or its variant with the
-//! suffix of the streaming functions chosen (contract
-//! `VG.Spec.Sha256.digestContract`), which hashes the whole message in one
-//! call.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,10 +1,4 @@
-//! PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2): one call of the verified
-//! `vg_pbkdf2_hmac_sha224` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract` of
-//! `VG.Spec.Hmac.sha224I`), which derives the whole key. Its variants, with the
-//! same contract, are chosen on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, `vg_pbkdf2_hmac_sha224_shani` and
-//! `vg_pbkdf2_hmac_sha224_avx2`; on x86, `vg_pbkdf2_hmac_sha224_shani`; on
-//! AArch64, `vg_pbkdf2_hmac_sha224_sha2`.
+//! PBKDF2-HMAC-SHA-224.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,6 +1,4 @@
-//! PBKDF2-HMAC-MD5 (RFC 8018 §5.2): one call of the verified
-//! `vg_pbkdf2_hmac_md5` (contract `VG.Spec.Hmac.Instance.pbkdf2Contract` of
-//! `VG.Spec.Hmac.md5I`), which derives the whole key.
+//! PBKDF2-HMAC-MD5.
 
 #![cfg(any(
     target_arch = "x86_64",

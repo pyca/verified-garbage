@@ -1,19 +1,8 @@
-//! X448 (RFC 7748), Diffie-Hellman on Curve448.
+//! X448 (RFC 7748 §5), Diffie-Hellman on Curve448.
 //!
-//! The whole function is the verified `vg_x448` (contract
-//! `VG.Spec.X448.x448Contract`): `X448(k, u)` of RFC 7748 §5, the
-//! scalar decoded (clamped) and all 448 bits of the u-coordinate reduced
-//! modulo the field prime, in constant time; and
-//! [`public_key`](PrivateKey::public_key) is the verified `vg_x448_base`
-//! (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)`. On x86-64 CPUs
-//! with the features their `_FEATURES` constants name, `Backend::select`
-//! chooses their variants `vg_x448_adx` and `vg_x448_base_adx`, with the
-//! same contracts. This module gives them working space, and destroys what
-//! they leave there.
-//!
-//! [`exchange`](PrivateKey::exchange) is `vg_x448` of the private key and
-//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
-//! public key of small order gives (RFC 7748 §6.2), in constant time.
+//! [`exchange`](PrivateKey::exchange) rejects the all-zero shared secret that a
+//! public key of small order gives (§6.2), and returns the shared secret raw,
+//! not passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",
