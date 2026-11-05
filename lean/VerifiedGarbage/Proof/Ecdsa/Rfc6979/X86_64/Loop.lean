@@ -125,7 +125,7 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 2
 def DgApart {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B, 160⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨
     r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 (24 + fT), 136⟩ ∨
-    r = ⟨L.B + BitVec.ofNat 64 8, 16⟩
+    r = ⟨L.B + BitVec.ofNat 64 8, 16⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 24, 128⟩
 
 theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint ⟨dgArg P L, P.Q⟩ r := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
@@ -133,7 +133,7 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint �
   have key : ∀ o, 256 ≤ o → o + P.Q ≤ 24 + fT → Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ r := by
     intro o h₁ h₂
     simp only [fT] at h₂
-    rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hL.stk_SCR (by omega_arith)
     · exact hL.stk_OUT (by omega_arith)
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
@@ -141,6 +141,7 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint �
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inl (by simp only [fT]; omega_arith)) (by omega_arith) (by simp only [fT]; omega_arith)
+    · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   simp only [dgArg]
   split
