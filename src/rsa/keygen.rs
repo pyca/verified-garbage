@@ -1,10 +1,12 @@
-//! RSA key generation (FIPS 186-5 Appendix A.1.3, as BoringSSL does it): a key,
-//! one of a key's primes, and the key from its two primes.
+//! RSA key generation (FIPS 186-5 Appendix A.1.3, as BoringSSL does it).
 //!
 //! The timing may depend on the lengths, `e`, the rejected candidates (which
 //! are discarded), how many random octets the accepted candidates' Miller–Rabin
 //! tests read, and whether a key was refused for its small `d`, but not on the
-//! primes or the key.
+//! primes or the key. There is no FIPS 140 pairwise consistency test
+//! (BoringSSL's `RSA_check_fips`): the key passes BoringSSL's `RSA_check_key`,
+//! and every private-key operation releases its result only if it checks
+//! against `e`.
 
 #![cfg(all(
     any(
@@ -38,103 +40,43 @@ use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
 use crate::arch::rsa_keygen::vg_rsa_prime_search_umaal;
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
-use crate::rsa::PublicKey;
 use crate::rsa::{Backend, PrivateKey};
 
-/// The shortest prime, in bits.
-pub const MIN_PRIME_BITS: usize = 256;
-/// The longest prime, in bits.
-pub const MAX_PRIME_BITS: usize = 4096;
-
-/// Why a prime or a key was not generated.
+/// Why a key was not generated.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
-    /// The prime's length is not a multiple of 64 bits from 256 to 4096.
-    InvalidLength,
-    /// The public exponent is not 1 to 8 bytes long or, for a key
-    /// ([`generate`]), not odd from 3 to `2^32 - 1`.
+    /// The public exponent is not odd from 3 to `2^32 - 1`.
     InvalidExponent,
     /// The requested modulus is longer than 8192 bits or, rounded down to a
     /// multiple of 128 bits, shorter than 512.
     InvalidModulusLength,
-    /// The other prime is not as long as the prime.
-    InvalidOtherPrime,
-    /// Too many candidates were rejected (`5 bits`, or `8 bits` for
-    /// `e = 3`), as BoringSSL's limit.
+    /// Too many candidates for a prime were rejected (`5 bits`, or `8 bits`
+    /// for `e = 3`, BoringSSL's limit), in each of four generations.
     TooManyIterations,
-    /// The random octets ran out before a candidate was accepted.
+    /// The random octets given to `generate_from` ran out before a key was
+    /// generated.
     NotEnoughRandomness,
     /// The operating system's random number generator failed.
     Randomness,
-    /// The private exponent `d` has at most half the modulus' bits, for
-    /// which BoringSSL generates both primes again.
-    SmallPrivateExponent,
     /// `e` has no inverse modulo `lcm(p - 1, q - 1)`, `q` none modulo `p`,
     /// or the key fails a check (`n`'s length, BoringSSL's `RSA_check_key`).
     InvalidKey,
-    /// The generated key failed the pairwise consistency test (a signature
-    /// made with the private key did not verify with the public key): a
-    /// prime was not prime.
-    PairwiseTestFailed,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
-            Error::InvalidLength => "invalid RSA prime length",
             Error::InvalidExponent => "invalid RSA public exponent",
             Error::InvalidModulusLength => "invalid RSA modulus length",
-            Error::InvalidOtherPrime => "RSA other prime is not as long as the prime",
             Error::TooManyIterations => "too many RSA prime candidates were rejected",
-            Error::NotEnoughRandomness => "not enough random octets for an RSA prime",
+            Error::NotEnoughRandomness => "not enough random octets for an RSA key",
             Error::Randomness => "the random number generator failed",
-            Error::SmallPrivateExponent => "the RSA private exponent is too small",
             Error::InvalidKey => "the RSA key from the primes is invalid",
-            Error::PairwiseTestFailed => "the RSA key failed the pairwise consistency test",
         })
     }
 }
 
 impl core::error::Error for Error {}
-
-/// The prime's length in bytes, and the most candidates that may be
-/// rejected (`VG.Spec.RsaKeyGen.primeLimit`), after checking the arguments.
-fn check(
-    bits: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-) -> Result<(usize, usize), Error> {
-    if !(MIN_PRIME_BITS..=MAX_PRIME_BITS).contains(&bits) || !bits.is_multiple_of(64) {
-        return Err(Error::InvalidLength);
-    }
-    if !(1..=8).contains(&public_exponent.len()) {
-        return Err(Error::InvalidExponent);
-    }
-    let len = bits / 8;
-    if other.is_some_and(|p| p.len() != len) {
-        return Err(Error::InvalidOtherPrime);
-    }
-    let e3 = public_exponent[..public_exponent.len() - 1]
-        .iter()
-        .all(|&b| b == 0)
-        && public_exponent[public_exponent.len() - 1] == 3;
-    Ok((len, if e3 { 8 * bits } else { 5 * bits }))
-}
-
-/// A probable prime of `bits` bits (a multiple of 64 from 256 to 4096),
-/// big-endian, with its two most significant bits set and
-/// `gcd(prime - 1, e) = 1` for the public exponent `e` (big-endian, 1 to 8
-/// bytes), not within `2^(bits - 100)` of `other` (big-endian, as long as
-/// the prime) if it is given, from the operating system's random number
-/// generator.
-pub fn generate_prime(
-    bits: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-) -> Result<Vec<u8>, Error> {
-    let (len, limit) = check(bits, public_exponent, other)?;
-    Random::new(fill_random).prime(len, limit, public_exponent, other)
-}
 
 /// Fill from the operating system; injectable at the buffer boundary in tests.
 fn fill_random(out: &mut [u8]) -> Result<(), Error> {
@@ -215,13 +157,17 @@ struct Search<'a> {
 }
 
 impl<'a> Search<'a> {
-    /// The search for a prime of `len` octets with the exponent `e`, which
-    /// [`check`] accepted with the limit of rejected candidates `limit`.
+    /// The search for a prime of `len` octets (a multiple of 8 from 32 to
+    /// 512) with the exponent `e` (1 to 8 bytes), not too close to `other`
+    /// (`len` octets) if given, which allows `limit` rejected candidates
+    /// (`VG.Spec.RsaKeyGen.primeLimit`: `8 · 8 len` for `e = 3`, `5 · 8 len`
+    /// otherwise).
     fn new(len: usize, limit: usize, e: &'a [u8], other: Option<&'a [u8]>) -> Self {
+        assert!(other.is_none_or(|p| p.len() == len));
         let mut state = [0u64; 4];
         // SAFETY: `state` is valid for writes and `e` for reads of its length.
         let ok = unsafe { vg_rsa_prime_search_init(&mut state, len, e.as_ptr(), e.len()) };
-        // The search accepts what `check` accepted, with the same limit.
+        // The search accepts the lengths, with the same limit.
         assert_eq!((ok, state[0]), (1, limit as u64));
         Self {
             e,
@@ -266,8 +212,9 @@ impl<'a> Search<'a> {
         let mut used = [0u64; 1];
         // SAFETY: each pointer is valid for its length (`out`, `used`,
         // `scratch` and `state` for writes), and none overlaps another or
-        // wraps around, as they are distinct Rust allocations; `check` gave
-        // `out_len`, `e_len` and `p_len`; `state` is from
+        // wraps around, as they are distinct Rust allocations;
+        // `vg_rsa_prime_search_init` accepted `out_len` and `e_len`, and
+        // `p_len` is 0 or `out_len` (`Search::new`); `state` is from
         // `vg_rsa_prime_search_init` or from the last call, which returned
         // 0; `rand_len` is at most the budget, `state[2]`; `scratch_len` is
         // `16 out_len + 32`; and the CPU has the features of the function
@@ -304,23 +251,11 @@ impl Drop for Search<'_> {
     }
 }
 
-/// [`generate_prime`]'s prime from the random octets `rand`, read as one
-/// stream (`VG.Spec.RsaKeyGen.generatePrime`), and the number of octets
-/// read; [`Error::NotEnoughRandomness`] if they run out first.
-pub fn generate_prime_from(
-    bits: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-    rand: &[u8],
-) -> Result<(Vec<u8>, usize), Error> {
-    let (len, limit) = check(bits, public_exponent, other)?;
-    let (r, read) = prime_from(len, limit, public_exponent, other, rand);
-    r.map(|prime| (prime, read))
-}
-
-/// [`generate_prime_from`] of arguments [`check`] accepted (the prime's
-/// length `len` in bytes, and the limit of rejected candidates), and the
-/// number of octets read, also when it fails.
+/// A prime of `len` octets, with the limit of rejected candidates `limit`
+/// (as [`Search::new`] takes them), from the random octets `rand`, read as
+/// one stream (`VG.Spec.RsaKeyGen.generatePrime`), and the number of octets
+/// read, also when it fails; [`Error::NotEnoughRandomness`] if they run out
+/// first.
 fn prime_from(
     len: usize,
     limit: usize,
@@ -349,21 +284,19 @@ fn prime_from(
 /// (big-endian, 1 to 8 bytes), as BoringSSL derives it
 /// (`VG.Spec.RsaKeyGen.keyFromPrimes`): `p` the larger of the two,
 /// `d = e⁻¹ mod lcm(p - 1, q - 1)`, `dP = d mod (p - 1)`,
-/// `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p`, after checking that `d` has
-/// more than half the modulus' bits, that `n = p q` has twice the primes'
-/// bits, and the key as BoringSSL's `RSA_check_key` does. It does not check
-/// that `p` and `q` are prime.
-pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<PrivateKey, Error> {
+/// `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p`, after checking that `n = p q`
+/// has twice the primes' bits, and the key as BoringSSL's `RSA_check_key`
+/// does; `None` if `d` has at most half the modulus' bits, for which
+/// BoringSSL generates both primes again. It does not check that `p` and `q`
+/// are prime.
+fn key_from_primes(
+    public_exponent: &[u8],
+    p: &[u8],
+    q: &[u8],
+) -> Result<Option<PrivateKey>, Error> {
     let len = p.len();
-    if !(MIN_PRIME_BITS / 8..=MAX_PRIME_BITS / 8).contains(&len) || !len.is_multiple_of(8) {
-        return Err(Error::InvalidLength);
-    }
-    if !(1..=8).contains(&public_exponent.len()) {
-        return Err(Error::InvalidExponent);
-    }
-    if q.len() != len {
-        return Err(Error::InvalidOtherPrime);
-    }
+    assert!((32..=512).contains(&len) && len.is_multiple_of(8) && q.len() == len);
+    assert!((1..=8).contains(&public_exponent.len()));
     let mut n = vec![0u8; 2 * len];
     let mut d = vec![0u8; 2 * len];
     let (mut kp, mut kq) = (p.to_vec(), q.to_vec());
@@ -401,9 +334,9 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
     // The working space holds the key.
     crate::zeroize::zeroize(&mut scratch);
     // The outputs are zeros but for 1, and `n`'s top bit then makes `p` and
-    // `q` as long as they are (`VG.Spec.RsaKeyGen.keyValid`), and `e` valid
-    // (`VG.Spec.Rsa.exponentValid`), so that this is the key `PrivateKey`
-    // holds.
+    // `q` as long as they are (`VG.Spec.RsaKeyGen.keyValid`), `e` valid
+    // (`VG.Spec.Rsa.exponentValid`), and the key one `RSA_check_key`
+    // accepts, so that this is a key `PrivateKey` holds.
     let key = PrivateKey {
         n,
         e: crate::rsa::trim(public_exponent).to_vec(),
@@ -415,16 +348,16 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
         qinv,
     };
     match status {
-        1 => Ok(key),
-        2 => Err(Error::SmallPrivateExponent),
+        1 => Ok(Some(key)),
+        2 => Ok(None),
         _ => Err(Error::InvalidKey),
     }
 }
 
 /// The smallest modulus [`generate`] makes, in bits.
-pub const MIN_MODULUS_BITS: usize = 512;
+const MIN_MODULUS_BITS: usize = 512;
 /// The largest modulus [`generate`] makes, in bits.
-pub const MAX_MODULUS_BITS: usize = 8192;
+const MAX_MODULUS_BITS: usize = 8192;
 
 /// The modulus' size in bits for the requested `bits`
 /// (`VG.Spec.RsaKeyGen.modulusBits`), and the public exponent without its
@@ -440,38 +373,6 @@ fn params(bits: usize, public_exponent: &[u8]) -> Result<(usize, &[u8]), Error> 
         return Err(Error::InvalidModulusLength);
     }
     Ok((nlen, e))
-}
-
-/// The message representative of BoringSSL's pairwise consistency test
-/// (`VG.Spec.RsaKeyGen.pairwiseMessage`) for a `k`-byte modulus:
-/// EMSA-PKCS1-v1_5 of SHA-256 with a digest of 32 zero bytes.
-fn pairwise_message(k: usize) -> Vec<u8> {
-    const PREFIX: [u8; 19] = [
-        0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
-        0x05, 0x00, 0x04, 0x20,
-    ];
-    let mut em = vec![0xff; k];
-    em[0] = 0;
-    em[1] = 1;
-    let t = k - PREFIX.len() - 32;
-    em[t - 1] = 0;
-    em[t..t + PREFIX.len()].copy_from_slice(&PREFIX);
-    em[t + PREFIX.len()..].fill(0);
-    em
-}
-
-/// The pairwise consistency test of BoringSSL's `RSA_check_fips`
-/// (`VG.Spec.RsaKeyGen.pairwiseOk`): the message representative signed with
-/// the private key, by the private-key operation checked against `e`,
-/// verifies with the public key.
-fn pairwise_ok(key: &PrivateKey) -> bool {
-    let em = pairwise_message(key.modulus_len());
-    let mut s = vec![0u8; em.len()];
-    key.private_op(&em, &mut s).is_ok()
-        && PublicKey::new(&key.n, &key.e).is_ok_and(|public| {
-            let mut v = vec![0u8; em.len()];
-            public.public_op(&s, &mut v).is_ok() && v == em
-        })
 }
 
 /// One generation of BoringSSL's `rsa_generate_key_impl`
@@ -492,10 +393,9 @@ fn generate_once(
             key
         });
         crate::zeroize::zeroize(&mut p);
-        match r {
-            // `d ≤ 2^(nlen / 2)`: both primes again.
-            Err(Error::SmallPrivateExponent) => {}
-            r => return r,
+        // `None`: `d ≤ 2^(nlen / 2)`, both primes again.
+        if let Some(key) = r? {
+            return Ok(key);
         }
     }
 }
@@ -504,8 +404,7 @@ fn generate_once(
 /// to a multiple of 128 (from 512 to 8192 bits), and the public exponent
 /// `e` (big-endian, odd, from 3 to `2^32 - 1`, with any number of leading
 /// zero bytes), from the operating system's random number generator, as
-/// BoringSSL's `RSA_generate_key_ex` and then its pairwise consistency test
-/// make it (`VG.Spec.RsaKeyGen.generate`).
+/// BoringSSL's `RSA_generate_key_ex` makes it (`VG.Spec.RsaKeyGen.generate`).
 pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error> {
     let (nlen, e) = params(bits, public_exponent)?;
     let len = nlen / 16;
@@ -519,6 +418,11 @@ pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error
 /// [`Error::NotEnoughRandomness`] if they run out first. A generation that
 /// fails with too many rejected candidates starts again from where it
 /// stopped reading, up to four times in all.
+///
+/// Not part of the API: it lets benchmarks measure [`generate`] on
+/// identical work, from fixed tapes. The key is secret only if `rand` is
+/// uniformly random, and never reused.
+#[doc(hidden)]
 pub fn generate_from(
     bits: usize,
     public_exponent: &[u8],
@@ -543,14 +447,7 @@ fn generate_with(
     for _ in 0..4 {
         match generate_once(e, prime) {
             Err(Error::TooManyIterations) => {}
-            r => {
-                let key = r?;
-                return if pairwise_ok(&key) {
-                    Ok(key)
-                } else {
-                    Err(Error::PairwiseTestFailed)
-                };
-            }
+            r => return r,
         }
     }
     Err(Error::TooManyIterations)
@@ -559,50 +456,37 @@ fn generate_with(
 #[cfg(test)]
 mod tests {
     use super::{
-        Error, Random, Vec, generate, generate_from, generate_prime, generate_prime_from,
-        generate_with, key_from_primes, pairwise_ok, prime_from, vec,
+        Error, PrivateKey, Random, Vec, fill_random, generate, generate_from, generate_with,
+        key_from_primes, prime_from, vec,
     };
+
+    /// Whether `key` loads again from its CRT values: whether BoringSSL's
+    /// `RSA_check_key` accepts it (`PrivateKey::from_crt`).
+    pub(super) fn reloads(key: &PrivateKey) -> bool {
+        let c = key.components();
+        PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).is_ok()
+    }
+
+    /// A prime of `bits` bits for `e`, from the operating system's random
+    /// octets.
+    fn prime(bits: usize, e: &[u8], other: Option<&[u8]>) -> Vec<u8> {
+        Random::new(fill_random)
+            .prime(bits / 8, 5 * bits, e, other)
+            .unwrap()
+    }
 
     #[test]
     fn errors_display() {
         for e in [
-            Error::InvalidLength,
             Error::InvalidExponent,
             Error::InvalidModulusLength,
-            Error::InvalidOtherPrime,
             Error::TooManyIterations,
             Error::NotEnoughRandomness,
             Error::Randomness,
-            Error::SmallPrivateExponent,
             Error::InvalidKey,
-            Error::PairwiseTestFailed,
         ] {
             assert!(!alloc::format!("{e}").is_empty());
         }
-    }
-
-    #[test]
-    fn invalid() {
-        for bits in [0, 128, 192, 255, 257, 4096 + 64] {
-            assert_eq!(generate_prime(bits, &[3], None), Err(Error::InvalidLength));
-            assert_eq!(
-                generate_prime_from(bits, &[3], None, &[]),
-                Err(Error::InvalidLength)
-            );
-        }
-        assert_eq!(generate_prime(256, &[], None), Err(Error::InvalidExponent));
-        assert_eq!(
-            generate_prime(256, &[1; 9], None),
-            Err(Error::InvalidExponent)
-        );
-        assert_eq!(
-            generate_prime(256, &[3], Some(&[0xff; 31])),
-            Err(Error::InvalidOtherPrime)
-        );
-        assert_eq!(
-            generate_prime(256, &[3], Some(&[0xff; 33])),
-            Err(Error::InvalidOtherPrime)
-        );
     }
 
     /// Candidates from zeros: `2^255 + 2^254 + 1`, which is 1 modulo 3, so
@@ -610,22 +494,16 @@ mod tests {
     #[test]
     fn too_many_iterations() {
         let zeros = vec![0u8; 32 * 8 * 256];
-        assert_eq!(
-            generate_prime_from(256, &[3], None, &zeros),
-            Err(Error::TooManyIterations)
-        );
-        assert_eq!(
-            generate_prime_from(256, &[0, 0, 3], None, &zeros),
-            Err(Error::TooManyIterations)
-        );
+        let from = |e: &[u8], limit, rand: &[u8]| prime_from(32, limit, e, None, rand).0;
+        assert_eq!(from(&[3], 8 * 256, &zeros), Err(Error::TooManyIterations));
         // `e = 15` rejects them too, but allows only `5 bits` rejections.
         assert_eq!(
-            generate_prime_from(256, &[15], None, &zeros[..32 * 5 * 256]),
+            from(&[15], 5 * 256, &zeros[..32 * 5 * 256]),
             Err(Error::TooManyIterations)
         );
         // One fewer is not enough.
         assert_eq!(
-            generate_prime_from(256, &[3], None, &zeros[..32 * (8 * 256 - 1)]),
+            from(&[3], 8 * 256, &zeros[..32 * (8 * 256 - 1)]),
             Err(Error::NotEnoughRandomness)
         );
     }
@@ -639,7 +517,7 @@ mod tests {
         other[31] = 1;
         let zeros = vec![0u8; 32 * 8 * 256 + 32];
         assert_eq!(
-            generate_prime_from(256, &[3], Some(&other), &zeros),
+            prime_from(32, 8 * 256, &[3], Some(&other), &zeros).0,
             Err(Error::NotEnoughRandomness)
         );
     }
@@ -662,35 +540,12 @@ mod tests {
     fn primes() {
         for bits in [256, 512, 1024] {
             for other in [None, Some(&[0x80u8; 128][..bits / 8])] {
-                let p = generate_prime(bits, &[1, 0, 1], other).unwrap();
+                let p = prime(bits, &[1, 0, 1], other);
                 assert_eq!(p.len(), bits / 8);
                 assert_eq!(p[0] >> 6, 3);
                 assert_eq!(p[p.len() - 1] & 1, 1);
             }
         }
-    }
-
-    #[test]
-    fn key_invalid() {
-        let p = [0xffu8; 32];
-        for len in [0, 24, 33, 520] {
-            assert_eq!(
-                key_from_primes(&[3], &vec![0xff; len], &vec![0xff; len]).unwrap_err(),
-                Error::InvalidLength
-            );
-        }
-        assert_eq!(
-            key_from_primes(&[], &p, &p).unwrap_err(),
-            Error::InvalidExponent
-        );
-        assert_eq!(
-            key_from_primes(&[1; 9], &p, &p).unwrap_err(),
-            Error::InvalidExponent
-        );
-        assert_eq!(
-            key_from_primes(&[3], &p, &p[1..]).unwrap_err(),
-            Error::InvalidOtherPrime
-        );
     }
 
     /// With `p = q`, `lcm(p - 1, q - 1) = p - 1`, so that `d < p`: too small,
@@ -701,10 +556,7 @@ mod tests {
         let mut p = [0u8; 32];
         p[0] = 0xc0;
         p[31] = 3;
-        assert_eq!(
-            key_from_primes(&[3], &p, &p).unwrap_err(),
-            Error::SmallPrivateExponent
-        );
+        assert!(key_from_primes(&[3], &p, &p).unwrap().is_none());
         p[31] = 1;
         assert_eq!(
             key_from_primes(&[3], &p, &p).unwrap_err(),
@@ -716,10 +568,10 @@ mod tests {
     #[test]
     fn keys() {
         for bits in [256, 512, 1024] {
-            let p = generate_prime(bits, &[1, 0, 1], None).unwrap();
-            let q = generate_prime(bits, &[1, 0, 1], Some(&p)).unwrap();
-            let key = key_from_primes(&[1, 0, 1], &p, &q).unwrap();
-            assert!(key.check_key());
+            let p = prime(bits, &[1, 0, 1], None);
+            let q = prime(bits, &[1, 0, 1], Some(&p));
+            let key = key_from_primes(&[1, 0, 1], &p, &q).unwrap().unwrap();
+            assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 4);
             let (hi, lo) = if p > q { (&p, &q) } else { (&q, &p) };
             let [_, e, _, kp, kq, ..] = key.components();
@@ -754,10 +606,9 @@ mod tests {
     fn generate_keys() {
         for (bits, e) in [(512, &[3][..]), (639, &[0, 0, 3]), (1024, &[1, 0, 1])] {
             let key = generate(bits, e).unwrap();
-            assert!(key.check_key());
+            assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 128 * 16);
             assert_eq!(key.components()[1], crate::rsa::trim(e));
-            assert!(pairwise_ok(&key));
         }
     }
 
@@ -911,9 +762,10 @@ mod tests {
     fn generate_small_d() {
         let mut rand = candidate(&SMALL_D_P, &W);
         rand.extend(candidate(&SMALL_D_Q, &W));
-        assert_eq!(
-            key_from_primes(&[1, 0, 1], &SMALL_D_P, &SMALL_D_Q).unwrap_err(),
-            Error::SmallPrivateExponent
+        assert!(
+            key_from_primes(&[1, 0, 1], &SMALL_D_P, &SMALL_D_Q)
+                .unwrap()
+                .is_none()
         );
         assert_eq!(
             generate_from(512, &[1, 0, 1], &rand).unwrap_err(),
@@ -923,24 +775,28 @@ mod tests {
         rand.extend(candidate(&SMALL_D_Q, &W));
         let (key, read) = generate_from(512, &[1, 0, 1], &rand).unwrap();
         assert_eq!(read, rand.len());
-        assert!(key.check_key());
+        assert!(reloads(&key));
         let [_, _, _, p, q, ..] = key.components();
         assert_eq!((p, q), (&SMALL_D_Q[..], &PRIME[..]));
     }
 
     /// A composite `p` that passes Miller–Rabin gives a key that passes
-    /// BoringSSL's `RSA_check_key`, which does not test primality, but
-    /// fails the pairwise consistency test.
+    /// BoringSSL's `RSA_check_key`, which does not test primality: the
+    /// generation returns it, as BoringSSL's `RSA_generate_key_ex` does, and
+    /// its private-key operations never release a result (the message of
+    /// FIPS 140's pairwise consistency test, which would have refused it,
+    /// fails its check against `e`).
     #[test]
     fn generate_composite() {
         let mut rand = candidate(&COMPOSITE, &LIAR);
         rand.extend(candidate(&SMALL_D_Q, &W));
-        let key = key_from_primes(&[1, 0, 1], &COMPOSITE, &SMALL_D_Q).unwrap();
-        assert!(key.check_key());
-        assert!(!pairwise_ok(&key));
+        let (key, read) = generate_from(512, &[1, 0, 1], &rand).unwrap();
+        assert_eq!(read, rand.len());
+        assert!(reloads(&key));
+        assert_eq!(key.components()[4], COMPOSITE);
         assert_eq!(
-            generate_from(512, &[1, 0, 1], &rand).unwrap_err(),
-            Error::PairwiseTestFailed
+            crate::rsa::pkcs1_sig::sign(&key, &[0; 32], crate::rsa::pkcs1_sig::Hash::Sha256),
+            Err(crate::rsa::pkcs1_sig::Error::Fault)
         );
     }
 }

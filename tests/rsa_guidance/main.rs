@@ -238,18 +238,22 @@ fn rsa_pkcs1_bad_keys() {
     let der = pem(&lines);
     let v = components(&der);
     let ct = &keys()[0].2[0].ct;
-    let with_d =
-        |d: &[u8]| PrivateKey::from_crt(v[1], v[2], d, v[4], v[5], v[6], v[7], v[8]).unwrap();
-    assert_eq!(decrypt(&with_d(&[]), ct), Err(Error::InvalidPrivateKey));
-    assert_eq!(decrypt(&with_d(&[0, 0]), ct), Err(Error::InvalidPrivateKey));
-    assert_eq!(
-        decrypt(&with_d(&vec![1; 257]), ct),
-        Err(Error::InvalidPrivateKey)
-    );
+    let with_d = |d: &[u8]| {
+        PrivateKey::from_crt(v[1], v[2], d, v[4], v[5], v[6], v[7], v[8]).map_err(|e| {
+            assert_eq!(e, verified_garbage::rsa::Error::InvalidPrivateKey);
+        })
+    };
+    // A `d` of zero, longer than `n`, or that does not match `e`: the key
+    // is refused, as loading checks `d` as `RSA_check_key` does.
+    let mut d1 = v[3].to_vec();
+    *d1.last_mut().unwrap() ^= 2;
+    for d in [&[][..], &[0, 0], &[1; 257], &d1] {
+        assert!(with_d(d).is_err());
+    }
     // `d` with leading zeros is the same number.
     let mut d = vec![0, 0];
     d.extend_from_slice(v[3]);
-    assert!(decrypt(&with_d(&d), ct).is_ok());
+    assert!(decrypt(&with_d(&d).unwrap(), ct).is_ok());
     // A `dP` that does not match `e`: the key is refused.
     let mut dp = v[6].to_vec();
     *dp.last_mut().unwrap() ^= 2;

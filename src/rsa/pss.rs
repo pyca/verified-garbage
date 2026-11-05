@@ -104,8 +104,8 @@ pub enum Error {
     /// two bytes are longer than `⌈(bits of n - 1) / 8⌉`.
     SaltTooLong,
     /// The signature failed the private-key operation's check against the
-    /// public exponent (see [`crate::rsa::Error::Fault`]) and is not
-    /// released.
+    /// public exponent (a factor of the key is not prime, or the computation
+    /// was faulted) and is not released.
     Fault,
     /// The random number generator failed.
     Randomness,
