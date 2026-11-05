@@ -434,61 +434,61 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	vaesdeclast ymm6, ymm6, ymm8
 	vaesdeclast ymm7, ymm7, ymm8
 	vextracti128 xmm14, ymm0, 1
-	pxor xmm0, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx]
-	movdqu XMMWORD PTR [rdx], xmm0
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+16]
-	movdqu XMMWORD PTR [rdx+16], xmm14
+	vpxor xmm0, xmm0, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx]
+	vmovdqu XMMWORD PTR [rdx], xmm0
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+16]
+	vmovdqu XMMWORD PTR [rdx+16], xmm14
 	vextracti128 xmm14, ymm1, 1
-	pxor xmm1, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+32]
-	movdqu XMMWORD PTR [rdx+32], xmm1
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+48]
-	movdqu XMMWORD PTR [rdx+48], xmm14
+	vpxor xmm1, xmm1, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+32]
+	vmovdqu XMMWORD PTR [rdx+32], xmm1
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+48]
+	vmovdqu XMMWORD PTR [rdx+48], xmm14
 	vextracti128 xmm14, ymm2, 1
-	pxor xmm2, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+64]
-	movdqu XMMWORD PTR [rdx+64], xmm2
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+80]
-	movdqu XMMWORD PTR [rdx+80], xmm14
+	vpxor xmm2, xmm2, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+64]
+	vmovdqu XMMWORD PTR [rdx+64], xmm2
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+80]
+	vmovdqu XMMWORD PTR [rdx+80], xmm14
 	vextracti128 xmm14, ymm3, 1
-	pxor xmm3, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+96]
-	movdqu XMMWORD PTR [rdx+96], xmm3
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+112]
-	movdqu XMMWORD PTR [rdx+112], xmm14
+	vpxor xmm3, xmm3, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+96]
+	vmovdqu XMMWORD PTR [rdx+96], xmm3
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+112]
+	vmovdqu XMMWORD PTR [rdx+112], xmm14
 	vextracti128 xmm14, ymm4, 1
-	pxor xmm4, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+128]
-	movdqu XMMWORD PTR [rdx+128], xmm4
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+144]
-	movdqu XMMWORD PTR [rdx+144], xmm14
+	vpxor xmm4, xmm4, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+128]
+	vmovdqu XMMWORD PTR [rdx+128], xmm4
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+144]
+	vmovdqu XMMWORD PTR [rdx+144], xmm14
 	vextracti128 xmm14, ymm5, 1
-	pxor xmm5, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+160]
-	movdqu XMMWORD PTR [rdx+160], xmm5
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+176]
-	movdqu XMMWORD PTR [rdx+176], xmm14
+	vpxor xmm5, xmm5, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+160]
+	vmovdqu XMMWORD PTR [rdx+160], xmm5
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+176]
+	vmovdqu XMMWORD PTR [rdx+176], xmm14
 	vextracti128 xmm14, ymm6, 1
-	pxor xmm6, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+192]
-	movdqu XMMWORD PTR [rdx+192], xmm6
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+208]
-	movdqu XMMWORD PTR [rdx+208], xmm14
+	vpxor xmm6, xmm6, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+192]
+	vmovdqu XMMWORD PTR [rdx+192], xmm6
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+208]
+	vmovdqu XMMWORD PTR [rdx+208], xmm14
 	vextracti128 xmm14, ymm7, 1
-	pxor xmm7, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+224]
-	movdqu XMMWORD PTR [rdx+224], xmm7
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+240]
-	movdqu XMMWORD PTR [rdx+240], xmm14
+	vpxor xmm7, xmm7, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+224]
+	vmovdqu XMMWORD PTR [rdx+224], xmm7
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+240]
+	vmovdqu XMMWORD PTR [rdx+240], xmm14
 	add rdx, 256
 	sub rcx, 16
 	cmp rcx, 16
@@ -1472,61 +1472,61 @@ vg_aes_cbc_decrypt_vaes:
 	vaesdeclast ymm6, ymm6, ymm8
 	vaesdeclast ymm7, ymm7, ymm8
 	vextracti128 xmm14, ymm0, 1
-	pxor xmm0, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx]
-	movdqu XMMWORD PTR [rdx], xmm0
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+16]
-	movdqu XMMWORD PTR [rdx+16], xmm14
+	vpxor xmm0, xmm0, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx]
+	vmovdqu XMMWORD PTR [rdx], xmm0
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+16]
+	vmovdqu XMMWORD PTR [rdx+16], xmm14
 	vextracti128 xmm14, ymm1, 1
-	pxor xmm1, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+32]
-	movdqu XMMWORD PTR [rdx+32], xmm1
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+48]
-	movdqu XMMWORD PTR [rdx+48], xmm14
+	vpxor xmm1, xmm1, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+32]
+	vmovdqu XMMWORD PTR [rdx+32], xmm1
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+48]
+	vmovdqu XMMWORD PTR [rdx+48], xmm14
 	vextracti128 xmm14, ymm2, 1
-	pxor xmm2, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+64]
-	movdqu XMMWORD PTR [rdx+64], xmm2
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+80]
-	movdqu XMMWORD PTR [rdx+80], xmm14
+	vpxor xmm2, xmm2, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+64]
+	vmovdqu XMMWORD PTR [rdx+64], xmm2
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+80]
+	vmovdqu XMMWORD PTR [rdx+80], xmm14
 	vextracti128 xmm14, ymm3, 1
-	pxor xmm3, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+96]
-	movdqu XMMWORD PTR [rdx+96], xmm3
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+112]
-	movdqu XMMWORD PTR [rdx+112], xmm14
+	vpxor xmm3, xmm3, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+96]
+	vmovdqu XMMWORD PTR [rdx+96], xmm3
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+112]
+	vmovdqu XMMWORD PTR [rdx+112], xmm14
 	vextracti128 xmm14, ymm4, 1
-	pxor xmm4, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+128]
-	movdqu XMMWORD PTR [rdx+128], xmm4
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+144]
-	movdqu XMMWORD PTR [rdx+144], xmm14
+	vpxor xmm4, xmm4, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+128]
+	vmovdqu XMMWORD PTR [rdx+128], xmm4
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+144]
+	vmovdqu XMMWORD PTR [rdx+144], xmm14
 	vextracti128 xmm14, ymm5, 1
-	pxor xmm5, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+160]
-	movdqu XMMWORD PTR [rdx+160], xmm5
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+176]
-	movdqu XMMWORD PTR [rdx+176], xmm14
+	vpxor xmm5, xmm5, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+160]
+	vmovdqu XMMWORD PTR [rdx+160], xmm5
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+176]
+	vmovdqu XMMWORD PTR [rdx+176], xmm14
 	vextracti128 xmm14, ymm6, 1
-	pxor xmm6, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+192]
-	movdqu XMMWORD PTR [rdx+192], xmm6
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+208]
-	movdqu XMMWORD PTR [rdx+208], xmm14
+	vpxor xmm6, xmm6, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+192]
+	vmovdqu XMMWORD PTR [rdx+192], xmm6
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+208]
+	vmovdqu XMMWORD PTR [rdx+208], xmm14
 	vextracti128 xmm14, ymm7, 1
-	pxor xmm7, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+224]
-	movdqu XMMWORD PTR [rdx+224], xmm7
-	pxor xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+240]
-	movdqu XMMWORD PTR [rdx+240], xmm14
+	vpxor xmm7, xmm7, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+224]
+	vmovdqu XMMWORD PTR [rdx+224], xmm7
+	vpxor xmm14, xmm14, xmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+240]
+	vmovdqu XMMWORD PTR [rdx+240], xmm14
 	add rdx, 256
 	sub rcx, 16
 	cmp rcx, 16

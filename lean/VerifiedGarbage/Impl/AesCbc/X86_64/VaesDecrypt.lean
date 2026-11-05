@@ -10,12 +10,22 @@ namespace VG.Impl.AesCbc.X86_64.VaesDecrypt
 open VG.X86_64
 open VG.Impl.Aes.X86_64.AesNi (at_ regs8 imcKeys blocksLoad)
 
+/-- VEX-encoded CBC stores avoid a legacy-SSE transition inside the VAES loop. -/
+def finishVex (b : XReg) (j : Nat) : List Instr :=
+  [.vop (.vbin .vpxor .l128 b b .xmm15),
+   .vmovdquLoad .l128 .xmm15 (at_ .rdx (16*j)),
+   .vmovdquStore .l128 (at_ .rdx (16*j)) b]
+
+def finishBlocks : List XReg → Nat → List Instr
+  | [], _ => []
+  | b::bs, j => finishVex b j ++ finishBlocks bs (j+1)
+
 /-- Extract a pair's upper plaintext, then perform the two sequential CBC
 stores. xmm14 is temporary and xmm15 retains the chaining value. -/
 def finishData : List XReg → Nat → List Instr
   | [], _ => []
   | b::bs, j => [.vop (.vextracti128 .xmm14 b 1)] ++
-      Decrypt.finishData [b,.xmm14] (2*j) ++ finishData bs (j+1)
+      finishBlocks [b,.xmm14] (2*j) ++ finishData bs (j+1)
 
 def blocks16 : Prog isa :=
   .seq (.block (Impl.Aes.X86_64.VaesBlocks.loadData regs8 0))

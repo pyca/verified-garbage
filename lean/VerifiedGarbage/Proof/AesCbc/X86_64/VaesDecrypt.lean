@@ -28,6 +28,90 @@ open VG.Impl.Aes.X86_64.AesNi (at_ regs8 imcKeys blocksLoad)
 open VG.Impl.AesCbc.X86_64.VaesDecrypt
 open VG.Spec.Aes (bytesAt)
 
+
+theorem finishVex_ok (b : XReg) (j : Nat) (s : State) (hb : b ≠ .xmm15)
+    (hin : InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (16*j)) 16) :
+    WP isa (.block (finishVex b j)) s fun t =>
+      t.mem = s.mem.writeW (s.gpr .rdx + BitVec.ofNat 64 (16*j)) (s.xmm b ^^^ s.xmm .xmm15) ∧
+      t.xmm .xmm15 = s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (16*j)) 128 ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r, r ≠ b → r ≠ .xmm15 → ∀ l, t.lane r l = s.lane r l) := by
+  let u := (VOp.vbin .vpxor .l128 b b .xmm15).exec s
+  let a := s.gpr .rdx + BitVec.ofNat 64 (16*j)
+  let v := u.setV .l128 .xmm15 (s.mem.readW a 128) 0
+  have ug : u.gpr = s.gpr := VOp.exec_gpr _ _
+  have um : u.mem = s.mem := VOp.exec_mem _ _
+  have ur : u.rd = s.rd := VOp.exec_rd _ _
+  have uw : u.wr = s.wr := VOp.exec_wr _ _
+  have ux : u.xmm b = s.xmm b ^^^ s.xmm .xmm15 := by
+    change u.lane b 0 = _
+    rw [lane_vbin128]
+    simp only [ite_true,VBinOp.sse,XBinOp.eval,State.lane]
+  rw [finishVex,WP.block_cons_iff]
+  refine ⟨u,rfl,?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨v,by
+    simp only [isa,exec,State.load128,ea_at,ofInt_natCast,ug,ur,uw,um]
+    rw [ite_eq_left (inRegions_wr hin)]
+    rfl,?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨v.setMem (s.mem.writeW a (s.xmm b ^^^ s.xmm .xmm15)),by
+    simp only [isa,exec,State.store128_eq,ea_at,ofInt_natCast,v,State.setV_gpr,State.setV_wr,
+      State.setV_mem,ug,uw,um,hin,ite_true,xmm_setV,ite_eq_right hb,ux]
+    rfl,WP.block_nil ?_⟩
+  refine ⟨rfl,?_,by simp [v,ug],by simp [v,ur],by simp [v,uw],fun r h₁ h₂ l => ?_⟩
+  · change v.xmm .xmm15 = _
+    simp only [v,xmm_setV,ite_true,a]
+  · rw [State.setMem_lane,State.lane_setV128,ite_eq_right h₂,lane_vbin128,ite_eq_right h₁]
+
+theorem finishBlocks_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.State}
+    {chain : Nat → BitVec 128} (hn : 16*n ≤ 2^64)
+    (hnext : ∀ k < n, chain (k+1) = m₀.readW (D + BitVec.ofNat 64 (16*k)) 128) :
+    ∀ (rs : List XReg) (j : Nat) (s : State), rs.Nodup → .xmm15 ∉ rs →
+    s.gpr .rdx = D + BitVec.ofNat 64 (16*c) → c+j+rs.length ≤ n →
+    (⟨D,16*n⟩ : Region) ∈ s.wr → DataInv m₀ s.mem D n (c+j) F →
+    s.xmm .xmm15 = chain (c+j) →
+    (∀ k (h : k < rs.length), st (s.xmm rs[k] ^^^ chain (c+j+k)) = F (c+j+k)) →
+    WP isa (.block (finishBlocks rs j)) s fun t =>
+      DataInv m₀ t.mem D n (c+j+rs.length) F ∧ t.xmm .xmm15 = chain (c+j+rs.length) ∧
+      Frame [⟨D,16*n⟩] s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r, r ≠ .xmm15 → r ∉ rs → ∀ l, t.lane r l = s.lane r l)
+  | [], _, s, _, _, _, _, _, hd, hx, _ =>
+    WP.block_nil ⟨hd,hx,Frame.refl _ _,rfl,rfl,rfl,fun _ _ _ _ => rfl⟩
+  | b::bs, j, s, hnd, h15, hg, hc, hw, hd, hx, hv => by
+    have hb : b ≠ .xmm15 := fun h => h15 (h ▸ List.mem_cons_self)
+    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+    have h15' : .xmm15 ∉ bs := fun h => h15 (List.mem_cons_of_mem _ h)
+    simp only [List.length_cons] at hc
+    have addr : s.gpr .rdx + BitVec.ofNat 64 (16*j) = D + BitVec.ofNat 64 (16*(c+j)) := by
+      rw [hg, Offset.add_add_eq D (c := 16*(c+j)) (by omega_arith)]
+    rw [finishBlocks, WP.block_append_iff]
+    refine WP.mono (finishVex_ok b j s hb (by
+      rw [addr]; exact ⟨_, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩))
+      fun t ⟨hm,hx',hg',hr,hw',ho⟩ => ?_
+    rw [addr] at hm hx'
+    have hv0 : st (s.xmm b ^^^ s.xmm .xmm15) = F (c+j) := by
+      rw [hx]; exact hv 0 (by simp)
+    have hd' := Decrypt.data_write hn (by omega_arith) hd hv0
+    rw [← hm] at hd'
+    have hchain : t.xmm .xmm15 = chain (c+(j+1)) := by
+      rw [hx', Decrypt.original_word hd (by omega_arith) (by omega_arith), ← hnext (c+j) (by omega_arith)]
+      congr 1
+    have hf : Frame [⟨D,16*n⟩] s.mem t.mem := by
+      rw [hm]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    refine WP.mono (finishBlocks_ok (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain) hn hnext bs (j+1) t (List.nodup_cons.mp hnd).2 h15'
+      (by rw [hg']; exact hg) (by omega_arith) (hw' ▸ hw) (by simpa [Nat.add_assoc] using hd') hchain
+      (fun k hk => by
+        rw [← show t.lane bs[k] 0 = t.xmm bs[k] from rfl,
+          ho _ (fun h => hbs (h ▸ List.getElem_mem hk)) (fun h => h15' (h ▸ List.getElem_mem hk)) 0,
+          show c+(j+1)+k=c+j+(k+1) by omega_arith]
+        exact hv (k+1) (by simp; omega_arith))) fun u ⟨hu,hx'',hf',hg'',hr',hw'',ho'⟩ => ?_
+    have he : c+(j+1)+bs.length = c+j+(b::bs).length := by simp; omega_arith
+    rw [he] at hu hx''
+    exact ⟨hu,hx'',hf.trans hf',hg''.trans hg',hr'.trans hr,hw''.trans hw',fun r h₁ h₂ l =>
+      (ho' r h₁ (fun h => h₂ (List.mem_cons_of_mem _ h)) l).trans
+        (ho r (fun h => h₂ (h ▸ List.mem_cons_self)) h₁ l)⟩
+
 theorem extract_ok (b : XReg) (s : State) :
     WP isa (.block [.vop (.vextracti128 .xmm14 b 1)]) s fun t =>
       t.xmm .xmm14 = s.lane b 1 ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
@@ -62,7 +146,7 @@ theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.
     have h15' : .xmm15 ∉ bs := fun h => h15 (List.mem_cons_of_mem _ h)
     rw [finishData,WP.block_append_iff,WP.block_append_iff]
     refine WP.mono (extract_ok b s) fun u ⟨hu,gu,mu,ru,wu,ou⟩ => ?_
-    refine WP.mono (Decrypt.finishData_ok (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain)
+    refine WP.mono (finishBlocks_ok (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain)
       hn hnext [b,.xmm14] (2*j) u (by simp [hb14]) (by
         intro h
         simp only [List.mem_cons,List.not_mem_nil,or_false] at h
@@ -82,17 +166,10 @@ theorem finishData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.
           change st (u.xmm .xmm14 ^^^ chain (c+2*j+1)) = F (c+2*j+1)
           rw [hu]
           exact hv1))
-      fun v ⟨hdv,hxv,hfv,gv,rv,wv,yv,ov⟩ => ?_
+      fun v ⟨hdv,hxv,hfv,gv,rv,wv,ov⟩ => ?_
     have keep (r : XReg) (h₁ : r ≠ .xmm15) (h₂ : r ≠ .xmm14) (h₃ : r ≠ b) (l : Nat) :
-        v.lane r l = s.lane r l := by
-      by_cases hl : l=0
-      · subst hl
-        change v.xmm r = s.xmm r
-        rw [ov r h₁ (by simp [h₂,h₃])]
-        exact ou r h₂ 0
-      · simp only [State.lane,ite_eq_right hl]
-        rw [yv]
-        simpa only [State.lane,ite_eq_right hl] using ou r h₂ l
+        v.lane r l = s.lane r l :=
+      (ov r h₁ (by simp [h₂,h₃]) l).trans (ou r h₂ l)
     refine WP.mono (finishData_ok (m₀ := m₀) (D := D) (n := n) (c := c) (F := F) (chain := chain)
       hn hnext bs (j+1) v (List.nodup_cons.mp hnd).2 h14' h15'
       (by rw [gv,gu]; exact hg) (by simp only [List.length_cons] at hc; omega_arith) (by rw [wv,wu]; exact hw)
