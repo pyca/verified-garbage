@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Init
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # AES-OCB (RFC 7253) on RISC-V -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SHA-224 (FIPS 180-4) on PPC64LE -/
 

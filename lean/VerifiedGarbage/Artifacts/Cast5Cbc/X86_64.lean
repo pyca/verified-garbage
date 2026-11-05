@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
 import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # CAST5-CBC artifacts on baseline x86-64 -/
 

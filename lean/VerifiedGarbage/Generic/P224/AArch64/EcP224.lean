@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags

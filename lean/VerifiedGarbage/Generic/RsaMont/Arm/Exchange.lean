@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Shared-secret exponentiation inherits every shared RSA Montgomery backend -/
 

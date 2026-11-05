@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # ML-DSA (FIPS 204) key generation on PPC64LE -/
 

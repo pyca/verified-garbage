@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Streaming ChaCha20 (RFC 8439) on x86-64: `vg_chacha20_apply` -/
 

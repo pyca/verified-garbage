@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86-64 -/
 

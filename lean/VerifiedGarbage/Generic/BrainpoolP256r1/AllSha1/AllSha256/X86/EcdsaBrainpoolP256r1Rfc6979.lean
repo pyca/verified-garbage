@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP256r1
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Deterministic ECDSA (RFC 6979) over brainpoolP256r1 on x86 (32-bit), with HMAC as a table -/
 

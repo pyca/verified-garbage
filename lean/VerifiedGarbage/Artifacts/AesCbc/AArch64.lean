@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 
 /-! # AES-CBC decryption with seven independent AES states -/

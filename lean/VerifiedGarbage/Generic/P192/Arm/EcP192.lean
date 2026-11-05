@@ -35,6 +35,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.EcKey.Arm.Finish
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish

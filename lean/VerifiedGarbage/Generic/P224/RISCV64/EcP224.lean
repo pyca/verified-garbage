@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 
 /-! # P-224 public keys (FIPS 186-5 §A.2) on RISC-V -/

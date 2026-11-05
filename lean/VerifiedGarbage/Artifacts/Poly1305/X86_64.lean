@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit

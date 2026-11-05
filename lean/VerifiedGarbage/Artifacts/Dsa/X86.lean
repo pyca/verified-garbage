@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
 public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA key generation, signing with a sampled nonce, and verification, on baseline i686 -/

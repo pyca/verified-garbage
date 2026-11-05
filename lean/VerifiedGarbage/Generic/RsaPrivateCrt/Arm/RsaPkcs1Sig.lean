@@ -351,6 +351,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # RSASSA-PKCS1-v1_5 signing on ARMv7, for each implementation of the CRT -/
 

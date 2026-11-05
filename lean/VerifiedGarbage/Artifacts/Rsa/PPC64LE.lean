@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # RSA (RFC 8017) on PPC64LE -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # ML-DSA (FIPS 204) verification on PPC64LE -/
 

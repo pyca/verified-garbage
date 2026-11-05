@@ -37,6 +37,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer

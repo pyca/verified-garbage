@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

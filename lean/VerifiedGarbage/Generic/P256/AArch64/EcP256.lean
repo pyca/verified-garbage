@@ -47,6 +47,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract

@@ -61,6 +61,7 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
 public import VerifiedGarbage.Proof.HashTable.X86_64
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # RSAES-OAEP decryption on x86-64, with both hash functions as tables -/
 

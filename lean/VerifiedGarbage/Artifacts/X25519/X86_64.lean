@@ -16,6 +16,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit

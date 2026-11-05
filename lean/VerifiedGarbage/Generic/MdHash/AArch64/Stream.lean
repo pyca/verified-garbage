@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Streaming Merkle–Damgård hash functions on AArch64 -/
 

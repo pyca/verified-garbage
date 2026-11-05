@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.TCB.AArch64.Print
 
 @[expose] public section
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 

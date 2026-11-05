@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Emit FFDH key generation from the context for every shared arithmetic backend -/
 

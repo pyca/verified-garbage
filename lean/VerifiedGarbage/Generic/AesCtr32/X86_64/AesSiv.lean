@@ -72,6 +72,7 @@ public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # AES-SIV (RFC 5297) key setup on x86-64 -/
 

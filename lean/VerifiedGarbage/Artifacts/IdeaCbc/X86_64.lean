@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 
 /-! # IDEA-CBC artifacts on baseline x86-64 -/

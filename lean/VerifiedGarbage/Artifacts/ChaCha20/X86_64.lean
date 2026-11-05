@@ -10,6 +10,7 @@ public import Mathlib.Data.List.Induction
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Streaming ChaCha20 (RFC 8439) on x86-64 -/
 

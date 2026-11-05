@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Init
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # AES-OCB (RFC 7253) on PPC64LE -/
 

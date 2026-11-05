@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
 import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 import VerifiedGarbage.Proof.AesCcm.AArch64.Header

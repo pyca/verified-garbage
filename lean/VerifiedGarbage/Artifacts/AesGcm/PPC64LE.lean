@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit

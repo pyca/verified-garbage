@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # CAST5-CBC artifacts on baseline ARMv7 -/
 

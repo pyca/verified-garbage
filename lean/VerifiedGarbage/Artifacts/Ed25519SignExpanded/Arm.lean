@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Expanded
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Ed25519 signing from the seed's cached SHA-512 digest -/
 

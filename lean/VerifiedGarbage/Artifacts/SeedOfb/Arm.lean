@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SEED-OFB artifacts on baseline ARMv7 -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # HMAC-SHA-1 (RFC 2104) on RISC-V -/
 

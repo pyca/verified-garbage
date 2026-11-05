@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
 
 /-! # SM4-CFB128 artifacts on baseline x86 (32-bit) -/

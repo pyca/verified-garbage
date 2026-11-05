@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/

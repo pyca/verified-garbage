@@ -33,6 +33,7 @@ public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Init

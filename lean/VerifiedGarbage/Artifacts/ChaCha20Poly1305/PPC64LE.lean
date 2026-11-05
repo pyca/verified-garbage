@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on PPC64LE -/
 

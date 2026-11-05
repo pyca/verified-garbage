@@ -29,6 +29,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
 public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT

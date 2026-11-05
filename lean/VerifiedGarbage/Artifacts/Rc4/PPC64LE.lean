@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Rc4.PPC64LE.Lit
 
 /-! # Raw RC4 on PPC64LE -/

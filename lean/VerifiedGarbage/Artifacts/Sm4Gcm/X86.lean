@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86.Ctr32Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Frame
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 
 /-! # SM4-GCM on baseline x86 (32-bit): its key setup -/

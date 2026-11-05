@@ -103,6 +103,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDH over P-192 (SP 800-56A) on x86 (32-bit) -/
 

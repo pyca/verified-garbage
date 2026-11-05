@@ -191,4 +191,32 @@ def Printer.function (body : Code M.Instr M.Cond) : List Line :=
   let (l, k, _) := P.lower body 0
   l ++ P.ret.map .text ++ k
 
+/-- What the emitter needs of the target whose ISA is `M`, besides its model
+and calling convention (`Target`): the printer of its code, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory. Each target's printer module
+(`TCB/<ISA>/Print.lean`) declares the one instance for its ISA, and
+`Api.artifact` takes it with the target (`EmitTarget`). None of it is part of
+`Target`, which every proof imports, so that a change to it rebuilds only what
+emits code, not the proofs. -/
+class Emitter (M : ISA) where
+  printer : Printer M
+  /-- The Rust `cfg` predicate under which the target's functions are
+  compiled. It must exclude every configuration of the architecture that the
+  model does not describe: memory is little-endian in every ISA model
+  (`TCB/Mem.lean`), and pointers have the calling convention's width
+  (`Abi.ptrBits`), which the contracts assume. -/
+  rustCfg : String
+  /-- The Rust ABI string of the generated functions (e.g. `sysv64`), which
+  the target's calling convention (`Target.abi`) stands for. -/
+  rustAbi : String
+  /-- How documentation names the calling convention's `argArea ws`, for
+  arguments of the widths `ws`: `none` if it is empty on every state;
+  otherwise its name and whether it is writable (the flag `argArea` gives
+  each of its regions). -/
+  argAreaDoc : List Nat → Option (String × Bool)
+  /-- How documentation names the calling convention's `reserved n`: `none`
+  if it is empty on every state. -/
+  reservedDoc : Nat → Option String
+
 end VG

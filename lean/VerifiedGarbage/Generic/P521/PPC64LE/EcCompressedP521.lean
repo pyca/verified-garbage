@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P521.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P521
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Lit
 
 /-! # P-521 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/

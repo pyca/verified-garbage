@@ -183,6 +183,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit) -/
 

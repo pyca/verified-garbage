@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Public-key validation inherits every shared RSA Montgomery backend -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Poly1305.Arm.Init
 public import VerifiedGarbage.Proof.Poly1305.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Poly1305 (RFC 8439 §2.5) on 32-bit ARM -/
 

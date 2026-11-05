@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcCT
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
 

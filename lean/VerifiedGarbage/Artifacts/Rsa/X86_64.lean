@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 

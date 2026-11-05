@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.X86.KeyVerified
 public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # CAST5 key expansion and ECB on baseline 32-bit x86 -/
 

@@ -13,6 +13,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # SHA-1 (FIPS 180-4) on x86 -/
 

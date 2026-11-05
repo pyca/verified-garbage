@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 

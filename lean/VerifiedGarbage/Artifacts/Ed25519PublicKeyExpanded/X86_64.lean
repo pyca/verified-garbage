@@ -18,6 +18,7 @@ public import Init.Data.String.Defs
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Ed25519 public-key derivation from the seed's SHA-512 digest on x86-64 -/
 

@@ -44,6 +44,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.EcKey.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.Sign

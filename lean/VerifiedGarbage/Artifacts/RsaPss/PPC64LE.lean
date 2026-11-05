@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # RSASSA-PSS on PPC64LE, with the hash functions as tables -/
 

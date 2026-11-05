@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Ctr32Verified
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit

@@ -45,6 +45,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock

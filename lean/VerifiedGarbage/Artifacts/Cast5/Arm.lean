@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # CAST5 key expansion and ECB on baseline ARMv7 -/
 

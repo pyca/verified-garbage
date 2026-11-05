@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -109,9 +109,6 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .r1 ++ s.gpr .r0
-  argAreaDoc ws := if (classify ws 0 0).2 = 0 then none else
-    some ("the arguments on the stack", false)
-  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => (s.syms name).setWidth 64
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
@@ -120,22 +117,7 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "arm"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
-  -- `armeb` targets are big-endian. Apple's 32-bit ARM targets do not use AAPCS:
-  -- `armv7s-apple-ios` uses APCS, where a 64-bit argument takes the next two
-  -- registers (`r1:r2` after one word) rather than an even pair (`r2:r3`,
-  -- AAPCS §5.5, "Parameter Passing", rule C.3), and `armv7k-apple-watchos` uses
-  -- AAPCS16, Apple's variant of AAPCS, which the model has not been checked
-  -- against. The ARMv4T–ARMv6 targets (`armv5te-*`, `arm-*`, …)
-  -- are not ARMv7, which the model describes, but Rust has no stable `cfg` for
-  -- the architecture version (its ARM target features, `v7` included, are
-  -- unstable, and `cfg` does not report them on stable): they are kept out only
-  -- because some functions use `movw`, which is new in ARMv7 (and ARMv6T2), so
-  -- the crate does not assemble for them.
-  rustCfg := "all(target_arch = \"arm\", target_endian = \"little\", \
-    not(target_vendor = \"apple\"))"
-  rustAbi := "C"
   abi := abi
 
 end VG.Arm

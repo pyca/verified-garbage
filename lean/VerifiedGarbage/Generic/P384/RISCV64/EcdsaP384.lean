@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyLit
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.P521.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P521
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.Lit
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on PPC64LE -/

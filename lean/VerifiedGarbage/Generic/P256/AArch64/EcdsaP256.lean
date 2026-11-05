@@ -149,6 +149,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 import VerifiedGarbage.Impl.P256.EcdhJac

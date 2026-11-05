@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CMAC (NIST SP 800-38B) on ARMv7 -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ct.PPC64LE
+public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.Registration
 
 @[expose] public section
 
@@ -9,7 +11,7 @@ open VG.PPC64LE
 
 def artifacts : List Artifact := [
   { Spec.Ct.eqApi with
-    target := target
+    target := .of target
     doc := Spec.Ct.eqApi.doc
     code := Impl.Ct.PPC64LE.eq
     contract := Spec.Ct.eqContract abi

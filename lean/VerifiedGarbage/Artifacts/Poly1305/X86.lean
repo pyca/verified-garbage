@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86.Init
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/
 

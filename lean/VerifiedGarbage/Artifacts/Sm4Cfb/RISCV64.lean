@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 
 /-! # SM4-CFB128 artifacts on baseline RISC-V -/

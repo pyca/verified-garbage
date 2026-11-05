@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer

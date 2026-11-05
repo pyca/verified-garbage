@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Seed.X86.KeyVerified
 public import VerifiedGarbage.Proof.Seed.X86.Verified
 public import VerifiedGarbage.Proof.Seed.X86.EcbCall
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Seed.X86.Lit
 
 /-! # SEED artifacts on baseline x86 (32-bit) -/

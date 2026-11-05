@@ -44,6 +44,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.KeySteps
 public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

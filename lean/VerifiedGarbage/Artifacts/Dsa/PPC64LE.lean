@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # DSA on PPC64LE -/
 

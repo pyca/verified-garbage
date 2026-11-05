@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P384
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhLit
 
 /-! # ECDH over P-384 (SP 800-56A §5.7.1.2) on RISC-V -/

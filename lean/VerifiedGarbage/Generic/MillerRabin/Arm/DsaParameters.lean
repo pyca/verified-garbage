@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # DSA parameter generation on ARMv7, calling the probable-prime test over each Miller–Rabin round -/
 

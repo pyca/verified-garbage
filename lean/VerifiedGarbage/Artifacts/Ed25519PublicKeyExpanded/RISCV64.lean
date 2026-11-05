@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.ExpandedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Ed25519's public key from the seed's SHA-512 digest, on RISC-V -/
 

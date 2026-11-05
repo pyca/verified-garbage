@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # AES-SIV (RFC 5297) on PPC64LE -/
 

@@ -69,6 +69,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.X86_64.Check

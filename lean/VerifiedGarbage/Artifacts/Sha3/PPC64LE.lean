@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Permute
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SHA-3 and SHAKE (FIPS 202) on PPC64LE -/
 

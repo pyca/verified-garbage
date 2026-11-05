@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -87,9 +87,6 @@ def abi : Abi isa where
   wr s := s.wr
   ret s := s.gpr .edx ++ s.gpr .eax
   sym := some fun s name => (s.syms name).setWidth 64
-  argAreaDoc ws := if argBytes ws = 0 then none else some ("the arguments on the stack", true)
-  reservedDoc n := some (if n = 0 then "the return address on the stack" else
-    s!"the return address on the stack or the {n} bytes of stack below it")
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter
@@ -97,12 +94,7 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "x86"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
-  -- The model's baseline is i686 with SSE2 (`TCB/X86/Isa.lean`), which the
-  -- `i586-*` targets and `i686-unknown-uefi` lack.
-  rustCfg := "all(target_arch = \"x86\", target_feature = \"sse2\")"
-  rustAbi := "C"
   abi := abi
 
 end VG.X86

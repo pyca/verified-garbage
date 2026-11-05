@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # RSAES-OAEP decryption on x86, with both hash functions as tables -/
 
