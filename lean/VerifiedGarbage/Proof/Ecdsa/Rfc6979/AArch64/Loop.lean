@@ -121,7 +121,7 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₂ : d + n ≤ 256 + 8 * L.e) :
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (r : Region) : Prop :=
   r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 144⟩ ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 192, 8⟩ ∨
-    r = ⟨L.B + BitVec.ofNat 64 (16 + fT), 136⟩
+    r = ⟨L.B + BitVec.ofNat 64 (16 + fT), 136⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 128⟩
 
 theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint ⟨dgArg P L, P.Q⟩ r := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
@@ -129,13 +129,14 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint �
   have key : ∀ o, 200 ≤ o → o + P.Q ≤ 16 + fT → Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ r := by
     intro o h₁ h₂
     simp only [fT] at h₂
-    rcases h with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hL.stk_SCR (by omega_arith)
     · exact hL.stk_OUT (by omega_arith)
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inl (by simp only [fT]; omega_arith)) (by omega_arith) (by simp only [fT]; omega_arith)
+    · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   simp only [dgArg]
   split
   · exact key _ (by simp only [fXc]; omega_arith) (by simp only [fXc, fT]; omega_arith)
