@@ -237,4 +237,132 @@ theorem candStep_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (
 
 end
 
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+/-- The candidate: `nV` `V`s of successive `V = HMAC_K(V)`. -/
+theorem cand_ok {K V₀ : List Byte} {t : State} (h : KVH P s₀ K V₀ t) (hsy : t.syms = s₀.syms) :
+    WP isa P.c.cand t fun w => KVH P s₀ K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K P.nV V₀).2 w ∧
+      bytesAt w.mem (sA s₀ fT) (P.nV * P.H.D) = (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K P.nV V₀).1 ∧
+      w.gpr .s5 = t.gpr .s5 ∧ w.syms = s₀.syms := by
+  obtain ⟨hN1, -, -⟩ := nV_facts P
+  unfold Cfg.cand Cfg.tInit
+  refine WP.seq (VG.RISCV64.WP.of_syms (wp_li (imm := 0) (by decide) fun t₁ u₁ => WP.block_nil fun y₁ => ?_))
+  have I₀ : CI P s₀ K V₀ (t.gpr .s5) 0 t₁ :=
+    ⟨⟨h.kr.upd (by decide) u₁, by rw [u₁.mem]; exact h.k, by rw [u₁.mem]; exact h.v, by rw [u₁.mem]; exact h.h,
+      by rw [u₁.mem]; exact h.x⟩, by rw [u₁.gpr, Nat.zero_mul], by simp [bytesAt, Spec.Ecdsa.Rfc6979.genT],
+      u₁.other _ (by decide), y₁.trans hsy⟩
+  refine WP.loop (M := isa) (fun n u => ∃ j, n = P.nV - j ∧ j < P.nV ∧ CI P s₀ K V₀ (t.gpr .s5) j u) ?_ _ t₁
+    ⟨0, rfl, hN1, I₀⟩
+  rintro n u ⟨j, rfl, hj, hI⟩
+  refine WP.mono (candStep_ok hp hj hI) fun w ⟨hw, he⟩ => ?_
+  by_cases hg : j + 1 < P.nV
+  · exact .inr ⟨by rw [he, decide_eq_true hg], _, by omega, j + 1, rfl, hg, hw⟩
+  · have e : j + 1 = P.nV := by omega
+    rw [e] at hw
+    exact .inl ⟨by rw [he, decide_eq_false hg], hw.kvh, hw.T, hw.s5, hw.sy⟩
+
+end
+
+/-! ## The candidates' signatures -/
+
+/-- `K` and `V` after steps b–g, before candidate `i`, candidate `i`'s `T`,
+and its signature. -/
+abbrev kv0 (P : Rfc) (s₀ : State) : List Byte × List Byte :=
+  Spec.Ecdsa.Rfc6979.init P.kit.E.curve P.hH.SH.H P.H.D (xOf P s₀) (hBOf P s₀)
+abbrev kvI (P : Rfc) (s₀ : State) (i : Nat) : List Byte × List Byte :=
+  VG.Proof.Ecdsa.Rfc6979.kvAtB P.hH.SH.H P.nV (kv0 P s₀).1 (kv0 P s₀).2 i
+abbrev candI (P : Rfc) (s₀ : State) (i : Nat) : List Byte :=
+  VG.Proof.Ecdsa.Rfc6979.candAtB P.hH.SH.H P.nV (kv0 P s₀).1 (kv0 P s₀).2 i
+abbrev sigI (P : Rfc) (s₀ : State) (i : Nat) : Option (Nat × Nat) :=
+  Spec.Ecdsa.signWith P.kit.E.curve (xOf P s₀) (eOf P s₀) (Spec.Ecdsa.Rfc6979.bits2int P.kit.E.curve (candI P s₀ i))
+
+/-- Before candidate `i`. -/
+structure LoopInv (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop where
+  lt : i < P.c.tries
+  kvh : KVH P s₀ (kvI P s₀ i).1 (kvI P s₀ i).2 t
+  cnt : t.gpr .s5 = BitVec.ofNat 64 (P.c.tries - i)
+  fails : ∀ j < i, sigI P s₀ j = none
+  sy : t.syms = s₀.syms
+
+/-- What the function's result is, for the signature `r` of the last candidate. -/
+def ResultIs (P : Rfc) (s₀ : State) (r : Option (Nat × Nat)) (t : State) : Prop :=
+  match r with
+  | some rs => t.gpr .a0 = 1 ∧ bytesAt t.mem (out s₀) (2 * P.Q) = Spec.Ecdsa.encode P.kit.E.curve rs
+  | none => t.gpr .a0 = 0 ∧ bytesAt t.mem (out s₀) (2 * P.Q) = List.replicate (2 * P.Q) 0
+
+/-- After the loop, at candidate `i`: suitable or the last. -/
+structure Exit (P : Rfc) (s₀ : State) (i : Nat) (t : State) : Prop where
+  lt : i < P.c.tries
+  kr : KR P s₀ t
+  fails : ∀ j < i, sigI P s₀ j = none
+  last : sigI P s₀ i ≠ none ∨ i + 1 = P.c.tries
+  res : ResultIs P s₀ (sigI P s₀ i) t
+
+theorem ResultIs.keep {P : Rfc} {s₀ : State} {r : Option (Nat × Nat)} {t t' : State} (h : ResultIs P s₀ r t)
+    (ha : t'.gpr .a0 = t.gpr .a0) (hm : bytesAt t'.mem (out s₀) (2 * P.Q) = bytesAt t.mem (out s₀) (2 * P.Q)) :
+    ResultIs P s₀ r t' := by
+  unfold ResultIs at *
+  split at h <;> exact ⟨by rw [ha]; exact h.1, by rw [hm]; exact h.2⟩
+
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+/-- What `core` reads is candidate `i`'s signature's input: the digest, `X`'s
+last `G` bytes, and `k`, `T`'s first `Q`. -/
+theorem sg_eq {t : State} (hk : KR P s₀ t) (hx : xOfM P s₀ t.mem = xSpec P s₀) {i : Nat}
+    (hT : bytesAt t.mem (sA s₀ fT) (P.nV * P.H.D) = candI P s₀ i) :
+    sgOf P.kit.E P.Q P.kit.G P.kit.sh t.mem (dk s₀) (sA s₀ P.c.fDg) (sA s₀ fT) = sigI P s₀ i := by
+  have hz := sizes P
+  obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
+  obtain ⟨hD0, hD⟩ := hz.D
+  obtain ⟨-, -, hNQ⟩ := nV_facts P
+  have hnb : Spec.Ecdsa.nBits P.kit.E.curve + P.kit.sh = 8 * P.Q := P.kit.nbits
+  have hsh := P.kit.sh8
+  have hG := hz.G
+  have hGQ : P.kit.G ≤ P.Q := by
+    cases hb : P.c.big
+    · rw [hG.2.2 hb]
+    · rw [hG.2.1 hb]; have := hz.big.1.mp hb; omega
+  have hfDg : P.c.fDg = fX + (P.Q - P.kit.G) := by rw [Cfg.fDg, hcQ, hG.1]
+  -- `X`'s last `G` bytes
+  have hX : bytesAt t.mem (sA s₀ P.c.fDg) P.kit.G = (xSpec P s₀).drop (P.Q - P.kit.G) := by
+    have e := VG.Proof.Hmac.Common.bytesAt_add t.mem (sA s₀ fX) (P.Q - P.kit.G) P.kit.G
+    rw [Nat.sub_add_cancel hGQ] at e
+    rw [← hx, xOfM, e, List.drop_left' (bytesAt_length _ _ _), add_ofNat_add', hfDg]
+  simp only [sgOf, sigI]
+  congr 1
+  · exact congrArg _ (hk.dBytes hp)
+  · rw [hX]
+    cases hb : P.c.big
+    · have hG' := hG.2.2 hb
+      have hsh0 := P.hsh hb
+      rw [hG', Nat.sub_self, List.drop_zero]
+      have hq : Spec.Ecdsa.nBits P.kit.E.curve = 8 * P.Q := by rw [hsh0] at hnb; omega
+      have hl : (xSpec P s₀).length = P.Q := by
+        simp only [xSpec, List.length_append, List.length_replicate, List.length_take, bytesAt_length]; omega
+      rw [Spec.Ecdsa.hashToInt, ite_eq_left (by rw [hl, hq])]
+      exact x_eq hq (n_ne P) (bytesAt_length _ _ _)
+    · have hG' := hG.2.1 hb
+      have hQb := hz.big.1.mp hb
+      rw [hG']
+      have e : (xSpec P s₀).drop (P.Q - 64) = List.replicate (64 - P.H.D) 0 ++ hBOf P s₀ := by
+        simp only [xSpec, Nat.min_eq_left (show P.H.D ≤ P.Q by omega),
+          List.take_of_length_le (show (hBOf P s₀).length ≤ P.H.D by rw [bytesAt_length])]
+        rw [List.drop_append, List.drop_replicate, List.length_replicate,
+          show P.Q - 64 - (P.Q - P.H.D) = 0 by omega, List.drop_zero, show P.Q - P.H.D - (P.Q - 64) = 64 - P.H.D by omega]
+      have hl : (List.replicate (64 - P.H.D) (0 : Byte) ++ hBOf P s₀).length = 64 := by
+        simp only [List.length_append, List.length_replicate, bytesAt_length]; omega
+      have hlB : (hBOf P s₀).length = P.H.D := bytesAt_length _ _ _
+      rw [e, Spec.Ecdsa.hashToInt, ite_eq_left (by rw [hl]; omega), VG.Proof.Ecdsa.Rfc6979.ofBytes_zeros]
+      show _ = Spec.Ecdsa.hashToInt _ (hBOf P s₀)
+      rw [(VG.Proof.Ecdsa.Rfc6979.hashToInt_short (by rw [hlB]; omega) (n_ne P)).1]
+  · rw [Spec.Ecdsa.Rfc6979.bits2int, VG.Proof.Ecdsa.Rfc6979.hashToInt_takeR (R := P.Q) (by omega)
+      (by rw [← hT, bytesAt_length]; exact hNQ), ← hT, ← bytesAt_take _ _ hNQ,
+      show 8 * P.Q - Spec.Ecdsa.nBits P.kit.E.curve = P.kit.sh by omega]
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
