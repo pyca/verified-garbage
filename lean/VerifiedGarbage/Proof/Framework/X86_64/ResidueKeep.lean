@@ -1,0 +1,147 @@
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+
+/-!
+# What code without AVX or AVX-512 instructions keeps (x86-64)
+
+`Instr.vecLevel` classifies the instructions of the model by the vector
+state and MXCSR they may write: 0 for those that write none of bits 511:128
+of `zmm0`–`zmm15`, nor `zmm16`–`zmm31`, nor MXCSR (the scalar and legacy SSE
+instructions, and every store); 1 for those that may also write bits 511:128
+of `zmm0`–`zmm15` (the VEX-encoded ones, and the EVEX ones of those
+registers); 2 for the rest (`ldmxcsr`, and the EVEX instructions that may
+write `zmm16`–`zmm31`). Code whose instructions are all at a level `l` of at
+most 1 keeps what that level does not write (`Exec.vecKeep`), through its
+frames and calls.
+-/
+
+@[expose] public section
+
+namespace VG.X86_64.Residue
+
+open VG.X86_64
+
+/-- See the module docs. -/
+def _root_.VG.X86_64.Instr.vecLevel : Instr → Nat
+  | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
+  | .vpmadd52Load .. | .zop _ | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .zbcst ..
+  | .vpbroadcastdZ .. | .zbcstd .. | .kLoad .. | .kLoad8 .. => 1
+  | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _ => 2
+  | _ => 0
+
+/-- What an instruction of level `l` keeps. -/
+def VKeep (l : Nat) (s s' : State) : Prop :=
+  s'.ymmH = s.ymmH ∧ s'.zmmHiH = s.zmmHiH ∧ s'.mxcsr = s.mxcsr ∧
+    (l = 0 → s'.ymmHi = s.ymmHi ∧ s'.zmmHi = s.zmmHi)
+
+/-- Every result in `o` satisfies `P`. -/
+def Pres (P : State → Prop) (o : Option State) : Prop := ∀ x, o = some x → P x
+
+theorem Pres.none' {P : State → Prop} : Pres P none := fun _ h => by cases h
+theorem Pres.some' {P : State → Prop} {x : State} (h : P x) : Pres P (some x) :=
+  fun _ e => by cases e; exact h
+theorem Pres.map' {α : Type} {P : State → Prop} {o : Option α} {f : α → State} (h : ∀ a, P (f a)) :
+    Pres P (o.map f) := fun x e => by
+  obtain ⟨a, _, rfl⟩ := Option.map_eq_some_iff.mp e; exact h a
+theorem Pres.bind' {α : Type} {P : State → Prop} {o : Option α} {f : α → Option State}
+    (h : ∀ a, Pres P (f a)) : Pres P (o.bind f) := fun x e => by
+  obtain ⟨a, _, e⟩ := Option.bind_eq_some_iff.mp e; exact h a x e
+
+macro "k0" : term => `(⟨rfl, rfl, rfl, fun _ => ⟨rfl, rfl⟩⟩)
+macro "k1" : term => `(⟨rfl, rfl, rfl, fun h => absurd h (by decide)⟩)
+macro "kk" : tactic => `(tactic| first | exact k0 | exact k1)
+macro "pres_leaf" : tactic => `(tactic| first
+  | exact Pres.none'
+  | (apply Pres.some'; kk)
+  | (apply Pres.map'; intro _; kk)
+  | (apply Pres.map'; intro _; split <;> kk))
+syntax "pres_go" : tactic
+macro_rules
+  | `(tactic| pres_go) => `(tactic| first
+    | pres_leaf
+    | (apply Pres.bind'; intro _; pres_go)
+    | (split <;> pres_go))
+
+theorem exec_pres (i : Instr) (s : State) (hi : i.vecLevel ≤ 1) :
+    Pres (VKeep i.vecLevel s) (exec i s) := by
+  cases i <;> simp only [Instr.vecLevel, Nat.reduceLeDiff] at hi ⊢
+  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' k1
+  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' k1
+  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' k0
+  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
+    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> pres_go
+  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
+      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
+      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
+      State.storeMasked512, State.storeMasked512B]
+  all_goals pres_go
+
+theorem exec_vkeep {i : Instr} {s s' : State} (hi : i.vecLevel ≤ 1) (h : exec i s = some s') :
+    VKeep i.vecLevel s s' :=
+  exec_pres i s hi s' h
+
+/-- The parts of the state that code of level 0 keeps. -/
+def vk0 (s : State) := (s.ymmH, s.zmmHiH, s.mxcsr, s.ymmHi, s.zmmHi)
+/-- The parts of the state that code of level 1 keeps. -/
+def vk1 (s : State) := (s.ymmH, s.zmmHiH, s.mxcsr)
+
+theorem pushRegs_vk0 (s : State) (rs : List Reg) : vk0 (pushRegs s rs) = vk0 s := by
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih => exact ih _
+
+theorem popReg_vk0 (s : State) (r : Reg) (k : Nat) : vk0 (popReg s r k) = vk0 s := by
+  induction k generalizing s with
+  | zero => rfl
+  | succ k ih => exact ih _
+
+theorem push_vk0 {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) : vk0 s₁ = vk0 s := by
+  cases i <;> simp only [isa, push, reduceCtorEq] at h
+  case push rs => split at h <;> cases h; exact pushRegs_vk0 s rs
+  case alloc => split at h <;> cases h; rfl
+
+theorem pop_vk0 {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : vk0 s' = vk0 s₂ := by
+  cases j <;> simp only [isa, pop, reduceCtorEq] at h
+  case pop r k => split at h <;> cases h; exact popReg_vk0 s₂ r k
+  case free => split at h <;> cases h; rfl
+
+theorem callret_vk0 {s s₁ s₂ s' : State} (hc : isa.call s = some s₁) (hr : isa.ret s₁ s₂ = some s')
+    (hb : vk0 s₂ = vk0 s₁) : vk0 s' = vk0 s := by
+  simp only [isa, call, Option.some.injEq] at hc; subst hc
+  simp only [isa, ret] at hr; split at hr <;> cases hr
+  exact hb
+
+theorem vk1_of_vk0 {a b : State} (h : vk0 a = vk0 b) : vk1 a = vk1 b := by
+  simp only [vk0, vk1, Prod.mk.injEq] at h ⊢
+  exact ⟨h.1, h.2.1, h.2.2.1⟩
+
+/-- Code of level 0 keeps bits 511:128 of every vector register and MXCSR. -/
+theorem Exec.vecKeep0 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel = 0) {s s' : State} {t : List Leak}
+    (h : Exec isa c s t s') : vk0 s' = vk0 s :=
+  Exec.keep (fun s : State => vk0 s) (ok := fun i : Instr => i.vecLevel = 0)
+    (fun {i s s'} hi he => by
+      have k := exec_vkeep (by omega) he
+      rw [hi] at k
+      simp only [vk0, k.1, k.2.1, k.2.2.1, (k.2.2.2 rfl).1, (k.2.2.2 rfl).2])
+    (fun _ hp hq hb => by rw [pop_vk0 hq, hb, push_vk0 hp]) hc
+    (.inr fun _ _ _ _ hc hr hb => callret_vk0 hc hr hb) h
+
+/-- Code of level at most 1 keeps `zmm16`–`zmm31` and MXCSR. -/
+theorem Exec.vecKeep1 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel ≤ 1) {s s' : State} {t : List Leak}
+    (h : Exec isa c s t s') : vk1 s' = vk1 s :=
+  Exec.keep (fun s : State => vk1 s) (ok := fun i : Instr => i.vecLevel ≤ 1)
+    (fun {i s s'} hi he => by
+      have k := exec_vkeep hi he
+      simp only [vk1, k.1, k.2.1, k.2.2.1])
+    (fun _ hp hq hb => by rw [vk1_of_vk0 (pop_vk0 hq), hb, vk1_of_vk0 (push_vk0 hp)]) hc
+    (.inr fun _ _ _ _ hc hr hb => by
+      simp only [isa, call, Option.some.injEq] at hc; subst hc
+      simp only [isa, ret] at hr; split at hr <;> cases hr
+      exact hb) h
+
+end VG.X86_64.Residue
