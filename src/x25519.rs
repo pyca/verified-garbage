@@ -10,9 +10,11 @@
 //! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`.
 //!
 //! The variants of both, with the same contracts, are chosen by
-//! `Backend::select` on CPUs with the features their `_FEATURES` constants
-//! name: on x86-64, the `_ifma` ones, then the `_adx` ones; on ARMv7,
-//! `vg_x25519_umaal`.
+//! `Backend::select` (and, for `vg_x25519_base`, `Backend::select_base`)
+//! on CPUs with the features their `_FEATURES` constants name: on x86-64,
+//! the `_ifma` ones, then the `_adx` ones, each function's apart (BMI2 and
+//! ADX without AVX2 choose `vg_x25519_adx` and the baseline
+//! `vg_x25519_base`); on ARMv7, `vg_x25519_umaal`.
 //!
 //! [`exchange`](PrivateKey::exchange) is `vg_x25519` of the private key and
 //! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
@@ -61,16 +63,28 @@ enum Backend {
 }
 
 impl Backend {
-    /// The best implementation a CPU with the features `f` can run.
+    /// The best implementation of `vg_x25519` a CPU with the features `f`
+    /// can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(
-            const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
-        ) {
+        Backend::best(f, VG_X25519_IFMA_FEATURES, VG_X25519_ADX_FEATURES)
+    }
+
+    /// The best implementation of `vg_x25519_base` a CPU with the features
+    /// `f` can run: chosen apart from `select`'s, since `_adx` needs AVX2
+    /// here (its comb selects entries with it) and not in `vg_x25519_adx`.
+    #[cfg(target_arch = "x86_64")]
+    fn select_base(f: Features) -> Backend {
+        Backend::best(f, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_BASE_ADX_FEATURES)
+    }
+
+    /// `_ifma` if `f` has the features `ifma`, else `_adx` if it has `adx`,
+    /// else the baseline.
+    #[cfg(target_arch = "x86_64")]
+    fn best(f: Features, ifma: Features, adx: Features) -> Backend {
+        if f.contains(ifma) {
             Backend::Ifma
-        } else if f.contains(
-            const { Features::all(&[VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES]) },
-        ) {
+        } else if f.contains(adx) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -145,7 +159,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // Uninitialized, as in `x25519`.
     let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     #[cfg(target_arch = "x86_64")]
-    let f = match Backend::select(detected()) {
+    let f = match Backend::select_base(detected()) {
         Backend::Baseline => vg_x25519_base,
         Backend::Adx => vg_x25519_base_adx,
         Backend::Ifma => vg_x25519_base_ifma,
@@ -350,30 +364,30 @@ mod tests {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
+            assert_eq!(Backend::select_base(Features(0)), Backend::Baseline);
             let adx = Features(VG_X25519_ADX_FEATURES.0 | VG_X25519_BASE_ADX_FEATURES.0);
             assert_eq!(Backend::select(adx), Backend::Adx);
+            assert_eq!(Backend::select_base(adx), Backend::Adx);
             // `vg_x25519_adx`'s features alone, without the AVX2 of
-            // `vg_x25519_base_adx`'s.
-            assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
+            // `vg_x25519_base_adx`'s: each function's own choice.
+            assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Adx);
             assert_eq!(
-                Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
+                Backend::select_base(VG_X25519_ADX_FEATURES),
                 Backend::Baseline
             );
+            let bmi2 = Features(verified_garbage_cpu::feature::BMI2);
+            assert_eq!(Backend::select(bmi2), Backend::Baseline);
+            assert_eq!(Backend::select_base(bmi2), Backend::Baseline);
             let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
-            assert_eq!(
-                Backend::select(Features(
-                    adx.0 | Features(verified_garbage_cpu::feature::AVX512IFMA).0
-                )),
-                Backend::Adx
-            );
+            assert_eq!(Backend::select_base(ifma), Backend::Ifma);
+            let adx_ifma = Features(adx.0 | verified_garbage_cpu::feature::AVX512IFMA);
+            assert_eq!(Backend::select(adx_ifma), Backend::Adx);
+            assert_eq!(Backend::select_base(adx_ifma), Backend::Adx);
             // Without AVX512F, which both `_ifma` functions need.
-            assert_eq!(
-                Backend::select(Features(
-                    ifma.0 & !Features(verified_garbage_cpu::feature::AVX512F).0
-                )),
-                Backend::Adx
-            );
+            let no_f = Features(ifma.0 & !verified_garbage_cpu::feature::AVX512F);
+            assert_eq!(Backend::select(no_f), Backend::Adx);
+            assert_eq!(Backend::select_base(no_f), Backend::Adx);
         }
         #[cfg(target_arch = "arm")]
         assert_eq!(Backend::select(VG_X25519_UMAAL_FEATURES), Backend::Umaal);
