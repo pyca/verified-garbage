@@ -5,6 +5,9 @@ public import VerifiedGarbage.Impl.Ffdh.RISCV64.CachedSearch
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.Cached
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptCorrect
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.RISCV64.Target
@@ -17,7 +20,8 @@ import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.SearchProof.CT
 `keyContract` states the shared contract on the registers and the stack
 (`key_implies`); with correctness (`key_correct`) and constant time
 (`key_constantTime`), the cached key search is verified for any attempt that
-uses no stack of its own (`key_verified_of`).
+uses no stack of its own (`key_verified_of`), and for
+`vg_ffdh_generate_key_cached` (`cachedAttempt`, `search_verified`).
 -/
 
 @[expose] public section
@@ -178,5 +182,20 @@ theorem key_verified_of (a : Attempt) :
     Verified RISCV64.target (Impl.Ffdh.RISCV64.Cached.Search.code a.call)
       (cachedKeySearchContract RISCV64.abi stackUse) :=
   Verified.of_correct (key_correct a) (key_constantTime a) key_implies
+
+/-- `vg_ffdh_generate_key_cached`, which has no frames. -/
+def cachedAttempt : Attempt where
+  name := Spec.Ffdh.cachedGenerateKeyApi.name
+  code := Impl.Ffdh.RISCV64.Cached.Generate.code
+  stack := by decide
+  correct := Cached.cg_correct
+  ct := Cached.cg_ct
+
+/-- The cached key search calling it. -/
+abbrev keyCode : Prog isa := Impl.Ffdh.RISCV64.Cached.Search.code cachedAttempt.call
+
+theorem search_verified :
+    Verified RISCV64.target keyCode (cachedKeySearchContract RISCV64.abi stackUse) :=
+  key_verified_of cachedAttempt
 
 end VG.Proof.Ffdh.RISCV64.Cached.SearchProof
