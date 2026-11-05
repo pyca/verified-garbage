@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
+import VerifiedGarbage.Proof.Ffdh.KeyScalar
+import VerifiedGarbage.Proof.Ffdh.VettedPolicy
+import VerifiedGarbage.Proof.Ffdh.Domain
 
 /-!
 # FFDH's key-generation context, row by row
@@ -149,5 +153,81 @@ theorem generationValues_parts (pLen : Nat) (dom : List Byte) :
         (List.range 32).flatMap fun d =>
           Spec.Rsa.toWords (Spec.Rsa.powMod a.g (Spec.Rsa.FixedBaseComb.exponent bits d) a.p * 2 ^ (64 * w) % a.p) w :=
   rfl
+
+/-! ## The context's words as 32-bit words -/
+
+/-- The low half of a 64-bit word. -/
+theorem w32_of_word (m : Mem) (P : Addr) (d : Nat) : Mont.w32 m P d = (word m P d).toNat % 2 ^ 32 := by
+  have h1 := VG.Proof.Bignum.read_eq_val32 m P 2 d
+  have h2 := VG.Proof.Bignum.read_eq_wv m P d 1
+  rw [show 8 * 1 = 4 * 2 from rfl, h1] at h2
+  simp only [Mont.val32, wv, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add,
+    Nat.mul_zero] at h2
+  rw [← h2, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (BitVec.isLt _)]
+
+/-- The context's words, from `generationValues`: its public words and its 34 rows. -/
+theorem ctx_of_values {m : Mem} {cp : Addr} {len : Nat} {dom : List Byte}
+    (h : Spec.Rsa.wordsAt m cp (3 + 34 * Spec.Rsa.modulusWords len) = generationValues len dom) :
+    let a := Spec.Ffdh.domainOf len dom
+    let bits := Spec.Ffdh.generationScalarBits a
+    let w := Spec.Rsa.modulusWords len
+    word m cp 0 = BitVec.ofNat 64 bits ∧ word m cp 8 = BitVec.ofNat 64 ((bits + 7) / 8) ∧
+      word m cp 16 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits) ∧
+      row m cp w 0 = Spec.Rsa.toWords a.p w ∧ row m cp w 1 = Spec.Rsa.toWords (2 ^ (128 * w) % a.p) w ∧
+      ∀ e < 32, row m cp w (2 + e) = Spec.Rsa.toWords
+        (Spec.Rsa.powMod a.g (Spec.Rsa.FixedBaseComb.exponent bits e) a.p * 2 ^ (64 * w) % a.p) w := by
+  rw [generationValues_parts] at h
+  exact rows_of_ctx (by simp [Spec.Rsa.toWords]) (by simp [Spec.Rsa.toWords]) (fun _ => by simp [Spec.Rsa.toWords]) h
+
+/-- A vetted width is not zero. -/
+theorem recognized_nonzero {a : Spec.Ffdh.Parameters} {bits : Nat}
+    (h : Spec.Ffdh.vettedExponentBits a = some bits) : bits ≠ 0 := by
+  unfold Spec.Ffdh.vettedExponentBits at h
+  repeat' split at h
+  all_goals cases h
+  all_goals decide
+
+theorem bitLength_le_of_lt {x n : Nat} (h : x < 2 ^ n) : Spec.RsaKeyGen.bitLength x ≤ n := by
+  by_cases hx : x = 0
+  · subst hx; unfold Spec.RsaKeyGen.bitLength; simp
+  · have hb := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds hx).1
+    refine Classical.byContradiction fun hc => ?_
+    have : 2 ^ n ≤ 2 ^ (Spec.RsaKeyGen.bitLength x - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+
+/-- The public scalar width of valid parameters: at least 1 and at most p's bits. -/
+theorem genBits_facts {k : Nat} {dom : List Byte} (hv : Spec.Ffdh.domainValid k dom = true) :
+    1 ≤ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) ∧
+      Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) ≤ 8 * k := by
+  have hv' := (VG.Proof.Ffdh.domainValid_iff k dom).mp hv
+  have hbnd : 2 ≤ Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) := by
+    unfold Spec.Ffdh.scalarBound
+    cases hq : (Spec.Ffdh.domainOf k dom).q with
+    | none => simp only [Option.getD_none]; omega
+    | some q => have := (hv'.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega
+  have hle : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≤ (Spec.Ffdh.domainOf k dom).p := by
+    unfold Spec.Ffdh.scalarBound
+    cases hq : (Spec.Ffdh.domainOf k dom).q with
+    | none => simp only [Option.getD_none]; omega
+    | some q => have := (hv'.2.2 q hq).1.2.2; simp only [Option.getD_some]; omega
+  have hp : (Spec.Ffdh.domainOf k dom).p < 2 ^ (8 * k) := by
+    have h1 := VG.Proof.Bignum.os2ip_lt (dom.take k)
+    have h2 : 256 ^ (dom.take k).length ≤ 2 ^ (8 * k) := by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
+    change Spec.Rsa.os2ip (dom.take k) < _
+    omega
+  have hb := VG.Proof.Ffdh.VettedPolicy.bits_le_bound (Spec.Ffdh.domainOf k dom)
+  have hbl : 1 ≤ Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) := by
+    have := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds
+      (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≠ 0 by omega)).2
+    refine Classical.byContradiction fun hc => ?_
+    have e : Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) = 0 := by omega
+    rw [e] at this; omega
+  refine ⟨?_, Nat.le_trans hb (bitLength_le_of_lt (Nat.lt_of_le_of_lt hle hp))⟩
+  unfold Spec.Ffdh.generationScalarBits
+  cases he : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf k dom) with
+  | none => simpa using hbl
+  | some b => have := recognized_nonzero he; simp only; omega
 
 end VG.Proof.Ffdh.ContextRows

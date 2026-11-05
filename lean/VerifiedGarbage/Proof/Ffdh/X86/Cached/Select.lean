@@ -85,6 +85,14 @@ structure CtxRd (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (s : 
 theorem CtxRd.keep {t : State} {rs : List Reg} (C : CtxRd base bytes len args s) (K : Keeps rs s t) :
     CtxRd base bytes len args t := ⟨C.span.of_keeps K, C.apart⟩
 
+/-- The context's 32-bit address does not wrap. -/
+theorem CtxRd.afit (C : CtxRd base bytes len args s) : (args ctxArg).toNat + ctxBytes len ≤ 2 ^ 32 := by
+  have fit := C.span.fit
+  have hv : (byteAddr (args ctxArg)).toNat = (args ctxArg).toNat := by
+    simp only [byteAddr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (args ctxArg).isLt; omega)
+  simp only [ctxAddr] at fit
+  omega
+
 /-- A span of the context, within it. -/
 theorem CtxRd.row (C : CtxRd base bytes len args s) {d n : Nat} (hd : d + n ≤ ctxBytes len) :
     Span s (ctxAddr args) d n := C.span.sub (Nat.zero_le _) (by omega)
