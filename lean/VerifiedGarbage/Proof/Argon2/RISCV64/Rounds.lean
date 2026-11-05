@@ -584,7 +584,7 @@ theorem linesOps_words : ∀ (l : List (Nat × Nat × Nat × Nat)) (x : Nat → 
     obtain ⟨⟨ha, hb, hd, had, hr⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
       linesOps_words l _ hl, lineOps_words _ ha hb hd had hr]
-    rfl
+    simp only [alines, List.foldl_cons]
 
 /-- Four GBs' operations as the code runs them. -/
 def roundOps (qs : List (Nat × Nat × Nat × Nat)) : List Op :=
