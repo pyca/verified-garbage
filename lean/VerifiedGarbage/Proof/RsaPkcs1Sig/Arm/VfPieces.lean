@@ -77,7 +77,7 @@ theorem verifyId_len {nB eB D sig : List Byte} {id : Nat} (h : sig.length ≠ nB
     Spec.RsaPkcs1Sig.verifyId nB eB id D sig = false := by
   unfold Spec.RsaPkcs1Sig.verifyId
   split
-  · rw [Spec.RsaPkcs1Sig.verify, ite_eq_right (fun hc => h hc.1)]
+  · rw [Spec.RsaPkcs1Sig.verify, ite_eq_right h]
   · rfl
 
 theorem ret0_wp {σ s : State} (h : H2 P σ s ∧ isa.eval .ne s = some true) :
