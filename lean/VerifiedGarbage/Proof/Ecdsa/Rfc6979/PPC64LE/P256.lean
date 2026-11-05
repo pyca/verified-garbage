@@ -30,7 +30,7 @@ open VG VG.PPC64LE
 def p256Core (hL : Weierstrass.Law Spec.P256.curve) : Core where
   E := Spec.Ecdsa.P256.inst
   C := Impl.Ecdsa.PPC64LE.signP256
-  N := "vg_ecdsa_p256_sign"
+  N := "vg_ecdsa_p256_sign_k"
   V := (Proof.Ecdsa.PPC64LE.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.sign_verified hL).2.1
   d := by decide +kernel

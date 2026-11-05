@@ -30,7 +30,7 @@ open VG VG.PPC64LE
 def secp256k1Core (hL : Weierstrass.Law Spec.Secp256k1.curve) : Core where
   E := Spec.Ecdsa.Secp256k1.inst
   C := Impl.Ecdsa.PPC64LE.signSecp256k1
-  N := "vg_ecdsa_secp256k1_sign"
+  N := "vg_ecdsa_secp256k1_sign_k"
   V := (Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified hL).2.1
   d := by decide +kernel

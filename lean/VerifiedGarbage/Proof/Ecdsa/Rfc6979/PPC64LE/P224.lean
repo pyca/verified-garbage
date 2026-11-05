@@ -30,7 +30,7 @@ open VG VG.PPC64LE
 def p224Core (hL : Weierstrass.Law Spec.P224.curve) : Core where
   E := Spec.Ecdsa.P224.inst
   C := Impl.Ecdsa.PPC64LE.signP224
-  N := "vg_ecdsa_p224_sign"
+  N := "vg_ecdsa_p224_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P224.sign_verified hL).1
   ct := (Proof.Ecdsa.PPC64LE.P224.sign_verified hL).2.1
   d := by decide +kernel

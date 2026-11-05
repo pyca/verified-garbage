@@ -202,6 +202,60 @@ bl {vg_brainpoolp256r1_sub_mod_n}
     )
 }
 
+/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNH/IfggAAH4sf0h+AAAYTnIAGv4wACL+LgAq/iwAOv44AAL+SAAKOnQACv5KAAo6dgAK/kAAGE5AAAgOTABK/k4ASv5QAEr+UgBK/lQASv5WAEr+WABK/loASv5cAEr+dAAy+ggACA5EDBJfRBRSn14Ssx8OFCMfXhiJn1QAaE4UCimfLgAi+g="
+20:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 20b
+.base64 "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BAELgQ0JCZEAAGE5sACL6QAMLOkAACz5CAws6QgALPkQDCzpEAAs+RgMLOkYACz5IAws6SAALPkoDCzpKAAs+TAMLOkwACz5OAws6TgALPlADCzpQAAs+UgMLOlIACz5UAws6VAALPlYDCzpWAAs+WAMLOlgACz5aAws6WgALPlwDCzpcAAs+XgMLOl4ACz5gAws6YAALPmIDCzpiAAs+ZAMLOmQACz5mAws6ZgALPmgDCzpoAAs+agMLOmoACz5sAws6bAALPm4DCzpuAAs+cAMLOnAACz5yAws6cgALPnQDCzp0AAs+dgMLOnYACz54Aws6eAALPnoDCzp6AAs+fAMLOnwACz5+Aws6fgALPkADSzpAAEs+QgNLOkIASz5EA0s6RABLPkYDSzpGAEs+SANLOkgASz5KA0s6SgBLPkwDSzpMAEs+TgNLOk4ASz5QA0s6UABLPlIDSzpSAEs+VANLOlQASz5WA0s6VgBLPlgDSzpYAEs+WgNLOloASz5cA0s6XABLPl4DSzpeAEs+QAAYTmwAIvpAABsONgAi+hgAKE40ADL6IAB7DgAAIE54ACM6QgAjOmmA4l9IQSATgAAYTmwAIvpAABsONgAi+jQAMvoFDKEfNAIrDhBAMA4gAHsOAAAgTngAIzpCACM6aYDiX0hBIBOAABhObAAi+kAAGw4wACMONgAq+jQAMvoFDKlfEEApTggAME4gAHsOAAAgTngAIzpEACM6aYDiX0hBIBOAABhObAAi+kAAGw4wACMOCAAoTjQAMvogAHsOAAAgTngAIzpAACM6aYDiX0hBIBOAABhObAAi+kAACzpAAws+QgALOkIDCz5EAAs6RAMLPkYACzpGAws+SAALOkgDCz5KAAs6SgMLPkwACzpMAws+TgALOk4DCz5QAAs6UAMLPlIACzpSAws+VAALOlQDCz5WAAs6VgMLPlgACzpYAws+WgALOloDCz5cAAs6XAMLPl4ACzpeAws+YAALOmADCz5iAAs6YgMLPmQACzpkAws+ZgALOmYDCz5oAAs6aAMLPmoACzpqAws+bAALOmwDCz5uAAs6bgMLPnAACzpwAws+cgALOnIDCz50AAs6dAMLPnYACzp2Aws+eAALOngDCz56AAs6egMLPnwACzp8Aws+fgALOn4DCz5AAEs6QANLPkIASzpCA0s+RABLOkQDSz5GAEs6RgNLPkgASzpIA0s+SgBLOkoDSz5MAEs6TANLPk4ASzpOA0s+UABLOlADSz5SAEs6UgNLPlQASzpUA0s+VgBLOlYDSz5YAEs6WANLPloASzpaA0s+XABLOlwDSz5eAEs6XgNLPkAAGE5sACL6QAAbDjYAIvoYAChONAAy+iAAew4AACBOeAAjOkIAIzppgOJfSEEgE4AAGE5sACL6QAAbDjAAIw42ACr6NAAy+gUMqV8AAClOGAAwTiAAew4AACBOeAAjOkQAIzppgOJfSEEgE6AACA5AABhOagAK/k="
+21:
+.base64 "AAAgOQAAYTmgACv5"
+22:
+.base64 "AABhObAAi+kADCzpAAAs+QgMLOkIACz5EAws6RAALPkYDCzpGAAs+SAMLOkgACz5KAws6SgALPkwDCzpMAAs+TgMLOk4ACz5QAws6UAALPlIDCzpSAAs+VAMLOlQACz5WAws6VgALPlgDCzpYAAs+WgMLOloACz5cAws6XAALPl4DCzpeAAs+YAMLOmAACz5iAws6YgALPmQDCzpkAAs+ZgMLOmYACz5oAws6aAALPmoDCzpqAAs+bAMLOmwACz5uAws6bgALPnADCzpwAAs+cgMLOnIACz50Aws6dAALPnYDCzp2AAs+eAMLOngACz56Aws6egALPnwDCzp8AAs+fgMLOn4ACz5AA0s6QABLPkIDSzpCAEs+RANLOkQASz5GA0s6RgBLPkgDSzpIAEs+SgNLOkoASz5MA0s6TABLPk4DSzpOAEs+UANLOlAASz5SA0s6UgBLPlQDSzpUAEs+VgNLOlYASz5YA0s6WABLPloDSzpaAEs+XANLOlwASz5eA0s6XgBLPkAAGE5sACL6QAAbDjYAIvoYAChONAAy+iAAew4AACBOeAAjOkIAIzppgOJfSEEgE4AAGE5sACL6QAAbDjAAIw42ACr6NAAy+gUMqV8AAClOGAAwTiAAew4AACBOeAAjOkQAIzppgOJfSEEgE4AAGE5YACBOMABoTigACvpFEqlfNAAy+g="
+23:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 23b
+.base64 "AABhOaAAK+nQAEvpFFIpfaAAK/kgAEA5EEiKfRBhjH0AACwo"
+bne %cr0, 22b
+.base64 "AABhOcgAa+jAAIvoMAGhOMABwTiwAOvo"
+bl {vg_ecdsa_brainpoolp256r1_sign_k}
+.base64 "AABhOagAK+n//yk5qAAr+QEAQDk4UGh8UEAKfThIDH0AACwo"
+bne %cr0, 24f
+.base64 "AACAOQ=="
+b 25f
+24:
+.base64 "AABhObAAK+nAAEvpAAAAOdAICZkAAGE5sACL6QAAbDjAAIw4IAChONAAy+iAAew4AACBOeAAjOkAAIzppgOJfSEEgE4AAGE5sACL6QAAbDjYAIvoYAChONAAy+iAAew4AACBOeAAjOkIAIzppgOJfSEEgE4AAGE5sACL6QAAbDjYAIvo0ADL6BQyhHzQCKw4AQDAOIAB7DgAAIE54ACM6QgAjOmmA4l9IQSATgAAYTmwAIvpAABsOMAAjDjYAKvo0ADL6BQypXwBAKU4IADBOIAB7DgAAIE54ACM6RAAjOmmA4l9IQSATgAAYTmwAIvpAABsOMAAjDggAKE40ADL6IAB7DgAAIE54ACM6QAAjOmmA4l9IQSATgAAYTmwAIvpAAAs6QAMLPkIACzpCAws+RAALOkQDCz5GAAs6RgMLPkgACzpIAws+SgALOkoDCz5MAAs6TAMLPk4ACzpOAws+UAALOlADCz5SAAs6UgMLPlQACzpUAws+VgALOlYDCz5YAAs6WAMLPloACzpaAws+XAALOlwDCz5eAAs6XgMLPmAACzpgAws+YgALOmIDCz5kAAs6ZAMLPmYACzpmAws+aAALOmgDCz5qAAs6agMLPmwACzpsAws+bgALOm4DCz5wAAs6cAMLPnIACzpyAws+dAALOnQDCz52AAs6dgMLPngACzp4Aws+egALOnoDCz58AAs6fAMLPn4ACzp+Aws+QABLOkADSz5CAEs6QgNLPkQASzpEA0s+RgBLOkYDSz5IAEs6SANLPkoASzpKA0s+TABLOkwDSz5OAEs6TgNLPlAASzpQA0s+UgBLOlIDSz5UAEs6VANLPlYASzpWA0s+WABLOlgDSz5aAEs6WgNLPlwASzpcA0s+XgBLOl4DSz5AABhObAAi+kAAGw42ACL6GAAoTjQAMvogAHsOAAAgTngAIzpCACM6aYDiX0hBIBOAABhObAAi+kAAGw4wACMONgAq+jQAMvoFDKlfAAApThgAME4gAHsOAAAgTngAIzpEACM6aYDiX0hBIBOAQCAOQ=="
+25:
+.base64 "AAAsKA=="
+bne %cr0, 21b
+.base64 "AABhOQAAgDkgAIv5KACL+TAAi/k4AIv5QACL+UgAi/lQAIv5WACL+WAAi/loAIv5cACL+XgAi/mAAIv5iACL+ZAAi/mYAIv56ACL+fAAi/n4AIv5AAGL+QgBi/kQAYv5GAGL+SABi/koAYv5MAGL+TgBi/lAAYv5SAGL+VABi/lYAYv5YAGL+WgBi/lwAYv5eAGL+YABi/mIAYv5kAGL+ZgBi/mgAYv5qAGL+bABi/m4AYv5wAGL+cgBi/nQAYv52AGL+eABi/noAYv58AGL+fgBi/kAAov5CAKL+RACi/kYAov5IAKL+SgCi/kwAov5OAKL+UACi/lIAov5UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+        vg_ecdsa_brainpoolp256r1_sign_k = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_add_mod_n.rs"]
+pub(crate) mod vg_brainpoolp256r1_add_mod_n;
+
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp256r1_mul_mod_n.rs"]
 pub(crate) mod vg_brainpoolp256r1_mul_mod_n;
@@ -211,5 +265,5 @@ pub(crate) mod vg_brainpoolp256r1_mul_mod_n;
 pub(crate) mod vg_brainpoolp256r1_sub_mod_n;
 
 #[rustfmt::skip]
-#[path = "internal/vg_ecdsa_brainpoolp256r1_sign.rs"]
-pub(crate) mod vg_ecdsa_brainpoolp256r1_sign;
+#[path = "internal/vg_ecdsa_brainpoolp256r1_sign_k.rs"]
+pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k;
