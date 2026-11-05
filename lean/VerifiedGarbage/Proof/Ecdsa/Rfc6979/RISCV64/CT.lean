@@ -372,4 +372,167 @@ theorem hmac_rel {σ σ' : State} (k : KR P s₀ σ) (k' : KR P s₀' σ') (y : 
 
 end
 
+/-! ## Pieces that keep `KR` -/
+
+/-- Two runs that keep `KR`, naming the symbols as at the start. -/
+abbrev KK (P : Rfc) (s₀ s₀' : State) (t t' : State) : Prop := Sy s₀ (KR P s₀) t ∧ Sy s₀' (KR P s₀') t'
+
+/-- The separator, keeping `KR`. -/
+theorem sep_kr {s₀ : State} (hp : Pre P s₀) {s : State} (h : KR P s₀ s) {b : Nat} (hb : b < 256) :
+    WP isa (.block (Cfg.sep b)) s (KR P s₀) := by
+  have hz := sizes P
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hfr : frB = 512 := rfl
+  unfold Cfg.sep
+  refine VG.RISCV64.Steps.wp_add fun s₁ u₁ => wp_li (imm := b) (by omega) fun s₂ u₂ => ?_
+  have a₂ : s₂.gpr .t0 + BitVec.ofNat 64 fV = sA s₀ (fV + P.H.D) := by
+    rw [u₂.other _ (by decide), u₁.gpr, h.s1, h.s7]
+    show s₀.sp + _ + _ = s₀.sp + _
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_comm]
+  refine VG.RISCV64.Steps.wp_sb (by decide) a₂ (by
+      rw [u₂.wr, u₁.wr]; exact in_fr hp h.wr (by simp only [fV]; omega)) fun s₃ m₃ => WP.block_nil ?_
+  have k₂ : KR P s₀ s₂ := (h.upd (by decide) u₁).upd (by decide) u₂
+  have F : Frame [sR s₀ (fV + P.H.D) 1] s₂.mem s₃.mem := by
+    rw [m₃.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  exact k₂.keep m₃.rd m₃.wr m₃.sp (fun r _ => by rw [m₃.gpr]) F
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact part_disj (.inl (by simp only [fV]; omega)) (by decide) (by simp only [fV]; omega))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, by simp, part_sub (by simp only [fV]; omega)⟩)
+
+section
+variable {s₀ s₀' : State} (hp : Pre P s₀) (hp' : Pre P s₀') (hq : PubEq P s₀ s₀') (hc : Checks P.c)
+include hp hp' hq hc
+
+theorem hmac_kk {ps : List Part} (hps : ∀ p ∈ ps, PartOk P p) (hone : OneD (false, 0) ps)
+    (htot : lval P (total ps) = tlen P ps) (hb : (total ps).2 < 2048) (hb' : (ps.map (·.2.2.2)).sum < 2048)
+    (htl : tlen P ps < 2048) {dst : Nat} (hdst : 96 ≤ dst ∧ dst + P.H.D ≤ frB) (cu : UpdCks (false, 0) ps)
+    (cf : Ck ptrRegs (.block (Cfg.finArgs (total ps) dst))) :
+    RelCT isa (KK P s₀ s₀') (P.c.hmac ps dst) (KK P s₀ s₀') := by
+  have ht : RelCT isa (KK P s₀ s₀') (P.c.hmac ps dst) fun _ _ => True :=
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h e₁ e₂ =>
+      ⟨(hmac_rel hp hp' hq hc h.1.1 h.2.1 h.1.2 h.2.2 hps hone htot hb hb' htl hdst cu cf _ _ _ _ _ _ ⟨rfl, rfl⟩
+        e₁ e₂).1, trivial⟩
+  exact (rel_wp (P₁ := Sy s₀ (KR P s₀)) (P₂ := Sy s₀' (KR P s₀')) ht
+    (sy_of fun s h hs => WP.mono (hmac_ok hp h hs hps hone htot hb hb' htl hdst) fun _ h => h.1)
+    (sy_of fun s h hs => WP.mono (hmac_ok hp' h hs hps hone htot hb hb' htl hdst) fun _ h => h.1)).mono
+    (fun _ _ h => h) fun _ _ h => h
+
+theorem hmacV_kk : RelCT isa (KK P s₀ s₀') P.c.hmacV (KK P s₀ s₀') := by
+  have hz := sizes P
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hfr : frB = 512 := rfl
+  exact hmac_kk hp hp' hq hc (fun p hp' => by
+      simp only [List.mem_singleton] at hp'; subst hp'
+      exact ⟨.inl ⟨rfl, by simp only [fV]; omega, by simp only [fV, plen, lval]; simp; omega⟩, by decide⟩)
+    (by simp [OneD]) (by simp [total, tlen, lval, plen]) (by decide) (by decide)
+    (by simp only [tlen, plen, lval]; simp; omega) ⟨by decide, by simp only [fV]; omega⟩ hc.uV hc.fVc
+
+omit hc in
+theorem sep_kk {b : Nat} (hb : b < 256) (cs : Ck ptrRegs (.block (Cfg.sep b))) :
+    RelCT isa (KK P s₀ s₀') (.block (Cfg.sep b)) (KK P s₀ s₀') :=
+  (rel_kr hq (fun _ h => h.1) (fun _ h => h.1) cs (sy_of fun _ h _ => sep_kr hp h hb)
+    (sy_of fun _ h _ => sep_kr hp' h hb)).mono (fun _ _ h => h) fun _ _ h => h
+
+theorem rekeyFull_kk {b : Nat} (hb : b < 256) (cs : Ck ptrRegs (.block (Cfg.sep b))) :
+    RelCT isa (KK P s₀ s₀') (P.c.rekeyFull b) (KK P s₀ s₀') := by
+  have hz := sizes P
+  obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hfr : frB = 512 := rfl
+  have hfo : P.c.fHo + P.Q ≤ frB ∧ 96 ≤ P.c.fHo := by
+    rcases fHo_cases P with e | e <;> rw [e] <;> simp only [fX, fH] <;> omega
+  unfold Cfg.rekeyFull
+  refine (sep_kk hp hp' hq hb cs).seq ((hmac_kk hp hp' hq hc (fun p hp' => ?_) (by simp [OneD])
+    (by simp [total, tlen, lval, plen]; omega) (by simp [total]; omega) (by simp; omega)
+    (by simp only [tlen, plen, lval]; simp; omega) ⟨by decide, by simp only [fK]; omega⟩ hc.uF
+    hc.fF).seq (hmacV_kk hp hp' hq hc))
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+  rcases hp' with rfl | rfl | rfl
+  · exact ⟨.inl ⟨rfl, by simp only [fV]; omega, by simp only [fV, plen, lval]; simp; omega⟩, by decide⟩
+  · exact ⟨.inr ⟨rfl, rfl, by simp [plen, lval, hcQ]⟩, by show P.c.Q < 2048; omega⟩
+  · exact ⟨.inl ⟨rfl, hfo.2, by simp [plen, lval, hcQ]; omega⟩, by show P.c.Q < 2048; omega⟩
+
+theorem rekey_kk : RelCT isa (KK P s₀ s₀') P.c.rekey (KK P s₀ s₀') := by
+  have hz := sizes P
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hfr : frB = 512 := rfl
+  unfold Cfg.rekey
+  refine (sep_kk hp hp' hq (b := 0) (by decide) hc.sep0).seq ((hmac_kk hp hp' hq hc (fun p hp' => ?_)
+    (by simp [OneD]) (by simp [total, tlen, lval, plen]) (by decide) (by decide)
+    (by simp only [tlen, plen, lval]; simp; omega) ⟨by decide, by simp only [fK]; omega⟩ hc.uR hc.fR).seq
+    (hmacV_kk hp hp' hq hc))
+  simp only [List.mem_singleton] at hp'; subst hp'
+  exact ⟨.inl ⟨rfl, by simp only [fV]; omega, by simp only [fV, plen, lval]; simp; omega⟩, by decide⟩
+
+/-- Two runs of the candidate. -/
+theorem cand_rel {K V₀ K' V₀' : List Byte} :
+    RelCT isa (fun t t' => (KVH P s₀ K V₀ t ∧ t.syms = s₀.syms) ∧ KVH P s₀' K' V₀' t' ∧ t'.syms = s₀'.syms)
+      P.c.cand fun _ _ => True := by
+  obtain ⟨hN1, -, -⟩ := nV_facts P
+  unfold Cfg.cand
+  have r₀ := rel_agree (P₁ := fun t => KVH P s₀ K V₀ t ∧ t.syms = s₀.syms)
+    (P₂ := fun t => KVH P s₀' K' V₀' t ∧ t.syms = s₀'.syms)
+    (G₁ := fun t => ∃ c, CI P s₀ K V₀ c 0 t) (G₂ := fun t => ∃ c, CI P s₀' K' V₀' c 0 t) (rs := [])
+    (fun _ _ h h' => ⟨by rw [h.1.kr.sp, h'.1.kr.sp, hq.sp], fun _ h => absurd h (by simp)⟩) hc.ti
+    (fun t h => VG.RISCV64.WP.of_syms (wp_li (imm := 0) (by decide) fun t₁ u₁ => WP.block_nil fun y₁ =>
+      ⟨t.gpr .s5, ⟨h.1.kr.upd (by decide) u₁, by rw [u₁.mem]; exact h.1.k, by rw [u₁.mem]; exact h.1.v,
+        by rw [u₁.mem]; exact h.1.h, by rw [u₁.mem]; exact h.1.x⟩, by rw [u₁.gpr, Nat.zero_mul],
+        by simp [bytesAt, Spec.Ecdsa.Rfc6979.genT], u₁.other _ (by decide), y₁.trans h.2⟩))
+    (fun t h => VG.RISCV64.WP.of_syms (wp_li (imm := 0) (by decide) fun t₁ u₁ => WP.block_nil fun y₁ =>
+      ⟨t.gpr .s5, ⟨h.1.kr.upd (by decide) u₁, by rw [u₁.mem]; exact h.1.k, by rw [u₁.mem]; exact h.1.v,
+        by rw [u₁.mem]; exact h.1.h, by rw [u₁.mem]; exact h.1.x⟩, by rw [u₁.gpr, Nat.zero_mul],
+        by simp [bytesAt, Spec.Ecdsa.Rfc6979.genT], u₁.other _ (by decide), y₁.trans h.2⟩))
+  refine r₀.seq ((RelCT.loop (Q := fun _ _ => True)
+    (fun n t t' => ∃ j c c', n = P.nV - j ∧ j < P.nV ∧ CI P s₀ K V₀ c j t ∧ CI P s₀' K' V₀' c' j t')
+    (fun n => RelCT.exists_ fun j => RelCT.exists_ fun c => RelCT.exists_ fun c' => ?_) P.nV).mono
+    (fun _ _ ⟨⟨c, h⟩, ⟨c', h'⟩⟩ => ⟨0, c, c', rfl, hN1, h, h'⟩) fun _ _ h => h)
+  by_cases hn : n = P.nV - j
+  · subst hn
+    by_cases hj : j < P.nV
+    · have r₁ := rel_wp (P₁ := CI P s₀ K V₀ c j) (P₂ := CI P s₀' K' V₀' c' j)
+        ((hmacV_kk hp hp' hq hc).mono (fun _ _ h => ⟨⟨h.1.kvh.kr, h.1.sy⟩, ⟨h.2.kvh.kr, h.2.sy⟩⟩)
+          fun _ _ _ => trivial) (fun _ h => cs1_ok hp hj h) (fun _ h => cs1_ok hp' hj h)
+      have r₂ := rel_agree (P₁ := CA P s₀ K V₀ c j) (P₂ := CA P s₀' K' V₀' c' j) (rs := .s9 :: ptrRegs)
+        (G₁ := CB P s₀ K V₀ c j) (G₂ := CB P s₀' K' V₀' c' j)
+        (fun s s' h h' => by
+          obtain ⟨e, g⟩ := ag_kr hq h.kvh.kr h'.kvh.kr
+          refine ⟨e, fun r hr => ?_⟩
+          rcases List.mem_cons.mp hr with rfl | hr
+          · rw [h.s9, h'.s9]
+          · exact g r hr) hc.ka (fun _ h => cs2_ok hj h) (fun _ h => cs2_ok hj h)
+      have r₃ := rel_agree (P₁ := CB P s₀ K V₀ c j) (P₂ := CB P s₀' K' V₀' c' j) (rs := [.a4, .a5, .a6])
+        (G₁ := CC P s₀ K V₀ c j) (G₂ := CC P s₀' K' V₀' c' j)
+        (fun s s' h h' => by
+          refine ⟨by rw [h.ca.kvh.kr.sp, h'.ca.kvh.kr.sp, hq.sp], fun r hr => ?_⟩
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · rw [h.a4, h'.a4, hq.sA]
+          · rw [h.a5, h'.a5, hq.sA]
+          · rw [h.a6, h'.a6]) hc.cl (fun _ h => cs3_ok hp hj h) (fun _ h => cs3_ok hp' hj h)
+      have r₄ := rel_agree (P₁ := CC P s₀ K V₀ c j) (P₂ := CC P s₀' K' V₀' c' j) (rs := .s9 :: ptrRegs)
+        (G₁ := fun x => CI P s₀ K V₀ c (j + 1) x ∧ isa.eval (.nonzero .t6) x = some (decide (j + 1 < P.nV)))
+        (G₂ := fun x => CI P s₀' K' V₀' c' (j + 1) x ∧ isa.eval (.nonzero .t6) x = some (decide (j + 1 < P.nV)))
+        (fun s s' h h' => by
+          obtain ⟨e, g⟩ := ag_kr hq h.kvh.kr h'.kvh.kr
+          refine ⟨e, fun r hr => ?_⟩
+          rcases List.mem_cons.mp hr with rfl | hr
+          · rw [h.s9, h'.s9]
+          · exact g r hr) hc.ts (fun _ h => cs4_ok hj h) (fun _ h => cs4_ok hj h)
+      refine ((r₁.seq (r₂.seq (r₃.seq r₄))).mono (fun _ _ h => ⟨h.2.2.1, h.2.2.2⟩) fun u u' ⟨⟨hu, e⟩, ⟨hu', e'⟩⟩ =>
+        ⟨by rw [e, e'], fun _ => trivial, fun ht => ?_⟩)
+      have hg : j + 1 < P.nV := by
+        rw [e] at ht
+        by_contra h'
+        rw [decide_eq_false h'] at ht
+        cases ht
+      exact ⟨P.nV - (j + 1), by omega, j + 1, c, c', rfl, hg, hu, hu'⟩
+    · exact RelCT.of_false fun _ _ h => hj h.2.1
+  · exact RelCT.of_false fun _ _ h => hn h.1
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
