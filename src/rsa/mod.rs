@@ -124,8 +124,8 @@ use verified_garbage_cpu::Features;
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, and of
 /// the functions built on them
-/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_keygen_candidate` and,
-/// on x86-64, AArch64, ARMv7 and PPC64LE, `vg_rsa_prime_search`, `crate::rsa_keygen`).
+/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_keygen_candidate` and
+/// `vg_rsa_prime_search`, `crate::rsa_keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
