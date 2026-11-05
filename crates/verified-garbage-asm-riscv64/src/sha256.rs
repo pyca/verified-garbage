@@ -917,3 +917,7 @@ call {vg_sha256_finalize}
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_compress.rs"]
 pub(crate) mod vg_sha256_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_state_digest.rs"]
+pub(crate) mod vg_sha256_state_digest;

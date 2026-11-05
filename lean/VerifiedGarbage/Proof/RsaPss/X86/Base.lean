@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Lay
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Vp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # RSASSA-PSS on x86: where everything is, for the pieces both functions share
@@ -176,3 +177,13 @@ theorem VP.empty {F G : State → State → Prop} {c : Prog isa} (h : ∀ σ s, 
   ⟨fun σ s hs => (h σ s hs).elim, fun _ _ _ _ _ _ ⟨σ, _, hs, _⟩ => (h σ _ hs).elim⟩
 
 end VG.Proof.RsaPss.X86
+
+namespace VG.Proof.RsaPss.X86.Sg
+
+open VG VG.X86 VG.Proof.RsaPkcs1Sig.X86
+
+theorem vpAssoc {F G : State → State → Prop} {a b c : Prog isa} (h : VP F (.seq (.seq a b) c) G) :
+    VP F (.seq a (.seq b c)) G :=
+  ⟨fun σ s hs => WP.assoc (h.wp σ s hs), RelCT.assoc h.ct⟩
+
+end VG.Proof.RsaPss.X86.Sg

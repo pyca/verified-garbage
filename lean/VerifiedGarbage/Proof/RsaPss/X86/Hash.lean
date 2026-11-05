@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.X86
+public import VerifiedGarbage.Impl.RsaPss.X86.Table
+public import VerifiedGarbage.Impl.MdHashTable.X86
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Spec.Mgf1
@@ -38,8 +40,9 @@ def spBlocks (H : Hash) : Prog isa :=
   seqs [.block (lenSet H), .block (clrArgs oLen H.B), .block (clrArgs oY H.B), .block (padArgs H),
     .block (padBody H), .block (blkSet H), .block (cmpSet H), .block (selSet H), outPart H, .block (mgfSeed H),
     .block (ctrSet H), .block (xorSet H), .block (mgfNext H), .block (params H), .block (cpDig H 16),
-    .block (cpDig H 4), .block (lenArgs H 18), .block (lenArgs H 7), .block (cpSalt H), .block (putH H),
-    .block (fxSalt H), .block (cpDb H), .block (passSet H), .block (anyLen H), .block (cmpArgs H)]
+    .block (cpDig H 4), .block (lenArgs H 19), .block (lenArgs H 8), .block (cpSalt H), .block (putH H),
+    .block (fxSalt H), .block (cpDb H), .block (passSet H), .block (anyLen H), .block (cmpArgs H),
+    .block (mgfArgsT H)]
 
 /-- The taint checks of the pieces whose immediates depend on the hash
 function: the blocks from states where only `esp` and `ebp` are known to
@@ -61,8 +64,8 @@ structure Certs (H : Hash) : Prop where
   params : TaintOk [.esp, .ebp, .esi, .ecx, .edx] (.block (params H))
   cpDig16 : TaintOk [.esp, .ebp] (.block (cpDig H 16))
   cpDig4 : TaintOk [.esp, .ebp] (.block (cpDig H 4))
-  lenArgs18 : TaintOk [.esp, .ebp] (.block (lenArgs H 18))
-  lenArgs7 : TaintOk [.esp, .ebp] (.block (lenArgs H 7))
+  lenArgs19 : TaintOk [.esp, .ebp] (.block (lenArgs H 19))
+  lenArgs8 : TaintOk [.esp, .ebp] (.block (lenArgs H 8))
   cpSalt : TaintOk [.esp, .ebp] (.block (cpSalt H))
   putH : TaintOk [.esp, .ebp] (.block (putH H))
   fxSalt : TaintOk [.esp, .ebp] (.block (fxSalt H))
@@ -70,6 +73,9 @@ structure Certs (H : Hash) : Prop where
   passSet : TaintOk [.esp, .ebp] (.block (passSet H))
   anyLen : TaintOk [.esp, .ebp] (.block (anyLen H))
   cmpArgs : TaintOk [.esp, .ebp] (.block (cmpArgs H))
+  mgfArgs : TaintOk [.esp, .ebp] (.block (mgfArgsT H))
+  digCt : TaintOk [.esp, .ebx, .eax] (Impl.MdHashTable.X86.digest H.out)
+  digSp : NoSp (Impl.MdHashTable.X86.digest H.out)
   sp : NoSp (spBlocks H)
 
 /-- What the pieces of code `Certs` checks read of a hash function: its
@@ -81,8 +87,8 @@ def shapeOf (H : Hash) : Hash :=
 
 theorem Certs.of_shape {H : Hash} (h : Certs (shapeOf H)) : Certs H :=
   ⟨h.lenSet, h.clrB, h.clrY, h.padArgs, h.padBody, h.blkSet, h.cmpSet, h.selSet, h.outPart, h.mgfSeed,
-    h.ctrSet, h.xorSet, h.mgfNext, h.params, h.cpDig16, h.cpDig4, h.lenArgs18, h.lenArgs7, h.cpSalt, h.putH,
-    h.fxSalt, h.cpDb, h.passSet, h.anyLen, h.cmpArgs, h.sp⟩
+    h.ctrSet, h.xorSet, h.mgfNext, h.params, h.cpDig16, h.cpDig4, h.lenArgs19, h.lenArgs8, h.cpSalt, h.putH,
+    h.fxSalt, h.cpDb, h.passSet, h.anyLen, h.cmpArgs, h.mgfArgs, h.digCt, h.digSp, h.sp⟩
 
 /-- A hash function, as RSASSA-PSS on x86 uses it. -/
 structure PssHash where

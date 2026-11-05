@@ -1,23 +1,32 @@
 module
 
 public import VerifiedGarbage.Impl.RsaOaep.PPC64LE
+public import VerifiedGarbage.Impl.Md5.PPC64LE.Stream
+public import VerifiedGarbage.Impl.Sha1.PPC64LE.Stream
+public import VerifiedGarbage.Impl.Sha256.PPC64LE.Md
+public import VerifiedGarbage.Impl.Sha512.PPC64LE.Md
 
 /-!
 # RSASSA-PSS verification (RFC 8017 §8.1.2) with a precomputed public key on PPC64LE
 
-`vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed(n = r3, n_len = r4, e = r5,
-e_len = r6, digest = r7, sig = r8, sig_len = r9, salt_len = r10,
-any_salt_len, scratch, scratch_len, pre, pre_len)`, the last five on the
-stack, for a hash function `H` (an `Impl.Hmac.Stream.PPC64LE.Hash`, its
-streaming functions) as both the hash function and MGF1's, which it calls,
-with `vg_rsa_public_precomputed_checked`.
+`vg_rsa_pss_verify_precomputed(n = r3, n_len = r4, e = r5, e_len = r6,
+digest = r7, digest_len = r8, sig = r9, sig_len = r10, salt_len,
+any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
+eight on the stack, with the hash function of the table `hash` (of the
+interface `MdHash`, `Spec/MdHashTable.lean`) and MGF1 over that of the table
+`mgf1` (of the interface `Hash`, `Spec/HashTable.lean`), which it calls
+through the tables (`tcall`), with `vg_rsa_public_precomputed_checked`. The
+index of `hash`'s hash function (its word 5) selects the code for that hash
+function's sizes (`byIdx`, among `idxs`), which is all that code uses of it
+(`shapeOf`): its digest length and its block, hash value and length field,
+with the code that writes the length field.
 
 It runs in the frame of RSAES-OAEP encryption (`Impl/RsaOaep/PPC64LE.lean`)
-and uses its MGF1 (`mgfXor`) and its part of `scratch` (`oEm`, `oSt`, `oDig`,
-`oW`), and more of it: `M'` at `oY`, a copy of the streaming state at `oBk`
-and the digest selected at `oSel`. The public operation gets the rest of
-`scratch` from `oRsa`, `scratch_len - 1024` words, and writes RSAVP1 of the
-signature (or zeros) to `EM`'s place, `k = n_len` bytes at `scratch`.
+and uses its MGF1 with a table (`mgfXorT`) and its part of `scratch` (`oEm`,
+`oSt`, `oDig`, `oW`), and more of it: `M'` at `oY`, the length field at
+`oLen` and the hash value selected at `oSel`. The public operation gets the
+rest of `scratch` from `oRsa`, `scratch_len - 1024` words, and writes RSAVP1
+of the signature (or zeros) to `EM`'s place, `k = n_len` bytes at `scratch`.
 
 The values the code keeps across the calls are in `r14`–`r23`: `r14` =
 `scratch`, `r15` = `k`, `r16` = `digest`, `r17` = `lo` (1 if
@@ -39,18 +48,26 @@ on it, whose value must be 1, and the salt's length `dbLen - pos - 1`, which
 must be `salt_len` if one is given. Then `H' = Hash(0⁸ ‖ mHash ‖ salt)`:
 
 * for a given salt length, the last `salt_len` bytes of `DB` follow `mHash`
-  in `M'`, which is hashed at once;
+  in `M'`, which is hashed with the streaming functions;
 * for any salt length, `DB` follows `mHash` in `M'` and is shifted left by
   `pos + 1` bytes in ten passes (one per bit of `pos + 1`, each moving every
-  byte or none), so that the salt follows `mHash`; then, after `0⁸ ‖ mHash`,
-  for each length `L` from 0 to `dbLen - 1` the streaming state is copied
-  away, finalized, the digest kept at `oSel` if `L` is the salt's length,
-  and the state copied back and updated with the next byte of `M'`.
+  byte or none), so that the salt follows `mHash`, then zeros; `M'`, whose
+  length `ℓ = 8 + hLen + sLen` is secret, is hashed by `ctHash`, which
+  depends only on `nbm = ⌊(8 + hLen + dbLen - 1 + L) / B⌋ + 1`, the blocks
+  of the longest: `init` sets the hash value, `0x80` is ORed into byte `i`
+  of `M'` under the mask of `i = ℓ` for every `i < nbm B`, the length field
+  of `ℓ` (written at `oLen` by the hash function's code for it) is ORed into
+  the end of block `b` under the mask of `b = ⌊(ℓ + L) / B⌋`, the last block
+  of the padded message, for every `b < nbm`; every block `b < nbm` is
+  compressed (the table's function 3), and the hash value copied to `oSel`
+  under the mask of `b = ⌊(ℓ + L) / B⌋`; and the digest of that hash value
+  is written to `oDig` (the table's function 4).
 
 The result is 1 if the accumulator, ORed with `H' ⊕ H`, is zero. A
 comparison of values below `2⁶³` is the top bit of their difference, and
 every selection a mask: every branch and address depends only on the
-pointers, the lengths, `salt_len`, `any_salt_len` and `n₀`.
+pointers, the lengths, `salt_len`, `any_salt_len`, `n₀` and which tables
+`hash` and `mgf1` are.
 -/
 
 @[expose] public section
@@ -60,18 +77,74 @@ namespace VG.Impl.RsaPss.PPC64LE
 open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-open VG.Impl.RsaOaep.PPC64LE (arg copyLoop zeroLoop oEm oSt oDig oW oRsa mgfXor)
+open VG.Impl.MdStream.PPC64LE (Params lg)
+open VG.Impl.RsaOaep.PPC64LE (arg copyLoop zeroLoop oEm oSt oDig oW oRsa Fns tcall tword mgfXorT)
 
 /-! ## More of our part of `scratch` -/
 
-/-- `M' = 0⁸ ‖ mHash ‖ salt`, and room for `DB`'s shift: 2048 bytes. -/
+/-- `M' = 0⁸ ‖ mHash ‖ salt`, and room for `DB`'s shift and the padding:
+2048 bytes. -/
 def oY : Nat := 2560
-/-- A copy of the streaming state (at most 192 bytes). -/
-def oBk : Nat := 4608
-/-- The digest selected (at most 64 bytes). -/
+/-- The length field of `ctHash` (at most 16 bytes). -/
+def oLen : Nat := 4608
+/-- The hash value selected by `ctHash` (at most 64 bytes). -/
 def oSel : Nat := 4800
 
-variable (H : Hash)
+/-! ## The tables
+
+The hash function's table, of `MdHash`, and MGF1's, of `Hash`, are stack
+arguments (`hArg`, `gArg` for verification); each call of one of their
+functions is indirect (`tcall`: the table's word through the stack
+argument, into `r12`, then `bctrl`, of whichever of the functions the list
+names is at that address). -/
+
+/-- The functions an indirect call of each of the functions of a table of
+`MdHash` may reach: for each of `init`, `update`, `finalize`, the
+compression function and the digest, that function of every table of the
+interface. -/
+structure MdFns where
+  init : List (String × Prog isa)
+  upd : List (String × Prog isa)
+  fin : List (String × Prog isa)
+  comp : List (String × Prog isa)
+  dig : List (String × Prog isa)
+
+/-- Verification's stack arguments `hash` and `mgf1`. -/
+def hArg : Nat := 6
+def gArg : Nat := 7
+
+/-! ## The hash function's sizes -/
+
+/-- The indices in `Spec.Mgf1.hashes` of the hash functions whose tables the
+functions take: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224
+and SHA-512/256. -/
+def idxs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7]
+
+/-- A hash function with only the sizes `B`, `N` and `D`, which is all the
+code with the hash function's calls through a table uses of it. -/
+def ofSizes (B N D : Nat) : Hash := ⟨B, N, D, 0, 0, "", .block [], "", .block [], "", .block [], ""⟩
+
+/-- The sizes and the Merkle–Damgård code's parameters of the hash function
+of index `i` in `Spec.Mgf1.hashes`: those of MD5, SHA-1, SHA-256 (for SHA-224
+too) and SHA-512 (for the SHA-512 family), with the digest length. -/
+def shapeOf : Nat → Hash × Params
+  | 0 => (ofSizes 64 16 16, Impl.Md5.PPC64LE.Stream.params)
+  | 1 => (ofSizes 64 20 20, Impl.Sha1.PPC64LE.Stream.params)
+  | 2 => (ofSizes 64 32 28, Impl.Sha256.PPC64LE.mdParams)
+  | 3 => (ofSizes 64 32 32, Impl.Sha256.PPC64LE.mdParams)
+  | 4 => (ofSizes 128 64 48, Impl.Sha512.PPC64LE.mdParams)
+  | 5 => (ofSizes 128 64 64, Impl.Sha512.PPC64LE.mdParams)
+  | 6 => (ofSizes 128 64 28, Impl.Sha512.PPC64LE.mdParams)
+  | _ => (ofSizes 128 64 32, Impl.Sha512.PPC64LE.mdParams)
+
+/-- `b i` for the index `i` in `r11` (`r12` is written), among `is`: the last
+if it is none of the others. -/
+def byIdx (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [i] => b i
+  | i :: is => .seq (.block [.subi .r12 .r11 i]) (.ite (.zero .d .r12) (b i) (byIdx b is))
+
+variable (H : Hash) (P : Params) (f : MdFns) (g : Fns)
 
 /-! ## The entry -/
 
@@ -80,9 +153,9 @@ variable (H : Hash)
 `n₀ >> 1` smeared down (`2^b - 1` for the top bit `b` of `n₀`), `lo = (x = 0)`
 and `c = x ∨ (0xFF ∧ -lo)`. -/
 def prologue : List Instr :=
-  [.load .d .r20 .r12 (arg 0), .lsr .w .r20 .r20 0, .load .d .r14 .r12 (arg 1), .load .d .r27 .r12 (arg 2),
-    .load .d .r22 .r12 (arg 3), .load .d .r23 .r12 (arg 4), mov .r15 .r4, mov .r16 .r7, mov .r19 .r10,
-    mov .r24 .r5, mov .r25 .r6, mov .r26 .r8, .lbz .r9 .r3 0,
+  [.load .d .r20 .r12 (arg 1), .lsr .w .r20 .r20 0, .load .d .r14 .r12 (arg 2), .load .d .r27 .r12 (arg 3),
+    .load .d .r22 .r12 (arg 4), .load .d .r23 .r12 (arg 5), mov .r15 .r4, mov .r16 .r7, .load .d .r19 .r12 (arg 0),
+    mov .r24 .r5, mov .r25 .r6, mov .r26 .r9, .lbz .r9 .r3 0,
     .lsr .d .r10 .r9 1, .lsr .d .r11 .r10 1, .logic .or .r10 .r10 .r11, .lsr .d .r11 .r10 2,
     .logic .or .r10 .r10 .r11, .lsr .d .r11 .r10 4, .logic .or .r10 .r10 .r11,
     .subi .r11 .r10 1, .lsr .d .r17 .r11 63, .li .r11 0, .sub .r11 .r11 .r17, .li .r8 0xFF,
@@ -199,50 +272,91 @@ def shift : Prog isa :=
     (.loop (.seq (shiftPass H) (.block [.lsr .d .r8 .r8 1, .add .r9 .r9 .r9, .subi .r10 .r10 1]))
       (.nonzero .d .r10))
 
-/-! ## Hashing -/
+/-! ## Hashing with the streaming functions -/
 
-/-- `init` on the state at `scratch + oSt`. -/
-def hInit : Prog isa := .seq (.block [.addi .r3 .r14 oSt]) H.callInit
+variable (j : Nat)
+
+/-- `init` on the state at `scratch + oSt`, through the table that is our
+stack argument `j`. -/
+def hInit : Prog isa := .seq (.block [.addi .r3 .r14 oSt]) (tcall j 0 f.init)
 
 /-- `update` of the state, after `r4` bytes, with the `r6` bytes of `M'` at
 `r5`. -/
-def hUpd : Prog isa := .seq (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) H.callUpd
+def hUpd : Prog isa := .seq (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) (tcall j 1 f.upd)
 
 /-- `finalize` of the state, after `r4` bytes, to `scratch + oDig`. -/
-def hFin : Prog isa := .seq (.block [.addi .r3 .r14 oSt, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) H.callFin
+def hFin : Prog isa := .seq (.block [.addi .r3 .r14 oSt, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) (tcall j 2 f.fin)
 
 /-- For a given salt length: `H' = Hash(M')`, `8 + hLen + salt_len` bytes, to
 `scratch + oDig`. -/
 def hashFixed : Prog isa :=
-  .seq (hInit H) (.seq (.block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)]) (.seq (hUpd H)
-    (.seq (.block [.addi .r4 .r19 (8 + H.D)]) (hFin H))))
+  .seq (hInit f j) (.seq (.block [.li .r4 0, .addi .r5 .r14 oY, .addi .r6 .r19 (8 + H.D)]) (.seq (hUpd f j)
+    (.seq (.block [.addi .r4 .r19 (8 + H.D)]) (hFin f j))))
 
-/-- `r4` bytes of `src` to `dst`. -/
-def copyN (src dst n : Nat) : Prog isa := .seq (.block [.addi .r4 .r14 src, .addi .r5 .r14 dst, .li .r6 n]) copyLoop
+/-! ## `ctHash`: hashing `M'` of a secret length -/
 
-/-- The digest at `oDig` copied to `oSel` if `L` (`r26`) is the salt's length
-(`r25`): XORed in under the mask `-(L = sLen)`. -/
-def select : Prog isa :=
-  .seq (.block [.logic .xor .r3 .r26 .r25, .subi .r3 .r3 1, .lsr .d .r3 .r3 63, .li .r4 0, .sub .r3 .r4 .r3,
-      .addi .r4 .r14 oDig, .addi .r5 .r14 oSel, .li .r6 H.D])
+/-- `ℓ = 8 + hLen + sLen` into `r29`, and `nbm = ⌊(8 + hLen + dbLen - 1 +
+L) / B⌋ + 1` into `r28`. -/
+def ctLens : List Instr :=
+  [.addi .r29 .r25 (8 + H.D), .addi .r28 .r21 (8 + H.D - 1 + P.L), .lsr .d .r28 .r28 (lg P), .addi .r28 .r28 1]
+
+/-- In `d`, all ones if `a = b`, zero if not (`r12` is written). -/
+def eqMask (d a b : Reg) : List Instr :=
+  [.logic .xor d a b, .subi d d 1, .lsr .d d d 63, .li .r12 0, .sub d .r12 d]
+
+/-- `0x80` ORed into byte `i` of `M'` under the mask of `i = ℓ`, for each of
+its `nbm B` bytes. -/
+def pad80 : Prog isa :=
+  .seq (.block [.addi .r4 .r14 oY, .lsl .r5 .r28 (lg P), .li .r6 0])
+    (.loop (.block (eqMask .r7 .r6 .r29 ++ [.li .r8 0x80, .logic .and .r7 .r7 .r8, .lbz .r8 .r4 0,
+      .logic .or .r8 .r8 .r7, .stb .r8 .r4 0, .addi .r4 .r4 1, .addi .r6 .r6 1, .subi .r5 .r5 1]))
+      (.nonzero .d .r5))
+
+/-- The length field of `ℓ` to `scratch + oLen` (`P.len` with `r26` placed so
+that it writes there), and the last block's index `⌊(ℓ + L) / B⌋` to
+`r27`. -/
+def lenField : List Instr :=
+  [.addi .r26 .r14 (oLen - (P.N + P.B - P.L))] ++ P.len ++ [.addi .r27 .r29 P.L, .lsr .d .r27 .r27 (lg P)]
+
+/-- The length field ORed into the last `L` bytes of block `b` (`r6`) under
+the mask of `b = ⌊(ℓ + L) / B⌋`, for every block. -/
+def lenLoop : Prog isa :=
+  .seq (.block [.addi .r4 .r14 (oY + P.B - P.L), .li .r6 0, mov .r9 .r28])
+    (.loop (.seq (.block (eqMask .r7 .r6 .r27 ++ [.addi .r5 .r14 oLen, .li .r10 P.L]))
+      (.seq (.loop (.block [.lbz .r8 .r5 0, .logic .and .r8 .r8 .r7, .lbz .r11 .r4 0, .logic .or .r11 .r11 .r8,
+          .stb .r11 .r4 0, .addi .r4 .r4 1, .addi .r5 .r5 1, .subi .r10 .r10 1]) (.nonzero .d .r10))
+        (.block [.addi .r4 .r4 (P.B - P.L), .addi .r6 .r6 1, .subi .r9 .r9 1])))
+      (.nonzero .d .r9))
+
+/-- The arguments of the compression function: the hash value at
+`scratch + oSt`, block `b` (`r26`) of `M'`, one block, the working space. -/
+def compArgs : List Instr :=
+  [.addi .r3 .r14 oSt, .lsl .r4 .r26 (lg P), .add .r4 .r4 .r14, .addi .r4 .r4 oY, .li .r5 1, .addi .r6 .r14 oW]
+
+/-- The hash value copied from `scratch + oSt` to `scratch + oSel` under the
+mask of `b = ⌊(ℓ + L) / B⌋` (`r26`, `r27`). -/
+def selHash : Prog isa :=
+  .seq (.block (eqMask .r3 .r26 .r27 ++ [.addi .r4 .r14 oSt, .addi .r5 .r14 oSel, .li .r6 P.N]))
     (.loop (.block [.lbz .r7 .r4 0, .lbz .r8 .r5 0, .logic .xor .r7 .r7 .r8, .logic .and .r7 .r7 .r3,
       .logic .xor .r8 .r8 .r7, .stb .r8 .r5 0, .addi .r4 .r4 1, .addi .r5 .r5 1, .subi .r6 .r6 1])
       (.nonzero .d .r6))
 
-/-- A length `L` (`r26`; `r27` lengths left): the digest of the first
-`8 + hLen + L` bytes of `M'`, kept if `L` is the salt's length; then the
-next byte of `M'` absorbed. -/
-def lenRound : Prog isa :=
-  .seq (copyN oSt oBk H.S) (.seq (.block [.addi .r4 .r26 (8 + H.D)]) (.seq (hFin H) (.seq (select H)
-    (.seq (copyN oBk oSt H.S) (.seq (.block [.addi .r4 .r26 (8 + H.D), .addi .r5 .r14 (oY + 8 + H.D),
-      .add .r5 .r5 .r26, .li .r6 1]) (.seq (hUpd H)
-    (.block [.addi .r26 .r26 1, .subi .r27 .r27 1])))))))
+/-- Every block compressed (`r26` the block, `r28` the blocks left), the last
+one's hash value selected. -/
+def compLoop : Prog isa :=
+  .seq (.block [.li .r26 0])
+    (.loop (.seq (.block (compArgs P)) (.seq (tcall j 3 f.comp)
+      (.seq (selHash P) (.block [.addi .r26 .r26 1, .subi .r28 .r28 1])))) (.nonzero .d .r28))
 
-/-- For any salt length: `H'` for every length below `dbLen`, the salt's
-kept at `scratch + oSel`. -/
-def hashAny : Prog isa :=
-  .seq (hInit H) (.seq (.block [.li .r4 0, .addi .r5 .r14 oY, .li .r6 (8 + H.D)]) (.seq (hUpd H)
-    (.seq (.block [.li .r26 0, mov .r27 .r21]) (.loop (lenRound H) (.nonzero .d .r27)))))
+/-- The digest of the selected hash value to `scratch + oDig`, by the
+table's function 4 (`digest(value = r3, out = r4)`). -/
+def digestOut : Prog isa := .seq (.block [.addi .r3 .r14 oSel, .addi .r4 .r14 oDig]) (tcall j 4 f.dig)
+
+/-- The digest of the first `ℓ` bytes of `M'`, padded in `nbm` blocks, to
+`scratch + oDig`, without revealing `ℓ`. -/
+def ctHash : Prog isa :=
+  .seq (.block (ctLens H P)) (.seq (hInit f j) (.seq (pad80 P) (.seq (.block (lenField P)) (.seq (lenLoop P)
+    (.seq (compLoop P f j) (digestOut f j))))))
 
 /-! ## The result -/
 
@@ -257,29 +371,36 @@ def cmpH (o : Nat) : Prog isa :=
 /-- The salt's hash and the result: by the public salt-length mode. -/
 def finish : Prog isa :=
   .ite (.zero .d .r20)
-    (.seq (mPrefix H 8) (.seq (copySalt H) (.seq (hashFixed H) (cmpH H oDig))))
-    (.seq (mPrefix H 2048) (.seq (copyDb H) (.seq (shift H) (.seq (hashAny H) (cmpH H oSel)))))
+    (.seq (mPrefix H 8) (.seq (copySalt H) (.seq (hashFixed H f hArg) (cmpH H oDig))))
+    (.seq (mPrefix H 2048) (.seq (copyDb H) (.seq (shift H) (.seq (ctHash H P f hArg) (cmpH H oDig)))))
 
 /-! ## The function -/
 
 /-- After the checks. -/
 def verifyMain : Prog isa :=
   .seq (.block pubArgs) (.seq Impl.RsaPkcs1Sig.PPC64LE.pubCall (.seq (.block acc0)
-  (.seq (.block (dbArgs H)) (.seq (mgfXor H) (.seq (.block clearTop) (.seq scan
-  (.seq (.block posCheck) (.seq lenCheck (finish H)))))))))
+  (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) (.seq scan
+  (.seq (.block posCheck) (.seq lenCheck (finish H P f)))))))))
 
 /-- The checks, then `verifyMain`. -/
 def checks : Prog isa :=
   .ite (.zero .d .r9) fail
     (.seq (.block (chkEm H)) (.ite (.nonzero .d .r3) fail
-      (.seq expLen (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) fail (verifyMain H))))))
+      (.seq expLen (.seq (.block (chkSalt H)) (.ite (.nonzero .d .r3) fail (verifyMain H P f g))))))
 
-/-- The frame's body. -/
+/-- The frame's body, for the hash function's sizes. -/
 def body : Prog isa :=
-  .seq (.block (Impl.RsaOaep.PPC64LE.save ++ prologue H)) (.seq (checks H) (.block Impl.RsaOaep.PPC64LE.restore))
+  .seq (.block (Impl.RsaOaep.PPC64LE.save ++ prologue H)) (.seq (checks H P f g) (.block Impl.RsaOaep.PPC64LE.restore))
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`. -/
+/-- The index of the table `hash`'s hash function (its word 5) to `r11`,
+then the frame's body for its sizes. -/
+def verifyBody : Prog isa :=
+  .seq (.block (tword .r11 hArg 5)) (byIdx (fun i => body (shapeOf i).1 (shapeOf i).2 f g) idxs)
+
+/-- `vg_rsa_pss_verify_precomputed`, with the hash function the table that
+is its stack argument 6 (`hash`) and MGF1's the table that is its stack
+argument 7 (`mgf1`). -/
 def verifyPrecomputed : Prog isa :=
-  .frame (.alloc Impl.RsaOaep.PPC64LE.frameBytes) (body H) (.free Impl.RsaOaep.PPC64LE.frameBytes)
+  .frame (.alloc Impl.RsaOaep.PPC64LE.frameBytes) (verifyBody f g) (.free Impl.RsaOaep.PPC64LE.frameBytes)
 
 end VG.Impl.RsaPss.PPC64LE

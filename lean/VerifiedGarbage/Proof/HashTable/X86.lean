@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Md5
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha1
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha224
 public import VerifiedGarbage.Proof.RsaOaep.X86.Hashes.Sha256
@@ -51,6 +52,7 @@ structure TVar where
   features : List String
   idx : Spec.Mgf1.hashes[Spec.HashTable.index g.G]? = some g.G
 
+def md5V : TVar := ⟨Proof.RsaOaep.X86.md5, "", [], rfl⟩
 def sha1V (b : Proof.Sha1.X86.Variants.Backend) : TVar := ⟨Proof.RsaOaep.X86.sha1 b, b.stream.suffix, b.features, rfl⟩
 def sha224V (b : Proof.Sha256.X86.Variants.Backend) : TVar :=
   ⟨Proof.RsaOaep.X86.sha224 b, b.stream.suffix, b.features, rfl⟩
@@ -61,11 +63,11 @@ def sha512V : TVar := ⟨Proof.RsaOaep.X86.sha512, "", [], rfl⟩
 def sha512_224V : TVar := ⟨Proof.RsaOaep.X86.sha512_224, "", [], rfl⟩
 def sha512_256V : TVar := ⟨Proof.RsaOaep.X86.sha512_256, "", [], rfl⟩
 
-/-- Every variant: SHA-1's with the backends `vs1`, SHA-224's and SHA-256's
+/-- Every variant: MD5's, SHA-1's with the backends `vs1`, SHA-224's and SHA-256's
 with `vs256`, and the SHA-512 family's. -/
 def vars (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
     List TVar :=
-  vs1.map sha1V ++ vs256.map sha224V ++ vs256.map sha256V ++ [sha384V, sha512V, sha512_224V, sha512_256V]
+  md5V :: (vs1.map sha1V ++ vs256.map sha224V ++ vs256.map sha256V ++ [sha384V, sha512V, sha512_224V, sha512_256V])
 
 /-- The table of `w`'s streaming functions, `VG_HASH_<HASH><SUFFIX>`. -/
 def tableOf (w : TVar) : FnTable where

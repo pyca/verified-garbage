@@ -73,7 +73,7 @@ theorem cmpLens_taint : ∀ x ∈ lens, x < 2 ^ 32 ∧
     TaintOk [] (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 x))]) := by
   intro x hx
   simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
 
 theorem tabHead_taint : TaintOk [.esp, .ebp, .eax]
     (.block (([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 16)), Impl.RsaPss.X86.st .eax sHl] : List Instr) ++

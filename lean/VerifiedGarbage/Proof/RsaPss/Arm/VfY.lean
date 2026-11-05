@@ -26,16 +26,14 @@ theorem away2_scr {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {o n : Nat} (ho :
   obtain ⟨σ', ok⟩ := hg.ok
   exact ⟨hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
-    hg.slot ok ho (by rw [hg.F]; decide), hg.slot ok ho (by rw [hg.F]; decide),
     Geo.sep (by omega) (by decide) ho⟩
 
 theorem away2_slot {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {d : Nat} (hd : d + 4 ≤ frameBytes)
-    (h₁ : d + 4 ≤ sC ∨ sC + 4 ≤ d) (h₂ : d + 4 ≤ sLo ∨ sLo + 4 ≤ d) (h₃ : d + 4 ≤ sDb ∨ sDb + 4 ≤ d)
-    (h₄ : d + 4 ≤ sAny ∨ sAny + 4 ≤ d) (h₅ : d + 4 ≤ sPos ∨ sPos + 4 ≤ d) (h₆ : d + 4 ≤ sAcc ∨ sAcc + 4 ≤ d) :
+    (h₂ : d + 4 ≤ sLo ∨ sLo + 4 ≤ d) (h₃ : d + 4 ≤ sDb ∨ sDb + 4 ≤ d) (h₅ : d + 4 ≤ sPos ∨ sPos + 4 ≤ d) (h₆ : d + 4 ≤ sAcc ∨ sAcc + 4 ≤ d) :
     Away2 L scr (slotR L d) := by
   obtain ⟨σ', ok⟩ := hg.ok
   exact ⟨slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
-    slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega), slotSep (by decide) hd (by omega),
+    slotSep (by decide) hd (by omega),
     (hg.slot ok (o := oEm) (n := 1024) (by decide) (by rw [hg.F]; omega)).symm⟩
 
 theorem dig_buf {P : EP} (hP : ∃ σ, In h.D P σ) : RBuf (P.lay h.D) P.dig h.D := by
@@ -51,7 +49,7 @@ abbrev Y1 (P : EP) (τ : State) (m : Mem) : Prop :=
 
 /-- `Y` cleared and `mHash` after its 8 zero bytes. -/
 theorem yDig_vf (P : EP) (hP : ∃ σ, In h.D P σ) (Q : Prop) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ Q) (yDig h.H 4)
+    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ Q) (yDig h.sh 4)
       (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ Q) ∧ Y1 h P τ s.mem) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo

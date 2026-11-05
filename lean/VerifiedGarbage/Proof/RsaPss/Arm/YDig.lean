@@ -42,7 +42,7 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} {dgP : BitVec 32} (hj21 : j < 21) (hj
     (hro : ∀ σ s, Ctx L scr σ s → ∀ i < h.D, s.mem (byteAt dgP i) = (dl σ).getD i 0)
     {X : State → Mem → Prop} (hX : ∀ σ m m', X σ m → Frame [sR scr oY 2048] m m' → X σ m') :
     VP (fun σ s => Ctx L scr σ s ∧ X σ s.mem)
-      (yDig h.H j)
+      (yDig h.sh j)
       (fun σ s => Ctx L scr σ s ∧ X σ s.mem ∧
         ∀ i < 2048, s.mem (sa scr (oY + i)) = (Spec.RsaPss.zeros 8 ++ dl σ).getD i 0) := by
   have hDl : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
@@ -53,7 +53,7 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} {dgP : BitVec 32} (hj21 : j < 21) (hj
   have hX' : ∀ σ m m' o n, X σ m → oY ≤ o → o + n ≤ oY + 2048 → Frame [sR scr o n] m m' → X σ m' :=
     fun σ m m' o n hx h₁ h₂ hf => hX σ m m' hx (Frame.sub hf fun r hr => ⟨sR scr oY 2048, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ h₁ h₂⟩)
-  show VP _ (.seq (.block clrY) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (cpDig h.H j))
+  show VP _ (.seq (.block clrY) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (cpDig h.sh j))
     Impl.Bignum.Arm.copyBytes))) _
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ X σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oY ∧
       s.gpr .r2 = 0 ∧ s.gpr .lr = BitVec.ofNat 32 2048)
@@ -81,11 +81,11 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} {dgP : BitVec 32} (hj21 : j < 21) (hj
       rw [hc.st.rd, hc.st.wr]; have := hc.st.ok.arg_read hj; rwa [Lay.argA, hg.F] at this
     have v : s.mem.readW (L.fr (argOff frameBytes j)) 32 = dgP := by
       have := hc.st.arg hj; rwa [Lay.argA, hg.F, hv] at this
-    have hw : WP isa (.block (cpDig h.H j)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    have hw : WP isa (.block (cpDig h.sh j)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 (oY + 8) ∧ t.gpr .r1 = dgP ∧
         t.gpr .lr = BitVec.ofNat 32 h.D := by
       prun [cpDig, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a, rd, v, hoff,
-        movw_val (show oY + 8 < 2 ^ 16 by decide), movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith)]
+        movw_val (show oY + 8 < 2 ^ 16 by decide), movw_val (show dig h.sh < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith)]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨hc.regs rd wr sp m, ⟨m ▸ hx, fun i hi => ?_, fun i hi => ?_⟩,
       r0, r1, lr, fun i hi => m ▸ hro σ s hc i hi⟩
     · rw [m, ← hg.byteAt_scr (by pomega)]; exact hz i (by omega_arith)

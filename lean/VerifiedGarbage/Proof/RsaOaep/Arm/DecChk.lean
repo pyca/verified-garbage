@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecCall
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.DecCall
 meta import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec

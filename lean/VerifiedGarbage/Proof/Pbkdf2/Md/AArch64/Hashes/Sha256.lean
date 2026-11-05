@@ -221,14 +221,9 @@ def stream : List StreamFn := [
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
-/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
-theorem pss_sha256 : Proof.RsaPss.AArch64.PssChecks coreH.P 32 := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-  taint_decide_all
-
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
-  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha256 rfl rfl satI satF satT satP (by decide)
+  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha256_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract

@@ -24,22 +24,22 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
 /-- Its stack arguments. -/
 def vArg (s : State) (i : Nat) : BitVec 64 :=
   match i with
-  | 0 => s.gpr .r9
+  | 0 => stackArg s 0
   | 1 => s.gpr .rsi
-  | 2 => off (stackArg s 3) oRsa
-  | _ => stackArg s 4 - BitVec.ofNat 64 1024
+  | 2 => off (stackArg s 4) oRsa
+  | _ => stackArg s 5 - BitVec.ofNat 64 1024
 
-theorem vfb_sub8 {s : State} (hp : VPre G s) : (fb s - 8).toNat = (fb s).toNat - 8 := by
+theorem vfb_sub8 {s : State} (hp : VPre tsH tsG s) : (fb s - 8).toNat = (fb s).toNat - 8 := by
   have hF := vfb_toNat hp; have := hp.sp1
   rw [BitVec.toNat_sub]; unfold verifyStack frameBytes at *
   rw [show (8 : BitVec 64).toNat = 8 from rfl]; omega_arith
 
-theorem vstackArg_call {s t : State} (hp : VPre G s) (hsp : t.gpr .rsp = fb s) (rd wr : List Region) {i : Nat}
+theorem vstackArg_call {s t : State} (hp : VPre tsH tsG s) (hsp : t.gpr .rsp = fb s) (rd wr : List Region) {i : Nat}
     (hi : i < 4) : stackArg (t.callEntry.withRegions rd wr) i = word t.mem (fb s) (8 * i) := by
   have hF := vfb_toNat hp
   have := hp.sp1; have := hp.sp2
@@ -56,8 +56,8 @@ theorem vstackArg_call {s t : State} (hp : VPre G s) (hsp : t.gpr .rsp = fb s) (
       show BitVec.ofNat 64 8 = 8 from rfl, BitVec.sub_add_cancel]
   rw [ea]
 
-theorem vsc_sub {s : State} (hp : VPre G s) :
-    (stackArg s 4 - 1024#64).toNat = (stackArg s 4).toNat - 1024 := by
+theorem vsc_sub {s : State} (hp : VPre tsH tsG s) :
+    (stackArg s 5 - 1024#64).toNat = (stackArg s 5).toNat - 1024 := by
   have := hp.hsl; have := hp.k1
   rw [BitVec.toNat_sub, show (1024#64).toNat = 1024 from rfl]; omega_arith
 

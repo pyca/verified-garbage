@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
-import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3
+import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 

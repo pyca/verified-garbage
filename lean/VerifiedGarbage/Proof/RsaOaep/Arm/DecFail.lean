@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
 public import VerifiedGarbage.Proof.RsaOaep.Decode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

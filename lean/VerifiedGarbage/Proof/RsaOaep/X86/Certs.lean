@@ -13,6 +13,10 @@ namespace VG.Proof.RsaOaep.X86
 open VG VG.X86 VG.Impl.RsaOaep.X86
 open VG.Proof.RsaPss.X86 (PssHash)
 
+theorem certs16 : OCerts (dShape 16) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
+    exact ⟨_, by taint_decide⟩
+
 theorem certs20 : OCerts (dShape 20) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, NoSp.of_all (by decide +kernel)⟩ <;>
     exact ⟨_, by taint_decide⟩
@@ -34,14 +38,15 @@ theorem certs64 : OCerts (dShape 64) := by
     exact ⟨_, by taint_decide⟩
 
 /-- The certificates of a digest length the library's hash functions have. -/
-theorem certsOf {D : Nat} (h : D = 20 ∨ D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : OCerts (dShape D) := by
-  rcases h with rfl | rfl | rfl | rfl | rfl
-  exacts [certs20, certs28, certs32, certs48, certs64]
+theorem certsOf {D : Nat} (h : D = 20 ∨ D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64 ∨ D = 16) : OCerts (dShape D) := by
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [certs20, certs28, certs32, certs48, certs64, certs16]
 
 /-- The RSASSA-PSS hash function's streaming functions. -/
-def OHash.ofPss (h : PssHash) (hD : h.H.D = 20 ∨ h.H.D = 28 ∨ h.H.D = 32 ∨ h.H.D = 48 ∨ h.H.D = 64) : OHash :=
+def OHash.ofPss (h : PssHash) (hD : h.H.D = 20 ∨ h.H.D = 28 ∨ h.H.D = 32 ∨ h.H.D = 48 ∨ h.H.D = 64 ∨ h.H.D = 16) :
+    OHash :=
   ⟨h.H.st, h.ok.hH, h.G, h.hash, h.glen, h.valid, OCerts.of_shape (certsOf hD), by
     show h.H.D ∈ Impl.RsaOaep.X86.lens
-    rcases hD with e | e | e | e | e <;> rw [e] <;> decide⟩
+    rcases hD with e | e | e | e | e | e <;> rw [e] <;> decide⟩
 
 end VG.Proof.RsaOaep.X86

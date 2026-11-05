@@ -136,14 +136,14 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     have c3 : Ctx (P.lay h.D) P.scr σ t3 := c2.upd u3 (by decide) (by decide)
     refine wp_addm (B := (P.lay h.D).B) (by rw [c3.st.sp]) (by rw [hg.aFr ok sDb (by decide)]; exact c3.rFr hg sDb (by decide)) fun t4 u4 => ?_
     have c4 : Ctx (P.lay h.D) P.scr σ t4 := c3.upd u4 (by decide) (by decide)
-    refine wp_subm (B := (P.lay h.D).B) (by rw [c4.st.sp]) (by rw [hg.aArg ok 18 (by simp)]; exact
+    refine wp_subm (B := (P.lay h.D).B) (by rw [c4.st.sp]) (by rw [hg.aArg ok 19 (by simp)]; exact
       (by rw [c4.st.rd, c4.st.wr]; exact c4.st.ok.arg_read (sg_arg h (by decide)))) fun t5 u5 => ?_
     refine wp_subi fun t6 u6 _ _ => WP.block_nil ?_
     have m6 : t6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨((c4.upd u5 (by decide) (by decide)).upd u6 (by decide) (by decide)), m6 ▸ hk, m6 ▸ he⟩, ?_⟩
-    have a18 : t4.mem.readW (addr (P.lay h.D).B (Impl.RsaPkcs1Sig.X86.argOff frameBytes 18)) 32 =
+    have a18 : t4.mem.readW (addr (P.lay h.D).B (Impl.RsaPkcs1Sig.X86.argOff frameBytes 19)) 32 =
         BitVec.ofNat 32 P.sl := by
-      rw [hg.aArg ok 18 (by simp), u4.mem, u3.mem, u2.mem, u1.mem, hc.st.arg (sg_arg h (by decide))]; rfl
+      rw [hg.aArg ok 19 (by simp), u4.mem, u3.mem, u2.mem, u1.mem, hc.st.arg (sg_arg h (by decide))]; rfl
     rw [u6.gpr, u5.gpr, a18, u4.gpr, u3.gpr, u2.gpr, u1.gpr, u3.mem, u2.mem, u1.mem, hc.ebp,
       hg.aFr ok sLo (by decide), hg.aFr ok sDb (by decide), hk.1.2.2.2.1, hk.1.2.2.2.2, BitVec.add_assoc,
       BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, ← Nat.add_assoc,
@@ -168,8 +168,8 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       u2.rd u2.wr (by rw [u2.gpr]) (by rw [u2.gpr])
     refine wp_addi fun t3 u3 => ?_
     have c3 : Ctx (P.lay h.D) P.scr σ t3 := c2.upd u3 (by decide) (by decide)
-    refine c3.wp_arg hg (sg_arg h (j := 17) (by decide)) (by decide) (by decide) fun t4 c4 u4 =>
-      c4.wp_arg hg (sg_arg h (j := 18) (by decide)) (by decide) (by decide) fun t5 c5 u5 =>
+    refine c3.wp_arg hg (sg_arg h (j := 18) (by decide)) (by decide) (by decide) fun t4 c4 u4 =>
+      c4.wp_arg hg (sg_arg h (j := 19) (by decide)) (by decide) (by decide) fun t5 c5 u5 =>
         wp_test fun t6 u6 z6 => WP.block_nil ?_
     have m6 : t6.mem = t2.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem]
     refine ⟨⟨c5.fupd u6, ?_, fun i hi => ?_⟩, ?_, ?_, ?_, ?_⟩

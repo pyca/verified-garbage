@@ -143,4 +143,14 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
     · rw [ite_eq_right hc'', ite_eq_right (fun h => hc'' h.2)]
   · rw [show h.N - n = j + 1 by omega_arith]; exact sk
 
+theorem neg_bit (c : Prop) [Decidable c] : (0 : BitVec 32) - (if c then 1 else 0) = maskOf c := by
+  by_cases hc : c <;> simp [maskOf, hc]
+
+
+theorem slot_frame (L : Lay) (m : Mem) (d : Nat) (v : BitVec 32) : Frame [slotR L d] m (m.writeW (L.fr d) v) :=
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+
+
+theorem neg_bit' (c : Prop) [Decidable c] : 0#32 - (if c then 1 else 0) = maskOf c := neg_bit c
+
 end VG.Proof.RsaPss.Arm

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Mid
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
@@ -14,7 +15,7 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Base
 # RSASSA-PSS verification on PPC64LE: `DB`
 
 Untrusted: everything here is checked by Lean. `unmask_ok`: `dbArgs` (`dbArgs_ok`), MGF1
-(`mgfXor_ok`, shared with RSAES-OAEP encryption) and `clearTop` (`clearTop_ok`) leave `DB` in
+through its table (`mgfXorT_ok`, shared with RSAES-OAEP encryption) and `clearTop` (`clearTop_ok`) leave `DB` in
 `EM`'s place: `maskedDB` XORed with MGF1 of `H`, its first byte ANDed with
 `c` (`dbV`).
 -/
@@ -24,10 +25,10 @@ Untrusted: everything here is checked by Lean. `unmask_ok`: `dbArgs` (`dbArgs_ok
 namespace VG.Proof.RsaPss.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE
-open VG.Impl.RsaOaep.PPC64LE (oEm oSt oDig oW oRsa mgfXor)
+open VG.Impl.RsaOaep.PPC64LE (oEm oSt oDig oW oRsa Fns mgfXorT)
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
-open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off view view_w8 sc_in sc_inR sc_inW fx hiRegs MFit mgfXor_ok)
+open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off off_off view view_w8 sc_in sc_inR sc_inW fx hiRegs MFit TabS mgfXorT_ok)
 open VG.Proof.RsaOaep (mixV srcB)
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_li wp_addi wp_add wp_mov wp_and wp_lbz wp_stb wp_nil)
 open VG.Proof.Mgf1 (ifp ifn)
@@ -84,21 +85,22 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) :
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega_arith))), hK, fun o ho => ?_⟩
   rw [hm, view_w8 _ _ (by unfold oRsa; omega_arith) (by unfold oSt oRsa at *; omega_arith)]
 
-theorem unmask_ok {H : Hash} (hH : HashOK H) (hD : H.D = D) {Gs : Spec.Mgf1.Hash}
-    (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D) (hGv : Proof.Mgf1.Valid Gs) {t : State}
-    (h : Base Sp (vP D) s t) {rest : Prog isa} {Q : State → Prop}
-    (k : ∀ t', Base Sp (vP D) s t' → (∀ o < oSt, view t'.mem (Sp s) o = dbV Gs (view t.mem (Sp s)) lN dN D c o) →
-      WP isa rest t' Q) :
-    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXor H) (.seq (.block clearTop) rest))) t Q := by
+theorem unmask_ok {H : Hash} (hD : H.D = D) {G : Hash} (hG : HashOK G) {g : Fns} {pg : Addr}
+    (Tg : TabS G g gArg Sp s pg) {Gm : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gm.hash x = hG.SH.H.hash x) (hGl : Gm.len = G.D) (hGv : Proof.Mgf1.Valid Gm) {t : State}
+    (h : Base Sp (vP D) s t) (sy : t.syms = s.syms) {rest : Prog isa} {Q : State → Prop}
+    (k : ∀ t', Base Sp (vP D) s t' → t'.syms = s.syms →
+      (∀ o < oSt, view t'.mem (Sp s) o = dbV Gm (view t.mem (Sp s)) lN dN D c o) → WP isa rest t' Q) :
+    WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) rest))) t Q := by
   have F := L.F
-  have hk := L.hk; have hk2 := L.k2; have hd1 := L.d1
-  refine WP.seq (WP.mono (dbArgs_ok L hD h) fun t₄ ⟨b₄, k₄, x24, x25, x26, x27⟩ => ?_)
-  subst hD
-  refine WP.seq (WP.mono (mgfXor_ok F hH hGh hGl hGv (src := lN + dN) (srcLen := H.D) (dst := lN) (dstLen := dN)
-    ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₄ x24 x25 x26 x27) fun t₅ ⟨b₅, v₅⟩ => ?_)
+  have hk := L.hk; have hk2 := L.k2; have hd1 := L.d1; have hD64 := L.D64
+  refine WP.seq (WP.mono_syms (dbArgs_ok L hD h) fun t₄ ⟨b₄, k₄, x24, x25, x26, x27⟩ y₄ => ?_)
+  refine WP.seq (WP.mono (mgfXorT_ok F hG Tg hGh hGl hGv (src := lN + dN) (srcLen := D) (dst := lN) (dstLen := dN)
+    ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₄ (y₄.trans sy) x24 x25 x26 x27)
+    fun t₅ ⟨⟨b₅, v₅⟩, y₅⟩ => ?_)
   have V4 : view t₄.mem (Sp s) = view t.mem (Sp s) := by rw [k₄.mem]
   rw [V4] at v₅
-  refine WP.seq (WP.mono (clearTop_ok L b₅) fun w ⟨b, _, v⟩ => k w b fun o ho => ?_)
+  refine WP.seq (WP.mono_syms (clearTop_ok L b₅) fun w ⟨b, _, v⟩ yw => k w b (yw.trans y₅) fun o ho => ?_)
   rw [v o ho, dbV]
   by_cases e : o = lN
   · subst e; rw [ifp rfl, ifp rfl, v₅ _ ho]

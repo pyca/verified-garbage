@@ -37,6 +37,7 @@ structure TVar where
   l : Link H
   idx : Spec.Mgf1.hashes[Spec.HashTable.index l.G]? = some l.G
 
+def md5V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.md5L, rfl⟩
 def sha1V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.sha1L, rfl⟩
 def sha224V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.sha224L, rfl⟩
 def sha256V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.sha256L, rfl⟩
@@ -46,7 +47,7 @@ def sha512_224V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.sha512_224L, rfl⟩
 def sha512_256V : TVar := ⟨_, Proof.RsaOaep.PPC64LE.sha512_256L, rfl⟩
 
 /-- Every hash function. -/
-def vars : List TVar := [sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
+def vars : List TVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
 
 /-- The table of `w`'s streaming functions, `VG_HASH_<HASH>`. -/
 def tableOf (w : TVar) : FnTable where

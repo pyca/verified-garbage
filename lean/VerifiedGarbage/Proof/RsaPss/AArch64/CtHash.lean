@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
+public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
@@ -20,7 +21,9 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 `ctHashWith padding` leaves the digest of the first `ℓ` bytes of `Y` at
 `scratch + oDig` (`ctHashWith_ok`), from a state where those bytes are
 followed by zeros up to `nbm` blocks, for a padding step that ORs `0x80`
-into byte `ℓ` (`pad80` or `fixedPad80`). It keeps everything but our part
+into byte `ℓ` (`pad80`), with the hash function's `init`, compression
+function and digest those whose addresses the slots of the table of
+`MdHash` hold (`HT`). It keeps everything but our part
 of the working space before `oEm` and from `oY` on.
 -/
 
@@ -94,58 +97,63 @@ theorem stateAt_rep {m m' : Mem} {S : Addr} {V V' : Nat → Byte} (R : Rep m S V
     hH.md.stateAt m' (off S o) = hH.md.stateAt m (off S o) :=
   hH.md.stateAt_congr fun i hi => by rw [off_add, R' _ (by omega_arith), R _ (by omega_arith), h i hi]
 
-/-- The streaming `init` on `scratch + oSt`. -/
-theorem ctInit_ok {t : State} {F S : Addr} (L : Lay t F S) (h19 : t.gpr .x19 = off S oSt) :
-    WP isa (ctInit H) t fun u => u.sp = t.sp ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
+/-- The streaming `init` on `scratch + oSt`, by the function whose address the
+slot `sIniH` holds. -/
+theorem ctInit_ok {f : MdFns} {dn : String} {t : State} {F S : Addr} (L : Lay t F S)
+    (h19 : t.gpr .x19 = off S oSt) (hT : HT H dn f F t.mem t.syms) :
+    WP isa (ctInit f) t fun u => u.sp = t.sp ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
       (∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r) ∧
       (∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) ∧
       Frame [⟨off S oSt, H.P.N + H.P.B⟩, below F 16] t.mem u.mem ∧
       hH.md.stateAt u.mem (off S oSt) = hH.iv := by
   have hN := hH.N_le; have hBl := hH.B_le
   unfold ctInit
-  refine WP.seq (wp_mov fun u₁ o₁ e₁ => wp_nil ?_)
-  refine VG.Proof.Pbkdf2.Md.AArch64.Calls.init_call hH.stream (st := off S oSt) (by rw [e₁, h19])
-    (by rw [o₁.wr]; exact Covers.one (L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith))) fun u hA hr => ?_
-  refine ⟨by rw [hA.sp, o₁.sp], by rw [hA.rd, o₁.rd], by rw [hA.wr, o₁.wr], fun r hr h30 => ?_,
-    fun r hr => by rw [hA.vec r hr, o₁.vcs r hr], ?_, ?_⟩
-  · rw [hA.cs r hr h30, o₁.gpr r (by
+  refine scall_wp (n := H.initN) (c := H.initC) (by decide) (WP.mono_syms
+    (Q := fun u₁ => Only [.x0] t u₁ ∧ u₁.gpr .x0 = t.gpr .x19) (wp_mov fun u₁ o₁ e₁ => wp_nil ⟨o₁, e₁⟩)
+    fun u₁ ⟨o₁, e₁⟩ sy => ⟨by rw [o₁.rd, o₁.wr, o₁.sp, L.sp]; exact L.fld (by decide),
+      by rw [o₁.mem, o₁.sp, L.sp, sy]; exact hT.wi, by rw [sy]; exact hT.fi, fun u₂ o₂ _ => ?_⟩)
+  have O : Only [.x0, .x16] t u₂ := (o₁.trans o₂).mono
+  refine VG.Proof.Pbkdf2.Md.AArch64.Calls.init_call hH.stream (st := off S oSt)
+    (by rw [o₂.get .x0, e₁, h19])
+    (by rw [O.wr]; exact Covers.one (L.st (n := H.P.N + H.P.B) (by unfold oSt oRsa; omega_arith))) fun u hA hr => ?_
+  refine ⟨by rw [hA.sp, O.sp], by rw [hA.rd, O.rd], by rw [hA.wr, O.wr], fun r hr h30 => ?_,
+    fun r hr => by rw [hA.vec r hr, O.vcs r hr], ?_, ?_⟩
+  · rw [hA.cs r hr h30, O.gpr r (by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with h | h | h | h | h | h | h | h | h | h | h <;> subst h <;> decide)]
   · have := hA.frame
-    rw [o₁.mem, o₁.sp, L.sp] at this
+    rw [O.mem, O.sp, L.sp] at this
     exact this
   · obtain ⟨h1, -⟩ := (hH.repr _ _ _).1 hr
     rw [h1, List.length_nil, Nat.zero_div, Md.compressList_zero]
 
+/-- The frame is not the stack below it. -/
+theorem frame_not_below16 (F : Addr) : Region.Disjoint ⟨F, frameBytes⟩ (below F 16) := by
+  have := slot_not_below F (d := 0) (n := frameBytes) (by decide)
+  simpa [off] using this
+
+/-- The slots, after writes to the working space and the stack. -/
+theorem HT.keepL {f : MdFns} {dn : String} {t : State} {F S : Addr} (L : Lay t F S) {m m' : Mem}
+    {sy : String → Addr} (h : HT H dn f F m sy) (hf : Frame [⟨S, oRsa⟩, below F 16] m m') : HT H dn f F m' sy :=
+  h.keep hf fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact L.dFS
+    · exact frame_not_below16 F
+
 /-- The digest of the hash value at `scratch + oSel` to `scratch + oDig`. -/
-theorem digestOut_ok {t : State} {F S : Addr} (L : Lay t F S) (h21 : t.gpr .x21 = off S oDig) :
-    WP isa (.block (digestOut H)) t fun t' => Keep [.x19, .x9] t t' ∧ t'.gpr .x19 = off S oSt ∧
+theorem digestOut_ok {f : MdFns} {dn : String} (hdo : DigOK H.P) {t : State} {F S : Addr} (L : Lay t F S)
+    (h21 : t.gpr .x21 = off S oDig) (hT : HT H dn f F t.mem t.syms) :
+    WP isa (digestOut f) t fun t' => t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) ∧
+      (∀ r ∈ preservedV, (t'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) ∧
       t'.mem = writeBytes t.mem (off S oDig) (hH.md.digest (hH.md.stateAt t.mem (off S oSel))) := by
   have hN := hH.N_le
-  unfold digestOut
-  refine wp_addImm (by decide) fun u₁ o₁ e₁ => ?_
-  show WP isa (.block (H.P.out ++ [.addImm .x .x19 .x20 oSt])) u₁ _
-  rw [WP.block_append_iff]
-  have h19 : u₁.gpr .x19 = off S oSel := by rw [e₁, L.x20]
-  have r19 : InRegions (u₁.rd ++ u₁.wr) (u₁.gpr .x19) H.P.N := by
-    rw [h19, o₁.rd, o₁.wr]; exact L.ld (by unfold oSel oRsa; omega_arith)
-  have w21 : InRegions u₁.wr (u₁.gpr .x21) H.P.N := by
-    rw [o₁.get .x21, h21, o₁.wr]; exact L.st (by unfold oDig oRsa; omega_arith)
-  have d : Region.Disjoint ⟨u₁.gpr .x19, H.P.N⟩ ⟨u₁.gpr .x21, H.P.N⟩ := by
-    rw [h19, o₁.get .x21, h21]
-    exact Offset.disjoint _ (by unfold oSel oDig; omega_arith) (by unfold oSel; omega_arith) (by unfold oDig; omega_arith)
-  refine WP.mono (WP.preservedV (hH.shape.out u₁ r19 w21 d)
-      (by rw [Code.allInstrs_eq]; exact hH.shape.outKeepsV))
-    fun u₂ ⟨⟨hg, hrd, hwr, hsp, hm⟩, hv⟩ => ?_
-  refine wp_addImm (by decide) fun u₃ o₃ e₃ => wp_nil ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr => ?_⟩, ?_, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [o₃.gpr r (by simpa using hr.1), hg r hr.2, o₁.gpr r (by simpa using hr.1)]
-  · rw [o₃.rd, hrd, o₁.rd]
-  · rw [o₃.wr, hwr, o₁.wr]
-  · rw [o₃.sp, hsp, o₁.sp]
-  · rw [o₃.vcs r hr, hv r hr, o₁.vcs r hr]
-  · rw [e₃, hg .x20 (by decide), o₁.get .x20, L.x20]
-  · rw [o₃.mem, hm, h19, o₁.get .x21, h21, o₁.mem]
+  refine digT_ok f hH.shape hdo (by rw [L.sp]; exact L.fld (by decide)) (by rw [L.sp]; exact hT.wd) hT.fd
+    (by rw [L.x20]) h21 (Covers.one (L.ld (by unfold oSel oRsa; omega_arith)))
+    (Covers.one (L.st (by unfold oDig oRsa; omega_arith)))
+    (Offset.disjoint _ (by unfold oSel oDig; omega_arith) (by unfold oSel; omega_arith) (by unfold oDig; omega_arith))
+    fun s' a b c d e g => ⟨c, a, b, d, e, g⟩
 
 include hH in
 /-- `ctHashWith`'s frame, registers and `EM`, for any message in `Y`, and the
@@ -154,8 +162,9 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     (R : Rep t.mem S V) {ℓ nbm : Nat} (h19 : t.gpr .x19 = off S oSt)
     (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ)
     (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
-    (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) (hp : PadOk H padding F S ℓ nbm) :
-    WP isa (ctHashWith H padding) t fun t' => CtOut t F S V t' ∧
+    (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) (hp : PadOk H padding F S ℓ nbm)
+    {f : MdFns} {dn : String} (hT : HT H dn f F t.mem t.syms) (hdo : DigOK H.P) :
+    WP isa (ctHashWith f H padding) t fun t' => CtOut t F S V t' ∧
       ∀ msg : List Byte, msg.length = ℓ → (∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) →
         Spec.Rsa.bytesAt t'.mem (off S oDig) H.D = hH.SH.H.hash msg := by
   have hB := hH.B_le
@@ -184,7 +193,7 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     rw [Nat.mul_comm nbm]; exact Nat.mul_le_mul_left _ hfb
   unfold ctHashWith seqs seqs seqs seqs seqs
   -- `init`.
-  refine WP.seq (WP.mono (ctInit_ok hH L h19) fun u1 ⟨sp1, rd1, wr1, cs1, v1, fr1, iv1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (ctInit_ok hH L h19 hT) fun u1 ⟨sp1, rd1, wr1, cs1, v1, fr1, iv1⟩ sy1 => ?_)
   have g1 : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28], u1.gpr r = t.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -207,19 +216,28 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   have R1 : Rep u1.mem S (fun o => u1.mem (off S o)) := fun _ _ => rfl
   have x22₁ : u1.gpr .x22 = BitVec.ofNat 64 ℓ := by rw [g1 .x22 (by decide), h22]
   -- `0x80`.
-  refine WP.seq (WP.mono (hp L1 R1 x22₁ hNb1) fun u2 ⟨k2, fr2, R2⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hp L1 R1 x22₁ hNb1) fun u2 ⟨k2, fr2, R2⟩ sy2 => ?_)
   have L2 : Lay u2 F S := L1.congr k2.sp k2.wr (k2.get .x20)
   have hNb2 : u2.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by rw [nb_keep fr2 L.nbS]; exact hNb1
   have x22₂ : u2.gpr .x22 = BitVec.ofNat 64 ℓ := by rw [k2.get .x22]; exact x22₁
   -- The length field.
-  refine WP.seq (WP.mono (lenField_ok H hH.shape L2 R2 (by omega_arith) hd.L.2) fun u3 ⟨k3, h19₃, fr3, R3⟩ => ?_)
+  refine WP.seq (WP.mono_syms (lenField_ok H hH.shape L2 R2 (by omega_arith) hd.L.2)
+    fun u3 ⟨k3, h19₃, fr3, R3⟩ sy3 => ?_)
   rw [x22₂, hH.md.lenOf_eq _ (hH.lenOk _ (by omega_arith))] at R3
   have L3 : Lay u3 F S := L2.congr k3.sp k3.wr (k3.get .x20)
   have hNb3 : u3.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by rw [nb_keep fr3 L.nbS]; exact hNb2
   have x22₃ : u3.gpr .x22 = BitVec.ofNat 64 ℓ := by rw [k3.get .x22]; exact x22₂
   -- Into the last block.
-  refine WP.seq (WP.mono (lenLoop_ok H L3 R3 hlg.1 hlg.2 (by omega_arith) hd.L.1 hd.L.2 hB (by omega_arith)
-    hnb hfb x22₃ hNb3) fun u4 ⟨k4, fr4, R4⟩ => ?_)
+  refine WP.seq (WP.mono_syms (lenLoop_ok H L3 R3 hlg.1 hlg.2 (by omega_arith) hd.L.1 hd.L.2 hB (by omega_arith)
+    hnb hfb x22₃ hNb3) fun u4 ⟨k4, fr4, R4⟩ sy4 => ?_)
+  have F1 : Frame [⟨S, oRsa⟩, below F 16] t.mem u1.mem := fr1.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, Offset.sub_base S (by omega_arith)⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+  have hT4 : HT H dn f F u4.mem u4.syms := by
+    rw [sy4, sy3, sy2, sy1]
+    exact hT.keepL L (F1.trans ((Frame.wide fr2).trans ((Frame.wide fr3).trans (Frame.wide fr4))))
   have L4 : Lay u4 F S := L3.congr k4.sp k4.wr (k4.get .x20)
   have hNb4 : u4.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by rw [nb_keep fr4 L.nbS]; exact hNb3
   have x22₄ : u4.gpr .x22 = BitVec.ofNat 64 ℓ := by rw [k4.get .x22]; exact x22₃
@@ -228,31 +246,28 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     rw [stateAt_rep hH R1 R4 (by omega_arith) fun i hi => ?_, iv1]
     simp (disch := omega_arith) only [LenLoop.vLen, updL, v80, ↓ite_eq_right]
   -- Every block.
-  refine WP.seq (WP.mono (compLoop_ok hH L4 R4 hlg.1 hlg.2 (by omega_arith) hnb hnbm x22₄ x19₄
-    hNb4) fun u5 C => ?_)
+  refine WP.seq (WP.mono_syms (compLoop_ok hH L4 R4 hlg.1 hlg.2 (by omega_arith) hnb hnbm x22₄ x19₄
+    hNb4 hT4.wc hT4.fc) fun u5 C sy5 => ?_)
   have L5 : Lay u5 F S := L4.congr C.sp C.wr (C.cs .x20 (by decide))
   -- The digest.
-  refine WP.mono (digestOut_ok hH L5 (by rw [C.cs .x21 (by decide), k4.get .x21, k3.get .x21, k2.get .x21,
-    g1 .x21 (by decide), h21])) fun u6 ⟨k6, h19₆, m6⟩ => ?_
+  have hT5 : HT H dn f F u5.mem u5.syms := by
+    rw [sy5]; exact hT4.keepL L4 (Frame.wide C.fr)
+  refine WP.mono (digestOut_ok hH hdo L5 (by rw [C.cs .x21 (by decide), k4.get .x21, k3.get .x21, k2.get .x21,
+    g1 .x21 (by decide), h21]) hT5) fun u6 ⟨sp6, rd6, wr6, cs6, v6, m6⟩ => ?_
   have hdl := hH.md.digest_length (hH.md.stateAt u5.mem (off S oSel))
   have hsel := C.sel hfb
   rw [iv4] at hsel
-  refine ⟨⟨k6.sp.trans (C.sp.trans (k4.sp.trans (k3.sp.trans (k2.sp.trans sp1)))),
-    k6.rd.trans (C.rd.trans (k4.rd.trans (k3.rd.trans (k2.rd.trans rd1)))),
-    k6.wr.trans (C.wr.trans (k4.wr.trans (k3.wr.trans (k2.wr.trans wr1)))), fun r hr => ?_,
-    fun r hr => (k6.vcs r hr).trans ((C.vec r hr).trans ((k4.vcs r hr).trans ((k3.vcs r hr).trans
+  refine ⟨⟨sp6.trans (C.sp.trans (k4.sp.trans (k3.sp.trans (k2.sp.trans sp1)))),
+    rd6.trans (C.rd.trans (k4.rd.trans (k3.rd.trans (k2.rd.trans rd1)))),
+    wr6.trans (C.wr.trans (k4.wr.trans (k3.wr.trans (k2.wr.trans wr1)))), fun r hr => ?_,
+    fun r hr => (v6 r hr).trans ((C.vec r hr).trans ((k4.vcs r hr).trans ((k3.vcs r hr).trans
       ((k2.vcs r hr).trans (v1 r hr))))), ?_, fun o ho₁ ho₂ => ?_⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [h19₆, h19]
-    all_goals rw [k6.get _ (by decide), C.cs _ (by decide), k4.get _ (by decide), k3.get _ (by decide),
+    · rw [cs6 _ (by decide) (by decide), C.cs _ (by decide), k4.get _ (by decide), h19₃, h19]
+    all_goals rw [cs6 _ (by decide) (by decide), C.cs _ (by decide), k4.get _ (by decide), k3.get _ (by decide),
       k2.get _ (by decide), g1 _ (by decide)]
-  · have F1 : Frame [⟨S, oRsa⟩, below F 16] t.mem u1.mem := fr1.sub fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, Offset.sub_base S (by omega_arith)⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-    have F6 : Frame [⟨S, oRsa⟩] u5.mem u6.mem := by
+  · have F6 : Frame [⟨S, oRsa⟩] u5.mem u6.mem := by
       rw [m6]; exact writeBytes_frame _ _ _ (Offset.contains_base S (by omega_arith) (by omega_arith))
     exact F1.trans ((Frame.wide fr2).trans ((Frame.wide fr3).trans ((Frame.wide fr4).trans
       ((Frame.wide C.fr).trans (Frame.wide F6)))))
@@ -280,10 +295,11 @@ theorem ctHashWith_ok (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t F
     (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 msg.length)
     (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
     (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) (hp : PadOk H padding F S msg.length nbm) :
-    WP isa (ctHashWith H padding) t fun t' => CtOut t F S V t' ∧
+    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) (hp : PadOk H padding F S msg.length nbm)
+    {f : MdFns} {dn : String} (hT : HT H dn f F t.mem t.syms) (hdo : DigOK H.P) :
+    WP isa (ctHashWith f H padding) t fun t' => CtOut t F S V t' ∧
       Spec.Rsa.bytesAt t'.mem (off S oDig) H.D = hH.SH.H.hash msg :=
-  WP.mono (ctHashWith_all hH padding L R h19 h21 h22 hNb hfit hnb hp) fun _ h => ⟨h.1, h.2 msg rfl hY⟩
+  WP.mono (ctHashWith_all hH padding L R h19 h21 h22 hNb hfit hnb hp hT hdo) fun _ h => ⟨h.1, h.2 msg rfl hY⟩
 
 include hH in
 /-- `ctHashWith`'s frame, registers and `EM`, for any message in `Y`. -/
@@ -291,40 +307,27 @@ theorem ctHashWith_out (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     (R : Rep t.mem S V) {ℓ nbm : Nat} (h19 : t.gpr .x19 = off S oSt)
     (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ)
     (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
-    (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) (hp : PadOk H padding F S ℓ nbm) :
-    WP isa (ctHashWith H padding) t (CtOut t F S V) :=
-  WP.mono (ctHashWith_all hH padding L R h19 h21 h22 hNb hfit hnb hp) fun _ h => h.1
+    (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) (hp : PadOk H padding F S ℓ nbm)
+    {f : MdFns} {dn : String} (hT : HT H dn f F t.mem t.syms) (hdo : DigOK H.P) :
+    WP isa (ctHashWith f H padding) t (CtOut t F S V) :=
+  WP.mono (ctHashWith_all hH padding L R h19 h21 h22 hNb hfit hnb hp hT hdo) fun _ h => h.1
 
 theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
     (R : Rep t.mem S V) {msg : List Byte} {nbm : Nat} (h19 : t.gpr .x19 = off S oSt)
     (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 msg.length)
     (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
     (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
-    WP isa (ctHash H) t fun t' => CtOut t F S V t' ∧
+    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0)
+    {f : MdFns} {dn : String} (hT : HT H dn f F t.mem t.syms) (hdo : DigOK H.P) :
+    WP isa (ctHash f H) t fun t' => CtOut t F S V t' ∧
       Spec.Rsa.bytesAt t'.mem (off S oDig) H.D = hH.SH.H.hash msg := by
   have hlg : 2 ^ lgB H = H.P.B ∧ lgB H < 64 := by
     unfold lgB
     rcases hH.sizes.B with h | h <;> rw [h]
     · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
-  refine ctHashWith_ok hH (pad80 H) L R h19 h21 h22 hNb hfit hnb hY fun L' R' h22' hNb' => ?_
+  refine ctHashWith_ok hH (pad80 H) L R h19 h21 h22 hNb hfit hnb hY (fun L' R' h22' hNb' => ?_) hT hdo
   exact WP.mono (pad80_ok H L' R' hlg.1 hlg.2 (by omega_arith) hnb (by omega_arith) h22' hNb') fun _ ⟨k, f, r⟩ =>
-    ⟨k.mono, f, r⟩
-
-theorem mgfHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
-    (R : Rep t.mem S V) {msg : List Byte} {nbm : Nat} (hml : msg.length = H.D + 4) (h19 : t.gpr .x19 = off S oSt)
-    (h21 : t.gpr .x21 = off S oDig) (h22 : t.gpr .x22 = BitVec.ofNat 64 msg.length)
-    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm)
-    (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
-    WP isa (mgfHash H) t fun t' => CtOut t F S V t' ∧
-      Spec.Rsa.bytesAt t'.mem (off S oDig) H.D = hH.SH.H.hash msg := by
-  have := hH.sizes.DN
-  have := hH.N_le
-  refine ctHashWith_ok hH _ L R h19 h21 h22 hNb hfit hnb hY fun L' R' _ _ => ?_
-  rw [hml]
-  exact WP.mono (fixedPad_ok L' R' (n := nbm * H.P.B) (by omega_arith) (by unfold oY; omega_arith)) fun _ ⟨k, f, r⟩ =>
     ⟨k.mono, f, r⟩
 
 end

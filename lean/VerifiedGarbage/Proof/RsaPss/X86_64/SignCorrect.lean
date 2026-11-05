@@ -27,7 +27,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (chkContract)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
 theorem bytesAt_cons (m : Mem) (p : Addr) {k : Nat} (hk : 1 ≤ k) :
     Spec.Rsa.bytesAt m p k = m p :: Spec.Rsa.bytesAt m (p + 1) (k - 1) := by
@@ -56,9 +56,9 @@ theorem frame_wrR {s : State} {m : Mem} (h : Frame [frR s] s.mem m) : Frame (wrR
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩
 
 /-- Memory changed only in the writable regions and below the frame. -/
-theorem frame_keep {s u v : State} (hp : SPre G s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
+theorem frame_keep {s u v : State} (hp : SPre tsH tsG s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
     (hM : Frame (wrR s) s.mem u.mem)
-    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 8).Contains a 1 → v.mem a = u.mem a) :
+    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 → v.mem a = u.mem a) :
     Frame (wrR s) s.mem v.mem := by
   intro x hx
   refine (hk x (fun r hr hc => ?_) (fun hc => ?_)).trans (hM x hx)
@@ -70,39 +70,42 @@ theorem frame_keep {s u v : State} (hp : SPre G s) (hw : u.wr = frR s :: s.wr) (
     · exact hx _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) hc
   · rw [hsp] at hc; exact hx _ (List.mem_cons_self ..) (ret_sub s x hc)
 
-variable (G) in
-/-- The outcome `signK.post` asks for. -/
-def signOut (s : State) : Spec.Rsa.Outcome :=
-  Spec.RsaPss.sign G G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+/-- The outcome `signK.post` asks for, with the hash functions `H` and `G`
+the tables name. -/
+def signOut (H G : Spec.Mgf1.Hash) (s : State) : Spec.Rsa.Outcome :=
+  Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 10) G.len)
-    (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 12).toNat)
+    (Spec.Rsa.bytesAt s.mem (stackArg s 10) H.len)
+    (Spec.Rsa.bytesAt s.mem (stackArg s 12) (stackArg s 13).toNat)
 
-variable (G) in
 /-- Before the epilogue: the outcome written, the saved registers in their
 slots. -/
 structure SDone (s t : State) : Prop where
-  L : Lay t (fb s) (stackArg s 13)
+  L : Lay t (fb s) (stackArg s 14)
   wr : t.wr = frR s :: s.wr
   cs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r
   rbx : t.mem.readW (off (fb s) sRbx) 64 = s.gpr .rbx
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
-  out : Spec.Rsa.writtenOutcome t.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t.gpr .rax).setWidth 32) (signOut G s)
+  out : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
+    Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+    Spec.Rsa.writtenOutcome t.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t.gpr .rax).setWidth 32) (signOut H G s)
   /-- MXCSR's control bits. -/
   mx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
 
-theorem fail_done {s t : State} (hp : SPre G s) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (L : Lay t (fb s) (stackArg s 13)) (R : Rep t.mem (fb s) (stackArg s 13) V W) (hw : t.wr = frR s :: s.wr)
+theorem fail_done {s t : State} (hp : SPre tsH tsG s) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay t (fb s) (stackArg s 14)) (R : Rep t.mem (fb s) (stackArg s 14) V W) (hw : t.wr = frR s :: s.wr)
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
     (h16 : W 16 = s.gpr .rdi) (h17 : W 17 = s.gpr .rcx) (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp)
-    (h43 : W 43 = s.gpr .r12) (hinv : signOut G s = .invalid) (hmx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
-    WP isa signFail t (SDone G s) := by
+    (h43 : W 43 = s.gpr .r12) (hinv : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
+      Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G → signOut H G s = .invalid)
+    (hmx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
+    WP isa signFail t (SDone s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hout : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region) ∈ t.wr := by
     rw [hw, hp.hwr, ← hp.hsi]; simp
@@ -110,19 +113,19 @@ theorem fail_done {s t : State} (hp : SPre G s) {V : Nat → Byte} {W : Nat → 
   refine WP.mono_mx (by decide) (signFail_ok L R (out := s.gpr .rdi) (k := (s.gpr .rcx).toNat) h16
     (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_arith) hk2 hout (by rw [← hp.hsi]; exact hp.wO)
     ((by rw [← hp.hsi]; exact hp.dOs : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint
-      ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩).sub_right (Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega_arith)))
+      ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩).sub_right (Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega_arith)))
     (hO.sub_right (frame_sub s))) fun t' ⟨L', k', R', hax, hz, _⟩ hm => ?_
   refine ⟨L', k'.2.2.trans hw, fun r hr => (k'.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> decide)).trans
     (hcs r hr), ?_, ?_, ?_, ?_, by rw [hm]; exact hmx⟩
   · rw [R'.rd (d := sRbx) 41 rfl (by decide), h41]
   · rw [R'.rd (d := sRbp) 42 rfl (by decide), h42]
   · rw [R'.rd (d := sR12) 43 rfl (by decide), h43]
-  · rw [hinv]; exact ⟨by rw [hax]; rfl, hz⟩
+  · intro H G hH hG; rw [hinv H G hH hG]; exact ⟨by rw [hax]; rfl, hz⟩
 
 /-- Stack arguments, kept where the function does not write. -/
-theorem argsKept_of {s : State} (hp : SPre G s) {m : Mem} (hM : Frame (wrR s) s.mem m) : ArgsKept s m := by
+theorem argsKept_of {s : State} (hp : SPre tsH tsG s) {m : Mem} (hM : Frame (wrR s) s.mem m) : ArgsKept s m := by
   intro j hj
-  refine hM.readW (r := ⟨stackArgAddr s 0, 120⟩) ?_ (in_apart hp.dKa hp.dOa hp.dsa.symm) (by decide)
+  refine hM.readW (r := ⟨stackArgAddr s 0, 144⟩) ?_ (in_apart hp.dKa hp.dOa hp.dsa.symm) (by decide)
   rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
     simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_arith]
   have := hp.sp2
@@ -158,8 +161,8 @@ theorem zext8 (b : Byte) : BitVec.setWidth 64 b = BitVec.ofNat 64 b.toNat := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
 /-- The modulus' first byte. -/
-theorem n0_ok {s t : State} (hp : SPre G s) (L : Lay t (fb s) (stackArg s 13)) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 13) V W) (h18 : W 18 = s.gpr .rdx) (hrd : t.rd = s.rd)
+theorem n0_ok {s t : State} (hp : SPre tsH tsG s) (L : Lay t (fb s) (stackArg s 14)) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 14) V W) (h18 : W 18 = s.gpr .rdx) (hrd : t.rd = s.rd)
     (hf : Frame (wrR s) s.mem t.mem) :
     WP isa (.block n0) t fun t' => Keep [.rsi, .rax] t t' ∧ t'.mem = t.mem ∧
       t'.gpr .rax = BitVec.ofNat 64 (s.mem (s.gpr .rdx)).toNat ∧
@@ -179,9 +182,9 @@ theorem n0_ok {s t : State} (hp : SPre G s) (L : Lay t (fb s) (stackArg s 13)) {
   rw [zext8, BitVec.and_self, ofNat_beq_zero (by have := (s.mem (s.gpr .rdx)).isLt; omega_arith)]
   exact ⟨rfl, rfl⟩
 
-theorem restore_ok {s t : State} (hp : SPre G s) (D : SDone G s t) :
+theorem restore_ok {s t : State} (hp : SPre tsH tsG s) (D : SDone s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (signK G).post s (freedF t') ∧
+      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (signK tsH tsG).post s (freedF t') ∧
       (freedF t').mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hF := fb_toNat hp
   refine WP.mono_mx (by decide) (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
@@ -203,8 +206,9 @@ theorem restore_ok {s t : State} (hp : SPre G s) (D : SDone G s t) :
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
-  · show Spec.Rsa.writtenOutcome t'.mem _ _ ((t'.gpr .rax).setWidth 32) _
+  · intro H G hH hG
+    show Spec.Rsa.writtenOutcome t'.mem _ _ ((t'.gpr .rax).setWidth 32) _
     rw [hm, k.gpr (show Reg.rax ∉ [Reg.rbx, .rbp, .r12] by decide)]
-    exact D.out
+    exact D.out H G hH hG
 
 end VG.Proof.RsaPss.X86_64

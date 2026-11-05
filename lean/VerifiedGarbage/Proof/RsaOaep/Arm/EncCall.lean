@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncEm
-public import VerifiedGarbage.Proof.RsaPss.Arm.SgCall
+public import VerifiedGarbage.Proof.RsaPss.Arm.Prims
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

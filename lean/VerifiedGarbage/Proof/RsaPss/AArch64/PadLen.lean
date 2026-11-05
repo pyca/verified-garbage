@@ -47,28 +47,6 @@ theorem v80_fixed (V : Nat → Byte) {ℓ n : Nat} (h : ℓ < n) :
 theorem or80 (b : Byte) : (BitVec.setWidth 64 b ||| (BitVec.ofNat 16 0x80).setWidth 64).setWidth 8 = b ||| 0x80 := by
   revert b; decide
 
-theorem fixedPad_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
-    {ℓ n : Nat} (hℓ : ℓ < n) (h4 : oY + ℓ < 4096) :
-    WP isa (fixedPad80 ℓ) t fun t' => Keep [.x10, .x9, .x13] t t' ∧
-      Frame [⟨S, oRsa⟩] t.mem t'.mem ∧ Rep t'.mem S (v80 V ℓ n) := by
-  unfold fixedPad80
-  refine wp_addImm h4 fun u₁ o₁ e₁ => ?_
-  have hY : oY + ℓ + 1 ≤ oRsa := by unfold oY oRsa at *; omega
-  refine wp_ldrb (by decide) (by rw [e₁, L.x20, BitVec.add_zero]) (by rw [o₁.rd, o₁.wr]; exact L.ld hY)
-    fun u₂ o₂ e₂ => wp_movz fun u₃ o₃ e₃ => wp_orr fun u₄ o₄ e₄ => ?_
-  have O₄ : Only [.x10, .x9, .x13] t u₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine wp_strb (by decide) (by rw [o₄.get .x10, o₃.get .x10, o₂.get .x10, e₁,
-      L.x20, BitVec.add_zero]) (by rw [O₄.wr]; exact L.st hY) fun u₅ m₅ => wp_nil ?_
-  have hb : (u₄.gpr .x9).setWidth 8 = V (oY + ℓ) ||| 0x80 := by
-    rw [e₄, o₃.get .x9, e₂, e₃, o₁.mem, R (oY + ℓ) (by omega)]
-    exact or80 _
-  refine ⟨(O₄.keep.trans m₅.keep).mono, ?_, ?_⟩
-  · rw [m₅.mem, O₄.mem]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (d := oY + ℓ) (n := 1) (by omega) (by unfold oRsa at *; omega))
-  · rw [m₅.mem, O₄.mem, hb, ← v80_fixed V hℓ]
-    exact R.wb (o := oY + ℓ) (by omega) _
-
 /-! ## The length field -/
 
 theorem lenField_ok (H : Hash) {md : Md H.P.B H.P.N H.P.L} (hs : Proof.Pbkdf2.AArch64.Shape (P := H.P) md)

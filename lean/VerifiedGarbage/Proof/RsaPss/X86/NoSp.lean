@@ -52,8 +52,8 @@ structure SpOk (H : Impl.Pbkdf2.Md.X86.Hash) : Prop where
   params : NoSp (.block (params H) : Prog isa)
   cpDig16 : NoSp (.block (cpDig H 16) : Prog isa)
   cpDig4 : NoSp (.block (cpDig H 4) : Prog isa)
-  lenArgs18 : NoSp (.block (lenArgs H 18) : Prog isa)
-  lenArgs7 : NoSp (.block (lenArgs H 7) : Prog isa)
+  lenArgs19 : NoSp (.block (lenArgs H 19) : Prog isa)
+  lenArgs8 : NoSp (.block (lenArgs H 8) : Prog isa)
   cpSalt : NoSp (.block (cpSalt H) : Prog isa)
   putH : NoSp (.block (putH H) : Prog isa)
   fxSalt : NoSp (.block (fxSalt H) : Prog isa)
@@ -61,6 +61,7 @@ structure SpOk (H : Impl.Pbkdf2.Md.X86.Hash) : Prop where
   passSet : NoSp (.block (passSet H) : Prog isa)
   anyLen : NoSp (.block (anyLen H) : Prog isa)
   cmpArgs : NoSp (.block (cmpArgs H) : Prog isa)
+  mgfArgs : NoSp (.block (mgfArgsT H) : Prog isa)
 
 theorem spOk : SpOk h.H := by
   have hsp := h.certs.sp
@@ -88,9 +89,10 @@ theorem spOk : SpOk h.H := by
   obtain ⟨s21, hsp⟩ := noSp_seq_inv hsp
   obtain ⟨s22, hsp⟩ := noSp_seq_inv hsp
   obtain ⟨s23, hsp⟩ := noSp_seq_inv hsp
-  obtain ⟨s24, s25⟩ := noSp_seq_inv hsp
+  obtain ⟨s24, hsp⟩ := noSp_seq_inv hsp
+  obtain ⟨s25, s26⟩ := noSp_seq_inv hsp
   exact ⟨s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20, s21, s22,
-    s23, s24, s25⟩
+    s23, s24, s25, s26⟩
 
 theorem ctHash_noSp : NoSp (ctHash h.H) := by
   obtain ⟨s1, s2, s3, s4, s5, s6, s7, s8, s9, -⟩ := spOk h
