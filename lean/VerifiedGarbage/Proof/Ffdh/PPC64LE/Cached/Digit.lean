@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Rows
 import VerifiedGarbage.Proof.Ffdh.CombBitBytes
+public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
@@ -186,5 +187,136 @@ theorem bit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j : N
           (((k1.trans k2).trans ck).trans dk).mono (by decide)⟩
       rw [d20, CombBitBytes.os2ip_bit xb k hb']
       subst hn; rfl
+
+theorem tooth_bv {acc b j : Nat} (hb : b < 2) (hj : j < 5) (ha : acc < 2 ^ j) :
+    BitVec.ofNat 64 acc ||| BitVec.ofNat 64 b <<< j = BitVec.ofNat 64 (acc + 2 ^ j * b) := by
+  have h2j : 2 ^ j ≤ 16 := Nat.le_trans (Nat.pow_le_pow_right (by decide : 0 < 2) (show j ≤ 4 by omega)) (by decide)
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega),
+    Nat.mod_eq_of_lt (show b * 2 ^ j < 2 ^ 64 by
+      have : b * 2 ^ j ≤ 1 * 16 := Nat.mul_le_mul (by omega) h2j
+      omega),
+    Nat.mod_eq_of_lt (show acc + 2 ^ j * b < 2 ^ 64 by
+      have : 2 ^ j * b ≤ 16 * 1 := Nat.mul_le_mul h2j (by omega)
+      omega),
+    Nat.or_comm, Nat.mul_comm b, ← Nat.two_pow_add_eq_or_of_lt ha, Nat.add_comm]
+
+/-- `tooth j`: `r16 := acc + 2^j` bit `i + j rows` of x, for `acc < 2^j`. -/
+theorem tooth_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j acc : Nat} (hs : Scr s B Z)
+    (hZ : 72 ≤ Z) (h23 : s.gpr .r23 = B) (h28 : s.gpr .r28 = BitVec.ofNat 64 xb.length)
+    (hIw : s.mem.readW (off B hI) 64 = BitVec.ofNat 64 (i + 1))
+    (hRw : s.mem.readW (off B hRows) 64 = BitVec.ofNat 64 rows) (hX : s.mem.readW (off B 64) 64 = X)
+    (hrd : ∀ n < xb.length, InRegions (s.rd ++ s.wr) (off X n) 1)
+    (hval : ∀ n (h : n < xb.length), s.mem (off X n) = xb[n])
+    (hj : j < 5) (hk : i + j * rows < 2 ^ 31) (hL : 8 * xb.length < 2 ^ 31)
+    (h16 : s.gpr .r16 = BitVec.ofNat 64 acc) (ha : acc < 2 ^ j) :
+    WP isa (tooth j) s fun t =>
+      (t.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2)) ∧
+        t.mem = s.mem) ∧ Keep (.r16 :: bitRegs) s t := by
+  unfold tooth
+  refine WP.seq (WP.mono (bit_ok hs hZ h23 h28 hIw hRw hX hrd hval hj hk hL) fun t ⟨⟨a20, m⟩, k⟩ => ?_)
+  have h16' : t.gpr .r16 = BitVec.ofNat 64 acc := (k.gpr .r16 (by decide)).trans h16
+  have hb : Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2 < 2 := Nat.mod_lt _ (by decide)
+  have post : ∀ u : State, (u.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2)) ∧
+      u.mem = t.mem) ∧ Keep [.r16, .r20] t u →
+      (u.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2)) ∧
+        u.mem = s.mem) ∧ Keep (.r16 :: bitRegs) s u :=
+    fun u ⟨⟨b16, bm⟩, bk⟩ => ⟨⟨b16, bm.trans m⟩, (k.trans bk).mono (by decide)⟩
+  by_cases h0 : j = 0
+  · subst h0
+    have ha0 : acc = 0 := by omega
+    subst ha0
+    simp only [ite_true, List.nil_append]
+    refine WP.mono (WP.keep [.r16, .r20] (Q := fun u =>
+        u.gpr .r16 = BitVec.ofNat 64 (0 + 2 ^ 0 * (Spec.Rsa.os2ip xb / 2 ^ (i + 0 * rows) % 2)) ∧ u.mem = t.mem)
+      ?_ (by decide)) post
+    prun [a20, h16']
+    rw [Nat.zero_add, Nat.one_mul]
+    exact BitVec.zero_or
+  · simp only [h0, ite_false, List.singleton_append]
+    refine WP.mono (WP.keep [.r16, .r20] (Q := fun u =>
+        u.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2)) ∧ u.mem = t.mem)
+      ?_ rfl) post
+    prun [a20, h16', exec_lsl (show j < 64 by omega), tooth_bv hb hj ha]
+
+/-- The comb's digit of row `i`, for `rows` rows: `FixedBaseComb.digit` for
+`rows = rows bits`. -/
+def combDigit (x i rows : Nat) : Nat :=
+  Rsa.FixedBaseComb.bit x i + 2 * Rsa.FixedBaseComb.bit x (i + rows) +
+    4 * Rsa.FixedBaseComb.bit x (i + 2 * rows) + 8 * Rsa.FixedBaseComb.bit x (i + 3 * rows) +
+    16 * Rsa.FixedBaseComb.bit x (i + 4 * rows)
+
+/-- What `bit` reads: the header's row and row count, and the `L` octets of
+x at `X`. -/
+structure XCtx (s : State) (B X : Addr) (Z : Nat) (xb : List Byte) (i rows : Nat) : Prop where
+  hs : Scr s B Z
+  hZ : 72 ≤ Z
+  h23 : s.gpr .r23 = B
+  h28 : s.gpr .r28 = BitVec.ofNat 64 xb.length
+  hIw : s.mem.readW (off B hI) 64 = BitVec.ofNat 64 (i + 1)
+  hRw : s.mem.readW (off B hRows) 64 = BitVec.ofNat 64 rows
+  hX : s.mem.readW (off B 64) 64 = X
+  hrd : ∀ n < xb.length, InRegions (s.rd ++ s.wr) (off X n) 1
+  hval : ∀ n (h : n < xb.length), s.mem (off X n) = xb[n]
+  hk : i + 4 * rows < 2 ^ 31
+  hL : 8 * xb.length < 2 ^ 31
+
+theorem XCtx.keep {s t : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows : Nat}
+    (h : XCtx s B X Z xb i rows) (hm : t.mem = s.mem) (k : Keep (.r16 :: bitRegs) s t) :
+    XCtx t B X Z xb i rows :=
+  ⟨h.hs.congr k.wr, h.hZ, (k.gpr .r23 (by decide)).trans h.h23, (k.gpr .r28 (by decide)).trans h.h28,
+    by rw [hm]; exact h.hIw, by rw [hm]; exact h.hRw, by rw [hm]; exact h.hX,
+    fun n hn => by rw [k.rd, k.wr]; exact h.hrd n hn, fun n hn => by rw [hm]; exact h.hval n hn, h.hk, h.hL⟩
+
+theorem XCtx.tooth {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j acc : Nat}
+    (h : XCtx s B X Z xb i rows) (hj : j < 5) (h16 : s.gpr .r16 = BitVec.ofNat 64 acc) (ha : acc < 2 ^ j) :
+    WP isa (tooth j) s fun t =>
+      (t.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * Rsa.FixedBaseComb.bit (Spec.Rsa.os2ip xb) (i + j * rows)) ∧
+        XCtx t B X Z xb i rows) ∧ t.mem = s.mem ∧ Keep (.r16 :: bitRegs) s t :=
+  WP.mono (tooth_ok h.hs h.hZ h.h23 h.h28 h.hIw h.hRw h.hX h.hrd h.hval hj
+      (by have : j * rows ≤ 4 * rows := Nat.mul_le_mul_right _ (by omega)
+          have := h.hk; omega) h.hL h16 ha)
+    fun t ⟨⟨a16, am⟩, ak⟩ => ⟨⟨a16, h.keep am ak⟩, am, ak⟩
+
+theorem seqs_teeth : seqs ((List.range 5).map tooth) =
+    .seq (tooth 0) (.seq (tooth 1) (.seq (tooth 2) (.seq (tooth 3) (tooth 4)))) := rfl
+
+/-- `digit`: the header's word `hD :=` row `i`'s digit of x. -/
+theorem digit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows : Nat}
+    (h : XCtx s B X Z xb i rows) :
+    WP isa digit s fun t =>
+      t.mem = s.mem.writeW (off B hD) (BitVec.ofNat 64 (combDigit (Spec.Rsa.os2ip xb) i rows)) ∧
+        Keep (.r16 :: bitRegs) s t := by
+  unfold digit
+  rw [seqs_teeth]
+  have hb := Rsa.FixedBaseComb.bit_lt (Spec.Rsa.os2ip xb)
+  refine WP.seq (WP.mono (WP.keep [.r16] (Q := fun t => t.gpr .r16 = BitVec.ofNat 64 0 ∧ t.mem = s.mem)
+    (by prun) (by decide)) fun t₀ ⟨⟨a0, m0⟩, k0⟩ => ?_)
+  have c0 := h.keep m0 (k0.mono (by decide))
+  refine WP.seq (WP.seq ?_)
+  refine WP.mono (c0.tooth (j := 0) (by decide) a0 (by decide)) fun t₁ ⟨⟨a1, c1⟩, m1, k1⟩ => ?_
+  refine WP.seq (WP.mono (c1.tooth (j := 1) (by decide) a1 (by have := hb (i + 0 * rows); omega))
+    fun t₂ ⟨⟨a2, c2⟩, m2, k2⟩ => ?_)
+  refine WP.seq (WP.mono (c2.tooth (j := 2) (by decide) a2
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); omega))
+    fun t₃ ⟨⟨a3, c3⟩, m3, k3⟩ => ?_)
+  refine WP.seq (WP.mono (c3.tooth (j := 3) (by decide) a3
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows); omega))
+    fun t₄ ⟨⟨a4, c4⟩, m4, k4⟩ => ?_)
+  refine WP.mono (c4.tooth (j := 4) (by decide) a4
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows)
+        have := hb (i + 3 * rows); omega))
+    fun t₅ ⟨⟨a5, c5⟩, m5, k5⟩ => ?_
+  have k05 := (((((k0.mono (by decide : ∀ r ∈ [Reg.r16], r ∈ Reg.r16 :: bitRegs)).trans k1).trans k2).trans
+    k3).trans k4).trans k5
+  have hm : t₅.mem = s.mem := by rw [m5, m4, m3, m2, m1, m0]
+  have l40 : InRegions t₅.wr (t₅.gpr .r23 + BitVec.ofNat 64 40) 8 := by
+    rw [c5.h23]; exact c5.hs.st (d := 40) (by have := c5.hZ; omega)
+  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off B hD)
+      (BitVec.ofNat 64 (combDigit (Spec.Rsa.os2ip xb) i rows))) ?_ (by decide))
+    fun t ⟨tm, tk⟩ => ⟨tm, (k05.trans tk).mono (by decide)⟩
+  unfold sth
+  prun [l40, a5, c5.h23, hm, hD]
 
 end VG.Proof.Ffdh.PPC64LE.Cached
