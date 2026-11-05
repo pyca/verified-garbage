@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Prepared
 
 /-!
@@ -80,7 +81,7 @@ def sealPrepared8Pre (pb : Nat) : Curry (sealPrepared8Sig.words pb) (Mem → Pro
 /-- The unchanged `sealContract` postcondition with the 384-byte context. -/
 def sealPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPrepared8Sig.contract A (pre := sealPrepared8Pre A.ptrBits)
-    (post := sealPost A.ptrBits)
+    (post := Proof.AesGcm.sealRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_open_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`:
@@ -101,7 +102,7 @@ def openPrepared8Pre (pb : Nat) : Curry (openPrepared8Sig.words pb) (Mem → Pro
 may leak what `openContract` may (`openLeak`). -/
 def openPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openPrepared8Sig.contract A (pre := openPrepared8Pre A.ptrBits)
-    (post := openPost A.ptrBits)
+    (post := Proof.AesGcm.openRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
 /-- `vg_aes_gcm_seal_gather_prepared8(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16])`:
@@ -121,7 +122,7 @@ def sealGatherPrepared8Pre (pb : Nat) : Curry (sealGatherPrepared8Sig.words pb) 
 /-- The unchanged `sealGatherContract` postcondition with the 384-byte context. -/
 def sealGatherPrepared8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealGatherPrepared8Sig.contract A (pre := sealGatherPrepared8Pre A.ptrBits)
-    (post := sealGatherPost A.ptrBits)
+    (post := Proof.AesGcm.sealGatherRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
 /-! ## GHASH -/
