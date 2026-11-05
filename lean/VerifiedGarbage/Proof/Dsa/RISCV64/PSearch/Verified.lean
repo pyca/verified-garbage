@@ -72,7 +72,7 @@ structure Ret (G : GP) (σ t : State) : Prop where
   out : Spec.Rsa.bytesAt t.mem G.out G.outLen = outB G
   used : Spec.Rsa.wordsAt t.mem G.used 1 = [BitVec.ofNat 64 (resG G).used]
   state : Spec.Rsa.wordsAt t.mem G.state 4 = [BitVec.ofNat 64 (resG G).remaining, BitVec.ofNat 64 G.pLen,
-    BitVec.ofNat 64 (Spec.Dsa.parameterEntropy G.pLen), BitVec.ofNat 64 (resG G).requested]
+    BitVec.ofNat 64 (Spec.Dsa.parameterEntropy G.pLen), BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (resG G))]
 
 theorem restore_vp : VP (Fin G) (.block restore) (Ret G) := by
   refine VP.pub (G := G) (fun σ s h => ⟨h.s6, by rw [h.sp, ← h.hG]; rfl⟩) []
@@ -159,7 +159,11 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   refine (post_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := [])).mpr ?_
   sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq]
-  exact ⟨hu.status, hu.out, hu.used, hu.state⟩
+  have hp : 0 < (mkG s).pLen := by
+    have := hpre.lens
+    simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
+    omega
+  exact ⟨hu.status, hu.out, hu.used, _, hu.state, VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
 
 /-- The code leaks only what its contract makes public. -/
 theorem code_ct (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :

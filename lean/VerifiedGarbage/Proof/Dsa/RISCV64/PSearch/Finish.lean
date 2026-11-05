@@ -63,7 +63,7 @@ structure Fin (G : GP) (σ t : State) : Prop where
   out : Spec.Rsa.bytesAt t.mem G.out G.outLen = outB G
   used : Spec.Rsa.wordsAt t.mem G.used 1 = [BitVec.ofNat 64 (resG G).used]
   state : Spec.Rsa.wordsAt t.mem G.state 4 = [BitVec.ofNat 64 (resG G).remaining, BitVec.ofNat 64 G.pLen,
-    BitVec.ofNat 64 (Spec.Dsa.parameterEntropy G.pLen), BitVec.ofNat 64 (resG G).requested]
+    BitVec.ofNat 64 (Spec.Dsa.parameterEntropy G.pLen), BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (resG G))]
   frame : Frame [G.rOut, G.rUsed, G.rScr, G.rState, rBelow σ STK0] σ.mem t.mem
 
 /-! ## The stage after the first write outside `scratch` -/
@@ -409,7 +409,7 @@ theorem setWidth_ofNat_small {r : Nat} (hr : r < 2 ^ 32) : ((BitVec.ofNat 64 r).
 /-- `Done` with the search's result is `Fin`. -/
 theorem fin_of_done {σ t : State}
     (h : Done G (outB G) (resG G).status (BitVec.ofNat 64 (resG G).used) (BitVec.ofNat 64 (resG G).remaining)
-      (BitVec.ofNat 64 (resG G).requested) σ t) : Fin G σ t := by
+      (BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (resG G))) σ t) : Fin G σ t := by
   obtain ⟨W, f, a0, hu, h0, h24⟩ := h
   have hs : (resG G).status < 4 := by
     simp only [Spec.Entropy.Result.status]; cases (resG G).outcome <;> simp [Spec.Entropy.Outcome.status]
@@ -656,7 +656,7 @@ end
 
 /-- `Done` with a result's words. -/
 abbrev DoneR (G : GP) (ob : List Byte) (R : Spec.Dsa.ParameterSearchResult) : State → State → Prop :=
-  Done G ob R.status (BitVec.ofNat 64 R.used) (BitVec.ofNat 64 R.remaining) (BitVec.ofNat 64 R.requested)
+  Done G ob R.status (BitVec.ofNat 64 R.used) (BitVec.ofNat 64 R.remaining) (BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen R))
 
 theorem fin_of {G : GP} {σ t : State} {ob : List Byte} {R : Spec.Dsa.ParameterSearchResult} (h : DoneR G ob R σ t)
     (hR : resG G = R) (hob : ob = outB G) : Fin G σ t := by
@@ -688,10 +688,11 @@ theorem ranOut_vp (g : Geo) (hgp : g.pLen = G.pLen) {F : State → State → Pro
       (VP.seq dbl_vp (VP.seq (min_vp (by omega) hB) (VP.seq (left_vp hk)
       ((tail_vp (r := 0) (by decide) hc fun _ _ h => h).mono (fun _ _ h => h) fun σ t h => ?_)))))
     have e : VG.Proof.Dsa.Generation.ranOutResult G.pLen k (G.randLen - c) c =
-        ⟨.entropy k (min (2 * max (G.randLen - c) (256 * G.pLen)) (Spec.Dsa.parameterEntropy G.pLen)), c, []⟩ := by
-      simp only [VG.Proof.Dsa.Generation.ranOutResult, Spec.Dsa.parameterRequest, Spec.Entropy.request,
-        Nat.not_le.mpr hAB, ↓reduceIte]
-    rw [DoneR, e]; exact h
+        ⟨.entropy k (G.randLen - c), c, []⟩ := by
+      simp only [VG.Proof.Dsa.Generation.ranOutResult, Nat.not_le.mpr hAB, ↓reduceIte]
+    have e2 : VG.Proof.Dsa.Generation.requested G.pLen ⟨.entropy k (G.randLen - c), c, []⟩ =
+        min (2 * max (G.randLen - c) (256 * G.pLen)) (Spec.Dsa.parameterEntropy G.pLen) := rfl
+    rw [DoneR, e, e2]; exact h
   · by_cases hAB : G.randLen - c < Spec.Dsa.parameterEntropy G.pLen
     · exact VP.of_false fun σ s ⟨h, e⟩ => by
         have := (ltu_of h.2.2.1 h.2.2.2 hA hB).symm.trans e

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Instances
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # DSA parameter generation over refillable tapes on RISC-V, calling each shared Miller–Rabin implementation -/
 

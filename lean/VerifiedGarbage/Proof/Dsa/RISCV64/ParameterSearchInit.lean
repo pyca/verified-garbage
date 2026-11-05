@@ -159,8 +159,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Dsa.parameterInit (s.gpr .a1).toNat with
   | none => ((t.gpr .a0).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = List.replicate 4 0
-  | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .a1).toNat) 0 first
 
 def initPub (s t : State) : Prop := s.sp = t.sp ∧ s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1
 
@@ -169,10 +170,6 @@ def initContract : Contract isa where
   post := initPost
   pub := initPub
 
-theorem request_zero (L : Nat) : Spec.Dsa.parameterRequest L 0 = 512 * L := by
-  simp only [Spec.Dsa.parameterRequest, Spec.Entropy.request, Spec.Dsa.parameterEntropy]
-  omega
-
 private theorem result_post {s t : State} (h : InitPost (s.gpr .a1).toNat s.mem (s.gpr .a0) t) :
     initPost s t := by
   unfold InitPost at h
@@ -180,9 +177,14 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .a1).toNat s.mem 
   split at h
   · rename_i hv
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
-    refine ⟨by rw [h.1]; rfl, ?_⟩
-    rw [h.2, words, written_words, request_zero]
-    rfl
+    have hp : 0 < (s.gpr .a1).toNat := by
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
+      omega
+    refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .a1).toNat, ?_, ?_⟩
+    · rw [h.2, words, written_words]
+      rfl
+    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
+      omega
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩
