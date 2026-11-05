@@ -762,10 +762,10 @@ theorem msg_keeps {L : Lay P.I.hashLen} (hL : L.Ok) {m m' : Mem}
     exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
 
 /-- `K = HMAC_K(V ‖ b (‖ d ‖ h))`, then `V = HMAC_K(V)`. -/
-theorem rekey_gen_ct {b : Nat} (hb : b < 2 ^ 15) {full : Bool} (fresh : Bool)
-    (tm : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b full)) (hl : mlen P full ≤ 256)
+theorem rekey_gen_ct {b : Nat} (hb : b < 2 ^ 15) {wr full : Bool} (fresh : Bool)
+    (tm : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b wr)) (hl : mlen P full ≤ 256)
     (ht : TaintOk [] (Cfg.finArgs (mlen P full) fK)) :
-    RelCT isa (Two P (KS P (fresh = false))) (.seq (.block Cfg.msgPtrs) (.seq (.block ((cfgOf P).msg b full))
+    RelCT isa (Two P (KS P (fresh = false))) (.seq (.block Cfg.msgPtrs) (.seq (.block ((cfgOf P).msg b wr))
       (.seq ((cfgOf P).hmacK fresh (mlen P full)) (cfgOf P).hmacVS))) fun _ _ => True := by
   refine (two_wp (Ψ := fun L g lr m₀ t => KS P (fresh = false) L g lr m₀ t ∧ ∀ r ∈ [Reg.r9, .r10, .r11],
       t.gpr r = msgP L r) (two_blk msgPtrs_taint) fun L g lr m₀ t hL hq hc hS =>
@@ -777,7 +777,7 @@ theorem rekey_gen_ct {b : Nat} (hb : b < 2 ^ 15) {full : Bool} (fresh : Bool)
       · exact h11⟩).seq ?_
   refine (two_wp (Ψ := KS P (fresh = false)) (two_regs [.r9, .r10, .r11] msgP (fun _ _ _ _ _ h => h.2) tm)
     fun L g lr m₀ t hL hq hc ⟨hS, hr⟩ => WP.mono (msg_ok hL hq.1 hc (hr .r11 (by simp)) (hr .r9 (by simp))
-      (hr .r10 (by simp)) hb full) fun u ⟨c, hf, _⟩ => ⟨c, msg_keeps hL hf hS⟩).seq ?_
+      (hr .r10 (by simp)) hb wr) fun u ⟨c, hf, _⟩ => ⟨c, msg_keeps hL hf hS⟩).seq ?_
   refine (two_wp (Ψ := Tt P) (hmacK_ct hl fresh ht) fun L g lr m₀ t hL hq hc hS =>
     WP.mono (hmacKB_ok hL hq.2 hc hl fresh hS) fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact hmacVS_ct
@@ -785,19 +785,24 @@ theorem rekey_gen_ct {b : Nat} (hb : b < 2 ^ 15) {full : Bool} (fresh : Bool)
 theorem msgF_taint (B : RfcT (cfgP P)) (b : Nat) : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b true) :=
   taintOk_erase (is₀ := (cfgP P).msg 0 true) B.msgF rfl
 
-theorem msgN_taint : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg 0 false) :=
+theorem msgN_taint (b : Nat) : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b false) :=
   taintOk_erase (is₀ := [.li .r8 0, .stb .r8 .r9 sMsg]) ⟨_, by taint_decide⟩ rfl
+
+theorem msgW_taint (B : RfcT (cfgP P)) (b : Nat) (wr : Bool) : TaintOk [.r9, .r10, .r11] ((cfgOf P).msg b wr) := by
+  cases wr
+  · exact msgN_taint b
+  · exact msgF_taint B b
 
 theorem rekeyFull_ct (B : RfcT (cfgP P)) (b : Nat) (hb : b < 2 ^ 15) :
     RelCT isa (Two P (KS P (b ≠ 0))) ((cfgOf P).rekeyFull b) fun _ _ => True := by
   have hl : mlen P true ≤ 256 := by simp only [mlen, ite_true]; have := Q_le P; omega
   unfold Cfg.rekeyFull
-  exact (rekey_gen_ct hb (decide (b = 0)) (msgF_taint B b) hl (by exact B.finM)).mono
+  exact (rekey_gen_ct (full := true) hb (decide (b = 0)) (msgW_taint B b _) hl (by exact B.finM)).mono
     (fun _ _ => Two.mono fun _ _ _ _ _ h h' => h (by simpa using h')) fun _ _ h => h
 
 theorem rekey_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ => True := by
   unfold Cfg.rekey
-  exact (rekey_gen_ct (b := 0) (full := false) (by decide) true msgN_taint (by simp [mlen]) finR_taint).mono
+  exact (rekey_gen_ct (b := 0) (full := false) (by decide) true (msgN_taint 0) (by simp [mlen]) finR_taint).mono
     (fun _ _ => Two.mono fun _ _ _ _ _ _ h => absurd h (by decide)) fun _ _ h => h
 
 /-! ## The byte loops and the conversions -/

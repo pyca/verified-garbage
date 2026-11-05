@@ -125,6 +125,8 @@ structure QC (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop
   v : vOf P L u.mem = V₁ P L m₀
   dg : DgOk P L m₀ u.mem
   saved : SavedK P L u.mem (kOf P L u.mem)
+  /-- `d ‖ h`, after the message's first byte. -/
+  tail : tailOf P L u.mem = Spec.Sha256.bytesAt m₀ L.d P.Q ++ hSpec P L m₀
 
 /-- After step g. -/
 structure QD (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
@@ -252,14 +254,17 @@ theorem stageB_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) (hq : QA P L 
 
 theorem stageC_ok (hL : L.Ok) (hq : HOk P L) {u : State} (hc : Ctx L g lr m₀ u) (hb : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g lr m₀ u' ∧ QC P L m₀ u' :=
-  WP.mono (rekeyFull_ok hL hq hc 0 (by decide) fun h => absurd rfl h) fun u' ⟨hc', hf', hk', hv', hS'⟩ =>
+  WP.mono (rekeyFull_ok hL hq hc 0 (by decide) (fun h => absurd rfl h) fun h => absurd rfl h)
+    fun u' ⟨hc', hf', hk', hv', hS', ht'⟩ =>
     ⟨hc', (hOf_frame hf' (kvw_h hL)).trans hb.h,
       by rw [hk', hb.k, hb.v, hb.h, hc.dBytes hL hq.1],
-      by rw [hv', hk', hb.k, hb.v, hb.h, hc.dBytes hL hq.1], hb.dg.frameA hL hf' kvw_away, hS'⟩
+      by rw [hv', hk', hb.k, hb.v, hb.h, hc.dBytes hL hq.1], hb.dg.frameA hL hf' kvw_away, hS',
+      by rw [ht', hb.h, hc.dBytes hL hq.1]⟩
 
 theorem stageD_ok (hL : L.Ok) (hq : HOk P L) {u : State} (hc : Ctx L g lr m₀ u) (hb : QC P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 1) u fun u' => Ctx L g lr m₀ u' ∧ QD P L m₀ u' :=
-  WP.mono (rekeyFull_ok hL hq hc 1 (by decide) fun _ => hb.saved) fun u' ⟨hc', hf', hk', hv', hS'⟩ =>
+  WP.mono (rekeyFull_ok hL hq hc 1 (by decide) (fun _ => hb.saved)
+    fun _ => by rw [hb.tail, hb.h, hc.dBytes hL hq.1]) fun u' ⟨hc', hf', hk', hv', hS', _⟩ =>
     ⟨hc', by rw [kv0_eq', hk', hb.k, hb.v, hb.h, hc.dBytes hL hq.1],
       by rw [kv0_eq', hv', hk', hb.k, hb.v, hb.h, hc.dBytes hL hq.1], hb.dg.frameA hL hf' kvw_away, hS'⟩
 

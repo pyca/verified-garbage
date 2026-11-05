@@ -57,6 +57,10 @@ variable {P : RfcHash}
 abbrev hOf (P : RfcHash) (L : Lay dn) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 (96 + (cfgOf P).fHo)) P.Q
 
+/-- What follows the message's first byte: `d ‖ h` once step d wrote them. -/
+abbrev tailOf (P : RfcHash) (L : Lay dn) (m : Mem) : List Byte :=
+  Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 (2256 + 1)) (2 * P.Q)
+
 /-- The length of the message. -/
 abbrev mlen (P : RfcHash) (full : Bool) : Nat := if full then 1 + 2 * P.Q else 1
 
@@ -73,8 +77,8 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
     {b : Nat} (hb : b < 2 ^ 15) (full : Bool) :
     WP isa (.block ((cfgOf P).msg b full)) t fun t' => Ctx L g lr m₀ t' ∧
       Frame [⟨L.scr + BitVec.ofNat 64 2256, 1 + 2 * P.Q⟩] t.mem t'.mem ∧
-      Spec.Sha256.bytesAt t'.mem (L.scr + BitVec.ofNat 64 2256) (mlen P full) =
-        [BitVec.ofNat 8 b] ++ (if full then Spec.Sha256.bytesAt t.mem L.d P.Q ++ hOf P L t.mem else []) := by
+      Spec.Sha256.bytesAt t'.mem (L.scr + BitVec.ofNat 64 2256) 1 = [BitVec.ofNat 8 b] ∧
+      tailOf P L t'.mem = if full then Spec.Sha256.bytesAt t.mem L.d P.Q ++ hOf P L t.mem else tailOf P L t.mem := by
   have hnB := hL.nB
   have hnc := hL.nc
   have hnd := hL.nd
@@ -116,11 +120,11 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
   have safeM : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 2256, 1 + 2 * P.Q⟩ : Region)], Safe L r := by
     simp only [List.mem_singleton]; rintro r rfl; exact safe_scr L (by nums)
   cases full
-  · simp only [Bool.false_eq_true, ite_false, mlen]
+  · simp only [Bool.false_eq_true, ite_false]
     refine wp_nil fun hsy => ⟨hc.keep hL K₄.rd K₄.wr K₄.sp (fun r hr => K₄.gpr r (by
         intro h; simp at h; subst h; simp [preserved] at hr)) (f₄.sub (sub (by omega) (by omega))) safeM hsy,
-      f₄.sub (sub (by omega) (by omega)), hb₄⟩
-  · simp only [ite_true, mlen]
+      f₄.sub (sub (by omega) (by omega)), hb₄, keep f₄ (by omega) (by omega) (by nums)⟩
+  · simp only [ite_true]
     rw [WP.block_append_iff]
     -- `d`.
     refine WP.mono (copyN_ok (S := L.d) (D := L.scr) (so := 0) (d := sMsg + 1) (n := P.Q)
@@ -149,7 +153,9 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
         (f₆.sub (sub (by omega) (by omega)))
     have K : Kp [.r8] t t₆ := (K₄.trans k₅).trans k₆
     refine ⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
-        intro h; simp at h; subst h; simp [preserved] at hr)) F safeM hsy, F, ?_⟩
+        intro h; simp at h; subst h; simp [preserved] at hr)) F safeM hsy, F, ?_, ?_⟩
+    · rw [keep (o := 2256) (n := 1) f₆ (by omega) (by nums) (by omega),
+        keep (o := 2256) (n := 1) f₅ (by omega) (by nums) (by omega), hb₄]
     -- `d` and `h`, as on entry.
     have hd₄ : Spec.Sha256.bytesAt t₄.mem L.d P.Q = Spec.Sha256.bytesAt t.mem L.d P.Q :=
       keepS f₄ ((hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega)))
@@ -157,11 +163,8 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
     have hh₅ : Spec.Sha256.bytesAt t₅.mem (L.B + BitVec.ofNat 64 (96 + (cfgOf P).fHo)) P.Q = hOf P L t.mem := by
       rw [keepS f₅ (hL.stk_scr (by omega) (by nums)) (by omega), keepS f₄ (hL.stk_scr (by omega) (by omega))
         (by omega)]
-    rw [show 1 + 2 * P.Q = 1 + P.Q + P.Q by omega, bytesAt_add, bytesAt_add, Offset.add_add, Offset.add_add,
-      keep (o := 2256) (n := 1) f₆ (by omega) (by nums) (by omega),
-      keep (o := 2256) (n := 1) f₅ (by omega) (by nums) (by omega), hb₄,
-      keep (o := 2256 + 1) (n := P.Q) f₆ (by omega) (by nums) (by nums), v₅, BitVec.add_zero, hd₄,
-      show 2256 + (1 + P.Q) = 2256 + 1 + P.Q by omega, v₆, fr_add, hh₅]
-    rfl
+    show Spec.Sha256.bytesAt t₆.mem (L.scr + BitVec.ofNat 64 (2256 + 1)) (2 * P.Q) = _
+    rw [show 2 * P.Q = P.Q + P.Q by omega, bytesAt_add, Offset.add_add,
+      keep (o := 2256 + 1) (n := P.Q) f₆ (by omega) (by nums) (by nums), v₅, BitVec.add_zero, hd₄, v₆, fr_add, hh₅]
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

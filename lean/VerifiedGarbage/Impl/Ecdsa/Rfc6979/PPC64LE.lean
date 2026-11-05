@@ -263,10 +263,11 @@ def msg (b : Nat) (full : Bool) : List Instr :=
     (if full then copyN c.len .r10 0 .r9 (sMsg + 1) ++ copyN c.len .r11 c.fHo .r9 (sMsg + 1 + c.len) else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g), the
-states for the new `K` saved; for `b = 1` (step f), the states for `K` are
-the copy step e saved. -/
+states for the new `K` saved. Step d writes the message; step f only its
+first byte, `d ‖ h` kept since; for `b = 1` (step f), the states for `K`
+are the copy step e saved. -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (c.msg b true)) (.seq (c.hmacK (b = 0) (1 + 2 * c.len)) c.hmacVS))
+  .seq (.block msgPtrs) (.seq (.block (c.msg b (b = 0))) (.seq (c.hmacK (b = 0) (1 + 2 * c.len)) c.hmacVS))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
