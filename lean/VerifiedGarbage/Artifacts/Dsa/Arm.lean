@@ -5,8 +5,10 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-! # DSA on ARMv7 -/
@@ -33,6 +35,9 @@ def artifacts : List Artifact := [
     verified := Proof.Dsa.Arm.validate_verified },
   Spec.Dsa.verifyPrevalidatedApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Prevalidated.verify
-    verified := Proof.Dsa.Arm.prevalidated_verified }]
+    verified := Proof.Dsa.Arm.prevalidated_verified },
+  Spec.Dsa.parameterInitApi.artifact Arm.target {
+    code := Impl.Dsa.Arm.Generation.init
+    verified := Proof.Dsa.Arm.Gen.Init.init_verified }]
 
 end VG.Artifacts.Dsa.Arm

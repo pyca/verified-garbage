@@ -46,7 +46,7 @@ section
 variable {G : GP} {σ s : State} {V : Nat → BitVec 32} {LS : List Nat}
 
 theorem GI.seedsFit (h : GI G σ V LS s) : G.seeds.toNat + G.seedsLen ≤ 2 ^ 32 := by
-  have := h.pre.nS; rw [← h.hG]; exact this
+  have := h.pre.nW; rw [← h.hG]; exact this
 
 theorem GI.seedsB_length (h : GI G σ V LS s) : G.seedsB.length = G.seedsLen := by
   rw [← h.hG]; exact bytesAt_length' _ _ _
@@ -65,7 +65,7 @@ theorem GI.seedSrc (h : GI G σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.seedsLe
   have fit := h.seedsFit
   have a : State.addr (G.seeds + BitVec.ofNat 32 k) = State.addr G.seeds + BitVec.ofNat 64 k := addr_add (by omega_arith)
   have sub : Region.Sub ⟨State.addr G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rSeeds := Offset.sub_base _ hk
-  have sC := h.pre.sC; rw [h.hG] at sC
+  have sC := h.pre.wC; rw [h.hG] at sC
   refine ⟨⟨G.rSeeds, ?_, a ▸ Offset.contains_base _ hk (by omega_arith)⟩, a ▸ sC.sub_left sub, ?_⟩
   · rw [h.rd, h.pre.rd, h.hG]; simp
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
