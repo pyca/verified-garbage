@@ -278,24 +278,18 @@ theorem shift_back (e sh : Nat) (hs : sh < 8) : (e * 2 ^ 8) >>> (8 - sh) = e * 2
   rw [Nat.shiftRight_eq_div_pow, show e * 2 ^ 8 = e * 2 ^ sh * 2 ^ (8 - sh) by
     rw [Nat.mul_assoc, ← Nat.pow_add]; congr 2; omega, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
 
-/-- If `big`: the digest for `core`, the digest's number shifted left by
-`sh` bits, in `Q` bytes at `fXc`. -/
-theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.D ≤ dn) {t : State}
-    (hc : Ctx L g lr m₀ t) :
-    WP isa (cfgOf P).prepC t fun u => Ctx L g lr m₀ u ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] t.mem u.mem ∧
-      Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (96 + fXc)) P.Q =
-        Spec.Weierstrass.toBytes P.Q
-          (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem L.dg P.v.H.D) * 2 ^ P.R.sh) := by
+/-- If `big`: the arguments of the copy of `core`'s digest: it cleared, `r6 = D`,
+the digest in `r4`, `fXc + Q - 1 - D` in `r5`. -/
+theorem xcArgs_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) {t : State} (hc : Ctx L g lr m₀ t) :
+    WP isa (.block (cfgOf P).xcArgs) t fun u => Ctx L g lr m₀ u ∧
+      Frame [⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] t.mem u.mem ∧
+      Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (96 + fXc)) 72 = List.replicate 72 0 ∧
+      u.gpr .r6 = BitVec.ofNat 64 P.v.H.D ∧ u.gpr .r5 = L.B + BitVec.ofNat 64 (96 + fXc + (P.Q - 1 - P.v.H.D)) ∧
+      u.gpr .r4 = L.dg := by
   have hnB := hL.nB
-  have hng := hL.ng
   obtain ⟨hw9, hQ66, hQD⟩ := P.sizesW hW
   have hs := P.sizes
-  have hsh := P.R.sh7 hW
   have hlen : (cfgOf P).len = P.Q := rfl
-  have hsc : (cfgOf P).sh = P.R.sh := rfl
-  rw [Cfg.prepC]
-  refine WP.seq ?_
   simp only [Cfg.xcArgs, List.cons_append]
   refine WP.of_syms (zero9_ok hc (o := fXc) (by decide) (by decide) (by decide) fun u₁ k₁ f₁ b₁ h11 => ?_)
   have hX : ∀ {d : Nat}, d + 8 ≤ 472 ∨ 544 ≤ d → d + 8 ≤ 736 →
@@ -327,7 +321,27 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.
       k₂.sp, k₁.sp, hc.sp, fr_add, hlen, show 96 + (fXc + P.Q - 1) = 96 + fXc + (P.Q - 1) by simp only [fXc]; omega,
       sub_min _ (by omega)]
   have h4 : u₅.gpr .r4 = L.dg := by rw [v₅, m₄, m₃, m₂, hX (d := 280) (by omega) (by omega), hc.pDg]
-  have hdg : Spec.Sha256.bytesAt u₁.mem L.dg P.v.H.D = Spec.Sha256.bytesAt t.mem L.dg P.v.H.D :=
+  exact ⟨hc₅, hm₅ ▸ f₁, hm₅ ▸ b₁, h6, h5, h4⟩
+
+/-- If `big`: the digest for `core`, the digest's number shifted left by
+`sh` bits, in `Q` bytes at `fXc`. -/
+theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.D ≤ dn) {t : State}
+    (hc : Ctx L g lr m₀ t) :
+    WP isa (cfgOf P).prepC t fun u => Ctx L g lr m₀ u ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] t.mem u.mem ∧
+      Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (96 + fXc)) P.Q =
+        Spec.Weierstrass.toBytes P.Q
+          (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem L.dg P.v.H.D) * 2 ^ P.R.sh) := by
+  have hnB := hL.nB
+  have hng := hL.ng
+  obtain ⟨hw9, hQ66, hQD⟩ := P.sizesW hW
+  have hs := P.sizes
+  have hsh := P.R.sh7 hW
+  have hlen : (cfgOf P).len = P.Q := rfl
+  have hsc : (cfgOf P).sh = P.R.sh := rfl
+  rw [Cfg.prepC]
+  refine WP.seq (WP.mono (xcArgs_ok hL hT hW hc) fun u₅ ⟨hc₅, f₁, b₁, h6, h5, h4⟩ => ?_)
+  have hdg : Spec.Sha256.bytesAt u₅.mem L.dg P.v.H.D = Spec.Sha256.bytesAt t.mem L.dg P.v.H.D :=
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hL.kg.symm.sub_left (Region.sub_prefix hdn)).sub_right (Offset.sub_base _ (by simp only [fXc]; omega)))
@@ -345,12 +359,11 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.
   refine WP.mono (conv_ok hL (c := cfgOf P) (o := fXc) (s := 8 - P.R.sh) (hlen.trans hQ66) hw9 hc₆ (by decide) (by decide)
     (by omega) (by omega)) fun u₇ ⟨hc₇, _, hf₇, hb₇⟩ => ?_
   refine ⟨hc₇, ?_, ?_⟩
-  · have F₁ : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] t.mem u₁.mem :=
+  · have F₁ : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] t.mem u₅.mem :=
       f₁.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
-    have F₆ : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] u₁.mem u₆.mem := by
-      rw [← hm₅]
+    have F₆ : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (96 + fXc), 72⟩] u₅.mem u₆.mem := by
       exact hf₆.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub _ (by omega) (by simp only [fXc]; omega)⟩
@@ -362,9 +375,9 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.
         · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega)⟩
     exact (F₁.trans F₆).trans F₇
   · -- `Q - D - 1` zero bytes, the digest, and a zero byte, shifted right by `8 - sh` bits.
-    have hz : ∀ a n, a + n ≤ 72 → Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 (96 + fXc + a)) n =
+    have hz : ∀ a n, a + n ≤ 72 → Spec.Sha256.bytesAt u₅.mem (L.B + BitVec.ofNat 64 (96 + fXc + a)) n =
         List.replicate n 0 := fun a n han => by
-      have h1 := bytesAt_take u₁.mem (L.B + BitVec.ofNat 64 (96 + fXc)) (n := a + n) (k := 72) (by omega)
+      have h1 := bytesAt_take u₅.mem (L.B + BitVec.ofNat 64 (96 + fXc)) (n := a + n) (k := 72) (by omega)
       rw [b₁, List.take_replicate, Nat.min_eq_left (by omega), Proof.Hmac.Common.bytesAt_add, Offset.add_add,
         ← List.replicate_append_replicate] at h1
       exact (List.append_inj h1.symm (by simp [Spec.Sha256.bytesAt])).2
@@ -382,7 +395,7 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.
         rw [bytesAt_frame hf₆ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact Offset.disjoint _ (.inl (by omega)) (by simp only [fXc]; omega) (by simp only [fXc]; omega))
-          (by omega), hm₅]
+          (by omega)]
         have := hz 0 (P.Q - 1 - P.v.H.D) (by omega)
         rwa [Nat.add_zero] at this
       have p₃ : Spec.Sha256.bytesAt u₆.mem (L.B + BitVec.ofNat 64 (96 + fXc + (P.Q - 1 - P.v.H.D) + P.v.H.D)) 1 =
@@ -390,10 +403,10 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.v.H.
         rw [bytesAt_frame hf₆ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact Offset.disjoint _ (.inr (by omega)) (by simp only [fXc]; omega) (by simp only [fXc]; omega))
-          (by omega), hm₅, show 96 + fXc + (P.Q - 1 - P.v.H.D) + P.v.H.D = 96 + fXc + (P.Q - 1 - P.v.H.D + P.v.H.D)
+          (by omega), show 96 + fXc + (P.Q - 1 - P.v.H.D) + P.v.H.D = 96 + fXc + (P.Q - 1 - P.v.H.D + P.v.H.D)
             by omega]
         exact hz (P.Q - 1 - P.v.H.D + P.v.H.D) 1 (by omega)
-      rw [e, e', hb₆, hm₅, hdg, p₁, p₃]
+      rw [e, e', hb₆, hdg, p₁, p₃]
     have hQ : P.Q = 66 := hQ66
     rw [hQ] at hY ⊢
     rw [hb₇, hY, Rfc6979.ofBytes_zeros, Rfc6979.ofBytes_append_zeros, show 8 * 1 = 8 from rfl,
