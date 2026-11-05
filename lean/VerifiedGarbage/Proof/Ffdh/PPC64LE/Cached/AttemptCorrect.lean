@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Front
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Attempt
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Attempt
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
+public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -210,5 +213,70 @@ theorem cg_front {s : State} (h : cgContract.pre s) :
   · rw [hw3, o2.word (by omega) (by omega), oc.word (by omega) (by omega)]
     have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
     rw [← k00.gpr _ (saved_ne1112 i hi), ← hS.saved i hi, a11'', ea]
+
+/-! ## The context's values -/
+
+/-- Word `i` of the context. -/
+theorem ctx_word {m : Mem} {C : Addr} {n i : Nat} (hi : i < n) :
+    m.readW (off C (8 * i)) 64 = (Spec.Rsa.wordsAt m C n)[i]'(by simp [Spec.Rsa.wordsAt, hi]) := by
+  simp [Spec.Rsa.wordsAt]
+
+/-- `w` words of the context from word `d` that are `toWords x w`, as a number. -/
+theorem ctx_val {m : Mem} {C : Addr} {n d w x : Nat} (hd : d + w ≤ n) (hx : x < 2 ^ (64 * w))
+    (h : ((Spec.Rsa.wordsAt m C n).drop d).take w = Spec.Rsa.toWords x w) :
+    val32 m C (8 * d) (2 * w) = x := by
+  rw [Pre.val32_eq_wv, ← Nat.mod_eq_of_lt hx]
+  refine VG.Proof.Bignum.wv_of_words fun i hi => ?_
+  have e := congrArg (fun l => l[i]?) h
+  simp only [List.getElem?_take, hi, ↓reduceIte, List.getElem?_drop, Spec.Rsa.toWords, List.getElem?_map,
+    List.getElem?_range hi, Option.map_some] at e
+  rw [List.getElem?_eq_getElem (by simp [Spec.Rsa.wordsAt]; omega)] at e
+  have e' := Option.some.inj e
+  show (m.readW (off C (8 * d + 8 * i)) 64).toNat = _
+  rw [show 8 * d + 8 * i = 8 * (d + i) by omega, ctx_word (n := n) (by omega), e', BitVec.toNat_ofNat]
+
+/-- The context's facts the attempt reads, from its words. -/
+theorem ctx_facts {m : Mem} {C : Addr} {k : Nat} {dom : List Byte}
+    (h : Spec.Rsa.wordsAt m C (3 + 34 * ((k + 7) / 8)) = VG.Proof.Ffdh.generationValues k dom)
+    (hp : 1 < (Spec.Ffdh.domainOf k dom).p) (hpw : (Spec.Ffdh.domainOf k dom).p < 2 ^ (64 * ((k + 7) / 8))) :
+    word m C 0 = BitVec.ofNat 64 (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)) ∧
+    word m C 8 = BitVec.ofNat 64 ((Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) + 7) / 8) ∧
+    word m C 16 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom))) ∧
+    val32 m C (rowOff ((k + 7) / 8) 1) (2 * ((k + 7) / 8)) =
+      2 ^ (64 * ((k + 7) / 8)) * 2 ^ (64 * ((k + 7) / 8)) % (Spec.Ffdh.domainOf k dom).p ∧
+    ∀ a < 32, ent m C ((k + 7) / 8) a = combM (Spec.Ffdh.domainOf k dom).g (Spec.Ffdh.domainOf k dom).p ((k + 7) / 8)
+      (Spec.Rsa.FixedBaseComb.exponent (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)) a) := by
+  generalize hw : (k + 7) / 8 = w at h hpw ⊢
+  have hP : 0 < (Spec.Ffdh.domainOf k dom).p := by omega
+  have eh := VG.Proof.Ffdh.generationValues_headers k dom
+  rw [← h] at eh
+  have g : ∀ i (hi : i < 3), word m C (8 * i) = ((Spec.Rsa.wordsAt m C (3 + 34 * w)).take 3)[i]'(by
+      simp [Spec.Rsa.wordsAt]; omega) := fun i hi => by
+    show m.readW (off C (8 * i)) 64 = _
+    rw [ctx_word (n := 3 + 34 * w) (by omega), List.getElem_take]
+  refine ⟨?_, ?_, ?_, ?_, fun a ha => ?_⟩
+  · have := g 0 (by decide); simp only [eh] at this; simpa using this
+  · have := g 1 (by decide); simp only [eh] at this; simpa using this
+  · have := g 2 (by decide); simp only [eh] at this; simpa using this
+  · have em := VG.Proof.Ffdh.generationValues_montgomery k dom
+    simp only [Spec.Rsa.modulusWords, hw] at em
+    rw [← h] at em
+    have e2 : ((Spec.Rsa.wordsAt m C (3 + 34 * w)).drop (3 + w)).take w =
+        Spec.Rsa.toWords (2 ^ (128 * w) % (Spec.Ffdh.domainOf k dom).p) w := by
+      have h1 : (((Spec.Rsa.wordsAt m C (3 + 34 * w)).drop 3).take (2 * w)).drop w =
+          Spec.Rsa.toWords (2 ^ (128 * w) % (Spec.Ffdh.domainOf k dom).p) w := by
+        rw [em]; exact List.drop_left' (VG.Proof.Rsa.FixedBaseComb.toWords_length _ _)
+      rw [List.drop_take, List.drop_drop, show 2 * w - w = w by omega] at h1
+      simpa only [Nat.add_comm] using h1
+    rw [show rowOff w 1 = 8 * (3 + w) by unfold rowOff; omega, ctx_val (by omega) (by
+      exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hP) (Nat.le_of_lt hpw)) e2, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega]
+  · have ee := VG.Proof.Ffdh.generationValues_entry k dom a ha
+    simp only [Spec.Rsa.modulusWords, hw] at ee
+    rw [← h] at ee
+    have hfit : 3 + (2 + a) * w + w ≤ 3 + 34 * w := by
+      have h' := Nat.mul_le_mul_right w (show 2 + a + 1 ≤ 34 by omega); rw [Nat.succ_mul] at h'; omega
+    unfold ent
+    rw [show rowOff w (a + 2) = 8 * (3 + (2 + a) * w) by unfold rowOff; rw [Nat.mul_comm w, Nat.add_comm a 2]; omega]
+    exact ctx_val hfit (Nat.lt_of_lt_of_le (Nat.mod_lt _ hP) (Nat.le_of_lt hpw)) ee
 
 end VG.Proof.Ffdh.PPC64LE.Cached
