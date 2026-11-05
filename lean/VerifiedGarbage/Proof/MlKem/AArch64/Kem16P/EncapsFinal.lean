@@ -106,18 +106,24 @@ theorem encapsP768_ct (v : Proof.Sha3.AArch64.Permutation) :
     srcOk768 hashOk768 habs768 startH768_taint (g_taint v.callee (symSums v))
     (restP768_taint v.callee (symSums v))
 
+/-- The correctness of `Kem16P.encaps` for ML-KEM-768, of its internal contract. -/
+theorem encapsP768_correct (v : Proof.Sha3.AArch64.Permutation) :
+    ∀ s, (entryContractS (encapsAArch64S lay768)).pre s →
+      ∃ t s', Exec isa (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) lay768) s t s' ∧
+        abiPreserved s s' ∧ (entryContractS (encapsAArch64S lay768)).post s s' := by
+  intro s h
+  have ss := preS h.1
+  have ts := entryS_tables h
+  exact using_correctP (fixedHash v.callee) (prfW_valid v) (enG768_correct v)
+    (kem_unstrip (Encaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩ srcOk768
+    hashOk768 Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2 (by decide) (by decide)
+    (matrixP768_depth v)
+
 theorem encapsP768_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) lay768)
       encapsH768Contract := by
-  refine Verified.of_correct (T := AArch64.target) (k := entryContractS (encapsAArch64S lay768)) ?_
+  refine Verified.of_correct (T := AArch64.target) (k := entryContractS (encapsAArch64S lay768)) (encapsP768_correct v)
     (encapsP768_ct v) ?_
-  · intro s h
-    have ss := preS h.1
-    have ts := entryS_tables h
-    exact using_correctP (fixedHash v.callee) (prfW_valid v) (enG768_correct v)
-      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩ srcOk768
-      hashOk768 Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2 (by decide) (by decide)
-      (matrixP768_depth v)
   · exact ⟨fun _ h => encapsH768_entry h, fun _ _ h hp => encapsH768_post h hp,
       fun _ _ hs ht hp => encapsH768_pub hs ht hp, encapsH768_sat⟩
 
@@ -131,19 +137,25 @@ theorem encapsP1024_ct (v : Proof.Sha3.AArch64.Permutation) :
     srcOk1024 hashOk1024 habs1024 startH1024_taint (g_taint v.callee (symSums v))
     (restP1024_taint v.callee (symSums v))
 
+/-- The correctness of `Kem16P.encaps` for ML-KEM-1024, of its internal contract. -/
+theorem encapsP1024_correct (v : Proof.Sha3.AArch64.Permutation) :
+    ∀ s, (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s →
+      ∃ t s', Exec isa (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024) s t s' ∧
+        abiPreserved s s' ∧ (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).post s s' := by
+  intro s h
+  have ss := preS h.1
+  have ts := entryS_tables h
+  exact using_correctP (fixedHash v.callee) (prfW_valid v) (enG1024_correct v)
+    (kem_unstrip (Encaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
+    srcOk1024 hashOk1024 Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2 (by decide)
+    (by decide) (matrixP1024_depth v)
+
 theorem encapsP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target
       (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
       encapsH1024Contract := by
   refine Verified.of_correct (T := AArch64.target)
-    (k := entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_ (encapsP1024_ct v) ?_
-  · intro s h
-    have ss := preS h.1
-    have ts := entryS_tables h
-    exact using_correctP (fixedHash v.callee) (prfW_valid v) (enG1024_correct v)
-      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
-      srcOk1024 hashOk1024 Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2 (by decide)
-      (by decide) (matrixP1024_depth v)
+    (k := entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)) (encapsP1024_correct v) (encapsP1024_ct v) ?_
   · exact ⟨fun _ h => encapsH1024_entry h, fun _ _ h hp => encapsH1024_post h hp,
       fun _ _ hs ht hp => encapsH1024_pub hs ht hp, encapsH1024_sat⟩
 
