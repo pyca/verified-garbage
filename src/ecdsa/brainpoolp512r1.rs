@@ -13,15 +13,15 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use super::table::{HmacHash, leftmost, sign_with};
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_sha3;
@@ -29,9 +29,9 @@ use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_s
 use crate::arch::ecdsa_brainpoolp512r1_sha512::vg_ecdsa_brainpoolp512r1_sha512_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::brainpoolp512r1::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 use crate::hashes::sha512::{Sha512, Sha512Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<BrainpoolP512r1> {
@@ -71,7 +71,7 @@ fn verify_with(q: &[u8; 129], e: &[u8; 64], signature: &[u8; 128]) -> Result<(),
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
     fn sign(d: &[u8; 64], digest: &H::Output) -> Result<[u8; 128], Error> {
         // SAFETY: `vg_ecdsa_brainpoolp512r1_sign` needs no CPU feature.
@@ -85,10 +85,10 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 impl<H: HmacHash> SignatureHash<BrainpoolP512r1> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     fn sign(d: &[u8; 64], digest: &[u8; 64]) -> Result<[u8; 128], Error> {
         let f = detected();
@@ -122,5 +122,5 @@ impl sealed::Functions<BrainpoolP512r1> for Sha512 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 impl SignatureHash<BrainpoolP512r1> for Sha512 {}

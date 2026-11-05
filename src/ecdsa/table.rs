@@ -9,7 +9,7 @@
 //! chooses for this CPU, as with its other uses
 //! (`crate::hashes::tables::TableHash::hmac_table`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use super::Error;
 use crate::hashes::HashFunction;
@@ -84,7 +84,20 @@ impl HmacHash for Sha512_256 {
 
 /// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
 /// signatures of `S = 2 Q`.
+#[cfg(target_arch = "x86_64")]
 pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" fn(
+    *mut [u8; S],
+    *const [u8; Q],
+    *const u8,
+    usize,
+    *mut [u64; 1024],
+    *const [usize; 6],
+) -> u32;
+
+/// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
+/// signatures of `S = 2 Q`, with its arguments on the stack.
+#[cfg(target_arch = "x86")]
+pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
     *mut [u8; S],
     *const [u8; Q],
     *const u8,

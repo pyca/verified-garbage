@@ -1,5 +1,5 @@
 //! RFC 6979 §A.2.5: P-256, with SHA-256 and SHA-384,
-//! and on x86-64 with the RFC's other hash functions.
+//! and on x86 and x86-64 with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,11 +14,11 @@ use verified_garbage::ecdsa::{Error, P256, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use verified_garbage::hashes::sha1::Sha1;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use verified_garbage::hashes::sha224::Sha224;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
@@ -147,8 +147,8 @@ fn p256_keys() {
     }
 }
 
-/// The signatures with SHA-1, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-1, which the curve also signs with on x86 and x86-64.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[test]
 fn p256_sha1() {
     super::sign_with::<P256, Sha1, 32, 65, 64>(
@@ -157,8 +157,8 @@ fn p256_sha1() {
     );
 }
 
-/// The signatures with SHA-224, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-224, which the curve also signs with on x86 and x86-64.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[test]
 fn p256_sha224() {
     super::sign_with::<P256, Sha224, 32, 65, 64>(
@@ -167,8 +167,8 @@ fn p256_sha224() {
     );
 }
 
-/// The signatures with SHA-512, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-512, which the curve also signs with on x86 and x86-64.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[test]
 fn p256_sha512() {
     super::sign_with::<P256, Sha512, 32, 65, 64>(
