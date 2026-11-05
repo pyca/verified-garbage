@@ -317,6 +317,8 @@ theorem digit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows : N
       (BitVec.ofNat 64 (combDigit (Spec.Rsa.os2ip xb) i rows))) ?_ (by decide))
     fun t ⟨tm, tk⟩ => ⟨tm, (k05.trans tk).mono (by decide)⟩
   unfold sth
-  prun [l40, a5, c5.h23, hm, hD]
+  prun [l40, a5, hm, hD]
+  rw [c5.h23]; unfold combDigit
+  simp only [Nat.zero_add, Nat.one_mul, Nat.zero_mul, Nat.add_zero]
 
 end VG.Proof.Ffdh.PPC64LE.Cached
