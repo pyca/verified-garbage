@@ -14,8 +14,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cmac::InvalidKeyLength;
 use verified_garbage::cmac::aes::AesCmac;
+use verified_garbage::error::InvalidKeyLength;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{MacCase, SizesGroup};

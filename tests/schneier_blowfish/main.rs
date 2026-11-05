@@ -14,7 +14,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
+
+use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// The vectors' file (`crate::vectors`).
@@ -80,11 +82,11 @@ fn set_key_records() {
         if length < 4 {
             assert!(matches!(
                 BlowfishEcbEncryptor::new(&key),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             assert!(matches!(
                 BlowfishEcbDecryptor::new(&key),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
         } else {
             assert_eq!(encrypt(&key, &clear), cipher);
@@ -159,11 +161,11 @@ fn errors() {
     for length in [0, 3, 57, 100] {
         assert!(matches!(
             BlowfishEcbEncryptor::new(&vec![1; length]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
         assert!(matches!(
             BlowfishEcbDecryptor::new(&vec![1; length]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
     }
     let key = [7; 16];
@@ -171,19 +173,13 @@ fn errors() {
     let mut output = [0; 15];
     assert_eq!(cipher.update(&[1; 3], &mut []), Ok(0));
     assert_eq!(cipher.output_len(usize::MAX), usize::MAX);
-    assert_eq!(
-        cipher.update(&[2; 13], &mut output),
-        Err(Error::OutputTooSmall)
-    );
+    assert_eq!(cipher.update(&[2; 13], &mut output), Err(OutputTooSmall));
     assert_eq!(output, [0; 15]);
     assert_eq!(cipher.update(&[2; 13], &mut [0; 16]), Ok(16));
     assert_eq!(cipher.update(&[3; 2], &mut []), Ok(0));
-    assert_eq!(cipher.finalize(), Err(Error::IncompleteBlock));
+    assert_eq!(cipher.finalize(), Err(IncompleteBlock));
     let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();
-    assert_eq!(
-        decipher.update(&[1; 9], &mut [0; 7]),
-        Err(Error::OutputTooSmall)
-    );
+    assert_eq!(decipher.update(&[1; 9], &mut [0; 7]), Err(OutputTooSmall));
     assert_eq!(decipher.update(&[1; 9], &mut [0; 8]), Ok(8));
-    assert_eq!(decipher.finalize(), Err(Error::IncompleteBlock));
+    assert_eq!(decipher.finalize(), Err(IncompleteBlock));
 }

@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::idea_cbc::{Error, IdeaCbcDecryptor, IdeaCbcEncryptor};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::idea_cbc::{IdeaCbcDecryptor, IdeaCbcEncryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -53,11 +55,11 @@ fn errors() {
     for len in [0, 8, 15, 17, 24, 32] {
         assert!(matches!(
             IdeaCbcEncryptor::new(&vec![0; len], &[0; 8]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
         assert!(matches!(
             IdeaCbcDecryptor::new(&vec![0; len], &[0; 8]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
     }
     let key = [0; 16];
@@ -65,8 +67,8 @@ fn errors() {
     let mut decryptor = IdeaCbcDecryptor::new(&key, &[7; 8]).unwrap();
     for len in [1, 15, 17, 31] {
         let mut buffer = vec![0x5a; len];
-        assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(encryptor.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(decryptor.decrypt(&mut buffer), Err(IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
     }
     // The failed calls changed nothing.

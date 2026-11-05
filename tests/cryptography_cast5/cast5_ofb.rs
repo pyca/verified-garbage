@@ -7,7 +7,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cast5_ofb::{Cast5Ofb, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::cast5_ofb::Cast5Ofb;
 
 /// The vectors both ways, truncated, in pieces and with a partial last
 /// block (`crate::modes::check`).
@@ -34,6 +36,6 @@ fn vectors() {
 fn errors() {
     assert_eq!(
         Cast5Ofb::new(&[0; 17], &[0; 8]).err(),
-        Some(Error::InvalidKeyLength)
+        Some(InvalidKeyLength)
     );
 }

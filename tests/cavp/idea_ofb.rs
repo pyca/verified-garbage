@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::idea_ofb::{Error, IdeaOfb};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::idea_ofb::IdeaOfb;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -47,7 +49,7 @@ fn errors() {
     for len in [0, 8, 15, 17, 24, 32] {
         assert_eq!(
             IdeaOfb::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

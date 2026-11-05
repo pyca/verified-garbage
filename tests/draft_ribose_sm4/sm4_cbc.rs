@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_cbc::{Error, Sm4CbcDecryptor, Sm4CbcEncryptor};
+use verified_garbage::error::IncompleteBlock;
+
+use verified_garbage::sm4_cbc::{Sm4CbcDecryptor, Sm4CbcEncryptor};
 
 use super::{field, section};
 
@@ -67,8 +69,8 @@ fn incomplete_blocks() {
     let mut decryptor = Sm4CbcDecryptor::new(&[0; 16], &[7; 16]);
     for len in [1, 15, 17, 31] {
         let mut buffer = vec![0x5a; len];
-        assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(encryptor.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(decryptor.decrypt(&mut buffer), Err(IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
     }
     let mut buffer = [0x5a; 32];

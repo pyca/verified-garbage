@@ -243,11 +243,11 @@ macro_rules! blake2 {
             /// not depend on where, or whether, `mac` differs from it (its
             /// length is public). `mac` must be the whole digest, of `N`
             /// bytes; a truncated one is rejected.
-            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::invalid_mac::InvalidMac> {
+            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::error::InvalidMac> {
                 if $crate::ct::eq(&self.finalize(), mac) {
                     Ok(())
                 } else {
-                    Err($crate::invalid_mac::InvalidMac)
+                    Err($crate::error::InvalidMac)
                 }
             }
 
@@ -296,7 +296,7 @@ pub(super) use blake2;
 mod tests {
     use super::super::blake2b::Blake2b;
     use super::super::blake2s::Blake2s;
-    use crate::invalid_mac::InvalidMac;
+    use crate::error::InvalidMac;
 
     /// `verify`, run by a computation of `mac`, accepts `mac` and rejects
     /// any other: one with a bit flipped in its first, a middle or its last

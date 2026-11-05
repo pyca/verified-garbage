@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_cbc::{Error, TripleDesCbcDecryptor, TripleDesCbcEncryptor};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::triple_des_cbc::{TripleDesCbcDecryptor, TripleDesCbcEncryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -69,11 +71,11 @@ fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert!(matches!(
             TripleDesCbcEncryptor::new(&vec![0; len], &[0; 8]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
         assert!(matches!(
             TripleDesCbcDecryptor::new(&vec![0; len], &[0; 8]),
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         ));
     }
     let key = [0; 24];
@@ -81,8 +83,8 @@ fn errors() {
     let mut decryptor = TripleDesCbcDecryptor::new(&key, &[7; 8]).unwrap();
     for len in [1, 7, 9, 15] {
         let mut buffer = vec![0x5a; len];
-        assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(encryptor.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(decryptor.decrypt(&mut buffer), Err(IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
     }
     // The failed calls changed nothing.

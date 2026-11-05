@@ -25,7 +25,7 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-pub use crate::hmac::InvalidMac;
+use crate::error::InvalidMac;
 
 /// The implementations of `vg_poly1305_update`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -35,6 +35,7 @@ use crate::arch::aes_cfb::{
 };
 use crate::arch::aes_cfb::{vg_aes_cfb128_decrypt, vg_aes_cfb128_encrypt};
 use crate::cpu::detected;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -103,23 +104,6 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Why an AES-CFB128 operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid AES key length",
-        IncompleteBlock => "AES-CFB128 input is not a whole number of blocks",
-    }
-}
-
 /// An expanded AES key.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
@@ -144,7 +128,7 @@ pub struct AesCfb128Encryptor {
 
 impl AesCfb128Encryptor {
     /// Expands a 16-, 24- or 32-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -155,9 +139,9 @@ impl AesCfb128Encryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
     /// a partial last segment.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.encrypt(&mut self.iv, buffer);
         Ok(())
@@ -193,7 +177,7 @@ pub struct AesCfb128Decryptor {
 
 impl AesCfb128Decryptor {
     /// Expands a 16-, 24- or 32-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -204,9 +188,9 @@ impl AesCfb128Decryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
     /// a partial last segment.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.decrypt(&mut self.iv, buffer);
         Ok(())
@@ -230,9 +214,9 @@ impl Drop for AesCfb128Decryptor {
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(

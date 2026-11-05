@@ -14,20 +14,8 @@
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt_chained, vg_sm4_cbc_encrypt_chained};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
-
-/// Why an SM4-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        IncompleteBlock => "SM4-CBC input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SM4 key, which serves both directions.
 struct Key {
@@ -58,7 +46,7 @@ impl Sm4CbcEncryptor {
     /// Encrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -86,7 +74,7 @@ impl Sm4CbcDecryptor {
     /// Decrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
@@ -108,9 +96,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: the buffer holds `len / 16` whole blocks, and it, the
         // chaining value (which the function reads and replaces) and the
@@ -132,9 +120,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {

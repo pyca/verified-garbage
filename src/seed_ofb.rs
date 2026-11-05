@@ -13,24 +13,8 @@
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_ofb::vg_seed_ofb;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why an SEED-OFB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid SEED key length",
-        IncompleteBlock => "SEED-OFB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SEED key.
 struct Key {
@@ -53,7 +37,7 @@ pub struct SeedOfb {
 
 impl SeedOfb {
     /// Expands a 16-byte key, to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -65,9 +49,9 @@ impl SeedOfb {
     /// anything if the buffer's length is not a multiple of 16: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.iv, buffer);
         Ok(())
@@ -90,8 +74,8 @@ impl Drop for SeedOfb {
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.

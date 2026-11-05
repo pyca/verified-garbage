@@ -9,7 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_ecb::{Error, TripleDesEcb};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::triple_des_ecb::TripleDesEcb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -20,12 +22,12 @@ fn check(key: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool) {
     let parity_ctx = TripleDesEcb::new(&parity).unwrap();
     for (operation, input, expected) in [
         (
-            TripleDesEcb::encrypt as fn(&TripleDesEcb, &mut [u8]) -> Result<(), Error>,
+            TripleDesEcb::encrypt as fn(&TripleDesEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
             plaintext,
             ciphertext,
         ),
         (
-            TripleDesEcb::decrypt as fn(&TripleDesEcb, &mut [u8]) -> Result<(), Error>,
+            TripleDesEcb::decrypt as fn(&TripleDesEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
             ciphertext,
             plaintext,
         ),
@@ -137,16 +139,13 @@ fn limits_and_empty_input() {
                     continue;
                 }
                 let mut buffer = vec![0x5a; n];
-                assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
+                assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
                 assert_eq!(buffer, vec![0x5a; n]);
-                assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+                assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
                 assert_eq!(buffer, vec![0x5a; n]);
             }
         } else {
-            assert!(matches!(
-                TripleDesEcb::new(&key),
-                Err(Error::InvalidKeyLength)
-            ));
+            assert!(matches!(TripleDesEcb::new(&key), Err(InvalidKeyLength)));
         }
     }
 }

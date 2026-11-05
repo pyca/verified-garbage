@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -187,11 +189,11 @@ fn limits_and_empty_input() {
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(
                 AesCbcEncryptor::new(&key, &iv),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             assert!(matches!(
                 AesCbcDecryptor::new(&key, &iv),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             continue;
         }
@@ -204,9 +206,9 @@ fn limits_and_empty_input() {
                 continue;
             }
             let mut buffer = vec![0x5a; n];
-            assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
+            assert_eq!(encryptor.encrypt(&mut buffer), Err(IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
-            assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+            assert_eq!(decryptor.decrypt(&mut buffer), Err(IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
         }
         // The calls before changed nothing: many blocks in one call encrypt

@@ -14,10 +14,8 @@
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb8::{vg_triple_des_cfb8_decrypt, vg_triple_des_cfb8_encrypt};
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
-
-/// The key does not contain 16 or 24 bytes.
-pub use crate::error::InvalidKeyLength;
 
 /// An expanded Triple DES key, which serves both directions.
 struct Key {

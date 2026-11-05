@@ -13,20 +13,8 @@
 ))]
 
 use crate::arch::seed::{vg_seed_ecb_decrypt, vg_seed_ecb_encrypt, vg_seed_expand_key};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
-
-/// Why a SEED ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        IncompleteBlock => "SEED-ECB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SEED key for ECB encryption and decryption.
 ///
@@ -49,19 +37,19 @@ impl SeedEcb {
 
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let f = if encrypt {
             vg_seed_ecb_encrypt

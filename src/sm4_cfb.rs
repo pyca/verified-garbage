@@ -14,21 +14,8 @@
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cfb::{vg_sm4_cfb128_decrypt, vg_sm4_cfb128_encrypt};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
-
-/// Why an SM4-CFB128 operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        IncompleteBlock => "SM4-CFB128 input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SM4 key.
 struct Key {
@@ -61,9 +48,9 @@ impl Sm4Cfb128Encryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
     /// a partial last segment.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.encrypt(&mut self.iv, buffer);
         Ok(())
@@ -110,9 +97,9 @@ impl Sm4Cfb128Decryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
     /// a partial last segment.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.decrypt(&mut self.iv, buffer);
         Ok(())

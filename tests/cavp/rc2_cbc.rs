@@ -9,6 +9,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use verified_garbage::error::{IncompleteBlock, OutputTooSmall};
 use verified_garbage::rc2_cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
 
 use verified_garbage_test_vectors::{Record, unhex};
@@ -19,8 +20,8 @@ trait Cbc: Sized {
     fn new(key: &[u8], iv: &[u8]) -> Result<Self, Error>;
     fn with_bits(key: &[u8], iv: &[u8], bits: usize) -> Result<Self, Error>;
     fn output_len(&self, input_len: usize) -> usize;
-    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error>;
-    fn finalize(self) -> Result<(), Error>;
+    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall>;
+    fn finalize(self) -> Result<(), IncompleteBlock>;
 }
 
 macro_rules! cbc {
@@ -35,10 +36,10 @@ macro_rules! cbc {
             fn output_len(&self, input_len: usize) -> usize {
                 <$t>::output_len(self, input_len)
             }
-            fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+            fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
                 <$t>::update(self, input, output)
             }
-            fn finalize(self) -> Result<(), Error> {
+            fn finalize(self) -> Result<(), IncompleteBlock> {
                 <$t>::finalize(self)
             }
         }
@@ -60,7 +61,7 @@ fn feed<C: Cbc>(ctx: &mut C, input: &[u8], extra: usize) -> Vec<u8> {
     assert!(len <= input.len() + 7);
     if len > 0 {
         let mut short = vec![UNWRITTEN; len - 1];
-        assert_eq!(ctx.update(input, &mut short), Err(Error::OutputTooSmall));
+        assert_eq!(ctx.update(input, &mut short), Err(OutputTooSmall));
         assert!(crate::bytes::all_equal(&short, UNWRITTEN));
         assert_eq!(ctx.output_len(input.len()), len);
     }
@@ -211,7 +212,7 @@ fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[
     for len in [0, 7] {
         assert_eq!(
             ctx.update(&input[5..8], &mut output[..len]),
-            Err(Error::OutputTooSmall)
+            Err(OutputTooSmall)
         );
     }
     assert!(crate::bytes::all_equal(&output, UNWRITTEN));
@@ -296,7 +297,7 @@ fn empty_and_incomplete_of<C: Cbc>() {
             ctx.update(&vec![0; length], &mut output),
             Ok(length / 8 * 8)
         );
-        assert_eq!(ctx.finalize(), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.finalize(), Err(IncompleteBlock));
     }
     // A partial block completed by a later update is not incomplete.
     let mut ctx = C::new(&[0; 16], &[0; 8]).unwrap();

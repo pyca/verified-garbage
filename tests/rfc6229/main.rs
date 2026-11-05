@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::rc4::{Error, Rc4};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::rc4::Rc4;
 use verified_garbage_test_vectors::unhex_spaced;
 
 #[test]
@@ -88,8 +90,8 @@ fn every_published_answer_and_streaming_split() {
 /// encryption.
 #[test]
 fn key_lengths_and_round_trips() {
-    assert_eq!(Rc4::new(&[]).err(), Some(Error::InvalidKeyLength));
-    assert_eq!(Rc4::new(&[0; 257]).err(), Some(Error::InvalidKeyLength));
+    assert_eq!(Rc4::new(&[]).err(), Some(InvalidKeyLength));
+    assert_eq!(Rc4::new(&[0; 257]).err(), Some(InvalidKeyLength));
     for length in [1, 2, 255, 256] {
         let key: Vec<u8> = crate::bytes::pattern(length, 37, 0);
         let original: Vec<u8> = crate::bytes::pattern(513, 19, 7);
