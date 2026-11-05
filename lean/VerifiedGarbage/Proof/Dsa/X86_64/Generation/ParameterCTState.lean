@@ -281,7 +281,7 @@ theorem seedGenerator_after (M : Mont) (Sq : MontS) {n pLen qLen : Nat}
   obtain ⟨⟨⟨⟨W, hm, _⟩, _, _, _, hq⟩, hp, bq⟩, bp, be⟩ := h
   have step := seedGenerator_ok M Sq hm p.value p.qValue p.domain bp be bq
   rw [hp] at step
-  refine WP.mono step fun t ⟨Wt, ht, _, bp', bq', outcome, _, _, _⟩ => ?_
+  refine WP.mono step fun t ⟨Wt, ht, _, _, bp', bq', outcome, _, _, _⟩ => ?_
   rcases outcome with ⟨hs, hr⟩ | ⟨gv, hs, hr, _, _, bg⟩
   · have status : p.status = 3 := by simp [SeedGeneratorPublic.status, SeedGeneratorPublic.result, hp, hr]
     exact ⟨⟨Wt, ht, hs.trans status.symm⟩, by simp [status]⟩

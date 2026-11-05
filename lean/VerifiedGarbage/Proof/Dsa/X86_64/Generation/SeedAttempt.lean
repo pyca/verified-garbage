@@ -99,7 +99,7 @@ theorem seedGeneratorFinish_ok (M : Mont) (Sq : MontS)
   have pfit : value < 256 ^ p.geo.pLen := by
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using domain.upper
   refine WP.seq (WP.mono (seedGenerator_ok M Sq h value qval domain bp be bq)
-    fun u ⟨Wu, mu, slots, bpu, bqu, result, fu, ru, wu⟩ => ?_)
+    fun u ⟨Wu, mu, slots, _, bpu, bqu, result, fu, ru, wu⟩ => ?_)
   have u16 : Wu 16 = BitVec.ofNat 64 used := (slots 16 (by simp [generatorSlots])).trans h16
   have uslots : ∀ k ∈ searchSlots, Wu k = W k := fun k hk => slots k (searchSlots_generator hk)
   rcases result with ⟨h19, hr⟩ | ⟨gv, h19, hr, _, upper, bgu⟩
