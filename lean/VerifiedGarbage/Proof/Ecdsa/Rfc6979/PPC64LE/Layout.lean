@@ -53,8 +53,9 @@ structure Lay (dn : Nat) where
   functions an indirect call of a table's functions may reach. -/
   w : HVar
   f : Fns
-  /-- The addresses of the statics. -/
-  sy : String → Addr
+  /-- The addresses of the hash function's HMAC functions (and zero for
+  every other name). -/
+  fa : String → Addr
 
 namespace Lay
 
@@ -244,9 +245,9 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ 
   pTab : t.mem.readW (L.B + BitVec.ofNat 64 320) 64 = L.tab
   lr : t.mem.readW (L.B + BitVec.ofNat 64 720) 64 = lr
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
-  sy : t.syms = L.sy
-  tabOk : TabOK L.w L.f L.sy
-  tabMem : TabMem L.w L.sy L.tab m₀
+  tabOk : TabOK L.w L.f t.syms
+  tabMem : TabMem L.w t.syms L.tab m₀
+  fsy : ∀ n ∈ [L.w.initN, L.w.H.updN, L.w.finN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -279,8 +280,8 @@ theorem keep (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'
     (keep 288 (by omega) (by omega)).trans hc.pD, (keep 296 (by omega) (by omega)).trans hc.pOut,
     (keep 304 (by omega) (by omega)).trans hc.pDl, (keep 312 (by omega) (by omega)).trans hc.pBl,
     (keep 320 (by omega) (by omega)).trans hc.pTab,
-    keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), hsy.trans hc.sy, hc.tabOk,
-    hc.tabMem⟩
+    keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.tabOk,
+    by rw [hsy]; exact hc.tabMem, fun n hn => by rw [hsy]; exact hc.fsy n hn⟩
 
 /-- Code that writes only registers but the callee-saved ones. -/
 theorem regs (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
@@ -383,7 +384,8 @@ def tabFacts (w : HVar) (f : Fns) (s : State) : Prop :=
 `q`, and the hash function `w`'s HMAC through the table, whose functions an
 indirect call reaches among `f`'s. -/
 def lay (dn q : Nat) (w : HVar) (f : Fns) (s : State) : Lay dn :=
-  ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r7, s.gpr .r8, s.sp - BitVec.ofNat 64 736, q, w, f, s.syms⟩
+  ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r7, s.gpr .r8, s.sp - BitVec.ofNat 64 736, q, w, f,
+    fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0⟩
 
 theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
     (h : (rfcPPC I 736 (tabFacts w f) ns).pre s) :

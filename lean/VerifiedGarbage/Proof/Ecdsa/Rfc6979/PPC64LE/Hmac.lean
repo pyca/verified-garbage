@@ -152,8 +152,8 @@ abbrev argRegs : List Reg := [.r3, .r4, .r5, .r6, .r7, .r11, .r12]
 `j` holds, of `n`. -/
 theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {j : Nat} (hj : 8 * j + 8 ≤ 48)
     {n : String} {c : Prog isa} {ts : List (String × Prog isa)}
-    (hw : m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = L.sy n)
-    (hf : ts.find? (fun q => L.sy q.1 == L.sy n) = some (n, c)) {Q : State → Prop}
+    (hw : m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = t.syms n)
+    (hf : ts.find? (fun q => t.syms q.1 == t.syms n) = some (n, c)) {Q : State → Prop}
     (h : ∀ t', Ctx L g lr m₀ t' → t'.mem = t.mem → (∀ r, r ≠ .r12 → t'.gpr r = t.gpr r) →
       WP isa (.call n c) t' Q) :
     WP isa (Cfg.tcall j ts) t Q := by
@@ -168,11 +168,11 @@ theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {j : Nat} (hj 
   have K : Kp [.r12] t t₃ := (k₁.trans k₂).trans k₃
   have hm : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
   have hc₃ : Ctx L g lr m₀ t₃ := hc.kp hL K hm hsy
-  have h12' : t₃.gpr .r12 = L.sy n := by rw [v₃, m₂, m₁, hc.tabWord hL hj, hw]
-  refine WP.icalls_of_call (a := L.sy n) (by simp only [PPC64LE.icall, h12']) ?_
+  have h12' : t₃.gpr .r12 = t.syms n := by rw [v₃, m₂, m₁, hc.tabWord hL hj, hw]
+  refine WP.icalls_of_call (a := t.syms n) (by simp only [PPC64LE.icall, h12']) ?_
     (h t₃ hc₃ hm fun r hr => K.gpr r (by simp [hr]))
-  show ts.find? (fun q => t₃.syms q.1 == L.sy n) = _
-  rw [hc₃.sy]; exact hf
+  show ts.find? (fun q => t₃.syms q.1 == t.syms n) = _
+  rw [hsy]; exact hf
 
 /-! ## HMAC's states -/
 

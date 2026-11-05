@@ -68,9 +68,10 @@ theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : Li
   have eTab : (lay I.hashLen I.ecdsa.curve.len w f s).tab = s.gpr .r8 := rfl
   have eW : (lay I.hashLen I.ecdsa.curve.len w f s).w = w := rfl
   have eF : (lay I.hashLen I.ecdsa.curve.len w f s).f = f := rfl
-  have eSy : (lay I.hashLen I.ecdsa.curve.len w f s).sy = s.syms := rfl
+  have eFa : (lay I.hashLen I.ecdsa.curve.len w f s).fa =
+      fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0 := rfl
   obtain ⟨L, hl⟩ : ∃ L, lay I.hashLen I.ecdsa.curve.len w f s = L := ⟨_, rfl⟩
-  rw [hl] at hL hsp hwr hm hrd hw₀ hspS hlr eOut eD eDg eScr eTab eW eF eSy ⊢
+  rw [hl] at hL hsp hwr hm hrd hw₀ hspS hlr eOut eD eDg eScr eTab eW eF eFa ⊢
   have hnB := hL.nB
   have hnt := hL.nt
   have hw : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions (entered s).wr (L.B + BitVec.ofNat 64 d) 8 :=
@@ -151,9 +152,9 @@ theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : Li
   have st : ∀ y (v : BitVec 64) (m m' : Mem), y + 8 ≤ 736 → Frame [L.OUT, L.SCR, L.STK] m m' →
       Frame [L.OUT, L.SCR, L.STK] m (m'.writeW (L.B + BitVec.ofNat 64 y) v) :=
     fun y v m m' hy f => f.writeW (r := L.STK) (by simp) _ (Offset.contains_base _ hy (by omega))
-  have hsy : t₁₀.syms = L.sy := by rw [hsy', entered_syms, eSy]
+  have hsy : t₁₀.syms = s.syms := by rw [hsy', entered_syms]
   refine ⟨by rw [K.rd, hrd], by rw [K.wr, hwr, hw₀], by rw [K.sp, hsp], fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, hsy, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_⟩
   · have h₁ : r ≠ .r11 := fun e => by subst e; simp [preserved] at hr
     have h₂ : r ≠ .r9 := fun e => by subst e; simp [preserved] at hr
     have h₀ : r ≠ .r0 := fun e => by subst e; simp [preserved] at hr
@@ -183,7 +184,11 @@ theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : Li
     exact st 312 _ _ _ (by omega) (st 304 _ _ _ (by omega) (st 320 _ _ _ (by omega) (st 272 _ _ _ (by omega)
       (st 280 _ _ _ (by omega) (st 288 _ _ _ (by omega) (st 296 _ _ _ (by omega) (st 96 _ _ _ (by omega)
       (st 720 _ _ _ (by omega) (st 688 _ _ _ (by omega) (Frame.refl _ _))))))))))
-  · rw [eW, eF, eSy]; exact htf.1
-  · rw [eW, eSy, eTab]; exact htf.2.1
+  · rw [hsy, eW, eF]; exact htf.1
+  · rw [hsy, eW, eTab]; exact htf.2.1
+  · intro n hn
+    rw [eW] at hn
+    rw [hsy, eFa]
+    simp only [hn, ite_true]
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
