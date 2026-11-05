@@ -376,6 +376,29 @@ class Selection(unittest.TestCase):
             self.assertIn('src/rsa/pss/x86_64.rs', planner.sources('rsa_pss'))
             self.assertEqual(planner.requirements('x86_64', {'rsa_pss'}, [None]), {frozenset({'adx'})})
 
+    def test_moved_files_are_named_by_their_path_at_the_root(self):
+        # ECDSA's private file of P-256, under `ec`, is `ecdsa_p256`; the
+        # code ECDSA's curves share is theirs and that of the modules using
+        # it outside their tests.
+        self.assertEqual(planner.logical('src/ec/ecdsa/p256.rs'), 'src/ecdsa/p256.rs')
+        self.assertEqual(planner.logical('src/ec/p256.rs'), 'src/ec/p256.rs')
+        self.assertEqual(planner.physical('src/ecdh/mod.rs'), 'src/ec/ecdh/mod.rs')
+        self.assertEqual(planner.physical('src/ec.rs'), 'src/ec.rs')
+        self.assertEqual(planner.crate_path('ecdsa'), 'ec::ecdsa')
+        self.assertEqual(planner.crate_path('ec'), 'ec')
+        self.catalog.update({'ecdsa_p256': {'ecdsa_p256', 'ec_p256'}, 'ecdsa_p384': {'ecdsa_p384'},
+                             'rsa': {'rsa'}})
+        self.files.update({
+            'src/ecdsa/mod.rs': 'mod p256;\nmod p384;\npub(crate) fn digest() {}\n',
+            'src/ecdsa/p256.rs': 'use super::digest;\n',
+            'src/ecdsa/p384.rs': '',
+            'src/rsa.rs': 'use crate::ec::ecdsa::digest;\n',
+            'src/error.rs': '#[cfg(test)]\nmod tests {\n    crate::ec::ecdsa::digest();\n}\n',
+        })
+        self.assertEqual({r['modules'] for r in self.rows(['src/ec/ecdsa/p256.rs'])}, {'ecdsa_p256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/ec/ecdsa/mod.rs'])},
+                         {'ecdsa_p256 ecdsa_p384 rsa'})
+
     def test_shared_hash_code_selects_every_hash(self):
         # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
         self.files['src/hashes/sha256.rs'] = ''

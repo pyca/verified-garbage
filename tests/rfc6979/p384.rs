@@ -10,8 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P384, PublicKey};
-use verified_garbage::ecdsa::{Error, SigningKey};
+use verified_garbage::ec::{Error, P384, PrivateKey, PublicKey};
 use verified_garbage::hashes::sha384::Sha384;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -27,7 +26,7 @@ fn p384() -> ([u8; 48], [u8; 48], [u8; 97], Signatures<96>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &SigningKey<P384>, message: &[u8]) -> [Result<[u8; 96], Error>; 2] {
+fn sign(key: &PrivateKey<P384>, message: &[u8]) -> [Result<[u8; 96], Error>; 2] {
     [
         key.sign::<Sha384>(message),
         key.sign_prehashed::<Sha384>(&Sha384::digest(message)),
@@ -47,12 +46,12 @@ fn verify(key: &PublicKey<P384>, message: &[u8], rs: &[u8; 96]) -> [Result<(), E
 #[test]
 fn p384_sha384() {
     let (_, x, _, signatures) = p384();
-    let key = SigningKey::<P384>::from_bytes(&x);
+    let key = PrivateKey::<P384>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
         let signed = sign(&key.clone(), message.as_bytes());
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
-    assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+    assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
 }
 
 /// The signatures verify with the public key, and not of another message,
@@ -62,7 +61,7 @@ fn p384_verify() {
     let (_, x, u, signatures) = p384();
     let key = PublicKey::<P384>::from_bytes(&u);
     assert_eq!(key.as_bytes(), &u);
-    let other = SigningKey::<P384>::from_bytes(&add(&x, 1))
+    let other = PrivateKey::<P384>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
     let bad = Err(Error::InvalidSignature);
@@ -82,7 +81,7 @@ fn p384_verify() {
 fn p384_public_key() {
     let (_, x, u, _) = p384();
     assert_eq!(
-        SigningKey::<P384>::from_bytes(&x).public_key(),
+        PrivateKey::<P384>::from_bytes(&x).public_key(),
         Ok(PublicKey::from_bytes(&u))
     );
 }
@@ -93,12 +92,12 @@ fn p384_public_key() {
 fn p384_keys() {
     let (q, _, _, _) = p384();
     for bad in [[0; 48], q, add(&q, 1), [0xff; 48]] {
-        let key = SigningKey::<P384>::from_bytes(&bad);
+        let key = PrivateKey::<P384>::from_bytes(&bad);
         assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
     }
     for good in [add(&[0; 48], 1), add(&q, -1)] {
-        let key = SigningKey::<P384>::from_bytes(&good);
+        let key = PrivateKey::<P384>::from_bytes(&good);
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }

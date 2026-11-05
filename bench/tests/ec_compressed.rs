@@ -11,7 +11,7 @@
 use openssl::bn::BigNumContext;
 use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
 use openssl::nid::Nid;
-use verified_garbage::ecdh::PrivateKey;
+use verified_garbage::ec::PrivateKey;
 
 macro_rules! differential {
     ($name:ident, $curve:ident, $len:literal, $nid:ident) => {

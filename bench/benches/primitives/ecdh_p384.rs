@@ -23,8 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ec::{P384, PublicKey};
-    use verified_garbage::ecdh::PrivateKey;
+    use verified_garbage::ec::{P384, PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 

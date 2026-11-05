@@ -10,8 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P521, PublicKey};
-use verified_garbage::ecdsa::{Error, SigningKey};
+use verified_garbage::ec::{Error, P521, PrivateKey, PublicKey};
 use verified_garbage::hashes::sha512::Sha512;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -27,7 +26,7 @@ fn p521() -> ([u8; 66], [u8; 66], [u8; 133], Signatures<132>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &SigningKey<P521>, message: &[u8]) -> [Result<[u8; 132], Error>; 2] {
+fn sign(key: &PrivateKey<P521>, message: &[u8]) -> [Result<[u8; 132], Error>; 2] {
     [
         key.sign::<Sha512>(message),
         key.sign_prehashed::<Sha512>(&Sha512::digest(message)),
@@ -47,12 +46,12 @@ fn verify(key: &PublicKey<P521>, message: &[u8], rs: &[u8; 132]) -> [Result<(), 
 #[test]
 fn p521_sha512() {
     let (_, x, _, signatures) = p521();
-    let key = SigningKey::<P521>::from_bytes(&x);
+    let key = PrivateKey::<P521>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
         let signed = sign(&key.clone(), message.as_bytes());
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
-    assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+    assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
 }
 
 /// The signatures verify with the public key, and not of another message,
@@ -62,7 +61,7 @@ fn p521_verify() {
     let (_, x, u, signatures) = p521();
     let key = PublicKey::<P521>::from_bytes(&u);
     assert_eq!(key.as_bytes(), &u);
-    let other = SigningKey::<P521>::from_bytes(&add(&x, 1))
+    let other = PrivateKey::<P521>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
     let bad = Err(Error::InvalidSignature);
@@ -82,7 +81,7 @@ fn p521_verify() {
 fn p521_public_key() {
     let (_, x, u, _) = p521();
     assert_eq!(
-        SigningKey::<P521>::from_bytes(&x).public_key(),
+        PrivateKey::<P521>::from_bytes(&x).public_key(),
         Ok(PublicKey::from_bytes(&u))
     );
 }
@@ -93,12 +92,12 @@ fn p521_public_key() {
 fn p521_keys() {
     let (q, _, _, _) = p521();
     for bad in [[0; 66], q, add(&q, 1), [0xff; 66]] {
-        let key = SigningKey::<P521>::from_bytes(&bad);
+        let key = PrivateKey::<P521>::from_bytes(&bad);
         assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
     }
     for good in [add(&[0; 66], 1), add(&q, -1)] {
-        let key = SigningKey::<P521>::from_bytes(&good);
+        let key = PrivateKey::<P521>::from_bytes(&good);
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }

@@ -177,7 +177,7 @@ GROUPS = {
         "tests": ["cavp::dsa", "wycheproof::dsa"],
     },
     "ecdsa": {
-        "lib": ["ecdsa", "ec::validate", "ec::compressed"],
+        "lib": ["ec::ecdsa", "ec::validate", "ec::compressed"],
         "tests": [
             "cavp::ecdsa_p256",
             "wycheproof::ec_compressed",

@@ -13,8 +13,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP256r1, PublicKey};
-use verified_garbage::ecdsa::Error;
+use verified_garbage::ec::{BrainpoolP256r1, Error, PublicKey};
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::harness::{self, Count, Expectation};
