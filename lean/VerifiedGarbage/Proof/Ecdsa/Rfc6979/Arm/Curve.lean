@@ -85,7 +85,7 @@ def cfgC (E : Impl.Ecdsa.Arm.Cfg) (big : Bool) (sh : Nat) : Cfg where
 address memory only from the registers that hold the pointers. -/
 structure RfcT (c : Cfg) : Prop where
   xArgs : TaintOk c.xArgs
-  reduce : c.big = false → TaintOk (c.reduce ++ Cfg.initKV)
+  reduce : c.big = false → TaintOk c.reduce
   initKV : TaintOk Cfg.initKV
   msgF₀ : TaintOk (c.msg 0 true)
   msgF₁ : TaintOk (c.msg 1 true)
