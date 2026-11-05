@@ -20,8 +20,10 @@ makes the state represent `keyBlock w key` (the key padded to a block, or
 nothing for unkeyed hashing), `update` on each piece of the message, and
 `finalize`, whose first `nn` bytes of output are then `blake2 P nn key msg`
 (for `1 ≤ nn ≤ P.maxBytes`, a key of at most `P.maxBytes` bytes, and data of
-fewer than 2⁶⁴ bytes): `finalHash P (init P nn kk) (keyBlock w key ++ msg)`
-takes its first `nn` bytes to the digest. The count the caller passes to
+fewer than 2⁶⁴ bytes): the first `nn` bytes of
+`finalHash P (init P nn kk) (keyBlock w key ++ msg)`, which
+`blake2b_eq_finalHash` and `blake2s_eq_finalHash` below prove are the
+digest. The count the caller passes to
 `update` and `finalize` is the length of the data so far, the key block
 included.
 
@@ -35,6 +37,116 @@ there.
 @[expose] public section
 
 namespace VG.Spec.Blake2
+
+/-! ## The contracts compute BLAKE2
+
+The contracts below speak of streaming states: `init` starts from
+`init P nn kk` with the data `keyBlock w key`, `update` appends to the data,
+and `finalize` outputs `finalHash` of the initial state and the data. These
+theorems, proven here, say that what the three compute together is the
+digest of §3.3, `blake2`: so a reviewer need only check that the contracts
+chain this way, not match `keyBlock`, `compressList` and `finalHash` against
+the RFC. -/
+
+private theorem getD_append_zeros (l : List Byte) (n i : Nat) :
+    (l ++ List.replicate n 0).getD i 0 = l.getD i 0 := by
+  by_cases hi : i < l.length
+  · simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left hi]
+  · simp only [List.getD_eq_getElem?_getD,
+      List.getElem?_append_right (Nat.le_of_not_lt hi),
+      List.getElem?_eq_none (Nat.le_of_not_lt hi), Option.getD_none, List.getElem?_replicate]
+    split <;> rfl
+
+/-- The padded data of §3.3 is the streamed data, `keyBlock w key ++ m`,
+followed by zeros (or one block of zeros for empty data). -/
+private theorem paddedData_eq (w : Nat) (key m : List Byte) :
+    paddedData w key m =
+      if (keyBlock w key ++ m).length = 0 then List.replicate (blockBytes w) 0
+      else (keyBlock w key ++ m) ++
+        List.replicate ((blockBytes w - m.length % blockBytes w) % blockBytes w) 0 := by
+  have e : (if key.length > 0 then padZeros w key else []) ++ padZeros w m =
+      (keyBlock w key ++ m) ++
+        List.replicate ((blockBytes w - m.length % blockBytes w) % blockBytes w) 0 := by
+    unfold keyBlock padZeros
+    by_cases hk : key.length = 0
+    · simp only [hk, Nat.lt_irrefl, gt_iff_lt, ite_true, ite_false, List.nil_append]
+    · simp only [hk, Nat.pos_of_ne_zero hk, ite_true, ite_false, List.append_assoc]
+  unfold paddedData
+  rw [e]
+  by_cases h : (keyBlock w key ++ m).length = 0
+  · have hm : m.length = 0 := by rw [List.length_append] at h; omega
+    simp only [h, hm, ite_true, List.length_append, List.length_replicate, Nat.zero_mod,
+      Nat.sub_zero, Nat.mod_self, Nat.add_zero]
+  · have h' : ¬((keyBlock w key ++ m) ++
+        List.replicate ((blockBytes w - m.length % blockBytes w) % blockBytes w) 0).length = 0 := by
+      simp only [List.length_append] at h ⊢; omega
+    simp only [h, h', ↓reduceIte]
+
+private theorem paddedData_getD (w : Nat) (key m : List Byte) (i : Nat) :
+    (paddedData w key m).getD i 0 = (keyBlock w key ++ m).getD i 0 := by
+  rw [paddedData_eq]
+  split
+  · rename_i h
+    rw [List.eq_nil_of_length_eq_zero h]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_nil, Option.getD_none,
+      List.getElem?_replicate]
+    split <;> rfl
+  · exact getD_append_zeros _ _ i
+
+private theorem keyBlock_length {w : Nat} (hw : w = 32 ∨ w = 64) {key : List Byte}
+    (hk : key.length ≤ blockBytes w) :
+    (keyBlock w key).length = if key.length = 0 then 0 else blockBytes w := by
+  unfold keyBlock padZeros
+  split
+  · rfl
+  · rcases hw with rfl | rfl <;>
+      simp only [blockBytes, Nat.reduceMul, Nat.reduceDiv, List.length_append,
+        List.length_replicate] at hk ⊢ <;> omega
+
+/-- The number of blocks of §3.3 but the last is the number of blocks the
+streaming state has compressed. -/
+private theorem paddedData_blocks {w : Nat} (hw : w = 32 ∨ w = 64) {key : List Byte}
+    (m : List Byte) (hk : key.length ≤ blockBytes w) :
+    (paddedData w key m).length / blockBytes w - 1 = compressed w (keyBlock w key ++ m) := by
+  have hkb := keyBlock_length hw hk
+  rw [paddedData_eq]
+  unfold compressed
+  split
+  · rename_i h
+    rw [h, List.length_replicate]
+    rcases hw with rfl | rfl <;> decide
+  · rename_i h
+    rw [List.length_append, List.length_append, List.length_replicate] at *
+    rw [hkb] at h ⊢
+    rcases hw with rfl | rfl <;> by_cases hk0 : key.length = 0 <;>
+      simp only [blockBytes, Nat.reduceMul, Nat.reduceDiv, hk0, ite_true, ite_false] at hk h ⊢ <;>
+      omega
+
+/-- BLAKE2 with the key `key` (of at most a block) and the message `m` is the
+first `nn` bytes of `finalHash` of the data `keyBlock w key ++ m`, from the
+initial state `init P nn kk`: what the contracts' `init`, `update` and
+`finalize` compute together. -/
+theorem blake2_eq_finalHash {w : Nat} (P : Params w) (hw : w = 32 ∨ w = 64) (nn : Nat)
+    (key m : List Byte) (hk : key.length ≤ blockBytes w) :
+    blake2 P nn key m = (finalHash P (init P nn key.length) (keyBlock w key ++ m)).take nn := by
+  have hlen : (if key.length = 0 then m.length else m.length + blockBytes w) =
+      (keyBlock w key ++ m).length := by
+    rw [List.length_append, keyBlock_length hw hk]
+    split <;> omega
+  unfold blake2 finalHash compressList
+  simp only [paddedData_getD, paddedData_blocks hw m hk, hlen]
+
+/-- BLAKE2b (`blake2b`), unkeyed or with a key of at most 64 bytes, is what
+`initBContract`, `updateBContract` and `finalizeBContract` compute. -/
+theorem blake2b_eq_finalHash (nn : Nat) (key m : List Byte) (hk : key.length ≤ 64) :
+    blake2b nn key m = (finalHash b (init b nn key.length) (keyBlock 64 key ++ m)).take nn :=
+  blake2_eq_finalHash b (Or.inr rfl) nn key m (Nat.le_trans hk (by decide))
+
+/-- BLAKE2s (`blake2s`), unkeyed or with a key of at most 32 bytes, is what
+`initSContract`, `updateSContract` and `finalizeSContract` compute. -/
+theorem blake2s_eq_finalHash (nn : Nat) (key m : List Byte) (hk : key.length ≤ 32) :
+    blake2s nn key m = (finalHash s (init s nn key.length) (keyBlock 32 key ++ m)).take nn :=
+  blake2_eq_finalHash s (Or.inl rfl) nn key m (Nat.le_trans hk (by decide))
 
 /-! ## BLAKE2b -/
 
