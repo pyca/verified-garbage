@@ -16,7 +16,7 @@
 
 mod x448;
 
-use verified_garbage::x25519::{BASE_POINT, PrivateKey, x25519};
+use verified_garbage::x25519::{PrivateKey, PublicKey};
 
 /// The vectors' file (`crate::vectors`).
 fn text() -> String {
@@ -42,6 +42,13 @@ fn values(from: &str, to: &str, label: &str) -> Vec<[u8; 32]> {
     out
 }
 
+/// `X25519(k, u)` through the API: the shared secret of the private key `k`
+/// and the public key `u`, which is not all zero in any of these vectors.
+fn x25519(k: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
+    let shared = PrivateKey::from_bytes(k).exchange(&PublicKey::from_bytes(u));
+    *shared.unwrap().as_bytes()
+}
+
 fn hex(s: &str) -> [u8; 32] {
     assert_eq!(s.len(), 64, "{s}");
     core::array::from_fn(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
@@ -61,14 +68,18 @@ fn x25519_vectors() {
 
 /// §5.2: X25519 iterated from `k = u = 9`, `k` becoming the result and `u`
 /// the old `k`, after 1 and 1,000 iterations (1,000,000 would take the
-/// tests minutes).
+/// tests minutes). 9 is the base point, so the first iteration is also the
+/// public key of the private key 9.
 #[test]
 fn iterated() {
     let from = "   The second type of test vector";
     let one = values(from, "   X448:", "After one iteration:");
     let thousand = values(from, "   X448:", "After 1,000 iterations:");
-    assert_eq!(values(from, "   X448:", "For X25519:"), [BASE_POINT]);
-    let (mut k, mut u) = (BASE_POINT, BASE_POINT);
+    let start = values(from, "   X448:", "For X25519:");
+    assert_eq!(start.len(), 1);
+    let public = PrivateKey::from_bytes(&start[0]).public_key();
+    assert_eq!([*public.as_bytes()], *one);
+    let (mut k, mut u) = (start[0], start[0]);
     for i in 1..=1000 {
         (k, u) = (x25519(&k, &u), k);
         if i == 1 {
@@ -80,22 +91,31 @@ fn iterated() {
 
 /// §6.1: the Diffie-Hellman vector.
 #[test]
-fn diffie_hellman() {
+fn exchange() {
     let v = |label| values("6.1.  Curve25519", "6.2.  Curve448", label)[0];
     let a = PrivateKey::from_bytes(&v("Alice's private key, a:"));
     let b = PrivateKey::from_bytes(&v("Bob's private key, b:"));
-    let ka = v("Alice's public key, X25519(a, 9):");
-    let kb = v("Bob's public key, X25519(b, 9):");
+    let ka = PublicKey::from_bytes(&v("Alice's public key, X25519(a, 9):"));
+    let kb = PublicKey::from_bytes(&v("Bob's public key, X25519(b, 9):"));
     let k = v("Their shared secret, K:");
     assert_eq!(a.public_key(), ka);
     assert_eq!(b.public_key(), kb);
-    assert_eq!(a.diffie_hellman(&kb), Ok(k));
-    assert_eq!(b.diffie_hellman(&ka), Ok(k));
+    assert_eq!(a.exchange(&kb).unwrap().as_bytes(), &k);
+    assert_eq!(b.exchange(&ka).unwrap().as_bytes(), &k);
 }
 
-/// A private key does not print its bytes.
+/// Neither a private key nor a shared secret prints its bytes; a public key
+/// does.
 #[test]
-fn private_key_debug() {
+fn debug() {
     let a = PrivateKey::from_bytes(&[0x42; 32]);
     assert_eq!(format!("{a:?}"), "PrivateKey { .. }");
+    let b = PrivateKey::from_bytes(&[0x24; 32]);
+    let shared = a.exchange(&b.public_key()).unwrap();
+    assert_eq!(format!("{shared:?}"), "SharedSecret { .. }");
+    let public = PublicKey::from_bytes(&[1; 32]);
+    assert_eq!(
+        format!("{public:?}"),
+        format!("PublicKey {{ bytes: {:?} }}", [1u8; 32])
+    );
 }

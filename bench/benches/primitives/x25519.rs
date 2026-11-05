@@ -21,7 +21,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::derive::Deriver;
     use openssl::pkey::{Id, PKey};
-    use verified_garbage::x25519::{PrivateKey, x25519};
+    use verified_garbage::x25519::PrivateKey;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
     let private = [0x42; 32];
@@ -45,54 +45,31 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap()
     };
+    let peer_bytes = *peer.as_bytes();
     assert_eq!(
-        aws_lc_agree(&aws_lc_private, &peer),
-        vg_private.diffie_hellman(&peer).unwrap()
+        aws_lc_agree(&aws_lc_private, &peer_bytes),
+        vg_private.exchange(&peer).unwrap().as_bytes()
     );
     assert_eq!(
         aws_lc_private.compute_public_key().unwrap().as_ref(),
-        vg_private.public_key()
+        vg_private.public_key().as_bytes()
     );
     let mut g = c.benchmark_group("x25519");
     // One Diffie-Hellman: a shared secret from a private key and the peer's
     // public key. The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 32), |b| {
-        b.iter(|| {
-            black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
-                .unwrap()
-        })
+        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
     });
     g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| {
-            let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X25519).unwrap();
+            let peer = PKey::public_key_from_raw_bytes(black_box(&peer_bytes), Id::X25519).unwrap();
             let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
             d.set_peer(&peer).unwrap();
             d.derive_to_vec().unwrap()
         })
     });
     g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
-        b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
-    });
-    g.finish();
-
-    // Neither OpenSSL nor aws-lc-rs has a function of the scalar
-    // multiplication alone: their nearest is the same Diffie-Hellman (which
-    // also rejects an all-zero secret).
-    let mut g = c.benchmark_group("x25519_raw");
-    g.bench(BenchmarkId::new(VG, 32), |b| {
-        b.iter(|| x25519(black_box(&private), black_box(&peer)))
-    });
-    g.bench(BenchmarkId::new(OPENSSL, 32), |b| {
-        b.iter(|| {
-            let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X25519).unwrap();
-            let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
-            d.set_peer(&peer).unwrap();
-            d.derive_to_vec().unwrap()
-        })
-    });
-    g.bench(BenchmarkId::new(AWS_LC, 32), |b| {
-        b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
+        b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer_bytes)))
     });
     g.finish();
 
