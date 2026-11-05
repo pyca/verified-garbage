@@ -8,12 +8,12 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: `μ` and `tr`
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: `μ`
 
 Untrusted: everything here is checked by Lean. In `Ctx`, `muHash` leaves
-`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_ok`), and
-`trHash` leaves `H(pk, 64)` there (`trHash_ok`): from the zeroed state, each
-absorb continues the message from the position the previous one returned.
+`μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840` (`muHash_ok`): from the
+zeroed state, each absorb continues the message from the position the
+previous one returned.
 -/
 
 @[expose] public section
@@ -23,7 +23,6 @@ namespace VG.Proof.MlDsa.AArch64.Message
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message
 open VG.Proof.MlDsa.Message
 open VG.Spec.Sha3 (bytesAt stateAt Repr)
-open VG.Spec.MlDsa (Params)
 
 section
 variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
@@ -111,30 +110,6 @@ theorem muHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (
   have hS6 := hS6 _ hR5 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil]; omega)
   refine WP.mono (ksqz_ok v hL hc6) fun t7 ⟨hc7, _, hm7⟩ => ⟨hc7, ?_⟩
   rw [hm7, hS6, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
-
-/-! ## `tr = H(pk, 64)` -/
-
-theorem trHash_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hL : L.Ok) (hk : L.keyLen = p.pkLen)
-    {t : State} (hc : Ctx L g vv m₀ t) :
-    WP isa (trHash v.callee p) t fun t' => Ctx L g vv m₀ t' ∧
-      bytesAt t'.mem L.MU 64 = Spec.MlDsa.H (bytesAt m₀ L.key L.keyLen) 64 := by
-  have hkl := hL.hKey.2
-  refine WP.seq (WP.mono (zeroSt_ok hL hc) fun t1 ⟨hc1, _, hz⟩ => ?_)
-  have hR1 : Repr t1.mem L.ST 136 [] := Proof.MlKem.repr_nil hz
-  refine WP.seq (WP.mono (kabs_ok v hL hc1 (n := L.keyLen) (q := 0)
-    (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl)
-    (by rw [hc1.slotV (f := fKey) (j := 0) rfl (by omega)]; rfl) (by rw [hk]; rfl) rfl (by decide) (by omega)
-    ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩
-    (by have := hL.x_r hL.xKey (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm)
-    (hL.x_r hL.xKey (e := 200) (k := 640) (by omega)).symm hL.kKey)
-    fun t2 ⟨hc2, _, hR2, _⟩ => ?_)
-  have hR2 := hR2 [] hR1 rfl
-  rw [List.nil_append, hc1.bytesAt_eq hL.xKey hL.kKey (by have := hL.nKey; omega)] at hR2
-  refine WP.seq (WP.mono (kpad_ok v hL hc2 (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega))
-    (q := p.pkLen % 136) rfl (Nat.mod_lt _ (by decide))) fun t3 ⟨hc3, _, hS3⟩ => ?_)
-  have hS3 := hS3 _ hR2 (by rw [Proof.MlKem.bytesAt_length, hk])
-  refine WP.mono (ksqz_ok v hL hc3) fun t4 ⟨hc4, _, hm4⟩ => ⟨hc4, ?_⟩
-  rw [hm4, hS3, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
 
 end
 

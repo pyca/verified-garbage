@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: where everything is
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The function's buffers, the
 16 bytes of stack below the stack pointer on entry (`STK`, which the calls'
