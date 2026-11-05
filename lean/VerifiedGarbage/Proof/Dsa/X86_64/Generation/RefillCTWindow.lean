@@ -191,19 +191,23 @@ theorem ctStoreImm96_ok {t : State} {F S : Addr} (L : Lay t F S) {w : Nat} (hw :
       u.mem = t.mem.writeW (off F 96) (BitVec.ofNat 64 w) ∧ Keep [.rax] t u := by
   have hv : (BitVec.ofNat 32 w).setWidth 64 = BitVec.ofNat 64 w := by
     apply BitVec.eq_of_toNat_eq
-    simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw]
+    simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega : w < 4294967296)]
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem.writeW (off F 96) (BitVec.ofNat 64 w)) (by
     xrun [ea_sp, L.rsp, L.st (d := 96) (by decide), hv]) rfl) fun _ h => h
 
 /-- After the window's comparison: its start written, its length in `rcx`
 and compared with `windowBytes`. -/
-def WindowChecked (n pLen qLen : Nat) (g : SeedGeneratorPublic) (t : State) : Prop :=
-  ∃ s, SeedGeneratorBefore n pLen qLen g s ∧
+def WindowCheckedFrom (n pLen qLen : Nat) (g : SeedGeneratorPublic) (s t : State) : Prop :=
+  SeedGeneratorBefore n pLen qLen g s ∧
     t.cf = some (decide (g.seed.context.rand.bytes.length - g.seed.used <
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) ∧
     t.gpr .rcx = BitVec.ofNat 64 (g.seed.context.rand.bytes.length - g.seed.used) ∧
     t.mem = s.mem.writeW (off g.seed.context.geo.F 88) (off g.seed.context.rand.ptr g.seed.used) ∧
     Keep [.rax, .rcx] s t
+
+def WindowChecked (n pLen qLen : Nat) (g : SeedGeneratorPublic) (t : State) : Prop :=
+  ∃ s, WindowCheckedFrom n pLen qLen g s t
 
 theorem windowBytes_lt (pLen : Nat) (hp : pLen ≤ 384) :
     Impl.Dsa.X86_64.Generation.Refill.windowBytes pLen < 2 ^ 31 := by
@@ -214,15 +218,15 @@ theorem windowHead_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : Stat
     WP isa (.block [.mov .rax (.mem (sp 104)), .alu .add .rax (.mem (sp 128)), .store (sp 88) .rax,
       .mov .rcx (.mem (sp 120)), .alu .sub .rcx (.mem (sp 128)),
       .alu .cmp .rcx (.imm (BitVec.ofNat 32 (Impl.Dsa.X86_64.Generation.Refill.windowBytes
-        g.seed.context.geo.pLen)))]) s (WindowChecked n pLen qLen g) := by
-  obtain ⟨⟨⟨⟨W, hm, _, h16, _⟩, _⟩, _⟩, _⟩ := h
+        g.seed.context.geo.pLen)))]) s (WindowCheckedFrom n pLen qLen g s) := by
+  obtain ⟨⟨⟨⟨W, hm, _, h16, _⟩, _⟩, _⟩, _⟩ := id h
   obtain ⟨V, R⟩ := hm.rep
   have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
   refine WP.mono (ctWindowHead_ok hm.layout R
     ((hm.slots 13 (by simp [generationSlots])).trans g.seed.context.randSlot) h16
     ((hm.slots 15 (by simp [generationSlots])).trans g.seed.context.randLengthSlot)
     g.seed.bound g.seed.context.rand.size (windowBytes_lt _ pn)) fun t ⟨hc, hr, hmem, hk⟩ => ?_
-  exact ⟨s, h, hc, hr, hmem, hk⟩
+  exact ⟨h, hc, hr, hmem, hk⟩
 
 theorem windowChecked_lay {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : State}
     (h : SeedGeneratorBefore n pLen qLen g s)
@@ -235,33 +239,44 @@ theorem windowChecked_lay {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : S
     rw [hm]; exact R.wf hm0.layout.geo (k := 11) (by decide) _
   exact lay_of_rep hm0.layout R Rt (by simp [upd]) (hk.gpr (by decide)) hk.2.2
 
-theorem windowTaken_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {t : State}
-    (h : WindowChecked n pLen qLen g t) (hb : isa.eval .b t = some true) :
+theorem windowTaken_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : State}
+    (hs : SeedGeneratorBefore n pLen qLen g s)
+    (hc : t.cf = some (decide (g.seed.context.rand.bytes.length - g.seed.used <
+      Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)))
+    (hr : t.gpr .rcx = BitVec.ofNat 64 (g.seed.context.rand.bytes.length - g.seed.used))
+    (hm : t.mem = s.mem.writeW (off g.seed.context.geo.F 88) (off g.seed.context.rand.ptr g.seed.used))
+    (hk : Keep [.rax, .rcx] s t) (hb : isa.eval .b t = some true) :
     WP isa (.block [.store (sp 96) .rcx]) t fun u =>
-      ∃ s, SeedGeneratorBefore n pLen qLen g s ∧ SeedGeneratorBefore n pLen qLen g.windowed u ∧
+      SeedGeneratorBefore n pLen qLen g.windowed u ∧
         Frame [⟨g.seed.context.geo.F, frameBytes⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
-  obtain ⟨s, hs, hc, hr, hm, hk⟩ := h
   have short : g.seed.context.rand.bytes.length - g.seed.used <
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen := by
-    have := hb.symm.trans (by simp only [eval, hc])
+    have e : isa.eval .b t = some (decide (g.seed.context.rand.bytes.length - g.seed.used <
+        Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) := by simp only [eval, hc]
+    have := hb.symm.trans e
     simpa using this
   refine WP.mono (ctStoreRcx96_ok (windowChecked_lay hs hm hk)) fun u ⟨hu, ku⟩ => ?_
   have len : g.seed.context.ctWindowLen g.seed.used = g.seed.context.rand.bytes.length - g.seed.used := by
     unfold GenerationContext.ctWindowLen; omega
   have hw := seedGeneratorBefore_windowed hs (t := u) (by rw [hu, hm, hr, len])
     ((ku.gpr (by decide)).trans (hk.gpr (by decide))) (ku.2.1.trans hk.2.1) (ku.2.2.trans hk.2.2)
-  exact ⟨s, hs, hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩
+  exact ⟨hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩
 
-theorem windowFull_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {t : State}
-    (h : WindowChecked n pLen qLen g t) (hb : isa.eval .b t = some false) :
+theorem windowFull_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : State}
+    (hs : SeedGeneratorBefore n pLen qLen g s)
+    (hc : t.cf = some (decide (g.seed.context.rand.bytes.length - g.seed.used <
+      Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)))
+    (hm : t.mem = s.mem.writeW (off g.seed.context.geo.F 88) (off g.seed.context.rand.ptr g.seed.used))
+    (hk : Keep [.rax, .rcx] s t) (hb : isa.eval .b t = some false) :
     WP isa (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (Impl.Dsa.X86_64.Generation.Refill.windowBytes
         g.seed.context.geo.pLen))), .store (sp 96) .rax]) t fun u =>
-      ∃ s, SeedGeneratorBefore n pLen qLen g s ∧ SeedGeneratorBefore n pLen qLen g.windowed u ∧
+      SeedGeneratorBefore n pLen qLen g.windowed u ∧
         Frame [⟨g.seed.context.geo.F, frameBytes⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
-  obtain ⟨s, hs, hc, hr, hm, hk⟩ := h
   have full : ¬ g.seed.context.rand.bytes.length - g.seed.used <
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen := by
-    have := hb.symm.trans (by simp only [eval, hc])
+    have e : isa.eval .b t = some (decide (g.seed.context.rand.bytes.length - g.seed.used <
+        Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) := by simp only [eval, hc]
+    have := hb.symm.trans e
     simpa using this
   have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
   refine WP.mono (ctStoreImm96_ok (windowChecked_lay hs hm hk)
@@ -271,25 +286,27 @@ theorem windowFull_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {t : Stat
     unfold GenerationContext.ctWindowLen; omega
   have hw := seedGeneratorBefore_windowed hs (t := u) (by rw [hu, hm, len])
     ((ku.gpr (by decide)).trans (hk.gpr (by decide))) (ku.2.1.trans hk.2.1) (ku.2.2.trans hk.2.2)
-  exact ⟨s, hs, hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩
+  exact ⟨hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩
+
+theorem seedGeneratorBefore_pLen {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
+    (h : SeedGeneratorBefore n pLen qLen g s) : g.seed.context.geo.pLen = pLen := h.1.2.1
 
 /-- The window, run: the generator search's input over it. -/
 theorem window_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
-    (h : SeedGeneratorBefore n pLen qLen g s) (hp : g.seed.context.geo.pLen = pLen) :
+    (h : SeedGeneratorBefore n pLen qLen g s) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.window pLen) s fun u =>
       SeedGeneratorBefore n pLen qLen g.windowed u ∧
         Frame [⟨g.seed.context.geo.F, frameBytes⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
+  have hp := seedGeneratorBefore_pLen h
   subst pLen
   unfold Impl.Dsa.X86_64.Generation.Refill.window
   refine WP.seq (WP.mono (windowHead_ready h) fun t ht => ?_)
-  obtain ⟨s', hs', hc, _⟩ := ht
-  have key : ∀ u, (∃ s₀, SeedGeneratorBefore n g.seed.context.geo.pLen qLen g s₀ ∧
-      SeedGeneratorBefore n g.seed.context.geo.pLen qLen g.windowed u ∧
-      Frame [⟨g.seed.context.geo.F, frameBytes⟩] s₀.mem u.mem ∧ u.rd = s₀.rd ∧ u.wr = s₀.wr) →
-      SeedGeneratorBefore n g.seed.context.geo.pLen qLen g.windowed u ∧
-        Frame [⟨g.seed.context.geo.F, frameBytes⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
-    sorry
-  sorry
+  obtain ⟨hs', hc, hr, hm, hk⟩ := ht
+  refine WP.ite (decide (g.seed.context.rand.bytes.length - g.seed.used <
+    Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) (by simp only [eval, hc])
+    (fun hb => ?_) (fun hb => ?_)
+  · exact windowTaken_ready hs' hc hr hm hk (by simp only [eval, hc, hb])
+  · exact windowFull_ready hs' hc hm hk (by simp only [eval, hc, hb])
 
 theorem windowChecked_pins (n pLen qLen : Nat) : Pins (WindowChecked n pLen qLen) [.rsp] := by
   intro g s t ⟨s₀, ⟨⟨⟨⟨_, hs, _⟩, _⟩, _⟩, _⟩, _, _, _, hks⟩ ⟨t₀, ⟨⟨⟨⟨_, ht, _⟩, _⟩, _⟩, _⟩, _, _, _, hkt⟩ r hr
@@ -310,11 +327,27 @@ theorem window_ct_of (n pLen qLen : Nat)
     (t₂ : (taint.check (Taint.ofRegs [.rsp]) (.block [.store (sp 96) .rcx]) h₂).isSome = true)
     (t₃ : (taint.check (Taint.ofRegs [.rsp]) (.block [.mov32 .rax (.imm (BitVec.ofNat 32
       (Impl.Dsa.X86_64.Generation.Refill.windowBytes pLen))), .store (sp 96) .rax]) h₃).isSome = true) :
-    RelCT isa (Two fun g s => SeedGeneratorBefore n pLen qLen g s ∧ g.seed.context.geo.pLen = pLen)
-      (Impl.Dsa.X86_64.Generation.Refill.window pLen)
-      (Two fun g s => SeedGeneratorBefore n pLen qLen g.windowed s) := by
+    RelCT isa (Two (SeedGeneratorBefore n pLen qLen)) (Impl.Dsa.X86_64.Generation.Refill.window pLen)
+      (Two fun (g : SeedGeneratorPublic) s => SeedGeneratorBefore n pLen qLen g.windowed s) := by
   unfold Impl.Dsa.X86_64.Generation.Refill.window
-  refine RelCT.seq (Ψ := ?_) ?_ ?_
-  all_goals sorry
+  refine RelCT.seq (two_piece (Ψ := WindowChecked n pLen qLen) [.rsp] (seedGeneratorBefore_pins n pLen qLen) t₁
+    fun g s h => ?_) ?_
+  · have hp := seedGeneratorBefore_pLen h
+    subst pLen
+    exact WP.mono (windowHead_ready h) fun t ht => ⟨s, ht⟩
+  refine two_ite (fun g s t ⟨_, hs, hcs, _⟩ ⟨_, ht, hct, _⟩ => by simp only [eval, hcs, hct]) ?_ ?_
+  · refine two_piece [.rsp] (fun g s t hs ht => windowChecked_pins n pLen qLen g s t hs.1 ht.1) t₂
+      fun g t ⟨⟨s, hs, hc, hr, hm, hk⟩, hb⟩ => WP.mono (windowTaken_ready hs hc hr hm hk hb) fun _ h => h.1
+  · refine two_piece [.rsp] (fun g s t hs ht => windowChecked_pins n pLen qLen g s t hs.1 ht.1) t₃
+      fun g t ⟨⟨s, hs, hc, hr, hm, hk⟩, hb⟩ => ?_
+    have hp := seedGeneratorBefore_pLen hs
+    subst pLen
+    exact WP.mono (windowFull_ready hs hc hm hk hb) fun _ h => h.1
+
+theorem window_ct (n pLen qLen : Nat) (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
+    RelCT isa (Two (SeedGeneratorBefore n pLen qLen)) (Impl.Dsa.X86_64.Generation.Refill.window pLen)
+      (Two fun (g : SeedGeneratorPublic) s => SeedGeneratorBefore n pLen qLen g.windowed s) := by
+  rcases hp with rfl | rfl | rfl
+  all_goals exact window_ct_of n _ qLen (by taint_decide) (by taint_decide) (by taint_decide)
 
 end VG.Proof.Dsa.X86_64.Generation
