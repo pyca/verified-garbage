@@ -3,9 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p521`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p521`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p521_sha512",
     "ecdsa_p521",
+    "fn_tables",
     "ec_p521",
     "hmac_sha512",
     "sha512",

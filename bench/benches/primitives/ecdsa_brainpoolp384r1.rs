@@ -3,9 +3,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_brainpoolp384r1`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_brainpoolp384r1`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_brainpoolp384r1_sha384",
     "ecdsa_brainpoolp384r1",
+    "fn_tables",
     "ec_brainpoolp384r1",
     "hmac_sha384",
     "sha512",

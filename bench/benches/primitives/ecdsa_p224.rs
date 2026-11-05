@@ -2,9 +2,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_p224`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_p224`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_p224_sha224",
     "ecdsa_p224",
+    "fn_tables",
     "ec_p224",
     "hmac_sha224",
     "sha256",
