@@ -113,22 +113,30 @@ structure QA (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop
   h : hOf P L u.mem = hSpec P L m₀
   dg : DgOk P L m₀ u.mem
 
-/-- `X` and `h` (step c's `h1` as `bits2octets`), and `core`'s digest. -/
-theorem stageA_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {c : Prog isa}
-    {Q : State → Prop} (hQ : ∀ u', Ctx L g m₀ u' → QA P L m₀ u' → WP isa c u' Q) :
-    WP isa (.seq (cfgOf P).prepX (.seq (cfgOf P).prepH c)) u Q := by
+/-- After `X`: `Q - m` zero bytes, then the digest's first `m = min(D, Q)`. -/
+abbrev QX (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop :=
+  Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (24 + fX)) P.Q =
+    List.replicate (P.Q - min P.H.D P.Q) 0 ++ (hBOf P L m₀).take (min P.H.D P.Q)
+
+theorem stageX_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) :
+    WP isa (cfgOf P).prepX u fun u' => Ctx L g m₀ u' ∧ QX P L m₀ u' := by
   have hT : TabL P L := (hok_of hk).2
   have hD : P.H.D = P.I.hashLen := P.len.symm
-  have hl := P.R.nBits_len
   obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, hQ8, hQ66, -, -⟩ := P.sizes
   have hdg : Spec.Sha256.bytesAt u.mem L.dg (min P.H.D P.Q) =
       (hBOf P L m₀).take (min P.H.D P.Q) := by
     rw [hc.dgBytes hL (by rw [← hD]; omega), hBOf, ← bytesAt_take _ _ (Nat.min_le_left _ _)]
-  refine WP.seq (WP.mono (prepX_ok hL hT (by rw [← hD]) hc) fun u₁ ⟨hc₁, hf₁, hx₁⟩ => ?_)
-  suffices H : WP isa (cfgOf P).prepH u₁ fun u' => Ctx L g m₀ u' ∧ QA P L m₀ u' from
-    WP.seq (WP.mono H fun u₂ h => hQ u₂ h.1 h.2)
-  rw [hdg] at hx₁
+  exact WP.mono (prepX_ok hL hT (by rw [← hD]) hc) fun u₁ ⟨hc₁, _, hx₁⟩ => ⟨hc₁, by show Spec.Sha256.bytesAt _ _ _ = _; rw [hx₁, hdg]⟩
+
+/-- `h` (step c's `h1` as `bits2octets`), and `core`'s digest. -/
+theorem stageH_ok (hL : L.Ok) (hk : CoreOk P L) {u₁ : State} (hc₁ : Ctx L g m₀ u₁) (hx₁ : QX P L m₀ u₁) :
+    WP isa (cfgOf P).prepH u₁ fun u' => Ctx L g m₀ u' ∧ QA P L m₀ u' := by
+  have hT : TabL P L := (hok_of hk).2
+  have hD : P.H.D = P.I.hashLen := P.len.symm
+  have hl := P.R.nBits_len
+  obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, hQ8, hQ66, -, -⟩ := P.sizes
   have hlB : (hBOf P L m₀).length = P.H.D := length_bytesAt _ _ _
+  unfold QX at hx₁
   cases hb : P.R.big
   · have hq : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := (P.R.sizesA hb).2.2.1
     have hX : Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u₁.mem (xa L) P.Q) = eOf P L m₀ := by
@@ -267,13 +275,14 @@ theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 theorem body_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).body t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' := by
   rw [Cfg.body]
-  exact stageA_ok hL hk hc fun _ h₁ q₁ =>
+  exact WP.seq (WP.mono (stageX_ok hL hk hc) fun _ ⟨h₀, q₀⟩ =>
+    WP.seq (WP.mono (stageH_ok hL hk h₀ q₀) fun _ ⟨h₁, q₁⟩ =>
     WP.seq (WP.mono (stageB_ok hL h₁ q₁) fun _ ⟨h₂, q₂⟩ =>
       WP.seq (WP.mono (stageC_ok hL hk h₂ q₂) fun _ ⟨h₃, q₃⟩ =>
         WP.seq (WP.mono (stageD_ok hL hk h₃ q₃) fun _ ⟨h₄, q₄⟩ =>
           WP.seq (WP.mono (stageE_ok hL h₄ q₄) fun _ ⟨h₅, q₅⟩ =>
             WP.seq (WP.mono (tries_ok hL hk h₅ q₅) fun _ ⟨h₆, i, q₆⟩ =>
-              WP.mono (stageG_ok hL hk h₆ q₆) fun _ ⟨h₇, q₇⟩ => ⟨h₇, i, q₇⟩)))))
+              WP.mono (stageG_ok hL hk h₆ q₆) fun _ ⟨h₇, q₇⟩ => ⟨h₇, i, q₇⟩)))))))
 
 /-! ## RFC 6979's result -/
 
