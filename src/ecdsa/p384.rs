@@ -13,26 +13,27 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "x86_64")]
+use super::x86_64::{SignFn, TableHash, leftmost, sign_with};
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_adx;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify_umaal;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p384::{
+    vg_ecdsa_p384_sign, vg_ecdsa_p384_sign_adx, vg_ecdsa_p384_verify_adx,
+};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_umaal;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384_sha384::{
-    vg_ecdsa_p384_sha384_sign_adx, vg_ecdsa_p384_sha384_sign_avx2,
-    vg_ecdsa_p384_sha384_sign_avx2_adx, vg_ecdsa_p384_sha384_sign_shani,
-    vg_ecdsa_p384_sha384_sign_shani_adx,
-};
 use crate::cpu::detected;
 use crate::ec::p384::{Mul, public_key};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha384::{Sha384, Sha384Backend};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P384> {
@@ -47,6 +48,57 @@ impl SigningKey<P384> {
     }
 }
 
+/// Whether `signature` verifies with `q` for the 48 bytes `e` of the hash
+/// (its leftmost bits, as many as the order has, FIPS 186-5 §6.4.2).
+fn verify_with(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), Error> {
+    let mut scratch = [0u64; 1024];
+    let ok = match Mul::select(detected()) {
+        // SAFETY: `q` is valid for reads of 97 bytes, `e` of 48,
+        // `signature` of 96 and `scratch` for reads and writes of 8192;
+        // `scratch` is a distinct object from the others, so it overlaps
+        // neither them nor the call's stack frame, and, as Rust objects,
+        // none wraps around the address space.
+        Mul::Baseline => unsafe { vg_ecdsa_p384_verify(q, e, signature, &mut scratch) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
+        // (`Mul::select`).
+        #[cfg(target_arch = "x86_64")]
+        Mul::Adx => unsafe { vg_ecdsa_p384_verify_adx(q, e, signature, &mut scratch) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+        // (`Mul::select`).
+        #[cfg(target_arch = "arm")]
+        Mul::Umaal => unsafe { vg_ecdsa_p384_verify_umaal(q, e, signature, &mut scratch) },
+    };
+    if ok == 1 {
+        Ok(())
+    } else {
+        Err(Error::InvalidSignature)
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl<H: TableHash> sealed::Functions<P384> for H {
+    fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
+        let f = detected();
+        let sign: SignFn<48, 96> = match Mul::select(f) {
+            Mul::Baseline => vg_ecdsa_p384_sign,
+            Mul::Adx => vg_ecdsa_p384_sign_adx,
+        };
+        // SAFETY: `sign` needs no CPU feature that the multiplications
+        // selected for this CPU do not.
+        unsafe { sign_with::<H, 48, 96>(sign, f, d, digest) }
+    }
+
+    /// `e` is the leftmost 384 bits of the hash (FIPS 186-5 §6.4.2): its
+    /// first 48 bytes, or the hash after zeros if it is shorter.
+    fn verify(q: &[u8; 97], digest: &H::Output, signature: &[u8; 96]) -> Result<(), Error> {
+        verify_with(q, &leftmost::<48>(digest.as_ref()), signature)
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl<H: TableHash> SignatureHash<P384> for H {}
+
+#[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P384> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let f = detected();
@@ -54,16 +106,6 @@ impl sealed::Functions<P384> for Sha384 {
             (Sha384Backend::Scalar, Mul::Baseline) => vg_ecdsa_p384_sha384_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha384Backend::Sha3, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_sha3,
-            #[cfg(target_arch = "x86_64")]
-            (Sha384Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_shani,
-            #[cfg(target_arch = "x86_64")]
-            (Sha384Backend::Avx2, Mul::Baseline) => vg_ecdsa_p384_sha384_sign_avx2,
-            #[cfg(target_arch = "x86_64")]
-            (Sha384Backend::Scalar, Mul::Adx) => vg_ecdsa_p384_sha384_sign_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Sha384Backend::ShaNi, Mul::Adx) => vg_ecdsa_p384_sha384_sign_shani_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Sha384Backend::Avx2, Mul::Adx) => vg_ecdsa_p384_sha384_sign_avx2_adx,
             #[cfg(target_arch = "arm")]
             (Sha384Backend::Scalar, Mul::Umaal) => vg_ecdsa_p384_sha384_sign_umaal,
         };
@@ -86,66 +128,35 @@ impl sealed::Functions<P384> for Sha384 {
     }
 
     fn verify(q: &[u8; 97], digest: &[u8; 48], signature: &[u8; 96]) -> Result<(), Error> {
-        let mut scratch = [0u64; 1024];
-        let ok = match Mul::select(detected()) {
-            // SAFETY: `q` is valid for reads of 97 bytes, `digest` of 48,
-            // `signature` of 96 and `scratch` for reads and writes of 8192;
-            // `scratch` is a distinct object from the others, so it overlaps
-            // neither them nor the call's stack frame, and, as Rust objects,
-            // none wraps around the address space.
-            Mul::Baseline => unsafe { vg_ecdsa_p384_verify(q, digest, signature, &mut scratch) },
-            // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
-            // (`Mul::select`).
-            #[cfg(target_arch = "x86_64")]
-            Mul::Adx => unsafe { vg_ecdsa_p384_verify_adx(q, digest, signature, &mut scratch) },
-            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-            // (`Mul::select`).
-            #[cfg(target_arch = "arm")]
-            Mul::Umaal => unsafe { vg_ecdsa_p384_verify_umaal(q, digest, signature, &mut scratch) },
-        };
-        if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
-        }
+        verify_with(q, digest, signature)
     }
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<P384> for Sha384 {}
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::{Mul, Sha384Backend};
-    use crate::arch::ecdsa_p384_sha384::{
-        VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES, VG_ECDSA_P384_SHA384_SIGN_AVX2_ADX_FEATURES,
-        VG_ECDSA_P384_SHA384_SIGN_AVX2_FEATURES, VG_ECDSA_P384_SHA384_SIGN_SHANI_ADX_FEATURES,
-        VG_ECDSA_P384_SHA384_SIGN_SHANI_FEATURES,
-    };
+    use super::Mul;
+    use crate::arch::ecdsa_p384::VG_ECDSA_P384_SIGN_ADX_FEATURES;
     use crate::cpu::NAMES;
     use verified_garbage_cpu::Features;
 
-    /// The CPU features of the signature with SHA-384's backend `s` and the
-    /// multiplications `m`.
-    fn required(s: Sha384Backend, m: Mul) -> Features {
-        match (s, m) {
-            (Sha384Backend::Scalar, Mul::Baseline) => Features(0),
-            (Sha384Backend::ShaNi, Mul::Baseline) => VG_ECDSA_P384_SHA384_SIGN_SHANI_FEATURES,
-            (Sha384Backend::Avx2, Mul::Baseline) => VG_ECDSA_P384_SHA384_SIGN_AVX2_FEATURES,
-            (Sha384Backend::Scalar, Mul::Adx) => VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES,
-            (Sha384Backend::ShaNi, Mul::Adx) => VG_ECDSA_P384_SHA384_SIGN_SHANI_ADX_FEATURES,
-            (Sha384Backend::Avx2, Mul::Adx) => VG_ECDSA_P384_SHA384_SIGN_AVX2_ADX_FEATURES,
+    /// The CPU features of the signature with the multiplications `m`.
+    fn required(m: Mul) -> Features {
+        match m {
+            Mul::Baseline => Features(0),
+            Mul::Adx => VG_ECDSA_P384_SIGN_ADX_FEATURES,
         }
     }
 
-    /// Each signature needs no CPU feature that the hash's backend and the
-    /// multiplications are not selected for: on every set of features that
-    /// selects them.
+    /// The signature needs no CPU feature that the multiplications are not
+    /// selected for: on every set of features that selects them.
     #[test]
     fn whole_algorithm_features() {
         for bits in 0..1u32 << NAMES.len() {
             let f = Features(bits);
-            let r = required(Sha384Backend::select(f), Mul::select(f));
-            assert!(f.contains(r), "{bits:#b}");
+            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
         }
     }
 }
