@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM-SIV on x86-64: the code a variant's artifacts run
@@ -268,14 +266,14 @@ def wideOpenCode (v : GcmImpl) : Prog X86_64.isa :=
 
 theorem wideSeal_framed (v : GcmImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v))
-      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
   unfold wideSealCode; split
   · exact sealCode_framed v
   · exact seal_framed v (ecbOf v) true
 
 theorem wideOpen_framed (v : GcmImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v))
-      (Spec.GcmSiv.openContract X86_64.abi 3856) := by
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
   unfold wideOpenCode; split
   · exact openCode_framed v
   · exact open_framed v (ecbOf v) true
@@ -290,22 +288,5 @@ theorem wideOpen_spSafe (v : GcmImpl) : (wideOpenCode v).all (fun i => !X86_64.i
   · exact openCode_spSafe v
   · exact open_spSafe v (ecbOf v) true
 
-/-- Add an AVX2 copy/XOR instance for every combination of callees, so that
-all their variants reach both the ordinary and the AVX2-copy callers. -/
-def withWideArtifacts (v : GcmImpl) (base : List Artifact) : List Artifact := base ++ [
-    Spec.GcmSiv.sealApi.artifact X86_64.target {
-      suffix := v.suffix ++ "_avx2"
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
-      stack := 3856
-      verified := wideSeal_framed v
-      spSafe := X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
-      features := (features v ++ ["avx", "avx2"]).dedup },
-    Spec.GcmSiv.openApi.artifact X86_64.target {
-      suffix := v.suffix ++ "_avx2"
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
-      stack := 3856
-      verified := wideOpen_framed v
-      spSafe := X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
-      features := (features v ++ ["avx", "avx2"]).dedup }]
 
 end VG.Proof.AesGcmSiv.X86_64
