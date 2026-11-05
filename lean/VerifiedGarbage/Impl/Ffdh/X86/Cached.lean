@@ -250,8 +250,12 @@ open KeySearch
 def ctxOff : Nat := 80
 def ctxLenOff : Nat := 84
 
-/-- `KeySearch.entry`, and the context's arguments kept. -/
-def entry : List Instr := KeySearch.entry ++ keep 13 ctxOff ++ keep 14 ctxLenOff
+/-- `KeySearch.entry`, with the context's arguments kept too. -/
+def entry : List Instr :=
+  ([.mov .eax (.mem (argAt 0 12)), .store (at_ .eax savedOff) .esi, .mov .esi (.reg .eax)] : List Instr) ++
+  keep 0 xOff ++ keep 2 yOff ++ keep 4 upOff ++ keep 5 domOff ++ keep 6 dlenOff ++ keep 7 KeySearch.lenOff ++
+  keep 8 randOff ++ keep 9 KeySearch.leftOff ++ keep 10 scratchOff ++ keep 11 slenOff ++ keep 13 ctxOff ++
+  keep 14 ctxLenOff ++ [.mov .eax (.imm 0), .store (st usedOff) .eax, .store (st (requestOff + 4)) .eax]
 
 /-- The attempt's arguments, then the context's. -/
 def arguments : List Instr := KeySearch.arguments ++ pass ctxOff 11 ++ pass ctxLenOff 12
