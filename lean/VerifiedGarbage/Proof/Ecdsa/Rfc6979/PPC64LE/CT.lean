@@ -688,7 +688,7 @@ theorem copyArgs_taint (b : Bool) : TaintOk [] (Cfg.copyArgs b) := by
 
 /-- The copy of HMAC's states from `scratch + src` to `scratch + dst`. -/
 theorem copy_ct {Φ : Pred P} (b : Bool) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15)
-    (he : Cfg.copyArgs b = Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384]) :
+    (he : Cfg.copyArgs b = Cfg.scrBase ++ ([.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384] : List Instr)) :
     RelCT isa (Two P Φ) (.seq (.block (Cfg.copyArgs b)) Impl.RsaOaep.PPC64LE.copyLoop) fun _ _ => True :=
   (two_wp (Ψ := CpA P (fun L => L.scr + BitVec.ofNat 64 dst) (fun L => L.scr + BitVec.ofNat 64 src) 384)
       (two_blk (copyArgs_taint b)) fun _ _ _ _ _ hL _ hc _ => by

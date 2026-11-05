@@ -100,7 +100,7 @@ theorem states_moved {m m' : Mem} {src dst : Nat} {k0 : List Byte} (hk : k0.leng
 /-- The copy's arguments: from `scratch + src` to `scratch + dst`, 384 bytes. -/
 theorem copyArgs_ok (hL : L.Ok) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15) {t : State}
     (hc : Ctx L g lr m₀ t) :
-    WP isa (.block (Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384])) t fun u =>
+    WP isa (.block (Cfg.scrBase ++ ([.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384] : List Instr))) t fun u =>
       Ctx L g lr m₀ u ∧ u.mem = t.mem ∧ u.gpr .r4 = L.scr + BitVec.ofNat 64 src ∧
         u.gpr .r5 = L.scr + BitVec.ofNat 64 dst ∧ u.gpr .r6 = BitVec.ofNat 64 384 :=
   WP.of_syms (scrBase_ok hc fun u₁ k₁ m₁ _ s₁ =>
@@ -115,7 +115,7 @@ theorem copyArgs_ok (hL : L.Ok) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 
 theorem copy384_ok (hL : L.Ok) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15)
     (hsd : src + 384 ≤ dst ∨ dst + 384 ≤ src) (hse : src + 384 ≤ 8192) (hde : dst + 384 ≤ 8192) {t : State}
     (hc : Ctx L g lr m₀ t) :
-    WP isa (.seq (.block (Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384])) copyLoop) t
+    WP isa (.seq (.block (Cfg.scrBase ++ ([.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384] : List Instr))) copyLoop) t
       fun u => Ctx L g lr m₀ u ∧ Frame [⟨L.scr + BitVec.ofNat 64 dst, 8 * 48⟩] t.mem u.mem ∧
         Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 dst) (8 * 48) =
           Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 src) (8 * 48) := by
