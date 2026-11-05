@@ -4,27 +4,10 @@
 
 use criterion::Criterion;
 
-/// The module `rsa_pss`, each hash function's Rust module (`rsa_pss_<H>`,
-/// `src/rsa_pss/<H>.rs`) and its generated one
-/// (`rsa_pss_<H>_mgf1_<H>`), and the modules they call.
+/// The module `rsa_pss`, the RSA primitives it calls (`rsa`), and the hash
+/// functions whose tables it calls (their generated modules).
 pub const USES: &[&str] = &[
     "rsa_pss",
-    "rsa_pss_md5",
-    "rsa_pss_md5_mgf1_md5",
-    "rsa_pss_sha1",
-    "rsa_pss_sha1_mgf1_sha1",
-    "rsa_pss_sha224",
-    "rsa_pss_sha224_mgf1_sha224",
-    "rsa_pss_sha256",
-    "rsa_pss_sha256_mgf1_sha256",
-    "rsa_pss_sha384",
-    "rsa_pss_sha384_mgf1_sha384",
-    "rsa_pss_sha512",
-    "rsa_pss_sha512_mgf1_sha512",
-    "rsa_pss_sha512_224",
-    "rsa_pss_sha512_224_mgf1_sha512_224",
-    "rsa_pss_sha512_256",
-    "rsa_pss_sha512_256_mgf1_sha512_256",
     "rsa",
     "md5",
     "sha1",
