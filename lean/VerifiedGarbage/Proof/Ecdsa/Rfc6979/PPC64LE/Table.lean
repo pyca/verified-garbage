@@ -244,7 +244,7 @@ def EntryF (σ u : State) : Prop :=
     u.sp = σ.sp ∧ u.lr = σ.lr ∧ u.syms = σ.syms
 
 /-- `entry`: `scratch` to `r6`, the table's index to `r9`. -/
-theorem entry_ok {s : State} (ht : InRegions (s.rd ++ s.wr) (s.gpr .r8 + BitVec.ofNat 64 24) 8) :
+theorem tentry_ok {s : State} (ht : InRegions (s.rd ++ s.wr) (s.gpr .r8 + BitVec.ofNat 64 24) 8) :
     WP isa (.block entry) s (EntryF s) := by
   refine WP.of_syms (wp_mov (d := .r6) (n := .r7) fun t₁ o₁ e₁ => ?_)
   refine wp_ld (t := .r9) (n := .r8) (a := s.gpr .r8 + BitVec.ofNat 64 24) (by rw [o₁.gpr _ (by decide)])
@@ -578,7 +578,7 @@ theorem signT_ok (hC : CurveT C T) {σ : State} (h : (tabK T vs).pre σ) :
   unfold signCode signT
   refine WP.seq (Proof.Mont.PPC64LE.wp_step exec_mflr (wp_nil ?_))
   refine WP.seq (WP.frame (show 48 ≤ σ.sp.toNat by omega) ?_)
-  refine WP.seq (WP.mono (entry_ok (inFrame_in hp)) fun t he => ?_)
+  refine WP.seq (WP.mono (tentry_ok (inFrame_in hp)) fun t he => ?_)
   refine byIdx_ok (b := fun i => .call (shapeName s!"vg_ecdsa_{C.R.E.name}_sign" (cfgT C T.tries vs i))
       (cfgT C T.tries vs i).sign) (D := Spec.HashTable.index w.l.G) (by have := idx_lt hw; omega)
     (F := fun u => InnerT σ u ∧ u.gpr .r9 = BitVec.ofNat 64 (Spec.HashTable.index w.l.G))
@@ -711,7 +711,7 @@ theorem entry_ct :
             inFrame_gpr _ (by decide)]
           exact pre2_r8 h⟩) ht)
     fun _ _ ⟨σ₁, σ₂, ⟨⟨_, _, _, h₁⟩, ⟨_, _, _, h₂⟩, _⟩, ea, eb⟩ => by
-      subst ea eb; exact ⟨entry_ok (inFrame_in h₁), entry_ok (inFrame_in h₂)⟩).mono (fun _ _ h => h)
+      subst ea eb; exact ⟨tentry_ok (inFrame_in h₁), tentry_ok (inFrame_in h₂)⟩).mono (fun _ _ h => h)
     fun _ _ ⟨_, a, b, ⟨σ₁, σ₂, h, ea, eb⟩, f₁, f₂⟩ => by subst ea eb; exact ⟨σ₁, σ₂, h, f₁, f₂⟩
 
 /-- What only `r10` changing keeps of the call's entry. -/
