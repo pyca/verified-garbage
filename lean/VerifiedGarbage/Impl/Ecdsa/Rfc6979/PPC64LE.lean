@@ -242,6 +242,10 @@ def msgPtrs : List Instr := [.addSp .r11 0, .load .d .r9 .r11 fScratch, .load .d
 def cpw (src : Reg) (so : Nat) (dst : Reg) (d k : Nat) : List Instr :=
   [.load .w .r8 src (so + 4 * k), .store .w .r8 dst (d + 4 * k)]
 
+/-- The `4 k` bytes at `so(src)` to `d(dst)`. -/
+def copyW (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
+  (List.range k).flatMap (cpw src so dst d)
+
 /-- Copying byte `k` from `so(src)` to `d(dst)`, through `r8`. -/
 def cpb (src : Reg) (so : Nat) (dst : Reg) (d k : Nat) : List Instr :=
   [.lbz .r8 src (so + k), .stb .r8 dst (d + k)]
@@ -249,8 +253,7 @@ def cpb (src : Reg) (so : Nat) (dst : Reg) (d k : Nat) : List Instr :=
 /-- The `n` bytes at `so(src)` to `d(dst)`: 32-bit words, then the last
 `n % 4` bytes one at a time. -/
 def copyN (n : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
-  (List.range (n / 4)).flatMap (cpw src so dst d) ++
-    (List.range (n % 4)).flatMap fun k => cpb src so dst d (4 * (n / 4) + k)
+  copyW (n / 4) src so dst d ++ (List.range (n % 4)).flatMap fun k => cpb src so dst d (4 * (n / 4) + k)
 
 /-- The message `b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
 `scratch + sMsg`, with the frame in `r11`, `scratch` in `r9` and `d` in
