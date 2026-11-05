@@ -5,26 +5,40 @@
 //! them, rather than one for each pair of them.
 //!
 //! `md_table` and `table` choose a hash function's tables, as the backends
-//! of the hash functions choose their implementations; each architecture's
-//! file (`x86_64.rs`, …) names its tables (`md_hash_table`, `hash_table`)
-//! and its verified functions for each implementation of the RSA operations
-//! (`pss_functions!`).
+//! of the hash functions choose their implementations
+//! (`crate::hashes::tables`); each architecture's file (`x86_64.rs`, …)
+//! names its verified functions for each implementation of the RSA
+//! operations (`pss_functions!`).
 
 use super::Hash;
-use super::arch::{hash_table, md_hash_table};
+use crate::hashes::tables::TableHash;
 use verified_garbage_cpu::Features;
+
+/// The hash function with tables that `hash` is.
+fn table_hash(hash: Hash) -> TableHash {
+    match hash {
+        Hash::Md5 => TableHash::Md5,
+        Hash::Sha1 => TableHash::Sha1,
+        Hash::Sha224 => TableHash::Sha224,
+        Hash::Sha256 => TableHash::Sha256,
+        Hash::Sha384 => TableHash::Sha384,
+        Hash::Sha512 => TableHash::Sha512,
+        Hash::Sha512_224 => TableHash::Sha512_224,
+        Hash::Sha512_256 => TableHash::Sha512_256,
+    }
+}
 
 /// The hash function `hash` as the verified functions take it, their
 /// argument `hash`: the words of its table of `MdHash` for the
 /// implementation that a CPU with the features `f` runs best.
 pub(super) fn md_table(hash: Hash, f: Features) -> super::MdTable {
-    md_hash_table(hash, f).0.as_ptr()
+    table_hash(hash).md_hash_table(f)
 }
 
 /// MGF1's hash function `hash` as the verified functions take it, their
 /// argument `mgf1`: the words of its table of `Hash`.
 pub(super) fn table(hash: Hash, f: Features) -> super::Table {
-    hash_table(hash, f).0.as_ptr()
+    table_hash(hash).hash_table(f)
 }
 
 /// The verified functions: `functions`, which chooses, for a CPU with the
@@ -85,15 +99,14 @@ pub(super) use pss_functions;
 
 #[cfg(test)]
 mod tests {
-    use super::{Features, Hash, hash_table, md_hash_table, md_table, table};
+    use super::{Hash, md_table, table};
 
-    /// Each table's functions need no CPU feature that was not required to
-    /// choose it, on every set of features; a table of `MdHash` holds the
-    /// hash function's index and digest length (its words 5 and 6), as its
-    /// table of `Hash` does (words 3 and 4), the digest length the verified
-    /// functions take the hash value's to be.
+    /// The tables of each hash function hold its digest length, the one the
+    /// verified functions take the hash value's to be: a table of `MdHash`
+    /// in its word 6, one of `Hash` in its word 4. (`crate::hashes::tables`
+    /// checks the tables' CPU features and indices.)
     #[test]
-    fn table_features() {
+    fn tables() {
         let all = [
             Hash::Md5,
             Hash::Sha1,
@@ -104,22 +117,13 @@ mod tests {
             Hash::Sha512_224,
             Hash::Sha512_256,
         ];
-        for bits in 0..1u32 << crate::cpu::NAMES.len() {
-            let f = Features(bits);
-            for h in all {
-                let (t, need) = md_hash_table(h, f);
-                assert!(f.contains(need), "{h:?} {bits:#b}");
-                let (g, gneed) = hash_table(h, f);
-                assert!(f.contains(gneed), "{h:?} {bits:#b}");
-                // SAFETY: `as_ptr` points to the tables' words, of immutable
-                // `'static` `repr(C)` values of 11 and 5 pointer-sized words.
-                let (words, gwords) = unsafe { (*t.as_ptr(), *g.as_ptr()) };
-                assert_eq!(words[6], h.digest_len(), "{h:?}");
-                assert_eq!(gwords[4], h.digest_len(), "{h:?}");
-                assert_eq!(words[5], gwords[3], "{h:?}");
-                assert_eq!(md_table(h, f), t.as_ptr());
-                assert_eq!(table(h, f), g.as_ptr());
-            }
+        let f = crate::cpu::detected();
+        for h in all {
+            // SAFETY: the pointers point to the tables' words, of immutable
+            // `'static` `repr(C)` values of 11 and 5 pointer-sized words.
+            let (md, g) = unsafe { (*md_table(h, f), *table(h, f)) };
+            assert_eq!(md[6], h.digest_len(), "{h:?}");
+            assert_eq!(g[4], h.digest_len(), "{h:?}");
         }
     }
 }

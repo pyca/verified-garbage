@@ -30,6 +30,12 @@ super::streaming_hash!(
         backends: Md5Backend {
             Scalar => (vg_md5_update, vg_md5_finalize),
         },
+        tables: {
+            Scalar => {
+                hash: crate::arch::fn_tables::VG_HASH_MD5 [],
+                md_hash: crate::arch::fn_tables::VG_MD_HASH_MD5 [],
+            },
+        },
     }
 );
 

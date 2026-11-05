@@ -1,5 +1,4 @@
-//! RSAES-OAEP's verified functions on x86-64: the tables of the hash
-//! functions (`crate::arch::fn_tables`), and `vg_rsa_oaep_encrypt_precomputed`
+//! RSAES-OAEP's verified functions on x86-64: `vg_rsa_oaep_encrypt_precomputed`
 //! and `vg_rsa_oaep_decrypt` (contracts
 //! `VG.Spec.RsaOaep.encryptTablesContract` and `decryptTablesContract`),
 //! which take the label's hash function and MGF1's as tables, for each
@@ -8,18 +7,6 @@
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
-use crate::arch::fn_tables::{
-    self, VG_HASH_SHA1, VG_HASH_SHA1_SHANI, VG_HASH_SHA1_SHANI_FEATURES, VG_HASH_SHA224,
-    VG_HASH_SHA224_AVX2, VG_HASH_SHA224_AVX2_FEATURES, VG_HASH_SHA224_SHANI,
-    VG_HASH_SHA224_SHANI_FEATURES, VG_HASH_SHA256, VG_HASH_SHA256_AVX2,
-    VG_HASH_SHA256_AVX2_FEATURES, VG_HASH_SHA256_SHANI, VG_HASH_SHA256_SHANI_FEATURES,
-    VG_HASH_SHA384, VG_HASH_SHA384_AVX2, VG_HASH_SHA384_AVX2_FEATURES, VG_HASH_SHA384_SHANI,
-    VG_HASH_SHA384_SHANI_FEATURES, VG_HASH_SHA512, VG_HASH_SHA512_224, VG_HASH_SHA512_224_AVX2,
-    VG_HASH_SHA512_224_AVX2_FEATURES, VG_HASH_SHA512_224_SHANI, VG_HASH_SHA512_224_SHANI_FEATURES,
-    VG_HASH_SHA512_256, VG_HASH_SHA512_256_AVX2, VG_HASH_SHA512_256_AVX2_FEATURES,
-    VG_HASH_SHA512_256_SHANI, VG_HASH_SHA512_256_SHANI_FEATURES, VG_HASH_SHA512_AVX2,
-    VG_HASH_SHA512_AVX2_FEATURES, VG_HASH_SHA512_SHANI, VG_HASH_SHA512_SHANI_FEATURES,
-};
 use crate::arch::rsa_oaep::{
     VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES, VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES,
     VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES,
@@ -27,63 +14,6 @@ use crate::arch::rsa_oaep::{
     vg_rsa_oaep_decrypt_crt_adx, vg_rsa_oaep_decrypt_crt_ifma, vg_rsa_oaep_encrypt_precomputed,
     vg_rsa_oaep_encrypt_precomputed_rsa_adx, vg_rsa_oaep_encrypt_precomputed_rsa_ifma,
 };
-use crate::hashes::sha1::Sha1Backend;
-use crate::hashes::sha224::Sha224Backend;
-use crate::hashes::sha256::Sha256Backend;
-use crate::hashes::sha384::Sha384Backend;
-use crate::hashes::sha512::Sha512Backend;
-use crate::hashes::sha512_224::Sha512_224Backend;
-use crate::hashes::sha512_256::Sha512_256Backend;
-use crate::rsa_pkcs1_sig::Hash;
-use verified_garbage_cpu::Features;
-
-/// The table of the hash function `hash` for the implementation that a CPU
-/// with the features `f` runs best, with the features its functions need,
-/// or `None` if `hash` is not supported.
-pub(super) fn hash_table(hash: Hash, f: Features) -> Option<(&'static fn_tables::Hash, Features)> {
-    let none = Features(0);
-    Some(match hash {
-        Hash::Sha1 => match Sha1Backend::select(f) {
-            Sha1Backend::Scalar => (&VG_HASH_SHA1, none),
-            Sha1Backend::ShaNi => (&VG_HASH_SHA1_SHANI, VG_HASH_SHA1_SHANI_FEATURES),
-        },
-        Hash::Sha224 => match Sha224Backend::select(f) {
-            Sha224Backend::Scalar => (&VG_HASH_SHA224, none),
-            Sha224Backend::ShaNi => (&VG_HASH_SHA224_SHANI, VG_HASH_SHA224_SHANI_FEATURES),
-            Sha224Backend::Avx2 => (&VG_HASH_SHA224_AVX2, VG_HASH_SHA224_AVX2_FEATURES),
-        },
-        Hash::Sha256 => match Sha256Backend::select(f) {
-            Sha256Backend::Scalar => (&VG_HASH_SHA256, none),
-            Sha256Backend::ShaNi => (&VG_HASH_SHA256_SHANI, VG_HASH_SHA256_SHANI_FEATURES),
-            Sha256Backend::Avx2 => (&VG_HASH_SHA256_AVX2, VG_HASH_SHA256_AVX2_FEATURES),
-        },
-        Hash::Sha384 => match Sha384Backend::select(f) {
-            Sha384Backend::Scalar => (&VG_HASH_SHA384, none),
-            Sha384Backend::ShaNi => (&VG_HASH_SHA384_SHANI, VG_HASH_SHA384_SHANI_FEATURES),
-            Sha384Backend::Avx2 => (&VG_HASH_SHA384_AVX2, VG_HASH_SHA384_AVX2_FEATURES),
-        },
-        Hash::Sha512 => match Sha512Backend::select(f) {
-            Sha512Backend::Scalar => (&VG_HASH_SHA512, none),
-            Sha512Backend::ShaNi => (&VG_HASH_SHA512_SHANI, VG_HASH_SHA512_SHANI_FEATURES),
-            Sha512Backend::Avx2 => (&VG_HASH_SHA512_AVX2, VG_HASH_SHA512_AVX2_FEATURES),
-        },
-        Hash::Sha512_224 => match Sha512_224Backend::select(f) {
-            Sha512_224Backend::Scalar => (&VG_HASH_SHA512_224, none),
-            Sha512_224Backend::ShaNi => {
-                (&VG_HASH_SHA512_224_SHANI, VG_HASH_SHA512_224_SHANI_FEATURES)
-            }
-            Sha512_224Backend::Avx2 => (&VG_HASH_SHA512_224_AVX2, VG_HASH_SHA512_224_AVX2_FEATURES),
-        },
-        Hash::Sha512_256 => match Sha512_256Backend::select(f) {
-            Sha512_256Backend::Scalar => (&VG_HASH_SHA512_256, none),
-            Sha512_256Backend::ShaNi => {
-                (&VG_HASH_SHA512_256_SHANI, VG_HASH_SHA512_256_SHANI_FEATURES)
-            }
-            Sha512_256Backend::Avx2 => (&VG_HASH_SHA512_256_AVX2, VG_HASH_SHA512_256_AVX2_FEATURES),
-        },
-        _ => return None,
-    })
-}
 
 crate::rsa_oaep::table::oaep_functions! {
     encrypt: {
