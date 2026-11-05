@@ -30,6 +30,10 @@ them.
 
 namespace VG.Spec.Cast5
 
+-- How this file proves its literal indices in bounds (`x[0xD]`), and nothing
+-- else: by `decide`, before core's rules, which rewrite and run `omega`.
+local macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| decide)
+
 abbrev Word := BitVec 32
 abbrev Block := Vector Byte 8
 /-- The subkeys `K1 … K32` of §2.4, at indices 0–31: the masking subkey
