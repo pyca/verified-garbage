@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyLit
@@ -19,9 +20,11 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyLit
 namespace VG.Generic.Secp256k1.RISCV64.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyApi.artifact RISCV64.target {
-    code := Impl.Ecdsa.RISCV64.verifySecp256k1
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact RISCV64.target {
+    code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+      Impl.Ecdsa.RISCV64.verifySecp256k1
     consts := Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts
-    verified := Proof.Ecdsa.RISCV64.Secp256k1.verify_verified h.law }]
+    stack := 80
+    verified := Proof.Ecdsa.RISCV64.Secp256k1.verifyHash_verified h.law }]
 
 end VG.Generic.Secp256k1.RISCV64.EcdsaSecp256k1

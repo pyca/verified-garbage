@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.RISCV64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.RISCV64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Verify
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
@@ -116,5 +121,17 @@ theorem verify_verified (hL : VG.Proof.Weierstrass.Law W) :
     Verified RISCV64.target verifyP224 (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts)) :=
   Verified.of_correct (verify_rv hL) verify_ct verifyRVC_implies
+
+
+/-- `vg_ecdsa_p224_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified (hL : VG.Proof.Weierstrass.Law W) :
+    Verified RISCV64.target
+      (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.RISCV64.P224.verifyP224)
+      (Spec.Ecdsa.Instance.verifyHashContract Spec.Ecdsa.P224.inst (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts) 80) :=
+  Proof.Ecdsa.Verify.RISCV64.verifyHash_verified_cons Proof.Ecdsa.Verify.p224_len (by decide) (verify_verified hL)
+    (by taint_decide) (Proof.Ecdsa.Verify.RISCV64.hashSat_cons (by decide) verify_sat (by decide) fun r hr => by
+      simp only [verifySatC, verifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.RISCV64.P224

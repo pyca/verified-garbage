@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.VerifyLit
@@ -20,9 +21,11 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.VerifyLit
 namespace VG.Generic.P256.RISCV64.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
-  Spec.Ecdsa.P256.verifyApi.artifact RISCV64.target {
-    code := Impl.Ecdsa.RISCV64.VerifyComb.verifyP256
+  Spec.Ecdsa.P256.verifyHashApi.artifact RISCV64.target {
+    code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.RISCV64.VerifyComb.verifyP256
     consts := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
-    verified := Proof.Ecdsa.RISCV64.P256.verify_verified h.law }]
+    stack := 80
+    verified := Proof.Ecdsa.RISCV64.P256.verifyHash_verified h.law }]
 
 end VG.Generic.P256.RISCV64.EcdsaP256
