@@ -20,6 +20,16 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 import VerifiedGarbage.Proof.Ffdh.X86.Ops
+import VerifiedGarbage.Proof.Ffdh.X86.Checks
+import VerifiedGarbage.Proof.Ffdh.X86.CheckDomain
+import VerifiedGarbage.Proof.Ffdh.KeyScalar
+import VerifiedGarbage.Proof.Ffdh.Lead
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.ContextRows
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+import VerifiedGarbage.Proof.Framework.CallLay
+meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 meta import VerifiedGarbage.Proof.Ffdh.X86.Ops
@@ -513,6 +523,216 @@ theorem table_trace (hR : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR' : Spec.Rsa.
       sv u.mem base len .wide 7 = entV len P G bits (2 ^ k)) 4 0 fun k _ hk => ?_).mono
     (fun _ _ h => h) fun _ _ ⟨⟨s₀, A, e, S, _⟩, ⟨s₀', A', e', S', _⟩⟩ => ⟨⟨s₀, A, e, S, trivial⟩, ⟨s₀', A', e', S', trivial⟩⟩
   exact column_trace (k := k) (by omega) hR hR' hP1
+
+end
+
+/-! ## The width -/
+
+theorem scan_check : ACheck VG.Impl.Ffdh.X86.GenerateKey.scan := by dsimp only [ACheck]; taint_decide
+theorem mbHead_check : ACheck (.block [.mov .eax (.imm 0), .mov .ecx (.mem (sc tOff))]) := by
+  dsimp only [ACheck]; taint_decide
+theorem boundBits_check : ACheck (.block boundBits) := by dsimp only [ACheck]; taint_decide
+theorem capHead_check : ACheck (.block [.mov .edx (.mem (sc recOff)), .alu .test .edx (.reg .edx)]) := by
+  dsimp only [ACheck]; taint_decide
+theorem metadata_check : ACheck (.block metadata) := by dsimp only [ACheck]; taint_decide
+theorem pSetup_check' : ACheck VG.Impl.Ffdh.X86.pSetup := by dsimp only [ACheck]; taint_decide
+theorem loadG_check' : ACheck (load (.slot .wide 10) (one .wide) 4 5) := by dsimp only [ACheck]; taint_decide
+theorem ret1_check : ACheck (VG.Impl.Ffdh.X86.ret 1) := by dsimp only [ACheck]; taint_decide
+
+section
+variable {dlen : Nat} {D : List Byte} {T : BitVec 32}
+
+/-- The body's start, with the public domain `D` and the table at `T`. -/
+structure PE (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (dlen : Nat) (D : List Byte) (T : BitVec 32) (x : State) : Prop where
+  rp : RP Ex base bytes len args sp dlen D T x
+  ok : ArgsOk x
+  domC : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (ctxR args len)
+  cw : CtxW base bytes len args x
+  dv : Spec.Ffdh.domainValid len D = true
+
+/-- A stage of the body from its start, with `X`. -/
+def SQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (dlen : Nat) (D : List Byte) (T : BitVec 32) (X : State → State → Prop) (u : State) : Prop :=
+  ∃ x₀, PE Ex base bytes len args sp dlen D T x₀ ∧ Step Ex base bytes len args x₀ u ∧ X x₀ u
+
+theorem SQ.run {X : State → State → Prop} {u : State} (h : SQ Ex base bytes len args sp dlen D T X u) :
+    Run Ex base bytes len args sp u :=
+  let ⟨_, P, S, _⟩ := h
+  ⟨S.inp, P.ok.keep S.keeps, S.esp.trans P.rp.esp⟩
+
+/-- The bound's octets, its first significant one and its bit length. -/
+abbrev pBnd (len : Nat) (D : List Byte) : List Byte := VG.Proof.Ffdh.KeyScalar.bnd len D
+abbrev pLd (len : Nat) (D : List Byte) : Nat := VG.Proof.Ffdh.lead (pBnd len D)
+abbrev pN (len : Nat) (D : List Byte) : Nat :=
+  Spec.RsaKeyGen.bitLength ((pBnd len D).getD (pLd len D) 0).toNat
+abbrev pRec (len : Nat) (D : List Byte) : Nat :=
+  VG.Impl.Ffdh.VettedGroups.recognizeList VG.Impl.Ffdh.VettedGroups.groups len D
+abbrev pW (len : Nat) (D : List Byte) : Nat := Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf len D)
+
+/-- The width's stages, with the start's public values. -/
+theorem front_trace {Q : State → State → Prop} {rest : Prog isa}
+    (hrest : RelCT isa (Both (SQ Ex base bytes len args sp dlen D T fun _ u =>
+      u.gpr .eax = BitVec.ofNat 32 (pW len D))) rest Q) :
+    RelCT isa (Both (PE Ex base bytes len args sp dlen D T)) (.seq recognize (.seq VG.Impl.Ffdh.X86.GenerateKey.scan
+      (.seq maskBits (.seq (.block boundBits) (.seq cap rest))))) Q := by
+  -- The recognized width.
+  refine VG.RelCT.seq (relCT_both (F := SQ Ex base bytes len args sp dlen D T fun _ u =>
+      w32 u.mem base recOff = pRec len D)
+    ((recognize_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)).mono
+      (fun _ _ h => ⟨h.1.rp, h.2.rp⟩) fun _ _ h => h) fun x P => ?_) ?_
+  · have e := P.rp.esp
+    exact WP.mono (recognize_ok P.rp.inp P.rp.geo (by rw [e]; exact P.rp.b40) P.rp.sym P.rp.tfit P.rp.tread
+      P.rp.tbytes P.rp.tws (by rw [e]; exact P.rp.t40)) fun u ⟨S, _, r⟩ => ⟨x, P, S, by show w32 _ _ _ = _; rw [r, P.rp.dom]⟩
+  -- The bound's first significant byte and its mask.
+  refine VG.RelCT.seq (aRel (fun _ h => h.run) scan_check (F := SQ Ex base bytes len args sp dlen D T fun _ u =>
+      w32 u.mem base recOff = pRec len D ∧ w32 u.mem base ldOff = pLd len D ∧
+        w32 u.mem base tOff = 2 ^ pN len D - 1) fun u ⟨x₀, P, S, r⟩ => ?_) ?_
+  · have e := P.rp.esp
+    have G₁ := P.rp.geo.keep ⟨rfl, rfl⟩ S.keeps
+    have hb := P.rp.b40
+    rw [← e] at hb
+    refine WP.mono (KeyScan.scan_ok S.inp P.rp.geo.e3 (KeyGen.bound_geo G₁ (by rw [S.esp]; exact hb))) fun t Sc => ?_
+    have bs : Spec.Rsa.bytesAt u.mem (byteAddr (KeyScan.boundAt args)) len = pBnd len D := by
+      rw [KeyGen.bound_bytes P.rp.geo, dom_keep P.rp.inp P.rp.geo hb S.frame, P.rp.dom]
+    rw [bs] at Sc
+    refine ⟨x₀, P, S.trans Sc.step, by rw [Sc.kept.word_eq (by simp only [recOff, numBase]; decide)]; exact r, Sc.ld, ?_⟩
+    rw [Sc.t, VG.Proof.Ffdh.KeyScalar.smearN_eq _ (BitVec.isLt _)]
+  -- The bit length of its first significant byte.
+  have hn8 : pN len D ≤ 8 := by
+    have := ((pBnd len D).getD (pLd len D) 0).isLt
+    by_cases hz : ((pBnd len D).getD (pLd len D) 0).toNat = 0
+    · show Spec.RsaKeyGen.bitLength _ ≤ 8; rw [hz]; decide
+    · have hb : 2 ^ (pN len D - 1) ≤ ((pBnd len D).getD (pLd len D) 0).toNat :=
+        (VG.Proof.Ffdh.KeyScalar.bitLength_bounds hz).1
+      by_contra hc
+      have : 2 ^ 8 ≤ 2 ^ (pN len D - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+      omega
+  let M : Nat → State → Prop := fun j u => ∃ u₂, SQ Ex base bytes len args sp dlen D T (fun _ u =>
+      w32 u.mem base recOff = pRec len D ∧ w32 u.mem base ldOff = pLd len D ∧
+        w32 u.mem base tOff = 2 ^ pN len D - 1) u₂ ∧
+    u.gpr .eax = BitVec.ofNat 32 j ∧ u.gpr .ecx = BitVec.ofNat 32 (2 ^ (pN len D - j) - 1) ∧ u.mem = u₂.mem ∧
+      Keeps [.eax, .ecx] u₂ u
+  have Mrun : ∀ {j u}, M j u → Run Ex base bytes len args sp u := fun ⟨u₂, Q₂, _, _, m, K⟩ => by
+    have R := Q₂.run
+    exact ⟨R.1.regs K m, R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
+  have Mpos : ∀ {j u}, M j u → 1 ≤ pN len D := fun ⟨u₂, ⟨x₀, P, _, _⟩, _⟩ => by
+    have hz := lead_ne P.dv P.rp.geo.lower (by rw [← P.rp.dom, VG.Proof.Bignum.bytesAt_length]; exact P.rp.geo.dl)
+    have bt : ((pBnd len D).getD (pLd len D) 0).toNat ≠ 0 := fun e => hz (BitVec.eq_of_toNat_eq e)
+    show 1 ≤ Spec.RsaKeyGen.bitLength _
+    simp only [Spec.RsaKeyGen.bitLength, bt, ↓reduceIte]; omega
+  have half : ∀ m < 9, 1 ≤ m → (2 ^ m - 1) / 2 = 2 ^ (m - 1) - 1 := by decide
+  have zero : ∀ m < 9, (BitVec.ofNat 32 (2 ^ m - 1) == 0) = decide (m = 0) := by decide
+  have mb : RelCT isa (Both (SQ Ex base bytes len args sp dlen D T fun _ u =>
+      w32 u.mem base recOff = pRec len D ∧ w32 u.mem base ldOff = pLd len D ∧
+        w32 u.mem base tOff = 2 ^ pN len D - 1)) maskBits (Both (M (pN len D))) := by
+    unfold maskBits
+    refine VG.RelCT.seq (aRel (fun _ h => h.run) mbHead_check (F := M 0) fun u Q => ?_) ?_
+    · have nb : numBase = 3336 := rfl
+      obtain ⟨x₀, P, S, r, l, t⟩ := Q
+      refine wp_movS rfl fun s₁ U₁ _ => wp_movS (readW_ok (S.inp.regs U₁.keeps U₁.mem) (d := tOff)
+        (v := 2 ^ pN len D - 1) (by decide) (by rw [U₁.mem]; exact t)
+        (by have : 2 ^ pN len D ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hn8; omega)) fun s₂ U₂ _ =>
+          WP.block_nil ⟨u, ⟨x₀, P, S, r, l, t⟩, by rw [U₂.other _ (by decide), U₁.gpr]; rfl,
+            by rw [U₂.gpr, Nat.sub_zero], by rw [U₂.mem, U₁.mem], (U₁.keeps.mono (by decide)).widen U₂.keeps⟩
+    by_cases hz : pN len D = 0
+    · -- No run has a bound of bit length zero.
+      exact fun x y _ _ _ _ h => absurd hz (by have := Mpos h.1; omega)
+    refine relCT_countLoop (I := M) (by omega) fun j hj => relCT_both (RelCT.taint (A := taint) (τr [])
+      (fun _ _ _ => agree_regs (by simp)) (hc := .block []) (by rfl)) fun u ⟨u₂, Q₂, ea, ec, mt, Kt⟩ => ?_
+    have pj : 2 ^ (pN len D - j) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+    have sh : BitVec.ofNat 32 (2 ^ (pN len D - j) - 1) >>> 1 = BitVec.ofNat 32 (2 ^ (pN len D - (j + 1)) - 1) := by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+        Nat.shiftRight_eq_div_pow, Nat.pow_one, half (pN len D - j) (by omega) (by omega),
+        show pN len D - j - 1 = pN len D - (j + 1) by omega]
+      have : 2 ^ (pN len D - (j + 1)) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+      rw [Nat.mod_eq_of_lt (by omega)]
+    refine wp_addS rfl fun t₁ V₁ _ => wp_shr (by decide) fun t₂ V₂ _ => wp_testS rfl fun t₃ V₃ z₃ =>
+      WP.block_nil ⟨⟨u₂, Q₂, ?_, ?_, ?_, ?_⟩, ?_⟩
+    · rw [V₃.gpr, V₂.other _ (by decide), V₁.gpr, ea, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+        BitVec.ofNat_add_ofNat]
+    · rw [V₃.gpr, V₂.gpr, V₁.other _ (by decide), ec, sh]
+    · rw [V₃.mem, V₂.mem, V₁.mem, mt]
+    · exact Kt.trans (((V₁.keeps.mono (by decide)).widen V₂.keeps).trans ((V₃.keeps []).mono (by decide)))
+    · rw [z₃, V₂.gpr, V₁.other _ (by decide), ec, sh, BitVec.and_self, zero _ (by omega)]
+      congr 1
+      exact decide_eq_decide.mpr (by omega)
+  refine VG.RelCT.seq (mb.mono (fun _ _ h => h) (Q' := Both (SQ Ex base bytes len args sp dlen D T fun _ u =>
+      w32 u.mem base recOff = pRec len D ∧ w32 u.mem base ldOff = pLd len D ∧
+        u.gpr .eax = BitVec.ofNat 32 (pN len D))) fun _ _ h => ⟨?_, ?_⟩) ?_
+  rotate_left
+  · obtain ⟨u₂, ⟨x₀, P, S, r, l, _⟩, ea, _, mt, Kt⟩ := h.1
+    exact ⟨x₀, P, S.trans (Step.regs S.inp mt Kt), by rw [mt]; exact r, by rw [mt]; exact l, ea⟩
+  · obtain ⟨u₂, ⟨x₀, P, S, r, l, _⟩, ea, _, mt, Kt⟩ := h.2
+    exact ⟨x₀, P, S.trans (Step.regs S.inp mt Kt), by rw [mt]; exact r, by rw [mt]; exact l, ea⟩
+  -- The bound's bit length.
+  refine VG.RelCT.seq (aRel (fun _ h => h.run) boundBits_check (F := SQ Ex base bytes len args sp dlen D T fun _ u =>
+      w32 u.mem base recOff = pRec len D ∧
+        u.gpr .eax = BitVec.ofNat 32 (pN len D + 8 * (len - 1 - pLd len D))) fun u ⟨x₀, P, S, r, l, ea⟩ => ?_) ?_
+  · have hbl := VG.Proof.Ffdh.KeyScalar.bnd_length (k := len) (dom := D)
+      (by rw [← P.rp.dom, VG.Proof.Bignum.bytesAt_length]; exact P.rp.geo.dl)
+    have hne : VG.Proof.Ffdh.KeyScalar.bnd len D ≠ [] := by
+      intro he; rw [he] at hbl; simp at hbl; have := P.rp.geo.lower; omega
+    have hld : pLd len D < len := by have := VG.Proof.Ffdh.lead_lt hne; rwa [hbl] at this
+    exact WP.mono (boundBits_ok S.inp P.rp.geo.e3 l hld ea) fun t ⟨e, m, K⟩ =>
+      ⟨x₀, P, S.trans (Step.regs S.inp m K), by rw [m]; exact r, e⟩
+  -- The width.
+  refine VG.RelCT.seq (relCT_both (F := SQ Ex base bytes len args sp dlen D T fun _ u =>
+      u.gpr .eax = BitVec.ofNat 32 (pW len D)) ?_ fun u ⟨x₀, P, S, r, ea⟩ => ?_) hrest
+  · have nb : numBase = 3336 := rfl
+    unfold cap
+    let bl := pN len D + 8 * (len - 1 - pLd len D)
+    let C1 : State → Prop := fun u => ∃ x₀, PE Ex base bytes len args sp dlen D T x₀ ∧
+      Run Ex base bytes len args sp u ∧ u.zf = some (decide (pRec len D = 0)) ∧
+      u.gpr .edx = BitVec.ofNat 32 (pRec len D) ∧ u.gpr .eax = BitVec.ofNat 32 bl
+    refine VG.RelCT.seq (aRel (fun _ h => h.run) capHead_check (F := C1) fun u h => ?_) ?_
+    · obtain ⟨x₀, P, S, r, ea⟩ := h
+      have up := P.rp.geo.upper
+      have rl := recognize_lt len D
+      refine wp_movS (readW_ok S.inp (d := recOff) (by simp only [recOff]; omega) r rl) fun s₁ U₁ _ =>
+        wp_testS rfl fun s₂ V₂ z₂ => WP.block_nil ⟨x₀, P, ?_, ?_, by rw [V₂.gpr, U₁.gpr],
+          by rw [V₂.gpr, U₁.other _ (by decide)]; exact ea⟩
+      · have R : Run Ex base bytes len args sp u := ⟨S.inp, P.ok.keep S.keeps, S.esp.trans P.rp.esp⟩
+        have K : Keeps [.edx] u s₂ := U₁.keeps.trans ((V₂.keeps []).mono (by decide))
+        exact ⟨R.1.regs K (by rw [V₂.mem, U₁.mem]), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
+      · rw [z₂, U₁.gpr, BitVec.and_self]
+        congr 1
+        by_cases e : pRec len D = 0
+        · rw [e]; rfl
+        · simp only [e, decide_false, beq_eq_false_iff_ne, ne_eq]
+          intro c
+          have := congrArg BitVec.toNat c
+          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt rl] at this
+          exact e this
+    refine VG.RelCT.ite (fun x y h => by
+      obtain ⟨⟨_, _, _, z₁, _⟩, ⟨_, _, _, z₂, _⟩⟩ := h
+      show x.zf = y.zf; rw [z₁, z₂]) (RelCT.block_nil fun _ _ _ => trivial) ?_
+    let C2 : State → Prop := fun u => ∃ v, C1 v ∧ u.cf = some (decide (pRec len D < bl))
+    refine VG.RelCT.seq ((relCT_both (P := C1) (F := C2) (c := .block [.alu .cmp .edx (.reg .eax)])
+      (RelCT.taint (A := taint) (τr [])
+      (fun _ _ _ => agree_regs (by simp)) (hc := .block []) (by rfl)) fun u h => wp_cmp fun t V c _ =>
+        WP.block_nil ⟨u, h, ?_⟩).mono (P' := fun x y => Both C1 x y ∧ isa.eval .e x = some false)
+          (fun _ _ h => h.1) fun _ _ h => h) ?_
+    · obtain ⟨x₀, P, _, _, ed, ea⟩ := h
+      have up := P.rp.geo.upper
+      have hn8' := hn8
+      rw [c, ed, ea, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (recognize_lt _ _),
+        Nat.mod_eq_of_lt (show bl < 2 ^ 32 by omega)]
+    exact VG.RelCT.ite (fun x y h => by
+      obtain ⟨⟨_, _, c₁⟩, ⟨_, _, c₂⟩⟩ := h
+      show x.cf = y.cf; rw [c₁, c₂]) (RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs (by simp))
+        (hc := .block []) (by rfl)) (RelCT.block_nil fun _ _ _ => trivial)
+  · have hbl := VG.Proof.Ffdh.KeyScalar.bnd_length (k := len) (dom := D)
+      (by rw [← P.rp.dom, VG.Proof.Bignum.bytesAt_length]; exact P.rp.geo.dl)
+    have up := P.rp.geo.upper
+    have size : D.length = 2 * len ∨ D.length = 3 * len := by
+      rw [← P.rp.dom, VG.Proof.Bignum.bytesAt_length]; exact P.rp.geo.dl
+    refine WP.mono (cap_ok S.inp r (recognize_lt _ _) ea (by omega)) fun t ⟨e, m, K⟩ =>
+      ⟨x₀, P, S.trans (Step.regs S.inp m K), ?_⟩
+    show t.gpr .eax = _
+    rw [e, show pN len D + 8 * (len - 1 - pLd len D) = Spec.RsaKeyGen.bitLength ((pBnd len D).getD (pLd len D) 0).toNat +
+      8 * (len - 1 - pLd len D) from rfl, width_spec P.dv P.rp.geo.lower size]
 
 end
 
