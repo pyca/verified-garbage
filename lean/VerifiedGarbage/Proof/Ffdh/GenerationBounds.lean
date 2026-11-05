@@ -35,44 +35,6 @@ theorem consume_status (n : Nat) (result : ParameterSearchResult) :
 theorem consume_zero (result : ParameterSearchResult) : result.consume 0 = result := by
   cases result <;> simp only [ParameterSearchResult.consume, Nat.zero_add]
 
-theorem search_used_le (bits generator : Nat) : ∀ remaining r,
-    (parameterSearch bits generator remaining r).used ≤ r.length := by
-  intro remaining
-  induction remaining with
-  | zero => intro r; exact Nat.zero_le _
-  | succ remaining ih =>
-    intro r
-    rw [parameterSearch]
-    cases he : parameterCandidate bits generator r with
-    | none => dsimp only; split <;> exact Nat.zero_le _
-    | some pair =>
-      obtain ⟨value, rest⟩ := pair
-      cases value with
-      | none =>
-        rw [consume_used]
-        obtain ⟨used, hu, hr⟩ := candidate_suffix he
-        have hi := ih rest
-        rw [hr, List.length_drop] at hi
-        simp only [hr, List.length_drop]
-        omega_using [hu, hi]
-      | some p => exact Nat.sub_le _ _
-
-theorem search_remaining_le (bits generator : Nat) : ∀ remaining r,
-    (parameterSearch bits generator remaining r).remaining ≤ remaining := by
-  intro remaining
-  induction remaining with
-  | zero => intro r; exact Nat.zero_le _
-  | succ remaining ih =>
-    intro r
-    rw [parameterSearch]
-    cases he : parameterCandidate bits generator r with
-    | none => dsimp only; split <;> simp only [ParameterSearchResult.remaining] <;> omega
-    | some pair =>
-      obtain ⟨value, rest⟩ := pair
-      cases value with
-      | none => rw [consume_remaining]; exact Nat.le_trans (ih rest) (Nat.le_succ _)
-      | some p => exact Nat.zero_le _
-
 theorem request_bounds {bits available : Nat} (hbits : 512 ≤ bits)
     (hroom : available < parameterEntropy bits) :
     available < parameterRequest bits available ∧ parameterRequest bits available ≤ parameterEntropy bits := by
@@ -92,21 +54,5 @@ theorem candidate_rest {bits generator : Nat} {rand rest : Rand} {value : Option
     omega_using [hu]
   rw [hl]
   exact hr
-
-theorem search_reject {bits generator remaining used : Nat} {rand rest : Rand}
-    (hr : 0 < remaining)
-    (hc : parameterCandidate bits generator (rand.drop used) = some (none, rest)) :
-    (parameterSearch bits generator remaining (rand.drop used)).consume used =
-      (parameterSearch bits generator (remaining - 1)
-        (rand.drop (used + ((rand.drop used).length - rest.length)))).consume
-        (used + ((rand.drop used).length - rest.length)) := by
-  cases remaining with
-  | zero => omega_using [hr]
-  | succ n =>
-    rw [parameterSearch, hc, consume_assoc, Nat.add_sub_cancel]
-    have he : rest = rand.drop (used + ((rand.drop used).length - rest.length)) :=
-      (candidate_rest hc).trans List.drop_drop
-    exact congrArg (fun r => (parameterSearch bits generator n r).consume
-      (used + ((rand.drop used).length - rest.length))) he
 
 end VG.Proof.Ffdh.Generation

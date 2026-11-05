@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 
 /-! # The parameter-search controller's contract in terms of the machine (PPC64LE)
 
-`vg_ffdh_generate_parameters_sieved(out = r3, out_len = r4, used = r5,
+`vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5,
 bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
 scratch_len, state)`: eight arguments in registers and two on the stack. The
 controller uses 336 bytes of stack: the frame of 48 bytes saving the link

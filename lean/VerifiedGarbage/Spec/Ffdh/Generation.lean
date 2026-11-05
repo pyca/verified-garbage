@@ -68,18 +68,4 @@ def ParameterSearchResult.consume (n : Nat) : ParameterSearchResult → Paramete
   | .accepted p used => .accepted p (n + used)
   | .exhausted used => .exhausted (n + used)
 
-/-- Search all complete candidates in the tape. Rejection advances to the next
-candidate inside the verified routine; only an entropy request returns control
-to the host. `remaining` is persistent native state across refills. -/
-def parameterSearch (bits generator : Nat) : Nat → Rand → ParameterSearchResult
-  | 0, _ => .exhausted 0
-  | remaining + 1, rand =>
-    match parameterCandidate bits generator rand with
-    | none =>
-      if parameterEntropy bits ≤ rand.length then .exhausted 0
-      else .entropy (remaining + 1) (parameterRequest bits rand.length) 0
-    | some (some p, rest) => .accepted p (rand.length - rest.length)
-    | some (none, rest) =>
-      (parameterSearch bits generator remaining rest).consume (rand.length - rest.length)
-
 end VG.Spec.Ffdh
