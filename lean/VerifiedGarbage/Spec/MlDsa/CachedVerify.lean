@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
-# Private cached-digest verification boundary
+# ML-DSA message verification with a cached public-key digest
 
-The additional read-only digest is valid only when it equals the public-key
-hash. The ordinary raw-key verification contract is unchanged.
+`vg_mldsa*_verify_message_cached`, `ML-DSA.Verify` (FIPS 204 Algorithm 3)
+with `tr = H(pk, 64)` (Algorithm 8, line 6) passed by the caller, which
+keeps it with the public key. The digest is valid only when it equals the
+public-key hash.
 -/
 
 @[expose] public section
@@ -14,16 +16,27 @@ hash. The ordinary raw-key verification contract is unchanged.
 namespace VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- Eight machine arguments: the ordinary message verifier's seven followed
-by a pointer to the cached 64-byte public-key digest. -/
+/-- `vg_mldsa*_verify_message_cached(pk: *const [u8; pkLen], msg: *const u8,
+msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; sigLen],
+scratch: *mut [u64; messageScratchWords], tr: *const [u8; 64]) -> u32`:
+`ML-DSA.Verify`'s arguments followed by a pointer to the cached 64-byte
+public-key digest. `scratch` is working space. -/
 def verifyMessageCachedSig (p : Params) : Sig where
   params := [("pk", .array false .u8 p.pkLen), ("msg", .slice false .u8 "msg_len"),
     ("ctx", .slice false .u8 "ctx_len"), ("sig", .array false .u8 p.sigLen),
     ("scratch", .array true .u64 (messageScratchWords p)), ("tr", .array false .u8 64)]
   ret := some .u32
 
-/-- Private contract. Its digest invariant must be established by the key
-constructor; an arbitrary digest is not a valid input to this entry. -/
+/-- With the public key at `pk`, the message `M` of `msg_len` bytes at `msg`,
+the context string `ctx` of `ctx_len` bytes at `ctx`, the signature at `sig`
+and `tr = H(pk, 64)` at `tr` (a precondition: the key constructor
+establishes it, and an arbitrary digest is not a valid input): returns 2 if
+`ctx` is longer than 255 bytes (`ML-DSA.Verify(pk, M, σ, ctx)`, Algorithm 3,
+lines 1–3, returns `⊥`); otherwise returns 1 if `ML-DSA.Verify_internal(pk,
+M′, σ)` (Algorithm 8) of the parameter set `p`, for the formatted message
+`M′ = 0 ‖ |ctx| ‖ ctx ‖ M` (`formatMessage`, Algorithm 3, line 5), is true;
+and 0 if it is false, or if a loop does not finish within `minBounds`. May
+leak its inputs. -/
 def verifyMessageCachedContract (p : Params) {M : ISA} (A : Abi M)
     (stack : Nat := 0) : Contract M :=
   (verifyMessageCachedSig p).contract A
