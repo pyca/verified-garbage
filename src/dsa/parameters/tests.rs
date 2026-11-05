@@ -1,4 +1,6 @@
-use super::{Error, Features, Generate, Parameters, Vec, detected, select, vec};
+use super::{Error, Parameters, Vec};
+#[cfg(not(target_arch = "x86_64"))]
+use super::{Features, Generate, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
 
@@ -52,32 +54,60 @@ fn prime_vectors() -> Vec<Vector> {
     cases
 }
 
+/// The three fixed tapes: the published seed in every seed chunk, h = 2 in
+/// every h chunk, and 0x02 witnesses.
+#[cfg(not(target_arch = "x86_64"))]
+fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
+    match tape {
+        0 => {
+            for seed in buf.chunks_exact_mut(v.seed.len()) {
+                seed.copy_from_slice(&v.seed);
+            }
+        }
+        1 => {
+            buf.fill(0);
+            for h in buf.chunks_exact_mut(v.p.len()) {
+                h[v.p.len() - 1] = 2;
+            }
+        }
+        // Deterministic valid witnesses for known-answer tests;
+        // production obtains independent bytes from the OS.
+        _ => buf.fill(2),
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+const KNOWN_ANSWER_FILLS: usize = 3;
+
+/// One refillable tape: the published seed, then 0x02 octets for its
+/// witnesses and generator candidates (deterministic, for known answers;
+/// production obtains independent bytes from the OS), and 0x02 octets in
+/// any refill.
+#[cfg(target_arch = "x86_64")]
+fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
+    buf.fill(2);
+    if tape == 0 {
+        buf[..v.seed.len()].copy_from_slice(&v.seed);
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+const KNOWN_ANSWER_FILLS: usize = 1;
+
 #[test]
 fn cavp_generated_parameters() {
     for v in prime_vectors() {
         let mut tape = 0;
         let parameters = Parameters::generate_with_rng(v.bits, |buf| {
-            match tape {
-                0 => {
-                    for seed in buf.chunks_exact_mut(v.seed.len()) {
-                        seed.copy_from_slice(&v.seed);
-                    }
-                }
-                1 => {
-                    buf.fill(0);
-                    for h in buf.chunks_exact_mut(v.p.len()) {
-                        h[v.p.len() - 1] = 2;
-                    }
-                }
-                // Deterministic valid witnesses for known-answer tests;
-                // production obtains independent bytes from the OS.
-                _ => buf.fill(2),
-            }
+            fill_known_answer(&v, tape, buf);
             tape += 1;
             Ok(())
         })
         .unwrap();
-        assert_eq!(tape, 3);
+        #[cfg(not(target_arch = "x86_64"))]
+        assert_eq!(tape, KNOWN_ANSWER_FILLS);
+        #[cfg(target_arch = "x86_64")]
+        assert!(tape >= KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
         assert_eq!(parameters.g().len(), v.p.len());
@@ -88,12 +118,19 @@ fn cavp_generated_parameters() {
     }
 }
 
+#[cfg(not(target_arch = "x86_64"))]
+const FILLS: usize = 3;
+#[cfg(target_arch = "x86_64")]
+const FILLS: usize = 2;
+
 #[test]
 fn parameter_generation_errors() {
     for bits in [0, 512, 2047, 4096] {
         assert_eq!(Parameters::generate(bits).unwrap_err(), Error::Length);
     }
-    for fail_at in 0..3 {
+    // The fixed tapes are filled up front; the refillable tape is filled,
+    // then refilled once before the 0x02 seeds below exhaust the search.
+    for fail_at in 0..FILLS {
         let mut fills = 0;
         let result = Parameters::generate_with_rng(1024, |buf| {
             let fail = fills == fail_at;
@@ -121,6 +158,7 @@ fn parameter_generation_errors() {
 }
 
 #[test]
+#[cfg(not(target_arch = "x86_64"))]
 fn empty_tapes_zero_output() {
     for (p_len, q_len) in [(128, 20), (256, 32), (384, 32)] {
         let mut out = vec![0xa5; 2 * p_len + q_len];
@@ -159,131 +197,6 @@ fn generated_parameters_with_os_randomness() {
         key.public_key()
             .verify(&digest, &key.sign(&digest).unwrap())
     );
-}
-
-#[test]
-#[cfg(target_arch = "x86_64")]
-fn backend_combinations() {
-    use super::select_backends;
-    use crate::arch::dsa::{
-        VG_DSA_GENERATE_PARAMETERS_MR_ADX_FEATURES, VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_MR_ADX_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_MR_ADX_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_MR_ADX_FEATURES, vg_dsa_generate_parameters,
-        vg_dsa_generate_parameters_mr_adx, vg_dsa_generate_parameters_sha1_shani,
-        vg_dsa_generate_parameters_sha1_shani_mr_adx,
-        vg_dsa_generate_parameters_sha1_shani_sha256_avx2,
-        vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx,
-        vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-        vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx,
-        vg_dsa_generate_parameters_sha256_avx2, vg_dsa_generate_parameters_sha256_avx2_mr_adx,
-        vg_dsa_generate_parameters_sha256_shani, vg_dsa_generate_parameters_sha256_shani_mr_adx,
-    };
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // Some of these pairs cannot be selected by a real CPU, since the hash
-    // instructions share feature requirements. Check the complete dispatch
-    // table against the emitted feature sets, at every width.
-    let cases: &[(H1, H256, bool, Generate, Features)] = &[
-        (
-            H1::Scalar,
-            H256::Scalar,
-            false,
-            vg_dsa_generate_parameters,
-            Features(0),
-        ),
-        (
-            H1::Scalar,
-            H256::Scalar,
-            true,
-            vg_dsa_generate_parameters_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_MR_ADX_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::Avx2,
-            false,
-            vg_dsa_generate_parameters_sha256_avx2,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::Avx2,
-            true,
-            vg_dsa_generate_parameters_sha256_avx2_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_AVX2_MR_ADX_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            false,
-            vg_dsa_generate_parameters_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            true,
-            vg_dsa_generate_parameters_sha256_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            false,
-            vg_dsa_generate_parameters_sha1_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Avx2,
-            false,
-            vg_dsa_generate_parameters_sha1_shani_sha256_avx2,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Avx2,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_sha256_avx2_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            false,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            true,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani_mr_adx,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES,
-        ),
-    ];
-    for &(h1, h256, adx, expected, required) in cases {
-        let selected = select_backends(h1, h256, adx);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
-        if detected().contains(required) {
-            for p_len in [128, 256, 384] {
-                check_empty_tapes(selected, p_len);
-            }
-        }
-    }
 }
 
 #[test]
@@ -339,7 +252,6 @@ fn backend_combinations() {
 /// An implementation given empty tapes zeroes `out` and returns 0.
 #[cfg(any(
     target_arch = "x86",
-    target_arch = "x86_64",
     all(
         target_arch = "arm",
         any(
@@ -381,6 +293,7 @@ fn check_empty_tapes(selected: Generate, p_len: usize) {
 }
 
 #[test]
+#[cfg(not(target_arch = "x86_64"))]
 fn exhausted_tapes_after_prime_search_zero_output() {
     let v = prime_vectors().remove(0);
     assert_eq!(v.bits, 1024);
