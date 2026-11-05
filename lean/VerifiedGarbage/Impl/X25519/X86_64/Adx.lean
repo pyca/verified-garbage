@@ -13,8 +13,8 @@ chains at once, the low halves of the products through OF and the high
 halves through CF.
 
 * `mulX`: the 512-bit product, row by row into `r8–r15` (row 0 with one
-  chain), then `lo + 38 hi` with both chains, and its carry word folded as
-  in `mul`;
+  chain), then `lo + 38 hi` with both chains, and that folded at bit 255
+  (`fold19X`: `shld`, `btr` and `imul`, as s2n-bignum's `mul_p25519`);
 * `sqrX`: the products `a_i a_j` (`i < j`) into `r9–r14`, then doubled
   through CF while the squares `a_i²` are added through OF, and reduced as
   in `mulX`.
@@ -73,8 +73,15 @@ def reduceLo : List Instr :=
   [.mov32 .rdx (.imm 38), clear] ++ madd .r8 .r9 (.reg .r12) ++ madd .r9 .r10 (.reg .r13) ++
     madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15)
 
-/-- `reduceLo`, then `r8–r11 += 38 r12`, folded at bit 255 (at most `2p`). -/
-def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry19 .rbp
+/-- `r8–r11 + 2²⁵⁶ r12` (`r12 < 2⁶²`) folded at bit 255, as s2n-bignum's
+`mul_p25519` does: `q = 2 r12 + bit 255` (`shld`), bit 255 cleared (`btr`),
+and `19 q` (`imul`) added, which cannot carry out (at most `2p`). -/
+def fold19X : List Instr :=
+  [.shld .r12 .r11 1, .btr .r11 63, .imul3 .rax .r12 19, .alu .add .r8 (.reg .rax),
+    .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)]
+
+/-- `reduceLo`, then folded at bit 255 (`fold19X`, at most `2p`). -/
+def reduceX : List Instr := reduceLo ++ fold19X
 
 /-- `r8–r12` doubled. -/
 def dbl5 : List Instr :=
