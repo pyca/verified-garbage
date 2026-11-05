@@ -16,28 +16,149 @@ comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
 is of. So of a registration, a reviewer reads `suffix` and
 `features` (which the emitter checks against the code); the kernel checks
-the rest, `written` included. The code is printed with the printer of the
-target's ISA, its one `HasPrinter` instance (`TCB/<ISA>/Print.lean`), which
-`Api.artifact` pairs with the target (`EmitTarget`).
+the rest, `written` included. The code is printed, and its documentation
+written, with what the emitter needs of the target, its ISA's one `Emitter`
+instance (`TCB/<ISA>/Print.lean`), which `Api.artifact` pairs with the target
+(`EmitTarget`).
 
-`Artifact` and `EmitTarget` are defined here rather than with `Target` and
-`Verified` (`TCB/Artifact.lean`), which every proof imports, so that no
-proof depends on a printer.
+`Artifact`, `EmitTarget` and how the documentation states the obligations a
+signature implies are defined here rather than with `Target` and `Verified`
+(`TCB/Artifact.lean`), which every proof imports, so that no proof depends on
+a printer or on the emitted documentation.
 -/
 
 @[expose] public section
 
 namespace VG
 
-/-- A target with the printer of its ISA's code (`HasPrinter`): the target
-an artifact is emitted for. The printer is not a field of `Target`, which
-every proof imports, so that a change to a printer rebuilds only the
-registration files and the emitter, not the proofs. -/
+/-- A target with what the emitter needs of it besides its model and calling
+convention (its ISA's `Emitter`): the target an artifact is emitted for.
+None of it is part of `Target`, which every proof imports, so that a change
+to it rebuilds only the registration files and the emitter, not the proofs. -/
 structure EmitTarget extends Target where
   printer : Printer isa
+  /-- `Emitter.rustCfg`. -/
+  rustCfg : String
+  /-- `Emitter.rustAbi`. -/
+  rustAbi : String
+  /-- `Emitter.argAreaDoc`. -/
+  argAreaDoc : List Nat → Option (String × Bool)
+  /-- `Emitter.reservedDoc`. -/
+  reservedDoc : Nat → Option String
 
-/-- The target `T` with its ISA's printer (`HasPrinter`). -/
-def EmitTarget.of (T : Target) [p : HasPrinter T.isa] : EmitTarget := ⟨T, p.printer⟩
+/-- The target `T` with its ISA's `Emitter`. -/
+def EmitTarget.of (T : Target) [e : Emitter T.isa] : EmitTarget :=
+  ⟨T, e.printer, e.rustCfg, e.rustAbi, e.argAreaDoc, e.reservedDoc⟩
+
+/-! ## Documenting the obligations `Sig.contract` implies
+
+The emitter adds to each function's `# Safety` section what `Sig.contract`
+requires of the memory each buffer is valid for (`Sig.validDoc`) and of where
+its buffers are (`Sig.layoutDoc`), and a note if it may overwrite its
+arguments (`Sig.layoutNote`), from the same signature, calling convention,
+`writeArgs` and `stack` as its contract (`Artifact.ofSig`). The
+target's `Emitter` names its calling convention's argument area and reserved
+memory (`EmitTarget.argAreaDoc`, `EmitTarget.reservedDoc`).
+-/
+
+/-- The buffers of the parameters `ps` as the documentation names them, and
+whether each is writable: those of `Sig.bufs`, in the same order, each list
+of slices followed by the slices it lists (`Sig.lists`). -/
+def Sig.bufNames : List (String × Param) → List (String × Bool)
+  | [] => []
+  | (_, .int ..) :: ps => Sig.bufNames ps
+  | (n, .array w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
+  | (n, .slice w ..) :: ps => (s!"`{n}`", w) :: Sig.bufNames ps
+  | (n, .slices ..) :: ps => (s!"`{n}`", false) :: (s!"the slices `{n}` lists", false) :: Sig.bufNames ps
+  | (n, .table _) :: ps => (s!"`{n}`", false) :: Sig.bufNames ps
+
+/-- The size in bytes of the buffer a parameter stands for, as the
+documentation states it: that of `Sig.bufs`, a number for an array and
+`` `len` `` or `` `k * len` `` for a slice of `len` elements of `k` bytes, and
+`` `2 * size_of::<usize>() * count` `` for the descriptors of a list of `count` slices,
+`` `n * size_of::<usize>()` `` for a table of `n` words;
+`none` for an integer. -/
+def Param.sizeDoc : Param → Option String
+  | .int .. => none
+  | .array _ e n => some s!"{n * e.size}"
+  | .slice _ e len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
+  | .slices _ count => some s!"`2 * size_of::<usize>() * {count}`"
+  | .table n => some s!"`{n} * size_of::<usize>()`"
+
+/-- The `# Safety` items stating the memory each buffer of `sig` must be
+valid for, in order: the region `Sig.contract` lets the function read
+(every buffer; loads may read the writable regions too) and write (the
+writable buffers), of the size `Sig.bufs` gives it, and, on a target whose
+contracts require it (`Abi.alignsBufs`), that a buffer of `u16`, `u32` or
+`u64` (`Sig.alignedBufs`) is aligned for its element. -/
+def Sig.validDoc {M : ISA} (A : Abi M) (sig : Sig) : List String :=
+  sig.params.filterMap fun (n, p) =>
+    let access := match p with
+      | .array true .. | .slice true .. => "reads and writes"
+      | _ => "reads"
+    let listed := match p with
+      | .slices e _ => if e.size = 1 then s!", and each slice it lists for reads of its length in \
+          bytes" else s!", and each slice it lists for reads of {e.size} times its length in bytes"
+      | _ => ""
+    let aligned := match p with
+      | .array _ e _ | .slice _ e _ =>
+        if A.alignsBufs && 1 < e.align then s!", and aligned for `{e.scalar.rust}`" else ""
+      | _ => ""
+    p.sizeDoc.map fun size =>
+      s!"`{n}` must be valid for {access} of {size} bytes{listed}{aligned}."
+
+/-- `xs` as an English list joined by `conj`: "a", "a or b", "a, b or c". -/
+def englishList (conj : String) : List String → String
+  | [] => ""
+  | [x] => x
+  | [x, y] => s!"{x} {conj} {y}"
+  | x :: xs => s!"{x}, " ++ englishList conj xs
+
+/-- The `# Safety` items stating what the contracts `sig.contract T.abi _ _
+writeArgs stack _` require of where the buffers are: that a writable buffer
+overlaps no other buffer, nor the arguments in memory (`T.abi.argArea`); that no
+buffer overlaps the arguments in memory if the function may write them, nor
+the memory `T.abi.reserved stack` (the return address, and the stack that the
+function's calls and frames use); and that no buffer wraps around the end of
+the address space. -/
+def Sig.layoutDoc (T : EmitTarget) (sig : Sig) (writeArgs : Bool) (stack : Nat) :
+    List String :=
+  let bufs := Sig.bufNames sig.params
+  let all := bufs.map (·.1)
+  let w := (bufs.filter (·.2)).map (·.1)
+  let r := (bufs.filter (!·.2)).map (·.1)
+  let args := T.argAreaDoc ((sig.words T.abi.ptrBits).map (·.bits T.abi.ptrBits))
+  let argsWritable := match args with
+    | some (_, wr) => wr && writeArgs
+    | none => false
+  let argsName := (args.map (·.1)).toList
+  let wObjs := (if w.length ≥ 2 then ["each other"] else []) ++ r ++
+    (if argsWritable then [] else argsName)
+  let allObjs := (if argsWritable then argsName else []) ++ (T.reservedDoc stack).toList
+  let tail := ", ".intercalate (allObjs.map ("overlap " ++ ·)) ++
+    (if allObjs.isEmpty then "" else ", or ") ++ "wrap around the end of the address space"
+  (if w.isEmpty || wObjs.isEmpty then [] else
+    [s!"{englishList "and" w} must not overlap {englishList "or" wObjs} (distinct Rust \
+      objects never do)."]) ++
+  match all with
+    | [] => []
+    | [b] => [s!"{b} must not {tail} (no Rust object does)."]
+    | [a, b] => [s!"Neither {a} nor {b} may {tail} (no Rust object does)."]
+    | _ => [s!"None of {englishList "and" all} may {tail} (no Rust object does)."]
+
+/-- A paragraph saying that the function may overwrite its arguments in
+memory, if the contracts `sig.contract T.abi _ _ writeArgs _ _` let it. -/
+def Sig.layoutNote (T : EmitTarget) (sig : Sig) (writeArgs : Bool) : List String :=
+  match T.argAreaDoc ((sig.words T.abi.ptrBits).map (·.bits T.abi.ptrBits)) with
+  | some (d, true) => if writeArgs then
+      [s!"The function may overwrite {d}, as the calling convention lets it."] else []
+  | _ => []
+
+/-- The documentation of `api` on a target: its summary, then its `# Safety`
+section. -/
+def Api.doc (api : Api) : String :=
+  api.summary ++ "\n\n# Safety\n\n" ++
+    "\n".intercalate (api.safety.map ("* " ++ ·))
 
 /-- A verified function, ready to be emitted into the Rust crate. -/
 structure Artifact where
@@ -188,9 +309,9 @@ structure Registration (api : Api) (target : Target) where
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix`, its documentation `api`'s (`Api.doc`), and its
 contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
-(`Api.contract`); its code is printed with the printer of `target`'s ISA
-(`EmitTarget.of`). -/
-def Api.artifact (api : Api) (target : Target) [HasPrinter target.isa] (r : Registration api target) :
+(`Api.contract`); its code is printed and documented with `target`'s ISA's
+`Emitter` (`EmitTarget.of`). -/
+def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registration api target) :
     Artifact where
   target := .of target
   module := api.module

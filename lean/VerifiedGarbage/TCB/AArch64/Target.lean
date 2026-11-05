@@ -129,9 +129,6 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .x0
-  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
-    some ("the arguments on the stack", false)
-  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
@@ -141,12 +138,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   name := "aarch64"
   isa := isa
   abiPreserved := abiPreserved
-  -- `aarch64_be` targets are big-endian, and ILP32 ones (`aarch64-unknown-linux-gnu_ilp32`)
-  -- have 32-bit pointers. The model's baseline includes AdvSIMD (NEON: see
-  -- `Instr.requires`), which `aarch64-unknown-none-softfloat` turns off.
-  rustCfg := "all(target_arch = \"aarch64\", target_endian = \"little\", \
-    target_pointer_width = \"64\", target_feature = \"neon\")"
-  rustAbi := "C"
   abi := abi
 
 end VG.AArch64

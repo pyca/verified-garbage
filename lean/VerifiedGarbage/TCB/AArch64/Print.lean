@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Printer for the AArch64 model
@@ -276,7 +277,19 @@ def printer : Printer isa where
     | .adrSym .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
-/-- The printer of this ISA's code (`HasPrinter`). -/
-instance : HasPrinter isa := ⟨printer⟩
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- `aarch64_be` targets are big-endian, and ILP32 ones (`aarch64-unknown-linux-gnu_ilp32`)
+  -- have 32-bit pointers. The model's baseline includes AdvSIMD (NEON: see
+  -- `Instr.requires`), which `aarch64-unknown-none-softfloat` turns off.
+  rustCfg := "all(target_arch = \"aarch64\", target_endian = \"little\", \
+    target_pointer_width = \"64\", target_feature = \"neon\")"
+  rustAbi := "C"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.AArch64

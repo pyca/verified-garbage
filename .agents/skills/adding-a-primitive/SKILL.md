@@ -42,7 +42,7 @@ instructions in an ISA model) go in their own PR before either.
    with the file importing
    `Proof/Framework/Registration.lean` for its default proofs, and its
    target's printer, `TCB/<Target>/Print.lean` (`public import
-   VerifiedGarbage.TCB.X86_64.Print`), whose `HasPrinter` instance
+   VerifiedGarbage.TCB.X86_64.Print`), whose `Emitter` instance
    `Api.artifact` takes (no proof imports a printer, so a change to one
    rebuilds only registration files; a generic file imports it too):
 

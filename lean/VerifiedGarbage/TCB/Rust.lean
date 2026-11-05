@@ -681,9 +681,9 @@ first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 (`fnTablesDoc`). -/
 def fullDoc (a : Artifact) : String :=
   let A := a.target.abi
-  let items := Sig.layoutDoc A a.sig a.writeArgs a.stack ++ fnTablesDoc a
+  let items := Sig.layoutDoc a.target a.sig a.writeArgs a.stack ++ fnTablesDoc a
   featureDoc (prependSafety (insertNotes a.doc
-      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
+      (Sig.layoutNote a.target a.sig a.writeArgs ++ writtenDoc a.name a.written))
     (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
 
 /-- If the emitter adds anything to the documentation of `a` from its
@@ -695,8 +695,8 @@ def checkLayout (a : Artifact) : Except String Unit := do
     throw s!"{a.target.name}: {a.name}'s doc states what memory a buffer must be valid for, \
       which the emitter generates from its signature (`Sig.validDoc`)"
   let A := a.target.abi
-  if (Sig.layoutDoc A a.sig a.writeArgs a.stack).isEmpty &&
-      (Sig.layoutNote A a.sig a.writeArgs).isEmpty && (Sig.validDoc A a.sig).isEmpty then return
+  if (Sig.layoutDoc a.target a.sig a.writeArgs a.stack).isEmpty &&
+      (Sig.layoutNote a.target a.sig a.writeArgs).isEmpty && (Sig.validDoc A a.sig).isEmpty then return
   let ok := match a.doc.splitOn "\n# " with
     | [_] => false
     | parts => parts.getLast!.startsWith "Safety\n" &&
@@ -721,7 +721,7 @@ On RISC-V (`riscv64`), `.option push` and `.option arch, +m, +c`, then
 `.option pop`, enable the M and C extensions for the function alone. The model's
 multiplies, `mul` and `mulhu`, are M's (`TCB/RISCV64/Isa.lean`), and the
 target compiles them only where Rust enables it (`target_feature = "m"`,
-`TCB/RISCV64/Target.lean`'s `rustCfg`), but rustc does not always tell the
+`TCB/RISCV64/Print.lean`'s `rustCfg`, `Emitter`), but rustc does not always tell the
 assembler: in a release build with several codegen units, LLVM assembles
 some units' module-level assembly (where naked functions go) without M,
 rejecting `mul` as needing `Zmmul`. The RISC-V Assembly Programmer's Manual
@@ -1507,7 +1507,7 @@ def prepareAll (ss : List Shared) : List Prepared :=
   (parts.map Task.get).flatten
 
 /-- The targets of the artifacts `as`, each once, with its Rust `cfg`
-(`Target.rustCfg`), in first-seen order. -/
+(`Emitter.rustCfg`), in first-seen order. -/
 def targetsOf (as : List Artifact) : List (String × String) :=
   (distinct as (·.target.name)).map fun t =>
     (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")

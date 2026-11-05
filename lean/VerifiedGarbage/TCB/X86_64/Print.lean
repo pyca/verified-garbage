@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Intel-syntax printer for the x86-64 model
@@ -419,7 +420,22 @@ def printer : Printer isa where
       | [] => if i.encode.isNone then some "an operand does not fit its field" else none
       | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
 
-/-- The printer of this ISA's code (`HasPrinter`). -/
-instance : HasPrinter isa := ⟨printer⟩
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- x32 targets (`x86_64-unknown-linux-gnux32`) have 32-bit pointers. The
+  -- model's baseline includes SSE2 (see `Instr.requires`), which
+  -- `x86_64-unknown-none` and `x86_64-unknown-uefi` turn off; there the Rust
+  -- caller would also not save the SSE registers, of which UEFI's convention
+  -- (the Microsoft x64 one) makes `xmm6`–`xmm15` callee-saved.
+  rustCfg := "all(target_arch = \"x86_64\", target_pointer_width = \"64\", \
+    target_feature = \"sse2\")"
+  rustAbi := "sysv64"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := some (if n = 0 then "the return address on the stack" else
+    s!"the return address on the stack or the {n} bytes of stack below it")
 
 end VG.X86_64

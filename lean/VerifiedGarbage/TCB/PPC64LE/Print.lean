@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
 # Printer for the 64-bit little-endian PowerPC model
@@ -140,7 +141,15 @@ def printer : Printer isa where
     | .adrSym .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
-/-- The printer of this ISA's code (`HasPrinter`). -/
-instance : HasPrinter isa := ⟨printer⟩
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  rustCfg := "all(target_arch = \"powerpc64\", target_endian = \"little\")"
+  rustAbi := "C"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.PPC64LE

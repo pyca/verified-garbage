@@ -96,9 +96,6 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .a0
-  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
-    some ("the arguments on the stack", false)
-  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => s.syms name
   -- `lhu`/`sh`, `lwu`/`sw` and `ld`/`sd` fault on an address not a multiple of 2,
   -- 4 and 8 (`TCB/RISCV64/Isa.lean`), and a `u16`'s, `u32`'s and `u64`'s alignments
@@ -112,9 +109,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   name := "riscv64"
   isa := isa
   abiPreserved := abiPreserved
-  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\", \
-    target_feature = \"c\")"
-  rustAbi := "C"
   abi := abi
 
 end VG.RISCV64

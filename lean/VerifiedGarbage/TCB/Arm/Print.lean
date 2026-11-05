@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Printer for the ARMv7 model
@@ -88,7 +89,27 @@ def printer : Printer isa where
         .text "3:"]
     | _ => none
 
-/-- The printer of this ISA's code (`HasPrinter`). -/
-instance : HasPrinter isa := ⟨printer⟩
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  -- `armeb` targets are big-endian. Apple's 32-bit ARM targets do not use AAPCS:
+  -- `armv7s-apple-ios` uses APCS, where a 64-bit argument takes the next two
+  -- registers (`r1:r2` after one word) rather than an even pair (`r2:r3`,
+  -- AAPCS §5.5, "Parameter Passing", rule C.3), and `armv7k-apple-watchos` uses
+  -- AAPCS16, Apple's variant of AAPCS, which the model has not been checked
+  -- against. The ARMv4T–ARMv6 targets (`armv5te-*`, `arm-*`, …)
+  -- are not ARMv7, which the model describes, but Rust has no stable `cfg` for
+  -- the architecture version (its ARM target features, `v7` included, are
+  -- unstable, and `cfg` does not report them on stable): they are kept out only
+  -- because some functions use `movw`, which is new in ARMv7 (and ARMv6T2), so
+  -- the crate does not assemble for them.
+  rustCfg := "all(target_arch = \"arm\", target_endian = \"little\", \
+    not(target_vendor = \"apple\"))"
+  rustAbi := "C"
+  argAreaDoc ws := if (classify ws 0 0).2 = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.Arm

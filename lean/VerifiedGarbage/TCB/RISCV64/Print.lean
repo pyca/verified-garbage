@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.RISCV64.Encode
 public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
 # Printer for the 64-bit RISC-V model
@@ -118,7 +119,16 @@ def printer : Printer isa where
     | _ => none
   unencodable := Instr.unencodable
 
-/-- The printer of this ISA's code (`HasPrinter`). -/
-instance : HasPrinter isa := ⟨printer⟩
+/-- What the emitter needs of the target (`Emitter`): its printer, its Rust `cfg`
+and ABI string, and how documentation names its calling convention's
+argument area and reserved memory (`abi`'s `argArea` and `reserved`). -/
+instance : Emitter isa where
+  printer := printer
+  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\", \
+    target_feature = \"c\")"
+  rustAbi := "C"
+  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
+    some ("the arguments on the stack", false)
+  reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
 
 end VG.RISCV64
