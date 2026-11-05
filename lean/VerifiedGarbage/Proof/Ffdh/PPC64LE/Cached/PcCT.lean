@@ -526,7 +526,7 @@ theorem loadP_rel : RelCT isa (Two F3) loadP (Two F4) := by
         (two_post (two_taint _ (fun q s₁ s₂ h₁ h₂ => pins_E3 q.cd s₁ s₂ h₁.1 h₂.1) (by taint_decide))
           fun _ _ ⟨_, s₀, h0, w⟩ => WP.mono w fun _ ht => ⟨s₀, h0, ht⟩)))
 
-theorem ite_rel : RelCT isa (Two F4) (.ite (.zero .d .r0) main (.block [.li .r3 0])) (Two F5) :=
+theorem branch_rel : RelCT isa (Two F4) (.ite (.zero .d .r0) main (.block [.li .r3 0])) (Two F5) :=
   two_ite (Φ := F4) (fun _ _ _ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ => h₁.1.2.2.trans h₂.1.2.2.symm) main_rel
     (RelCT.of_false fun _ _ ⟨_, ⟨⟨_, h0, h4⟩, hne⟩, _⟩ => hne (h4.1.2.2.mpr h0.geo.hmod))
 
@@ -538,7 +538,7 @@ theorem pins_F5 : Pins F5 [.r23] := by
 theorem pc_rel : RelCT isa (Two P0) Precompute.code fun _ _ => True := by
   unfold Precompute.code
   exact RelCT.seq front_rel (RelCT.seq rec_rel (RelCT.seq setup_rel (RelCT.seq loadP_rel
-    (RelCT.seq ite_rel (two_taint _ pins_F5 (by taint_decide))))))
+    (RelCT.seq branch_rel (two_taint _ pins_F5 (by taint_decide))))))
 
 theorem pqOf_eq {s t : State} (h : pcContract.pub s t) : pqOf s = pqOf t := by
   obtain ⟨⟨hsp, hdom, h3, h4, h5, h6, h7, h8, h9⟩, hsym⟩ := h
