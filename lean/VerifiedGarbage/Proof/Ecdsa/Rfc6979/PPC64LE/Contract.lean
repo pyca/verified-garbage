@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 
 /-!
@@ -23,10 +23,10 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 open VG VG.PPC64LE Spec.Weierstrass Spec.Ecdsa
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
-abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcPPC (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Prop) (ns : List String) :
+def rfcPPC (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (TabFacts : State → Prop) (ns : List String) :
     Contract PPC64LE.isa where
   pre s :=
     let out : Region := ⟨s.gpr .r3, 2 * I.ecdsa.curve.len⟩

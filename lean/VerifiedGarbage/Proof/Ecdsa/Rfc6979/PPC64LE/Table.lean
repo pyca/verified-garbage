@@ -98,7 +98,7 @@ theorem WOk.blockSize {w : HVar} (hw : WOk w) : Spec.HmacTable.blockSize w.G = w
   exact w.ok.hB
 
 /-- The instance with `w`'s hash function fixed. -/
-def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Spec.Ecdsa.Rfc6979.Instance where
+def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Proof.Ecdsa.Rfc6979.Instance where
   ecdsa := T.ecdsa
   hash := w.ok.SH.H
   hashLen := w.H.D
@@ -135,7 +135,7 @@ theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : Curv
 /-- RFC 6979's result with `w`'s hash function fixed is the table's. -/
 theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) (m : Mem) (d dg : Addr) :
     (instOf T w).result m d dg = T.result w.G w.ok.SH.H m d dg := by
-  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.len]
+  simp only [Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.len]
 
 /-! ## The contract with whichever table `hmac` is -/
 

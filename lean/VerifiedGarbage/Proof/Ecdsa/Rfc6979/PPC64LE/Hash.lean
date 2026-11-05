@@ -111,7 +111,7 @@ structure RfcHash where
   /-- The curve. -/
   R : RfcCurve
   /-- The instance of the contract, with the hash function fixed. -/
-  I : Spec.Ecdsa.Rfc6979.Instance
+  I : Proof.Ecdsa.Rfc6979.Instance
   /-- The hash function's functions. -/
   v : HVar
   /-- The functions an indirect call of a table's functions may reach. -/

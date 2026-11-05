@@ -31,7 +31,7 @@ section Entry
 
 open VG.X86.Wp
 
-variable {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance}
+variable {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance}
   {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns} {ns : List String} {s : State}
 
 /-- A word of the stack, through a store elsewhere in it. -/
@@ -459,7 +459,7 @@ theorem result_unfold :
         let (K, V) := kv0 P L m₀
         Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V P.I.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
+  simp only [result, Proof.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
     ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/

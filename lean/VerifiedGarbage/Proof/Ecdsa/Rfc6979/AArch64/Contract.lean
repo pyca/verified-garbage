@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
@@ -43,10 +43,10 @@ def TblOk (E : Impl.Ecdsa.AArch64.Cfg) (s : State) (wr : List Region) : Prop :=
   ∀ r ∈ wr, Region.Disjoint ⟨tableAddr E s.syms, 8 * E.combWords.length⟩ r
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
-abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat)
+def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat)
     (TabFacts : State → Prop) (ns : List String) : Contract AArch64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .x0, 2 * I.ecdsa.curve.len⟩

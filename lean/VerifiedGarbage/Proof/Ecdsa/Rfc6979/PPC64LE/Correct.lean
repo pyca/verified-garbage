@@ -313,7 +313,7 @@ theorem result_unfold :
         Spec.Ecdsa.Rfc6979.search P.R.C.E.curve P.v.ok.SH.H P.v.H.D (xOf P L m₀) (eOf P L m₀)
           (kv0 P L m₀).1 (kv0 P L m₀).2 P.I.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.ecdsa, P.hash, P.len,
+  simp only [result, Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.ecdsa, P.hash, P.len,
     Proof.Ecdsa.Rfc6979.ecdsa_bytesAt]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/
