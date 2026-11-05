@@ -22,12 +22,10 @@ use crate::arch::ec_p384::{VG_EC_P384_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_p384_publ
 use crate::arch::ecdh_p384::VG_ECDH_P384_ADX_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_p384::VG_ECDH_P384_UMAAL_FEATURES;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::VG_ECDSA_P384_VERIFY_ADX_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384::VG_ECDSA_P384_VERIFY_UMAAL_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384_sha384::VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES;
+use crate::arch::ecdsa_p384::{VG_ECDSA_P384_SIGN_ADX_FEATURES, VG_ECDSA_P384_VERIFY_ADX_FEATURES};
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p384_sha384::VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES;
 use crate::cpu::detected;
@@ -56,7 +54,7 @@ impl Mul {
                 Features::all(&[
                     VG_EC_P384_PUBLIC_KEY_ADX_FEATURES,
                     VG_ECDH_P384_ADX_FEATURES,
-                    VG_ECDSA_P384_SHA384_SIGN_ADX_FEATURES,
+                    VG_ECDSA_P384_SIGN_ADX_FEATURES,
                     VG_ECDSA_P384_VERIFY_ADX_FEATURES,
                 ])
             },
