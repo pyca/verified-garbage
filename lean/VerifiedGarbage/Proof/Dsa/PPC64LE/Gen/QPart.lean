@@ -230,7 +230,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
   have nM : sMsg = 512 := rfl
   have nS : sState = 576 := rfl
   have nQ : sQ = 608 := rfl
-  have nE : hEnd = 320 := rfl
+  have nE : hEnd = 352 := rfl
   generalize hpd : padTail HO.md G.qLen = pad at hpad pl
   generalize hsd : seedAt G k = sd at hsl hHl hne qb
   let c1 : Cfg := { c with cl := [(sMsg, sd), (sMsg + G.qLen, pad)] }

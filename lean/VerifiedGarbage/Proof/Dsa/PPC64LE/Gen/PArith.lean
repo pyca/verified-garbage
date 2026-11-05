@@ -184,7 +184,7 @@ theorem pTail_vp {x q : Nat} (hq : 2 ^ (8 * G.qLen - 1) ≤ q)
   have hM : x - x % q - (if x / q % 2 = 0 then 0 else q) = pVal x q - 1 := by rw [pm, pv]; omega_arith
   have nE : sE = 1440 := rfl
   have nP : sPBE = 1056 := rfl
-  have nH : hEnd = 320 := rfl
+  have nH : hEnd = 352 := rfl
   have hkB : sE + G.pLen ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have eB : eBytes G.pLen G.qLen ≤ G.pLen := by simp only [eBytes]; omega_arith
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])

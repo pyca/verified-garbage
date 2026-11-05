@@ -90,8 +90,13 @@ def fUsedP : Nat := 144
 def fStP : Nat := 152
 /-- The cursor: the current seed's start in `rand`. -/
 def fC : Nat := 160
+/-- The result's words: `used`, `state[0]`, `state[3]` and the status. -/
+def fRU : Nat := 168
+def fR0 : Nat := 176
+def fR3 : Nat := 184
+def fRet : Nat := 192
 /-- Our caller's `r2` and `r14`–`r31`. -/
-def fSave : Nat := 168
+def fSave : Nat := 200
 
 /-- The nonvolatile registers saved, `r28` (which keeps `S`) last. -/
 def saved : List Reg :=
@@ -466,10 +471,9 @@ def search : Prog isa := seqs [
             .ite (.zero .d .r0) (.block rejected) (.block [])])]),
     .block (cmpF fStatus 0)]) (.zero .d .r0)]
 
-/-- `state[0]` := `r5`, `state[3]` := `r6`, `used` := the header word `u`,
-and the status `v` into `r3`. -/
-def results (u v : Nat) : List Instr :=
-  [ld .r3 fStP, .store .d .r5 .r3 0, .store .d .r6 .r3 24, ld .r3 fUsedP, ld .r4 u, .store .d .r4 .r3 0, .li .r3 v]
+/-- The result's words into the header: `used` from the header word `u`, the
+status `v`, `state[0]` from `r5` and `state[3]` from `r6`. -/
+def results (u v : Nat) : List Instr := [ld .r3 u, st .r3 fRU, .li .r3 v, st .r3 fRet, st .r5 fR0, st .r6 fR3]
 
 /-- Exhausted: no seeds left, no request, nothing past the cursor used. -/
 def exhausted : List Instr := [.li .r5 0, .li .r6 0] ++ results fC 3
@@ -487,15 +491,21 @@ def ranOut : Prog isa := seqs [
       .block ([.addi .r6 .r3 0, ld .r5 fSeedLeft] ++ results fC 0)])
     (.block exhausted)]
 
-/-- The result: p||q||g to `out` and 1, or zeros and 0 or 3; `used` and
-`state`. -/
-def finish : Prog isa :=
-  .seq (.block (cmpF fStatus 1))
-    (.ite (.zero .d .r0)
-      (seqs [copyN [scr .r3 sPacked] [ld .r4 fOut] (2 * g.pLen + g.qLen),
-        .block ([.li .r5 0, .li .r6 0] ++ results fUsed 1)])
-      (seqs [.block [ld .r3 fOut, .li .r5 (2 * g.pLen + g.qLen)], zeroN, .block (cmpF fStatus 2),
-        .ite (.zero .d .r0) g.ranOut (.block exhausted)]))
+/-- The result's words to `state` and `used`, and the status into `r3`. -/
+def writeBack : List Instr :=
+  [ld .r3 fStP, ld .r4 fR0, .store .d .r4 .r3 0, ld .r4 fR3, .store .d .r4 .r3 24, ld .r3 fUsedP, ld .r4 fRU,
+    .store .d .r4 .r3 0, ld .r3 fRet]
+
+/-- The result: its words into the header; p||q||g to `out` for status 1,
+else zeros; then the words to `state` and `used`, and the status. -/
+def finish : Prog isa := seqs [
+  .block (cmpF fStatus 1),
+  .ite (.zero .d .r0) (.block ([.li .r5 0, .li .r6 0] ++ results fUsed 1))
+    (seqs [.block (cmpF fStatus 2), .ite (.zero .d .r0) g.ranOut (.block exhausted)]),
+  .block (cmpF fStatus 1),
+  .ite (.zero .d .r0) (copyN [scr .r3 sPacked] [ld .r4 fOut] (2 * g.pLen + g.qLen))
+    (seqs [.block [ld .r3 fOut, .li .r5 (2 * g.pLen + g.qLen)], zeroN]),
+  .block writeBack]
 
 def generate : Prog isa := .seq g.search g.finish
 

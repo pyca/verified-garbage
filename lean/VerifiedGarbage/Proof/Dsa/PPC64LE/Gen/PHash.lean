@@ -66,7 +66,7 @@ theorem seedAdd_vp {j off : Nat} (hq : G.qLen = 20 ∨ G.qLen = 32)
   have fit := gi.scrFit
   have kb := gi.kBig
   have nM : sMsg = 512 := rfl
-  have nE : hEnd = 320 := rfl
+  have nE : hEnd = 352 := rfl
   have hkB : sMsg + 64 ≤ kB G.pLen := by rcases gi.lens3 with e | e | e <;> rw [e] <;> decide
   have hw : InRegions s.wr (G.sa sMsg) G.qLen := gi.inScr (by omega) (by omega)
   refine (addLoop_ok (base := G.sa sMsg) hq0 (by omega) (by
@@ -127,7 +127,7 @@ theorem pHash_vp {g : Geo} (HO : HashOk g.G) {j : Nat}
   have hWW : 1024 ≤ 8 * wWords G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have nM : sMsg = 512 := rfl
   have nS : sState = 576 := rfl
-  have nE : hEnd = 320 := rfl
+  have nE : hEnd = 352 := rfl
   generalize hpd : padTail HO.md G.qLen = pad at hpad pl
   unfold Geo.pHash
   simp only [VG.Impl.Rsa.PPC64LE.Keys.seqs]
