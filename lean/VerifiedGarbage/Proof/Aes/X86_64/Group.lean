@@ -14,9 +14,9 @@ section
 # Bitslicing the round keys, on x86-64
 
 The key loop of `vg_aes_ctr32` bitslices each round key (loaded as four
-identical blocks) with `toBs` and stores it in the scratch buffer. The
+identical blocks) with `keyToBs` and stores it in the scratch buffer. The
 loads and stores are checked by evaluation over the naming domain
-(`Bitslice.names`), `toBs` by its proof (`Encrypt.lean`).
+(`Bitslice.names`), and the specialized transpose over the linear domain.
 -/
 
 namespace VG.Proof.Aes.X86_64
@@ -68,6 +68,45 @@ theorem keyLoad_ok {s : State} {r : Region} {off : Nat} (hr : r ∈ s.rd ++ s.wr
       simp [slotRegion, loadCfg, Region.Contains] at hc
   · refine Bool.ne_false_of_eq_true (List.all_eq_true.mp keyLoad_writes r ?_)
     revert hr; cases r <;> decide
+
+/-! ## Bitslicing identical blocks -/
+
+def keyToBsG (j p : Nat) : List Nat :=
+  [64 * (4 * (idx p / 8)) + (8 * (idx p % 8) + j)]
+
+theorem keyToBs_check :
+    check (lanes 64 9) linCfg (linExt 0) keyToBs (linEnv qIns)
+      (linPost 9 (qOuts keyToBsG)) = true := by
+  decide +kernel
+
+theorem keyToBs_ok {s : State} (hok : Ok linCfg s)
+    (hdup : ∀ b < 4, Q s b = Q s 0 ∧ Q s (b + 4) = Q s 4) :
+    ∃ s', runBlock isa keyToBs s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p =
+        (Q s (p % 4 + 4 * (idx p / 8))).getLsbD (8 * (idx p % 8) + j)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion linCfg s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear keyToBs_check (by decide) (by decide +kernel) hok (Q s)
+    (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, keyToBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by simp only [idx]; omega_arith)]
+  have hd := hdup (p % 4) (by omega_arith)
+  have hi : idx p < 16 := by simp only [idx]; omega_arith
+  by_cases h : idx p < 8
+  · rw [show idx p / 8 = 0 by omega_arith]
+    simpa using congrArg (fun v : BitVec 64 => v.getLsbD (8 * (idx p % 8) + j)) hd.1.symm
+  · rw [show idx p / 8 = 1 by omega_arith]
+    simpa using congrArg (fun v : BitVec 64 => v.getLsbD (8 * (idx p % 8) + j)) hd.2.symm
+
+theorem keyToBs_keeps_t1 {s s' : State} (hok : Ok linCfg s)
+    (h : runBlock isa keyToBs s = some s') : s'.gpr t1 = s.gpr t1 := by
+  obtain ⟨s'', hs'', -, -, -, hoth, -⟩ := linear_ok keyToBs_check hok (Q s) (fun r i hri => by
+    simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
+    obtain ⟨i, hi, rfl, rfl⟩ := hri
+    exact ⟨by omega_arith, rfl⟩) (fun j hj => by simp [linCfg] at hj)
+  rw [run_unique h hs'']
+  exact hoth t1 (by decide +kernel)
 
 /-! ## Storing it -/
 
@@ -277,7 +316,11 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
   -- Bitslice it.
   have hok₁ : Ok linCfg s₁ := Ok.of_region (r := ⟨b, 2048⟩) (by rw [hwr₁, hi.wr]; exact hk.scr)
     (by simp only [linCfg]; rw [hoth₁ sb (.inl (by decide)), hsb]) (by simp [linCfg]) (by simp [linCfg]) rfl
-  obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hoth₂, hfr₂⟩ := toBs_ok hok₁
+  have hdup : ∀ bb < 4, Q s₁ bb = Q s₁ 0 ∧ Q s₁ (bb + 4) = Q s₁ 4 := by
+    intro bb hb
+    exact ⟨(hq₁ bb hb).1.trans (hq₁ 0 (by decide)).1.symm,
+      (hq₁ bb hb).2.trans (hq₁ 0 (by decide)).2.symm⟩
+  obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hoth₂, hfr₂⟩ := keyToBs_ok hok₁ hdup
   refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
   have hbs₂ := bs_of_in hq₂ hin
   -- Store it.
@@ -325,7 +368,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
   have hnew : KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R j) k) 64) (roundKey w j) :=
     keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [hm₄, ← hrsi₂, hst₃ k hk]
   have hr15 : s₃.gpr .r15 = BitVec.ofNat 64 j := by
-    rw [hg₃, show Reg.r15 = t1 from rfl, toBs_keeps_t1 hok₁ hs₂, show t1 = Reg.r15 from rfl,
+    rw [hg₃, show Reg.r15 = t1 from rfl, keyToBs_keeps_t1 hok₁ hs₂, show t1 = Reg.r15 from rfl,
       hoth₁ .r15 (.inr rfl), hi.r15]
   have hrdi : s₃.gpr .rdi = sc + BitVec.ofNat 64 (16 * j) := by
     rw [hg₃, hoth₂ .rdi (by decide), hoth₁ .rdi (.inl (by decide)), hi.rdi]

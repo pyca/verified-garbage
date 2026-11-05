@@ -75,12 +75,25 @@ def keyLoad : List Instr :=
 /-- Store the bitsliced round key at `rsi`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store (slotAt .rsi j) (q j)
 
+/-- Bitslice four identical round-key blocks. Shuffle each distinct half
+once, then share the first transpose stage before duplicating its results. -/
+def keyToBs : List Instr :=
+  setMasks bsMasks ++
+  swapIn (q 0) t0 1 16 ++ swapIn (q 4) t0 1 16 ++
+  swapIn (q 0) t0 2 8 ++ swapIn (q 4) t0 2 8 ++
+  swapBetween (q 0) (q 4) t0 3 8 ++
+  [movR (q 1) (q 0)] ++ swapBetween (q 0) (q 1) t0 4 1 ++
+  [movR (q 5) (q 4)] ++ swapBetween (q 4) (q 5) t0 4 1 ++
+  [movR (q 2) (q 0), movR (q 3) (q 1), movR (q 6) (q 4), movR (q 7) (q 5)] ++
+  ([(0, 2), (1, 3), (4, 6), (5, 7)].flatMap fun (a, b) => swapBetween (q a) (q b) t0 5 2) ++
+  ([(0, 4), (1, 5), (2, 6), (3, 7)].flatMap fun (a, b) => swapBetween (q a) (q b) t0 6 4)
+
 /-- Step `rdi` and `rsi` back a round key, and `r15` down (CF is set when it
 passes zero). -/
 def keyStep : List Instr := [.alu .sub .rdi (.imm 16), .alu .sub .rsi (.imm 64), .alu .sub .r15 (.imm 1)]
 
 /-- Bitslice the round key at `rdi` to `rsi`, and step back. -/
-def keyBody : List Instr := keyLoad ++ toBs ++ keyStore ++ keyStep
+def keyBody : List Instr := keyLoad ++ keyToBs ++ keyStore ++ keyStep
 
 /-- `rdi := ` the first round key. -/
 def keyDone : List Instr := [movR .rdi .rsi, .alu .add .rdi (.imm 64)]

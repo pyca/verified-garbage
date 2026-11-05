@@ -1499,27 +1499,6 @@ vg_aes_encrypt_blocks:
 	xor rax, r14
 	ror r14, 48
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 16
-	xor r14, rbx
-	and r14, QWORD PTR [r9+8]
-	xor rbx, r14
-	ror r14, 48
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 16
-	xor r14, rcx
-	and r14, QWORD PTR [r9+8]
-	xor rcx, r14
-	ror r14, 48
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 16
-	xor r14, rbp
-	and r14, QWORD PTR [r9+8]
-	xor rbp, r14
-	ror r14, 48
-	xor rbp, r14
 	mov r14, r10
 	shr r14, 16
 	xor r14, r10
@@ -1527,27 +1506,6 @@ vg_aes_encrypt_blocks:
 	xor r10, r14
 	ror r14, 48
 	xor r10, r14
-	mov r14, r11
-	shr r14, 16
-	xor r14, r11
-	and r14, QWORD PTR [r9+8]
-	xor r11, r14
-	ror r14, 48
-	xor r11, r14
-	mov r14, r12
-	shr r14, 16
-	xor r14, r12
-	and r14, QWORD PTR [r9+8]
-	xor r12, r14
-	ror r14, 48
-	xor r12, r14
-	mov r14, r13
-	shr r14, 16
-	xor r14, r13
-	and r14, QWORD PTR [r9+8]
-	xor r13, r14
-	ror r14, 48
-	xor r13, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -1555,27 +1513,6 @@ vg_aes_encrypt_blocks:
 	xor rax, r14
 	ror r14, 56
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 8
-	xor r14, rbx
-	and r14, QWORD PTR [r9+16]
-	xor rbx, r14
-	ror r14, 56
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 8
-	xor r14, rcx
-	and r14, QWORD PTR [r9+16]
-	xor rcx, r14
-	ror r14, 56
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 8
-	xor r14, rbp
-	and r14, QWORD PTR [r9+16]
-	xor rbp, r14
-	ror r14, 56
-	xor rbp, r14
 	mov r14, r10
 	shr r14, 8
 	xor r14, r10
@@ -1583,27 +1520,6 @@ vg_aes_encrypt_blocks:
 	xor r10, r14
 	ror r14, 56
 	xor r10, r14
-	mov r14, r11
-	shr r14, 8
-	xor r14, r11
-	and r14, QWORD PTR [r9+16]
-	xor r11, r14
-	ror r14, 56
-	xor r11, r14
-	mov r14, r12
-	shr r14, 8
-	xor r14, r12
-	and r14, QWORD PTR [r9+16]
-	xor r12, r14
-	ror r14, 56
-	xor r12, r14
-	mov r14, r13
-	shr r14, 8
-	xor r14, r13
-	and r14, QWORD PTR [r9+16]
-	xor r13, r14
-	ror r14, 56
-	xor r13, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, r10
@@ -1611,27 +1527,7 @@ vg_aes_encrypt_blocks:
 	xor r10, r14
 	ror r14, 56
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 8
-	xor r14, r11
-	and r14, QWORD PTR [r9+24]
-	xor r11, r14
-	ror r14, 56
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 8
-	xor r14, r12
-	and r14, QWORD PTR [r9+24]
-	xor r12, r14
-	ror r14, 56
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 8
-	xor r14, r13
-	and r14, QWORD PTR [r9+24]
-	xor r13, r14
-	ror r14, 56
-	xor rbp, r14
+	mov rbx, rax
 	mov r14, rax
 	shr r14, 1
 	xor r14, rbx
@@ -1639,13 +1535,7 @@ vg_aes_encrypt_blocks:
 	xor rbx, r14
 	ror r14, 63
 	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
+	mov r11, r10
 	mov r14, r10
 	shr r14, 1
 	xor r14, r11
@@ -1653,13 +1543,10 @@ vg_aes_encrypt_blocks:
 	xor r11, r14
 	ror r14, 63
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
-	xor r12, r14
+	mov rcx, rax
+	mov rbp, rbx
+	mov r12, r10
+	mov r13, r11
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -3167,27 +3054,6 @@ vg_aes_decrypt_blocks:
 	xor rax, r14
 	ror r14, 48
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 16
-	xor r14, rbx
-	and r14, QWORD PTR [r9+8]
-	xor rbx, r14
-	ror r14, 48
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 16
-	xor r14, rcx
-	and r14, QWORD PTR [r9+8]
-	xor rcx, r14
-	ror r14, 48
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 16
-	xor r14, rbp
-	and r14, QWORD PTR [r9+8]
-	xor rbp, r14
-	ror r14, 48
-	xor rbp, r14
 	mov r14, r10
 	shr r14, 16
 	xor r14, r10
@@ -3195,27 +3061,6 @@ vg_aes_decrypt_blocks:
 	xor r10, r14
 	ror r14, 48
 	xor r10, r14
-	mov r14, r11
-	shr r14, 16
-	xor r14, r11
-	and r14, QWORD PTR [r9+8]
-	xor r11, r14
-	ror r14, 48
-	xor r11, r14
-	mov r14, r12
-	shr r14, 16
-	xor r14, r12
-	and r14, QWORD PTR [r9+8]
-	xor r12, r14
-	ror r14, 48
-	xor r12, r14
-	mov r14, r13
-	shr r14, 16
-	xor r14, r13
-	and r14, QWORD PTR [r9+8]
-	xor r13, r14
-	ror r14, 48
-	xor r13, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -3223,27 +3068,6 @@ vg_aes_decrypt_blocks:
 	xor rax, r14
 	ror r14, 56
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 8
-	xor r14, rbx
-	and r14, QWORD PTR [r9+16]
-	xor rbx, r14
-	ror r14, 56
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 8
-	xor r14, rcx
-	and r14, QWORD PTR [r9+16]
-	xor rcx, r14
-	ror r14, 56
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 8
-	xor r14, rbp
-	and r14, QWORD PTR [r9+16]
-	xor rbp, r14
-	ror r14, 56
-	xor rbp, r14
 	mov r14, r10
 	shr r14, 8
 	xor r14, r10
@@ -3251,27 +3075,6 @@ vg_aes_decrypt_blocks:
 	xor r10, r14
 	ror r14, 56
 	xor r10, r14
-	mov r14, r11
-	shr r14, 8
-	xor r14, r11
-	and r14, QWORD PTR [r9+16]
-	xor r11, r14
-	ror r14, 56
-	xor r11, r14
-	mov r14, r12
-	shr r14, 8
-	xor r14, r12
-	and r14, QWORD PTR [r9+16]
-	xor r12, r14
-	ror r14, 56
-	xor r12, r14
-	mov r14, r13
-	shr r14, 8
-	xor r14, r13
-	and r14, QWORD PTR [r9+16]
-	xor r13, r14
-	ror r14, 56
-	xor r13, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, r10
@@ -3279,27 +3082,7 @@ vg_aes_decrypt_blocks:
 	xor r10, r14
 	ror r14, 56
 	xor rax, r14
-	mov r14, rbx
-	shr r14, 8
-	xor r14, r11
-	and r14, QWORD PTR [r9+24]
-	xor r11, r14
-	ror r14, 56
-	xor rbx, r14
-	mov r14, rcx
-	shr r14, 8
-	xor r14, r12
-	and r14, QWORD PTR [r9+24]
-	xor r12, r14
-	ror r14, 56
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 8
-	xor r14, r13
-	and r14, QWORD PTR [r9+24]
-	xor r13, r14
-	ror r14, 56
-	xor rbp, r14
+	mov rbx, rax
 	mov r14, rax
 	shr r14, 1
 	xor r14, rbx
@@ -3307,13 +3090,7 @@ vg_aes_decrypt_blocks:
 	xor rbx, r14
 	ror r14, 63
 	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
+	mov r11, r10
 	mov r14, r10
 	shr r14, 1
 	xor r14, r11
@@ -3321,13 +3098,10 @@ vg_aes_decrypt_blocks:
 	xor r11, r14
 	ror r14, 63
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
-	xor r12, r14
+	mov rcx, rax
+	mov rbp, rbx
+	mov r12, r10
+	mov r13, r11
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
