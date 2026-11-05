@@ -17,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
+import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 
 /-! # Native FFDH parameter-generation initialization on RISC-V: correctness, constant time
@@ -148,8 +149,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Ffdh.parameterInit (s.gpr .a1).toNat ((s.gpr .a2).setWidth 32).toNat with
   | none => ((t.gpr .a0).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = List.replicate 4 0
-  | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .a1).toNat) 0 first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1 ∧
@@ -161,7 +163,7 @@ def initContract : Contract isa where
   pub := initPub
 
 theorem parameterInit_eq (n g : Nat) : Spec.Ffdh.parameterInit n g = if initValid n g then
-    some [Spec.Ffdh.parameterAttempts n, (n + 7) / 8, Spec.Ffdh.parameterEntropy n, 512 * ((n + 7) / 8)]
+    some [Spec.Ffdh.parameterAttempts n, (n + 7) / 8, Spec.Ffdh.parameterEntropy n]
     else none := by
   simp only [Spec.Ffdh.parameterInit, initValid, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq,
     beq_iff_eq, and_assoc]
@@ -186,7 +188,7 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
   · have hv : initValid n g := h0.1 (by simpa using hb)
     refine WP.mono (initialize_ok hvw hv4 hv.2.1) fun t ⟨⟨ht, hmt⟩, _⟩ => ?_
     simp only [initPost, hxn, hgn, parameterInit_eq, ite_eq_left hv]
-    refine ⟨by rw [ht]; rfl, ?_⟩
+    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.first_valid hv.1⟩
     rw [hmt, hmv, h3, initWritten_words]
     rfl
   · have hv : ¬initValid n g := fun hv => by simp [h0.2 hv] at hb

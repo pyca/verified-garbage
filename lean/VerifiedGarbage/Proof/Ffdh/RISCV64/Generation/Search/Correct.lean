@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.RISCV64.KeyGeneration.Correct
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Generation.Init
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
@@ -787,7 +788,7 @@ theorem request_ok {p : SPub} {original s : State} {used k : Nat} (h : SLive p o
     (by omega) (by omega)
   have hr : min (2 * max (p.randLen - used) (p.len * 2 ^ 8)) (parameterEntropy p.bits) =
       parameterRequest p.bits (p.randLen - used) := by
-    unfold parameterRequest
+    unfold Proof.Ffdh.parameterRequest Proof.Entropy.request
     rw [show p.len * 2 ^ 8 = 256 * ((p.bits + 7) / 8) by omega]
   refine KeyGeneration.WP.ctl ?_ (by rfl)
   unfold request sel writeController requestValues
@@ -1219,7 +1220,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (hS : p.S = c.S) (h : SI
 
 theorem SReturned.post {S : Nat} {s t : State} (h : SReturned (sOfState S s) (searchResult s) t) :
     searchPost s t :=
-  ⟨h.1, h.2.1, h.2.2.2, h.2.2.1⟩
+  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, Proof.Ffdh.SievedGeneration.search_requests _ _ _ _⟩
 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre c.S s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by
