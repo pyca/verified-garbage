@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Taint
@@ -27,7 +26,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Depth
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -52,24 +50,34 @@ def words (L : Nat) : List (BitVec 64) :=
 theorem words_ok {s : State} {B : Addr} {L : Nat} (scr : Scr s B 32) (hdi : s.gpr .rdi = B)
     (hsi : s.gpr .rsi = BitVec.ofNat 64 L) (hL : L ≤ 384) :
     WP isa (.block initWords) s fun t => t.gpr .rax = 1 ∧ t.mem = written s.mem B (words L) := by
-  have hstore : ∀ j < 4, InRegions s.wr (B + BitVec.ofNat 64 (8 * j)) 8 :=
-    fun j hj => scr.st (by omega_using [hj])
+  have h0 : InRegions s.wr B 8 := by
+    have h := scr.st (d := 0) (by decide)
+    rwa [off, BitVec.add_zero] at h
+  have h1 : InRegions s.wr (B + BitVec.ofNat 64 8) 8 := scr.st (d := 8) (by decide)
+  have h2 : InRegions s.wr (B + BitVec.ofNat 64 16) 8 := scr.st (d := 16) (by decide)
+  have h3 : InRegions s.wr (B + BitVec.ofNat 64 24) 8 := scr.st (d := 24) (by decide)
   have h15 := shl_ofNat L 15 (by omega_using [hL])
   have h9 := shl_ofNat L 9 (by omega_using [hL])
   have e32769 : BitVec.ofNat 64 (L * 2 ^ 15) + BitVec.ofNat 64 L = BitVec.ofNat 64 (32769 * L) := by
     rw [add_ofNat]; congr 1; omega
   have e512 : BitVec.ofNat 64 (L * 2 ^ 9) = BitVec.ofNat 64 (512 * L) := by congr 1; omega
   unfold written words initWords
-  xrun [State.ea, BitVec.ofInt_ofNat, hdi, hsi, h15, h9, e32769, e512,
-    hstore 0 (by decide), hstore 1 (by decide), hstore 2 (by decide), hstore 3 (by decide)]
+  have hw : BitVec.setWidth 64 (4096 : BitVec 32) = BitVec.ofNat 64 4096 := by decide
+  xrun [State.ea, BitVec.ofInt_ofNat, hw, hdi, hsi, h15, h9, e32769, e512,
+    h0, h1, h2, h3, off, List.getD_cons_zero, List.getD_cons_succ]
 
 theorem zeros_ok {s : State} {B : Addr} (scr : Scr s B 32) (hdi : s.gpr .rdi = B) :
     WP isa (.block initZeros) s fun t => t.gpr .rax = 0 ∧ t.mem = written s.mem B [0, 0, 0, 0] := by
-  have hstore : ∀ j < 4, InRegions s.wr (B + BitVec.ofNat 64 (8 * j)) 8 :=
-    fun j hj => scr.st (by omega_using [hj])
+  have h0 : InRegions s.wr B 8 := by
+    have h := scr.st (d := 0) (by decide)
+    rwa [off, BitVec.add_zero] at h
+  have h1 : InRegions s.wr (B + BitVec.ofNat 64 8) 8 := scr.st (d := 8) (by decide)
+  have h2 : InRegions s.wr (B + BitVec.ofNat 64 16) 8 := scr.st (d := 16) (by decide)
+  have h3 : InRegions s.wr (B + BitVec.ofNat 64 24) 8 := scr.st (d := 24) (by decide)
   unfold written initZeros
-  xrun [State.ea, BitVec.ofInt_ofNat, hdi,
-    hstore 0 (by decide), hstore 1 (by decide), hstore 2 (by decide), hstore 3 (by decide)]
+  have hw : BitVec.setWidth 64 (0 : BitVec 32) = (0 : BitVec 64) := by decide
+  xrun [State.ea, BitVec.ofInt_ofNat, hw, hdi,
+    h0, h1, h2, h3, off, List.getD_cons_zero, List.getD_cons_succ]
 
 /-! ## The guards -/
 
@@ -86,8 +94,11 @@ theorem eq_guard (s : State) (c : BitVec 32) (n : Nat) (hn : n < 2 ^ 31)
       · exact k.gpr (by simpa only [List.mem_singleton] using hq), k.2⟩⟩
   xrun [hc, eval]
   apply Bool.eq_iff_iff.mpr
-  simp only [beq_iff_eq, decide_eq_true_eq, ← BitVec.toNat_inj,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+  simp only [beq_iff_eq, decide_eq_true_eq, BitVec.sub_eq_iff_eq_add]
+  have hz : (0 : BitVec 64) + BitVec.ofNat 64 n = BitVec.ofNat 64 n := BitVec.zero_add _
+  constructor
+  · intro h; rw [h, hz, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · intro h; rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact (BitVec.zero_add _).symm
 
 /-! ## The whole initialization -/
 
@@ -106,14 +117,15 @@ private theorem words_post {t : State} {B : Addr} {L : Nat} {m : Mem} (scr : Scr
   refine WP.mono (words_ok scr hdi hsi (by omega)) fun u ⟨ha, hu⟩ => ?_
   have hvalid : Spec.Dsa.generationPLenValid L = true := by
     rcases hv with rfl | rfl | rfl <;> rfl
-  simp only [InitPost, hvalid, if_true]
+  simp only [InitPost, hvalid, ↓reduceIte]
   exact ⟨ha, by rw [hu, hm]⟩
 
 theorem init_ok {s : State} {B : Addr} (scr : Scr s B 32) (hdi : s.gpr .rdi = B) :
     WP isa init s (InitPost (s.gpr .rsi).toNat s.mem B) := by
   let L := (s.gpr .rsi).toNat
   change WP isa init s (InitPost L s.mem B)
-  have hsL : s.gpr .rsi = BitVec.ofNat 64 L := (BitVec.ofNat_toNat _).symm.trans (by simp)
+  have hsL : s.gpr .rsi = BitVec.ofNat 64 L := by
+    simp only [L, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   unfold init
   refine WP.seq (WP.mono (eq_guard s 128 128 (by decide) (by decide)) fun u ⟨⟨he, hm⟩, k⟩ => ?_)
   have hdu : u.gpr .rdi = B := (keep_gpr k _).trans hdi
@@ -143,7 +155,7 @@ theorem init_ok {s : State} {B : Addr} (scr : Scr s B 32) (hdi : s.gpr .rdi = B)
   have hvalid : Spec.Dsa.generationPLenValid L = false := by
     simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_false_iff, beq_eq_false_iff_ne]
     exact ⟨⟨h1, h2⟩, h3⟩
-  simp only [InitPost, hvalid, Bool.false_eq_true, if_false]
+  simp only [InitPost, hvalid, Bool.false_eq_true, ↓reduceIte]
   exact ⟨ha, by rw [ht, hmw']⟩
 
 /-! ## The contract -/
@@ -167,30 +179,29 @@ def initContract : Contract isa where
   post := initPost
   pub := initPub
 
+theorem request_zero (L : Nat) : Spec.Dsa.parameterRequest L 0 = 512 * L := by
+  simp only [Spec.Dsa.parameterRequest, Spec.Entropy.request, Spec.Dsa.parameterEntropy]
+  omega
+
 private theorem result_post {s t : State} (h : InitPost (s.gpr .rsi).toNat s.mem (s.gpr .rdi) t) :
     initPost s t := by
   unfold InitPost at h
   unfold initPost Spec.Dsa.parameterInit
   split at h
   · rename_i hv
-    rw [if_pos hv]
+    rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
     refine ⟨by rw [h.1]; rfl, ?_⟩
-    rw [h.2, words, written_words]
-    simp only [List.map_cons, List.map_nil, Spec.Dsa.parameterSeeds, Spec.Dsa.parameterEntropy,
-      Spec.Dsa.parameterRequest, Spec.Entropy.request, Nat.max_def, Nat.zero_le, if_true]
-    congr 3
-    rw [Nat.min_def, if_pos (by omega)]
-    congr 1
-    omega
+    rw [h.2, words, written_words, request_zero]
+    rfl
   · rename_i hv
-    rw [if_neg hv]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩
 
 theorem init_correct (s : State) (h : initPre s) :
     ∃ tr t, Exec isa init s tr t ∧ abiPreserved s t ∧ initPost s t := by
   obtain ⟨_, hwr, hroom, hret⟩ := h
   have scr : Scr s (s.gpr .rdi) 32 := Scr.of_mem (by rw [hwr]; simp) hroom
-  obtain ⟨tr, t, he, hp, k⟩ := WP.keep [.rax] (init_ok scr rfl) (by decide +kernel)
+  obtain ⟨tr, t, he, hp, k⟩ := WP.keep [.rax, .rsi] (init_ok scr rfl) (by decide +kernel)
   have safe : SpSafe init := SpSafe.of_all (Code.all_of_allInstrs (by decide +kernel))
   have hd : init.x86_64Depth = 0 := rfl
   have hf := Exec.stackFrame safe he (by rw [hd]; decide)
