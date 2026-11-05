@@ -89,7 +89,7 @@ def recognize : Prog isa :=
   .seq VettedValidation.tableAddress <|
   .seq (.block VettedValidation.saveTable) <|
   .seq (.frame (.alloc 16) (.seq (.block scanArgs) (VettedValidation.scan VettedGroups.groups 0)) (.free 16))
-    (.block (restoreEdi ++ [.store (sc recOff) .eax]))
+    (.block [.mov .edi (.reg .ebx), .store (sc recOff) .eax])
 
 /-- `eax :=` the bit length of the bound's first nonzero byte, from its mask (not zero). -/
 def maskBits : Prog isa :=

@@ -354,16 +354,14 @@ theorem recognize_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo 
       · rw [fesp, sp₃]
   · -- `edi` back, and the width to the header.
     obtain ⟨sp₄, rd₄, wr₄, Fr₄, ea₄, K₄⟩ := H₄
-    show WP isa (.block [.mov .edi (.mem (argAt 0 wsArg)), .store (sc recOff) .eax]) s₄ _
-    refine wp_movS (arg_in h₃ (k := 0) (i := 16) (by decide) (by rw [sp₄, sp₃]; simp) rd₄
-      (fun r hr => by rw [wr₄]; exact hr) (by rw [sp₃]; exact Fr₄)) fun s₅ U₅ _ => ?_
+    refine wp_movS rfl fun s₅ U₅ _ => ?_
     have K₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₅ := by
       refine ⟨fun r hr => ?_, by rw [U₅.rd, rd₄, K₃.2.1], by rw [U₅.wr, wr₄, K₃.2.2]⟩
       have e : r = .edi ∨ r = .esp := by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         cases r <;> simp_all
       rcases e with rfl | rfl
-      · rw [U₅.gpr]; exact h.edi_eq
+      · rw [U₅.gpr, K₄.1 _ (by decide), M₃.gpr]; exact ebx₂
       · rw [U₅.other _ (by decide), sp₄]
     have Fs₅ : Frame [below (s.gpr .esp) 96] s₃.mem s₅.mem := by rw [U₅.mem]; exact Fr₄
     have F₅ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₅.mem := F₃.trans (stk_frameR Fs₅)
