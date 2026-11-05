@@ -733,6 +733,82 @@ theorem writeBack_vp (o : COut) :
         (fo_of (h.upd up₁ (by simp) sp₁ ⟨by rw [up₁.mem]; exact h.p.1, by rw [up₁.mem]; exact h.p.2.1,
           by rw [up₁.mem]; exact h.p.2.2⟩) up₁.gpr)
 
+theorem dCfg_found (G : GP) (a : Spec.Dsa.Params) (u : Nat) :
+    dCfg G (.found a u) = ((((cFin G (.found a u)).setV fRU (BitVec.ofNat 64 u)).setV fRet (BitVec.ofNat 64 1)).setV
+      fR0 0).setV fR3 0 := by
+  simp [dCfg, cRes, Spec.Entropy.Result.status, Spec.Entropy.Outcome.status,
+    Spec.Dsa.ParameterSearchResult.remaining, VG.Proof.Dsa.Generation.requested, VG.Proof.Entropy.requested]
+
+theorem dCfg_noSeeds (G : GP) (c : Nat) :
+    dCfg G (.noSeeds c) = ((((cFin G (.noSeeds c)).setV fRU (BitVec.ofNat 64 c)).setV fRet (BitVec.ofNat 64 3)).setV
+      fR0 0).setV fR3 0 := by
+  simp [dCfg, cRes, Spec.Entropy.Result.status, Spec.Entropy.Outcome.status,
+    Spec.Dsa.ParameterSearchResult.remaining, VG.Proof.Dsa.Generation.requested, VG.Proof.Entropy.requested]
+
+/-- The exit. -/
+theorem finish_vp {g : Geo} (hL : g.pLen = G.pLen) (hQ : g.qLen = G.qLen) (o : COut) (hok : cOk G o)
+    (h64 : G.witLen < 2 ^ 64) :
+    VP (St G (cFin G o) X) g.finish (fun σ t => FO G o σ t ∧ X σ) := by
+  unfold Geo.finish
+  have hc : ∀ {F : State → State → Prop} {b : Bool}, (∀ σ s, F σ s → isa.eval (.zero .d .r0) s = some b) →
+      ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → isa.eval (.zero .d .r0) s₁ = isa.eval (.zero .d .r0) s₂ :=
+    fun hF _ _ _ _ h₁ h₂ => by rw [hF _ _ h₁, hF _ _ h₂]
+  have no : ∀ {F : State → State → Prop} {c : Prog isa} {Q : State → State → Prop} {b : Bool},
+      VP (fun σ s => (F σ s ∧ isa.eval (.zero .d .r0) s = some b) ∧ isa.eval (.zero .d .r0) s = some (!b)) c Q := by
+    intro F c Q b
+    exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; cases b <;> simp at z
+  cases o with
+  | found a u =>
+    refine VP.seq (G := fun σ s => St G (cFin G (.found a u)) X σ s ∧ isa.eval (.zero .d .r0) s = some true)
+      (cmpF_vp (x := BitVec.ofNat 64 1) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    refine VP.seq (G := St G (dCfg G (.found a u)) X) (VP.ite (hc fun σ s h => h.2)
+      ((zres_vp (u := fUsed) (U := BitVec.ofNat 64 u) (by decide) (by simp [cFin]) (by simp [cFin, upd, fUsed, fStatus])
+        (by decide) (by decide) fun σ s h => h.1.1).mono (fun _ _ h => h) fun σ s h => by
+          rw [dCfg_found]; exact h) no) ?_
+    refine VP.seq (G := fun σ s => St G (dCfg G (.found a u)) X σ s ∧ isa.eval (.zero .d .r0) s = some true)
+      (cmpF_vp (x := BitVec.ofNat 64 1) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin, upd, fStatus, fR3, fR0, fRet, fRU]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    exact VP.seq (VP.ite (hc fun σ s h => h.2)
+      (outCopy_vp (fun σ s h => h.1.1) (by simp [cFin]) hL hQ) no) (writeBack_vp _)
+  | noSeeds c =>
+    refine VP.seq (G := fun σ s => St G (cFin G (.noSeeds c)) X σ s ∧ isa.eval (.zero .d .r0) s = some false)
+      (cmpF_vp (x := BitVec.ofNat 64 3) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    refine VP.seq (G := St G (dCfg G (.noSeeds c)) X) (VP.ite (hc fun σ s h => h.2) no ?_) ?_
+    · refine VP.seq (G := fun σ s => St G (cFin G (.noSeeds c)) X σ s ∧ isa.eval (.zero .d .r0) s = some false)
+        (cmpF_vp (x := BitVec.ofNat 64 3) (fun σ s h => h.1.1.1) (by decide) (by decide) (by decide)
+          (fun σ s h => (h.1.1.1.gi.slotV (by simp [cFin])).trans (by simp [cFin]))
+          fun σ s t ⟨⟨⟨_, x⟩, _⟩, _⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+      exact VP.ite (hc fun σ s h => h.2) no
+        ((zres_vp (u := fC) (U := BitVec.ofNat 64 c) (by decide) (by simp [cFin]) (by simp [cFin, upd, fC, fStatus])
+          (by decide) (by decide) fun σ s h => h.1.1).mono (fun _ _ h => h) fun σ s h => by
+            rw [dCfg_noSeeds]; exact h)
+    refine VP.seq (G := fun σ s => St G (dCfg G (.noSeeds c)) X σ s ∧ isa.eval (.zero .d .r0) s = some false)
+      (cmpF_vp (x := BitVec.ofNat 64 3) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin, upd, fStatus, fR3, fR0, fRet, fRU]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    exact VP.seq (VP.ite (hc fun σ s h => h.2) no (outZero_vp (fun σ s h => h.1.1) hL hQ)) (writeBack_vp _)
+  | ranOut j c =>
+    refine VP.seq (G := fun σ s => St G (cFin G (.ranOut j c)) X σ s ∧ isa.eval (.zero .d .r0) s = some false)
+      (cmpF_vp (x := BitVec.ofNat 64 2) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    refine VP.seq (G := St G (dCfg G (.ranOut j c)) X) (VP.ite (hc fun σ s h => h.2) no ?_) ?_
+    · refine VP.seq (G := fun σ s => St G (cFin G (.ranOut j c)) X σ s ∧ isa.eval (.zero .d .r0) s = some true)
+        (cmpF_vp (x := BitVec.ofNat 64 2) (fun σ s h => h.1.1.1) (by decide) (by decide) (by decide)
+          (fun σ s h => (h.1.1.1.gi.slotV (by simp [cFin])).trans (by simp [cFin]))
+          fun σ s t ⟨⟨⟨_, x⟩, _⟩, _⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+      exact VP.ite (hc fun σ s h => h.2) ((ranOut_vp hL hok.1 h64).mono (fun σ s h => h.1.1) fun _ _ h => h) no
+    refine VP.seq (G := fun σ s => St G (dCfg G (.ranOut j c)) X σ s ∧ isa.eval (.zero .d .r0) s = some false)
+      (cmpF_vp (x := BitVec.ofNat 64 2) (fun σ s h => h.1) (by decide) (by decide) (by decide)
+        (fun σ s h => (h.1.gi.slotV (by simp [cFin])).trans (by simp [cFin, upd, fStatus, fR3, fR0, fRet, fRU]))
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩) ?_
+    exact VP.seq (VP.ite (hc fun σ s h => h.2) no (outZero_vp (fun σ s h => h.1.1) hL hQ)) (writeBack_vp _)
+
 end
 
 end VG.Proof.Dsa.PPC64LE.Gen
