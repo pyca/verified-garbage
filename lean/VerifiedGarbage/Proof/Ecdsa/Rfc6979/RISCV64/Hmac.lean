@@ -481,32 +481,42 @@ theorem updArgs_ok {s t : State} {pre : List Byte} {cnt : Len} {p : Part} (h : H
   · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ q1, u₁.other _ q0, hq]; rfl
   · exact u₄.gpr
 
-/-- The streaming `update`, through the table, with the part `p`. -/
-theorem updc_ok {s t : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t) (hpo : PartOk P p)
-    (hsy : t.syms = s₀.syms) :
-    WP isa (tcall 1 P.c.f.upd) t (HU P s₀ s (pre ++ bytesAt s.mem (pA s₀ p) (plen P p))) := by
-  refine tcall_ok hp h.1.1.kr hsy (j := 1) (by decide) hp.tok.u (by rw [Nat.mul_one]; exact hp.tmem.2.1)
-    fun t₀ u₀ _ => ?_
+omit hp in
+/-- `HUA` across the load of a table's word. -/
+theorem HUA.upd {s t t₀ : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t) {v : BitVec 64}
+    (u : Upd t t₀ .t1 v) : HUA P s₀ s pre p t₀ := by
   obtain ⟨⟨hS₀, hi, ho⟩, h0, h1, h2, h3⟩ := h
-  have hS := hS₀.upd (by decide) u₀
-  rw [← u₀.mem] at hi ho
-  rw [← u₀.other _ (by decide)] at h0 h1 h2 h3
+  exact ⟨⟨hS₀.upd (by decide) u, by rw [u.mem]; exact hi, by rw [u.mem]; exact ho⟩,
+    by rw [u.other _ (by decide)]; exact h0, by rw [u.other _ (by decide)]; exact h1,
+    by rw [u.other _ (by decide)]; exact h2, by rw [u.other _ (by decide)]; exact h3⟩
+
+/-- What `update` needs, after its arguments. -/
+theorem upd_args {s t₀ : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t₀) (hpo : PartOk P p) :
+    UpdArgs P t₀ (cA s₀ sIn) (pA s₀ p) (plen P p) := by
+  obtain ⟨⟨hS, -, -⟩, h0, -, h2, h3⟩ := h
   have hz := sizes P
   have hX := hz.X
-  have ha : UpdArgs P t₀ (cA s₀ sIn) (pA s₀ p) (plen P p) := by
-    refine ⟨h0, h2, by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hpo.len; omega)],
-      part_st hp hpo ((st_in (P := P))), by rw [hS.kr.sp]; exact hp.al,
-      by rw [hS.kr.sp]; have := hp.spX; omega, below_st hp hS.kr hX.2.2.1 ((st_in (P := P))),
-      below_part hp hS.kr hX.2.2.1 hpo, ?_, ?_⟩
-    · refine VG.Covers.of_sub fun r hr => ?_
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact cov_part hp hS.kr hpo
-      · exact cov_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
-    · refine VG.Covers.of_sub fun r hr => ?_
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl
-      exact covW_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
+  refine ⟨h0, h2, by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hpo.len; omega)],
+    part_st hp hpo ((st_in (P := P))), by rw [hS.kr.sp]; exact hp.al,
+    by rw [hS.kr.sp]; have := hp.spX; omega, below_st hp hS.kr hX.2.2.1 ((st_in (P := P))),
+    below_part hp hS.kr hX.2.2.1 hpo, ?_, ?_⟩
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact cov_part hp hS.kr hpo
+    · exact cov_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl
+    exact covW_scr hp hS.kr (by have := hz.S192; simp only [sIn]; omega)
+
+/-- The call of the streaming `update`, after its arguments. -/
+theorem updcall_ok {s t₀ : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t₀) (hpo : PartOk P p) :
+    WP isa (.call P.H.updN P.H.updC) t₀ (HU P s₀ s (pre ++ bytesAt s.mem (pA s₀ p) (plen P p))) := by
+  have ha := upd_args hp h hpo
+  obtain ⟨⟨hS, hi, ho⟩, h0, h1, h2, h3⟩ := h
+  have hz := sizes P
+  have hX := hz.X
   refine upd_call ha fun t' a hu => ?_
   have St' : St P s₀ s t' := hS.call hp a.rd a.wr a.sp a.cs a.frame fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -522,6 +532,13 @@ theorem updc_ok {s t : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre
   rcases hr with rfl | rfl
   · exact (in_out hp).symm
   · exact (below_st hp hS.kr hX.2.2.1 ((st_out (P := P)))).symm
+
+/-- The streaming `update`, through the table, with the part `p`. -/
+theorem updc_ok {s t : State} {pre : List Byte} {p : Part} (h : HUA P s₀ s pre p t) (hpo : PartOk P p)
+    (hsy : t.syms = s₀.syms) :
+    WP isa (tcall 1 P.c.f.upd) t (HU P s₀ s (pre ++ bytesAt s.mem (pA s₀ p) (plen P p))) :=
+  tcall_ok hp h.1.1.kr hsy (j := 1) (by decide) hp.tok.u (by rw [Nat.mul_one]; exact hp.tmem.2.1)
+    fun _ u _ => updcall_ok hp (h.upd u) hpo
 
 /-- The parts absorbed, one `update` each. -/
 theorem upds_ok {s : State} : ∀ (ps : List Part) {t : State} {pre : List Byte} {cnt : Len}, HU P s₀ s pre t →
