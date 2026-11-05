@@ -239,7 +239,7 @@ theorem kvw_h (hL : L.Ok) : ∀ r ∈ KVW L, ∀ {d n : Nat}, 328 ≤ d → d + 
 
 /-- `V = 0x01…` and `K = 0x00…`. -/
 theorem stageB_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) (hq : QA P L m₀ u) :
-    WP isa (.block Cfg.initKV) u fun u' => Ctx L g lr m₀ u' ∧ QB P L m₀ u' := by
+    WP isa Cfg.initKV u fun u' => Ctx L g lr m₀ u' ∧ QB P L m₀ u' := by
   have hs := P.sizes
   have := hL.nB
   have kv : ∀ r ∈ [(⟨L.B + BitVec.ofNat 64 128, 128⟩ : Region)], ∀ {d n : Nat}, 256 ≤ d → d + n ≤ 736 →
@@ -276,7 +276,7 @@ theorem stageE_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) (hb : QD P L 
 
 theorem stageG_ok (hL : L.Ok) (hq : HOk P L) {u : State} (hc : Ctx L g lr m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
-    WP isa (.block Cfg.wipe) u fun u' => Ctx L g lr m₀ u' ∧ Exit P L m₀ i u' :=
+    WP isa Cfg.wipe u fun u' => Ctx L g lr m₀ u' ∧ Exit P L m₀ i u' :=
   WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, K₇, hf₇⟩ => ⟨hc₇, hx.lt, hx.fails, hx.last,
     hx.res.keep (by rw [K₇.gpr _ (by decide)]) (out_keep (P := P) hL hq.1 hf₇ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -286,9 +286,9 @@ theorem stageG_ok (hL : L.Ok) (hq : HOk P L) {u : State} (hc : Ctx L g lr m₀ u
 
 /-- The body after the arguments are saved. -/
 theorem rest_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.seq (cfgOf P).prepX (.seq (cfgOf P).prepH (.seq (.block Cfg.initKV) (.seq ((cfgOf P).rekeyFull 0)
+    WP isa (.seq (cfgOf P).prepX (.seq (cfgOf P).prepH (.seq Cfg.initKV (.seq ((cfgOf P).rekeyFull 0)
       (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
-      (.seq (.loop (cfgOf P).tryOne (.nonzero .d .r12)) (.block Cfg.wipe)))))))) t
+      (.seq (.loop (cfgOf P).tryOne (.nonzero .d .r12)) Cfg.wipe))))))) t
       fun t' => Ctx L g lr m₀ t' ∧ ∃ i, Exit P L m₀ i t' :=
   WP.seq (WP.mono (stageX_ok hL hq hc) fun _ ⟨h₀, q₀⟩ =>
     WP.seq (WP.mono (stageH_ok hL hq h₀ q₀) fun _ ⟨h₁, q₁⟩ =>

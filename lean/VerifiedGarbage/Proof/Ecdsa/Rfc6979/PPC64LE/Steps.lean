@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -34,6 +36,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.Rfc6979.PPC64LE
 open VG.Proof.Mont.PPC64LE (Kp)
+open VG.Impl.RsaOaep.PPC64LE (copyLoop)
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {lr : Addr} {m₀ : Mem}
 
@@ -93,22 +96,47 @@ theorem states_moved {m m' : Mem} {src dst : Nat} {k0 : List Byte} (hk : k0.leng
   rw [Offset.add_add, Offset.add_add, ← Nat.add_assoc, ← Nat.add_assoc] at h
   rw [Offset.add_add, Offset.add_add]; exact h
 
+/-- The copy's arguments: from `scratch + src` to `scratch + dst`, 384 bytes. -/
+theorem copyArgs_ok (hL : L.Ok) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15) {t : State}
+    (hc : Ctx L g lr m₀ t) :
+    WP isa (.block (Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384])) t fun u =>
+      Ctx L g lr m₀ u ∧ u.mem = t.mem ∧ u.gpr .r4 = L.scr + BitVec.ofNat 64 src ∧
+        u.gpr .r5 = L.scr + BitVec.ofNat 64 dst ∧ u.gpr .r6 = BitVec.ofNat 64 384 :=
+  WP.of_syms (scrBase_ok hc fun u₁ k₁ m₁ _ s₁ =>
+    stepAddi (by decide) hs fun u₂ k₂ m₂ v₂ => stepAddi (by decide) hd fun u₃ k₃ m₃ v₃ =>
+      stepLi (by decide) fun u₄ k₄ m₄ v₄ => wp_nil fun hsy => by
+        have K : Kp [.r11, .r12, .r4, .r5, .r6] t u₄ := ((k₁.mono.trans k₂.mono).trans k₃.mono).trans k₄.mono
+        have hm : u₄.mem = t.mem := by rw [m₄, m₃, m₂, m₁]
+        exact ⟨hc.kp hL K hm hsy, hm, by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), v₂, s₁],
+          by rw [k₄.gpr _ (by decide), v₃, k₂.gpr _ (by decide), s₁], by rw [v₄]⟩)
+
+/-- The copy of `scratch + src` to `scratch + dst`, 384 bytes, by the byte loop. -/
+theorem copy384_ok (hL : L.Ok) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15)
+    (hsd : src + 384 ≤ dst ∨ dst + 384 ≤ src) (hse : src + 384 ≤ 8192) (hde : dst + 384 ≤ 8192) {t : State}
+    (hc : Ctx L g lr m₀ t) :
+    WP isa (.seq (.block (Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384])) copyLoop) t
+      fun u => Ctx L g lr m₀ u ∧ Frame [⟨L.scr + BitVec.ofNat 64 dst, 8 * 48⟩] t.mem u.mem ∧
+        Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 dst) (8 * 48) =
+          Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 src) (8 * 48) := by
+  have hnc := hL.nc
+  refine WP.seq (WP.mono (copyArgs_ok hL hs hd hc) fun u ⟨hu, hm, h4, h5, h6⟩ => ?_)
+  refine WP.mono (cp_ok hL hu (n := 384) (by decide) (by decide) h4 h5 h6
+    (fun i hi => by rw [Offset.add_add]; exact hu.inScrW (by omega))
+    (safe_scr L (by omega))
+    (fun i hi => by rw [Offset.add_add]; exact hu.inScr (by omega))
+    (Offset.disjoint _ hsd (by omega) (by omega))
+    (by rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega)]; omega)) fun u' ⟨hc', _, hf, hb⟩ => ?_
+  rw [hm] at hf hb
+  exact ⟨hc', hf, hb⟩
+
 /-- After `init`: the states copied to `scratch + 3072`, and `St` kept. -/
 theorem save_ok (hL : L.Ok) {k0 : List Byte} {u : State} (hu : St P L g lr m₀ k0 [] u) :
-    WP isa (.block Cfg.save) u fun u' => St P L g lr m₀ k0 [] u' ∧ SavedB P L u'.mem k0 ∧
+    WP isa Cfg.save u fun u' => St P L g lr m₀ k0 [] u' ∧ SavedB P L u'.mem k0 ∧
       Frame [SaveR L] u.mem u'.mem := by
   have hle := n_le P
-  have hc := hu.ctx
-  have hnc := hL.nc
-  refine WP.of_syms (scrBase_ok hc fun u₁ k₁ m₁ b₁ s₁ => ?_)
-  rw [show Cfg.copyStates true = (List.range 48).flatMap (Cfg.cpd .r12 sInner .r12 sSave) from rfl]
-  refine WP.mono (copyD_ok (S := L.scr) (D := L.scr) (so := 0) (d := 3072) (K := 48) (by decide) (by decide)
-    (by decide) (by decide) (Offset.disjoint _ (by decide) (by decide) (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) 48 (Nat.le_refl _) u₁ s₁ s₁
-    (fun j hj => by rw [k₁.rd, k₁.wr]; exact hc.inScr (by omega))
-    (fun j hj => by rw [k₁.wr]; exact hc.inScrW (by omega))) fun u' ⟨k', hf', hb'⟩ hsy => ?_
-  rw [m₁] at hf' hb'
-  have K : Kp [.r9, .r11, .r12] u u' := k₁.mono.trans k'.mono
+  show WP isa (.seq (.block (Cfg.scrBase ++ [.addi .r4 .r12 0, .addi .r5 .r12 3072, .li .r6 384])) copyLoop) _ _
+  refine WP.mono (copy384_ok (src := 0) (dst := 3072) hL (by decide) (by decide) (by decide) (by decide)
+    (by decide) hu.ctx) fun u' ⟨hc', hf', hb'⟩ => ?_
   have hst : ∀ o, o + 192 ≤ 384 → ∀ i < P.v.H.N,
       u'.mem (L.scr + BitVec.ofNat 64 o + BitVec.ofNat 64 i) = u.mem (L.scr + BitVec.ofNat 64 o + BitVec.ofNat 64 i) :=
     fun o ho i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 o, 192⟩) hf'
@@ -119,33 +147,20 @@ theorem save_ok (hL : L.Ok) {k0 : List Byte} {u : State} (hu : St P L g lr m₀ 
   have hin := hu.inner
   rw [List.append_nil] at hin
   have hmv := states_moved (L := L) (m := u.mem) (m' := u'.mem) (src := 0) (dst := 3072) hu.klen hb' hin hu.outer
-  refine ⟨⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
-        intro h; simp at h; rcases h with rfl | rfl | rfl <;> simp [preserved] at hr)) hf'
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by decide)) hsy,
-    hu.klen, hu.tlen, ?_, ?_⟩, hmv, hf'⟩
+  refine ⟨⟨hc', hu.klen, hu.tlen, ?_, ?_⟩, hmv, hf'⟩
   · rw [List.append_nil]; exact P.v.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 0 (by decide) i hi) hin
   · exact P.v.ok.reloc _ _ _ _ _ (pad_mod hu.klen _) (fun i hi => hst 192 (by decide) i hi) hu.outer
 
 /-- The copy back: HMAC's states for the block key `k0`, and the copy kept. -/
 theorem restore_ok (hL : L.Ok) {k0 : List Byte} {t : State} (hc : Ctx L g lr m₀ t) (hS : SavedB P L t.mem k0)
     (hk : k0.length = P.v.H.B) :
-    WP isa (.block Cfg.restore) t fun u => St P L g lr m₀ k0 [] u ∧
+    WP isa Cfg.restore t fun u => St P L g lr m₀ k0 [] u ∧
       Frame [⟨L.scr + BitVec.ofNat 64 0, 8 * 48⟩] t.mem u.mem ∧ SavedB P L u.mem k0 := by
-  have hnc := hL.nc
-  refine WP.of_syms (scrBase_ok hc fun u₁ k₁ m₁ b₁ s₁ => ?_)
-  rw [show Cfg.copyStates false = (List.range 48).flatMap (Cfg.cpd .r12 sSave .r12 sInner) from rfl]
-  refine WP.mono (copyD_ok (S := L.scr) (D := L.scr) (so := 3072) (d := 0) (K := 48) (by decide) (by decide)
-    (by decide) (by decide) (Offset.disjoint _ (by decide) (by decide) (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) 48 (Nat.le_refl _) u₁ s₁ s₁
-    (fun j hj => by rw [k₁.rd, k₁.wr]; exact hc.inScr (by omega))
-    (fun j hj => by rw [k₁.wr]; exact hc.inScrW (by omega))) fun u ⟨k', hf, hb⟩ hsy => ?_
-  rw [m₁] at hf hb
-  have K : Kp [.r9, .r11, .r12] t u := k₁.mono.trans k'.mono
+  show WP isa (.seq (.block (Cfg.scrBase ++ [.addi .r4 .r12 3072, .addi .r5 .r12 0, .li .r6 384])) copyLoop) _ _
+  refine WP.mono (copy384_ok (src := 3072) (dst := 0) hL (by decide) (by decide) (by decide) (by decide)
+    (by decide) hc) fun u ⟨hc', hf, hb⟩ => ?_
   have hmv := states_moved (L := L) (m := t.mem) (m' := u.mem) (src := 3072) (dst := 0) hk hb hS.1 hS.2
-  refine ⟨⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
-        intro h; simp at h; rcases h with rfl | rfl | rfl <;> simp [preserved] at hr)) hf
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by decide)) hsy,
-    hk, by simp, by rw [List.append_nil]; exact hmv.1, hmv.2⟩, hf, hS.frame hk hf fun r hr => by
+  refine ⟨⟨hc', hk, by simp, by rw [List.append_nil]; exact hmv.1, hmv.2⟩, hf, hS.frame hk hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint _ (by decide) (by decide) (by decide)⟩
 

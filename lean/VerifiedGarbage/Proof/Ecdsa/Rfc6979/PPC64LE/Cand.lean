@@ -3,6 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Steps
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

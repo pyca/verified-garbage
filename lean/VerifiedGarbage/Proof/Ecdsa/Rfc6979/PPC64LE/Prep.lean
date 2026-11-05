@@ -4,6 +4,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Wide
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Loops
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -144,32 +145,6 @@ theorem minDQ_ok {t : State} (h11 : t.gpr .r11 = L.B + BitVec.ofNat 64 96)
     rw [v₄, v₃, c₃, e6, e9, hD, hQ, BitVec.toNat_ofNat]
   rw [v₇, a9, a12, a10]
   exact sel_min (by omega) (by omega)
-
-/-! ## A byte loop -/
-
-/-- `n` bytes from `q` (`r4`) to `p` (`r5`), `n` in `r6`, by `copyLoop`:
-`Ctx` kept, for a destination the code may write apart from the source. -/
-theorem cp_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {p q : Addr} {n : Nat} (hn : 0 < n)
-    (hn' : n < 2 ^ 63) (h4 : u.gpr .r4 = q) (h5 : u.gpr .r5 = p) (h6 : u.gpr .r6 = BitVec.ofNat 64 n)
-    (hw : ∀ i < n, InRegions u.wr (p + BitVec.ofNat 64 i) 1) (hs : Safe L ⟨p, n⟩)
-    (hsrc : ∀ i < n, InRegions (u.rd ++ u.wr) (q + BitVec.ofNat 64 i) 1)
-    (hsep : Region.Disjoint ⟨q, n⟩ ⟨p, n⟩) (hpn : p.toNat + n ≤ 2 ^ 64) :
-    WP isa copyLoop u fun u' => Ctx L g lr m₀ u' ∧ Kp [.r4, .r5, .r6, .r7] u u' ∧
-      Frame [⟨p, n⟩] u.mem u'.mem ∧ Spec.Sha256.bytesAt u'.mem p n = Spec.Sha256.bytesAt u.mem q n := by
-  refine WP.mono_syms (Proof.RsaOaep.PPC64LE.copy_ok hn (by omega) h4 h5 h6 hsrc hw
-    (fun j hj i hi he => hsep (q + BitVec.ofNat 64 j) (Offset.contains_base _ (by omega) (by omega))
-      (he ▸ Offset.contains_base _ (by omega) (by omega)))) fun u' ⟨hk, hm⟩ hsy => ?_
-  have K : Kp [.r4, .r5, .r6, .r7] u u' := ⟨fun r hr => hk.gpr r (by simp_all), hk.rd, hk.wr, hk.sp, hk.lr⟩
-  have hlen : (Spec.Rsa.bytesAt u.mem q n).length = n := Proof.RsaPkcs1Sig.bytesAt_length _ _ _
-  have hf : Frame [⟨p, n⟩] u.mem u'.mem := by
-    rw [hm]; exact WriteBytes.writeBytes_frame _ _ _ (by rw [hlen]; exact Region.contains_self _ _)
-  refine ⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
-      intro h; simp at h; rcases h with rfl | rfl | rfl | rfl <;> simp [preserved] at hr)) hf
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs) hsy, K, hf, ?_⟩
-  rw [hm]
-  have := Proof.Hmac.Common.bytesAt_writeBytes_self u.mem p (Spec.Rsa.bytesAt u.mem q n) (by omega)
-  rw [hlen] at this
-  exact this
 
 /-! ## `X` -/
 

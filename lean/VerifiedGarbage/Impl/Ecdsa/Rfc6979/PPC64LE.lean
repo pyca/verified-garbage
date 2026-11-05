@@ -91,7 +91,7 @@ namespace VG.Impl.Ecdsa.Rfc6979.PPC64LE
 
 open VG.PPC64LE
 open VG.Impl.Mont.PPC64LE (movImm mask32)
-open VG.Impl.RsaOaep.PPC64LE (Fns copyLoop)
+open VG.Impl.RsaOaep.PPC64LE (Fns copyLoop zeroLoop)
 
 /-! Where things are in the frame. -/
 def fK : Nat := 32
@@ -207,32 +207,30 @@ def updM (len : Nat) : Prog isa := .seq (.block (updMArgs len)) (tcall 1 c.f.upd
 /-- The MAC, of `D + len` bytes of text, to the frame at `dst`. -/
 def fin (len dst : Nat) : Prog isa := .seq (.block (finArgs len dst)) (tcall 2 c.f.fin)
 
-/-- Doubleword `j` from `so(src)` to `d(dst)`, through `r9`. -/
-def cpd (src : Reg) (so : Nat) (dst : Reg) (d j : Nat) : List Instr :=
-  [.load .d .r9 src (so + 8 * j), .store .d .r9 dst (d + 8 * j)]
+/-- The arguments of the copy of HMAC's two states (384 bytes) from
+`scratch + sInner` to `scratch + sSave` (`toSave`) or back, with `scratch`
+loaded into `r12`: the source in `r4`, the destination in `r5`, the length
+in `r6`. -/
+def copyArgs (toSave : Bool) : List Instr :=
+  scrBase ++ (if toSave then [.addi .r4 .r12 sInner, .addi .r5 .r12 sSave]
+    else [.addi .r4 .r12 sSave, .addi .r5 .r12 sInner]) ++ [.li .r6 384]
 
-/-- HMAC's two states (384 bytes) copied from `scratch + sInner` to `scratch + sSave`
-(`toSave`) or back, with `scratch` in `r12`, through `r9`. -/
-def copyStates (toSave : Bool) : List Instr :=
-  if toSave then (List.range 48).flatMap (cpd .r12 sInner .r12 sSave)
-  else (List.range 48).flatMap (cpd .r12 sSave .r12 sInner)
+/-- The states for `K` saved, a byte at a time. -/
+def save : Prog isa := .seq (.block (copyArgs true)) copyLoop
 
-/-- The states for `K` saved. -/
-def save : List Instr := scrBase ++ copyStates true
-
-/-- The states for `K` restored from the copy. -/
-def restore : List Instr := scrBase ++ copyStates false
+/-- The states for `K` restored from the copy, a byte at a time. -/
+def restore : Prog isa := .seq (.block (copyArgs false)) copyLoop
 
 /-- `V = HMAC_K(V)`, saving the states for `K`. -/
-def hmacVS : Prog isa := .seq c.initK (.seq (.block save) (.seq c.updV (c.fin 0 fV)))
+def hmacVS : Prog isa := .seq c.initK (.seq save (.seq c.updV (c.fin 0 fV)))
 
 /-- `V = HMAC_K(V)`, from the saved states for `K`. -/
-def hmacVR : Prog isa := .seq (.block restore) (.seq c.updV (c.fin 0 fV))
+def hmacVR : Prog isa := .seq restore (.seq c.updV (c.fin 0 fV))
 
 /-- `K = HMAC_K(V ‖ msg)`, for the message's `len` bytes, from the states
 for `K` by `init` (`fresh`) or restored. -/
 def hmacK (fresh : Bool) (len : Nat) : Prog isa :=
-  .seq (if fresh then c.initK else .block restore) (.seq c.updV (.seq (c.updM len) (c.fin len fK)))
+  .seq (if fresh then c.initK else restore) (.seq c.updV (.seq (c.updM len) (c.fin len fK)))
 
 /-- The pointers the messages need: the frame in `r11`, `scratch` in `r9`,
 `d` in `r10`. -/
@@ -350,10 +348,15 @@ def prepC : Prog isa := .seq (.block c.xcArgs) (.seq copyLoop (.block (c.conv fX
 /-- `h`: `reduce`, or, if `big`, `X` itself, with `core`'s digest. -/
 def prepH : Prog isa := if c.big then c.prepC else .block c.reduce
 
+/-- The arguments of a byte loop's fill: the frame's `n` bytes at `o`, of
+the byte `b`. -/
+def fillArgs (o n b : Nat) : List Instr := [.addSp .r4 o, .li .r5 n, .li .r6 b]
+
+/-- The frame's `n` bytes at `o` set to `b`, a byte at a time. -/
+def fill (o n b : Nat) : Prog isa := .seq (.block (fillArgs o n b)) zeroLoop
+
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
-def initKV : List Instr :=
-  ([.addSp .r11 0, .lis .r9 0x0101, .ori .r9 .r9 0x0101, .li .r10 0] : List Instr) ++
-    (List.range 16).flatMap fun j => [.store .w .r9 .r11 (fV + 4 * j), .store .w .r10 .r11 (fK + 4 * j)]
+def initKV : Prog isa := .seq (fill fV 64 1) (fill fK 64 0)
 
 /-- The candidates left. -/
 def initCnt : List Instr := [.li .r9 c.tries, .addSp .r11 0, .store .d .r9 .r11 fCnt]
@@ -413,11 +416,9 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite (.nonzero .d .r12) (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- `K` and `V`, and everything above the table's address, cleared (`r3`,
-the result, kept). -/
-def wipe : List Instr :=
-  ([.addSp .r11 0, .li .r12 0] : List Instr) ++ (List.range 16).map (fun j => .store .d .r12 .r11 (fK + 8 * j)) ++
-    (List.range 45).map fun j => .store .d .r12 .r11 (fH + 8 * j)
+/-- `K` and `V`, and everything above the table's address, cleared, a byte
+at a time (`r3`, the result, kept). -/
+def wipe : Prog isa := .seq (fill fK 128 0) (fill fH 360 0)
 
 /-- `out`, `d`, `digest`, `scratch` and the table into the frame, and `D`
 and `B`, the table's words of data 4 and 5. -/
@@ -431,12 +432,12 @@ def body : Prog isa :=
   .seq (.block saveArgs)
   (.seq c.prepX
   (.seq c.prepH
-  (.seq (.block initKV)
+  (.seq initKV
   (.seq (c.rekeyFull 0)
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne (.nonzero .d .r12))
-    (.block wipe))))))))
+    wipe)))))))
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def sign : Prog isa :=

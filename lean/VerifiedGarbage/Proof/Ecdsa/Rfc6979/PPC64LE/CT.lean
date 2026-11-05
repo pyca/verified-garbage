@@ -630,16 +630,51 @@ theorem scrBase_two {L : Lay P.I.hashLen} {t : State} (hc : Ctx L g lr m₀ t) :
   exact scrBase_ok hc fun t' k _ _ h12 => wp_nil ⟨k.sp, fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h12⟩
 
-theorem copyStates_taint (b : Bool) : TaintOk [.r12] (Cfg.copyStates b) := by
+theorem copyLoop_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r5, .r6]) Impl.RsaOaep.PPC64LE.copyLoop hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- A byte copy's registers. -/
+abbrev CpA (P : RfcHash) (p q : Lay P.I.hashLen → Addr) (n : Nat) : Pred P := fun L _ _ _ u =>
+  u.gpr .r4 = q L ∧ u.gpr .r5 = p L ∧ u.gpr .r6 = BitVec.ofNat 64 n
+
+/-- The value of each register of a copy. -/
+def cpF (p q : Lay P.I.hashLen → Addr) (n : Nat) (L : Lay P.I.hashLen) : Reg → BitVec 64
+  | .r4 => q L
+  | .r5 => p L
+  | _ => BitVec.ofNat 64 n
+
+/-- The byte loop, from registers that agree. -/
+theorem cp_ct {Φ : Pred P} {p q : Lay P.I.hashLen → Addr} {n : Nat}
+    (h : ∀ L g lr m₀ u, Φ L g lr m₀ u → CpA P p q n L g lr m₀ u) :
+    RelCT isa (Two P Φ) Impl.RsaOaep.PPC64LE.copyLoop fun _ _ => True :=
+  two_prog [.r4, .r5, .r6] (cpF p q n) (fun _ _ _ _ _ hf r hr => by
+    obtain ⟨a, b, c⟩ := h _ _ _ _ _ hf
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact a
+    · exact b
+    · exact c) copyLoop_taint
+
+theorem copyArgs_taint (b : Bool) : TaintOk [] (Cfg.copyArgs b) := by
   cases b
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
 
-theorem save_ct {Φ : Pred P} : RelCT isa (Two P Φ) (.block Cfg.save) fun _ _ => True :=
-  two_split [.r12] (fun L _ => L.scr) scrBase_taint (fun _ _ _ _ _ _ hc => scrBase_two hc) (copyStates_taint true)
+/-- The copy of HMAC's states from `scratch + src` to `scratch + dst`. -/
+theorem copy_ct {Φ : Pred P} (b : Bool) {src dst : Nat} (hs : src < 2 ^ 15) (hd : dst < 2 ^ 15)
+    (he : Cfg.copyArgs b = Cfg.scrBase ++ [.addi .r4 .r12 src, .addi .r5 .r12 dst, .li .r6 384]) :
+    RelCT isa (Two P Φ) (.seq (.block (Cfg.copyArgs b)) Impl.RsaOaep.PPC64LE.copyLoop) fun _ _ => True :=
+  (two_wp (Ψ := CpA P (fun L => L.scr + BitVec.ofNat 64 dst) (fun L => L.scr + BitVec.ofNat 64 src) 384)
+      (two_blk (copyArgs_taint b)) fun _ _ _ _ _ hL _ hc _ => by
+    rw [he]; exact WP.mono (copyArgs_ok hL hs hd hc) fun _ ⟨c, _, h4, h5, h6⟩ => ⟨c, h4, h5, h6⟩).seq
+    (cp_ct fun _ _ _ _ _ h => h)
 
-theorem restore_ct {Φ : Pred P} : RelCT isa (Two P Φ) (.block Cfg.restore) fun _ _ => True :=
-  two_split [.r12] (fun L _ => L.scr) scrBase_taint (fun _ _ _ _ _ _ hc => scrBase_two hc) (copyStates_taint false)
+theorem save_ct {Φ : Pred P} : RelCT isa (Two P Φ) Cfg.save fun _ _ => True :=
+  copy_ct true (src := 0) (dst := 3072) (by decide) (by decide) rfl
+
+theorem restore_ct {Φ : Pred P} : RelCT isa (Two P Φ) Cfg.restore fun _ _ => True :=
+  copy_ct false (src := 3072) (dst := 0) (by decide) (by decide) rfl
 
 /-! ## HMAC -/
 
@@ -766,32 +801,6 @@ theorem rekey_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ =>
     (fun _ _ => Two.mono fun _ _ _ _ _ _ h => absurd h (by decide)) fun _ _ h => h
 
 /-! ## The byte loops and the conversions -/
-
-theorem copyLoop_taint :
-    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r5, .r6]) Impl.RsaOaep.PPC64LE.copyLoop hc).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-/-- A byte copy's registers. -/
-abbrev CpA (P : RfcHash) (p q : Lay P.I.hashLen → Addr) (n : Nat) : Pred P := fun L _ _ _ u =>
-  u.gpr .r4 = q L ∧ u.gpr .r5 = p L ∧ u.gpr .r6 = BitVec.ofNat 64 n
-
-/-- The value of each register of a copy. -/
-def cpF (p q : Lay P.I.hashLen → Addr) (n : Nat) (L : Lay P.I.hashLen) : Reg → BitVec 64
-  | .r4 => q L
-  | .r5 => p L
-  | _ => BitVec.ofNat 64 n
-
-/-- The byte loop, from registers that agree. -/
-theorem cp_ct {Φ : Pred P} {p q : Lay P.I.hashLen → Addr} {n : Nat}
-    (h : ∀ L g lr m₀ u, Φ L g lr m₀ u → CpA P p q n L g lr m₀ u) :
-    RelCT isa (Two P Φ) Impl.RsaOaep.PPC64LE.copyLoop fun _ _ => True :=
-  two_prog [.r4, .r5, .r6] (cpF p q n) (fun _ _ _ _ _ hf r hr => by
-    obtain ⟨a, b, c⟩ := h _ _ _ _ _ hf
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact a
-    · exact b
-    · exact c) copyLoop_taint
 
 /-- `scratch` in `r3`. -/
 def ScrIn (P : RfcHash) : Pred P := fun L _ _ _ u => u.gpr .r3 = L.scr
@@ -1068,10 +1077,15 @@ theorem loop_ct (B : RfcT (cfgP P)) :
 
 /-! ## Steps a–g and the loop -/
 
-theorem initKV_taint : TaintOk [] Cfg.initKV := ⟨_, by taint_decide⟩
+theorem initKV_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) Cfg.initKV hc).isSome = true :=
+  ⟨_, by taint_decide⟩
 theorem initCnt_taint (c : Cfg) : TaintOk [] c.initCnt :=
   taintOk_erase (is₀ := (cfgC 0 0 false 0 0).initCnt) ⟨_, by taint_decide⟩ rfl
-theorem wipe_taint : TaintOk [] Cfg.wipe := ⟨_, by taint_decide⟩
+theorem wipe_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) Cfg.wipe hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem wipe_ct {Φ : Pred P} : RelCT isa (Two P Φ) Cfg.wipe fun _ _ => True :=
+  two_prog [] (fun _ _ => 0) (fun _ _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) wipe_taint
 
 theorem prepX_ct (B : RfcT (cfgP P)) :
     RelCT isa (Two P (Tt P)) (cfgOf P).prepX (Two P fun L _ _ m₀ u => QX P L m₀ u) := by
@@ -1117,12 +1131,12 @@ theorem prepH_ct (B : RfcT (cfgP P)) :
 
 theorem rest_ct (B : RfcT (cfgP P)) :
     RelCT isa (Two P (Tt P))
-      (.seq (cfgOf P).prepX (.seq (cfgOf P).prepH (.seq (.block Cfg.initKV) (.seq ((cfgOf P).rekeyFull 0)
+      (.seq (cfgOf P).prepX (.seq (cfgOf P).prepH (.seq Cfg.initKV (.seq ((cfgOf P).rekeyFull 0)
         (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
-        (.seq (.loop (cfgOf P).tryOne (.nonzero .d .r12)) (.block Cfg.wipe))))))))
+        (.seq (.loop (cfgOf P).tryOne (.nonzero .d .r12)) Cfg.wipe)))))))
       fun _ _ => True := by
   refine (prepX_ct B).seq ((prepH_ct B).seq ?_)
-  refine (two_wp (Ψ := fun L _ _ m₀ u => QB P L m₀ u) (two_blk initKV_taint)
+  refine (two_wp (Ψ := fun L _ _ m₀ u => QB P L m₀ u) (two_prog [] (fun _ _ => 0) (fun _ _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) initKV_taint)
     fun _ _ _ _ _ hL _ hc h => stageB_ok hL hc h).seq ?_
   refine (two_wp (Ψ := fun L _ _ m₀ u => QC P L m₀ u) ((rekeyFull_ct B 0 (by decide)).mono
       (fun _ _ => Two.mono fun _ _ _ _ _ _ h => absurd rfl h) fun _ _ h => h)
@@ -1132,7 +1146,7 @@ theorem rest_ct (B : RfcT (cfgP P)) :
     fun _ _ _ _ _ hL hq hc h => stageD_ok hL hq hc h).seq ?_
   refine (two_wp (Ψ := fun L _ _ m₀ u => LoopInv P L m₀ 0 u) (two_blk (initCnt_taint _))
     fun _ _ _ _ _ hL _ hc h => stageE_ok hL hc h).seq ?_
-  exact (loop_ct B).seq (two_blk wipe_taint)
+  exact (loop_ct B).seq wipe_ct
 
 /-! ## The whole function -/
 

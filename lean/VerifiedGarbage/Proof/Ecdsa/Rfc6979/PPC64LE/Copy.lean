@@ -12,6 +12,10 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Loops
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # Deterministic ECDSA on PPC64LE: copying words
@@ -195,66 +199,39 @@ theorem copyN_ok {src dst : Reg} {S D : Addr} {so d n : Nat} (hsr : src ≠ .r0)
         simp only [List.mem_singleton] at hr; subst hr
         exact (hsep.sub_left (Offset.sub _ (by omega) (by omega))).sub_right (Region.sub_prefix h4)) (by omega)
 
-/-- One doubleword copied through `r9`. -/
-theorem cpd_ok {u : State} {src dst : Reg} {S D : Addr} (hs : u.gpr src = S) (hd : u.gpr dst = D)
-    (hsr : src ≠ .r0) (hdr : dst ≠ .r0) (hd9 : dst ≠ .r9) {so d k : Nat} (hso : so + 8 * k < 2 ^ 15)
-    (hdo : d + 8 * k < 2 ^ 15) (hso4 : so % 4 = 0) (hdo4 : d % 4 = 0)
-    (hr : InRegions (u.rd ++ u.wr) (S + BitVec.ofNat 64 (so + 8 * k)) 8)
-    (hw : InRegions u.wr (D + BitVec.ofNat 64 (d + 8 * k)) 8) :
-    WP isa (.block (Cfg.cpd src so dst d k)) u fun u' => Kp [.r9] u u' ∧
-      u'.mem = u.mem.writeW (D + BitVec.ofNat 64 (d + 8 * k)) (u.mem.readW (S + BitVec.ofNat 64 (so + 8 * k)) 64) := by
-  refine stepLd hsr ⟨hso, by omega⟩ (by rw [hs]) hr fun u₁ k₁ m₁ v₁ => ?_
-  refine stepStd hdr ⟨hdo, by omega⟩ (by rw [k₁.gpr _ (by simp [hd9]), hd]) (by rw [k₁.wr]; exact hw)
-    fun u₂ k₂ g₂ m₂ => wp_nil ⟨k₁.trans k₂.mono, ?_⟩
-  rw [m₂, v₁, m₁]
+/-! ## A byte loop -/
 
-theorem bytesAt_copied8 (m : Mem) (D S : Addr) :
-    Spec.Sha256.bytesAt (m.writeW D (m.readW S 64)) D 8 = Spec.Sha256.bytesAt m S 8 := by
-  rw [show (64 : Nat) = 8 * 8 from rfl, Proof.Hmac.Common.writeW_readW]
-  have := Proof.Hmac.Common.bytesAt_writeBytes_self m D (Spec.Sha256.bytesAt m S 8) (by simp [Spec.Sha256.bytesAt])
-  rwa [Proof.Hmac.Common.bytesAt_length] at this
+section
 
-/-- The `8 k` bytes at `src + so` to `dst + d`, a doubleword at a time through `r9`. -/
-theorem copyD_ok {src dst : Reg} {S D : Addr} {so d K : Nat} (hsr : src ≠ .r0) (hdr : dst ≠ .r0)
-    (hd9 : dst ≠ .r9) (hs9 : src ≠ .r9)
-    (hsep : Region.Disjoint ⟨S + BitVec.ofNat 64 so, 8 * K⟩ ⟨D + BitVec.ofNat 64 d, 8 * K⟩)
-    (hdn : d + 8 * K < 2 ^ 64) (hso : so + 8 * K < 2 ^ 15) (hdo : d + 8 * K < 2 ^ 15) (hso4 : so % 4 = 0)
-    (hdo4 : d % 4 = 0) :
-    ∀ k ≤ K, ∀ u : State, u.gpr src = S → u.gpr dst = D →
-      (∀ j < K, InRegions (u.rd ++ u.wr) (S + BitVec.ofNat 64 (so + 8 * j)) 8) →
-      (∀ j < K, InRegions u.wr (D + BitVec.ofNat 64 (d + 8 * j)) 8) →
-      WP isa (.block ((List.range k).flatMap (Cfg.cpd src so dst d))) u fun u' =>
-        Kp [.r9] u u' ∧ Frame [⟨D + BitVec.ofNat 64 d, 8 * K⟩] u.mem u'.mem ∧
-        Spec.Sha256.bytesAt u'.mem (D + BitVec.ofNat 64 d) (8 * k) =
-          Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 so) (8 * k)
-  | 0, _, u, _, _, _, _ => wp_nil ⟨Kp.refl _ _, Frame.refl _ _, rfl⟩
-  | k + 1, hk, u, hs, hd, hr, hw => by
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyD_ok hsr hdr hd9 hs9 hsep hdn hso hdo hso4 hdo4 k (by omega) u hs hd hr hw)
-      fun u₁ ⟨k₁, hf₁, hb₁⟩ => ?_
-    refine WP.mono (cpd_ok (u := u₁) (S := S) (D := D) (k := k) (by rw [k₁.gpr _ (by simp [hs9]), hs])
-      (by rw [k₁.gpr _ (by simp [hd9]), hd]) hsr hdr hd9 (by omega) (by omega) hso4 hdo4
-      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega)) (by rw [k₁.wr]; exact hw k (by omega)))
-      fun u₂ ⟨k₂, hm₂⟩ => ?_
-    have hsub : Region.Sub ⟨D + BitVec.ofNat 64 (d + 8 * k), 8⟩ ⟨D + BitVec.ofNat 64 d, 8 * K⟩ :=
-      Offset.sub _ (by omega) (by omega)
-    have hf₂ : Frame [⟨D + BitVec.ofNat 64 (d + 8 * k), 8⟩] u₁.mem u₂.mem := by
-      rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (Nat.le_refl _) (by omega) (by omega))
-    have hsrc : Spec.Sha256.bytesAt u₁.mem (S + BitVec.ofNat 64 (so + 8 * k)) 8 =
-        Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 (so + 8 * k)) 8 :=
-      bytesAt_frame hf₁ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact hsep.sub_left (Offset.sub _ (by omega) (by omega))) (by omega)
-    refine ⟨k₁.trans k₂, hf₁.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩), ?_⟩
-    rw [show 8 * (k + 1) = 8 * k + 8 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add,
-      Offset.add_add, Offset.add_add, ← hsrc]
-    congr 1
-    · rw [← hb₁]
-      exact bytesAt_frame hf₂ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)
-    · rw [hm₂]; exact bytesAt_copied8 _ _ _
+open VG.Impl.RsaOaep.PPC64LE (copyLoop)
+
+variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {lr : Addr} {m₀ : Mem}
+
+
+/-- `n` bytes from `q` (`r4`) to `p` (`r5`), `n` in `r6`, by `copyLoop`:
+`Ctx` kept, for a destination the code may write apart from the source. -/
+theorem cp_ok (hL : L.Ok) {u : State} (hc : Ctx L g lr m₀ u) {p q : Addr} {n : Nat} (hn : 0 < n)
+    (hn' : n < 2 ^ 63) (h4 : u.gpr .r4 = q) (h5 : u.gpr .r5 = p) (h6 : u.gpr .r6 = BitVec.ofNat 64 n)
+    (hw : ∀ i < n, InRegions u.wr (p + BitVec.ofNat 64 i) 1) (hs : Safe L ⟨p, n⟩)
+    (hsrc : ∀ i < n, InRegions (u.rd ++ u.wr) (q + BitVec.ofNat 64 i) 1)
+    (hsep : Region.Disjoint ⟨q, n⟩ ⟨p, n⟩) (hpn : p.toNat + n ≤ 2 ^ 64) :
+    WP isa copyLoop u fun u' => Ctx L g lr m₀ u' ∧ Kp [.r4, .r5, .r6, .r7] u u' ∧
+      Frame [⟨p, n⟩] u.mem u'.mem ∧ Spec.Sha256.bytesAt u'.mem p n = Spec.Sha256.bytesAt u.mem q n := by
+  refine WP.mono_syms (Proof.RsaOaep.PPC64LE.copy_ok hn (by omega) h4 h5 h6 hsrc hw
+    (fun j hj i hi he => hsep (q + BitVec.ofNat 64 j) (Offset.contains_base _ (by omega) (by omega))
+      (he ▸ Offset.contains_base _ (by omega) (by omega)))) fun u' ⟨hk, hm⟩ hsy => ?_
+  have K : Kp [.r4, .r5, .r6, .r7] u u' := ⟨fun r hr => hk.gpr r (by simp_all), hk.rd, hk.wr, hk.sp, hk.lr⟩
+  have hlen : (Spec.Rsa.bytesAt u.mem q n).length = n := Proof.RsaPkcs1Sig.bytesAt_length _ _ _
+  have hf : Frame [⟨p, n⟩] u.mem u'.mem := by
+    rw [hm]; exact WriteBytes.writeBytes_frame _ _ _ (by rw [hlen]; exact Region.contains_self _ _)
+  refine ⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
+      intro h; simp at h; rcases h with rfl | rfl | rfl | rfl <;> simp [preserved] at hr)) hf
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs) hsy, K, hf, ?_⟩
+  rw [hm]
+  have := Proof.Hmac.Common.bytesAt_writeBytes_self u.mem p (Spec.Rsa.bytesAt u.mem q n) (by omega)
+  rw [hlen] at this
+  exact this
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
