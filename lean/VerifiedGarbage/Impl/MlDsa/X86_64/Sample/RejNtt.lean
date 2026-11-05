@@ -41,12 +41,34 @@ def rnBody : Prog isa :=
   .seq (.block rnLoad) (.seq (.ite .b rnTry (.block [])) (.block [.alu .add .rsi (.imm 3), .alu .sub .rcx (.imm 1)]))
 
 /-- The loop, from the XOF output at `scratch + 840`. -/
-def rnLoop : Prog isa :=
+def rnLoopCount (count : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)])
-    (.seq (.block [.mov32 .rcx (.imm 336)]) (.loop rnBody .ne))
+    (.seq (.block [.mov32 .rcx (.imm (BitVec.ofNat 32 count))]) (.loop rnBody .ne))
+
+def rnLoop : Prog isa := rnLoopCount 336
 
 def rejNTT : Prog isa :=
   .seq (.block (pro .rdx .rsi (.imm 0) (.imm 34)))
     (.seq (sponge 168 1008) (.seq rnLoop (.block (retJ ++ epi))))
+
+/-- Save the sampler layout; the parameter register is unused until squeezing. -/
+def rnShortPro : List Instr :=
+  [.store (at_ .rdx 2024) .rbx, .store (at_ .rdx 2032) .rbp, .store (at_ .rdx 2040) .r12,
+    .mov .rbx (.reg .rdx), .mov .rbp (.reg .rsi), .mov .rcx (.reg .rdi), .mov32 .r8 (.imm 34)]
+
+/-- Append only the remaining bytes and resume at the previous coefficient count. -/
+def rnContinueArgs : Prog isa :=
+  .seq (.block saveCount) (.seq (squeezeMore 168 1620 228)
+    (.block (resumeArgs 1620 76 ++ [.mov32 .r12 (.imm 0)])))
+
+def rnContinue : Prog isa :=
+  .seq rnContinueArgs (.seq (.loop rnBody .ne) (.block (retJ ++ epi)))
+
+/-- Parse the prefix, then extend the same SHAKE stream and polynomial to the
+original six-block bound when more coefficients are needed. -/
+def rejNTTShort : Prog isa :=
+  .seq (.block rnShortPro) (.seq (spongeStream 168 780) (.seq (rnLoopCount 260)
+    (.seq (.block [.alu .cmp .rdi (.imm 256)])
+      (.ite .e (.block (retJ ++ epi)) rnContinue))))
 
 end VG.Impl.MlDsa.X86_64.Sample

@@ -1,7 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
+
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
@@ -39,7 +41,7 @@ def prims : Prims where
   mul := Arith.mul
   mulAdd := Arith.mulAdd
   sub := Arith.sub
-  rejNtt := Sample.rejNTT
+  rejNtt := Sample.rejNTTShort
   ball := Sample.sampleInBall
   useHint := Round.useHint
   simpleBitPack := Pack.simpleBitPack
@@ -82,7 +84,7 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   mul := calleeOf v.ok.mul
   mulAdd := calleeOf v.ok.mulAdd
   sub := calleeOf v.ok.sub
-  rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.rejNTT_verified (by decide)
+  rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.RejNttShort.verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_allInstrs (by lit_decide)) :
     CalleeOk prims.rejNtt _)

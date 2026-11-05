@@ -78,7 +78,7 @@ def callK (k : Nat) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * k))),
       .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * k))), .mov .rdx (.reg .rbx),
       .alu .add .rdx (.imm (BitVec.ofNat 32 oScalar))])
-    (.seq (.call "vg_mldsa_rej_ntt_poly" rejNTT) (.block [.alu32 .and .r14 (.reg .rax)]))
+    (.seq (.call "vg_mldsa_rej_ntt_poly" rejNTTShort) (.block [.alu32 .and .r14 (.reg .rax)]))
 
 /-- `vg_mldsa_rej_ntt_poly4`: `vg_mldsa_rej_ntt_poly` on each seed, with the
 prologue and epilogue of `vg_mldsa_rej_ntt_poly4_avx2`. -/

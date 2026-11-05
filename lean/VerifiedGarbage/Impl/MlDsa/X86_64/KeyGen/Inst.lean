@@ -27,7 +27,7 @@ def prims : Prims where
   mul := Arith.mul
   mulAdd := Arith.mulAdd
   add := Arith.add
-  rejNtt := Sample.rejNTT
+  rejNtt := Sample.rejNTTShort
   rejBounded := Sample.rejBoundedShort
   power2Round := Round.power2Round
   simpleBitPack := Pack.simpleBitPack
