@@ -389,25 +389,25 @@ theorem cbcDecryptChained_verified :
 theorem ofb_verified : Verified target ofb (Proof.Camellia.ofbScratchContract abi 422) := by
   refine Verified.of_correct ofb_correct ofb_constantTime ?_
   sig_implies [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig,
-    Spec.Camellia.ofbPre, Spec.Camellia.ofbPost, abi, argRegs, modeContract, ofbPost, modePub_iff,
+    Spec.Camellia.ofbPre, Proof.Camellia.ofbPostSk, abi, argRegs, modeContract, ofbPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem cfbEncrypt_verified : Verified target cfbEncrypt (Proof.Camellia.cfbEncScratchContract abi 422) := by
   refine Verified.of_correct cfbEncrypt_correct cfbEncrypt_constantTime ?_
   sig_implies [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig,
-    Spec.Camellia.cfbPre, Spec.Camellia.cfbEncryptPost, abi, argRegs, modeContract, cfbEncPost, modePub_iff,
+    Spec.Camellia.cfbPre, Proof.Camellia.cfbEncryptPostSk, abi, argRegs, modeContract, cfbEncPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem cfbDecrypt_verified : Verified target cfbDecrypt (Proof.Camellia.cfbDecScratchContract abi 422) := by
   refine Verified.of_correct cfbDecrypt_correct cfbDecrypt_constantTime ?_
   sig_implies [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig,
-    Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, abi, argRegs, modeContract, cfbDecPost, modePub_iff,
+    Spec.Camellia.cfbPre, Proof.Camellia.cfbDecryptPostSk, abi, argRegs, modeContract, cfbDecPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem ctr_verified : Verified target ctr (Proof.Camellia.ctrScratchContract abi 422) := by
   refine Verified.of_correct ctr_correct ctr_constantTime ?_
   sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
-    Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, abi, argRegs, modeContract, ctrPost, modePub_iff,
+    Spec.Camellia.ctrPre, Proof.Camellia.ctrPostSk, abi, argRegs, modeContract, ctrPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 end VG.Proof.Camellia.PPC64LE.Modes

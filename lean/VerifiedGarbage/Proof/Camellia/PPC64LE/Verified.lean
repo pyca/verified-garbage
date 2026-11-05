@@ -107,7 +107,7 @@ theorem ecb_verified (dir : Dir) :
   Verified.of_correct (ecb_correct dir) (ecb_ct dir) (by
     cases dir <;>
     sig_implies [Proof.Camellia.ecbScratchContract, Proof.Camellia.ecbScratchSig, Spec.Camellia.ecbSig,
-      Spec.Camellia.ecbPre, Spec.Camellia.ecbPost, ecbPPC64LE, specDir, abi, argRegs, slots, tailSlot, savedSlot,
+      Spec.Camellia.ecbPre, Proof.Camellia.ecbPostSk, ecbPPC64LE, specDir, abi, argRegs, slots, tailSlot, savedSlot,
       endSlot, keySlot] [ecbSat] using ecbSat)
 
 /-- A state satisfying the ECB functions' precondition: the schedule at
@@ -122,17 +122,18 @@ def ecbFrameSat : State where
   wr := [⟨0x3000, 16⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Spec.Camellia.ecbContract abi d 3344).pre s := by
-  implies_sat [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Spec.Camellia.ecbPost, abi,
+    ∃ s, (Proof.Camellia.ecbContractSk abi d 3344).pre s := by
+  implies_sat [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Proof.Camellia.ecbPostSk, abi,
     argRegs] [ecbFrameSat] using ecbFrameSat
 
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
     Verified target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414 (ecb dir))
       (Spec.Camellia.ecbContract abi (specDir dir) 3344) :=
+  Proof.Camellia.ecb_of_sk <|
   Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
     (n := 414) (pre := Spec.Camellia.ecbPre abi.ptrBits)
-    (post := Spec.Camellia.ecbPost (specDir dir) abi.ptrBits) (wa := false) (stack := 0)
+    (post := Proof.Camellia.ecbPostSk (specDir dir) abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3344) (words := 414) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
     (by decide) (by decide) (by decide) (Proof.Camellia.ecbPre_local _) (Proof.Camellia.ecbPost_local _ _)
     (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)

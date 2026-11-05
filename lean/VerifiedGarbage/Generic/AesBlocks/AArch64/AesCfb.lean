@@ -18,12 +18,12 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCfb.AArch64.encrypt v.enc
-    verified := encrypt_verified v
+    verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
     features := v.features },
   Spec.Cfb.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Caller.decrypt v
-    verified := Caller.verified v
+    verified := Proof.AesCfb.decrypt_keyed (Caller.verified v)
     written := Caller.written v
     writtenOk := Caller.written_ok v
     features := v.features }]

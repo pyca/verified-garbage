@@ -20,7 +20,7 @@ def sievedParameterSearch (bits generator : Nat) : Nat → Rand → ParameterSea
     match sievedParameterCandidate bits generator rand with
     | none =>
       if parameterEntropy bits ≤ rand.length then .exhausted 0
-      else .entropy (remaining + 1) (parameterRequest bits rand.length) 0
+      else .entropy (remaining + 1) rand.length 0
     | some (some p, rest) => .accepted p (rand.length - rest.length)
     | some (none, rest) =>
       (sievedParameterSearch bits generator remaining rest).consume (rand.length - rest.length)

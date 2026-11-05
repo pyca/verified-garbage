@@ -359,9 +359,9 @@ theorem wide_implies_ofb :
     (wideContract ofbPost).Implies (Proof.Camellia.ofbScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost] at h
+    sig_pre [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost] at h
     sig_split h
-    sig_reduce [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
+    sig_reduce [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
     sig_and_intros
     sig_close
     all_goals first
@@ -369,18 +369,18 @@ theorem wide_implies_ofb :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost, ciph, ivAt, dataAt]
-  · sig_implies_pub [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
-  · sig_implies_sat [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
+  · sig_implies_post [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost, ciph, ivAt, dataAt]
+  · sig_implies_pub [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
+  · sig_implies_sat [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbEnc :
     (wideContract cfbEncPost).Implies (Proof.Camellia.cfbEncScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost] at h
+    sig_pre [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost] at h
     sig_split h
-    sig_reduce [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
+    sig_reduce [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
     sig_and_intros
     sig_close
     all_goals first
@@ -388,18 +388,18 @@ theorem wide_implies_cfbEnc :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost, ciph, ivAt, dataAt]
-  · sig_implies_pub [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
-  · sig_implies_sat [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
+  · sig_implies_post [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost, ciph, ivAt, dataAt]
+  · sig_implies_pub [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
+  · sig_implies_sat [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbDec :
     (wideContract cfbDecPost).Implies (Proof.Camellia.cfbDecScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost] at h
+    sig_pre [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost] at h
     sig_split h
-    sig_reduce [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
+    sig_reduce [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
     sig_and_intros
     sig_close
     all_goals first
@@ -407,9 +407,9 @@ theorem wide_implies_cfbDec :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost, ciph, ivAt, dataAt]
-  · sig_implies_pub [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
-  · sig_implies_sat [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
+  · sig_implies_post [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost, ciph, ivAt, dataAt]
+  · sig_implies_pub [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
+  · sig_implies_sat [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 /-- A state satisfying the functions' precondition: the schedule at `0x1000`,
@@ -486,8 +486,9 @@ theorem cfbDecrypt_verified :
 theorem ofb_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ofb)
       (Spec.Camellia.ofbContract X86.abi 2772) :=
+  Proof.Camellia.ofb_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := Spec.Camellia.ofbPost X86.abi.ptrBits) (wa := true) (stack := 16)
+    (n := 341) (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := Proof.Camellia.ofbPostSk X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ofbPre_local _)
     (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) (frameSat_ofb _)
@@ -496,8 +497,9 @@ theorem ofb_framed :
 theorem cfbEncrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cfbEncrypt)
       (Spec.Camellia.cfbEncryptContract X86.abi 2772) :=
+  Proof.Camellia.cfbEncrypt_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbEncryptPost X86.abi.ptrBits) (wa := true) (stack := 16)
+    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Proof.Camellia.cfbEncryptPostSk X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) (frameSat_cfb _)
@@ -506,8 +508,9 @@ theorem cfbEncrypt_framed :
 theorem cfbDecrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cfbDecrypt)
       (Spec.Camellia.cfbDecryptContract X86.abi 2772) :=
+  Proof.Camellia.cfbDecrypt_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbDecryptPost X86.abi.ptrBits) (wa := true) (stack := 16)
+    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Proof.Camellia.cfbDecryptPostSk X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) (frameSat_cfb _)

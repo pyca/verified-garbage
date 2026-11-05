@@ -14,6 +14,6 @@ namespace VG.Artifacts.AesCtr.RISCV64
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact RISCV64.target {
     code := Impl.AesCtr.RISCV64.crypt
-    verified := Proof.AesCtr.RISCV64.crypt_verified }]
+    verified := Proof.AesCtr.keyed Proof.AesCtr.RISCV64.crypt_verified }]
 
 end VG.Artifacts.AesCtr.RISCV64

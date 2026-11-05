@@ -25,7 +25,7 @@ use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
-use verified_garbage::rsa::pss::{Hash, SaltLength, sign, verify};
+use verified_garbage::rsa::pss::{Hash, SaltLength};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
@@ -116,8 +116,8 @@ fn rsa_pss_test() {
             let mgf = hash(&p.mgf_sha).expect("a supported hash function");
             let id = test.tc_id;
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
-            let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
-            let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
+            let ok = key.verify_pss(sig, &d, h, mgf, SaltLength::Len(p.s_len));
+            let any = key.verify_pss(sig, &d, h, mgf, SaltLength::Any);
             assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
             assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
             // A signature with the expected salt length has some salt length.
@@ -168,38 +168,34 @@ fn check_signatures(
         let id = test.tc_id;
         let d = digest(*h, &test.case.msg.0);
         for s_len in [0, h.digest_len()] {
-            let sig = sign(&private, &d, *h, *h, s_len)
+            let sig = private
+                .sign_pss(&d, *h, *h, s_len)
                 .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
-            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len)));
-            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Any));
-            assert!(!verify(
-                &public,
-                &sig,
-                &d,
-                *h,
-                *h,
-                SaltLength::Len(s_len + 1)
-            ));
+            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len)));
+            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Any));
+            assert!(!public.verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len + 1)));
         }
-        let a = sign(&private, &d, *h, *h, 16).unwrap();
-        let b = sign(&private, &d, *h, *h, 16).unwrap();
+        let a = private.sign_pss(&d, *h, *h, 16).unwrap();
+        let b = private.sign_pss(&d, *h, *h, 16).unwrap();
         assert_ne!(a, b, "{name} tcId {id}");
         // MGF1 over the next of the hash functions: the signature verifies
         // with it, and not with MGF1 over the hash function itself.
         let i = HASHES.iter().position(|(_, x)| x == h).unwrap();
         let g = HASHES[(i + 1) % HASHES.len()].1;
-        let sig = sign(&private, &d, *h, g, 16).unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+        let sig = private
+            .sign_pss(&d, *h, g, 16)
+            .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
         assert!(
-            verify(&public, &sig, &d, *h, g, SaltLength::Len(16)),
+            public.verify_pss(&sig, &d, *h, g, SaltLength::Len(16)),
             "{name} tcId {id}"
         );
         assert!(
-            verify(&public, &sig, &d, *h, g, SaltLength::Any),
+            public.verify_pss(&sig, &d, *h, g, SaltLength::Any),
             "{name} tcId {id}"
         );
         assert!(
-            !verify(&public, &sig, &d, *h, *h, SaltLength::Any),
+            !public.verify_pss(&sig, &d, *h, *h, SaltLength::Any),
             "{name} tcId {id}"
         );
     }

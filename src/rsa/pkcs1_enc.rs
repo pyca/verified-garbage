@@ -1,15 +1,17 @@
 //! RSAES-PKCS1-v1_5 (RFC 8017 §7.2), with the implicit rejection of
-//! draft-irtf-cfrg-rsa-guidance-10 §7.2.
+//! draft-irtf-cfrg-rsa-guidance-10 §7.2: the types of
+//! [`PublicKey::encrypt_pkcs1v15`] and [`PrivateKey::decrypt_pkcs1v15`].
 //!
 //! **RSAES-PKCS1-v1_5 is deprecated** (RFC 8017, draft-irtf-cfrg-rsa-guidance):
 //! new protocols should use RSAES-OAEP, or better, a key encapsulation
-//! mechanism. [`decrypt`] **never reports an invalid padding**: it returns,
-//! instead, a message derived from the private key and the ciphertext, the same
-//! each time, which looks random to anyone without the key. So a successful
-//! decryption does not prove the ciphertext genuine, and the caller must check
-//! the message (its length, and its contents if it can) in constant time.
-//! Decryption's timing does not depend on whether the padding is valid, on the
-//! message's length, or on which of the two messages it returns.
+//! mechanism. [`PrivateKey::decrypt_pkcs1v15`] **never reports an invalid
+//! padding**: it returns, instead, a message derived from the private key and
+//! the ciphertext, the same each time, which looks random to anyone without
+//! the key. So a successful decryption does not prove the ciphertext genuine,
+//! and the caller must check the message (its length, and its contents if it
+//! can) in constant time. Decryption's timing does not depend on whether the
+//! padding is valid, on the message's length, or on which of the two messages
+//! it returns.
 
 #![cfg(all(
     any(
@@ -112,33 +114,36 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
 }
 
-/// RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1): encrypts `plaintext`, of at
-/// most [`modulus_len`](PublicKey::modulus_len)` - 11` bytes, with `key`,
-/// with a padding string of random nonzero bytes, and returns the
-/// ciphertext ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian).
-/// The timing may depend on the public key and the plaintext's length, not
-/// on its contents.
-///
-/// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
-pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-    encrypt_from(key, plaintext, os_random)
-}
-
-/// [`encrypt`], with its padding string drawn from `random`.
-fn encrypt_from(
-    key: &PublicKey,
-    plaintext: &[u8],
-    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-) -> Result<Vec<u8>, Error> {
-    let k = key.modulus_len();
-    if plaintext.len() + 11 > k {
-        return Err(Error::MessageTooLong);
+impl PublicKey {
+    /// RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1): encrypts `plaintext`, of at
+    /// most [`modulus_len`](PublicKey::modulus_len)` - 11` bytes, with `key`,
+    /// with a padding string of random nonzero bytes, and returns the
+    /// ciphertext ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian).
+    /// The timing may depend on the public key and the plaintext's length, not
+    /// on its contents.
+    ///
+    /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
+    pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+        self.encrypt_pkcs1v15_from(plaintext, os_random)
     }
-    let mut ps = vec![0u8; k - plaintext.len() - 3];
-    fill_nonzero(&mut ps, random)?;
-    let c = encrypt_with(key, plaintext, &ps);
-    zeroize(&mut ps);
-    Ok(c)
+
+    /// [`encrypt_pkcs1v15`](Self::encrypt_pkcs1v15), with its padding string
+    /// drawn from `random`.
+    fn encrypt_pkcs1v15_from(
+        &self,
+        plaintext: &[u8],
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+    ) -> Result<Vec<u8>, Error> {
+        let k = self.modulus_len();
+        if plaintext.len() + 11 > k {
+            return Err(Error::MessageTooLong);
+        }
+        let mut ps = vec![0u8; k - plaintext.len() - 3];
+        fill_nonzero(&mut ps, random)?;
+        let c = encrypt_with(self, plaintext, &ps);
+        zeroize(&mut ps);
+        Ok(c)
+    }
 }
 
 /// `vg_rsa_pkcs1_encrypt_precomputed` of `plaintext` with the padding string `ps`, of
@@ -298,90 +303,90 @@ fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
     }
 }
 
-/// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection
-/// (draft-irtf-cfrg-rsa-guidance-10 §7.2): decrypts `ciphertext`
-/// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`,
-/// and returns the message: the encoded one if its padding is valid, and
-/// otherwise one derived from `d` and the ciphertext, of at most
-/// [`modulus_len`](PrivateKey::modulus_len)` - 11` bytes. **An invalid
-/// padding is never an error** (see the [module](self) documentation): the
-/// errors are a ciphertext of the wrong length or not below the modulus,
-/// and a fault of the private-key operation. The timing may depend on the public key and the lengths of
-/// the primes, not on the ciphertext, the private key, the validity of the
-/// padding or the message (but for the length of the message returned).
-///
-/// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
-pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
-    let k = key.modulus_len();
-    if ciphertext.len() != k {
-        return Err(Error::InvalidLength);
-    }
-    // Loading the key checked that `0 < d < n` (`RSA_check_key`).
-    let d = trim(&key.d);
-    let f = decrypt_fn(
-        Sha256Backend::select(detected()),
-        Backend::select(detected()),
-    );
-    let mut out = vec![0u8; k];
-    let mut len = [0u64; 1];
-    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-    // SAFETY: each pointer is valid for its length (`out`, `len` and
-    // `scratch` for writes), and none overlaps another or wraps around, as
-    // they are distinct Rust allocations; loading the key and the check
-    // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
-    // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
-    // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
-    // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
-    // implementations of SHA-256 and of the private-key operation that
-    // `Sha256Backend::select` and `Backend::select` chose, which are those
-    // of `f`.
-    let r = unsafe {
-        f(
-            out.as_mut_ptr(),
-            k,
-            &mut len,
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            d.as_ptr(),
-            d.len(),
-            ciphertext.as_ptr(),
-            k,
-            key.p.as_ptr(),
-            key.p.len(),
-            key.q.as_ptr(),
-            key.q.len(),
-            key.dp.as_ptr(),
-            key.dp.len(),
-            key.dq.as_ptr(),
-            key.dq.len(),
-            key.qinv.as_ptr(),
-            key.qinv.len(),
-            scratch.as_mut_ptr(),
-            scratch.len(),
-        )
-    };
-    // `PrivateKey::from_crt` checked `n`, `e` and the key, so a refusal
-    // means the ciphertext is not below the modulus.
-    match r {
-        1 => {
-            // The function returns at most `n_len - 11` bytes.
-            let l = len[0] as usize;
-            out.drain(..k - l);
-            Ok(out)
+impl PrivateKey {
+    /// RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) with implicit rejection
+    /// (draft-irtf-cfrg-rsa-guidance-10 §7.2): decrypts `ciphertext`
+    /// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`,
+    /// and returns the message: the encoded one if its padding is valid, and
+    /// otherwise one derived from `d` and the ciphertext, of at most
+    /// [`modulus_len`](PrivateKey::modulus_len)` - 11` bytes. **An invalid
+    /// padding is never an error** (see the [module](self) documentation): the
+    /// errors are a ciphertext of the wrong length or not below the modulus,
+    /// and a fault of the private-key operation. The timing may depend on the
+    /// public key and the lengths of the primes, not on the ciphertext, the
+    /// private key, the validity of the padding or the message (but for the
+    /// length of the message returned).
+    ///
+    /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
+    pub fn decrypt_pkcs1v15(&self, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        let k = self.modulus_len();
+        if ciphertext.len() != k {
+            return Err(Error::InvalidLength);
         }
-        2 => Err(Error::Fault),
-        _ => Err(Error::InputOutOfRange),
+        // Loading the key checked that `0 < d < n` (`RSA_check_key`).
+        let d = trim(&self.d);
+        let f = decrypt_fn(
+            Sha256Backend::select(detected()),
+            Backend::select(detected()),
+        );
+        let mut out = vec![0u8; k];
+        let mut len = [0u64; 1];
+        let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+        // SAFETY: each pointer is valid for its length (`out`, `len` and
+        // `scratch` for writes), and none overlaps another or wraps around, as
+        // they are distinct Rust allocations; loading the key and the check
+        // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
+        // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
+        // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
+        // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
+        // implementations of SHA-256 and of the private-key operation that
+        // `Sha256Backend::select` and `Backend::select` chose, which are those
+        // of `f`.
+        let r = unsafe {
+            f(
+                out.as_mut_ptr(),
+                k,
+                &mut len,
+                self.n.as_ptr(),
+                k,
+                self.e.as_ptr(),
+                self.e.len(),
+                d.as_ptr(),
+                d.len(),
+                ciphertext.as_ptr(),
+                k,
+                self.p.as_ptr(),
+                self.p.len(),
+                self.q.as_ptr(),
+                self.q.len(),
+                self.dp.as_ptr(),
+                self.dp.len(),
+                self.dq.as_ptr(),
+                self.dq.len(),
+                self.qinv.as_ptr(),
+                self.qinv.len(),
+                scratch.as_mut_ptr(),
+                scratch.len(),
+            )
+        };
+        // `PrivateKey::from_crt` checked `n`, `e` and the self, so a refusal
+        // means the ciphertext is not below the modulus.
+        match r {
+            1 => {
+                // The function returns at most `n_len - 11` bytes.
+                let l = len[0] as usize;
+                out.drain(..k - l);
+                Ok(out)
+            }
+            2 => Err(Error::Fault),
+            _ => Err(Error::InputOutOfRange),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Backend, Error, Sha256Backend, Vec, decrypt, decrypt_fn, encrypt_from, fill_nonzero,
-        os_random, vec,
-    };
+    use super::{Backend, Error, Sha256Backend, Vec, decrypt_fn, fill_nonzero, os_random, vec};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -392,7 +397,7 @@ mod tests {
         let (private, _) = composite_key();
         let mut two = vec![0; 64];
         two[63] = 2;
-        assert_eq!(decrypt(&private, &two), Err(Error::Fault));
+        assert_eq!(private.decrypt_pkcs1v15(&two), Err(Error::Fault));
     }
 
     /// The same padding string gives the same ciphertext, as the fixed-tape
@@ -401,11 +406,12 @@ mod tests {
     fn encryption_from_a_fixed_tape_is_deterministic() {
         let (_, public) = composite_key();
         let encrypt = |byte| {
-            encrypt_from(&public, &[7; 53], |buf| {
-                buf.fill(byte);
-                Ok(())
-            })
-            .unwrap()
+            public
+                .encrypt_pkcs1v15_from(&[7; 53], |buf| {
+                    buf.fill(byte);
+                    Ok(())
+                })
+                .unwrap()
         };
         assert_eq!(encrypt(1), encrypt(1));
         assert_ne!(encrypt(1), encrypt(2));

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -17,12 +18,12 @@ open VG VG.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 open VG.Proof.Ffdh.Arm (withRest_all)
 open VG.Impl.RsaKeyGen.Arm.Search
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult)
 
 /-- The state's eight halves, for a finished search. -/
 def stateWords (p : SearchPublic) (r : PrimeSearchResult) : List (Nat × BitVec 32) :=
   [(0, BitVec.ofNat 32 r.remaining), (1, 0), (2, BitVec.ofNat 32 p.len), (3, 0),
-    (4, BitVec.ofNat 32 (32769 * p.len)), (5, 0), (6, BitVec.ofNat 32 r.requested), (7, 0)]
+    (4, BitVec.ofNat 32 (32769 * p.len)), (5, 0), (6, BitVec.ofNat 32 (requested p.len r)), (7, 0)]
 
 /-- The results stored: the state's words, then `used`. -/
 def finished (p : SearchPublic) (m : Mem) (r : PrimeSearchResult) : Mem :=
@@ -104,9 +105,9 @@ theorem finished_used {p : SearchPublic} (m : Mem) (r : PrimeSearchResult) (hr :
   exact pair_ofNat hr
 
 theorem finished_state {p : SearchPublic} {o : State} (h : SearchInput p o) (m : Mem) (r : PrimeSearchResult)
-    (h0 : r.remaining < 2 ^ 32) (h1 : p.len < 2 ^ 32) (h2 : 32769 * p.len < 2 ^ 32) (h3 : r.requested < 2 ^ 32) :
+    (h0 : r.remaining < 2 ^ 32) (h1 : p.len < 2 ^ 32) (h2 : 32769 * p.len < 2 ^ 32) (h3 : (requested p.len r) < 2 ^ 32) :
     Spec.Rsa.wordsAt (finished p m r) (State.addr p.stp) 4 = [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
-      BitVec.ofNat 64 (32769 * p.len), BitVec.ofNat 64 r.requested] := by
+      BitVec.ofNat 64 (32769 * p.len), BitVec.ofNat 64 (requested p.len r)] := by
   have pw := h.writes_pairwise
   simp only [inWrites, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.Pairwise.nil, and_true] at pw
@@ -213,7 +214,9 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     exact hd.output
   · change Spec.Rsa.wordsAt _ (State.addr p.up) 1 = _
     rw [mem, finished_used _ _ (by omega)]
-  · change Spec.Rsa.wordsAt _ (State.addr p.stp) 4 = _
+  · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
+      (searchRemaining s) (searchRand s)⟩
+    change Spec.Rsa.wordsAt _ (State.addr p.stp) 4 = _
     rw [mem, finished_state hp _ _ (by omega) (by omega) (by omega) (by unfold primeEntropy at bq; omega)]
     rfl
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'

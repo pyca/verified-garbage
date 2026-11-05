@@ -478,7 +478,9 @@ def initPost (s t : State) : Prop :=
   | none => ((t.gpr .r1 ++ t.gpr .r0).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = List.replicate 4 0
   | some values => ((t.gpr .r1 ++ t.gpr .r0).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 = values.map (BitVec.ofNat 64)
+      ∃ first, Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 =
+        (values ++ [first]).map (BitVec.ofNat 64) ∧
+        Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (s.gpr .r1).toNat) 0 first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2 ∧
@@ -529,9 +531,9 @@ private theorem result_post {s t : State}
   split at h
   · rename_i hv
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
-    refine ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, ?_⟩
+    refine ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, _, ?_, SearchInit.first_valid hv⟩
     rw [h.2, valid_words _ _ _ hv.2.1]
-    simp only [limit, decide_eq_true_eq, List.map_cons, List.map_nil]
+    simp only [limit, decide_eq_true_eq, List.cons_append, List.nil_append, List.map_cons, List.map_nil]
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, by rw [h.2, zeros_words]⟩

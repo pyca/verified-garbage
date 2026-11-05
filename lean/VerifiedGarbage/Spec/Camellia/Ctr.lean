@@ -43,16 +43,15 @@ def ctrSig : Sig where
 def ctrPre (pb : Nat) : Curry (ctrSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _ctr _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces the `n` blocks at `data` with their CTR
-encryption or decryption (§6.5) by Camellia, from the counter block at
-`ctr`, and that block with `Tₙ₊₁`, its `n`-th increment modulo `2¹²⁸`
-(unchanged if `n = 0`). Stated for those numbers of rounds, which the
-precondition requires, so that it reads only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CTR
+encryption or decryption (§6.5) by Camellia under `key`, from the counter
+block at `ctr`, and that block with `Tₙ₊₁`, its `n`-th increment modulo
+`2¹²⁸` (unchanged if `n = 0`). -/
 def ctrPost (pb : Nat) : ctrSig.Post pb := fun schedule rounds ctr data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+  ∀ key, KeySchedule m schedule rounds.toNat key →
     Cbc.blocksAt m' data n.toNat =
-        Ctr.crypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m ctr 16)
+        Ctr.crypt (cipher (expandKey key)) (Aes.bytesAt m ctr 16)
           (Cbc.blocksAt m data n.toNat) ∧
       Aes.bytesAt m' ctr 16 = Ctr.next (Aes.bytesAt m ctr 16) n.toNat
 

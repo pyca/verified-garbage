@@ -25,7 +25,6 @@ pub fn bench(c: &mut Criterion) {
     use openssl::bn::BigNum;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::pkcs1_enc::{decrypt, encrypt};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -48,7 +47,11 @@ pub fn bench(c: &mut Criterion) {
         .unwrap();
         let mut out = vec![0; k];
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| encrypt(black_box(&vg_key), black_box(&msg)).unwrap())
+            b.iter(|| {
+                black_box(&vg_key)
+                    .encrypt_pkcs1v15(black_box(&msg))
+                    .unwrap()
+            })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
@@ -100,7 +103,7 @@ pub fn bench(c: &mut Criterion) {
         key.public_encrypt(&msg, &mut ct, Padding::PKCS1).unwrap();
         let mut out = vec![0; k];
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| decrypt(black_box(&vg_key), black_box(&ct)).unwrap())
+            b.iter(|| black_box(&vg_key).decrypt_pkcs1v15(black_box(&ct)).unwrap())
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {

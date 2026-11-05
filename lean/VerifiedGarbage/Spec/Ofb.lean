@@ -57,7 +57,7 @@ def next (ciph : Cipher) (iv : List Byte) (n : Nat) : List Byte := (outputs ciph
 output blocks, the last one truncated to what is left of `x` (§6.4,
 `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
 def aesOfb (key iv x : List Byte) : List Byte :=
-  let ciph := Cbc.aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
+  let ciph := Cbc.aes key
   List.zipWith (· ^^^ ·) x (outputs ciph iv ((x.length + 15) / 16)).flatten
 
 end VG.Spec.Ofb

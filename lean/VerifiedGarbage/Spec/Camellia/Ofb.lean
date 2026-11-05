@@ -35,15 +35,14 @@ def ofbSig : Sig where
 def ofbPre (pb : Nat) : Curry (ofbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces the `n` blocks at `data` with their OFB
-encryption or decryption (§6.4) by Camellia, from the block at `iv`, and
-that block with the last output block `Oₙ` (unchanged if `n = 0`). Stated
-for those numbers of rounds, which the precondition requires, so that it
-reads only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their OFB
+encryption or decryption (§6.4) by Camellia under `key`, from the block at
+`iv`, and that block with the last output block `Oₙ` (unchanged if
+`n = 0`). -/
 def ofbPost (pb : Nat) : ofbSig.Post pb := fun schedule rounds iv data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-    let ciph := cipher (subkeysAt m schedule rounds.toNat)
+  ∀ key, KeySchedule m schedule rounds.toNat key →
+    let ciph := cipher (expandKey key)
     Cbc.blocksAt m' data n.toNat = Ofb.crypt ciph (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat) ∧
       Aes.bytesAt m' iv 16 = Ofb.next ciph (Aes.bytesAt m iv 16) n.toNat
 

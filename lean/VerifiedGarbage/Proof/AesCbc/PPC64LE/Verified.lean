@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Spec.Cbc.Contract
@@ -42,14 +43,14 @@ def sat : State where
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2176⟩]
 
-theorem encrypt_verified : Verified PPC64LE.target encrypt (Spec.Cbc.aesEncryptContract PPC64LE.abi) :=
+theorem encrypt_verified : Verified PPC64LE.target encrypt (Proof.AesCbc.encryptRoundsContract PPC64LE.abi) :=
   Verified.of_correct encrypt_correct (whole_ct encBody_ok encBody_ct) (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcPPC64LE, modePPC64LE, cbcMode,
+    sig_implies [Proof.AesCbc.encryptRoundsContract, Spec.Cbc.aesSig, cbcPPC64LE, modePPC64LE, cbcMode,
       ciphOf, cbc, cts, PPC64LE.abi, PPC64LE.argRegs] [sat] using sat)
 
-theorem decrypt_verified : Verified PPC64LE.target decrypt (Spec.Cbc.aesDecryptContract PPC64LE.abi) :=
+theorem decrypt_verified : Verified PPC64LE.target decrypt (Proof.AesCbc.decryptRoundsContract PPC64LE.abi) :=
   Verified.of_correct decrypt_correct (whole_ct decBody_ok decBody_ct) (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcPPC64LE, modePPC64LE, cbcMode,
+    sig_implies [Proof.AesCbc.decryptRoundsContract, Spec.Cbc.aesSig, cbcPPC64LE, modePPC64LE, cbcMode,
       ciphOf, cbc, cts, PPC64LE.abi, PPC64LE.argRegs] [sat] using sat)
 
 end VG.Proof.AesCbc.PPC64LE

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
@@ -48,7 +49,7 @@ theorem cand_short {bits gen : Nat} {rand : Rand} {used : Nat} (h : rand.length 
 
 theorem ptail_short {bits gen : Nat} {rand : Rand} {used n : Nat} (hn : n ≠ 0) (h : candAt bits gen rand used = none) :
     ptail bits gen rand used n = if parameterEntropy bits ≤ rand.length - used then .exhausted used
-      else .entropy n (parameterRequest bits (rand.length - used)) used := by
+      else .entropy n (rand.length - used) used := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   unfold ptail
   rw [sievedParameterSearch, show sievedParameterCandidate bits gen (rand.drop used) = none from h]

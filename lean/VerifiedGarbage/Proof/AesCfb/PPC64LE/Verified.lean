@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Impl.AesCfb.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
@@ -35,14 +36,14 @@ theorem decrypt_correct (s : State) (hs : (modePPC64LE (cfbMode false)).pre s) :
   obtain ⟨t, s', he, hg, hlr, hp⟩ := whole_wp decBody_ok hs
   exact ⟨t, s', he, ⟨hg, Exec.sp he, hlr⟩, hp⟩
 
-theorem encrypt_verified : Verified PPC64LE.target encrypt (Spec.Cfb.aesEncryptContract PPC64LE.abi) :=
+theorem encrypt_verified : Verified PPC64LE.target encrypt (Proof.AesCfb.encryptRoundsContract PPC64LE.abi) :=
   Verified.of_correct encrypt_correct (whole_ct encBody_ok encBody_ct) (by
-    sig_implies [Spec.Cfb.aesEncryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modePPC64LE, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modePPC64LE, cfbMode, cfb, cts,
       PPC64LE.abi, PPC64LE.argRegs] [sat] using sat)
 
-theorem decrypt_verified : Verified PPC64LE.target decrypt (Spec.Cfb.aesDecryptContract PPC64LE.abi) :=
+theorem decrypt_verified : Verified PPC64LE.target decrypt (Proof.AesCfb.decryptRoundsContract PPC64LE.abi) :=
   Verified.of_correct decrypt_correct (whole_ct decBody_ok decBody_ct) (by
-    sig_implies [Spec.Cfb.aesDecryptContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modePPC64LE, cfbMode, cfb, cts,
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modePPC64LE, cfbMode, cfb, cts,
       PPC64LE.abi, PPC64LE.argRegs] [sat] using sat)
 
 end VG.Proof.AesCfb.PPC64LE

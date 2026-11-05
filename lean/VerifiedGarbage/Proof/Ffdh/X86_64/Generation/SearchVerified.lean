@@ -1,8 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchImplies
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
@@ -34,7 +36,7 @@ def SearchReturned (p : SearchPublic) (result : Spec.Ffdh.ParameterSearchResult)
     Spec.Rsa.wordsAt t.mem p.c.up 1 = [BitVec.ofNat 64 result.used] ∧
     Spec.Rsa.wordsAt t.mem p.control 4 =
       [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.c.k,
-        BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 result.requested]
+        BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result)]
 
 theorem search_finish {p : SearchPublic} {original s : State} {result : Spec.Ffdh.ParameterSearchResult}
     (h : SearchDone p original result s) :
@@ -100,10 +102,14 @@ theorem initial_search_result {p : SearchPublic} {s : State} (h : SearchInput p 
 
 theorem returned_post {p : SearchPublic} {s t : State} (h : SearchInput p s)
     (hr : SearchReturned p (searchResult s) t) : searchPost s t := by
+  have hreq : (searchResult s).Requests (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat)
+      (Proof.Ffdh.requested (s.gpr .rcx).toNat (searchResult s)) :=
+    SievedGeneration.search_requests _ _ _ _
   cases h.2
   simp only [SearchReturned, SearchOutput, searchPost, searchOfState, SearchPublic.c,
     candidateOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq] at hr ⊢
-  cases he : searchResult s <;> simpa only [he] using hr
+  cases he : searchResult s <;> simp only [he] at hr hreq ⊢ <;>
+    exact ⟨hr.1, hr.2.1, hr.2.2.1, _, hr.2.2.2, hreq⟩
 
 theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
     WP isa (code (candidateCode v)) s fun t => searchPost s t ∧

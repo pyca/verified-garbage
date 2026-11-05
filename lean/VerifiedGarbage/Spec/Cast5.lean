@@ -506,4 +506,12 @@ def scheduleAt (m : Mem) (p : Addr) : Schedule :=
     m (p + BitVec.ofNat 64 (4 * i.val + 3)) ++ m (p + BitVec.ofNat 64 (4 * i.val + 2)) ++
       m (p + BitVec.ofNat 64 (4 * i.val + 1)) ++ m (p + BitVec.ofNat 64 (4 * i.val))
 
+/-- The subkeys at `schedule` are those of the key `key`, of 5 to 16 bytes
+(`expandKey`, as `vg_cast5_expand_key` writes them), and `n` is the number
+of rounds for a key of its length (§2.5, `rounds`). The contracts of the
+functions that read subkeys are stated for every key whose subkeys are in
+memory this way, with the cipher of that key. -/
+def KeySchedule (mem : Mem) (schedule : Addr) (n : Nat) (key : List Byte) : Prop :=
+  validKey key.length ∧ n = rounds key.length ∧ scheduleAt mem schedule = expandKey key
+
 end VG.Spec.Cast5

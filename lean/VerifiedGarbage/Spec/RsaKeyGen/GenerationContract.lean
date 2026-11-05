@@ -20,14 +20,17 @@ def primeInitSig : Sig where
     ("e", .slice false .u8 "e_len")]
   ret := some .u32
 
-/-- `primeInit`: 1 and its four words, or 0 and four zeros. Its timing may
-depend on `e`, which is public. -/
+/-- `primeInit`: 1, its three words and the first tape's length, any that
+`Entropy.RequestValid` allows with no octets available, or 0 and four zeros.
+Its timing may depend on `e`, which is public. -/
 def primeInitContract {M : ISA} (A : Abi M) : Contract M :=
   primeInitSig.contract A
     (post := fun state primeLen e eLen m m' r =>
       match primeInit primeLen.toNat (bytesAt m e eLen.toNat) with
       | none => r.toNat = 0 ∧ wordsAt m' state 4 = List.replicate 4 0
-      | some values => r.toNat = 1 ∧ wordsAt m' state 4 = values.map (BitVec.ofNat 64))
+      | some values => r.toNat = 1 ∧ ∃ first,
+        wordsAt m' state 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+        Entropy.RequestValid (primeEntropy primeLen.toNat) 0 first)
     (leak := some fun _state _primeLen e eLen m =>
       (bytesAt m e eLen.toNat).map (·.toNat))
 
@@ -61,9 +64,9 @@ def primeSearchSig : Sig where
 /-- `primeSearch` on `rand`, from the candidates left in `state`: its status
 (`Entropy.Outcome.status`), the prime at `out` (zeros otherwise), the octets it
 consumed at `used`, and the state for the next call, whose last word is the
-next tape's length (0 if there is none). Its timing may depend on `e`, the
-state's words, the result's status, consumption and request, and the trace of
-its candidates. -/
+next tape's length: any that `Entropy.Result.Requests` allows (0 if there is
+none). Its timing may depend on `e`, the state's words, the result's status,
+consumption and octets left, and the trace of its candidates. -/
 def primeSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   primeSearchSig.contract A
     (pre := fun _out outLen _used e eLen _p pLen _rand randLen _scratch scratchLen state m =>
@@ -84,14 +87,16 @@ def primeSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
           | .accepted c => i2osp c outLen.toNat
           | _ => List.replicate outLen.toNat 0) ∧
       wordsAt m' used 1 = [BitVec.ofNat 64 result.used] ∧
-      wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 outLen.toNat,
-        BitVec.ofNat 64 (primeEntropy outLen.toNat), BitVec.ofNat 64 result.requested])
+      ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
+        BitVec.ofNat 64 outLen.toNat, BitVec.ofNat 64 (primeEntropy outLen.toNat),
+        BitVec.ofNat 64 requested] ∧
+        result.Requests (primeEntropy outLen.toNat) requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out outLen _used e eLen p pLen rand randLen _scratch _scratchLen state m =>
       let result := primeSearch outLen.toNat (bytesAt m e eLen.toNat)
         (bytesAt m p pLen.toNat) (m.readW state 64).toNat (bytesAt m rand randLen.toNat)
       (bytesAt m e eLen.toNat).map (·.toNat) ++ (wordsAt m state 4).map (·.toNat) ++
-        [result.status, result.used, result.requested] ++ result.trace)
+        [result.status, result.used, result.available] ++ result.trace)
 
 def primeSearchApi : Api where
   module := "rsa_keygen"
@@ -107,11 +112,12 @@ def primeSearchApi : Api where
     is exhausted, by too many rejected candidates or by one candidate needing more than \
     the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of \
     `rand` it consumed to `used`, and the state for the next call to `state`, whose last \
-    word is, for 0, the length of the next tape: keep the octets of `rand` after the \
-    first `used`, in order, and append fresh random octets up to that length. `out` is \
+    word is, for 0, the length of the next tape, more than the octets of `rand` after \
+    the first `used` and at most the entropy budget: keep those octets, in order, and \
+    append fresh random octets up to that length. `out` is \
     zeros but for 1.\n\n\
     Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the \
-    pointers, the lengths, `e`, `state`, the status, consumption and request it returns, \
+    pointers, the lengths, `e`, `state`, the status and consumption it returns, \
     and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. \
     Not on `p`, or on the prime it accepts."
   safety := ["`state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, \

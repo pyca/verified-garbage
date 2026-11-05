@@ -1,6 +1,8 @@
-//! RSA keys (RFC 8017 §3), and, in the submodules, the padding schemes
+//! RSA keys (RFC 8017 §3) and their operations: the padding schemes are
+//! methods of the keys ([`PublicKey::encrypt_oaep`],
+//! [`PrivateKey::sign_pss`], …), with each scheme's types in its submodule
 //! ([`oaep`], [`pss`], [`pkcs1_sig`], and for compatibility only
-//! [`pkcs1_enc`]) and key generation ([`keygen`]).
+//! [`pkcs1_enc`]), and key generation is [`keygen::generate`].
 //!
 //! Raw RSA is not part of the API: on its own it is not a secure encryption
 //! or signature scheme. Public exponents are odd, from 3 to `2^33 - 1`

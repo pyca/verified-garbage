@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
@@ -212,12 +213,12 @@ structure SearchDone (p : SearchPublic) (o : State) (result : PrimeSearchResult)
     SearchBase p o s where
   r8 : s.gpr .r8 = BitVec.ofNat 32 result.used
   r9 : s.gpr .r9 = BitVec.ofNat 32 result.remaining
-  r10 : s.gpr .r10 = BitVec.ofNat 32 result.requested
+  r10 : s.gpr .r10 = BitVec.ofNat 32 (requested p.len result)
   r11 : s.gpr .r11 = BitVec.ofNat 32 result.status
   output : Spec.Rsa.bytesAt s.mem (State.addr p.op) p.len =
     match result.outcome with
     | .accepted c => Spec.Rsa.i2osp c p.len
     | _ => List.replicate p.len 0
-  bounds : result.used ≤ p.randLen ∧ result.remaining ≤ p.remaining ∧ result.requested ≤ primeEntropy p.len
+  bounds : result.used ≤ p.randLen ∧ result.remaining ≤ p.remaining ∧ (requested p.len result) ≤ primeEntropy p.len
 
 end VG.Proof.RsaKeyGen.Arm.Search

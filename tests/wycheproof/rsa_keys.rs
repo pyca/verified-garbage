@@ -30,7 +30,7 @@
 
 use std::collections::BTreeMap;
 
-use verified_garbage::rsa::pkcs1_sig::{Hash, sign, verify};
+use verified_garbage::rsa::pkcs1_sig::Hash;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Fields, TestFile};
@@ -86,12 +86,15 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
     assert_eq!(key.modulus_len(), n.len(), "{name}");
     // A signature that verifies; RSASSA-PKCS1-v1_5 is deterministic.
     let digest = [0x5a; 32];
-    let expect = sign(&key, &digest, Hash::Sha256).unwrap();
-    assert!(verify(&public, &expect, &digest, Hash::Sha256), "{name}");
+    let expect = key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap();
+    assert!(
+        public.verify_pkcs1v15(&expect, &digest, Hash::Sha256),
+        "{name}"
+    );
     let values = key.components()[..3].concat();
     let check = |key: &PrivateKey, how: &str| {
         assert_eq!(
-            sign(key, &digest, Hash::Sha256).unwrap(),
+            key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap(),
             expect,
             "{name}: {how}"
         );

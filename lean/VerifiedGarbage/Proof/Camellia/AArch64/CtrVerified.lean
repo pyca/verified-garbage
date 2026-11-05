@@ -144,7 +144,7 @@ theorem ctr_verified :
     Verified AArch64.target ctr (Proof.Camellia.ctrScratchContract AArch64.abi (slots + 12)) :=
   Verified.of_correct ctr_correct ctr_ct (by
     sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
-      Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, ctrAArch64, AArch64.abi, AArch64.argRegs, slots,
+      Spec.Camellia.ctrPre, Proof.Camellia.ctrPostSk, ctrAArch64, AArch64.abi, AArch64.argRegs, slots,
       tailSlot, savedSlot, endSlot, keySlot] [ctrSat] using ctrSat)
 
 /-- A state satisfying CTR's precondition: the schedule at `0x1000`, the
@@ -157,17 +157,18 @@ def ctrFrameSat : State where
   rd := [⟨0x1000, 272⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract AArch64.abi 3344).pre s := by
-  implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
-    Spec.Camellia.ctrPost, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
+theorem ctrFrameSat_pre : ∃ s, (Proof.Camellia.ctrContractSk AArch64.abi 3344).pre s := by
+  implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
+    Proof.Camellia.ctrPostSk, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
 /-- CTR with its working space on the stack. -/
 theorem ctr_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 ctr)
       (Spec.Camellia.ctrContract AArch64.abi 3344) :=
+  Proof.Camellia.ctr_of_sk <|
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Spec.Camellia.ctrPre AArch64.abi.ptrBits)
-    (post := Spec.Camellia.ctrPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (post := Proof.Camellia.ctrPostSk AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3344) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
     (by decide) (by decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
 

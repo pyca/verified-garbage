@@ -1,11 +1,12 @@
-//! RSASSA-PSS (RFC 8017 §8.1) of a hash value, with the keys of [`crate::rsa`],
-//! and with MD5, SHA-1 or a SHA-2 hash function for the message and for MGF1.
+//! RSASSA-PSS (RFC 8017 §8.1) of a hash value, as methods of the keys of
+//! [`crate::rsa`], and with MD5, SHA-1 or a SHA-2 hash function for the
+//! message and for MGF1.
 //!
-//! [`sign`] releases a signature only if it verifies with the public exponent.
-//! [`verify`] expects a salt of a given length or of any length
-//! ([`SaltLength::Any`]). The timing may depend on the public key, the hash
-//! functions, the lengths and the expected salt length, but not on the hash
-//! value, the salt, the signature or the private key.
+//! [`PrivateKey::sign_pss`] releases a signature only if it verifies with the
+//! public exponent. [`PublicKey::verify_pss`] expects a salt of a given length
+//! or of any length ([`SaltLength::Any`]). The timing may depend on the public
+//! key, the hash functions, the lengths and the expected salt length, but not
+//! on the hash value, the salt, the signature or the private key.
 
 #![cfg(all(
     any(
@@ -222,27 +223,29 @@ pub(crate) fn public_scratch_words(n_len: usize) -> usize {
     crate::rsa::public_scratch_words(n_len) + 1024
 }
 
-/// RSASSA-PSS-SIGN (RFC 8017 §8.1.1) of the hash value `digest` of the hash
-/// function `hash`, with MGF1 over `mgf1_hash` and a salt of `salt_len`
-/// random bytes: the signature, as long as the modulus.
-pub fn sign(
-    key: &PrivateKey,
-    digest: &[u8],
-    hash: Hash,
-    mgf1_hash: Hash,
-    salt_len: usize,
-) -> Result<Vec<u8>, Error> {
-    if digest.len() != hash.digest_len() {
-        return Err(Error::InvalidDigestLength);
+impl PrivateKey {
+    /// RSASSA-PSS-SIGN (RFC 8017 §8.1.1) of the hash value `digest` of the hash
+    /// function `hash`, with MGF1 over `mgf1_hash` and a salt of `salt_len`
+    /// random bytes: the signature, as long as the modulus.
+    pub fn sign_pss(
+        &self,
+        digest: &[u8],
+        hash: Hash,
+        mgf1_hash: Hash,
+        salt_len: usize,
+    ) -> Result<Vec<u8>, Error> {
+        if digest.len() != hash.digest_len() {
+            return Err(Error::InvalidDigestLength);
+        }
+        if salt_len > self.n.len() {
+            return Err(Error::SaltTooLong);
+        }
+        let mut salt = vec![0u8; salt_len];
+        getrandom::fill(&mut salt).map_err(|_| Error::Randomness)?;
+        let r = sign_with(self, digest, hash, mgf1_hash, &salt);
+        zeroize(&mut salt);
+        r
     }
-    if salt_len > key.n.len() {
-        return Err(Error::SaltTooLong);
-    }
-    let mut salt = vec![0u8; salt_len];
-    getrandom::fill(&mut salt).map_err(|_| Error::Randomness)?;
-    let r = sign_with(key, digest, hash, mgf1_hash, &salt);
-    zeroize(&mut salt);
-    r
 }
 
 /// The signature of `digest` with the salt `salt`.
@@ -265,7 +268,7 @@ fn sign_with(
     // `out_len = n_len` and `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`hashes::tables::tests::table_words` checks it, and `sign`
+    // (`hashes::tables::tests::table_words` checks it, and `sign_pss`
     // the length); and the
     // CPU has the features of `f` and of the tables' functions, which
     // `functions`, `table::md_table` and `table::table` chose for the
@@ -308,67 +311,69 @@ fn sign_with(
     }
 }
 
-/// RSASSA-PSS-VERIFY (RFC 8017 §8.1.2): whether `signature` is a valid
-/// signature of the hash value `digest` of the hash function `hash`, with
-/// MGF1 over `mgf1_hash` and a salt of `salt_length`.
-pub fn verify(
-    key: &PublicKey,
-    signature: &[u8],
-    digest: &[u8],
-    hash: Hash,
-    mgf1_hash: Hash,
-    salt_length: SaltLength,
-) -> bool {
-    let k = key.n.len();
-    if digest.len() != hash.digest_len() || signature.len() != k {
-        return false;
+impl PublicKey {
+    /// RSASSA-PSS-VERIFY (RFC 8017 §8.1.2): whether `signature` is a valid
+    /// signature of the hash value `digest` of the hash function `hash`, with
+    /// MGF1 over `mgf1_hash` and a salt of `salt_length`.
+    pub fn verify_pss(
+        &self,
+        signature: &[u8],
+        digest: &[u8],
+        hash: Hash,
+        mgf1_hash: Hash,
+        salt_length: SaltLength,
+    ) -> bool {
+        let k = self.n.len();
+        if digest.len() != hash.digest_len() || signature.len() != k {
+            return false;
+        }
+        let (salt_len, any) = match salt_length {
+            SaltLength::Len(l) => (l, 0),
+            SaltLength::Any => (0, 1),
+        };
+        let (_, f, h, m) = with_tables(hash, mgf1_hash);
+        let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
+        let pre = self.pre(&mut scratch);
+        // SAFETY: each pointer is valid for its length (`scratch` for writes),
+        // and none overlaps another or wraps around, as they are distinct Rust
+        // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
+        // `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len` and
+        // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
+        // precomputed values for `self.n`, with their required length; `hash` is
+        // the words of a table of the crate's of `MdHash` and `mgf1` of one of
+        // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
+        // (`hashes::tables::tests::table_words` checks it); and the CPU has the
+        // features of `f` and of the tables' functions, which `functions`,
+        // `table::md_table` and `table::table` chose for the features detected
+        // (which fails to compile if they need others).
+        let r = unsafe {
+            f(
+                self.n.as_ptr(),
+                k,
+                self.e.as_ptr(),
+                self.e.len(),
+                digest.as_ptr(),
+                digest.len(),
+                signature.as_ptr(),
+                k,
+                salt_len,
+                any,
+                scratch.as_mut_ptr(),
+                scratch.len(),
+                pre.as_ptr(),
+                pre.len(),
+                h,
+                m,
+            )
+        };
+        // The encoding is public: ScratchLease returns the buffer to the key unwiped.
+        r == 1
     }
-    let (salt_len, any) = match salt_length {
-        SaltLength::Len(l) => (l, 0),
-        SaltLength::Any => (0, 1),
-    };
-    let (_, f, h, m) = with_tables(hash, mgf1_hash);
-    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
-    let pre = key.pre(&mut scratch);
-    // SAFETY: each pointer is valid for its length (`scratch` for writes),
-    // and none overlaps another or wraps around, as they are distinct Rust
-    // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len` and
-    // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
-    // precomputed values for `key.n`, with their required length; `hash` is
-    // the words of a table of the crate's of `MdHash` and `mgf1` of one of
-    // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`hashes::tables::tests::table_words` checks it); and the CPU has the features of `f` and
-    // of the tables' functions, which `functions`, `table::md_table` and
-    // `table::table` chose for the features detected (which
-    // fails to compile if they need others).
-    let r = unsafe {
-        f(
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            digest.as_ptr(),
-            digest.len(),
-            signature.as_ptr(),
-            k,
-            salt_len,
-            any,
-            scratch.as_mut_ptr(),
-            scratch.len(),
-            pre.as_ptr(),
-            pre.len(),
-            h,
-            m,
-        )
-    };
-    // The encoding is public: ScratchLease returns the buffer to the key unwiped.
-    r == 1
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, SaltLength, sign, verify};
+    use super::{Error, Hash, SaltLength};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -379,7 +384,7 @@ mod tests {
     #[test]
     fn sign_refused() {
         let (private, _) = composite_key();
-        let s = |d: &[u8], h, g, l| sign(&private, d, h, g, l);
+        let s = |d: &[u8], h, g, l| private.sign_pss(d, h, g, l);
         assert_eq!(
             s(&[0; 19], Hash::Sha1, Hash::Sha1, 0),
             Err(Error::InvalidDigestLength)
@@ -401,7 +406,7 @@ mod tests {
     fn verify_refused() {
         let (_, public) = composite_key();
         let sig = [1; 64];
-        let v = |s: &[u8], d: &[u8], h, g| verify(&public, s, d, h, g, SaltLength::Any);
+        let v = |s: &[u8], d: &[u8], h, g| public.verify_pss(s, d, h, g, SaltLength::Any);
         assert!(!v(&sig, &[0; 19], Hash::Sha1, Hash::Sha1));
         assert!(!v(&sig[..63], &[0; 20], Hash::Sha1, Hash::Sha1));
         assert!(!v(&sig, &[0; 20], Hash::Sha1, Hash::Sha1));

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 import VerifiedGarbage.Proof.Framework.Omega
@@ -100,7 +101,7 @@ def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
 /-- The controller's four public words for a finished search. -/
 def SPub.policy (p : SPub) (result : ParameterSearchResult) : List (BitVec 64) :=
   [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.len,
-    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 result.requested]
+    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.bits result)]
 
 /-- A finished search, before `finish` stores `used` and restores `x19`. -/
 structure SDone (p : SPub) (original : State) (result : ParameterSearchResult) (s : State) : Prop where

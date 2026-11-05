@@ -27,11 +27,11 @@ variable {H G : Hash}
 
 theorem dropWhile_ps (p : Nat) (m : List Byte) :
     (zeros p ++ 0x01 :: m).dropWhile (· == 0) = 0x01 :: m :=
-  Proof.RsaPss.dropWhile_db p m
+  Spec.RsaPss.dropWhile_db p m
 
 theorem eq_ps {ps m : List Byte} (h : ps.dropWhile (· == 0) = 0x01 :: m) :
     ps = zeros (ps.length - m.length - 1) ++ 0x01 :: m :=
-  Proof.RsaPss.eq_db h
+  Spec.RsaPss.eq_db h
 
 theorem ps_length (p : Nat) (m : List Byte) : (zeros p ++ 0x01 :: m).length = p + m.length + 1 :=
   Proof.RsaPss.db_length p m

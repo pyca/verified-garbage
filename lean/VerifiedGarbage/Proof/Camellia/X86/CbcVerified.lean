@@ -201,6 +201,7 @@ theorem cbcDecryptChained_verified :
 theorem cbcEncryptChained_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract X86.abi 2772) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 341) (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits) (post := Proof.Camellia.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
@@ -211,6 +212,7 @@ theorem cbcEncryptChained_framed :
 theorem cbcDecryptChained_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cbcDecryptChained)
       (Spec.Camellia.cbcDecryptChainedContract X86.abi 2772) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 341) (pre := Proof.Camellia.cbcChainedPre X86.abi.ptrBits) (post := Proof.Camellia.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
