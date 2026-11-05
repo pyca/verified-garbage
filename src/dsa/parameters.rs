@@ -8,15 +8,16 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{Error, Secret};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dsa::vg_dsa_generate_parameters;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dsa::{
@@ -28,9 +29,9 @@ use crate::arch::dsa::{
     vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
     vg_dsa_generate_parameters_sha256_shani,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::cpu::detected;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use verified_garbage_cpu::Features;
 
 mod search;
@@ -77,9 +78,9 @@ impl Parameters {
             3072 => (384, 32),
             _ => return Err(Error::Length),
         };
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
         let packed = search::generate(p_len, q_len, random)?;
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
         let packed = tapes(p_len, q_len, random)?;
         Ok(Self {
             packed,
@@ -104,7 +105,7 @@ impl Parameters {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -122,7 +123,7 @@ type Generate = unsafe extern "C" fn(
 
 /// The finite search over three fixed tapes (`VG.Spec.Dsa.generateParametersBytes`),
 /// on the targets that do not have the refillable-tape search yet.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 fn tapes(
     p_len: usize,
     q_len: usize,

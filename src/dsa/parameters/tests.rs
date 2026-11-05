@@ -1,5 +1,5 @@
 use super::{Error, Parameters, Vec};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use super::{Features, Generate, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
@@ -56,7 +56,7 @@ fn prime_vectors() -> Vec<Vector> {
 
 /// The three fixed tapes: the published seed in every seed chunk, h = 2 in
 /// every h chunk, and 0x02 witnesses.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     match tape {
         0 => {
@@ -76,14 +76,14 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 const KNOWN_ANSWER_FILLS: usize = 3;
 
 /// One refillable tape: the published seed, then 0x02 octets for its
 /// witnesses and generator candidates (deterministic, for known answers;
 /// production obtains independent bytes from the OS), and 0x02 octets in
 /// any refill.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     buf.fill(2);
     if tape == 0 {
@@ -91,7 +91,7 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 const KNOWN_ANSWER_FILLS: usize = 1;
 
 #[test]
@@ -104,9 +104,9 @@ fn cavp_generated_parameters() {
             Ok(())
         })
         .unwrap();
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
         assert_eq!(tape, KNOWN_ANSWER_FILLS);
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
         assert!(tape >= KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
@@ -118,9 +118,9 @@ fn cavp_generated_parameters() {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 const FILLS: usize = 3;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 const FILLS: usize = 2;
 
 #[test]
@@ -158,7 +158,7 @@ fn parameter_generation_errors() {
 }
 
 #[test]
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 fn empty_tapes_zero_output() {
     for (p_len, q_len) in [(128, 20), (256, 32), (384, 32)] {
         let mut out = vec![0xa5; 2 * p_len + q_len];
@@ -293,7 +293,7 @@ fn check_empty_tapes(selected: Generate, p_len: usize) {
 }
 
 #[test]
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 fn exhausted_tapes_after_prime_search_zero_output() {
     let v = prime_vectors().remove(0);
     assert_eq!(v.bits, 1024);
