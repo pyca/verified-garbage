@@ -319,6 +319,46 @@ abbrev spec (s : State) (m : Mem) (r : BitVec 32) : Prop :=
     else Spec.Rsa.bytesAt m (argumentPointer s 0) (arg s 6).toNat = List.replicate (arg s 6).toNat 0 ∧
       Spec.Rsa.bytesAt m (argumentPointer s 2) (arg s 6).toNat = List.replicate (arg s 6).toNat 0
 
+/-- The context's values at the frame's state. -/
+theorem frame_vals {s : State} (A : CachedABI s) {m : Mem}
+    (Ft : Frame [⟨wsBase gArgs s, wsSize gArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem m) :
+    CtxVals (pLenOf gArgs s) (synth gArgs (arg s)) (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).p
+      (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).g
+      (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s))) m := by
+  have dl : (arg s 5).toNat = 2 * (arg s 6).toNat ∨ (arg s 5).toNat = 3 * (arg s 6).toNat := A.dLen
+  have lw := A.pLen.1
+  have up := A.pLen.2
+  have mv := VG.Proof.Ffdh.domainValid_mod A.valid
+  have mv' := mv
+  unfold Spec.Rsa.modulusValid at mv'
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv'
+  have hp : 0 < (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).p := by
+    exact Nat.lt_of_lt_of_le (Nat.two_pow_pos 511) mv'.1.1.2
+  have hpl : (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).p < 2 ^ (8 * (arg s 6).toNat) := by
+    have h1 := VG.Proof.Bignum.os2ip_lt ((entryDom s).take (arg s 6).toNat)
+    have h2 : 256 ^ ((entryDom s).take (arg s 6).toNat).length ≤ 2 ^ (8 * (arg s 6).toNat) := by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
+    change Spec.Rsa.os2ip ((entryDom s).take (arg s 6).toNat) < _
+    omega
+  have dlen : (arg s 6).toNat ≤ (entryDom s).length := by
+    rw [VG.Proof.Bignum.bytesAt_length]; omega
+  have W : Spec.Rsa.wordsAt s.mem (ctxAddr (synth gArgs (arg s))) (3 + 34 * mw (arg s 6).toNat) =
+      generationValues (arg s 6).toNat (entryDom s) := by
+    have c := A.ctx
+    rw [VG.Proof.Ffdh.generationPrecompute_eq dlen mv, A.ctxLen, genWords_eq] at c
+    exact (Option.some.inj c).symm
+  have CV0 : CtxVals (pLenOf gArgs s) (synth gArgs (arg s)) _ _ _ s.mem := ctxVals_of W A.valid A.pLen.2 hp hpl
+  have cb := ctxBytes_eq A
+  have hn : ctxBytes (pLenOf gArgs s) < 2 ^ 64 := by
+    have := A.ctxBound; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
+    omega
+  exact CV0.keep Ft (frame_far A (by
+    show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
+    rw [← cb]; exact A.scratchCtx.symm)
+    (by show Region.Disjoint _ ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩
+        rw [← cb]; exact A.belowCtx)) hn
+
 /-- The body, from the frame's state. -/
 theorem frame_ok {s : State} (A : CachedABI s) (f : State)
     (I : In (Rd s) (wsBase gArgs s) (wsSize gArgs s) (pLenOf gArgs s) (synth gArgs (arg s)) f)
@@ -350,36 +390,7 @@ theorem frame_ok {s : State} (A : CachedABI s) (f : State)
   have h2 : 2 * pLenOf gArgs s ≤ (arg s 5).toNat := by omega
   have dv : Spec.Ffdh.domainValid (pLenOf gArgs s) (domOf f.mem (synth gArgs (arg s)) (arg s 5).toNat) = true := by
     rw [domOf, D]; exact A.valid
-  have mv := VG.Proof.Ffdh.domainValid_mod A.valid
-  have mv' := mv
-  unfold Spec.Rsa.modulusValid at mv'
-  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv'
-  have hp : 0 < (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).p := by
-    exact Nat.lt_of_lt_of_le (Nat.two_pow_pos 511) mv'.1.1.2
-  have hpl : (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)).p < 2 ^ (8 * (arg s 6).toNat) := by
-    have h1 := VG.Proof.Bignum.os2ip_lt ((entryDom s).take (arg s 6).toNat)
-    have h2 : 256 ^ ((entryDom s).take (arg s 6).toNat).length ≤ 2 ^ (8 * (arg s 6).toNat) := by
-      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
-    change Spec.Rsa.os2ip ((entryDom s).take (arg s 6).toNat) < _
-    omega
-  have dlen : (arg s 6).toNat ≤ (entryDom s).length := by
-    rw [VG.Proof.Bignum.bytesAt_length]; omega
-  have W : Spec.Rsa.wordsAt s.mem (ctxAddr (synth gArgs (arg s))) (3 + 34 * mw (arg s 6).toNat) =
-      generationValues (arg s 6).toNat (entryDom s) := by
-    have c := A.ctx
-    rw [VG.Proof.Ffdh.generationPrecompute_eq dlen mv, A.ctxLen, genWords_eq] at c
-    exact (Option.some.inj c).symm
-  have CV0 : CtxVals (pLenOf gArgs s) (synth gArgs (arg s)) _ _ _ s.mem := ctxVals_of W A.valid (by omega) hp hpl
-  have hn : ctxBytes (pLenOf gArgs s) < 2 ^ 64 := by
-    have := CR.afit; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
-    omega
-  have cb := ctxBytes_eq A
-  have CVf := CV0.keep Ft (frame_far A (by
-    show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
-    rw [← cb]; exact A.scratchCtx.symm)
-    (by show Region.Disjoint _ ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩
-        rw [← cb]; exact A.belowCtx)) hn
+  have CVf := frame_vals A Ft
   have CV : CtxVals (pLenOf gArgs s) (synth gArgs (arg s)) (comp f.mem (synth gArgs (arg s)) (pLenOf gArgs s) 0)
       (comp f.mem (synth gArgs (arg s)) (pLenOf gArgs s) 1)
       (Spec.Ffdh.generationScalarBits (CheckPrivate.params f.mem (synth gArgs (arg s)) (pLenOf gArgs s)

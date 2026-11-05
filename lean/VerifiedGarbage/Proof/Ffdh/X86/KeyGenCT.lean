@@ -116,15 +116,15 @@ theorem qBranch_rel {Q : State → Prop} :
   have Su := Step.regs T.1.1 m K
   exact WP.mono (andStore_ok Su.inp (d := accOff) (by decide)) fun t St => tp_step T (Su.trans St)
 
-theorem tail_trace :
-    RelCT isa (Both (TP Ex base bytes len dlen args sp)) Impl.Ffdh.X86.GenerateKey.tail fun _ _ => True := by
+/-- The tail with the stage `pow`, whose runs are related. -/
+theorem tailWith_trace {Q : State → Prop} {pow : Prog isa}
+    (hpow : RelCT isa (Both Q) pow (Both (TP Ex base bytes len dlen args sp))) :
+    RelCT isa (Both Q) (tailWith pow) fun _ _ => True := by
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
-  rw [tail_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (M := isa) (R := Both fun u => TP Ex base bytes len dlen args sp u ∧ Gate u (dlen = 2 * len)) ?_ ?_
-  · refine VG.RelCT.seq (powP_tp (by decide) (by decide) (by decide) (by decide)
-      VG.Proof.Ffdh.X86.CheckDomain.copy10_check VG.Proof.Ffdh.X86.CheckPrivate.copy13_check) ?_
+  · refine VG.RelCT.seq hpow ?_
     refine VG.RelCT.seq (aRel (F := TP Ex base bytes len dlen args sp) (fun _ T => T.1) copy612_check fun x T =>
       WP.mono (KeyGen.copyW_ok T.1.1 (a := 6) (b := 12) (by decide) (by decide) (by decide))
         fun _ ⟨S, _⟩ => tp_step T S) ?_
@@ -146,6 +146,12 @@ theorem tail_trace :
       ((qBranch_rel (Q := fun _ => True)).mono (fun _ _ h => ⟨⟨h.1.1.1, trivial⟩, h.2.1.1, trivial⟩)
         fun _ _ h => h)) ?_
     exact aEnd (fun _ T => T.1) outStat_check
+
+theorem tail_trace :
+    RelCT isa (Both (TP Ex base bytes len dlen args sp)) Impl.Ffdh.X86.GenerateKey.tail fun _ _ => True := by
+  rw [tail_eq]
+  exact tailWith_trace (powP_tp (by decide) (by decide) (by decide) (by decide)
+    VG.Proof.Ffdh.X86.CheckDomain.copy10_check VG.Proof.Ffdh.X86.CheckPrivate.copy13_check)
 end
 
 /-! ## The runs of the body -/

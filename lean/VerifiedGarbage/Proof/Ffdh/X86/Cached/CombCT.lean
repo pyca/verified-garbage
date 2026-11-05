@@ -250,7 +250,7 @@ theorem loop_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.F
 /-- A run the comb starts from. -/
 def CS (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (P bits : Nat) (u : State) : Prop :=
-  ∃ G x, In Ex base bytes len args u ∧ CombEnv Ex base bytes len args P G x bits u ∧
+  ∃ G x, x < 2 ^ bits ∧ In Ex base bytes len args u ∧ CombEnv Ex base bytes len args P G x bits u ∧
     safeM (sv u.mem base len .wide 9) = P ∧ w32 u.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows bits ∧
     ArgsOk u ∧ u.gpr .esp = sp
 
@@ -271,9 +271,9 @@ theorem comb_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.F
   refine VG.RelCT.seq (relCT_both (F := CI Ex base bytes len args sp P bits (Spec.Rsa.FixedBaseComb.rows bits))
     ((combHead_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)).mono
       (fun _ _ h => ?_) fun _ _ h => h) fun u C => ?_) ?_
-  · obtain ⟨⟨_, _, h₁, _, _, _, A₁, e₁⟩, ⟨_, _, h₂, _, _, _, A₂, e₂⟩⟩ := h
+  · obtain ⟨⟨_, _, _, h₁, _, _, _, A₁, e₁⟩, ⟨_, _, _, h₂, _, _, _, A₂, e₂⟩⟩ := h
     exact ⟨⟨h₁, A₁, e₁⟩, ⟨h₂, A₂, e₂⟩⟩
-  · obtain ⟨G, x, h, E, hP, hrows, A, e⟩ := C
+  · obtain ⟨G, x, _, h, E, hP, hrows, A, e⟩ := C
     exact WP.mono (combHead_ok h E hP hR0 hrows) fun t S => ⟨u, G, x, _, h, E, S, A, e⟩
   refine VG.RelCT.seq (loop_trace hR0 hR) ?_
   refine (mul_relCT (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) sp (o := 6) (a := 6)
