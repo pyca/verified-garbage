@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedShortCT
+
 /-!
 # ML-DSA key generation on x86-64, with this library's primitives
 
@@ -46,7 +48,7 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   add := calleeOf v.ok.add
   rejNtt := (⟨⟨16, by decide, Sample.rejNTT_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.rejNtt _)
-  rejBounded := (⟨⟨16, by decide, Sample.rejBounded_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
+  rejBounded := (⟨⟨16, by decide, Sample.RejBoundedShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.rejBounded _)
   power2Round := (⟨⟨0, by decide, Round.power2Round_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.power2Round _)

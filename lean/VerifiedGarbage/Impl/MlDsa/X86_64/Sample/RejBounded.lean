@@ -71,14 +71,40 @@ def rbBody (η : Nat) : Prog isa :=
       (.block [.alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]))
 
 /-- The loop, from the XOF output at `scratch + 840`. -/
-def rbLoop (η : Nat) : Prog isa :=
+def rbLoopCount (η count : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)])
-    (.seq (.block [.mov32 .rcx (.imm 544)]) (.loop (rbBody η) .ne))
+    (.seq (.block [.mov32 .rcx (.imm (BitVec.ofNat 32 count))]) (.loop (rbBody η) .ne))
+
+/-- Parse all four blocks. -/
+def rbLoop (η : Nat) : Prog isa := rbLoopCount η 544
 
 def rejBounded : Prog isa :=
   .seq (.block (pro .rcx .rdx (.reg .rsi) (.imm 66)))
     (.seq (sponge 136 544)
       (.seq (.seq (.block [.alu32 .cmp .r12 (.imm 2)]) (.ite .e (rbLoop 2) (rbLoop 4)))
         (.block (retJ ++ epi))))
+
+/-- Save the ordinary sampler layout. -/
+def rbShortPro : List Instr :=
+  [.store (at_ .rcx 2024) .rbx, .store (at_ .rcx 2032) .rbp, .store (at_ .rcx 2040) .r12,
+    .mov .rbx (.reg .rcx), .mov .rbp (.reg .rdx), .mov .rcx (.reg .rdi), .mov32 .r8 (.imm 66)]
+
+/-- Append the remaining SHAKE bytes and resume at the accepted coefficient
+count, using the same parser and the existing four-block bound. -/
+def rbContinueArgs (η : Nat) : Prog isa :=
+  .seq (.block saveCount) (.seq (squeezeMore 136 1112 272) (.block (resumeArgs 1112 272 ++ [.mov32 .r12 (.imm (BitVec.ofNat 32 η))])))
+
+def rbContinue (η : Nat) : Prog isa :=
+  .seq (rbContinueArgs η) (.seq (.loop (rbBody η) .ne) (.block (retJ ++ epi)))
+
+/-- Sample two blocks first; if needed, continue the same SHAKE stream and
+coefficient list to the original four-block bound. -/
+def rbShort (η : Nat) : Prog isa :=
+  .seq (.block rbShortPro) (.seq (spongeStream 136 272) (.seq (rbLoopCount η 272)
+    (.seq (.block [.alu .cmp .rdi (.imm 256)])
+      (.ite .e (.block (retJ ++ epi)) (rbContinue η)))))
+
+def rejBoundedShort : Prog isa :=
+  .seq (.block [.alu32 .cmp .rsi (.imm 2)]) (.ite .e (rbShort 2) (rbShort 4))
 
 end VG.Impl.MlDsa.X86_64.Sample
