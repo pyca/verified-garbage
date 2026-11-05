@@ -606,4 +606,212 @@ theorem loop_ok {t : State} (h : LoopInv P s₀ 0 t) :
 
 end
 
+/-! ## Steps a–g, and the end -/
+
+theorem restorable : Spill.Restorable .s1 restList := by decide
+
+/-- RFC 6979's `K` and `V` after step g, from the code's. -/
+theorem kv0_eq (P : Rfc) (s₀ : State) :
+    kv0 P s₀ =
+      let K₁ := Spec.Hmac.hmac P.hH.SH.H (List.replicate P.H.D 0)
+        (List.replicate P.H.D 1 ++ BitVec.ofNat 8 0 :: (dB P s₀ ++ hSpec P s₀))
+      let V₁ := Spec.Hmac.hmac P.hH.SH.H K₁ (List.replicate P.H.D 1)
+      let K₂ := Spec.Hmac.hmac P.hH.SH.H K₁ (V₁ ++ BitVec.ofNat 8 1 :: (dB P s₀ ++ hSpec P s₀))
+      (K₂, Spec.Hmac.hmac P.hH.SH.H K₂ V₁) := by
+  have hi : Spec.Ecdsa.Rfc6979.int2octets P.kit.E.curve (xOf P s₀) = dB P s₀ := by
+    have hnb : Spec.Ecdsa.nBits P.kit.E.curve + P.kit.sh = 8 * P.Q := P.kit.nbits
+    have := P.kit.sh8
+    rw [Spec.Ecdsa.Rfc6979.int2octets, VG.Proof.Ecdsa.Rfc6979.rlenR (R := P.Q) (by omega) (by omega),
+      show P.Q = (dB P s₀).length from (bytesAt_length _ _ _).symm, VG.Proof.Ecdsa.Rfc6979.toBytes_ofBytes]
+  simp only [kv0, Spec.Ecdsa.Rfc6979.init, hi]
+  rfl
+
+theorem wipe_eq : Cfg.wipe = .li .t0 0 :: (((List.range 51).map fun j => (Reg.t0, fK + 8 * j)).map
+    (fun q => .store .d q.1 .s1 q.2)) := by
+  rw [Cfg.wipe, List.map_map]; rfl
+
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+/-- The frame's body: our caller's registers restored, and the result. -/
+theorem main_ok : WP isa P.c.main s₀ fun u => (∀ r ∈ preserved, u.gpr r = s₀.gpr r) ∧
+      u.gpr .ra = s₀.gpr .ra ∧ u.sp = s₀.sp ∧ u.wr = s₀.wr ∧ ∃ i, i < P.c.tries ∧
+      (∀ j < i, sigI P s₀ j = none) ∧ (sigI P s₀ i ≠ none ∨ i + 1 = P.c.tries) ∧
+      ResultIs P s₀ (sigI P s₀ i) u := by
+  have hz := sizes P
+  have hfr : frB = 512 := rfl
+  unfold Cfg.main
+  refine WP.seq (VG.RISCV64.WP.mono_syms (prologue_ok hp) fun s₁ h₁ y₁ => ?_)
+  refine WP.seq (VG.RISCV64.WP.mono_syms (prepX_ok hp h₁) fun s₂ ⟨h₂, x₂, _⟩ y₂ => ?_)
+  refine WP.seq (VG.RISCV64.WP.mono_syms (prepH_ok hp h₂ x₂) fun s₃ ⟨h₃, hh₃, x₃, _⟩ y₃ => ?_)
+  refine WP.seq (VG.RISCV64.WP.mono_syms (initKV_ok hp h₃ hh₃ x₃) fun s₄ h₄ y₄ => ?_)
+  have y₄' : s₄.syms = s₀.syms := y₄.trans (y₃.trans (y₂.trans y₁))
+  refine WP.seq (VG.RISCV64.WP.mono_syms (rekeyFull_ok hp h₄ y₄' (b := 0) (by decide)) fun s₅ h₅ y₅ => ?_)
+  refine WP.seq (VG.RISCV64.WP.mono_syms (rekeyFull_ok hp h₅ (y₅.trans y₄') (b := 1) (by decide))
+    fun s₆ h₆ y₆ => ?_)
+  refine WP.seq ?_
+  unfold Cfg.initCnt
+  refine VG.RISCV64.WP.of_syms (wp_li (imm := P.c.tries) P.hT' fun s₇ u₇ => WP.block_nil fun y₇ => ?_)
+  have L₇ : LoopInv P s₀ 0 s₇ := by
+    have e := kv0_eq P s₀
+    refine ⟨P.hT, ⟨h₆.kr.upd (by decide) u₇, ?_, ?_, ?_, ?_⟩, by rw [u₇.gpr, Nat.sub_zero],
+      fun j hj => absurd hj (by omega), y₇.trans (y₆.trans (y₅.trans y₄'))⟩
+    · rw [u₇.mem, h₆.k]; show _ = (kv0 P s₀).1; rw [e]
+    · rw [u₇.mem, h₆.v]; show _ = (kv0 P s₀).2; rw [e]
+    · rw [u₇.mem]; exact h₆.h
+    · rw [u₇.mem]; exact h₆.x
+  refine WP.seq (WP.mono (loop_ok hp L₇) fun s₈ ⟨i, x₈⟩ => ?_)
+  rw [wipe_eq, List.cons_append]
+  refine wp_li (imm := 0) (by decide) fun s₉ u₉ => ?_
+  refine sds_ok hp ((List.range 51).map fun j => (Reg.t0, fK + 8 * j)) (fun q hq => by
+      simp only [List.mem_map, List.mem_range] at hq
+      obtain ⟨j, hj, rfl⟩ := hq
+      simp only [fK]; omega) (by decide) (x₈.kr.upd (by decide) u₉) fun s₁₀ k₁₀ g₁₀ f₁₀ _ => ?_
+  have F : Frame [sR s₀ fK 408] s₈.mem s₁₀.mem := by
+    rw [← u₉.mem]
+    exact f₁₀.sub fun r hr => by
+      simp only [List.map_map, List.mem_map, List.mem_range] at hr
+      obtain ⟨j, hj, rfl⟩ := hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by simp only [fK]; omega) (by simp only [fK]; omega)⟩
+  refine WP.mono (Spill.restore_wp (b := .s1) (l := restList) (by omega_using [hp.al]) k₁₀.s1
+    (by decide) restorable
+    (fun q hq => in_fr' hp k₁₀.wr (by
+      simp only [restList, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega))
+    (k₁₀.saved.sub (by decide))) fun u hr => ⟨fun r hr' => ?_, ?_, by rw [hr.sp, k₁₀.sp], by rw [hr.wr, k₁₀.wr],
+      i, x₈.lt, x₈.fails, x₈.last, ?_⟩
+  · refine hr.gpr_of ?_
+    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [.inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide),
+      .inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide), .inl (by decide),
+      .inr (k₁₀.nv _ (by simp)), .inr (k₁₀.nv _ (by simp))]
+  · exact hr.gpr_of (.inl (by decide))
+  · refine x₈.res.keep ?_ ?_
+    · rw [hr.other _ (by decide), g₁₀, u₉.other _ (by decide)]
+    · rw [hr.mem, fbytes F (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (hp.f_o.sub_left (part_sub (by simp only [fK]; omega))).symm) (by have := hz.Q; omega)]
+
+end
+
+/-! ## The frame -/
+
+/-- The state the frame's body starts in, from the contract's precondition. -/
+theorem pre_alloc {ns : List String} {s : State} (hp : (rfcRC P.kit.K P.I P.w P.c.f ns P.N).pre s) :
+    Pre P (allocd frB s) := by
+  have hz := sizes P
+  have hX := hz.X
+  have hfr : frB = 512 := rfl
+  have hlen : P.I.ecdsa.curve.len = P.Q := by rw [P.hE, P.kit.len]
+  obtain ⟨hs, hk⟩ := hp
+  simp only [rfcR, hlen, P.hD, stripConsts_gpr, stripConsts_sp, stripConsts_wr, stripConsts_mem,
+    stripConsts_syms] at hs
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+    h23, h24, h25, h26, h27⟩ := hs
+  have hN : P.N = frB + P.X := by simp only [Rfc.N, Rfc.X]
+  have hspN : (s.sp - BitVec.ofNat 64 frB).toNat = s.sp.toNat - frB :=
+    VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by rw [hN] at h11; omega) (by omega)
+  have subF : Region.Sub ⟨s.sp - BitVec.ofNat 64 frB, frB⟩ (below s.sp P.N) :=
+    Offset.sub_below s.sp (by rw [hN]; omega) (by rw [hN]; omega)
+  have subS : Region.Sub (below (s.sp - BitVec.ofNat 64 frB) P.X) (below s.sp P.N) := by
+    have := below_body' s.sp frB P.X
+    rwa [Nat.add_comm P.X, ← hN] at this
+  refine ⟨?_, ?_, h3, h4, h5, h6, h7, h12.sub_left subF, h13.sub_left subF, h14.sub_left subF,
+    h15.sub_left subF, h12.sub_left subS, h13.sub_left subS, h14.sub_left subS, h15.sub_left subS, ?_, ?_, ?_,
+    h17, h18, h19, h20, h22, h21, h23, ?_, h24, h25, h26, h27, hk.2.1, hk.2.2.2,
+    fun t ht => (hk.2.2.1 t ht).1, ?_⟩
+  · have e1 : s.rd.take (s.rd.length - P.kit.K.length) =
+        [⟨s.gpr .a1, P.Q⟩, ⟨s.gpr .a2, P.H.D⟩, ⟨s.gpr .a5, 48⟩] := h1
+    have e := List.take_append_drop (s.rd.length - P.kit.K.length) s.rd
+    rw [e1, hk.1] at e
+    show s.rd = _
+    rw [← e]; rfl
+  · show (⟨s.sp - BitVec.ofNat 64 frB, frB⟩ : Region) :: s.wr = _
+    rw [h2]; rfl
+  · show (s.sp - BitVec.ofNat 64 frB).toNat % 16 = 0
+    rw [hspN]; omega
+  · show P.X ≤ (s.sp - BitVec.ofNat 64 frB).toNat
+    rw [hspN]; rw [hN] at h11; omega
+  · show (s.sp - BitVec.ofNat 64 frB).toNat + frB ≤ 2 ^ 64
+    rw [hspN]; have := s.sp.isLt; rw [hN] at h11; omega
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (h16.sub_left subF).symm
+    · exact h8
+    · exact h9
+    · exact (h16.sub_left subS).symm
+  · intro t ht r hr
+    obtain ⟨-, hw, hres⟩ := hk.2.2.1 t ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    have hb : below s.sp P.N ∈ abi.reserved P.N s := by
+      show _ ∈ stackBelow s.sp P.N
+      rw [show P.N = (frB - 1 + P.X) + 1 by rw [hN]; omega]
+      exact List.mem_singleton_self _
+    have d1 : Region.Disjoint t (below s.sp P.N) := hres _ hb
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (d1.symm.sub_left subF).symm
+    · exact hw _ (by rw [h2]; exact List.mem_cons_self)
+    · exact hw _ (by rw [h2]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    · exact (d1.symm.sub_left subS).symm
+
+/-- The instance's signature and number of candidates, as the proof names its parts. -/
+theorem result_unfold (s₀ : State) :
+    result P.I s₀.mem (dk s₀) (dg s₀) =
+      if 1 ≤ xOf P s₀ ∧ xOf P s₀ < P.kit.E.curve.n then
+        Spec.Ecdsa.Rfc6979.search P.kit.E.curve P.hH.SH.H P.H.D (xOf P s₀) (eOf P s₀) (kv0 P s₀).1 (kv0 P s₀).2
+          P.c.tries
+      else (none, 0) := by
+  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.hct]
+  rw [P.hE, P.hHash, P.hD, P.kit.len]
+  rfl
+
+/-- The signature of the candidate the loop stopped at is RFC 6979's. -/
+theorem result_eq (s₀ : State) {i : Nat} (hi : i < P.c.tries) (hf : ∀ j < i, sigI P s₀ j = none)
+    (hl : sigI P s₀ i ≠ none ∨ i + 1 = P.c.tries) :
+    (result P.I s₀.mem (dk s₀) (dg s₀)).1 = sigI P s₀ i := by
+  rw [result_unfold]
+  by_cases hv : 1 ≤ xOf P s₀ ∧ xOf P s₀ < P.kit.E.curve.n
+  · simp only [hv, and_self, ite_true]
+    rw [VG.Proof.Ecdsa.Rfc6979.searchB_shift (b := P.nV) (nV_eq P) i P.c.tries (by omega) hf,
+      show P.c.tries - i = (P.c.tries - 1 - i) + 1 by omega]
+    cases hs : sigI P s₀ i with
+    | some rs => rw [VG.Proof.Ecdsa.Rfc6979.searchB_ok (b := P.nV) (nV_eq P) hs]
+    | none =>
+      have h7 : i + 1 = P.c.tries := hl.resolve_left (by simp [hs])
+      rw [VG.Proof.Ecdsa.Rfc6979.searchB_fail (b := P.nV) (nV_eq P) hs, show P.c.tries - 1 - i = 0 by omega]
+      rfl
+  · symm
+    simp only [hv, ite_false, sigI, Spec.Ecdsa.signWith]
+    split
+    · rename_i h; exact absurd ⟨h.1, h.2.1⟩ hv
+    · rfl
+
+/-- The function, in its frame. -/
+theorem correct {ns : List String} {s : State} (hp : (rfcRC P.kit.K P.I P.w P.c.f ns P.N).pre s) :
+    WP isa P.c.sign s fun s' => abiPreserved s s' ∧ (rfcRC P.kit.K P.I P.w P.c.f ns P.N).post s s' := by
+  have hz := sizes P
+  have hfr : frB = 512 := rfl
+  have hsp : P.N ≤ s.sp.toNat := hp.1.2.2.2.2.2.2.2.2.2.2.1
+  have p := pre_alloc hp
+  unfold Cfg.sign
+  refine WP.alloc ⟨by omega, by omega, by omega⟩
+    (by have : frB ≤ P.N := by simp only [Rfc.N]; omega
+        omega)
+    (WP.mono (main_ok p) fun s' ⟨hk, hra, hsp', hwr, i, hi, hf, hl, hres⟩ => ?_)
+  rw [freed_eq hwr hsp']
+  refine ⟨⟨fun r hr => hk r hr, rfl, hra⟩, ?_⟩
+  have hlen : P.I.ecdsa.curve.len = P.Q := by rw [P.hE, P.kit.len]
+  have hr := result_eq (s₀ := allocd frB s) hi hf hl
+  show match (result P.I s.mem (s.gpr .a1) (s.gpr .a2)).1 with
+    | some rs => (s'.gpr .a0).setWidth 32 = 1 ∧
+        Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = Spec.Ecdsa.encode P.I.ecdsa.curve rs
+    | none => (s'.gpr .a0).setWidth 32 = 0 ∧
+        Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = List.replicate (2 * P.I.ecdsa.curve.len) 0
+  rw [show s.mem = (allocd frB s).mem from rfl, show s.gpr = (allocd frB s).gpr from rfl, hr, hlen, P.hE]
+  unfold ResultIs at hres
+  split at hres <;> exact ⟨by rw [hres.1]; rfl, hres.2⟩
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
