@@ -206,7 +206,7 @@ section
 variable {G : GP} {σ s : State} {c : Cfg}
 
 theorem GI.witLt {V : Nat → BitVec 64} {LS : List Nat} (h : GI G 176 σ V LS s) : G.witLen < 2 ^ 64 := by
-  rw [← h.hG]; exact (stackArg σ 1).isLt
+  rw [← h.hG]; exact (σ.gpr .r7).isLt
 
 theorem wWords_lt {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) : wWords L < 2 ^ 15 := by
   rcases hL with rfl | rfl | rfl <;> decide

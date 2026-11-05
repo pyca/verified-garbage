@@ -161,7 +161,7 @@ theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hc
   have e2 : sPBE = 1056 := rfl
   have e3 : sQ = 608 := rfl
   have e4 : sG = 1824 := rfl
-  have hE : hEnd = 296 := rfl
+  have hE : hEnd = 320 := rfl
   have hpb : VG.Impl.Dsa.PPC64LE.Generation.pB = 3072 := rfl
   -- The copies.
   refine VP.seq (copyCl_vp (dst := sPacked) hP hPl hb.1 (by omega) (by decide) (by decide) (by omega) (by omega)
