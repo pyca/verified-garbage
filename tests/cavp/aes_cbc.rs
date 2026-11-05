@@ -227,3 +227,44 @@ fn limits_and_empty_input() {
         assert_eq!(buffer, vec![0xa5; 16 * 67]);
     }
 }
+
+/// The parallel block groups and their tails preserve streaming behavior,
+/// including unaligned buffers and empty calls at each split.
+#[test]
+fn block_batches_and_continuation() {
+    let iv = [0x3c; 16];
+    for key_len in [16, 24, 32] {
+        let key = crate::bytes::pattern(key_len, 17, 3);
+        for blocks in [0usize, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65] {
+            let plain = crate::bytes::pattern(16 * blocks, 73, 5);
+            let mut ciphertext = plain.clone();
+            run(&key, &iv, true, &mut ciphertext, &[]);
+            for split in [
+                0,
+                blocks.min(1),
+                blocks / 2,
+                blocks.saturating_sub(1),
+                blocks,
+            ] {
+                for encrypt in [true, false] {
+                    let (input, expected) = if encrypt {
+                        (&plain, &ciphertext)
+                    } else {
+                        (&ciphertext, &plain)
+                    };
+                    let mut guarded = vec![0xa5; input.len() + 2];
+                    guarded[1..input.len() + 1].copy_from_slice(input);
+                    run(
+                        &key,
+                        &iv,
+                        encrypt,
+                        &mut guarded[1..input.len() + 1],
+                        &[0, 16 * split, 0],
+                    );
+                    assert_eq!(&guarded[1..input.len() + 1], expected);
+                    assert_eq!((guarded[0], guarded[input.len() + 1]), (0xa5, 0xa5));
+                }
+            }
+        }
+    }
+}

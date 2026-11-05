@@ -18,11 +18,13 @@ pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
     use criterion::{BenchmarkId, Throughput};
+    use openssl::cipher_ctx::CipherCtx;
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
+    eprintln!("AES-CBC comparison: {}", openssl::version::version());
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
     let iv = [0x3c; 16];
     for (key_len, cipher) in [
@@ -36,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
             ("decrypt", false, Mode::Decrypt),
         ] {
             let mut group = c.benchmark_group(format!("aes-cbc-{operation}-{}", 8 * key_len));
-            for size in SIZES {
+            for size in SIZES.into_iter().chain([1024 * 1024]) {
                 group.throughput(Throughput::Bytes(size as u64));
                 let data = vec![0x5a; size];
                 let mut buffer = crate::InPlace::new(size, &data);
@@ -64,6 +66,36 @@ pub fn bench(c: &mut Criterion) {
                         ctx.pad(false);
                         let n = ctx.update(black_box(&data), &mut output).unwrap();
                         let n = n + ctx.finalize(&mut output[n..]).unwrap();
+                        black_box(&output[..n]);
+                    })
+                });
+                // Match VG's in-place API, including the input copy. Keep the
+                // original out-of-place EVP comparison above for continuity.
+                let cipher_ref = openssl::cipher::Cipher::from_nid(cipher.nid()).unwrap();
+                group.bench(BenchmarkId::new("openssl-inplace", size), |b| {
+                    b.iter(|| {
+                        let mut ctx = CipherCtx::new().unwrap();
+                        if encrypt {
+                            ctx.encrypt_init(
+                                Some(cipher_ref),
+                                Some(black_box(key)),
+                                Some(black_box(&iv)),
+                            )
+                            .unwrap();
+                        } else {
+                            ctx.decrypt_init(
+                                Some(cipher_ref),
+                                Some(black_box(key)),
+                                Some(black_box(&iv)),
+                            )
+                            .unwrap();
+                        }
+                        ctx.set_padding(false);
+                        output[..size].copy_from_slice(black_box(&data));
+                        let n = ctx
+                            .cipher_update_inplace(black_box(&mut output), size)
+                            .unwrap();
+                        let n = n + ctx.cipher_final(&mut output[n..]).unwrap();
                         black_box(&output[..n]);
                     })
                 });
