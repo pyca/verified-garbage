@@ -21,13 +21,6 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Ecdsa.Rfc6979.X86
 open VG.Proof.Mont.X86 (wp_movS)
 
-/-- Argument `i` of the layout. -/
-def Lay.a {dn : Nat} (L : Lay dn) : Nat → BitVec 32
-  | 0 => L.a0
-  | 1 => L.a1
-  | 2 => L.a2
-  | _ => L.a3
-
 /-- The bytes of a region a frame of writes misses. -/
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
@@ -56,26 +49,15 @@ theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e 
 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
-/-- Our arguments, in the frame's body. -/
-theorem Ctx.argv {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
-    u.mem.readW (L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i)) 32 = L.a i := by
-  match i, hi with
-  | 0, _ => rw [show 276 + 4 * L.e + 4 * 0 = 276 + 4 * L.e by omega]; exact hc.pOut
-  | 1, _ => rw [show 276 + 4 * L.e + 4 * 1 = 280 + 4 * L.e by omega]; exact hc.pD
-  | 2, _ => rw [show 276 + 4 * L.e + 4 * 2 = 284 + 4 * L.e by omega]; exact hc.pDg
-  | 3, _ => rw [show 276 + 4 * L.e + 4 * 3 = 288 + 4 * L.e by omega]; exact hc.pScr
+theorem argM_eq (i : Nat) : argM i = .mem ⟨.esp, 516 + 4 * i⟩ := by
+  simp only [argM, Impl.Ecdsa.Rfc6979.X86.frameBytes, stk]
 
-theorem argM_eq (wide hHigh : Bool) (i : Nat) : argM wide hHigh i = .mem ⟨.esp, 200 + 4 * extra wide hHigh + 4 * i⟩ := by
-  simp only [argM, Impl.Ecdsa.Rfc6979.X86.frameBytes, stk]; congr 2; omega
-
-/-- `argM L.wide L.hHigh i` reads our argument `i`. -/
-theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
-    readSrc u (argM L.wide L.hHigh i) = some (L.a i) := by
-  have := L.he
-  have e : addr L.F (200 + 4 * extra L.wide L.hHigh + 4 * i) = L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i) := by
-    rw [hL.addrF (by rw [L.ew]; omega), L.ew, show 76 + (200 + 4 * extra L.wide L.hHigh + 4 * i) =
-      276 + 4 * extra L.wide L.hHigh + 4 * i by omega]
-  rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.argv hi]
+/-- `argM i` reads our argument `i`. -/
+theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 6) :
+    readSrc u (argM i) = some (L.a i) := by
+  have e : addr L.F (516 + 4 * i) = L.B + BitVec.ofNat 64 (592 + 4 * i) := by
+    rw [hL.addrF (by omega), show 76 + (516 + 4 * i) = 592 + 4 * i by omega]
+  rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.pArg i hi]
 
 /-! ## Code that sets one register -/
 
@@ -87,6 +69,7 @@ structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (u : 
   mem : u'.mem = u.mem
   val : u'.gpr d = v
   keep : ∀ r, r ≠ d → u'.gpr r = u.gpr r
+  syms : u'.syms = u.syms
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp)
     (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) (hsy : u'.syms = u.syms) :
@@ -95,19 +78,19 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 
 theorem Upd.of_wp {u u' : State} {d : Reg} {v : BitVec 32} (hL : L.Ok) (hc : Ctx L g m₀ u) (hd : d ≠ .esp)
     (h : VG.X86.Wp.Upd u u' d v) : Upd L g m₀ u d v u' :=
-  ⟨hc.set hL hd h.rd h.wr h.mem h.other h.syms, h.mem, h.gpr, h.other⟩
+  ⟨hc.set hL hd h.rd h.wr h.mem h.other h.syms, h.mem, h.gpr, h.other, h.syms⟩
 
 theorem Upd.trans {u u' u'' : State} {d : Reg} {v w : BitVec 32} (hL : L.Ok) (hd : d ≠ .esp)
     (h₁ : VG.X86.Wp.Upd u u' d v) (h₂ : VG.X86.Wp.Upd u' u'' d w) (hc : Ctx L g m₀ u) :
     Upd L g m₀ u d w u'' :=
   ⟨hc.set hL hd (h₂.rd.trans h₁.rd) (h₂.wr.trans h₁.wr) (h₂.mem.trans h₁.mem)
       (fun r hr => (h₂.other r hr).trans (h₁.other r hr)) (h₂.syms.trans h₁.syms),
-    h₂.mem.trans h₁.mem, h₂.gpr, fun r hr => (h₂.other r hr).trans (h₁.other r hr)⟩
+    h₂.mem.trans h₁.mem, h₂.gpr, fun r hr => (h₂.other r hr).trans (h₁.other r hr), h₂.syms.trans h₁.syms⟩
 
 /-- `d ← scratch + a`. -/
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) (a : Nat) :
-    WP isa (.block (Cfg.scr L.wide L.hHigh d a)) u (Upd L g m₀ u d (L.a3 + BitVec.ofNat 32 a)) := by
-  refine wp_movS (hc.readArg hL (i := 3) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
+    WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.sc + BitVec.ofNat 32 a)) := by
+  refine wp_movS (hc.readArg hL (i := 4) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
   rw [v₁.gpr] at v₂
   exact Upd.trans hL hd v₁ v₂ hc
 
@@ -124,8 +107,8 @@ theorem movi_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
   wp_movi fun _ v₁ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- `d ← argument i`. -/
-theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 4) :
-    WP isa (.block [.mov d (argM L.wide L.hHigh i)]) u (Upd L g m₀ u d (L.a i)) :=
+theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 6) :
+    WP isa (.block [.mov d (argM i)]) u (Upd L g m₀ u d (L.a i)) :=
   wp_movS (hc.readArg hL hi) fun _ v₁ _ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- Two pieces of code, each setting one register. -/
@@ -133,10 +116,11 @@ theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 32
     (h₁ : WP isa (.block is) u (Upd L g m₀ u d v))
     (h₂ : ∀ u', Ctx L g m₀ u' → WP isa (.block js) u' (Upd L g m₀ u' e w)) {Q : State → Prop}
     (hQ : ∀ u'', Ctx L g m₀ u'' → u''.mem = u.mem → u''.gpr e = w →
-      (∀ r, r ≠ e → r ≠ d → u''.gpr r = u.gpr r) → (e ≠ d → u''.gpr d = v) → Q u'') :
+      (∀ r, r ≠ e → r ≠ d → u''.gpr r = u.gpr r) → (e ≠ d → u''.gpr d = v) → u''.syms = u.syms → Q u'') :
     WP isa (.block (is ++ js)) u Q := by
   rw [WP.block_append_iff]
   refine WP.mono h₁ fun u' h => WP.mono (h₂ u' h.ctx) fun u'' h' => hQ u'' h'.ctx (h'.mem.trans h.mem) h'.val
-    (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) fun hne => (h'.keep d hne.symm).trans h.val
+    (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) (fun hne => (h'.keep d hne.symm).trans h.val)
+    (h'.syms.trans h.syms)
 
 end VG.Proof.Ecdsa.Rfc6979.X86
