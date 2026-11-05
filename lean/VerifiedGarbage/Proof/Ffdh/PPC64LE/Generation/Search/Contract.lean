@@ -2,16 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Contract
-public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
+public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 
 /-! # The parameter-search controller's contract in terms of the machine (PPC64LE)
 
-`vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5, bits = r6,
-generator = r7, rand = r8, rand_len = r9, scratch = r10, scratch_len, state)`:
-eight arguments in registers and two on the stack. The controller uses 336
-bytes of stack: the frame of 48 bytes saving the link register, its
-candidate's frame of 112 bytes, and the 176 bytes the candidate may use
-below its own (`Cand.stack`).
+`vg_ffdh_generate_parameters_sieved(out = r3, out_len = r4, used = r5,
+bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
+scratch_len, state)`: eight arguments in registers and two on the stack. The
+controller uses 336 bytes of stack: the frame of 48 bytes saving the link
+register, its candidate's frame of 112 bytes, and the 176 bytes the
+candidate may use below its own (`Cand.stack`).
+
+The candidate reads RSA's table of trial division (`TrialTable32`), so the
+controller reads it too: its region is the last it reads (`inTab`), and the
+precondition states its entries. The contract under `abi.withConsts` states
+the same (`Implies.lean`).
 -/
 
 @[expose] public section
@@ -25,7 +31,7 @@ open VG.Proof.Ffdh.PPC64LE.ParameterCandidate (pcContract pcPre pcPub)
 /-- The stack the controller uses below the stack pointer. -/
 abbrev stackUse : Nat := 336
 
-/-- An implementation of `vg_ffdh_parameter_candidate`, as the controller
+/-- An implementation of `vg_ffdh_parameter_candidate_sieved`, as the controller
 calls it: its name, its code, the stack it uses, and its proofs. -/
 structure Cand where
   name : String
@@ -43,10 +49,12 @@ def inRand (s : State) : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
 def inScr (s : State) : Region := ⟨s.gpr .r10, (stackArg s 0).toNat * 8⟩
 def inCtl (s : State) : Region := ⟨stackArg s 1, 128⟩
 def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
+/-- The table of trial division, where the state names it. -/
+def inTab (s : State) : Region := ⟨s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol, 8192⟩
 
 /-- The buffers the controller writes, and those it only reads. -/
 def inWrites (s : State) : List Region := [inOut s, inUsed s, inScr s, inCtl s]
-def inReads (s : State) : List Region := [inRand s, inArgs s]
+def inReads (s : State) : List Region := [inRand s, inArgs s, inTab s]
 
 /-- The width, the bits, the generator, the tape and the attempts on entry. -/
 abbrev genLen (s : State) : Nat := (s.gpr .r4).toNat
@@ -68,10 +76,11 @@ def searchPre (s : State) : Prop :=
     genAttempts s ≤ parameterAttempts (genBits s) ∧
     s.mem.readW (stackArg s 1 + 8) 64 = BitVec.ofNat 64 (genLen s) ∧
     s.mem.readW (stackArg s 1 + 16) 64 = BitVec.ofNat 64 (parameterEntropy (genBits s)) ∧
-    (s.gpr .r9).toNat ≤ parameterEntropy (genBits s)
+    (s.gpr .r9).toNat ≤ parameterEntropy (genBits s) ∧
+    VG.Proof.Ffdh.PPC64LE.ParameterCandidate.TabAt (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) s.mem
 
 def searchResult (s : State) : ParameterSearchResult :=
-  parameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
+  sievedParameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
 
 def searchPost (s t : State) : Prop :=
   ((t.gpr .r3).setWidth 32).toNat = (searchResult s).status ∧
@@ -84,14 +93,15 @@ def searchPost (s t : State) : Prop :=
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
       BitVec.ofNat 64 (searchResult s).requested]
 
-/-- What timing may depend on: the arguments, the tape and the controller's
-public words. -/
+/-- What timing may depend on: the arguments, the tape, the controller's
+public words and the table's address. -/
 def searchPub (s t : State) : Prop :=
   s.sp = t.sp ∧ (genRand s).map (·.toNat) = (genRand t).map (·.toNat) ∧
     wordsAt s.mem (stackArg s 1) 4 = wordsAt t.mem (stackArg t 1) 4 ∧
     s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧ s.gpr .r5 = t.gpr .r5 ∧ s.gpr .r6 = t.gpr .r6 ∧
     (s.gpr .r7).setWidth 32 = (t.gpr .r7).setWidth 32 ∧ s.gpr .r8 = t.gpr .r8 ∧ s.gpr .r9 = t.gpr .r9 ∧
-    s.gpr .r10 = t.gpr .r10 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1
+    s.gpr .r10 = t.gpr .r10 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1 ∧
+    s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = t.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def searchContract : Contract isa where
   pre := searchPre

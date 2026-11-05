@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieved
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Tests
@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.Div
 # An FFDH parameter candidate on AArch64: `main`
 
 `tests_ok`: one witness of `p`, all of `q`'s, then `p`'s others
-(`testsSpec`); `main_ok`: `p`, its shape's checks, and the tests, as
+(`Proof.Ffdh.ParameterCandidate.sievedTests`); `main_ok`: `p`, its shape's checks, and the tests, as
 `Spec.Ffdh.sievedParameterCandidate` (`PEnd`).
 -/
 
@@ -36,7 +36,7 @@ open VG.Impl.RsaKeyGen VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.Ffdh.AArch64.
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
 open VG.Proof.MillerRabin.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_zero eq_zero_iff)
-open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses)
+open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses onPass sievedTests sieved_eq)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK sCnt)
 
 /-- How the candidate ends, from `s`, for the specification's result. -/
@@ -48,23 +48,6 @@ def PEnd (s t : State) (p : PP) : Option (Option Nat × List Byte) → Prop
 theorem PEnd.trans_pre {s₀ s t : State} {p : PP} {res : Option (Option Nat × List Byte)} (h : PEnd s t p res)
     (hout : outBytes s.mem p.op p.L = outBytes s₀.mem p.op p.L) (k₀ : Keep mmRegs s₀ s) : PEnd s₀ t p res := by
   rcases res with _ | ⟨_ | _, _⟩ <;> exact KEnd.trans_pre h hout (k₀.mono (by decide))
-
-/-- After a test's result `res`: the candidate rejected unless it passed,
-then `k` on the rest of the tape. -/
-def onPass (res : Option (Bool × List Byte)) (k : List Byte → Option (Option Nat × List Byte)) :
-    Option (Option Nat × List Byte) :=
-  match res with
-  | none => none
-  | some (false, r) => some (none, r)
-  | some (true, r) => k r
-
-/-- The tests from the tape `r`: one witness of `p`, all of `q`'s, then
-`p`'s others (`screenedChecks`). -/
-def testsSpec (c : Nat) (r : List Byte) : Option (Option Nat × List Byte) :=
-  onPass (checkWitnesses c 1 r) fun r =>
-    onPass (checkWitnesses ((c - 1) / 2) (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength ((c - 1) / 2))) r)
-      fun r => (checkWitnesses c (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength c) - 1) r).map
-        fun (pass, r) => (if pass then some c else none, r)
 
 /-- `kStat` against 1. -/
 theorem stat1_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
@@ -132,7 +115,7 @@ theorem stage_ok {p : PP} {w N mb K : Nat} {s s₀ t₁ : State} {res : Option (
 theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt p (mW p.bits) s)
     (hc : c = Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L))) (hqo : ((c - 1) / 2) % 2 = 1)
     (hU : word s.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L) (hL : p.L ≤ p.r.length) :
-    WP isa (tests M.mm R.run) s fun t => PEnd s t p (testsSpec c (p.r.drop p.L)) := by
+    WP isa (tests M.mm R.run) s fun t => PEnd s t p (sievedTests c (p.r.drop p.L)) := by
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
   have h256 := h.ws.h256
@@ -151,7 +134,7 @@ theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt
   rw [hmbp] at hEZp
   have hout : ∀ {t : State}, InScr p.B p.Z s.mem t.mem → outBytes t.mem p.op p.L = outBytes s.mem p.op p.L :=
     fun hi => outBytes_inScr hi h.ou.outZ
-  unfold testsSpec
+  unfold sievedTests
   rw [hbq, hbp]
   unfold tests
   refine wp_seqs_append (by simp [test, phase]) (by simp) ?_
@@ -209,41 +192,6 @@ theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt
   · exact PEnd.trans_pre (p := p) (res := none) ht ho hk
   · exact PEnd.trans_pre (p := p) (res := some (none, rest')) ht ho hk
   · exact PEnd.trans_pre (p := p) (res := some (some c, rest')) ht ho hk
-
-/-- The sieved candidate by its shape and its tests. -/
-theorem sieved_eq {bits g : Nat} {r : List Byte} (h : (bits + 7) / 8 ≤ r.length) :
-    Spec.Ffdh.sievedParameterCandidate bits g r =
-      if !(Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8)))) &&
-          Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8)))) &&
-          Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8))) - 1) / 2) &&
-          !Spec.RsaKeyGen.obviouslyComposite bits
-            (Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8)))) &&
-          !Spec.RsaKeyGen.obviouslyComposite bits
-            ((Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8))) - 1) / 2))
-      then some (none, r.drop ((bits + 7) / 8))
-      else testsSpec (Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8))))
-        (r.drop ((bits + 7) / 8)) := by
-  unfold Spec.Ffdh.sievedParameterCandidate
-  rw [VG.Proof.Ffdh.ParameterCandidate.draw_of_le h]
-  simp only [bind, Option.bind]
-  generalize Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (r.take ((bits + 7) / 8))) = c
-  generalize r.drop ((bits + 7) / 8) = t
-  split
-  · rfl
-  · rename_i hcond
-    have hc := Bool.not_eq_true _ ▸ hcond
-    simp only [Bool.not_eq_false', Bool.and_eq_true] at hc
-    rw [← VG.Proof.Ffdh.ParameterCandidate.screenedChecks_eq hc.1.1.1.2 hc.1.1.2]
-    unfold VG.Proof.Ffdh.ParameterCandidate.screenedChecks testsSpec onPass
-    rcases h1 : checkWitnesses c 1 t with _ | ⟨_ | _, t₁⟩
-    · simp
-    · simp
-    rcases h2 : checkWitnesses ((c - 1) / 2) (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength ((c - 1) / 2))) t₁
-      with _ | ⟨_ | _, t₂⟩
-    · simp [h2]
-    · simp [h2]
-    rcases h3 : checkWitnesses c (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength c) - 1) t₂ with _ | ⟨_ | _, t₃⟩
-    all_goals simp [h2, h3]
 
 /-- RSA's table survives changes below it. -/
 theorem TabOk.frm {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (h : TabOk m B w)

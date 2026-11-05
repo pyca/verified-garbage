@@ -31,9 +31,9 @@ open VG.Proof.Mont (val32)
 
 /-- Before a draw of a witness for the modulus `N` of `mb` bits, `u`
 octets of the tape read. -/
-structure DPre (p : PP) (mb N u : Nat) (s : State) : Prop where
+structure DPre (p : PP) (mb N u C : Nat) (s : State) : Prop where
   st : St p s
-  ph : Ph p mb s
+  ph : Ph p mb C s
   prep : Prep s p.B p.n (wOf mb) N
   used : word s.mem p.B (8 * hUsed) = BitVec.ofNat 64 u
   room : u + (mb + 7) / 8 ≤ p.r.length
@@ -42,7 +42,7 @@ structure DPre (p : PP) (mb N u : Nat) (s : State) : Prop where
 
 /-- The head of a draw: the octets' address in `r12`, their count in `r6`,
 array 4's in `r10`, and `used` advanced. -/
-theorem dHead_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
+theorem dHead_ok {C : Nat} {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u C s) :
     WP isa (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6,
         sth .r3 hUsed] ++ base .r10 4)) s fun t =>
       (t.gpr .r12 = p.rp + BitVec.ofNat 64 u ∧ t.gpr .r6 = BitVec.ofNat 64 ((mb + 7) / 8) ∧
@@ -74,7 +74,7 @@ def DHead (p : PP) (mb u : Nat) (s t : State) : Prop :=
   Keep [.r3, .r6, .r12, .r10] s t
 
 /-- The load, after the head: the witness's octets in array 4. -/
-theorem dLoadN_ok {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb N u s) (ht : DHead p mb u s t) :
+theorem dLoadN_ok {C : Nat} {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb N u C s) (ht : DHead p mb u s t) :
     WP isa loadN t fun t₂ =>
       (val32 t₂.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧
         t₂.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
@@ -123,7 +123,7 @@ theorem dLoadN_ok {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb N u s) (h
 
 
 /-- The head and the load: the witness's octets in array 4. -/
-theorem dLoad_ok {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u s) :
+theorem dLoad_ok {C : Nat} {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u C s) :
     WP isa (.seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6,
         sth .r3 hUsed] ++ base .r10 4)) loadN) s fun t =>
       (val32 t.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧

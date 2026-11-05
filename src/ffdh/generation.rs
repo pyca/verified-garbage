@@ -7,19 +7,6 @@
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
-#[cfg(not(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    target_arch = "x86_64"
-)))]
-use crate::arch::ffdh::vg_ffdh_generate_parameters;
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    target_arch = "x86_64"
-))]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_adx as vg_ffdh_generate_parameters_adx;
@@ -229,25 +216,12 @@ mod tests {
                 half
             })
             .collect();
-        // The sieved candidate (AArch64, ARMv7, x86, x86-64) draws one witness for p first.
-        #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        ))]
+        // The sieved candidate draws one witness for p first.
         let phases = [
             (prime.to_vec(), 1),
             (q, rounds),
             (prime.to_vec(), rounds - 1),
         ];
-        #[cfg(not(any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        )))]
-        let phases = [(q, rounds), (prime.to_vec(), rounds)];
         for (modulus, rounds) in phases {
             let mut upper = modulus.clone();
             *upper.last_mut().unwrap() -= 1;

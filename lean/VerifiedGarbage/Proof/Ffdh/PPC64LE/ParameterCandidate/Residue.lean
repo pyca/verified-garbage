@@ -34,7 +34,7 @@ theorem res2 : ∀ r < 24, (BitVec.ofNat 64 r ^^^ BitVec.ofNat 64 11 = 0#64 ↔ 
 theorem res5 : ∀ r < 10, ((BitVec.ofNat 64 r ||| BitVec.ofNat 64 4) ^^^ BitVec.ofNat 64 7 = 0#64 ↔ r = 3 ∨ r = 7) := by
   decide
 
-theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
+theorem residue_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) :
     WP isa residue s fun t =>
       ((word t.mem p.B (8 * hBad) = 0#64 ↔ goodRes p.g (wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits))) ∧
         Frm p.B [(8 * hBad, 8)] s.mem t.mem) ∧ Keep resRegs s t := by

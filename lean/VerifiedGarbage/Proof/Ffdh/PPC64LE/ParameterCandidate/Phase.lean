@@ -30,8 +30,8 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 /-- The working space of a modulus of `mb` bits: `w = ⌈mb / 64⌉`. -/
 abbrev wOf (mb : Nat) : Nat := (mb + 63) / 64
 
-/-- The header and the registers after `phase`. -/
-structure Ph (p : PP) (mb : Nat) (s : State) : Prop where
+/-- The header and the registers after `phase`, with `K` witnesses to test. -/
+structure Ph (p : PP) (mb K : Nat) (s : State) : Prop where
   r10 : s.gpr .r10 = off p.B (slot (wOf mb) 0)
   r11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wOf mb)
   r29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wOf mb + 2))
@@ -40,7 +40,9 @@ structure Ph (p : PP) (mb : Nat) (s : State) : Prop where
   wW : word s.mem p.B (8 * hW) = BitVec.ofNat 64 (wOf mb)
   strideW : word s.mem p.B (8 * hStride) = BitVec.ofNat 64 (8 * (wOf mb + 2))
   arrW : ∀ j < 8, word s.mem p.B (8 * (8 + j)) = off p.B (slot (wOf mb) j)
-  checksW : word s.mem p.B (8 * hChecks) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks mb)
+  checksW : word s.mem p.B (8 * hChecks) = BitVec.ofNat 64 K
+  k1 : 1 ≤ K
+  k2 : K ≤ 128
   topW : word s.mem p.B (8 * hTop) = BitVec.ofNat 64 (2 ^ (mb + 64 - 64 * wOf mb) - 1)
 
 /-- The bit length of the modulus: `bits − 1` for q, `bits` for p. -/
@@ -206,7 +208,7 @@ theorem phRanges_mut (n : Nat) : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], InMut n 
 
 /-- `phase`: `Ph` for the modulus of `mbOf p q` bits. -/
 theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
-    WP isa (phase q) s fun t => (St p t ∧ Ph p (mbOf p q) t ∧ Frm p.B (phRanges ++ [(8 * hTop, 8)]) s.mem t.mem) ∧
+    WP isa (phase q) s fun t => (St p t ∧ Ph p (mbOf p q) (Spec.Ffdh.primeChecks (mbOf p q)) t ∧ Frm p.B (phRanges ++ [(8 * hTop, 8)]) s.mem t.mem) ∧
       Keep phaseRegs s t := by
   unfold phase
   refine WP.seq (WP.mono (phaseHead_ok h q) fun u ⟨⟨u10, u11, u29, um, uk, uw, us, ua, uc, uf⟩, ku⟩ => ?_)
@@ -222,7 +224,8 @@ theorem phase_ok {p : PP} {s : State} (h : St p s) (q : Bool) :
     (kt.gpr .r29 (by decide)).trans u29, (e (by simp only [hMb]; omega_arith)).trans um,
     (e (by simp only [hK]; omega_arith)).trans uk, (e (by simp only [hW]; omega_arith)).trans uw,
     (e (by simp only [hStride]; omega_arith)).trans us, fun j hj => (e (by omega_arith)).trans (ua j hj),
-    (e (by simp only [hChecks]; omega_arith)).trans uc, tt⟩,
+    (e (by simp only [hChecks]; omega_arith)).trans uc, by unfold Spec.Ffdh.primeChecks; split <;> decide,
+    by unfold Spec.Ffdh.primeChecks; split <;> decide, tt⟩,
     (uf.mono fun r hr => List.mem_append_left _ hr).trans (tf.mono fun r hr => List.mem_append_right _ hr)⟩,
     (ku.trans kt).mono (by decide)⟩
 

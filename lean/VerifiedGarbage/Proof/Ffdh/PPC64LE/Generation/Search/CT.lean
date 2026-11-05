@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.LeafCT
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Classify
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
@@ -63,11 +64,11 @@ private theorem head_first (q : SPoint) (s : State) (h : SCandidated q s) :
   have hv7 := h.header (j := 7) (v := q.inputs.up) (by simp [SPub.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at hv7
   have h9 := low32 hp.1
-  refine WP.mono (WP.keep [.r9, .r11] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r9, .r11] (Q := fun t =>
     (t.gpr .r11 = q.inputs.up ∧ t.gpr .r9 = BitVec.ofNat 64 q.status) ∧ t.mem = s.mem) ?_
-    (by decide)) fun t ⟨⟨⟨h11, h9⟩, hm⟩, k⟩ => ?_
+    (by decide)) fun t ⟨⟨⟨h11, h9⟩, hm⟩, k⟩ hy => ?_
   · prun [ldf, h.r31, hv7, a.ld 56 (by decide), h9]
-  · refine ⟨⟨original, h.keep k hm, hk, ?_⟩, h11, h9⟩
+  · refine ⟨⟨original, h.keep k hm hy, hk, ?_⟩, h11, h9⟩
     unfold CandPost at hp ⊢
     rw [hm, k.gpr .r3 (by decide)]
     exact hp
@@ -86,10 +87,10 @@ private theorem head_second (q : SPoint) (s : State) (h : SHead q s) :
     · rw [h.wr, h.input.1.2.2.2.1, ← h.input.used_eq]; simp [inWrites]
     · exact Offset.contains_base q.inputs.up (d := 0) (n := 8) (k := 8) (by decide) (by decide)
   have hst : q.status < 3 := status_lt (q.inputs.cand q.used)
-  refine WP.mono (WP.keep [.r10, .r12] (Q := fun t =>
+  refine WP.mono_syms (WP.keep [.r10, .r12] (Q := fun t =>
     isa.eval (.zero .d .r12) t = some (decide (q.status = 1)) ∧ t.mem = s.mem) ?_
-    (by decide)) fun t ⟨⟨he, hm⟩, k⟩ =>
-      ⟨⟨original, h.keep k hm⟩, hk, (k.gpr .r9 (by decide)).trans h9, he⟩
+    (by decide)) fun t ⟨⟨he, hm⟩, k⟩ hy =>
+      ⟨⟨original, h.keep k hm hy⟩, hk, (k.gpr .r9 (by decide)).trans h9, he⟩
   prun [h11, h9, hu]
   have : ∀ st < 3, ((BitVec.ofNat 64 st - BitVec.ofNat 64 1) == 0) = decide (st = 1) := by decide
   refine (eval_zero _ _).trans ?_
@@ -99,8 +100,8 @@ private theorem second_ready (q : SPoint) (s : State)
     (h : SGuard 1 q s ∧ isa.eval (.zero .d .r12) s = some false) :
     WP isa (.block [.subi .r12 .r9 2]) s (SGuard 2 q) := by
   obtain ⟨⟨⟨o, hl⟩, hk, h9, _⟩, _⟩ := h
-  refine WP.mono (test_two h9 (status_lt _)) fun t ⟨⟨he, hm⟩, kt⟩ => ?_
-  exact ⟨⟨o, hl.keep kt hm⟩, hk, (kt.gpr .r9 (by decide)).trans h9, he⟩
+  refine WP.mono_syms (test_two h9 (status_lt _)) fun t ⟨⟨he, hm⟩, kt⟩ hy => ?_
+  exact ⟨⟨o, hl.keep kt hm hy⟩, hk, (kt.gpr .r9 (by decide)).trans h9, he⟩
 
 private theorem guard_eq (j : Nat) (q : SPoint) (s₁ s₂ : State) (h₁ : SGuard j q s₁)
     (h₂ : SGuard j q s₂) : isa.eval (.zero .d .r12) s₁ = isa.eval (.zero .d .r12) s₂ :=
