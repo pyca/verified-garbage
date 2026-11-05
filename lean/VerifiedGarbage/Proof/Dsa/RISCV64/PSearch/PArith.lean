@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
+-- separate module: p's arithmetic (`pArith_vp`), which the candidate's attempt uses apart from the power in
+-- `Power`
+
 /-! # DSA parameter search on RISC-V: p and `(p − 1) / q`
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/KSSetup.lean`, `KSLoad.lean`,
