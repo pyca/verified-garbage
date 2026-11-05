@@ -48,31 +48,6 @@ theorem clearTop_db {z : Nat} (hz : z ≤ 7) (p : Nat) (salt : List Byte) :
     rw [this z (by omega)]
   | succ p => simp [zeros, List.replicate_succ, clearTop]
 
-/-! ## Finding the salt -/
-
-theorem dropWhile_db (p : Nat) (salt : List Byte) :
-    (zeros p ++ 0x01 :: salt).dropWhile (· == 0) = 0x01 :: salt := by
-  induction p with
-  | zero => simp [zeros]
-  | succ p ih => simp [zeros, List.replicate_succ] at ih ⊢
-
-/-- An octet string whose first nonzero octet is `0x01`, followed by `salt`,
-is zeros, `0x01` and `salt`. -/
-theorem eq_db {db salt : List Byte} (h : db.dropWhile (· == 0) = 0x01 :: salt) :
-    db = zeros (db.length - salt.length - 1) ++ 0x01 :: salt := by
-  have hz : db.takeWhile (· == 0) = zeros (db.takeWhile (· == 0)).length := by
-    apply List.eq_replicate_iff.mpr
-    refine ⟨rfl, fun b hb => ?_⟩
-    simpa using List.all_eq_true.mp List.all_takeWhile b hb
-  have hd := List.takeWhile_append_dropWhile (p := (· == (0 : Byte))) (l := db)
-  rw [h, hz] at hd
-  have hl := congrArg List.length hd
-  simp only [zeros, List.length_append, List.length_replicate, List.length_cons] at hl
-  rw [← hd]
-  simp only [zeros, List.length_append, List.length_replicate, List.length_cons]
-  congr 2
-  omega
-
 /-! ## The round trip -/
 
 variable {H G : Hash}
