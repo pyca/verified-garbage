@@ -159,6 +159,10 @@ theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 736) (h₂ : e + k 
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
 
+theorem stk_scr0 (h : L.Ok) {d n k : Nat} (h₁ : d + n ≤ 736) (h₂ : k ≤ 8192) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr, k⟩ :=
+  (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Region.sub_prefix h₂)
+
 theorem stk_SCR (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 736) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.SCR := h.kc.sub_left (Offset.sub_base _ h₁)
 
