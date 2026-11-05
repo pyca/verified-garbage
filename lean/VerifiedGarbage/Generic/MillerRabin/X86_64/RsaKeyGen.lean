@@ -154,20 +154,13 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 
-/-! # Emit RSA candidates and prime searches for every shared Miller–Rabin backend -/
+/-! # The RSA prime search on x86-64, its candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.X86_64.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.candidateApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Proof.RsaKeyGen.X86_64.sharedCandidateCode v
-    stack := 128
-    verified := Proof.RsaKeyGen.X86_64.sharedCandidate_verified v
-    spSafe := Proof.RsaKeyGen.X86_64.sharedCandidate_sp v
-    features := v.features },
   Spec.RsaKeyGen.primeSearchApi.artifact X86_64.target {
     suffix := v.suffix
     code := Proof.RsaKeyGen.X86_64.Search.searchCode v

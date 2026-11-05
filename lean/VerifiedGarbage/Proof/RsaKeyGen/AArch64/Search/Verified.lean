@@ -48,7 +48,7 @@ theorem candidate_noFrames (v : RoundImpl) : (codeWith v.mont.mm v.kernel.run).n
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := Spec.RsaKeyGen.candidateApi.name ++ v.suffix
+  name := "vg_rsa_keygen_candidate" ++ v.suffix
   code := codeWith v.mont.mm v.kernel.run
   noFrames := candidate_noFrames v
   correct := sharedCode_correct v.mont v.kernel

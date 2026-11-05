@@ -4,11 +4,12 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-!
 # A candidate on PPC64LE: the contract's arguments
 
-`CIn s`: the shared contract's precondition (`Spec.RsaKeyGen.candidateContract`,
+`CIn s`: the shared contract's precondition (`Proof.RsaKeyGen.candidateContract`,
 with 400 bytes of stack), without the table of small primes, as the proof
 uses it (`cin_of_pre`): `(out, out_len, used, e, e_len, p, p_len, rand)` in
 `r3`–`r10`, and `rand_len`, `scratch` and `scratch_len` the stack arguments
@@ -79,10 +80,10 @@ theorem stackArgs_three (s : State) :
     List.map (PPC64LE.stackArg s) (List.range 3) = [PPC64LE.stackArg s 0, PPC64LE.stackArg s 1,
       PPC64LE.stackArg s 2] := rfl
 
-theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 400).pre s) : CIn s := by
-  sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
+theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 400).pre s) : CIn s := by
+  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
     List.append_eq, List.range, List.range.loop] at h
-  sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
+  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
     List.append_eq, List.range, List.range.loop] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h

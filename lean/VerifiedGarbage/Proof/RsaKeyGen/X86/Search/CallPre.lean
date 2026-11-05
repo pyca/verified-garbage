@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the callee's precondition, whose facts build in parallel with the rest of the search
 
@@ -228,7 +230,7 @@ theorem call_pre {p : SearchPublic} {o t : State} {used : Nat} (h : SearchInput 
       simp only [List.mem_singleton] at hr; subst hr
       intro q hq; simp only [List.mem_singleton] at hq; subst hq
       exact TF.2.2.2.sub_right Rs
-  sig_pre [VG.Proof.RsaKeyGen.X86.Candidate.contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pre [VG.Proof.RsaKeyGen.X86.Candidate.contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     VG.Proof.RsaKeyGen.X86.Candidate.packed_length, stackBelow]
   simp only [ce_arg h he ha _ _ (show 0 < 11 by decide), ce_arg h he ha _ _ (show 1 < 11 by decide),

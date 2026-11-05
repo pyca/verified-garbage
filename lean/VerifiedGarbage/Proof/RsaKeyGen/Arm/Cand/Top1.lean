@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # A candidate on ARMv7: the contract's arguments
 
@@ -103,8 +104,8 @@ structure CIn (s : State) : Prop where
   plv : (stackArg s 2).toNat = 0 ∨ (stackArg s 2).toNat = (s.gpr .r1).toNat
   scr : Spec.Rsa.scratchWords (s.gpr .r1).toNat ≤ (stackArg s 6).toNat
 
-theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 112).pre s) : CIn s := by
-  sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val] at h
+theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 112).pre s) : CIn s := by
+  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h
   exact ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
