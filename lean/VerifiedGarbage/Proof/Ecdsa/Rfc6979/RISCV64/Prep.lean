@@ -275,8 +275,9 @@ include hp
 omit hp in
 theorem xArgs_eq : P.c.xArgs = .li .t0 0 :: (((List.range 9).map fun j => (Reg.t0, fX + 8 * j)).map
     (fun q => .store .d q.1 .s1 q.2) ++
-    [.li .t1 P.c.Q, .sub .t2 .s7 .t1, .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3,
-      .logic .and .t2 .t2 .t3, .add .a6 .t1 .t2, mov .a4 .s4, .addi .a5 .s1 (fX + P.c.Q), .sub .a5 .a5 .a6]) := by
+    ([.li .t1 P.c.Q, .sub .t2 .s7 .t1, .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3,
+      .logic .and .t2 .t2 .t3, .add .a6 .t1 .t2, mov .a4 .s4, .addi .a5 .s1 (fX + P.c.Q), .sub .a5 .a5 .a6] :
+      List Instr)) := by
   rw [Cfg.xArgs, List.map_map]; rfl
 
 /-- `X`: `Q - min(D, Q)` zero bytes, then the digest's leftmost `min(D, Q)`. -/
@@ -723,8 +724,8 @@ theorem hd_keep {s t : State} {msg : List Byte} {dst : Nat} (hdst : dst = fK ∨
       (by omega)
 
 omit hp in
-theorem initKV_eq : Cfg.initKV = [.li .t0 0x101, .shift .sll .d .t1 .t0 16, .logic .or .t0 .t0 .t1,
-    .shift .sll .d .t1 .t0 32, .logic .or .t0 .t0 .t1, .li .t1 0] ++
+theorem initKV_eq : Cfg.initKV = ([.li .t0 0x101, .shift .sll .d .t1 .t0 16, .logic .or .t0 .t0 .t1,
+    .shift .sll .d .t1 .t0 32, .logic .or .t0 .t0 .t1, .li .t1 0] : List Instr) ++
     (((List.range 8).flatMap fun j => [(Reg.t1, fK + 8 * j), (Reg.t0, fV + 8 * j)]).map
       (fun q => .store .d q.1 .s1 q.2) ++ []) := rfl
 
