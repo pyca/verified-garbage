@@ -159,9 +159,8 @@ abbrev attOut (w : Nat) : List (Nat × Nat) := [(32, 24), (slot w 0, 28 * (8 * (
 theorem comb_att {B : Addr} {w : Nat} {m m' : Mem} (h : Outs B (combOut w) m m') : Outs B (attOut w) m m' :=
   Outs.cover h fun r hr => by
     simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, Nat.le_refl _, Nat.le_refl _⟩
-    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [slot]; omega, by simp only [slot]; omega⟩
+    subst hr
+    exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [slot]; omega, by simp only [slot]; omega⟩
 
 theorem body_att {B : Addr} {w : Nat} {m m' : Mem} (h : VG.Proof.Ffdh.PPC64LE.Domain.Body B w m m') :
     Outs B (attOut w) m m' := Outs.of_outside h (by simp [attOut])
@@ -208,7 +207,7 @@ theorem goodC_ok {s : State} {B C X O : Addr} {Z w k : Nat} {xb : List Byte} {P 
   refine WP.seq (WP.mono (VG.Proof.Ffdh.PPC64LE.Domain.exOut_ok (O := O) (k := k) (h.env.hs.congr k1.wr)
     (ho.congr k1.wr) r10 ((k1.gpr .r29 (by decide)).trans h.env.h29) ((k1.gpr .r11 (by decide)).trans h.env.h11)
     ((k1.gpr .r23 (by decide)).trans h.h23) (by rw [k1.gpr .r28 (by decide), h.h28, hk28]) hw hw' hZ hk hkw
-    (by rw [hdr_of_comb o1 (by decide) (by decide)]; exact hO) hsepO
+    (by rw [hdr_of_comb o1 (by decide)]; exact hO) hsepO
     (by rw [p1]; omega) (by rw [z1, p1]; exact hzP) (by rw [p1]; exact hpk))
     fun s₂ ⟨⟨ob, o2, m, bm, om⟩, k2⟩ => ?_)
   rw [z1, p1] at ob o2
@@ -245,7 +244,7 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
     (hbw : s.mem.readW (off B hBits) 64 = BitVec.ofNat 64 bits)
     (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8))
     (hRw : s.mem.readW (off B hRows) 64 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits))
-    (hc : CtxRd s B Z C w) (hsepCX : ∀ y, ofs C y < 8 * ctxWords w → k ≤ ofs X y)
+    (hCw : s.mem.readW (off B hCtx) 64 = C) (hc : CtxRd s B Z C w) (hsepCX : ∀ y, ofs C y < 8 * ctxWords w → k ≤ ofs X y)
     (hents : ∀ a < 32, ent s.mem C w a =
       combM (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) p w (Spec.Rsa.FixedBaseComb.exponent bits a))
     (hr2 : val32 s.mem C (rowOff w 1) (2 * w) = 2 ^ (64 * w) * 2 ^ (64 * w) % p)
@@ -392,8 +391,8 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
     have hl4 : (Spec.Rsa.bytesAt s₄.mem X k).length = k := VG.Proof.Bignum.bytesAt_length _ _ _
     have ci : CombIn s₄ B C X Z w (Spec.Rsa.bytesAt s₄.mem X k) p
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) bits := by
-      refine ⟨e4, g23₄, by rw [g28₄, hl4], hc.congr (by rw [show hCtx = 0 from rfl]; exact (hw4 0 (by omega)).trans hc.hC)
-        k34.rd k34.wr, fun a ha => ?_, ?_, p4, by rw [show hRows = 24 from rfl]; exact (hw4 24 (by omega)).trans hRw,
+      refine ⟨e4, g23₄, by rw [g28₄, hl4], by rw [show hCtx = 0 from rfl]; exact (hw4 0 (by omega)).trans hCw,
+        hc.congr k34.rd k34.wr, fun a ha => ?_, ?_, p4, by rw [show hRows = 24 from rfl]; exact (hw4 24 (by omega)).trans hRw,
         by rw [show s₄.mem.readW (off B 64) 64 = word s₄.mem B 64 from rfl, hw4 64 (by omega)]
            exact hX.trans (BitVec.add_zero _),
         fun n hn => (hx.congr k34.wr).ld (d := n) (n := 1) (by omega), fun n hn => hsepX n (by omega),

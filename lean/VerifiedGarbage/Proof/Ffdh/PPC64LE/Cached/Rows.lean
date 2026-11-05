@@ -41,16 +41,14 @@ theorem row_bv {w j : Nat} (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) :
   omega
 
 /-- `rowPtr`: `r8 :=` the address of row `j` (in `r3`) of the context at `C`
-(the header's word 0), with `2 w` in `r11`. -/
-theorem rowPtr_ok {s : State} {B C : Addr} {Z w j : Nat} (hs : Scr s B Z) (hZ : 8 ≤ Z)
-    (h23 : s.gpr .r23 = B) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h3 : s.gpr .r3 = BitVec.ofNat 64 j)
-    (hC : s.mem.readW (off B hCtx) 64 = C) (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) :
+(`r30`), with `2 w` in `r11`. -/
+theorem rowPtr_ok {s : State} {C : Addr} {w j : Nat}
+    (h30 : s.gpr .r30 = C) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h3 : s.gpr .r3 = BitVec.ofNat 64 j)
+    (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) :
     WP isa (.block rowPtr) s fun t => (t.gpr .r8 = off C (rowOff w j) ∧ t.mem = s.mem) ∧ Keep [.r8, .r9] s t := by
   refine WP.keep _ ?_ (by decide)
-  unfold rowPtr ldh
-  have hC' : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 0) 64 = C := by rw [h23]; exact hC
-  have hr : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 0) 8 := by rw [h23]; exact hs.ld (d := 0) (n := 8) (by omega)
-  prun [hCtx, hC', hr, h11, h3, row_bv hw hj]
+  unfold rowPtr
+  prun [h30, h11, h3, row_bv hw hj]
   rw [show 8 * (w * j) + 24 = rowOff w j by unfold rowOff; omega]
 
 /-- The registers `storeRow` and `loadRow` write. -/
@@ -58,20 +56,19 @@ def rowRegs : List Reg := [.r0, .r8, .r9, .r14, .r15, .r17]
 
 /-- `storeRow a`: array `a`'s `w` words to row `j` (in `r3`) of the context
 at `C`, writable and apart from the working space. -/
-theorem storeRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
-    (hp : Scr s C Zc) (h3 : s.gpr .r3 = BitVec.ofNat 64 j) (hC : s.mem.readW (off B hCtx) 64 = C)
+theorem storeRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w)
+    (hp : Scr s C Zc) (h3 : s.gpr .r3 = BitVec.ofNat 64 j) (h30 : s.gpr .r30 = C)
     (ha : a < 28) (hj : j < 2 ^ 16) (hrow : rowOff w j + 8 * w ≤ Zc)
     (hsep : ∀ x, ofs B x < Z → Zc ≤ ofs C x) :
     WP isa (storeRow a) s fun t =>
       ((∀ i < w, word t.mem C (rowOff w j + 8 * i) = word s.mem B (slot w a + 8 * i)) ∧
         Outside C (rowOff w j) (8 * w) s.mem t.mem) ∧ Keep rowRegs s t := by
   have hw := h.hw; have hw' := h.hw'
-  have hZ8 : 8 ≤ Z := Nat.le_trans (by unfold slot; omega) h.hZ
   unfold storeRow
   refine WP.seq ?_
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (rowPtr_ok h.hs hZ8 h23 h.h11 h3 hC (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
+  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r14] (Q := fun t => t.gpr .r14 = off C (rowOff w j) ∧ t.mem = t₁.mem)
     (by prun [a8, BitVec.add_zero]) (by decide)) fun t₂ ⟨⟨a14, m2⟩, k2⟩ => ?_
@@ -87,8 +84,8 @@ theorem storeRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w
 
 /-- `loadRow a`: row `j` (in `r3`) of the context at `C`, readable and apart
 from the working space, to array `a`'s `w` words. -/
-theorem loadRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
-    (hC : s.mem.readW (off B hCtx) 64 = C) (h3 : s.gpr .r3 = BitVec.ofNat 64 j)
+theorem loadRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w)
+    (h30 : s.gpr .r30 = C) (h3 : s.gpr .r3 = BitVec.ofNat 64 j)
     (ha : a < 28) (hj : j < 2 ^ 16) (hrow : rowOff w j + 8 * w ≤ Zc) (hCn : C.toNat + Zc ≤ 2 ^ 64)
     (hrd : ∀ i < w, InRegions (s.rd ++ s.wr) (off C (rowOff w j + 8 * i)) 8)
     (hsep : ∀ x, ofs C x < Zc → Z ≤ ofs B x) :
@@ -96,12 +93,11 @@ theorem loadRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w)
       ((∀ i < w, word t.mem B (slot w a + 8 * i) = word s.mem C (rowOff w j + 8 * i)) ∧
         Outside B (slot w a) (8 * w) s.mem t.mem) ∧ Keep rowRegs s t := by
   have hw := h.hw; have hw' := h.hw'
-  have hZ8 : 8 ≤ Z := Nat.le_trans (by unfold slot; omega) h.hZ
   unfold loadRow
   refine WP.seq ?_
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (rowPtr_ok h.hs hZ8 h23 h.h11 h3 hC (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
+  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r15] (Q := fun t => t.gpr .r15 = off C (rowOff w j) ∧ t.mem = t₁.mem)
     (by prun [a8, BitVec.add_zero]) (by decide)) fun t₂ ⟨⟨a15, m2⟩, k2⟩ => ?_

@@ -475,7 +475,7 @@ theorem cg_correct (s : State) (h : cgContract.pre s) :
     have := hb2.env; rw [show (gcOf s).S = stackArg s 1 from rfl, hS] at this
     simp only [gcOf, CD.w] at this; rw [hkd, hZd] at this; exact this
   have hc2 : CtxRd s₂ S Z (stackArg s 3) ((k + 7) / 8) := by
-    refine ⟨by rw [show hCtx = 0 from rfl]; exact (hw2 0 (by omega)).trans wc0, by have := nwC; unfold ctxWords; omega,
+    refine ⟨by have := nwC; unfold ctxWords; omega,
       fun d hd => ?_, fun x hx => by have := sepCS x (by unfold ctxWords at hx; omega); omega⟩
     rw [k12.rd, k12.wr]
     exact ⟨⟨stackArg s 3, (3 + 34 * ((k + 7) / 8)) * 8⟩, List.mem_append_left _ (by rw [hrd]; simp),
@@ -514,7 +514,7 @@ theorem cg_correct (s : State) (h : cgContract.pre s) :
         (by show word s₂.mem S 8 = _; rw [hw2 8 (by omega), wc8]; exact cb)
         (by show word s₂.mem S 16 = _; rw [hw2 16 (by omega), wc16]; exact cy)
         (by show word s₂.mem S 24 = _; rw [hw2 24 (by omega), wc24]; exact cr)
-        hc2 (fun y hy => sepCX y (by unfold ctxWords at hy; omega)) cent cr2 hbits.1 hbits.2
+        (by rw [show hCtx = 0 from rfl]; exact (hw2 0 (by omega)).trans wc0) hc2 (fun y hy => sepCX y (by unfold ctxWords at hy; omega)) cent cr2 hbits.1 hbits.2
         (fun i hi => by
           have := hb2.rdD i (show i < (s.gpr .r8).toNat by omega)
           rwa [show (gcOf s).D = s.gpr .r7 from rfl, hD] at this)
