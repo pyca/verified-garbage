@@ -233,27 +233,37 @@ def copyBytes (len : Nat) (src dst : Reg) : List Instr :=
     else [.addImm .x .x13 src (len - 8), .addImm .x .x14 dst (len - 8), .ldr .x .x11 .x13 0,
       .str .x .x11 .x14 0])
 
-/-- HMAC's two states (384 bytes) copied from `scratch + sInner` to
-`scratch + sSave` (`toSave`) or back, with `scratch` in `x9`, through `x11`. -/
-def copyStates (toSave : Bool) : List Instr :=
-  if toSave then copyN 48 .x9 sInner .x9 sSave else copyN 48 .x9 sSave .x9 sInner
+/-- A byte of `[x11]` to `[x12]`, through `x10`, both pointers advanced and
+the count in `x13` one less. -/
+def cpBody : List Instr :=
+  [.ldrb .x10 .x11 0, .strb .x10 .x12 0, .addImm .x .x11 .x11 1, .addImm .x .x12 .x12 1, .subImm .x .x13 .x13 1]
 
-/-- The states for `K` saved. -/
-def save : List Instr := scrPtr ++ copyStates true
+/-- The `x13` bytes at `x11` to `x12` (`x13 > 0`), a byte at a time. -/
+def cpLoop : Prog isa := .loop (.block cpBody) (.nonzero .x .x13)
 
-/-- The states for `K` restored from the copy. -/
-def restore : List Instr := scrPtr ++ copyStates false
+/-- The arguments of the copy of HMAC's two states (384 bytes) from
+`scratch + sInner` to `scratch + sSave` (`toSave`) or back, with `scratch`
+in `x9`: the source in `x11`, the destination in `x12`, the count in `x13`. -/
+def copyArgs (toSave : Bool) : List Instr :=
+  if toSave then [.addImm .x .x11 .x9 sInner, .addImm .x .x12 .x9 sSave, .movz .x .x13 (BitVec.ofNat 16 384) 0]
+  else [.addImm .x .x11 .x9 sSave, .addImm .x .x12 .x9 sInner, .movz .x .x13 (BitVec.ofNat 16 384) 0]
+
+/-- The states for `K` saved, by `cpLoop`. -/
+def save : Prog isa := .seq (.block (scrPtr ++ copyArgs true)) cpLoop
+
+/-- The states for `K` restored from the copy, by `cpLoop`. -/
+def restore : Prog isa := .seq (.block (scrPtr ++ copyArgs false)) cpLoop
 
 /-- `V = HMAC_K(V)`, saving the states for `K`. -/
-def hmacVS : Prog isa := .seq c.initK (.seq (.block save) (.seq c.updV (c.fin 0 fV)))
+def hmacVS : Prog isa := .seq c.initK (.seq save (.seq c.updV (c.fin 0 fV)))
 
 /-- `V = HMAC_K(V)`, from the saved states for `K`. -/
-def hmacVR : Prog isa := .seq (.block restore) (.seq c.updV (c.fin 0 fV))
+def hmacVR : Prog isa := .seq restore (.seq c.updV (c.fin 0 fV))
 
 /-- `K = HMAC_K(V ‖ msg)`, for the message's `len` bytes, from the states
 for `K` by `init` (`fresh`) or restored. -/
 def hmacK (fresh : Bool) (len : Nat) : Prog isa :=
-  .seq (if fresh then c.initK else .block restore) (.seq c.updV (.seq (c.updM len) (c.fin len fK)))
+  .seq (if fresh then c.initK else restore) (.seq c.updV (.seq (c.updM len) (c.fin len fK)))
 
 /-- The pointers the messages need: `scratch` in `x9`, `d` in `x10`, the
 frame in `x15`. -/
@@ -282,14 +292,6 @@ def rekey : Prog isa :=
   .seq (.block msgPtrs) (.seq (.block (c.msg 0 false)) (.seq (c.hmacK true 1) c.hmacVS))
 
 /-! ## Bytes, numbers and `h` -/
-
-/-- A byte of `[x11]` to `[x12]`, through `x10`, both pointers advanced and
-the count in `x13` one less. -/
-def cpBody : List Instr :=
-  [.ldrb .x10 .x11 0, .strb .x10 .x12 0, .addImm .x .x11 .x11 1, .addImm .x .x12 .x12 1, .subImm .x .x13 .x13 1]
-
-/-- The `x13` bytes at `x11` to `x12` (`x13 > 0`), a byte at a time. -/
-def cpLoop : Prog isa := .loop (.block cpBody) (.nonzero .x .x13)
 
 /-- Nine zero words at `sp + o`, through `x15` and `x14`. -/
 def zero9 (o : Nat) : List Instr :=

@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -417,42 +419,45 @@ theorem fin_piece {Φ : Pr P} {len dst : Nat} (hlen : len ≤ 256) (hdst : dst +
       fun _ ⟨c, _, d, s, x, k, r⟩ => ⟨c, d, s, x, k, r⟩).seq
     (tcall_piece (by decide) tfn_fin r16_fa tload_taint₂ (hfin_piece hdst))
 
-/-! ## Blocks from `scratch`'s pointer -/
+/-! ## The byte loops -/
 
-/-- `scratch` in `x9`. -/
-def ScrIn (P : RfcHash) : Pr P := fun L _ u => u.gpr .x9 = L.scr
+theorem cpLoop_taint : ∃ hc, (taint.check (Taint.ofRegs [.x11, .x12, .x13]) Cfg.cpLoop hc).isSome = true :=
+  ⟨_, by taint_decide⟩
 
-theorem scrPtr_piece {Φ : Pr P} : Piece P Φ (.block Cfg.scrPtr) (ScrIn P) :=
-  Piece.blkS ⟨_, by taint_decide⟩ fun _ _ _ _ hL _ hc _ => WP.mono (scrPtr_ok hL hc) fun _ h => ⟨h.1, h.2.2.1⟩
+/-- A byte copy's registers. -/
+abbrev CpA (P : RfcHash) (p q : Lay P.I.hashLen P.R.E → Addr) (n : Nat) : Pr P := fun L _ u =>
+  u.gpr .x11 = q L ∧ u.gpr .x12 = p L ∧ u.gpr .x13 = BitVec.ofNat 64 n
 
-theorem scrRegs {Φ : Pr P} (hΦ : ∀ L m₀ t, Φ L m₀ t → t.gpr .x9 = L.scr) :
-    ∀ (L : Lay P.I.hashLen P.R.E) (t₁ t₂ : State) g₁ g₂ m₁ m₂, Ctx L g₁ m₁ t₁ → Ctx L g₂ m₂ t₂ → Φ L m₁ t₁ →
-      Φ L m₂ t₂ → ∀ r ∈ [Reg.x9], t₁.gpr r = t₂.gpr r := by
-  intro L _ _ _ _ _ _ _ _ f₁ f₂ r hr
-  simp only [List.mem_singleton] at hr; subst hr
-  exact (hΦ _ _ _ f₁).trans (hΦ _ _ _ f₂).symm
+/-- The byte loop, from registers that agree. -/
+theorem cp_ct {Φ : Pr P} {p q : Lay P.I.hashLen P.R.E → Addr} {n : Nat}
+    (h : ∀ L m₀ u, Φ L m₀ u → CpA P p q n L m₀ u) : RelCT isa (Two P Φ) Cfg.cpLoop fun _ _ => True :=
+  two_prog [.x11, .x12, .x13] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
+    obtain ⟨a₁, b₁, c₁⟩ := h _ _ _ f₁; obtain ⟨a₂, b₂, c₂⟩ := h _ _ _ f₂
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact a₁.trans a₂.symm
+    · exact b₁.trans b₂.symm
+    · exact c₁.trans c₂.symm) cpLoop_taint
 
-theorem copyStates_taint (b : Bool) : TaintOk [.x9] (Cfg.copyStates b) := by
-  cases b
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+/-- The copy of the 384 bytes at `scratch + a` to `scratch + d`, apart. -/
+theorem copy384_piece {Φ : Pr P} {a d : Nat} (ha : a < 4096) (hd : d < 4096) (hsep : a + 384 ≤ d ∨ d + 384 ≤ a)
+    (hd₂ : d + 384 ≤ 8192) (ht : TaintOk [] ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++
+      [.addImm .x .x12 .x9 d] ++ [.movz .x .x13 (BitVec.ofNat 16 384) 0])) :
+    Piece P Φ (.seq (.block ([.ldrSp .x9 fScratch] ++ [.addImm .x .x11 .x9 a] ++ [.addImm .x .x12 .x9 d] ++
+      [.movz .x .x13 (BitVec.ofNat 16 384) 0])) Cfg.cpLoop) (Tt P) :=
+  Piece.of ((two_wp (Ψ := CpA P (fun L => L.scr + BitVec.ofNat 64 d) (fun L => L.scr + BitVec.ofNat 64 a) 384)
+      (two_blk [] spOnly ht) fun _ _ _ _ hL _ hc _ =>
+        WP.mono (copyArgs_ok hL ha hd hc) fun _ ⟨c, _, h11, h12, h13⟩ => ⟨c, h11, h12, h13⟩).seq
+      (cp_ct fun _ _ _ h => h))
+    fun _ _ _ _ hL _ hc _ => WP.mono (copy384_ok hL ha hd hsep hd₂ hc) fun _ h => ⟨h.1, trivial⟩
 
-/-- HMAC's states saved (`b`), or restored. -/
-theorem copyStates_piece {Φ : Pr P} (b : Bool) : Piece P Φ (.block (Cfg.scrPtr ++ Cfg.copyStates b)) (Tt P) :=
-  Piece.of (RelCT.block_append (scrPtr_piece.ct.seq (two_blk [.x9] (scrRegs fun _ _ _ h => h)
-    (copyStates_taint b)))) fun L _ _ _ hL _ hc _ => by
-    rw [WP.block_append_iff]
-    refine WP.mono (scrPtr_ok hL hc) fun u ⟨hcu, _, h9, _⟩ => ?_
-    have h9' : u.gpr .x9 = L.scr + BitVec.ofNat 64 0 := by rw [h9, BitVec.add_zero]
-    cases b
-    · exact WP.mono (copy_ok hL hcu (src := .x9) (S := L.scr) h9 (by decide) (dst := .x9) (by decide) h9'
-        (so := sSave) (d := sInner) (K := 48) (by decide) (by decide) (by decide)
-        (fun j hj => hcu.inScr (by simp only [sSave]; omega))
-        (Offset.disjoint _ (by decide) (by decide) (by decide))) fun _ h => ⟨h.1, trivial⟩
-    · exact WP.mono (copy_ok hL hcu (src := .x9) (S := L.scr) h9 (by decide) (dst := .x9) (by decide) h9'
-        (so := sInner) (d := sSave) (K := 48) (by decide) (by decide) (by decide)
-        (fun j hj => hcu.inScr (by simp only [sInner]; omega))
-        (Offset.disjoint _ (by decide) (by decide) (by decide))) fun _ h => ⟨h.1, trivial⟩
+/-- HMAC's states saved. -/
+theorem save_piece {Φ : Pr P} : Piece P Φ Cfg.save (Tt P) :=
+  copy384_piece (a := 0) (d := 3072) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
+
+/-- HMAC's states restored. -/
+theorem restore_piece {Φ : Pr P} : Piece P Φ Cfg.restore (Tt P) :=
+  copy384_piece (a := 3072) (d := 0) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
 
 /-! ## HMAC -/
 
@@ -461,18 +466,18 @@ theorem finV_taint : TaintOk [] (Cfg.finArgs 0 fV) := ⟨_, by taint_decide⟩
 theorem finK1_taint : TaintOk [] (Cfg.finArgs 1 fK) := ⟨_, by taint_decide⟩
 
 theorem hmacVS_piece {Φ : Pr P} : Piece P Φ (cfgOf P).hmacVS (Tt P) :=
-  initK_piece.seq ((copyStates_piece true).seq
+  initK_piece.seq (save_piece.seq
     (updV_piece.seq (fin_piece (by decide) (by simp only [fV]; anums) finV_taint)))
 
 theorem hmacVR_piece {Φ : Pr P} : Piece P Φ (cfgOf P).hmacVR (Tt P) :=
-  (copyStates_piece false).seq (updV_piece.seq (fin_piece (by decide) (by simp only [fV]; anums) finV_taint))
+  restore_piece.seq (updV_piece.seq (fin_piece (by decide) (by simp only [fV]; anums) finV_taint))
 
 /-- `K = HMAC_K(V ‖ msg)`, for the message's `len` bytes. -/
 theorem hmacK_piece {Φ : Pr P} {len : Nat} (hlen : len ≤ 256) (ht : TaintOk [] (Cfg.finArgs len fK))
     (fresh : Bool) : Piece P Φ ((cfgOf P).hmacK fresh len) (Tt P) := by
   unfold Cfg.hmacK
   cases fresh
-  · exact (copyStates_piece false).seq (updV_piece.seq ((updM_piece hlen).seq
+  · exact restore_piece.seq (updV_piece.seq ((updM_piece hlen).seq
       (fin_piece hlen (by simp only [fK]; anums) ht)))
   · exact initK_piece.seq (updV_piece.seq ((updM_piece hlen).seq (fin_piece hlen (by simp only [fK]; anums) ht)))
 
@@ -519,26 +524,6 @@ theorem Ctx.regen {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g g' :
     {u : State} (hc : Ctx L g' m₀ u) (h : ∀ r ∈ preserved, r ≠ .x30 → g' r = g r) (h30 : g' .x30 = g .x30) :
     Ctx L g m₀ u :=
   { hc with cs := fun r hr hr' => (hc.cs r hr hr').trans (h r hr hr'), lr := hc.lr.trans h30 }
-
-/-! ## The byte loops -/
-
-theorem cpLoop_taint : ∃ hc, (taint.check (Taint.ofRegs [.x11, .x12, .x13]) Cfg.cpLoop hc).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-/-- A byte copy's registers. -/
-abbrev CpA (P : RfcHash) (p q : Lay P.I.hashLen P.R.E → Addr) (n : Nat) : Pr P := fun L _ u =>
-  u.gpr .x11 = q L ∧ u.gpr .x12 = p L ∧ u.gpr .x13 = BitVec.ofNat 64 n
-
-/-- The byte loop, from registers that agree. -/
-theorem cp_ct {Φ : Pr P} {p q : Lay P.I.hashLen P.R.E → Addr} {n : Nat}
-    (h : ∀ L m₀ u, Φ L m₀ u → CpA P p q n L m₀ u) : RelCT isa (Two P Φ) Cfg.cpLoop fun _ _ => True :=
-  two_prog [.x11, .x12, .x13] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
-    obtain ⟨a₁, b₁, c₁⟩ := h _ _ _ f₁; obtain ⟨a₂, b₂, c₂⟩ := h _ _ _ f₂
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact a₁.trans a₂.symm
-    · exact b₁.trans b₂.symm
-    · exact c₁.trans c₂.symm) cpLoop_taint
 
 /-! ## The candidate -/
 
