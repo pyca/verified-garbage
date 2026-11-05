@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -128,10 +129,11 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 namespace VG.Generic.P224.X86_64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.verifyApi.artifact X86_64.target {
+  Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target {
     consts := Impl.Ecdsa.X86_64.p224.combConsts
-    code := Impl.Ecdsa.Verify.X86_64.jointVerifyP224
-    stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.P224.jointVerify_verified h.law (Proof.P224.combOk7 h.law) h.inv }]
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP224
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_verified h.law (Proof.P224.combOk7 h.law) h.inv }]
 
 end VG.Generic.P224.X86_64.EcdsaP224

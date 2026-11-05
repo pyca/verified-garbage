@@ -12,6 +12,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
@@ -127,11 +128,12 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 namespace VG.Generic.Secp256k1.X86_64.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyApi.artifact X86_64.target {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target {
     consts := Impl.Secp256k1.X86_64.secp256k1v.combConsts
-    code := Impl.Ecdsa.Verify.X86_64.verifySecp256k1
-    stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verify_verified h.law
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.verifySecp256k1
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_verified h.law
       (Proof.Secp256k1.gtabOk9 h.law) h.inv }]
 
 end VG.Generic.Secp256k1.X86_64.EcdsaSecp256k1
