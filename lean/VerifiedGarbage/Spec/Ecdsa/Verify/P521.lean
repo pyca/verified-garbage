@@ -14,9 +14,6 @@ module `ecdsa_p521`, for P-521's `Ecdsa.Instance`.
 
 namespace VG.Spec.Ecdsa.P521
 
-/-- `vg_ecdsa_p521_verify` on every target. -/
-def verifyApi : Api := inst.verifyApi
-
 /-- `vg_ecdsa_p521_verify` on every target, taking the hash function's output. -/
 def verifyHashApi : Api := inst.verifyHashApi
 

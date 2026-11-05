@@ -126,7 +126,7 @@ def checkVector (C : Curve) (v : Case) : Except String Unit := do
   let verify' := verifyM C (Test.memo tableG mulG) (Test.memo tableQ mulQ)
   unless verify' (pt v.qx v.qy) e sig == v.valid do
     throw s!"{v.hash}, R = {v.r}: expected {v.valid}"
-  -- The contract's hash argument (`Ecdsa.Instance.digestDoc`): the leftmost
+  -- The fixed-length hash argument of the internal functions: the leftmost
   -- `len` octets, or `e` shifted left by the bits `hashToInt` drops (none
   -- when `n` has `8 len` bits: the hash padded on the left with zeros).
   let arg := if digest.length ≥ C.len then digest.take C.len
