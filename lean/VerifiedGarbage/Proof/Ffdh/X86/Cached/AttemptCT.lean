@@ -296,6 +296,193 @@ theorem main_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024)
     exact WP.mono (combStage_ok h E hP hx hR0 hrows) fun u ⟨S, _, _⟩ => KeyGen.tp_step T S
   · omega
 
+
+theorem body_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024) :
+    RelCT isa (Both (KAtC Ex base bytes len dlen args sp D St)) Generate.body fun _ _ => True := by
+  show RelCT isa _ (Prog.chain [.block PublicFn.modulusArgs, .block modulusCheck]
+    (.ite .e Generate.main (ret 0))) _
+  apply VG.RelCT.chain
+  refine VG.RelCT.seq (relCT_both (F := fun u => KAtC Ex base bytes len dlen args sp D St u ∧ Gate u (KeyGen.modOk len D))
+    (aEnd (fun _ A => A.run) KeyGen.mod_check) fun x A => ?_) ?_
+  · have h := A.run.1
+    have G := A.geo.dom
+    have fit := G.fit
+    have dl := G.dl
+    have lw := G.lower
+    refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide) (h.arg (i := 2) (by decide))
+      (h.arg (i := 3) (by decide))) fun u ⟨P, C, M, K⟩ => ?_)
+    have S₁ : Step Ex base bytes len args x u := Step.regs h M K
+    have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
+      rw [P, K.2.1, K.2.2]
+      have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+      rwa [BitVec.add_zero] at this
+    refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [C, G.e3]))
+      fun v ⟨Z, Mv, Kv⟩ => WP.block_nil ⟨(A.keep S₁ M).keep (Step.regs S₁.inp Mv Kv) Mv, Gate.of_eval Z ?_⟩)
+    rw [P, M, ← A.dom, KeyGen.modOk, VG.Proof.Ffdh.domainOf_p x.mem _ (by omega)]
+  · exact gate_relCT (fun _ h => h.2) ((main_trace hD hl).mono (fun _ _ h => ⟨⟨h.1.1.1, h.1.2⟩, h.2.1.1, h.2.2⟩)
+      fun _ _ h => h) (aEnd (fun _ h => h.1.1.run) KeyGen.ret0_check)
+
+/-- The context's values, as `body_ok` takes them. -/
+theorem KAtC.cv {u : State} (A : KAtC Ex base bytes len dlen args sp D St u) :
+    CtxVals len args (comp u.mem args len 0) (comp u.mem args len 1)
+      (Spec.Ffdh.generationScalarBits (CheckPrivate.params u.mem args len dlen)) u.mem := by
+  have dl := A.geo.dom.dl
+  have lw := A.geo.dom.lower
+  have h2 : 2 * len ≤ dlen := by omega_arith
+  rw [comp_p u.mem args h2, comp_g u.mem args h2]
+  have hp : CheckPrivate.params u.mem args len dlen = Spec.Ffdh.domainOf len D := congrArg (Spec.Ffdh.domainOf len) A.dom
+  rw [hp, show Spec.Rsa.bytesAt u.mem (byteAddr (args 2)) dlen = D from A.dom]
+  exact A.vals
+
+end
+
+
+/-! ## Against the contract -/
+
+section
+
+/-- The status at entry. -/
+abbrev status (s : State) : Nat :=
+  Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s))
+    (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf (arg s 6).toNat (entryDom s)) (entryRand s))
+
+theorem pub_facts {s t : State} (H : (Spec.Ffdh.cachedGenerateKeyContract abi stack).pub s t) :
+    s.gpr .esp = t.gpr .esp ∧ (∀ i < 13, arg s i = arg t i) ∧ entryDom s = entryDom t ∧ status s = status t := by
+  sig_pub [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+    argSlots, argVal, argBytes] at H
+  obtain ⟨SP, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := H
+  have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
+    fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
+  obtain ⟨L₁, L₂⟩ := List.append_inj L (by simp [Spec.Rsa.bytesAt, a5])
+  refine ⟨SP, fun i hi => ?_, inj L₁, List.cons.inj L₂ |>.1⟩
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨
+    i = 12 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact a0
+  · exact a1
+  · exact a2
+  · exact a3
+  · exact a4
+  · exact a5
+  · exact a6
+  · exact a7
+  · exact a8
+  · exact a9
+  · exact a10
+  · exact a11
+  · exact a12
+
+theorem narrowRd {s : State} {rd wr : List Region} (h : Rd s rd wr) (x : Region) :
+    Rd s (rd ++ wr) [x, KeyGen.xR s, KeyGen.yR s] :=
+  let ⟨⟨r, hr, hc⟩, ⟨r', hr', hc'⟩, _, _, ⟨r'', hr'', hc''⟩⟩ := h
+  ⟨⟨r, List.mem_append_left _ hr, hc⟩, ⟨r', List.mem_append_left _ hr', hc'⟩,
+    ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.contains_self _ _⟩,
+    ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), Region.contains_self _ _⟩,
+    ⟨r'', List.mem_append_left _ hr'', hc''⟩⟩
+
+/-- The narrowed state the body runs from, x and y writable. -/
+theorem kAt_of {s f : State} (A : CachedABI s) (Bf : BodyAt (Rd s) gArgs s f) :
+    KAtC (Rd s) (wsBase gArgs s) (wsSize gArgs s) (pLenOf gArgs s) (arg s 5).toNat (synth gArgs (arg s))
+      (s.gpr .esp - BitVec.ofNat 32 argsFrame) (entryDom s) (status s)
+      (narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s]) := by
+  have hx := narrowRd Bf.1.extra ⟨wsBase gArgs s, wsSize gArgs s⟩
+  have low := A.stackLow
+  have st' : stack = 172 := rfl
+  have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+    rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
+  have rL : (arg s 8).toNat = pLenOf gArgs s := A.randLen
+  have D : KeyGen.domOf f.mem (synth gArgs (arg s)) (arg s 5).toNat = entryDom s :=
+    frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega)
+  have R : Spec.Rsa.bytesAt f.mem (byteAddr (synth gArgs (arg s) 10)) (pLenOf gArgs s) = entryRand s := by
+    show Spec.Rsa.bytesAt f.mem (argumentPointer s 7) _ = _
+    rw [← rL]
+    exact frame_keep A Bf.2.2.2.2 A.randScratch A.belowRand (by have := A.randBound; omega)
+  obtain ⟨CR, cstk, cx⟩ := frame_ctx (f := narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s])
+    A Bf.2.1 hx
+  refine ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [KeyGen.xR s, KeyGen.yR s])
+    fun r hr => ?_, Bf.2.1⟩, frame_geo A rfl hx, D, ?_, CR, by rw [← Bf.2.1]; exact cstk, cx, A.valid,
+    frame_vals A Bf.2.2.2.2⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact A.belowX.sub_left sub
+    · exact A.belowY.sub_left sub
+  · show Spec.Ffdh.keyStatus _ (Spec.Ffdh.vettedScalarOfOctets _ (Spec.Rsa.bytesAt f.mem _ _)) = _
+    rw [R]
+    rfl
+
+
+theorem constantTime : ConstantTime isa (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre
+    (Spec.Ffdh.cachedGenerateKeyContract abi stack).pub Impl.Ffdh.X86.Cached.Generate.code := by
+  intro s t tr ur sf tf S T H E F
+  have A := cachedABI_of S
+  have B := cachedABI_of T
+  obtain ⟨SP, args, dom, st⟩ := pub_facts H
+  have hws : wsBase gArgs s = wsBase gArgs t := by
+    show (arg s 9).setWidth 64 = (arg t 9).setWidth 64
+    rw [args 9 (by decide)]
+  have hwz : wsSize gArgs s = wsSize gArgs t := by
+    show (arg s 10).toNat * 8 = (arg t 10).toNat * 8
+    rw [args 10 (by decide)]
+  have hpl : pLenOf gArgs s = pLenOf gArgs t := by
+    show (arg s 6).toNat = (arg t 6).toNat
+    rw [args 6 (by decide)]
+  have hsy : synth gArgs (arg t) = synth gArgs (arg s) :=
+    synth_congr (wrapABI A).below fun i hi => (args i hi).symm
+  have hxR : KeyGen.xR t = KeyGen.xR s := by
+    show (⟨(arg t 0).setWidth 64, (arg t 1).toNat⟩ : Region) = ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
+    rw [args 0 (by decide), args 1 (by decide)]
+  have hyR : KeyGen.yR t = KeyGen.yR s := by
+    show (⟨(arg t 2).setWidth 64, (arg t 3).toNat⟩ : Region) = ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
+    rw [args 2 (by decide), args 3 (by decide)]
+  have hRd : Rd t = Rd s := by
+    show (fun rd wr => InRegions (rd ++ wr) ((arg t 4).setWidth 64) (arg t 5).toNat ∧
+        InRegions (rd ++ wr) ((arg t 7).setWidth 64) (arg t 8).toNat ∧
+        InRegions wr ((arg t 0).setWidth 64) (arg t 1).toNat ∧ InRegions wr ((arg t 2).setWidth 64) (arg t 3).toNat ∧
+        InRegions (rd ++ wr) ((arg t 11).setWidth 64) ((arg t 12).toNat * 8)) =
+      fun rd wr => InRegions (rd ++ wr) ((arg s 4).setWidth 64) (arg s 5).toNat ∧
+        InRegions (rd ++ wr) ((arg s 7).setWidth 64) (arg s 8).toNat ∧
+        InRegions wr ((arg s 0).setWidth 64) (arg s 1).toNat ∧ InRegions wr ((arg s 2).setWidth 64) (arg s 3).toNat ∧
+        InRegions (rd ++ wr) ((arg s 11).setWidth 64) ((arg s 12).toNat * 8)
+    rw [args 0 (by decide), args 1 (by decide), args 2 (by decide), args 3 (by decide), args 4 (by decide),
+      args 5 (by decide), args 7 (by decide), args 8 (by decide), args 11 (by decide), args 12 (by decide)]
+  have hl5 : (arg t 5).toNat = (arg s 5).toNat := by rw [args 5 (by decide)]
+  have hx : ∀ {x : State}, CachedABI x → Rd x x.rd (⟨frameAt x, argsFrame⟩ :: x.wr) := fun {x} X => by
+    show InRegions (x.rd ++ _) _ _ ∧ InRegions (x.rd ++ _) _ _ ∧ InRegions _ _ _ ∧ InRegions _ _ _ ∧
+      InRegions (x.rd ++ _) _ _
+    rw [X.rd, X.wr]
+    exact ⟨⟨_, List.mem_cons_self .., Region.contains_self _ _⟩,
+      ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.contains_self _ _⟩,
+      ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.contains_self _ _⟩,
+      ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Region.contains_self _ _⟩,
+      ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Region.contains_self _ _⟩⟩
+  have hw : ∀ {x f : State} (X : CachedABI x) (Bf : BodyAt (Rd x) gArgs x f),
+      ∃ F, WP isa Impl.Ffdh.X86.Cached.Generate.body
+        (narrowed (wsBase gArgs x) (wsSize gArgs x) f [KeyGen.xR x, KeyGen.yR x]) F := fun X Bf => by
+    have K := kAt_of X Bf
+    have sp' := K.run.2.2
+    exact ⟨_, body_ok K.run.1 K.geo.dom (by rw [sp']; exact K.geo.dom40) (by rw [sp']; exact K.geo.cut) K.geo.rWs
+      (by rw [sp']; exact K.geo.r40) K.geo.domX (by rw [sp']; exact K.geo.ox) (by rw [sp']; exact K.geo.oy)
+      K.geo.e9 K.geo.xy K.rd (by rw [sp']; exact K.stk) K.cx (by rw [K.dom]; exact K.dv) K.cv⟩
+  have ho : ∀ {x f : State}, CachedABI x → BodyAt (Rd x) gArgs x f →
+      ∀ r ∈ [KeyGen.xR x, KeyGen.yR x], r ∈ f.wr := fun X Bf r hr => by
+    rw [Bf.2.2.2.1, X.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  refine wrap_trace (wrapABI A) (wrapABI B) args SP (hx A) (hx B) fill_check
+    (fun f Bf => WP.mono (frame_ok A f Bf.1 Bf.2.1 Bf.2.2.2.2) fun _ h => h.2.2)
+    (fun f Bf => WP.mono (frame_ok B f Bf.1 Bf.2.1 Bf.2.2.2.2) fun _ h => h.2.2)
+    (narrow_body (Out := [KeyGen.xR s, KeyGen.yR s]) hws hwz (fun f Bf => hw A Bf)
+      (fun g Bg => by rw [← hxR, ← hyR]; exact hw B Bg)
+      (fun f g Bf Bg => ⟨kAt_of A Bf, ?_⟩) (body_trace A.valid A.pLen.2) (fun f Bf => ho A Bf)
+      (fun g Bg => by rw [← hxR, ← hyR]; exact ho B Bg)) E F
+  have D₂ := kAt_of B Bg
+  rw [hRd, ← hws, ← hwz, ← hpl, hsy, hl5, ← SP, hxR, hyR, ← dom, ← st] at D₂
+  rw [← hws, ← hwz]
+  exact D₂
+
 end
 
 end VG.Proof.Ffdh.X86.Cached
