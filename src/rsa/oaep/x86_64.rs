@@ -15,7 +15,7 @@ use crate::arch::rsa_oaep::{
     vg_rsa_oaep_encrypt_precomputed_rsa_adx, vg_rsa_oaep_encrypt_precomputed_rsa_ifma,
 };
 
-crate::rsa_oaep::table::oaep_functions! {
+crate::rsa::oaep::table::oaep_functions! {
     encrypt: {
         Baseline => vg_rsa_oaep_encrypt_precomputed [],
         Adx => vg_rsa_oaep_encrypt_precomputed_rsa_adx [VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES],

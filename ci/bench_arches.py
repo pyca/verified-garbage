@@ -35,6 +35,8 @@ files changed:
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
     `src/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself
     if it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …);
+  * a submodule of a family's member, `src/<family>/<member>/<name>.rs`
+    (e.g. `src/rsa/pss/x86_64.rs`): `<family>_<member>`;
   * a private submodule of a module, `src/<module>/<name>.rs` with no
     `<module>_<name>` (e.g. `src/rsa/scratch.rs`, declared in
     `src/rsa/mod.rs`): as its parent's `mod.rs`, on the architectures that
@@ -279,6 +281,9 @@ LIB_MOD = re.compile(r"^((?:#\[[^\n]*\]\n)*)(pub(?:\([a-z]+\))? )?mod ([a-z0-9_]
 EXTERNAL_MOD = re.compile(
     r"^[ \t]*((?:#\[[^\]]*\]\s*)*)(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;", re.M)
 FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
+# A file of a member's own submodules, `src/<family>/<member>/<name>.rs`
+# (e.g. `src/rsa/pss/x86_64.rs`, of `src/rsa/pss.rs`, the module `rsa_pss`).
+NESTED = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)/[a-z0-9_]+\.rs$")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
 # A differential test of one algorithm's benchmark's API, next to it.
@@ -918,7 +923,8 @@ def sources(module):
     if hash_:
         paths += [f"src/{family}/{hash_}.rs", f"src/{family}/mod.rs"]
     return paths + [path for path in rust_files() if (m := FAMILY.match(path)) and m[1] == module
-                    and m[2] != "mod" and path not in paths and submodule_arches(module, m[2], None)]
+                    and m[2] != "mod" and path not in paths and submodule_arches(module, m[2], None)
+                    or (m := NESTED.match(path)) and f"{m[1]}_{m[2]}" == module]
 
 
 def detectable(arch, cpu):
@@ -1088,6 +1094,10 @@ def arches(changed, base=None):
             for a in targets:
                 for name in names:
                     need(a, name)
+        elif (nested := NESTED.match(path)) and f"{nested[1]}_{nested[2]}" in known:
+            # The member's own code, as its file.
+            for a in targets:
+                need(a, f"{nested[1]}_{nested[2]}")
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
                 uses := own_uses(bench[1], catalogs[-1])
                 or helper_uses(bench[1], catalogs[-1])):

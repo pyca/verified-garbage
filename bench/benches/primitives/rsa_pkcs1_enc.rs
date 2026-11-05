@@ -26,7 +26,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_pkcs1_enc::{decrypt, encrypt_with_rng};
+    use verified_garbage::rsa::pkcs1_enc::{decrypt, encrypt_with_rng};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'

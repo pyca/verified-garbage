@@ -1,4 +1,4 @@
-//! RSA prime generation (`verified_garbage::rsa_keygen`), with the octets of
+//! RSA prime generation (`verified_garbage::rsa::keygen`), with the octets of
 //! known numbers as the first candidate:
 //!
 //! * each two-prime private key of the RSA test vector files
@@ -38,7 +38,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::json_struct;
-use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
+use verified_garbage::rsa::keygen::{generate_prime_from, key_from_primes};
 
 use super::harness::{self, Count, Expectation, Fields, Hex, TestFile};
 use super::schema::{RsaAnyKeyGroup, RsaAnyPrivateKey};

@@ -43,7 +43,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
-    use verified_garbage::rsa_oaep::{Hash, decrypt, encrypt, encrypt_with_rng};
+    use verified_garbage::rsa::oaep::{Hash, decrypt, encrypt, encrypt_with_rng};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
 

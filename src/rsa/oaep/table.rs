@@ -10,7 +10,7 @@
 //! each implementation of the RSA operations (`oaep_functions!`).
 
 use crate::hashes::tables::TableHash;
-use crate::rsa_pkcs1_sig::Hash;
+use crate::rsa::pkcs1_sig::Hash;
 use verified_garbage_cpu::Features;
 
 /// The hash function `hash` as the verified functions take it: the words of
@@ -58,9 +58,9 @@ macro_rules! oaep_functions {
 
         /// The functions, `(encrypt, decrypt)`, for the implementation that a
         /// CPU with the features `f` runs best.
-        pub(in crate::rsa_oaep) fn functions(
+        pub(in crate::rsa::oaep) fn functions(
             f: verified_garbage_cpu::Features,
-        ) -> (crate::rsa_oaep::EncryptFn, crate::rsa_oaep::DecryptFn) {
+        ) -> (crate::rsa::oaep::EncryptFn, crate::rsa::oaep::DecryptFn) {
             let rsa = crate::rsa::Backend::select(f);
             (
                 match rsa {

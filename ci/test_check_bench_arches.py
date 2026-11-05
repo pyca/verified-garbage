@@ -361,6 +361,21 @@ class Selection(unittest.TestCase):
         self.base_files.pop('src/rsa/mod.rs')
         self.assertEqual(len(self.rows(['src/rsa/scratch.rs'])), self.full_matrix())
 
+    def test_a_members_submodules_select_the_member(self):
+        # `src/rsa/pss.rs` is `rsa_pss`, and so is its own submodule
+        # `src/rsa/pss/x86_64.rs`, which chooses among its implementations.
+        self.catalog.update({'rsa': {'rsa'}, 'rsa_pss': {'rsa_pss', 'rsa'}})
+        self.files.update({
+            'src/rsa/pss.rs': 'mod x86_64;\nfn f() {}\n',
+            'src/rsa/pss/x86_64.rs': '#![cfg(target_arch = "x86_64")]\nFeatures::of(&["adx"])\n',
+        })
+        self.base_files['src/rsa/pss/x86_64.rs'] = '#![cfg(target_arch = "x86_64")]\n'
+        self.assertEqual(self.modules(self.rows(['src/rsa/pss/x86_64.rs'])), {'x86_64': 'rsa_pss'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertIn('src/rsa/pss/x86_64.rs', planner.sources('rsa_pss'))
+            self.assertEqual(planner.requirements('x86_64', {'rsa_pss'}, [None]), {frozenset({'adx'})})
+
     def test_shared_hash_code_selects_every_hash(self):
         # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
         self.files['src/hashes/sha256.rs'] = ''

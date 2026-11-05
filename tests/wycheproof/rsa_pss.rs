@@ -25,8 +25,8 @@ use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
+use verified_garbage::rsa::pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{MsgCase, RsaPrivateKey, RsaPrivateKeyGroup, RsaPublicKey, SigCase};
