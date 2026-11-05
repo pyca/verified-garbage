@@ -94,6 +94,14 @@ macro "spec_pre" " at " h:ident : tactic => `(tactic| (
     List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left',
     List.append_nil, argSlots, argVal, argBytes, ↓reduceIte, Option.map_some, tableRegion_eq, names_eq] at $h:ident))
 
+/-- Unfolds the contract's precondition in the goal. -/
+macro "spec_pre_goal" : tactic => `(tactic| (
+  sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    X86.abi, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
+    List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left',
+    List.append_nil, argSlots, argVal, argBytes, ↓reduceIte, Option.map_some, tableRegion_eq, names_eq]))
+
 /-- The facts the precondition gives, whichever the tables of constants. -/
 theorem facts_of (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} {w : HVar} (hv : w ∈ vs)
     (hheld : HeldW w s) (e588 : 588 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .esp).toNat + 4 + 24 ≤ 2 ^ 32)

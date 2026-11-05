@@ -69,7 +69,7 @@ instance (w : HVar) : Decidable (WOk w) := by
 
 /-- What the registrations check of the variants whose tables the function
 takes. -/
-def OK (vs : List HVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ [] ∧ ∀ w ∈ vs, WOk w
+def OK (vs : List HVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 24 ∧ vs ≠ [] ∧ ∀ w ∈ vs, WOk w
 
 instance (vs : List HVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
