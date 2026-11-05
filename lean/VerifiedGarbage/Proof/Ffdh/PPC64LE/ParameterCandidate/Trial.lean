@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Tests
 
+-- separate module: its proofs build in parallel with those of `TestsFn`, which `Main` also imports
+
 /-!
 # An FFDH parameter candidate on PPC64LE: RSA's trial division
 

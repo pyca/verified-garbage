@@ -7,18 +7,19 @@ public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Trial
 /-!
 # One FFDH parameter candidate on PPC64LE
 
-`vg_ffdh_parameter_candidate_sieved(out = r3, out_len = r4, used = r5, bits = r6,
-generator = r7, rand = r8, rand_len = r9, scratch = r10, scratch_len)`, the
-last on the stack (`Proof.Ffdh.sievedParameterCandidateContract`, with RSA's table of trial division
-`VG_RSA_KEYGEN_TRIAL32`), in RSA's
-Montgomery working space at `scratch` (`Proof.Rsa.Mont.Layout`, as the shared
-Miller–Rabin round takes it): a header of 32 words, then arrays of `w + 2`
-words, `w` set for each modulus. The arguments and the candidate's state are
-in header words that neither the working space nor the round changes; the
-link register and the nonvolatile registers are saved in the last 160 bytes
-of `scratch`, and `r31` keeps `scratch` throughout (as `Env`, the working
-space of the Miller–Rabin proofs, has it). The algorithm is
-AArch64's (`Impl/Ffdh/AArch64/ParameterCandidate.lean`), in the steps of
+`vg_ffdh_parameter_candidate_sieved(out = r3, out_len = r4, used = r5,
+bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
+scratch_len)`, the last on the stack
+(`Proof.Ffdh.sievedParameterCandidateContract`, with RSA's table of trial
+division `VG_RSA_KEYGEN_TRIAL32`), in RSA's Montgomery working space at
+`scratch` (`Proof.Rsa.Mont.Layout`, as the shared Miller–Rabin round takes
+it): a header of 32 words, then arrays of `w + 2` words, `w` set for each
+modulus. The arguments and the candidate's state are in header words that
+neither the working space nor the round changes; the link register and the
+nonvolatile registers are saved in the last 160 bytes of `scratch`, and
+`r31` keeps `scratch` throughout (as `Env`, the working space of the
+Miller–Rabin proofs, has it). The algorithm is AArch64's
+(`Impl/Ffdh/AArch64/ParameterCandidate.lean`), in the steps of
 `Spec.Ffdh.sievedParameterCandidate`:
 
 1. `out` is zeroed; if `rand` is shorter than `out_len`, the result is 0.
@@ -33,14 +34,14 @@ AArch64's (`Impl/Ffdh/AArch64/ParameterCandidate.lean`), in the steps of
    in place, its oddness, its sieve and its trial division. The result is 2
    if any of them fails.
 3. In the order of `Spec.Ffdh.screenedParameterWitnesses`: one witness of
-   p, all of q's, then p's other `primeChecks − 1`, each with its own word count `w = ⌈mb / 64⌉` (`mb` its
-   bit length: `bits − 1` or `bits`): the header (`w`, the arrays'
-   addresses and size, and `−N⁻¹ mod 2⁶⁴` by Newton's iteration), `R² mod N`
-   (`Precompute.r2`), `R mod N` into array 9 and `N − R mod N` into array 10,
-   Miller–Rabin's exponent (`expSetup`); then witnesses: each the next
-   `⌈mb / 8⌉` octets of `rand`, cut to `mb` bits, rejected unless `x ≥ 2` and
-   `(x | 1) < N`, else in Montgomery form in array 5, and the shared round
-   called. A witness that fails ends with 2, and the test's count of passing
+   p, all of q's, then p's other `primeChecks − 1`, each modulus with its own
+   word count `w = ⌈mb / 64⌉` (`mb` its bit length: `bits − 1` or `bits`):
+   the header (`w`, the arrays' addresses and size, and `−N⁻¹ mod 2⁶⁴` by
+   Newton's iteration), `R² mod N` (`Precompute.r2`), `R mod N` into array 9
+   and `N − R mod N` into array 10, Miller–Rabin's exponent (`expSetup`);
+   then witnesses: each the next `⌈mb / 8⌉` octets of `rand`, cut to `mb`
+   bits, rejected unless `x ≥ 2` and `(x | 1) < N`, else in Montgomery form
+   in array 5, and the shared round called. A witness that fails ends with 2, and the test's count of passing
    ones with 1; the result is 0 when `rand` runs out. p is loaded again from
    the start of `rand` for each of its tests, q halved again from it, and p
    written to `out` when it passes.
@@ -218,8 +219,8 @@ def tests (name : String) (roundCode : Prog isa) : Prog isa :=
     (.ite (.zero .d .r3) (testQ name roundCode) qResult))
 
 /-- Once `rand` holds the candidate's octets: p, its congruence, rejected
-before any other check (most candidates fail it); then the sieves of p and
-q, and the tests. -/
+before any other check (most candidates fail it); then the sieves and trial
+divisions of p and q, and the tests. -/
 def main (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (phase false) (.seq shapeP (.seq residue (.seq (.block [ldh .r5 hBad])
     (.ite (.zero .d .r5)

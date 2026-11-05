@@ -196,8 +196,8 @@ theorem exit_ct : RelCT isa (Two XE) (.block exit) fun _ _ => True := by
       BitVec.ofNat 64 (q.with sv toc).n from h.len]) (by decide)) fun _ ⟨u11, k⟩ =>
     ⟨u11, (k.gpr _ (by decide)).trans h.r31⟩
 
-/-- `vg_ffdh_parameter_candidate` leaks the same from the same public
-arguments and tape. -/
+/-- `vg_ffdh_parameter_candidate_sieved` leaks the same from the same public
+arguments, tape and table. -/
 theorem code_rel (R : RoundImpl) : RelCT isa (Two CI) (code R.name R.code) fun _ _ => True := by
   unfold code
   exact RelCT.assoc (RelCT.seq front_ct (RelCT.assoc (RelCT.seq (body_ct R)
@@ -209,10 +209,11 @@ theorem qOf_pub {s t : State} (h : pcPub s t) : qOf s = qOf t := by
     (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hr
   simp only [qOf, PP.with, ppOf, hsp, h3, h5, h6, h7, h8, h10, hst, hr']
 
-/-- `vg_ffdh_parameter_candidate` in constant time, for any implementation of
-the round. -/
+/-- `vg_ffdh_parameter_candidate_sieved` in constant time, for any
+implementation of the round. -/
 theorem code_ct (R : RoundImpl) : ConstantTime isa pcContract.pre pcContract.pub (code R.name R.code) :=
-  RelCT.constantTime ((code_rel R).mono (fun s _ ⟨hs, ht, hp⟩ => ⟨(qOf s, s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol),
-    ⟨hs, rfl, rfl⟩, ⟨ht, (qOf_pub hp).symm, hp.2.2.2.2.2.2.2.2.2.2.2.symm⟩, hp.1⟩) fun _ _ h => h)
+  RelCT.constantTime ((code_rel R).mono (fun s _ ⟨hs, ht, hp⟩ =>
+    ⟨(qOf s, s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol), ⟨hs, rfl, rfl⟩,
+      ⟨ht, (qOf_pub hp).symm, hp.2.2.2.2.2.2.2.2.2.2.2.symm⟩, hp.1⟩) fun _ _ h => h)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

@@ -11,9 +11,9 @@ meta import VerifiedGarbage.Proof.Ffdh.Contract
 /-!
 # An FFDH parameter candidate on PPC64LE: the callable contract
 
-`vg_ffdh_parameter_candidate(out = r3, out_len = r4, used = r5, bits = r6,
-generator = r7, rand = r8, rand_len = r9, scratch = r10, scratch_len)`, the
-last on the stack (`pcContract`), with 176 bytes of stack below `sp` for the
+`vg_ffdh_parameter_candidate_sieved(out = r3, out_len = r4, used = r5,
+bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
+scratch_len)`, the last on the stack (`pcContract`), with 176 bytes of stack below `sp` for the
 round it calls, and RSA's table of trial division (`VG_RSA_KEYGEN_TRIAL32`,
 `TabAt`) readable, apart from `out` and `scratch`.
 -/
