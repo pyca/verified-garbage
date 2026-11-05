@@ -30,28 +30,14 @@ mod scratch;
 pub(crate) use scratch::Scratch;
 use scratch::VerifyScratch;
 
-use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa::vg_rsa_public_precomputed_checked;
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa::vg_rsa_public_precomputed_checked_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, vg_rsa_public_precomputed_checked_adx,
-    vg_rsa_public_precomputed_checked_ifma,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_PRIME_SEARCH_ADX_FEATURES;
@@ -71,7 +57,6 @@ use crate::arch::{
     rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
     rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
-use crate::cpu::detected;
 use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_rsa_public_precompute`,
@@ -258,21 +243,6 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
-/// Why a raw RSA operation (`PublicKey::public_op`,
-/// `PrivateKey::private_op`) was refused.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum OpError {
-    /// The input or the output is not as long as the modulus.
-    InvalidLength,
-    /// The input, as a number, is not less than the modulus.
-    InputOutOfRange,
-    /// The private-key operation's result failed the check against the
-    /// public exponent (its `e`-th power modulo `n` is not the input): a
-    /// factor of the key is not prime, or the computation was faulted. The
-    /// result is not released.
-    Fault,
-}
-
 /// The words of working space the operations need for an `n_len`-byte
 /// modulus (`VG.Spec.Rsa.scratchWords`).
 pub(crate) fn scratch_words(n_len: usize) -> usize {
@@ -351,71 +321,6 @@ impl PublicKey {
     pub fn modulus_len(&self) -> usize {
         self.n.len()
     }
-
-    /// RSAEP (RSAVP1), for key generation's pairwise consistency test:
-    /// writes `input^e mod n` to `out`, both big-endian and
-    /// [`modulus_len`](Self::modulus_len) bytes long. The input must be
-    /// less than `n`; on an error `out` is left as zeros. Its timing may
-    /// depend on the key but not on the input.
-    pub(crate) fn public_op(&self, input: &[u8], out: &mut [u8]) -> Result<(), OpError> {
-        let k = self.n.len();
-        if input.len() != k || out.len() != k {
-            return Err(OpError::InvalidLength);
-        }
-        let mut scratch = vec![0u64; public_scratch_words(k)];
-        let pre = self.pre(&mut scratch);
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_public_precomputed_checked,
-            // `select` chose it because the CPU has the features it needs.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_public_precomputed_checked_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_public_precomputed_checked_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_public_precomputed_checked_umaal,
-        };
-        // SAFETY: each pointer is valid for its length (`out` for writes,
-        // `scratch` too), and none overlaps another or wraps around, as they
-        // are distinct Rust allocations; `PublicKey::new` and the check above
-        // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
-        // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 8 ⌈out_len / 8⌉ + 48`; `pre` holds what
-        // `vg_rsa_public_precompute` (or its variant, with the same contract)
-        // wrote for the modulus, returning 1; and the CPU has the features of
-        // the function `select` chose.
-        let r = unsafe {
-            f(
-                out.as_mut_ptr(),
-                k,
-                pre.as_ptr(),
-                pre.len(),
-                self.e.as_ptr(),
-                self.e.len(),
-                input.as_ptr(),
-                k,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // The working space holds powers of the input.
-        crate::zeroize::zeroize(&mut scratch);
-        // `pre` holds a valid modulus' values and `e` is within the limits
-        // (`PublicKey::new`), so a refusal means the input is not below `n`.
-        if r == 1 {
-            Ok(())
-        } else {
-            Err(OpError::InputOutOfRange)
-        }
-    }
 }
 
 mod privatekey;
@@ -441,8 +346,8 @@ pub(crate) mod tests {
     ))]
     use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
     use super::{
-        Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, OpError, PrivateKey, PublicKey,
-        Vec, exponent, public_scratch_words, scratch_words, trim, vec,
+        Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey, Vec,
+        exponent, public_scratch_words, scratch_words, trim,
     };
     #[cfg(target_arch = "x86_64")]
     use super::{
@@ -450,6 +355,7 @@ pub(crate) mod tests {
         VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
     };
     use alloc::string::ToString;
+    use alloc::vec;
 
     #[test]
     fn public_scratch_within_scratch() {
@@ -539,29 +445,6 @@ pub(crate) mod tests {
         n[0] |= 0x80;
         n[k - 1] |= 1;
         n
-    }
-
-    fn minus_one(n: &[u8]) -> Vec<u8> {
-        let mut m = n.to_vec();
-        // `n` is odd: only its last byte changes.
-        *m.last_mut().unwrap() -= 1;
-        m
-    }
-
-    /// `x` as `k` big-endian bytes.
-    pub(super) fn be(x: u64, k: usize) -> Vec<u8> {
-        let mut v = vec![0; k];
-        v[k - 8..].copy_from_slice(&x.to_be_bytes());
-        v
-    }
-
-    fn op(n: &[u8], e: &[u8], x: &[u8]) -> Result<Vec<u8>, OpError> {
-        let mut out = vec![0xa5; n.len()];
-        let r = PublicKey::new(n, e).unwrap().public_op(x, &mut out);
-        if r.is_err() {
-            assert_eq!(out, vec![0; n.len()]);
-        }
-        r.map(|()| out)
     }
 
     #[test]
@@ -657,63 +540,6 @@ pub(crate) mod tests {
         }
     }
 
-    /// Identities that hold for every modulus, at every length from 512 to
-    /// 8192 bits, including lengths that are not a whole number of words.
-    #[test]
-    fn identities() {
-        for k in [64, 65, 71, 72, 127, 128, 255, 256, 384, 512, 1023, 1024] {
-            for n in [modulus(k), vec![0xff; k]] {
-                let m1 = minus_one(&n);
-                let one = be(1, k);
-                assert_eq!(op(&n, &[3], &m1), Ok(m1.clone()));
-                assert_eq!(op(&n, &[0, 3], &m1), Ok(m1.clone()));
-                assert_eq!(op(&n, &[3], &one), Ok(one.clone()));
-                assert_eq!(op(&n, &[0x41], &vec![0; k]), Ok(vec![0; k]));
-                // 2^63 and 2^(8 + 63): no reduction.
-                assert_eq!(op(&n, &[63], &be(2, k)), Ok(be(1 << 63, k)));
-                let mut big = vec![0; k];
-                big[k - 9] = 0x80;
-                assert_eq!(op(&n, &[0, 71], &be(2, k)), Ok(big));
-                // The input `n - 1` with the longest exponent, of all ones.
-                assert_eq!(op(&n, &[1, 0xff, 0xff, 0xff, 0xff], &m1), Ok(m1.clone()));
-                // Out of range.
-                assert_eq!(op(&n, &[3], &n), Err(OpError::InputOutOfRange));
-                assert_eq!(op(&n, &[3], &vec![0xff; k]), Err(OpError::InputOutOfRange));
-            }
-            // For `n = 2^(8k) - 1`, `2^(8k + 1) = 2` and `2^(8k + 5) = 32`.
-            let n = vec![0xff; k];
-            let bits = (8 * k) as u64;
-            assert_eq!(op(&n, &(bits + 1).to_be_bytes(), &be(2, k)), Ok(be(2, k)));
-            assert_eq!(
-                op(&n, &(bits + 5).to_be_bytes()[6..], &be(2, k)),
-                Ok(be(32, k))
-            );
-        }
-    }
-
-    /// Exercise the 65537 shortcut and a neighboring general exponent at
-    /// whole-word and partial-word widths. For n = 2^(8k) - 1, powers of
-    /// two wrap at bit 8k, giving an independent expected result.
-    #[test]
-    fn public_65537_and_neighbor() {
-        for k in [64, 65, 71, 72, 127, 128, 255, 256, 384, 512, 1023, 1024] {
-            let n = vec![0xff; k];
-            for e in [65537_u32, 65539] {
-                let exponent = e.to_be_bytes();
-                let key = PublicKey::new(&n, &exponent[1..]).unwrap();
-                let mut expected = vec![0; k];
-                let bit = e as usize % (8 * k);
-                expected[k - 1 - bit / 8] = 1 << (bit % 8);
-                let mut out = vec![0; k];
-                key.public_op(&be(2, k), &mut out).unwrap();
-                assert_eq!(out, expected, "k={k}, e={e}");
-                key.public_op(&minus_one(&n), &mut out).unwrap();
-                assert_eq!(out, minus_one(&n));
-                assert_eq!(key.public_op(&n, &mut out), Err(OpError::InputOutOfRange));
-            }
-        }
-    }
-
     #[test]
     fn invalid() {
         let n = modulus(64);
@@ -734,16 +560,6 @@ pub(crate) mod tests {
         for e in [&[][..], &[1], &[2], &[1; 64]] {
             assert_eq!(PublicKey::new(&n, e), Err(Error::InvalidExponent));
         }
-        let key = PublicKey::new(&n, &[3]).unwrap();
-        let mut out = [0; 64];
-        assert_eq!(
-            key.public_op(&[0; 63], &mut out),
-            Err(OpError::InvalidLength)
-        );
-        assert_eq!(
-            key.public_op(&[0; 64], &mut out[..63]),
-            Err(OpError::InvalidLength)
-        );
     }
 
     #[test]

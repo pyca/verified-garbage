@@ -27,8 +27,7 @@ pub fn bench(c: &mut Criterion) {
     // modulus' bytes. The number of candidates varies from one prime to the
     // next, so verified-garbage's key is from fixed octets (`generate(bits,
     // e)` but for `getrandom`), and a slowdown is the code's, not the draw's:
-    // two primes, the key from them, its check, and the pairwise consistency
-    // test. So that the draw is a typical one, they are the stream, of the
+    // two primes, and the key from them and its check. So that the draw is a typical one, they are the stream, of the
     // streams of nine fixed seeds (splitmix64), whose key reads the median
     // number of octets. OpenSSL's `RSA_generate_key_ex` draws from its own
     // generator, and so does aws-lc-rs's `KeyPair::generate` (AWS-LC's, which

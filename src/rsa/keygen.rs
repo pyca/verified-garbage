@@ -3,7 +3,10 @@
 //! The timing may depend on the lengths, `e`, the rejected candidates (which
 //! are discarded), how many random octets the accepted candidates' Miller–Rabin
 //! tests read, and whether a key was refused for its small `d`, but not on the
-//! primes or the key.
+//! primes or the key. There is no FIPS 140 pairwise consistency test
+//! (BoringSSL's `RSA_check_fips`): the key passes BoringSSL's `RSA_check_key`,
+//! and every private-key operation releases its result only if it checks
+//! against `e`.
 
 #![cfg(all(
     any(
@@ -37,7 +40,6 @@ use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
 use crate::arch::rsa_keygen::vg_rsa_prime_search_umaal;
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
-use crate::rsa::PublicKey;
 use crate::rsa::{Backend, PrivateKey};
 
 #[cfg(test)]
@@ -62,10 +64,6 @@ pub enum Error {
     /// `e` has no inverse modulo `lcm(p - 1, q - 1)`, `q` none modulo `p`,
     /// or the key fails a check (`n`'s length, BoringSSL's `RSA_check_key`).
     InvalidKey,
-    /// The generated key failed the pairwise consistency test (a signature
-    /// made with the private key did not verify with the public key): a
-    /// prime was not prime.
-    PairwiseTestFailed,
 }
 
 impl fmt::Display for Error {
@@ -77,7 +75,6 @@ impl fmt::Display for Error {
             Error::NotEnoughRandomness => "not enough random octets for an RSA key",
             Error::Randomness => "the random number generator failed",
             Error::InvalidKey => "the RSA key from the primes is invalid",
-            Error::PairwiseTestFailed => "the RSA key failed the pairwise consistency test",
         })
     }
 }
@@ -381,38 +378,6 @@ fn params(bits: usize, public_exponent: &[u8]) -> Result<(usize, &[u8]), Error> 
     Ok((nlen, e))
 }
 
-/// The message representative of BoringSSL's pairwise consistency test
-/// (`VG.Spec.RsaKeyGen.pairwiseMessage`) for a `k`-byte modulus:
-/// EMSA-PKCS1-v1_5 of SHA-256 with a digest of 32 zero bytes.
-fn pairwise_message(k: usize) -> Vec<u8> {
-    const PREFIX: [u8; 19] = [
-        0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
-        0x05, 0x00, 0x04, 0x20,
-    ];
-    let mut em = vec![0xff; k];
-    em[0] = 0;
-    em[1] = 1;
-    let t = k - PREFIX.len() - 32;
-    em[t - 1] = 0;
-    em[t..t + PREFIX.len()].copy_from_slice(&PREFIX);
-    em[t + PREFIX.len()..].fill(0);
-    em
-}
-
-/// The pairwise consistency test of BoringSSL's `RSA_check_fips`
-/// (`VG.Spec.RsaKeyGen.pairwiseOk`): the message representative signed with
-/// the private key, by the private-key operation checked against `e`,
-/// verifies with the public key.
-fn pairwise_ok(key: &PrivateKey) -> bool {
-    let em = pairwise_message(key.modulus_len());
-    let mut s = vec![0u8; em.len()];
-    key.private_op(&em, &mut s).is_ok()
-        && PublicKey::new(&key.n, &key.e).is_ok_and(|public| {
-            let mut v = vec![0u8; em.len()];
-            public.public_op(&s, &mut v).is_ok() && v == em
-        })
-}
-
 /// One generation of BoringSSL's `rsa_generate_key_impl`
 /// (`VG.Spec.RsaKeyGen.generateOnce`) of a modulus of `nlen` bits and the
 /// valid exponent `e`, drawing `p`, then `q` from the same source, and
@@ -442,8 +407,7 @@ fn generate_once(
 /// to a multiple of 128 (from 512 to 8192 bits), and the public exponent
 /// `e` (big-endian, odd, from 3 to `2^32 - 1`, with any number of leading
 /// zero bytes), from the operating system's random number generator, as
-/// BoringSSL's `RSA_generate_key_ex` and then its pairwise consistency test
-/// make it (`VG.Spec.RsaKeyGen.generate`).
+/// BoringSSL's `RSA_generate_key_ex` makes it (`VG.Spec.RsaKeyGen.generate`).
 pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error> {
     let (nlen, e) = params(bits, public_exponent)?;
     let len = nlen / 16;
@@ -486,14 +450,7 @@ fn generate_with(
     for _ in 0..4 {
         match generate_once(e, prime) {
             Err(Error::TooManyIterations) => {}
-            r => {
-                let key = r?;
-                return if pairwise_ok(&key) {
-                    Ok(key)
-                } else {
-                    Err(Error::PairwiseTestFailed)
-                };
-            }
+            r => return r,
         }
     }
     Err(Error::TooManyIterations)
@@ -503,7 +460,7 @@ fn generate_with(
 mod tests {
     use super::{
         Error, PrivateKey, Random, Vec, fill_random, generate, generate_from, generate_with,
-        key_from_primes, pairwise_ok, prime_from, vec,
+        key_from_primes, prime_from, vec,
     };
 
     /// Whether `key` loads again from its CRT values: whether BoringSSL's
@@ -530,7 +487,6 @@ mod tests {
             Error::NotEnoughRandomness,
             Error::Randomness,
             Error::InvalidKey,
-            Error::PairwiseTestFailed,
         ] {
             assert!(!alloc::format!("{e}").is_empty());
         }
@@ -656,7 +612,6 @@ mod tests {
             assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 128 * 16);
             assert_eq!(key.components()[1], crate::rsa::trim(e));
-            assert!(pairwise_ok(&key));
         }
     }
 
@@ -829,20 +784,22 @@ mod tests {
     }
 
     /// A composite `p` that passes Miller–Rabin gives a key that passes
-    /// BoringSSL's `RSA_check_key`, which does not test primality, but
-    /// fails the pairwise consistency test.
+    /// BoringSSL's `RSA_check_key`, which does not test primality: the
+    /// generation returns it, as BoringSSL's `RSA_generate_key_ex` does, and
+    /// its private-key operations never release a result (the message of
+    /// FIPS 140's pairwise consistency test, which would have refused it,
+    /// fails its check against `e`).
     #[test]
     fn generate_composite() {
         let mut rand = candidate(&COMPOSITE, &LIAR);
         rand.extend(candidate(&SMALL_D_Q, &W));
-        let key = key_from_primes(&[1, 0, 1], &COMPOSITE, &SMALL_D_Q)
-            .unwrap()
-            .unwrap();
+        let (key, read) = generate_from(512, &[1, 0, 1], &rand).unwrap();
+        assert_eq!(read, rand.len());
         assert!(reloads(&key));
-        assert!(!pairwise_ok(&key));
+        assert_eq!(key.components()[4], COMPOSITE);
         assert_eq!(
-            generate_from(512, &[1, 0, 1], &rand).unwrap_err(),
-            Error::PairwiseTestFailed
+            crate::rsa::pkcs1_sig::sign(&key, &[0; 32], crate::rsa::pkcs1_sig::Hash::Sha256),
+            Err(crate::rsa::pkcs1_sig::Error::Fault)
         );
     }
 }
