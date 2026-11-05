@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86 -/

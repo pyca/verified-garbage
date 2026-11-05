@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Verified
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Lit
 
 /-! # SM4-GCM on baseline AArch64: its key setup -/

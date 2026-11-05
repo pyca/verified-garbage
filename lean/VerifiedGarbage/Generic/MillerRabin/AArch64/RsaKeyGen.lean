@@ -345,6 +345,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Halve
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.Primes
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # The RSA prime search on AArch64, its candidates calling each shared Miller–Rabin implementation -/
 

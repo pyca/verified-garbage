@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -110,7 +110,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "x86_64"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
   -- x32 targets (`x86_64-unknown-linux-gnux32`) have 32-bit pointers. The
   -- model's baseline includes SSE2 (see `Instr.requires`), which

@@ -234,6 +234,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.Primes
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # The RSA prime search on ARMv7, its candidates calling each shared Miller–Rabin implementation -/
 

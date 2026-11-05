@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Comb -- shake: kee
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on 32-bit ARM -/
 

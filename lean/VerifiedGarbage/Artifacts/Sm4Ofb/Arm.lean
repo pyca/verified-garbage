@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SM4-OFB artifacts on baseline ARMv7 -/
 

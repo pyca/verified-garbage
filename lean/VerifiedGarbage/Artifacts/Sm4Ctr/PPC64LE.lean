@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 

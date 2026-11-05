@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Safety
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SearchInit
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Native RSA key generation on baseline i686 -/
 

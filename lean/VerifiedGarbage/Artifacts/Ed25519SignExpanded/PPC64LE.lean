@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Ed25519 signing with the seed's cached SHA-512 digest -/
 

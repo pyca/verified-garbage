@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
 public import VerifiedGarbage.Proof.Scrypt.RISCV64.RoMix
 public import VerifiedGarbage.Proof.Scrypt.RISCV64.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on RISC-V -/
 

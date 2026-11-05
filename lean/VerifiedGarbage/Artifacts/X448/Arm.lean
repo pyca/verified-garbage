@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # X448 (RFC 7748) on ARMv7 -/
 

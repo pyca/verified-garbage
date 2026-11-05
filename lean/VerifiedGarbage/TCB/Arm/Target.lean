@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -120,7 +120,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "arm"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
   -- `armeb` targets are big-endian. Apple's 32-bit ARM targets do not use AAPCS:
   -- `armv7s-apple-ios` uses APCS, where a 64-bit argument takes the next two

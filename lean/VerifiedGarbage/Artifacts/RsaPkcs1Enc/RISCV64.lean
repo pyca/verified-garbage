@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.EncVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on RISC-V -/
 

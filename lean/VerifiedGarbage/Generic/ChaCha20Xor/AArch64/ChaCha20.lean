@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # ChaCha20 (RFC 8439) on AArch64: `vg_chacha20_apply` -/
 

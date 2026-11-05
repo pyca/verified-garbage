@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -140,7 +140,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "aarch64"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
   -- `aarch64_be` targets are big-endian, and ILP32 ones (`aarch64-unknown-linux-gnu_ilp32`)
   -- have 32-bit pointers. The model's baseline includes AdvSIMD (NEON: see

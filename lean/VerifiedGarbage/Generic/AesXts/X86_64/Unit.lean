@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole data units on x86-64 -/
 

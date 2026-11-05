@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.Registration
 
 /-!
 # Rendering artifacts as Rust
@@ -750,7 +750,7 @@ def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.pri
 /-- The lines of a function on the target `T`, given its printed code
 `lines`: the target's opening `funcOptions`, `lines`, the printer's
 `funcAlign`, and the closing `funcOptions`. -/
-def bodyLines (T : Target) (lines : List Line) : List Line :=
+def bodyLines (T : EmitTarget) (lines : List Line) : List Line :=
   let (start, stop) := funcOptions T.name
   start.map .text ++ lines ++ T.printer.funcAlign.map .text ++ stop.map .text
 
@@ -764,7 +764,7 @@ its template, then the `sym` operand of each function it calls, at the path
 `<root>::<module>::<name>` (`moduleOf` gives the module), and of each table
 of constants it names, at `<root>::consts::<name>`; `root` is the path of the
 crate's root from the function's file. -/
-def asmOf (T : Target) (body : List Line) (moduleOf : String → String) (root : String) :
+def asmOf (T : EmitTarget) (body : List Line) (moduleOf : String → String) (root : String) :
     String :=
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
@@ -892,7 +892,7 @@ def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
 (`ShareCommon.shareCommon'`, which makes equal values the same value in
 memory) for the code of every artifact and of every call, so that a call of
 an artifact's code is the same value as the artifact's (`printsAs`). -/
-abbrev Fn := (T : Target) × Prog T.isa
+abbrev Fn := (T : EmitTarget) × Prog T.isa
 
 /-- Whether the code `f` prints as `lines`, the printed code of `g`: at once if
 `f` and `g` are the same value in memory (`withPtrEq`), for then `f` prints as
@@ -962,7 +962,7 @@ where
   /-- The function `name` of the target `T`, whose lines are `body`, in an
   assembly file: its name, then its lines (`assembly`), each indented but its
   labels. -/
-  functionAssembly (T : Target) (name : String) (body : List Line) : String :=
+  functionAssembly (T : EmitTarget) (name : String) (body : List Line) : String :=
     s!"\n{name}:\n" ++ String.join ((assembly T.printer.call body).map fun l =>
       if l.endsWith ":" && !l.contains ' ' then l ++ "\n" else "\t" ++ l ++ "\n")
 
@@ -1119,7 +1119,7 @@ def internalOwner (name : String) (modules callers : List String) : String :=
   | none => sorted.headD ""
 
 /-- The target of an internal function. -/
-abbrev Internal.target (h : Internal) : Target := h.fn.1
+abbrev Internal.target (h : Internal) : EmitTarget := h.fn.1
 
 /-- The code of an internal function. -/
 abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
@@ -1138,7 +1138,7 @@ it is of that code. -/
 def internalsOf (ps : List Prepared) : List Internal := Id.run do
   -- Each internal function found so far: its target and name, the code of its
   -- first call, and the modules of the artifacts that call it.
-  let mut found : List (String × String × Σ T : Target, Prog T.isa) := []
+  let mut found : List (String × String × Σ T : EmitTarget, Prog T.isa) := []
   let mut callers : List ((String × String) × List String) := []
   for p in ps do
     let a := p.art
@@ -1394,7 +1394,7 @@ def fnTablesMod (t : String) (ts : List FnTable) (features : FnTable → List St
 the `cfg` attribute of those features (`Printer.featureCfg`), holding the
 address of each of its functions (`moduleOf` gives its module, from the
 crate's root) and its words of data. -/
-def fnTableFile (T : Target) (tb : FnTable) (features : List String) (moduleOf : String → String) :
+def fnTableFile (T : EmitTarget) (tb : FnTable) (features : List String) (moduleOf : String → String) :
     String :=
   let gate := cfgGate (features.filterMap T.printer.featureCfg)
   header ++ s!"//! The table of functions `{tb.name}` of the verified functions for `{T.name}` \

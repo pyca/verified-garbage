@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Mul
 public import VerifiedGarbage.Proof.MlKem.X86.NttInv
 public import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ML-KEM (FIPS 203) on x86 -/
 

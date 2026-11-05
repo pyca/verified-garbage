@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP256r1.Lit
 
 /-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on PPC64LE -/

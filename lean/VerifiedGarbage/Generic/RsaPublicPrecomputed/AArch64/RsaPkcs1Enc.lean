@@ -10,6 +10,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified

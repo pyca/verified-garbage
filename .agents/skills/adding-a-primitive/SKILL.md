@@ -40,7 +40,11 @@ instructions in an ISA model) go in their own PR before either.
    new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
    from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
    with the file importing
-   `Proof/Framework/Registration.lean` for its default proofs:
+   `Proof/Framework/Registration.lean` for its default proofs, and its
+   target's printer, `TCB/<Target>/Print.lean` (`public import
+   VerifiedGarbage.TCB.X86_64.Print`), whose `HasPrinter` instance
+   `Api.artifact` takes (no proof imports a printer, so a change to one
+   rebuilds only registration files; a generic file imports it too):
 
    ```lean
      Spec.<Alg>.fooApi.artifact X86_64.target {

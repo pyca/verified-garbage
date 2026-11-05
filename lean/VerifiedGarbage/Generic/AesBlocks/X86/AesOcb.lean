@@ -40,6 +40,7 @@ public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load

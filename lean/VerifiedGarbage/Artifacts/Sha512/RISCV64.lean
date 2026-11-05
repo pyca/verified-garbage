@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on RISC-V -/
 

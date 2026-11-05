@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Blowfish-CFB128 artifacts on baseline ARMv7 -/
 

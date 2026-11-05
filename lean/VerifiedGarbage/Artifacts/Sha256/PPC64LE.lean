@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SHA-256 (FIPS 180-4) on PPC64LE -/
 

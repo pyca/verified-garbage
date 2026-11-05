@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P384
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Deterministic ECDSA (RFC 6979) over P-384 on PPC64LE, with HMAC as a table -/
 

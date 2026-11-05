@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SearchInit
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on AArch64 -/
 

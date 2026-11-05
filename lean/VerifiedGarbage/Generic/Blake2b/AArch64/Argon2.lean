@@ -5,6 +5,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Argon2 H′ for every ARM64 BLAKE2b backend -/
 

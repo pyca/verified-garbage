@@ -123,6 +123,7 @@ public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64

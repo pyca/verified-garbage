@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha512_224
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # PBKDF2-HMAC-SHA-512/224 (RFC 8018) on PPC64LE: the iteration and the whole derivation -/
 

@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds

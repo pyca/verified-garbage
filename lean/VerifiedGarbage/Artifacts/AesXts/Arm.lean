@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.Arm.Verified
 public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on ARMv7 -/
 

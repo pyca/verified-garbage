@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # SEC 1 point conversion with Secp256k1's existing field backend -/
 

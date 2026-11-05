@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RC2 artifacts on baseline AArch64 -/
 

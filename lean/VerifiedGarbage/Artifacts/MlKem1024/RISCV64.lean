@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem1024.RISCV64.DecapsCT
 public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ML-KEM-1024 (FIPS 203) on RISC-V -/
 

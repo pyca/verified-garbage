@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Sig
 
 /-!
 # Targets, contracts and verified artifacts
 
 **Trusted.** This file defines what it *means* for an emitted function to be
-verified. Every function the Rust crate contains is an `Artifact`, and an
+verified. Every function the Rust crate contains is an `Artifact`
+(`TCB/Registration.lean`, with the printer of its target), and an
 `Artifact` cannot be constructed without a proof of `Verified`.
 
 `Verified T c k` says, for the machine code `c` on target `T` and contract `k`:
@@ -37,12 +38,13 @@ read.
 
 namespace VG
 
-/-- A code-generation target: an ISA model, its printer, and its calling convention. -/
+/-- A code-generation target: an ISA model and its calling convention. Its
+printer is not part of it (`EmitTarget`, `TCB/Registration.lean`): every
+proof imports `Target`, and none depends on how its code is printed. -/
 structure Target where
   /-- Short name; also the name of the generated Rust module (e.g. `x86_64`). -/
   name : String
   isa : ISA
-  printer : Printer isa
   /-- Calling-convention obligations every function must meet when it
   returns, relating the entry state to the exit state (callee-saved
   registers and the stack pointer restored, return address intact). -/
@@ -287,96 +289,5 @@ section. -/
 def Api.doc (api : Api) : String :=
   api.summary ++ "\n\n# Safety\n\n" ++
     "\n".intercalate (api.safety.map ("* " ++ ·))
-
-/-- A verified function, ready to be emitted into the Rust crate. -/
-structure Artifact where
-  target : Target
-  /-- The Rust module the function is emitted into, `src/asm/<target>/<module>.rs`
-  (e.g. `sha256`). -/
-  module : String
-  /-- The Rust function name. Must be unique within the target. -/
-  name : String
-  /-- The Rust signature, rendered as the parameter list and return type
-  (`Sig.rust`). -/
-  sig : Sig
-  /-- Documentation for the generated Rust function. With what the emitter
-  adds to it (`Sig.layoutNote`, `Sig.validDoc` and `Sig.layoutDoc`, which
-  need it to end with its `# Safety` section if they add anything, and not
-  to state what they do), it must state every
-  requirement of `contract.pre` that the caller is responsible for, and
-  anything the contract declares the function may leak (`Sig.contract`'s
-  `leak`). -/
-  doc : String
-  /-- Tables of 64-bit constants the code reads, by name: the emitter writes
-  each as a `static` of that name, from which the code forms the table's
-  address (`Abi.sym`; on AArch64, ARMv7 and PPC64LE, `adrSym`; on RISC-V,
-  `lla`; on x86-64, `leaSym`), and checks that every artifact of the target with a table of that name gives
-  the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
-  `target.abi.withConsts consts` (`Abi.withConsts`). A table an instruction
-  carries (x86-64's `aluTbl`, `Printer.tables`) is written and checked the
-  same way without being listed here: the model reads its words from the
-  instruction, not from memory the contract describes. -/
-  consts : List (String × List (BitVec 64)) := []
-  /-- The tables of functions the function takes (`Abi.withTables`): for
-  each of its parameters that is one, the parameter's name and every table
-  it may point to. The emitter checks that each names a read-only array of
-  `u64` of the tables' length, and that it lists every table of their
-  interface on the target, of which the Rust caller may pass any
-  (`Rust.checkFnTables`). So `contract` is one for the calling convention
-  `(target.abi.withConsts consts).withTables sig tables`. -/
-  tables : List (String × List FnTable) := []
-  code : Prog target.isa
-  contract : Contract target.isa
-  verified : Verified target code contract
-  /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
-  writeArgs : Bool := false
-  stack : Nat := 0
-  /-- `contract` is one that `Sig.contract` derives from `sig` for the
-  target's calling convention, `writeArgs` and `stack`: so it reads the
-  arguments and writes the return value where the calling convention places
-  them for `sig`, and requires what `Sig.layoutDoc` documents of where the
-  buffers are. -/
-  ofSig : ∃ pre post leak,
-      contract = sig.contract ((target.abi.withConsts consts).withTables sig tables) pre post writeArgs
-        stack leak := by
-    exact ⟨_, _, _, rfl⟩
-  /-- The contract of the function on every target, which an artifact made
-  from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
-  (`Api.contracts`). The emitter refuses an artifact without one
-  (`Rust.checkApi`). -/
-  contracts : Option Contracts := none
-  /-- `contract` is `contracts` on the target, for `stack`: an artifact made
-  from an `Api` is proven against the contract `Spec/` gives the function,
-  not one chosen where the artifact is built. -/
-  ofApi : contracts.elim True fun f =>
-      contract = f ((target.abi.withConsts consts).withTables sig tables) stack := by
-    first | exact True.intro | exact rfl
-  /-- The code changes the stack pointer only by calls and returns and by
-  the pushes and pops of frames, which are nested: no other instruction of
-  it, or of the functions it calls, writes it. So a call instruction or a
-  push only ever stores below the stack pointer on entry, where no Rust
-  object lies. -/
-  spSafe : code.all (fun i => !target.isa.writesSp i) = true := by decide +kernel
-  /-- The CPU features beyond the target's baseline ISA that the code needs,
-  by their Rust `target_feature` names: exactly those its instructions, and
-  those of the functions it calls, require (`ISA.requires`). The emitter
-  checks this (`Rust.checkFeatures`) and adds their presence to the
-  function's `# Safety` section, which `doc` must end with when this is not
-  empty. -/
-  features : List String := []
-  /-- How much of some writable array parameters the function writes, in
-  bytes: for each `(name, n)`, it changes no byte of the buffer of the
-  parameter `name` at offset `n` or beyond (`writtenOk`). The emitter checks
-  that each names a writable array parameter, once, with `n` at most its size
-  (`Rust.checkWritten`), exports `n` as the constant
-  `<NAME>_<PARAM>_WRITTEN` (`Rust.writtenConsts`) and documents it, so that a
-  caller that must destroy what the function wrote there need destroy only
-  the first `n` bytes. -/
-  written : List (String × Nat) := []
-  /-- Every run from a state satisfying `contract.pre` changes no byte of
-  those buffers beyond their bounds (`Sig.writtenWithin`). -/
-  writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
-      Sig.writtenWithin (target.abi.withConsts consts) sig written s s' := by
-    exact fun _ _ _ _ _ => True.intro
 
 end VG

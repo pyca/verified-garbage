@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Verified
 public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 
 /-! # SM4 artifacts on baseline RISC-V -/

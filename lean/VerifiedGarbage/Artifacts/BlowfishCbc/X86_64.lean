@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86_64.CbcVerified
 import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Blowfish-CBC artifacts on baseline x86-64 -/
 

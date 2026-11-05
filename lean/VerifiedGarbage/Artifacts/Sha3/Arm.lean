@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.Arm.Shared
 public import VerifiedGarbage.Proof.Sha3.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SHA-3 and SHAKE (FIPS 202) on 32-bit ARM -/
 

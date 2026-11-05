@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedInit
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Raw RC4 on baseline AArch64 -/
 

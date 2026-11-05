@@ -118,4 +118,7 @@ def printer : Printer isa where
     | _ => none
   unencodable := Instr.unencodable
 
+/-- The printer of this ISA's code (`HasPrinter`). -/
+instance : HasPrinter isa := ⟨printer⟩
+
 end VG.RISCV64

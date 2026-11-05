@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Expanded
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Ed25519 public-key derivation from the seed's SHA-512 digest -/
 

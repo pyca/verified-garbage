@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on PPC64LE -/
 

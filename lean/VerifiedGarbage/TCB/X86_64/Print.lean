@@ -419,4 +419,7 @@ def printer : Printer isa where
       | [] => if i.encode.isNone then some "an operand does not fit its field" else none
       | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
 
+/-- The printer of this ISA's code (`HasPrinter`). -/
+instance : HasPrinter isa := ⟨printer⟩
+
 end VG.X86_64

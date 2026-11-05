@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P224.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.P224.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P224
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.P224.Lit
 
 /-! # ECDH over P-224 (SP 800-56A §5.7.1.2) on PPC64LE -/

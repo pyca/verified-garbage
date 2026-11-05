@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask

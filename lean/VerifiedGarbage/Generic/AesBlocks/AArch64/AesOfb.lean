@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOfb.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on AArch64 -/
 

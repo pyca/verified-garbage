@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Verified
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # The RSA prime search on RISC-V, its candidates calling each shared Miller–Rabin implementation -/
 

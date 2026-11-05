@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on x86-64 -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # AES-CCM (NIST SP 800-38C) on PPC64LE -/
 

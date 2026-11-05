@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on AArch64 -/
 

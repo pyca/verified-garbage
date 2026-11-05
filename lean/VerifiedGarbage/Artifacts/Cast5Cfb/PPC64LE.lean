@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 
 /-! # CAST5-CFB64 artifacts on baseline PPC64LE -/

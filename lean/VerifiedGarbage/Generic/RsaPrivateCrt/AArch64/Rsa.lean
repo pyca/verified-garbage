@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
 public import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset

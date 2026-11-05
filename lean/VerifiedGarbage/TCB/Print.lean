@@ -191,4 +191,12 @@ def Printer.function (body : Code M.Instr M.Cond) : List Line :=
   let (l, k, _) := P.lower body 0
   l ++ P.ret.map .text ++ k
 
+/-- The printer of the ISA `M`'s code: each ISA's printer module
+(`TCB/<ISA>/Print.lean`) declares the one instance for its ISA, and
+`Api.artifact` takes the printer of an artifact's target from it
+(`EmitTarget`). It is not a field of `Target`, which every proof imports, so
+that a change to a printer rebuilds only what emits code, not the proofs. -/
+class HasPrinter (M : ISA) where
+  printer : Printer M
+
 end VG

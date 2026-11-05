@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
 import VerifiedGarbage.Proof.Argon2.X86.CompressLit
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Argon2 (RFC 9106) on x86 -/
 

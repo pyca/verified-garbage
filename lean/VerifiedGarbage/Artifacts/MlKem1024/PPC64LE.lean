@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.DecapsCT
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # ML-KEM-1024 (FIPS 203) on PPC64LE -/
 

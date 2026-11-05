@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args

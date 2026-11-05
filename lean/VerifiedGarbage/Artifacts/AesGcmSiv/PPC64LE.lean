@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Verified
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 

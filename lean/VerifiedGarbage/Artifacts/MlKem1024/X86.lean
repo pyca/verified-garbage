@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ML-KEM-1024 (FIPS 203) on x86 -/
 

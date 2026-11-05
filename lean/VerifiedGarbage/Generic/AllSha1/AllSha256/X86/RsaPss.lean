@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Inst
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # RSASSA-PSS verification on x86 with a precomputed key, with the hash functions as tables -/
 

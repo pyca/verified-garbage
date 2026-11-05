@@ -276,4 +276,7 @@ def printer : Printer isa where
     | .adrSym .. => none
     | i => if i.encode.isNone then some "an operand does not fit its field" else none
 
+/-- The printer of this ISA's code (`HasPrinter`). -/
+instance : HasPrinter isa := ⟨printer⟩
+
 end VG.AArch64

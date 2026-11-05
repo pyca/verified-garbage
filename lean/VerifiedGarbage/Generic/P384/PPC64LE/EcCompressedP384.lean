@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P384.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P384.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P384
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P384.Lit
 
 /-! # P-384 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/

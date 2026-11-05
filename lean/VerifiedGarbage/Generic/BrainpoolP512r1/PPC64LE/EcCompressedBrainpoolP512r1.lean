@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.Lit
 
 /-! # brainpoolP512r1 point compression and decompression (SEC 1 §§2.3.3–2.3.4) on PPC64LE -/

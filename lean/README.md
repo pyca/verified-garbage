@@ -18,10 +18,13 @@ VerifiedGarbage/
     Print.lean      lowering of structured control flow to labels and branches, of
                     calls to call instructions, and of frames to push and pop
     Sig.lean        Rust signatures and calling conventions (`Abi`)
-    Artifact.lean   Target, Contract, `Verified`, `Artifact`: what "verified" means;
+    Artifact.lean   Target, Contract, `Verified`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
-    Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
-                    what its implementation chooses (`Registration`)
+                    (no printer: every proof imports it)
+    Registration.lean  `Artifact`, emitted for an `EmitTarget` (a target with its
+                    ISA's printer, `HasPrinter`); `Api.artifact`: an `Artifact`
+                    made from an `Api` and only what its implementation chooses
+                    (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the function whose code the model runs for it (an
                     artifact, or an internal function the emitter writes from that

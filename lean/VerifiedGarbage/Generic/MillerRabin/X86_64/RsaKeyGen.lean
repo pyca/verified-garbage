@@ -79,6 +79,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes

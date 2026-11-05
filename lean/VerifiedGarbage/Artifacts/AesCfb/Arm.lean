@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7 -/
 

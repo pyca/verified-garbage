@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified

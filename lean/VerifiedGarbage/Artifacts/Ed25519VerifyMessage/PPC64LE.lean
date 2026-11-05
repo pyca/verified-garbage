@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 @[expose] public section
 

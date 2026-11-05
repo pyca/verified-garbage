@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # RSA (RFC 8017) on ARMv7 -/
 

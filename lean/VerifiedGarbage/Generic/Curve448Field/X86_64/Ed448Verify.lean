@@ -51,6 +51,7 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 public import VerifiedGarbage.Proof.X448.X86_64.Main
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.Recover

@@ -88,4 +88,7 @@ def printer : Printer isa where
         .text "3:"]
     | _ => none
 
+/-- The printer of this ISA's code (`HasPrinter`). -/
+instance : HasPrinter isa := ⟨printer⟩
+
 end VG.Arm

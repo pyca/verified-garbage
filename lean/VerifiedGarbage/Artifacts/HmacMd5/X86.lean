@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 
 /-! # HMAC-MD5 (RFC 2104) on x86 -/

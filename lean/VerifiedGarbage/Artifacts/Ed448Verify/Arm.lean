@@ -57,6 +57,7 @@ public import VerifiedGarbage.Proof.X448.Arm.RowPass
 public import VerifiedGarbage.Proof.X448.Arm.Setup
 public import VerifiedGarbage.Proof.X448.Arm.Step
 public import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash

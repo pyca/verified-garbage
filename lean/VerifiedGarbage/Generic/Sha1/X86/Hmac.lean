@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha1
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # HMAC-SHA-1 (RFC 2104) on x86, for every x86 SHA-1 backend -/
 

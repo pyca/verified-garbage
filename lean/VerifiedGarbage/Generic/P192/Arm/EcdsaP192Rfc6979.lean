@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P192
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Deterministic ECDSA (RFC 6979) over P-192 on ARMv7, with HMAC as a table -/
 

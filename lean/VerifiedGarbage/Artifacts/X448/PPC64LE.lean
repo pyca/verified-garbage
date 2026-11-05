@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # X448 (RFC 7748) on PPC64LE -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 @[expose] public section
 

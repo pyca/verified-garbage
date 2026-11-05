@@ -22,6 +22,7 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 import VerifiedGarbage.Proof.AesSiv.AArch64.Finish

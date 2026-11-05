@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -97,7 +97,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "x86"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
   -- The model's baseline is i686 with SSE2 (`TCB/X86/Isa.lean`), which the
   -- `i586-*` targets and `i686-unknown-uefi` lack.

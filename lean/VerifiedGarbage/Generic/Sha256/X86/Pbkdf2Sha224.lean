@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances

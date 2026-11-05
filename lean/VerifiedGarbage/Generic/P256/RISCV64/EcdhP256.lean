@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P256.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.EcdhLit
 
 /-! # ECDH over P-256 (SP 800-56A §5.7.1.2) on RISC-V -/

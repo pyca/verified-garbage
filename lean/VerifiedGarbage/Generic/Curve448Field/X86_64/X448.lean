@@ -5,6 +5,7 @@ public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # X448 and Ed448 share the selected Curve448 exponentiation backend -/
 

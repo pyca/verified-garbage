@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.EcdhLit
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on RISC-V -/

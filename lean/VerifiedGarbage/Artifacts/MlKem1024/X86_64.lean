@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
 public import VerifiedGarbage.Artifacts.MlKem.X86_64
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/
 

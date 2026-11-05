@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Lit
 

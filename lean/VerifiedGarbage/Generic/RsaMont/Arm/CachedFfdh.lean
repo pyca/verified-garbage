@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Cached key generation and its native controller share one RSA arithmetic helper -/
 

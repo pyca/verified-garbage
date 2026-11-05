@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on RISC-V -/
 

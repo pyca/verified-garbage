@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -111,7 +111,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "riscv64"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
   rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\", \
     target_feature = \"c\")"

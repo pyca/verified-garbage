@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Blake2.RISCV64.Verified
 public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 

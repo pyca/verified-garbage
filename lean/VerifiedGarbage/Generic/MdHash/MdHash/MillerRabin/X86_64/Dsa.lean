@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Widths
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # DSA parameter generation with every SHA-1, SHA-256 and Miller–Rabin backend on x86-64 -/
 

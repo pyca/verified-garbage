@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on RISC-V -/

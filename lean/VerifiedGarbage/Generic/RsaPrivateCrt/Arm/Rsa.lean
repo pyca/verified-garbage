@@ -204,6 +204,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
 public import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Rsa.ZeroTest32
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # The checked RSA private-key operation on ARMv7 -/
 

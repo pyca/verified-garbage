@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Written
 public import VerifiedGarbage.Proof.MlKem.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (hashing the key, or with `H(ek)` given) and decapsulation -/
 

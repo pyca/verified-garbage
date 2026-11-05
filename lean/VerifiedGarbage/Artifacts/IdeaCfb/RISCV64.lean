@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Idea.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Idea.RISCV64.ModesLit
 
 /-! # IDEA-CFB64 artifacts on baseline RISC-V -/

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.RISCV64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.RISCV64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.Lit
 
 /-! # CAST5 key expansion and ECB on RISC-V -/

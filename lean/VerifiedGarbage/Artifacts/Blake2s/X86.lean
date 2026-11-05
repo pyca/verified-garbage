@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 import VerifiedGarbage.Proof.Blake2.X86.LitS
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # BLAKE2s (RFC 7693) on x86 -/
 

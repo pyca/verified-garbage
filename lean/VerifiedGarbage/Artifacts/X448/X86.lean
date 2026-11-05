@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X448.X86.Verified
 public import VerifiedGarbage.Proof.X448.X86.Base
 import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # X448 (RFC 7748) on x86 (32-bit) -/
 
