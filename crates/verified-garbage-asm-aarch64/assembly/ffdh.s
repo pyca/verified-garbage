@@ -20758,7 +20758,7 @@ vg_ffdh_key_generation_init:
 	ret
 	.p2align 6
 
-vg_ffdh_generate_parameters_sieved:
+vg_ffdh_generate_parameters:
 	add x14, sp, #0
 	ldr x8, [x14, #8]
 	ldr x9, [x14, #0]

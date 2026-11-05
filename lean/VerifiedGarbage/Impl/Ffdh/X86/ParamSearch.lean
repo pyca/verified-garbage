@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ffdh.SievedContract
 /-!
 # FFDH on i686: the parameter-generation controller
 
-`vg_ffdh_generate_parameters_sieved` repeats `vg_ffdh_parameter_candidate_sieved`
+`vg_ffdh_generate_parameters` repeats `vg_ffdh_parameter_candidate_sieved`
 on the random tape until it accepts a p, the attempts run out, or the tape
 does: rejected candidates never return to the host.
 

@@ -13,7 +13,7 @@ space, whose base is kept in the callee-saved `x19` (the caller's `x19`
 saved in word 4). The loop runs in a frame saving `x30`, which the calls
 change; each candidate in a frame of 16 bytes holding its stack argument.
 
-`vg_ffdh_generate_parameters_sieved(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_generate_parameters(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7,
 scratch_len = [sp], state = [sp + 8])`.
 -/

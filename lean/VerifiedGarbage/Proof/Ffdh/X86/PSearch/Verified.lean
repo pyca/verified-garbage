@@ -13,7 +13,7 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.ToAdditive
 
-/-! # `vg_ffdh_generate_parameters_sieved` on i686, verified -/
+/-! # `vg_ffdh_generate_parameters` on i686, verified -/
 
 @[expose] public section
 

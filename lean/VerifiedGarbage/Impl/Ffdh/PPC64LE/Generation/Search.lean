@@ -15,7 +15,7 @@ the calls change; each candidate in a frame of 112 bytes holding its stack
 argument at offset 96. The comparisons are the sign bits of differences of
 numbers below `2^63`, without the carry bit.
 
-`vg_ffdh_generate_parameters_sieved(out = r3, out_len = r4, used = r5,
+`vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5,
 bits = r6, generator = r7, rand = r8, rand_len = r9, scratch = r10,
 scratch_len = [sp + 96], state = [sp + 104])`.
 -/
