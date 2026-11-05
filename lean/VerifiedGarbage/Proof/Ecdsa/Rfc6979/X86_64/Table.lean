@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 public import VerifiedGarbage.Proof.HmacTable.X86_64
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Instrs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -109,7 +109,7 @@ theorem WOk.blockSize {w : MdHash} (hw : WOk w) : Spec.HmacTable.blockSize w.mgf
   exact w.ok.hB
 
 /-- The instance with `w`'s hash function fixed. -/
-def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Spec.Ecdsa.Rfc6979.Instance where
+def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Proof.Ecdsa.Rfc6979.Instance where
   ecdsa := T.ecdsa
   hash := w.ok.SH.H
   hashLen := w.H.D
@@ -151,7 +151,7 @@ theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : Curv
 /-- RFC 6979's result with `w`'s hash function fixed is the table's. -/
 theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) (m : Mem) (d dg : Addr) :
     (instOf T w).result m d dg = T.result w.mgf.G w.ok.SH.H m d dg := by
-  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.mgf.len]
+  simp only [Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.mgf.len]
 
 /-! ## The contract on entry -/
 
@@ -188,7 +188,7 @@ def tabK (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List MdHash
 
 /-- The contract the proof is written against, of a state with the same
 arguments, regions, memory and symbols. -/
-theorem rfc_congr {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S : Nat}
+theorem rfc_congr {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {S : Nat}
     {H : Impl.Pbkdf2.Md.X86_64.Hash} {f : Impl.Mgf1.X86_64.Table.Fns} {ns : List String} {s t : State}
     (h : (rfcX86_64 cs I S (tabFacts H f) ns).pre s)
     (hg : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r9, .rsp, .r10, .r11], t.gpr r = s.gpr r) (hrd : t.rd = s.rd)
@@ -301,7 +301,7 @@ theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
 /-! ## Constant time -/
 
 /-- Public data that agree. -/
-theorem pub_trans {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+theorem pub_trans {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {S S' : Nat}
     {F F' : State → Prop} {ns : List String} {a b c : State} (h₁ : (rfcX86_64 cs I S F ns).pub a b)
     (h₂ : (rfcX86_64 cs I S F ns).pub a c) : (rfcX86_64 cs I S' F' ns).pub b c := by
   obtain ⟨p₁, p₂, p₃, p₄, p₅, p₆, p₇, p₈, p₉⟩ := h₁
@@ -310,12 +310,12 @@ theorem pub_trans {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc69
     p₆.symm.trans q₆, p₇.symm.trans q₇, fun c hc => (p₈ c hc).symm.trans (q₈ c hc),
     fun n hn => (p₉ n hn).symm.trans (q₉ n hn)⟩
 
-theorem pub_refl {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S : Nat}
+theorem pub_refl {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {S : Nat}
     {F : State → Prop} {ns : List String} (a : State) : (rfcX86_64 cs I S F ns).pub a a :=
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => rfl⟩
 
 /-- Public data of a state with the same arguments, memory and symbols. -/
-theorem pub_congr {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+theorem pub_congr {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {S S' : Nat}
     {F F' : State → Prop} {ns : List String} {a b c : State} (h : (rfcX86_64 cs I S F ns).pub a b)
     (hg : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r9, .rsp], c.gpr r = b.gpr r) (hm : c.mem = b.mem)
     (hsy : c.syms = b.syms) : (rfcX86_64 cs I S' F' ns).pub a c := by

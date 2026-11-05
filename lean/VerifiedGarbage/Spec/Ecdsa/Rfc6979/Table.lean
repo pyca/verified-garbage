@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.HmacTable
 
 /-!

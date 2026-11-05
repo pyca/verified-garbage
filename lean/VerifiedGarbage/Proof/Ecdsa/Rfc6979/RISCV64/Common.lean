@@ -4,7 +4,7 @@ module
 -- changes need not re-check them
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 public import VerifiedGarbage.Proof.HmacTable.RISCV64
@@ -69,13 +69,13 @@ open Spec.Sha256 (bytesAt)
 /-! ## The contract -/
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
-abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
 /-- `sign(out, d, digest, digest_len, scratch, hmac)`, with `N` bytes of
 stack, for the table `hmac` of `w`, whose functions an indirect call of `f`'s
 reaches, with the addresses of the functions `ns` public. -/
-def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (w : HVar) (f : Fns) (ns : List String) (N : Nat) :
+def rfcR (I : Proof.Ecdsa.Rfc6979.Instance) (w : HVar) (f : Fns) (ns : List String) (N : Nat) :
     Contract isa where
   pre s :=
     let out : Region := ⟨s.gpr .a0, 2 * I.ecdsa.curve.len⟩
@@ -110,7 +110,7 @@ def rfcR (I : Spec.Ecdsa.Rfc6979.Instance) (w : HVar) (f : Fns) (ns : List Strin
 
 /-- `rfcR` with the tables `K` the signature with a given `k` reads
 (`abi.withConsts`): `rfcR` for the state without them, and what they add. -/
-def rfcRC (K : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (w : HVar) (f : Fns)
+def rfcRC (K : List (String × List (BitVec 64))) (I : Proof.Ecdsa.Rfc6979.Instance) (w : HVar) (f : Fns)
     (ns : List String) (N : Nat) : Contract isa where
   pre s := (rfcR I w f ns N).pre (stripConsts K s) ∧ ConstsOk K N s
   post := (rfcR I w f ns N).post
@@ -210,7 +210,7 @@ configuration, and the hash function of the table. -/
 structure Rfc where
   c : Cfg
   w : HVar
-  I : Spec.Ecdsa.Rfc6979.Instance
+  I : Proof.Ecdsa.Rfc6979.Instance
   kit : Kit
   hE : I.ecdsa = kit.E
   hHash : I.hash = w.t.l.ok.SH.H

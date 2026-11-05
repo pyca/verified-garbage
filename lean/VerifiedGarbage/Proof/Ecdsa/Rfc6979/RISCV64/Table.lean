@@ -69,7 +69,7 @@ def OK (vs : List HVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs �
 instance (vs : List HVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
 /-- The instance with `w`'s hash function fixed. -/
-def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Spec.Ecdsa.Rfc6979.Instance where
+def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Proof.Ecdsa.Rfc6979.Instance where
   ecdsa := T.ecdsa
   hash := w.t.l.ok.SH.H
   hashLen := w.H.D
@@ -107,7 +107,7 @@ def rfcOf {R : CurveT} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveOk R T)
 /-- RFC 6979's result with `w`'s hash function fixed is the table's. -/
 theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) (m : Mem) (d dg : Addr) :
     (instOf T w).result m d dg = T.result w.G w.t.l.ok.SH.H m d dg := by
-  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, HVar.G,
+  simp only [Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, HVar.G,
     w.t.l.len]
 
 /-! ## The contract on entry -/

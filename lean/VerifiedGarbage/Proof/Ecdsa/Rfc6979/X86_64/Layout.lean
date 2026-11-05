@@ -436,7 +436,7 @@ theorem lay_tbls (dn q e : Nat) (he : e = 48) (cs : List (String × List (BitVec
     (lay dn q e he cs H f s).TBLs = Abi.constRegions (fun n => s.syms n) cs :=
   constRegions_congr (lay_sy dn q e he (H := H) (f := f) s)
 
-theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {e : Nat}
+theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {e : Nat}
     (he : e = 48) {H : Hash} {f : Fns} {ns : List String} {s : State}
     (h : (rfcX86_64 cs I (248 + 8 * e) (tabFacts H f) ns).pre s) :
     (lay I.hashLen I.ecdsa.curve.len e he cs H f s).Ok := by
@@ -476,7 +476,7 @@ theorem push_db (sp : Addr) (e j : Nat) (hj : j < 2) (he : 2 ≤ e) :
   rw [show 8 * (e - j + 1) = 248 + 8 * e - (240 + 8 * j) by omega_arith, ← Offset.ofNat_sub_ofNat (by omega_arith),
     Offset.sub_sub_eq]
 
-theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance} {e : Nat}
+theorem push_ctx {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance} {e : Nat}
     (he : e = 48) {H : Hash} {f : Fns} {ns : List String} {s : State}
     (h : (rfcX86_64 cs I (248 + 8 * e) (tabFacts H f) ns).pre s) :
     Ctx (lay I.hashLen I.ecdsa.curve.len e he cs H f s) s.gpr s.mem (pushed (pushRs e) s) := by

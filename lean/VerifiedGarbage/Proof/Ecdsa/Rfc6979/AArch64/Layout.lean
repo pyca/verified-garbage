@@ -429,7 +429,7 @@ theorem lay_top (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (e : Nat) (he : e = 48
     (s : State) : (lay dn q E e he H f s).B + BitVec.ofNat 64 (256 + 8 * e) = s.sp :=
   BitVec.sub_add_cancel _ _
 
-theorem lay_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {e : Nat} (he : e = 48)
+theorem lay_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {e : Nat} (he : e = 48)
     {H : Hash} {f : Fns} {ns : List String} {s : State}
     (h : (rfcAArch64 E I (256 + 8 * e) (tabFacts H f) ns).pre s) :
     (lay I.hashLen I.ecdsa.curve.len E e he H f s).Ok := by
@@ -516,7 +516,7 @@ theorem saved_ok (B : Addr) (m : Mem) (o d g c l b t : BitVec 64) :
   simp (disch := decide) only [saved, rdW_sep, Mem.readW_writeW_self64]
 
 /-- The arguments, `D`, `B` and the table's address saved in the frame: `Ctx` holds. -/
-theorem save_ctx {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {H : Hash} {f : Fns}
+theorem save_ctx {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {H : Hash} {f : Fns}
     {ns : List String} {s : State} (h : (rfcAArch64 E I (256 + 8 * 48) (tabFacts H f) ns).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.AArch64.Cfg.saveArgs) (entered s)
       (Ctx (lay I.hashLen I.ecdsa.curve.len E 48 rfl H f s) s.gpr s.mem) := by

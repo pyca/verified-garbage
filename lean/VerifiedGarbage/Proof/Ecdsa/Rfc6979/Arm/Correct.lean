@@ -309,7 +309,7 @@ theorem result_unfold :
         let (K, V) := kv0 P L m₀
         Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V P.I.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
+  simp only [result, Proof.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.hash, P.len,
     ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/
@@ -371,7 +371,7 @@ theorem lay_tbls (s : State) :
   intro c hc
   simp only [lay_sy (dn := dn) (q := q) (cs := cs) (F := F) (f := f) s hc]
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {ns : List String} {s : State}
+theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {ns : List String} {s : State}
     (h : (rfcArm I stackT cs (tabFacts F f) ns).pre s) : (lay I.hashLen I.ecdsa.curve.len cs F f s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, na, ao, ac, nt, to, tc, tk, tables, -⟩ := h
   refine ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nt, to, tc, tk, ao, ac, nB, na, ?_⟩
