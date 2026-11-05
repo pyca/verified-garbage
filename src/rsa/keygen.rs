@@ -42,9 +42,6 @@ use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey};
 
-#[cfg(test)]
-mod wycheproof;
-
 /// Why a key was not generated.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {

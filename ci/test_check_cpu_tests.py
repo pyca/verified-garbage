@@ -126,14 +126,9 @@ class RsaEmulationTests(unittest.TestCase):
         expensive = {"wycheproof::rsa_pss::rsa_pss_sign_test",
                      "wycheproof::rsa_oaep::rsa_shared_key_leases"}
         listed["tests"] += list(expensive)
-        # Prime generation (with Wycheproof's primes, in the library's own
-        # tests) and the selectors, in the library's tests.
         selectors = {"rsa::pss::sha256::tests::backend_features",
-                     "rsa::oaep::sha256::tests::backend_features",
-                     "rsa::keygen::tests::primes",
-                     "rsa::keygen::wycheproof::rsa_keygen_primes",
-                     "rsa::keygen::wycheproof::rsa_keygen_composites"}
-        listed["lib"] += list(selectors)
+                     "rsa::oaep::sha256::tests::backend_features"}
+        listed["lib"] += list(selectors) + ["rsa::keygen::tests::primes"]
         runs = self.selected("icx", "tests", listed, emulated=True)
         self.assertFalse(set.union(*runs) & expensive)
         for path in ["wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::rsa_pkcs1_enc::rsa_pkcs1_test",
@@ -143,6 +138,7 @@ class RsaEmulationTests(unittest.TestCase):
             self.assertEqual(sum(path in r for r in self.selected("icx", "tests", listed, emulated=True)), 1, path)
         lib = set.union(*self.selected("icx", "lib", listed, emulated=True))
         self.assertIn("rsa::keygen::tests::generate_small_d", lib)
+        self.assertNotIn("rsa::keygen::tests::primes", lib)
         self.assertFalse(lib & selectors)
         # The full suites still belong to native and SKX runs.
         for chip in ("native", "skx", "icx"):
