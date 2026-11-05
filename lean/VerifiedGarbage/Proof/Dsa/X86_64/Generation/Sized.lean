@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sized
-public import VerifiedGarbage.Spec.Dsa.GenerationSized
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SizedContract
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Dispatch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInnerCT
@@ -131,7 +130,7 @@ theorem verified (G1 G256 : Stream) (sq : Prog isa)
       (Spec.Dsa.generateParametersContract abi 536))
     (pBytes : Nat) (hp : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) :
     Verified target (VG.Impl.Dsa.X86_64.Generation.Sized.code (checkName := checkName) pBytes G1 G256 sq mul round)
-      (Spec.Dsa.GenerationSized.contract pBytes abi 536) := by
+      (VG.Proof.Dsa.X86_64.Generation.Sized.contract pBytes abi 536) := by
   refine ⟨?_, ?_, sized_satisfiable pBytes hp⟩
   · intro s hs
     have old := pre_of_sized hs
