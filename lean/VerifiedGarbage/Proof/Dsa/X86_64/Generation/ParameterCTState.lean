@@ -431,7 +431,7 @@ private def searchLoopInv (n pLen qLen remaining : Nat) : State → State → Pr
 
 section
 variable (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-variable (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+variable (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
 variable (sizes : GenerationSizes pLen qLen)
 variable (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
 variable (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -504,7 +504,7 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation
 
 theorem primeSearch_ct (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-    (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)
     (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -535,7 +535,7 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem seedPrime_ct (H : GenerationHashes) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
       (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run pLen qLen) (fun _ _ => True) := by
   have hq : qLen = 20 ∨ qLen = 32 := by
@@ -589,7 +589,7 @@ theorem seedPrimeAfter_related {n pLen qLen : Nat} {s t : State}
   exact ⟨p.generatorPublic vs rs ds, hgs, hgt⟩
 
 theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
       (.seq (primeSearch H.sha1 H.sha256 T.run pLen qLen)
         (onSuccess (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen)))))
@@ -623,7 +623,7 @@ def SeedAttemptBefore (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   SeedBefore n qLen p s ∧ p.context.geo.pLen = pLen
 
 theorem seedAttempt_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedAttemptBefore n pLen qLen))
       (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
   have width : qLen = 20 ∨ qLen = 32 := by

@@ -29,7 +29,7 @@ theorem parameterIteration_ready (H : GenerationHashes) (M : Mont) (Sq : MontS) 
 private def parameterLoopInv (n pLen qLen remaining : Nat) : State → State → Prop :=
   Two fun p s => p.context.seeds.bytes.length - p.seedUsed + 1 = remaining ∧ ParameterBefore n pLen qLen p s
 
-private theorem parameterLoop_step (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat)
+private theorem parameterLoop_step (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen) (remaining : Nat) :
     RelCT isa (parameterLoopInv n pLen qLen remaining)
       (tapeIteration seedTape qLen (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen))
@@ -53,7 +53,7 @@ private theorem parameterLoop_step (H : GenerationHashes) (M : Mont) (Sq : MontS
   change p.seedUsed + p.context.geo.qLen ≤ p.context.seeds.bytes.length at room
   omega
 
-theorem parameterLoop_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat)
+theorem parameterLoop_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterBefore n pLen qLen))
       (.loop (tapeIteration seedTape qLen (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen)) .e) (fun _ _ => True) := by

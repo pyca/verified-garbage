@@ -68,12 +68,12 @@ variable {G : Stream} (hG : StreamOK G)
 
 include hG in
 /-- The label's hash to `scratch + o`, in two runs with the same `LQ`. -/
-theorem hashLabel_ct (n : Nat) (hn : n = 2 ∨ n = 3) {o : Nat} (ho : o = oDig ∨ o = oLh) :
+theorem hashLabel_ct (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) {o : Nat} (ho : o = oDig ∨ o = oLh) :
     RelCT isa (Two (LW n)) (hashLabel G o) fun _ _ => True := by
   have hoo : oSt + 256 ≤ o ∧ o + 64 ≤ oW := by rcases ho with rfl | rfl <;> decide
   unfold hashLabel seqs seqs seqs seqs seqs
   refine RelCT.seq (two_pieceF (Ψ := fun q t => LW n q t ∧ t.gpr .rdi = off q.S oSt) [] [] LQ.F LQ.ws (fun _ _ => 0)
-    (fun q t h => h.fr) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h =>
+    (fun q t h => h.fr) nopin (by decide) (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h =>
       WP.mono (scr_ok h.L (d := .rdi) (by decide) (o := oSt) (by decide))
         fun t' ⟨hdi, hm, k⟩ => ⟨h.congr (k.gpr (by decide)) k.2.1 k.2.2 hm, hdi⟩) ?_
   refine RelCT.seq (two_post (Ψ := LW n) (two_init hG LQ.F LQ.S fun q t h => ⟨h.1.L, h.2⟩) fun q t h => ?_) ?_
@@ -82,7 +82,7 @@ theorem hashLabel_ct (n : Nat) (hn : n = 2 ∨ n = 3) {o : Nat} (ho : o = oDig �
   refine RelCT.seq (two_pieceF (Ψ := fun q t => LW n q t ∧ t.gpr .rdi = off q.S oSt ∧
       t.gpr .rsi = BitVec.ofNat 64 0 ∧ t.gpr .rdx = q.lab ∧ t.gpr .rcx = BitVec.ofNat 64 q.labLen ∧
       t.gpr .r8 = off q.S oW) [] [] LQ.F LQ.ws (fun _ _ => 0)
-    (fun q t h => h.fr) nopin (by decide) (by rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h => ?_) ?_
+    (fun q t h => h.fr) nopin (by decide) (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩) fun q t h => ?_) ?_
   · obtain ⟨V, W, R, A⟩ := h.rep
     exact WP.mono (labA_ok h.L R A) fun t' ⟨hdi, hsi, hdx, hcx, h8, hm, k⟩ =>
       ⟨h.congr (k.gpr (by decide)) k.2.1 k.2.2 hm, hdi, hsi, hdx, hcx, h8⟩
@@ -96,7 +96,7 @@ theorem hashLabel_ct (n : Nat) (hn : n = 2 ∨ n = 3) {o : Nat} (ho : o = oDig �
       fun t' ⟨L', rd', wr', _, R', _⟩ => h.1.after L' rd' wr' R' A
   refine RelCT.seq (two_pieceF (Ψ := fun q t => LW n q t ∧ t.gpr .rdi = off q.S oSt ∧
       t.gpr .rsi = BitVec.ofNat 64 q.labLen ∧ t.gpr .rdx = off q.S o ∧ t.gpr .rcx = off q.S oW) [] [] LQ.F LQ.ws
-    (fun _ _ => 0) (fun q t h => h.fr) nopin (by decide) (by rcases ho with rfl | rfl <;> rcases hn with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    (fun _ _ => 0) (fun q t h => h.fr) nopin (by decide) (by rcases ho with rfl | rfl <;> rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
     fun q t h => ?_) ?_
   · obtain ⟨V, W, R, A⟩ := h.rep
     exact WP.mono (labF_ok h.L R A.hll (o := o) (by rcases ho with rfl | rfl <;> decide))

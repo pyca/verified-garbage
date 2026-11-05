@@ -25,7 +25,7 @@ theorem parameter_before_pins (n pLen qLen : Nat) : Pins (ParameterBefore n pLen
   exact hs.layout.rsp.trans ht.layout.rsp.symm
 
 theorem parameterIteration_ct_of (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen)
     {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.rsp]) (.block (chunkCheck seedTape qLen)) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.rsp]) (.block (tapeTake seedTape qLen)) hc₂).isSome = true) :
@@ -55,7 +55,7 @@ theorem parameterIteration_ct_of (H : GenerationHashes) (M : Mont) (Sq : MontS) 
     exact two_map (fun p : ParameterPublic => p) (fun _ _ h => parameter_available h.1 h.2) tail
 
 theorem parameterIteration_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterBefore n pLen qLen))
       (tapeIteration seedTape qLen (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen))
       (Two (ParameterIterationAfter n pLen qLen)) := by

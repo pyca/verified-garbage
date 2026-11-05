@@ -48,7 +48,7 @@ def ParameterBodyAfter (n pLen qLen : Nat) (p : ParameterPublic) (s : State) : P
   p.seedUsed + p.context.geo.qLen ≤ p.context.seeds.bytes.length
 
 theorem parameter_body_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterTaken n pLen qLen))
       (seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
   apply (seedAttempt_ct (checkName := checkName) H M Sq T n hn pLen qLen sizes).mono ?_ (fun _ _ h => h)

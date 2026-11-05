@@ -40,7 +40,7 @@ theorem hashTest_ct (n : Nat) :
 
 theorem seedHash_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
-    (n : Nat) (hn : n = 2 ∨ n = 3) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
     RelCT isa (Two (LW n)) (Impl.Dsa.X86_64.Generation.seedHash G1 G256)
       (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.seedHash
@@ -53,7 +53,7 @@ theorem seedHash_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
 
 theorem seedHashAt_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
-    (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
     RelCT isa (Two (LW n)) (Impl.Dsa.X86_64.Generation.seedHashAt G1 G256 len)
       (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.seedHashAt

@@ -171,4 +171,187 @@ theorem headerB_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F) (hctl : ctlRegi
   xrun [headerB, Impl.Dsa.X86_64.Generation.Refill.ctl, Impl.Dsa.X86_64.Generation.Refill.frameBytes,
     ea_sp, ea_at0', hsp, c1, c2, ha, hav, hv, hvv]
 
+/-- The memory after the first three stores, which the rest of `headerA` keeps outside the frame. -/
+def chainA₀ (m : Mem) (F : Addr) (g : Reg → BitVec 64) : Mem :=
+  ((m.writeW (off F 48) (g .rdi)).writeW (off F 56) (g .rsi)).writeW (off F 296) (g .rdx)
+
+theorem chainA_ctl (m : Mem) (F : Addr) (g : Reg → BitVec 64) (pLen qLen : Nat) :
+    ctlWord (chainA m F g pLen qLen) F 0 = g .rdx := by
+  have fc : ∀ d, d + 8 ≤ frameBytes → (⟨F, frameBytes⟩ : Region).Contains (off F d) 8 := fun d hd =>
+    Offset.contains_base F hd (by unfold frameBytes at hd; omega)
+  have hf : Frame [⟨F, frameBytes⟩] (chainA₀ m F g) (chainA m F g pLen qLen) := by
+    unfold chainA
+    refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW
+      (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
+      (List.mem_cons_self ..) _ (fc 64 (by decide))) (List.mem_cons_self ..) _ (fc 72 (by decide)))
+      (List.mem_cons_self ..) _ (fc 104 (by decide))) (List.mem_cons_self ..) _ (fc 120 (by decide)))
+      (List.mem_cons_self ..) _ (fc 88 (by decide))) (List.mem_cons_self ..) _ (fc 96 (by decide)))
+      (List.mem_cons_self ..) _ (fc 80 (by decide))) (List.mem_cons_self ..) _ (fc 40 (by decide)))
+      (List.mem_cons_self ..) _ (fc 136 (by decide))) (List.mem_cons_self ..) _ (fc 144 (by decide)))
+      (List.mem_cons_self ..) _ (fc 224 (by decide))
+  rw [ctlWord_frame hf (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact ctl_frame F) (by decide)]
+  exact ctlWord_write_self _ F 0 _
+
+theorem contains_head (a : Addr) {n k : Nat} (h : n ≤ k) : (⟨a, k⟩ : Region).Contains a n := by
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact h
+
+/-- The state the body starts from: the three frames allocated and the
+callee-saved registers saved. -/
+structure RefillAllocated {pBytes : Nat} {s₀ : State} (h : RefillABI pBytes s₀) (u : State) : Prop where
+  rsp : u.gpr .rsp = refillBase s₀
+  frame : (⟨refillBase s₀, frameBytes⟩ : Region) ∈ u.wr
+  ctl : ctlRegion (refillBase s₀) ∈ u.wr
+  wr : ∀ r ∈ s₀.wr, r ∈ u.wr
+  rd : u.rd = s₀.rd
+  regs : ∀ r, r ≠ .rsp → u.gpr r = s₀.gpr r
+  mem : Frame [⟨off (low s₀) 520, 48⟩] s₀.mem u.mem
+
+theorem refillBase_bound {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
+    (refillBase s).toNat + 328 ≤ 2 ^ 64 := by
+  rw [refillBase_toNat h]; have := (s.gpr .rsp).isLt; have : 568 ≤ (s.gpr .rsp).toNat := h.stackLower; omega
+
+theorem refillBase_args (s : State) : off (refillBase s) 392 = stackArgAddr s 1 := by
+  simp only [refillBase, low, off, stackArgAddr, stackUse]
+  bv_omega
+
+/-- The stack's regions are disjoint from each buffer. -/
+theorem RefillABI.frame_disjoint {pBytes : Nat} {s : State} (h : RefillABI pBytes s) {r : Region}
+    (hr : r = inOut s ∨ r = inUsed s ∨ r = inRand s ∨ r = inScr s ∨ r = inState s ∨ r = inArgs s) :
+    ∀ q ∈ [(⟨off (low s) 520, 48⟩ : Region), ⟨refillBase s, frameBytes⟩, ctlRegion (refillBase s)], r.Disjoint q := by
+  intro q hq
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl
+  · exact (h.stack_disjoint (by decide) hr).symm
+  · exact (h.stack_disjoint (d := 192) (n := 296) (by decide) hr).symm
+  · rw [ctlRegion_eq]; exact (h.stack_disjoint (by decide) hr).symm
+
+theorem RefillABI.geo {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
+    Geo (refillBase s) (refillGeometry h).hash := by
+  have hh := (refillGeometry h).small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+  exact ⟨by have := refillBase_bound h; unfold frameBytes; omega, (refillGeometry h).part_bound hh,
+    (refillGeometry h).frame_part hh,
+    ((refillGeometry h).stack_part hh).sub_left (below_sub (a := 16) (by decide) (by decide))⟩
+
+theorem RefillABI.ctl_arena {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
+    (ctlRegion (refillBase s)).Disjoint ⟨s.gpr .r9, VG.Impl.Dsa.Generation.Layout.usedBytes pBytes⟩ := by
+  rw [ctlRegion_eq]
+  exact (h.stack_disjoint (r := inScr s) (by decide) (by simp)).sub_right h.arena_sub
+
+theorem RefillABI.ctl_hash {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
+    (ctlRegion (refillBase s)).Disjoint ⟨(refillGeometry h).hash, oRsa⟩ :=
+  h.ctl_arena.sub_right ((refillGeometry h).part_sub
+    ((refillGeometry h).small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)))
+
+theorem RefillAllocated.randMemory {pBytes : Nat} {s₀ u v : State} {h : RefillABI pBytes s₀}
+    (a : RefillAllocated h u) (hf : Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem v.mem)
+    (hr : v.rd = u.rd) : GenerationTapeMemory (randTape h) v where
+  cover := by
+    intro x n hx
+    simp only [randTape, bytesAt_length, InRegions, List.mem_singleton] at hx
+    obtain ⟨r, rfl, hx⟩ := hx
+    refine ⟨_, List.mem_append_left _ ?_, hx⟩
+    rw [hr, a.rd, h.rd]; exact List.mem_cons_self ..
+  bytes := by
+    change Spec.Rsa.bytesAt v.mem (s₀.gpr .rcx) (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat).length = _
+    rw [bytesAt_length]
+    have hall : Frame [(⟨off (low s₀) 520, 48⟩ : Region), ⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)]
+        s₀.mem v.mem :=
+      (a.mem.mono (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact List.mem_cons_self ..)).trans
+      (hf.mono fun r hr => List.mem_cons_of_mem _ hr)
+    exact VG.Proof.Dsa.Generation.frame_bytesAt hall (h.frame_disjoint (r := inRand s₀) (by simp))
+      (Nat.le_of_lt (s₀.gpr .r8).isLt)
+
+theorem entry_ok {pBytes qBytes : Nat} {s₀ u : State} (h : RefillABI pBytes s₀) (a : RefillAllocated h u)
+    (hq : qBytes = Spec.Dsa.generationQLen pBytes) :
+    WP isa (.block (Impl.Dsa.X86_64.Generation.Refill.entryHeader pBytes qBytes ++
+        Impl.Dsa.X86_64.Generation.entryDerived)) u fun v =>
+      ∃ W, GenerationMemory (refillContext h) W v ∧ W 16 = 0 ∧ W 10 = 0 ∧
+        ctlWord v.mem (refillBase s₀) 0 = s₀.gpr .rdx ∧ ctlWord v.mem (refillBase s₀) 1 = stackArg s₀ 1 ∧
+        ctlWord v.mem (refillBase s₀) 2 = s₀.mem.readW (stackArg s₀ 1) 64 ∧
+        Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem v.mem ∧ Keep [.rax] u v := by
+  have hp : pBytes < 2 ^ 31 := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+  have hq' : qBytes < 2 ^ 31 := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+  have hb := refillBase_bound h
+  have G := h.geo
+  have hS := h.ctl_hash
+  rw [entryHeader_eq, List.append_assoc]
+  apply WP.block_append
+  refine WP.mono (headerA_ok a.rsp a.frame a.ctl hb hp hq') fun t ⟨hm, kt⟩ => ?_
+  have RA := chainA_rep G (initialRep u.mem (refillBase s₀) (refillGeometry h).hash) hS u.gpr pBytes qBytes
+  rw [← hm] at RA
+  have fA : Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem t.mem := by
+    rw [hm]; exact chainA_frame _ _ _ _ _
+  -- the arguments and `state[0]`, through the stores so far
+  have argsC : (inArgs s₀).Contains (off (refillBase s₀) 392) 8 := by
+    rw [refillBase_args]
+    exact Offset.contains (s₀.gpr .rsp) (e := 8) (d := 16) (by decide) (by decide) (by decide)
+  have hall : ∀ {m : Mem}, Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem m →
+      Frame [(⟨off (low s₀) 520, 48⟩ : Region), ⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] s₀.mem m :=
+    fun hf => (a.mem.mono (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact List.mem_cons_self ..)).trans
+      (hf.mono fun r hr => List.mem_cons_of_mem _ hr)
+  have hav : t.mem.readW (off (refillBase s₀) 392) 64 = stackArg s₀ 1 := by
+    rw [(hall fA).readW argsC (h.frame_disjoint (r := inArgs s₀) (by simp)) (by decide), refillBase_args]; rfl
+  have ha : InRegions (t.rd ++ t.wr) (off (refillBase s₀) 392) 8 :=
+    ⟨inArgs s₀, List.mem_append_left _ (by rw [kt.2.1, a.rd, h.rd]; simp), argsC⟩
+  have stC : (inState s₀).Contains (stackArg s₀ 1) 8 := contains_head _ (by decide)
+  have hv : InRegions (t.rd ++ t.wr) (stackArg s₀ 1) 8 :=
+    ⟨inState s₀, List.mem_append_right _ (by rw [kt.2.2]; exact a.wr _ (by rw [h.wr]; simp)), stC⟩
+  have fA1 : Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem
+      (t.mem.writeW (off (refillBase s₀) 304) (stackArg s₀ 1)) :=
+    fA.writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (ctl_contains _ (k := 1) (by decide))
+  have hvv : (t.mem.writeW (off (refillBase s₀) 304) (stackArg s₀ 1)).readW (stackArg s₀ 1) 64 =
+      s₀.mem.readW (stackArg s₀ 1) 64 :=
+    (hall fA1).readW stC (h.frame_disjoint (r := inState s₀) (by simp)) (by decide)
+  apply WP.block_append
+  refine WP.mono (headerB_ok ((kt.gpr (by decide)).trans a.rsp) (by rw [kt.2.2]; exact a.ctl) hb ha hav hv hvv)
+    fun t₂ ⟨hm₂, kt₂⟩ => ?_
+  have RB := rep_ctl (rep_ctl RA hS (k := 1) (by decide) (stackArg s₀ 1)) hS (k := 2) (by decide)
+    (s₀.mem.readW (stackArg s₀ 1) 64)
+  rw [← hm₂] at RB
+  have fB : Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem t₂.mem := by
+    rw [hm₂]; exact fA1.writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (ctl_contains _ (k := 2) (by decide))
+  have sp₂ : t₂.gpr .rsp = refillBase s₀ := (kt₂.gpr (by decide)).trans ((kt.gpr (by decide)).trans a.rsp)
+  have wr₂ : t₂.wr = u.wr := kt₂.2.2.trans kt.2.2
+  refine WP.mono (entryDerived_ok G RB sp₂ (by rw [wr₂]; exact a.frame) (B := u.gpr .r9) rfl)
+    fun v ⟨Rv, fv, kv⟩ => ?_
+  have fV : Frame [⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] u.mem v.mem :=
+    fB.trans (fv.mono fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact List.mem_cons_self ..)
+  have kV : Keep [.rax] u v := ((kt.trans kt₂).trans kv).mono (by decide)
+  have spv : v.gpr .rsp = refillBase s₀ := (kv.gpr (by decide)).trans sp₂
+  have r9 : u.gpr .r9 = s₀.gpr .r9 := a.regs _ (by decide)
+  have scr : Scr v (s₀.gpr .r9) (VG.Impl.Dsa.Generation.Layout.usedBytes pBytes) :=
+    ⟨⟨s₀.gpr .r9, 0, (stackArg s₀ 0).toNat * 8, by rw [kV.2.2]; exact a.wr _ (by rw [h.wr]; simp [inScr]),
+      by simp [off], by have := h.scratchSize; omega, by have := h.scrBound; omega⟩,
+      by have := h.scrBound; have := h.scratchSize; omega⟩
+  have hh := (refillGeometry h).small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+  have ctl₂ : ∀ k < 4, ctlWord v.mem (refillBase s₀) k = ctlWord t₂.mem (refillBase s₀) k := fun k hk =>
+    ctlWord_frame fv (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact ctl_frame _) hk
+  refine ⟨_, ⟨?_, ⟨_, Rv⟩, ?_, scr, a.randMemory fV kV.2.1, ?_, a.randMemory fV kV.2.1⟩, ?_, ?_, ?_, ?_, ?_, fV, kV⟩
+  · exact { rsp := spv, fr := by rw [kV.2.2]; exact a.frame
+            F8 := by show 8 ≤ (refillBase s₀).toNat; have := refillBase_toNat h; have : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega
+            Fw := G.Fw, sc := scr.sub hh (by decide)
+            slot := by
+              show Bignum.word v.mem (refillBase s₀) (8 * 14) = off (s₀.gpr .r9) VG.Impl.Dsa.Generation.Layout.hash
+              rw [Rv.fr 14 (by decide)]
+              simp only [workspaceWords, derivedWords, workspaceSlots, List.foldl, upd, r9]
+              rfl
+            dFS := G.dFS, dRS := G.dRS }
+  · intro k hk
+    simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals simp only [workspaceWords, derivedWords, workspaceSlots, List.foldl, wordsA, upd, refillContext,
+      refillWords, r9, a.regs _ (by decide : Reg.rdi ≠ .rsp), a.regs _ (by decide : Reg.rsi ≠ .rsp),
+      a.regs _ (by decide : Reg.rcx ≠ .rsp), a.regs _ (by decide : Reg.r8 ≠ .rsp), hq]
+    all_goals first | rfl | simp [off]
+  · exact GenerationTapeMemory.slice (a.randMemory fV kV.2.1) (Nat.zero_le _)
+  · simp [workspaceWords, upd]
+  · simp [workspaceWords, derivedWords, workspaceSlots, wordsA, upd]
+  · rw [ctl₂ 0 (by decide), hm₂, ctlWord_write_other _ _ (j := 0) (k := 2) (by decide) (by decide) (by decide),
+      ctlWord_write_other _ _ (j := 0) (k := 1) (by decide) (by decide) (by decide), hm, chainA_ctl,
+      a.regs _ (by decide)]
+  · rw [ctl₂ 1 (by decide), hm₂, ctlWord_write_other _ _ (j := 1) (k := 2) (by decide) (by decide) (by decide)]
+    exact ctlWord_write_self _ _ 1 _
+  · rw [ctl₂ 2 (by decide), hm₂]
+    exact ctlWord_write_self _ _ 2 _
+
 end VG.Proof.Dsa.X86_64.Generation.Refill

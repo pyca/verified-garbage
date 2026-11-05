@@ -113,7 +113,8 @@ for some `h` tape, the result `res` (as `SeedOutcome` states it), with
 `used` the witness tape's octets consumed. -/
 def RefillFinished (p : GenerationContext) (initial : Nat → BitVec 64)
     (res : Option (Option Spec.Dsa.Params × List Byte)) (s t : State) : Prop :=
-  ∃ (hs : GenerationTape p.geo) (W : Nat → BitVec 64) (used : Nat), GenerationMemory (p.withHs hs) W t ∧
+  ∃ (hs : GenerationTape p.geo) (W : Nat → BitVec 64) (used : Nat),
+    Region.Sub ⟨hs.ptr, hs.bytes.length⟩ ⟨p.rand.ptr, p.rand.bytes.length⟩ ∧ GenerationMemory (p.withHs hs) W t ∧
     used ≤ p.rand.bytes.length ∧ W 16 = BitVec.ofNat 64 used ∧
     (∀ k ∈ refillSlots, W k = initial k) ∧ SeedOutcome p res W used t ∧
     Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr
