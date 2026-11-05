@@ -2393,6 +2393,982 @@ beq %cr0, 20b
     )
 }
 
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `ctx` and `scratch` must not overlap each other or `domain` (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "cADI+XgA6PmAAAj6iAAo+pAASPqYAGj6oACI+qgAqPqwAMj6uAAI+8AAKPvIAEj70ABo+9gAiPvgAKj76ADI+/AA6Pv4AOj6AADoOgAAd/gAAGU4AACGOAAApzimAoh9AP8FOAAAICg="
+beq %cr0, 20f
+.base64 "AQBAOQ=="
+b 21f
+20:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "CAAIOQAAJDkAAEA5"
+22:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 22b
+21:
+.base64 "AAAqKA=="
+beq %cr0, 23f
+.base64 "AP8FOAAAICg="
+beq %cr0, 25f
+.base64 "AQBAOQ=="
+b 26f
+25:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "EAMIOQAAJDkAAEA5"
+27:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 27b
+26:
+.base64 "AAAqKA=="
+beq %cr0, 28f
+.base64 "gP4FOAAAICg="
+beq %cr0, 210f
+.base64 "AQBAOQ=="
+b 211f
+210:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "GAYIOQAAJDkAAEA5"
+212:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 212b
+211:
+.base64 "AAAqKA=="
+beq %cr0, 213f
+.base64 "gP4FOAAAICg="
+beq %cr0, 215f
+.base64 "AQBAOQ=="
+b 216f
+215:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "oAoIOQAAJDkAAEA5"
+217:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 217b
+216:
+.base64 "AAAqKA=="
+beq %cr0, 218f
+.base64 "AP4FOAAAICg="
+beq %cr0, 220f
+.base64 "AQBAOQ=="
+b 221f
+220:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "KA8IOQAAJDkAAEA5"
+222:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 222b
+221:
+.base64 "AAAqKA=="
+beq %cr0, 223f
+.base64 "AP4FOAAAICg="
+beq %cr0, 225f
+.base64 "AQBAOQ=="
+b 226f
+225:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "MBUIOQAAJDkAAEA5"
+227:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 227b
+226:
+.base64 "AAAqKA=="
+beq %cr0, 228f
+.base64 "AP0FOAAAICg="
+beq %cr0, 230f
+.base64 "AQBAOQ=="
+b 231f
+230:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "OBsIOQAAJDkAAEA5"
+232:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 232b
+231:
+.base64 "AAAqKA=="
+beq %cr0, 233f
+.base64 "AP0FOAAAICg="
+beq %cr0, 235f
+.base64 "AQBAOQ=="
+b 236f
+235:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "QCQIOQAAJDkAAEA5"
+237:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 237b
+236:
+.base64 "AAAqKA=="
+beq %cr0, 238f
+.base64 "APwFOAAAICg="
+beq %cr0, 240f
+.base64 "AQBAOQ=="
+b 241f
+240:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "SC0IOQAAJDkAAEA5"
+242:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 242b
+241:
+.base64 "AAAqKA=="
+beq %cr0, 243f
+.base64 "APwFOAAAICg="
+beq %cr0, 245f
+.base64 "AQBAOQ=="
+b 246f
+245:
+bcl 20, 31, 2f
+2:
+mflr %r8
+addis %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@ha
+addi %r8, %r8, ({VG_FFDH_VETTED_GROUPS_PPC} - 2b)@l
+.base64 "UDkIOQAAJDkAAEA5"
+247:
+.base64 "UCBpfRRaY30AAAuIAABoiXhaAHx4A0p9AQAIOf//KTkAACko"
+bne %cr0, 247b
+246:
+.base64 "AAAqKA=="
+beq %cr0, 248f
+.base64 "AAAAOQ=="
+b 249f
+248:
+.base64 "kAEAOQ=="
+249:
+b 244f
+243:
+.base64 "kAEAOQ=="
+244:
+b 239f
+238:
+.base64 "dwEAOQ=="
+239:
+b 234f
+233:
+.base64 "dwEAOQ=="
+234:
+b 229f
+228:
+.base64 "RQEAOQ=="
+229:
+b 224f
+223:
+.base64 "RQEAOQ=="
+224:
+b 219f
+218:
+.base64 "EwEAOQ=="
+219:
+b 214f
+213:
+.base64 "EwEAOQ=="
+214:
+b 29f
+28:
+.base64 "4QAAOQ=="
+29:
+b 24f
+23:
+.base64 "4QAAOQ=="
+24:
+.base64 "pgOIfWAAF/kAAKM6AABkOwAAhTsHAGU5wuhreSQffXkQAL07AAFXOaQPa3kAAPc7AACVOQAA3DgAAMo5QvhxeQAAADg="
+250:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 250b
+.base64 "FDLqff//7zkAAAw6AAAmOg=="
+251:
+.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+bne %cr0, 251b
+.base64 "FDLsff//7zkAAA+IAQBAOjiQAHx4kgB8AADsiQAALyg="
+beq %cr0, 252f
+b 253f
+252:
+.base64 "AQAAOA=="
+253:
+.base64 "wP8GOgAAMCg="
+beq %cr0, 254f
+b 255f
+254:
+.base64 "wsnveXiS7314ewB8"
+255:
+.base64 "AAAgKA=="
+beq %cr0, 256f
+.base64 "AABgOA=="
+b 257f
+256:
+.base64 "pA+AexTiAHxQ2AB8AAAgKA=="
+beq %cr0, 258f
+.base64 "AACVOQ=="
+b 259f
+258:
+.base64 "pA+MexSqjH0="
+259:
+.base64 "AADcOAAAgDj//9w6AADAOQAA4Dk="
+260:
+.base64 "AAAMigAAADhQADB+eIMxfuAPMXpQADF+eHsxfnh6MX54ItJ+OIhSfniS1n54gtJ9OIhSfniSzn14i+99AQCMOQEAhDj//8Y4AAAmKA=="
+bne %cr0, 260b
+.base64 "AADgOQ=="
+261:
+.base64 "QvjOeQEA7zkAAC4o"
+bne %cr0, 261b
+.base64 "UOAWfiQfEHr4/xA6FHoQfmAAF+lQQDB94A8peQAAKCg="
+beq %cr0, 262f
+.base64 "AAApKA=="
+beq %cr0, 264f
+.base64 "AAAIOg=="
+b 265f
+264:
+265:
+b 263f
+262:
+263:
+.base64 "BwAwOsLoMXoAAHA6AABAOg=="
+266:
+.base64 "+/9zOgEAUjoAAAA4UAATfOAPAHgAACAo"
+bne %cr0, 266b
+.base64 "AADX6wAAHvoIAD76EABe+gAAEjsAAKo4FOqlfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAMU5QvhxeQAAADg="
+267:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 267b
+.base64 "AQAAOAAABZBkNmR5"
+268:
+.base64 "AADIOQAA5TkAACs6AACAOg=="
+269:
+.base64 "AAAPgBQCAHwUogB8AAAOkCIAFHgEAM45BADvOf//MToAADEo"
+bne %cr0, 269b
+.base64 "AACOkgAAyDkAAOk5AAAKOgAAKzoAAIA6"
+270:
+.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+bne %cr0, 270b
+.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAMg5AADpOQAABToAACs6"
+271:
+.base64 "AAAPgAAAboB4AmN8OKBjfHgCY3wAAHCQBADOOQQA7zkEABA6//8xOgAAMSg="
+bne %cr0, 271b
+.base64 "//+EOAAAJCg="
+bne %cr0, 268b
+.base64 "AAAK6AAAiunSYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx9AABgOFAYjH3GB4x5IgCMeQAAYDhC+Gl50hkpfSQfKXkUSh59GAAIOQAAyDkAAOo5QvhxeQ=="
+272:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 272b
+.base64 "AQBgOEL4aXnSGSl9JB8peRRKHn0YAAg5AADIOQAA6jkU6u99QvhxeQ=="
+273:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 273b
+.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn1C+HF5AAAAOA=="
+274:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 274b
+.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizhC+GR5AADIOQEAJDoAAMA6"
+275:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 275b
+276:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 277f
+279:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 279b
+b 278f
+277:
+278:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 280f
+282:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 282b
+b 281f
+280:
+281:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 276b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+283:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 283b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+284:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 284b
+.base64 "AgBgOEL4aXnSGSl9JB8peRRKHn0YAAg5AADIOQAA6jkU6u99FOrvfRTq730U6u99FOrvfRTq731C+HF5"
+285:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 285b
+.base64 "FOKVfQAA3DgAAEo5FOpKfRTqSn0U6kp9FOpKfQAAyjlC+HF5AAAAOA=="
+286:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 286b
+.base64 "FDLqff//7zkAAAw6AAAmOg=="
+287:
+.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+bne %cr0, 287b
+.base64 "AAFXOQAACugAAIrp0mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfQAAYDhQGIx9xgeMeSIAjHkAAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfAAA6jgU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizhC+GR5AADIOQEAJDoAAMA6"
+288:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 288b
+289:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 290f
+292:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 292b
+b 291f
+290:
+291:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 293f
+295:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 295b
+b 294f
+293:
+294:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 289b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+296:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 296b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+297:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 297b
+.base64 "AwBgOEL4aXnSGSl9JB8peRRKHn0YAAg5AADIOQAA6jkU6u99FOrvfRTq730U6u99FOrvfUL4cXk="
+298:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 298b
+.base64 "AACAOv//lDoAAAo5FOoIfRTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9FOopfRTqKX0AAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwU6qV8AADIOQAA6TkAAAU6QvhxeQ=="
+299:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 299b
+.base64 "AgBAOw=="
+2100:
+.base64 "AAA4Ow=="
+2101:
+.base64 "AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizhC+GR5AADIOQEAJDoAAMA6"
+2102:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 2102b
+2103:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 2104f
+2106:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 2106b
+b 2105f
+2104:
+2105:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 2107f
+2109:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 2109b
+b 2108f
+2107:
+2108:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 2103b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+2110:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 2110b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+2111:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 2111b
+.base64 "//85OwAAOSg="
+bne %cr0, 2101b
+.base64 "AgB6OEL4aXnSGSl9JB8peRRKHn0YAAg5AADIOQAA6jkU6u99FOrvfRTq730U6u99FOrvfRTq731C+HF5"
+2112:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 2112b
+.base64 "AQAgOw=="
+2113:
+.base64 "AgB5OEL4aXnSGSl9JB8peRRKHn0YAAg5AADoOQAAyjkU6s59FOrOfRTqzn0U6s59FOrOfUL4cXk="
+2114:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 2114b
+.base64 "AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8AADKOBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4QvhkeQAAyDkBACQ6AADAOg=="
+2115:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 2115b
+2116:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 2117f
+2119:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 2119b
+b 2118f
+2117:
+2118:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 2120f
+2122:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 2122b
+b 2121f
+2120:
+2121:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 2116b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+2123:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 2123b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+2124:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 2124b
+.base64 "FNJ5fAIAYzhC+Gl50hkpfSQfKXkUSh59GAAIOQAAyDkAAOo5FOrvfRTq730U6u99FOrvfRTq731C+HF5"
+2125:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 2125b
+.base64 "AQA5O1DIenwAACMo"
+bne %cr0, 2113b
+.base64 "FNJaf+D/ejgAACMo"
+bne %cr0, 2100b
+.base64 "AQBgOA=="
+257:
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+        VG_FFDH_VETTED_GROUPS_PPC = sym super::consts::VG_FFDH_VETTED_GROUPS_PPC,
+    )
+}
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "aABhOQAAa+l4AIE5AACM6XAAy/l4AOv5gAAL+ogAK/qQAEv6mABr+qAAi/qoAKv6sADL+rgAC/vAACv7yABL+9AAa/vYAIv74ACr++gAy/vwAOv7+ADr+gAA6zoAAAzoCADM6BAAbOkAAJf5CAAX+BAA1/gYAHf5QAB3+EgAl/hQALf4WABX+QAAZzgAAIg4AACpOAAAozoAAGQ7AACFOwcAZTnC6Gt5JB99eRAAvTsAAVc5pA9reQAA9zsAAJU5AADcOAAAyjlC+HF5AAAAOA=="
+20:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 20b
+.base64 "FDLqff//7zkAAAw6AAAmOg=="
+21:
+.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+bne %cr0, 21b
+.base64 "FDLsff//7zkAAA+IAQBAOjiQAHx4kgB8AADsiQAALyg="
+beq %cr0, 22f
+b 23f
+22:
+.base64 "AQAAOA=="
+23:
+.base64 "wP8GOgAAMCg="
+beq %cr0, 24f
+b 25f
+24:
+.base64 "wsnveXiS7314ewB8"
+25:
+.base64 "AAAgKA=="
+beq %cr0, 26f
+.base64 "AABgOA=="
+b 27f
+26:
+.base64 "EAA36iQfMXoIAFfqUIgyfv8AwDkAADEo"
+beq %cr0, 28f
+210:
+.base64 "QvjOef//MToAADEo"
+bne %cr0, 210b
+b 29f
+28:
+29:
+.base64 "EADX6lDg1n5YABfrQAA36wAA3DgAAIA4"
+211:
+.base64 "AAAYigAAADhQIDZ+4A8xelAAMX54spJ8//9SOuAPUnpQAFJ+/wBgOnhydH44kJR+eJqUfniLlH54ipR+OKAQfgAAGZoBABg7AQA5OwEAhDj//8Y4AAAmKA=="
+bne %cr0, 211b
+.base64 "AABKORTqSn0U6kp9FOpKfRTqSn1AAJfpSADX6AAAyjlC+HF5AAAAOA=="
+212:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 212b
+.base64 "FDLqff//7zkAAAw6AAAmOg=="
+213:
+.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+bne %cr0, 213b
+.base64 "FOrKffD/zjkAAAA4AAAO+AABVzkAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
+214:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 214b
+.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkAAACjkAACo5FOopfRTqKX0U6il9FOopfRTqKX0U6il9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfRTqSn0AAMg5AADpOQAACjoAACs6AACAOg=="
+215:
+.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+bne %cr0, 215b
+.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAVc5AADKORTqzn0U6s59FOrOfRTqzn0U6s59QvhxeQAAADg="
+216:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 216b
+.base64 "AAAKORTqCH0U6gh9FOoIfRTqCH0AACo5FOopfRTqKX0U6il9pA+AexTiAHxQ2AB8AAAgKA=="
+beq %cr0, 217f
+.base64 "AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfQ=="
+b 218f
+217:
+.base64 "pA+MexSqjH0AANw4AABKORTqSn0AAMo5QvhxeQAAADg="
+219:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 219b
+.base64 "FDLqff//7zkAAAw6AAAmOg=="
+220:
+.base64 "AAAQiAAAD5gBABA6///vOf//MToAADEo"
+bne %cr0, 220b
+218:
+.base64 "AADIOQAA6TkAAAo6AAArOgAAgDo="
+221:
+.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+bne %cr0, 221b
+.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAFQ7AAFXOQAAyjkU6s59FOrOfRTqzn0U6s59AADqORTq730U6u99FOrvfRTq730U6u99QvhxeQAAYDg="
+222:
+.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+bne %cr0, 222b
+.base64 "AAAAOBAAY3yUAWB8UABjfnibWn94mlp/AAA6KA=="
+beq %cr0, 223f
+.base64 "AADX60AAd+sYALfqAQBgOEL4aXnSGSl9JB8peRRKHn0YAAg5AADoOQAAyjkU6s59QvhxeQ=="
+225:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 225b
+.base64 "AAAK6AAAiunSYWB8AgCAOFAgY3zSGYx90mFgfAIAgDhQIGN80hmMfdJhYHwCAIA4UCBjfNIZjH3SYWB8AgCAOFAgY3zSGYx9AABgOFAYjH3GB4x5IgCMeQAAyjkU6s59FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59QvhxeQAAADg="
+226:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 226b
+.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkAAAqjgU6qV8FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfAAA6jgU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizhC+GR5AADIOQEAJDoAAMA6"
+227:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 227b
+228:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 229f
+231:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 231b
+b 230f
+229:
+230:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 232f
+234:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 234b
+b 233f
+232:
+233:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 228b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+235:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 235b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+236:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 236b
+.base64 "AAAVOw=="
+237:
+.base64 "AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfBTq53wU6ud8AAAKORTqCH0U6gh9AAAqORTqKX0U6il9FOopfQAAizhC+GR5AADIOQEAJDoAAMA6"
+238:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 238b
+239:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 240f
+242:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 242b
+b 241f
+240:
+241:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 243f
+245:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 245b
+b 244f
+243:
+244:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 239b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+246:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 246b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+247:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 247b
+.base64 "AAAAOv//eDoAAAA40gFVfhSSc34kH5J7UJhSfuAPUnoAADIo"
+beq %cr0, 248f
+.base64 "wuhyelDgUn7//1I6FJI7fgAAkYoHAAA4OAByfgAAMig="
+beq %cr0, 250f
+252:
+.base64 "QviUev//UjoAADIo"
+bne %cr0, 252b
+b 251f
+250:
+251:
+.base64 "AQAAODgAlH4="
+b 249f
+248:
+.base64 "AACAOg=="
+249:
+.base64 "eKMQfv//eDoBAAA40gFVfhSSc34kH5J7UJhSfuAPUnoAADIo"
+beq %cr0, 253f
+.base64 "wuhyelDgUn7//1I6FJI7fgAAkYoHAAA4OAByfgAAMig="
+beq %cr0, 255f
+257:
+.base64 "QviUev//UjoAADIo"
+bne %cr0, 257b
+b 256f
+255:
+256:
+.base64 "AQAAODgAlH4="
+b 254f
+253:
+.base64 "AACAOg=="
+254:
+.base64 "pA+UenijEH7//3g6AgAAONIBVX4UknN+JB+Se1CYUn7gD1J6AAAyKA=="
+beq %cr0, 258f
+.base64 "wuhyelDgUn7//1I6FJI7fgAAkYoHAAA4OAByfgAAMig="
+beq %cr0, 260f
+262:
+.base64 "QviUev//UjoAADIo"
+bne %cr0, 262b
+b 261f
+260:
+261:
+.base64 "AQAAODgAlH4="
+b 259f
+258:
+.base64 "AACAOg=="
+259:
+.base64 "ZBeUenijEH7//3g6AwAAONIBVX4UknN+JB+Se1CYUn7gD1J6AAAyKA=="
+beq %cr0, 263f
+.base64 "wuhyelDgUn7//1I6FJI7fgAAkYoHAAA4OAByfgAAMig="
+beq %cr0, 265f
+267:
+.base64 "QviUev//UjoAADIo"
+bne %cr0, 267b
+b 266f
+265:
+266:
+.base64 "AQAAODgAlH4="
+b 264f
+263:
+.base64 "AACAOg=="
+264:
+.base64 "JB+UenijEH7//3g6BAAAONIBVX4UknN+JB+Se1CYUn7gD1J6AAAyKA=="
+beq %cr0, 268f
+.base64 "wuhyelDgUn7//1I6FJI7fgAAkYoHAAA4OAByfgAAMig="
+beq %cr0, 270f
+272:
+.base64 "QviUev//UjoAADIo"
+bne %cr0, 272b
+b 271f
+270:
+271:
+.base64 "AQAAODgAlH4="
+b 269f
+268:
+.base64 "AACAOg=="
+269:
+.base64 "5CaUenijEH4AAFA7AADKORTqzn0U6s59FOrOfRTqzn1C+HF5AAAAOA=="
+273:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 273b
+.base64 "AAAgOw=="
+274:
+.base64 "AgB5OEL4aXnSGSl9JB8peRRKHn0YAAg5AADoOQAAyjkU6s59FOrOfRTqzn1C+HF5"
+275:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 275b
+.base64 "eNIkf///hDjgD4R4AAAAOFAAhH4AAAo5FOoIfRTqCH0U6gh9AAAqORTqKX0U6il9FOopfRTqKX0AAKo4FOqlfBTqpXwU6qV8FOqlfBTqpXwAAMg5AADpOQAABTpC+HF5"
+276:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 276b
+.base64 "AQA5OwIAeThC+Gl50hkpfSQfKXkUSh59GAAIOQAA6DkAAMo5FOrOfRTqzn0U6s59QvhxeQ=="
+277:
+.base64 "AAAP6AAADvgIAM45CADvOf//MToAADEo"
+bne %cr0, 277b
+.base64 "eNIkf///hDjgD4R4AAAAOFAAhH4AAAo5FOoIfRTqCH0U6gh9AAAqORTqKX0U6il9FOopfRTqKX0U6il9AACqOBTqpXwU6qV8FOqlfBTqpXwAAMg5AADpOQAABTpC+HF5"
+278:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 278b
+.base64 "AQA5O+D/eTgAACMo"
+bne %cr0, 274b
+.base64 "AACqOBTqpXwU6qV8FOqlfBTqpXwU6qV8FOqlfAAAyjgU6sZ8FOrGfBTqxnwU6sZ8FOrGfBTqxnwAAOo4FOrnfBTq53wU6ud8FOrnfAAACjkU6gh9FOoIfQAAKjkU6il9FOopfRTqKX0AAIs4QvhkeQAAyDkBACQ6AADAOg=="
+279:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 279b
+280:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 281f
+283:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 283b
+b 282f
+281:
+282:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 284f
+286:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 286b
+b 285f
+284:
+285:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 280b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+287:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 287b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+288:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 288b
+.base64 "//8YOwAAOCg="
+bne %cr0, 237b
+.base64 "AACqOBTqpXwU6qV8FOqlfBTqpXwAAMo4FOrGfBTqxnwU6sZ8FOrGfBTqxnwU6sZ8AADqOBTq53wU6ud8FOrnfBTq53wU6ud8FOrnfBTq53wAAAo5FOoIfRTqCH0AACo5FOopfRTqKX0U6il9AACLOEL4ZHkAAMg5AQAkOgAAwDo="
+289:
+.base64 "AADO+ggAzjn//zE6AAAxKA=="
+bne %cr0, 289b
+290:
+.base64 "AAAm6ggAxjgAAGfqAACI6tKZUX4SmHF+FJCUfpQBU34AAGro0mHDfgIA1jrSYdZ+0rEUfNIZwH4SGGB+FKDWfpQB034AAMg5AADnOQAAajhC+HB5//8QOkbwEHqgFxB6AAAwKA=="
+beq %cr0, 291f
+293:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+ggAzjkIAO85CABjOP//EDoAADAo"
+bne %cr0, 293b
+b 292f
+291:
+292:
+.base64 "Qvhwef//EDqC8BB6AAAwKA=="
+beq %cr0, 294f
+296:
+.base64 "CABu6hSYUn4IAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34IAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+AACO+hAAbuoUmFJ+EABv6tKZkX4SmHF+lAFzfhSQlH6UAVN+EABj6hSg1n7SmYB+EphgfpQBc34UsJR+lAHTfggAjvoYAG7qFJhSfhgAb+rSmZF+EphxfpQBc34UkJR+lAFTfhgAY+oUoNZ+0pmAfhKYYH6UAXN+FLCUfpQB034QAI76IABu6hSYUn4gAG/q0pmRfhKYcX6UAXN+FJCUfpQBU34gAGPqFKDWftKZgH4SmGB+lAFzfhSwlH6UAdN+GACO+iAAzjkgAO85IABjOP//EDoAADAo"
+bne %cr0, 296b
+b 295f
+294:
+295:
+.base64 "CABu6hSYUn4AAGA6lAFzfhSwUn6UAXN+AABO+ggAbvr//4Q4AAAkKA=="
+bne %cr0, 290b
+.base64 "AADIOQAA6TkAAAo6QvhxeRAAAHw="
+297:
+.base64 "AAAO6AAAcOgQAQN8AAAP+AgAzjkIAO85CAAQOv//MToAADEo"
+bne %cr0, 297b
+.base64 "AAAO6AAAYDgQAQN8EKGUfgAAyDkAAOk5AAAFOkL4cXk="
+298:
+.base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
+bne %cr0, 298b
+.base64 "AAD3OwAAyjkU6s59FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59QvhxeQAAADg="
+299:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 299b
+.base64 "AADKORTqzn0U6s59FOrOfRTqzn0U6s59FOrOfRTqzn0BAAA4AAAOkAAACjkAACo5FOopfRTqKX0U6il9FOopfRTqKX0U6il9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9FOpKfRTqSn0AAMg5AADpOQAACjoAACs6AACAOg=="
+2100:
+.base64 "AAAOgAAAcIBQAAN8UAAUfAAAD5DgDxR4BADOOQQA7zkEABA6//8xOgAAMSg="
+bne %cr0, 2100b
+.base64 "AAAOgFAAFHzgDwB4AABgOFAYgH4AAVc5AADKORTqzn0U6s59FOrOfRTqzn0U6s59QvhxeQAAADg="
+2101:
+.base64 "AAAO+AgAzjn//zE6AAAxKA=="
+bne %cr0, 2101b
+.base64 "AABAO///WjsAAMo5FOrOfRTqzn0U6s59FOrOfQAA6jkU6u99FOrvfRTq730U6u99FOrvfUL4cXkAAGA4"
+2102:
+.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+bne %cr0, 2102b
+.base64 "AAAAOBAAY3yUAWB8UABjfnibWn94mlp/AADKORTqzn0U6s59FOrOfRTqzn0AAOo5FOrvfRTq730U6u99FOrvfRTq730U6u99FOrvfUL4cXkAAGA4"
+2103:
+.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+bne %cr0, 2103b
+.base64 "AAAAOBAAY3yUAWB8UABjfnibWn94mlp/AADKORTqzn0U6s59FOrOfRTqzn0AAOo5FOrvfRTq730U6u99FOrvfRTq730U6u99QvhxeQAAYDg="
+2104:
+.base64 "AAAO6AAAj+h4IgB8eANjfAgAzjkIAO85//8xOgAAMSg="
+bne %cr0, 2104b
+.base64 "AAAAOBAAY3yUAWB8UABjfnibWn94mlp/UAB36wAA6jkU6u99FOrvfRTq730U6u99FOLvff//7zkAABs6AAA8Og=="
+2105:
+.base64 "AAAPiDjQAHwAABCYAQAQOv//7zn//zE6AAAxKA=="
+bne %cr0, 2105b
+.base64 "AQBgODjQY3wDAAA4pA9jeFAAY3w="
+b 224f
+223:
+.base64 "UAB36wAA6jkU6u99FOrvfRTq730U6u99FOLvff//7zkAABs6AAA8Og=="
+2106:
+.base64 "AAAPiDjQAHwAABCYAQAQOv//7zn//zE6AAAxKA=="
+bne %cr0, 2106b
+.base64 "AQBgODjQY3wCAGA4"
+224:
+.base64 "//+DOQAAADhQACx+eGMxfuAPMXr//zE6QAA36wAA3Dg="
+2107:
+.base64 "AAAZijiIEH4AABmaAQA5O///xjgAACYo"
+bne %cr0, 2107b
+27:
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+    )
+}
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "YABhOSAAi+kAAAvoCACL6BAAy+gYAEvpIADs+wAA7DsoAH/4MAC/+DgAH/lAAD/5eAD/+EgAH/hQAJ/4AABgOVgAf/lgAN/4aABf+aYCCHzR/yH4IAAB+A=="
+20:
+.base64 "AAA/6QAAKSg="
+beq %cr0, 21f
+.base64 "CAA/6QAAKSg="
+beq %cr0, 23f
+.base64 "UAA/6RAAX+lQSIp94A+MeeAPK3k4YGt9eFqMfQAALCg="
+beq %cr0, 25f
+.base64 "EABf6QAAYDkYAF/5cAB/+SgAf+gQAJ/oAACgOA=="
+27:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 27b
+.base64 "MAB/6BAAn+gAAKA4"
+28:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 28b
+b 26f
+25:
+.base64 "cf8h+CgAf+gQAJ/oMAC/6BAA3+g4AP/oQAAf6RAAP+lIAF/pYACf6WgAH+hgAGE5AACL+AgAi/kQAAv4SAGBOQAADOgYAAv4CAAM6CAAC/g="
+bl {vg_ffdh_generate_key_cached}
+.base64 "kAAhOMYHaXgiACl5EAB/6UgAn+lQAH/oWACf6BRajH1QGGt8FFqEfEgAn/lQAH/4WACf+P//STkAACoo"
+beq %cr0, 29f
+.base64 "/v9JOQAAKig="
+beq %cr0, 211f
+.base64 "/f9JOQAAKig="
+beq %cr0, 213f
+.base64 "AABAOQMAYDkAAF/5CABf+RgAX/lwAH/5KAB/6BAAn+gAAKA4"
+215:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 215b
+.base64 "MAB/6BAAn+gAAKA4"
+216:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 216b
+b 214f
+213:
+.base64 "AABf6f//SjmAAGA5BACAOQAAX/kIAH/5cACf+Q=="
+214:
+b 212f
+211:
+.base64 "CABf6f//SjkEAGA5CABf+XAAf/k="
+212:
+b 210f
+29:
+.base64 "AABAOQEAYDkAAF/5CABf+RgAX/lwAH/5"
+210:
+26:
+b 24f
+23:
+.base64 "AABAOQMAYDkAAF/5CABf+RgAX/lwAH/5KAB/6BAAn+gAAKA4"
+217:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 217b
+.base64 "MAB/6BAAn+gAAKA4"
+218:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 218b
+24:
+b 22f
+21:
+.base64 "AABAOQMAYDkAAF/5CABf+RgAX/lwAH/5KAB/6BAAn+gAAKA4"
+219:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 219b
+.base64 "MAB/6BAAn+gAAKA4"
+220:
+.base64 "AACjmAEAYzj//4Q4AAAkKA=="
+bne %cr0, 220b
+22:
+.base64 "cAA/6fz/KTkAACko"
+beq %cr0, 20b
+.base64 "IAAB6DAAITimAwh8eACf6FgAv+hwAH/oAACk+CAA/+sgAIBO""#,
+        vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached,
+    )
+}
+
 /// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
 /// # Safety
