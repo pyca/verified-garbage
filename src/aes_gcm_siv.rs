@@ -11,8 +11,9 @@
 //! holds the key schedule.
 //!
 //! Their variants, with the same contracts, are one for each of AES-GCM's
-//! backends, with its suffix, and are chosen as AES-GCM's are
-//! (`crate::aes_gcm`). x86-64, x86,
+//! backends, with its suffix. On x86-64, AVX2 copy/XOR variants also
+//! serve these callees independently of VAES and VPCLMULQDQ. Other choices
+//! follow AES-GCM (`crate::aes_gcm`). x86-64, x86,
 //! AArch64, 32-bit ARM, PPC64LE and RISC-V (the baseline ISA's
 //! implementations alone on the last three) have implementations so far.
 
@@ -25,7 +26,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes_gcm::{Backend, instance, select};
+use crate::aes_gcm::{Backend, instance, select as select_gcm};
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
@@ -53,6 +54,48 @@ use crate::arch::aes_gcm_siv::{
 };
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
+
+/// SIV can use AVX2 copies independently of its AES and GHASH callees.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SivBackend {
+    Gcm(Backend),
+    #[cfg(target_arch = "x86_64")]
+    Avx2(Backend),
+}
+
+impl SivBackend {
+    fn gcm(self) -> Backend {
+        match self {
+            Self::Gcm(b) => b,
+            #[cfg(target_arch = "x86_64")]
+            Self::Avx2(b) => b,
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_gcm_siv::{
+    VG_AES_GCM_SIV_SEAL_AVX2_FEATURES, vg_aes_gcm_siv_open_aesni_avx2,
+    vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2, vg_aes_gcm_siv_open_aesni_pclmul_avx2,
+    vg_aes_gcm_siv_open_aesni_vpclmul_avx2, vg_aes_gcm_siv_open_avx2,
+    vg_aes_gcm_siv_open_pclmul_avx2, vg_aes_gcm_siv_open_vaes_avx2,
+    vg_aes_gcm_siv_open_vaes_pclmul_avx2, vg_aes_gcm_siv_open_vaes_vpclmul_avx2,
+    vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2, vg_aes_gcm_siv_open_vpclmul_avx2,
+    vg_aes_gcm_siv_seal_aesni_avx2, vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2,
+    vg_aes_gcm_siv_seal_aesni_pclmul_avx2, vg_aes_gcm_siv_seal_aesni_vpclmul_avx2,
+    vg_aes_gcm_siv_seal_avx2, vg_aes_gcm_siv_seal_pclmul_avx2, vg_aes_gcm_siv_seal_vaes_avx2,
+    vg_aes_gcm_siv_seal_vaes_pclmul_avx2, vg_aes_gcm_siv_seal_vaes_vpclmul_avx2,
+    vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2, vg_aes_gcm_siv_seal_vpclmul_avx2,
+};
+
+fn select(f: verified_garbage_cpu::Features) -> SivBackend {
+    let b = select_gcm(f);
+    #[cfg(target_arch = "x86_64")]
+    if f.contains(VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) {
+        return SivBackend::Avx2(b);
+    }
+    SivBackend::Gcm(b)
+}
 
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
 /// `A_MAX`, `2^36`).
@@ -89,7 +132,7 @@ pub struct AesGcmSiv {
     /// The number of rounds of AES: 10 or 14.
     rounds: usize,
     /// The variants of the functions to call.
-    backend: Backend,
+    backend: SivBackend,
 }
 
 impl Drop for AesGcmSiv {
@@ -125,7 +168,7 @@ impl AesGcmSiv {
         // The variants whose suffix names `aesni` or `vaes` take
         // `vg_aes_expand_key_aesni`'s schedule, AArch64's
         // `vg_aes_expand_key_aes`'s.
-        let expand = instance!(k.backend, vg_aes_expand_key,
+        let expand = instance!(k.backend.gcm(), vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
@@ -153,13 +196,23 @@ impl AesGcmSiv {
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
         check(aad.len() as u64, data.len() as u64)?;
-        let seal = instance!(self.backend, vg_aes_gcm_siv_seal,
+        let seal = match self.backend {
+            SivBackend::Gcm(b) => instance!(b, vg_aes_gcm_siv_seal,
             x86_64: [vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vpclmul, vg_aes_gcm_siv_seal_vaes_pclmul,
                 vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
                 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_seal_aes, vg_aes_gcm_siv_seal_aes_sha3]);
+            aarch64: [vg_aes_gcm_siv_seal_aes, vg_aes_gcm_siv_seal_aes_sha3]),
+            #[cfg(target_arch = "x86_64")]
+            SivBackend::Avx2(b) => instance!(b, vg_aes_gcm_siv_seal_avx2,
+            x86_64: [vg_aes_gcm_siv_seal_aesni_avx2, vg_aes_gcm_siv_seal_pclmul_avx2, vg_aes_gcm_siv_seal_aesni_pclmul_avx2],
+            vaes: [vg_aes_gcm_siv_seal_vaes_avx2, vg_aes_gcm_siv_seal_vpclmul_avx2, vg_aes_gcm_siv_seal_vaes_pclmul_avx2,
+                vg_aes_gcm_siv_seal_aesni_vpclmul_avx2, vg_aes_gcm_siv_seal_vaes_vpclmul_avx2,
+                vg_aes_gcm_siv_seal_vaes_vpclmul_avx512_avx2],
+            avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2],
+            aarch64: [vg_aes_gcm_siv_seal_aes, vg_aes_gcm_siv_seal_aes_sha3]),
+        };
         let mut tag = [0u8; 16];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10 or 14) rounds, valid for reads of 240
@@ -197,13 +250,23 @@ impl AesGcmSiv {
         tag: &[u8; 16],
     ) -> Result<(), Error> {
         check(aad.len() as u64, data.len() as u64)?;
-        let open = instance!(self.backend, vg_aes_gcm_siv_open,
+        let open = match self.backend {
+            SivBackend::Gcm(b) => instance!(b, vg_aes_gcm_siv_open,
             x86_64: [vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_open_vaes_pclmul,
                 vg_aes_gcm_siv_open_aesni_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
                 vg_aes_gcm_siv_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_open_aes_sha3]);
+            aarch64: [vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_open_aes_sha3]),
+            #[cfg(target_arch = "x86_64")]
+            SivBackend::Avx2(b) => instance!(b, vg_aes_gcm_siv_open_avx2,
+            x86_64: [vg_aes_gcm_siv_open_aesni_avx2, vg_aes_gcm_siv_open_pclmul_avx2, vg_aes_gcm_siv_open_aesni_pclmul_avx2],
+            vaes: [vg_aes_gcm_siv_open_vaes_avx2, vg_aes_gcm_siv_open_vpclmul_avx2, vg_aes_gcm_siv_open_vaes_pclmul_avx2,
+                vg_aes_gcm_siv_open_aesni_vpclmul_avx2, vg_aes_gcm_siv_open_vaes_vpclmul_avx2,
+                vg_aes_gcm_siv_open_vaes_vpclmul_avx512_avx2],
+            avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2],
+            aarch64: [vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_open_aes_sha3]),
+        };
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of 16 bytes, which `data`, a unique borrow, does not
         // overlap.
@@ -279,6 +342,67 @@ mod tests {
                 aarch64: [VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES]);
             assert!(need.contains(seal) && need.contains(open), "{b:?}");
         }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn avx2_copy_selection_and_features() {
+        use super::{SivBackend, select};
+        use crate::arch::aes_gcm_siv::{
+            VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_AVX2_FEATURES,
+            VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_AVX2_FEATURES,
+            VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES,
+        };
+        for &(b, base_need) in Backend::ALL {
+            let seal = instance!(b, VG_AES_GCM_SIV_SEAL_AVX2_FEATURES,
+                x86_64: [VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX2_FEATURES],
+                vaes: [VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_AVX2_FEATURES],
+                avx: [VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES],
+                aarch64: [NONE, NONE]);
+            let open = instance!(b, VG_AES_GCM_SIV_OPEN_AVX2_FEATURES,
+                x86_64: [VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX2_FEATURES],
+                vaes: [VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES,
+                    VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX2_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_AVX2_FEATURES],
+                avx: [VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES],
+                aarch64: [NONE, NONE]);
+            let need = Features::all(&[base_need, seal]);
+            assert!(need.contains(open));
+            assert_eq!(select(need).gcm(), super::select_gcm(need));
+            assert!(matches!(select(need), SivBackend::Avx2(_)));
+            let key = match b {
+                Backend::Scalar | Backend::Pclmul | Backend::Vpclmul => Features(0),
+                _ => crate::arch::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES,
+            };
+            assert!(seal.contains(key));
+            for bit in 0..32 {
+                if VG_AES_GCM_SIV_SEAL_AVX2_FEATURES.0 & (1 << bit) != 0 {
+                    assert!(matches!(
+                        select(Features(need.0 & !(1 << bit))),
+                        SivBackend::Gcm(_)
+                    ));
+                }
+            }
+        }
+        assert_eq!(select(Features(0)), SivBackend::Gcm(Backend::Scalar));
     }
 
     /// The lengths of §6, which no test can allocate.

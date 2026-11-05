@@ -50,6 +50,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := features v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifacts (v : GcmVariant) : List Artifact := withWideArtifacts v.impl (artifactsOf v.impl)
 
 end VG.Generic.AesGcm.X86_64.AesGcmSiv

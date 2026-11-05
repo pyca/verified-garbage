@@ -30,7 +30,11 @@ grep -o 'avx512ifma\|vaes\|vpclmulqdq\|sha_ni' /proc/cpuinfo | sort -u
 
 `gcm_siv_features.py` prints a pair of feature ceilings and optionally runs
 a command with them. Its profiles cover every VG AES-GCM-SIV backend,
-including backends with hardware AES but software hashing and vice versa:
+including backends with hardware AES but software hashing and vice versa.
+`scalar_avx2`, `aesni_avx2`, and `pclmul_avx2` exercise AVX2 copies
+independently of VAES/VPCLMULQDQ. `aesni_pclmul_avx` also allows AVX2:
+on updated VG it selects the AVX2-copy AES-NI/PCLMUL implementation.
+For example:
 
 ```sh
 python3 bench/gcm_siv_features.py aesni_pclmul_avx
