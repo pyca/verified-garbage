@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: the moves of a call's arguments
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: the moves of a call's arguments
 
 Untrusted: everything here is checked by Lean. Each argument's value
 (`Arg.val`): a saved argument (a slot at `x28 + f`), plus an offset, an

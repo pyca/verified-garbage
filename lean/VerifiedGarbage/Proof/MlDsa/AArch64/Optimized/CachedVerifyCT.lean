@@ -24,7 +24,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 variable {p : Params}
 
-/-- The layout is that of a run of `verify_message` from a state with the
+/-- The layout is that of a run of `verify_message_cached` from a state with the
 memory `m`, past the branch on `ctx_len`. -/
 def VOk (p : Params) (L : VG.Proof.MlDsa.AArch64.Message.Lay) (m : Mem) : Prop :=
   ∃ σ, CachedPre p σ ∧ (σ.gpr .x4).toNat < 256 ∧ cachedLay p σ = L ∧ σ.mem = m
@@ -34,7 +34,7 @@ def VMuOk (p : Params) (L : VG.Proof.MlDsa.AArch64.Message.Lay) (m : Mem) (t : S
   bytesAt t.mem L.MU 64 = H (H (bytesAt m L.key p.pkLen) 64 ++ hdrBytes L ++
     bytesAt m L.ctx L.ctxLen.toNat ++ bytesAt m L.msg L.len.toNat) 64
 
-/-- What a layout of `verify_message` says of `sig` and `scratch`. -/
+/-- What a layout of `verify_message_cached` says of `sig` and `scratch`. -/
 structure VFacts (p : Params) (L : VG.Proof.MlDsa.AArch64.Message.Lay) : Prop where
   key : L.keyLen = p.pkLen
   xSig : L.XS.Disjoint ⟨L.sig, p.sigLen⟩

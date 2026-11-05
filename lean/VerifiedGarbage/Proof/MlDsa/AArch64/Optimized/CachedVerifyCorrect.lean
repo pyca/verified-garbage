@@ -25,7 +25,7 @@ theorem cachedSaves_vals {p : Params} {s s1 : State} (o : Only [.x9] s s1) :
   have : j < 8 := hj
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [cachedVerifySaves, verifySaves, fRnd, fKey, fMsg, fLen, fCtx, fCtxLen, fSig, fScr, List.map_cons, List.map_nil, ite_true, Nat.reduceBEq, Lay.vals, cachedLay, List.getElem_cons_zero, List.getElem_cons_succ, List.getD_cons_zero,
+    simp only [cachedVerifySaves, Lay.vals, cachedLay, List.getElem_cons_zero, List.getElem_cons_succ, List.getD_cons_zero,
       List.getD_cons_succ] <;> exact o.get _
 
 theorem verifyMessageCached_wp (v : Proof.Sha3.AArch64.Permutation) {p : Params} {n : String} {c : Prog isa}

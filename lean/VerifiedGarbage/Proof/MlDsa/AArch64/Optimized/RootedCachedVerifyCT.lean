@@ -29,7 +29,7 @@ open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.AArch64.Sign (StaticRoots signRootConsts)
 open Message.Optimized (rootRegions rootPairRegions rootsAt rootsAt_syms)
 variable {p : Params}
-/-- The layout is that of a run of `verify_message` from a state with the
+/-- The layout is that of a run of `verify_message_cached` from a state with the
 memory `m`, past the branch on `ctx_len`. -/
 def VOk (p : Params) (L : VG.Proof.MlDsa.AArch64.Message.Lay) (m : Mem) : Prop :=
   ∃ σ, CachedPre p σ ∧ (σ.gpr .x4).toNat < 256 ∧ cachedLay p σ = L ∧ σ.mem = m

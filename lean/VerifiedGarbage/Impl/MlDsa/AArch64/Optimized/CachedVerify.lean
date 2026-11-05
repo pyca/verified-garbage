@@ -8,8 +8,10 @@ namespace VG.Impl.MlDsa.AArch64.Optimized
 open VG.AArch64
 open VG.Impl.MlDsa.AArch64.Message
 
+/-- The arguments the cached verifier saves, with the digest `tr` (`x7`) in
+the slot of `rnd`. -/
 def cachedVerifySaves : List (Reg × Nat) :=
-  verifySaves.map fun (r, o) => (if o == fRnd then .x7 else r, o)
+  [(.x0, fKey), (.x1, fMsg), (.x2, fLen), (.x3, fCtx), (.x4, fCtxLen), (.x7, fRnd), (.x5, fSig), (.x6, fScr)]
 
 /-- Private cached verifier. The eighth argument is saved in the message
 frame's otherwise unused randomness slot. Its contract requires the digest

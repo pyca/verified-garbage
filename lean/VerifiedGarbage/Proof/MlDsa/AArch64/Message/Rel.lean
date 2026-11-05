@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: two runs
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: two runs
 
 Untrusted: everything here is checked by Lean. Blocks whose addresses are
 functions of `x28` and the stack pointer, which they keep, leak the same in
