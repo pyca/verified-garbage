@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.Artifact
@@ -25,7 +26,7 @@ def contract (d : Spec.Rc2.Direction) : Contract isa where
       iv.Disjoint data ∧ iv.Disjoint buf ∧ data.Disjoint buf ∧
       (s.gpr .x2).toNat + 8 * (s.gpr .x3).toNat ≤ 2 ^ 64
   post s s' :=
-    let out := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .x1)) (Spec.Rc2.blocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
     Spec.Rc2.blocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat = out.1 ∧
       Spec.Rc2.blockAt s'.mem (s.gpr .x1) = out.2

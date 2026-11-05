@@ -66,10 +66,10 @@ theorem CallPost.iv {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s'
 
 structure StepPost (d : Spec.Rc2.Direction) (s s' : State) : Prop extends Pinned s s' where
   data : Spec.Rc2.blockAt s'.mem (s.gpr .x1) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blockAt s.mem (s.gpr .x1))).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .x23) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blockAt s.mem (s.gpr .x1))).2
 
 end VG.Proof.Rc2.AArch64.Cbc

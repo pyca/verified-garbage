@@ -330,10 +330,10 @@ chaining value, `out`, its scratch space and the stack below `esp`. -/
 theorem cbcCall_ok (d : Spec.Rc2.Direction) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [ivR s₀, oR s₀, ⟨sA s₀, 512⟩, stkR s₀] s.mem s'.mem →
-      Spec.Rc2.blocksAt s'.mem (oA s₀) (O s₀ / 8) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (cA s₀)) d
+      Spec.Rc2.blocksAt s'.mem (oA s₀) (O s₀ / 8) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (cA s₀)) d
         (Spec.Rc2.blockAt s.mem (cA s₀ + BitVec.ofNat 64 128)) (Spec.Rc2.blocksAt s.mem (oA s₀) (O s₀ / 8))).1 →
       Spec.Rc2.blockAt s'.mem (cA s₀ + BitVec.ofNat 64 128) =
-        (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (cA s₀)) d
+        (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (cA s₀)) d
           (Spec.Rc2.blockAt s.mem (cA s₀ + BitVec.ofNat 64 128)) (Spec.Rc2.blocksAt s.mem (oA s₀) (O s₀ / 8))).2 →
       Q s') :
     WP isa (cbcCall d) s Q := by

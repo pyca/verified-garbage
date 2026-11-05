@@ -118,10 +118,10 @@ structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (loopWrites s n) s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (State.addr (s.gpr .r1)) n =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r1)) n)).1
   iv : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r4)) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r1)) n)).2
 
 theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
@@ -138,10 +138,10 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
       · simp only [eval_nonzeroCount, h₁.flag, decide_true, Option.map_some, Bool.not_true]
       · refine ⟨h₁.ptr, h₁.count, h₁.reg, h₁.callee, h₁.rd, h₁.wr, h₁.frame (by decide), ?_, ?_⟩
         · rw [blocksAt_cons, blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact congrArg (· :: []) h₁.data
         · rw [blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp (by omega_arith)
       obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_arith) (by omega_arith) hp₁ (by simpa using h₁.count)
@@ -436,7 +436,7 @@ def contract (d : Spec.Rc2.Direction) : Contract isa where
       (stackArg s 0).toNat + 512 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32
   post s s' :=
-    let out := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1))) (Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
     Spec.Rc2.blocksAt s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = out.1 ∧
       Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r1)) = out.2

@@ -56,7 +56,7 @@ def cbcC (d : Spec.Rc2.Direction) : Contract isa where
       key.Disjoint buf ∧ iv.Disjoint data ∧ iv.Disjoint buf ∧ data.Disjoint buf ∧
       (s.gpr .a2).toNat + 8 * (s.gpr .a3).toNat ≤ 2 ^ 64 ∧ (s.gpr .a4).toNat + 512 ≤ 2 ^ 64
   post s s' :=
-    let result := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .a0)) d (Spec.Rc2.blockAt s.mem (s.gpr .a1))
+    let result := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .a0)) d (Spec.Rc2.blockAt s.mem (s.gpr .a1))
       (Spec.Rc2.blocksAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
     Spec.Rc2.blocksAt s'.mem (s.gpr .a2) (s.gpr .a3).toNat = result.1 ∧
       Spec.Rc2.blockAt s'.mem (s.gpr .a1) = result.2
