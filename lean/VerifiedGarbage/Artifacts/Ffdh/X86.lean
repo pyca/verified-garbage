@@ -12,6 +12,9 @@ public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.PreVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -62,6 +65,22 @@ def artifacts : List Artifact := [
     verified := Proof.Ffdh.X86.KeySearch.verified
     spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
     stack := 220 },
+  Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
+    consts := Impl.Ffdh.X86.VettedValidation.tableConsts
+    code := Impl.Ffdh.X86.Cached.Precompute.code
+    verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
+    spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe
+    stack := 172 },
+  Spec.Ffdh.cachedGenerateKeyApi.artifact X86.target {
+    code := Impl.Ffdh.X86.Cached.Generate.code
+    verified := Proof.Ffdh.X86.Cached.verified
+    spSafe := Proof.Ffdh.X86.Shape.cachedGenerate_spSafe
+    stack := 172 },
+  Spec.Ffdh.cachedKeySearchApi.artifact X86.target {
+    code := Impl.Ffdh.X86.Cached.Search.code
+    verified := Proof.Ffdh.X86.Cached.Search.verified
+    spSafe := Proof.Ffdh.X86.Shape.cachedSearch_spSafe
+    stack := 228 },
   Spec.Ffdh.parameterInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.ParamInit.code
     verified := Proof.Ffdh.X86.ParamInit.verified },

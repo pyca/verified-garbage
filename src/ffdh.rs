@@ -32,6 +32,7 @@ mod generation;
     target_arch = "arm",
     target_arch = "aarch64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "x86_64"
 ))]
 mod precomputed;
@@ -191,6 +192,7 @@ impl Parameters {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         let exponent_len = self.domain.exponent_len();
@@ -198,6 +200,7 @@ impl Parameters {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         )))]
         let exponent_len = self.q.as_ref().map_or(len, Vec::len);

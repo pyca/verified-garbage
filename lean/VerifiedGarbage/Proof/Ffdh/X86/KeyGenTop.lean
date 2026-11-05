@@ -79,7 +79,7 @@ theorem generateKeyABI_of {s : State} (h : (Spec.Ffdh.generateKeyContract abi st
 
 theorem wrapABI {s : State} (A : GenerateKeyABI s) : WrapABI Impl.Ffdh.X86.GenerateKey.args 11 s where
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h; decide),
-    (fun _ h => by cases h; decide), by decide⟩
+    (fun _ h => by cases h; decide), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
   stackBound := by have := A.stackBound; omega
   argsIn := by
