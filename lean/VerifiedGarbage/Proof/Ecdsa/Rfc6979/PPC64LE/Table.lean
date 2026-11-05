@@ -530,7 +530,8 @@ theorem inner_pre (hC : CurveT C T) {w : TVar} (hw : WOk w) {σ u : State} (hp :
       rw [hi.2.2.1]; exact inFrame_frame σ) hi.2.2.2.2.2.2, ?_, ?_⟩
   · rw [hrd, hwr, hi.2.2.2.1, hi.2.2.2.2.1]
     exact Covers.of_mem fun r hr => by
-      simp only [List.mem_append] at hr ⊢; tauto
+      simp only [List.mem_append] at hr ⊢
+      exact hr.imp_right (List.mem_cons_of_mem _)
   · rw [hwr, hi.2.2.2.2.1]
     exact Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr
 
