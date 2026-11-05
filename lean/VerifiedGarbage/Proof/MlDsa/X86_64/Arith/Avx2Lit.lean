@@ -42,7 +42,9 @@ materialize_code Round.lowBitsAvx2
 materialize_code Round.normLtAvx2
 materialize_code Round.makeHintAvx2
 materialize_code Round.useHintAvx2
-materialize_code Sample.Rej5.rejNTT4Avx2
-materialize_code Sample.Mask4.expandMask4Avx2
+materialize_code Sample.Rej5.rejNTT4Avx2False := Sample.Rej5.rejNTT4Avx2 false
+materialize_code Sample.Rej5.rejNTT4Avx2True := Sample.Rej5.rejNTT4Avx2 true
+materialize_code Sample.Mask4.expandMask4Avx2False := Sample.Mask4.expandMask4Avx2 false
+materialize_code Sample.Mask4.expandMask4Avx2True := Sample.Mask4.expandMask4Avx2 true
 
 end VG

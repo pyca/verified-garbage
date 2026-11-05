@@ -22,6 +22,9 @@ pub(crate) enum Backend {
     /// `_avx2`.
     #[cfg(target_arch = "x86_64")]
     Avx2,
+    /// `_avx512`.
+    #[cfg(target_arch = "x86_64")]
+    Avx512,
 }
 
 impl Backend {
@@ -35,10 +38,15 @@ impl Backend {
     pub(crate) fn select(
         f: verified_garbage_cpu::Features,
         required: verified_garbage_cpu::Features,
+        #[cfg(target_arch = "x86_64")] required_avx512: verified_garbage_cpu::Features,
     ) -> Backend {
         #[cfg(target_arch = "aarch64")]
         if f.contains(required) {
             return Backend::Sha3;
+        }
+        #[cfg(target_arch = "x86_64")]
+        if f.contains(required_avx512) {
+            return Backend::Avx512;
         }
         #[cfg(target_arch = "x86_64")]
         if f.contains(required) {
@@ -70,10 +78,15 @@ macro_rules! ml_dsa {
         sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
         verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
+        keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
+        sign_avx512: ($sign_avx512:path, $sign_avx512_features:path),
         verify_avx2: ($verify_avx2:path, $verify_avx2_features:path),
+        verify_avx512: ($verify_avx512:path, $verify_avx512_features:path),
         sign_message_avx2: ($sign_message_avx2:path, $sign_message_avx2_features:path),
+        sign_message_avx512: ($sign_message_avx512:path, $sign_message_avx512_features:path),
         verify_message_cached_avx2: ($verify_message_cached_avx2:path, $verify_message_cached_avx2_features:path),
+        verify_message_cached_avx512: ($verify_message_cached_avx512:path, $verify_message_cached_avx512_features:path),
         pk: $pk:literal,
         sk: $sk:literal,
         sig: $sig:literal,
@@ -104,9 +117,19 @@ macro_rules! ml_dsa {
             ];
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             const REQUIRED: &[verified_garbage_cpu::Features] = &[];
+            #[cfg(target_arch = "x86_64")]
+            const REQUIRED_AVX512: &[verified_garbage_cpu::Features] = &[
+                $keygen_avx512_features,
+                $sign_avx512_features,
+                $verify_avx512_features,
+                $sign_message_avx512_features,
+                $verify_message_cached_avx512_features,
+            ];
             Backend::select(
                 $crate::cpu::detected(),
                 const { verified_garbage_cpu::Features::all(REQUIRED) },
+                #[cfg(target_arch = "x86_64")]
+                const { verified_garbage_cpu::Features::all(REQUIRED_AVX512) },
             )
         }
 
@@ -180,6 +203,8 @@ macro_rules! ml_dsa {
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $verify_message_cached_avx512(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
                 match r {
@@ -212,6 +237,8 @@ macro_rules! ml_dsa {
                         Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $verify_avx512(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
                 if r == 1 { Ok(()) } else { Err(MlDsaError::InvalidSignature) }
@@ -275,6 +302,8 @@ macro_rules! ml_dsa {
                         Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $keygen_avx512(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -350,6 +379,10 @@ macro_rules! ml_dsa {
                         Backend::Avx2 => {
                             $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => {
+                            $sign_message_avx512(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                        }
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -400,6 +433,8 @@ macro_rules! ml_dsa {
                         Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $sign_avx512(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -425,6 +460,28 @@ pub(crate) use ml_dsa;
 mod tests {
     use crate::error::MlDsaError;
     use crate::mldsa44::SigningKey44;
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn x86_backends_require_every_feature() {
+        use super::Backend;
+        use crate::arch::mldsa44::{
+            VG_MLDSA44_KEYGEN_AVX2_FEATURES, VG_MLDSA44_KEYGEN_AVX512_FEATURES,
+        };
+        use verified_garbage_cpu::Features;
+
+        let avx2 = VG_MLDSA44_KEYGEN_AVX2_FEATURES;
+        let avx512 = VG_MLDSA44_KEYGEN_AVX512_FEATURES;
+        assert_eq!(Backend::select(Features(0), avx2, avx512), Backend::Scalar);
+        assert_eq!(Backend::select(avx2, avx2, avx512), Backend::Avx2);
+        assert_eq!(Backend::select(avx512, avx2, avx512), Backend::Avx512);
+        for bit in 0..32 {
+            let f = Features(avx512.0 & !(1 << bit));
+            if f != avx512 {
+                assert_ne!(Backend::select(f, avx2, avx512), Backend::Avx512);
+            }
+        }
+    }
 
     #[cfg(target_arch = "aarch64")]
     #[test]

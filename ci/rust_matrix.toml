@@ -245,6 +245,7 @@ bmi2,adx | ffdh dsa ed448 message_boundaries_and_unaligned_inputs signing_with_a
 avx,avx2,bmi2,adx | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
+avx,avx2,avx512f,avx512vl | mldsa cpu
 """
 
 # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but

@@ -301,9 +301,9 @@ theorem m2_of {s : State} (h : P1 σ 4 s) : M2 σ 0 s :=
     fun k hk => by rw [h.j k hk, ite_eq_left hk], fun k hk => by have := h.st k hk; rwa [ite_eq_left hk] at this⟩
 
 /-- The second squeezes. -/
-theorem sqM_ok {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State} (h : M2 σ b s) :
-    WP isa (squeezes b n) s (M2 σ (b + n)) := by
-  refine WP.mono (sqTs_ok hp hn hbn h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
+theorem sqM_ok {fast : Bool} {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3) {s : State} (h : M2 σ b s) :
+    WP isa (squeezes b n fast) s (M2 σ (b + n)) := by
+  refine WP.mono (sqTs_ok (fast := fast) hp hn hbn h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oJ + 8 * k) (n := 8) (by simp only [oSave, oJ]; omega_arith)

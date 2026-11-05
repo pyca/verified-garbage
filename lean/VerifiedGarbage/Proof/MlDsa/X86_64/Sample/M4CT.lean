@@ -43,10 +43,11 @@ theorem env_rsp {σ₁ σ₂ s₁ s₂ : State} (hq : em4K.pub σ₁ σ₂) (e�
     s₁.gpr .rsp = s₂.gpr .rsp := by rw [e₁.rsp, e₂.rsp, hq.2.2.2.2]
 
 /-- `squeezes`, given its taint analysis. -/
-theorem sq_ct {hc : VG.Taint.Hint X86_64.Taint.T}
-    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) squeezes hc).isSome = true) :
-    RelCT isa (R fun σ s => SqInv σ 0 s) squeezes (R fun σ s => SqInv σ 5 s) :=
-  relInv (fun σ s hp h => sqs_ok (pre_of hp) h)
+theorem sq_ct {fast : Bool}
+    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes fast) hc).isSome = true) :
+    RelCT isa (R fun σ s => SqInv σ 0 s) (squeezes fast) (R fun σ s => SqInv σ 5 s) := by
+  obtain ⟨_, c⟩ := c
+  exact relInv (fun σ s hp h => sqs_ok (fast := fast) (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
@@ -119,7 +120,7 @@ theorem sel_ct : RelCT isa (R fun σ s => (∀ c, UI σ c 0 s) ∧
     have e₁ : gOf σ₁ = 2 ^ 19 := (pre_of p₁).gamma.resolve_left hb'
     exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨h₁.1 20, by rw [e₁]; rfl⟩, ⟨h₂.1 20, by rw [← gOf_pub hq, e₁]; rfl⟩⟩
 
-theorem ct : ConstantTime isa em4K.pre em4K.pub expandMask4Avx2 := by
+theorem ct {fast : Bool} : ConstantTime isa em4K.pre em4K.pub (expandMask4Avx2 fast) := by
   unfold expandMask4Avx2
   refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ s => SqInv σ 0 s)
     (fun σ s hp h => by subst h; exact start_ok (pre_of hp))
@@ -128,7 +129,7 @@ theorem ct : ConstantTime isa em4K.pre em4K.pub expandMask4Avx2 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       exacts [hq.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2]) (by taint_decide))) ?_)
-  refine RelCT.seq (sq_ct (by taint_decide)) ?_
+  refine RelCT.seq (sq_ct (fast := fast) (by cases fast <;> exact ⟨_, by taint_decide⟩)) ?_
   refine RelCT.seq (relInv (fun σ s _ h => cmp_ok h) (taintRel [] (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
     (by taint_decide))) (RelCT.seq sel_ct ?_)
   exact taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by

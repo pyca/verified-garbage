@@ -76,20 +76,20 @@ theorem sqTaint : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
     (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes 0 3) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- Squeezes, from the absorption, given their taint analysis. -/
-theorem sqT_ct {t b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
-    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => SqT σ t b s) (squeezes b n) (R4 fun σ s => SqT σ t (b + n) s) := by
+theorem sqT_ct {fast : Bool} {t b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
+    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n fast) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => SqT σ t b s) (squeezes b n fast) (R4 fun σ s => SqT σ t (b + n) s) := by
   obtain ⟨_, c⟩ := c
-  exact relInv (fun σ s hp h => WP.mono (sqTs_ok (pre_of hp) hn hbn h) fun _ h' => h'.1)
+  exact relInv (fun σ s hp h => WP.mono (sqTs_ok (fast := fast) (pre_of hp) hn hbn h) fun _ h' => h'.1)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
 /-- The second squeezes, given their taint analysis. -/
-theorem sqM_ct {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
-    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => M2 σ b s) (squeezes b n) (R4 fun σ s => M2 σ (b + n) s) := by
+theorem sqM_ct {fast : Bool} {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
+    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n fast) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => M2 σ b s) (squeezes b n fast) (R4 fun σ s => M2 σ (b + n) s) := by
   obtain ⟨_, c⟩ := c
-  exact relInv (fun σ s hp h => sqM_ok (pre_of hp) hn hbn h)
+  exact relInv (fun σ s hp h => sqM_ok (fast := fast) (pre_of hp) hn hbn h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) c)
 
