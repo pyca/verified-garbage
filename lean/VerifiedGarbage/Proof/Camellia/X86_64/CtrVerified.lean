@@ -192,7 +192,7 @@ theorem ctr_verified :
     Verified X86_64.target ctr (Proof.Camellia.ctrScratchContract X86_64.abi 409 8) :=
   Verified.of_correct ctr_correct ctr_ct (by
     sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
-      Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, ctrX86_64, X86_64.abi, X86_64.argRegs, slots,
+      Spec.Camellia.ctrPre, Proof.Camellia.ctrPostSk, ctrX86_64, X86_64.abi, X86_64.argRegs, slots,
       tailSlot, endSlot, keySlot] [ctrSat] using ctrSat)
 
 /-- A state satisfying CTR's precondition: the schedule at `0x1000`, the
@@ -209,17 +209,18 @@ def ctrFrameSat : State where
   rd := [⟨0x1000, 272⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
-    Spec.Camellia.ctrPost, X86_64.abi, X86_64.argRegs] [ctrFrameSat] using ctrFrameSat
+theorem ctrFrameSat_pre : ∃ s, (Proof.Camellia.ctrContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
+    Proof.Camellia.ctrPostSk, X86_64.abi, X86_64.argRegs] [ctrFrameSat] using ctrFrameSat
 
 /-- CTR with its working space on the stack. -/
 theorem ctr_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ctr)
       (Spec.Camellia.ctrContract X86_64.abi 3288) :=
+  Proof.Camellia.ctr_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Spec.Camellia.ctrPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.Camellia.ctrPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre

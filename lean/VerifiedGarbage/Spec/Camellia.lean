@@ -321,10 +321,21 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
 /-- The 64-bit word at `p`, its first byte the most significant. -/
 def wordAt (m : Mem) (p : Addr) : BitVec 64 := ofBytes 64 (bytesAt m p 8)
 
-/-- The subkeys of `rounds` rounds (18 or 24) in the schedule at `p`. -/
+/-- The subkeys of `rounds` rounds (18 or 24) in the schedule at `p`. The
+contracts state a schedule by the key it is of (`KeySchedule`), not by this
+reading of it, which the proofs use. -/
 def subkeysAt (m : Mem) (p : Addr) (rounds : Nat) : Subkeys :=
   subkeysOfWords rounds
     ((List.range (scheduleLength rounds)).map fun i => wordAt m (p + BitVec.ofNat 64 (8 * i)))
+
+/-- The schedule at `p` is that of the key `key` with `r` rounds, as
+`vg_camellia_expand_key` writes it (`Camellia/Contract.lean`): the key is of
+16, 24 or 32 bytes, `r` is the number of rounds for its length (`rounds`),
+and the `8 * scheduleLength r` bytes at `p` are its subkeys (`expandKey`) as
+stored (`scheduleBytes`). -/
+def KeySchedule (m : Mem) (p : Addr) (r : Nat) (key : List Byte) : Prop :=
+  (key.length = 16 ∨ key.length = 24 ∨ key.length = 32) ∧ r = rounds key.length ∧
+    bytesAt m p (8 * scheduleLength r) = scheduleBytes (expandKey key)
 
 def blockAt (m : Mem) (p : Addr) : Block :=
   Vector.ofFn fun i => m (p + BitVec.ofNat 64 i.val)

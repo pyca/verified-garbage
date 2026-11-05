@@ -73,7 +73,7 @@ theorem ofb_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbSig, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Proof.Camellia.ofbPostSk, Spec.Camellia.ofbSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     intro hR
     have e := ofb_post h
@@ -93,8 +93,8 @@ theorem ofb_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
 theorem ofb_verified : Verified Arm.target ofb (Proof.Camellia.ofbScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .encrypt) (ofb_ok _) ofbTaint ofb_implies
 
-theorem ofbFrameSat : ∃ s, (Spec.Camellia.ofbContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Arm.abi, Arm.argRegs,
+theorem ofbFrameSat : ∃ s, (Proof.Camellia.ofbContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.ofbContractSk, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
@@ -102,8 +102,9 @@ theorem ofbFrameSat : ∃ s, (Spec.Camellia.ofbContract Arm.abi 2904).pre s := b
 theorem ofb_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ofb)
       (Spec.Camellia.ofbContract Arm.abi 2904) :=
+  Proof.Camellia.ofb_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64) (n := 9)
-    (pre := Spec.Camellia.ofbPre Arm.abi.ptrBits) (post := Spec.Camellia.ofbPost Arm.abi.ptrBits)
+    (pre := Spec.Camellia.ofbPre Arm.abi.ptrBits) (post := Proof.Camellia.ofbPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
     ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat
@@ -118,7 +119,7 @@ theorem cfbEncrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEn
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbSig, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Proof.Camellia.cfbEncryptPostSk, Spec.Camellia.cfbSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     intro hR
     have e := cfbEnc_post h
@@ -138,8 +139,8 @@ theorem cfbEncrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEn
 theorem cfbEncrypt_verified : Verified Arm.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .encrypt) (cfbEnc_ok _) cfbEncryptTaint cfbEncrypt_implies
 
-theorem cfbEncryptFrameSat : ∃ s, (Spec.Camellia.cfbEncryptContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Arm.abi, Arm.argRegs,
+theorem cfbEncryptFrameSat : ∃ s, (Proof.Camellia.cfbEncryptContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.cfbEncryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
@@ -147,8 +148,9 @@ theorem cfbEncryptFrameSat : ∃ s, (Spec.Camellia.cfbEncryptContract Arm.abi 29
 theorem cfbEncrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cfbEncrypt)
       (Spec.Camellia.cfbEncryptContract Arm.abi 2904) :=
+  Proof.Camellia.cfbEncrypt_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
-    (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Spec.Camellia.cfbEncryptPost Arm.abi.ptrBits)
+    (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbEncryptPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
     cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat
@@ -163,7 +165,7 @@ theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDe
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbSig, Arm.abi, Arm.argRegs,
+    sig_post [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Proof.Camellia.cfbDecryptPostSk, Spec.Camellia.cfbSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     intro hR
     have e := cfbDec_post h
@@ -183,8 +185,8 @@ theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDe
 theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract Arm.abi 9 2816) :=
   seq_verified (ecbSpec .encrypt) (cfbDec_ok _) cfbDecryptTaint cfbDecrypt_implies
 
-theorem cfbDecryptFrameSat : ∃ s, (Spec.Camellia.cfbDecryptContract Arm.abi 2904).pre s := by
-  implies_sat [Spec.Camellia.cfbDecryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Arm.abi, Arm.argRegs,
+theorem cfbDecryptFrameSat : ∃ s, (Proof.Camellia.cfbDecryptContractSk Arm.abi 2904).pre s := by
+  implies_sat [Proof.Camellia.cfbDecryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
 
@@ -192,8 +194,9 @@ theorem cfbDecryptFrameSat : ∃ s, (Spec.Camellia.cfbDecryptContract Arm.abi 29
 theorem cfbDecrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cfbDecrypt)
       (Spec.Camellia.cfbDecryptContract Arm.abi 2904) :=
+  Proof.Camellia.cfbDecrypt_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
-    (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Spec.Camellia.cfbDecryptPost Arm.abi.ptrBits)
+    (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbDecryptPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2816) (m := 1) (bytes := 88)
     cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecryptFrameSat

@@ -37,28 +37,26 @@ def cfbSig : Sig where
 def cfbPre (pb : Nat) : Curry (cfbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule` (`subkeysAt`): replaces the `n` blocks at `data` with their
-CFB128 encryption (§6.3) by Camellia, from the block at `iv`, and that
-block with the last ciphertext block (unchanged if `n = 0`). Stated for
-those numbers of rounds, which the precondition requires, so that it reads
-only the buffers. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CFB128
+encryption (§6.3) by Camellia under `key`, from the block at `iv`, and that
+block with the last ciphertext block (unchanged if `n = 0`). -/
 def cfbEncryptPost (pb : Nat) : cfbSig.Post pb := fun schedule rounds iv data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
-    let cs := Cfb.encrypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16)
+  ∀ key, KeySchedule m schedule rounds.toNat key →
+    let cs := Cfb.encrypt (cipher (expandKey key)) (Aes.bytesAt m iv 16)
       (Cbc.blocksAt m data n.toNat)
     Cbc.blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs
 
-/-- For `rounds` of 18 or 24, with the subkeys of that many rounds at
-`schedule`: replaces the `n` blocks at `data` with their CFB128 decryption
-(§6.3) by Camellia, from the block at `iv`, and that block with the last
-ciphertext block, the last block at `data` on entry (unchanged if `n = 0`).
-Stated for those numbers of rounds, as `cfbEncryptPost`. -/
+/-- If the schedule at `schedule` is that of a key `key` with `rounds`
+rounds (`KeySchedule`): replaces the `n` blocks at `data` with their CFB128
+decryption (§6.3) by Camellia under `key`, from the block at `iv`, and that
+block with the last ciphertext block, the last block at `data` on entry
+(unchanged if `n = 0`). -/
 def cfbDecryptPost (pb : Nat) : cfbSig.Post pb := fun schedule rounds iv data n m m' _ =>
-  (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+  ∀ key, KeySchedule m schedule rounds.toNat key →
     let cs := Cbc.blocksAt m data n.toNat
     Cbc.blocksAt m' data n.toNat =
-        Cfb.decrypt (cipher (subkeysAt m schedule rounds.toNat)) (Aes.bytesAt m iv 16) cs ∧
+        Cfb.decrypt (cipher (expandKey key)) (Aes.bytesAt m iv 16) cs ∧
       Aes.bytesAt m' iv 16 = Cbc.next (Aes.bytesAt m iv 16) cs
 
 /-- `cfbPre` and `cfbEncryptPost`. The subkeys, the chaining value and the
