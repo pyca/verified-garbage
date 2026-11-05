@@ -96,15 +96,17 @@ def C3 (p : PP) (s : State) : Prop := C2 p s ∧ TabOk s.mem p.B (mW p.bits)
 
 /-- After the sieve of `p`. -/
 def C4 (p : PP) (s : State) : Prop :=
-  MS p (cOf p) s ∧ TabOk s.mem p.B (mW p.bits) ∧ word s.mem p.B (8 * fBad) = rOf p ||| mask (anyPre (cOf p) 53)
+  MS p (cOf p) s ∧ TabOk s.mem p.B (mW p.bits) ∧
+    word s.mem p.B (8 * fBad) = rOf p ||| mask (anyPre (cOf p) (4 * trialN (mW p.bits)))
 
 /-- After `q`. -/
 def C5 (p : PP) (s : State) : Prop :=
   MS p (cOf p / 2) s ∧ TabOk s.mem p.B (mW p.bits) ∧
-    word s.mem p.B (8 * fBad) = rOf p ||| mask (anyPre (cOf p) 53) ||| evenFlag (cOf p / 2)
+    word s.mem p.B (8 * fBad) = rOf p ||| mask (anyPre (cOf p) (4 * trialN (mW p.bits))) ||| evenFlag (cOf p / 2)
 
 /-- After the sieve of `q`. -/
-def C6 (p : PP) (s : State) : Prop := MS p (cOf p / 2) s ∧ word s.mem p.B (8 * fBad) = shapeFlag p.g (cOf p)
+def C6 (p : PP) (s : State) : Prop :=
+  MS p (cOf p / 2) s ∧ word s.mem p.B (8 * fBad) = shapeFlag p.g (mW p.bits) (cOf p)
 
 theorem stA_ok {p : PP} {s : State} (h : M0 p s) : WP isa (seqs (phase false ++ shapeP)) s (MS p (cOf p)) :=
   WP.mono (pPhase_ok h.1 rfl h.2.1 h.2.2 h.2.2) fun _ ⟨ht, _⟩ => ⟨ht.st, ht.n, ht.used, h.2.2⟩
@@ -206,15 +208,102 @@ theorem te_endF {q : TQ} {s : State} (h : TE q s) : EndF (endFOf q) s := by
 /-- Before the tests. -/
 def TQd (p : PP) (s : State) : Prop := MS p ((cOf p - 1) / 2) s ∧ ((cOf p - 1) / 2) % 2 = 1
 
-theorem testQ_ct (M : Mont) (R : Kernel) : RelCT isa (Two TQd) (seqs (test true M.mm R.run)) (Two TE) := by
+/-- The first test's public data: `p`'s first witness. -/
+abbrev d1 (p : PP) : TD := ⟨p, p.bits, cOf p, p.L, 1⟩
+
+/-- The second's: `q`'s witnesses. -/
+abbrev d2 (p : PP) : TD :=
+  ⟨p, p.bits - 1, (cOf p - 1) / 2, uOfRes p.r (d1 p).tq.res, Spec.Ffdh.primeChecks (p.bits - 1)⟩
+
+/-- The third's: `p`'s others. -/
+abbrev d3 (p : PP) : TD := ⟨p, p.bits, cOf p, uOfRes p.r (d2 p).tq.res, Spec.Ffdh.primeChecks p.bits - 1⟩
+
+/-- `q` is odd. -/
+abbrev QOdd (p : PP) : Prop := ((cOf p - 1) / 2) % 2 = 1
+
+/-- The Montgomery setup, the exponent and the witnesses of a test of
+`N p` of `mb p` bits by `K p` witnesses from octet `u p`. -/
+theorem tail_ct (M : Mont) (R : Kernel) (mb N u K : PP → Nat) :
+    RelCT isa (Two fun p t => TT p (mb p) (N p) (u p) (K p) t ∧ QOdd p)
+      (seqs (montPrep M.mm ++ expSetup ++ VG.Impl.Ffdh.AArch64.ParameterCandidate.millerRabin M.mm R.run))
+      (Two fun p t => TE (⟨p, mb p, N p, u p, K p⟩ : TD).tq t ∧ QOdd p) :=
+  two_post ((two_map (fun p => (⟨p, mb p, N p, u p, K p⟩ : TD)) (fun _ _ h => h.1) (testTail_ct M R)).mono
+    (fun _ _ h => h) fun _ _ _ => trivial) fun _ s h =>
+      WP.mono (testTail_ok M R h.1) fun _ he => ⟨⟨h.1.dims, s, he⟩, h.2⟩
+
+/-- Before a test of `p` from octet `u p`. -/
+def PStart (u : PP → Nat) (p : PP) (s : State) : Prop :=
+  (∃ w, PSt p w s) ∧ word s.mem p.B (8 * kUsed) = BitVec.ofNat 64 (u p) ∧ u p ≤ p.r.length ∧ p.L ≤ p.r.length ∧
+    QOdd p
+
+/-- A test of `p` from octet `u p`, its witness count changed by `adjust` to
+`K p`, leaks the same in runs with the same public data. -/
+theorem testP_ct (M : Mont) (R : Kernel) (u K : PP → Nat) {adjust : Prog isa} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.x0]) adjust hc).isSome = true)
+    (hadj : ∀ p s, TT p p.bits (cOf p) (u p) (Spec.Ffdh.primeChecks p.bits) s →
+      WP isa adjust s fun t => TT p p.bits (cOf p) (u p) (K p) t) :
+    RelCT isa (Two (PStart u)) (seqs (test false [adjust] M.mm R.run))
+      (Two fun p t => TE (⟨p, p.bits, cOf p, u p, K p⟩ : TD).tq t ∧ QOdd p) := by
+  rw [test_false']
+  refine ct_app' (by simp [phase]) (by simp) (Ψ := fun p t => TT p p.bits (cOf p) (u p)
+    (Spec.Ffdh.primeChecks p.bits) t ∧ QOdd p) ?_ ?_
+  · refine two_post (ct_app' (by simp [phase]) (by simp [shapeP, loadA]) (Ψ := fun p t => SP p t)
+      (two_post (two_map id (fun _ _ h => h.1.choose_spec.ph) (phase_ct false)) fun p s h => ?_)
+      (two_map id (fun _ _ h => h) shapeP_ct)) fun p s h => ?_
+    · refine WP.mono (phase_ok h.1.choose_spec.ph false) fun t ht => ?_
+      have hmb : p.mb false = p.bits := by simp only [PP.mb, Bool.false_eq_true, ↓reduceIte]
+      have st := ht.st
+      rw [hmb] at st
+      exact ⟨st, by have := ht.len; rw [hmb] at this; exact this, h.2.2.2.1⟩
+    · exact WP.mono (pPhase_ok h.1.choose_spec.ph rfl h.2.1 h.2.2.1 h.2.2.2.1) fun t ⟨ht', _⟩ => ⟨ht', h.2.2.2.2⟩
+  refine ct_app' (a := [adjust]) (by simp) (by simp [montPrep])
+    (Ψ := fun p t => TT p p.bits (cOf p) (u p) (K p) t ∧ QOdd p) ?_
+    (tail_ct M R (fun p => p.bits) cOf u K)
+  rw [seqs_one]
+  exact two_piece [.x0] (pins_ws' (fun p : PP => p.B) (fun p : PP => p.Z) (fun p : PP => mW p.bits)
+    fun _ _ h => h.1.st.ws) ht fun p s h => WP.mono (hadj p s h.1) fun t ht => ⟨ht, h.2⟩
+
+/-- Before the test of `q` from octet `u p`. -/
+def QStart (u : PP → Nat) (p : PP) (s : State) : Prop :=
+  PSt p (mW p.bits) s ∧ wv s.mem p.B (slot (mW p.bits) aN) (mW p.bits) = (cOf p - 1) / 2 ∧
+    QOdd p ∧ word s.mem p.B (8 * kUsed) = BitVec.ofNat 64 (u p) ∧ u p ≤ p.r.length ∧ p.L ≤ p.r.length
+
+theorem testQ_ct (M : Mont) (R : Kernel) :
+    RelCT isa (Two (QStart fun p => (d2 p).u)) (seqs (test true [] M.mm R.run))
+      (Two fun p t => TE (d2 p).tq t ∧ QOdd p) := by
   rw [test_true]
   refine ct_app' (by simp [phase]) (by simp [montPrep])
-    (Ψ := fun p t => TT p (p.bits - 1) ((cOf p - 1) / 2) p.L t)
-    (two_post (two_map id (fun _ _ h => h.1.st.ph) (phase_ct true)) fun p s h =>
-      WP.mono (qPhase_ok h.1.st rfl h.1.an h.2 h.1.used h.1.hl h.1.hl) fun _ ⟨ht, _⟩ => ht)
-    (two_map (fun p : PP => (⟨p, p.bits - 1, (cOf p - 1) / 2, p.L⟩ : TD)) (fun _ _ h => h) (testTail_ct M R))
+    (Ψ := fun p t => TT p (d2 p).mb (d2 p).N (d2 p).u (d2 p).K t ∧ QOdd p)
+    (two_post (two_map id (fun _ _ h => h.1.ph) (phase_ct true)) fun p s h =>
+      WP.mono (qPhase_ok h.1 rfl h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) fun _ ⟨ht, _⟩ =>
+        ⟨ht, h.2.2.1⟩)
+    (tail_ct M R (fun p => (d2 p).mb) (fun p => (d2 p).N) (fun p => (d2 p).u) (fun p => (d2 p).K))
 
-/-- The test of `p`, after `q` passed. -/
+/-- After a test whose public data are `f p`: `qResult` unless it passed,
+else `cont`. -/
+theorem stage_ct (f : PP → TQ) {cont : Prog isa}
+    (hc : RelCT isa (Two fun p t => (TE (f p) t ∧ QOdd p) ∧
+      isa.eval (.zero .x .x3) t = some (decide (statF (f p).res = 1)) ∧ isa.eval (.zero .x .x3) t = some true) cont
+      fun _ _ => True) :
+    RelCT isa (Two fun p t => TE (f p) t ∧ QOdd p)
+      (seqs [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1], .ite (.zero .x .x3) cont qResult]) fun _ _ => True := by
+  simp only [seqs]
+  have pw : ∀ {Φ : PP → State → Prop}, (∀ p s, Φ p s → TE (f p) s) → Pins Φ [.x0] := fun h =>
+    pins_ws' (fun p => (f p).p.B) (fun p => (f p).p.Z) (fun p => (f p).w) fun _ _ hx => (te_fix (h _ _ hx)).st.ws
+  refine RelCT.seq (two_piece (Ψ := fun p t => (TE (f p) t ∧ QOdd p) ∧
+      isa.eval (.zero .x .x3) t = some (decide (statF (f p).res = 1))) [.x0] (pw fun _ _ h => h.1) (by taint_decide)
+      fun p s h => ?_) (two_ite (fun _ _ _ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_)
+  · have fix := te_fix h.1
+    refine WP.mono (stat1_ok fix.st.ws (v := statF (f p).res) (by unfold statF; split <;> (try split) <;> decide)
+      (te_stat h.1)) fun t ⟨hz, hm, k⟩ => ⟨⟨?_, h.2⟩, hz⟩
+    obtain ⟨⟨hd, s₀, he⟩, -⟩ := h
+    have hEZ := hd.eZ
+    exact ⟨hd, s₀, he.1.same hEZ hm k (by decide), by rw [hm]; exact he.2.1, fun b rest h' => by
+      rw [hm]; exact he.2.2.1 b rest h', by rw [hm]; exact he.2.2.2.1, (he.2.2.2.2.trans k).mono (by decide)⟩
+  · exact hc.mono (fun _ _ h => two_mono (fun _ _ h => ⟨h.1.1, h.1.2, h.2⟩) h) fun _ _ h => h
+  · exact two_map (fun p => endFOf (f p)) (fun _ _ h => te_endF h.1.1.1) qResult_ct
+
+/-- A test that passed. -/
 def PQ (q : TQ) (s : State) : Prop := TE q s ∧ isa.eval (.zero .x .x3) s = some true
 
 theorem pq_res {q : TQ} {s : State} (h : PQ q s) (h3 : isa.eval (.zero .x .x3) s = some (decide (statF q.res = 1))) :
@@ -229,52 +318,69 @@ theorem pq_res {q : TQ} {s : State} (h : PQ q s) (h3 : isa.eval (.zero .x .x3) s
     · cases h1
     · exact ⟨rest, rfl⟩
 
-/-- The test of `p` leaks the same in runs with the same public data. -/
-theorem testP_ct (M : Mont) (R : Kernel) :
-    RelCT isa (Two fun (q : TQ) s => TE q s ∧ isa.eval (.zero .x .x3) s = some (decide (statF q.res = 1)) ∧
-      isa.eval (.zero .x .x3) s = some true) (seqs (test false M.mm R.run ++ [pResult])) fun _ _ => True := by
-  rw [test_false']
-  refine ct_app' (by simp [phase]) (by simp) (Ψ := TE) ?_
-    (by rw [seqs_one]; exact two_map endFOf (fun _ _ h => te_endF h) pResult_ct)
-  refine ct_app' (by simp [phase]) (by simp [montPrep])
-    (Ψ := fun q t => TT q.p q.p.bits (cOf q.p) (uOfRes q.p.r q.res) t) ?_
-    (two_map (fun q : TQ => (⟨q.p, q.p.bits, cOf q.p, uOfRes q.p.r q.res⟩ : TD)) (fun _ _ h => h) (testTail_ct M R))
-  refine two_post (ct_app' (by simp [phase]) (by simp [shapeP, loadA]) (Ψ := fun q t => SP q.p t)
-    (two_post (two_map (fun q : TQ => q.p) (fun _ _ h => (te_fix h.1).st.ph) (phase_ct false)) fun q s h => ?_)
-    (two_map (fun q : TQ => q.p) (fun _ _ h => h) shapeP_ct)) fun q s ⟨h, h3, ht⟩ => ?_
-  · have hL := h.1.1.hL
-    refine WP.mono (phase_ok (te_fix h.1).st.ph false) fun t ht => ?_
-    have hmb : q.p.mb false = q.p.bits := by simp only [PP.mb, Bool.false_eq_true, ↓reduceIte]
-    have st := ht.st
-    rw [hmb] at st
-    exact ⟨st, by have := ht.len; rw [hmb] at this; exact this, hL⟩
-  · obtain ⟨rest, hr⟩ := pq_res ⟨h, ht⟩ h3
-    obtain ⟨hd, s₀, he⟩ := h
-    obtain ⟨u, hu, hrest, hU⟩ := (he.2.2.1 true rest hr).2
-    have hu' : uOfRes q.p.r q.res = u := by
-      rw [hr]; simp only [uOfRes]; rw [hrest, List.length_drop]; omega_arith
-    refine WP.mono (pPhase_ok he.1.st.ph rfl (by rw [hu']; exact hU) (by rw [hu']; exact hu) hd.hL)
-      fun t ⟨ht', _⟩ => ht'
+/-- What a test that passed leaves: the octets it read. -/
+theorem te_passed {q : TQ} {s : State} (h : TE q s) (h3 : isa.eval (.zero .x .x3) s = some (decide (statF q.res = 1)))
+    (ht : isa.eval (.zero .x .x3) s = some true) :
+    MrFix q.p q.w q.N q.mb q.K s ∧ word s.mem q.p.B (8 * kUsed) = BitVec.ofNat 64 (uOfRes q.p.r q.res) ∧
+      uOfRes q.p.r q.res ≤ q.p.r.length := by
+  obtain ⟨rest, hr⟩ := pq_res ⟨h, ht⟩ h3
+  obtain ⟨hd, s₀, he⟩ := h
+  obtain ⟨u, hu, hrest, hU⟩ := (he.2.2.1 true rest hr).2
+  have hu' : uOfRes q.p.r q.res = u := by
+    rw [hr]; simp only [uOfRes]; rw [hrest, List.length_drop]; omega_arith
+  exact ⟨he.1, by rw [hu']; exact hU, by rw [hu']; exact hu⟩
+
+/-- `p`'s other witnesses, after `q` passed. -/
+theorem testRest_ct (M : Mont) (R : Kernel) :
+    RelCT isa (Two fun p t => (TE (d2 p).tq t ∧ QOdd p) ∧
+      isa.eval (.zero .x .x3) t = some (decide (statF (d2 p).tq.res = 1)) ∧ isa.eval (.zero .x .x3) t = some true)
+      (testRest M.mm R.run) fun _ _ => True := by
+  unfold testRest
+  refine ct_app' (by simp [test, phase]) (by simp) (Ψ := fun p t => TE (d3 p).tq t ∧ QOdd p) ?_
+    (by rw [seqs_one]; exact two_map (fun p => endFOf (d3 p).tq) (fun _ _ h => te_endF h.1) pResult_ct)
+  refine two_map id (Φ' := PStart fun p => (d3 p).u) (fun p s h => ?_)
+    (testP_ct M R (fun p => (d3 p).u) (fun p => (d3 p).K) (adjust := restChecks) (by taint_decide)
+      fun p s h => WP.mono (restChecks_ok h (by unfold Spec.Ffdh.primeChecks; split <;> decide)) fun t ⟨ht, _⟩ => ht)
+  obtain ⟨⟨hte, hqo⟩, h3, ht⟩ := h
+  obtain ⟨fix, hU, hu⟩ := te_passed hte h3 ht
+  exact ⟨⟨_, fix.st⟩, hU, hu, hte.1.hL, hqo⟩
+
+/-- `q` and its test, after `p`'s first witness passed. -/
+theorem testQS_ct (M : Mont) (R : Kernel) :
+    RelCT isa (Two fun p t => (TE (d1 p).tq t ∧ QOdd p) ∧
+      isa.eval (.zero .x .x3) t = some (decide (statF (d1 p).tq.res = 1)) ∧ isa.eval (.zero .x .x3) t = some true)
+      (testQ M.mm R.run) fun _ _ => True := by
+  unfold testQ
+  simp only [List.append_assoc]
+  refine ct_app' (by simp [halveQ]) (by simp [test, phase]) (Ψ := QStart fun p => (d2 p).u) ?_ ?_
+  · refine two_post (two_map PP.ws (fun _ _ h => (te_fix h.1.1).st.ws) halveQ_ct) fun p s h => ?_
+    obtain ⟨⟨hte, hqo⟩, h3, ht⟩ := h
+    obtain ⟨fix, hU, hu⟩ := te_passed hte h3 ht
+    obtain ⟨_, hc⟩ := fix.ctx
+    have hws := fix.st.ws
+    have hn := hws.scr.nowrap
+    have h256 := hws.h256
+    have hb1 : 512 ≤ p.bits := fix.st.dims.b1
+    obtain ⟨hpo, _, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits)
+      (by omega_arith) (Spec.Rsa.os2ip (p.r.take p.L))
+    refine WP.mono (halveQ_ok fix.st hc.n rfl) fun t ⟨st, hq, _, f, _⟩ => ⟨st, by
+      rw [hq]; simp only [cOf] at hpo ⊢; omega_arith, hqo, ?_, hu, hte.1.hL⟩
+    rw [f.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact .inl (by simp only [slot, hdrBytes, kUsed, sFn]; omega_arith)
+      · exact .inr (by decide)) (by simp only [kUsed, sFn]; omega_arith)]
+    exact hU
+  exact ct_app' (by simp [test, phase]) (by simp) (Ψ := fun p t => TE (d2 p).tq t ∧ QOdd p) (testQ_ct M R)
+    (stage_ct (fun p => (d2 p).tq) (testRest_ct M R))
 
 /-- The tests leak the same in runs with the same public data. -/
-theorem tests_ct (M : Mont) (R : Kernel) : RelCT isa (Two TQd) (tests M.mm R.run) fun _ _ => True := by
-  unfold tests
-  refine RelCT.seqs_append (by simp [test, phase]) (by simp) (RelCT.seq (testQ_ct M R) ?_)
-  simp only [seqs]
-  have pw : ∀ {Φ : TQ → State → Prop}, (∀ q s, Φ q s → TE q s) → Pins Φ [.x0] := fun h =>
-    pins_ws' (fun q : TQ => q.p.B) (fun q : TQ => q.p.Z) (fun q : TQ => q.w) fun _ _ hx => (te_fix (h _ _ hx)).st.ws
-  refine RelCT.seq (two_piece (Ψ := fun q t => TE q t ∧
-      isa.eval (.zero .x .x3) t = some (decide (statF q.res = 1))) [.x0] (pw fun _ _ h => h) (by taint_decide)
-      fun q s h => ?_) (two_ite (fun _ _ _ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_)
-  · have fix := te_fix h
-    refine WP.mono (stat1_ok fix.st.ws (v := statF q.res) (by unfold statF; split <;> (try split) <;> decide)
-      (te_stat h)) fun t ⟨hz, hm, k⟩ => ⟨?_, hz⟩
-    obtain ⟨hd, s₀, he⟩ := h
-    have hEZ := hd.eZ
-    exact ⟨hd, s₀, he.1.same hEZ hm k (by decide), by rw [hm]; exact he.2.1, fun b rest h' => by
-      rw [hm]; exact he.2.2.1 b rest h', by rw [hm]; exact he.2.2.2.1, (he.2.2.2.2.trans k).mono (by decide)⟩
-  · exact (testP_ct M R).mono (fun _ _ h => two_mono (fun _ _ h => ⟨h.1.1, h.1.2, h.2⟩) h) fun _ _ h => h
-  · exact two_map endFOf (fun _ _ h => te_endF h.1.1) qResult_ct
+theorem tests_ct (M : Mont) (R : Kernel) : RelCT isa (Two TQd) (tests M.mm R.run) fun _ _ => True :=
+  ct_app' (by simp [test, phase]) (by simp) (Ψ := fun p t => TE (d1 p).tq t ∧ QOdd p)
+    (two_map id (Φ' := PStart fun p => (d1 p).u) (fun p s h => ⟨⟨_, h.1.st⟩, h.1.used, h.1.hl, h.1.hl, h.2⟩)
+      (testP_ct M R (fun p => (d1 p).u) (fun p => (d1 p).K) (adjust := firstCheck) (by taint_decide)
+        fun p s h => WP.mono (firstCheck_ok h) fun t ⟨ht, _⟩ => ht))
+    (stage_ct (fun p => (d1 p).tq) (testQS_ct M R))
 
 /-! ## `main` -/
 
@@ -288,13 +394,13 @@ theorem main_eq (M : Mont) (R : Kernel) : main M.mm R.run = seqs ((phase false +
 theorem ms_ws {p : PP} {n : Nat} {s : State} (h : MS p n s) : WQ p.ws s := h.st.ws
 
 /-- After the flag's load. -/
-def C7 (p : PP) (s : State) : Prop := C6 p s ∧ s.gpr .x5 = shapeFlag p.g (cOf p)
+def C7 (p : PP) (s : State) : Prop := C6 p s ∧ s.gpr .x5 = shapeFlag p.g (mW p.bits) (cOf p)
 
 theorem flag_ok {p : PP} {s : State} (h : C6 p s) : WP isa (.block [ldh .x5 fBad]) s (C7 p) := by
   have hw := h.1.st.ws
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g (cOf p) ∧ t.mem = s.mem)
+  refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g (mW p.bits) (cOf p) ∧ t.mem = s.mem)
     (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
       h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
   exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
@@ -357,12 +463,12 @@ theorem main_ct (M : Mont) (R : Kernel) : RelCT isa (Two M0) (main M.mm R.run) f
     fun p s h => flag_ok h) (two_ite (fun _ _ _ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_)
   · refine (tests_ct M R).mono (fun _ _ h => two_mono (fun p t ⟨⟨⟨hm, hb⟩, h5⟩, hz⟩ => ?_) h) fun _ _ h => h
     rw [eval_zero, h5] at hz
-    have hz' : shapeFlag p.g (cOf p) = 0 := by simpa using hz
+    have hz' : shapeFlag p.g (mW p.bits) (cOf p) = 0 := by simpa using hz
     have hb1 := hm.st.dims.b1
     have hb2 := hm.st.dims.b2
     have hsh := (shapeFlag_zero (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 hm.st.dims.g).mp hz'
     have hqs : Spec.Ffdh.primeShape ((cOf p - 1) / 2) = true := by
-      simp only [Bool.and_eq_true] at hsh; exact hsh.2
+      simp only [Bool.and_eq_true] at hsh; exact hsh.1.1.2
     have hqo : ((cOf p - 1) / 2) % 2 = 1 := by
       unfold Spec.Ffdh.primeShape at hqs
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hqs

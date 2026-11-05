@@ -11,8 +11,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # An FFDH parameter candidate on AArch64: correctness
 
-`code`, from a state `pcContract` allows, ends as `parameterCandidate`
-(`code_correct`).
+`code`, from a state `pcContract` allows, ends as
+`Spec.Ffdh.sievedParameterCandidate` (`code_correct`).
 -/
 
 @[expose] public section
@@ -24,14 +24,13 @@ open VG.Impl.RsaKeyGen VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.Ffdh.AArch64.
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
 open VG.Proof.MillerRabin.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
-open VG.Proof.Ffdh.ParameterCandidate (checkedCandidate)
 
 /-- The postcondition, from how the candidate ended after the entry and the
 zeros to `out` (at `t₃`). -/
 theorem pcEnd_post {s t₃ t : State} (c : PCtx s)
     (hz : ∀ i < (s.gpr .x1).toNat, t₃.mem (s.gpr .x0 + BitVec.ofNat 64 i) = 0)
     (kk : Keep (.x0 :: mmRegs) s t₃)
-    (h : PEnd t₃ t (ppOf s) (checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r)) :
+    (h : PEnd t₃ t (ppOf s) (Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r)) :
     abiPreserved s t ∧ pcPost s t := by
   have hL := c.len
   have key : ∀ {st u : Nat} {outv : Option Nat}, st < 4 →
@@ -55,10 +54,10 @@ theorem pcEnd_post {s t₃ t : State} (c : PCtx s)
     · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
         hk.used]
   unfold pcPost pcResult
-  rw [← VG.Proof.Ffdh.ParameterCandidate.checkedCandidate_eq]
-  change PEnd t₃ t (ppOf s) (checkedCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s)) at h
+  change PEnd t₃ t (ppOf s) (Spec.Ffdh.sievedParameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat
+    (pcRand s)) at h
   have hrl : (pcRand s).length = (s.gpr .x6).toNat := pcRand_length s
-  rcases hres : checkedCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s) with
+  rcases hres : Spec.Ffdh.sievedParameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s) with
     _ | ⟨_ | _, rest⟩ <;> rw [hres] at h <;> simp only [PEnd] at h
   · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
     exact ⟨hg, by rw [hst]; rfl, hb, hw⟩
@@ -158,7 +157,7 @@ theorem ph_of {s t : State} (c : PCtx s) (h : Front s t) : PH (ppOf s) t := by
     exact ⟨fun i hi => by rw [h.keep.rd, h.keep.wr]; exact c.rsrc.rd i hi,
       fun i hi => by show t.mem (s.gpr .x5 + _) = (pcRand s)[i]; rw [hm i hi]; exact c.rsrc.val i hi, c.rsrc.out⟩
 
-/-- `vg_ffdh_parameter_candidate` ends as the specification says. -/
+/-- `vg_ffdh_parameter_candidate_sieved` ends as the specification says. -/
 theorem code_correct (M : Mont) (R : Kernel) (s : State) (h : pcContract.pre s) :
     ∃ t s', Exec isa (VG.Impl.Ffdh.AArch64.ParameterCandidate.code M.mm R.run) s t s' ∧ abiPreserved s s' ∧ pcContract.post s s' := by
   have c := pctx_of h
@@ -181,9 +180,9 @@ theorem code_correct (M : Mont) (R : Kernel) (s : State) (h : pcContract.pre s) 
     refine WP.mono (finNone_ok (up := s.gpr .x2) hph.scr hph.x0 (show 8 * 32 ≤ (stackArg s 0).toNat * 8 by omega)
       hf.args.usedP hph.ou.upw)
       fun t ht => pcEnd_post c hf.zero hf.keep ?_
-    have hnone : checkedCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = none := by
-      show checkedCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s) = none
-      unfold checkedCandidate
+    have hnone : Spec.Ffdh.sievedParameterCandidate (ppOf s).bits (ppOf s).g (ppOf s).r = none := by
+      show Spec.Ffdh.sievedParameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s) = none
+      unfold Spec.Ffdh.sievedParameterCandidate
       have hs : (pcRand s).length < ((s.gpr .x3).toNat + 7) / 8 := by rw [hrl]; omega
       rw [VG.Proof.Ffdh.ParameterCandidate.draw_of_short hs]
       rfl

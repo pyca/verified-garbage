@@ -10,7 +10,8 @@ pub const USES: &[&str] = &["rsa_keygen", "miller_rabin"];
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use std::cell::OnceCell;
@@ -190,7 +191,8 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 fn bench_candidate(
     c: &mut Criterion,
@@ -249,7 +251,8 @@ fn bench_candidate(
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 ))]
 fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     let start = seed / 4;
@@ -274,6 +277,7 @@ fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "powerpc64"
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}

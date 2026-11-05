@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Generic.MillerRabin.AArch64.Ffdh
 
 def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
-  Spec.Ffdh.parameterSearchApi.artifact AArch64.target {
+  Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
     suffix := v.suffix
     stack := 32
     code := Proof.Ffdh.AArch64.Generation.searchCode v

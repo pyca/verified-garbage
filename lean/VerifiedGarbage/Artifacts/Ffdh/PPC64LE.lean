@@ -9,6 +9,9 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcCT
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptVerified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
@@ -46,6 +49,17 @@ def artifacts : List Artifact := [
   Spec.Ffdh.keySearchApi.artifact PPC64LE.target {
     stack := 176
     code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode
-    verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified }]
+    verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified },
+  Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
+    consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
+    code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
+    verified := Proof.Ffdh.PPC64LE.Cached.pc_verified },
+  Spec.Ffdh.cachedGenerateKeyApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Cached.Generate.code
+    verified := Proof.Ffdh.PPC64LE.Cached.cg_verified },
+  Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target {
+    stack := 192
+    code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
+    verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }]
 
 end VG.Artifacts.Ffdh.PPC64LE

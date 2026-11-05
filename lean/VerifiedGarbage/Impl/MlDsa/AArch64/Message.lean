@@ -5,15 +5,15 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
 /-!
-# ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
+# ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign_message` and the message wrappers' pieces
 
 `sign_message(sk = x0, msg = x1, msg_len = x2, ctx = x3, ctx_len = x4,
-rnd = x5, sig = x6, scratch = x7) -> w0` and `verify_message(pk = x0,
-msg = x1, msg_len = x2, ctx = x3, ctx_len = x4, sig = x5, scratch = x6) -> w0`:
-`ML-DSA.Sign` and `ML-DSA.Verify` (FIPS 204 Algorithms 2 and 3), as calls of
-the sponge functions (with the Keccak permutation `c`) and of the functions
-on `μ` (`vg_mldsa*_sign`, `vg_mldsa*_verify`), named `n` and with the code
-`f`.
+rnd = x5, sig = x6, scratch = x7) -> w0`: `ML-DSA.Sign` (FIPS 204
+Algorithm 2), as calls of the sponge functions (with the Keccak permutation
+`c`) and of the signing function on `μ` (`vg_mldsa*_sign`), named `n` and
+with the code `f`. `vg_mldsa*_verify_message_cached`
+(`Impl/MlDsa/AArch64/Optimized/CachedVerify.lean`) is built from the same
+pieces.
 
 If `ctx_len ≥ 256` (`ctx_len >> 8 ≠ 0`) they return 2 at once. Otherwise
 they work in the 1 KiB after the working space of the function on `μ` (at
@@ -23,10 +23,8 @@ bytes), the caller's `x28` and `x30`, the arguments (at the offsets `f*`)
 and the two bytes `0 ‖ ctx_len` of the formatted message. They use no stack
 of their own.
 
-* Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
-  bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
-* Verification first computes `tr = H(pk, 64)` into the buffer of `μ`, then
-  `μ` from it likewise, and calls `vg_mldsa*_verify(pk, μ, sig, scratch)`.
+Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
+bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
 
 Each call's arguments are moved into their registers from the saved
 arguments (a slot, or a slot plus an offset), as offsets from `x28` or
@@ -34,7 +32,6 @@ immediates, or from `x0` (the position the previous sponge function
 returned). Every address and branch depends only on the pointers and the
 lengths, and the calls' own leakage.
 -/
-
 @[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Message
@@ -138,11 +135,6 @@ def muHash (tr : Arg) : Prog isa :=
     (.seq (kabs c (.slot fCtx) (.slot fCtxLen) (.imm 66)) (.seq (kabs c (.slot fMsg) (.slot fLen) .ret)
       (.seq (kpad c .ret) (ksqz c))))))
 
-/-- `tr = H(pk, 64)` to the buffer of `μ`. -/
-def trHash (p : Params) : Prog isa :=
-  .seq (.block zeroSt) (.seq (kabs c (.slot fKey) (.imm p.pkLen) (.imm 0))
-    (.seq (kpad c (.imm (p.pkLen % 136))) (ksqz c)))
-
 end
 
 /-! ## The functions -/
@@ -157,22 +149,11 @@ def top (ent : List Instr) (body : Prog isa) : Prog isa :=
 def signSaves : List (Reg × Nat) :=
   [(.x0, fKey), (.x1, fMsg), (.x2, fLen), (.x3, fCtx), (.x4, fCtxLen), (.x5, fRnd), (.x6, fSig), (.x7, fScr)]
 
-/-- The arguments verification saves (`sig` in the slot of `rnd` too). -/
-def verifySaves : List (Reg × Nat) :=
-  [(.x0, fKey), (.x1, fMsg), (.x2, fLen), (.x3, fCtx), (.x4, fCtxLen), (.x5, fRnd), (.x5, fSig), (.x6, fScr)]
-
 /-- `vg_mldsa*_sign_message` for the parameter set `p`, with the Keccak
 permutation `c`, calling the signing function on `μ` `f`, named `n`. -/
 def signMessage (c : Impl.Sha3.AArch64.Callee) (n : String) (f : Prog isa) (p : Params) : Prog isa :=
   top (enter .x7 p signSaves)
     (.seq (muHash c (.slotOff fKey 64))
       (callA n f [(.x0, .slot fKey), (.x1, .off oMU), (.x2, .slot fRnd), (.x3, .slot fSig), (.x4, .slot fScr)]))
-
-/-- `vg_mldsa*_verify_message` for the parameter set `p`, with the Keccak
-permutation `c`, calling the verification function on `μ` `f`, named `n`. -/
-def verifyMessage (c : Impl.Sha3.AArch64.Callee) (n : String) (f : Prog isa) (p : Params) : Prog isa :=
-  top (enter .x6 p verifySaves)
-    (.seq (trHash c p) (.seq (muHash c (.off oMU))
-      (callA n f [(.x0, .slot fKey), (.x1, .off oMU), (.x2, .slot fSig), (.x3, .slot fScr)])))
 
 end VG.Impl.MlDsa.AArch64.Message

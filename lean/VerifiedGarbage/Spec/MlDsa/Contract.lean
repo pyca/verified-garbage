@@ -305,37 +305,6 @@ def signMessageContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : 
       signMessageLeak p (bytesAt m sk p.skLen) (bytesAt m msg msgLen.toNat)
         (bytesAt m ctx ctxLen.toNat) (bytesAt m rnd 32))
 
-/-- `ML-DSA.Verify`'s arguments, `(pk: *const [u8; pkLen], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; sigLen], scratch: *mut [u64; messageScratchWords]) -> u32`,
-which `vg_mldsa*_verify_message_cached` takes followed by `tr`
-(`verifyMessageCachedSig`). `scratch` is working space. -/
-def verifyMessageSig (p : Params) : Sig where
-  params := [("pk", .array false .u8 p.pkLen), ("msg", .slice false .u8 "msg_len"),
-    ("ctx", .slice false .u8 "ctx_len"), ("sig", .array false .u8 p.sigLen),
-    ("scratch", .array true .u64 (messageScratchWords p))]
-  ret := some .u32
-
-/-- With the public key at `pk`, the message `M` of `msg_len` bytes at `msg`,
-the context string `ctx` of `ctx_len` bytes at `ctx` and the signature at
-`sig`: returns 2 if `ctx` is longer than 255 bytes
-(`ML-DSA.Verify(pk, M, σ, ctx)`, Algorithm 3, lines 1–3, returns `⊥`);
-otherwise returns 1 if `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8) of
-the parameter set `p`, for the formatted message `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`
-(`formatMessage`, Algorithm 3, line 5), is true; and 0 if it is false, or
-if a loop does not finish within `minBounds`. May leak its inputs. -/
-def verifyMessageContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  (verifyMessageSig p).contract A
-    (post := fun pk msg msgLen ctx ctxLen sig _scratch m _m' r =>
-      match formatMessage (bytesAt m ctx ctxLen.toNat) (bytesAt m msg msgLen.toNat) with
-      | none => r = 2
-      | some M' =>
-        let v := fun b => verifyInternal p b (bytesAt m pk p.pkLen) M' (bytesAt m sig p.sigLen)
-        (r = 1 ∧ ∃ b, v b = some true) ∨ (r = 0 ∧ v minBounds ≠ some true))
-    (writeArgs := true)
-    (stack := stack)
-    (leak := some fun pk msg msgLen ctx ctxLen sig _scratch m =>
-      leakBytes (bytesAt m pk p.pkLen ++ bytesAt m msg msgLen.toNat ++
-        bytesAt m ctx ctxLen.toNat ++ bytesAt m sig p.sigLen))
-
 /-! ## The functions on every target -/
 
 /-- What the documentation says of the return value of a function whose

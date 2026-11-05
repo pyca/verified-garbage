@@ -178,10 +178,10 @@ theorem code_constantTime (M : Mont) (R : Kernel) :
   RelCT.constantTime ((code_ct M R).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
     ⟨ppOf s₁, P0.self h₁, ⟨h₂, ppOf_eq hp⟩, hp.1⟩) fun _ _ h => h)
 
-/-- `vg_ffdh_parameter_candidate`, against its contract. -/
+/-- `vg_ffdh_parameter_candidate_sieved`, against its contract. -/
 theorem pc_verified (M : Mont) (R : Kernel) :
     Verified target (VG.Impl.Ffdh.AArch64.ParameterCandidate.code M.mm R.run)
-      (Proof.Ffdh.parameterCandidateContract abi) :=
+      (Proof.Ffdh.sievedParameterCandidateContract abi) :=
   Verified.of_correct (code_correct M R) (code_constantTime M R) pc_implies
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate
