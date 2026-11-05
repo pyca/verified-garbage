@@ -37,10 +37,9 @@ pub fn bench(c: &mut Criterion) {
         let mut buffer = crate::InPlace::new(size, &data);
         group.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
-                let ctx = BlowfishOfb::new(black_box(&key)).unwrap();
-                let mut chain = black_box(iv);
+                let ctx = BlowfishOfb::new(black_box(&key), &black_box(iv)).unwrap();
                 buffer.copy_from_slice(black_box(&data));
-                ctx.apply_keystream(&mut chain, black_box(&mut buffer));
+                ctx.apply_keystream_final(black_box(&mut buffer));
                 black_box(&buffer);
             })
         });

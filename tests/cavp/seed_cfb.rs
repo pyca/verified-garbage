@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::seed_cfb::{InvalidKeyLength, SeedCfb128};
+use verified_garbage::seed_cfb::{Error, SeedCfb128Decryptor, SeedCfb128Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -28,13 +28,21 @@ fn pyca_vectors() {
         let iv: [u8; 16] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
-        let ctx = SeedCfb128::new(&key).unwrap();
         let vector = (&plaintext[..], &ciphertext[..]);
-        let cfb = crate::modes::Feedback::Ciphertext;
-        crate::modes::check(cfb, iv, vector, vector, &|iv, b| ctx.encrypt(iv, b));
-        crate::modes::check(cfb, iv, vector, (&ciphertext, &plaintext), &|iv, b| {
-            ctx.decrypt(iv, b)
-        });
+        crate::modes::check(
+            iv,
+            vector,
+            &|iv| SeedCfb128Encryptor::new(&key, iv).unwrap(),
+            SeedCfb128Encryptor::encrypt,
+            SeedCfb128Encryptor::encrypt_final,
+        );
+        crate::modes::check(
+            iv,
+            (&ciphertext, &plaintext),
+            &|iv| SeedCfb128Decryptor::new(&key, iv).unwrap(),
+            SeedCfb128Decryptor::decrypt,
+            SeedCfb128Decryptor::decrypt_final,
+        );
     }
     assert_eq!(key_lens, [16; 20]);
 }
@@ -42,6 +50,13 @@ fn pyca_vectors() {
 #[test]
 fn errors() {
     for len in [0, 8, 15, 17, 24, 32] {
-        assert_eq!(SeedCfb128::new(&vec![0; len]).err(), Some(InvalidKeyLength));
+        assert_eq!(
+            SeedCfb128Encryptor::new(&vec![0; len], &[0; 16]).err(),
+            Some(Error::InvalidKeyLength)
+        );
+        assert_eq!(
+            SeedCfb128Decryptor::new(&vec![0; len], &[0; 16]).err(),
+            Some(Error::InvalidKeyLength)
+        );
     }
 }

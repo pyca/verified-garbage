@@ -7,7 +7,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cast5_cbc::{Cast5Cbc, Error};
+use verified_garbage::cast5_cbc::{Cast5CbcDecryptor, Cast5CbcEncryptor, Error};
 
 #[test]
 fn vectors() {
@@ -16,28 +16,23 @@ fn vectors() {
     ));
     assert_eq!(records.len(), 20);
     for (key, iv, plaintext, ciphertext) in records {
-        let cipher = Cast5Cbc::new(&key).unwrap();
         // Whole.
-        let mut chain = iv;
         let mut data = plaintext.clone();
-        cipher.encrypt(&mut chain, &mut data).unwrap();
+        let mut encryptor = Cast5CbcEncryptor::new(&key, &iv).unwrap();
+        encryptor.encrypt(&mut data).unwrap();
         assert_eq!(data, ciphertext);
-        assert_eq!(chain[..], ciphertext[ciphertext.len() - 8..]);
-        let mut chain = iv;
-        cipher.decrypt(&mut chain, &mut data).unwrap();
+        let mut decryptor = Cast5CbcDecryptor::new(&key, &iv).unwrap();
+        decryptor.decrypt(&mut data).unwrap();
         assert_eq!(data, plaintext);
-        assert_eq!(chain[..], ciphertext[ciphertext.len() - 8..]);
-        // A block at a time, each continuing from the chaining value the
-        // last left.
-        let mut chain = iv;
-        let mut data = plaintext.clone();
+        // A block at a time, each continuing the message.
+        let mut encryptor = Cast5CbcEncryptor::new(&key, &iv).unwrap();
         for block in data.chunks_mut(8) {
-            cipher.encrypt(&mut chain, block).unwrap();
+            encryptor.encrypt(block).unwrap();
         }
         assert_eq!(data, ciphertext);
-        let mut chain = iv;
+        let mut decryptor = Cast5CbcDecryptor::new(&key, &iv).unwrap();
         for block in data.chunks_mut(8) {
-            cipher.decrypt(&mut chain, block).unwrap();
+            decryptor.decrypt(block).unwrap();
         }
         assert_eq!(data, plaintext);
     }
@@ -46,22 +41,31 @@ fn vectors() {
 #[test]
 fn errors_and_empty_input() {
     assert!(matches!(
-        Cast5Cbc::new(&[0; 4]),
+        Cast5CbcEncryptor::new(&[0; 4], &[0; 8]),
         Err(Error::InvalidKeyLength)
     ));
-    let cipher = Cast5Cbc::new(&[7; 10]).unwrap();
-    let mut iv = [0x5a; 8];
+    assert!(matches!(
+        Cast5CbcDecryptor::new(&[0; 4], &[0; 8]),
+        Err(Error::InvalidKeyLength)
+    ));
+    let (key, iv) = ([7; 10], [0x5a; 8]);
+    let mut encryptor = Cast5CbcEncryptor::new(&key, &iv).unwrap();
+    let mut decryptor = Cast5CbcDecryptor::new(&key, &iv).unwrap();
     let mut data = [0xa5; 12];
-    assert_eq!(
-        cipher.encrypt(&mut iv, &mut data),
-        Err(Error::IncompleteBlock)
-    );
-    assert_eq!(
-        cipher.decrypt(&mut iv, &mut data),
-        Err(Error::IncompleteBlock)
-    );
-    assert_eq!((iv, data), ([0x5a; 8], [0xa5; 12]));
-    cipher.encrypt(&mut iv, &mut []).unwrap();
-    cipher.decrypt(&mut iv, &mut []).unwrap();
-    assert_eq!(iv, [0x5a; 8]);
+    assert_eq!(encryptor.encrypt(&mut data), Err(Error::IncompleteBlock));
+    assert_eq!(decryptor.decrypt(&mut data), Err(Error::IncompleteBlock));
+    assert_eq!(data, [0xa5; 12]);
+    encryptor.encrypt(&mut []).unwrap();
+    decryptor.decrypt(&mut []).unwrap();
+    // None of these calls changed the chaining value.
+    let mut data = [0xa5; 16];
+    let mut expected = data;
+    Cast5CbcEncryptor::new(&key, &iv)
+        .unwrap()
+        .encrypt(&mut expected)
+        .unwrap();
+    encryptor.encrypt(&mut data).unwrap();
+    assert_eq!(data, expected);
+    decryptor.decrypt(&mut data).unwrap();
+    assert_eq!(data, [0xa5; 16]);
 }

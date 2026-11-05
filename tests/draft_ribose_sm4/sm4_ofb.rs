@@ -39,29 +39,34 @@ fn examples() -> Vec<Example> {
 #[test]
 fn draft_examples() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        let ctx = Sm4Ofb::new(&key);
         let vector = (&plaintext[..], &ciphertext[..]);
         for io in [vector, (&ciphertext[..], &plaintext[..])] {
-            crate::modes::check(crate::modes::Feedback::Output, iv, vector, io, &|iv, b| {
-                ctx.apply_keystream(iv, b)
-            });
+            crate::modes::check(
+                iv,
+                io,
+                &|iv| Sm4Ofb::new(&key, iv),
+                Sm4Ofb::apply_keystream,
+                Sm4Ofb::apply_keystream_final,
+            );
         }
     }
 }
 
-/// The examples in place, at every offset of the data and the chaining
-/// value, leave the bytes around them unchanged.
+/// The examples in place, at every offset of the data, leave the bytes
+/// around them unchanged.
 #[test]
 fn unaligned_buffers() {
     for (key, iv, plaintext, ciphertext) in examples() {
-        let ctx = Sm4Ofb::new(&key);
-        let n = plaintext.len();
-        let after = core::array::from_fn(|i| plaintext[n - 16 + i] ^ ciphertext[n - 16 + i]);
         for io in [
             (&plaintext[..], &ciphertext[..]),
             (&ciphertext[..], &plaintext[..]),
         ] {
-            crate::modes::check_unaligned(iv, io, after, &|iv, b| ctx.apply_keystream(iv, b));
+            crate::modes::check_unaligned(
+                iv,
+                io,
+                &|iv| Sm4Ofb::new(&key, iv),
+                Sm4Ofb::apply_keystream_final,
+            );
         }
     }
 }

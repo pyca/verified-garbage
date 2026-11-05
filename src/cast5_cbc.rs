@@ -9,7 +9,8 @@
 //! decryption from the chaining value at `iv`, and the chaining value with the
 //! one to continue from, the last ciphertext block, in constant time: their
 //! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the subkeys.
+//! module checks the lengths and holds the key schedule and the chaining
+//! value.
 
 #![cfg(any(
     target_arch = "x86",
@@ -24,18 +25,70 @@ use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt_chained, vg_cast5_cbc_encrypt_
 use crate::cast5_ecb::Cast5Ecb;
 pub use crate::cast5_ecb::Error;
 
-/// An expanded CAST5 key for CBC encryption and decryption.
-///
-/// No padding is added or removed: each operation takes whole 8-byte blocks.
-/// The chaining value is updated in place, so that a message may be
-/// processed in pieces, each continuing from the last.
-pub struct Cast5Cbc {
+/// An expanded CAST5 key, which serves both directions.
+struct Key {
     key: Cast5Ecb,
 }
 
-impl Cast5Cbc {
-    /// Expands a key of 5 to 16 bytes for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+/// A CAST5-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// encrypted in pieces.
+pub struct Cast5CbcEncryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl Cast5CbcEncryptor {
+    /// Expands a key of 5 to 16 bytes, to encrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.encrypt(&mut self.iv, buffer)
+    }
+}
+
+/// A CAST5-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues the message from the
+/// last ciphertext block of the call before, so that a message may be
+/// decrypted in pieces.
+pub struct Cast5CbcDecryptor {
+    key: Key,
+    /// The chaining value: the IV, then the last ciphertext block.
+    iv: [u8; 8],
+}
+
+impl Cast5CbcDecryptor {
+    /// Expands a key of 5 to 16 bytes, to decrypt a message from `iv`.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+        Ok(Self {
+            key: Key::new(key)?,
+            iv: *iv,
+        })
+    }
+
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+        self.key.decrypt(&mut self.iv, buffer)
+    }
+}
+
+impl Key {
+    /// Expands a key of 5 to 16 bytes.
+    fn new(key: &[u8]) -> Result<Self, Error> {
         Ok(Self {
             key: Cast5Ecb::new(key)?,
         })
@@ -43,10 +96,10 @@ impl Cast5Cbc {
 
     /// Encrypts whole 8-byte blocks in place, chained from `iv`, and replaces
     /// `iv` with the last ciphertext block (leaving it unchanged for empty
-    /// input), so that a further call continues the message. Returns an
+    /// input). Returns an
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
-    pub fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
@@ -69,10 +122,10 @@ impl Cast5Cbc {
 
     /// Decrypts whole 8-byte blocks in place, chained from `iv`, and replaces
     /// `iv` with the last ciphertext block (leaving it unchanged for empty
-    /// input), so that a further call continues the message. Returns an
+    /// input). Returns an
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
-    pub fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }

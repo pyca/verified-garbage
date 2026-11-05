@@ -16,7 +16,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cbc::AesCbc;
+use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CipherCase, SizesGroup};
@@ -49,16 +49,19 @@ fn aes_cbc_pkcs5() {
         assert_eq!(Some(key.0.len() * 8), group.params.key_size, "tcId {id}");
         assert_eq!(group.params.iv_size, Some(128), "tcId {id}");
         assert_eq!(ct.0.len() % 16, 0, "tcId {id}");
-        let ctx = AesCbc::new(&key.0).unwrap();
         let iv: [u8; 16] = iv.0[..].try_into().unwrap();
-        let mut chain = iv;
         let mut decrypted = ct.0.clone();
-        ctx.decrypt(&mut chain, &mut decrypted).unwrap();
+        AesCbcDecryptor::new(&key.0, &iv)
+            .unwrap()
+            .decrypt(&mut decrypted)
+            .unwrap();
         if test.result == Expectation::Valid {
             assert_eq!(unpad(&decrypted), Some(&msg.0[..]), "tcId {id}");
             let mut encrypted = pad(&msg.0);
-            let mut chain = iv;
-            ctx.encrypt(&mut chain, &mut encrypted).unwrap();
+            AesCbcEncryptor::new(&key.0, &iv)
+                .unwrap()
+                .encrypt(&mut encrypted)
+                .unwrap();
             assert_eq!(encrypted, ct.0, "tcId {id}");
             valid.add();
         } else {

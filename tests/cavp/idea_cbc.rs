@@ -11,27 +11,23 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::idea_cbc::{Error, IdeaCbc};
+use verified_garbage::idea_cbc::{Error, IdeaCbcDecryptor, IdeaCbcEncryptor};
 
 use verified_garbage_test_vectors::unhex;
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
-/// at every block boundary, leaving the last ciphertext block as the
-/// chaining value.
-fn check(ctx: &IdeaCbc, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let after: [u8; 8] = *ciphertext.last_chunk().unwrap();
+/// at every block boundary.
+fn check(key: &[u8], iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
     for offset in (0..=plaintext.len()).step_by(8) {
-        let mut chain = iv;
         let mut buffer = plaintext.to_vec();
-        ctx.encrypt(&mut chain, &mut buffer[..offset]).unwrap();
-        ctx.encrypt(&mut chain, &mut buffer[offset..]).unwrap();
+        let mut encryptor = IdeaCbcEncryptor::new(key, &iv).unwrap();
+        encryptor.encrypt(&mut buffer[..offset]).unwrap();
+        encryptor.encrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, ciphertext);
-        assert_eq!(chain, after);
-        let mut chain = iv;
-        ctx.decrypt(&mut chain, &mut buffer[..offset]).unwrap();
-        ctx.decrypt(&mut chain, &mut buffer[offset..]).unwrap();
+        let mut decryptor = IdeaCbcDecryptor::new(key, &iv).unwrap();
+        decryptor.decrypt(&mut buffer[..offset]).unwrap();
+        decryptor.decrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, plaintext);
-        assert_eq!(chain, after);
     }
 }
 
@@ -47,12 +43,7 @@ fn pyca_vectors() {
         let key = get("KEY");
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         key_lens.push(key.len());
-        check(
-            &IdeaCbc::new(&key).unwrap(),
-            iv,
-            &get("PLAINTEXT"),
-            &get("CIPHERTEXT"),
-        );
+        check(&key, iv, &get("PLAINTEXT"), &get("CIPHERTEXT"));
     }
     assert_eq!(key_lens, [16; 20]);
 }
@@ -61,23 +52,32 @@ fn pyca_vectors() {
 fn errors() {
     for len in [0, 8, 15, 17, 24, 32] {
         assert!(matches!(
-            IdeaCbc::new(&vec![0; len]),
+            IdeaCbcEncryptor::new(&vec![0; len], &[0; 8]),
+            Err(Error::InvalidKeyLength)
+        ));
+        assert!(matches!(
+            IdeaCbcDecryptor::new(&vec![0; len], &[0; 8]),
             Err(Error::InvalidKeyLength)
         ));
     }
-    let ctx = IdeaCbc::new(&[0; 16]).unwrap();
+    let key = [0; 16];
+    let mut encryptor = IdeaCbcEncryptor::new(&key, &[7; 8]).unwrap();
+    let mut decryptor = IdeaCbcDecryptor::new(&key, &[7; 8]).unwrap();
     for len in [1, 15, 17, 31] {
-        let mut chain = [7; 8];
         let mut buffer = vec![0x5a; len];
-        assert_eq!(
-            ctx.encrypt(&mut chain, &mut buffer),
-            Err(Error::IncompleteBlock)
-        );
-        assert_eq!(
-            ctx.decrypt(&mut chain, &mut buffer),
-            Err(Error::IncompleteBlock)
-        );
+        assert_eq!(encryptor.encrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(decryptor.decrypt(&mut buffer), Err(Error::IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
-        assert_eq!(chain, [7; 8]);
     }
+    // The failed calls changed nothing.
+    let mut buffer = [0x5a; 16];
+    let mut expected = buffer;
+    IdeaCbcEncryptor::new(&key, &[7; 8])
+        .unwrap()
+        .encrypt(&mut expected)
+        .unwrap();
+    encryptor.encrypt(&mut buffer).unwrap();
+    assert_eq!(buffer, expected);
+    decryptor.decrypt(&mut buffer).unwrap();
+    assert_eq!(buffer, [0x5a; 16]);
 }

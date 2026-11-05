@@ -10,28 +10,25 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_cfb8::{InvalidKeyLength, TripleDesCfb8};
+use verified_garbage::triple_des_cfb8::{
+    InvalidKeyLength, TripleDesCfb8Decryptor, TripleDesCfb8Encryptor,
+};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
-/// at every byte, leaving the shift register holding the last eight bytes
-/// of the IV and the ciphertext.
-fn check(ctx: &TripleDesCfb8, iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
-    let register = [&iv[..], ciphertext].concat();
-    let next: [u8; 8] = register[register.len() - 8..].try_into().unwrap();
+/// at every byte.
+fn check(key: &[u8], iv: [u8; 8], plaintext: &[u8], ciphertext: &[u8]) {
     for offset in 0..=plaintext.len() {
-        let mut chain = iv;
         let mut buffer = plaintext.to_vec();
-        ctx.encrypt(&mut chain, &mut buffer[..offset]);
-        ctx.encrypt(&mut chain, &mut buffer[offset..]);
+        let mut encryptor = TripleDesCfb8Encryptor::new(key, &iv).unwrap();
+        encryptor.encrypt(&mut buffer[..offset]);
+        encryptor.encrypt(&mut buffer[offset..]);
         assert_eq!(buffer, ciphertext);
-        assert_eq!(chain, next);
-        let mut chain = iv;
-        ctx.decrypt(&mut chain, &mut buffer[..offset]);
-        ctx.decrypt(&mut chain, &mut buffer[offset..]);
+        let mut decryptor = TripleDesCfb8Decryptor::new(key, &iv).unwrap();
+        decryptor.decrypt(&mut buffer[..offset]);
+        decryptor.decrypt(&mut buffer[offset..]);
         assert_eq!(buffer, plaintext);
-        assert_eq!(chain, next);
     }
 }
 
@@ -44,19 +41,9 @@ fn check_file(text: &str) -> usize {
         let iv: [u8; 8] = unhex(fields["IV"]).try_into().unwrap();
         let plaintext = unhex(fields["PLAINTEXT"]);
         let ciphertext = unhex(fields["CIPHERTEXT"]);
-        check(
-            &TripleDesCfb8::new(&key).unwrap(),
-            iv,
-            &plaintext,
-            &ciphertext,
-        );
+        check(&key, iv, &plaintext, &ciphertext);
         if key[..8] == key[16..] {
-            check(
-                &TripleDesCfb8::new(&key[..16]).unwrap(),
-                iv,
-                &plaintext,
-                &ciphertext,
-            );
+            check(&key[..16], iv, &plaintext, &ciphertext);
         }
         count += 1;
     }
@@ -83,7 +70,11 @@ fn cavp_mmt() {
 fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert_eq!(
-            TripleDesCfb8::new(&vec![0; len]).err(),
+            TripleDesCfb8Encryptor::new(&vec![0; len], &[0; 8]).err(),
+            Some(InvalidKeyLength)
+        );
+        assert_eq!(
+            TripleDesCfb8Decryptor::new(&vec![0; len], &[0; 8]).err(),
             Some(InvalidKeyLength)
         );
     }
