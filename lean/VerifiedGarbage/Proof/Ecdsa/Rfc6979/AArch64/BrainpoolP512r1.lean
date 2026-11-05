@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Verified
@@ -11,6 +13,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Verified
@@ -51,24 +54,33 @@ theorem coreK_brainpoolp512r1 : coreK Impl.Ecdsa.AArch64.brainpoolp512r1 =
     brainpoolp512r1_empty_disjoint, and_true, Proof.Ecdsa.AArch64.BrainpoolP512r1.signAArch64]
   rfl
 
+/-! ## The curve's blocks -/
+
+theorem brainpoolp512r1_blk : RfcT (cfgC Impl.Ecdsa.AArch64.brainpoolp512r1 false 0) := by rfcT_decide
+
 /-- brainpoolp512r1, with the group law `hL`, the inversions' soundness `hI`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.AArch64.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.AArch64.brainpoolp512r1
   inst := Spec.Ecdsa.BrainpoolP512r1.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inr (.inr rfl), .inl rfl, Proof.Ecdsa.AArch64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  hHigh := true
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.BrainpoolP512r1.brainpoolp512r1_sh
-  coreN := "vg_ecdsa_brainpoolp512r1_sign"
+  coreN := "vg_ecdsa_brainpoolp512r1_sign_k"
   coreC := Impl.Ecdsa.AArch64.signBrainpoolP512r1
   coreX := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.AArch64.BrainpoolP512r1.sign_a64 hL hI
   coreCT := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.AArch64.BrainpoolP512r1.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceKeepsV := Function.const _ (by decide +kernel)
+  blk := brainpoolp512r1_blk
+
+/-- `vg_ecdsa_brainpoolp512r1_sign`, with the tables of `vs`. -/
+theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.AArch64.InvSounds) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) (h : OK vs) :
+    Verified AArch64.target (signCodeT (brainpoolp512r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 [] vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h (by decide) rfl
+  exact signT_verified_nil ⟨rfl, by decide, by decide⟩ rfl rfl rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

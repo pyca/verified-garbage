@@ -37,7 +37,7 @@ use crate::arch::scrypt::vg_scrypt_sha2;
 use crate::arch::scrypt::vg_scrypt_shani;
 use crate::hashes::sha256::Sha256Backend;
 
-/// Why [`scrypt`] refused to derive a key, or [`verify`] to accept one.
+/// Why [`derive`] refused to derive a key, or [`verify`] to accept one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     /// The parameters are not valid (RFC 7914 §2 and §6): `n` must be a
@@ -98,7 +98,7 @@ fn chunks(len: usize) -> Result<Vec<[u8; 128]>, Error> {
 /// valid, [`Error::MemoryLimitExceeded`] if scrypt would need more than
 /// `max_memory` bytes, and [`Error::AllocationFailed`] if allocating them
 /// fails. `out` is unchanged then.
-pub fn scrypt(
+pub fn derive(
     password: &[u8],
     salt: &[u8],
     n: u64,
@@ -113,11 +113,11 @@ pub fn scrypt(
 
 /// Checks a password against a stored derived key: derives a key of `N`
 /// bytes from `password` and `salt` by scrypt with parameters `n`, `r` and
-/// `p` (as [`scrypt`] does), if that needs at most `max_memory` bytes, and
+/// `p` (as [`derive`] does), if that needs at most `max_memory` bytes, and
 /// compares it with `expected`.
 ///
 /// The comparison is constant time: the time taken does not depend on
-/// where, or whether, the keys differ. The derivation is [`scrypt`]'s, whose
+/// where, or whether, the keys differ. The derivation is [`derive`]'s, whose
 /// memory accesses depend on the password (see the module's documentation).
 /// `N` is public. The derived key is wiped before returning.
 ///
@@ -132,7 +132,7 @@ pub fn scrypt(
 /// # Errors
 ///
 /// [`Error::KeyMismatch`] if the derived key is not `expected`; otherwise
-/// as [`scrypt`], with `expected` in place of `out`.
+/// as [`derive`], with `expected` in place of `out`.
 pub fn verify<const N: usize>(
     password: &[u8],
     salt: &[u8],
@@ -207,7 +207,7 @@ impl Memory {
     fn derive(&mut self, password: &[u8], salt: &[u8], out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         let backend = Sha256Backend::select(crate::cpu::detected());
-        derive(
+        derive_by(
             backend,
             password,
             salt,
@@ -225,7 +225,7 @@ impl Memory {
 /// [`Memory::new`] checked, with `r + 16` chunks of `scratch`, by the
 /// implementation `backend` (which must have been selected for this CPU).
 #[allow(clippy::too_many_arguments)]
-fn derive(
+fn derive_by(
     backend: Sha256Backend,
     password: &[u8],
     salt: &[u8],
@@ -317,7 +317,7 @@ mod tests {
 
 #[cfg(test)]
 mod derive_tests {
-    use super::{PBKDF2_CHUNKS, Sha256Backend, chunks, derive, scrypt};
+    use super::{PBKDF2_CHUNKS, Sha256Backend, chunks, derive, derive_by};
 
     /// The implementation selected for this CPU derives the same key as the
     /// baseline one (CI runs this on CPUs that select each of them).
@@ -329,7 +329,7 @@ mod derive_tests {
             let mut v = chunks(n * r).unwrap();
             let mut scratch = chunks(r + 2 + PBKDF2_CHUNKS).unwrap();
             let mut out = [0u8; 80];
-            derive(
+            derive_by(
                 backend,
                 b"password",
                 b"salt",
@@ -344,7 +344,7 @@ mod derive_tests {
         let selected = Sha256Backend::select(crate::cpu::detected());
         assert_eq!(derive_with(selected), derive_with(Sha256Backend::Scalar));
         let mut out = [0u8; 80];
-        scrypt(
+        derive(
             b"password",
             b"salt",
             n as u64,

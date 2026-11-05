@@ -5,7 +5,8 @@
 //! * ML-KEM, ML-DSA, Ed25519, Ed448, ECDSA, ECDH, DSA, X25519, X448, RSA
 //!   and FFDH wipe their private keys when they are dropped, and the
 //!   intermediate values and working space of each operation (FIPS 203
-//!   §3.3, FIPS 204 §3.6.3).
+//!   §3.3, FIPS 204 §3.6.3). X25519 and X448 also wipe their shared secrets
+//!   (`SharedSecret`) when they are dropped.
 //! * Every other object holding key material (the ciphers, AEADs and MACs,
 //!   and the hash functions, whose state represents the key under HMAC,
 //!   PBKDF2 or keyed BLAKE2) wipes it when it is dropped.
@@ -18,8 +19,8 @@
 //! Rust code makes on the stack when it moves or copies them (e.g. the context
 //! of each ChaCha20-Poly1305 call, which holds the key, or the blocks of PBKDF2
 //! and scrypt), which the next calls overwrite; and anything once it has been
-//! returned to the caller (e.g. a MAC, a derived key or a shared secret), whose
-//! wiping is the caller's.
+//! returned to the caller (e.g. a MAC, a derived key or another shared secret),
+//! whose wiping is the caller's.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.4: P-224, with SHA-224.
+//! RFC 6979 §A.2.4: P-224, with SHA-224,
+//! and with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,6 +12,11 @@
 
 use verified_garbage::ecdsa::{Error, P224, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha224::Sha224;
+
+use verified_garbage::hashes::sha1::Sha1;
+use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hashes::sha384::Sha384;
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
 
@@ -122,4 +128,40 @@ fn p224_keys() {
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve also signs with.
+#[test]
+fn p224_sha1() {
+    super::sign_with::<P224, Sha1, 28, 57, 56>(
+        "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-256, which the curve also signs with.
+#[test]
+fn p224_sha256() {
+    super::sign_with::<P224, Sha256, 28, 57, 56>(
+        "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n",
+        "SHA-256",
+    );
+}
+
+/// The signatures with SHA-384, which the curve also signs with.
+#[test]
+fn p224_sha384() {
+    super::sign_with::<P224, Sha384, 28, 57, 56>(
+        "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n",
+        "SHA-384",
+    );
+}
+
+/// The signatures with SHA-512, which the curve also signs with.
+#[test]
+fn p224_sha512() {
+    super::sign_with::<P224, Sha512, 28, 57, 56>(
+        "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }

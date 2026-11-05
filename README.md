@@ -2213,13 +2213,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2233,9 +2233,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2253,9 +2253,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2273,13 +2273,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
-
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
+
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2293,13 +2293,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2313,13 +2313,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2333,9 +2333,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2353,9 +2353,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2373,13 +2373,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2815,6 +2815,17 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   leaks imply equal timing" relates very few pairs of inputs: these theorems
   guarantee much less than "independent of the secret", and what the leak
   reveals is an argument about SHAKE, outside the proofs.
+* **Speculative execution is not modelled.** Each ISA model runs one
+  instruction at a time, in program order, with each load seeing the
+  latest store, and the constant-time theorems are about that sequential
+  execution. A CPU may also run instructions transiently: past a
+  mispredicted branch, call or return, or with a load that bypasses an
+  earlier store to the same address. The transient instructions are then
+  discarded, but the cache state and other effects they leave behind can
+  still reveal data. These are the Spectre-class attacks (Spectre v1,
+  v1.1, v2, v4 and return-stack-buffer variants, among others), and they
+  are outside the current proofs: nothing here shows that the code is free
+  of them, and the code contains no mitigations aimed at them.
 
 ### What is not verified
 

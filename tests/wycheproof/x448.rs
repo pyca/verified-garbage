@@ -1,11 +1,11 @@
 //! X448 (`XdhComp` vectors of `x448_test.json`).
 //!
 //! Every vector, valid or acceptable, has the shared secret RFC 7748's
-//! X448 computes, which [`x448`] must return. The acceptable ones are
-//! public keys of small order (whose shared secret is all zero), and public
-//! keys on the twist or not reduced modulo p, which RFC 7748 processes like
-//! any other: [`PrivateKey::diffie_hellman`] rejects exactly the all-zero
-//! shared secrets. Oversized public keys fail conversion to the API's
+//! X448 computes, which [`PrivateKey::exchange`] must return, but for the
+//! all-zero shared secrets, which it rejects. The acceptable ones are public
+//! keys of small order (whose shared secret is all zero), and public keys on
+//! the twist or not reduced modulo p, which RFC 7748 processes like any
+//! other. Oversized public keys fail conversion to the API's
 //! fixed-size byte array.
 
 #![cfg(any(
@@ -17,7 +17,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use verified_garbage::x448::{Error, PrivateKey, x448};
+use verified_garbage::x448::{Error, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -42,14 +42,15 @@ fn x448_test() {
         assert_ne!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
         let private: [u8; 56] = test.case.private.0.clone().try_into().unwrap();
         let shared: [u8; 56] = test.case.shared.0.clone().try_into().unwrap();
-        assert_eq!(x448(&private, &public), shared, "tcId {}", test.tc_id);
         let expected = if shared == [0; 56] {
             Err(Error::ZeroSharedSecret)
         } else {
             Ok(shared)
         };
         let key = PrivateKey::from_bytes(&private);
-        assert_eq!(key.diffie_hellman(&public), expected, "tcId {}", test.tc_id);
+        let got = key.exchange(&PublicKey::from_bytes(&public));
+        let got = got.map(|shared| *shared.as_bytes());
+        assert_eq!(got, expected, "tcId {}", test.tc_id);
     });
     assert!(checked.get() > 0);
 }

@@ -4,9 +4,12 @@
 
 use criterion::Criterion;
 
+/// The module `ecdsa_secp256k1`, the tables of functions (`fn_tables`), the
+/// curve's arithmetic (`ec_secp256k1`), and the HMAC and hash functions it
+/// signs with through their tables (their generated modules).
 pub const USES: &[&str] = &[
-    "ecdsa_secp256k1_sha256",
     "ecdsa_secp256k1",
+    "fn_tables",
     "ec_secp256k1",
     "hmac_sha256",
     "sha256",

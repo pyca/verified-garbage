@@ -80,10 +80,10 @@ fn ecdh_secp256k1_webcrypto_test() {
             one[31] = 1;
             let reference = PrivateKey::<Secp256k1>::from_bytes(&one);
             let valid = Secp256k1::validate_public_key(&peer);
-            let expected = reference.diffie_hellman(&peer).is_ok();
+            let expected = reference.exchange(&peer).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
-        let result = key.diffie_hellman(&peer);
+        let result = key.exchange(&peer);
         match test.result {
             Expectation::Valid => {
                 let shared = result.map(|z| z.to_vec());

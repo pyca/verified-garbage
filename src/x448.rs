@@ -11,9 +11,9 @@
 //! same contracts. This module gives them working space, and destroys what
 //! they leave there.
 //!
-//! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
-//! shared secret that a public key of small order gives (RFC 7748 §6.2), in
-//! constant time; [`x448`] is the function itself, which does not.
+//! [`exchange`](PrivateKey::exchange) is `vg_x448` of the private key and
+//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
+//! public key of small order gives (RFC 7748 §6.2), in constant time.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -80,15 +80,8 @@ crate::error::impl_error! {
     }
 }
 
-/// The u-coordinate of the base point, 5 (RFC 7748 §4.2), encoded.
-pub const BASE_POINT: [u8; 56] = {
-    let mut b = [0; 56];
-    b[0] = 5;
-    b
-};
-
 /// `X448(scalar, u)` (RFC 7748 §5), which may be all zero.
-pub fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
+fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
     let f = match Backend::select(detected()) {
@@ -146,8 +139,7 @@ impl Drop for PrivateKey {
 }
 
 impl PrivateKey {
-    /// The size of a private key, of a public key and of a shared secret, in
-    /// bytes.
+    /// The size of a private key, in bytes.
     pub const SIZE: usize = 56;
 
     /// A new private key: 56 random bytes from the operating system.
@@ -168,29 +160,90 @@ impl PrivateKey {
     }
 
     /// The public key, `X448(k, 5)` (RFC 7748 §6.2).
-    pub fn public_key(&self) -> [u8; 56] {
-        base(&self.bytes)
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey {
+            bytes: base(&self.bytes),
+        }
     }
 
     /// The shared secret with the peer whose public key is `peer`,
     /// `X448(k, peer)` (RFC 7748 §6.2); [`Error::ZeroSharedSecret`] if it
     /// is all zero, which is checked without revealing anything else about
     /// it.
-    pub fn diffie_hellman(&self, peer: &[u8; 56]) -> Result<[u8; 56], Error> {
-        let mut shared = x448(&self.bytes, peer);
-        if crate::ct::eq(&shared, &[0; 56]) {
-            zeroize(&mut shared);
+    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, Error> {
+        let mut bytes = x448(&self.bytes, &peer.bytes);
+        if crate::ct::eq(&bytes, &[0; 56]) {
+            zeroize(&mut bytes);
             return Err(Error::ZeroSharedSecret);
         }
-        Ok(shared)
+        Ok(SharedSecret { bytes })
+    }
+}
+
+/// An X448 public key: the u-coordinate of a point, 56 bytes (RFC 7748
+/// §5).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PublicKey {
+    bytes: [u8; 56],
+}
+
+impl PublicKey {
+    /// The size of a public key, in bytes.
+    pub const SIZE: usize = 56;
+
+    /// The public key `bytes`. Any 56 bytes are one: X448 reduces them
+    /// modulo the field prime (RFC 7748 §5), and [`PrivateKey::exchange`]
+    /// rejects the keys of small order.
+    pub fn from_bytes(bytes: &[u8; 56]) -> Self {
+        PublicKey { bytes: *bytes }
+    }
+
+    /// The bytes of the key.
+    pub fn as_bytes(&self) -> &[u8; 56] {
+        &self.bytes
+    }
+}
+
+/// The shared secret of an X448 exchange, never all zero. It is wiped when
+/// dropped.
+pub struct SharedSecret {
+    bytes: [u8; 56],
+}
+
+impl core::fmt::Debug for SharedSecret {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SharedSecret").finish_non_exhaustive()
+    }
+}
+
+impl Drop for SharedSecret {
+    fn drop(&mut self) {
+        zeroize(&mut self.bytes);
+    }
+}
+
+impl SharedSecret {
+    /// The size of a shared secret, in bytes.
+    pub const SIZE: usize = 56;
+
+    /// The bytes of the secret.
+    pub fn as_bytes(&self) -> &[u8; 56] {
+        &self.bytes
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{BASE_POINT, Backend, Error, Features, PrivateKey, x448};
+    use super::{Backend, Error, Features, PrivateKey, PublicKey, x448};
     #[cfg(target_arch = "x86_64")]
     use super::{VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES};
+
+    /// The u-coordinate of the base point, 5 (RFC 7748 §4.2), encoded.
+    const BASE_POINT: [u8; 56] = {
+        let mut b = [0; 56];
+        b[0] = 5;
+        b
+    };
 
     /// A generated key agrees with itself: both sides compute the same
     /// secret.
@@ -201,9 +254,13 @@ mod tests {
         assert_ne!(a.as_bytes(), b.as_bytes());
         let ka = a.public_key();
         let kb = b.public_key();
-        assert_eq!(a.diffie_hellman(&kb), b.diffie_hellman(&ka));
+        assert_eq!(
+            a.exchange(&kb).unwrap().as_bytes(),
+            b.exchange(&ka).unwrap().as_bytes()
+        );
         assert_eq!(PrivateKey::from_bytes(a.as_bytes()).public_key(), ka);
         assert_eq!(a.clone().public_key(), ka);
+        assert_eq!(PublicKey::from_bytes(ka.as_bytes()), ka);
     }
 
     /// The public key is `X448(k, 5)` for many scalars: random ones, and ones
@@ -211,7 +268,10 @@ mod tests {
     #[test]
     fn public_key_is_x448_of_base_point() {
         let check = |k: &[u8; 56]| {
-            assert_eq!(PrivateKey::from_bytes(k).public_key(), x448(k, &BASE_POINT));
+            assert_eq!(
+                *PrivateKey::from_bytes(k).public_key().as_bytes(),
+                x448(k, &BASE_POINT)
+            );
         };
         for n in 0..=15u8 {
             check(&[n * 0x11; 56]);
@@ -241,7 +301,8 @@ mod tests {
     #[test]
     fn zero_shared_secret() {
         let a = PrivateKey::from_bytes(&[0x42; 56]);
-        assert_eq!(a.diffie_hellman(&[0; 56]), Err(Error::ZeroSharedSecret));
+        let zero = PublicKey::from_bytes(&[0; 56]);
+        assert_eq!(a.exchange(&zero).unwrap_err(), Error::ZeroSharedSecret);
         assert_eq!(x448(a.as_bytes(), &[0; 56]), [0; 56]);
     }
 }
