@@ -416,15 +416,15 @@ theorem stageE_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QD P L m�
 
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
-    WP isa (.block Cfg.wipe) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' :=
+    WP isa (.block Cfg.wipe) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' ∧ ∀ p ∈ saved, u'.gpr p.1 = g p.1 :=
   have hQ66 : P.Q ≤ 66 := P.sizes.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, ha₇, hf₇, _⟩ => ⟨hc₇, hx.lt, hx.fails, hx.last,
+  WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, ha₇, hf₇, hs₇⟩ => ⟨hc₇, ⟨hx.lt, hx.fails, hx.last,
     hx.res.keep ha₇ (bytesAt_frame hf₇ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hL.stk_OUT (d := 76) (n := 128) (by omega)).symm.sub_left (Region.sub_prefix (by rw [hk.1]))
       · exact (hL.stk_OUT (d := 228) (n := 360) (by omega)).symm.sub_left
-          (Region.sub_prefix (by rw [hk.1]))) (by omega))⟩
+          (Region.sub_prefix (by rw [hk.1]))) (by omega))⟩, hs₇⟩
 
 /-- The body after the frame's entry. -/
 abbrev rest (P : RfcHash) : Prog isa :=
@@ -435,7 +435,7 @@ abbrev rest (P : RfcHash) : Prog isa :=
 theorem body_eq (P : RfcHash) : (cfgOf P).body = .seq (.block Cfg.entry) (.seq (.block Cfg.tabDB) (rest P)) := rfl
 
 theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (rest P) t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' :=
+    WP isa (rest P) t fun t' => Ctx L g m₀ t' ∧ (∃ i, Exit P L m₀ i t') ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 :=
   WP.seq (WP.mono (stageX_ok hL hT hc) fun _ ⟨h₀, q₀⟩ =>
     WP.seq (WP.mono (stageH_ok hL hT h₀ q₀) fun _ ⟨h₁, q₁⟩ =>
     WP.seq (WP.mono (stageB_ok hL h₁ q₁) fun _ ⟨h₂, q₂⟩ =>
@@ -443,7 +443,7 @@ theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) (hT : TabL P L) {t : State} (hc : 
         WP.seq (WP.mono (stageD_ok hL hk hT h₃ q₃) fun _ ⟨h₄, q₄⟩ =>
           WP.seq (WP.mono (stageE_ok hL h₄ q₄) fun _ ⟨h₅, q₅⟩ =>
             WP.seq (WP.mono (tries_ok hL hk hT h₅ q₅) fun _ ⟨h₆, i, q₆⟩ =>
-              WP.mono (stageG_ok hL hk h₆ q₆) fun _ ⟨h₇, q₇⟩ => ⟨h₇, i, q₇⟩)))))))
+              WP.mono (stageG_ok hL hk h₆ q₆) fun _ ⟨h₇, q₇, r₇⟩ => ⟨h₇, ⟨i, q₇⟩, r₇⟩)))))))
 
 /-! ## RFC 6979's result -/
 
@@ -528,5 +528,67 @@ theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j =
     omega_using []
 
 /-! ## The whole function -/
+
+theorem released_gpr {s₂ : State} {r : Reg} (hr : r ≠ .esp) : (released s₂).gpr r = s₂.gpr r :=
+  (Wp.Upd.setReg s₂ .esp _).other r hr
+
+theorem released_esp (s₂ : State) : (released s₂).gpr .esp = s₂.gpr .esp + BitVec.ofNat 32 512 :=
+  (Wp.Upd.setReg s₂ .esp _).gpr
+
+/-- The contract the code for `P`'s hash function is proven against, with
+`P`'s table and the functions `ns`' addresses public. -/
+abbrev rfcP (P : RfcHash) (ns : List String) : Contract isa :=
+  rfcX86 P.R.E.combConsts P.I 588 (tabFacts P.F P.f) ns
+
+/-- The layout of a call from `s`. -/
+abbrev layOf (P : RfcHash) (s : State) : Lay P.I.hashLen :=
+  lay P.I.hashLen P.I.ecdsa.curve.len P.R.E.combConsts P.F P.f s
+
+theorem coreOk_lay (P : RfcHash) (s : State) : CoreOk P (layOf P s) := ⟨P.curveLen, rfl⟩
+
+theorem tabL_lay (P : RfcHash) (s : State) : TabL P (layOf P s) := ⟨rfl, rfl⟩
+
+/-- `vg_ecdsa_<curve>_sign` for `P`'s hash function, whose body writes no
+`esp`, meets `rfcP P` and keeps the callee-saved registers and its return
+address. -/
+theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : (rfcP P ns).pre s) :
+    WP isa (cfgOf P).sign s fun s' => abiPreserved s s' ∧ (rfcP P ns).post s s' := by
+  have hL := lay_ok h
+  have nB := hL.nB
+  refine WP.alloc (by have := h.1; omega_arith) hsp ?_
+  rw [body_eq]
+  refine WP.seq (WP.mono (entry_ok h) fun t₁ h₁ => WP.seq (WP.mono h₁ fun t hc =>
+    WP.mono (rest_ok hL (coreOk_lay P s) (tabL_lay P s) hc) fun u ⟨hu, ⟨i, hx⟩, hs⟩ => ?_))
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [released_gpr (by decide)]; exact hs (.ebx, 128) (by decide)
+    · rw [released_gpr (by decide)]; exact hs (.esi, 132) (by decide)
+    · rw [released_gpr (by decide)]; exact hs (.edi, 136) (by decide)
+    · rw [released_gpr (by decide)]; exact hs (.ebp, 140) (by decide)
+    · rw [released_esp, hu.esp]; exact BitVec.sub_add_cancel _ _
+  · have hret : (s.gpr .esp).setWidth 64 = (layOf P s).B + BitVec.ofNat 64 588 := by
+      rw [hL.B_eq, BitVec.sub_add_cancel]; rfl
+    show u.mem.readW _ 32 = _
+    rw [hret]
+    refine hu.frame.readW (r := (layOf P s).RET) (Region.contains_self _ _) ?_ (by decide)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hL.ro
+    · exact hL.rc
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · show match (result P.I s.mem (layOf P s).d (layOf P s).dg).1 with
+      | some rs => _ | none => _
+    rw [result_eq hx]
+    have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
+    have e₂ : P.I.ecdsa.curve = P.R.E.C := by rw [P.ecdsa, P.R.curve]
+    rw [e₁]
+    have hr := hx.res
+    have ha : (released u).gpr .eax = u.gpr .eax := released_gpr (by decide)
+    revert hr
+    cases sigI P (layOf P s) s.mem i with
+    | some rs => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, by rw [e₂]; exact h₂⟩
+    | none => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, h₂⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86
