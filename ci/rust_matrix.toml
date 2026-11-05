@@ -228,7 +228,8 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 # with AVX2, and P-256's, P-384's, P-521's and Ed25519's `_adx`
 # functions, whose combs select their entries with AVX2, P-384's
 # and P-521's with SHA-512's baseline code); BMI2 and
-# ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
+# ADX without AVX-512F (and without AVX2, X25519's `vg_x25519_adx` with
+# the baseline `vg_x25519_base`); AVX-512F without AVX2, for Argon2 with G's
 # AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
 # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
 # code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
@@ -241,7 +242,7 @@ chip = "skx"
 arch = "x86_64"
 runs = """
 - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-bmi2,adx | ffdh dsa ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+bmi2,adx | ffdh dsa ed448 x25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,bmi2,adx | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
