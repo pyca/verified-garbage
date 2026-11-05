@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -75,20 +77,20 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TCom
 open VG.Proof.Mont VG.Proof.Mont.Arm
 
 abbrev combVerifySpec : Contract isa :=
-  Spec.Ecdsa.P256.inst.verifyContract (abi.withConsts p256CombConsts)
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (abi.withConsts p256CombConsts)
 
 def combVerifyPre (um : Bool) (s : State) : Prop :=
   VPre (p256With um) s (constRegs p256CombConsts s) ∧ ConstsOk p256CombConsts 0 s
 
 theorem verify_spec_pre {um : Bool} {s : State}
-    (h : (Spec.Ecdsa.P256.inst.verifyContract abi).pre s) : VPre (p256With um) s := by
-  sig_pre [Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+    (h : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst abi).pre s) : VPre (p256With um) s := by
+  sig_pre [Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
   exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
 
 theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
-  have hp : (Spec.Ecdsa.P256.inst.verifyContract abi).pre (stripConsts p256CombConsts s) ∧
+  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst abi).pre (stripConsts p256CombConsts s) ∧
       ConstsOk p256CombConsts 0 s := pre_consts.mp h
   have p := verify_spec_pre (um := um) hp.1
   refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩
@@ -167,8 +169,8 @@ open VG.Proof.P256.Arm in
 theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   have held := combSat_held
   generalize eqs : combVerifySat=s
-  sig_pre [combVerifySpec,Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+  sig_pre [combVerifySpec,Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
     Loc.val,State.addr,p256CombConsts,Abi.withConsts,Abi.constRegions,Abi.constsHeld,stackBelow]
   subst s
   rw [comb_words_length]
@@ -194,14 +196,14 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P256.curve) (um : Boo
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
-    sig_post [combVerifySpec,Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_post [combVerifySpec,Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combVerifySpec,Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_pub [combVerifySpec,Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.P256.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,p256CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩

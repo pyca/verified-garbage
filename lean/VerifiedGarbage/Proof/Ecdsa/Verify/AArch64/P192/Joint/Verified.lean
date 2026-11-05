@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Public
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
@@ -33,8 +35,8 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P192
 open VG.Impl.Ecdsa.Verify.AArch64.P192.Joint
 
 theorem public_of_spec {s t : State}
-    (pub : (Spec.Ecdsa.P192.inst.verifyContract AArch64.abi).pub s t) : Public s t := by
-  sig_pub [Spec.Ecdsa.P192.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst AArch64.abi).pub s t) : Public s t := by
+  sig_pub [Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P192.curve,Spec.Ecdsa.scratchWords,AArch64.abi,AArch64.argRegs] at pub
   obtain ⟨hsp,inputs,h0,h1,h2,h3⟩ := pub
   refine ⟨⟨hsp,fun r hr => ?_⟩,?_,?_⟩
@@ -59,7 +61,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P192.curve)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve)
     (hI : Weierstrass.AArch64.InvSounds) :
-    Verified AArch64.target verify (Spec.Ecdsa.P192.inst.verifyContract AArch64.abi) := by
+    Verified AArch64.target verify (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst AArch64.abi) := by
   refine ⟨?_,?_,implies.sat⟩
   · intro s hs
     obtain ⟨t,s',he,ha,hp⟩ := verify_a64 hL hI s (implies.pre s hs)
@@ -69,8 +71,8 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve)
       (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (public_of_spec pub) e₁ e₂
 
 /-- `P192.satState` satisfies the precondition of the verification of the `len` bytes. -/
-theorem sat_spec : (Spec.Ecdsa.P192.inst.verifyContract AArch64.abi).pre P192.satState := by
-  sig_pre [Spec.Ecdsa.P192.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem sat_spec : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst AArch64.abi).pre P192.satState := by
+  sig_pre [Spec.Ecdsa.P192.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P192.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, P192.satState]
   repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | rfl | constructor)
 

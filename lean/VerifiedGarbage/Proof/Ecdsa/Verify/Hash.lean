@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 Untrusted: everything here is checked by Lean. `vg_ecdsa_<curve>_verify`
 takes the hash as the hash function's output (`Instance.verifyHashContract`);
 on each target it writes `fixedDigest` of it, `len` bytes, to a buffer, and
-runs the verification that takes those `len` bytes (`Instance.verifyContract`)
+runs the verification that takes those `len` bytes (`Proof.Ecdsa.verifyContract`)
 on them. `fixedDigest` is the hash's leftmost `len` bytes, or, for a shorter
 hash, the hash after zero bytes, shifted left by a further 7 bits (`shr1` of
 the hash after a zero byte) for a curve whose `n` has 7 bits fewer than `8 len`

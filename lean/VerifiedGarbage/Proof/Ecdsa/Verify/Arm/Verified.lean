@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
@@ -106,25 +108,25 @@ def satState : State where
   wr := [⟨0x8000, 8192⟩]
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified Arm.target verifyP256 (Spec.Ecdsa.P256.inst.verifyContract Arm.abi) :=
+    Verified Arm.target verifyP256 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst Arm.abi) :=
   Verified.of_correct (verify_arm hL) verify_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         exact h
       pub := by
-        sig_implies_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_sat [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
