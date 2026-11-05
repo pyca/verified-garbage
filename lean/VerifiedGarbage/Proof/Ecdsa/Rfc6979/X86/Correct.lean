@@ -43,7 +43,8 @@ theorem stk_sep (B : Addr) (m : Mem) {x y : Nat} (v : BitVec 32)
 /-- Our caller's registers, `hmac`'s address, and its `D` and `B` in the
 frame: `Ctx` holds. -/
 theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
-    WP isa (.block Cfg.entry) (entered s) fun t₁ =>
+    WP isa (.block Cfg.entry) (entered s) fun t₁ => t₁.gpr .eax = arg s 5 ∧
+      t₁.gpr .esp = (lay I.hashLen I.ecdsa.curve.len cs H f s).F ∧
       WP isa (.block Cfg.tabDB) t₁ (Ctx (lay I.hashLen I.ecdsa.curve.len cs H f s) s.gpr s.mem) := by
   have hL := lay_ok h
   have nB := hL.nB
@@ -109,6 +110,7 @@ theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)
+  refine ⟨eax₅, by rw [u₅.other _ (by decide), esp₄], ?_⟩
   -- `D` and `B`.
   simp only [Cfg.tabDB, stk, fDl, fBl, VG.Impl.Pbkdf2.Stream.X86.at_]
   have hrd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]; rfl
@@ -557,7 +559,7 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
   have nB := hL.nB
   refine WP.alloc (by have := h.1; omega_arith) hsp ?_
   rw [body_eq]
-  refine WP.seq (WP.mono (entry_ok h) fun t₁ h₁ => WP.seq (WP.mono h₁ fun t hc =>
+  refine WP.seq (WP.mono (entry_ok h) fun t₁ h₁ => WP.seq (WP.mono h₁.2.2 fun t hc =>
     WP.mono (rest_ok hL (coreOk_lay P s) (tabL_lay P s) hc) fun u ⟨hu, ⟨i, hx⟩, hs⟩ => ?_))
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr

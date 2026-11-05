@@ -100,6 +100,7 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
   xArgs : TaintOk [.esp] c.xArgs
   reduce : c.big = false → TaintOk [.esp] c.reduce
   msgF : TaintOk [.esp, .edi, .esi] (c.msg 0 true)
+  msgF₁ : TaintOk [.esp, .edi, .esi] (c.msg 1 true)
   msgN : TaintOk [.esp, .edi, .esi] (c.msg 0 false)
   updM : TaintOk [.esp] (Cfg.updMArgs (1 + 2 * c.len))
   finM : TaintOk [.esp] (Cfg.finArgs (1 + 2 * c.len) fK)
@@ -124,7 +125,7 @@ structure RfcT (c : Impl.Ecdsa.Rfc6979.X86.Cfg) : Prop where
 /-- `RfcT` of a curve's blocks, by evaluating them. -/
 macro "rfcT_decide" : tactic => `(tactic| exact
   { xArgs := ⟨_, by taint_decide⟩, reduce := by exact (Function.const _ ⟨_, by taint_decide⟩),
-    msgF := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, updM := ⟨_, by taint_decide⟩,
+    msgF := ⟨_, by taint_decide⟩, msgF₁ := ⟨_, by taint_decide⟩, msgN := ⟨_, by taint_decide⟩, updM := ⟨_, by taint_decide⟩,
     finM := ⟨_, by taint_decide⟩, tStep := ⟨_, by taint_decide⟩, coreArgs := ⟨_, by taint_decide⟩,
     xcArgs := by exact (Function.const _ ⟨_, by taint_decide⟩),
     convC := by exact (Function.const _ ⟨_, by taint_decide⟩),
