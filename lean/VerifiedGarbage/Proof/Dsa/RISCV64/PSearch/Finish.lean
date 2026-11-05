@@ -4,11 +4,15 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Ctl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Entry
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyBytes
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
+
+-- separate module: the result's writes outside `scratch` (its own stage `FS`), apart from the controller and
+-- the seed's parts, so that a change to either rebuilds only what states the search
 
 /-! # DSA parameter search on RISC-V: the result
 
@@ -419,5 +423,366 @@ theorem fin_of_done {σ t : State}
     rw [show G.state + BitVec.ofNat 64 0 = G.state by simp, h0, f.st8, f.st16, h24]
 
 end
+
+/-! ## `out`: the parameters, or zeros -/
+
+section
+variable {G : GP}
+
+/-- The claim of `n` octets at `sPacked` (`p || q || g`) copied to `out`. -/
+theorem copyOut_vp {F : State → State → Prop} {c : Cfg} {bs : List Byte} {n : Nat}
+    (hF : ∀ σ s, F σ s → SS G STK0 σ c s) (hb : (sPacked, bs) ∈ c.cl) (hbl : bs.length = n)
+    (hn : n = G.outLen) (hn0 : 0 < G.outLen) (hn2 : G.outLen < 2048)
+    (W : List (Nat × BitVec 64)) (hW : ∀ p ∈ W, p.1 ∈ c.LS ∧ c.V p.1 = p.2) (hWok : WOk W) :
+    VP F (copyN (scrB .a0 sPacked) [ld .a1 fOut] n) (FS G W bs) := by
+  subst hn
+  let M : State → State → Prop := fun σ t => SS G STK0 σ c t ∧
+    t.gpr .a0 = G.sa sPacked ∧ t.gpr .a1 = G.out ∧ t.gpr .a2 = BitVec.ofNat 64 G.outLen
+  refine VP.seq (G := M) (VP.pub (SS.pub hF) []
+    ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6])
+      (.block (scrB .a0 sPacked ++ ([ld .a1 fOut] : List Instr) ++ ([.li .a2 G.outLen] : List Instr))), by kernel_rfl⟩
+    (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    fun σ s hs => WP.mono (pro_big_ld hF (o := sPacked) (f := fOut) (P := G.out) (by decide) (by decide)
+      (by decide) (by decide) (fun σ s hs => (hF σ s hs).gi.fixedV (by simp [fixedWords])) hn2 σ s hs)
+      fun t ⟨K, m, sp, a0, a1, a2⟩ => ⟨(hF σ s hs).of_keep K m sp, a0, a1, a2⟩) ?_
+  refine VP.pub (G := G) (fun σ t h => ⟨h.1.gi.s6, by rw [h.1.gi.sp, ← h.1.gi.hG]; rfl⟩) [.a0, .a1, .a2]
+    ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6, .a0, .a1, .a2])
+      (Impl.Words.RISCV64.copyLoop .a3 .a0 .a1 .a2), by kernel_rfl⟩
+    (fun σ₁ σ₂ s₁ s₂ ⟨_, a0, a1, a2⟩ ⟨_, b0, b1, b2⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [a0, b0]
+      · rw [a1, b1]
+      · rw [a2, b2]) fun σ t ⟨h, t0, t1, t2⟩ => ?_
+  have gi := h.gi
+  have fit := gi.scrFit
+  obtain ⟨dOU, dOC, dOT, dUC, dUT, dCT, dBT, nO, nU, nT, aU, aT⟩ := gi.pre.disj gi.hG
+  have oE : sPacked + G.outLen ≤ G.scrLen * 8 := by have := (h.clOk _ hb).2.2; rw [← hbl]; exact this
+  have sb : Spec.Rsa.bytesAt t.mem (G.sa sPacked) G.outLen = bs := by have := h.sb _ hb; rw [← hbl]; exact this
+  refine WP.sp_eq (WP.mono (copyLoop_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) t
+    hn0 (by omega) t2 (fun i hi => by rw [t0, GP.sa_add]; exact gi.inRdWr (o := sPacked + i) (n := 1) (by omega))
+    (fun i hi => by
+      rw [t1]
+      exact ⟨G.rOut, by rw [gi.wr, gi.pre.wr, gi.hG]; simp, Offset.contains_base _ (by omega) (by omega)⟩)
+    (by rw [t0, t1]; exact sep_of_disjoint (dOC.sub_right (sw G oE))))
+    fun u ⟨cp, f, kp⟩ spu => ?_)
+  refine FS.of_SS h W hW hWok kp (by decide) spu (by rw [t1] at f; exact f) ?_
+  rw [← sb]
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hi' := List.mem_range.mp hi
+  rw [← t1, cp i hi', t0]
+
+/-- `out` zeroed. -/
+theorem zeroOut_vp {F : State → State → Prop} {c : Cfg} {n : Nat}
+    (hF : ∀ σ s, F σ s → SS G STK0 σ c s) (hn : n = G.outLen) (hn0 : 0 < G.outLen) (hn2 : G.outLen < 2048)
+    (W : List (Nat × BitVec 64)) (hW : ∀ p ∈ W, p.1 ∈ c.LS ∧ c.V p.1 = p.2) (hWok : WOk W) :
+    VP F (.seq (.block [ld .a0 fOut, .li .a1 n]) (Impl.Rsa.RISCV64.Keys.zeroBytes .a0 .a1))
+      (FS G W (List.replicate G.outLen 0)) := by
+  subst hn
+  let M : State → State → Prop := fun σ t => SS G STK0 σ c t ∧
+    t.gpr .a0 = G.out ∧ t.gpr .a1 = BitVec.ofNat 64 G.outLen
+  refine VP.seq (G := M) (VP.pub (SS.pub hF) []
+    ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6]) (.block [ld .a0 fOut, .li .a1 G.outLen]),
+      by kernel_rfl⟩
+    (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    fun σ s hs => (hF σ s hs).ldK (o := fOut) (by decide) (by decide)
+      ((hF σ s hs).gi.fixedV (o := fOut) (v := G.out) (by simp [fixedWords])) (t := .a0) (by decide) fun s₁ h₁ u₁ =>
+      wp_li hn2 fun t u => WP.block_nil ⟨h₁.of_upd u (by decide), by rw [u.other _ (by decide), u₁.gpr], u.gpr⟩) ?_
+  refine VP.pub (G := G) (fun σ t h => ⟨h.1.gi.s6, by rw [h.1.gi.sp, ← h.1.gi.hG]; rfl⟩) [.a0, .a1]
+    ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6, .a0, .a1])
+      (Impl.Rsa.RISCV64.Keys.zeroBytes .a0 .a1), by kernel_rfl⟩
+    (fun σ₁ σ₂ s₁ s₂ ⟨_, a0, a1⟩ ⟨_, b0, b1⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [a0, b0]
+      · rw [a1, b1]) fun σ t ⟨h, t0, t1⟩ => ?_
+  have gi := h.gi
+  obtain ⟨dOU, dOC, dOT, dUC, dUT, dCT, dBT, nO, nU, nT, aU, aT⟩ := gi.pre.disj gi.hG
+  refine WP.sp_eq (WP.mono (VG.Proof.Rsa.RISCV64.Keys.zeroBytes_ok t0 t1 (by decide) (by omega) (by omega)
+    (fun i hi => ⟨G.rOut, by rw [gi.wr, gi.pre.wr, gi.hG]; simp, Offset.contains_base _ (by omega) (by omega)⟩) nO)
+    fun u ⟨hz, ho, kp⟩ spu => ?_)
+  have f : Frame [G.rOut] t.mem u.mem := fun x hx => ho x (Or.inr (by
+    have := hx _ (List.mem_singleton_self _)
+    simp only [Region.Contains] at this
+    change 0 + G.outLen ≤ (x - G.out).toNat
+    omega))
+  refine FS.of_SS h W hW hWok kp (by decide) spu f ?_
+  simp only [Spec.Rsa.bytesAt]
+  refine List.ext_getElem (by simp) fun i h₁ h₂ => ?_
+  simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
+  exact hz i (by simpa using h₁)
+
+end
+
+/-! ## Blocks on the stage, and `ranOut`'s arithmetic -/
+
+theorem shl_ofNat (P k : Nat) : BitVec.ofNat 64 P <<< k = BitVec.ofNat 64 (P * 2 ^ k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_mul_mod]
+
+theorem sub_ofNat {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 64) :
+    BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show a - b < 2 ^ 64 by omega)]
+  omega
+
+section
+variable {G : GP} {W : List (Nat × BitVec 64)} {ob : List Byte} {σ s : State}
+
+theorem FS.pLen (h : FS G W ob σ s) : 0 < G.pLen ∧ G.pLen ≤ 384 := by
+  have := h.pre.lens; rw [h.hG] at this
+  simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
+  omega
+
+/-- A block analysed with `s6` alone public. -/
+theorem FS.blk {F Q : State → State → Prop} {is : List Instr} (hF : ∀ σ s, F σ s → FS G W ob σ s)
+    (cert : (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s6]) (.block is)
+      (VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6]) (.block is))).isSome = true)
+    (h : ∀ σ s, F σ s → WP isa (.block is) s (Q σ)) : VP F (.block is) Q :=
+  VP.pub (G := G) (fun σ s hs => (hF σ s hs).pub) [] ⟨_, cert⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp)) h
+
+/-- `cmpF` on the stage: the word `o` of `W` against `v`. -/
+theorem FS.cmpF_vp {P Q : State → State → Prop} (hF : ∀ σ s, P σ s → FS G W ob σ s) {o v : Nat}
+    {x : BitVec 64} (ho : (o, x) ∈ W) (hv : v ≤ 2048)
+    (k : ∀ σ t, FS G W ob σ t → isa.eval (.zero .t2) t = some (x == BitVec.ofNat 64 v) → Q σ t) :
+    VP P (.block (cmpF o v)) Q :=
+  FS.blk hF (by kernel_rfl) fun σ s hs => by
+    have h := hF σ s hs
+    refine h.ldK (h.wok _ ho).1 (h.wok _ ho).2 (h.words _ ho) (r := .t2) (by decide) fun s₁ h₁ u₁ => ?_
+    refine wp_subi hv fun t u => WP.block_nil ?_
+    refine k σ t (h₁.of_upd u (by decide)) ?_
+    rw [eval_zero, u.gpr, u₁.gpr, sub_beq_zero]
+
+/-- The stage with `t3`, `t4` and `t5` known. -/
+abbrev R3 (G : GP) (W : List (Nat × BitVec 64)) (ob : List Byte) (x3 x4 x5 : Nat) (σ s : State) : Prop :=
+  FS G W ob σ s ∧ s.gpr .t3 = BitVec.ofNat 64 x3 ∧ s.gpr .t4 = BitVec.ofNat 64 x4 ∧
+    s.gpr .t5 = BitVec.ofNat 64 x5
+
+theorem ltu_of {a b : Reg} {xa xb : Nat} {s : State}
+    (ha : s.gpr a = BitVec.ofNat 64 xa) (hb : s.gpr b = BitVec.ofNat 64 xb) (hxa : xa < 2 ^ 64)
+    (hxb : xb < 2 ^ 64) : isa.eval (.ltu a b) s = some (decide (xa < xb)) := by
+  rw [eval_ltu, ha, hb]; exact congrArg some (decide_eq_decide.mpr (ofNat_lt_iff hxa hxb))
+
+/-- `ranOut`'s first block: the octets from the seed's start and the budget. -/
+theorem ro1_vp {F : State → State → Prop} {c : Nat} (hc : (fStart, BitVec.ofNat 64 c) ∈ W)
+    (hcl : c ≤ G.randLen) (hF : ∀ σ s, F σ s → FS G W ob σ s) :
+    VP F (.block (([ld .t4 fWitLen, ld .t3 fStart, .sub .t4 .t4 .t3] : List Instr) ++
+        ([.li .t5 G.pLen, .shift .sll .d .t5 .t5 15, .addi .t5 .t5 G.pLen] : List Instr)))
+      (R3 G W ob c (G.randLen - c) (Spec.Dsa.parameterEntropy G.pLen)) :=
+  FS.blk hF (by kernel_rfl) fun σ s hs => by
+    have h := hF σ s hs
+    have hp := h.pLen
+    have hr : G.randLen < 2 ^ 64 := by rw [← h.hG]; exact BitVec.isLt _
+    simp only [List.cons_append, List.nil_append]
+    refine h.ldK (o := fWitLen) (by decide) (by decide) (h.fixed (fWitLen, BitVec.ofNat 64 G.randLen)
+      (by simp [fixedWords])) (r := .t4) (by decide) fun s₁ h₁ u₁ => ?_
+    refine h₁.ldK (h₁.wok _ hc).1 (h₁.wok _ hc).2 (h₁.words _ hc) (r := .t3) (by decide) fun s₂ h₂ u₂ => ?_
+    refine wp_sub fun s₃ u₃ => wp_li (show G.pLen < 2048 by omega) fun s₄ u₄ =>
+      wp_sll (by decide) fun s₅ u₅ => wp_addi (show G.pLen < 2048 by omega) fun t u => WP.block_nil ?_
+    refine ⟨((((h₂.of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)).of_upd u (by decide)),
+      by rw [u.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr],
+      ?_, ?_⟩
+    · rw [u.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
+        u₁.gpr, u₂.gpr, sub_ofNat hcl hr]
+    · rw [u.gpr, u₅.gpr, u₄.gpr, shl_ofNat, ← BitVec.ofNat_add, Spec.Dsa.parameterEntropy,
+        show G.pLen * 2 ^ 15 + G.pLen = 32769 * G.pLen by omega]
+
+/-- `t3 := 256 pLen`. -/
+theorem t3_vp {x3 x4 x5 : Nat} :
+    VP (R3 G W ob x3 x4 x5) (.block [.li .t3 G.pLen, .shift .sll .d .t3 .t3 8]) (R3 G W ob (256 * G.pLen) x4 x5) :=
+  FS.blk (fun _ _ h => h.1) (by kernel_rfl) fun σ s ⟨h, _, a4, a5⟩ => by
+    have hp := h.pLen
+    refine wp_li (show G.pLen < 2048 by omega) fun s₁ u₁ => wp_sll (by decide) fun t u => WP.block_nil ?_
+    refine ⟨(h.of_upd u₁ (by decide)).of_upd u (by decide), ?_, by rw [u.other _ (by decide), u₁.other _ (by decide), a4],
+      by rw [u.other _ (by decide), u₁.other _ (by decide), a5]⟩
+    rw [u.gpr, u₁.gpr, shl_ofNat, show G.pLen * 2 ^ 8 = 256 * G.pLen by omega]
+
+/-- `t4 := max t4 t3`. -/
+theorem max_vp {x3 x4 x5 : Nat} (h3 : x3 < 2 ^ 64) (h4 : x4 < 2 ^ 64) :
+    VP (R3 G W ob x3 x4 x5) (.ite (.ltu .t4 .t3) (.block [.addi .t4 .t3 0]) (.block []))
+      (R3 G W ob x3 (max x4 x3) x5) := by
+  refine VP.ite (fun _ _ s₁ s₂ h₁ h₂ => by rw [ltu_of h₁.2.2.1 h₁.2.1 h4 h3, ltu_of h₂.2.2.1 h₂.2.1 h4 h3]) ?_ ?_
+  · refine FS.blk (fun _ _ h => h.1.1) (by kernel_rfl) fun σ s ⟨hs, e⟩ => ?_
+    obtain ⟨h, a3, a4, a5⟩ := hs
+    rw [ltu_of a4 a3 h4 h3] at e
+    have hl : x4 < x3 := of_decide_eq_true (Option.some.inj e)
+    refine wp_addi (imm := 0) (by decide) fun t u => WP.block_nil ⟨h.of_upd u (by decide),
+      by rw [u.other _ (by decide), a3], ?_, by rw [u.other _ (by decide), a5]⟩
+    rw [u.gpr, a3, BitVec.add_zero, Nat.max_eq_right (Nat.le_of_lt hl)]
+  · refine VP.block_nil fun σ s ⟨hs, e⟩ => ?_
+    obtain ⟨h, a3, a4, a5⟩ := hs
+    rw [ltu_of a4 a3 h4 h3] at e
+    have hl : ¬ x4 < x3 := of_decide_eq_false (Option.some.inj e)
+    exact ⟨h, a3, by rw [a4, Nat.max_eq_left (by omega)], a5⟩
+
+/-- `t5 := min t4 t5`. -/
+theorem min_vp {x3 x4 x5 : Nat} (h4 : x4 < 2 ^ 64) (h5 : x5 < 2 ^ 64) :
+    VP (R3 G W ob x3 x4 x5) (.ite (.ltu .t4 .t5) (.block [.addi .t5 .t4 0]) (.block []))
+      (R3 G W ob x3 x4 (min x4 x5)) := by
+  refine VP.ite (fun _ _ s₁ s₂ h₁ h₂ => by rw [ltu_of h₁.2.2.1 h₁.2.2.2 h4 h5, ltu_of h₂.2.2.1 h₂.2.2.2 h4 h5]) ?_ ?_
+  · refine FS.blk (fun _ _ h => h.1.1) (by kernel_rfl) fun σ s ⟨hs, e⟩ => ?_
+    obtain ⟨h, a3, a4, a5⟩ := hs
+    rw [ltu_of a4 a5 h4 h5] at e
+    have hl : x4 < x5 := of_decide_eq_true (Option.some.inj e)
+    refine wp_addi (imm := 0) (by decide) fun t u => WP.block_nil ⟨h.of_upd u (by decide),
+      by rw [u.other _ (by decide), a3], by rw [u.other _ (by decide), a4], ?_⟩
+    rw [u.gpr, a4, BitVec.add_zero, Nat.min_eq_left (Nat.le_of_lt hl)]
+  · refine VP.block_nil fun σ s ⟨hs, e⟩ => ?_
+    obtain ⟨h, a3, a4, a5⟩ := hs
+    rw [ltu_of a4 a5 h4 h5] at e
+    have hl : ¬ x4 < x5 := of_decide_eq_false (Option.some.inj e)
+    exact ⟨h, a3, a4, by rw [a5, Nat.min_eq_right (by omega)]⟩
+
+/-- `t4 := 2 t4`. -/
+theorem dbl_vp {x3 x4 x5 : Nat} :
+    VP (R3 G W ob x3 x4 x5) (.block [.add .t4 .t4 .t4]) (R3 G W ob x3 (2 * x4) x5) :=
+  FS.blk (fun _ _ h => h.1) (by kernel_rfl) fun σ s ⟨h, a3, a4, a5⟩ =>
+    wp_add fun t u => WP.block_nil ⟨h.of_upd u (by decide), by rw [u.other _ (by decide), a3],
+      by rw [u.gpr, a4, ← BitVec.ofNat_add, Nat.two_mul], by rw [u.other _ (by decide), a5]⟩
+
+/-- `t4 :=` the word `fLeft`. -/
+theorem left_vp {x3 x4 x5 k : Nat} (hk : (fLeft, BitVec.ofNat 64 k) ∈ W) :
+    VP (R3 G W ob x3 x4 x5) (.block [ld .t4 fLeft])
+      (fun σ t => FS G W ob σ t ∧ t.gpr .t4 = BitVec.ofNat 64 k ∧ t.gpr .t5 = BitVec.ofNat 64 x5) :=
+  FS.blk (fun _ _ h => h.1) (by kernel_rfl) fun σ s ⟨h, _, _, a5⟩ =>
+    h.ldK (h.wok _ hk).1 (h.wok _ hk).2 (h.words _ hk) (r := .t4) (by decide) fun t ht u =>
+      WP.block_nil ⟨ht, u.gpr, by rw [u.other _ (by decide), a5]⟩
+
+end
+
+/-! ## `ranOut`, and the whole of `finish` -/
+
+/-- `Done` with a result's words. -/
+abbrev DoneR (G : GP) (ob : List Byte) (R : Spec.Dsa.ParameterSearchResult) : State → State → Prop :=
+  Done G ob R.status (BitVec.ofNat 64 R.used) (BitVec.ofNat 64 R.remaining) (BitVec.ofNat 64 R.requested)
+
+theorem fin_of {G : GP} {σ t : State} {ob : List Byte} {R : Spec.Dsa.ParameterSearchResult} (h : DoneR G ob R σ t)
+    (hR : resG G = R) (hob : ob = outB G) : Fin G σ t := by
+  subst hR hob; exact fin_of_done h
+
+section
+variable {G : GP} {W : List (Nat × BitVec 64)} {ob : List Byte}
+
+/-- A seed that ran out, at the seed's start `c` with `k` seeds left. -/
+theorem ranOut_vp (g : Geo) (hgp : g.pLen = G.pLen) {F : State → State → Prop} {c k : Nat}
+    (hc : (fStart, BitVec.ofNat 64 c) ∈ W) (hk : (fLeft, BitVec.ofNat 64 k) ∈ W) (hcl : c ≤ G.randLen)
+    (hF : ∀ σ s, F σ s → FS G W ob σ s) :
+    VP F g.ranOut (DoneR G ob (VG.Proof.Dsa.Generation.ranOutResult G.pLen k (G.randLen - c) c)) := by
+  by_cases hp : 0 < G.pLen ∧ G.pLen ≤ 384
+  swap; · exact VP.of_false fun σ s h => hp (hF σ s h).pLen
+  by_cases hb : G.randLen ≤ Spec.Dsa.parameterEntropy G.pLen
+  swap; · exact VP.of_false fun σ s h => hb (by have := (hF σ s h).pre.randLen; rw [(hF σ s h).hG] at this; exact this)
+  have hB : Spec.Dsa.parameterEntropy G.pLen < 2 ^ 64 := by simp only [Spec.Dsa.parameterEntropy]; omega
+  have hA : G.randLen - c < 2 ^ 64 := by omega
+  have hBv : Spec.Dsa.parameterEntropy G.pLen = 32769 * G.pLen := rfl
+  simp only [Geo.ranOut, Geo.budget, hgp]
+  refine VP.seq (ro1_vp hc hcl hF) (VP.ite (fun _ _ _ _ h₁ h₂ => by
+    rw [ltu_of h₁.2.2.1 h₁.2.2.2 hA hB, ltu_of h₂.2.2.1 h₂.2.2.2 hA hB]) ?_ ?_)
+  · by_cases hAB : G.randLen - c < Spec.Dsa.parameterEntropy G.pLen
+    swap; · exact VP.of_false fun σ s ⟨h, e⟩ => hAB (of_decide_eq_true (Option.some.inj
+        ((ltu_of h.2.2.1 h.2.2.2 hA hB).symm.trans e)))
+    simp only [Impl.Rsa.RISCV64.Keys.seqs]
+    refine VP.seq (t3_vp.mono (fun _ _ h => h.1) fun _ _ h => h) (VP.seq (max_vp (by omega) hA)
+      (VP.seq dbl_vp (VP.seq (min_vp (by omega) hB) (VP.seq (left_vp hk)
+      ((tail_vp (r := 0) (by decide) hc fun _ _ h => h).mono (fun _ _ h => h) fun σ t h => ?_)))))
+    have e : VG.Proof.Dsa.Generation.ranOutResult G.pLen k (G.randLen - c) c =
+        ⟨.entropy k (min (2 * max (G.randLen - c) (256 * G.pLen)) (Spec.Dsa.parameterEntropy G.pLen)), c, []⟩ := by
+      simp only [VG.Proof.Dsa.Generation.ranOutResult, Spec.Dsa.parameterRequest, Spec.Entropy.request,
+        Nat.not_le.mpr hAB, ↓reduceIte]
+    rw [DoneR, e]; exact h
+  · by_cases hAB : G.randLen - c < Spec.Dsa.parameterEntropy G.pLen
+    · exact VP.of_false fun σ s ⟨h, e⟩ => by
+        have := (ltu_of h.2.2.1 h.2.2.2 hA hB).symm.trans e
+        simp only [Option.some.injEq, decide_eq_false_iff_not] at this; exact this hAB
+    simp only [Geo.exhausted, Impl.Rsa.RISCV64.Keys.seqs]
+    refine VP.seq (zero45_vp fun _ _ h => h.1.1) ((tail_vp (r := 3) (by decide) hc fun _ _ h => h).mono
+      (fun _ _ h => h) fun σ t h => ?_)
+    have e : VG.Proof.Dsa.Generation.ranOutResult G.pLen k (G.randLen - c) c = ⟨.exhausted, c, []⟩ := by
+      simp only [VG.Proof.Dsa.Generation.ranOutResult, Nat.not_lt.mp hAB, ↓reduceIte]
+    rw [DoneR, e]; exact h
+
+end
+
+theorem ev_ne {s : State} {c : Cond} {a b : Bool} (h₁ : isa.eval c s = some a) (h₂ : isa.eval c s = some b)
+    (h : a ≠ b) : False := h (Option.some.inj (h₁.symm.trans h₂))
+
+/-- From the end of the controller's last iteration, `finish`. -/
+theorem finish_vp {G : GP} (g : Geo) (hgp : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) {cl0 : Claims}
+    {X : State → Prop} (hst : stAt G.pLen G.randB (lastPos G) ≠ 2) :
+    VP (St G (midCfg G cl0 (lastPos G)) X) g.finish (Fin G) := by
+  by_cases hp : 0 < G.pLen ∧ G.pLen ≤ 384
+  swap; · exact VP.of_false fun σ s h => hp (by
+      have := h.1.gi.pre.lens; rw [h.1.gi.hG] at this
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega)
+  by_cases hRL : G.randB.length = G.randLen
+  swap; · exact VP.of_false fun σ s h => hRL (by rw [← h.1.gi.hG]; simp [mkG, Spec.Rsa.bytesAt])
+  by_cases hOL : G.outLen = 2 * G.pLen + G.qLen
+  swap; · exact VP.of_false fun σ s h => hOL (by have := h.1.gi.pre.outLen; rw [h.1.gi.hG] at this; exact this)
+  have hq : G.qLen ≤ 32 := by simp only [GP.qLen, Spec.Dsa.generationQLen]; split <;> omega
+  have hres : resAt G.pLen G.randB (lastPos G) = resG G := VG.Proof.Dsa.Generation.res_pos hp.1 _ _ _
+  have hcl : (lastPos G).2 ≤ G.randLen := hRL ▸ VG.Proof.Dsa.Generation.pos_le _ _ _ _
+  have hle := VG.Proof.Dsa.Generation.stAt_le G.pLen G.randB (lastPos G)
+  obtain ⟨u, extra, hmid, h1, h3, h0⟩ := mid_end (cl0 := cl0) (lastPos G) hst hRL hp.1
+  rw [hmid]
+  generalize stAt G.pLen G.randB (lastPos G) = st at hst h1 h3 h0 hle ⊢
+  simp only [Geo.finish, Impl.Rsa.RISCV64.Keys.seqs, hgp, hgq]
+  have hx : ∀ σ s, St G ((endCfg cl0 st (lastPos G).1 (lastPos G).2 u extra).setV fStatus
+      (BitVec.ofNat 64 st)) X σ s → fw s.mem G fStatus = BitVec.ofNat 64 st := fun σ s h =>
+    (h.1.gi.slotV List.mem_cons_self).trans
+      (upd_self (endCfg cl0 st (lastPos G).1 (lastPos G).2 u extra).V fStatus _)
+  refine VP.seq (cmpF_vp (fun σ s h => h.1) (by decide) (by decide) (v := 1) (by decide) hx
+    (Q := fun σ t => St G ((endCfg cl0 st (lastPos G).1 (lastPos G).2 u extra).setV fStatus
+      (BitVec.ofNat 64 st)) X σ t ∧ isa.eval (.zero .t2) t = some (BitVec.ofNat 64 st == BitVec.ofNat 64 1))
+    fun σ s t hs ht _ e => ⟨⟨ht, hs.2⟩, e⟩) (VP.ite (fun _ _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_)
+  · -- status 1: the parameters
+    by_cases h1' : st = 1
+    swap; · exact VP.of_false fun σ s ⟨⟨_, e₁⟩, e₂⟩ => ev_ne e₁ e₂ (by
+        rw [ofNat_beq (by omega) (by decide)]; simpa using h1')
+    subst h1'
+    obtain ⟨a, rfl, hr⟩ := h1 rfl
+    have hR : resG G = ⟨.accepted a, u, []⟩ := hres ▸ hr
+    have hbl := VG.Proof.Dsa.Generation.encodeParams_length G.pLen G.qLen a
+    refine VP.seq (copyOut_vp (fun σ s h => h.1.1.1) (by simp [endCfg]) hbl hOL.symm (by omega) (by omega)
+      [(fUsed, BitVec.ofNat 64 u)] (fun p hp => by
+        simp only [List.mem_singleton] at hp; subst hp
+        simp [endCfg, upd, fStatus, fLeft, fStart, fUsed]) (by simp [WOk, fUsed, hEnd, fSave]))
+      (VP.seq (zero45_vp fun _ _ h => h) ((tail_vp (r := 1) (by decide) List.mem_cons_self fun _ _ h => h).mono
+        (fun _ _ h => h) fun σ t h => fin_of (R := ⟨.accepted a, u, []⟩) h hR (by simp [outB, hR])))
+  · -- otherwise `out` zeroed
+    by_cases h1' : st = 1
+    · subst h1'; exact VP.of_false fun σ s ⟨⟨_, e₁⟩, e₂⟩ => ev_ne e₁ e₂ (by decide)
+    have hW : ∀ p ∈ [(fStatus, BitVec.ofNat 64 st), (fLeft, BitVec.ofNat 64 (lastPos G).1),
+        (fStart, BitVec.ofNat 64 (lastPos G).2)],
+        p.1 ∈ ((endCfg cl0 st (lastPos G).1 (lastPos G).2 u extra).setV fStatus (BitVec.ofNat 64 st)).LS ∧
+        ((endCfg cl0 st (lastPos G).1 (lastPos G).2 u extra).setV fStatus (BitVec.ofNat 64 st)).V p.1 = p.2 := by
+      intro p hp
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl <;> simp [endCfg, upd, fStatus, fLeft, fStart, fUsed, h1', hst]
+    refine VP.assoc (VP.seq (zeroOut_vp (fun σ s h => h.1.1.1) hOL.symm (by omega) (by omega) _ hW
+      (by simp [WOk, fStatus, fLeft, fStart, hEnd, fSave])) (VP.seq (FS.cmpF_vp (fun _ _ h => h) List.mem_cons_self
+      (v := 3) (by decide) (Q := fun σ t => FS G _ _ σ t ∧
+        isa.eval (.zero .t2) t = some (BitVec.ofNat 64 st == BitVec.ofNat 64 3)) fun σ t ht e => ⟨ht, e⟩)
+      (VP.ite (fun _ _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_)))
+    · -- status 3: exhausted
+      by_cases h3' : st = 3
+      swap; · exact VP.of_false fun σ s ⟨⟨_, e₁⟩, e₂⟩ => ev_ne e₁ e₂ (by
+          rw [ofNat_beq (by omega) (by decide)]; simpa using h3')
+      subst h3'
+      have hR : resG G = ⟨.exhausted, (lastPos G).2, []⟩ := hres ▸ h3 rfl
+      simp only [Geo.exhausted, Impl.Rsa.RISCV64.Keys.seqs]
+      refine VP.seq (zero45_vp fun _ _ h => h.1.1) ((tail_vp (r := 3) (by decide) (by simp) fun _ _ h => h).mono
+        (fun _ _ h => h) fun σ t h => fin_of (R := ⟨.exhausted, (lastPos G).2, []⟩) h hR (by simp [outB, hR]))
+    · -- status 0: the tape ran out
+      by_cases h3' : st = 3
+      · subst h3'; exact VP.of_false fun σ s ⟨⟨_, e₁⟩, e₂⟩ => ev_ne e₁ e₂ (by decide)
+      have h0' : st = 0 := by omega
+      subst h0'
+      have hR := hres ▸ h0 rfl
+      refine (ranOut_vp g hgp (by simp) (by simp) hcl fun _ _ h => h.1.1).mono (fun _ _ h => h) fun σ t h =>
+        fin_of h hR ?_
+      by_cases hE : Spec.Dsa.parameterEntropy G.pLen ≤ G.randLen - (lastPos G).2 <;>
+        simp [outB, hR, VG.Proof.Dsa.Generation.ranOutResult, hE]
 
 end VG.Proof.Dsa.RISCV64.PSearch
