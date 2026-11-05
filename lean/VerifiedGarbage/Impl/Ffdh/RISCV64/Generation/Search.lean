@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.RISCV64.MontMul
 /-! # The native FFDH parameter-search controller on RISC-V
 
 As on PPC64LE (`Impl/Ffdh/PPC64LE/Generation/Search.lean`): repeats
-`vg_ffdh_parameter_candidate` on the tape until a candidate is accepted,
+`vg_ffdh_parameter_candidate_sieved` on the tape until a candidate is accepted,
 the attempts run out, or the tape does, consuming the octets of each
 rejected candidate. The first four state words are the attempts left, the
 width, the entropy cap and the next request; the rest are private working
@@ -39,7 +39,7 @@ def entry : List Instr :=
     stf .a0 5, stf .a1 6, stf .a2 7, stf .a3 8, .shift .sll .d .t4 .a4 32, .shift .srl .d .t4 .t4 32,
     stf .t4 9, stf .a5 10, stf .a6 11, .li .t1 0, stf .t1 12, stf .a7 13, stf .t3 15]
 
-/-- `vg_ffdh_parameter_candidate`'s arguments, for the tape's current
+/-- `vg_ffdh_parameter_candidate_sieved`'s arguments, for the tape's current
 pointer and length: its stack argument at the frame's base. -/
 def arguments : List Instr :=
   [ldf .a0 5, ldf .a1 6, ldf .a2 7, ldf .a3 8, ldf .a4 9, ldf .a5 10, ldf .a6 11, ldf .a7 13, ldf .t0 15,
@@ -94,7 +94,7 @@ def classify : Prog isa := .seq (.block (head ++ test 1))
 
 variable (candidate : Prog isa)
 
-/-- The candidate, a call of `vg_ffdh_parameter_candidate`, in a frame of
+/-- The candidate, a call of `vg_ffdh_parameter_candidate_sieved`, in a frame of
 its stack argument. -/
 def candidateRun : Prog isa := .frame (.alloc 16) (.seq (.block arguments) candidate) (.free 16)
 

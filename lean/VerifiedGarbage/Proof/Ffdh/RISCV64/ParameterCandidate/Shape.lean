@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
+import VerifiedGarbage.Proof.Framework.Mem
 
 -- separate module: the candidate's shape checks, whose symbolic executions the tests' changes need not re-check
 
@@ -35,6 +37,8 @@ the specification's shape checks pass; and `MB`, p's working space with
 @[expose] public section
 
 namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
+
+variable {C : Nat}
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
@@ -59,7 +63,7 @@ theorem shapeHead_ok {p : PP} {s : State} (h : St p s) :
   brun [h.s6, h.ld (d := 136) (by decide), h.ld (d := 24) (by decide), h.al (d := 136) (by decide) (by decide),
     h.al (d := 24) (by decide) (by decide), h.args.rand', h.args.len', BitVec.add_zero]
 
-theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : p.L ≤ p.r.length) :
+theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) (hrl : p.L ≤ p.r.length) :
     WP isa shapeP s fun t =>
       (wv t.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) =
           Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) ∧
@@ -161,7 +165,7 @@ theorem res2 : ∀ r < 24, (BitVec.ofNat 64 r ^^^ BitVec.ofNat 64 11 = 0#64 ↔ 
 theorem res5 : ∀ r < 10, ((BitVec.ofNat 64 r ||| BitVec.ofNat 64 4) ^^^ BitVec.ofNat 64 7 = 0#64 ↔ r = 3 ∨ r = 7) := by
   decide
 
-theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) :
+theorem residue_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) :
     WP isa residue s fun t =>
       ((word t.mem p.B (8 * hBad) = 0#64 ↔ goodRes p.g (wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits))) ∧
         Frm p.B [(8 * hBad, 8)] s.mem t.mem) ∧ Keep resRegs s t := by
@@ -399,21 +403,21 @@ theorem shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (h
 /-! ## Through the shape checks -/
 
 /-- `Ph` survives a change of memory that keeps the header but `hBad`. -/
-theorem Ph.keepBad {p : PP} {mb : Nat} {s t : State} (h : Ph p mb s)
+theorem Ph.keepBad {p : PP} {mb : Nat} {s t : State} (h : Ph p mb C s)
     (r7 : t.gpr .a7 = s.gpr .a7) (r0 : t.gpr .t0 = s.gpr .t0) (r5 : t.gpr .s5 = s.gpr .s5)
-    (hw : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d) : Ph p mb t :=
+    (hw : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d) : Ph p mb C t :=
   ⟨r7.trans h.a7, r0.trans h.t0, r5.trans h.s5, (hw 248 (by decide)).trans h.mbW,
     (hw 216 (by decide)).trans h.kW, (hw 48 (by decide)).trans h.wW, (hw 224 (by decide)).trans h.strideW,
-    fun j hj => (hw _ (by omega_arith)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW,
+    fun j hj => (hw _ (by omega_arith)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW, h.k1, h.k2,
     (hw 192 (by decide)).trans h.topW⟩
 
 /-- A piece of the shape checks, which changes `hBad` and array 0 at most. -/
-theorem shapeStep {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits s)
+theorem shapeStep {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits C s)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 p.L) {rs : List (Nat × Nat)} (hf : Frm p.B rs s.mem t.mem)
     (hr : ∀ r ∈ rs, r = (200, 8) ∨ r = (256, 8 * wOf p.bits)) {regs : List Reg} (k : Keep regs s t)
     (hsp : t.sp = s.sp) (h7 : Reg.a7 ∉ regs := by decide) (h0 : Reg.t0 ∉ regs := by decide)
     (h5 : Reg.s5 ∉ regs := by decide) (h6 : Reg.s6 ∉ regs := by decide) :
-    St p t ∧ Ph p p.bits t ∧ word t.mem p.B 152 = BitVec.ofNat 64 p.L := by
+    St p t ∧ Ph p p.bits C t ∧ word t.mem p.B 152 = BitVec.ofNat 64 p.L := by
   have hdn := h.dims.n
   have hb2 := h.dims.b2
   have hb1 := h.dims.b1
@@ -437,13 +441,43 @@ theorem badLoad_ok {p : PP} {s : State} (h : St p s) :
 
 instance (g x : Nat) : Decidable (goodRes g x) := by unfold goodRes; infer_instance
 
-/-- In p's working space, with `x` in array 0 and `hBad` zero iff `B`. -/
-structure MB (p : PP) (x : Nat) (B : Prop) (t : State) : Prop where
+/-- The table at `T`, where the state names it, readable, aligned, and
+apart from the working space of `Z` bytes at `B`. -/
+structure TabIn (B : Addr) (Z : Nat) (T : Addr) (s : State) : Prop where
+  sym : s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = T
+  tab : TabAt T s.mem
+  rd : (⟨T, 8192⟩ : Region) ∈ s.rd
+  fit : T.toNat + 8192 ≤ 2 ^ 64
+  al : T.toNat % 8 = 0
+  dj : (⟨T, 8192⟩ : Region).Disjoint ⟨B, Z⟩
+
+/-- The table survives a change of the working space. -/
+theorem TabIn.step {B T : Addr} {Z : Nat} {s t : State} {rs : List (Nat × Nat)}
+    (h : TabIn B Z T s) (sy : t.syms = s.syms) (hf : Frm B rs s.mem t.mem) (hr : ∀ r ∈ rs, r.1 + r.2 ≤ Z)
+    (krd : t.rd = s.rd) : TabIn B Z T t := by
+  refine ⟨sy ▸ h.sym, fun i hi => ?_, by rw [krd]; exact h.rd, h.fit, h.al, h.dj⟩
+  rw [← h.tab i hi]
+  refine Mem.readW_congr fun j hj => (hf _ fun r hr' => .inr ?_)
+  have hj' : j < 8 := by omega
+  have hc : (⟨T, 8192⟩ : Region).Contains (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) 1 := by
+    simp only [Region.Contains, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.ofNat_add_ofNat,
+      BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega)]; omega
+  have hn := h.dj _ hc
+  simp only [Region.Contains, Nat.not_le] at hn
+  have := hr r hr'
+  unfold ofs
+  omega
+
+/-- In p's working space, with `x` in array 0, `hBad` zero iff `B`, and
+the table at `T`. -/
+structure MB (p : PP) (T : Addr) (x : Nat) (B : Prop) (t : State) : Prop where
   st : St p t
-  ph : Ph p p.bits t
+  ph : Ph p p.bits (Spec.Ffdh.primeChecks p.bits) t
   u : word t.mem p.B 152 = BitVec.ofNat 64 p.L
   n : wv t.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) = x
   bad : word t.mem p.B (8 * hBad) = 0#64 ↔ B
+  tab : TabIn p.B p.Z T t
 
 theorem phR_used : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], 152 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 152 := by
   intro r hr
@@ -458,44 +492,60 @@ theorem phR_low : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], r.1 + r.2 ≤ 256 := by
 /-- p's working space, and p. -/
 theorem mainA_ok {p : PP} {s : State} (h : St p s) (hU : word s.mem p.B 152 = BitVec.ofNat 64 p.L)
     (hL : p.L ≤ p.r.length) :
-    WP isa (.seq (phase false) shapeP) s fun t => St p t ∧ Ph p p.bits t ∧ word t.mem p.B 152 = BitVec.ofNat 64 p.L ∧
+    WP isa (.seq (phase false) shapeP) s fun t => St p t ∧ Ph p p.bits (Spec.Ffdh.primeChecks p.bits) t ∧
+      word t.mem p.B 152 = BitVec.ofNat 64 p.L ∧
       wv t.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) =
-        Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) := by
+        Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) ∧
+      (∀ r ∈ phRanges ++ [(8 * hTop, 8)] ++ [(256, 8 * wOf p.bits)], r.1 + r.2 ≤ p.Z) ∧
+      Frm p.B (phRanges ++ [(8 * hTop, 8)] ++ [(256, 8 * wOf p.bits)]) s.mem t.mem ∧ t.rd = s.rd := by
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
-  refine WP.seq (WP.mono (phase_ok h false) fun t₁ ⟨⟨⟨st₁, ph₁, hf₁⟩, _⟩, _⟩ => ?_)
+  have hdn := h.dims.n
+  have hb2 := h.dims.b2
+  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
+  have hLe : p.L = (p.bits + 7) / 8 := rfl
+  have hZe : p.Z = 8 * p.n := rfl
+  refine WP.seq (WP.mono (phase_ok h false) fun t₁ ⟨⟨⟨st₁, ph₁, hf₁⟩, k₁⟩, _⟩ => ?_)
   simp only [mbOf, Bool.false_eq_true, ↓reduceIte] at ph₁
   have hU₁ : word t₁.mem p.B 152 = BitVec.ofNat 64 p.L := by rw [hf₁.word_eq phR_used (by decide)]; exact hU
   refine WP.mono (WP.rdwr (shapeP_ok st₁ ph₁ hL)) fun t₂ ⟨⟨⟨hn₂, f₂⟩, k₂⟩, _, _, sp₂⟩ => ?_
   obtain ⟨st₂, ph₂, hU₂⟩ := shapeStep st₁ ph₁ hU₁ f₂ (fun r hr => by
     rw [List.mem_singleton.mp hr, hsl]; exact .inr rfl) k₂ sp₂
-  exact ⟨st₂, ph₂, hU₂, hn₂⟩
+  refine ⟨st₂, ph₂, hU₂, hn₂, fun r hr => ?_, ?_, k₂.2.1.trans k₁.2.1⟩
+  · rcases List.mem_append.mp hr with hr | hr
+    · have := phR_low r hr; omega_arith
+    · rw [List.mem_singleton.mp hr]; dsimp only; omega_arith
+  · exact (hf₁.mono fun r hr => List.mem_append_left _ hr).trans
+      (by rw [hsl] at f₂; exact f₂.mono fun r hr => List.mem_append_right _ hr)
 
 /-- p's congruence. -/
-theorem residue_mb {p : PP} {s : State} {x : Nat} (h : St p s) (hp : Ph p p.bits s)
+theorem residue_mb {p : PP} {T : Addr} {s : State} {x : Nat} (h : St p s)
+    (hp : Ph p p.bits (Spec.Ffdh.primeChecks p.bits) s) (ht : TabIn p.B p.Z T s)
     (hU : word s.mem p.B 152 = BitVec.ofNat 64 p.L) (hn : wv s.mem p.B (slot (wOf p.bits) 0) (wOf p.bits) = x) :
-    WP isa residue s (MB p x (goodRes p.g x)) := by
+    WP isa residue s (MB p T x (goodRes p.g x)) := by
   have hdn := h.dims.n
   have hb2 := h.dims.b2
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
   have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hLe : p.L = (p.bits + 7) / 8 := rfl
   have hZe : p.Z = 8 * p.n := rfl
-  refine WP.mono (WP.rdwr (residue_ok h hp)) fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ => ?_
+  refine WP.mono_syms (WP.rdwr (residue_ok h hp)) fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ sy => ?_
   rw [hn] at hb
   obtain ⟨st, ph, hU'⟩ := shapeStep h hp hU f (fun r hr => .inl (List.mem_singleton.mp hr)) k tsp
-  refine ⟨st, ph, hU', ?_, hb⟩
+  refine ⟨st, ph, hU', ?_, hb, ht.step sy f (fun r hr => by
+    rw [List.mem_singleton.mp hr]; dsimp only; first | (simp only [hBad]; omega_arith) | omega_arith) k.2.1⟩
   rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact hn
 
 /-- `hBad` into `t3`. -/
-theorem MB.badLoad {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
-    WP isa (.block [ldh .t3 hBad]) s fun t => MB p x B t ∧ t.gpr .t3 = word s.mem p.B 200 := by
-  refine WP.mono (badLoad_ok h.st) fun t ⟨⟨t5, tm, k⟩, tsp⟩ => ?_
+theorem MB.badLoad {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
+    WP isa (.block [ldh .t3 hBad]) s fun t => MB p T x B t ∧ t.gpr .t3 = word s.mem p.B 200 := by
+  refine WP.mono_syms (badLoad_ok h.st) fun t ⟨⟨t5, tm, k⟩, tsp⟩ sy => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k tsp
-  exact ⟨⟨st, ph, hU, by rw [tm]; exact h.n, by rw [tm]; exact h.bad⟩, t5⟩
+  exact ⟨⟨st, ph, hU, by rw [tm]; exact h.n, by rw [tm]; exact h.bad,
+    h.tab.step sy (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k.2.1⟩, t5⟩
 
 /-- A sieve of array 0. -/
-theorem MB.sieve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
-    WP isa VG.Impl.Ffdh.RISCV64.ParameterCandidate.sieve s (MB p x (B ∧ ∀ d ∈ oddPrimes256, x % d ≠ 0)) := by
+theorem MB.sieve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
+    WP isa VG.Impl.Ffdh.RISCV64.ParameterCandidate.sieve s (MB p T x (B ∧ ∀ d ∈ oddPrimes256, x % d ≠ 0)) := by
   have hb1 := h.st.dims.b1
   have hb2 := h.st.dims.b2
   have hdn := h.st.dims.n
@@ -504,16 +554,17 @@ theorem MB.sieve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
   have hZe : p.Z = 8 * p.n := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
   have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
-  refine WP.mono (WP.rdwr (sieve_ok oddPrimes256 VG.Proof.MillerRabin.RISCV64.Search.oddPrimes256_bounds h.st.scr
-    h.st.s6 h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw (by rw [hsl]) (by omega_arith)))
-    fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ => ?_
+  refine WP.mono_syms (WP.rdwr (sieve_ok oddPrimes256 VG.Proof.MillerRabin.RISCV64.Search.oddPrimes256_bounds
+    h.st.scr h.st.s6 h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw (by rw [hsl]) (by omega_arith)))
+    fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ sy => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => .inl (List.mem_singleton.mp hr)) k tsp
-  refine ⟨st, ph, hU, ?_, hb.trans (and_congr h.bad Iff.rfl)⟩
+  refine ⟨st, ph, hU, ?_, hb.trans (and_congr h.bad Iff.rfl), h.tab.step sy f (fun r hr => by
+    rw [List.mem_singleton.mp hr]; dsimp only; first | (simp only [hBad]; omega_arith) | omega_arith) k.2.1⟩
   rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact h.n
 
 /-- q from p. -/
-theorem MB.halve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
-    WP isa halveQ s (MB p (x / 2) (B ∧ x / 2 % 2 = 1)) := by
+theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
+    WP isa halveQ s (MB p T (x / 2) (B ∧ x / 2 % 2 = 1)) := by
   have hb1 := h.st.dims.b1
   have hb2 := h.st.dims.b2
   have hdn := h.st.dims.n
@@ -522,13 +573,15 @@ theorem MB.halve {p : PP} {x : Nat} {B : Prop} {s : State} (h : MB p x B s) :
   have hZe : p.Z = 8 * p.n := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
   have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
-  refine WP.mono (WP.rdwr (halveQ_ok h.st h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw))
-    fun t ⟨⟨⟨hn, hb, f⟩, k⟩, _, _, tsp⟩ => ?_
+  refine WP.mono_syms (WP.rdwr (halveQ_ok h.st h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw))
+    fun t ⟨⟨⟨hn, hb, f⟩, k⟩, _, _, tsp⟩ sy => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [hsl]; exact .inr rfl
     · exact .inl rfl) k tsp
-  exact ⟨st, ph, hU, hn, hb.trans (and_congr h.bad Iff.rfl)⟩
+  exact ⟨st, ph, hU, hn, hb.trans (and_congr h.bad Iff.rfl), h.tab.step sy f (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> dsimp only <;> first | (simp only [hBad]; omega_arith) | omega_arith) k.2.1⟩
 
 end VG.Proof.Ffdh.RISCV64.ParameterCandidate
