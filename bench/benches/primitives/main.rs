@@ -126,6 +126,7 @@ mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
+mod rsa_public;
 mod scrypt;
 mod seed_cbc;
 mod seed_cfb;
@@ -686,6 +687,7 @@ benches! {
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
+    (rsa_public::USES, rsa_public::bench),
     (triple_des_cbc::USES, triple_des_cbc::bench),
     (triple_des_cfb::USES, triple_des_cfb::bench),
     (triple_des_cfb8::USES, triple_des_cfb8::bench),
