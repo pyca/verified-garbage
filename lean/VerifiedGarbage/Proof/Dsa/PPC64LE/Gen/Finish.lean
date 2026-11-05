@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Entry
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pre
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -48,11 +49,12 @@ structure FO (G : GP) (o : COut) (σ t : State) : Prop where
   lr : fw t.mem G fLR = σ.lr
   frame : Frame [G.rOut, G.rUsed, G.rSt, G.rScr, rBelow σ 176] σ.mem t.mem
   out : Spec.Rsa.bytesAt t.mem G.out G.outLen = outBytes G o
-  used : t.mem.readW G.usedP 64 = BitVec.ofNat 64 (cRes G o).used
-  st0 : t.mem.readW G.stP 64 = BitVec.ofNat 64 (cRes G o).remaining
-  st1 : t.mem.readW (G.stP + 8) 64 = σ.mem.readW (G.stP + 8) 64
-  st2 : t.mem.readW (G.stP + 16) 64 = σ.mem.readW (G.stP + 16) 64
-  st3 : t.mem.readW (G.stP + 24) 64 = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o))
+  used : t.mem.readW (G.usedP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).used
+  st0 : t.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining
+  st1 : t.mem.readW (G.stP + BitVec.ofNat 64 8) 64 = σ.mem.readW (G.stP + BitVec.ofNat 64 8) 64
+  st2 : t.mem.readW (G.stP + BitVec.ofNat 64 16) 64 = σ.mem.readW (G.stP + BitVec.ofNat 64 16) 64
+  st3 : t.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+    BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o))
   r3 : t.gpr .r3 = BitVec.ofNat 64 (cRes G o).status
 
 section
@@ -441,6 +443,295 @@ theorem ranOut_vp {g : Geo} (hL : g.pLen = G.pLen) {j c : Nat} (hc : c ≤ G.wit
   refine h₁.ldK (o := fSeedLeft) (by decide) (by decide) ((h₁.gi.slotV hS).trans hSv) (by decide)
     fun t ht u₂ => WP.block_nil ⟨⟨ht, x⟩, u₂.gpr, ?_⟩
   rw [u₂.other _ (by decide), u₁.gpr, r3, BitVec.add_zero]
+
+/-! ## The words to `state` and `used` -/
+
+/-- The words the write-back stores. -/
+abbrev wbRegs (G : GP) : List Region :=
+  [⟨G.stP + BitVec.ofNat 64 0, 8⟩, ⟨G.stP + BitVec.ofNat 64 24, 8⟩, ⟨G.usedP + BitVec.ofNat 64 0, 8⟩]
+
+theorem readW_writeW_disj {m : Mem} {a b : Addr} {v : BitVec 64} (hd : Region.Disjoint ⟨a, 8⟩ ⟨b, 8⟩) :
+    (m.writeW b v).readW a 64 = m.readW a 64 :=
+  ((Frame.refl [⟨b, 8⟩] m).writeW List.mem_cons_self v (Region.contains_self _ _)).readW
+    (Region.contains_self _ _) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) (by decide)
+
+/-- A stage of the write-back: from `u₀`, where `out` is written, registers
+changed and the words `wbRegs` written, with `P`. -/
+def WBA (G : GP) (o : COut) (X : State → Prop) (P : State → Prop) (σ u : State) : Prop :=
+  ∃ u₀, OD G (dCfg G o) X (outBytes G o) σ u₀ ∧ Keep [.r0, .r3, .r4, .r5, .r6] u₀ u ∧ u.sp = u₀.sp ∧
+    Frame (wbRegs G) u₀.mem u.mem ∧ P u
+
+/-- The facts a stage of the write-back rests on. -/
+structure WBF (G : GP) (o : COut) (σ t u : State) : Prop where
+  gi : SS G 176 σ (dCfg G o) t
+  r28 : u.gpr .r28 = G.scr
+  sp : u.sp = G.sp
+  rd : u.rd = t.rd
+  wr : u.wr = t.wr
+  hdr : ∀ o', o' + 8 ≤ hEnd → fw u.mem G o' = fw t.mem G o'
+
+theorem wbf_of {o : COut} {σ t u₀ u : State} (ht : St G (dCfg G o) X σ t) (K : Keep [.r0, .r3, .r4, .r5, .r6] t u₀)
+    (sp : u₀.sp = t.sp) (f : Frame [G.rOut] t.mem u₀.mem) (K' : Keep [.r0, .r3, .r4, .r5, .r6] u₀ u)
+    (sp' : u.sp = u₀.sp) (f' : Frame (wbRegs G) u₀.mem u.mem) : WBF G o σ t u := by
+  have gi := ht.1.gi
+  have pre := gi.pre
+  have hE := gi.hEnd_le
+  have fit := gi.scrFit
+  refine ⟨ht.1, (K'.gpr (by decide)).trans ((K.gpr (by decide)).trans gi.r28),
+    by rw [sp', sp, gi.sp, ← gi.hG]; rfl, by rw [K'.2.1, K.2.1], by rw [K'.2.2, K.2.2], fun o' ho' => ?_⟩
+  have hs : Region.Sub (G.rs o' 8) G.rScr := sw G (by omega)
+  have cS := pre.cS; have uC := pre.uC; have oC := pre.oC; rw [gi.hG] at cS uC oC
+  rw [fw_frame f' (fun r hr => ?_), fw_frame f (fun r hr => ?_)]
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact oC.symm.sub_left hs
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (cS.sub_left hs).sub_right (Offset.sub_base (d := 0) (n := 8) (k := 32) G.stP (by decide))
+    · exact (cS.sub_left hs).sub_right (Offset.sub_base (d := 24) (n := 8) (k := 32) G.stP (by decide))
+    · exact (uC.symm.sub_left hs).sub_right (Offset.sub_base (d := 0) (n := 8) (k := 8) G.usedP (by decide))
+
+theorem WBA.facts {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P σ u) :
+    ∃ t, WBF G o σ t u ∧ X σ := by
+  obtain ⟨u₀, ⟨t, ht, K, sp, f, _⟩, K', sp', f', _⟩ := h
+  exact ⟨t, wbf_of ht K sp f K' sp' f', ht.2⟩
+
+/-- A load of a header word in the write-back. -/
+theorem WBA.ldH {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P σ u) {o' : Nat} (ho : o' + 8 ≤ hEnd)
+    (h8 : o' % 8 = 0) {v : BitVec 64} (hv : ∀ t, SS G 176 σ (dCfg G o) t → fw t.mem G o' = v) {r : Reg}
+    {rest : List Instr} {Q : State → Prop} (k : ∀ u', Upd u u' r v → u'.sp = u.sp → WP isa (.block rest) u' Q) :
+    WP isa (.block (ld r o' :: rest)) u Q := by
+  obtain ⟨t, F, _⟩ := h.facts
+  have hE := F.gi.gi.hEnd_le
+  have e : u.mem.readW (G.sa o') 64 = v := (F.hdr o' ho).trans (hv t F.gi)
+  refine WP.cons (s' := u.write r v) ?_ (k _ (Upd.write _ _ _) rfl)
+  rw [show ld r o' = .load .d r .r28 o' from rfl, exec_load_d (by decide)
+    ⟨by simp only [hEnd, fSave] at ho; omega, by omega⟩ (by rw [F.r28, F.rd, F.wr]; exact F.gi.gi.inRdWr (by omega)),
+    F.r28, e]
+
+theorem WBA.pub {o : COut} {P : State → Prop} : Pub G (WBA G o X P) := fun σ u h => by
+  obtain ⟨t, F, _⟩ := h.facts; exact ⟨F.r28, F.sp⟩
+
+/-- A step of the write-back that keeps what was written. -/
+theorem WBA.step {o : COut} {P P' : State → Prop} {σ u u' : State} (h : WBA G o X P σ u) {ws : List Reg}
+    (K : Keep ws u u') (hws : ∀ r ∈ ws, r ∈ [Reg.r0, .r3, .r4, .r5, .r6]) (sp : u'.sp = u.sp)
+    (f : Frame (wbRegs G) u.mem u'.mem) (p : P' u') : WBA G o X P' σ u' := by
+  obtain ⟨u₀, hod, K₀, sp₀, f₀, _⟩ := h
+  exact ⟨u₀, hod, K₀.trans (K.mono hws) |>.mono (by simp), by rw [sp, sp₀], f₀.trans f, p⟩
+
+theorem WBA.upd {o : COut} {P P' : State → Prop} {σ u u' : State} (h : WBA G o X P σ u) {r : Reg} {v : BitVec 64}
+    (up : Upd u u' r v) (hr : r ∈ [Reg.r0, .r3, .r4, .r5, .r6]) (sp : u'.sp = u.sp) (p : P' u') : WBA G o X P' σ u' :=
+  h.step (ws := [r]) ⟨fun r' hr' => up.other r' (by simpa using hr'), up.rd, up.wr⟩ (by simpa using hr) sp
+    (by rw [up.mem]; exact Frame.refl _ _) p
+
+/-- What the write-back's stages rest on: where the words are. -/
+structure WBW (G : GP) (σ : State) : Prop where
+  inS0 : InRegions σ.wr (G.stP + BitVec.ofNat 64 0) 8
+  inS3 : InRegions σ.wr (G.stP + BitVec.ofNat 64 24) 8
+  inU : InRegions σ.wr (G.usedP + BitVec.ofNat 64 0) 8
+  d03 : Region.Disjoint ⟨G.stP + BitVec.ofNat 64 0, 8⟩ ⟨G.stP + BitVec.ofNat 64 24, 8⟩
+  d0U : Region.Disjoint ⟨G.stP + BitVec.ofNat 64 0, 8⟩ ⟨G.usedP + BitVec.ofNat 64 0, 8⟩
+  d3U : Region.Disjoint ⟨G.stP + BitVec.ofNat 64 24, 8⟩ ⟨G.usedP + BitVec.ofNat 64 0, 8⟩
+
+theorem wbw_of {σ t : State} {c : Cfg} (h : SS G 176 σ c t) : WBW G σ := by
+  have pre := h.gi.pre
+  have nS := pre.nS; have nU := pre.nU
+  have uS := pre.uS; rw [h.gi.hG] at uS
+  have eS : (σ.gpr .r10).toNat = G.stP.toNat := by rw [← h.gi.hG]; rfl
+  have eU : (σ.gpr .r5).toNat = G.usedP.toNat := by rw [← h.gi.hG]; rfl
+  have w : σ.wr = [G.rOut, G.rUsed, G.rScr, G.rSt] := by rw [pre.wr, h.gi.hG]
+  refine ⟨⟨G.rSt, by rw [w]; simp, Offset.contains_base _ (show 0 + 8 ≤ 32 by decide) (by decide)⟩,
+    ⟨G.rSt, by rw [w]; simp, Offset.contains_base _ (show 24 + 8 ≤ 32 by decide) (by decide)⟩,
+    ⟨G.rUsed, by rw [w]; simp, Offset.contains_base _ (show 0 + 8 ≤ 8 by decide) (by decide)⟩,
+    Offset.disjoint _ (by decide) (by omega) (by omega), ?_, ?_⟩
+  · exact (uS.symm.sub_left (Offset.sub_base (d := 0) (n := 8) (k := 32) _ (by decide))).sub_right
+      (Offset.sub_base (d := 0) (n := 8) (k := 8) _ (by decide))
+  · exact (uS.symm.sub_left (Offset.sub_base (d := 24) (n := 8) (k := 32) _ (by decide))).sub_right
+      (Offset.sub_base (d := 0) (n := 8) (k := 8) _ (by decide))
+
+theorem WBA.wbw {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P σ u) : WBW G σ ∧ u.wr = σ.wr := by
+  obtain ⟨t, F, _⟩ := h.facts
+  exact ⟨wbw_of F.gi, by rw [F.wr, F.gi.gi.wr]⟩
+
+/-- A store of `r4` through `r3` into one of the words. -/
+theorem WBA.st {o : COut} {P P' : State → Prop} {σ u : State} (h : WBA G o X P σ u) {a : Addr} {off : Nat}
+    (ha : u.gpr .r3 + BitVec.ofNat 64 off = a) (ho : off < 2 ^ 15 ∧ off % 4 = 0) (hin : InRegions σ.wr a 8)
+    (hr : ⟨a, 8⟩ ∈ wbRegs G) {rest : List Instr} {Q : State → State → Prop}
+    (p : ∀ u', u'.gpr = u.gpr → u'.mem = u.mem.writeW a (u.gpr .r4) → P' u')
+    (k : ∀ u', WBA G o X P' σ u' → WP isa (.block rest) u' (Q σ)) :
+    WP isa (.block (.store .d .r4 .r3 off :: rest)) u (Q σ) :=
+  wp_std' (by decide) ho ha (by rw [h.wbw.2]; exact hin) fun u' m sp _ =>
+    k u' (h.step (ws := []) ⟨fun r _ => by rw [m.gpr], m.rd, m.wr⟩ (by simp) sp
+      (by rw [m.mem]; exact (Frame.refl _ _).writeW hr _ (Region.contains_self _ _)) (p u' m.gpr m.mem))
+
+theorem WBA.p {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P σ u) : P u := by
+  obtain ⟨_, _, _, _, _, p⟩ := h; exact p
+
+/-- The words of `state` the search keeps. -/
+theorem keepWord {o : COut} {P : State → Prop} {σ u : State} (h : WBA G o X P σ u) {d : Nat}
+    (hd : d = 8 ∨ d = 16) : u.mem.readW (G.stP + BitVec.ofNat 64 d) 64 = σ.mem.readW (G.stP + BitVec.ofNat 64 d) 64 := by
+  obtain ⟨u₀, ⟨t, ⟨ht, _⟩, _, _, f, _⟩, _, _, f', _⟩ := h
+  have gi := ht.gi
+  have pre := gi.pre
+  have nS := pre.nS; have nU := pre.nU
+  have eS : (σ.gpr .r10).toNat = G.stP.toNat := by rw [← gi.hG]; rfl
+  have uS := pre.uS; have oS := pre.oS; have cS := pre.cS; have bS := pre.bS
+  rw [gi.hG] at uS oS cS bS
+  have sub : Region.Sub ⟨G.stP + BitVec.ofNat 64 d, 8⟩ G.rSt := Offset.sub_base (k := 32) _ (by omega)
+  rw [f'.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
+    f.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
+    gi.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact cS.symm.sub_left sub
+    · exact bS.symm.sub_left sub
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact oS.symm.sub_left sub
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact (uS.symm.sub_left sub).sub_right (Offset.sub_base (d := 0) (n := 8) (k := 8) _ (by decide))
+
+/-- The last stage of the write-back: `FO`. -/
+theorem fo_of {o : COut} {σ u : State}
+    (h : WBA G o X (fun u => u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+        BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)) ∧
+      u.mem.readW (G.usedP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).used) σ u)
+    (r3 : u.gpr .r3 = BitVec.ofNat 64 (cRes G o).status) : FO G o σ u ∧ X σ := by
+  have k8 := keepWord h (d := 8) (.inl rfl)
+  have k16 := keepWord h (d := 16) (.inr rfl)
+  obtain ⟨u₀, ⟨t, ⟨ht, x⟩, K, sp, f, ob⟩, K', sp', f', p0, p3, pU⟩ := h
+  have F := wbf_of ⟨ht, x⟩ K sp f K' sp' f'
+  have gi := ht.gi
+  have pre := gi.pre
+  have big := gi.wBig
+  have fit := gi.scrFit
+  have hE := gi.hEnd_le
+  have nS := pre.nS; have nU := pre.nU
+  have eS : (σ.gpr .r10).toNat = G.stP.toNat := by rw [← gi.hG]; rfl
+  have eU : (σ.gpr .r5).toNat = G.usedP.toNat := by rw [← gi.hG]; rfl
+  have uS := pre.uS; have oS := pre.oS; have oU := pre.oU; have nO := pre.nO
+  rw [gi.hG] at uS oS oU
+  have eO : (σ.gpr .r3).toNat + (σ.gpr .r4).toNat = G.out.toNat + G.outLen := by rw [← gi.hG]; rfl
+  have hfr : Frame [G.rOut, G.rUsed, G.rSt, G.rScr, rBelow σ 176] σ.mem u.mem := by
+    refine (gi.frame.mono fun r hr => ?_).trans ((f.mono fun r hr => ?_).trans (f'.sub fun r hr => ?_))
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> simp
+    · simp only [List.mem_singleton] at hr; subst hr; simp
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨G.rSt, by simp, Offset.sub_base (k := 32) _ (by decide)⟩
+      · exact ⟨G.rSt, by simp, Offset.sub_base (k := 32) _ (by decide)⟩
+      · exact ⟨G.rUsed, by simp, Offset.sub_base (k := 8) _ (by decide)⟩
+  refine ⟨⟨pre, gi.hG, F.sp.trans (by rw [← gi.hG]; rfl), by rw [F.rd, gi.rd], by rw [F.wr, gi.wr], F.r28,
+    fun i hi => by rw [F.hdr _ (by simp only [hEnd]; omega)]; exact gi.saved i hi,
+    by rw [F.hdr _ (by decide)]; exact gi.lr, hfr, ?_, pU, p0, k8, k16, p3, r3⟩, x⟩
+  rw [VG.Proof.Dsa.Generation.frame_bytesAt f' (fun r hr => ?_) (by omega)]
+  · exact ob
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact oS.sub_right (Offset.sub_base (k := 32) _ (by decide))
+    · exact oS.sub_right (Offset.sub_base (k := 32) _ (by decide))
+    · exact oU.sub_right (Offset.sub_base (k := 8) _ (by decide))
+
+/-- The words to `state` and `used`, and the status into `r3`. -/
+theorem writeBack_vp (o : COut) :
+    VP (OD G (dCfg G o) X (outBytes G o)) (.block Geo.writeBack) (fun σ t => FO G o σ t ∧ X σ) := by
+  refine (show VP (WBA G o X (fun _ => True)) _ _ from ?_).mono
+    (fun σ u h => ⟨u, h, Keep.refl _ _, rfl, Frame.refl _ _, trivial⟩) (fun _ _ h => h)
+  rw [show Geo.writeBack = [ld .r3 fStP, ld .r4 fR0] ++ ([.store .d .r4 .r3 0] ++ ([ld .r4 fR3] ++
+    ([.store .d .r4 .r3 24] ++ ([ld .r3 fUsedP, ld .r4 fRU] ++ ([.store .d .r4 .r3 0] ++ [ld .r3 fRet]))))) from rfl]
+  have vR0 : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fR0 = BitVec.ofNat 64 (cRes G o).remaining :=
+    fun σ t h => (h.gi.slotV (by simp)).trans (by simp [upd, fR0, fR3])
+  have vR3 : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fR3 =
+      BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)) :=
+    fun σ t h => (h.gi.slotV (by simp)).trans (by simp [upd])
+  have vRU : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fRU = BitVec.ofNat 64 (cRes G o).used :=
+    fun σ t h => (h.gi.slotV (by simp)).trans (by simp [upd, fR0, fR3, fRet, fRU])
+  have vRet : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fRet = BitVec.ofNat 64 (cRes G o).status :=
+    fun σ t h => (h.gi.slotV (by simp)).trans (by simp [upd, fR0, fR3, fRet])
+  have vSt : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fStP = G.stP :=
+    fun σ t h => h.gi.fixedV (by simp [fixedWords])
+  have vUs : ∀ σ t, SS G 176 σ (dCfg G o) t → fw t.mem G fUsedP = G.usedP :=
+    fun σ t h => h.gi.fixedV (by simp [fixedWords])
+  -- `r3` := `state`, `r4` := `state[0]`.
+  refine VP.block_append (G := WBA G o X fun u => u.gpr .r3 = G.stP ∧
+      u.gpr .r4 = BitVec.ofNat 64 (cRes G o).remaining)
+    (VP.pub WBA.pub [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
+      (.block [ld .r3 fStP, ld .r4 fR0]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+      fun σ u h => h.ldH (by decide) (by decide) (vSt σ) fun u₁ up₁ sp₁ => ?_) ?_
+  · have h₁ : WBA G o X (fun u' => u'.gpr .r3 = G.stP) σ u₁ := h.upd up₁ (by simp) sp₁ up₁.gpr
+    exact h₁.ldH (by decide) (by decide) (vR0 σ) fun u₂ up₂ sp₂ =>
+      WP.block_nil (h₁.upd up₂ (by simp) sp₂ ⟨by rw [up₂.other _ (by decide), up₁.gpr], up₂.gpr⟩)
+  -- `state[0]`.
+  refine VP.block_append (G := WBA G o X fun u => u.gpr .r3 = G.stP ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining)
+    (VP.pub WBA.pub [.r3] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3])
+      (.block [.store .d .r4 .r3 0]), by kernel_rfl⟩
+      (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h₁.p.1, h₂.p.1])
+      fun σ u h => h.st (by rw [h.p.1]) ⟨by decide, by decide⟩ h.wbw.1.inS0 (by simp)
+        (fun u' g m => ⟨by rw [g]; exact h.p.1, by rw [m, Mem.readW_writeW_self64, h.p.2]⟩)
+        fun u' h' => WP.block_nil h') ?_
+  -- `r4` := `state[3]`.
+  refine VP.block_append (G := WBA G o X fun u => u.gpr .r3 = G.stP ∧
+      u.gpr .r4 = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)) ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining)
+    (VP.pub WBA.pub [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
+      (.block [ld .r4 fR3]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+      fun σ u h => h.ldH (by decide) (by decide) (vR3 σ) fun u₁ up₁ sp₁ => WP.block_nil
+        (h.upd up₁ (by simp) sp₁ ⟨by rw [up₁.other _ (by decide)]; exact h.p.1, up₁.gpr,
+          by rw [up₁.mem]; exact h.p.2⟩)) ?_
+  -- `state[3]`.
+  refine VP.block_append (G := WBA G o X fun u =>
+      u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+        BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)))
+    (VP.pub WBA.pub [.r3] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3])
+      (.block [.store .d .r4 .r3 24]), by kernel_rfl⟩
+      (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h₁.p.1, h₂.p.1])
+      fun σ u h => h.st (by rw [h.p.1]) ⟨by decide, by decide⟩ h.wbw.1.inS3 (by simp)
+        (fun u' _ m => ⟨by rw [m, readW_writeW_disj h.wbw.1.d03, h.p.2.2],
+          by rw [m, Mem.readW_writeW_self64, h.p.2.1]⟩)
+        fun u' h' => WP.block_nil h') ?_
+  -- `r3` := `used`, `r4` := its word.
+  refine VP.block_append (G := WBA G o X fun u => u.gpr .r3 = G.usedP ∧
+      u.gpr .r4 = BitVec.ofNat 64 (cRes G o).used ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+        BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)))
+    (VP.pub WBA.pub [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
+      (.block [ld .r3 fUsedP, ld .r4 fRU]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+      fun σ u h => h.ldH (by decide) (by decide) (vUs σ) fun u₁ up₁ sp₁ => ?_) ?_
+  · have h₁ : WBA G o X (fun u' => u'.gpr .r3 = G.usedP ∧
+        u'.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining ∧
+        u'.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+          BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o))) σ u₁ :=
+      h.upd up₁ (by simp) sp₁ ⟨up₁.gpr, by rw [up₁.mem]; exact h.p.1, by rw [up₁.mem]; exact h.p.2⟩
+    exact h₁.ldH (by decide) (by decide) (vRU σ) fun u₂ up₂ sp₂ =>
+      WP.block_nil (h₁.upd up₂ (by simp) sp₂ ⟨by rw [up₂.other _ (by decide)]; exact h₁.p.1, up₂.gpr,
+        by rw [up₂.mem]; exact h₁.p.2.1, by rw [up₂.mem]; exact h₁.p.2.2⟩)
+  -- `used`.
+  refine VP.block_append (G := WBA G o X fun u =>
+      u.mem.readW (G.stP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).remaining ∧
+      u.mem.readW (G.stP + BitVec.ofNat 64 24) 64 =
+        BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested G.pLen (cRes G o)) ∧
+      u.mem.readW (G.usedP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (cRes G o).used)
+    (VP.pub WBA.pub [.r3] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3])
+      (.block [.store .d .r4 .r3 0]), by kernel_rfl⟩
+      (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h₁.p.1, h₂.p.1])
+      fun σ u h => h.st (by rw [h.p.1]) ⟨by decide, by decide⟩ h.wbw.1.inU (by simp)
+        (fun u' _ m => ⟨by rw [m, readW_writeW_disj h.wbw.1.d0U, h.p.2.2.1],
+          by rw [m, readW_writeW_disj h.wbw.1.d3U, h.p.2.2.2], by rw [m, Mem.readW_writeW_self64, h.p.2.1]⟩)
+        fun u' h' => WP.block_nil h') ?_
+  -- The status.
+  exact VP.pub WBA.pub [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
+      (.block [ld .r3 fRet]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+      fun σ u h => h.ldH (by decide) (by decide) (vRet σ) fun u₁ up₁ sp₁ => WP.block_nil
+        (fo_of (h.upd up₁ (by simp) sp₁ ⟨by rw [up₁.mem]; exact h.p.1, by rw [up₁.mem]; exact h.p.2.1,
+          by rw [up₁.mem]; exact h.p.2.2⟩) up₁.gpr)
 
 end
 
