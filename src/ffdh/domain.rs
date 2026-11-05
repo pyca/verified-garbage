@@ -11,6 +11,7 @@ use super::arithmetic::{Backend, scalar};
     target_arch = "arm",
     target_arch = "aarch64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "x86_64"
 )))]
 use crate::arch::ffdh::vg_ffdh_generate_key_search;
@@ -40,6 +41,7 @@ pub(super) struct Domain {
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "x86",
         target_arch = "x86_64"
     ))]
     precomputed: super::precomputed::Precomputed,
@@ -88,6 +90,7 @@ impl Domain {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         let precomputed = super::precomputed::Precomputed::new(&bytes, p_len, &mut ws);
@@ -98,6 +101,7 @@ impl Domain {
                 target_arch = "arm",
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             precomputed,
@@ -108,6 +112,7 @@ impl Domain {
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "x86",
         target_arch = "x86_64"
     ))]
     pub(super) fn exponent_len(&self) -> usize {
@@ -238,6 +243,7 @@ impl Domain {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         ))]
         let f = match Backend::ffdh(detected()) {
@@ -251,6 +257,7 @@ impl Domain {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         )))]
         let f = match Backend::ffdh(detected()) {
@@ -284,6 +291,7 @@ impl Domain {
                     target_arch = "arm",
                     target_arch = "aarch64",
                     target_arch = "powerpc64",
+                    target_arch = "x86",
                     target_arch = "x86_64"
                 ))]
                 self.precomputed.words().as_ptr(),
@@ -291,6 +299,7 @@ impl Domain {
                     target_arch = "arm",
                     target_arch = "aarch64",
                     target_arch = "powerpc64",
+                    target_arch = "x86",
                     target_arch = "x86_64"
                 ))]
                 self.precomputed.words().len(),
@@ -309,6 +318,7 @@ impl Domain {
             target_arch = "arm",
             target_arch = "aarch64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "x86_64"
         )
     ))]
@@ -391,6 +401,7 @@ impl Domain {
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "x86",
         target_arch = "x86_64"
     )
 ))]

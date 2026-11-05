@@ -66,6 +66,7 @@ fn generate_from(params: &Parameters, draw: &[u8]) -> PrivateKey {
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "x86",
         target_arch = "x86_64"
     ))]
     assert_eq!(key.exponent_len, params.domain.exponent_len());
@@ -73,6 +74,7 @@ fn generate_from(params: &Parameters, draw: &[u8]) -> PrivateKey {
         target_arch = "arm",
         target_arch = "aarch64",
         target_arch = "powerpc64",
+        target_arch = "x86",
         target_arch = "x86_64"
     )))]
     assert_eq!(
@@ -94,6 +96,7 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
                 target_arch = "arm",
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             ))]
             {
@@ -105,6 +108,7 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
                 target_arch = "arm",
                 target_arch = "aarch64",
                 target_arch = "powerpc64",
+                target_arch = "x86",
                 target_arch = "x86_64"
             )))]
             {
