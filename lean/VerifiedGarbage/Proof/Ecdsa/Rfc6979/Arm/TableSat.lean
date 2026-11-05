@@ -25,7 +25,7 @@ any, at `0x100000`, where the memory `m₀` holds it (`sat_nil`, `sat_one`).
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm
-open VG.Proof.HmacTable.Arm (HVar tables names tableOf held_tableOf hashAt_tableOf)
+open VG.Proof.HmacTable.Arm (HVar vars sha256V tables names tableOf held_tableOf hashAt_tableOf)
 open VG.Proof.HashTable (symsOf32 symsOf32_distinct)
 
 /-- A word read apart from a word written. -/
@@ -232,5 +232,26 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
     | (refine ⟨show (1048576 : BitVec 64).toNat + 8 * W.length ≤ 2 ^ 32 by bv_omega, ?_, ?_, ?_⟩ <;>
        exact Region.disjoint_of_sep (by
          simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
+
+theorem names_len : (names vars).length < 2 ^ 24 := by decide
+
+theorem sha256V_mem : sha256V ∈ vars := .tail _ (.tail _ (.tail _ (.head _)))
+
+/-- `vg_ecdsa_<curve>_sign` with the tables of every hash function with HMAC
+on ARMv7, for a curve without tables of constants. -/
+theorem nilT_verified {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T)
+    (hsw : T.scratchWords = 1024) (hQ : T.ecdsa.curve.len ≤ 66) (hcs : R.coreConsts = []) :
+    Verified Arm.target (signCodeT R T.tries vars) (specK T R.coreConsts vars) :=
+  signT_verified hC hsw vars_ok (by rw [hcs]; exact sat_nil sha256V_mem names_len (by decide) hQ hsw)
+
+/-- The same, for a curve with one table of constants `W`, `m₀` holding it
+at `0x100000`. -/
+theorem oneT_verified {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T)
+    (hsw : T.scratchWords = 1024) (hQ : T.ecdsa.curve.len ≤ 66) {n : String} {W : List (BitVec 64)}
+    (hcs : R.coreConsts = [(n, W)]) (m₀ : Mem) (hna : n ∉ names vars) (hW : 8 * W.length ≤ 0x100000)
+    (hheld : ∀ i < W.length, m₀.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W.getD i 0) :
+    Verified Arm.target (signCodeT R T.tries vars) (specK T R.coreConsts vars) :=
+  signT_verified hC hsw vars_ok (by
+    rw [hcs]; exact sat_one sha256V_mem names_len (by decide) m₀ hna hW hheld hQ hsw)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
