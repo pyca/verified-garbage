@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 import VerifiedGarbage.Proof.Ffdh.X86.Ops
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
-import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.X86.SymFrame
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
@@ -214,27 +214,23 @@ structure RH (Ex : List Region → List Region → Prop) (base : Addr) (bytes le
   tw : v.mem.readW (off base 16) 32 = T
   syms : v.syms = s.syms
 
-/-- `ebx := edi`, the table's address, saved in the header. -/
-theorem recHead_ok (h : In Ex base bytes len args s) {T : BitVec 32}
-    (hT : s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym = T) {X : Prog isa} {Q : State → Prop}
-    (k : ∀ v, RH Ex base bytes len args T s v → WP isa X v Q) :
-    WP isa (.seq (.block [.mov .ebx (.reg .edi)]) (.seq VG.Impl.Ffdh.X86.VettedValidation.tableAddress
-      (.seq (.block VG.Impl.Ffdh.X86.VettedValidation.saveTable) X))) s Q := by
+/-- What `ebx := edi`, the table's address and its store into the header leave. -/
+theorem rh_of (h : In Ex base bytes len args s) {T : BitVec 32}
+    (hT : s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym = T) {s₁ s₂ s₃ : State}
+    (U₁ : Upd s s₁ .ebx (s.gpr .edi)) (R : SymAddrPost VG.Impl.Ffdh.X86.VettedValidation.tableSym s₁ s₂)
+    (M₃ : Mupd s₂ s₃ (s₂.mem.writeW (off base 16) (s₂.gpr .eax))) : RH Ex base bytes len args T s s₃ := by
   have low := h.room.low
   have nb : numBase = 3336 := rfl
   have bl := h.bytes_lt
   have nd := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
-  refine WP.seq (wp_movS rfl fun s₁ U₁ _ => WP.block_nil ?_)
-  have e1 : s₁.gpr .ebx = s.gpr .edi := U₁.gpr
-  refine WP.seq (WP.mono (symFrame_ok _ s₁ (by rw [U₁.other _ (by decide)]; omega)) fun s₂ R => ?_)
   have sp₂ : s₂.gpr .esp = s.gpr .esp := (R.gpr _ (by decide)).trans (U₁.other _ (by decide))
   have K₂ : Keeps [.eax, .ebx, .ecx] s s₂ := by
     refine ⟨fun r hr => ?_, R.rd.trans U₁.rd, R.wr.trans U₁.wr⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [R.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.1, hr.2.2⟩),
       U₁.other _ hr.2.1]
-  have ebx₂ : s₂.gpr .ebx = s.gpr .edi := (R.gpr _ (by decide)).trans e1
+  have ebx₂ : s₂.gpr .ebx = s.gpr .edi := (R.gpr _ (by decide)).trans U₁.gpr
   have eax₂ : s₂.gpr .eax = T := by rw [R.addr, U₁.syms, hT]
   have Fs₂ : Frame [below (s.gpr .esp) 96] s.mem s₂.mem := by
     have F := R.frame
@@ -242,18 +238,41 @@ theorem recHead_ok (h : In Ex base bytes len args s) {T : BitVec 32}
     exact F.sub fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact ⟨_, List.mem_singleton_self _, below4_sub low⟩
   have F₂ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₂.mem := stk_frameR Fs₂
-  have h₂ : In Ex base bytes len args s₂ := h.keepF K₂ (by decide) (by decide) F₂ (fR_fit h)
-  have ea₂ : s₂.ea ⟨.ebx, 16⟩ = off base 16 := by
-    rw [ea_mk, ebx₂]; exact h.scratch.ea (d := 16) (by omega)
-  refine WP.seq (wp_storeS ea₂ (h₂.scratch.write (d := 16) (n := 4) (by omega)) fun s₃ M₃ => WP.block_nil ?_)
   have O₃ : Outside base 16 4 s₂.mem s₃.mem := by rw [M₃.mem]; exact writeW32_outside _ _ _ (by omega)
   have K₃ : Keeps [.eax, .ebx, .ecx] s s₃ := K₂.trans ((M₃.keeps []).mono (by decide))
   have F₃ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₃.mem :=
     F₂.trans (fR_of_outside h O₃ (.inl (by omega)))
-  exact k s₃ ⟨h.keepF K₃ (by decide) (by decide) F₃ (fR_fit h), by rw [M₃.gpr]; exact ebx₂,
+  exact ⟨h.keepF K₃ (by decide) (by decide) F₃ (fR_fit h), by rw [M₃.gpr]; exact ebx₂,
     by rw [M₃.gpr, sp₂], K₃, F₃,
     ((kept_ops h (stk_frameR Fs₂) h.room).mono).trans (kept_word h (d := 16) (by omega) (by decide) O₃).mono,
     by rw [M₃.mem, Mem.readW_writeW_self32, eax₂], by rw [M₃.syms, R.syms, U₁.syms]⟩
+
+/-- The table's address from `ebx := edi` and the symbol, to its header word: where it is written. -/
+theorem saveTable_ok (h : In Ex base bytes len args s) {s₁ s₂ : State} (U₁ : Upd s s₁ .ebx (s.gpr .edi))
+    (R : SymAddrPost VG.Impl.Ffdh.X86.VettedValidation.tableSym s₁ s₂) :
+    WP isa (.block VG.Impl.Ffdh.X86.VettedValidation.saveTable) s₂ fun s₃ =>
+      Mupd s₂ s₃ (s₂.mem.writeW (off base 16) (s₂.gpr .eax)) := by
+  have nb : numBase = 3336 := rfl
+  have bl := h.bytes_lt
+  have nd := h.need
+  have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
+  have ebx₂ : s₂.gpr .ebx = s.gpr .edi := (R.gpr _ (by decide)).trans U₁.gpr
+  have ea₂ : s₂.ea ⟨.ebx, 16⟩ = off base 16 := by
+    rw [ea_mk, ebx₂]; exact h.scratch.ea (d := 16) (by omega)
+  have wr : s₂.wr = s.wr := R.wr.trans U₁.wr
+  exact wp_storeS ea₂ (by rw [wr]; exact h.scratch.write (d := 16) (n := 4) (by omega)) fun s₃ M₃ =>
+    WP.block_nil M₃
+
+/-- `ebx := edi`, the table's address, saved in the header. -/
+theorem recHead_ok (h : In Ex base bytes len args s) {T : BitVec 32}
+    (hT : s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym = T) {X : Prog isa} {Q : State → Prop}
+    (k : ∀ v, RH Ex base bytes len args T s v → WP isa X v Q) :
+    WP isa (.seq (.block [.mov .ebx (.reg .edi)]) (.seq VG.Impl.Ffdh.X86.VettedValidation.tableAddress
+      (.seq (.block VG.Impl.Ffdh.X86.VettedValidation.saveTable) X))) s Q := by
+  have low := h.room.low
+  refine WP.seq (wp_movS rfl fun s₁ U₁ _ => WP.block_nil ?_)
+  refine WP.seq (WP.mono (symFrame_ok _ s₁ (by rw [U₁.other _ (by decide)]; omega)) fun s₂ R => ?_)
+  exact WP.seq (WP.mono (saveTable_ok h U₁ R) fun s₃ M₃ => k s₃ (rh_of h hT U₁ R M₃))
 
 /-- The scan's arguments, in its frame: the scan's context. -/
 theorem scanCtx_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
@@ -352,6 +371,42 @@ theorem scanCtx_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo ar
     · rw [hlen]; exact dl
   · exact tableAt_of (t := w) (inw tread) (by rw [KeyScan.bytes_keep h tws (by decide) t40 Fsw]; exact tbytes)
 
+/-- The scan, in a frame of its three arguments: `eax` the recognized width. -/
+theorem recScan_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96)) {T : BitVec 32}
+    (tfit : T.toNat + 17744 ≤ 2 ^ 32) (tread : InRegions (s.rd ++ s.wr) (byteAddr T) 17744)
+    (tbytes : Spec.Rsa.bytesAt s.mem (byteAddr T) 17744 = VG.Impl.Ffdh.VettedGroups.tableBytes)
+    (tws : Region.Disjoint ⟨byteAddr T, 17744⟩ ⟨base, bytes⟩)
+    (t40 : Region.Disjoint ⟨byteAddr T, 17744⟩ (below (s.gpr .esp) 96)) {s₃ : State}
+    (H : RH Ex base bytes len args T s s₃) :
+    WP isa (.frame (.alloc 16) (.seq (.block scanArgs) (VG.Impl.Ffdh.X86.VettedValidation.scan
+      VG.Impl.Ffdh.VettedGroups.groups 0)) (.free 16)) s₃ fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s₃.rd ∧
+      t.wr = s₃.wr ∧ Frame [below (s.gpr .esp) 96] s₃.mem t.mem ∧
+      t.gpr .eax = BitVec.ofNat 32 (VG.Impl.Ffdh.VettedGroups.recognizeList VG.Impl.Ffdh.VettedGroups.groups len
+        (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) dlen)) ∧
+      Keeps [.eax, .ecx, .edx, .esi, .edi, .ebp] s₃ t := by
+  have low := h.room.low
+  have sp₃ := H.sp
+  have elen : (VG.Impl.Ffdh.VettedGroups.groups.flatMap VG.Impl.Ffdh.VettedGroups.Group.bytes).length = 17744 :=
+    VG.Proof.Ffdh.VettedTableFacts.tableBytes_length
+  have p16 : 16 ≤ (s₃.gpr .esp).toNat := by rw [sp₃]; omega
+  refine WP.frameAlloc (by decide) (by decide) (by decide) p16 (NoSp.of_all (by rfl)) ?_
+  refine WP.seq (WP.mono (scanCtx_ok h G hb40 tfit tread tbytes tws t40 H)
+    fun w ⟨C, TA, wrd, wwr, Fw, wesp, wbx⟩ => ?_)
+  refine WP.mono (VettedValidation.scan_ok _ 0 w C TA (by rw [elen])) fun t ⟨E, Mt, Kt⟩ => ?_
+  have tesp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 := (Kt.1 _ (by decide)).trans wesp
+  have fesp : (freed 16 t).gpr .esp = s.gpr .esp := by rw [freed_esp, tesp]; exact BitVec.sub_add_cancel _ _
+  refine ⟨fesp, by rw [freed_rd, Kt.2.1, wrd], by rw [freed_wr, Kt.2.2, wwr, List.tail_cons], ?_,
+    by rw [freed_gpr _ _ (by decide), E], ?_⟩
+  · rw [freed_mem, Mt]; exact Fw
+  · refine ⟨fun r hr => ?_, by rw [freed_rd, Kt.2.1, wrd], by rw [freed_wr, Kt.2.2, wwr, List.tail_cons]⟩
+    have e : r = .ebx ∨ r = .esp := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      cases r <;> simp_all
+    rcases e with rfl | rfl
+    · rw [freed_gpr _ _ (by decide), Kt.1 _ (by decide), wbx, H.ebx, h.edi_eq]
+    · rw [fesp, sp₃]
+
 /-- The vetted groups' recognized width of the domain, to the header word at 48. -/
 theorem recognize_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
     (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96)) {T : BitVec 32}
@@ -377,47 +432,27 @@ theorem recognize_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo 
   have h₃ := H.inp
   have F₃ := H.frame
   have p16 : 16 ≤ (s₃.gpr .esp).toNat := by rw [sp₃]; omega
-  refine WP.seq (WP.mono (WP.frameAlloc (bytes := 16) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s₃.rd ∧
-      t.wr = s₃.wr ∧ Frame [below (s.gpr .esp) 96] s₃.mem t.mem ∧
-      t.gpr .eax = BitVec.ofNat 32 (VG.Impl.Ffdh.VettedGroups.recognizeList VG.Impl.Ffdh.VettedGroups.groups len
-        (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) dlen)) ∧
-      Keeps [.eax, .ecx, .edx, .esi, .edi, .ebp] s₃ t) (by decide) (by decide) (by decide) p16
-    (NoSp.of_all (by rfl)) ?_) fun s₄ H₄ => ?_)
-  · refine WP.seq (WP.mono (scanCtx_ok h G hb40 tfit tread tbytes tws t40 H)
-      fun w ⟨C, TA, wrd, wwr, Fw, wesp, wbx⟩ => ?_)
-    refine WP.mono (VettedValidation.scan_ok _ 0 w C TA (by rw [elen])) fun t ⟨E, Mt, Kt⟩ => ?_
-    have tesp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 := (Kt.1 _ (by decide)).trans wesp
-    have fesp : (freed 16 t).gpr .esp = s.gpr .esp := by rw [freed_esp, tesp]; exact BitVec.sub_add_cancel _ _
-    refine ⟨fesp, by rw [freed_rd, Kt.2.1, wrd], by rw [freed_wr, Kt.2.2, wwr, List.tail_cons], ?_,
-      by rw [freed_gpr _ _ (by decide), E], ?_⟩
-    · rw [freed_mem, Mt]; exact Fw
-    · refine ⟨fun r hr => ?_, by rw [freed_rd, Kt.2.1, wrd], by rw [freed_wr, Kt.2.2, wwr, List.tail_cons]⟩
-      have e : r = .ebx ∨ r = .esp := by
-        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-        cases r <;> simp_all
-      rcases e with rfl | rfl
-      · rw [freed_gpr _ _ (by decide), Kt.1 _ (by decide), wbx, H.ebx, h.edi_eq]
-      · rw [fesp, sp₃]
-  · -- `edi` back, and the width to the header.
-    obtain ⟨sp₄, rd₄, wr₄, Fr₄, ea₄, K₄⟩ := H₄
-    refine wp_movS rfl fun s₅ U₅ _ => ?_
-    have K₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₅ := by
-      refine ⟨fun r hr => ?_, by rw [U₅.rd, rd₄, K₃.2.1], by rw [U₅.wr, wr₄, K₃.2.2]⟩
-      have e : r = .edi ∨ r = .esp := by
-        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-        cases r <;> simp_all
-      rcases e with rfl | rfl
-      · rw [U₅.gpr, K₄.1 _ (by decide)]; exact H.ebx
-      · rw [U₅.other _ (by decide), sp₄]
-    have Fs₅ : Frame [below (s.gpr .esp) 96] s₃.mem s₅.mem := by rw [U₅.mem]; exact Fr₄
-    have F₅ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₅.mem := F₃.trans (stk_frameR Fs₅)
-    have h₅ : In Ex base bytes len args s₅ := h.keepF K₅ (by decide) (by decide) F₅ (fR_fit h)
-    refine WP.mono (hdr_store h₅ (d := recOff) (by simp only [recOff]; omega) .eax) fun u ⟨I, O, W, K, _⟩ => ?_
-    refine ⟨⟨I, F₅.trans (fR_of_outside h₅ O (.inr ⟨by simp only [recOff]; omega, by simp only [recOff]; omega⟩)),
-      K₅.trans (K.mono (by decide))⟩, ?_, ?_⟩
-    · exact (H.kept.trans (kept_ops h₃ (sp := s.gpr .esp) (stk_frameR Fs₅) h.room).mono).trans
-        (kept_word h₅ (d := recOff) (by simp only [recOff]; omega) (by decide) O).mono
-    · rw [W, U₅.other _ (by decide), ea₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (recognize_lt _ _)]
+  refine WP.seq (WP.mono (recScan_ok h G hb40 tfit tread tbytes tws t40 H) fun s₄ H₄ => ?_)
+  -- `edi` back, and the width to the header.
+  obtain ⟨sp₄, rd₄, wr₄, Fr₄, ea₄, K₄⟩ := H₄
+  refine wp_movS rfl fun s₅ U₅ _ => ?_
+  have K₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₅ := by
+    refine ⟨fun r hr => ?_, by rw [U₅.rd, rd₄, K₃.2.1], by rw [U₅.wr, wr₄, K₃.2.2]⟩
+    have e : r = .edi ∨ r = .esp := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      cases r <;> simp_all
+    rcases e with rfl | rfl
+    · rw [U₅.gpr, K₄.1 _ (by decide)]; exact H.ebx
+    · rw [U₅.other _ (by decide), sp₄]
+  have Fs₅ : Frame [below (s.gpr .esp) 96] s₃.mem s₅.mem := by rw [U₅.mem]; exact Fr₄
+  have F₅ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₅.mem := F₃.trans (stk_frameR Fs₅)
+  have h₅ : In Ex base bytes len args s₅ := h.keepF K₅ (by decide) (by decide) F₅ (fR_fit h)
+  refine WP.mono (hdr_store h₅ (d := recOff) (by simp only [recOff]; omega) .eax) fun u ⟨I, O, W, K, _⟩ => ?_
+  refine ⟨⟨I, F₅.trans (fR_of_outside h₅ O (.inr ⟨by simp only [recOff]; omega, by simp only [recOff]; omega⟩)),
+    K₅.trans (K.mono (by decide))⟩, ?_, ?_⟩
+  · exact (H.kept.trans (kept_ops h₃ (sp := s.gpr .esp) (stk_frameR Fs₅) h.room).mono).trans
+      (kept_word h₅ (d := recOff) (by simp only [recOff]; omega) (by decide) O).mono
+  · rw [W, U₅.other _ (by decide), ea₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (recognize_lt _ _)]
 
 /-- The bit length of the bound's first nonzero byte, `n`, from its mask `2^n − 1`. -/
 theorem maskBits_ok (h : In Ex base bytes len args s) {n : Nat} (hn1 : 1 ≤ n) (hn8 : n ≤ 8)
