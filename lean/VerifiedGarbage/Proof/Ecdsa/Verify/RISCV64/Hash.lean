@@ -63,76 +63,7 @@ structure CPost (len : Nat) (wide : Bool) (s t : State) : Prop where
 
 /-! ## Bytes -/
 
-theorem bytesAt_getD (m : Mem) (p : Addr) (n i : Nat) (hi : i < n) :
-    (Spec.Ecdsa.bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
-  simp [Spec.Ecdsa.bytesAt, hi]
-
-theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Ecdsa.bytesAt m p n).length = n := by
-  simp [Spec.Ecdsa.bytesAt]
-
-theorem shr1_getD : ∀ (l : List Byte) (i : Nat), i + 1 < l.length →
-    (shr1 l).getD i 0 = sh (l.getD i 0) (l.getD (i + 1) 0)
-  | a :: b :: r, 0, _ => by simp [shr1]
-  | a :: b :: r, i + 1, h => by
-    rw [shr1, List.getD_cons_succ, shr1_getD (b :: r) i (by simpa using h)]
-    simp
-  | [_], _, h => by simp at h
-  | [], _, h => by simp at h
-
-/-- The value `shiftBytes` stores. -/
-theorem shift_byte (b c : Byte) :
-    ((b.setWidth 64 <<< 7) + (c.setWidth 64 >>> 1)).setWidth 8 = sh b c := by
-  apply BitVec.eq_of_toNat_eq
-  have hb := b.isLt
-  have hc := c.isLt
-  rw [sh_toNat, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_shiftLeft,
-    BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.shiftLeft_eq,
-    Nat.shiftRight_eq_div_pow]
-  simp only [Nat.reducePow]
-  omega
-
-/-- The bytes of the buffer after the zeros and the hash: the hash at
-`len - d`. -/
-def tz (len : Nat) (H : List Byte) (j : Nat) : Byte :=
-  if len - H.length ≤ j ∧ j < len then H.getD (j - (len - H.length)) 0 else 0
-
-theorem tz_getD {len : Nat} {H : List Byte} (hl : H.length < len) {j : Nat} (hj : j ≤ len) :
-    (List.replicate (len - H.length) (0 : Byte) ++ H ++ [0]).getD j 0 = tz len H j := by
-  unfold tz
-  rw [List.append_assoc, List.getD_eq_getElem?_getD]
-  by_cases h₁ : j < len - H.length
-  · rw [List.getElem?_append_left (by simpa using h₁)]
-    simp [h₁, show ¬ (len - H.length ≤ j) by omega]
-  · rw [List.getElem?_append_right (by simp; omega)]
-    simp only [List.length_replicate]
-    by_cases h₂ : j < len
-    · rw [List.getElem?_append_left (by omega)]
-      simp [show len - H.length ≤ j by omega, h₂, List.getD_eq_getElem?_getD]
-    · have e : j - (len - H.length) - H.length = 0 := by omega
-      rw [List.getElem?_append_right (by omega), e]
-      simp [h₂]
-
-theorem fixed_short {len : Nat} {H : List Byte} (hl : H.length < len) (wide : Bool) {i : Nat}
-    (hi : i < len) :
-    (fixedDigest len wide H).getD i 0 =
-      if wide then sh (tz len H i) (tz len H (i + 1)) else tz len H i := by
-  unfold fixedDigest
-  simp only [show ¬ len ≤ H.length by omega, ite_false]
-  cases wide with
-  | true =>
-    simp only [ite_true]
-    rw [shr1_getD _ _ (by simp; omega), tz_getD hl (by omega), tz_getD hl (by omega)]
-  | false =>
-    simp only [Bool.false_eq_true, ite_false]
-    have := tz_getD hl (Nat.le_of_lt hi)
-    rw [← this, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-      List.getElem?_append_left (l₁ := List.replicate (len - H.length) 0 ++ H) (by simp; omega)]
-
 /-! ## The cases -/
-
-theorem contains_sub {B x : Addr} {n k : Nat} (h : (⟨B, n⟩ : Region).Contains x 1) (hk : n ≤ k) :
-    (⟨B, k⟩ : Region).Contains x 1 := by
-  unfold Region.Contains at *; simp only at h ⊢; omega
 
 theorem hash_byte {i : Nat} (hi : i < (s.gpr .a2).toNat) :
     (hashOf s).getD i 0 = s.mem (s.gpr .a1 + BitVec.ofNat 64 i) :=
@@ -196,19 +127,6 @@ structure SInv (len : Nat) (s : State) (k : Nat) (u : State) : Prop where
   a5 : u.gpr .a5 = s.gpr .a5
   wr : u.wr = s.wr
 
-theorem byte_writeW_ne' (m : Mem) (p : Addr) (b : Byte) {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64)
-    (h : j ≠ i) : (m.writeW (p + BitVec.ofNat 64 i) b) (p + BitVec.ofNat 64 j) = m (p + BitVec.ofNat 64 j) := by
-  rw [WriteBytes.writeW8_apply]
-  simp only [Offset.add_ofNat_ne p hj hi h, ite_false]
-
-theorem byte_writeW_eq (m : Mem) (p : Addr) (b : Byte) (i : Nat) :
-    (m.writeW (p + BitVec.ofNat 64 i) b) (p + BitVec.ofNat 64 i) = b := by
-  simp only [WriteBytes.writeW8_apply, ite_true]
-
-theorem inRegions_wr {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions wr a n) :
-    InRegions (rd ++ wr) a n := by
-  obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
-
 theorem shift_ok (hp : CPre len s) (hl : (s.gpr .a2).toNat < len) {u : State} (hz : ZInv len s u) :
     WP isa (.block (shiftBytes len)) u (MPost len true s) := by
   have h66 := hp.len66
@@ -261,16 +179,6 @@ theorem tail_ok (wide : Bool) (hp : CPre len s) (hl : (s.gpr .a2).toNat < len) {
     refine WP.block_nil ⟨fun i hi => ?_, hz.frame⟩
     rw [hz.mem i (by have := hp.len66; omega), fixed_short (by rw [length_bytesAt]; exact hl) false hi]
     rfl
-
-theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
-
-theorem replicate_getD (n j : Nat) : (List.replicate n (0 : Nat)).getD j 0 = 0 := by
-  rw [List.getD_eq_getElem?_getD, List.getElem?_replicate]; split <;> rfl
-
-/-- The bytes `[off, off + n)` of the buffer are within its 80. -/
-theorem in_buf {B x : Addr} {off n : Nat} (h : (⟨B + BitVec.ofNat 64 off, n⟩ : Region).Contains x 1)
-    (hn : off + n ≤ 80) : (⟨B, 80⟩ : Region).Contains x 1 :=
-  Offset.sub_base B hn x h
 
 theorem short_ok (wide : Bool) (hp : CPre len s) {s₁ : State} (hk : Keep [.t0] s s₁)
     (hm : s₁.mem = s.mem) (hl : (s.gpr .a2).toNat < len) :
@@ -499,42 +407,6 @@ theorem WP.narrowRun {c : Prog isa} {P : State → Prop} {Q : State → State �
   · exact ha.2.1
   · exact ha.2.2
 
-theorem nBits_pos (C : Spec.Weierstrass.Curve) : 0 < Spec.Ecdsa.nBits C := by
-  unfold Spec.Ecdsa.nBits; omega
-
-/-- The bytes of a region apart from the memory a frame changes. -/
-theorem bytesAt_frame {R : Region} {m m' : Mem} (hf : Frame [R] m m') {p : Addr} {n : Nat}
-    (hd : (⟨p, n⟩ : Region).Disjoint R) (hn : n ≤ 2 ^ 64) :
-    Spec.Ecdsa.bytesAt m' p n = Spec.Ecdsa.bytesAt m p n := by
-  simp only [Spec.Ecdsa.bytesAt]
-  refine List.map_congr_left fun i hi => ?_
-  have hi : i < n := by simpa using hi
-  exact Frame.bytes (R := ⟨p, n⟩) hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd)
-    hn hi
-
-theorem bytesAt_ext {m : Mem} {p : Addr} {n : Nat} {l : List Byte} (hl : l.length = n)
-    (h : ∀ i < n, m (p + BitVec.ofNat 64 i) = l.getD i 0) : Spec.Ecdsa.bytesAt m p n = l := by
-  refine List.ext_getElem (by rw [length_bytesAt, hl]) fun i h₁ h₂ => ?_
-  have := h i (by rw [length_bytesAt] at h₁; exact h₁)
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some] at this
-  simp only [Spec.Ecdsa.bytesAt, List.getElem_map, List.getElem_range]
-  exact this
-
-theorem length_fixedDigest (len : Nat) (wide : Bool) (H : List Byte) : (fixedDigest len wide H).length = len := by
-  unfold fixedDigest
-  split
-  · simp; omega
-  · split
-    · rw [show List.replicate (len - H.length) (0 : Byte) ++ H ++ [0] =
-          (0 : Byte) :: (List.replicate (len - H.length - 1) 0 ++ H ++ [0]) by
-        rw [show len - H.length = (len - H.length - 1) + 1 by omega, List.replicate_succ]; simp,
-        length_shr1]
-      simp; omega
-    · simp; omega
-
-theorem sub_prefix (B : Addr) {n k : Nat} (h : n ≤ k) : Region.Sub ⟨B, n⟩ ⟨B, k⟩ := fun x hx => by
-  unfold Region.Contains at *; simp only at *; omega
-
 theorem length_constRegs (K : List (String × List (BitVec 64))) (s : State) :
     (constRegs K s).length = K.length := by simp [constRegs, Abi.constRegions]
 
@@ -742,15 +614,6 @@ theorem hashed_correct {wide : Bool} {K : List (String × List (BitVec 64))} {st
   exact ⟨t, s', he, ha, hq⟩
 
 /-! ## Constant time -/
-
-theorem bytes_of_leak {a₁ b₁ c₁ a₂ b₂ c₂ : List Byte} (ha : a₁.length = a₂.length) (hb : b₁.length = b₂.length)
-    (h : (a₁ ++ b₁ ++ c₁).map (·.toNat) = (a₂ ++ b₂ ++ c₂).map (·.toNat)) : a₁ = a₂ ∧ b₁ = b₂ ∧ c₁ = c₂ := by
-  have e : a₁ ++ b₁ ++ c₁ = a₂ ++ b₂ ++ c₂ := by
-    have := congrArg (List.map fun n => BitVec.ofNat 8 n) h
-    simpa [List.map_map, Function.comp_def] using this
-  obtain ⟨e1, e2⟩ := List.append_inj e (by simp [ha, hb])
-  obtain ⟨e3, e4⟩ := List.append_inj e1 ha
-  exact ⟨e3, e4, e2⟩
 
 /-- Inlined verified code: two runs, from states that narrow to ones its
 contract relates, leak the same. -/
