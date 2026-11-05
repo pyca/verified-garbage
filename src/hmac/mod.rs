@@ -129,8 +129,8 @@ impl<H, const S: usize> Drop for StreamingHmacState<H, S> {
 /// the `match` on the backend is exhaustive, so a new implementation of the
 /// hash does not compile until its HMAC functions are listed here too (see
 /// "Variants and generic callers" in `lean/VerifiedGarbage/TCB/Emit.lean`),
-/// and a test checks that they need no CPU feature the hash's
-/// implementation was not selected for.
+/// and it does not compile if they need a CPU feature that the hash's
+/// `select` does not require to choose its implementation.
 macro_rules! streaming_hmac {
     (
         $hash:ident ($backend:ident) {
@@ -141,10 +141,15 @@ macro_rules! streaming_hmac {
         state: $state:literal,
         output: $output:literal $(,)?
     ) => {
-        // The CPU features of each implementation, which `tests` checks.
+        // Each implementation's `init` and `finalize` need no CPU feature that the
+        // hash's `select` does not require to choose its implementation.
         $(
             $(#[$attr])*
-            const _: &[verified_garbage_cpu::Features] = &[$($req),*];
+            const _: () = assert!(
+                $backend::REQUIRES[$backend::$variant as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($req),*])),
+                "a function needs a CPU feature its implementation is not chosen for"
+            );
         )*
 
         impl super::sealed::Sealed for $hash {}
@@ -172,7 +177,7 @@ macro_rules! streaming_hmac {
                 // objects or fields, so they do not overlap each other or the
                 // call's stack frame, nor wrap around the address space.
                 // `init` needs no CPU feature that `backend` was not selected
-                // for (`tests::backend_features`).
+                // for (checked when it compiles).
                 unsafe { init(inner, &mut state.outer, key.as_ptr(), key.len()) };
                 state
             }
@@ -199,7 +204,7 @@ macro_rules! streaming_hmac {
                 // below 2⁶⁴, so the text is shorter than 2⁶⁴ − B bytes), and
                 // `state.outer` represents `K₀ ⊕ opad`. `finalize` needs no
                 // CPU feature that the hash's implementation was not selected
-                // for (`tests::backend_features`).
+                // for (checked when it compiles).
                 unsafe { finalize(inner, &state.outer, count, &mut mac) };
                 mac
             }
@@ -235,22 +240,6 @@ macro_rules! streaming_hmac {
         #[cfg(test)]
         mod tests {
             use super::$hash;
-
-            /// Each implementation's `init` and `finalize` need no CPU
-            /// feature that the hash's implementation is not selected for:
-            /// on every set of features that selects it.
-            #[test]
-            fn backend_features() {
-                $(
-                    $(#[$attr])*
-                    for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                        let f = verified_garbage_cpu::Features(bits);
-                        if super::$backend::select(f) == super::$backend::$variant {
-                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$(super::$req),*])));
-                        }
-                    }
-                )*
-            }
 
             /// `mac` gives the MAC that `new`, `update` and `finalize`
             /// compute: with keys up to longer than a block and messages

@@ -112,11 +112,7 @@ GROUPS = {
         "tests": [],
     },
     "blake2": {
-        "lib": [
-            "hashes::blake2",
-            "hashes::blake2b",
-            "hashes::blake2s",
-        ],
+        "lib": ["hashes::blake2"],
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
     "brainpoolp256r1": {
@@ -241,7 +237,7 @@ GROUPS = {
         "tests": ["rfc6979::p224::p224_sha224"],
     },
     "p256": {
-        "lib": ["ec::p256", "ecdsa::p256", "ec::validate::tests::p256", "ec::compressed::tests::p256"],
+        "lib": ["ec::p256", "ec::validate::tests::p256", "ec::compressed::tests::p256"],
         "tests": [
             "cavp::ecdh_p256",
             "cavp::ecdsa_p256",
@@ -255,7 +251,7 @@ GROUPS = {
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
     "p521": {
-        "lib": ["ec::p521", "ecdsa::p521", "ec::validate::tests::p521", "ec::compressed::tests::p521"],
+        "lib": ["ec::p521", "ec::validate::tests::p521", "ec::compressed::tests::p521"],
         "tests": [
             "cavp::ecdh_p521",
             "rfc6979::p521",
@@ -264,7 +260,7 @@ GROUPS = {
         ],
     },
     "p384": {
-        "lib": ["ec::p384", "ecdsa::p384", "ec::validate::tests::p384", "ec::compressed::tests::p384"],
+        "lib": ["ec::p384", "ec::validate::tests::p384", "ec::compressed::tests::p384"],
         "tests": [
             "cavp::ecdh_p384",
             "rfc6979::p384",
@@ -314,9 +310,9 @@ GROUPS = {
     # IFMA's vectors once, without repeating ADX prime generation (SKX and
     # native run it). Keep a key-generation dispatch check, every signing
     # hash, large private-key operands and concurrent use of a shared key.
-    # The per-hash backend_features tests enumerate synthetic feature sets,
-    # without executing those instructions: native/SKX's full groups cover
-    # them. Keep the unit tests that execute RSA here.
+    # The tables' tests (`rsa_oaep::table`, `rsa_pss::table`) execute no RSA
+    # code: native/SKX's full groups cover them. Keep the unit tests that
+    # execute RSA here.
     "rsa_ifma": {
         "lib": ["rsa::tests", "rsa::precomputed", "rsa::privatekey", "rsa::scratch",
                 "rsa::keygen::tests::generate_small_d", "rsa::oaep::tests", "rsa::pkcs1_enc",

@@ -149,21 +149,34 @@ pub(crate) enum Backend {
 }
 
 impl Backend {
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant: every CPU it is chosen for has them, so a function
+    /// chosen with it may need no other, which its caller checks when it
+    /// compiles (`assert!` in a `const`).
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) const REQUIRES: &[Features] = &{
+        let adx = Features::all(&[
+            VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
+            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+            VG_RSA_PRIVATE_CHECKED_ADX_FEATURES,
+            VG_RSA_PKCS1_SIGN_ADX_FEATURES,
+            VG_RSA_PRIME_SEARCH_ADX_FEATURES,
+        ]);
+        let ifma = Features::all(&[
+            adx,
+            VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
+            VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
+        ]);
+        [Features(0), adx, ifma]
+    };
+
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select(f: Features) -> Backend {
-        let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
-            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIME_SEARCH_ADX_FEATURES);
-        if adx
-            && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
-            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
-        {
+        if f.contains(Self::REQUIRES[Backend::Ifma as usize]) {
             Backend::Ifma
-        } else if adx {
+        } else if f.contains(Self::REQUIRES[Backend::Adx as usize]) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -193,6 +206,49 @@ impl Backend {
         Backend::Baseline
     }
 
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant: none, of the only one. (Only the callers' checks
+    /// use it, which the builds without `alloc` leave out.)
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "riscv64",
+        all(
+            target_arch = "arm",
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            ))
+        )
+    ))]
+    #[allow(dead_code)]
+    pub(crate) const REQUIRES: &[Features] = &[Features(0)];
+
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant.
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    pub(crate) const REQUIRES: &[Features] = &[
+        Features(0),
+        Features::all(&[
+            VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES,
+            VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+            VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
+        ]),
+    ];
+
     /// The best implementation a CPU with the features `f` can run, on
     /// ARMv7.
     #[cfg(all(
@@ -206,10 +262,7 @@ impl Backend {
         )
     ))]
     pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
-            && f.contains(VG_RSA_PRIME_SEARCH_UMAAL_FEATURES)
-        {
+        if f.contains(Self::REQUIRES[Backend::Umaal as usize]) {
             Backend::Umaal
         } else {
             Backend::Baseline

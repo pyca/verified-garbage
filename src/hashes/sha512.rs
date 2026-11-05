@@ -106,9 +106,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha512, Sha512Backend};
-    use crate::cpu::detected;
-    use verified_garbage_cpu::Features;
+    use super::Sha512;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -130,41 +128,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of the features it depends on.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let backend = Sha512Backend::select(Features(bits));
-            #[cfg(target_arch = "x86_64")]
-            {
-                // AVX, AVX2 and SHA512; AVX, AVX2, BMI1 and BMI2.
-                let shani = bits & 0b10_0011_0000 == 0b10_0011_0000;
-                let avx2 = bits & 0b1111_0000 == 0b1111_0000;
-                let expected = if shani {
-                    Sha512Backend::ShaNi
-                } else if avx2 {
-                    Sha512Backend::Avx2
-                } else {
-                    Sha512Backend::Scalar
-                };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(target_arch = "aarch64")]
-            {
-                let expected =
-                    if Features(bits).contains(Features(verified_garbage_cpu::feature::SHA3)) {
-                        Sha512Backend::Sha3
-                    } else {
-                        Sha512Backend::Scalar
-                    };
-                assert_eq!(backend, expected, "{bits:#b}");
-            }
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            assert_eq!(backend, Sha512Backend::Scalar);
-        }
-        assert_eq!(Sha512::new().backend, Sha512Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.

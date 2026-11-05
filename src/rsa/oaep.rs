@@ -283,10 +283,10 @@ fn encrypt_with(
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; `hash`
     // and `mgf1` are the words of tables of the crate's of `Hash`, and
     // `seed_len` is the digest length of `hash`'s, its word 4
-    // (`table_features` checks it); and the CPU has the features of `f` and
+    // (`hashes::tables::tests::table_words` checks it); and the CPU has the features of `f` and
     // of the tables' functions, which `functions` and `table::table` chose
-    // for the features detected (their `backend_features` and
-    // `table_features` tests check that they need no others).
+    // for the features detected (which fails to compile if they
+    // need others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -363,8 +363,8 @@ fn decrypt_with(
     // `scratch_len = 16 n_len + 1056`; `hash` and `mgf1` are the words of
     // tables of the crate's of `Hash`; and the CPU has the features of `f`
     // and of the tables' functions, which `functions` and `table::table`
-    // chose for the features detected (their `backend_features` and
-    // `table_features` tests check that they need no others).
+    // chose for the features detected (which fails to compile if they
+    // need others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),

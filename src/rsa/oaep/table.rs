@@ -34,8 +34,8 @@ pub(super) fn table(hash: Hash, f: Features) -> Option<super::Table> {
 /// The verified functions: `functions`, which chooses, for a CPU with the
 /// features `f`, the implementation of the RSA operations it runs best
 /// (`crate::rsa::Backend`), and returns encryption and decryption calling
-/// them; and a test that each needs no CPU feature that was not required to
-/// choose it.
+/// them; it does not compile if one needs a CPU feature that RSA's
+/// `select` does not require to choose its implementation.
 ///
 /// Each arm names, for one of RSA's backends on the architecture, encryption
 /// or decryption, with the generated constants of the CPU features it needs
@@ -45,15 +45,23 @@ macro_rules! oaep_functions {
         encrypt: {$($(#[$eattr:meta])* $eb:ident => $enc:path [$($ereq:ident),*]),* $(,)?},
         decrypt: {$($(#[$dattr:meta])* $db:ident => $dec:path [$($dreq:ident),*]),* $(,)?} $(,)?
     ) => {
-        // The CPU features of each implementation, which `function_tests`
-        // checks.
+        // Each function needs no CPU feature that RSA's `select` does not
+        // require to choose the implementation it is listed for.
         $(
             $(#[$eattr])*
-            const _: &[verified_garbage_cpu::Features] = &[$($ereq),*];
+            const _: () = assert!(
+                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$eb as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($ereq),*])),
+                "an encryption needs a CPU feature its implementation is not chosen for"
+            );
         )*
         $(
             $(#[$dattr])*
-            const _: &[verified_garbage_cpu::Features] = &[$($dreq),*];
+            const _: () = assert!(
+                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$db as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($dreq),*])),
+                "a decryption needs a CPU feature its implementation is not chosen for"
+            );
         )*
 
         /// The functions, `(encrypt, decrypt)`, for the implementation that a
@@ -71,28 +79,6 @@ macro_rules! oaep_functions {
                 },
             )
         }
-
-        #[cfg(test)]
-        mod function_tests {
-            /// Each function needs no CPU feature that the implementations
-            /// it calls were not chosen for: on every set of features.
-            #[test]
-            fn backend_features() {
-                for bits in 0..1u32 << crate::cpu::NAMES.len() {
-                    let f = verified_garbage_cpu::Features(bits);
-                    let rsa = crate::rsa::Backend::select(f);
-                    let encrypt = match rsa {
-                        $($(#[$eattr])* crate::rsa::Backend::$eb =>
-                            verified_garbage_cpu::Features::all(&[$(super::$ereq),*]),)*
-                    };
-                    let decrypt = match rsa {
-                        $($(#[$dattr])* crate::rsa::Backend::$db =>
-                            verified_garbage_cpu::Features::all(&[$(super::$dreq),*]),)*
-                    };
-                    assert!(f.contains(encrypt) && f.contains(decrypt), "{bits:#b}");
-                }
-            }
-        }
     };
 }
 
@@ -104,7 +90,8 @@ mod tests {
 
     /// Every hash function but MD5 and SHA-3's has a table, whose word 4 is
     /// the hash function's digest length, which encryption takes as the
-    /// seed's. (`crate::hashes::tables` checks the tables' CPU features.)
+    /// seed's. (`streaming_hash!` checks the tables' CPU features when it
+    /// compiles.)
     #[test]
     fn tables() {
         let all = [

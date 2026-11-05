@@ -311,11 +311,12 @@ fn sign_with(
     // `out_len = n_len` and `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`table_features` checks it, and `sign_with_rng` the length); and the
+    // (`hashes::tables::tests::table_words` checks it, and `sign_with_rng`
+    // the length); and the
     // CPU has the features of `f` and of the tables' functions, which
     // `functions`, `table::md_table` and `table::table` chose for the
-    // features detected (their `backend_features` and `table_features` tests
-    // check that they need no others).
+    // features detected (which fails to compile if they need
+    // others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -383,11 +384,10 @@ pub fn verify(
     // precomputed values for `key.n`, with their required length; `hash` is
     // the words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`table_features` checks it); and the CPU has the features of `f` and
+    // (`hashes::tables::tests::table_words` checks it); and the CPU has the features of `f` and
     // of the tables' functions, which `functions`, `table::md_table` and
-    // `table::table` chose for the features detected (their
-    // `backend_features` and `table_features` tests check that they need no
-    // others).
+    // `table::table` chose for the features detected (which
+    // fails to compile if they need others).
     let r = unsafe {
         f(
             key.n.as_ptr(),

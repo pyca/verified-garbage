@@ -254,8 +254,8 @@ fn derive_by(
     // and `salt` are only read), so none of them overlaps another written
     // one or the call's stack frame, and, as Rust objects, none wraps around
     // the address space. `scrypt` needs no CPU feature that `backend`, the
-    // implementation of SHA-256, was not selected for
-    // (`tests::backend_features`).
+    // implementation of SHA-256, was not selected for (checked when it
+    // compiles, below).
     unsafe {
         scrypt(
             password.as_ptr(),
@@ -275,45 +275,26 @@ fn derive_by(
     };
 }
 
-#[cfg(all(
-    test,
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")
-))]
-mod tests {
-    use super::Sha256Backend;
-    #[cfg(target_arch = "x86_64")]
-    use crate::arch::scrypt::VG_SCRYPT_AVX2_FEATURES;
-    #[cfg(target_arch = "aarch64")]
-    use crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES;
-    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-    use crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES;
-    use crate::cpu::NAMES;
-    use verified_garbage_cpu::Features;
-
-    /// Each implementation of `vg_scrypt` needs no CPU feature that the
-    /// implementation of SHA-256 is not selected for: on every set of
-    /// features that selects it.
-    #[test]
-    fn backend_features() {
-        #[cfg(target_arch = "x86_64")]
-        let variants = [
-            (Sha256Backend::ShaNi, VG_SCRYPT_SHANI_FEATURES),
-            (Sha256Backend::Avx2, VG_SCRYPT_AVX2_FEATURES),
-        ];
-        #[cfg(target_arch = "x86")]
-        let variants = [(Sha256Backend::ShaNi, VG_SCRYPT_SHANI_FEATURES)];
-        #[cfg(target_arch = "aarch64")]
-        let variants = [(Sha256Backend::Sha2, VG_SCRYPT_SHA2_FEATURES)];
-        for (backend, req) in variants {
-            for bits in 0..1u32 << NAMES.len() {
-                let f = Features(bits);
-                if Sha256Backend::select(f) == backend {
-                    assert!(f.contains(Features::all(&[req])));
-                }
-            }
-        }
-    }
-}
+// Each implementation of `vg_scrypt` needs no CPU feature that SHA-256's
+// `select` does not require to choose its implementation.
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::ShaNi as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES),
+    "vg_scrypt_shani needs a CPU feature SHA-256's _shani is not chosen for"
+);
+#[cfg(target_arch = "x86_64")]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::Avx2 as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_AVX2_FEATURES),
+    "vg_scrypt_avx2 needs a CPU feature SHA-256's _avx2 is not chosen for"
+);
+#[cfg(target_arch = "aarch64")]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::Sha2 as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES),
+    "vg_scrypt_sha2 needs a CPU feature SHA-256's _sha2 is not chosen for"
+);
 
 #[cfg(test)]
 mod derive_tests {

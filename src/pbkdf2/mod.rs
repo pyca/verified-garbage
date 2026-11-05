@@ -122,8 +122,9 @@ fn check_len(len: usize, block: usize) {
 /// HMAC do: the `match` on the backend is exhaustive, so a new
 /// implementation of the hash does not compile until it is listed here too
 /// (see "Variants and generic callers" in
-/// `lean/VerifiedGarbage/TCB/Emit.lean`), and a test checks that it needs no
-/// CPU feature the hash's implementation was not selected for.
+/// `lean/VerifiedGarbage/TCB/Emit.lean`), and it does not compile if it
+/// needs a CPU feature that the hash's `select` does not require to choose
+/// its implementation.
 macro_rules! whole_pbkdf2 {
     (
         $hash:ident ($backend:ident) {
@@ -133,10 +134,15 @@ macro_rules! whole_pbkdf2 {
         },
         output: $output:literal $(,)?
     ) => {
-        // The CPU features of each implementation, which `tests` checks.
+        // Each implementation's `pbkdf2` needs no CPU feature that the
+        // hash's `select` does not require to choose its implementation.
         $(
             $(#[$attr])*
-            const _: &[verified_garbage_cpu::Features] = &[$($req),*];
+            const _: () = assert!(
+                $backend::REQUIRES[$backend::$variant as usize]
+                    .contains(verified_garbage_cpu::Features::all(&[$($req),*])),
+                "a function needs a CPU feature its implementation is not chosen for"
+            );
         )*
 
         impl super::Pbkdf2Hash for $hash {
@@ -159,7 +165,7 @@ macro_rules! whole_pbkdf2 {
                 // overlaps neither of them nor the call's stack frame, and,
                 // as Rust objects, none wraps around the address space. `pbkdf2` needs no CPU feature
                 // that the implementation was not selected for
-                // (`tests::backend_features`).
+                // (checked when it compiles).
                 unsafe {
                     pbkdf2(
                         password.as_ptr(),
@@ -177,22 +183,6 @@ macro_rules! whole_pbkdf2 {
         #[cfg(test)]
         mod tests {
             use super::$hash;
-
-            /// Each implementation's `pbkdf2` needs no CPU feature that the
-            /// hash's implementation is not selected for: on every set of
-            /// features that selects it.
-            #[test]
-            fn backend_features() {
-                $(
-                    $(#[$attr])*
-                    for bits in 0..1u32 << $crate::cpu::NAMES.len() {
-                        let f = verified_garbage_cpu::Features(bits);
-                        if super::$backend::select(f) == super::$backend::$variant {
-                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$(super::$req),*])));
-                        }
-                    }
-                )*
-            }
 
             /// With no expected value computed here, for the hash
             /// functions without published PBKDF2 vectors too: a key of
