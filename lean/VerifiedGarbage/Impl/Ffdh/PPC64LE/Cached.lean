@@ -184,10 +184,10 @@ def scalar : Prog isa :=
     GenerateKey.cutSetup)) (VG.Impl.Bignum.PPC64LE.Precompute.countLoop .r6 GenerateKey.cutBody))
 
 /-- `r20 :=` bit `k` of x (`r19 := k = i − 1 + j rows`), its `p_len` octets
-most significant first at the header's word 8; 0 from the width up. -/
+most significant first at the header's word 8; 0 from `8 p_len` up. -/
 def bit (j : Nat) : Prog isa :=
   .seq (.block [ldh .r19 hI, .subi .r19 .r19 1, ldh .r18 hRows, .li .r0 j, .mul .r18 .r18 .r0,
-      .add .r19 .r19 .r18, ldh .r18 hBits, .sub .r18 .r19 .r18, .lsr .d .r18 .r18 63])
+      .add .r19 .r19 .r18, .lsl .r18 .r28 3, .sub .r18 .r19 .r18, .lsr .d .r18 .r18 63])
     (.ite (.zero .d .r18) (.block [.li .r20 0])
       (.seq (.block [.lsr .d .r18 .r19 3, .sub .r18 .r28 .r18, .subi .r18 .r18 1, .load .d .r17 .r23 64,
           .add .r17 .r17 .r18, .lbz .r20 .r17 0, .li .r0 7, .logic .and .r18 .r19 .r0])
