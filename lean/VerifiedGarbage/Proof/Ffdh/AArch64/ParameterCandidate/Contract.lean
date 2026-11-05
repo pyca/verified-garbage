@@ -9,9 +9,9 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # An FFDH parameter candidate on AArch64: the contract the proofs use
 
-`pcContract` states `Proof.Ffdh.parameterCandidateContract` (with no stack of
+`pcContract` states `Proof.Ffdh.sievedParameterCandidateContract` (with no stack of
 its own) on the registers and the stack:
-`vg_ffdh_parameter_candidate(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_parameter_candidate_sieved(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7, scratch_len = [sp])`;
 the shared contract implies it (`pc_implies`).
 -/
@@ -43,7 +43,7 @@ abbrev pcRand (s : State) : List Byte := bytesAt s.mem (s.gpr .x5) (s.gpr .x6).t
 
 /-- The specification's result, from the state on entry. -/
 def pcResult (s : State) : Option (Option Nat × Spec.RsaKeyGen.Rand) :=
-  parameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s)
+  sievedParameterCandidate (s.gpr .x3).toNat ((s.gpr .x4).setWidth 32).toNat (pcRand s)
 
 def pcPost (s t : State) : Prop :=
   ((t.gpr .x0).setWidth 32).toNat = candidateStatus (pcResult s) ∧
@@ -80,29 +80,29 @@ def pcSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x6000, 8⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩]
 
-theorem pc_implies : pcContract.Implies (parameterCandidateContract abi) where
+theorem pc_implies : pcContract.Implies (sievedParameterCandidateContract abi) where
   pre := by
     intro s h
-    sig_pre [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
+    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
       stackArgs_one, List.append_eq] at h
-    sig_pre [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
+    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
       stackArgs_one, List.append_eq] at h
     sig_split h
-    sig_reduce [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
+    sig_reduce [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
       stackArgs_one, List.append_eq]
     sig_and_intros
     sig_close
   post := by
-    sig_implies_post [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract,
+    sig_implies_post [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract,
       pcPost, pcResult, pcRand, stackArgs_one, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [parameterCandidateContract, parameterCandidateSig, abi, argRegs, stackArgs_one,
+    sig_pub [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackArgs_one,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     exact h
   sat := by
-    sig_implies_sat [parameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
+    sig_implies_sat [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract, pcPre,
       stackArgs_one, List.append_eq] [pcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using pcSat
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

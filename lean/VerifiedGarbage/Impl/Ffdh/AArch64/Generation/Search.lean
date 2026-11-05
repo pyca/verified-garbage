@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 /-! # The native FFDH parameter-search controller on AArch64
 
 As on x86-64 (`Impl/Ffdh/X86_64/Generation/Search.lean`): repeats
-`vg_ffdh_parameter_candidate` on the tape until a candidate is accepted,
+`vg_ffdh_parameter_candidate_sieved` on the tape until a candidate is accepted,
 the attempts run out, or the tape does, consuming the octets of each
 rejected candidate. The first four state words are the attempts left, the
 width, the entropy cap and the next request; the rest are private working
@@ -13,7 +13,7 @@ space, whose base is kept in the callee-saved `x19` (the caller's `x19`
 saved in word 4). The loop runs in a frame saving `x30`, which the calls
 change; each candidate in a frame of 16 bytes holding its stack argument.
 
-`vg_ffdh_generate_parameters(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_generate_parameters_sieved(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7,
 scratch_len = [sp], state = [sp + 8])`.
 -/
@@ -38,7 +38,7 @@ def entry : List Instr := [
   movi .x13 0, stf .x0 5, stf .x1 6, stf .x2 7, stf .x3 8, stf .x4 9, stf .x5 10, stf .x6 11, stf .x13 12,
   stf .x7 13, stf .x9 15]
 
-/-- `vg_ffdh_parameter_candidate`'s arguments, for the tape's current
+/-- `vg_ffdh_parameter_candidate_sieved`'s arguments, for the tape's current
 pointer and length: its stack argument at the 16 bytes the candidate's
 frame allocates. -/
 def arguments : List Instr := [
@@ -87,7 +87,7 @@ def classify : Prog isa := .seq (.block (head ++ [.subImm .x .x12 .x9 1]))
 
 variable (candidate : Prog isa)
 
-/-- The candidate, a call of `vg_ffdh_parameter_candidate`, in a frame of
+/-- The candidate, a call of `vg_ffdh_parameter_candidate_sieved`, in a frame of
 its stack argument. -/
 def candidateRun : Prog isa := .frame (.alloc 16) (.seq (.block arguments) candidate) (.free 16)
 

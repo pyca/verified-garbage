@@ -55,7 +55,7 @@ def SInput (p : SPub) (s : State) : Prop := searchPre s ∧ sOfState s = p
 
 /-- The search from octet `used` of the tape, with `k` attempts left. -/
 def SPub.tail (p : SPub) (used k : Nat) : ParameterSearchResult :=
-  (parameterSearch p.bits p.gen k (p.rand.drop used)).consume used
+  (sievedParameterSearch p.bits p.gen k (p.rand.drop used)).consume used
 
 /-- The controller's words while it searches. -/
 def SPub.headers (p : SPub) (used k : Nat) : List (Nat × BitVec 64) :=

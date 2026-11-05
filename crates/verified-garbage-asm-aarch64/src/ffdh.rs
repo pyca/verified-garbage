@@ -6740,7 +6740,7 @@ cbz x9, 20b
     )
 }
 
-/// Run native finite-field Diffie–Hellman parameter generation. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Contract: `VG.Spec.Ffdh.parameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+/// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
 /// # Safety
 ///
@@ -6756,7 +6756,7 @@ cbz x9, 20b
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub unsafe extern "C" fn vg_ffdh_generate_parameters_sieved(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x910003ee,0xf94005c8,0xf94001c9,0x11000084,0xf9001113,0x91000113,0xd280000d,0xf9001660
 .inst 0xf9001a61,0xf9001e62,0xf9002263,0xf9002664,0xf9002a65,0xf9002e66,0xf900326d,0xf9003667
@@ -6766,7 +6766,7 @@ pub unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usiz
 cbz x9, 21f
 .inst 0xd10043ff,0xf9401660,0xf9401a61,0xf9401e62,0xf9402263,0xf9402664,0xf9402a65,0xf9402e66
 .inst 0xf9403667,0xf9403e69,0x910003eb,0xf9000169
-bl {vg_ffdh_parameter_candidate}
+bl {vg_ffdh_parameter_candidate_sieved}
 .inst 0x910043ff,0x11000009,0xf9401e6b,0xf940016a,0xd100052c
 cbz x12, 23f
 .inst 0xd100092c
@@ -6802,10 +6802,10 @@ cbnz x2, 210b
 cbz x9, 20b
 .inst 0xf84107fe,0xf9401e61,0xf9403262,0xf9403a60,0xf9401273,0xf9000022,0xd65f03c0
 .p2align 6",
-        vg_ffdh_parameter_candidate = sym super::ffdh::vg_ffdh_parameter_candidate::vg_ffdh_parameter_candidate,
+        vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_ffdh_parameter_candidate.rs"]
-pub(crate) mod vg_ffdh_parameter_candidate;
+#[path = "internal/vg_ffdh_parameter_candidate_sieved.rs"]
+pub(crate) mod vg_ffdh_parameter_candidate_sieved;
