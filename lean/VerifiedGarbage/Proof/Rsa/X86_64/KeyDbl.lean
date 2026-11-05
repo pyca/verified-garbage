@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 `dblIn`: `[o] := 2 [o] + c mod m` for `[o] < m` and the carry `c` in `rbp`
 (`dblIn_ok`), as `double_ok` proves `vg_rsa_public`'s doubling from no
 carry: the double into the accumulator (`w + 1` words), then `subMod` and
-`selectAcc`.
+`selectRem`.
 -/
 
 @[expose] public section
@@ -25,6 +25,57 @@ namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+/-! ## Selecting the remainder -/
+
+theorem selectRem_ok {s : State} {B : Addr} {Z w eA eT eo : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B eA) (hsi : s.gpr .rsi = off B eT) (hbx : s.gpr .rbx = off B eo)
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 w) {lt : Bool} (hbp : s.gpr .rbp = mask lt)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : eA + 8 * w ≤ Z) (hT : eT + 8 * w ≤ Z) (ho : eo + 8 * w ≤ Z)
+    (sA : eo + 8 * w ≤ eA ∨ eA + 8 * w ≤ eo) (sT : eo + 8 * w ≤ eT ∨ eT + 8 * w ≤ eo) :
+    WP isa selectRem s fun t =>
+      wv t.mem B eo w = (if lt then wv s.mem B eA w else wv s.mem B eT w) ∧
+      Outside B eo (8 * w) s.mem t.mem ∧ Keep [.rax, .rdx, .r14] s t := by
+  have hn := hs.nowrap
+  unfold selectRem
+  have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = s.mem → Keep [.r14] s t → t.cf = s.cf →
+      SelInv s B Z eA eT eo lt 0 t := fun t h14 hm k _ =>
+    ⟨hs.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _, by
+      cases lt <;> rfl⟩
+  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_arith) hw' (SelInv s B Z eA eT eo lt) h0 ?_)
+    fun t hI => ⟨hI.val, hI.out, hI.keep⟩
+  intro j _ hj t hI
+  have t8 : t.gpr .r8 = off B eA := (hI.keep.gpr (by decide)).trans h8
+  have tsi : t.gpr .rsi = off B eT := (hI.keep.gpr (by decide)).trans hsi
+  have tbx : t.gpr .rbx = off B eo := (hI.keep.gpr (by decide)).trans hbx
+  have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans h12
+  have tbp : t.gpr .rbp = mask lt := (hI.keep.gpr (by decide)).trans hbp
+  have hx : word t.mem B (eA + 8 * j) = word s.mem B (eA + 8 * j) := hI.out.word (by omega_arith) (by omega_arith)
+  have hy : word t.mem B (eT + 8 * j) = word s.mem B (eT + 8 * j) := hI.out.word (by omega_arith) (by omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.rax, .rdx, .rbp] (Q := fun t₁ => t₁.mem = t.mem.writeW (off B (eo + 8 * j))
+      (if lt then word s.mem B (eA + 8 * j) else word s.mem B (eT + 8 * j)) ∧
+      t₁.gpr .rbp = t.gpr .rbp) (by
+      cases lt <;> xrun [mask, State.ea, ix, addr0 t8 hI.r14, addr0 tsi hI.r14, addr0 tbx hI.r14, tbp,
+        hI.scr.ld (show eA + 8 * j + 8 ≤ Z by omega_arith), hI.scr.ld (show eT + 8 * j + 8 ≤ Z by omega_arith),
+        hI.scr.st (show eo + 8 * j + 8 ≤ Z by omega_arith), hx, hy, execCmov, eval]) rfl)
+    fun t₁ ⟨⟨hm, hbp₁⟩, k₁'⟩ => ?_
+  -- TEST updates flags but preserves the mask register.
+  have k₁ : Keep [.rax, .rdx] t t₁ := ⟨fun r hr => by
+    by_cases he : r = .rbp
+    · subst r; exact hbp₁
+    · exact k₁'.gpr (by simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or, and_assoc] using And.intro hr he), k₁'.2⟩
+  have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
+  have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide), h14, ?_, ?_⟩
+  · rw [hm', hm]
+    intro x hx'
+    rw [writeW_outside t.mem B _ (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega_arith), hI.val]
+    cases lt <;> simp [wv]
+
 
 /-- After `j` words of `dblIn`'s loop, from the carry `c₀`:
 `A_j + 2^(64 j) c = 2 O_j + c₀`. -/
@@ -130,7 +181,7 @@ theorem dblIn_ok {s : State} {B : Addr} {Z w eo em eA eT : Nat} {c₀ : Bool} (h
     fun s₄ ⟨c', lt, hbp', hlt, hD, ho₄, k₄⟩ => ?_)
   have hs₄ := hs₃.congr k₄.2.2
   have k14 := k13.trans k₄
-  refine WP.mono (selectAcc_ok hs₄ ((k14.gpr (by decide)).trans h8) ((k₄.gpr (by decide)).trans hsi₃)
+  refine WP.mono (selectRem_ok hs₄ ((k14.gpr (by decide)).trans h8) ((k₄.gpr (by decide)).trans hsi₃)
     ((k14.gpr (by decide)).trans hbx) ((k14.gpr (by decide)).trans h12) hbp' (by omega_arith) hw'
     (by omega_arith) hT ho (by omega_arith) sTo) fun t ⟨hv', hot, k₅⟩ => ?_
   have hacc₄ : wv s₄.mem B eA w = wv s₃.mem B eA w := ho₄.wv (by omega_arith) (by omega_arith)

@@ -51257,10 +51257,8 @@ vg_rsa_check_key:
 	mov r14, 0
 250:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -51429,10 +51427,8 @@ vg_rsa_check_key:
 	mov r14, 0
 264:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -51714,10 +51710,8 @@ vg_rsa_check_key:
 	mov r14, 0
 289:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -51886,10 +51880,8 @@ vg_rsa_check_key:
 	mov r14, 0
 2103:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -52155,10 +52147,8 @@ vg_rsa_check_key:
 	mov r14, 0
 2127:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -52710,10 +52700,8 @@ vg_rsa_check_crt_key:
 	mov r14, 0
 240:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -52946,10 +52934,8 @@ vg_rsa_check_crt_key:
 	mov r14, 0
 260:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
@@ -53215,10 +53201,8 @@ vg_rsa_check_crt_key:
 	mov r14, 0
 284:
 	mov rax, QWORD PTR [r8+r14*8]
-	mov rdx, QWORD PTR [rsi+r14*8]
-	xor rax, rdx
-	and rax, rbp
-	xor rax, rdx
+	test rbp, rbp
+	cmove rax, QWORD PTR [rsi+r14*8]
 	mov QWORD PTR [rbx+r14*8], rax
 	add r14, 1
 	cmp r14, r12
