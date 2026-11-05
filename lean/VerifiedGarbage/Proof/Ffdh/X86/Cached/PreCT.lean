@@ -278,7 +278,7 @@ theorem rowRest_trace {P : State → Prop} (hP : ∀ x, P x → Run Ex base byte
 
 /-- A slot to a row. -/
 theorem storeRow_trace {P F : State → Prop} (hP : ∀ x, P x → Run Ex base bytes len args sp x) (k a : Nat)
-    (hc : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+    (hc : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
       (ptrTo (.slot .wide a) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))))
     (hw : ∀ x, P x → WP isa (storeRow (rowImm k) a) x F) : RelCT isa (Both P) (storeRow (rowImm k) a) (Both F) := by
   refine relCT_both ?_ hw
@@ -288,7 +288,7 @@ theorem storeRow_trace {P F : State → Prop} (hP : ∀ x, P x → Run Ex base b
 
 /-- A row to a slot. -/
 theorem loadRow_trace {P F : State → Prop} (hP : ∀ x, P x → Run Ex base bytes len args sp x) (k a : Nat)
-    (hc : XACheck (.seq (.block (rowAt .ebp ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+    (hc : XACheck (.seq (.block (rowAt .ebp ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
       (ptrTo (.slot .wide a) .ebx .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))))
     (hw : ∀ x, P x → WP isa (loadRow (rowImm k) a) x F) : RelCT isa (Both P) (loadRow (rowImm k) a) (Both F) := by
   refine relCT_both ?_ hw
@@ -296,27 +296,27 @@ theorem loadRow_trace {P F : State → Prop} (hP : ∀ x, P x → Run Ex base by
   simp only [List.append_assoc]
   exact relCT_seq_block_append (VG.RelCT.seq (idx_trace k) (rowRest_trace hP hc))
 
-theorem store9_check : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem store9_check : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 9) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
-theorem store4_check : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem store4_check : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 4) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
-theorem store6_check : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem store6_check : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 6) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
-theorem store7_check : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem store7_check : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 7) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
-theorem store8_check : XACheck (.seq (.block (rowAt .ebx ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem store8_check : XACheck (.seq (.block (rowAt .ebx ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 8) .ebp .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
-theorem load5_check : XACheck (.seq (.block (rowAt .ebp ++ ([.mov .ecx (.imm (BitVec.allOnes 32))] ++
+theorem load5_check : XACheck (.seq (.block (rowAt .ebp ++ (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++
     (ptrTo (.slot .wide 5) .ebx .edx ++ cntTo (one .wide) .edi)))) (.seq selectLoop (.block restoreEdi))) := by
   dsimp only [XACheck]; taint_decide
 
