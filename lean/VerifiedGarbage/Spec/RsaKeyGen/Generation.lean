@@ -14,10 +14,10 @@ the distance check against the other prime, trial division, the gcd check and
 Miller–Rabin with its blinded witnesses keep their meaning, and candidates too
 close to the other prime still do not count as attempts.
 
-Over one tape long enough, the search finds what `generatePrime` finds, from
-the same octets (`VerifiedGarbageTest/RsaPrimeGeneration.lean` checks it on a
-stream). Over a stream cut into refilled tapes, it finds the same, since only
-an unfinished candidate is ever run again, from its own octets.
+The search is `generatePrime` on the stream of octets the host hands out,
+cut into refilled tapes (`GenerationAgrees.lean` states and proves it,
+`primeSearch_agrees`): only an unfinished candidate is ever run again, from
+its own octets.
 
 It adds one way to fail: an unfinished candidate may use at most
 `primeEntropy` octets (a candidate and 32768 witness draws). This bounds the
