@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 
+-- separate module: the entry's symbolic execution, which a change to the loop's proofs does not re-elaborate
+
 /-! # The refillable-tape search's entry on x86-64
 
 The entry stores the arguments in the attempts' frame and the controller's
@@ -211,7 +213,7 @@ theorem refillBase_bound {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
   rw [refillBase_toNat h]; have := (s.gpr .rsp).isLt; have : 568 ≤ (s.gpr .rsp).toNat := h.stackLower; omega
 
 theorem refillBase_args (s : State) : off (refillBase s) 392 = stackArgAddr s 1 := by
-  simp only [refillBase, low, off, stackArgAddr, stackUse]
+  simp only [refillBase, low, off, stackArgAddr, refillStack]
   bv_omega
 
 /-- The stack's regions are disjoint from each buffer. -/

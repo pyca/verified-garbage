@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
 
+-- separate module: target-independent facts about the spec, for every target's proof of the search
+
 /-! # The refillable-tape parameter search, one seed at a time
 
 `Spec.Dsa.parameterSearch` over a tape `R`, after `c` octets consumed by

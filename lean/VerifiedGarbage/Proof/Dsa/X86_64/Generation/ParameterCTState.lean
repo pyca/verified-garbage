@@ -4,48 +4,48 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
 
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
-import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-import Mathlib.Basic.IsEmpty.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackMemoryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-import VerifiedGarbage.Impl.Dsa.Generation.Layout
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
-import VerifiedGarbage.Impl.RsaOaep.X86_64
-import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
-import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Ffdh
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
-import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
-import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
+public import Mathlib.Basic.IsEmpty.Defs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackMemoryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
 /-! # Public seed and witness cursors for the complete parameter search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedPrimeResultCT.lean`, which only this module imported.
@@ -53,7 +53,7 @@ section
 
 /-! # Public prime-search outcomes select the next generator phase -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64
@@ -113,7 +113,7 @@ section
 
 /-! # Final domain validation uses the generation arena and exact packed bytes -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.Generation.Layout VG.Impl.RsaOaep.X86_64
@@ -192,7 +192,7 @@ section
 
 /-! # Compose domain packing with the final verified parameter check -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.Generation.Layout
@@ -250,7 +250,7 @@ section
 
 /-! # Generator selection supplies public inputs to the final validation gate -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64
@@ -309,7 +309,7 @@ section
 
 /-! # Complete generator search, phase gate, packing, and validation timing -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.X86_64.Generation
@@ -340,7 +340,7 @@ section
 
 /-! # Instantiate the public prime-search state from actual persistent-frame words -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
@@ -421,7 +421,7 @@ section
 
 /-! # Timing of the bounded native p search, including its exact retry cursor -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
@@ -498,7 +498,7 @@ section
 
 /-! # The complete bounded native p search has a public trace -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 VG.Impl.Dsa.X86_64.Generation
@@ -530,7 +530,7 @@ section
 
 /-! # The accepted subgroup enters the complete public-trace prime search -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
@@ -555,7 +555,7 @@ section
 
 /-! # Prime search composes with generator selection and final domain checking -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation

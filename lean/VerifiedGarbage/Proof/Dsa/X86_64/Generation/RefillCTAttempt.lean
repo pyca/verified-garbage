@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -138,7 +140,8 @@ theorem shortAccepted_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : Sta
   obtain ⟨⟨⟨W, hm, h19⟩, next⟩, hs⟩ := h
   have e : g.status = 1 := by
     have := hs.symm.trans he; simpa using this
-  have sh : g.shortStatus = 1 := by simp [SeedGeneratorPublic.shortStatus, e]
+  have sh : g.shortStatus = 1 := by
+    unfold SeedGeneratorPublic.shortStatus; rw [ite_eq_left e]
   exact WP.block_nil ⟨⟨W, hm, h19.trans (e.trans sh.symm)⟩, fun _ => next e⟩
 
 theorem shortRanOut_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
@@ -148,8 +151,13 @@ theorem shortRanOut_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State
   have short : g.seed.context.hs.bytes.length <
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen := by
     have := hc.symm.trans hb; simpa using this
-  have sh : g.shortStatus = 0 := by simp [SeedGeneratorPublic.shortStatus, ne, short]
-  refine WP.mono (Refill.statusMem_ok hm 0 (by decide)) fun t ⟨mt, _, _⟩ => ?_
+  have sh : g.shortStatus = 0 := by
+    unfold SeedGeneratorPublic.shortStatus; rw [ite_eq_right ne, ite_eq_left short]
+  obtain ⟨V, R⟩ := hm.rep
+  refine WP.mono (stackStatus_ok hm.layout R 0 (by decide)) fun t ⟨Lt, Rt, ot, kt⟩ => ?_
+  have mt := hm.frame Lt ⟨V, Rt⟩ (fun k hk => by
+    have : k ≠ 19 := by rintro rfl; exact absurd hk (by decide)
+    simp [upd, this]) (GenerationContext.status_frame ot) kt.2.1 kt.2.2
   exact ⟨⟨_, mt, by simp [upd, sh]⟩, fun h1 => by rw [sh] at h1; exact absurd h1 (by decide)⟩
 
 theorem shortFull_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
@@ -159,7 +167,8 @@ theorem shortFull_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
   have full : ¬ g.seed.context.hs.bytes.length <
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen := by
     have := hc.symm.trans hb; simpa using this
-  have sh : g.shortStatus = g.status := by simp [SeedGeneratorPublic.shortStatus, ne, full]
+  have sh : g.shortStatus = g.status := by
+    unfold SeedGeneratorPublic.shortStatus; rw [ite_eq_right ne, ite_eq_right full]
   exact WP.block_nil ⟨⟨W, hm, h19.trans sh.symm⟩, fun h1 => absurd (sh.symm.trans h1) ne⟩
 
 theorem shortChecked_pins (pLen qLen : Nat) : Pins (ShortChecked pLen qLen) [.rsp] :=

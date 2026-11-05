@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Dsa.Generation.Layout
 import VerifiedGarbage.Proof.Bignum.Octets
 
+-- separate module: the precondition's facts and the frames, apart from the entry's symbolic execution
+
 /-! # The refillable-tape search's precondition, as facts about the machine
 
 `vg_dsa_parameter_search(out, out_len, used, rand, rand_len, scratch,
@@ -26,7 +28,7 @@ namespace VG.Proof.Dsa.X86_64.Generation.Refill
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack the search uses below its return address. -/
-abbrev stackUse : Nat := 568
+abbrev refillStack : Nat := 568
 
 def inOut (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
 def inUsed (s : State) : Region := ⟨s.gpr .rdx, 8⟩
@@ -39,7 +41,7 @@ def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
 abbrev refillPLen (s : State) : Nat := (s.mem.readW (stackArg s 1 + 8) 64).toNat
 
 structure RefillABI (pBytes : Nat) (s : State) : Prop where
-  stackLower : stackUse ≤ (s.gpr .rsp).toNat
+  stackLower : refillStack ≤ (s.gpr .rsp).toNat
   stackUpper : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
   rd : s.rd = [inRand s, inArgs s]
   wr : s.wr = [inOut s, inUsed s, inScr s, inState s]
@@ -63,12 +65,12 @@ structure RefillABI (pBytes : Nat) (s : State) : Prop where
   retScr : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint (inScr s)
   retState : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint (inState s)
   retArgs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint (inArgs s)
-  stackOut : (below (s.gpr .rsp) stackUse).Disjoint (inOut s)
-  stackUsed : (below (s.gpr .rsp) stackUse).Disjoint (inUsed s)
-  stackRand : (below (s.gpr .rsp) stackUse).Disjoint (inRand s)
-  stackScr : (below (s.gpr .rsp) stackUse).Disjoint (inScr s)
-  stackState : (below (s.gpr .rsp) stackUse).Disjoint (inState s)
-  stackArgs : (below (s.gpr .rsp) stackUse).Disjoint (inArgs s)
+  stackOut : (below (s.gpr .rsp) refillStack).Disjoint (inOut s)
+  stackUsed : (below (s.gpr .rsp) refillStack).Disjoint (inUsed s)
+  stackRand : (below (s.gpr .rsp) refillStack).Disjoint (inRand s)
+  stackScr : (below (s.gpr .rsp) refillStack).Disjoint (inScr s)
+  stackState : (below (s.gpr .rsp) refillStack).Disjoint (inState s)
+  stackArgs : (below (s.gpr .rsp) refillStack).Disjoint (inArgs s)
   outBound : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
   usedBound : (s.gpr .rdx).toNat + 8 ≤ 2 ^ 64
   randBound : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
@@ -84,7 +86,7 @@ structure RefillABI (pBytes : Nat) (s : State) : Prop where
 
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
-theorem refillABI_of {pBytes : Nat} {s : State} (h : (contract pBytes abi stackUse).pre s) :
+theorem refillABI_of {pBytes : Nat} {s : State} (h : (contract pBytes abi refillStack).pre s) :
     RefillABI pBytes s := by
   sig_pre [contract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two, stackBelow, List.range, List.range.loop,
     inOut, inUsed, inRand, inScr, inState, inArgs] at h
@@ -101,7 +103,7 @@ The stack below the return address, from `low = rsp - 568` up: the 192
 octets the attempts' calls use, the attempts' frame of 296 (`refillBase`),
 the controller's 32 and the saved registers' 48. -/
 
-def low (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 stackUse
+def low (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 refillStack
 
 /-- The attempts' frame. -/
 def refillBase (s : State) : Addr := off (low s) 192
@@ -113,7 +115,7 @@ def ctlRegion (F : Addr) : Region := ⟨off F 296, 32⟩
 def ctlWord (m : Mem) (F : Addr) (k : Nat) : BitVec 64 := m.readW (off F (296 + 8 * k)) 64
 
 theorem low_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
-    (low s).toNat = (s.gpr .rsp).toNat - stackUse := by
+    (low s).toNat = (s.gpr .rsp).toNat - refillStack := by
   have hl := h.stackLower
   simp only [low, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := (s.gpr .rsp).isLt
@@ -124,11 +126,11 @@ theorem refillBase_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
   have hl : 568 ≤ (s.gpr .rsp).toNat := h.stackLower
   have hb := low_toNat h
   have := (s.gpr .rsp).isLt
-  simp only [refillBase, off, BitVec.toNat_add, BitVec.toNat_ofNat, hb, stackUse, Nat.reducePow, Nat.reduceMod]
+  simp only [refillBase, off, BitVec.toNat_add, BitVec.toNat_ofNat, hb, refillStack, Nat.reducePow, Nat.reduceMod]
   omega
 
-theorem low_sub {d n : Nat} (s : State) (h : d + n ≤ stackUse) :
-    Region.Sub ⟨off (low s) d, n⟩ (below (s.gpr .rsp) stackUse) :=
+theorem low_sub {d n : Nat} (s : State) (h : d + n ≤ refillStack) :
+    Region.Sub ⟨off (low s) d, n⟩ (below (s.gpr .rsp) refillStack) :=
   Offset.sub_base _ h
 
 theorem refillBase_below (s : State) : below (refillBase s) 192 = ⟨low s, 192⟩ := by
@@ -139,7 +141,7 @@ theorem ctlRegion_eq (s : State) : ctlRegion (refillBase s) = ⟨off (low s) 488
 
 /-- Regions of the stack below the return address are disjoint from the buffers. -/
 theorem RefillABI.stack_disjoint {pBytes : Nat} {s : State} (h : RefillABI pBytes s) {d n : Nat}
-    (hd : d + n ≤ stackUse) {r : Region}
+    (hd : d + n ≤ refillStack) {r : Region}
     (hr : r = inOut s ∨ r = inUsed s ∨ r = inRand s ∨ r = inScr s ∨ r = inState s ∨ r = inArgs s) :
     (⟨off (low s) d, n⟩ : Region).Disjoint r := by
   have sub := low_sub s hd
