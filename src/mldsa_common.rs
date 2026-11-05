@@ -287,7 +287,8 @@ macro_rules! ml_dsa {
                     return Err(MlDsaError::LoopBound);
                     // NO-COVERAGE-END
                 }
-                // keyGenInternal encodes SHAKE256(pk, 64) at sk[64..128].
+                // keyGenInternal encodes SHAKE256(pk, 64) at sk[64..128]
+                // (`VG.Spec.MlDsa.keyGenInternal_tr`).
                 // Initialize the cache only after successful key generation.
                 key.vk.tr.copy_from_slice(&key.sk[64..128]);
                 Ok(key)
