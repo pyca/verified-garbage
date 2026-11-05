@@ -671,7 +671,7 @@ theorem linesOps_words (hR : ROk P) (r : Nat) (M : Block z.bits) : ∀ (l : List
     obtain ⟨⟨ha, hb, hd, had, hk⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
       linesOps_words hR r M l _ hl, lineOps_words P hR r M _ ha hb hd had hk]
-    rfl
+    simp only [blines, List.foldl_cons]
 
 /-- Half `h` of the four `G`s `(i, x, y, c, d)` of `qs`, as the code's operations. -/
 def halfOps (qs : List (Nat × Nat × Nat × Nat × Nat)) (h : Nat) : List Op :=
