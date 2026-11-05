@@ -812,6 +812,27 @@ class Refinement(unittest.TestCase):
         self.assertEqual(len(seen), len(set(seen)))
 
 
+    def test_moves_between_different_shards_are_simulated_together(self):
+        # x1 joins x0 and y1 joins y0: four different shards, one call.
+        imps = {"x": [], "y": [], "x0": ["x"], "x1": ["x"], "y0": ["y"], "y1": ["y"],
+                "a": [], "b": [], "c": [], "d": []}
+        cost = {m: (60.0 if m in "xy" else 1.0) for m in imps}
+        closure = shards.closures(imps)
+        targets = [["x0", "a"], ["x1", "b"], ["y0", "c"], ["y1", "d"]]
+        built = [set().union(*(closure[t] for t in ts)) for ts in targets]
+        loads = [shards.build_time(imps, {m: cost[m] for m in part}) for part in built]
+        calls = []
+
+        def simulate(parts):
+            calls.append(len(parts))
+            return [shards.build_time(imps, {m: cost[m] for m in part}) for part in parts]
+
+        _, targets, built = shards.refine(imps, closure, cost, shards.paths(imps, cost),
+                                          (loads, targets, built), 1000.0, None, simulate)
+        self.assertEqual(calls[0], 4)
+        self.assertEqual(sorted(fam for part in built for fam in "xy" if fam in part), ["x", "y"])
+
+
 @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
 class RefineBudget(Project):
     def test_refining_never_makes_the_chosen_packing_slower(self):
@@ -820,9 +841,9 @@ class RefineBudget(Project):
         limits = []
         real = shards.refine
 
-        def refine(imps, closure, cost, path, packed, limit, simulator=None):
+        def refine(imps, closure, cost, path, packed, limit, *args):
             limits.append((limit, max(packed[0])))
-            return real(imps, closure, cost, path, packed, limit, simulator)
+            return real(imps, closure, cost, path, packed, limit, *args)
 
         imps = {f"S{i}": [] for i in range(4)}
         imps.update({f"T{i}": [f"S{i % 4}"] for i in range(12)})

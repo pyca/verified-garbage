@@ -131,9 +131,12 @@ PARALLELISM = 5.4
 # finished 9% sooner, but 12 left one shard much slower): the plan tries
 # each and keeps the fastest by the simulation.
 REUSE_WEIGHTS = (1.0, 2.0, 4.0, 6.0, 8.0)
-# How far `refine` searches: the moves it simulates and accepts at most.
+# How far `refine` searches: the moves it simulates and accepts at most,
+# and how many (between different shards) it simulates together. The plan
+# does not depend on how many CPUs simulate them.
 REFINE_SIMULATIONS = 256
 REFINE_MOVES = 64
+REFINE_WIDTH = 2
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
@@ -554,6 +557,7 @@ class _BuildGraph:
 
     def __init__(self, imps, cost):
         names = sorted(cost)
+        self.names = names
         self.index = {m: i for i, m in enumerate(names)}
         self.cost = [cost[m] for m in names]
         self.users = [[] for _ in names]
@@ -672,36 +676,71 @@ _PACKING = None
 
 def _pack_one(task):
     n, reuse = task
-    sinks, closure, cost, path, prepared = _PACKING
+    sinks, closure, cost, path, prepared, _ = _PACKING
     return pack(n, sinks, closure, cost, path, reuse, prepared)
+
+
+def _pack_and_simulate(task):
+    """A worker's packing, with its shards' simulated times while they
+    finish (with SHARD_OVERHEAD) by `limit`, as `schedule` checks them
+    (none if its lower bound does not)."""
+    *task, limit = task
+    simulator = _PACKING[5]
+    bounds, targets, built = _pack_one(task)
+    loads = []
+    if max(bounds) + SHARD_OVERHEAD <= limit and all(targets):
+        for part in built:
+            loads.append(simulator.time(part))
+            if loads[-1] + SHARD_OVERHEAD > limit:
+                break
+    return bounds, targets, built, loads
+
+
+def _simulate(modules):
+    """A worker's simulated time of the modules (numbers in the simulator)."""
+    simulator = _PACKING[5]
+    return simulator.time(frozenset(map(simulator.names.__getitem__, modules)))
 
 
 class _Packings:
     """Each count's packings, one per reuse weight. With many sinks (a
     packing then takes a large part of a second) and CPUs to spare, worker
-    processes pack them at once, forked when first needed; the packings are
-    the same as one after another."""
+    processes pack them at once, forked when first needed, and simulate
+    each packing's shards (as `simulator` would); the packings are the same
+    as one after another. The workers simulate `refine`'s moves too."""
 
     # Fewer sinks pack in less time than forking takes.
     PARALLEL_SINKS = 200
 
-    def __init__(self, sinks, closure, cost, path, prepared):
+    def __init__(self, sinks, closure, cost, path, prepared, simulator=None):
         global _PACKING
-        _PACKING = (sinks, closure, cost, path, prepared)
+        _PACKING = (sinks, closure, cost, path, prepared, simulator)
         self.pool = None
         cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
         self.workers = min(len(REUSE_WEIGHTS), cpus)
         if (len(sinks) < self.PARALLEL_SINKS
                 or "fork" not in multiprocessing.get_all_start_methods()):
             self.workers = 1
+        self.simulator = simulator
 
-    def __call__(self, n):
+    def __call__(self, n, limit=math.inf):
+        """Each packing of `n` shards, and, when workers simulated them,
+        its shards' times until one finishes after `limit` (None otherwise)."""
         tasks = [(n, reuse) for reuse in REUSE_WEIGHTS]
         if self.workers == 1:
-            return [_pack_one(t) for t in tasks]
+            return [(*_pack_one(t), None) for t in tasks]
         if self.pool is None:
             self.pool = multiprocessing.get_context("fork").Pool(self.workers)
-        return self.pool.map(_pack_one, tasks, chunksize=1)
+        if self.simulator is None:
+            return [(*p, None) for p in self.pool.map(_pack_one, tasks, chunksize=1)]
+        return self.pool.map(_pack_and_simulate, [(*t, limit) for t in tasks], chunksize=1)
+
+    def simulate(self, parts):
+        """The simulated time of each of `parts`, at once in the workers."""
+        if self.pool is None or len(parts) < 2:
+            return [self.simulator.time(part) for part in parts]
+        index = self.simulator.index
+        return self.pool.map(_simulate, [[index[m] for m in part] for part in parts], chunksize=1)
 
     def close(self):
         global _PACKING
@@ -759,7 +798,7 @@ def pack(
     return [estimate(w, p) for w, p in zip(loads, longest)], targets, shards
 
 
-def refine(imps, closure, cost, path, packed, limit, simulator=None):
+def refine(imps, closure, cost, path, packed, limit, simulator=None, simulate=None, width=REFINE_WIDTH):
     """Move targets to reuse imports, within the latency budget `limit`.
 
     Greedy packing cannot reconsider an early assignment. Rank moves by
@@ -770,10 +809,18 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None):
     simulation rejected is not simulated again until one of its shards
     changes. The search is bounded by `REFINE_SIMULATIONS` simulated moves
     and `REFINE_MOVES` accepted ones, independently of project size.
+
+    Moves between different shards do not change each other's savings, so
+    up to `width` of them, the best that share no shard, are simulated
+    together (by `simulate`, which gives each of a list of shards' times)
+    and each taken if it fits.
     """
     loads, targets, built = packed
     if simulator is None:
         simulator = _BuildGraph(imps, cost)
+    if simulate is None:
+        def simulate(parts):
+            return [simulator.time(part) for part in parts]
     count = len(built)
     owner = {t: i for i, ts in enumerate(targets) for t in ts}
     work = [math.fsum(map(cost.__getitem__, part)) for part in built]
@@ -793,8 +840,8 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None):
     saved = {t: math.fsum(map(cost.__getitem__, removed[t])) for t in owner}
     adding = {t: [math.fsum(map(cost.__getitem__, closure[t] - part)) for part in built] for t in owner}
     rejected: set[tuple[str, int]] = set()
-    simulated = 0
-    for _ in range(REFINE_MOVES):
+    simulated = accepted = 0
+    while accepted < REFINE_MOVES:
         longest = [max((path[t] for t in ts), default=0.0) for ts in targets]
         moves = []
         for t, src in owner.items():
@@ -806,30 +853,51 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None):
                         or estimate(work[dst] + added, max(longest[dst], path[t])) > limit):
                     continue
                 moves.append((added - saved[t], src, dst, t))
-        moves.sort()
-        for _, src, dst, t in moves:
-            if simulated == REFINE_SIMULATIONS:
+        moves.sort(reverse=True)
+        taken = []
+        while moves and not taken:
+            # The best moves left that share no shard (with a width of one,
+            # simply the best move left).
+            batch, busy, kept = [], set(), []
+            while moves and len(batch) < min(width, REFINE_MOVES - accepted):
+                if simulated + len(batch) == REFINE_SIMULATIONS:
+                    break
+                move = moves.pop()
+                if busy & {move[1], move[2]}:
+                    kept.append(move)
+                    continue
+                batch.append(move)
+                busy |= {move[1], move[2]}
+            moves.extend(reversed(kept))
+            if not batch:
                 return loads, targets, built
-            simulated += 1
-            parts = {src: built[src] - removed[t], dst: built[dst] | closure[t]}
-            times = {i: simulator.time(part) for i, part in parts.items()}
-            if max(times.values()) > limit + 1e-9:
-                rejected.add((t, dst))
-                continue
+            simulated += len(batch)
+            parts = [p for _, src, dst, t in batch
+                     for p in (built[src] - removed[t], built[dst] | closure[t])]
+            times = simulate(parts)
+            for k, (_, src, dst, t) in enumerate(batch):
+                if max(times[2 * k], times[2 * k + 1]) > limit + 1e-9:
+                    rejected.add((t, dst))
+                    continue
+                taken.append((src, dst, t, parts[2 * k], parts[2 * k + 1], times[2 * k], times[2 * k + 1]))
+        if not taken:
+            break
+        for src, dst, t, from_part, to_part, from_time, to_time in taken:
+            accepted += 1
             # Each target adds to the two shards what they lost or no
             # longer what they gained.
             lost, gained = removed[t], closure[t] - built[dst]
             for u, add in adding.items():
                 add[src] += math.fsum(map(cost.__getitem__, lost & closure[u]))
                 add[dst] -= math.fsum(map(cost.__getitem__, gained & closure[u]))
-            for i in parts:
-                built[i], loads[i] = parts[i], times[i]
+            built[src], loads[src], built[dst], loads[dst] = from_part, from_time, to_part, to_time
+            for i in (src, dst):
                 work[i] = math.fsum(map(cost.__getitem__, built[i]))
             targets[src].remove(t)
             targets[dst].append(t)
             owner[t] = dst
             # Moves to or from a shard that changed may fit or not fit now.
-            rejected = {(u, i) for u, i in rejected if i not in parts and owner[u] not in parts}
+            rejected = {(u, i) for u, i in rejected if i not in (src, dst) and owner[u] not in (src, dst)}
             # The targets that need a module alone now that t left, or no
             # longer alone now that t joined.
             changed = {t}
@@ -851,9 +919,6 @@ def refine(imps, closure, cost, path, packed, limit, simulator=None):
             removed[t] = {m for m in closure[t] if uses[dst][m][0] == 1}
             for u in changed:
                 saved[u] = math.fsum(map(cost.__getitem__, removed[u]))
-            break
-        else:
-            break
     return loads, targets, built
 
 
@@ -1022,56 +1087,62 @@ def schedule(
     # Start with more shards to establish a tight finish-time bound early.
     # A lower bound already outside the tolerance cannot become competitive
     # as the fastest time decreases, so it need not be simulated.
-    packings = _Packings(sinks, required, cost, path, prepared)
-    for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
-        # However they are packed, n shards build all the work between them,
-        # and one builds the longest chain: no packing makes a count whose
-        # bound is outside the tolerance competitive.
-        if estimate(unique_work / n, max(path[m] for m in sinks)) + SHARD_OVERHEAD > fastest * (1 + SLACK):
-            if diagnostics is not None:
-                diagnostics["candidates"].append({"shards": n, "excluded": "work_bound"})
-            continue
-        for reuse, (bounds, targets, built) in zip(REUSE_WEIGHTS, packings(n)):
-            candidate = {"shards": n, "reuse": reuse, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
-            if diagnostics is not None:
-                diagnostics["candidates"].append(candidate)
-            if any(not ts for ts in targets):
-                # An empty target list would invoke an unscoped `lake build`.
-                candidate["excluded"] = "empty_targets"
+    packings = _Packings(sinks, required, cost, path, prepared, simulator)
+    try:
+        for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
+            # However they are packed, n shards build all the work between them,
+            # and one builds the longest chain: no packing makes a count whose
+            # bound is outside the tolerance competitive.
+            if estimate(unique_work / n, max(path[m] for m in sinks)) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                if diagnostics is not None:
+                    diagnostics["candidates"].append({"shards": n, "excluded": "work_bound"})
                 continue
-            if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
-                candidate["excluded"] = "lower_bound"
-                continue
-            loads = []
-            for part in built:
-                loads.append(simulator.time(part))
-                if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
-                    break
-            if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
-                candidate["excluded"] = "simulated_finish"
-                continue
-            repeated = math.fsum(cost[m] for part in built for m in part)
-            candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
-            candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
-            fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
-    packings.close()
-    # Work counts shared dependencies again on each runner. Within the
-    # latency tolerance, prefer less work, then fewer runners, then latency.
-    # The weights only pack a count's shards: of each count, take the
-    # fastest packing (then the least work), so that more weights do not
-    # make a slower plan more likely.
-    best = {}
-    for c in candidates:
-        if c[2] not in best or (c[0], c[1]) < (best[c[2]][0], best[c[2]][1]):
-            best[c[2]] = c
-    chosen = min((c for c in best.values() if c[0] <= fastest * (1 + SLACK)),
-                 key=lambda c: (c[1], c[2], c[0]))
-    packed = chosen[3]
-    if chosen[2]:
-        # Within the packing's own estimate: SLACK chose among packings,
-        # and refining spends none of it, so that it saves work without
-        # making the plan slower.
-        packed = refine(imps, required, cost, path, packed, max(packed[0]), simulator)
+            # The workers simulate within the tolerance as it stands; it
+            # only narrows as this count's packings are scored.
+            limit = fastest * (1 + SLACK)
+            for reuse, (bounds, targets, built, simulated) in zip(REUSE_WEIGHTS, packings(n, limit)):
+                candidate = {"shards": n, "reuse": reuse, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
+                if diagnostics is not None:
+                    diagnostics["candidates"].append(candidate)
+                if any(not ts for ts in targets):
+                    # An empty target list would invoke an unscoped `lake build`.
+                    candidate["excluded"] = "empty_targets"
+                    continue
+                if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                    candidate["excluded"] = "lower_bound"
+                    continue
+                loads = [] if simulated is None else simulated
+                if simulated is None:
+                    for part in built:
+                        loads.append(simulator.time(part))
+                        if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                            break
+                if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                    candidate["excluded"] = "simulated_finish"
+                    continue
+                repeated = math.fsum(cost[m] for part in built for m in part)
+                candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
+                candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
+                fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
+        # Work counts shared dependencies again on each runner. Within the
+        # latency tolerance, prefer less work, then fewer runners, then latency.
+        # The weights only pack a count's shards: of each count, take the
+        # fastest packing (then the least work), so that more weights do not
+        # make a slower plan more likely.
+        best = {}
+        for c in candidates:
+            if c[2] not in best or (c[0], c[1]) < (best[c[2]][0], best[c[2]][1]):
+                best[c[2]] = c
+        chosen = min((c for c in best.values() if c[0] <= fastest * (1 + SLACK)),
+                     key=lambda c: (c[1], c[2], c[0]))
+        packed = chosen[3]
+        if chosen[2]:
+            # Within the packing's own estimate: SLACK chose among packings,
+            # and refining spends none of it, so that it saves work without
+            # making the plan slower. Workers, if any, simulate its moves.
+            packed = refine(imps, required, cost, path, packed, max(packed[0]), simulator, packings.simulate)
+    finally:
+        packings.close()
     return work, path, report(packed)
 
 
