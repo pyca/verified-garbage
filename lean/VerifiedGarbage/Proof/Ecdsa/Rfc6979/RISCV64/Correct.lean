@@ -365,4 +365,245 @@ theorem sg_eq {t : State} (hk : KR P s₀ t) (hx : xOfM P s₀ t.mem = xSpec P s
 
 end
 
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+/-- The tables are kept: the code writes only `wrs`. -/
+theorem held_of {t : State} (hk : KR P s₀ t) : Abi.constsHeld t.mem (fun name => s₀.syms name) P.kit.K :=
+  fun c hc i hi => by
+  rw [← hp.held c hc i hi]
+  have hr : (⟨s₀.syms c.1, 8 * c.2.length⟩ : Region) ∈ constRegs P.kit.K s₀ := List.mem_map_of_mem hc
+  have := hp.tfit _ hr
+  refine Mem.readW_congr fun b hb => hk.frame _ fun r hr' hc' => hp.t_w _ hr r hr' _ ?_ hc'
+  simp only [Region.Contains] at this ⊢
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Mem.sub_ofNat_toNat _ (by omega)]
+  omega
+
+/-- `core`'s arguments: `X`'s last `G` bytes as the digest, `T` as `k`. -/
+theorem coreArgs_ok {t : State} {K V : List Byte} (h : KVH P s₀ K V t) (hsy : t.syms = s₀.syms) :
+    WP isa (.block P.c.coreArgs) t fun u =>
+      KVH P s₀ K V u ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧ u.mem = t.mem ∧
+      CoreArgsG P.Q P.kit.G P.kit.K u (out s₀) (dk s₀) (sA s₀ P.c.fDg) (sA s₀ fT) (scr s₀) := by
+  have hz := sizes P
+  obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
+  have hfr : frB = 512 := rfl
+  have hG := hz.G
+  have hGQ : P.kit.G ≤ P.Q := by
+    cases hb : P.c.big
+    · rw [hG.2.2 hb]
+    · rw [hG.2.1 hb]; have := hz.big.1.mp hb; omega
+  have hfDg : P.c.fDg = fX + (P.Q - P.kit.G) := by rw [Cfg.fDg, hcQ, hG.1]
+  have hdg : P.c.fDg + P.kit.G ≤ fT := by rw [hfDg]; simp only [fX, fT]; omega
+  have hfT : fT = 368 := rfl
+  have hfX : fX = 232 := rfl
+  unfold Cfg.coreArgs
+  refine VG.RISCV64.WP.of_syms (wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_addi (by simp only [fT] at hdg; omega)
+    fun s₃ u₃ => wp_addi (by simp only [fT]; omega) fun s₄ u₄ => wp_mv fun s₅ u₅ => WP.block_nil fun sy₅ => ?_)
+  have mm : s₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have k₅ : KR P s₀ s₅ := (((((h.kr.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd
+    (by decide) u₄).upd (by decide) u₅)
+  have ef : (fun name => s₅.syms name) = fun name => s₀.syms name := by rw [sy₅, hsy]
+  have cr : constRegs P.kit.K s₅ = constRegs P.kit.K s₀ := by simp only [constRegs, ef]
+  have kS : Region.Sub ⟨sA s₀ fT, P.Q⟩ (frR s₀) := part_sub (by simp only [fT]; omega)
+  have gS : Region.Sub ⟨sA s₀ P.c.fDg, P.kit.G⟩ (frR s₀) := part_sub (by simp only [fT] at hdg; omega)
+  have hn : ∀ o, o ≤ frB → (sA s₀ o).toNat + (frB - o) ≤ 2 ^ 64 := fun o ho => by
+    have := hp.top
+    show (s₀.sp + BitVec.ofNat 64 o).toNat + _ ≤ _
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  refine ⟨⟨k₅, by rw [mm]; exact h.k, by rw [mm]; exact h.v, by rw [mm]; exact h.h, by rw [mm]; exact h.x⟩,
+    fun r hr => ?_, mm, ?_, ?_, ?_, ?_, ?_,
+    hp.o_c, hp.d_c, hp.f_c.sub_left gS, hp.f_c.sub_left kS, hp.no, hp.nd,
+    by have := hn P.c.fDg (by simp only [fT] at hdg; omega); omega, by have := hn fT (by decide); omega,
+    hp.nc, hp.ca, by rw [mm, ef]; exact held_of hp h.kr,
+    by rw [cr]; exact hp.tfit, by rw [cr]; exact hp.tal,
+    fun r hr => hp.t_w r (by rwa [cr] at hr) _ (by simp),
+    fun r hr => hp.t_w r (by rwa [cr] at hr) _ (by simp), ?_, ?_⟩
+  · rw [u₅.other r (by revert r; decide), u₄.other r (by revert r; decide), u₃.other r (by revert r; decide),
+      u₂.other r (by revert r; decide), u₁.other r (by revert r; decide)]
+  · upd_simp [u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    exact h.kr.s2
+  · upd_simp [u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    exact h.kr.s3
+  · upd_simp [u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    rw [h.kr.s1]
+  · upd_simp [u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    rw [h.kr.s1]
+  · upd_simp [u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₂.other, u₁.gpr, u₁.other]
+    exact h.kr.s0
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with (((rfl | rfl | rfl) | hr) | rfl | rfl)
+    · exact ⟨dR P s₀, List.mem_append_left _ (by rw [k₅.rd, hp.rd]; simp), 0, by simp, by simp⟩
+    · exact cov_fr hp k₅ (o := P.c.fDg) (n := P.kit.G) (by simp only [fT] at hdg; omega)
+    · exact cov_fr hp k₅ (o := fT) (n := P.Q) (by simp only [fT]; omega)
+    · exact ⟨r, List.mem_append_left _ (by rw [k₅.rd, hp.rd, ← cr]; exact List.mem_append_right _ hr), 0,
+        by simp, by simp⟩
+    · exact ⟨outR P s₀, List.mem_append_right _ (out_wr hp k₅.wr), 0, by simp, by simp⟩
+    · exact cov_scr hp k₅ (o := 0) (n := 8192) (by decide) |>.imp fun r' ⟨hm, off, hb, hl⟩ =>
+        ⟨hm, off, by rw [← hb]; simp, hl⟩
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨outR P s₀, out_wr hp k₅.wr, 0, by simp, by simp⟩
+    · exact ⟨scrR s₀, scr_wr hp k₅.wr, 0, by simp, by simp⟩
+
+/-- `core` with candidate `i`. -/
+theorem coreCall_ok {t : State} {K V : List Byte} (h : KVH P s₀ K V t) {i : Nat}
+    (hsg : sgOf P.kit.E P.Q P.kit.G P.kit.sh t.mem (dk s₀) (sA s₀ P.c.fDg) (sA s₀ fT) = sigI P s₀ i)
+    (ha : CoreArgsG P.Q P.kit.G P.kit.K t (out s₀) (dk s₀) (sA s₀ P.c.fDg) (sA s₀ fT) (scr s₀)) :
+    WP isa (.call P.c.coreN P.c.coreC) t fun u => KVH P s₀ K V u ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
+      ResultIs P s₀ (sigI P s₀ i) u := by
+  have hz := sizes P
+  have hfr : frB = 512 := rfl
+  rw [P.hcC]
+  refine P.kit.core_call ha fun u a hpost => ?_
+  have hw : ∀ r ∈ [(⟨out s₀, 2 * P.Q⟩ : Region), ⟨scr s₀, 8192⟩], Wk P s₀ r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact .inr (.inl fun x hx => hx)
+    · exact .inr (.inr (.inl fun x hx => hx))
+  have kp : ∀ {o n : Nat}, o + n ≤ frB → ∀ r ∈ [(⟨out s₀, 2 * P.Q⟩ : Region), ⟨scr s₀, 8192⟩],
+      Region.Disjoint (sR s₀ o n) r := fun ho r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.f_o.sub_left (part_sub ho)
+    · exact hp.f_c.sub_left (part_sub ho)
+  have := fHo_in P
+  have := hz.Q
+  have := hz.D
+  have hfT : fT = 368 := rfl
+  have hfX : fX = 232 := rfl
+  refine ⟨⟨h.kr.call hp a.rd a.wr a.sp a.cs a.frame hw, ?_, ?_, ?_, ?_⟩, a.cs, ?_⟩
+  · rw [← h.k]; exact fbytes a.frame (kp (by have := hz.D; simp only [fK]; omega)) (by omega)
+  · rw [← h.v]; exact fbytes a.frame (kp (by have := hz.D; simp only [fV]; omega)) (by omega)
+  · rw [← h.h]; exact fbytes a.frame (kp (by simp only [fT] at *; omega)) (by omega)
+  · rw [← h.x]; exact fbytes a.frame (kp (by simp only [fX]; omega)) (by omega)
+  · rw [hsg] at hpost
+    unfold ResultIs
+    exact hpost
+
+end
+
+/-! ## One candidate, and the loop -/
+
+theorem sub_one_ofNat {k : Nat} (h₁ : 1 ≤ k) (h₂ : k < 2 ^ 64) :
+    BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  omega
+
+theorem nonzero_ofNat {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = decide (k ≠ 0) := by
+  rw [bne, VG.RISCV64.Steps.ofNat_beq_zero h]
+  simp
+
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+omit hp in
+/-- One candidate fewer, and whether to go on. -/
+theorem goOn_ok {t : State} {K V : List Byte} (h : KVH P s₀ K V t) {i : Nat} (hi : i < P.c.tries)
+    (hc : t.gpr .s5 = BitVec.ofNat 64 (P.c.tries - i)) (hr : ResultIs P s₀ (sigI P s₀ i) t) :
+    WP isa (.block Cfg.goOn) t fun u => KVH P s₀ K V u ∧ ResultIs P s₀ (sigI P s₀ i) u ∧
+      u.gpr .s5 = BitVec.ofNat 64 (P.c.tries - (i + 1)) ∧
+      isa.eval (.nonzero .t6) u = some (decide (sigI P s₀ i = none ∧ i + 1 < P.c.tries)) := by
+  have hT := P.hT'
+  unfold Cfg.goOn
+  refine VG.RISCV64.Steps.wp_subi (imm := 1) (by decide) fun s₁ u₁ =>
+    VG.RISCV64.Steps.wp_andi (imm := 1) (by decide) fun s₂ u₂ =>
+    VG.RISCV64.Steps.wp_subi (imm := 1) (by decide) fun s₃ u₃ =>
+    VG.Proof.X25519.RISCV64.wp_and fun s₄ u₄ => WP.block_nil ?_
+  have mm : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have k₄ : KR P s₀ s₄ := ((((h.kr.upd (by decide) u₁).upd (by decide) u₂).upd (by decide) u₃).upd (by decide) u₄)
+  have c₄ : s₄.gpr .s5 = BitVec.ofNat 64 (P.c.tries - (i + 1)) := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hc,
+      sub_one_ofNat (by omega) (by omega), show P.c.tries - i - 1 = P.c.tries - (i + 1) by omega]
+  have a₄ : s₄.gpr .a0 = t.gpr .a0 := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  have t6 : s₄.gpr .t6 = ((t.gpr .a0 &&& BitVec.ofInt 64 1) - BitVec.ofNat 64 1) &&& s₄.gpr .s5 := by
+    rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.other .a0 (by decide), c₄, u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr,
+      hc, sub_one_ofNat (by omega) (by omega), show P.c.tries - i - 1 = P.c.tries - (i + 1) by omega]
+  refine ⟨⟨k₄, by rw [mm]; exact h.k, by rw [mm]; exact h.v, by rw [mm]; exact h.h, by rw [mm]; exact h.x⟩,
+    hr.keep a₄ (by rw [mm]), c₄, ?_⟩
+  rw [VG.RISCV64.Steps.eval_nonzero, t6, c₄]
+  unfold ResultIs at hr
+  split at hr
+  · rename_i rs hs
+    rw [hr.1, hs]
+    have e : ((1 : BitVec 64) &&& BitVec.ofInt 64 1) - BitVec.ofNat 64 1 = 0 := by decide
+    rw [e]
+    simp
+  · rename_i hs
+    rw [hr.1, hs]
+    have e : ((0 : BitVec 64) &&& BitVec.ofInt 64 1) - BitVec.ofNat 64 1 = BitVec.allOnes 64 := by decide
+    rw [e, BitVec.allOnes_and, nonzero_ofNat (by omega)]
+    simp only [true_and]
+    congr 1
+    exact decide_eq_decide.mpr (by omega)
+
+/-- After `core`: whether to go on, and step h.3 or the end. -/
+theorem tryRest_ok {t : State} {i : Nat} (hlt : i < P.c.tries) (hf : ∀ j < i, sigI P s₀ j = none)
+    (k₃ : KVH P s₀ (kvI P s₀ i).1
+      (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H (kvI P s₀ i).1 P.nV (kvI P s₀ i).2).2 t)
+    (c₃ : t.gpr .s5 = BitVec.ofNat 64 (P.c.tries - i)) (r₃ : ResultIs P s₀ (sigI P s₀ i) t)
+    (y₃ : t.syms = s₀.syms) :
+    WP isa (.seq (.block Cfg.goOn) (.ite (.nonzero .t6) (.seq P.c.rekey (.block Cfg.again)) (.block Cfg.stop))) t
+      fun u =>
+      isa.eval (.nonzero .t6) u = some (decide (sigI P s₀ i = none ∧ i + 1 < P.c.tries)) ∧
+      (sigI P s₀ i = none ∧ i + 1 < P.c.tries → LoopInv P s₀ (i + 1) u) ∧
+      (¬ (sigI P s₀ i = none ∧ i + 1 < P.c.tries) → Exit P s₀ i u) := by
+  refine WP.seq (VG.RISCV64.WP.mono_syms (goOn_ok k₃ hlt c₃ r₃) fun t₄ ⟨k₄, r₄, c₄, e₄⟩ y₄ => ?_)
+  have y₄' : t₄.syms = s₀.syms := y₄.trans y₃
+  refine WP.ite _ e₄ (fun hg => ?_) fun hg => ?_
+  · obtain ⟨hn, hlt'⟩ := of_decide_eq_true hg
+    refine WP.seq (VG.RISCV64.WP.mono_syms (rekey_ok hp k₄ y₄') fun t₅ ⟨k₅, p₅⟩ y₅ => ?_)
+    refine VG.RISCV64.WP.of_syms (wp_li (imm := 1) (by decide) fun t₆ u₆ =>
+      WP.block_nil fun y₆ => ⟨?_, fun _ => ?_, fun hn' => absurd ⟨hn, hlt'⟩ hn'⟩)
+    · rw [VG.RISCV64.Steps.eval_nonzero, u₆.gpr, decide_eq_true ⟨hn, hlt'⟩]; rfl
+    · have m₆ : t₆.mem = t₅.mem := u₆.mem
+      refine ⟨hlt', ⟨k₅.kr.upd (by decide) u₆, by rw [m₆]; exact k₅.k, by rw [m₆]; exact k₅.v,
+        by rw [m₆]; exact k₅.h, by rw [m₆]; exact k₅.x⟩, ?_, fun j hj => ?_, y₆.trans (y₅.trans y₄')⟩
+      · rw [u₆.other _ (by decide), p₅ _ (by decide), c₄]
+      · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+        · exact hf j hj
+        · exact hn
+  · have hl : ¬ (sigI P s₀ i = none ∧ i + 1 < P.c.tries) := of_decide_eq_false hg
+    refine wp_li (imm := 0) (by decide) fun t₅ u₅ => WP.block_nil ⟨?_, fun h' => absurd h' hl, fun _ => ?_⟩
+    · rw [VG.RISCV64.Steps.eval_nonzero, u₅.gpr, decide_eq_false hl]; rfl
+    · refine ⟨hlt, k₄.kr.upd (by decide) u₅, hf, ?_, r₄.keep (u₅.other _ (by decide)) (by rw [u₅.mem])⟩
+      by_cases hs : sigI P s₀ i = none
+      · have h1 := hlt
+        have h2 : ¬ i + 1 < P.c.tries := fun h' => hl ⟨hs, h'⟩
+        exact .inr (by omega)
+      · exact .inl hs
+
+/-- One candidate: on, before the next, or the end. -/
+theorem tryOne_ok {t : State} {i : Nat} (h : LoopInv P s₀ i t) :
+    WP isa P.c.tryOne t fun u =>
+      isa.eval (.nonzero .t6) u = some (decide (sigI P s₀ i = none ∧ i + 1 < P.c.tries)) ∧
+      (sigI P s₀ i = none ∧ i + 1 < P.c.tries → LoopInv P s₀ (i + 1) u) ∧
+      (¬ (sigI P s₀ i = none ∧ i + 1 < P.c.tries) → Exit P s₀ i u) := by
+  unfold Cfg.tryOne
+  refine WP.seq (WP.mono (cand_ok hp h.kvh h.sy) fun t₁ ⟨k₁, T₁, c₁, y₁⟩ => ?_)
+  refine WP.seq (VG.RISCV64.WP.mono_syms (coreArgs_ok hp k₁ y₁) fun t₂ ⟨k₂, p₂, m₂, a₂⟩ y₂ => ?_)
+  have hT : bytesAt t₂.mem (sA s₀ fT) (P.nV * P.H.D) = candI P s₀ i := by rw [m₂, T₁]; rfl
+  refine WP.seq (VG.RISCV64.WP.mono_syms (coreCall_ok hp k₂ (sg_eq hp k₂.kr k₂.x hT) a₂)
+    fun t₃ ⟨k₃, p₃, r₃⟩ y₃ => ?_)
+  exact tryRest_ok hp h.lt h.fails k₃ (by rw [p₃ _ (by decide), p₂ _ (by decide), c₁, h.cnt]) r₃
+    (y₃.trans (y₂.trans y₁))
+
+/-- The candidates, from the first: the loop stops at one. -/
+theorem loop_ok {t : State} (h : LoopInv P s₀ 0 t) :
+    WP isa (.loop P.c.tryOne (.nonzero .t6)) t fun u => ∃ i, Exit P s₀ i u := by
+  refine WP.loop (M := isa) (fun n u => ∃ i, n = P.c.tries - i ∧ LoopInv P s₀ i u) ?_ _ t ⟨0, rfl, h⟩
+  rintro n u ⟨i, rfl, hi⟩
+  refine WP.mono (tryOne_ok hp hi) fun w ⟨he, hon, hoff⟩ => ?_
+  by_cases hg : sigI P s₀ i = none ∧ i + 1 < P.c.tries
+  · have hl := hon hg
+    exact .inr ⟨by rw [he, decide_eq_true hg], _, by have := hl.lt; omega, i + 1, rfl, hl⟩
+  · exact .inl ⟨by rw [he, decide_eq_false hg], i, hoff hg⟩
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
