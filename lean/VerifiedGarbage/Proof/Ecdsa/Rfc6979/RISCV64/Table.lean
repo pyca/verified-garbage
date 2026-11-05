@@ -131,7 +131,7 @@ def tabK (R : CurveT) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List HVar) : 
   pub s₁ s₂ := ∃ w ∈ vs, PreW R T vs w s₁ ∧ PreW R T vs w s₂ ∧
     (rfcRC R.kit.K (instOf T w) w (fnsOf vs) (names vs) stackT).pub s₁ s₂
 
-theorem index_lt (w : HVar) : Spec.HashTable.index w.G < 8 := by
+theorem index_lt (w : HVar) : Spec.HashTable.index w.G < 2 ^ 64 := by
   have h := w.t.idx
   have : Spec.HashTable.index w.G < Spec.Mgf1.hashes.length := by
     rcases Nat.lt_or_ge (Spec.HashTable.index w.G) Spec.Mgf1.hashes.length with h' | h'
@@ -147,7 +147,7 @@ theorem same_hash {w w' : HVar}
   have e : Spec.HashTable.index w'.G = Spec.HashTable.index w.G := by
     have h₁ := index_lt w; have h₂ := index_lt w'
     have := congrArg BitVec.toNat h
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h₂, Nat.mod_eq_of_lt h₁] at this
     exact this
   have hG : w'.G = w.G := by
     have a := w'.t.idx; have b := w.t.idx
