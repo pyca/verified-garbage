@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared8
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
@@ -186,17 +187,17 @@ theorem sealPrepared_verified :
   Verified.of_correct (sealPrepared_correct v gp hMK) (sealPrepared_ct v gp hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Proof.AesGcm.sealRoundsPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         sig_implies_post [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Proof.AesGcm.sealRoundsPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         sig_implies_pub [Proof.AesGcm.sealPrepared8ScratchContract, Proof.AesGcm.sealPrepared8ScratchSig,
-          Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, sealPreparedAArch64,
+          Proof.Gcm.sealPrepared8Pre, Proof.AesGcm.sealRoundsPost, sealPreparedAArch64,
           sealPrepW, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨sealSatP, by
@@ -225,7 +226,7 @@ def sealFrameSatP : State :=
 theorem sealFrameSatP_pre : ∃ s, (Proof.Gcm.sealPrepared8Contract AArch64.abi 2576).pre s := by
   refine ⟨sealFrameSatP, ?_⟩
   sig_pre [Proof.Gcm.sealPrepared8Contract, Proof.Gcm.sealPrepared8Sig,
-    Proof.Gcm.sealPrepared8Pre, Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+    Proof.Gcm.sealPrepared8Pre, Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
     AArch64.stackArgAddr, List.getD, List.range, List.range.loop, sealFrameSatP, sealFrameSat, sealSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -244,7 +245,7 @@ theorem sealPrepared_framed (v : GcmImpl) (gp : GhashPreparedImpl) (hMK : Proof.
       (Proof.Gcm.sealPrepared8Contract AArch64.abi 2576) :=
   AArch64.Verified.stackArgScratch (sig := Proof.Gcm.sealPrepared8Sig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealPrepared8Pre AArch64.abi.ptrBits)
-    (post := Spec.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
+    (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
     (sealPrepared_verified v gp hMK) (by decide) (by decide) (Proof.AesGcm.sealPrepared8Pre_local _)
     (Proof.AesGcm.sealPrepared8Post_local _) sealFrameSatP_pre
 

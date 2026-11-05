@@ -61,18 +61,19 @@ def sealGatherPre (pb : Nat) : Curry (sealGatherSig.words pb) (Mem → Prop) :=
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`, and slices
-of `len` bytes in all listed by `src`: the `len` bytes at `dst` are the
-encryption of their concatenation (`gathered`), with the IV the `nonce_len`
-bytes at `nonce` and the `aad_len` bytes of additional data at `aad`
-(GCM-AE, `encryptWith`), and the 16-byte tag is at `tag`. (`sealPost`, with
-the plaintext gathered from `src` and the ciphertext written to `dst`.) -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`), and slices of `len` bytes in all listed by `src`: the `len`
+bytes at `dst` are the encryption of their concatenation (`gathered`), with
+the IV the `nonce_len` bytes at `nonce` and the `aad_len` bytes of additional
+data at `aad` (GCM-AE under `K`, `aesGcmEncrypt`), and the 16-byte tag is at
+`tag`. (`sealPost`, with the plaintext gathered from `src` and the ciphertext
+written to `dst`.) -/
 def sealGatherPost (pb : Nat) : sealGatherSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    ∀ key, KeyRounds m ctx rounds.toNat key →
     gatheredLen pb m src srcCount.toNat = len.toNat →
-    encryptWith (ctxCiph m ctx rounds.toNat) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
-        (gathered pb m src srcCount.toNat) (Aes.bytesAt m aad aadLen.toNat) =
+    aesGcmEncrypt key 16 (Aes.bytesAt m nonce nonceLen.toNat) (gathered pb m src srcCount.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) =
       (Aes.bytesAt m' dst len.toNat, Aes.bytesAt m' tag 16)
 
 /-- For `rounds` of 10, 12 or 14 and slices of `len` bytes in all

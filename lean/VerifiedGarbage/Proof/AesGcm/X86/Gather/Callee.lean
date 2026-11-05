@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
@@ -11,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
 calls an instance of `vg_aes_gcm_seal` as an artifact (`SealFn`), with its
 working space in a frame of its own, so what the proof needs of it is its
-shared contract (`Spec.Gcm.sealContract`, with 2632 bytes of stack): its
+shared contract (`Proof.AesGcm.sealRoundsContract`, with 2632 bytes of stack): its
 precondition from the layout the call gives it (`callPre`, `sealSpec_pre`),
 its postcondition (`sealSpec_post`) and its public data (`sealSpec_pub`).
 -/
@@ -32,7 +33,7 @@ stack pointer that the contract reserves. -/
 structure SealFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.Gcm.sealContract X86.abi 2632)
+  verified : Verified X86.target code (Proof.AesGcm.sealRoundsContract X86.abi 2632)
   noSp : NoSp code
   depth : stackUse code ≤ 2632
 
@@ -65,35 +66,35 @@ def callPre (s : State) : Prop :=
     ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
 
 /-- The shared contract's precondition, from the layout the call gives. -/
-theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract X86.abi 2632).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract X86.abi 2632).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
     a₂₈ a₂₉ a₃₀ a₃₁ a₃₂ a₃₃
   have a₃₄ := h
   clear h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, X86.abi, argVal, ↓reduceIte,
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, X86.abi, argVal, ↓reduceIte,
     Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32,
     toNat_w64]
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄⟩
 
 /-- Its postcondition, for rounds of 10, 12 or 14. -/
-theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract X86.abi 2632).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract X86.abi 2632).post s s')
     (hR : (arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14) :
     encryptWith (ctxCiph s.mem (w64 (arg s 0)) (arg s 1).toNat) (ctxH s.mem (w64 (arg s 0))) 16
         (bytesAt s.mem (w64 (arg s 2)) (arg s 3).toNat) (bytesAt s.mem (w64 (arg s 6)) (arg s 7).toNat)
         (bytesAt s.mem (w64 (arg s 4)) (arg s 5).toNat) =
       (bytesAt s'.mem (w64 (arg s 6)) (arg s 7).toNat, bytesAt s'.mem (w64 (arg s 8)) 16) := by
-  sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, X86.abi, argVal, ↓reduceIte,
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, X86.abi, argVal, ↓reduceIte,
     Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32,
     toNat_w64] at h
   exact h hR
 
 /-- Its public data, from the arguments. -/
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 9, arg s₁ i = arg s₂ i) :
-    (Spec.Gcm.sealContract X86.abi 2632).pub s₁ s₂ := by
+    (Proof.AesGcm.sealRoundsContract X86.abi 2632).pub s₁ s₂ := by
   obtain ⟨a₁, a₂⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff, argBytes,
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff, argBytes,
     Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32, toNat_w64]
   exact ⟨a₁, a₂ 0 (by decide), a₂ 1 (by decide), a₂ 2 (by decide), a₂ 3 (by decide), a₂ 4 (by decide),
     a₂ 5 (by decide), a₂ 6 (by decide), a₂ 7 (by decide), a₂ 8 (by decide)⟩

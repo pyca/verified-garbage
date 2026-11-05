@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
@@ -23,14 +24,14 @@ open Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args rounds)
 
 theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) :
-    (Spec.Gcm.streamEncryptPrepared16Contract X86_64.abi 2608).pre s := by
+    (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
   have a₂₂ := h
   clear h
-  sig_pre [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_pre [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
     Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
     Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
@@ -40,27 +41,27 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
   all_goals with_reducible assumption
 
 theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
-    (h : (Spec.Gcm.streamEncryptPrepared16Contract X86_64.abi 2608).post s s') :
+    (h : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).post s s') :
     Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  sig_post [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
-    Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Spec.Gcm.streamEncryptPost] at h
-  sig_reduce [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_post [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig,
+    Spec.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.streamEncryptRoundsPost] at h
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem encSpecPrepared16_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
-    (Spec.Gcm.streamEncryptPrepared16Contract X86_64.abi 2608).pub s₁ s₂ := by
+    (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
-  sig_pub [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_pub [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
-  sig_reduce [Spec.Gcm.streamEncryptPrepared16Contract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
+  sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 
 def EncFn.ofPrepared16 (f : Fn)
-    (hv : Verified X86_64.target f.code (Spec.Gcm.streamEncryptPrepared16Contract X86_64.abi 2608))
+    (hv : Verified X86_64.target f.code (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608))
     (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2608)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : EncFn CtxMode.prepared16 where
   fn := f

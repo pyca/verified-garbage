@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.CalleePw
 public import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
@@ -223,17 +224,17 @@ theorem sealPw_verified :
   Verified.of_correct (sealPw_correct v g hMK) (sealPw_ct v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
-          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Spec.Gcm.sealWithPowersPost, Spec.Gcm.sealPost,
+          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         sig_implies_post [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
-          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Spec.Gcm.sealWithPowersPost, Spec.Gcm.sealPost,
+          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       pub := by
         sig_implies_pub [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
-          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Spec.Gcm.sealWithPowersPost, Spec.Gcm.sealPost,
+          Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
           sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
           AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨sealSatPw, by
@@ -257,10 +258,10 @@ def sealFrameSatPw : State :=
   { sealSatPw with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x6000, 128⟩, ⟨0x8000, 16⟩],
                    wr := [⟨0x4000, 0⟩, ⟨0, 16⟩] }
 
-theorem sealFrameSatPw_pre : ∃ s, (Spec.Gcm.sealWithPowersContract AArch64.abi 2592).pre s := by
+theorem sealFrameSatPw_pre : ∃ s, (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi 2592).pre s := by
   refine ⟨sealFrameSatPw, ?_⟩
-  sig_pre [Spec.Gcm.sealWithPowersContract, Spec.Gcm.sealWithPowersSig, Spec.Gcm.sealSig, Spec.Gcm.withPowersParam,
-    Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Spec.Gcm.sealWithPowersPost, Spec.Gcm.sealPost, AArch64.abi,
+  sig_pre [Proof.AesGcm.sealWithPowersRoundsContract, Spec.Gcm.sealWithPowersSig, Spec.Gcm.sealSig, Spec.Gcm.withPowersParam,
+    Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost, AArch64.abi,
     AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop,
     List.cons_append, List.nil_append, sealFrameSatPw, sealSatPw, sealSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read]
@@ -274,10 +275,10 @@ theorem sealFrameSatPw_pre : ∃ s, (Spec.Gcm.sealWithPowersContract AArch64.abi
 theorem sealPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn))
-      (Spec.Gcm.sealWithPowersContract AArch64.abi 2592) :=
+      (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealWithPowersPre AArch64.abi.ptrBits)
-    (post := Spec.Gcm.sealWithPowersPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
     (Proof.AesGcm.sealWithPowersPost_local _) sealFrameSatPw_pre
 

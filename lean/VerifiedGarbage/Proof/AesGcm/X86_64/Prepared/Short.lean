@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
@@ -27,7 +28,7 @@ variable (v : GcmImpl) (B : BlkFn CtxMode.prepared)
 theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCodeP (v.withBlk B)))
-      (Spec.Gcm.sealPreparedContract X86_64.abi 2624) := by
+      (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCodeP; split
   · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealMP_correct v B hF)
       (Short.sealMW_ct hF v B Short.powOk_powersP Short.powersP_ct
@@ -45,7 +46,7 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
 theorem openSelPrepared_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B)))
-      (Spec.Gcm.openPreparedContract X86_64.abi 2632) := by
+      (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632) := by
   unfold GcmImpl.openCodeP; split
   · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF)
       (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct

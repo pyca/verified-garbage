@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
@@ -93,33 +94,33 @@ def crFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 24⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩]
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamEncryptPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamEncryptRoundsPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
 theorem streamEncrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt)
-      (Spec.Gcm.streamEncryptContract Arm.abi 2600) :=
+      (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.streamEncryptPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamEncryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (streamTextPre_local _) (streamEncryptPost_local _) streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
-    Spec.Gcm.streamDecryptPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamDecryptRoundsPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
 theorem streamDecrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt)
-      (Spec.Gcm.streamDecryptContract Arm.abi 2600) :=
+      (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.streamDecryptPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamDecryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (streamTextPre_local _) (streamDecryptPost_local _) streamDecryptFrameSat_pre
 
@@ -129,18 +130,18 @@ def finFrameSat : State :=
   mkSat4 (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩]
 
-theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost,
+theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [finFrameSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using finFrameSat
 
 theorem streamFinish_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish)
-      (Spec.Gcm.streamFinishContract Arm.abi 2600) :=
+      (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.streamFinishPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamFinishRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) streamFinish_verified (by decide) (by decide) (by decide) (by decide)
     (streamFinishPre_local _) (streamFinishPost_local _) finFrameSat_pre
 
@@ -150,18 +151,18 @@ def verFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0x3000, 80⟩]
 
-theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost,
+theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [verFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using verFrameSat
 
 theorem streamVerify_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify)
-      (Spec.Gcm.streamVerifyContract Arm.abi 2600) :=
+      (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.streamVerifyPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.streamVerifyRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamVerify_verified (by decide) (by decide) (by decide) (by decide)
     (streamVerifyPre_local _) (streamVerifyPost_local _) verFrameSat_pre
 
@@ -171,18 +172,18 @@ def sealFrameSat : State :=
   mkSat4 (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩]
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [sealFrameSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal»)
-      (Spec.Gcm.sealContract Arm.abi 2600) :=
+      (Proof.AesGcm.sealRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.sealPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) seal_verified (by decide) (by decide) (by decide) (by decide)
     (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
@@ -192,18 +193,18 @@ def openFrameSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0, 0⟩]
 
-theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract Arm.abi 2600).pre s := by
-  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract Arm.abi 2600).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [openFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
 theorem open_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
-      (Spec.Gcm.openContract Arm.abi 2600) :=
+      (Proof.AesGcm.openRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre Arm.abi.ptrBits)
-    (post := Spec.Gcm.openPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Gcm.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
     (openPre_local _) (openPost_local _) openFrameSat_pre

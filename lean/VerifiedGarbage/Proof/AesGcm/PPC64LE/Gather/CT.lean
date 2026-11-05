@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Fn
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -42,8 +43,8 @@ theorem entered_desc {σ₁ σ₂ e₁ e₂ : State} (h₁ : Lay σ₁) (h₂ : 
   exact hdesc j hj
 
 theorem body_rel (hv : SealOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
-      (Spec.Gcm.sealContract PPC64LE.abi 2672).pub sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub sealCode)
     {σ₁ σ₂ e₁ e₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hq : gatherPub σ₁ σ₂)
     (he₁ : Entered σ₁ e₁) (he₂ : Entered σ₂ e₂) :
     RelCT isa (Eq2 e₁ e₂) body TT := by
@@ -81,8 +82,8 @@ theorem body_rel (hv : SealOk)
 
 
 theorem sealGather_ct (hv : SealOk)
-    (hct : ConstantTime isa (Spec.Gcm.sealContract PPC64LE.abi 2672).pre
-      (Spec.Gcm.sealContract PPC64LE.abi 2672).pub sealCode) :
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub sealCode) :
     ConstantTime isa gatherPre gatherPub sealGather := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁

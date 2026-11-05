@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
 import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
 import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
@@ -88,7 +89,7 @@ def scSat : State :=
 theorem streamEncrypt_verified :
     Verified Arm.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamEncrypt_wp hs) streamEncrypt_ct (by
-    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptArm, streamCryptPre,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
@@ -96,7 +97,7 @@ theorem streamEncrypt_verified :
 theorem streamDecrypt_verified :
     Verified Arm.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamDecrypt_wp hs) streamDecrypt_ct (by
-    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptArm, streamCryptPre,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
@@ -115,7 +116,7 @@ theorem streamFinish_verified :
     Verified Arm.target streamFinish (Proof.AesGcm.streamFinishScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamFinish_wp hs) streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
-      Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost, streamFinishArm, streamFinishPreArm, finPub, bel, arg,
+      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishArm, streamFinishPreArm, finPub, bel, arg,
       args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [fSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using fSat)
 
@@ -135,7 +136,7 @@ theorem streamVerify_verified :
       post := by
         intro s s' _ h
         sig_eval [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
-          Spec.Gcm.streamVerifyPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+          Proof.AesGcm.streamVerifyRoundsPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [streamVerifyArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
         intro _ iv a c hs ha hc
@@ -160,7 +161,7 @@ def oSat : State :=
 theorem seal_verified : Verified Arm.target «seal» (Proof.AesGcm.sealScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealArm, sealPreArm, onePub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs,
+      Proof.AesGcm.sealRoundsPost, sealArm, sealPreArm, onePub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [oSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using oSat)
 
@@ -185,7 +186,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesGcm.openScratchCo
           Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPost, Arm.abi,
+        sig_eval [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Proof.AesGcm.openRoundsPost, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [openArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right

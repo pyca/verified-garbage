@@ -36,30 +36,30 @@ def artifacts : List Artifact := [
   Spec.Gcm.streamEncryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
     stack := 2592
-    verified := streamEncrypt_framed },
+    verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed },
   Spec.Gcm.streamDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
     stack := 2592
-    verified := streamDecrypt_framed },
+    verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed },
   Spec.Gcm.streamFinishApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 Impl.AesGcm.PPC64LE.streamFinish
     stack := 2592
-    verified := streamFinish_framed },
+    verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed },
   Spec.Gcm.streamVerifyApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamVerify
     stack := 2592
-    verified := streamVerify_framed },
+    verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed },
   Spec.Gcm.sealApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
     stack := 2672
-    verified := seal_framed },
+    verified := Proof.AesGcm.seal_keyed seal_framed },
   Spec.Gcm.openApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesGcm.PPC64LE.open
     stack := 2688
-    verified := open_framed },
+    verified := Proof.AesGcm.open_keyed open_framed },
   Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
     stack := 2960
-    verified := GatherSplit.verified }]
+    verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified }]
 
 end VG.Artifacts.AesGcm.PPC64LE

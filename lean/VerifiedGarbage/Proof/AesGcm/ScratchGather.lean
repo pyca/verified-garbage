@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.ScratchP
 import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
@@ -120,7 +121,7 @@ theorem sealGatherPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (sealGath
   rw [gatheredLen_congr_le (by rw [BitVec.toNat_setWidth]; exact this) hl]
   exact ⟨h.1, h.2.1, powersRepr_congr hc h.2.2⟩
 
-/-- `sealGatherPost` reads the memory on entry only within the buffers and the
+/-- `sealGatherRoundsPost` reads the memory on entry only within the buffers and the
 list of slices, for a key context of `cl ≥ 256` bytes. -/
 private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
     {ctx rd nonce nl aad al src cnt dst len tag : BitVec 64}
@@ -156,8 +157,8 @@ private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
 theorem sealGatherPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealGatherSig.words pb).length →
     (∀ b ∈ Sig.bufs sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ sealGatherSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealGatherSig.words pb) (sealGatherPost pb) vs m₁ m' r →
-      Curry.apply (sealGatherSig.words pb) (sealGatherPost pb) vs m₂ m' r := by
+    Curry.apply (sealGatherSig.words pb) (sealGatherRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealGatherSig.words pb) (sealGatherRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb hl h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -187,19 +188,19 @@ theorem sealGatherPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealGatherSig
   simp only [sealGatherSig, Sig.lists, List.append_nil] at hl
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPost pb) _ m₁ m' r at h
+    (sealGatherRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, sealGatherPost, ArgWord.ofRaw] at h ⊢
+    (sealGatherRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
   exact post_local pb (Nat.le_refl _) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) hl h
 
 theorem sealGatherPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
     vs.length = (sealGatherPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ sealGatherPrecomputedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealGatherPrecomputedSig.words pb) (sealGatherPost pb) vs m₁ m' r →
-      Curry.apply (sealGatherPrecomputedSig.words pb) (sealGatherPost pb) vs m₂ m' r := by
+    Curry.apply (sealGatherPrecomputedSig.words pb) (sealGatherRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealGatherPrecomputedSig.words pb) (sealGatherRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb hl h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -229,11 +230,11 @@ theorem sealGatherPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
   simp only [sealGatherPrecomputedSig, Sig.lists, List.append_nil] at hl
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPost pb) _ m₁ m' r at h
+    (sealGatherRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-    (sealGatherPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, sealGatherPost, ArgWord.ofRaw] at h ⊢
+    (sealGatherRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
   exact post_local pb (by decide) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) hl h
 
 end VG.Proof.AesGcm

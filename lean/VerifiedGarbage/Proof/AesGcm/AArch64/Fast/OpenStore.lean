@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
@@ -242,14 +243,14 @@ theorem openSt_verified :
     { pre := by
         sig_implies_pre [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_reduce [openStAArch64, openAArch64, openRes, AArch64.stackArg, AArch64.stackArgAddr] at h
@@ -258,7 +259,7 @@ theorem openSt_verified :
       pub := by
         sig_implies_pub [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨openSatSt, by
@@ -281,11 +282,11 @@ def openFrameSatSt : State :=
   { openSatSt with rd := [⟨0x1000, 256⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0, 16⟩, ⟨0x8000, 24⟩],
                    wr := [⟨0x4000, 0⟩, ⟨0x6000, 128⟩] }
 
-theorem openFrameSatSt_pre : ∃ s, (Spec.Gcm.openStorePowersContract AArch64.abi 2592).pre s := by
+theorem openFrameSatSt_pre : ∃ s, (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592).pre s := by
   refine ⟨openFrameSatSt, ?_⟩
-  sig_pre [Spec.Gcm.openStorePowersContract, Spec.Gcm.openStorePowersSig, Spec.Gcm.openSig,
-    Spec.Gcm.storePowersParam, Spec.Gcm.openPre, Spec.Gcm.storePowersOk, Spec.Gcm.openStorePowersPost,
-    Spec.Gcm.openPost, Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+  sig_pre [Proof.AesGcm.openStorePowersRoundsContract, Spec.Gcm.openStorePowersSig, Spec.Gcm.openSig,
+    Spec.Gcm.storePowersParam, Spec.Gcm.openPre, Spec.Gcm.storePowersOk, Proof.AesGcm.openStorePowersRoundsPost,
+    Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop, List.cons_append, List.nil_append, openFrameSatSt, openSatSt, openSat,
     stackArg, stackArgAddr, Mem.readW, Mem.read]
   sig_and_intros
@@ -297,10 +298,10 @@ theorem openFrameSatSt_pre : ∃ s, (Spec.Gcm.openStorePowersContract AArch64.ab
 theorem openSt_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn))
-      (Spec.Gcm.openStorePowersContract AArch64.abi 2592) :=
+      (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openStorePowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.openStorePowersPreP AArch64.abi.ptrBits)
-    (post := Spec.Gcm.openStorePowersPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.openStorePowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Proof.AesGcm.openStorePowersLeakP AArch64.abi.ptrBits))
     (openSt_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.openStorePowersPre_local _)
     (Proof.AesGcm.openStorePowersPost_local _) openFrameSatSt_pre

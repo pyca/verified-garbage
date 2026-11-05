@@ -35,14 +35,14 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
     stack := 2624
-    verified := sealSel_framed v Short.shortFacts
+    verified := Proof.AesGcm.seal_keyed (sealSel_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB)
     features := v.features },
   Spec.Gcm.openApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
     stack := 2632
-    verified := openSel_framed v Short.shortFacts
+    verified := Proof.AesGcm.open_keyed (openSel_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
   Spec.Gcm.streamInitApi.artifact X86_64.target {
@@ -65,28 +65,28 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
     stack := 2608
-    verified := streamEncrypt_framed v
+    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
     stack := 2608
-    verified := streamDecrypt_framed v
+    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
     stack := 2584
-    verified := streamFinish_framed v
+    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup },
   Spec.Gcm.streamVerifyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
     stack := 2592
-    verified := streamVerify_framed v
+    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup }]
 
@@ -103,14 +103,14 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
     stack := 2624
-    verified := sealSelP_framed v Short.shortFacts
+    verified := Proof.AesGcm.sealPrecomputed_keyed (sealSelP_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP)
     features := v.features },
   Spec.Gcm.openPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
     stack := 2632
-    verified := openSelP_framed v Short.shortFacts
+    verified := Proof.AesGcm.openPrecomputed_keyed (openSelP_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkP)
     features := v.features },
   Spec.Gcm.streamEncryptPrecomputedApi.artifact X86_64.target {
@@ -118,7 +118,7 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))
     stack := 2608
-    verified := streamEncryptP_framed v
+    verified := Proof.AesGcm.streamEncryptPrecomputed_keyed (streamEncryptP_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP)
     features := v.features },
   Spec.Gcm.streamDecryptPrecomputedApi.artifact X86_64.target {
@@ -126,7 +126,7 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.withBlk v.blkP))
     stack := 2608
-    verified := streamDecryptP_framed v
+    verified := Proof.AesGcm.streamDecryptPrecomputed_keyed (streamDecryptP_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
     features := v.features }]
 
@@ -140,8 +140,8 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
         (shortFn v).code (initFn v.impl).fn
         (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
     stack := 5128
-    verified := Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
-      (finFn v.impl)
+    verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
+      (finFn v.impl))
     spSafe := X86_64.withStackArgScratch_spSafe
       (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
         (finFn v.impl))
@@ -154,8 +154,8 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
         (shortFnP v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnP v).fn (finFn v.impl).fn)
       stack := 5128
-      verified := Gather.sealGatherP_framed (shortFnP v) (initFn v.impl) (aadFn v.impl)
-        (toFnP v) (finFn v.impl)
+      verified := Proof.AesGcm.sealGatherPrecomputed_keyed (Gather.sealGatherP_framed (shortFnP v) (initFn v.impl) (aadFn v.impl)
+        (toFnP v) (finFn v.impl))
       spSafe := X86_64.withStackArgScratch_spSafe
         (Gather.sealGather_spAll (shortFnP v) (initFn v.impl) (aadFn v.impl) (toFnP v)
           (finFn v.impl))
@@ -167,14 +167,14 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
     stack := 2624
-    verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
+    verified := Proof.AesGcm.sealPrepared_keyed (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     stack := 2632
-    verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
+    verified := Proof.AesGcm.openPrepared_keyed (openSelPrepared_framed v.impl (blkR v) Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
@@ -182,7 +182,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))
     stack := 2608
-    verified := streamEncryptPrepared_framed v.impl (blkR v)
+    verified := Proof.AesGcm.streamEncryptPrepared_keyed (streamEncryptPrepared_framed v.impl (blkR v))
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v))
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
@@ -190,7 +190,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v)))
     stack := 2608
-    verified := streamDecryptPrepared_framed v.impl (blkR v)
+    verified := Proof.AesGcm.streamDecryptPrepared_keyed (streamDecryptPrepared_framed v.impl (blkR v))
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v))
     features := v.impl.features }]
 
@@ -202,8 +202,8 @@ def artifactsGatherR (v : GcmVariant) : List Artifact :=
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
             (shortFnR v).code (initFn v.impl).fn (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn))
       stack := 5128
-      verified := Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
-        (toFnR v) (finFn v.impl) (splitFnR v) (tlsLong v)
+      verified := Proof.AesGcm.sealGatherPrepared_keyed (Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
+        (toFnR v) (finFn v.impl) (splitFnR v) (tlsLong v))
       spSafe := X86_64.withStackArgScratch_spSafe
         (Gather.withFront_spAll (shortFnR v) (initFn v.impl) (aadFn v.impl) (toFnR v)
           (finFn v.impl) (splitFnR v) (tlsLong v))
@@ -214,14 +214,14 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR16 v)))
     stack := 2624
-    verified := sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short
+    verified := Proof.AesGcm.sealPrepared16_keyed (sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
     spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR16 v))
     features := v.impl.features },
   Spec.Gcm.openPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR16 v)))
     stack := 2632
-    verified := openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short
+    verified := Proof.AesGcm.openPrepared16_keyed (openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR16 v))
     features := v.impl.features },
   Spec.Gcm.streamEncryptPrepared16Api.artifact X86_64.target {
@@ -229,7 +229,7 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR16 v)))
     stack := 2608
-    verified := streamEncryptPrepared16_framed v.impl (blkR16 v)
+    verified := Proof.AesGcm.streamEncryptPrepared16_keyed (streamEncryptPrepared16_framed v.impl (blkR16 v))
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR16 v))
     features := v.impl.features },
   Spec.Gcm.streamDecryptPrepared16Api.artifact X86_64.target {
@@ -237,7 +237,7 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR16 v)))
     stack := 2608
-    verified := streamDecryptPrepared16_framed v.impl (blkR16 v)
+    verified := Proof.AesGcm.streamDecryptPrepared16_keyed (streamDecryptPrepared16_framed v.impl (blkR16 v))
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v))
     features := v.impl.features }]
 
@@ -249,8 +249,8 @@ def artifactsGatherR16 (v : GcmVariant) (r : R16 v) : List Artifact :=
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR16 v r.short r.onePass).quick (shortFnR16 v r.short r.onePass).fast (shortFnR16 v r.short r.onePass).test
             (shortFnR16 v r.short r.onePass).code (initFn v.impl).fn (aadFn v.impl).fn (toFnR16 v).fn (finFn v.impl).fn true))
       stack := 5128
-      verified := Gather.sealGatherPrepared16_framed (shortFnR16 v r.short r.onePass) (initFn v.impl) (aadFn v.impl)
-        (toFnR16 v) (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v)
+      verified := Proof.AesGcm.sealGatherPrepared16_keyed (Gather.sealGatherPrepared16_framed (shortFnR16 v r.short r.onePass) (initFn v.impl) (aadFn v.impl)
+        (toFnR16 v) (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v))
       spSafe := X86_64.withStackArgScratch_spSafe
         (Gather.withFront_spAll (shortFnR16 v r.short r.onePass) (initFn v.impl) (aadFn v.impl) (toFnR16 v)
           (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v) true)

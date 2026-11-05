@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenSh
@@ -138,19 +139,19 @@ theorem openPwS_verified :
   Verified.of_correct (openPwS_correct v g hMK gh) (openPwS_ct v g hMK gh)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
-          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Spec.Gcm.openWithPowersPost, Spec.Gcm.openPost,
+          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
           Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
           openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
           List.getD, List.range, List.range.loop]
       post := by
         sig_implies_post [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
-          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Spec.Gcm.openWithPowersPost, Spec.Gcm.openPost,
+          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
           Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
           openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
           List.getD, List.range, List.range.loop]
       pub := by
         sig_implies_pub [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
-          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Spec.Gcm.openWithPowersPost, Spec.Gcm.openPost,
+          Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
           Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
           openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
           List.getD, List.range, List.range.loop]
@@ -171,10 +172,10 @@ end
 theorem openPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn))
-      (Spec.Gcm.openWithPowersContract AArch64.abi 2592) :=
+      (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openWithPowersPre AArch64.abi.ptrBits)
-    (post := Spec.Gcm.openWithPowersPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))
     (openPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.openWithPowersPre_local _)
     (Proof.AesGcm.openWithPowersPost_local _) openFrameSatPw_pre
@@ -256,14 +257,14 @@ theorem openStS_verified :
     { pre := by
         sig_implies_pre [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_reduce [openStAArch64, openAArch64, openRes, AArch64.stackArg, AArch64.stackArgAddr] at h
@@ -272,7 +273,7 @@ theorem openStS_verified :
       pub := by
         sig_implies_pub [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
           Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Spec.Gcm.openStorePowersPost, Spec.Gcm.openPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
+          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
           openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
           AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := ⟨openSatSt, by
@@ -292,10 +293,10 @@ theorem openStS_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch
     (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn))
-      (Spec.Gcm.openStorePowersContract AArch64.abi 2592) :=
+      (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openStorePowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.openStorePowersPreP AArch64.abi.ptrBits)
-    (post := Spec.Gcm.openStorePowersPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+    (post := Proof.AesGcm.openStorePowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Proof.AesGcm.openStorePowersLeakP AArch64.abi.ptrBits))
     (openStS_verified v g hMK hP gh) (by decide) (by decide) (Proof.AesGcm.openStorePowersPre_local _)
     (Proof.AesGcm.openStorePowersPost_local _) openFrameSatSt_pre

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.X86.StreamAad
 import VerifiedGarbage.Proof.AesGcm.X86.StreamInit
 import VerifiedGarbage.Proof.AesGcm.X86.StreamDecrypt
@@ -126,7 +127,7 @@ theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 
@@ -144,7 +145,7 @@ theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 
@@ -177,7 +178,7 @@ theorem streamFinish_verified :
     have e : argAddr finSat 0 = 0x8004 := by decide
     have esp : finSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
-      Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost, streamFinishX86, finPre, pubN,
+      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishX86, finPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using finSat)
 
@@ -210,7 +211,7 @@ theorem streamVerify_verified :
     have e : argAddr verSat 0 = 0x8004 := by decide
     have esp : verSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
-      Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost, streamVerifyX86, verifyPre, pubN,
+      Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyX86, verifyPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using verSat)
 
@@ -245,7 +246,7 @@ theorem seal_verified : Verified X86.target («seal» vg.callees) (Proof.AesGcm.
     have e : argAddr sealSat 0 = 0x8004 := by decide
     have esp : sealSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealX86, sealPre, pubN, roundsOk,
+      Proof.AesGcm.sealRoundsPost, sealX86, sealPre, pubN, roundsOk,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using sealSat)
 
@@ -282,7 +283,7 @@ theorem openPre_rounds {s : State} (h : openPre s) : roundsOk s 1 := by
 
 theorem open_pre : ∀ s, (Proof.AesGcm.openScratchContract X86.abi 28).pre s → openX86.pre s := by
   sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-    Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+    Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
@@ -291,21 +292,21 @@ theorem open_verified : Verified X86.target («open» vg.callees) (Proof.AesGcm.
   Verified.of_correct open_correct open_ct
     { pre := open_pre
       post := by sig_implies_post [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig,
-        Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+        Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       pub := by
         intro s₁ s₂ h₁ h₂ h
         have hR₁ := openPre_rounds (open_pre s₁ h₁)
         have hR₂ := openPre_rounds (open_pre s₂ h₂)
         sig_pub [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-          Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
         sig_split h
         sig_reduce [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-          Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         sig_simp [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-          Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [Nat.forall_lt_succ_right, Nat.not_lt_zero,
           false_imp_iff, forall_const, true_and]
         sig_and_intros
@@ -328,7 +329,7 @@ theorem open_verified : Verified X86.target («open» vg.callees) (Proof.AesGcm.
         have e : argAddr openSat 0 = 0x8004 := by decide
         have esp : openSat.gpr .esp = 0x8000 := rfl
         sig_implies_sat [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-          Spec.Gcm.openPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openX86, openPre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp] using openSat }
 
