@@ -233,8 +233,19 @@ fn keys(c: &mut Criterion) {
 
     let mut g = c.benchmark_group("rsa_from_primes");
     // The same sizes: the CRT values of `(n, e, d, p, q)` and the key.
+    // Reuse the same keys across binaries and CPU-feature configurations
+    // when comparing implementations: OpenSSL's inverse is variable time.
+    let key_dir = std::env::var_os("VG_BENCH_RSA_KEYS");
     for bits in [2048, 3072, 4096] {
-        let key = Rsa::generate(bits).unwrap();
+        let key = if let Some(dir) = &key_dir {
+            let path = std::path::Path::new(dir).join(format!("{bits}.pem"));
+            let pem = std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            let key = Rsa::private_key_from_pem(&pem).unwrap();
+            assert_eq!(key.n().num_bits(), bits as i32, "{}", path.display());
+            key
+        } else {
+            Rsa::generate(bits).unwrap()
+        };
         let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
         let (p, q) = (key.p().unwrap().to_vec(), key.q().unwrap().to_vec());
         let k = n.len();
