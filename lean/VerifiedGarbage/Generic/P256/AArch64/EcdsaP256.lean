@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P256.GTable9
 public import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
@@ -258,9 +259,11 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 namespace VG.Generic.P256.AArch64.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
-  Spec.Ecdsa.P256.verifyApi.artifact AArch64.target {
+  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
     consts := Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.combConsts
-    code := Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.prime h.inv h.invToM (Proof.P256.gtabOk9 h.law) }]
+    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
+    stack := 80
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified h.law h.prime h.inv h.invToM (Proof.P256.gtabOk9 h.law) }]
 
 end VG.Generic.P256.AArch64.EcdsaP256

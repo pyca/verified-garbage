@@ -49,6 +49,14 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 
 /-! ## `AllocatedInverse` -/
 
@@ -183,6 +191,21 @@ theorem allocatedVerify_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder Spe
       (fun _ _ ps pt => Allocated.allocatedPoints_relCT Allocated.raw_correct (p256_ok hI) hL hO hT ps pt)
       jointTail_ct _ _ _ _ _ _ (vpreG_of (impliesG.pre _ pre₁)) (vpreG_of (impliesG.pre _ pre₂))
       (jacPublicG_of_spec pub) e₁ e₂
+
+
+/-- `vg_ecdsa_p256_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified_cons`). -/
+theorem allocatedVerifyHash_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
+    (hN : InvToM p256.C.n)
+    (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start) :
+    Verified AArch64.target
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false P256Allocated.verify)
+      (Spec.Ecdsa.P256.inst.verifyHashContract (AArch64.abi.withConsts P256Joint.p256v.combConsts) 80) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p256_len (by decide) (allocatedVerify_verified hL hO hI hN hT)
+    (by taint_decide) (Hash.hashSat_cons (by decide) sat_specG (by decide) fun r hr => by
+      simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.Verify.AArch64
 
