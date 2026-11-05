@@ -49561,3 +49561,25438 @@ vg_dsa_verify_prevalidated:
 	ld s6, 224(s6)
 	ret
 	.option pop
+
+vg_dsa_parameter_search_init:
+	.option push
+	.option arch, +m, +c
+	addi t3, zero, 128
+	beq a1, t3, 20f
+	addi t3, zero, 256
+	beq a1, t3, 22f
+	addi t3, zero, 384
+	beq a1, t3, 24f
+	addi t2, zero, 0
+	sd t2, 0(a0)
+	sd t2, 8(a0)
+	sd t2, 16(a0)
+	sd t2, 24(a0)
+	addi a0, zero, 0
+	j 25f
+24:
+	lui t2, 1
+	sd t2, 0(a0)
+	sd a1, 8(a0)
+	slli t2, a1, 15
+	add t2, t2, a1
+	sd t2, 16(a0)
+	slli t2, a1, 9
+	sd t2, 24(a0)
+	addi a0, zero, 1
+25:
+	j 23f
+22:
+	lui t2, 1
+	sd t2, 0(a0)
+	sd a1, 8(a0)
+	slli t2, a1, 15
+	add t2, t2, a1
+	sd t2, 16(a0)
+	slli t2, a1, 9
+	sd t2, 24(a0)
+	addi a0, zero, 1
+23:
+	j 21f
+20:
+	lui t2, 1
+	sd t2, 0(a0)
+	sd a1, 8(a0)
+	slli t2, a1, 15
+	add t2, t2, a1
+	sd t2, 16(a0)
+	slli t2, a1, 9
+	sd t2, 24(a0)
+	addi a0, zero, 1
+21:
+	ret
+	.option pop
+
+vg_dsa_parameter_search:
+	.option push
+	.option arch, +m, +c
+	ld t2, 0(a7)
+	addi t3, zero, 0
+	sd s0, 184(a5)
+	sd s1, 192(a5)
+	sd s2, 200(a5)
+	sd s3, 208(a5)
+	sd s4, 216(a5)
+	sd s5, 224(a5)
+	sd s7, 232(a5)
+	sd s8, 240(a5)
+	sd s9, 248(a5)
+	sd s10, 256(a5)
+	sd s11, 264(a5)
+	sd s6, 272(a5)
+	sd ra, 120(a5)
+	sd a0, 0(a5)
+	sd a2, 152(a5)
+	sd a3, 72(a5)
+	sd a4, 80(a5)
+	sd a7, 160(a5)
+	sd a6, 168(a5)
+	sd t2, 16(a5)
+	sd t3, 24(a5)
+	addi s6, a5, 0
+	ld t3, 160(s6)
+	ld t2, 8(t3)
+	addi t3, zero, 128
+	beq t2, t3, 20f
+	addi t3, zero, 256
+	beq t2, t3, 22f
+	addi t2, zero, 0
+	sd t2, 320(s6)
+	sd t2, 328(s6)
+	sd t2, 336(s6)
+	sd t2, 344(s6)
+	sd t2, 352(s6)
+	sd t2, 360(s6)
+	sd t2, 368(s6)
+	sd t2, 376(s6)
+	addi t2, zero, 128
+	sb t2, 352(s6)
+	addi t2, zero, 1
+	sb t2, 382(s6)
+	addi t2, zero, 0
+	sb t2, 383(s6)
+24:
+	ld t2, 24(s6)
+	sd t2, 144(s6)
+	ld t3, 16(s6)
+	beqz t3, 25f
+	ld t3, 80(s6)
+	sub t3, t3, t2
+	addi t4, zero, 32
+	bltu t3, t4, 27f
+	ld t3, 72(s6)
+	add t3, t3, t2
+	sd t3, 8(s6)
+	addi t2, t2, 32
+	sd t2, 24(s6)
+	addi t2, zero, 2
+	sd t2, 64(s6)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+29:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 29b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 512
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	lbu t2, 512(s6)
+	ori t2, t2, 128
+	sb t2, 512(s6)
+	lbu t2, 543(s6)
+	ori t2, t2, 1
+	sb t2, 543(s6)
+	addi a0, s6, 512
+	lui a1, 7
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 32
+210:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 210b
+	lui a0, 7
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 7
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 211f
+	j 212f
+211:
+	ld a2, 72(s6)
+212:
+	call {vg_dsa_probable_prime_256}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 213f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 214f
+213:
+214:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 215f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 217f
+	j 218f
+217:
+	addi t2, zero, 0
+	sd t2, 32(s6)
+	addi t2, zero, 1
+	sd t2, 40(s6)
+	addi t2, zero, 4
+	sd t2, 96(s6)
+219:
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+220:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 220b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 0
+	addi a3, zero, 32
+221:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 221b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 928
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+222:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 222b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 1
+	addi a3, zero, 32
+223:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 223b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 896
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+224:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 224b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 2
+	addi a3, zero, 32
+225:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 225b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 864
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+226:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 226b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 3
+	addi a3, zero, 32
+227:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 227b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 832
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+228:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 228b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 4
+	addi a3, zero, 32
+229:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 229b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 800
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+230:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 230b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 5
+	addi a3, zero, 32
+231:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 231b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 768
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+232:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 232b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 6
+	addi a3, zero, 32
+233:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 233b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 736
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+234:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 234b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 7
+	addi a3, zero, 32
+235:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 235b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 704
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+236:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 236b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 8
+	addi a3, zero, 32
+237:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 237b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 672
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+238:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 238b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 9
+	addi a3, zero, 32
+239:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 239b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 640
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+240:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 240b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 10
+	addi a3, zero, 32
+241:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 241b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 608
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+242:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 242b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 11
+	addi a3, zero, 32
+243:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 243b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 576
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	lbu t2, 576(s6)
+	ori t2, t2, 128
+	sb t2, 576(s6)
+	lui s11, 5
+	add s11, s11, s6
+	addi s10, zero, 400
+	addi s9, zero, 48
+	addi t3, zero, 15
+	mul t3, t3, s10
+	srli t3, t3, 3
+	addi t0, s11, 256
+	addi t5, zero, 0
+244:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 244b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t5, zero, 1
+	sd t5, 0(t0)
+	addi a0, s6, 576
+	addi a1, zero, 384
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+245:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 245b
+	addi a0, s6, 576
+	addi a1, zero, 384
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 4
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+246:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 246b
+	addi a0, s6, 512
+	addi a1, zero, 32
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 2
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+247:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 247b
+	addi a1, zero, 32
+	addi s8, a1, 7
+	srli s8, s8, 3
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+248:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 248b
+	slli s7, s9, 6
+	addi a4, zero, -1
+249:
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	srli t3, t5, 63
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	andi t4, a4, 1
+	addi t2, s8, 1
+	andi t2, t2, 3
+	beqz t2, 250f
+252:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, -1
+	bnez t2, 252b
+	j 251f
+250:
+251:
+	addi t2, s8, 1
+	srli t2, t2, 2
+	beqz t2, 253f
+255:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	ld t5, 8(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 8(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 8(t0)
+	ld t5, 16(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 16(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 16(t0)
+	ld t5, 24(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 24(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 24(t0)
+	addi t0, t0, 32
+	addi t1, t1, 32
+	addi t2, t2, -1
+	bnez t2, 255b
+	j 254f
+253:
+254:
+	srli t5, t6, 63
+	addi a4, t5, -1
+	andi a5, a4, 1
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	slli t5, t5, 1
+	or t5, t5, a5
+	sd t5, 0(t2)
+	addi s7, s7, -1
+	bnez s7, 249b
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	xori a4, a4, -1
+	addi t4, zero, 0
+	addi t3, s8, 1
+256:
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	and t6, t6, a4
+	add t5, t5, t4
+	sltu a5, t5, t4
+	add t5, t5, t6
+	sltu t4, t5, t6
+	or t4, t4, a5
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 256b
+	addi t0, zero, 5
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 1
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+257:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 257b
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, 1
+	sd t5, 160(s11)
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	ld t4, 160(s11)
+	addi t5, zero, 0
+	sub t4, t5, t4
+	addi t3, s9, 0
+258:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 258b
+	addi t0, zero, 7
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 5
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+259:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 259b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 7
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+260:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 260b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	ori t5, t5, 1
+	sd t5, 0(t0)
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 0
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+261:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 261b
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, -2
+	sd t5, 0(t0)
+	addi a0, s6, 960
+	addi a1, zero, 384
+	addi t4, zero, -1
+	addi t1, zero, 8
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+262:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 262b
+	addi a0, s6, 1344
+	addi a1, zero, 353
+	addi t4, zero, -1
+	addi t1, zero, 9
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+263:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 263b
+	lbu t2, 960(s6)
+	srli t2, t2, 7
+	beqz t2, 264f
+	addi a0, s6, 960
+	lui a1, 7
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 384
+266:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 266b
+	lui a0, 7
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 7
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 267f
+	j 268f
+267:
+	ld a2, 72(s6)
+268:
+	call {vg_dsa_probable_prime_3072}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 269f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 270f
+269:
+270:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 271f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 273f
+	j 274f
+273:
+	addi t2, zero, 1
+	sd t2, 96(s6)
+274:
+	j 272f
+271:
+	addi t2, zero, 0
+	sd t2, 96(s6)
+272:
+	j 265f
+264:
+265:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 275f
+	j 276f
+275:
+	ld t3, 32(s6)
+	addi t3, t3, 1
+	sd t3, 32(s6)
+	ld t4, 40(s6)
+	addi t4, t4, 12
+	sd t4, 40(s6)
+	addi t2, zero, 384
+	slli t2, t2, 5
+	sub t2, t3, t2
+	beqz t2, 277f
+	j 278f
+277:
+	addi t2, zero, 2
+	sd t2, 96(s6)
+278:
+276:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 219b
+	ld t2, 96(s6)
+	addi t2, t2, 0
+	beqz t2, 279f
+	ld t2, 96(s6)
+	addi t2, t2, -1
+	beqz t2, 281f
+	j 282f
+281:
+	ld t2, 72(s6)
+	ld t3, 24(s6)
+	add t2, t2, t3
+	sd t2, 48(s6)
+	sd t2, 128(s6)
+	ld t4, 80(s6)
+	sub t4, t4, t3
+	addi t5, zero, 384
+	slli t5, t5, 7
+	bltu t4, t5, 283f
+	sd t5, 56(s6)
+	addi t2, zero, 1
+	sd t2, 136(s6)
+	j 284f
+283:
+	sd t4, 56(s6)
+	addi t2, zero, 0
+	sd t2, 136(s6)
+284:
+	addi t2, zero, 4
+	sd t2, 104(s6)
+285:
+	ld t2, 56(s6)
+	addi t3, zero, 384
+	bltu t2, t3, 286f
+	lui s11, 5
+	add s11, s11, s6
+	addi s10, zero, 400
+	addi s9, zero, 48
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+288:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 288b
+	ld a0, 48(s6)
+	addi a1, zero, 384
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+289:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 289b
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 10
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+290:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 290b
+	sd t4, 168(s11)
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 10
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 7
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+291:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 291b
+	sd t4, 176(s11)
+	ld t5, 168(s11)
+	ld t6, 176(s11)
+	and t5, t5, t6
+	sd t5, 168(s11)
+	ld t2, 168(s11)
+	beqz t2, 292f
+	lui a7, 2
+	add a7, a7, s6
+	addi a7, a7, 256
+	addi t0, zero, 48
+	addi s5, zero, 400
+	addi s7, s6, 960
+	addi s8, zero, 384
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+294:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 294b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+295:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 295b
+	ld s3, 0(a7)
+	addi s0, s3, 0
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	addi s1, zero, 0
+	sub t1, s1, s0
+	addi a2, a7, 0
+	add a2, a2, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a2, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+296:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 296b
+	addi s0, zero, 1
+	sd s0, 0(a2)
+	slli a1, t0, 7
+297:
+	addi t3, a5, 0
+	addi t4, a2, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+298:
+	ld s2, 0(t4)
+	slli s3, s2, 1
+	add s3, s3, s4
+	srli s4, s2, 63
+	sd s3, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 298b
+	sd s4, 0(t3)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+299:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 299b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2100:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2100b
+	addi a1, a1, -1
+	bnez a1, 297b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	addi t5, t0, 2
+2101:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2101b
+	ld s7, 48(s6)
+	addi s8, zero, 384
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2102:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2102b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+2103:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 2103b
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	addi t3, a7, 0
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 2
+2104:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2104b
+	addi s9, s6, 1344
+	addi s10, zero, 353
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2105:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2105b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2106:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2106b
+2107:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2108f
+2110:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2110b
+	j 2109f
+2108:
+2109:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2111f
+2113:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2113b
+	j 2112f
+2111:
+2112:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2107b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2114:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2114b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2115:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2115b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2116:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2116b
+2117:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2118f
+2120:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2120b
+	j 2119f
+2118:
+2119:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2121f
+2123:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2123b
+	j 2122f
+2121:
+2122:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2117b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2124:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2124b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2125:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2125b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2126:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2126b
+	addi s7, zero, 2
+2127:
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2128:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2128b
+2129:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2130f
+2132:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2132b
+	j 2131f
+2130:
+2131:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2133f
+2135:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2135b
+	j 2134f
+2133:
+2134:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2129b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2136:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2136b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2137:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2137b
+	addi s4, zero, -1
+	addi t2, s7, 8
+	mul t2, t2, s5
+	add a2, t2, a7
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2138:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2138b
+	addi s7, s7, 1
+	addi t2, s7, -16
+	bnez t2, 2127b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2139:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2139b
+2140:
+	lbu s7, 0(s9)
+	slli s7, s7, 56
+	addi s9, s9, 1
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2141:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2141b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2142:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2143f
+2145:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2145b
+	j 2144f
+2143:
+2144:
+	beqz t6, 2146f
+2148:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2148b
+	j 2147f
+2146:
+2147:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2142b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2149:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2149b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2150:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2151f
+2153:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2153b
+	j 2152f
+2151:
+2152:
+	beqz t6, 2154f
+2156:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2156b
+	j 2155f
+2154:
+2155:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2150b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2157:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2157b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2158:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2158b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2159:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2159b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2160:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2161f
+2163:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2163b
+	j 2162f
+2161:
+2162:
+	beqz t6, 2164f
+2166:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2166b
+	j 2165f
+2164:
+2165:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2160b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2167:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2167b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2168:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2169f
+2171:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2171b
+	j 2170f
+2169:
+2170:
+	beqz t6, 2172f
+2174:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2174b
+	j 2173f
+2172:
+2173:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2168b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2175:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2175b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2176:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2176b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2177:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2177b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2178:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2179f
+2181:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2181b
+	j 2180f
+2179:
+2180:
+	beqz t6, 2182f
+2184:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2184b
+	j 2183f
+2182:
+2183:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2178b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2185:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2185b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2186:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2187f
+2189:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2189b
+	j 2188f
+2187:
+2188:
+	beqz t6, 2190f
+2192:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2192b
+	j 2191f
+2190:
+2191:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2186b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2193:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2193b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2194:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2194b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2195:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2195b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2196:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2197f
+2199:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2199b
+	j 2198f
+2197:
+2198:
+	beqz t6, 2200f
+2202:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2202b
+	j 2201f
+2200:
+2201:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2196b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2203:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2203b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2204:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2205f
+2207:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2207b
+	j 2206f
+2205:
+2206:
+	beqz t6, 2208f
+2210:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2210b
+	j 2209f
+2208:
+2209:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2204b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2211:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2211b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2212:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2212b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2213:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2214:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2214b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2215:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2215b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2213b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2216:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2216b
+2217:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2218f
+2220:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2220b
+	j 2219f
+2218:
+2219:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2221f
+2223:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2223b
+	j 2222f
+2221:
+2222:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2217b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2224:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2224b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2225:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2225b
+	slli s7, s7, 4
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2226:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2226b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2227:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2228f
+2230:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2230b
+	j 2229f
+2228:
+2229:
+	beqz t6, 2231f
+2233:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2233b
+	j 2232f
+2231:
+2232:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2227b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2234:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2234b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2235:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2236f
+2238:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2238b
+	j 2237f
+2236:
+2237:
+	beqz t6, 2239f
+2241:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2241b
+	j 2240f
+2239:
+2240:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2235b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2242:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2242b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2243:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2243b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2244:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2244b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2245:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2246f
+2248:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2248b
+	j 2247f
+2246:
+2247:
+	beqz t6, 2249f
+2251:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2251b
+	j 2250f
+2249:
+2250:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2245b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2252:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2252b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2253:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2254f
+2256:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2256b
+	j 2255f
+2254:
+2255:
+	beqz t6, 2257f
+2259:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2259b
+	j 2258f
+2257:
+2258:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2253b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2260:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2260b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2261:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2261b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2262:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2262b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2263:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2264f
+2266:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2266b
+	j 2265f
+2264:
+2265:
+	beqz t6, 2267f
+2269:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2269b
+	j 2268f
+2267:
+2268:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2263b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2270:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2270b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2271:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2272f
+2274:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2274b
+	j 2273f
+2272:
+2273:
+	beqz t6, 2275f
+2277:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2277b
+	j 2276f
+2275:
+2276:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2271b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2278:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2278b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2279:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2279b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2280:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2280b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2281:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2282f
+2284:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2284b
+	j 2283f
+2282:
+2283:
+	beqz t6, 2285f
+2287:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2287b
+	j 2286f
+2285:
+2286:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2281b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2288:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2288b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2289:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2290f
+2292:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2292b
+	j 2291f
+2290:
+2291:
+	beqz t6, 2293f
+2295:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2295b
+	j 2294f
+2293:
+2294:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2289b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2296:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2296b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2297:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2297b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2298:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2299:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2299b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2300:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2300b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2298b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2301:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2301b
+2302:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2303f
+2305:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2305b
+	j 2304f
+2303:
+2304:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2306f
+2308:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2308b
+	j 2307f
+2306:
+2307:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2302b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2309:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2309b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2310:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2310b
+	slli s7, s7, 4
+	addi s10, s10, -1
+	bnez s10, 2140b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2311:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2311b
+2312:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2313f
+2315:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2315b
+	j 2314f
+2313:
+2314:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2316f
+2318:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2318b
+	j 2317f
+2316:
+2317:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2312b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2319:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2319b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2320:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2320b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2321:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2321b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2322:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2322b
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2323:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2323b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi a1, s4, 0
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+2324:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2324b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+2325:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2325b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi a0, a1, 0
+	andi a0, a0, 1
+	xori a0, a0, 1
+	beqz a0, 2326f
+	j 2327f
+2326:
+	addi s7, s6, 1728
+	addi s8, zero, 384
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s8
+	addi t3, t3, -1
+	addi t4, s7, 0
+	addi t5, s8, 0
+2328:
+	lbu s0, 0(t3)
+	sb s0, 0(t4)
+	addi t4, t4, 1
+	addi t3, t3, -1
+	addi t5, t5, -1
+	bnez t5, 2328b
+	addi t2, zero, 1
+	sd t2, 104(s6)
+2327:
+	j 293f
+292:
+293:
+	ld t2, 48(s6)
+	addi t2, t2, 384
+	sd t2, 48(s6)
+	ld t2, 56(s6)
+	addi t2, t2, -384
+	sd t2, 56(s6)
+	j 287f
+286:
+	addi t2, zero, 2
+	sd t2, 104(s6)
+287:
+	ld t2, 104(s6)
+	addi t2, t2, -4
+	beqz t2, 285b
+	ld t2, 48(s6)
+	ld t3, 128(s6)
+	sub t2, t2, t3
+	ld t3, 24(s6)
+	add t3, t3, t2
+	sd t3, 24(s6)
+	ld t2, 104(s6)
+	addi t2, t2, -1
+	beqz t2, 2329f
+	ld t2, 136(s6)
+	beqz t2, 2331f
+	j 2332f
+2331:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2332:
+	j 2330f
+2329:
+	addi a0, s6, 960
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 384
+2333:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2333b
+	addi a0, s6, 512
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 384
+	addi a2, zero, 32
+2334:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2334b
+	addi a0, s6, 1728
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 416
+	addi a2, zero, 384
+2335:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2335b
+	lui a0, 1
+	add a0, a0, s6
+	addi a1, zero, 800
+	addi a2, zero, 384
+	addi a3, zero, 32
+	lui a4, 7
+	add a4, a4, s6
+	ld a5, 168(s6)
+	lui t3, 7
+	srli t3, t3, 3
+	sub a5, a5, t3
+	call {vg_dsa_check_parameters}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi t2, a0, -1
+	beqz t2, 2336f
+	j 2337f
+2336:
+	addi t2, zero, 1
+	sd t2, 64(s6)
+2337:
+2330:
+282:
+	j 280f
+279:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+280:
+218:
+	j 216f
+215:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+216:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 2338f
+	j 2339f
+2338:
+	ld t2, 16(s6)
+	addi t2, t2, -1
+	sd t2, 16(s6)
+2339:
+	j 28f
+27:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+28:
+	j 26f
+25:
+	addi t2, zero, 3
+	sd t2, 64(s6)
+26:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 24b
+	ld t2, 64(s6)
+	addi t2, t2, -1
+	beqz t2, 2340f
+	ld a0, 0(s6)
+	addi a1, zero, 800
+	addi t0, a0, 0
+	addi t3, a1, 0
+	addi t5, zero, 0
+2342:
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t3, t3, -1
+	bnez t3, 2342b
+	ld t2, 64(s6)
+	addi t2, t2, -3
+	beqz t2, 2343f
+	ld t4, 80(s6)
+	ld t3, 144(s6)
+	sub t4, t4, t3
+	addi t5, zero, 384
+	slli t5, t5, 15
+	addi t5, t5, 384
+	bltu t4, t5, 2345f
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+	j 2346f
+2345:
+	addi t3, zero, 384
+	slli t3, t3, 8
+	bltu t4, t3, 2347f
+	j 2348f
+2347:
+	addi t4, t3, 0
+2348:
+	add t4, t4, t4
+	bltu t4, t5, 2349f
+	j 2350f
+2349:
+	addi t5, t4, 0
+2350:
+	ld t4, 16(s6)
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 0
+2346:
+	j 2344f
+2343:
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+2344:
+	j 2341f
+2340:
+	lui a0, 1
+	add a0, a0, s6
+	ld a1, 0(s6)
+	addi a2, zero, 800
+2351:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2351b
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 24(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 1
+2341:
+	j 23f
+22:
+	addi t2, zero, 0
+	sd t2, 320(s6)
+	sd t2, 328(s6)
+	sd t2, 336(s6)
+	sd t2, 344(s6)
+	sd t2, 352(s6)
+	sd t2, 360(s6)
+	sd t2, 368(s6)
+	sd t2, 376(s6)
+	addi t2, zero, 128
+	sb t2, 352(s6)
+	addi t2, zero, 1
+	sb t2, 382(s6)
+	addi t2, zero, 0
+	sb t2, 383(s6)
+2352:
+	ld t2, 24(s6)
+	sd t2, 144(s6)
+	ld t3, 16(s6)
+	beqz t3, 2353f
+	ld t3, 80(s6)
+	sub t3, t3, t2
+	addi t4, zero, 32
+	bltu t3, t4, 2355f
+	ld t3, 72(s6)
+	add t3, t3, t2
+	sd t3, 8(s6)
+	addi t2, t2, 32
+	sd t2, 24(s6)
+	addi t2, zero, 2
+	sd t2, 64(s6)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2357:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2357b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 512
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	lbu t2, 512(s6)
+	ori t2, t2, 128
+	sb t2, 512(s6)
+	lbu t2, 543(s6)
+	ori t2, t2, 1
+	sb t2, 543(s6)
+	addi a0, s6, 512
+	lui a1, 6
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 32
+2358:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2358b
+	lui a0, 6
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 6
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 2359f
+	j 2360f
+2359:
+	ld a2, 72(s6)
+2360:
+	call {vg_dsa_probable_prime_256}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 2361f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 2362f
+2361:
+2362:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 2363f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 2365f
+	j 2366f
+2365:
+	addi t2, zero, 0
+	sd t2, 32(s6)
+	addi t2, zero, 1
+	sd t2, 40(s6)
+	addi t2, zero, 4
+	sd t2, 96(s6)
+2367:
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2368:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2368b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 0
+	addi a3, zero, 32
+2369:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2369b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 800
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2370:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2370b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 1
+	addi a3, zero, 32
+2371:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2371b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 768
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2372:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2372b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 2
+	addi a3, zero, 32
+2373:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2373b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 736
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2374:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2374b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 3
+	addi a3, zero, 32
+2375:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2375b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 704
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2376:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2376b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 4
+	addi a3, zero, 32
+2377:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2377b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 672
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2378:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2378b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 5
+	addi a3, zero, 32
+2379:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2379b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 640
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2380:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2380b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 6
+	addi a3, zero, 32
+2381:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2381b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 608
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 32
+2382:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2382b
+	addi a0, s6, 351
+	ld a2, 40(s6)
+	addi a2, a2, 7
+	addi a3, zero, 32
+2383:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2383b
+	addi a0, s6, 384
+	lui t0, 434334
+	addiw t0, t0, 1639
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 767611
+	addiw t0, t0, -379
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 247535
+	addiw t0, t0, 882
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 677119
+	addiw t0, t0, 1338
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 332005
+	addiw t0, t0, 639
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	lui t0, 634967
+	addiw t0, t0, -1908
+	sb t0, 20(a0)
+	srli t1, t0, 8
+	sb t1, 21(a0)
+	srli t1, t0, 16
+	sb t1, 22(a0)
+	srli t1, t0, 24
+	sb t1, 23(a0)
+	lui t0, 129086
+	addiw t0, t0, -1621
+	sb t0, 24(a0)
+	srli t1, t0, 8
+	sb t1, 25(a0)
+	srli t1, t0, 16
+	sb t1, 26(a0)
+	srli t1, t0, 24
+	sb t1, 27(a0)
+	lui t0, 376333
+	addiw t0, t0, -743
+	sb t0, 28(a0)
+	srli t1, t0, 8
+	sb t1, 29(a0)
+	srli t1, t0, 16
+	sb t1, 30(a0)
+	srli t1, t0, 24
+	sb t1, 31(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha256_compress}
+	addi s1, s6, 384
+	addi s3, s6, 576
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t1, 20(s1)
+	lbu t2, 21(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 22(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 23(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 20(s3)
+	srli t2, t1, 16
+	sb t2, 21(s3)
+	srli t2, t1, 8
+	sb t2, 22(s3)
+	srli t2, t1, 0
+	sb t2, 23(s3)
+	lbu t1, 24(s1)
+	lbu t2, 25(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 26(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 27(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 24(s3)
+	srli t2, t1, 16
+	sb t2, 25(s3)
+	srli t2, t1, 8
+	sb t2, 26(s3)
+	srli t2, t1, 0
+	sb t2, 27(s3)
+	lbu t1, 28(s1)
+	lbu t2, 29(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 30(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 31(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 28(s3)
+	srli t2, t1, 16
+	sb t2, 29(s3)
+	srli t2, t1, 8
+	sb t2, 30(s3)
+	srli t2, t1, 0
+	sb t2, 31(s3)
+	lbu t2, 576(s6)
+	ori t2, t2, 128
+	sb t2, 576(s6)
+	lui s11, 4
+	add s11, s11, s6
+	addi s10, zero, 272
+	addi s9, zero, 32
+	addi t3, zero, 15
+	mul t3, t3, s10
+	srli t3, t3, 3
+	addi t0, s11, 256
+	addi t5, zero, 0
+2384:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2384b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t5, zero, 1
+	sd t5, 0(t0)
+	addi a0, s6, 576
+	addi a1, zero, 256
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2385:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2385b
+	addi a0, s6, 576
+	addi a1, zero, 256
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 4
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2386:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2386b
+	addi a0, s6, 512
+	addi a1, zero, 32
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 2
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2387:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2387b
+	addi a1, zero, 32
+	addi s8, a1, 7
+	srli s8, s8, 3
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+2388:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2388b
+	slli s7, s9, 6
+	addi a4, zero, -1
+2389:
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	srli t3, t5, 63
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	andi t4, a4, 1
+	addi t2, s8, 1
+	andi t2, t2, 3
+	beqz t2, 2390f
+2392:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, -1
+	bnez t2, 2392b
+	j 2391f
+2390:
+2391:
+	addi t2, s8, 1
+	srli t2, t2, 2
+	beqz t2, 2393f
+2395:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	ld t5, 8(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 8(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 8(t0)
+	ld t5, 16(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 16(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 16(t0)
+	ld t5, 24(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 24(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 24(t0)
+	addi t0, t0, 32
+	addi t1, t1, 32
+	addi t2, t2, -1
+	bnez t2, 2395b
+	j 2394f
+2393:
+2394:
+	srli t5, t6, 63
+	addi a4, t5, -1
+	andi a5, a4, 1
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	slli t5, t5, 1
+	or t5, t5, a5
+	sd t5, 0(t2)
+	addi s7, s7, -1
+	bnez s7, 2389b
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	xori a4, a4, -1
+	addi t4, zero, 0
+	addi t3, s8, 1
+2396:
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	and t6, t6, a4
+	add t5, t5, t4
+	sltu a5, t5, t4
+	add t5, t5, t6
+	sltu t4, t5, t6
+	or t4, t4, a5
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2396b
+	addi t0, zero, 5
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 1
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2397:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2397b
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, 1
+	sd t5, 160(s11)
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	ld t4, 160(s11)
+	addi t5, zero, 0
+	sub t4, t5, t4
+	addi t3, s9, 0
+2398:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2398b
+	addi t0, zero, 7
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 5
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2399:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2399b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 7
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2400:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2400b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	ori t5, t5, 1
+	sd t5, 0(t0)
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 0
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2401:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2401b
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, -2
+	sd t5, 0(t0)
+	addi a0, s6, 960
+	addi a1, zero, 256
+	addi t4, zero, -1
+	addi t1, zero, 8
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+2402:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 2402b
+	addi a0, s6, 1344
+	addi a1, zero, 225
+	addi t4, zero, -1
+	addi t1, zero, 9
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+2403:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 2403b
+	lbu t2, 960(s6)
+	srli t2, t2, 7
+	beqz t2, 2404f
+	addi a0, s6, 960
+	lui a1, 6
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 256
+2406:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2406b
+	lui a0, 6
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 6
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 2407f
+	j 2408f
+2407:
+	ld a2, 72(s6)
+2408:
+	call {vg_dsa_probable_prime_2048}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 2409f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 2410f
+2409:
+2410:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 2411f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 2413f
+	j 2414f
+2413:
+	addi t2, zero, 1
+	sd t2, 96(s6)
+2414:
+	j 2412f
+2411:
+	addi t2, zero, 0
+	sd t2, 96(s6)
+2412:
+	j 2405f
+2404:
+2405:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 2415f
+	j 2416f
+2415:
+	ld t3, 32(s6)
+	addi t3, t3, 1
+	sd t3, 32(s6)
+	ld t4, 40(s6)
+	addi t4, t4, 8
+	sd t4, 40(s6)
+	addi t2, zero, 256
+	slli t2, t2, 5
+	sub t2, t3, t2
+	beqz t2, 2417f
+	j 2418f
+2417:
+	addi t2, zero, 2
+	sd t2, 96(s6)
+2418:
+2416:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 2367b
+	ld t2, 96(s6)
+	addi t2, t2, 0
+	beqz t2, 2419f
+	ld t2, 96(s6)
+	addi t2, t2, -1
+	beqz t2, 2421f
+	j 2422f
+2421:
+	ld t2, 72(s6)
+	ld t3, 24(s6)
+	add t2, t2, t3
+	sd t2, 48(s6)
+	sd t2, 128(s6)
+	ld t4, 80(s6)
+	sub t4, t4, t3
+	addi t5, zero, 256
+	slli t5, t5, 7
+	bltu t4, t5, 2423f
+	sd t5, 56(s6)
+	addi t2, zero, 1
+	sd t2, 136(s6)
+	j 2424f
+2423:
+	sd t4, 56(s6)
+	addi t2, zero, 0
+	sd t2, 136(s6)
+2424:
+	addi t2, zero, 4
+	sd t2, 104(s6)
+2425:
+	ld t2, 56(s6)
+	addi t3, zero, 256
+	bltu t2, t3, 2426f
+	lui s11, 4
+	add s11, s11, s6
+	addi s10, zero, 272
+	addi s9, zero, 32
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2428:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2428b
+	ld a0, 48(s6)
+	addi a1, zero, 256
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2429:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2429b
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 10
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2430:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2430b
+	sd t4, 168(s11)
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 10
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 7
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2431:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2431b
+	sd t4, 176(s11)
+	ld t5, 168(s11)
+	ld t6, 176(s11)
+	and t5, t5, t6
+	sd t5, 168(s11)
+	ld t2, 168(s11)
+	beqz t2, 2432f
+	lui a7, 2
+	add a7, a7, s6
+	addi a7, a7, 256
+	addi t0, zero, 32
+	addi s5, zero, 272
+	addi s7, s6, 960
+	addi s8, zero, 256
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2434:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2434b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+2435:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 2435b
+	ld s3, 0(a7)
+	addi s0, s3, 0
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	addi s1, zero, 0
+	sub t1, s1, s0
+	addi a2, a7, 0
+	add a2, a2, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a2, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2436:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2436b
+	addi s0, zero, 1
+	sd s0, 0(a2)
+	slli a1, t0, 7
+2437:
+	addi t3, a5, 0
+	addi t4, a2, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2438:
+	ld s2, 0(t4)
+	slli s3, s2, 1
+	add s3, s3, s4
+	srli s4, s2, 63
+	sd s3, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2438b
+	sd s4, 0(t3)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2439:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2439b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2440:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2440b
+	addi a1, a1, -1
+	bnez a1, 2437b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	addi t5, t0, 2
+2441:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2441b
+	ld s7, 48(s6)
+	addi s8, zero, 256
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2442:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2442b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+2443:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 2443b
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	addi t3, a7, 0
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 2
+2444:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2444b
+	addi s9, s6, 1344
+	addi s10, zero, 225
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2445:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2445b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2446:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2446b
+2447:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2448f
+2450:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2450b
+	j 2449f
+2448:
+2449:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2451f
+2453:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2453b
+	j 2452f
+2451:
+2452:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2447b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2454:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2454b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2455:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2455b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2456:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2456b
+2457:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2458f
+2460:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2460b
+	j 2459f
+2458:
+2459:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2461f
+2463:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2463b
+	j 2462f
+2461:
+2462:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2457b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2464:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2464b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2465:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2465b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2466:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2466b
+	addi s7, zero, 2
+2467:
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2468:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2468b
+2469:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2470f
+2472:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2472b
+	j 2471f
+2470:
+2471:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2473f
+2475:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2475b
+	j 2474f
+2473:
+2474:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2469b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2476:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2476b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2477:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2477b
+	addi s4, zero, -1
+	addi t2, s7, 8
+	mul t2, t2, s5
+	add a2, t2, a7
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2478:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2478b
+	addi s7, s7, 1
+	addi t2, s7, -16
+	bnez t2, 2467b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2479:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2479b
+2480:
+	lbu s7, 0(s9)
+	slli s7, s7, 56
+	addi s9, s9, 1
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2481:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2481b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2482:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2483f
+2485:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2485b
+	j 2484f
+2483:
+2484:
+	beqz t6, 2486f
+2488:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2488b
+	j 2487f
+2486:
+2487:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2482b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2489:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2489b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2490:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2491f
+2493:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2493b
+	j 2492f
+2491:
+2492:
+	beqz t6, 2494f
+2496:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2496b
+	j 2495f
+2494:
+2495:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2490b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2497:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2497b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2498:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2498b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2499:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2499b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2500:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2501f
+2503:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2503b
+	j 2502f
+2501:
+2502:
+	beqz t6, 2504f
+2506:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2506b
+	j 2505f
+2504:
+2505:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2500b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2507:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2507b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2508:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2509f
+2511:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2511b
+	j 2510f
+2509:
+2510:
+	beqz t6, 2512f
+2514:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2514b
+	j 2513f
+2512:
+2513:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2508b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2515:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2515b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2516:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2516b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2517:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2517b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2518:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2519f
+2521:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2521b
+	j 2520f
+2519:
+2520:
+	beqz t6, 2522f
+2524:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2524b
+	j 2523f
+2522:
+2523:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2518b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2525:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2525b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2526:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2527f
+2529:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2529b
+	j 2528f
+2527:
+2528:
+	beqz t6, 2530f
+2532:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2532b
+	j 2531f
+2530:
+2531:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2526b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2533:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2533b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2534:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2534b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2535:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2535b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2536:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2537f
+2539:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2539b
+	j 2538f
+2537:
+2538:
+	beqz t6, 2540f
+2542:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2542b
+	j 2541f
+2540:
+2541:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2536b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2543:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2543b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2544:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2545f
+2547:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2547b
+	j 2546f
+2545:
+2546:
+	beqz t6, 2548f
+2550:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2550b
+	j 2549f
+2548:
+2549:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2544b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2551:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2551b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2552:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2552b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2553:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2554:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2554b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2555:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2555b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2553b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2556:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2556b
+2557:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2558f
+2560:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2560b
+	j 2559f
+2558:
+2559:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2561f
+2563:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2563b
+	j 2562f
+2561:
+2562:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2557b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2564:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2564b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2565:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2565b
+	slli s7, s7, 4
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2566:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2566b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2567:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2568f
+2570:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2570b
+	j 2569f
+2568:
+2569:
+	beqz t6, 2571f
+2573:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2573b
+	j 2572f
+2571:
+2572:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2567b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2574:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2574b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2575:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2576f
+2578:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2578b
+	j 2577f
+2576:
+2577:
+	beqz t6, 2579f
+2581:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2581b
+	j 2580f
+2579:
+2580:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2575b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2582:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2582b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2583:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2583b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2584:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2584b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2585:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2586f
+2588:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2588b
+	j 2587f
+2586:
+2587:
+	beqz t6, 2589f
+2591:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2591b
+	j 2590f
+2589:
+2590:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2585b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2592:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2592b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2593:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2594f
+2596:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2596b
+	j 2595f
+2594:
+2595:
+	beqz t6, 2597f
+2599:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2599b
+	j 2598f
+2597:
+2598:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2593b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2600:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2600b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2601:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2601b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2602:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2602b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2603:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2604f
+2606:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2606b
+	j 2605f
+2604:
+2605:
+	beqz t6, 2607f
+2609:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2609b
+	j 2608f
+2607:
+2608:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2603b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2610:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2610b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2611:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2612f
+2614:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2614b
+	j 2613f
+2612:
+2613:
+	beqz t6, 2615f
+2617:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2617b
+	j 2616f
+2615:
+2616:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2611b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2618:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2618b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2619:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2619b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2620:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2620b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2621:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2622f
+2624:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2624b
+	j 2623f
+2622:
+2623:
+	beqz t6, 2625f
+2627:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2627b
+	j 2626f
+2625:
+2626:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2621b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2628:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2628b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2629:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2630f
+2632:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2632b
+	j 2631f
+2630:
+2631:
+	beqz t6, 2633f
+2635:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2635b
+	j 2634f
+2633:
+2634:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2629b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2636:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2636b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2637:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2637b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2638:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2639:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2639b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2640:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2640b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2638b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2641:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2641b
+2642:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2643f
+2645:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2645b
+	j 2644f
+2643:
+2644:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2646f
+2648:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2648b
+	j 2647f
+2646:
+2647:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2642b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2649:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2649b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2650:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2650b
+	slli s7, s7, 4
+	addi s10, s10, -1
+	bnez s10, 2480b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2651:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2651b
+2652:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2653f
+2655:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2655b
+	j 2654f
+2653:
+2654:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2656f
+2658:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2658b
+	j 2657f
+2656:
+2657:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2652b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2659:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2659b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2660:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2660b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2661:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2661b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2662:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2662b
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2663:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2663b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi a1, s4, 0
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+2664:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2664b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+2665:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2665b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi a0, a1, 0
+	andi a0, a0, 1
+	xori a0, a0, 1
+	beqz a0, 2666f
+	j 2667f
+2666:
+	addi s7, s6, 1728
+	addi s8, zero, 256
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s8
+	addi t3, t3, -1
+	addi t4, s7, 0
+	addi t5, s8, 0
+2668:
+	lbu s0, 0(t3)
+	sb s0, 0(t4)
+	addi t4, t4, 1
+	addi t3, t3, -1
+	addi t5, t5, -1
+	bnez t5, 2668b
+	addi t2, zero, 1
+	sd t2, 104(s6)
+2667:
+	j 2433f
+2432:
+2433:
+	ld t2, 48(s6)
+	addi t2, t2, 256
+	sd t2, 48(s6)
+	ld t2, 56(s6)
+	addi t2, t2, -256
+	sd t2, 56(s6)
+	j 2427f
+2426:
+	addi t2, zero, 2
+	sd t2, 104(s6)
+2427:
+	ld t2, 104(s6)
+	addi t2, t2, -4
+	beqz t2, 2425b
+	ld t2, 48(s6)
+	ld t3, 128(s6)
+	sub t2, t2, t3
+	ld t3, 24(s6)
+	add t3, t3, t2
+	sd t3, 24(s6)
+	ld t2, 104(s6)
+	addi t2, t2, -1
+	beqz t2, 2669f
+	ld t2, 136(s6)
+	beqz t2, 2671f
+	j 2672f
+2671:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2672:
+	j 2670f
+2669:
+	addi a0, s6, 960
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 256
+2673:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2673b
+	addi a0, s6, 512
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 256
+	addi a2, zero, 32
+2674:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2674b
+	addi a0, s6, 1728
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 288
+	addi a2, zero, 256
+2675:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2675b
+	lui a0, 1
+	add a0, a0, s6
+	addi a1, zero, 544
+	addi a2, zero, 256
+	addi a3, zero, 32
+	lui a4, 6
+	add a4, a4, s6
+	ld a5, 168(s6)
+	lui t3, 6
+	srli t3, t3, 3
+	sub a5, a5, t3
+	call {vg_dsa_check_parameters}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi t2, a0, -1
+	beqz t2, 2676f
+	j 2677f
+2676:
+	addi t2, zero, 1
+	sd t2, 64(s6)
+2677:
+2670:
+2422:
+	j 2420f
+2419:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2420:
+2366:
+	j 2364f
+2363:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2364:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 2678f
+	j 2679f
+2678:
+	ld t2, 16(s6)
+	addi t2, t2, -1
+	sd t2, 16(s6)
+2679:
+	j 2356f
+2355:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2356:
+	j 2354f
+2353:
+	addi t2, zero, 3
+	sd t2, 64(s6)
+2354:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 2352b
+	ld t2, 64(s6)
+	addi t2, t2, -1
+	beqz t2, 2680f
+	ld a0, 0(s6)
+	addi a1, zero, 544
+	addi t0, a0, 0
+	addi t3, a1, 0
+	addi t5, zero, 0
+2682:
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t3, t3, -1
+	bnez t3, 2682b
+	ld t2, 64(s6)
+	addi t2, t2, -3
+	beqz t2, 2683f
+	ld t4, 80(s6)
+	ld t3, 144(s6)
+	sub t4, t4, t3
+	addi t5, zero, 256
+	slli t5, t5, 15
+	addi t5, t5, 256
+	bltu t4, t5, 2685f
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+	j 2686f
+2685:
+	addi t3, zero, 256
+	slli t3, t3, 8
+	bltu t4, t3, 2687f
+	j 2688f
+2687:
+	addi t4, t3, 0
+2688:
+	add t4, t4, t4
+	bltu t4, t5, 2689f
+	j 2690f
+2689:
+	addi t5, t4, 0
+2690:
+	ld t4, 16(s6)
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 0
+2686:
+	j 2684f
+2683:
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+2684:
+	j 2681f
+2680:
+	lui a0, 1
+	add a0, a0, s6
+	ld a1, 0(s6)
+	addi a2, zero, 544
+2691:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2691b
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 24(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 1
+2681:
+23:
+	j 21f
+20:
+	addi t2, zero, 0
+	sd t2, 320(s6)
+	sd t2, 328(s6)
+	sd t2, 336(s6)
+	sd t2, 344(s6)
+	sd t2, 352(s6)
+	sd t2, 360(s6)
+	sd t2, 368(s6)
+	sd t2, 376(s6)
+	addi t2, zero, 128
+	sb t2, 340(s6)
+	addi t2, zero, 0
+	sb t2, 382(s6)
+	addi t2, zero, 160
+	sb t2, 383(s6)
+2692:
+	ld t2, 24(s6)
+	sd t2, 144(s6)
+	ld t3, 16(s6)
+	beqz t3, 2693f
+	ld t3, 80(s6)
+	sub t3, t3, t2
+	addi t4, zero, 20
+	bltu t3, t4, 2695f
+	ld t3, 72(s6)
+	add t3, t3, t2
+	sd t3, 8(s6)
+	addi t2, t2, 20
+	sd t2, 24(s6)
+	addi t2, zero, 2
+	sd t2, 64(s6)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2697:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2697b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 512
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t2, 512(s6)
+	ori t2, t2, 128
+	sb t2, 512(s6)
+	lbu t2, 531(s6)
+	ori t2, t2, 1
+	sb t2, 531(s6)
+	addi a0, s6, 512
+	lui a1, 5
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 20
+2698:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2698b
+	lui a0, 5
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 5
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 2699f
+	j 2700f
+2699:
+	ld a2, 72(s6)
+2700:
+	call {vg_dsa_probable_prime_160}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 2701f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 2702f
+2701:
+2702:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 2703f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 2705f
+	j 2706f
+2705:
+	addi t2, zero, 0
+	sd t2, 32(s6)
+	addi t2, zero, 1
+	sd t2, 40(s6)
+	addi t2, zero, 4
+	sd t2, 96(s6)
+2707:
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2708:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2708b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 0
+	addi a3, zero, 20
+2709:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2709b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 684
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2710:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2710b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 1
+	addi a3, zero, 20
+2711:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2711b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 664
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2712:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2712b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 2
+	addi a3, zero, 20
+2713:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2713b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 644
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2714:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2714b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 3
+	addi a3, zero, 20
+2715:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2715b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 624
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2716:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2716b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 4
+	addi a3, zero, 20
+2717:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2717b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 604
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2718:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2718b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 5
+	addi a3, zero, 20
+2719:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2719b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 584
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	ld a0, 8(s6)
+	addi a1, s6, 320
+	addi a2, zero, 20
+2720:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2720b
+	addi a0, s6, 339
+	ld a2, 40(s6)
+	addi a2, a2, 6
+	addi a3, zero, 20
+2721:
+	lbu a1, 0(a0)
+	add a1, a1, a2
+	sb a1, 0(a0)
+	srli a2, a1, 8
+	addi a0, a0, -1
+	addi a3, a3, -1
+	bnez a3, 2721b
+	addi a0, s6, 384
+	lui t0, 422994
+	addiw t0, t0, 769
+	sb t0, 0(a0)
+	srli t1, t0, 8
+	sb t1, 1(a0)
+	srli t1, t0, 16
+	sb t1, 2(a0)
+	srli t1, t0, 24
+	sb t1, 3(a0)
+	lui t0, 982235
+	addiw t0, t0, -1143
+	sb t0, 4(a0)
+	srli t1, t0, 8
+	sb t1, 5(a0)
+	srli t1, t0, 16
+	sb t1, 6(a0)
+	srli t1, t0, 24
+	sb t1, 7(a0)
+	lui t0, 625582
+	addiw t0, t0, -770
+	sb t0, 8(a0)
+	srli t1, t0, 8
+	sb t1, 9(a0)
+	srli t1, t0, 16
+	sb t1, 10(a0)
+	srli t1, t0, 24
+	sb t1, 11(a0)
+	lui t0, 66341
+	addiw t0, t0, 1142
+	sb t0, 12(a0)
+	srli t1, t0, 8
+	sb t1, 13(a0)
+	srli t1, t0, 16
+	sb t1, 14(a0)
+	srli t1, t0, 24
+	sb t1, 15(a0)
+	lui t0, 802094
+	addiw t0, t0, 496
+	sb t0, 16(a0)
+	srli t1, t0, 8
+	sb t1, 17(a0)
+	srli t1, t0, 16
+	sb t1, 18(a0)
+	srli t1, t0, 24
+	sb t1, 19(a0)
+	addi a0, s6, 384
+	addi a1, s6, 320
+	addi a2, zero, 1
+	addi a3, s6, 416
+	call {vg_sha1_compress}
+	addi s1, s6, 384
+	addi s3, s6, 564
+	lbu t1, 0(s1)
+	lbu t2, 1(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 2(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 3(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 0(s3)
+	srli t2, t1, 16
+	sb t2, 1(s3)
+	srli t2, t1, 8
+	sb t2, 2(s3)
+	srli t2, t1, 0
+	sb t2, 3(s3)
+	lbu t1, 4(s1)
+	lbu t2, 5(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 6(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 7(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 4(s3)
+	srli t2, t1, 16
+	sb t2, 5(s3)
+	srli t2, t1, 8
+	sb t2, 6(s3)
+	srli t2, t1, 0
+	sb t2, 7(s3)
+	lbu t1, 8(s1)
+	lbu t2, 9(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 10(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 11(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 8(s3)
+	srli t2, t1, 16
+	sb t2, 9(s3)
+	srli t2, t1, 8
+	sb t2, 10(s3)
+	srli t2, t1, 0
+	sb t2, 11(s3)
+	lbu t1, 12(s1)
+	lbu t2, 13(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 14(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 15(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 12(s3)
+	srli t2, t1, 16
+	sb t2, 13(s3)
+	srli t2, t1, 8
+	sb t2, 14(s3)
+	srli t2, t1, 0
+	sb t2, 15(s3)
+	lbu t1, 16(s1)
+	lbu t2, 17(s1)
+	slli t2, t2, 8
+	or t1, t1, t2
+	lbu t2, 18(s1)
+	slli t2, t2, 16
+	or t1, t1, t2
+	lbu t2, 19(s1)
+	slli t2, t2, 24
+	or t1, t1, t2
+	srli t2, t1, 24
+	sb t2, 16(s3)
+	srli t2, t1, 16
+	sb t2, 17(s3)
+	srli t2, t1, 8
+	sb t2, 18(s3)
+	srli t2, t1, 0
+	sb t2, 19(s3)
+	lbu t2, 576(s6)
+	ori t2, t2, 128
+	sb t2, 576(s6)
+	lui s11, 4
+	add s11, s11, s6
+	addi s10, zero, 144
+	addi s9, zero, 16
+	addi t3, zero, 15
+	mul t3, t3, s10
+	srli t3, t3, 3
+	addi t0, s11, 256
+	addi t5, zero, 0
+2722:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2722b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t5, zero, 1
+	sd t5, 0(t0)
+	addi a0, s6, 576
+	addi a1, zero, 128
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2723:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2723b
+	addi a0, s6, 576
+	addi a1, zero, 128
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 4
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2724:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2724b
+	addi a0, s6, 512
+	addi a1, zero, 20
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 2
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2725:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2725b
+	addi a1, zero, 20
+	addi s8, a1, 7
+	srli s8, s8, 3
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+2726:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2726b
+	slli s7, s9, 6
+	addi a4, zero, -1
+2727:
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	srli t3, t5, 63
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	andi t4, a4, 1
+	addi t2, s8, 1
+	andi t2, t2, 3
+	beqz t2, 2728f
+2730:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, -1
+	bnez t2, 2730b
+	j 2729f
+2728:
+2729:
+	addi t2, s8, 1
+	srli t2, t2, 2
+	beqz t2, 2731f
+2733:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	ld t5, 8(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 8(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 8(t0)
+	ld t5, 16(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 16(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 16(t0)
+	ld t5, 24(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 24(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 24(t0)
+	addi t0, t0, 32
+	addi t1, t1, 32
+	addi t2, t2, -1
+	bnez t2, 2733b
+	j 2732f
+2731:
+2732:
+	srli t5, t6, 63
+	addi a4, t5, -1
+	andi a5, a4, 1
+	addi t2, zero, 0
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	slli t5, t5, 1
+	or t5, t5, a5
+	sd t5, 0(t2)
+	addi s7, s7, -1
+	bnez s7, 2727b
+	addi t0, zero, 1
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 2
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	xori a4, a4, -1
+	addi t4, zero, 0
+	addi t3, s8, 1
+2734:
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	and t6, t6, a4
+	add t5, t5, t4
+	sltu a5, t5, t4
+	add t5, t5, t6
+	sltu t4, t5, t6
+	or t4, t4, a5
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2734b
+	addi t0, zero, 5
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 1
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2735:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2735b
+	addi t0, zero, 0
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, 1
+	sd t5, 160(s11)
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	ld t4, 160(s11)
+	addi t5, zero, 0
+	sub t4, t5, t4
+	addi t3, s9, 0
+2736:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2736b
+	addi t0, zero, 7
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 5
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2737:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2737b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 7
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2738:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2738b
+	addi t0, zero, 8
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	ori t5, t5, 1
+	sd t5, 0(t0)
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 0
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2739:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2739b
+	addi t0, zero, 9
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld t5, 0(t0)
+	andi t5, t5, -2
+	sd t5, 0(t0)
+	addi a0, s6, 960
+	addi a1, zero, 128
+	addi t4, zero, -1
+	addi t1, zero, 8
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+2740:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 2740b
+	addi a0, s6, 1344
+	addi a1, zero, 109
+	addi t4, zero, -1
+	addi t1, zero, 9
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	add t1, t1, a1
+	addi t1, t1, -1
+	addi t0, a0, 0
+	addi t3, a1, 0
+2741:
+	lbu t5, 0(t1)
+	and t5, t5, t4
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t1, t1, -1
+	addi t3, t3, -1
+	bnez t3, 2741b
+	lbu t2, 960(s6)
+	srli t2, t2, 7
+	beqz t2, 2742f
+	addi a0, s6, 960
+	lui a1, 5
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 128
+2744:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 2744b
+	lui a0, 5
+	add a0, a0, s6
+	ld a1, 168(s6)
+	lui t3, 5
+	srli t3, t3, 3
+	sub a1, a1, t3
+	ld t2, 24(s6)
+	ld a2, 72(s6)
+	ld a3, 80(s6)
+	add a2, a2, t2
+	sub a3, a3, t2
+	addi a4, s6, 112
+	beqz a3, 2745f
+	j 2746f
+2745:
+	ld a2, 72(s6)
+2746:
+	call {vg_dsa_probable_prime_1024}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	sd a0, 88(s6)
+	beqz a0, 2747f
+	ld t3, 112(s6)
+	ld t4, 24(s6)
+	add t4, t4, t3
+	sd t4, 24(s6)
+	j 2748f
+2747:
+2748:
+	ld t2, 88(s6)
+	addi t2, t2, 0
+	beqz t2, 2749f
+	ld t2, 88(s6)
+	addi t2, t2, -1
+	beqz t2, 2751f
+	j 2752f
+2751:
+	addi t2, zero, 1
+	sd t2, 96(s6)
+2752:
+	j 2750f
+2749:
+	addi t2, zero, 0
+	sd t2, 96(s6)
+2750:
+	j 2743f
+2742:
+2743:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 2753f
+	j 2754f
+2753:
+	ld t3, 32(s6)
+	addi t3, t3, 1
+	sd t3, 32(s6)
+	ld t4, 40(s6)
+	addi t4, t4, 7
+	sd t4, 40(s6)
+	addi t2, zero, 128
+	slli t2, t2, 5
+	sub t2, t3, t2
+	beqz t2, 2755f
+	j 2756f
+2755:
+	addi t2, zero, 2
+	sd t2, 96(s6)
+2756:
+2754:
+	ld t2, 96(s6)
+	addi t2, t2, -4
+	beqz t2, 2707b
+	ld t2, 96(s6)
+	addi t2, t2, 0
+	beqz t2, 2757f
+	ld t2, 96(s6)
+	addi t2, t2, -1
+	beqz t2, 2759f
+	j 2760f
+2759:
+	ld t2, 72(s6)
+	ld t3, 24(s6)
+	add t2, t2, t3
+	sd t2, 48(s6)
+	sd t2, 128(s6)
+	ld t4, 80(s6)
+	sub t4, t4, t3
+	addi t5, zero, 128
+	slli t5, t5, 7
+	bltu t4, t5, 2761f
+	sd t5, 56(s6)
+	addi t2, zero, 1
+	sd t2, 136(s6)
+	j 2762f
+2761:
+	sd t4, 56(s6)
+	addi t2, zero, 0
+	sd t2, 136(s6)
+2762:
+	addi t2, zero, 4
+	sd t2, 104(s6)
+2763:
+	ld t2, 56(s6)
+	addi t3, zero, 128
+	bltu t2, t3, 2764f
+	lui s11, 4
+	add s11, s11, s6
+	addi s10, zero, 144
+	addi s9, zero, 16
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2766:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2766b
+	ld a0, 48(s6)
+	addi a1, zero, 128
+	addi t1, a0, 0
+	addi t3, a1, 0
+	addi t0, zero, 10
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	add t0, t0, t3
+	addi t0, t0, -1
+2767:
+	lbu t5, 0(t1)
+	sb t5, 0(t0)
+	addi t1, t1, 1
+	addi t0, t0, -1
+	addi t3, t3, -1
+	bnez t3, 2767b
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 10
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2768:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2768b
+	sd t4, 168(s11)
+	addi t0, zero, 14
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 10
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 7
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+2769:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2769b
+	sd t4, 176(s11)
+	ld t5, 168(s11)
+	ld t6, 176(s11)
+	and t5, t5, t6
+	sd t5, 168(s11)
+	ld t2, 168(s11)
+	beqz t2, 2770f
+	lui a7, 2
+	add a7, a7, s6
+	addi a7, a7, 256
+	addi t0, zero, 16
+	addi s5, zero, 144
+	addi s7, s6, 960
+	addi s8, zero, 128
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2772:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2772b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+2773:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 2773b
+	ld s3, 0(a7)
+	addi s0, s3, 0
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	mul s1, s3, s0
+	addi s2, zero, 2
+	sub s1, s2, s1
+	mul s0, s0, s1
+	addi s1, zero, 0
+	sub t1, s1, s0
+	addi a2, a7, 0
+	add a2, a2, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a2, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2774:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2774b
+	addi s0, zero, 1
+	sd s0, 0(a2)
+	slli a1, t0, 7
+2775:
+	addi t3, a5, 0
+	addi t4, a2, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2776:
+	ld s2, 0(t4)
+	slli s3, s2, 1
+	add s3, s3, s4
+	srli s4, s2, 63
+	sd s3, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2776b
+	sd s4, 0(t3)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2777:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2777b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2778:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2778b
+	addi a1, a1, -1
+	bnez a1, 2775b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	addi t5, t0, 2
+2779:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2779b
+	ld s7, 48(s6)
+	addi s8, zero, 128
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add a7, a7, s5
+	add t3, a7, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	addi t5, t0, 0
+	addi s0, zero, 0
+2780:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2780b
+	add t4, a7, s8
+	addi t4, t4, -1
+	addi a0, s7, 0
+	addi t5, s8, 0
+2781:
+	lbu s0, 0(a0)
+	sb s0, 0(t4)
+	addi a0, a0, 1
+	addi t4, t4, -1
+	addi t5, t5, -1
+	bnez t5, 2781b
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	sub a7, a7, s5
+	addi t3, a7, 0
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 2
+2782:
+	ld s0, 0(t4)
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 2782b
+	addi s9, s6, 1344
+	addi s10, zero, 109
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2783:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2783b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2784:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2784b
+2785:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2786f
+2788:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2788b
+	j 2787f
+2786:
+2787:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2789f
+2791:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2791b
+	j 2790f
+2789:
+2790:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2785b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2792:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2792b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2793:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2793b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2794:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2794b
+2795:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2796f
+2798:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2798b
+	j 2797f
+2796:
+2797:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2799f
+2801:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2801b
+	j 2800f
+2799:
+2800:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2795b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2802:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2802b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2803:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2803b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2804:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2804b
+	addi s7, zero, 2
+2805:
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2806:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2806b
+2807:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2808f
+2810:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2810b
+	j 2809f
+2808:
+2809:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2811f
+2813:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2813b
+	j 2812f
+2811:
+2812:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2807b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2814:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2814b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2815:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2815b
+	addi s4, zero, -1
+	addi t2, s7, 8
+	mul t2, t2, s5
+	add a2, t2, a7
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2816:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2816b
+	addi s7, s7, 1
+	addi t2, s7, -16
+	bnez t2, 2805b
+	addi s4, zero, -1
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2817:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2817b
+2818:
+	lbu s7, 0(s9)
+	slli s7, s7, 56
+	addi s9, s9, 1
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2819:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2819b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2820:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2821f
+2823:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2823b
+	j 2822f
+2821:
+2822:
+	beqz t6, 2824f
+2826:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2826b
+	j 2825f
+2824:
+2825:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2820b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2827:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2827b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2828:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2829f
+2831:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2831b
+	j 2830f
+2829:
+2830:
+	beqz t6, 2832f
+2834:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2834b
+	j 2833f
+2832:
+2833:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2828b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2835:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2835b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2836:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2836b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2837:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2837b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2838:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2839f
+2841:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2841b
+	j 2840f
+2839:
+2840:
+	beqz t6, 2842f
+2844:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2844b
+	j 2843f
+2842:
+2843:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2838b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2845:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2845b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2846:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2847f
+2849:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2849b
+	j 2848f
+2847:
+2848:
+	beqz t6, 2850f
+2852:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2852b
+	j 2851f
+2850:
+2851:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2846b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2853:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2853b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2854:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2854b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2855:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2855b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2856:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2857f
+2859:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2859b
+	j 2858f
+2857:
+2858:
+	beqz t6, 2860f
+2862:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2862b
+	j 2861f
+2860:
+2861:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2856b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2863:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2863b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2864:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2865f
+2867:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2867b
+	j 2866f
+2865:
+2866:
+	beqz t6, 2868f
+2870:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2870b
+	j 2869f
+2868:
+2869:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2864b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2871:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2871b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2872:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2872b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2873:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2873b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2874:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2875f
+2877:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2877b
+	j 2876f
+2875:
+2876:
+	beqz t6, 2878f
+2880:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2880b
+	j 2879f
+2878:
+2879:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2874b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2881:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2881b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2882:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2883f
+2885:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2885b
+	j 2884f
+2883:
+2884:
+	beqz t6, 2886f
+2888:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2888b
+	j 2887f
+2886:
+2887:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2882b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2889:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2889b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2890:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2890b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2891:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2892:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2892b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2893:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2893b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2891b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2894:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2894b
+2895:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2896f
+2898:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2898b
+	j 2897f
+2896:
+2897:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2899f
+2901:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2901b
+	j 2900f
+2899:
+2900:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2895b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2902:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2902b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2903:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2903b
+	slli s7, s7, 4
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2904:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2904b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2905:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2906f
+2908:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2908b
+	j 2907f
+2906:
+2907:
+	beqz t6, 2909f
+2911:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2911b
+	j 2910f
+2909:
+2910:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2905b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2912:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2912b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2913:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2914f
+2916:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2916b
+	j 2915f
+2914:
+2915:
+	beqz t6, 2917f
+2919:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2919b
+	j 2918f
+2917:
+2918:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2913b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2920:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2920b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2921:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2921b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2922:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2922b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2923:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2924f
+2926:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2926b
+	j 2925f
+2924:
+2925:
+	beqz t6, 2927f
+2929:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2929b
+	j 2928f
+2927:
+2928:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2923b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2930:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2930b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2931:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2932f
+2934:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2934b
+	j 2933f
+2932:
+2933:
+	beqz t6, 2935f
+2937:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2937b
+	j 2936f
+2935:
+2936:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2931b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2938:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2938b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2939:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2939b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2940:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2940b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2941:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2942f
+2944:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2944b
+	j 2943f
+2942:
+2943:
+	beqz t6, 2945f
+2947:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2947b
+	j 2946f
+2945:
+2946:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2941b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2948:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2948b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2949:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2950f
+2952:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2952b
+	j 2951f
+2950:
+2951:
+	beqz t6, 2953f
+2955:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2955b
+	j 2954f
+2953:
+2954:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2949b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2956:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2956b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2957:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2957b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	add t5, t0, t0
+	addi t5, t5, 2
+	addi s0, zero, 0
+2958:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2958b
+	addi t3, a3, 0
+	addi a1, t0, -1
+	addi t2, a5, 8
+2959:
+	ld s0, 0(t3)
+	addi s1, zero, 0
+	addi a0, t3, 8
+	addi t4, t2, 0
+	addi t5, a1, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2960f
+2962:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2962b
+	j 2961f
+2960:
+2961:
+	beqz t6, 2963f
+2965:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2965b
+	j 2964f
+2963:
+2964:
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, 16
+	addi a1, a1, -1
+	bnez a1, 2959b
+	addi t3, a5, 0
+	addi a0, a3, 0
+	addi t5, t0, 0
+	addi t2, zero, 0
+	addi s1, zero, 0
+2966:
+	ld s2, 0(t3)
+	ld s3, 8(t3)
+	srli s4, s2, 63
+	slli s2, s2, 1
+	add s2, s2, t2
+	srli t2, s3, 63
+	slli s3, s3, 1
+	add s3, s3, s4
+	ld s4, 0(a0)
+	add s1, s1, s2
+	sltu s2, s1, s2
+	mul s0, s4, s4
+	mulhu s4, s4, s4
+	add s4, s4, s2
+	add s0, s0, s1
+	sltu s2, s0, s1
+	add s4, s4, s2
+	add s3, s3, s4
+	sltu s1, s3, s4
+	sd s0, 0(t3)
+	sd s3, 8(t3)
+	addi t3, t3, 16
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2966b
+	addi t3, a5, 0
+	addi t2, t0, 0
+	addi a1, zero, 0
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a0, a5, s2
+2967:
+	ld s0, 0(t3)
+	mul s0, s0, t1
+	addi s1, zero, 0
+	addi t4, t3, 0
+	addi t5, t0, 0
+	andi t6, t5, 7
+	srli t5, t5, 3
+	ld a7, 0(a0)
+	beqz t5, 2968f
+2970:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	ld s4, 8(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 8(t4)
+	ld s4, 16(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 16(t4)
+	ld s4, 24(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 24(t4)
+	ld s4, 32(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 32(t4)
+	ld s4, 40(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 48(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 40(t4)
+	ld s4, 48(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 56(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 48(t4)
+	ld s4, 56(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 64(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 56(t4)
+	addi t4, t4, 64
+	addi a0, a0, 64
+	addi t5, t5, -1
+	bnez t5, 2970b
+	j 2969f
+2968:
+2969:
+	beqz t6, 2971f
+2973:
+	ld s4, 0(t4)
+	mul s3, s0, a7
+	mulhu s2, s0, a7
+	ld a7, 8(a0)
+	add s3, s3, s4
+	sltu s4, s3, s4
+	add s2, s2, s4
+	add s3, s3, s1
+	sltu s4, s3, s1
+	add s1, s2, s4
+	sd s3, 0(t4)
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t6, t6, -1
+	bnez t6, 2973b
+	j 2972f
+2971:
+2972:
+	ld s2, 0(t4)
+	add s1, s1, s2
+	sltu s3, s1, s2
+	add s1, s1, a1
+	sltu s2, s1, a1
+	add a1, s3, s2
+	sd s1, 0(t4)
+	addi t3, t3, 8
+	addi t2, t2, -1
+	slli s2, t0, 3
+	sub a0, a0, s2
+	bnez t2, 2967b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	slli s2, s2, 1
+	sub a7, a5, s2
+	slli t3, t0, 3
+	add a5, a5, t3
+	add t4, a5, t3
+	sd a1, 0(t4)
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2974:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2974b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2975:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2975b
+	slli t3, t0, 3
+	sub a5, a5, t3
+	srli a1, s7, 60
+	addi s8, zero, 0
+2976:
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2977:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2977b
+	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2978:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2978b
+	addi s8, s8, 1
+	addi t2, s8, -16
+	bnez t2, 2976b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2979:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2979b
+2980:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2981f
+2983:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2983b
+	j 2982f
+2981:
+2982:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2984f
+2986:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2986b
+	j 2985f
+2984:
+2985:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2980b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2987:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2987b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2988:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2988b
+	slli s7, s7, 4
+	addi s10, s10, -1
+	bnez s10, 2818b
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi a3, a7, 0
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	add a3, a3, s5
+	addi a4, a7, 0
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	add a4, a4, s5
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a1, t0, 0
+	addi t3, a5, 0
+	addi t5, t0, 1
+	addi s0, zero, 0
+	addi a0, a7, 0
+2989:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2989b
+2990:
+	ld t6, 0(a3)
+	addi a3, a3, 8
+	ld s3, 0(a4)
+	ld s2, 0(a5)
+	ld a6, 8(a4)
+	ld a7, 8(a0)
+	mul s0, t6, s3
+	mulhu s3, t6, s3
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	mul t2, s2, t1
+	ld s3, 0(a0)
+	mul s1, t2, s3
+	mulhu s3, t2, s3
+	add s1, s1, s2
+	sltu s4, s1, s2
+	add s1, s3, s4
+	addi t3, a5, 0
+	addi t4, a4, 0
+	addi t5, t0, -1
+	andi t5, t5, 3
+	beqz t5, 2991f
+2993:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2993b
+	j 2992f
+2991:
+2992:
+	addi t5, t0, -1
+	srli t5, t5, 2
+	beqz t5, 2994f
+2996:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 16(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 16(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 0(t3)
+	ld s2, 16(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 24(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 24(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 8(t3)
+	ld s2, 24(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 32(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 32(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 16(t3)
+	ld s2, 32(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	mul s2, t6, a6
+	mulhu s3, t6, a6
+	ld a6, 40(t4)
+	add s3, s3, s4
+	add s2, s2, s0
+	sltu s4, s2, s0
+	add s0, s3, s4
+	add s1, s1, s2
+	sltu s4, s1, s2
+	mul s2, t2, a7
+	mulhu s3, t2, a7
+	ld a7, 40(a0)
+	add s3, s3, s4
+	add s2, s2, s1
+	sltu s4, s2, s1
+	add s1, s3, s4
+	sd s2, 24(t3)
+	addi t3, t3, 32
+	addi t4, t4, 32
+	addi a0, a0, 32
+	addi t5, t5, -1
+	bnez t5, 2996b
+	j 2995f
+2994:
+2995:
+	ld s2, 8(t3)
+	add s0, s0, s2
+	sltu s4, s0, s2
+	add s0, s0, s1
+	sltu s3, s0, s1
+	add s4, s4, s3
+	sd s0, 0(t3)
+	sd s4, 8(t3)
+	slli s2, t0, 3
+	sub a0, a0, s2
+	addi a0, a0, 8
+	addi a1, a1, -1
+	bnez a1, 2990b
+	slli s2, t0, 3
+	addi s2, s2, 16
+	add a6, a5, s2
+	slli s3, s2, 1
+	sub a7, a5, s3
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+2997:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2997b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2998:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2998b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t3, t3, -16
+	addi s0, zero, 0
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+2999:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 2999b
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi s0, zero, 1
+	sd s0, 0(t3)
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t5, t0, 0
+	addi s0, zero, 0
+21000:
+	sd s0, 0(t3)
+	addi t3, t3, 8
+	addi t5, t5, -1
+	bnez t5, 21000b
+	addi a5, a7, 0
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	add a5, a5, s5
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a7, 0
+	addi t5, t0, 0
+	addi s4, zero, 0
+21001:
+	ld s2, 0(t3)
+	ld s3, 0(a0)
+	sltu s0, s2, s3
+	sub s2, s2, s3
+	sltu s1, s2, s4
+	sub s2, s2, s4
+	or s4, s0, s1
+	sd s2, 0(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 21001b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi a1, s4, 0
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+21002:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 21002b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 0
+	addi t2, zero, 0
+21003:
+	ld s0, 0(t3)
+	ld s1, 0(t4)
+	xor s0, s0, s1
+	or t2, t2, s0
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 21003b
+	addi s0, zero, 0
+	sltu s1, s0, t2
+	addi a2, s1, -1
+	or a1, a1, a2
+	xor a1, a1, a2
+	addi a0, a1, 0
+	andi a0, a0, 1
+	xori a0, a0, 1
+	beqz a0, 21004f
+	j 21005f
+21004:
+	addi s7, s6, 1728
+	addi s8, zero, 128
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s8
+	addi t3, t3, -1
+	addi t4, s7, 0
+	addi t5, s8, 0
+21006:
+	lbu s0, 0(t3)
+	sb s0, 0(t4)
+	addi t4, t4, 1
+	addi t3, t3, -1
+	addi t5, t5, -1
+	bnez t5, 21006b
+	addi t2, zero, 1
+	sd t2, 104(s6)
+21005:
+	j 2771f
+2770:
+2771:
+	ld t2, 48(s6)
+	addi t2, t2, 128
+	sd t2, 48(s6)
+	ld t2, 56(s6)
+	addi t2, t2, -128
+	sd t2, 56(s6)
+	j 2765f
+2764:
+	addi t2, zero, 2
+	sd t2, 104(s6)
+2765:
+	ld t2, 104(s6)
+	addi t2, t2, -4
+	beqz t2, 2763b
+	ld t2, 48(s6)
+	ld t3, 128(s6)
+	sub t2, t2, t3
+	ld t3, 24(s6)
+	add t3, t3, t2
+	sd t3, 24(s6)
+	ld t2, 104(s6)
+	addi t2, t2, -1
+	beqz t2, 21007f
+	ld t2, 136(s6)
+	beqz t2, 21009f
+	j 21010f
+21009:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+21010:
+	j 21008f
+21007:
+	addi a0, s6, 960
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 0
+	addi a2, zero, 128
+21011:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 21011b
+	addi a0, s6, 512
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 128
+	addi a2, zero, 20
+21012:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 21012b
+	addi a0, s6, 1728
+	lui a1, 1
+	add a1, a1, s6
+	addi a1, a1, 148
+	addi a2, zero, 128
+21013:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 21013b
+	lui a0, 1
+	add a0, a0, s6
+	addi a1, zero, 276
+	addi a2, zero, 128
+	addi a3, zero, 20
+	lui a4, 5
+	add a4, a4, s6
+	ld a5, 168(s6)
+	lui t3, 5
+	srli t3, t3, 3
+	sub a5, a5, t3
+	call {vg_dsa_check_parameters}
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi t2, a0, -1
+	beqz t2, 21014f
+	j 21015f
+21014:
+	addi t2, zero, 1
+	sd t2, 64(s6)
+21015:
+21008:
+2760:
+	j 2758f
+2757:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2758:
+2706:
+	j 2704f
+2703:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2704:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 21016f
+	j 21017f
+21016:
+	ld t2, 16(s6)
+	addi t2, t2, -1
+	sd t2, 16(s6)
+21017:
+	j 2696f
+2695:
+	addi t2, zero, 0
+	sd t2, 64(s6)
+2696:
+	j 2694f
+2693:
+	addi t2, zero, 3
+	sd t2, 64(s6)
+2694:
+	ld t2, 64(s6)
+	addi t2, t2, -2
+	beqz t2, 2692b
+	ld t2, 64(s6)
+	addi t2, t2, -1
+	beqz t2, 21018f
+	ld a0, 0(s6)
+	addi a1, zero, 276
+	addi t0, a0, 0
+	addi t3, a1, 0
+	addi t5, zero, 0
+21020:
+	sb t5, 0(t0)
+	addi t0, t0, 1
+	addi t3, t3, -1
+	bnez t3, 21020b
+	ld t2, 64(s6)
+	addi t2, t2, -3
+	beqz t2, 21021f
+	ld t4, 80(s6)
+	ld t3, 144(s6)
+	sub t4, t4, t3
+	addi t5, zero, 128
+	slli t5, t5, 15
+	addi t5, t5, 128
+	bltu t4, t5, 21023f
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+	j 21024f
+21023:
+	addi t3, zero, 128
+	slli t3, t3, 8
+	bltu t4, t3, 21025f
+	j 21026f
+21025:
+	addi t4, t3, 0
+21026:
+	add t4, t4, t4
+	bltu t4, t5, 21027f
+	j 21028f
+21027:
+	addi t5, t4, 0
+21028:
+	ld t4, 16(s6)
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 0
+21024:
+	j 21022f
+21021:
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 144(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 3
+21022:
+	j 21019f
+21018:
+	lui a0, 1
+	add a0, a0, s6
+	ld a1, 0(s6)
+	addi a2, zero, 276
+21029:
+	lbu a3, 0(a0)
+	sb a3, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 21029b
+	addi t4, zero, 0
+	addi t5, zero, 0
+	ld t2, 24(s6)
+	ld t3, 152(s6)
+	sd t2, 0(t3)
+	ld t3, 160(s6)
+	sd t4, 0(t3)
+	sd t5, 24(t3)
+	addi a0, zero, 1
+21019:
+21:
+	ld ra, 120(s6)
+	ld s0, 184(s6)
+	ld s1, 192(s6)
+	ld s2, 200(s6)
+	ld s3, 208(s6)
+	ld s4, 216(s6)
+	ld s5, 224(s6)
+	ld s7, 232(s6)
+	ld s8, 240(s6)
+	ld s9, 248(s6)
+	ld s10, 256(s6)
+	ld s11, 264(s6)
+	ld s6, 272(s6)
+	ret
+	.option pop
