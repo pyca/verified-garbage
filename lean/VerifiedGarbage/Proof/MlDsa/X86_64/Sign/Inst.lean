@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
@@ -31,7 +31,7 @@ arithmetic (`prims_okWith`), with 32 bytes of stack for each call: their
 contracts, and, of the samplers whose result signing branches on, that it
 depends only on their public data and that they succeed only if the algorithm
 finishes within `maxBounds` (from what their own proofs say they return,
-`rejNTT_correct` and `sampleInBall_correct`).
+`RejNttShort.correct` and `sampleInBall_correct`).
 -/
 
 @[expose] public section
@@ -51,7 +51,7 @@ def prims : Prims where
   mul := Impl.MlDsa.X86_64.Arith.mul
   add := Impl.MlDsa.X86_64.Arith.add
   sub := Impl.MlDsa.X86_64.Arith.sub
-  rejNTT := Impl.MlDsa.X86_64.Sample.rejNTT
+  rejNTT := Impl.MlDsa.X86_64.Sample.rejNTTShort
   expandMask := Impl.MlDsa.X86_64.Sample.expandMask
   ball := Impl.MlDsa.X86_64.Sample.sampleInBall
   highBits := Impl.MlDsa.X86_64.Round.highBits
@@ -109,10 +109,10 @@ theorem rn_pub (s₁ s₂ : State) (h : (rejNTTContract X86_64.abi 16).pub s₁ 
   exact VG.Proof.MlDsa.Sign.leakBytes_inj hb
 
 theorem rn_ret {s s' : State} {tr : List Leak} (h : (rejNTTContract X86_64.abi 16).pre s)
-    (e : Exec isa Impl.MlDsa.X86_64.Sample.rejNTT s tr s') :
+    (e : Exec isa Impl.MlDsa.X86_64.Sample.rejNTTShort s tr s') :
     (s'.gpr .rax).setWidth 32 =
       if (rnFold [] (G (bytesAt s.mem (s.gpr .rdi) 34) 1008)).length = 256 then 1 else 0 := by
-  obtain ⟨_, _, e', _, hq⟩ := rejNTT_correct s (rn_pre s h)
+  obtain ⟨_, _, e', _, hq⟩ := RejNttShort.correct s (rn_pre s h)
   obtain ⟨-, rfl⟩ := Exec.det e e'
   exact hq.1
 
@@ -151,7 +151,7 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
   mul := calleeOf v.ok.mul
   add := calleeOf v.ok.add
   sub := calleeOf v.ok.sub
-  rejNTT := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.rejNTT_verified, nosp_of (by decide +kernel),
+  rejNTT := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.RejNttShort.verified, nosp_of (by decide +kernel),
     by decide +kernel⟩ :
     Callee _ signStack prims.rejNTT)
   expandMask := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.expandMask_verified, nosp_of (by decide +kernel),
@@ -176,7 +176,7 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
     by decide +kernel⟩ :
     Callee _ signStack prims.hintBitPack)
   rejRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
-    ⟨Proof.MlDsa.X86_64.Sample.rejNTT_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
+    ⟨Proof.MlDsa.X86_64.Sample.RejNttShort.verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩)
   rejMax := fun s t s' h e h1 => by
     rw [rn_ret h e] at h1

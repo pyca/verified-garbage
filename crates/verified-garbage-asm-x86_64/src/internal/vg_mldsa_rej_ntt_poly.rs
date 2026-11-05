@@ -11,13 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly() {
     core::arch::naked_asm!(
-        r#".base64 "SIma6AcAAEiJqvAHAABMiaL4BwAASInTSIn1QbwAAAAASIn5ScfAIgAAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfvqgAAAC6AAAAAEmJ2UmBwcgAAAA="
+        r#".base64 "SIma6AcAAEiJqvAHAABMiaL4BwAASInTSIn1SIn5QbgiAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid++qAAAALoAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_absorb_scratch}
 .base64 "SInfvqgAAABIicK5HwAAAEmJ2EmBwMgAAAA="
 call {vg_keccak_pad_scratch}
-.base64 "SInfvqgAAAC6AAAAAEiJ2UiBwUgDAABBuPADAABJidlJgcHIAAAA"
+.base64 "SInfvqgAAAC6AAAAAEiJ2UiBwUgDAABBuAwDAABJidlJgcHIAAAA"
 call {vg_keccak_squeeze_scratch}
-.base64 "SIneSIHGSAMAAL8AAAAAuVABAAA="
+.base64 "SYnESIneSIHGSAMAAL8AAAAAuQQBAAA="
 20:
 .base64 "D7YGD7ZWAUQPtkYCQYPgf0HByBDByhhBAdBBAcBIgf8AAQAA"
 jb 21f
@@ -32,7 +32,31 @@ jmp 24f
 22:
 .base64 "SIPGA0iD6QE="
 jne 20b
-.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAMM="
+.base64 "SIH/AAEAAA=="
+je 25f
+.base64 "SIm74AcAAEiJ376oAAAATIniSInZSIHBVAYAAEG45AAAAEmJ2UmBwcgAAAA="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIu74AcAAEiJ3kiBxlQGAAC5TAAAAEG8AAAAAA=="
+27:
+.base64 "D7YGD7ZWAUQPtkYCQYPgf0HByBDByhhBAdBBAcBIgf8AAQAA"
+jb 28f
+jmp 29f
+28:
+.base64 "QYH4AeB/AA=="
+jb 210f
+jmp 211f
+210:
+.base64 "RIlEvQBIg8cB"
+211:
+29:
+.base64 "SIPGA0iD6QE="
+jne 27b
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+jmp 26f
+25:
+.base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAA=="
+26:
+.base64 "ww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,

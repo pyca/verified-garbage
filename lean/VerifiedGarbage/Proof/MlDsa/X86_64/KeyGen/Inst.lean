@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
@@ -46,7 +46,7 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   mul := calleeOf v.ok.mul
   mulAdd := calleeOf v.ok.mulAdd
   add := calleeOf v.ok.add
-  rejNtt := (⟨⟨16, by decide, Sample.rejNTT_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
+  rejNtt := (⟨⟨16, by decide, Sample.RejNttShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.rejNtt _)
   rejBounded := (⟨⟨16, by decide, Sample.RejBoundedShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.rejBounded _)
