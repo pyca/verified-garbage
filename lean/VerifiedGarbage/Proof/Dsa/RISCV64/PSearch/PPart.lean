@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 
+-- separate module: p's search (`pPart_vp`), which builds beside q's part and the generator's (`QPart`, `GCheck`), all of which the seed's attempt imports
+
 /-! # DSA parameter search on RISC-V: the search for p
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/PAttempt.lean`, `PPart.lean`,

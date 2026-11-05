@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 
+-- separate module: the probable-prime tests' contract, which builds beside the search's proofs, both of which the search's instances import
+
 /-!
 # DSA's probable-prime test on RISC-V: verified
 
