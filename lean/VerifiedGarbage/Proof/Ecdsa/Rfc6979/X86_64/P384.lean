@@ -53,6 +53,17 @@ theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.sign
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p384_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 16 64) := by rfcT_decide
+theorem p384_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 20 64) := by rfcT_decide
+theorem p384_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 28 64) := by rfcT_decide
+theorem p384_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 32 64) := by rfcT_decide
+theorem p384_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 48 128) := by rfcT_decide
+theorem p384_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 64 128) := by rfcT_decide
+theorem p384_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 28 128) := by rfcT_decide
+theorem p384_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p384 false 0 32 128) := by rfcT_decide
+
 /-- P-384, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve)
@@ -66,7 +77,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
-  coreN := "vg_ecdsa_p384_sign"
+  coreN := "vg_ecdsa_p384_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP384
   coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
@@ -75,7 +86,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blkT := blkT_of p384_blk₀ p384_blk₁ p384_blk₂ p384_blk₃ p384_blk₄ p384_blk₅ p384_blk₆ p384_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

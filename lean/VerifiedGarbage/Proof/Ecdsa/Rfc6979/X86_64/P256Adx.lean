@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -8,6 +10,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -20,7 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 As `P256.lean`, with `vg_ecdsa_p256_sign_adx` (`p256x`, P-256 multiplying
 with BMI2 and ADX), proven correct and constant time against the same
-contract; `p256Of` is either.
+contract; `p256Of` is either. `vg_ecdsa_p256_sign` with either, taking the
+tables of `vs` for its hash function, is verified (`p256T_verified`).
 -/
 
 @[expose] public section
@@ -45,7 +50,7 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
-  coreN := "vg_ecdsa_p256_sign" ++ "_adx"
+  coreN := "vg_ecdsa_p256_sign_k" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP256Adx
   coreX := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI
   coreCT := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_ct_adx
@@ -54,13 +59,26 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  reduceSp := Function.const _ (by decide +kernel)
-  reduceMx := Function.const _ (by decide +kernel)
+  blkT := blkT_of p256_blk₀ p256_blk₁ p256_blk₂ p256_blk₃ p256_blk₄ p256_blk₅ p256_blk₆ p256_blk₇
 
 /-- P-256 with BMI2 and ADX (`adx`) or without. -/
 def p256Of (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) : RfcCurve :=
   bif adx then p256x hL hT hI else p256 hL hT hI
+
+
+/-- `vg_ecdsa_p256_sign` (`_adx`, with BMI2 and ADX), with the tables of `vs`. -/
+theorem p256T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HashTable.X86_64.names vs) :
+    Verified X86_64.target (signCode (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86_64.p256.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p256) h.1 Proof.Ecdsa.X86_64.satMem h.2
+    (by rw [Proof.Ecdsa.X86_64.p256W_length]; decide) Proof.Ecdsa.X86_64.satMem_held (by decide) rfl
+  cases adx
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+  · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
