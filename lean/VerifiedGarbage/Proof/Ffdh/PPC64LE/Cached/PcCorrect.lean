@@ -393,21 +393,24 @@ structure St5 (q : PQ) (s₀ s : State) : Prop where
   keep : Bignum.PPC64LE.Keep rs5 s₀ s
   r23 : s.gpr .r23 = q.S
 
-theorem pc_s5 {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) :
-    WP isa (.ite (.zero .d .r0) main (.block [.li .r3 0])) s (St5 q s₀) := by
+/-- `main`, with p valid. -/
+theorem pc_main {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) : WP isa main s (St5 q s₀) := by
   have mp := h.mp g
   have hZ := g.hZ
   have hb' : Spec.Rsa.bytesAt s.mem q.D q.L = q.db := h.1.1.bD
-  refine WP.ite (s.gpr .r0 == 0) (eval_zero _ _) (fun _ => ?_) (fun hz => ?_)
-  · refine WP.mono (main_ok mp) fun t ⟨⟨t3, tw, tm⟩, kt⟩ => ⟨t3, by rw [tw, hb'], fun i hi => ?_,
-      h.2.keep.trans kt, (kt.gpr .r23 (by decide)).trans h.1.1.r23⟩
-    have hm : Outside q.S (slot q.w 1) (2 ^ 64) s.mem t.mem := fun x hx => by
-      rcases hx with hx | hx
-      · exact tm x hx
-      · exact absurd hx (by have := (x - q.S).isLt; simp only [ofs]; omega)
-    rw [Outside.word hm (by rw [Domain.slot_eq]; omega) (by omega)]
-    exact h.2.sav i hi
-  · exact absurd (h.1.2.2.mpr g.hmod) (by simpa using hz)
+  refine WP.mono (main_ok mp) fun t ⟨⟨t3, tw, tm⟩, kt⟩ => ⟨t3, by rw [tw, hb'], fun i hi => ?_,
+    h.2.keep.trans kt, (kt.gpr .r23 (by decide)).trans h.1.1.r23⟩
+  have hm : Outside q.S (slot q.w 1) (2 ^ 64) s.mem t.mem := fun x hx => by
+    rcases hx with hx | hx
+    · exact tm x hx
+    · exact absurd hx (by have := (x - q.S).isLt; simp only [ofs]; omega)
+  rw [Outside.word hm (by rw [Domain.slot_eq]; omega) (by omega)]
+  exact h.2.sav i hi
+
+theorem pc_s5 {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) :
+    WP isa (.ite (.zero .d .r0) main (.block [.li .r3 0])) s (St5 q s₀) :=
+  WP.ite (s.gpr .r0 == 0) (eval_zero _ _) (fun _ => pc_main g h)
+    (fun hz => absurd (h.1.2.2.mpr g.hmod) (by simpa using hz))
 
 theorem pc_correct (s : State) (h : pcContract.pre s) :
     ∃ tr t, Exec isa Precompute.code s tr t ∧ abiPreserved s t ∧ pcContract.post s t := by
