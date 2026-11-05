@@ -14,9 +14,6 @@ module `ecdsa_p384`, for P-384's `Ecdsa.Instance`.
 
 namespace VG.Spec.Ecdsa.P384
 
-/-- `vg_ecdsa_p384_verify` on every target. -/
-def verifyApi : Api := inst.verifyApi
-
 /-- `vg_ecdsa_p384_verify` on every target, taking the hash function's output. -/
 def verifyHashApi : Api := inst.verifyHashApi
 

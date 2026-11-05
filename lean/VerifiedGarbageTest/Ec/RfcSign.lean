@@ -102,7 +102,7 @@ def checkVector (C : Curve) (x : Nat) (v : Vector) : Except String Unit := do
   unless enc.length == 2 * C.len && ofBytes (enc.take C.len) == v.r &&
       ofBytes (enc.drop C.len) == v.s do
     throw s!"{v.hash}, {v.message}: encoding mismatch"
-  -- The contract's hash argument (`Ecdsa.Instance.digestDoc`): the leftmost
+  -- The fixed-length hash argument of the internal functions: the leftmost
   -- `len` octets, or `e` shifted left by the bits `hashToInt` drops (none
   -- when `n` has `8 len` bits: the hash padded on the left with zeros).
   let arg := if digest.length ≥ C.len then digest.take C.len

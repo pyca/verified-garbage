@@ -21,7 +21,7 @@ are FIPS 186-5's `e`, as `hashToInt` reads them: its leftmost `len` octets
 if it is longer. A shorter hash is padded on the left with zeros, which
 leaves its integer value unchanged, when `n` has `8 len` bits (P-256,
 P-384); otherwise its integer is shifted left by the `8 len - N` bits that
-`hashToInt` drops (P-521: 7). `digestDoc` says which.
+`hashToInt` drops (P-521: 7).
 
 The signature determines memory validity, separation and that the pointers
 are public, through `Sig.contract`; the contents of every buffer are secret.

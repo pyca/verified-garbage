@@ -14,9 +14,6 @@ module `ecdsa_secp256k1`, for secp256k1's `Ecdsa.Instance`.
 
 namespace VG.Spec.Ecdsa.Secp256k1
 
-/-- `vg_ecdsa_secp256k1_verify` on every target. -/
-def verifyApi : Api := inst.verifyApi
-
 /-- `vg_ecdsa_secp256k1_verify` on every target, taking the hash function's output. -/
 def verifyHashApi : Api := inst.verifyHashApi
 
