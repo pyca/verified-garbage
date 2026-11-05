@@ -50,7 +50,11 @@ The masks clear AES-NI, PCLMULQDQ, SSSE3, AVX, AVX2, VAES and VPCLMULQDQ
 unless allowed, and clear unselected AVX-512 and other crypto capabilities.
 They preserve baseline SSE2 and CPU vendor/cache-topology flags.
 See OpenSSL's `OPENSSL_ia32cap(3)` for bit positions. AWS-LC reads the same
-first two masks. These are equivalent instruction ceilings, not a guarantee
+first two masks. Its GCM-SIV assembly dispatch checks only AES-NI and AVX,
+not PCLMULQDQ: in the `vaes` profile (AVX enabled, PCLMUL disabled), AWS-LC
+still uses PCLMUL instructions. Treat its numbers in that profile as a
+reference only, not a feature-equivalent comparison. VG and OpenSSL honor
+the selected ceilings. These ceilings are not a guarantee
 that each library dispatches to the same implementation. Masking features
 on a modern CPU does not reproduce the instruction costs of an older CPU.
 
