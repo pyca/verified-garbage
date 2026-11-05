@@ -161,12 +161,15 @@ def deriveArgs : List Instr :=
   ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 revO ++
     ([.mov .rcx (.reg .rbp)] : List Instr) ++ ptr .r8 .r15 scrO
 
-/-- The first 8 bytes of each of the `rbp` encrypted blocks at `W + revO`,
-one after the other from `W + akO`. -/
+/-- The first 8 bytes of each of the `rbp` (4 or 6) encrypted blocks at
+`W + revO`, one after the other from `W + akO`: two at a time, with one
+16-byte store (`punpcklqdq` of the two blocks), which the 16-byte loads of
+the keys can take from the store buffer. -/
 def deriveKeep : Prog isa :=
   .seq (.block (ptr .rsi .r15 revO ++ ptr .rdi .r15 akO ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
-    (.loop (.block [.mov .rax (.mem (at_ .rsi 0)), .store (at_ .rdi 0) .rax, .alu .add .rsi (imm 16),
-      .alu .add .rdi (imm 8), .alu .sub .rcx (imm 1)]) .ne)
+    (.loop (.block [.movdquLoad .xmm0 (at_ .rsi 0), .movdquLoad .xmm1 (at_ .rsi 16),
+      .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore (at_ .rdi 0) .xmm0, .alu .add .rsi (imm 32),
+      .alu .add .rdi (imm 16), .alu .sub .rcx (imm 2)]) .ne)
 
 /-- The message keys (all their blocks encrypted by one call of
 `vg_aes_encrypt_blocks`), 8 bytes per block, from `W + akO`. -/

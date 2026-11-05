@@ -63,11 +63,13 @@ vg_aes_gcm_siv_seal_aesni:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -669,11 +671,13 @@ vg_aes_gcm_siv_open_aesni:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -1308,11 +1312,13 @@ vg_aes_gcm_siv_seal_aesni_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -2104,11 +2110,13 @@ vg_aes_gcm_siv_open_aesni_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -2933,11 +2941,13 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -3539,11 +3549,13 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -4178,11 +4190,13 @@ vg_aes_gcm_siv_seal_aesni_pclmul_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -4974,11 +4988,13 @@ vg_aes_gcm_siv_open_aesni_pclmul_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -5811,11 +5827,13 @@ vg_aes_gcm_siv_seal_aesni_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -6607,11 +6625,13 @@ vg_aes_gcm_siv_open_aesni_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -7440,11 +7460,13 @@ vg_aes_gcm_siv_seal_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -8046,11 +8068,13 @@ vg_aes_gcm_siv_open_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -8685,11 +8709,13 @@ vg_aes_gcm_siv_seal_pclmul_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -9481,11 +9507,13 @@ vg_aes_gcm_siv_open_pclmul_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -10310,11 +10338,13 @@ vg_aes_gcm_siv_seal:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -10916,11 +10946,13 @@ vg_aes_gcm_siv_open:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -11555,11 +11587,13 @@ vg_aes_gcm_siv_seal_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -12351,11 +12385,13 @@ vg_aes_gcm_siv_open_avx2:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -13180,11 +13216,13 @@ vg_aes_gcm_siv_seal_vaes:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -13976,11 +14014,13 @@ vg_aes_gcm_siv_open_vaes:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -14809,11 +14849,13 @@ vg_aes_gcm_siv_seal_vaes_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -15605,11 +15647,13 @@ vg_aes_gcm_siv_open_vaes_pclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -16438,11 +16482,13 @@ vg_aes_gcm_siv_seal_vaes_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -18387,11 +18433,13 @@ vg_aes_gcm_siv_open_vaes_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -20665,11 +20713,13 @@ vg_aes_gcm_siv_seal_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32
@@ -21461,11 +21511,13 @@ vg_aes_gcm_siv_open_vpclmul:
 	add rdi, 16
 	mov rcx, rbp
 21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rsi, 16
-	add rdi, 8
-	sub rcx, 1
+	movdqu xmm0, XMMWORD PTR [rsi]
+	movdqu xmm1, XMMWORD PTR [rsi+16]
+	punpcklqdq xmm0, xmm1
+	movdqu XMMWORD PTR [rdi], xmm0
+	add rsi, 32
+	add rdi, 16
+	sub rcx, 2
 	jne 21b
 	mov rdi, r15
 	add rdi, 32

@@ -435,6 +435,12 @@ theorem punpck_movq (a b : BitVec 64) :
 theorem pxor_self (a : BitVec 128) : XBinOp.eval .pxor a a = 0#64 ++ 0#64 := by
   simp only [XBinOp.eval, BitVec.xor_self]; rfl
 
+/-- The low quadword of two. -/
+theorem qword0_app (hi lo : BitVec 64) : qword (hi ++ lo) 0 = lo := by
+  ext i hi'
+  simp only [qword, Nat.mul_zero, BitVec.getElem_extractLsb', Nat.zero_add, BitVec.getLsbD_append, hi',
+    ↓reduceIte, BitVec.getLsbD_eq_getElem hi']
+
 /-- Runs a block of the instructions the AES-GCM-SIV code uses, SSE ones too. -/
 tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   srun [XOp.exec, State.store128, State.load128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm,
