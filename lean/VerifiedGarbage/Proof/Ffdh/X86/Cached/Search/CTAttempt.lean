@@ -35,10 +35,11 @@ open VG.Proof.Dsa.X86 (Two Pins two_post two_taint two_piece two_map two_mono tw
 /-- Two entry states with the same public descriptor have the same arguments but the state's
 words. -/
 theorem args_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) {i : Nat}
-    (hi : i = 0 ∨ i = 2 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12) :
+    (hi : i = 0 ∨ i = 2 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨
+      i = 14) :
     arg o₁ i = arg o₂ i := by
   have ofn : ∀ {x y : BitVec 32}, x.toNat = y.toNat → x = y := BitVec.eq_of_toNat_eq
-  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact congrArg KPub.xp e
   · exact congrArg KPub.yp e
   · exact congrArg KPub.up e
@@ -50,13 +51,16 @@ theorem args_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) {i : Nat}
   · exact congrArg KPub.B e
   · exact ofn (congrArg KPub.slen e)
   · exact congrArg KPub.S e
+  · exact congrArg KPub.C e
+  · exact ofn (congrArg KPub.clen e)
 
 theorem callArg_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) (used j : Nat) :
     callArg o₁ used j = callArg o₂ used j := by
   unfold callArg
   rw [args_eq e (i := 0) (by omega), args_eq e (i := 2) (by omega), args_eq e (i := 5) (by omega),
     args_eq e (i := 6) (by omega), args_eq e (i := 7) (by omega), args_eq e (i := 8) (by omega),
-    args_eq e (i := 10) (by omega), args_eq e (i := 11) (by omega)]
+    args_eq e (i := 10) (by omega), args_eq e (i := 11) (by omega), args_eq e (i := 13) (by omega),
+    args_eq e (i := 14) (by omega)]
 
 theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ f₂ : Nat → BitVec 32} {used : Nat}
     (e : ofState o₁ = ofState o₂) (h₁ : Fr o₁ ds₁ f₁ t₁) (h₂ : Fr o₂ ds₂ f₂ t₂)
@@ -76,10 +80,12 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
   have c₂ := fun j (hj : j < 13) => ce_arg A₂ h₂.esp a₂ rd wr hj
   simp only [c₁ 0 (by decide), c₁ 1 (by decide), c₁ 2 (by decide), c₁ 3 (by decide), c₁ 4 (by decide),
     c₁ 5 (by decide), c₁ 6 (by decide), c₁ 7 (by decide), c₁ 8 (by decide), c₁ 9 (by decide), c₁ 10 (by decide),
+    c₁ 11 (by decide), c₁ 12 (by decide),
     c₂ 0 (by decide), c₂ 1 (by decide), c₂ 2 (by decide), c₂ 3 (by decide), c₂ 4 (by decide),
-    c₂ 5 (by decide), c₂ 6 (by decide), c₂ 7 (by decide), c₂ 8 (by decide), c₂ 9 (by decide), c₂ 10 (by decide)]
+    c₂ 5 (by decide), c₂ 6 (by decide), c₂ 7 (by decide), c₂ 8 (by decide), c₂ 9 (by decide), c₂ 10 (by decide),
+    c₂ 11 (by decide), c₂ 12 (by decide)]
   have ca := callArg_eq e used
-  refine ⟨?_, ca 0, ca 1, ca 2, ca 3, ca 4, ca 5, ca 6, ca 7, ca 8, ca 9, ca 10⟩
+  refine ⟨?_, ca 0, ca 1, ca 2, ca 3, ca 4, ca 5, ca 6, ca 7, ca 8, ca 9, ca 10, ca 11, ca 12⟩
   rw [ret_eq A₁ h₁.esp, ret_eq A₂ h₂.esp]
   have b₁ := entry_bytes h₁ hu (t₁.unknowns 0)
   have b₂ := entry_bytes h₂ hu₂ (t₂.unknowns 0)
@@ -121,7 +127,7 @@ theorem frAt_pins : Pins FrAt [.esi, .esp] := by
 
 /-- What the callee reads and writes, from the public descriptor. -/
 abbrev callRdK (p : KPub) (used : Nat) : List Region :=
-  [⟨p.dp.setWidth 64, p.dlen⟩, ⟨(p.rp + BitVec.ofNat 32 used).setWidth 64, p.len⟩]
+  [⟨p.dp.setWidth 64, p.dlen⟩, ⟨(p.rp + BitVec.ofNat 32 used).setWidth 64, p.len⟩, ⟨p.C.setWidth 64, p.clen * 8⟩]
 abbrev callWrK (p : KPub) : List Region :=
   [⟨p.xp.setWidth 64, p.len⟩, ⟨p.yp.setWidth 64, p.len⟩, ⟨p.B.setWidth 64, p.slen * 8⟩,
     ⟨p.sp.setWidth 64 - 228#64 + BitVec.ofNat 64 176, 52⟩]
@@ -145,10 +151,10 @@ theorem call_ct (k : Ap) :
   have eqW : callWr o₂ = callWr o₁ := by rw [← w₁, ← w₂, e₂]
   rw [r₁, w₁]
   rw [eqR, eqW] at c₂
-  refine ⟨call_pre F₁.abi hu₁ F₁.esp a₁, ?_, callee_pub e₂.symm F₁ F₂ hu₁ a₁ a₂ (st₁.trans (by rw [e₂]; exact st₂.symm)) _ _,
+  refine ⟨call_pre F₁.abi hu₁ F₁.esp a₁ F₁.frame, ?_, callee_pub e₂.symm F₁ F₂ hu₁ a₁ a₂ (st₁.trans (by rw [e₂]; exact st₂.symm)) _ _,
     c₁.1, c₁.2, c₂.1, c₂.2, ?_⟩
   · rw [← eqR, ← eqW]
-    exact call_pre F₂.abi hu₂' F₂.esp a₂
+    exact call_pre F₂.abi hu₂' F₂.esp a₂ F₂.frame
   · rw [F₁.esp, F₂.esp, show o₁.gpr .esp = o₂.gpr .esp from (congrArg KPub.sp e₂).symm]
 
 theorem attempt_ct : RelCT isa (Two AttAt) attempt fun _ _ => True := by

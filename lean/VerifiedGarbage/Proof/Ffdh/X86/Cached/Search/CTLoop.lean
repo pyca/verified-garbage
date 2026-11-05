@@ -84,7 +84,7 @@ theorem room_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o
 theorem head_status {p : KPub} {o : State} {used keys scalars : Nat} {sts : List Nat}
     (h : (p.tail (randOf o) used keys scalars).statuses = sts) (hk : keys ≠ 0) (hs : scalars ≠ 0)
     (hr : p.len ≤ (randOf o).length - used) : attemptStatus .cached p.a p.len ((randOf o).drop used) = sts.headD 0 := by
-  have := keyTail_statuses_head (a := p.a) (len := p.len) (rand := randOf o) (used := used) hk hs hr
+  have := keyTail_statuses_head (policy := .cached) (a := p.a) (len := p.len) (rand := randOf o) (used := used) hk hs hr
   rw [KPub.tail] at h
   rw [h] at this
   cases sts with

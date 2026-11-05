@@ -49,6 +49,7 @@ theorem entAt_live {q : Kp} {s : State} (h : EntAt q s) :
   obtain ⟨A, rfl⟩ := h
   refine WP.mono (entry_ok A) fun t L => ⟨s, L, ?_⟩
   simp only [entryPt, KPub.tail, keyTail, after, List.drop_zero]
+  rfl
 
 theorem entry_ct : RelCT isa (Two EntAt) (.block entry) (Two LiveCT) := by
   refine two_post ?_ fun q s h => entAt_live h
@@ -101,7 +102,7 @@ theorem wordsAt4 (m : Mem) (p : Addr) : Spec.Rsa.wordsAt m p 4 =
 /-- Two entry states whose public data agree start at the same loop point. -/
 theorem pub_point {s t : State} (H : (Spec.Ffdh.cachedKeySearchContract abi stack).pub s t) : entryPt s = entryPt t := by
   sig_pub [Spec.Ffdh.cachedKeySearchContract, Spec.Ffdh.cachedKeySearchSig, Spec.Ffdh.keySearchSig, abi, argSlots, argVal, argBytes] at H
-  obtain ⟨SP, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := H
+  obtain ⟨SP, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := H
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
     fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
   obtain ⟨L₁₂, L₃⟩ := List.append_inj L (by simp [Spec.Rsa.bytesAt, Spec.Rsa.wordsAt, a6])
@@ -114,7 +115,7 @@ theorem pub_point {s t : State} (H : (Spec.Ffdh.cachedKeySearchContract abi stac
   have e : ofState s = ofState t := by
     simp only [ofState, KPub.mk.injEq]
     exact ⟨SP, a12, a0, a2, a4, a5, a8, a10, congrArg BitVec.toNat a7, congrArg BitVec.toNat a6,
-      congrArg BitVec.toNat a9, congrArg BitVec.toNat a11, k, c, D⟩
+      congrArg BitVec.toNat a9, congrArg BitVec.toNat a11, k, c, D, a13, congrArg BitVec.toNat a14⟩
   simp only [entryPt, e]
   exact congrArg _ L₃
 
