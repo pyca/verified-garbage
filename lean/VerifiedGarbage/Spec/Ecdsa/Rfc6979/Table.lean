@@ -1,27 +1,27 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public import VerifiedGarbage.Spec.HashTable
+public import VerifiedGarbage.Spec.HmacTable
 
 /-!
-# Deterministic ECDSA with its hash function given as a table
+# Deterministic ECDSA with its HMAC given as a table
 
 **Trusted** (as every file in `Spec/`). A `TableInstance` is a curve's
 `Ecdsa.Instance` and the bound on candidates: `vg_ecdsa_<curve>_sign`, in
 the module `ecdsa_<curve>`, signs as `vg_ecdsa_<curve>_<hash>_sign`
 (`Spec/Ecdsa/Rfc6979/Generic.lean`) does, with the hash function not fixed
-but given at run time: a last parameter `hash`, a table of the interface
-`Hash` (`Spec/HashTable.lean`), naming the hash function `H`
-(`HashTable.hashAt`) whose HMAC (`hmacOf H`, with `H`'s block size)
-RFC 6979 uses, and whose output `digest` is. So one function serves every
-hash function, with every implementation of it, rather than a function for
-each.
+but given at run time: a last parameter `hmac`, a table of the interface
+`Hmac` (`Spec/HmacTable.lean`), naming the hash function `H`
+(`HmacTable.hashAt`) whose output `digest` is, and the HMAC over it
+(`HmacTable.hmacOf H`, with `H`'s block size) that RFC 6979 uses, through
+the table's functions. So one function serves every hash function, with
+every implementation of its HMAC, rather than a function for each.
 
 The digest is a slice of `digest_len` octets, which must be `H`'s length (a
-precondition, on a public length: which table `hash` is is public,
+precondition, on a public length: which table `hmac` is is public,
 `Abi.withTables`). Everything else, the timing guarantee included, is that
 of the contract with `H` fixed: the number of candidates tried may affect
-timing (`leak`), and which table `hash` is; the table's own memory is
+timing (`leak`), and which table `hmac` is; the table's own memory is
 read-only.
 -/
 
@@ -31,34 +31,6 @@ namespace VG.Spec.Ecdsa.Rfc6979
 
 open Weierstrass
 open Mgf1 (Hash)
-
-/-- The hash function `H` for HMAC (`Spec/Hmac.lean`): its digest and its
-block size, if this file gives one (the hash functions of FIPS 180-4 and
-MD5, which have tables of `Hash`); by `H`'s Rust name, which is distinct
-for each. -/
-def hmacOf (H : Hash) : Option Hmac.HashFunction :=
-  match H.rust with
-  | "md5" => some Hmac.md5
-  | "sha1" => some Hmac.sha1
-  | "sha224" => some Hmac.sha224
-  | "sha256" => some Hmac.sha256
-  | "sha384" => some Hmac.sha384
-  | "sha512" => some Hmac.sha512
-  | "sha512_224" => some Hmac.sha512_224
-  | "sha512_256" => some Hmac.sha512_256
-  | _ => none
-
-/-- Each hash function `hmacOf` gives a block size has the same digest as
-its HMAC's. -/
-theorem hmacOf_hash : ∀ H ∈ Mgf1.hashes, ∀ F, hmacOf H = some F → F.hash = H.hash := by
-  intro H hH F hF
-  simp only [Mgf1.hashes, List.mem_cons, List.not_mem_nil, or_false] at hH
-  rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp_all [hmacOf, Mgf1.md5, Mgf1.sha1, Mgf1.sha224, Mgf1.sha256, Mgf1.sha384, Mgf1.sha512,
-      Mgf1.sha512_224, Mgf1.sha512_256, Mgf1.sha3_224, Mgf1.sha3_256, Mgf1.sha3_384,
-      Mgf1.sha3_512, Mgf1.blake2b512, Mgf1.blake2s256, Hmac.md5, Hmac.sha1, Hmac.sha224,
-      Hmac.sha256, Hmac.sha384, Hmac.sha512, Hmac.sha512_224, Hmac.sha512_256] <;>
-    exact hF ▸ rfl
 
 /-- A curve and the bound on candidates, and their names in the Rust
 interface. -/
@@ -75,11 +47,11 @@ variable (I : TableInstance)
 
 /-- `(out: *mut [u8; 2 len], d: *const [u8; len], digest: *const u8,
 digest_len: usize, scratch: *mut [u64; I.scratchWords],
-hash: *const [usize; 5]) -> u32`. -/
+hmac: *const [usize; 5]) -> u32`. -/
 def signSig : Sig where
   params := [("out", .array true .u8 (2 * I.ecdsa.curve.len)),
     ("d", .array false .u8 I.ecdsa.curve.len), ("digest", .slice false .u8 "digest_len"),
-    ("scratch", .array true .u64 I.scratchWords), ("hash", HashTable.param)]
+    ("scratch", .array true .u64 I.scratchWords), ("hmac", HmacTable.param)]
   ret := some .u32
 
 /-- RFC 6979's signature of `digest` with the private key `d` and HMAC over
@@ -90,33 +62,33 @@ def result (H : Hash) (F : Hmac.HashFunction) (m : Mem) (d digest : Addr) :
     (bytesAt m digest H.len)
 
 /-- The number of candidates tried, which the function may reveal: that of
-`result` for the hash function the table at `hash` names. -/
-def tried (ptrBits : Nat) (m : Mem) (d digest hash : Addr) : Nat :=
-  match HashTable.hashAt ptrBits m hash with
-  | some H => match hmacOf H with
+`result` for the hash function the table at `hmac` names. -/
+def tried (ptrBits : Nat) (m : Mem) (d digest hmac : Addr) : Nat :=
+  match HmacTable.hashAt ptrBits m hmac with
+  | some H => match HmacTable.hmacOf H with
     | some F => (I.result H F m d digest).2
     | none => 0
   | none => 0
 
-/-- `Instance.signContract` for the hash function `hash` names: the
+/-- `Instance.signContract` for the hash function `hmac` names: the
 deterministic signature of `digest` with the private key `d`, if there is
 one; then the function returns 1 and writes it (`encode`) to `out`;
 otherwise it returns 0 and writes zeros to `out`. Constant time but for the
-number of candidates tried and which table `hash` is. -/
+number of candidates tried and which table `hmac` is. -/
 def signContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   I.signSig.contract A
-    (pre := fun _out _d _digest digestLen _scratch hash m =>
-      ∀ H, HashTable.hashAt A.ptrBits m hash = some H →
-        digestLen.toNat = H.len ∧ (hmacOf H).isSome)
-    (post := fun out d digest _digestLen _scratch hash m m' r =>
-      ∀ H F, HashTable.hashAt A.ptrBits m hash = some H → hmacOf H = some F →
+    (pre := fun _out _d _digest digestLen _scratch hmac m =>
+      ∀ H, HmacTable.hashAt A.ptrBits m hmac = some H →
+        digestLen.toNat = H.len ∧ (HmacTable.hmacOf H).isSome)
+    (post := fun out d digest _digestLen _scratch hmac m m' r =>
+      ∀ H F, HmacTable.hashAt A.ptrBits m hmac = some H → HmacTable.hmacOf H = some F →
         match (I.result H F m d digest).1 with
         | some rs => r = 1 ∧ bytesAt m' out (2 * I.ecdsa.curve.len) = encode I.ecdsa.curve rs
         | none => r = 0 ∧ bytesAt m' out (2 * I.ecdsa.curve.len) =
             List.replicate (2 * I.ecdsa.curve.len) 0)
     (writeArgs := true) (stack := stack)
-    (leak := some fun _out d digest _digestLen _scratch hash m =>
-      [I.tried A.ptrBits m d digest hash])
+    (leak := some fun _out d digest _digestLen _scratch hmac m =>
+      [I.tried A.ptrBits m d digest hmac])
 
 /-- `vg_ecdsa_<curve>_sign` on every target. -/
 def signApi : Api where
@@ -126,7 +98,7 @@ def signApi : Api where
   writeArgs := true
   contracts := some fun A stack => I.signContract A stack
   summary := s!"Deterministic ECDSA signature generation over {I.ecdsa.title} with HMAC \
-    over the hash function of the table `hash` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the \
+    over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the \
     private key `d` ({I.ecdsa.curve.len} bytes, most significant first), signs the hash at \
     `digest` (`digest_len` bytes, the hash function's output), deriving the per-message \
     secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` \
@@ -134,14 +106,14 @@ def signApi : Api where
     writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first {I.tries} \
     candidates for `k` is suitable (which does not happen in practice).\n\n\
     Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the \
-    number of candidates for `k` tried (almost always 1) and which table `hash` is: timing \
+    number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing \
     may depend on the pointers, that number and the table, not otherwise on the key or the \
     hash."
-  safety := ["`digest_len` must be the digest length of the hash function `hash` names.",
+  safety := ["`digest_len` must be the digest length of the hash function `hmac` names.",
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use.",
-    "`hash` names the hash function of the digest and of RFC 6979's HMAC: the one of \
-      `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' \
+    "`hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: \
+      the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC \
       tables of this crate, `fn_tables`, say which they name)."]
 
 end TableInstance
