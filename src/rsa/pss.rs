@@ -234,26 +234,6 @@ impl PrivateKey {
         mgf1_hash: Hash,
         salt_len: usize,
     ) -> Result<Vec<u8>, Error> {
-        self.sign_pss_with_rng(digest, hash, mgf1_hash, salt_len, |buf| {
-            getrandom::fill(buf).map_err(|_| Error::Randomness)
-        })
-    }
-
-    /// [`sign_pss`](Self::sign_pss), with its salt drawn from `random`
-    /// instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The signature has the security of
-    /// RSASSA-PSS only if `random` supplies uniformly random bytes.
-    #[doc(hidden)]
-    pub fn sign_pss_with_rng(
-        &self,
-        digest: &[u8],
-        hash: Hash,
-        mgf1_hash: Hash,
-        salt_len: usize,
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-    ) -> Result<Vec<u8>, Error> {
         if digest.len() != hash.digest_len() {
             return Err(Error::InvalidDigestLength);
         }
@@ -261,7 +241,7 @@ impl PrivateKey {
             return Err(Error::SaltTooLong);
         }
         let mut salt = vec![0u8; salt_len];
-        random(&mut salt)?;
+        getrandom::fill(&mut salt).map_err(|_| Error::Randomness)?;
         let r = sign_with(self, digest, hash, mgf1_hash, &salt);
         zeroize(&mut salt);
         r
@@ -288,7 +268,7 @@ fn sign_with(
     // `out_len = n_len` and `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`hashes::tables::tests::table_words` checks it, and `sign_with_rng`
+    // (`hashes::tables::tests::table_words` checks it, and `sign_pss`
     // the length); and the
     // CPU has the features of `f` and of the tables' functions, which
     // `functions`, `table::md_table` and `table::table` chose for the

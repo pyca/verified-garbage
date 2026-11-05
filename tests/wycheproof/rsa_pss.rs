@@ -179,19 +179,6 @@ fn check_signatures(
         let a = private.sign_pss(&d, *h, *h, 16).unwrap();
         let b = private.sign_pss(&d, *h, *h, 16).unwrap();
         assert_ne!(a, b, "{name} tcId {id}");
-        // The same salt gives the same signature, as the fixed-tape
-        // benchmark relies on.
-        let fixed = || {
-            private
-                .sign_pss_with_rng(&d, *h, *h, 16, |buf| {
-                    buf.fill(0x5a);
-                    Ok(())
-                })
-                .unwrap()
-        };
-        let a = fixed();
-        assert_eq!(a, fixed(), "{name} tcId {id}");
-        assert!(public.verify_pss(&a, &d, *h, *h, SaltLength::Len(16)));
         // MGF1 over the next of the hash functions: the signature verifies
         // with it, and not with MGF1 over the hash function itself.
         let i = HASHES.iter().position(|(_, x)| x == h).unwrap();

@@ -262,19 +262,13 @@ impl PrivateKey {
     /// draws. Invalid keys therefore return an error instead of retrying
     /// indefinitely. Each retry draws a fresh nonce.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
-        self.sign_with_rng(digest, |buf| {
+        self.sign_from(digest, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
         })
     }
 
-    /// [`sign`](Self::sign), with its nonces drawn from `random` instead of
-    /// the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The signature is secure only if
-    /// `random` supplies uniformly random bytes, never reused.
-    #[doc(hidden)]
-    pub fn sign_with_rng(
+    /// [`sign`](Self::sign), with its nonces drawn from `random`.
+    fn sign_from(
         &self,
         digest: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,

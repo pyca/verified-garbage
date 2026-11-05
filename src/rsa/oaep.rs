@@ -210,17 +210,12 @@ impl PublicKey {
         mgf1_hash: Hash,
         label: &[u8],
     ) -> Result<Vec<u8>, Error> {
-        self.encrypt_oaep_with_rng(plaintext, hash, mgf1_hash, label, os_random)
+        self.encrypt_oaep_from(plaintext, hash, mgf1_hash, label, os_random)
     }
 
     /// [`encrypt_oaep`](Self::encrypt_oaep), with its seed drawn from
-    /// `random` instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The ciphertext is secure only if
-    /// `random` supplies uniformly random bytes, never reused.
-    #[doc(hidden)]
-    pub fn encrypt_oaep_with_rng(
+    /// `random`.
+    fn encrypt_oaep_from(
         &self,
         plaintext: &[u8],
         hash: Hash,
@@ -477,7 +472,7 @@ mod tests {
     fn encryption_from_a_fixed_tape_is_deterministic() {
         let (_, public) = composite_key();
         let encrypt = |byte| {
-            public.encrypt_oaep_with_rng(&[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
+            public.encrypt_oaep_from(&[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
                 buf.fill(byte);
                 Ok(())
             })
@@ -485,7 +480,7 @@ mod tests {
         assert_eq!(encrypt(1), encrypt(1));
         assert_ne!(encrypt(1), encrypt(2));
         assert_eq!(
-            public.encrypt_oaep_with_rng(b"", Hash::Sha1, Hash::Sha1, b"", |_| {
+            public.encrypt_oaep_from(b"", Hash::Sha1, Hash::Sha1, b"", |_| {
                 Err(Error::Randomness)
             }),
             Err(Error::Randomness)

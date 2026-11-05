@@ -124,17 +124,12 @@ impl PublicKey {
     ///
     /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
     pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-        self.encrypt_pkcs1v15_with_rng(plaintext, os_random)
+        self.encrypt_pkcs1v15_from(plaintext, os_random)
     }
 
     /// [`encrypt_pkcs1v15`](Self::encrypt_pkcs1v15), with its padding string
-    /// drawn from `random` instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The ciphertext is secure only if
-    /// `random` supplies uniformly random bytes, never reused.
-    #[doc(hidden)]
-    pub fn encrypt_pkcs1v15_with_rng(
+    /// drawn from `random`.
+    fn encrypt_pkcs1v15_from(
         &self,
         plaintext: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
@@ -412,7 +407,7 @@ mod tests {
         let (_, public) = composite_key();
         let encrypt = |byte| {
             public
-                .encrypt_pkcs1v15_with_rng(&[7; 53], |buf| {
+                .encrypt_pkcs1v15_from(&[7; 53], |buf| {
                     buf.fill(byte);
                     Ok(())
                 })
