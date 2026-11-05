@@ -161,16 +161,20 @@ end Precompute
 
 namespace Generate
 
+/-- The context's pointer (`r12`) and its three metadata words into the header. -/
+def ctxHdr : List Instr :=
+  [.load .d .r0 .r12 0, .load .d .r6 .r12 8, .load .d .r11 .r12 16, sth .r12 hCtx, sth .r0 hBits, sth .r6 hBytes,
+    sth .r11 hRows]
+
 /-- `vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len,
 p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len)`, the last five on
 the stack: `GenerateKey.gkFront` with the context's pointer and its three
 metadata words in the header. -/
 def front : List Instr :=
-  [.addSp .r11 104, .load .d .r11 .r11 0, .addSp .r12 120, .load .d .r12 .r12 0] ++ save .r11 ++
-    [sth .r12 hCtx, .load .d .r0 .r12 0, sth .r0 hBits, .load .d .r0 .r12 8, sth .r0 hBytes,
-      .load .d .r0 .r12 16, sth .r0 hRows,
-      .store .d .r3 .r23 64, .store .d .r4 .r23 72, .store .d .r5 .r23 80, .store .d .r10 .r23 88,
-      .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] ++ setup
+  ([.addSp .r11 104, .load .d .r11 .r11 0] : List Instr) ++ ([.addSp .r12 120, .load .d .r12 .r12 0] : List Instr) ++
+    save .r11 ++ ctxHdr ++
+    ([.store .d .r3 .r23 64, .store .d .r4 .r23 72, .store .d .r5 .r23 80, .store .d .r10 .r23 88,
+      .addi .r3 .r7 0, .addi .r4 .r8 0, .addi .r5 .r9 0] : List Instr) ++ setup
 
 /-- `r14 :=` the mask of the first octet's bits, `255 >> (8 bytes − bits)`. -/
 def maskByte : Prog isa :=
