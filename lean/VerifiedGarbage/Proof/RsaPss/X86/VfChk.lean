@@ -48,10 +48,10 @@ abbrev sLenO (P : EP) : Option Nat := if P.any = 0 then some P.slt else none
 abbrev digB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.dig.setWidth 64) h.D
 abbrev sigB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.sig.setWidth 64) P.K
 
-/-- The result. -/
+/-- The result, with MGF1's hash function that of `P.g`. -/
 abbrev Res (P : EP) (σ : State) (r : BitVec 32) : Prop :=
   Spec.Rsa.publicPrecompute P.nB = some P.pw →
-    r = if Spec.RsaPss.verify h.G h.G P.nB P.eB (digB h P σ) (sigB P σ) (sLenO P) then 1 else 0
+    r = if Spec.RsaPss.verify h.G P.g.G P.nB P.eB (digB h P σ) (sigB P σ) (sLenO P) then 1 else 0
 
 /-- The end of the body. -/
 abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h P σ (s.gpr .eax)
@@ -106,13 +106,13 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk ++ params h.H)) (C1 h P)
   refine VP.block_append (G := C0 h P) (VP.taint [.esp] verifyChk_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.sp, h₂.2.sp]) fun σ s ⟨hi, hs⟩ => ?_)
     (VP.taint _ h.certs.params (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hc, hi, si, cx, dx, sa⟩ => ?_)
-  · have hl : ∀ j, j < 13 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+  · have hl : ∀ j, j < 16 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
     have hg := hi.geo
     simp only [verifyChk, ld, st, mi]
-    refine hs.wp_arg (hl 9 (by decide)) (by decide) fun t1 s1 u1 => ?_
+    refine hs.wp_arg (hl 10 (by decide)) (by decide) fun t1 s1 u1 => ?_
     have c1 : Ctx (P.lay h.D) P.scr σ t1 := ⟨s1, by rw [u1.gpr]; rfl⟩
-    refine c1.wp_arg hg (hl 7 (by decide)) (by decide) (by decide) fun t2 c2 u2 => ?_
-    refine c2.wp_arg hg (hl 8 (by decide)) (by decide) (by decide) fun t3 c3 u3 => ?_
+    refine c1.wp_arg hg (hl 8 (by decide)) (by decide) (by decide) fun t2 c2 u2 => ?_
+    refine c2.wp_arg hg (hl 9 (by decide)) (by decide) (by decide) fun t3 c3 u3 => ?_
     refine wp_movi fun t4 u4 => wp_cmp fun t5 f5 cf5 _ => wp_sbb_self cf5 fun t6 u6 => ?_
     have c6 := ((c3.upd u4 (by decide) (by decide)).fupd f5).upd u6 (by decide) (by decide)
     refine wp_mov fun t7 u7 => wp_andi fun t8 u8 => ?_
@@ -205,7 +205,7 @@ theorem emLen_eq {P : EP} {b : Byte} {rest : List Byte} (hbr : P.nB = b :: rest)
 
 /-- The specification refuses what does not fit. -/
 theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
-    Spec.RsaPss.verify h.G h.G P.nB P.eB (digB h P σ) (sigB P σ) (sLenO P) = false := by
+    Spec.RsaPss.verify h.G P.g.G P.nB P.eB (digB h P σ) (sigB P σ) (sLenO P) = false := by
   have hl := nB_length hi
   have hK := hi.k64
   obtain ⟨b, rest, hbr⟩ : ∃ b rest, P.nB = b :: rest := by
@@ -217,10 +217,10 @@ theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
   by_cases hb : b.toNat = 0
   · have : b = 0 := BitVec.eq_of_toNat_eq hb
     subst this
-    exact RsaPss.verify_zero h.G ..
+    exact RsaPss.verify_zero₂ P.g.G h.G ..
   · rw [hbr, List.length_cons] at hl
     have hem := emLen_eq hbr hl hb
-    refine RsaPss.verify_short h.G _ _ _ ?_
+    refine RsaPss.verify_short₂ P.g.G h.G _ _ _ ?_
     have gl : h.G.len = h.D := h.glen
     have hs : (sLenO P).getD 0 = eLen P := by unfold sLenO eLen; split <;> rfl
     rw [hem, gl, hs]
@@ -231,7 +231,8 @@ theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
     simp only [ne_eq, hb0, not_false_eq_true, true_and] at hf
     omega
 
-theorem fail_vp (P : EP) : VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (.block [mi .eax 0]) (Fin h P) := by
+theorem fail_vp (P : EP) :
+    VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (.block [mi .eax 0]) (Fin h P) := by
   refine VP.taint [.esp, .ebp] ret0_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

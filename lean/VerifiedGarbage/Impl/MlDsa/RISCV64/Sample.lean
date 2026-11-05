@@ -179,16 +179,22 @@ def rbBody (η : Nat) : Prog isa :=
       (.seq (.block (.shift .srl .d .a6 .a5 4 :: rbHalf η))
         (.seq (accept .a7) (.block [.addi .a0 .a0 1, .addi .a3 .a3 (-1)]))))
 
-/-- The loop, from the XOF output at `scratch + 840`. -/
-def rbLoop (η : Nat) : Prog isa :=
-  .seq (.block ([.addi .a0 .s11 840, mov .a1 .s10, .li .a2 0, .li .a3 544] ++ loadQ))
+/-- The loop over `N` bytes, from the XOF output at `scratch + 840`. -/
+def rbLoop (N η : Nat) : Prog isa :=
+  .seq (.block ([.addi .a0 .s11 840, mov .a1 .s10, .li .a2 0, .li .a3 N] ++ loadQ))
     (.loop (rbBody η) (.nonzero .a3))
 
+/-- A try: `N` bytes of output, and the loop for `η` over them. -/
+def rbTry (N : Nat) : Prog isa := .seq (sponge 136 N) (Pack.sel .s7 2 (rbLoop N 2) (rbLoop N 4))
+
+/-- Two blocks (272 bytes) almost always give 256 coefficients, for `η` 2 and
+4: the function tries those first, and only if they fall short tries again
+from the start with 544 bytes. -/
 def rejBounded : Prog isa :=
   .seq (.block (pro .a3 .a2 .a0 [.li .s8 66] [mov .s7 .a1]))
-    (.seq (sponge 136 544)
-      (.seq (Pack.sel .s7 2 (rbLoop 2) (rbLoop 4))
-        (.block (retJ ++ epi))))
+    (.seq (rbTry 272)
+    (.seq (.block [.shift .srl .d .t0 .a2 8])
+    (.seq (.ite (.zero .t0) (rbTry 544) (.block [])) (.block (retJ ++ epi)))))
 
 /-! ## `vg_mldsa_expand_mask_poly` -/
 

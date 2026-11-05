@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Final
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.DecapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
+public import VerifiedGarbage.Proof.MlKem.AArch64.EncapsH
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -32,6 +33,12 @@ def spongeArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     code := Impl.MlKem.AArch64.encapsWith v.callee
     stack := 16
     verified := Proof.MlKem.AArch64.Encaps.encaps_verifiedWith (keccak := v) },
+  Spec.MlKem.encapsHApi.artifact AArch64.target {
+    suffix := v.callee.suffix
+    features := v.features
+    code := Impl.MlKem.AArch64.encapsHWith v.callee
+    stack := 16
+    verified := Proof.MlKem.AArch64.EncapsH.encapsH_verifiedWith (keccak := v) },
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
@@ -50,6 +57,12 @@ def spongeArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     code := Impl.MlKem1024.AArch64.encapsWith v.callee
     stack := 16
     verified := Proof.MlKem1024.AArch64.Encaps.encaps_verifiedWith (keccak := v) },
+  Spec.MlKem1024.encapsHApi.artifact AArch64.target {
+    suffix := v.callee.suffix
+    features := v.features
+    code := Impl.MlKem1024.AArch64.encapsHWith v.callee
+    stack := 16
+    verified := Proof.MlKem.AArch64.EncapsH.encapsH1024_verifiedWith (keccak := v) },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
@@ -76,6 +89,13 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.encapsP768_verified v },
+  Spec.MlKem.encapsHApi.artifact AArch64.target {
+    suffix := Emit.qualifiedName "" (parts x2 v)
+    features := features x2 v
+    consts := Proof.MlKem.AArch64.Optimized.constants
+    code := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
+    stack := 128
+    verified := Proof.MlKem.AArch64.EncapsH.encapsHP768_verified v },
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
@@ -97,6 +117,13 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v },
+  Spec.MlKem1024.encapsHApi.artifact AArch64.target {
+    suffix := Emit.qualifiedName "" (parts x2 v)
+    features := features x2 v
+    consts := Proof.MlKem.AArch64.Optimized.constants
+    code := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
+    stack := 128
+    verified := Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified v },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v

@@ -9877,6 +9877,147 @@ bx lr",
     )
 }
 
+/// Start a search for a prime of an RSA key, of `prime_len` octets, for the public exponent `e` (`e_len` octets, most significant first). Returns 1 and writes the search's four public words to `state`: the rejected candidates it still allows, `prime_len`, its entropy budget, and the length of the first random tape to give `vg_rsa_prime_search`. Returns 0 and writes zeros if `prime_len` is not a multiple of 8 in 32..=512 or `e_len` is not in 1..=8.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeInitContract`. Timing may depend on `e`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `state` must not overlap `e` (distinct Rust objects never do).
+/// * Neither `state` nor `e` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_prime_search_init(state: *mut [u64; 4], prime_len: usize, e: *const u8, e_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"cmp r1, #32
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 20f
+mov r12, #512
+cmp r12, r1
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 22f
+and r12, r1, #7
+cmp r12, #0
+bne 24f
+cmp r3, #0
+beq 26f
+mov r12, #8
+cmp r12, r3
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 28f
+mov r12, #0
+str r12, [r0, #4]
+str r12, [r0, #12]
+str r12, [r0, #20]
+str r12, [r0, #28]
+str r1, [r0, #8]
+lsl r12, r1, #15
+add r12, r12, r1
+str r12, [r0, #16]
+lsl r12, r1, #5
+str r12, [r0, #24]
+mov r1, #0
+subs r3, r3, #1
+beq 210f
+212:
+ldrb r12, [r2, #0]
+orr r1, r1, r12
+add r2, r2, #1
+subs r3, r3, #1
+bne 212b
+b 211f
+210:
+211:
+ldrb r12, [r2, #0]
+eor r12, r12, #3
+orr r1, r1, r12
+subs r1, r1, #1
+mov r1, #0
+adc r1, r1, #0
+ldr r12, [r0, #8]
+lsl r3, r12, #3
+add r3, r3, r12, lsl #4
+mul r1, r1, r3
+lsl r12, r12, #6
+sub r12, r12, r1
+str r12, [r0, #0]
+mov r0, #1
+b 29f
+28:
+mov r12, #0
+str r12, [r0, #0]
+str r12, [r0, #4]
+str r12, [r0, #8]
+str r12, [r0, #12]
+str r12, [r0, #16]
+str r12, [r0, #20]
+str r12, [r0, #24]
+str r12, [r0, #28]
+mov r0, #0
+29:
+b 27f
+26:
+mov r12, #0
+str r12, [r0, #0]
+str r12, [r0, #4]
+str r12, [r0, #8]
+str r12, [r0, #12]
+str r12, [r0, #16]
+str r12, [r0, #20]
+str r12, [r0, #24]
+str r12, [r0, #28]
+mov r0, #0
+27:
+b 25f
+24:
+mov r12, #0
+str r12, [r0, #0]
+str r12, [r0, #4]
+str r12, [r0, #8]
+str r12, [r0, #12]
+str r12, [r0, #16]
+str r12, [r0, #20]
+str r12, [r0, #24]
+str r12, [r0, #28]
+mov r0, #0
+25:
+b 23f
+22:
+mov r12, #0
+str r12, [r0, #0]
+str r12, [r0, #4]
+str r12, [r0, #8]
+str r12, [r0, #12]
+str r12, [r0, #16]
+str r12, [r0, #20]
+str r12, [r0, #24]
+str r12, [r0, #28]
+mov r0, #0
+23:
+b 21f
+20:
+mov r12, #0
+str r12, [r0, #0]
+str r12, [r0, #4]
+str r12, [r0, #8]
+str r12, [r0, #12]
+str r12, [r0, #16]
+str r12, [r0, #20]
+str r12, [r0, #24]
+str r12, [r0, #28]
+mov r0, #0
+21:
+bx lr",
+    )
+}
+
 /// One candidate for a prime of an RSA key, as BoringSSL's `generate_prime` tests it (FIPS 186-5 Appendix A.1.3 steps 4 and 5). Reads from the front of `rand` `out_len` octets, most significant first, sets the two most significant bits and the least significant bit, and tests the candidate `c`: too close to `p` (`|p − c| ≤ 2^(8 out_len − 100)`, if `p_len` is not 0); then divisible by one of the first 512 primes (1024 above 1024 bits) but 2; then `gcd(c − 1, e) ≠ 1`; then Miller–Rabin (FIPS 186-5 B.3.1), with the witnesses read from `rand` after the candidate, at least 16 of them and as many as it takes for `BN_prime_checks_for_size` of them to be uniform. Returns 1 and writes `c` to `out` if it passes, 2 if it is too close to `p`, 3 if it fails otherwise, and writes the number of octets of `rand` it read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random octets. `out` is zeros but for 1, and `used` is 0 for 0. `e` (`e_len` bytes) and `p` (`p_len` bytes) are most significant first.
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
@@ -17622,6 +17763,253 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_miller_rabin_round = sym super::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
+    )
+}
+
+/// Search for a prime of an RSA key, of `out_len` octets, for the public exponent `e`, not too close to the prime `p` if `p_len` is not 0, over the random tape `rand`: the candidates and their tests of `vg_rsa_keygen_candidate`, one after another, with the rejected candidates counted in `state` (those too close to `p` are not). Returns 1 and writes the prime to `out` once one is accepted; 3 if the search is exhausted, by too many rejected candidates or by one candidate needing more than the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape: keep the octets of `rand` after the first `used`, in order, and append fresh random octets up to that length. `out` is zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the pointers, the lengths, `e`, `state`, the status, consumption and request it returns, and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. Not on `p`, or on the prime it accepts.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, or from the last call of this function for the same `out_len`, `e` and `p` that returned 0.
+/// * `out_len` must be a multiple of 8 in 32..=512.
+/// * `e_len` must be in 1..=8.
+/// * `p_len` must be 0 or `out_len`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` holds secrets; the caller must destroy both after use.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `e`, `p`, `rand`, `scratch` and `state` may overlap the 184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_prime_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+ldr r12, [sp, #68]
+ldr r9, [r12, #0]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r8, #0
+mov r10, #0
+mov r11, #4
+20:
+cmp r9, #0
+beq 21f
+ldr r0, [sp, #56]
+sub r0, r0, r8
+cmp r0, r5
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 23f
+sub sp, sp, #32
+mov r0, r4
+mov r1, r5
+mov r2, r6
+mov r3, r7
+add lr, sp, #0
+ldr r12, [sp, #72]
+str r12, [lr, #0]
+ldr r12, [sp, #76]
+str r12, [lr, #4]
+ldr r12, [sp, #80]
+str r12, [lr, #8]
+ldr r12, [sp, #84]
+add r12, r12, r8
+str r12, [lr, #12]
+ldr r12, [sp, #88]
+sub r12, r12, r8
+str r12, [lr, #16]
+ldr r12, [sp, #92]
+str r12, [lr, #20]
+ldr r12, [sp, #96]
+str r12, [lr, #24]
+bl {vg_rsa_keygen_candidate}
+add sp, sp, #32
+ldr r12, [r6, #0]
+cmp r0, #1
+beq 25f
+cmp r0, #0
+beq 27f
+cmp r12, #0
+beq 29f
+add r8, r8, r12
+cmp r0, #3
+beq 211f
+b 212f
+211:
+sub r9, r9, #1
+212:
+b 210f
+29:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+213:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+210:
+b 28f
+27:
+ldr r0, [sp, #56]
+sub r0, r0, r8
+lsl r1, r5, #15
+add r1, r1, r5
+cmp r0, r1
+beq 214f
+lsl r2, r5, #4
+cmp r0, r2
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 216f
+b 217f
+216:
+mov r0, r2
+217:
+add r0, r0, r0
+cmp r0, r1
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 218f
+mov r0, r1
+b 219f
+218:
+219:
+mov r10, r0
+mov r11, #0
+b 215f
+214:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+220:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 220b
+215:
+28:
+b 26f
+25:
+add r8, r8, r12
+mov r9, #0
+mov r10, #0
+mov r11, #1
+26:
+b 24f
+23:
+mov r0, r4
+mov lr, r5
+mov r2, #0
+221:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 221b
+ldr r0, [sp, #56]
+sub r0, r0, r8
+lsl r1, r5, #15
+add r1, r1, r5
+cmp r0, r1
+beq 222f
+lsl r2, r5, #4
+cmp r0, r2
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 224f
+b 225f
+224:
+mov r0, r2
+225:
+add r0, r0, r0
+cmp r0, r1
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 226f
+mov r0, r1
+b 227f
+226:
+227:
+mov r10, r0
+mov r11, #0
+b 223f
+222:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+228:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 228b
+223:
+24:
+b 22f
+21:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+229:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 229b
+22:
+cmp r11, #4
+beq 20b
+ldr r12, [sp, #68]
+mov r0, #0
+lsl r1, r5, #15
+add r1, r1, r5
+str r9, [r12, #0]
+str r0, [r12, #4]
+str r5, [r12, #8]
+str r0, [r12, #12]
+str r1, [r12, #16]
+str r0, [r12, #20]
+str r10, [r12, #24]
+str r0, [r12, #28]
+str r8, [r6, #0]
+str r0, [r6, #4]
+mov r0, r11
+ldr r5, [sp, #4]
+ldr r6, [sp, #8]
+ldr r7, [sp, #12]
+ldr r8, [sp, #16]
+ldr r9, [sp, #20]
+ldr r10, [sp, #24]
+ldr r11, [sp, #28]
+ldr lr, [sp, #36]
+ldr r4, [sp], #40
+bx lr",
+        vg_rsa_keygen_candidate = sym super::rsa_keygen::vg_rsa_keygen_candidate,
     )
 }
 
@@ -25376,5 +25764,258 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_miller_rabin_round_umaal = sym super::dsa::vg_miller_rabin_round_umaal::vg_miller_rabin_round_umaal,
+    )
+}
+
+/// The CPU features `vg_rsa_prime_search_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_RSA_PRIME_SEARCH_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Search for a prime of an RSA key, of `out_len` octets, for the public exponent `e`, not too close to the prime `p` if `p_len` is not 0, over the random tape `rand`: the candidates and their tests of `vg_rsa_keygen_candidate`, one after another, with the rejected candidates counted in `state` (those too close to `p` are not). Returns 1 and writes the prime to `out` once one is accepted; 3 if the search is exhausted, by too many rejected candidates or by one candidate needing more than the entropy budget; or 0 if the tape ran out inside a candidate. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape: keep the octets of `rand` after the first `used`, in order, and append fresh random octets up to that length. `out` is zeros but for 1.
+///
+/// Contract: `VG.Spec.RsaKeyGen.primeSearchContract`. Timing may depend on the pointers, the lengths, `e`, `state`, the status, consumption and request it returns, and on what `vg_rsa_keygen_candidate`'s timing may depend on for each candidate. Not on `p`, or on the prime it accepts.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 32 bytes.
+/// * `state` must come from `vg_rsa_prime_search_init` for `out_len` and `e`, or from the last call of this function for the same `out_len`, `e` and `p` that returned 0.
+/// * `out_len` must be a multiple of 8 in 32..=512.
+/// * `e_len` must be in 1..=8.
+/// * `p_len` must be 0 or `out_len`.
+/// * `rand_len` must be at most the entropy budget, `state[2]`.
+/// * `scratch_len` must be at least `16 * out_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` holds secrets; the caller must destroy both after use.
+/// * `out`, `used`, `scratch` and `state` must not overlap each other, `e`, `p`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `e`, `p`, `rand`, `scratch` and `state` may overlap the 184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_prime_search_umaal(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+ldr r12, [sp, #68]
+ldr r9, [r12, #0]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r8, #0
+mov r10, #0
+mov r11, #4
+20:
+cmp r9, #0
+beq 21f
+ldr r0, [sp, #56]
+sub r0, r0, r8
+cmp r0, r5
+mov r12, #0
+adc r12, r12, #0
+cmp r12, #0
+beq 23f
+sub sp, sp, #32
+mov r0, r4
+mov r1, r5
+mov r2, r6
+mov r3, r7
+add lr, sp, #0
+ldr r12, [sp, #72]
+str r12, [lr, #0]
+ldr r12, [sp, #76]
+str r12, [lr, #4]
+ldr r12, [sp, #80]
+str r12, [lr, #8]
+ldr r12, [sp, #84]
+add r12, r12, r8
+str r12, [lr, #12]
+ldr r12, [sp, #88]
+sub r12, r12, r8
+str r12, [lr, #16]
+ldr r12, [sp, #92]
+str r12, [lr, #20]
+ldr r12, [sp, #96]
+str r12, [lr, #24]
+bl {vg_rsa_keygen_candidate_umaal}
+add sp, sp, #32
+ldr r12, [r6, #0]
+cmp r0, #1
+beq 25f
+cmp r0, #0
+beq 27f
+cmp r12, #0
+beq 29f
+add r8, r8, r12
+cmp r0, #3
+beq 211f
+b 212f
+211:
+sub r9, r9, #1
+212:
+b 210f
+29:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+213:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+210:
+b 28f
+27:
+ldr r0, [sp, #56]
+sub r0, r0, r8
+lsl r1, r5, #15
+add r1, r1, r5
+cmp r0, r1
+beq 214f
+lsl r2, r5, #4
+cmp r0, r2
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 216f
+b 217f
+216:
+mov r0, r2
+217:
+add r0, r0, r0
+cmp r0, r1
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 218f
+mov r0, r1
+b 219f
+218:
+219:
+mov r10, r0
+mov r11, #0
+b 215f
+214:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+220:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 220b
+215:
+28:
+b 26f
+25:
+add r8, r8, r12
+mov r9, #0
+mov r10, #0
+mov r11, #1
+26:
+b 24f
+23:
+mov r0, r4
+mov lr, r5
+mov r2, #0
+221:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 221b
+ldr r0, [sp, #56]
+sub r0, r0, r8
+lsl r1, r5, #15
+add r1, r1, r5
+cmp r0, r1
+beq 222f
+lsl r2, r5, #4
+cmp r0, r2
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 224f
+b 225f
+224:
+mov r0, r2
+225:
+add r0, r0, r0
+cmp r0, r1
+mov r3, #0
+adc r3, r3, #0
+cmp r3, #0
+beq 226f
+mov r0, r1
+b 227f
+226:
+227:
+mov r10, r0
+mov r11, #0
+b 223f
+222:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+228:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 228b
+223:
+24:
+b 22f
+21:
+mov r9, #0
+mov r10, #0
+mov r11, #3
+mov r0, r4
+mov lr, r5
+mov r2, #0
+229:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 229b
+22:
+cmp r11, #4
+beq 20b
+ldr r12, [sp, #68]
+mov r0, #0
+lsl r1, r5, #15
+add r1, r1, r5
+str r9, [r12, #0]
+str r0, [r12, #4]
+str r5, [r12, #8]
+str r0, [r12, #12]
+str r1, [r12, #16]
+str r0, [r12, #20]
+str r10, [r12, #24]
+str r0, [r12, #28]
+str r8, [r6, #0]
+str r0, [r6, #4]
+mov r0, r11
+ldr r5, [sp, #4]
+ldr r6, [sp, #8]
+ldr r7, [sp, #12]
+ldr r8, [sp, #16]
+ldr r9, [sp, #20]
+ldr r10, [sp, #24]
+ldr r11, [sp, #28]
+ldr lr, [sp, #36]
+ldr r4, [sp], #40
+bx lr",
+        vg_rsa_keygen_candidate_umaal = sym super::rsa_keygen::vg_rsa_keygen_candidate_umaal,
     )
 }

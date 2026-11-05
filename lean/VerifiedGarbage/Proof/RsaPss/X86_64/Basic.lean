@@ -83,10 +83,12 @@ theorem bytesAt_off (m : Mem) (p : Addr) (o n : Nat) :
 
 `F` is `rsp` in the frame, whose `frameBytes` bytes are writable; `S` the
 working space, of which the first 8192 bytes are ours, in its slot; the
-return address of a call from the frame is just below it. -/
+16 bytes a call from the frame uses (its return address, and that of a
+streaming hash function's call of its compression function) are just below
+it. -/
 
-/-- The bytes below `F` that a call's return address takes. -/
-abbrev retR (F : Addr) : Region := below F 8
+/-- The bytes below `F` that a call from the frame uses. -/
+abbrev retR (F : Addr) : Region := below F 16
 
 structure Lay (t : State) (F S : Addr) : Prop where
   rsp : t.gpr .rsp = F

@@ -205,5 +205,9 @@ pub(crate) mod vg_md5_compress;
 pub(crate) mod vg_md5_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_md5_state_digest.rs"]
+pub(crate) mod vg_md5_state_digest;
+
+#[rustfmt::skip]
 #[path = "internal/vg_md5_update_scratch.rs"]
 pub(crate) mod vg_md5_update_scratch;

@@ -181,12 +181,21 @@ theorem widths_withScratch (sig : Sig) (nm : String) (e : Elem) (n : Nat) :
   rw [Sig.words_withScratch, List.map_append]
   rfl
 
-theorem firstNarrowStack_append {l : List Nat} (h : firstNarrowStack l = true) :
-    firstNarrowStack (l ++ [64]) = true := by
-  unfold firstNarrowStack at h ⊢
-  split at h
-  · simpa [List.all_append] using h
-  · exact absurd h (by decide)
+theorem pairedNarrowStack_append :
+    ∀ {l : List Nat}, pairedNarrowStack l = true → pairedNarrowStack (l ++ [64]) = true
+  | [], _ => rfl
+  | [w], h => by
+    have hw : w = 64 := by simpa [pairedNarrowStack] using h
+    subst hw; rfl
+  | w :: w' :: rest, h => by
+    show pairedNarrowStack (w :: w' :: (rest ++ [64])) = true
+    unfold pairedNarrowStack at h ⊢
+    split at h
+    · rw [ite_eq_left (by assumption)]
+      exact pairedNarrowStack_append (l := w' :: rest) h
+    · rw [ite_eq_right (by assumption)]
+      simp only [Bool.and_eq_true] at h ⊢
+      exact ⟨h.1, pairedNarrowStack_append h.2⟩
 
 /-- The calling convention passes the arguments of `sig` with a buffer after
 its stack arguments if it passes those of `sig`. -/
@@ -198,7 +207,7 @@ theorem argsOk_withScratch {sig : Sig} (nm : String) (e : Elem) (n : Nat)
   -- The stack arguments of `sig` are of a layout `abi` accepts.
   have hS : (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).drop argRegs.length).all
         (· = 64) = true ∨
-      firstNarrowStack (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).drop argRegs.length) =
+      pairedNarrowStack (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).drop argRegs.length) =
         true := by
     rcases Nat.eq_or_lt_of_le hk with hk' | hk'
     · refine .inl ?_
@@ -229,7 +238,7 @@ theorem argsOk_withScratch {sig : Sig} (nm : String) (e : Elem) (n : Nat)
           rw [List.drop_append_of_le_length (by rw [List.length_map, h8]; omega_using [hk64])] at h₂ h₃
           rcases hS with hS | hS
           · exact h₂ (by rw [List.all_append, hS]; rfl)
-          · exact h₃ (firstNarrowStack_append hS)
+          · exact h₃ (pairedNarrowStack_append hS)
   · exact h
 
 theorem nStack_withScratch (sig : Sig) (nm : String) (e : Elem) (n : Nat)

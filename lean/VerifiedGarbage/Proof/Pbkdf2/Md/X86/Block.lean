@@ -388,6 +388,26 @@ theorem cmp_rel (hB : 0 < B) {P : State → State → Prop} {sp st sc : BitVec 3
   · simp only [arg_withRegions, a.a2 x, a'.a2 x']
   · simp only [arg_withRegions, a.a3, a'.a3]
 
+/-- Two runs of the call of the compression function in the frame of its
+arguments, from the same hash value and scratch space, with `ecx = 1`, at
+the same `esp`. -/
+theorem cmpFrame_rel (hB : 0 < B) {P : State → State → Prop} {sp st sc : BitVec 32}
+    (h : ∀ s s', P s s' → (CmpArgs N B so s st sc ∧ s.gpr .ecx = 1) ∧ (CmpArgs N B so s' st sc ∧ s'.gpr .ecx = 1) ∧
+      s.gpr .esp = sp ∧ s'.gpr .esp = sp) :
+    RelCT isa P (.frame (.push cmp4) (.call name code) (.pop .eax cmp4.length)) fun _ _ => True := by
+  refine RelCT.callWith (rs := cmp4) hc.verified.1 hc.verified.2.1 (CmpArgs.rd N B st sp)
+    (CmpArgs.wr N so st sc) fun s s' hp => ?_
+  obtain ⟨⟨a, x⟩, ⟨a', x'⟩, e, e'⟩ := h s s' hp
+  have c := a.callPre x H hB
+  have c' := a'.callPre x' H hB
+  rw [e] at c; rw [e'] at c'
+  refine ⟨c, c', e.trans e'.symm, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [State.withRegions_gpr, callEntry_esp', e, e']
+  · simp only [arg_withRegions, a.a0, a'.a0]
+  · simp only [arg_withRegions, a.a1, a'.a1]
+  · simp only [arg_withRegions, a.a2 x, a'.a2 x']
+  · simp only [arg_withRegions, a.a3, a'.a3]
+
 end
 
 /-! ## The digest -/

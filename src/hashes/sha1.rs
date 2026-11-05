@@ -68,6 +68,22 @@ super::streaming_hash!(
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi => vg_sha1_digest_shani,
         },
+        tables: {
+            Scalar => {
+                hash: crate::arch::fn_tables::VG_HASH_SHA1 [],
+                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1 [],
+            },
+            #[cfg(target_arch = "aarch64")]
+            Sha2 => {
+                hash: crate::arch::fn_tables::VG_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_HASH_SHA1_SHA2_FEATURES],
+                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES],
+            },
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            ShaNi => {
+                hash: crate::arch::fn_tables::VG_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_HASH_SHA1_SHANI_FEATURES],
+                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES],
+            },
+        },
     }
 );
 

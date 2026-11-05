@@ -65,7 +65,7 @@ call {vg_keccak_pad}
 .insn 4, 0x08800593
 .insn 2, 0x4601
 .insn 4, 0x348d8693
-.insn 4, 0x22000713
+.insn 4, 0x11000713
 call {vg_keccak_squeeze}
 .insn 4, 0x00000837
 .insn 2, 0x0809
@@ -74,7 +74,7 @@ beqz a6, 20f
 .insn 4, 0x348d8513
 .insn 2, 0x85ea
 .insn 2, 0x4601
-.insn 4, 0x22000693
+.insn 4, 0x11000693
 .insn 4, 0x007fe737
 .insn 2, 0x0705
 22:
@@ -124,7 +124,7 @@ j 21f
 .insn 4, 0x348d8513
 .insn 2, 0x85ea
 .insn 2, 0x4601
-.insn 4, 0x22000693
+.insn 4, 0x11000693
 .insn 4, 0x007fe737
 .insn 2, 0x0705
 27:
@@ -192,6 +192,179 @@ j 211f
 .insn 2, 0x16fd
 bnez a3, 27b
 21:
+.insn 4, 0x00865293
+beqz t0, 212f
+j 213f
+212:
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x4601
+.insn 2, 0x86e6
+.insn 2, 0x8762
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x4601
+.insn 4, 0x348d8693
+.insn 4, 0x22000713
+call {vg_keccak_squeeze}
+.insn 4, 0x00000837
+.insn 2, 0x0809
+.insn 4, 0x410b883b
+beqz a6, 214f
+.insn 4, 0x348d8513
+.insn 2, 0x85ea
+.insn 2, 0x4601
+.insn 4, 0x22000693
+.insn 4, 0x007fe737
+.insn 2, 0x0705
+216:
+.insn 4, 0x00054783
+.insn 4, 0x03c79813
+.insn 4, 0x03c85813
+.insn 4, 0xff780393
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060313
+.insn 4, 0x03f35313
+.insn 4, 0x0063f3b3
+.insn 2, 0x4891
+.insn 4, 0x410888b3
+.insn 4, 0x03f8d313
+.insn 4, 0x02e30333
+.insn 2, 0x989a
+beqz t2, 217f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 218f
+217:
+218:
+.insn 4, 0x0047d813
+.insn 4, 0xff780393
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060313
+.insn 4, 0x03f35313
+.insn 4, 0x0063f3b3
+.insn 2, 0x4891
+.insn 4, 0x410888b3
+.insn 4, 0x03f8d313
+.insn 4, 0x02e30333
+.insn 2, 0x989a
+beqz t2, 219f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 220f
+219:
+220:
+.insn 2, 0x0505
+.insn 2, 0x16fd
+bnez a3, 216b
+j 215f
+214:
+.insn 4, 0x348d8513
+.insn 2, 0x85ea
+.insn 2, 0x4601
+.insn 4, 0x22000693
+.insn 4, 0x007fe737
+.insn 2, 0x0705
+221:
+.insn 4, 0x00054783
+.insn 4, 0x03c79813
+.insn 4, 0x03c85813
+.insn 4, 0xff180393
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060313
+.insn 4, 0x03f35313
+.insn 4, 0x0063f3b3
+.insn 2, 0x1859
+.insn 4, 0x03f85313
+.insn 4, 0x00331893
+.insn 2, 0x9846
+.insn 4, 0x00131893
+.insn 2, 0x9846
+.insn 2, 0x186d
+.insn 4, 0x03f85313
+.insn 4, 0x00231893
+.insn 2, 0x9846
+.insn 2, 0x981a
+.insn 2, 0x4889
+.insn 4, 0x410888b3
+.insn 4, 0x03f8d313
+.insn 4, 0x02e30333
+.insn 2, 0x989a
+beqz t2, 222f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 223f
+222:
+223:
+.insn 4, 0x0047d813
+.insn 4, 0xff180393
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060313
+.insn 4, 0x03f35313
+.insn 4, 0x0063f3b3
+.insn 2, 0x1859
+.insn 4, 0x03f85313
+.insn 4, 0x00331893
+.insn 2, 0x9846
+.insn 4, 0x00131893
+.insn 2, 0x9846
+.insn 2, 0x186d
+.insn 4, 0x03f85313
+.insn 4, 0x00231893
+.insn 2, 0x9846
+.insn 2, 0x981a
+.insn 2, 0x4889
+.insn 4, 0x410888b3
+.insn 4, 0x03f8d313
+.insn 4, 0x02e30333
+.insn 2, 0x989a
+beqz t2, 224f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 225f
+224:
+225:
+.insn 2, 0x0505
+.insn 2, 0x16fd
+bnez a3, 221b
+215:
+213:
 .insn 4, 0x00865513
 .insn 4, 0x7f8db083
 .insn 4, 0x7d0dbb83

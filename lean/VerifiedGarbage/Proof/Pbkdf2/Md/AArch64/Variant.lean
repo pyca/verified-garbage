@@ -10,7 +10,6 @@ public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Hmac.Scratch
 
@@ -99,13 +98,10 @@ structure MdHash where
   I : Spec.Hmac.Instance
   /-- What the proofs know of the hash function's code (for the callers that
   work at the level of its compression function: RSASSA-PSS's,
-  `Generic/MdHash/RsaPrivateCrt/AArch64/RsaPss.lean`). -/
+  `Generic/RsaPrivateCrt/AllMdHash/AArch64/RsaPss.lean`). -/
   ok : HashOK H
   /-- The hash function as RSA's padding takes it. -/
   mgf : MgfLink H ok
-  /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
-  hash function, once for each hash function. -/
-  pss : Proof.RsaPss.AArch64.PssChecks H.P H.D
   hmacInit : Verified AArch64.target H.hmacInit (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16)
   hmacFin : Verified AArch64.target H.hmacFin (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16)
   iterate : Verified AArch64.target H.iterate (Proof.Pbkdf2.Instance.iterateContract I AArch64.abi)
@@ -257,7 +253,6 @@ end MdHash
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (lk : MgfLink H hH)
-    (pss : Proof.RsaPss.AArch64.PssChecks H.P H.D)
     (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
     (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArch64.abi 16).pre s)
     (hsF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I AArch64.abi 16).pre s)
@@ -277,7 +272,6 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   I := I
   ok := hH
   mgf := lk
-  pss := pss
   hmacInit := MdHash.hmacInit_of hH C hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C hSH hW hsF
   iterate := MdHash.iterate_of hH C hSH hW hsT

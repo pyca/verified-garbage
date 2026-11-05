@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules

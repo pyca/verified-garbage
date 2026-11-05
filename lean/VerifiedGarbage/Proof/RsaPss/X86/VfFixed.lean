@@ -115,12 +115,12 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     refine wp_addm (B := (P.lay h.D).B) (by rw [c3.st.sp])
       (by rw [hg.aFr ok sDb (by decide)]; exact c3.rFr hg sDb (by decide)) fun t4 u4 => ?_
     have c4 : Ctx (P.lay h.D) P.scr τ t4 := c3.upd u4 (by decide) (by decide)
-    refine wp_subm (B := (P.lay h.D).B) (by rw [c4.st.sp]) (by rw [hg.aArg ok 7 (by simp)]; exact
+    refine wp_subm (B := (P.lay h.D).B) (by rw [c4.st.sp]) (by rw [hg.aArg ok 8 (by simp)]; exact
       (by rw [c4.st.rd, c4.st.wr]; exact c4.st.ok.arg_read (vf_arg h (by decide)))) fun t5 u5 => ?_
     refine wp_mov fun t6 u6 => wp_addi fun t7 u7 => ?_
     have c7 : Ctx (P.lay h.D) P.scr τ t7 :=
       ((c4.upd u5 (by decide) (by decide)).upd u6 (by decide) (by decide)).upd u7 (by decide) (by decide)
-    refine c7.wp_arg hg (vf_arg h (j := 7) (by decide)) (by decide) (by decide) fun t8 c8 u8 =>
+    refine c7.wp_arg hg (vf_arg h (j := 8) (by decide)) (by decide) (by decide) fun t8 c8 u8 =>
       wp_test fun t9 f9 z9 => WP.block_nil ?_
     have m9 : t9.mem = s.mem := by rw [f9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨c8.fupd f9, m9 ▸ ⟨hk, ha'⟩, m9 ▸ hy⟩, ?_, ?_, ?_, ?_⟩
@@ -130,8 +130,8 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [f9.gpr]
       simp (disch := decide) only [u8.other, u7.other, u6.other, u5.gpr, u4.gpr, u3.gpr, u2.gpr, u1.gpr, hc.ebp]
       rw [u4.mem, u3.mem, u2.mem, u1.mem, hg.aFr ok sLo (by decide), hk.2.2.1.2.1, hg.aFr ok sDb (by decide),
-        hk.2.2.1.2.2.1, hg.aArg ok 7 (by simp), hc.st.arg (vf_arg h (by decide)),
-        show (P.lay h.D).argv.getD 7 0 = BitVec.ofNat 32 P.slt from rfl, BitVec.add_assoc, BitVec.add_assoc,
+        hk.2.2.1.2.2.1, hg.aArg ok 8 (by simp), hc.st.arg (vf_arg h (by decide)),
+        show (P.lay h.D).argv.getD 8 0 = BitVec.ofNat 32 P.slt from rfl, BitVec.add_assoc, BitVec.add_assoc,
         BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, add_ofNat_sub (by omega), Nat.add_assoc]
     · rw [f9.gpr, u8.gpr]; rfl
     · rw [z9, u8.gpr, BitVec.and_self]
@@ -180,9 +180,9 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
 /-- `M'`'s length and blocks. -/
 theorem lenF_vp (P : EP) :
     VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ P.any = 0) ∧ Yf h P τ s.mem)
-      (.block (lenArgs h.H 7))
+      (.block (lenArgs h.H 8))
       (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P (Mf h P) (nbF h P) τ s.mem ∧ Yf h P τ s.mem) := by
-  refine VP.taint [.esp, .ebp] h.certs.lenArgs7 (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, ⟨hk, ha⟩, hy⟩ => ?_
+  refine VP.taint [.esp, .ebp] h.certs.lenArgs8 (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, ⟨hk, ha⟩, hy⟩ => ?_
   have hg := hk.1.geo
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
@@ -195,7 +195,7 @@ theorem lenF_vp (P : EP) :
     rw [ofNat_shr (by omega), h.pow_lg]
   obtain ⟨σ', ok⟩ := hg.ok
   simp only [lenArgs, ld, st, addi]
-  refine hc.wp_arg hg (vf_arg h (j := 7) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
+  refine hc.wp_arg hg (vf_arg h (j := 8) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
     wp_addi fun t2 u2 => (c1.upd u2 (by decide) (by decide)).wp_st hg (by decide) fun t3 c3 u3 =>
       wp_addi fun t4 u4 => wp_shr h.lg_range fun t5 u5 _ => wp_addi fun t6 u6 => ?_
   refine ((((c3.upd u4 (by decide) (by decide)).upd u5 (by decide) (by decide)).upd u6 (by decide)
@@ -225,14 +225,16 @@ theorem lenF_vp (P : EP) :
     · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
 
 /-- A salt of the expected length. -/
-theorem fixed_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ P.any = 0) (fixedPath h.H)
-      (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
-        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (Mf h P τ) then 1 else 0) := by
+theorem fixed_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
+    (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
+    (fne : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) :
+    VP (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧ P.any = 0) ∧ s.syms = τ.syms) (fixedPathT f h.H)
+      (fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ K2 h P τ s.mem ∧
+        s.gpr .eax = if acc2 h P τ = 0 ∧ HOk h P τ (Mf h P τ) then 1 else 0) ∧ s.syms = τ.syms) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   by_cases hf : fits h P ∧ P.any = 0
   swap
-  · exact VP.empty fun σ s h' => hf ⟨h'.2.1.2.1, h'.2.2⟩
+  · exact VP.empty fun σ s h' => hf ⟨h'.1.2.1.2.1, h'.1.2.2⟩
   obtain ⟨hf, ha⟩ := hf
   have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
   have hL := h.L_le
@@ -246,11 +248,12 @@ theorem fixed_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     show ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega
   show VP _ (.seq (yDig h.H 4) (.seq (.block (fxSalt h.H)) (.seq (.ite .e (.block []) Impl.Bignum.X86.copyBytes)
-    (.seq (.block (lenArgs h.H 7)) (.seq (ctHash h.H) (cmpH h.H)))))) _
-  refine (yDig_vf h P ⟨σ₀, hi₀⟩ (P.any = 0)).seq ?_
-  refine Sg.vpAssoc ((fxSalt_vp h P ⟨σ₀, hi₀⟩).seq ((lenF_vp h P).seq ?_))
-  exact (tail_vp h P ⟨σ₀, hi₀⟩ hT (Nat.succ_pos _) (msg := Mf h P) fun τ => by
+    (.seq (.block (lenArgs h.H 8)) (.seq (ctHashT f h.H 14) (cmpH h.H)))))) _
+  refine (Proof.RsaOaep.X86.VP.syms (yDig_vf h P ⟨σ₀, hi₀⟩ (P.any = 0))).seq ?_
+  refine Sg.vpAssoc ((Proof.RsaOaep.X86.VP.syms (fxSalt_vp h P ⟨σ₀, hi₀⟩)).seq
+    ((Proof.RsaOaep.X86.VP.syms (lenF_vp h P)).seq ?_))
+  exact (tail_vp h P ⟨σ₀, hi₀⟩ hTH fne hT (Nat.succ_pos _) (msg := Mf h P) fun τ => by
       rw [Mf_length]; show _ ≤ ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega).mono
-    (fun τ s ⟨hc, hk, hy⟩ => ⟨hc, hk, fun i hi => hy i (by omega)⟩) fun τ s ⟨hc, hk, r0⟩ => ⟨hc, hk, r0⟩
+    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩) fun τ s h => h
 
 end VG.Proof.RsaPss.X86.Vf

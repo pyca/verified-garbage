@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: entry and exit
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: entry and exit
 
 Untrusted: everything here is checked by Lean. Stores of registers at
 distinct offsets that are multiples of 8 from a base (`strs_ok`). The entry:

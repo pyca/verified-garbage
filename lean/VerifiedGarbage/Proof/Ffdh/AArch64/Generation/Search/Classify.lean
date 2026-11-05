@@ -27,7 +27,7 @@ open VG.Impl.Bignum.AArch64 (movi)
 
 /-- The candidate at octet `used` of the tape. -/
 abbrev SPub.cand (p : SPub) (used : Nat) : Option (Option Nat × List Byte) :=
-  parameterCandidate p.bits p.gen (p.rand.drop used)
+  sievedParameterCandidate p.bits p.gen (p.rand.drop used)
 
 /-- The octets the candidate at `used` reads. -/
 def SPub.read (p : SPub) (used : Nat) : Nat :=

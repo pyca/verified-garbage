@@ -14,9 +14,9 @@ namespace VG.Proof.RsaPss.X86_64.Pc
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
-theorem arg_read {s u : State} (hp : Pre G s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 7) :
+theorem arg_read {s u : State} (hp : Pre tsH tsG s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 10) :
     InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
   rw [hrd]
   apply (Covers.one hp.args).left
@@ -25,7 +25,7 @@ theorem arg_read {s u : State} (hp : Pre G s) (hrd : u.rd = s.rd) {j : Nat} (hj 
     simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
   exact Offset.contains_base _ (by omega) (by omega)
 
-theorem arg_keep {s : State} {m : Mem} (hp : Pre G s) (hf : Frame (vwrR s) s.mem m) {j : Nat} (hj : j < 7) :
+theorem arg_keep {s : State} {m : Mem} (hp : Pre tsH tsG s) (hf : Frame (vwrR s) s.mem m) {j : Nat} (hj : j < 10) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
   refine hf.readW (r := argsR s) ?_ (fun r hr => ?_) (by decide)
@@ -37,13 +37,13 @@ theorem arg_keep {s : State} {m : Mem} (hp : Pre G s) (hf : Frame (vwrR s) s.mem
     · exact hp.argsStack
     · exact hp.argsScr
 
-theorem load_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s) (hrd : t.rd = s.rd)
+theorem load_pre {s t : State} (hp : Pre tsH tsG s) (hsp : t.gpr .rsp = fb s) (hrd : t.rd = s.rd)
     (hf : Frame (vwrR s) s.mem t.mem) :
-    WP isa (.block [.mov .rdx (.mem (arg 5)), .mov .rcx (.mem (arg 6))]) t fun u =>
+    WP isa (.block [.mov .rdx (.mem (arg 6)), .mov .rcx (.mem (arg 7))]) t fun u =>
       Keep [.rdx, .rcx] t u ∧ u.mem = t.mem ∧
-        u.gpr .rdx = stackArg s 5 ∧ u.gpr .rcx = stackArg s 6 := by
+        u.gpr .rdx = stackArg s 6 ∧ u.gpr .rcx = stackArg s 7 := by
   refine WP.keep [.rdx, .rcx] ?_ rfl |> WP.mono <| fun u ⟨h, k⟩ => ⟨k, h⟩
-  xrun [arg, ea_sp, hsp, arg_read hp hrd (show 5 < 7 by decide), arg_read hp hrd (show 6 < 7 by decide),
-    arg_keep hp hf (show 5 < 7 by decide), arg_keep hp hf (show 6 < 7 by decide)]
+  xrun [arg, ea_sp, hsp, arg_read hp hrd (show 6 < 10 by decide), arg_read hp hrd (show 7 < 10 by decide),
+    arg_keep hp hf (show 6 < 10 by decide), arg_keep hp hf (show 7 < 10 by decide)]
 
 end VG.Proof.RsaPss.X86_64.Pc

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
@@ -32,6 +31,47 @@ theorem cachedPre_spec {p : Params} {s : State} (h : CachedPre p s) :
     h.nPk,h.nMsg,h.nCtx,h.nSig,h.nScr,h.nTr,h.digest⟩
   · rw [h.rd];rfl
   · rw [h.rd];rfl
+
+/-- The registers, stack and regions of a witness without the digest; with
+both root tables (`verifySatWith`), it gives the tables' facts that `roots`
+needs (`verifySatWith_roots`). -/
+def baseSat (p : Params) : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 0x3000 | .x3 => 0x3100 | .x5 => 0x3200 | .x6 => 0x10000
+    | _ => 0
+  sp := 0x80000
+  mem _ := 0
+  rd := [⟨0x1000,p.pkLen⟩,⟨0x3000,0⟩,⟨0x3100,0⟩,⟨0x3200,p.sigLen⟩]
+  wr := [⟨0x10000,mScrLen p⟩]
+
+def verifySatWith (p : Params) (m : Mem) : State :=
+  { baseSat p with
+    mem := m
+    syms := fun name=>if name="VG_MLDSA_NTT_EXPANDED" then 1048576 else 1052480
+    rd := (baseSat p).rd++[⟨1048576,3904⟩,⟨1052480,3904⟩] }
+
+theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
+    (hf : ∀j<488,m.readW (1048576+BitVec.ofNat 64 (8*j)) 64=
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD j 0)
+    (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
+    StaticRoots 16 (verifySatWith p m) := by
+  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩,
+    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩⟩
+  · apply Covers.one
+    exact ⟨⟨1048576,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
+  · rcases hp with rfl|rfl|rfl
+    all_goals dsimp [verifySatWith,baseSat]
+    all_goals simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq]
+    all_goals exact Region.disjoint_of_sep (by decide +kernel)
+  · exact Region.disjoint_of_sep (by dsimp [verifySatWith,baseSat]; decide)
+  · apply Covers.one
+    exact ⟨⟨1052480,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
+  · rcases hp with rfl|rfl|rfl
+    all_goals dsimp [verifySatWith,baseSat]
+    all_goals simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq]
+    all_goals exact Region.disjoint_of_sep (by decide +kernel)
+  · exact Region.disjoint_of_sep (by dsimp [verifySatWith,baseSat]; decide)
 
 def tableMem : Mem := (Sign.optimizedSignSat mlDsa44).mem
 
@@ -77,7 +117,7 @@ private theorem roots (p : Params) (hp : Ok3 p) : StaticRoots 16 (verifySat p) :
     intro j hj
     rw [satMem_high p _ (by bv_omega) (by bv_omega)]
     exact src.inverse.held j hj
-  have h := Message.OptimizedVerify.verifySatWith_roots p hp (satMem p) heldF heldI
+  have h := verifySatWith_roots p hp (satMem p) heldF heldI
   refine ⟨⟨h.forward.held,h.forward.fit,?_,h.forward.writable,h.forward.stack,h.forward.aligned⟩,
     ⟨h.inverse.held,h.inverse.fit,?_,h.inverse.writable,h.inverse.stack,h.inverse.aligned⟩⟩
   · apply Covers.one

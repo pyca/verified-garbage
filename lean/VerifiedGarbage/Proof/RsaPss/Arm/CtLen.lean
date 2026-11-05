@@ -43,7 +43,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     (hI : ∀ σ m m', Inv σ m → Frame [sR scr oLen h.B] m m' → Inv σ m') {ℓ : State → Nat}
     (hℓ : ∀ σ, ℓ σ < 2 ^ 32) :
     VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ s.mem.readW (L.fr sL) 32 = BitVec.ofNat 32 (ℓ σ))
-      (.seq (.block (lenClr h.H)) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (lenArgs h.H)) (.block h.H.len))))
+      (.seq (.block (lenClr h.sh)) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (lenArgs h.sh)) (.block h.H.len))))
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ LB h scr (ℓ σ) s.mem) := by
   have hN := h.N_le
   have hBl := h.B_le

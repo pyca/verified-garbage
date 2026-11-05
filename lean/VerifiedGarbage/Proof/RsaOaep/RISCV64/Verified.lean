@@ -544,7 +544,7 @@ theorem enc_sat (hw : w ∈ vs) (hl : (Proof.HashTable.RISCV64.names vs).length 
   unfold encSpec
   rw [e]
   simp only [Impl.RsaOaep.RISCV64.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
-  rcases hl' with rfl | rfl | rfl | rfl | rfl
+  rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
     sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
       Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,

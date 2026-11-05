@@ -8,14 +8,14 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: SHAKE256 through the sponge functions
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: SHAKE256 through the sponge functions
 
 Untrusted: everything here is checked by Lean. In `Ctx`: zeroing the Keccak
 state at `X` (`zeroSt_ok`), and the calls of `vg_keccak_absorb`,
 `vg_keccak_pad` and `vg_keccak_squeeze` (with the permutation of `v`) on it,
 with their working space at `X + 200` (`kabs_ok`, `kpad_ok`, `ksqz_ok`); then
 `muHash`, which leaves `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840`
-(`muHash_ok`), and `trHash`, which leaves `H(pk, 64)` there (`trHash_ok`).
+(`muHash_ok`).
 -/
 
 @[expose] public section

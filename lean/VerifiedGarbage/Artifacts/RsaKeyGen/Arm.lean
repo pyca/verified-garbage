@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 
@@ -14,6 +15,9 @@ def artifacts : List Artifact := [
   Spec.RsaKeyGen.keyApi.artifact Arm.target {
     code := Impl.RsaKeyGen.Arm.Key.code
     stack := 56
-    verified := Proof.RsaKeyGen.Arm.Key.key_verified }]
+    verified := Proof.RsaKeyGen.Arm.Key.key_verified },
+  Spec.RsaKeyGen.primeInitApi.artifact Arm.target {
+    code := Impl.RsaKeyGen.Arm.SearchInit.init
+    verified := Proof.RsaKeyGen.Arm.SearchInit.init_verified }]
 
 end VG.Artifacts.RsaKeyGen.Arm

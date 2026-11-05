@@ -46,7 +46,7 @@ structure AbiEnvironment (s : State) : Prop where
 theorem abi_environment (s : State) (h : (Spec.Argon2.deriveContract AArch64.abi 400).pre s) :
     AbiEnvironment s := by
   sig_pre [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
-    AArch64.argRegs, AArch64.firstNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at h
+    AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at h
   sig_split h
   all_goals simp only [BitVec.add_zero] at *
   constructor

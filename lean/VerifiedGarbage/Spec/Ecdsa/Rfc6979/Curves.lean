@@ -12,7 +12,7 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 
 /-!
-# Deterministic ECDSA with its hash function given as a table: each curve
+# Deterministic ECDSA with its HMAC given as a table: each curve
 
 **Trusted** (as every file in `Spec/`). The `TableInstance` of each curve:
 its `vg_ecdsa_<curve>_sign`, in the module `ecdsa_<curve>`, with the bound

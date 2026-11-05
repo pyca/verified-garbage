@@ -7,11 +7,11 @@
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
-#[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
+#[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86")))]
 use crate::arch::ffdh::vg_ffdh_generate_parameters;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
-#[cfg(any(target_arch = "arm", target_arch = "x86"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters;
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal;
@@ -219,14 +219,14 @@ mod tests {
                 half
             })
             .collect();
-        // The sieved candidate (ARMv7, x86) draws one witness for p first.
-        #[cfg(any(target_arch = "arm", target_arch = "x86"))]
+        // The sieved candidate (AArch64, ARMv7, x86) draws one witness for p first.
+        #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
         let phases = [
             (prime.to_vec(), 1),
             (q, rounds),
             (prime.to_vec(), rounds - 1),
         ];
-        #[cfg(not(any(target_arch = "arm", target_arch = "x86")))]
+        #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86")))]
         let phases = [(q, rounds), (prime.to_vec(), rounds)];
         for (modulus, rounds) in phases {
             let mut upper = modulus.clone();

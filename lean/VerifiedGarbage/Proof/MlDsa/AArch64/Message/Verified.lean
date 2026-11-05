@@ -1,22 +1,19 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
 
 /-!
-# ML-DSA on AArch64, `sign_message` and `verify_message`: verified
+# ML-DSA on AArch64, `sign_message`: verified
 
-Untrusted: everything here is checked by Lean. `signMessage v.callee n c p`
-and `verifyMessage v.callee n c p`, for any functions on `μ` `c` they can
-call (`SignFn`, `VerifyFn`), are verified against `signMessageContract p
-AArch64.abi 16` and `verifyMessageContract p AArch64.abi 16`; the functions
-on `μ` with the Keccak permutation of `v` are such functions (`signFn`,
-`verifyFn`).
+Untrusted: everything here is checked by Lean. `signMessage v.callee n c p`,
+for any signing function on `μ` `c` it can call (`SignFn`), is verified
+against `signMessageContract p AArch64.abi 16`; the functions on `μ` with
+the Keccak permutation of `v` are functions that `sign_message` and
+`verify_message_cached` can call (`signFn`, `verifyFn`).
 -/
 
 @[expose] public section
@@ -51,33 +48,6 @@ theorem signMessage_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} {
     Verified AArch64.target (signMessage v.callee n c p) (signMessageContract p AArch64.abi 16) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp v hS hp h; ⟨t, s', he, ha, hq⟩,
     signMessage_ct v hS hp, signMessage_sat hp⟩
-
-/-- A state satisfying the precondition of verification. -/
-def verifySat (p : Params) : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x3000 | .x3 => 0x3100 | .x5 => 0x3200 | .x6 => 0x10000
-    | _ => 0
-  sp := 0x80000
-  mem _ := 0
-  rd := [⟨0x1000, p.pkLen⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, p.sigLen⟩]
-  wr := [⟨0x10000, mScrLen p⟩]
-
-theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (verifyMessageContract p AArch64.abi 16).pre s := by
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl
-  · sig_implies_sat [verifyMessageContract, verifyMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [verifySat] using verifySat mlDsa44
-  · sig_implies_sat [verifyMessageContract, verifyMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [verifySat] using verifySat mlDsa65
-  · sig_implies_sat [verifyMessageContract, verifyMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [verifySat] using verifySat mlDsa87
-
-theorem verifyMessage_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} {n : String} {c : Prog isa}
-    (hV : VerifyFn p c) (hp : p ∈ params) :
-    Verified AArch64.target (verifyMessage v.callee n c p) (verifyMessageContract p AArch64.abi 16) :=
-  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp v hV hp h; ⟨t, s', he, ha, hq⟩,
-    verifyMessage_ct v hV hp, verifyMessage_sat hp⟩
 
 /-! ## The functions on `μ` -/
 
