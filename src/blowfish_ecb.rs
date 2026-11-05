@@ -16,28 +16,8 @@
 use crate::arch::blowfish::{
     vg_blowfish_ecb_decrypt, vg_blowfish_ecb_encrypt, vg_blowfish_expand_key,
 };
+use crate::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
 use crate::zeroize::zeroize;
-
-/// Why a Blowfish-ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key length is outside 4..=56 bytes (32 to 448 bits).
-    InvalidKeyLength,
-    /// The total input length is not a multiple of eight bytes.
-    IncompleteBlock,
-    /// The output buffer of an update is shorter than the bytes it would
-    /// write ([`BlowfishEcbEncryptor::output_len`],
-    /// [`BlowfishEcbDecryptor::output_len`]).
-    OutputTooSmall,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Blowfish key length",
-        IncompleteBlock => "Blowfish-ECB input is not a whole number of blocks",
-        OutputTooSmall => "Blowfish-ECB output buffer is too small",
-    }
-}
 
 /// A streaming Blowfish-ECB encryption (or, if `DECRYPT`, decryption),
 /// which [`BlowfishEcbEncryptor`] and [`BlowfishEcbDecryptor`] wrap.
@@ -51,9 +31,9 @@ struct Ecb<const DECRYPT: bool> {
 
 impl<const DECRYPT: bool> Ecb<DECRYPT> {
     /// Expands a key of 4..=56 bytes.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !(4..=56).contains(&key.len()) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut ecb = Self {
             schedule: [0; 4168],
@@ -79,11 +59,11 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
     /// Processes the whole blocks of the pending bytes and `input` into the
     /// first bytes of `output`, keeps the rest pending, and returns how many
     /// bytes it wrote; changes nothing if `output` is too short.
-    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         // No slice is `usize::MAX` bytes long, so an overflowing length
         // (`output_len` saturates) is too long for any `output`.
         let written = self.output_len(input.len());
-        let output = output.get_mut(..written).ok_or(Error::OutputTooSmall)?;
+        let output = output.get_mut(..written).ok_or(OutputTooSmall)?;
         if written == 0 {
             // `pending_len + input.len() < 8`.
             self.pending[self.pending_len..self.pending_len + input.len()].copy_from_slice(input);
@@ -112,11 +92,11 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
     }
 
     /// Fails if a partial block remains.
-    fn finalize(self) -> Result<(), Error> {
+    fn finalize(self) -> Result<(), IncompleteBlock> {
         if self.pending_len == 0 {
             Ok(())
         } else {
-            Err(Error::IncompleteBlock)
+            Err(IncompleteBlock)
         }
     }
 }
@@ -136,7 +116,7 @@ pub struct BlowfishEcbEncryptor {
 impl BlowfishEcbEncryptor {
     /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are
     /// accepted.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             ecb: Ecb::new(key)?,
         })
@@ -156,15 +136,15 @@ impl BlowfishEcbEncryptor {
     /// [`output_len`](Self::output_len)`(input.len())`.
     ///
     /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`Error::OutputTooSmall`],
+    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
     /// writing nothing and leaving the encryptor unchanged.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         self.ecb.update(input, output)
     }
 
-    /// Consumes the encryptor. Fails with [`Error::IncompleteBlock`] if a
+    /// Consumes the encryptor. Fails with [`IncompleteBlock`] if a
     /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), Error> {
+    pub fn finalize(self) -> Result<(), IncompleteBlock> {
         self.ecb.finalize()
     }
 }
@@ -177,7 +157,7 @@ pub struct BlowfishEcbDecryptor {
 impl BlowfishEcbDecryptor {
     /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are
     /// accepted.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             ecb: Ecb::new(key)?,
         })
@@ -197,15 +177,15 @@ impl BlowfishEcbDecryptor {
     /// [`output_len`](Self::output_len)`(input.len())`.
     ///
     /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`Error::OutputTooSmall`],
+    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
     /// writing nothing and leaving the decryptor unchanged.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         self.ecb.update(input, output)
     }
 
-    /// Consumes the decryptor. Fails with [`Error::IncompleteBlock`] if a
+    /// Consumes the decryptor. Fails with [`IncompleteBlock`] if a
     /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), Error> {
+    pub fn finalize(self) -> Result<(), IncompleteBlock> {
         self.ecb.finalize()
     }
 }

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
@@ -33,7 +34,7 @@ theorem candidate_short (p : SearchParams) (used : Nat)
 theorem SearchParams.tail_short {p : SearchParams} {used remaining : Nat} (positive : 0 < remaining)
     (candidate : candidateResult p used = none) :
     p.tail used remaining = if Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used
-      then .exhausted used else .entropy remaining (parameterRequest p.c.bits (p.c.bytes.length - used)) used := by
+      then .exhausted used else .entropy remaining (p.c.bytes.length - used) used := by
   cases remaining with
   | zero => omega
   | succ n =>

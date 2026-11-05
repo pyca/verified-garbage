@@ -63,11 +63,11 @@ def next (iv cs : List Byte) : List Byte := (iv ++ cs).drop cs.length
 /-- AES-CFB8 encryption of the plaintext `pt` under the key `key` (16, 24
 or 32 bytes) with the 16-byte `iv`. -/
 def aesCfb8Encrypt (key iv pt : List Byte) : List Byte :=
-  encrypt (Cbc.aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv pt
+  encrypt (Cbc.aes key) iv pt
 
 /-- AES-CFB8 decryption of the ciphertext `ct` under the key `key` (16, 24
 or 32 bytes) with the 16-byte `iv`. -/
 def aesCfb8Decrypt (key iv ct : List Byte) : List Byte :=
-  decrypt (Cbc.aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv ct
+  decrypt (Cbc.aes key) iv ct
 
 end VG.Spec.Cfb8

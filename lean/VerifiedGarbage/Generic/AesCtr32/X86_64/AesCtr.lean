@@ -17,7 +17,7 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesCtr.X86_64.crypt v.callee
     stack := 8
-    verified := crypt_verified v
+    verified := Proof.AesCtr.keyed (crypt_verified v)
     spSafe := crypt_spSafe v
     features := v.features }]
 

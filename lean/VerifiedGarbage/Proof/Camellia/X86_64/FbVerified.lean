@@ -244,12 +244,12 @@ theorem ofb_verified :
       exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
     ofb_ct (by
     sig_implies [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig,
-      Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Spec.Camellia.ofbPost, ofbX86_64, fbPre, fbPub, X86_64.abi,
+      Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Proof.Camellia.ofbPostSk, ofbX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
-    Spec.Camellia.ofbPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
+theorem ofbFrameSat_pre : ∃ s, (Proof.Camellia.ofbContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.ofbContractSk, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
+    Proof.Camellia.ofbPostSk, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
   VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
@@ -261,12 +261,12 @@ theorem cfbEncrypt_verified :
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
     cfbEncrypt_ct (by
     sig_implies [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig,
-      Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbEncryptPost, cfbEncX86_64, fbPre, fbPub, X86_64.abi,
+      Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Proof.Camellia.cfbEncryptPostSk, cfbEncX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cfbEncryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbEncryptContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbEncryptPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
+theorem cfbEncryptFrameSat_pre : ∃ s, (Proof.Camellia.cfbEncryptContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.cfbEncryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbEncryptPostSk, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
   VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
@@ -278,20 +278,21 @@ theorem cfbDecrypt_verified :
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
     cfbDecrypt_ct (by
     sig_implies [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig,
-      Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi,
+      Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Proof.Camellia.cfbDecryptPostSk, cfbDecX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cfbDecryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbDecryptContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.cfbDecryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbDecryptPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
+theorem cfbDecryptFrameSat_pre : ∃ s, (Proof.Camellia.cfbDecryptContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.cfbDecryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbDecryptPostSk, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ofb)
       (Spec.Camellia.ofbContract X86_64.abi 3288) :=
+  Proof.Camellia.ofb_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Spec.Camellia.ofbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.Camellia.ofbPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.ofbScratchContract_eq]; exact ofb_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat_pre
@@ -300,9 +301,10 @@ theorem ofb_framed :
 theorem cfbEncrypt_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cfbEncrypt)
       (Spec.Camellia.cfbEncryptContract X86_64.abi 3288) :=
+  Proof.Camellia.cfbEncrypt_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.cfbEncryptPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.Camellia.cfbEncryptPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cfbEncScratchContract_eq]; exact cfbEncrypt_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat_pre
@@ -311,9 +313,10 @@ theorem cfbEncrypt_framed :
 theorem cfbDecrypt_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cfbDecrypt)
       (Spec.Camellia.cfbDecryptContract X86_64.abi 3288) :=
+  Proof.Camellia.cfbDecrypt_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.cfbDecryptPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.Camellia.cfbDecryptPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact cfbDecrypt_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecryptFrameSat_pre

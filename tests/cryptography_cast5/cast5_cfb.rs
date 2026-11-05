@@ -7,7 +7,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cast5_cfb::{Cast5Cfb64Decryptor, Cast5Cfb64Encryptor, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::cast5_cfb::{Cast5Cfb64Decryptor, Cast5Cfb64Encryptor};
 
 /// The vectors in both directions, truncated, in pieces and with a partial
 /// last segment (`crate::modes::check`).
@@ -39,10 +41,10 @@ fn vectors() {
 fn errors() {
     assert_eq!(
         Cast5Cfb64Encryptor::new(&[], &[0; 8]).err(),
-        Some(Error::InvalidKeyLength)
+        Some(InvalidKeyLength)
     );
     assert_eq!(
         Cast5Cfb64Decryptor::new(&[], &[0; 8]).err(),
-        Some(Error::InvalidKeyLength)
+        Some(InvalidKeyLength)
     );
 }

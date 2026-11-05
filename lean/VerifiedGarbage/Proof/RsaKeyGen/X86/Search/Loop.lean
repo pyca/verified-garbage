@@ -20,7 +20,7 @@ open VG VG.X86
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly)
 open VG.Impl.RsaKeyGen.X86.Search
 open VG.Impl.Mont.X86 (at_)
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult candidateOp)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult candidateOp)
 
 theorem cmp_ok {u : State} {r : Reg} {n c : Nat} (hr : u.gpr r = BitVec.ofNat 32 n) (hn : n < 2 ^ 32)
     (hc : c < 2 ^ 32) :
@@ -73,7 +73,7 @@ theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : Pr
       op_short (by rw [List.length_drop, hlen]; exact z)
     have e : final = if primeEntropy p.len ≤ p.randLen - used then
         ⟨.exhausted, used, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩
-        else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used,
+        else ⟨.entropy k (p.randLen - used), used,
           tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl

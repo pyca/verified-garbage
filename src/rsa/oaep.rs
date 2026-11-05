@@ -1,5 +1,6 @@
 //! RSAES-OAEP (RFC 8017 §7.1), with SHA-1 or a SHA-2 hash function for the
-//! label and for MGF1.
+//! label and for MGF1: the types of [`PublicKey::encrypt_oaep`] and
+//! [`PrivateKey::decrypt_oaep`].
 //!
 //! Every decryption failure is the one error [`Error::Decryption`], and
 //! decryption's timing does not depend on whether the decoding succeeded, nor
@@ -190,44 +191,41 @@ fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(EncryptFn, DecryptFn, Tab
     ))
 }
 
-/// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and
-/// MGF1 over `mgf1_hash`: encrypts `plaintext`, of at most
-/// [`modulus_len`](PublicKey::modulus_len)` - 2 hLen - 2` bytes, with `key`
-/// and the label `label`, with a random seed, and returns the ciphertext
-/// ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian). The timing
-/// may depend on the public key and the lengths of the plaintext and the
-/// label, not on their contents.
-///
-/// Repeated operations with the same key reuse its scratch allocation,
-/// shared with signature verification. The buffer is wiped before reuse;
-/// concurrent callers use independent buffers.
-pub fn encrypt(
-    key: &PublicKey,
-    plaintext: &[u8],
-    hash: Hash,
-    mgf1_hash: Hash,
-    label: &[u8],
-) -> Result<Vec<u8>, Error> {
-    encrypt_with_rng(key, plaintext, hash, mgf1_hash, label, os_random)
-}
+impl PublicKey {
+    /// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and
+    /// MGF1 over `mgf1_hash`: encrypts `plaintext`, of at most
+    /// [`modulus_len`](PublicKey::modulus_len)` - 2 hLen - 2` bytes, with `key`
+    /// and the label `label`, with a random seed, and returns the ciphertext
+    /// ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian). The timing
+    /// may depend on the public key and the lengths of the plaintext and the
+    /// label, not on their contents.
+    ///
+    /// Repeated operations with the same key reuse its scratch allocation,
+    /// shared with signature verification. The buffer is wiped before reuse;
+    /// concurrent callers use independent buffers.
+    pub fn encrypt_oaep(
+        &self,
+        plaintext: &[u8],
+        hash: Hash,
+        mgf1_hash: Hash,
+        label: &[u8],
+    ) -> Result<Vec<u8>, Error> {
+        self.encrypt_oaep_from(plaintext, hash, mgf1_hash, label, os_random)
+    }
 
-/// [`encrypt`], with its seed drawn from `random` instead of the operating
-/// system.
-///
-/// Not part of the API: it lets benchmarks compare implementations on
-/// identical work, from fixed tapes. The ciphertext is secure only if
-/// `random` supplies uniformly random bytes, never reused.
-#[doc(hidden)]
-pub fn encrypt_with_rng(
-    key: &PublicKey,
-    plaintext: &[u8],
-    hash: Hash,
-    mgf1_hash: Hash,
-    label: &[u8],
-    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-) -> Result<Vec<u8>, Error> {
-    let (f, _, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-    encrypt_with(key, plaintext, label, f, (h, hash.digest_len()), m, random)
+    /// [`encrypt_oaep`](Self::encrypt_oaep), with its seed drawn from
+    /// `random`.
+    fn encrypt_oaep_from(
+        &self,
+        plaintext: &[u8],
+        hash: Hash,
+        mgf1_hash: Hash,
+        label: &[u8],
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+    ) -> Result<Vec<u8>, Error> {
+        let (f, _, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        encrypt_with(self, plaintext, label, f, (h, hash.digest_len()), m, random)
+    }
 }
 
 /// `f`, a `vg_rsa_oaep_encrypt_precomputed` that this CPU can run, with the
@@ -295,24 +293,26 @@ fn encrypt_with(
     Ok(out)
 }
 
-/// RSAES-OAEP-DECRYPT (RFC 8017 §7.1.2) with the hash function `hash` and
-/// MGF1 over `mgf1_hash`: decrypts `ciphertext`
-/// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`
-/// and the label `label`, and returns the message. A ciphertext not below
-/// the modulus and every failure of its decoding are the one error
-/// [`Error::Decryption`]. The timing may depend on the public key, the
-/// lengths of the primes and of the label, not on the ciphertext, the
-/// private key, the label's contents, whether the decryption succeeds or
-/// the message's length.
-pub fn decrypt(
-    key: &PrivateKey,
-    ciphertext: &[u8],
-    hash: Hash,
-    mgf1_hash: Hash,
-    label: &[u8],
-) -> Result<Vec<u8>, Error> {
-    let (_, f, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-    decrypt_with(key, ciphertext, label, f, h, m)
+impl PrivateKey {
+    /// RSAES-OAEP-DECRYPT (RFC 8017 §7.1.2) with the hash function `hash` and
+    /// MGF1 over `mgf1_hash`: decrypts `ciphertext`
+    /// ([`modulus_len`](PrivateKey::modulus_len) bytes, big-endian) with `key`
+    /// and the label `label`, and returns the message. A ciphertext not below
+    /// the modulus and every failure of its decoding are the one error
+    /// [`Error::Decryption`]. The timing may depend on the public key, the
+    /// lengths of the primes and of the label, not on the ciphertext, the
+    /// private key, the label's contents, whether the decryption succeeds or
+    /// the message's length.
+    pub fn decrypt_oaep(
+        &self,
+        ciphertext: &[u8],
+        hash: Hash,
+        mgf1_hash: Hash,
+        label: &[u8],
+    ) -> Result<Vec<u8>, Error> {
+        let (_, f, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        decrypt_with(self, ciphertext, label, f, h, m)
+    }
 }
 
 /// `f`, a `vg_rsa_oaep_decrypt` that this CPU can run, with the label's hash
@@ -385,7 +385,7 @@ fn decrypt_with(
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, decrypt, encrypt, encrypt_with_rng, vec, with_tables};
+    use super::{Error, Hash, vec, with_tables};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -428,38 +428,40 @@ mod tests {
     fn refused() {
         let (private, public) = composite_key();
         assert_eq!(
-            encrypt(&public, b"", Hash::Md5, Hash::Md5, b""),
+            public.encrypt_oaep(b"", Hash::Md5, Hash::Md5, b""),
             Err(Error::UnsupportedHash)
         );
         assert_eq!(
-            decrypt(&private, &[0; 64], Hash::Sha256, Hash::Md5, b""),
+            private.decrypt_oaep(&[0; 64], Hash::Sha256, Hash::Md5, b""),
             Err(Error::UnsupportedHash)
         );
         // 64 bytes hold at most 22 bytes of message with SHA-1, none with
         // SHA-512.
         assert_eq!(
-            encrypt(&public, &[0; 23], Hash::Sha1, Hash::Sha1, b""),
+            public.encrypt_oaep(&[0; 23], Hash::Sha1, Hash::Sha1, b""),
             Err(Error::MessageTooLong)
         );
         assert_eq!(
-            encrypt(&public, b"", Hash::Sha512, Hash::Sha512, b""),
+            public.encrypt_oaep(b"", Hash::Sha512, Hash::Sha512, b""),
             Err(Error::MessageTooLong)
         );
-        let c = encrypt(&public, &[7; 22], Hash::Sha1, Hash::Sha1, b"label").unwrap();
+        let c = public
+            .encrypt_oaep(&[7; 22], Hash::Sha1, Hash::Sha1, b"label")
+            .unwrap();
         assert_eq!(c.len(), 64);
         assert_eq!(
-            decrypt(&private, &c[1..], Hash::Sha1, Hash::Sha1, b"label"),
+            private.decrypt_oaep(&c[1..], Hash::Sha1, Hash::Sha1, b"label"),
             Err(Error::InvalidLength)
         );
         let mut two = vec![0; 64];
         two[63] = 2;
         assert_eq!(
-            decrypt(&private, &two, Hash::Sha1, Hash::Sha1, b""),
+            private.decrypt_oaep(&two, Hash::Sha1, Hash::Sha1, b""),
             Err(Error::Fault)
         );
         // Not below the modulus.
         assert_eq!(
-            decrypt(&private, &[0xff; 64], Hash::Sha1, Hash::Sha1, b""),
+            private.decrypt_oaep(&[0xff; 64], Hash::Sha1, Hash::Sha1, b""),
             Err(Error::Decryption)
         );
     }
@@ -470,7 +472,7 @@ mod tests {
     fn encryption_from_a_fixed_tape_is_deterministic() {
         let (_, public) = composite_key();
         let encrypt = |byte| {
-            encrypt_with_rng(&public, &[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
+            public.encrypt_oaep_from(&[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
                 buf.fill(byte);
                 Ok(())
             })
@@ -478,7 +480,7 @@ mod tests {
         assert_eq!(encrypt(1), encrypt(1));
         assert_ne!(encrypt(1), encrypt(2));
         assert_eq!(
-            encrypt_with_rng(&public, b"", Hash::Sha1, Hash::Sha1, b"", |_| {
+            public.encrypt_oaep_from(b"", Hash::Sha1, Hash::Sha1, b"", |_| {
                 Err(Error::Randomness)
             }),
             Err(Error::Randomness)

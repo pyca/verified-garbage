@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_cfb::{Error, TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::triple_des_cfb::{TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -73,11 +75,11 @@ fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert_eq!(
             TripleDesCfb64Encryptor::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
         assert_eq!(
             TripleDesCfb64Decryptor::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

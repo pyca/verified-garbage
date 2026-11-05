@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
@@ -66,7 +67,7 @@ theorem openS_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
     Verified X86_64.target (X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Proof.AesGcmSiv.openScratchContract X86_64.abi 477 8) :=
   Verified.of_correct (openS_correct v eb wide) (openS_ct v eb wide)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
@@ -77,19 +78,19 @@ theorem openS_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
       post := by
         intro s s' hs h
         sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] at h
         sig_simp [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
@@ -99,20 +100,20 @@ theorem openS_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] at h
         sig_split h
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
         sig_simp [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
@@ -121,7 +122,7 @@ theorem openS_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
         sig_close
         all_goals with_reducible assumption
       sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
         Proof.AesGcmSiv.oneLay, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
@@ -137,10 +138,10 @@ theorem openS_xdepth : (X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.c
 
 theorem openS_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
-      (Spec.GcmSiv.openContract X86_64.abi 3856) :=
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
     (Proof.AesGcmSiv.Verified.of_openScratch (openS_verified v eb wide))
     (by decide) (by decide) (by decide) (openS_spSafe v eb wide) (openS_xdepth v eb wide) (openPre_local _)
@@ -186,7 +187,7 @@ theorem sealS_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
     Verified X86_64.target (X86_64Stitch.«seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Proof.AesGcmSiv.sealScratchContract X86_64.abi 477 8) :=
   Verified.of_correct (sealS_correct v eb wide) (sealS_ct v eb wide) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Spec.GcmSiv.sealPost, Proof.AesGcmSiv.sealX86_64, Proof.AesGcmSiv.sealPre, Proof.AesGcmSiv.oneLay,
+      Proof.AesGcmSiv.sealRoundsPost, Proof.AesGcmSiv.sealX86_64, Proof.AesGcmSiv.sealPre, Proof.AesGcmSiv.oneLay,
       Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args, Proof.AesGcmSiv.stk8,
       Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range,
       List.range.loop, VG.X86_64.below, X86_64.argRegs] [sealSat] using sealSat)
@@ -201,10 +202,10 @@ theorem sealS_xdepth : (X86_64Stitch.«seal» v.callees ⟨eb.enc.name, eb.enc.c
 
 theorem sealS_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (X86_64Stitch.«seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
-      (Spec.GcmSiv.sealContract X86_64.abi 3856) :=
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3848) (sealS_verified v eb wide) (by decide) (by decide) (by decide)
     (sealS_spSafe v eb wide) (sealS_xdepth v eb wide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
@@ -233,7 +234,7 @@ def sealCode (v : GcmImpl) : Prog X86_64.isa :=
 
 theorem sealCode_framed (v : GcmImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
-      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
   unfold sealCode; split
   · exact sealS_framed v (ecbOf v) (sivWide v)
   · exact seal_framed v (ecbOf v) (sivWide v)
@@ -245,7 +246,7 @@ theorem sealCode_spSafe (v : GcmImpl) : (sealCode v).all (fun i => !X86_64.isa.w
 
 theorem openCode_framed (v : GcmImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
-      (Spec.GcmSiv.openContract X86_64.abi 3856) := by
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
   unfold openCode; split
   · exact openS_framed v (ecbOf v) (sivWide v)
   · exact open_framed v (ecbOf v) (sivWide v)

@@ -15,7 +15,7 @@ def artifacts : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Impl.AesCbc.AArch64.Decrypt.code
-    verified := Proof.AesCbc.AArch64.Decrypt.verified
+    verified := Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verified
     features := ["aes","sha3"]
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.written }]

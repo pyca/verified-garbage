@@ -79,7 +79,7 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
         (Spec.Cmac.chain ciph (Spec.Cmac.chain ciph (Spec.Cmac.zeros 16)
             (Spec.Cmac.blocks 16 (p.take (16 * kOf p.length))))
           (Spec.Cmac.blocks 16 ((Spec.Siv.xorend (p.drop (16 * kOf p.length)) d).take (16 * jOf p.length))))) =
-      Spec.Siv.s2vFinish (Spec.Siv.cmacWith ciph k1 k2) d p := by
+      Spec.Siv.s2vFinish (Spec.Cmac.macWith ciph 16 k1 k2) d p := by
   have hT := kOf_tail hL16
   have hJ := jOf_rest hL16
   have hlT : (Spec.Siv.xorend (p.drop (16 * kOf p.length)) d).length = p.length - 16 * kOf p.length := by
@@ -87,7 +87,7 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
   rw [Siv.s2vFinish_long _ hd (a := 16 * kOf p.length) (by omega)]
   generalize Spec.Siv.xorend (List.drop (16 * kOf p.length) p) d = tl at hlT ⊢
   conv => rhs; rw [← List.take_append_drop (16 * jOf p.length) tl]
-  rw [← List.append_assoc, Siv.cmacWith_split₂ _ _ _ (by rw [List.length_take]; omega)
+  rw [← List.append_assoc, Siv.macWith_split₂ _ _ _ (by rw [List.length_take]; omega)
       (by rw [List.length_take, hlT]; omega) (by rw [List.length_drop, hlT]; omega)
       (Or.inr (by rw [List.length_drop, hlT]; omega)), Proof.Cmac.xor_comm]
 

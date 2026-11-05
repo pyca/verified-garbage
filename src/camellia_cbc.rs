@@ -14,23 +14,8 @@
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_cbc::{vg_camellia_cbc_decrypt_chained, vg_camellia_cbc_encrypt_chained};
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Camellia-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16, 24 or 32 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Camellia key length",
-        IncompleteBlock => "Camellia-CBC input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Camellia key, which serves both directions.
 struct Key {
@@ -53,7 +38,7 @@ pub struct CamelliaCbcEncryptor {
 impl CamelliaCbcEncryptor {
     /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
     /// 32-byte keys, 24), to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -63,7 +48,7 @@ impl CamelliaCbcEncryptor {
     /// Encrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -82,7 +67,7 @@ pub struct CamelliaCbcDecryptor {
 impl CamelliaCbcDecryptor {
     /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
     /// 32-byte keys, 24), to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -92,18 +77,18 @@ impl CamelliaCbcDecryptor {
     /// Decrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
-            _ => return Err(Error::InvalidKeyLength),
+            _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -119,9 +104,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer holds `len / 16` whole
@@ -145,9 +130,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {

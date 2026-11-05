@@ -26,6 +26,14 @@ std = []
 # the library uses (see `src/cpu.rs`), to test and benchmark every
 # implementation on one machine. Reading the environment needs `std`.
 cpu-features-env = ["std"]
+# Not part of the API: exposes the prime searches that take their random
+# bytes from the caller instead of the operating system (the
+# `generate_with_rng` of RSA keys and of DSA's and FFDH's parameters), whose
+# time depends on how many candidates the draws reject: the benchmarks run
+# them on fixed tapes, so that every run does the same work. Only the
+# benchmarks (`bench/Cargo.toml`) enable it; nothing else, tests included,
+# may need it.
+internal-bench = []
 
 [lints]
 workspace = true

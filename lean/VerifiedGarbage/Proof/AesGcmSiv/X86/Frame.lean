@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
@@ -70,8 +71,8 @@ working space: as `sealSat`, with eight stack arguments. -/
 def sealFrameSat : State :=
   { sealSat with wr := [⟨0x3000, 0⟩, ⟨0x4000, 16⟩, ⟨0x8004, 32⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract X86.abi 2884).pre s := by
-  implies_sat [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86.abi 2884).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
 
@@ -81,24 +82,24 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x4000, 16⟩],
                  wr := [⟨0x3000, 0⟩, ⟨0x8004, 32⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract X86.abi 2884).pre s := by
-  implies_sat [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Spec.GcmSiv.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86.abi 2884).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem seal_framed (hti : TagInputEq) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2856 8 («seal» v.callees))
-      (Spec.GcmSiv.sealContract X86.abi 2884) :=
+      (Proof.AesGcmSiv.sealRoundsContract X86.abi 2884) :=
   X86.Verified.stackScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64) (n := 352)
-    (pre := Spec.GcmSiv.sealPre X86.abi.ptrBits) (post := Spec.GcmSiv.sealPost X86.abi.ptrBits)
+    (pre := Spec.GcmSiv.sealPre X86.abi.ptrBits) (post := Proof.AesGcmSiv.sealRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 28) (bytes := 2856) (seal_verified v hti) (by decide) (seal_noEsp v)
     (seal_stackUse v) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_pre
 
 theorem open_framed (hti : TagInputEq) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2856 8 («open» v.callees))
-      (Spec.GcmSiv.openContract X86.abi 2884) :=
+      (Proof.AesGcmSiv.openRoundsContract X86.abi 2884) :=
   X86.Verified.stackScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64) (n := 352)
-    (pre := Spec.GcmSiv.openPre X86.abi.ptrBits) (post := Spec.GcmSiv.openPost X86.abi.ptrBits)
+    (pre := Spec.GcmSiv.openPre X86.abi.ptrBits) (post := Proof.AesGcmSiv.openRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 28) (leak := some (Spec.GcmSiv.openLeak X86.abi.ptrBits)) (bytes := 2856)
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v hti)) (by decide) (open_noEsp v)
     (open_stackUse v) (Proof.AesGcmSiv.openPre_local _)

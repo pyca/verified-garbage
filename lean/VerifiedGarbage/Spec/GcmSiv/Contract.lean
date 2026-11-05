@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Spec.GcmSiv
 public import VerifiedGarbage.TCB.Artifact
 
@@ -18,10 +19,13 @@ AES-GCM-SIV derives its keys from the key-generating key per nonce (RFC 8452
 §4), so all a caller keeps of a key is the key schedule of the
 key-generating key, as `vg_aes_expand_key` writes it
 (`VG.Spec.Aes.expandKeyContract`), with its number of rounds: 10 for a
-16-byte key, 14 for a 32-byte key. The functions compute with the cipher of
-the schedule they are given, for the number of rounds they are given
-(`ctxCiph`, `keyLen`): with the schedule of a key, that is AES-GCM-SIV with
-that key (`encryptWith_ctx`, `decryptWith_ctx`).
+16-byte key, 14 for a 32-byte key. The postconditions are stated for every
+key-generating key whose schedule is at `schedule` with `rounds` rounds
+(`Aes.KeySchedule`), with the cipher of that key (`aes key`) and its length;
+with lengths that §6 accepts, that is AES-GCM-SIV with that key
+(`encryptWith_ctx`, `decryptWith_ctx`). `open`'s leak is stated for the
+cipher of the schedule it is given, for the number of rounds it is given
+(`ctxCiph`, `keyLen`).
 
 * `vg_aes_gcm_siv_seal` is encryption (`encryptWith`): it encrypts the data
   in place and writes the 16-byte tag.
@@ -36,9 +40,9 @@ lengths of §6 (`supported`: at most 2³⁶ bytes of plaintext and of
 additional data). The nonce is 12 bytes (§6), the tag 16: `seal` writes the
 tag to the 16 bytes at `tag`, and `open` reads the received tag from the 16
 bytes at `tag`. The functions keep their working space on the stack. The
-postconditions (and `open`'s leak) are stated for `rounds` of 10 or 14,
-which the preconditions require, so that they read only the buffers (the
-key schedule's round keys for those rounds).
+leak of `open` is stated for `rounds` of 10 or 14, which the preconditions
+require, so that it reads only the buffers (the key schedule's round keys
+for those rounds).
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -63,21 +67,21 @@ def sealPre (pb : Nat) : Curry (sealSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _nonce _aad _aadLen _data _len _tag _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
-in the first `16 (rounds + 1)` bytes at `schedule`: the `len` bytes at
-`data` are encrypted, with the 12-byte nonce at `nonce` and the `aad_len`
+/-- For every AES-GCM-SIV key-generating key `K` (16 or 32 bytes) whose
+key schedule is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): the
+`len` bytes at `data` are encrypted under `K`, with the 12-byte nonce at `nonce` and the `aad_len`
 bytes of additional data at `aad` (`encryptWith`), and the 16-byte tag is
 at `tag`. -/
 def sealPost (pb : Nat) : sealSig.Post pb :=
   fun schedule rounds nonce aad aadLen data len tag m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 14) →
-    encryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat) (Aes.bytesAt m nonce 12)
+    ∀ key, (key.length = 16 ∨ key.length = 32) → Aes.KeySchedule m schedule rounds.toNat key →
+    encryptWith (aes key) key.length (Aes.bytesAt m nonce 12)
         (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
       (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag 16)
 
-/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
-in the first `16 (rounds + 1)` bytes at `schedule`: encrypts the `len` bytes
-at `data` in place, with the 12-byte nonce at `nonce` and the `aad_len`
+/-- For `rounds` of 10 or 14, and every AES-GCM-SIV key-generating key `K`
+(16 or 32 bytes) whose key schedule is at `schedule` with `rounds` rounds
+(`Aes.KeySchedule`): encrypts the `len` bytes at `data` in place under `K`, with the 12-byte nonce at `nonce` and the `aad_len`
 bytes of additional data at `aad` (`encryptWith`), and writes the 16-byte
 tag to `tag`. -/
 def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -117,16 +121,16 @@ def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _nonce _aad _aadLen _data _len _tag _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
-in the first `16 (rounds + 1)` bytes at `schedule` and the received tag the
-16 bytes at `tag`: if the tag is right for the `len` bytes of encrypted
+/-- For every AES-GCM-SIV key-generating key `K` (16 or 32 bytes) whose key
+schedule is at `schedule` with `rounds` rounds (`Aes.KeySchedule`), with the
+received tag the 16 bytes at `tag`: if the tag under `K` is right for the `len` bytes of encrypted
 plaintext at `data`, the 12-byte nonce at `nonce` and the `aad_len` bytes of
 additional data at `aad` (`decryptWith`), the result is 1 and the plaintext
 is at `data`; otherwise the result is 0 and zeros are at `data`. -/
 def openPost (pb : Nat) : openSig.Post pb :=
   fun schedule rounds nonce aad aadLen data len tag m m' r =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 14) →
-    match decryptWith (ctxCiph m schedule rounds.toNat) (keyLen rounds.toNat)
+    ∀ key, (key.length = 16 ∨ key.length = 32) → Aes.KeySchedule m schedule rounds.toNat key →
+    match decryptWith (aes key) key.length
         (Aes.bytesAt m nonce 12) (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat)
         (Aes.bytesAt m tag 16) with
     | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
@@ -142,9 +146,10 @@ def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
         (Aes.bytesAt m tag 16)).isSome
       then 1 else 0]
 
-/-- For `rounds` of 10 or 14, with the key schedule of the key-generating key
-in the first `16 (rounds + 1)` bytes at `schedule` and the received tag the
-16 bytes at `tag`: if the tag is right for the `len` bytes of encrypted
+/-- For `rounds` of 10 or 14, and every AES-GCM-SIV key-generating key `K`
+(16 or 32 bytes) whose key schedule is at `schedule` with `rounds` rounds
+(`Aes.KeySchedule`), with the received tag the 16 bytes at `tag`: if the tag
+under `K` is right for the `len` bytes of encrypted
 plaintext at `data`, the 12-byte nonce at `nonce` and the `aad_len` bytes of
 additional data at `aad` (`decryptWith`), returns 1 and leaves the plaintext
 at `data`; otherwise returns 0 and leaves zeros at `data`. May leak which

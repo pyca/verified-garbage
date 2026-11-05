@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::camellia_cfb::{CamelliaCfb128Decryptor, CamelliaCfb128Encryptor, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::camellia_cfb::{CamelliaCfb128Decryptor, CamelliaCfb128Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -51,11 +53,11 @@ fn errors() {
     for len in [0, 15, 17, 33] {
         assert_eq!(
             CamelliaCfb128Encryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
         assert_eq!(
             CamelliaCfb128Decryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

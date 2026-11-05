@@ -16,7 +16,7 @@ def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
   Spec.Ctr.aesApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCtr.AArch64.crypt v.callee
-    verified := crypt_verified v
+    verified := Proof.AesCtr.keyed (crypt_verified v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.AArch64.AesCtr

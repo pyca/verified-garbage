@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesOfb.X86
+public import VerifiedGarbage.Proof.AesOfb.Rounds
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Spec.Ofb.Contract
 
@@ -33,21 +34,21 @@ theorem crypt_spSafe (v : BlocksImpl) : (crypt v.enc).all (fun i => !isa.writesS
   decide +kernel
 
 theorem crypt_verified (v : BlocksImpl) :
-    Verified X86.target (crypt v.enc) (Spec.Ofb.aesContract X86.abi 24) :=
+    Verified X86.target (crypt v.enc) (Proof.AesOfb.roundsContract X86.abi 24) :=
   Verified.of_correct (fun _ hs => whole_wp (body_ok v) hs) (whole_ct (body_ok v) (body_ct v))
-    { pre := by sig_implies_pre [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
+    { pre := by sig_implies_pre [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, modeX86]
       -- `ofbMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
+        sig_post [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, modeX86, ofbMode]
-        sig_reduce [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
+        sig_reduce [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, modeX86, ofbMode] at h
-        sig_simp [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
+        sig_simp [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, modeX86, ofbMode] [] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
+      pub := by sig_implies_pub [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, modeX86]
       sat := by
         have a0 : arg sat 0 = 0x1000 := by decide
@@ -58,7 +59,7 @@ theorem crypt_verified (v : BlocksImpl) :
         have a5 : arg sat 5 = 0x4000 := by decide
         have e : argAddr sat 0 = 0x8004 := by decide
         have esp : sat.gpr .esp = 0x8000 := rfl
-        sig_implies_sat [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
+        sig_implies_sat [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
           X86.argVal, X86.argBytes, modeX86] [a0, a1, a2, a3, a4, a5, e, esp] using sat }
 
 end VG.Proof.AesOfb.X86

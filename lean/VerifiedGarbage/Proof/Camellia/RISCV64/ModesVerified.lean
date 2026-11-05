@@ -16,11 +16,17 @@ import VerifiedGarbage.Proof.Modes.RISCV64.Modes
 import VerifiedGarbage.Proof.Modes.RISCV64.Wide
 import VerifiedGarbage.Proof.Modes.RISCV64.WideCtr
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Camellia.CbcScratch
+import VerifiedGarbage.Proof.Camellia.CtrScratch
+import VerifiedGarbage.Proof.Camellia.FbScratch
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Camellia.CbcScratch
+meta import VerifiedGarbage.Proof.Camellia.CtrScratch
+meta import VerifiedGarbage.Proof.Camellia.FbScratch
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesConstantTime
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModeCore
 meta import VerifiedGarbage.Spec.Camellia.Cbc
@@ -328,39 +334,45 @@ theorem modePub_iff (s₁ s₂ : State) : modePub s₁ s₂ ↔
   simp [modePub]
 
 theorem cbcEncryptChained_verified :
-    Verified RISCV64.target cbcEncryptChained (Spec.Camellia.cbcEncryptChainedContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cbcEncryptChained (Spec.Camellia.cbcEncryptChainedContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <| by
   refine Verified.of_correct cbcEncryptChained_correct (cbcEncryptChained_constantTime _) ?_
-  contract_implies [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig,
+  contract_implies [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig,
     RISCV64.abi, RISCV64.argRegs, modeContract, cbcEncPost, modePub_iff] [modeSat] using modeSat
 
 theorem cbcDecryptChained_verified :
-    Verified RISCV64.target cbcDecryptChained (Spec.Camellia.cbcDecryptChainedContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cbcDecryptChained (Spec.Camellia.cbcDecryptChainedContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <| by
   refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) ?_
-  contract_implies [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig,
+  contract_implies [Proof.Camellia.cbcDecryptChainedContractSk, Spec.Camellia.cbcChainedSig,
     RISCV64.abi, RISCV64.argRegs, modeContract, cbcDecPost, modePub_iff] [modeSat] using modeSat
 
-theorem ofb_verified : Verified RISCV64.target ofb (Spec.Camellia.ofbContract RISCV64.abi frameBytes) := by
+theorem ofb_verified : Verified RISCV64.target ofb (Spec.Camellia.ofbContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.ofb_of_sk <| by
   refine Verified.of_correct ofb_correct (ofb_constantTime _) ?_
-  contract_implies [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Spec.Camellia.ofbPost,
+  contract_implies [Proof.Camellia.ofbContractSk, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Proof.Camellia.ofbPostSk,
     RISCV64.abi, RISCV64.argRegs, modeContract, ofbPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbEncrypt_verified :
-    Verified RISCV64.target cfbEncrypt (Spec.Camellia.cfbEncryptContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cfbEncrypt (Spec.Camellia.cfbEncryptContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.cfbEncrypt_of_sk <| by
   refine Verified.of_correct cfbEncrypt_correct (cfbEncrypt_constantTime _) ?_
-  contract_implies [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbEncryptPost, RISCV64.abi, RISCV64.argRegs, modeContract, cfbEncPost, modePub_iff]
+  contract_implies [Proof.Camellia.cfbEncryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbEncryptPostSk, RISCV64.abi, RISCV64.argRegs, modeContract, cfbEncPost, modePub_iff]
     [modeSat] using modeSat
 
 theorem cfbDecrypt_verified :
-    Verified RISCV64.target cfbDecrypt (Spec.Camellia.cfbDecryptContract RISCV64.abi frameBytes) := by
+    Verified RISCV64.target cfbDecrypt (Spec.Camellia.cfbDecryptContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.cfbDecrypt_of_sk <| by
   refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
-  contract_implies [Spec.Camellia.cfbDecryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
-    Spec.Camellia.cfbDecryptPost, RISCV64.abi, RISCV64.argRegs, modeContract, cfbDecPost, modePub_iff]
+  contract_implies [Proof.Camellia.cfbDecryptContractSk, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
+    Proof.Camellia.cfbDecryptPostSk, RISCV64.abi, RISCV64.argRegs, modeContract, cfbDecPost, modePub_iff]
     [modeSat] using modeSat
 
-theorem ctr_verified : Verified RISCV64.target ctr (Spec.Camellia.ctrContract RISCV64.abi frameBytes) := by
+theorem ctr_verified : Verified RISCV64.target ctr (Spec.Camellia.ctrContract RISCV64.abi frameBytes) :=
+  Proof.Camellia.ctr_of_sk <| by
   refine Verified.of_correct ctr_correct (ctr_constantTime _) ?_
-  contract_implies [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Spec.Camellia.ctrPost,
+  contract_implies [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Proof.Camellia.ctrPostSk,
     RISCV64.abi, RISCV64.argRegs, modeContract, ctrPost, modePub_iff] [modeSat] using modeSat
 
 end VG.Proof.Camellia.RISCV64.Modes

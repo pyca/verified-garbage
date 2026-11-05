@@ -16,7 +16,7 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::rsa::pkcs1_enc::{Error, decrypt, encrypt};
+use verified_garbage::rsa::pkcs1_enc::Error;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage_test_vectors::unhex;
 
@@ -196,10 +196,20 @@ fn check_appendix_b(key_count: usize) {
         assert_eq!(vectors.len(), 12);
         for v in vectors {
             assert_eq!(v.ct.len(), private.modulus_len(), "{}", v.title);
-            assert_eq!(decrypt(private, &v.ct).as_ref(), Ok(&v.msg), "{}", v.title);
+            assert_eq!(
+                private.decrypt_pkcs1v15(&v.ct).as_ref(),
+                Ok(&v.msg),
+                "{}",
+                v.title
+            );
             if v.title.contains("Valid") {
-                let c = encrypt(public, &v.msg).unwrap();
-                assert_eq!(decrypt(private, &c).as_ref(), Ok(&v.msg), "{}", v.title);
+                let c = public.encrypt_pkcs1v15(&v.msg).unwrap();
+                assert_eq!(
+                    private.decrypt_pkcs1v15(&c).as_ref(),
+                    Ok(&v.msg),
+                    "{}",
+                    v.title
+                );
             }
         }
     }
@@ -211,20 +221,23 @@ fn rsa_pkcs1_lengths() {
     let k = public.modulus_len();
     for len in [0, 1, k - 11] {
         let m: Vec<u8> = crate::bytes::pattern(len, 1, 0);
-        let c = encrypt(public, &m).unwrap();
+        let c = public.encrypt_pkcs1v15(&m).unwrap();
         assert_eq!(c.len(), k);
         // A fresh padding string each time.
-        assert_ne!(encrypt(public, &m).unwrap(), c);
-        assert_eq!(decrypt(private, &c), Ok(m));
+        assert_ne!(public.encrypt_pkcs1v15(&m).unwrap(), c);
+        assert_eq!(private.decrypt_pkcs1v15(&c), Ok(m));
     }
     assert_eq!(
-        encrypt(public, &vec![1; k - 10]),
+        public.encrypt_pkcs1v15(&vec![1; k - 10]),
         Err(Error::MessageTooLong)
     );
     let ct = &vectors[0].ct;
-    assert_eq!(decrypt(private, &ct[1..]), Err(Error::InvalidLength));
     assert_eq!(
-        decrypt(private, &vec![0xff; k]),
+        private.decrypt_pkcs1v15(&ct[1..]),
+        Err(Error::InvalidLength)
+    );
+    assert_eq!(
+        private.decrypt_pkcs1v15(&vec![0xff; k]),
         Err(Error::InputOutOfRange)
     );
 }
@@ -253,7 +266,7 @@ fn rsa_pkcs1_bad_keys() {
     // `d` with leading zeros is the same number.
     let mut d = vec![0, 0];
     d.extend_from_slice(v[3]);
-    assert!(decrypt(&with_d(&d).unwrap(), ct).is_ok());
+    assert!(with_d(&d).unwrap().decrypt_pkcs1v15(ct).is_ok());
     // A `dP` that does not match `e`: the key is refused.
     let mut dp = v[6].to_vec();
     *dp.last_mut().unwrap() ^= 2;

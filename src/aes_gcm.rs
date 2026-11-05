@@ -144,6 +144,7 @@ use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_vpclmul,
 };
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::MaybeUninit;
 use verified_garbage_cpu::Features;
@@ -868,8 +869,6 @@ impl Backend {
 /// Why an AES-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is empty.
     InvalidNonceLength,
     /// The plaintext or ciphertext is longer than `2^36 − 32` bytes.
@@ -892,7 +891,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "AES-GCM nonce is empty",
         InvalidTextLength => "AES-GCM text is too long",
         InvalidAadLength => "AES-GCM additional data is too long",
@@ -983,9 +981,9 @@ impl AesGcm {
 
     /// Prepares `key`, which must be 16, 24 or 32 bytes long (AES-128,
     /// AES-192 or AES-256).
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         // The features, read once: each read is a call.
         let f = detected();
@@ -1679,7 +1677,7 @@ impl AesGcmDecryptor<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select};
+    use super::{AesGcm, Backend, Error, InvalidKeyLength, MAX_AAD, MAX_TEXT, add_len, select};
     use crate::cpu::detected;
     use verified_garbage_cpu::Features;
 
@@ -3010,7 +3008,7 @@ mod tests {
 
     #[test]
     fn errors() {
-        assert_eq!(AesGcm::new(&[0; 15]).err(), Some(Error::InvalidKeyLength));
+        assert_eq!(AesGcm::new(&[0; 15]).err(), Some(InvalidKeyLength));
         let k = AesGcm::new(&[0; 32]).unwrap();
         let mut buf = [0u8; 3];
         assert_eq!(

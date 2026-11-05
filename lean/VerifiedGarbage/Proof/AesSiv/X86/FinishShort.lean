@@ -322,7 +322,7 @@ theorem ctxMac_block (m : Mem) (C : Addr) (R : Nat) {T : List Byte} (hT : T.leng
     Spec.Siv.ctxMac m C R T = Spec.Cmac.aesWith R (bytesAt m C (16 * (R + 1)))
       (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (bytesAt m (C + BitVec.ofNat 64 240) 16)
         (bytesAt m (C + BitVec.ofNat 64 256) 16) T) (Spec.Cmac.zeros 16)) := by
-  have := Siv.cmacWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
+  have := Siv.macWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
     (msg := []) (last := T) (by decide) (by omega_arith) (.inl rfl)
   simp only [List.nil_append] at this
   rw [Spec.Siv.ctxMac, this, Proof.Cmac.xor_comm]

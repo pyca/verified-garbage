@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
@@ -161,9 +162,9 @@ def ecbSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 0⟩, ⟨0x3000, 256⟩]
 
-theorem ecbP_implies (up : Bool) : (ecbP up).Implies (Spec.Cast5.ecbContract abi (dir up)) := by
+theorem ecbP_implies (up : Bool) : (ecbP up).Implies (Proof.Cast5.ecbRoundsContract abi (dir up)) := by
   cases up <;>
-  sig_implies [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, Spec.Cast5.ecbPost, abi, argRegs,
+  sig_implies [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, Proof.Cast5.ecbRoundsPost, abi, argRegs,
     ecbP, dir] [ecbSat] using ecbSat
 
 theorem ecbConsts_eq : ecbConsts = [(s1234Sym, s1234)] := rfl
@@ -193,13 +194,13 @@ theorem ecbSatMem_held : ∀ i < s1234.length,
 def ecbSatC : State :=
   { ecbSat with mem := ecbSatMem, rd := [⟨0x1000, 128⟩, ⟨0x100000, 4096⟩], syms := fun _ => 0x100000 }
 
-theorem ecb_sat (up : Bool) : (Spec.Cast5.ecbContract (abi.withConsts ecbConsts) (dir up)).pre ecbSatC := by
+theorem ecb_sat (up : Bool) : (Proof.Cast5.ecbRoundsContract (abi.withConsts ecbConsts) (dir up)).pre ecbSatC := by
   have hl : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
   have held := ecbSatMem_held
   rw [ecbConsts_eq]
   generalize s1234 = W at hl held ⊢
   generalize e : ecbSatC = s
-  sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, abi, argRegs, Abi.withConsts,
+  sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, abi, argRegs, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
@@ -211,7 +212,7 @@ theorem ecb_sat (up : Bool) : (Spec.Cast5.ecbContract (abi.withConsts ecbConsts)
   rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
 
 theorem ecbPC_implies (up : Bool) :
-    (ecbPC up).Implies (Spec.Cast5.ecbContract (abi.withConsts ecbConsts) (dir up)) :=
+    (ecbPC up).Implies (Proof.Cast5.ecbRoundsContract (abi.withConsts ecbConsts) (dir up)) :=
   { pre := fun _ hs => ⟨(ecbP_implies up).pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
     post := fun s s' hs hp => post_consts.mpr ((ecbP_implies up).post (stripConsts ecbConsts s) s'
       (pre_consts.mp hs).1 hp)
@@ -221,11 +222,11 @@ theorem ecbPC_implies (up : Bool) :
     sat := ⟨ecbSatC, ecb_sat up⟩ }
 
 theorem ecbEncrypt_verified :
-    Verified target ecbEncrypt (Spec.Cast5.ecbEncryptContract (abi.withConsts ecbConsts)) :=
+    Verified target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecb_ok true (by lit_decide) (by lit_decide)) ecbEncrypt_ct (ecbPC_implies true)
 
 theorem ecbDecrypt_verified :
-    Verified target ecbDecrypt (Spec.Cast5.ecbDecryptContract (abi.withConsts ecbConsts)) :=
+    Verified target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (abi.withConsts ecbConsts)) :=
   Verified.of_correct (ecb_ok false (by lit_decide) (by lit_decide)) ecbDecrypt_ct (ecbPC_implies false)
 
 end VG.Proof.Cast5.PPC64LE

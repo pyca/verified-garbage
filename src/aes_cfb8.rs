@@ -35,6 +35,7 @@ use crate::arch::aes_cfb8::{
 };
 use crate::arch::aes_cfb8::{vg_aes_cfb8_decrypt, vg_aes_cfb8_encrypt};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -102,9 +103,6 @@ fn select(f: Features) -> Backend {
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }
-
-/// The key is not 16, 24 or 32 bytes long.
-pub use crate::error::InvalidKeyLength;
 
 /// An expanded AES key, which serves both directions.
 struct Key {

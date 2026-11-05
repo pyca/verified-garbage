@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
@@ -593,25 +594,25 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.in
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem encryptBlocks_implies :
-    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).Implies (Spec.Aes.encryptBlocksContract AArch64.abi) := by
-  sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) := by
+  sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
     AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat
 
 theorem decryptBlocks_implies :
-    (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).Implies (Spec.Aes.decryptBlocksContract AArch64.abi) := by
-  sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+    (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).Implies (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) := by
+  sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
     AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat
 
 theorem encryptBlocks_verified :
-    Verified AArch64.target encryptBlocks (Spec.Aes.encryptBlocksContract AArch64.abi) :=
+    Verified AArch64.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
 
 theorem decryptBlocks_verified :
-    Verified AArch64.target decryptBlocks (Spec.Aes.decryptBlocksContract AArch64.abi) :=
+    Verified AArch64.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Aes.encryptBlocksContract AArch64.abi).pre s) (he : Exec isa encryptBlocks s t s') :
+    (hs : (Proof.Aes.encryptBlocksRoundsContract AArch64.abi).pre s) (he : Exec isa encryptBlocks s t s') :
     Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
   have hp := bpre_of (encryptBlocks_implies.pre s hs)
   simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
@@ -619,7 +620,7 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   exact fun i h => blocks_scratch encFn (fun _ hp => encSetup_ok hp) hp he (by simpa [Elem.size] using h)
 
 theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Aes.decryptBlocksContract AArch64.abi).pre s) (he : Exec isa decryptBlocks s t s') :
+    (hs : (Proof.Aes.decryptBlocksRoundsContract AArch64.abi).pre s) (he : Exec isa decryptBlocks s t s') :
     Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s' := by
   have hp := bpre_of (decryptBlocks_implies.pre s hs)
   simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,

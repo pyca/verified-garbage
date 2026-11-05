@@ -24,7 +24,7 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::rsa::pkcs1_enc::{Error, decrypt, encrypt};
+use verified_garbage::rsa::pkcs1_enc::Error;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation, TestFile, TestGroup};
@@ -57,16 +57,16 @@ fn check(name: &str) -> (usize, usize, usize) {
         let n = trim_zeros(&group.params.private_key.modulus.0);
         let id = test.tc_id;
         let ct = &test.case.ct.0;
-        let r = decrypt(key, ct);
+        let r = key.decrypt_pkcs1v15(ct);
         if test.result == Expectation::Valid {
             assert_eq!(r.as_deref(), Ok(&test.case.msg.0[..]), "{name} tcId {id}");
-            let again = encrypt(public, &test.case.msg.0).unwrap();
-            assert_eq!(decrypt(key, &again), r, "{name} tcId {id}");
+            let again = public.encrypt_pkcs1v15(&test.case.msg.0).unwrap();
+            assert_eq!(key.decrypt_pkcs1v15(&again), r, "{name} tcId {id}");
             valid.add();
         } else if test.flags.iter().any(|f| f == "InvalidPkcs1Padding") {
             let m = r.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert!(m.len() <= n.len() - 11, "{name} tcId {id}");
-            assert_eq!(decrypt(key, ct), Ok(m), "{name} tcId {id}");
+            assert_eq!(key.decrypt_pkcs1v15(ct), Ok(m), "{name} tcId {id}");
             padding.add();
         } else {
             let e = if ct.len() == n.len() {

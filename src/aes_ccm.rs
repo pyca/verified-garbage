@@ -43,6 +43,7 @@ use crate::arch::aes_ccm::{
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -160,8 +161,6 @@ macro_rules! assert_tag_length {
 /// Why an AES-CCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is not 7 to 13 bytes long (Appendix A.1).
     InvalidNonceLength,
     /// The payload is too long for the nonce: at least `2^(8 (15 − n))`
@@ -174,7 +173,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "invalid AES-CCM nonce length",
         InvalidTextLength => "AES-CCM text is too long for the nonce",
         TagMismatch => "AES-CCM tag does not match",
@@ -216,9 +214,9 @@ fn check(nonce: &[u8], len: usize) -> Result<(), Error> {
 
 impl AesCcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut k = AesCcm {
             schedule: [0; 240],
@@ -350,7 +348,7 @@ impl AesCcm {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCcm, Error};
+    use super::{AesCcm, Error, InvalidKeyLength};
 
     /// The `_aes_cbc` (or `_aesni_cbc`) instances run for more than 32 bytes
     /// of associated data and payload together, the others otherwise.
@@ -372,7 +370,7 @@ mod tests {
     fn key_lengths() {
         let key = [0u8; 40];
         for n in [0, 15, 17, 23, 25, 31, 33, 40] {
-            assert_eq!(AesCcm::new(&key[..n]).err(), Some(Error::InvalidKeyLength));
+            assert_eq!(AesCcm::new(&key[..n]).err(), Some(InvalidKeyLength));
         }
     }
 

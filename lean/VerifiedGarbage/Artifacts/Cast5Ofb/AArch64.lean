@@ -15,6 +15,6 @@ def artifacts : List Artifact := [
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.ofb
     stack := 112
-    verified := Proof.Cast5.AArch64.ofb_framed }]
+    verified := Proof.Cast5.ofb_keyed Proof.Cast5.AArch64.ofb_framed }]
 
 end VG.Artifacts.Cast5Ofb.AArch64

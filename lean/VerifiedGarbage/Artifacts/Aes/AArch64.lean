@@ -49,22 +49,22 @@ def artifacts : List Artifact := [
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.encryptBlocks
-    verified := Proof.Aes.AArch64.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.decryptBlocks
-    verified := Proof.Aes.AArch64.decryptBlocks_verified },
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.decryptBlocks_verified },
   Spec.Aes.encryptBlocksApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.encryptBlocks
-    verified := Proof.Aes.AArch64.Aese.encryptBlocks_verified
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.Aese.encryptBlocks_verified
     writtenOk := Proof.Aes.AArch64.Aese.encryptBlocks_written
     features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact AArch64.target {
     suffix := "_aes"
     written := [("scratch", 0)]
     code := Impl.Aes.AArch64.Aese.decryptBlocks
-    verified := Proof.Aes.AArch64.Aese.decryptBlocks_verified
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.Aese.decryptBlocks_verified
     writtenOk := Proof.Aes.AArch64.Aese.decryptBlocks_written
     features := ["aes"] }]
 

@@ -16,7 +16,8 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use verified_garbage::x25519::{Error, PrivateKey, PublicKey};
+use verified_garbage::error::XdhError;
+use verified_garbage::x25519::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -34,7 +35,7 @@ fn x25519_test() {
         let public: [u8; 32] = test.case.public.0.clone().try_into().unwrap();
         let shared: [u8; 32] = test.case.shared.0.clone().try_into().unwrap();
         let expected = if shared == [0; 32] {
-            Err(Error::ZeroSharedSecret)
+            Err(XdhError::ZeroSharedSecret)
         } else {
             Ok(shared)
         };

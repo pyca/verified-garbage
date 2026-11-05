@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::camellia_ofb::{CamelliaOfb, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::camellia_ofb::CamelliaOfb;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -46,7 +48,7 @@ fn errors() {
     for len in [0, 15, 17, 33] {
         assert_eq!(
             CamelliaOfb::new(&vec![0; len], &[0; 16]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

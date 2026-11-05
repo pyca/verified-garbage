@@ -16,24 +16,8 @@
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_ctr::vg_camellia_ctr;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Camellia-CTR operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16, 24 or 32 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Camellia key length",
-        IncompleteBlock => "Camellia-CTR input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Camellia key.
 struct Key {
@@ -58,7 +42,7 @@ pub struct CamelliaCtr {
 impl CamelliaCtr {
     /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
     /// 32-byte keys, 24), to process a message from the counter block `ctr`.
-    pub fn new(key: &[u8], ctr: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], ctr: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             counter: *ctr,
@@ -70,9 +54,9 @@ impl CamelliaCtr {
     /// anything if the buffer's length is not a multiple of 16: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.counter, buffer);
         Ok(())
@@ -88,11 +72,11 @@ impl CamelliaCtr {
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
-            _ => return Err(Error::InvalidKeyLength),
+            _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
         // SAFETY: the key has a validated length; key and schedule are separate

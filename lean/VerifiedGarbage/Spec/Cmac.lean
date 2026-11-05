@@ -98,10 +98,9 @@ def lastBlock (b : Nat) (k1 k2 last : List Byte) : List Byte :=
   if last.length = b then xor k1 last
   else xor k2 (last ++ [0x80] ++ zeros (b - last.length - 1))
 
-/-- §6.2, `CMAC(K, M, Tlen)` with `Tlen = b` (the whole of `Cₙ`; `mac` is
-the MAC of step 7 truncated to `t` bytes), for the message `M` (`m`):
+/-- §6.2 steps 2–6, `Cₙ` for the message `M` (`m`) with the subkeys `K1` and
+`K2` that step 1 produced given (`k1`, `k2`):
 ```
-1. Apply the subkey generation process in Sect. 6.1 to K to produce K1 and K2.
 2. If Mlen = 0, let n = 1; else, let n = ⌈Mlen/b⌉.
 3. Let M1, M2, ... , Mn-1, Mn* denote the unique sequence of bit strings such that
    M = M1 ‖ M2 ‖ ... ‖ Mn-1 ‖ Mn*, where M1, M2,..., Mn-1 are complete blocks.
@@ -109,14 +108,29 @@ the MAC of step 7 truncated to `t` bytes), for the message `M` (`m`):
    else, let Mn = K2 ⊕ (Mn* ‖ 10ʲ), where j = nb - Mlen - 1.
 5. Let C0 = 0ᵇ.
 6. For i = 1 to n, let Ci = CIPH_K(Ci-1 ⊕ Mi).
-7. Let T = MSB_Tlen(Cn).
-``` -/
-def macFull (ciph : Cipher) (b : Nat) (m : List Byte) : List Byte :=
-  let (k1, k2) := subkeys ciph b
+```
+An implementation that computes the subkeys once per key and stores them
+computes this with the stored ones. -/
+def macWith (ciph : Cipher) (b : Nat) (k1 k2 m : List Byte) : List Byte :=
   let n := if m.length = 0 then 1 else (m.length + b - 1) / b
   let ms := (List.range (n - 1)).map fun i => (m.drop (b * i)).take b
   let mn := lastBlock b k1 k2 (m.drop (b * (n - 1)))
   chain ciph (zeros b) (ms ++ [mn])
+
+/-- §6.2, `CMAC(K, M, Tlen)` with `Tlen = b` (the whole of `Cₙ`; `mac` is
+the MAC of step 7 truncated to `t` bytes), for the message `M` (`m`):
+```
+1. Apply the subkey generation process in Sect. 6.1 to K to produce K1 and K2.
+2.–6. as in `macWith`
+7. Let T = MSB_Tlen(Cn).
+``` -/
+def macFull (ciph : Cipher) (b : Nat) (m : List Byte) : List Byte :=
+  let (k1, k2) := subkeys ciph b
+  macWith ciph b k1 k2 m
+
+/-- The MAC is `macWith` with the subkeys of step 1. -/
+theorem macFull_eq (ciph : Cipher) (b : Nat) (m : List Byte) :
+    macFull ciph b m = macWith ciph b (subkeys ciph b).1 (subkeys ciph b).2 m := rfl
 
 /-- §6.2 step 7, the MAC `T = MSB_Tlen(Cₙ)` of `t ≤ b` bytes. -/
 def mac (ciph : Cipher) (b t : Nat) (m : List Byte) : List Byte :=

@@ -7,7 +7,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cast5_cbc::{Cast5CbcDecryptor, Cast5CbcEncryptor, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::cast5_cbc::{Cast5CbcDecryptor, Cast5CbcEncryptor};
 
 #[test]
 fn vectors() {
@@ -42,18 +44,18 @@ fn vectors() {
 fn errors_and_empty_input() {
     assert!(matches!(
         Cast5CbcEncryptor::new(&[0; 4], &[0; 8]),
-        Err(Error::InvalidKeyLength)
+        Err(InvalidKeyLength)
     ));
     assert!(matches!(
         Cast5CbcDecryptor::new(&[0; 4], &[0; 8]),
-        Err(Error::InvalidKeyLength)
+        Err(InvalidKeyLength)
     ));
     let (key, iv) = ([7; 10], [0x5a; 8]);
     let mut encryptor = Cast5CbcEncryptor::new(&key, &iv).unwrap();
     let mut decryptor = Cast5CbcDecryptor::new(&key, &iv).unwrap();
     let mut data = [0xa5; 12];
-    assert_eq!(encryptor.encrypt(&mut data), Err(Error::IncompleteBlock));
-    assert_eq!(decryptor.decrypt(&mut data), Err(Error::IncompleteBlock));
+    assert_eq!(encryptor.encrypt(&mut data), Err(IncompleteBlock));
+    assert_eq!(decryptor.decrypt(&mut data), Err(IncompleteBlock));
     assert_eq!(data, [0xa5; 12]);
     encryptor.encrypt(&mut []).unwrap();
     decryptor.decrypt(&mut []).unwrap();

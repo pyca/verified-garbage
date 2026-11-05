@@ -13,23 +13,8 @@
 ))]
 
 use crate::arch::idea::{vg_idea_ecb, vg_idea_expand_key, vg_idea_invert_key};
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why an IDEA ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of eight bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid IDEA key length",
-        IncompleteBlock => "IDEA-ECB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded IDEA key for ECB encryption and decryption: its encryption
 /// and decryption subkeys. No padding is added or removed.
@@ -40,8 +25,8 @@ pub struct IdeaEcb {
 
 impl IdeaEcb {
     /// Expands a 16-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut encrypt = [0; 104];
         let mut decrypt = [0; 104];
         // SAFETY: the key and both schedules are separate valid buffers of
@@ -55,20 +40,20 @@ impl IdeaEcb {
 
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         crypt(&self.encrypt, buffer)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         crypt(&self.decrypt, buffer)
     }
 }
 
-fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), Error> {
+fn crypt(schedule: &[u8; 104], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
     if !buffer.len().is_multiple_of(8) {
-        return Err(Error::IncompleteBlock);
+        return Err(IncompleteBlock);
     }
     // SAFETY: buffer contains complete eight-byte blocks, including zero
     // blocks. The buffer and schedule are separate valid objects and do not

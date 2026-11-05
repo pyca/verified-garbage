@@ -22,7 +22,7 @@ open VG VG.X86
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly)
 open VG.Impl.RsaKeyGen.X86.Search
 open VG.Impl.Mont.X86 (at_)
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult candidateOp)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult candidateOp)
 
 /-- The search from octet `used` of the tape, with `remaining` counted
 candidates left. -/
@@ -252,7 +252,7 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
     have hu2 := hu'.keep k2 sy2 hm2
     have e : final = if primeEntropy p.len ≤ p.randLen - used then
         ⟨.exhausted, used, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩
-        else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used,
+        else ⟨.entropy k (p.randLen - used), used,
           tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl

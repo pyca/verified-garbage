@@ -76,7 +76,7 @@ def sel (d a b : Reg) (lt : Bool) : List Instr :=
     (if lt then [.logic .xor d a b, .logic .and d d .r0, .logic .xor d d b]
       else [.logic .xor d a b, .logic .and d d .r0, .logic .xor d d a])
 
-/-- The next request, `parameterRequest`: twice the larger of the octets
+/-- The next request, `VG.Proof.Ffdh.parameterRequest`: twice the larger of the octets
 left and 256 per octet of p, at most the entropy cap. -/
 def request : List Instr :=
   [ldf .r3 11, ldf .r4 6, ldf .r5 2, .lsl .r4 .r4 8] ++ sel .r6 .r3 .r4 false ++ [.add .r6 .r6 .r6] ++

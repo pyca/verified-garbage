@@ -17,7 +17,7 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesOfb.X86_64.crypt v.enc
     stack := 8
-    verified := crypt_verified v
+    verified := Proof.AesOfb.keyed (crypt_verified v)
     spSafe := crypt_spSafe v
     features := v.features }]
 

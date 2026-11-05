@@ -40,6 +40,7 @@ use crate::arch::aes_gcm_siv::{
     vg_aes_gcm_siv_seal_vaes_vpclmul_avx512, vg_aes_gcm_siv_seal_vpclmul,
 };
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
@@ -49,8 +50,6 @@ const MAX_LEN: u64 = 1 << 36;
 /// Why an AES-GCM-SIV operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16 or 32 bytes long.
-    InvalidKeyLength,
     /// The plaintext or ciphertext is longer than `2^36` bytes (§6).
     InvalidTextLength,
     /// The additional data is longer than `2^36` bytes (§6).
@@ -62,7 +61,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES-GCM-SIV key length",
         InvalidTextLength => "AES-GCM-SIV text is too long",
         InvalidAadLength => "AES-GCM-SIV additional data is too long",
         TagMismatch => "AES-GCM-SIV tag does not match",
@@ -101,9 +99,9 @@ fn check(aad_len: u64, len: u64) -> Result<(), Error> {
 impl AesGcmSiv {
     /// Prepares the key-generating key `key`, which must be 16 or 32 bytes
     /// long (AEAD_AES_128_GCM_SIV, AEAD_AES_256_GCM_SIV).
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut k = AesGcmSiv {
             schedule: [0; 240],
@@ -219,7 +217,7 @@ impl AesGcmSiv {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcmSiv, Error, MAX_LEN, check};
+    use super::{AesGcmSiv, Error, InvalidKeyLength, MAX_LEN, check};
     use crate::aes_gcm::{Backend, instance};
     #[cfg(target_arch = "aarch64")]
     use crate::arch::aes_gcm_siv::{
@@ -281,10 +279,7 @@ mod tests {
     fn errors() {
         let key = [0u8; 40];
         for n in [0, 15, 17, 24, 31, 33, 40] {
-            assert_eq!(
-                AesGcmSiv::new(&key[..n]).err(),
-                Some(Error::InvalidKeyLength)
-            );
+            assert_eq!(AesGcmSiv::new(&key[..n]).err(), Some(InvalidKeyLength));
         }
     }
 }

@@ -79,14 +79,23 @@ the forward cipher's, which the inverse cipher uses in the reverse order). -/
 def aesInvWith (nr : Nat) (w : List Byte) : Cipher := fun x =>
   (Aes.invCipher nr w (Vector.ofFn fun i => x.getD i 0)).toList
 
+/-- `CIPH_K` for AES with the key `key` (16, 24 or 32 bytes): its number of
+rounds and its key schedule. -/
+def aes (key : List Byte) : Cipher := aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
+
+/-- `CIPH⁻¹_K` for AES with the key `key` (16, 24 or 32 bytes): its number of
+rounds and its key schedule. -/
+def aesInv (key : List Byte) : Cipher :=
+  aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
+
 /-- AES-CBC encryption of the plaintext `pt` (a multiple of 16 bytes) under
 the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
 def aesCbcEncrypt (key iv pt : List Byte) : List Byte :=
-  (encrypt (aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv (blocks pt)).flatten
+  (encrypt (aes key) iv (blocks pt)).flatten
 
 /-- AES-CBC decryption of the ciphertext `ct` (a multiple of 16 bytes)
 under the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
 def aesCbcDecrypt (key iv ct : List Byte) : List Byte :=
-  (decrypt (aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)) iv (blocks ct)).flatten
+  (decrypt (aesInv key) iv (blocks ct)).flatten
 
 end VG.Spec.Cbc

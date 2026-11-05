@@ -98,7 +98,7 @@ const KNOWN_ANSWER_FILLS: usize = 1;
 fn cavp_generated_parameters() {
     for v in prime_vectors() {
         let mut tape = 0;
-        let parameters = Parameters::generate_with_rng(v.bits, |buf| {
+        let parameters = Parameters::generate_from(v.bits, |buf| {
             fill_known_answer(&v, tape, buf);
             tape += 1;
             Ok(())
@@ -132,7 +132,7 @@ fn parameter_generation_errors() {
     // then refilled once before the 0x02 seeds below exhaust the search.
     for fail_at in 0..FILLS {
         let mut fills = 0;
-        let result = Parameters::generate_with_rng(1024, |buf| {
+        let result = Parameters::generate_from(1024, |buf| {
             let fail = fills == fail_at;
             fills += 1;
             if fail {
@@ -148,7 +148,7 @@ fn parameter_generation_errors() {
     // Repeated 0x02 seeds produce a subgroup candidate divisible by 3.
     // The verified search exhausts the seed tape and reports failure.
     assert_eq!(
-        Parameters::generate_with_rng(1024, |buf| {
+        Parameters::generate_from(1024, |buf| {
             buf.fill(2);
             Ok(())
         })

@@ -14,7 +14,8 @@
 
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
-use verified_garbage::camellia_ctr::{CamelliaCtr, Error};
+use verified_garbage::camellia_ctr::CamelliaCtr;
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
 /// Checks a message truncated, in pieces and with a partial last block
 /// (`crate::modes::check`).
@@ -96,7 +97,7 @@ fn limits_and_lengths() {
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(
                 CamelliaCtr::new(&key, &ctr),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             continue;
         }
@@ -104,7 +105,7 @@ fn limits_and_lengths() {
         let mut ctx = CamelliaCtr::new(&key, &ctr).unwrap();
         ctx.apply_keystream(&mut []).unwrap();
         let mut data = [0xa5; 20];
-        assert_eq!(ctx.apply_keystream(&mut data), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.apply_keystream(&mut data), Err(IncompleteBlock));
         assert_eq!(data, [0xa5; 20]);
         let mut expected = data;
         CamelliaCtr::new(&key, &ctr)

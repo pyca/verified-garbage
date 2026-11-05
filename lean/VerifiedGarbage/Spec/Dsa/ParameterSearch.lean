@@ -60,18 +60,13 @@ def generatorAttempts : Nat := 128
 modulus's width. -/
 def parameterEntropy (pLen : Nat) : Nat := 32769 * pLen
 
-/-- The next tape's length when `available` octets did not hold a whole seed
-(`Entropy.request`): at first `512 * pLen`, enough for a seed, the tests of
-its `p` candidates and the 128 witnesses of `p`'s, most of the time. -/
-def parameterRequest (pLen available : Nat) : Nat :=
-  Entropy.request (256 * pLen) (parameterEntropy pLen) available
-
-/-- The search's four public words: the seeds it may still reject, the
-modulus's width, the entropy budget and the first tape's length; `none` for
-an unsupported width. -/
+/-- The search's first three public words: the seeds it may still reject,
+the modulus's width and the entropy budget (the fourth, the first tape's
+length, is the code's choice: `parameterInitContract`); `none` for an
+unsupported width. -/
 def parameterInit (pLen : Nat) : Option (List Nat) :=
   if generationPLenValid pLen then
-    some [parameterSeeds, pLen, parameterEntropy pLen, parameterRequest pLen 0]
+    some [parameterSeeds, pLen, parameterEntropy pLen]
   else none
 
 /-- A.2.1 over `h` candidates of `pLen` octets drawn from the tape, at most
@@ -129,7 +124,7 @@ def parameterSearch (pLen : Nat) : (remaining : Nat) → Rand → ParameterSearc
     match seedCandidate pLen (generationQLen pLen) rand with
     | none =>
       if parameterEntropy pLen ≤ rand.length then ⟨.exhausted, 0, []⟩
-      else ⟨.entropy (remaining + 1) (parameterRequest pLen rand.length), 0, []⟩
+      else ⟨.entropy (remaining + 1) rand.length, 0, []⟩
     | some (some a, rest) => ⟨.accepted a, rand.length - rest.length, []⟩
     | some (none, rest) =>
       (parameterSearch pLen remaining rest).consume (rand.length - rest.length) []

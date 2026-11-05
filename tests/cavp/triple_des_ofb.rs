@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_ofb::{Error, TripleDesOfb};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::triple_des_ofb::TripleDesOfb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -65,7 +67,7 @@ fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert_eq!(
             TripleDesOfb::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

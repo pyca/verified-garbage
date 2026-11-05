@@ -42,10 +42,10 @@ pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::oaep::{Hash, decrypt, encrypt, encrypt_with_rng};
+    use verified_garbage::rsa::oaep::Hash;
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // Each supported hash function, by the name its modules have and
     // OpenSSL's, and aws-lc-rs's algorithm with MGF1 over the same hash, if
@@ -76,9 +76,8 @@ pub fn bench(c: &mut Criterion) {
     ];
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537, generated
     // once; the ids' size is the modulus' bytes. Each library loads the key
-    // once, outside the measurements. verified-garbage takes its seed from a
-    // fixed tape (`encrypt` but for `getrandom`); OpenSSL and aws-lc-rs draw
-    // a fresh seed per encryption.
+    // once, outside the measurements. Each draws a fresh seed per
+    // encryption.
     // aws-lc-rs sets up its `EVP_PKEY_CTX` in every operation, where OpenSSL
     // reuses one.
     let keys: Vec<_> = [2048, 3072, 4096]
@@ -128,12 +127,9 @@ pub fn bench(c: &mut Criterion) {
             let mut out = vec![0; k];
             group.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    let mut tape = fixed_tape(k as u64);
-                    encrypt_with_rng(black_box(&vg_key), black_box(&msg), *h, *g, b"", |buf| {
-                        tape(buf);
-                        Ok(())
-                    })
-                    .unwrap()
+                    black_box(&vg_key)
+                        .encrypt_oaep(black_box(&msg), *h, *g, b"")
+                        .unwrap()
                 })
             });
             group.bench(BenchmarkId::new(OPENSSL, k), |b| {
@@ -156,7 +152,7 @@ pub fn bench(c: &mut Criterion) {
                     &key.iqmp().unwrap().to_vec(),
                 )
                 .unwrap();
-                assert_eq!(decrypt(&vg_private, ct, *h, *g, b"").unwrap(), msg);
+                assert_eq!(vg_private.decrypt_oaep(ct, *h, *g, b"").unwrap(), msg);
                 group.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| {
                         black_box(&aws_key)
@@ -192,10 +188,17 @@ pub fn bench(c: &mut Criterion) {
             dec.set_rsa_padding(Padding::PKCS1_OAEP).unwrap();
             dec.set_rsa_oaep_md(h_md).unwrap();
             dec.set_rsa_mgf1_md(g_md).unwrap();
-            let ct = encrypt(&PublicKey::new(&n, &e).unwrap(), &msg, *h, *g, b"").unwrap();
+            let ct = PublicKey::new(&n, &e)
+                .unwrap()
+                .encrypt_oaep(&msg, *h, *g, b"")
+                .unwrap();
             let mut out = vec![0; k];
             group.bench(BenchmarkId::new(VG, k), |b| {
-                b.iter(|| decrypt(black_box(&vg_key), black_box(&ct), *h, *g, b"").unwrap())
+                b.iter(|| {
+                    black_box(&vg_key)
+                        .decrypt_oaep(black_box(&ct), *h, *g, b"")
+                        .unwrap()
+                })
             });
             group.bench(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| black_box(&dec).decrypt(black_box(&ct), &mut out).unwrap())

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation
+public import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: it names no ISA, for every target's prime search
@@ -145,7 +146,7 @@ theorem search_short {remaining : Nat} {r : Rand} (hr : remaining ≠ 0)
     (hc : candidateOp L eB pB r = none) :
     primeSearch L eB pB remaining r =
       if primeEntropy L ≤ r.length then ⟨.exhausted, 0, entry L eB pB r⟩
-      else ⟨.entropy remaining (primeRequest L r.length), 0, entry L eB pB r⟩ := by
+      else ⟨.entropy remaining r.length, 0, entry L eB pB r⟩ := by
   rw [primeSearch, ite_eq_right_of_eq_false _ _ (eq_false hr)]
   simp only [hc]
 
@@ -178,6 +179,41 @@ theorem search_rejected {remaining : Nat} {r rest : Rand} (hr : remaining ≠ 0)
 theorem consume_consume (r : PrimeSearchResult) (a b : Nat) (x y : List Nat) :
     (r.consume b y).consume a x = r.consume (a + b) (x ++ y) := by
   simp only [Spec.Entropy.Result.consume, Nat.add_assoc, List.append_assoc]
+
+/-! ## The request -/
+
+/-- Asking for more entropy, the search had fewer octets left than its budget. -/
+theorem search_available_lt (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand) :
+    ∀ k a, (primeSearch L eB pB remaining r).outcome = .entropy k a → a < primeEntropy L := by
+  rw [primeSearch]
+  split
+  · intro k a h; cases h
+  · simp only
+    split
+    · split
+      · intro k a h; cases h
+      · rename_i hlt
+        intro k a h
+        simp only [Spec.Entropy.Outcome.entropy.injEq] at h
+        omega
+    · intro k a h; cases h
+    · split
+      · rename_i hlt
+        exact search_available_lt L eB pB remaining _
+      · intro k a h; cases h
+    · split
+      · rename_i hlt
+        exact search_available_lt L eB pB (remaining - 1) _
+      · intro k a h; cases h
+termination_by r.length
+
+/-- The code's request after any search is one the contract allows. -/
+theorem search_requests (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand) :
+    (primeSearch L eB pB remaining r).Requests (primeEntropy L)
+      (requested L (primeSearch L eB pB remaining r)) :=
+  Entropy.requested_requests fun k a h => by
+    have hlt := search_available_lt L eB pB remaining r k a h
+    exact Entropy.request_valid (by unfold primeEntropy at hlt; omega) hlt
 
 /-! ## What the trace says -/
 

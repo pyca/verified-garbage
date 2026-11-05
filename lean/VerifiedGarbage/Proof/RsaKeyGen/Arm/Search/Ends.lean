@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Leaf
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -19,7 +20,7 @@ open VG VG.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 open VG.Proof.Ffdh.Arm (withRest_all)
 open VG.Impl.RsaKeyGen.Arm.Search
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult)
 
 theorem terminal_ok (s : State) (status : Nat) (hs : status < 256) :
     WP isa (.block (terminal status)) s fun t =>
@@ -146,7 +147,7 @@ theorem request_ok {s : State} {L left : Nat} (hL : L ≤ 512) (hleft : left ≤
     (k.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans
       ((k4.mono (by decide)).trans (kt.mono (by decide)))))⟩
   rw [h10]
-  unfold primeRequest Spec.Entropy.request primeEntropy
+  unfold primeRequest Entropy.request primeEntropy
   congr 2
 
 namespace SearchBase
@@ -199,7 +200,7 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
     (hk : k ≤ p.remaining)
     (hout : Spec.Rsa.bytesAt s.mem (State.addr p.op) p.len = List.replicate p.len 0) (tr : List Nat) :
     WP isa short s (SearchDone p o (if primeEntropy p.len ≤ p.randLen - used then ⟨.exhausted, used, tr⟩
-      else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used, tr⟩)) := by
+      else ⟨.entropy k (p.randLen - used), used, tr⟩)) := by
   have hi := h.input
   have f := hi.facts
   have hl := f.valid
@@ -231,6 +232,7 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
       fun t ⟨⟨h10, h11, hmt⟩, kt⟩ => ⟨hu'.keep kt hmt, (kt.gpr .r8 (by decide)).trans h8',
         (kt.gpr .r9 (by decide)).trans ((k'.gpr .r9 (by decide)).trans h9), h10, h11,
         by rw [hmt, hm]; exact hout, hu, hk, by
-          unfold primeRequest Spec.Entropy.request; exact Nat.min_le_right _ _⟩
+          show primeRequest p.len (p.randLen - used) ≤ _
+          unfold primeRequest Entropy.request; exact Nat.min_le_right _ _⟩
 
 end VG.Proof.RsaKeyGen.Arm.Search

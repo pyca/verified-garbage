@@ -10,7 +10,6 @@
     target_arch = "riscv64"
 ))]
 
-use super::{InvalidKeyLength, InvalidMac};
 use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::cmac_aes::{
@@ -32,6 +31,7 @@ use crate::arch::cmac_aes::{
 };
 use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
 use crate::cpu::detected;
+use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -269,8 +269,8 @@ impl AesCmac {
 #[cfg(test)]
 mod tests {
     use super::{AesCmac, Backend, select};
-    use crate::cmac::InvalidKeyLength;
     use crate::cpu::detected;
+    use crate::error::InvalidKeyLength;
     use verified_garbage_cpu::Features;
 
     /// Keys of other lengths are rejected.

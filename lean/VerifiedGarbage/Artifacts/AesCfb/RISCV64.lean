@@ -15,9 +15,9 @@ open VG.Proof.AesCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact RISCV64.target {
     code := Impl.AesCfb.RISCV64.encrypt
-    verified := encrypt_verified },
+    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
   Spec.Cfb.aesDecryptApi.artifact RISCV64.target {
     code := Impl.AesCfb.RISCV64.decrypt
-    verified := decrypt_verified }]
+    verified := Proof.AesCfb.decrypt_keyed decrypt_verified }]
 
 end VG.Artifacts.AesCfb.RISCV64

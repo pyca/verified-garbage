@@ -10,9 +10,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_cfb8::{
-    InvalidKeyLength, TripleDesCfb8Decryptor, TripleDesCfb8Encryptor,
-};
+use verified_garbage::error::InvalidKeyLength;
+use verified_garbage::triple_des_cfb8::{TripleDesCfb8Decryptor, TripleDesCfb8Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 

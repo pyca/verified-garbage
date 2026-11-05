@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Spec.Cbc
 public import VerifiedGarbage.TCB.Artifact
 
@@ -45,9 +46,9 @@ def aesSig : Sig where
     ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n"),
     ("scratch", .array true .u64 272)]
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their CBC encryption (§6.2) by AES with `w`, from the chaining value
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their CBC encryption (§6.2) by AES with `K`, from the chaining value
 at `iv`, and the chaining value with the last ciphertext block (unchanged
 if `n = 0`). -/
 def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -55,14 +56,15 @@ def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds iv data n _scratch m m' _ =>
-      let ciph := aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      let cs := encrypt ciph (Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
-      blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciph := aes key
+        let cs := encrypt ciph (Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
+        blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
     (stack := stack)
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their CBC decryption (§6.2) by AES with `w`, from the chaining value
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their CBC decryption (§6.2) by AES with `K`, from the chaining value
 at `iv`, and the chaining value with the last ciphertext block, the last
 block at `data` on entry (unchanged if `n = 0`). -/
 def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -70,10 +72,11 @@ def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds iv data n _scratch m m' _ =>
-      let ciphInv := aesInvWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      let cs := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = decrypt ciphInv (Aes.bytesAt m iv 16) cs ∧
-        Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciphInv := aesInv key
+        let cs := blocksAt m data n.toNat
+        blocksAt m' data n.toNat = decrypt ciphInv (Aes.bytesAt m iv 16) cs ∧
+          Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
     (stack := stack)
 
 /-- The `# Safety` items the two functions share. -/

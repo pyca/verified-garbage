@@ -24,7 +24,7 @@ theorem parameterInit_spec (bits gen : BitVec 32) :
     Spec.Ffdh.parameterInit bits.toNat gen.toNat =
       if 512 ≤ bits.toNat ∧ bits.toNat ≤ 8192 ∧ (gen = 2 ∨ gen = 5) then
         some [Spec.Ffdh.parameterAttempts bits.toNat, (bits.toNat + 7) / 8,
-          Spec.Ffdh.parameterEntropy bits.toNat, 512 * ((bits.toNat + 7) / 8)]
+          Spec.Ffdh.parameterEntropy bits.toNat]
       else none := by
   simp only [Spec.Ffdh.parameterInit, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq,
     beq_iff_eq, generatorNat gen 2 (by decide), generatorNat gen 5 (by decide), and_assoc]

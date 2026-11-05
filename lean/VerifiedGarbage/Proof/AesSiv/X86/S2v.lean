@@ -201,7 +201,7 @@ theorem ctxMac_zero (m : Mem) (C : Addr) (R : Nat) :
     Spec.Siv.ctxMac m C R Spec.Siv.zero = Spec.Cmac.aesWith R (bytesAt m C (16 * (R + 1)))
       (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (bytesAt m (C + BitVec.ofNat 64 240) 16)
         (bytesAt m (C + BitVec.ofNat 64 256) 16) (Spec.Cmac.zeros 16)) (Spec.Cmac.zeros 16)) := by
-  have := Siv.cmacWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
+  have := Siv.macWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
     (msg := []) (last := Spec.Cmac.zeros 16) (by decide) (by decide) (.inl rfl)
   simp only [List.nil_append] at this
   rw [Spec.Siv.ctxMac, zero_eq, this, Proof.Cmac.xor_comm]

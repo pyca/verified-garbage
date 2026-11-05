@@ -13,24 +13,8 @@
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_ofb::vg_triple_des_ofb;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Triple DES-OFB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 or 24 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Triple DES key length",
-        IncompleteBlock => "Triple DES-OFB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Triple DES key.
 struct Key {
@@ -55,7 +39,7 @@ impl TripleDesOfb {
     /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
     /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit
     /// is ignored), to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -67,9 +51,9 @@ impl TripleDesOfb {
     /// anything if the buffer's length is not a multiple of 8: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.iv, buffer);
         Ok(())
@@ -92,9 +76,9 @@ impl Drop for TripleDesOfb {
 
 impl Key {
     /// Expands a 16- or 24-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate

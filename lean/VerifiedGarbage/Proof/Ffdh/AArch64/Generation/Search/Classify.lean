@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Call
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.Omega
@@ -277,7 +278,7 @@ theorem request_value {p : SPub} {original s : State} {used k : Nat} (h : SLive 
   simp only [List.take_succ_cons, List.take_zero]
   brun [ldf, h.x19, hv2, hv6, hv11, a.ld 16 (by decide), a.ld 48 (by decide), a.ld 88 (by decide),
     shift_ofNat, subs_ge (show p.randLen - used < 2 ^ 64 by omega) (show p.len * 2 ^ 8 < 2 ^ 64 by omega)]
-  unfold parameterRequest
+  unfold parameterRequest Entropy.request
   rw [← hl]
   have hA : p.randLen - used ≤ parameterEntropy p.bits := by omega
   generalize p.randLen - used = A at *

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Finish
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The parameter search against its contract (x86)
@@ -43,7 +44,7 @@ theorem correct (s : State) (h : contract.pre s) :
   unfold Output at out
   sig_post [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
-  refine ⟨?_, ?_, F.used, F.policy⟩
+  refine ⟨?_, ?_, F.used, _, F.policy, SievedGeneration.search_requests _ _ _ _⟩
   · rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega)]
     rfl
   · show Spec.Rsa.bytesAt t.mem ((arg s 0).setWidth 64) (arg s 1).toNat = (match searchOf s with

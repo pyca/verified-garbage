@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Step
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
@@ -59,7 +60,7 @@ end SearchInput
 /-- The public words to the state, and the octets consumed to `used`. -/
 def finished (p : SearchPublic) (m : Mem) (r : PrimeSearchResult) : Mem :=
   (SearchInit.written m p.stp [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
-    BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 r.requested]).writeW p.up (BitVec.ofNat 64 r.used)
+    BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 (requested p.len r)]).writeW p.up (BitVec.ofNat 64 r.used)
 
 /-- The registers `finish` writes. -/
 abbrev finishRegs : List Reg := [.a0, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0]
@@ -151,14 +152,14 @@ theorem finished_used {p : SearchPublic} (m : Mem) (r : PrimeSearchResult) :
 theorem finished_state {p : SearchPublic} {original : State} (h : SearchInput p original) (m : Mem)
     (r : PrimeSearchResult) :
     Spec.Rsa.wordsAt (finished p m r) p.stp 4 = [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
-      BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 r.requested] := by
+      BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 (requested p.len r)] := by
   have hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
   have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
   have hsu := h.state_used
   rw [hst, hus] at hsu
   have hpast (d : Nat) (hd : d + 8 ≤ 32) : word (finished p m r) p.stp d =
       word (SearchInit.written m p.stp [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
-        BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 r.requested]) p.stp d :=
+        BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 (requested p.len r)]) p.stp d :=
     read_past hsu (Offset.contains_base _ hd (by omega))
       (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; decide)
       (by show 8 ≤ 2 ^ 64; decide) _
@@ -189,7 +190,9 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     exact hd.output
   · change Spec.Rsa.wordsAt q.mem p.up 1 = _
     rw [hmq, finished_used]
-  · change Spec.Rsa.wordsAt q.mem p.stp 4 = _
+  · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
+      (searchRemaining s) (searchRand s)⟩
+    change Spec.Rsa.wordsAt q.mem p.stp 4 = _
     rw [hmq, finished_state hp]
     rfl
   · intro reg hreg

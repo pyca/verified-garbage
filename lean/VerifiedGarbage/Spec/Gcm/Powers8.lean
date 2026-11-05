@@ -10,8 +10,8 @@ key's hash subkey, kept apart from its 256-byte key context (`KeyRepr`): pair
 `k`, at byte `32 k`, is `preparedPower(H^(2k+2))` then
 `preparedPower(H^(2k+1))`, each stored little-endian. This is the layout of
 bytes 256 through 383 of `PreparedPowersRepr`'s 1024-byte format, in a buffer
-of its own. It is a storage convention, not a change to GCM's field
-arithmetic (NIST SP 800-38D §6.3).
+of its own (`PreparedPowersRepr.powers8`). It is a storage convention, not a
+change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
 No function computes the buffer on its own. Each `*_store_powers` function is
 a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, or GHASH over whole blocks), with its
@@ -44,6 +44,17 @@ def Powers8Repr (m : Mem) (pw : Addr) (H : Block) : Prop :=
   ∀ k < 4,
     m.readW (pw + BitVec.ofNat 64 (32 * k)) 128 = preparedPower (hpow H (2 * k + 2)) ∧
     m.readW (pw + BitVec.ofNat 64 (16 + 32 * k)) 128 = preparedPower (hpow H (2 * k + 1))
+
+/-- The layout is that of bytes 256 through 383 of a context `vg_aes_gcm_prepare`
+wrote, with the powers of its hash subkey. -/
+theorem PreparedPowersRepr.powers8 {m : Mem} {p : Addr} (h : PreparedPowersRepr m p) :
+    Powers8Repr m (p + 256) (ctxH m p) := by
+  intro k hk
+  have e : ∀ n, p + BitVec.ofNat 64 (256 + n) = p + 256 + BitVec.ofNat 64 n := fun n => by
+    rw [BitVec.ofNat_add, BitVec.add_assoc]; rfl
+  have h₁ := h k (by omega)
+  rw [e, show 272 + 32 * k = 256 + (16 + 32 * k) by omega, e] at h₁
+  exact h₁
 
 /-- The powers' buffer written by the `*_store_powers` functions. -/
 def storePowersParam : String × Param := ("pw", .array true .u64 16)

@@ -44,7 +44,7 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
     fn hmac_mac(key: &[u8], data: &[u8]) -> Self::Output;
 }
 
-pub use crate::invalid_mac::InvalidMac;
+use crate::error::InvalidMac;
 
 /// An incremental HMAC computation with the hash function `H`.
 #[derive(Clone)]

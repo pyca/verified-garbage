@@ -21,7 +21,9 @@ def parameterInitContract {M : ISA} (A : Abi M) : Contract M :=
     (post := fun state bits generator _ m' r =>
       match parameterInit bits.toNat generator.toNat with
       | none => r.toNat = 0 ∧ wordsAt m' state 4 = List.replicate 4 0
-      | some values => r.toNat = 1 ∧ wordsAt m' state 4 = values.map (BitVec.ofNat 64))
+      | some values => r.toNat = 1 ∧ ∃ first,
+        wordsAt m' state 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+        Entropy.RequestValid (parameterEntropy bits.toNat) 0 first)
 
 def parameterInitApi : Api where
   module := "ffdh"

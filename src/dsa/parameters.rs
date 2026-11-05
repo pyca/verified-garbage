@@ -57,7 +57,7 @@ impl Parameters {
     /// contract treats the entropy tapes as public: search timing can depend
     /// on their contents. These are domain parameters shared between keys.
     pub fn generate(bits: usize) -> Result<Self, Error> {
-        Self::generate_with_rng(bits, |buf| {
+        Self::generate_from(bits, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
         })
     }
@@ -68,8 +68,18 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The result is generated as FIPS
     /// 186-4 requires only if `random` supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng(
+        bits: usize,
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+    ) -> Result<Self, Error> {
+        Self::generate_from(bits, random)
+    }
+
+    /// [`generate`](Self::generate), with its entropy tapes filled by
+    /// `random`.
+    fn generate_from(
         bits: usize,
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {

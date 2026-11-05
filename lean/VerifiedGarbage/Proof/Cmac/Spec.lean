@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # CMAC: lemmas about the specification
 
-* `macFull_split`: the MAC of a message of whole blocks followed by its last
+* `macWith_split` and `macFull_split`: the MAC (with given subkeys, or its own) of a message of whole blocks followed by its last
   bytes `Mₙ*` (at most a block, and some unless the message is empty) is the
   cipher of the chaining value of the whole blocks XORed with `Mₙ` (§6.2
   steps 3–6), which is how `update` and `finalize` compute it.
@@ -62,12 +62,12 @@ theorem blocks_eq {msg : List Byte} (hm : msg.length % 16 = 0) (last : List Byte
   rw [List.mem_range] at hi
   rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length (by simp; omega)]
 
-/-- §6.2 steps 3–6, for a message of whole blocks `msg` followed by `last`. -/
-theorem macFull_split (ciph : Cipher) {msg last : List Byte} (hm : msg.length % 16 = 0)
-    (hl : last.length ≤ 16) (hne : msg = [] ∨ 0 < last.length) :
-    macFull ciph 16 (msg ++ last) =
-      ciph (xor (chain ciph (zeros 16) (blocks 16 msg))
-        (lastBlock 16 (subkeys ciph 16).1 (subkeys ciph 16).2 last)) := by
+/-- §6.2 steps 3–6 with the subkeys `k1` and `k2`, for a message of whole
+blocks `msg` followed by `last`. -/
+theorem macWith_split (ciph : Cipher) (k1 k2 : List Byte) {msg last : List Byte}
+    (hm : msg.length % 16 = 0) (hl : last.length ≤ 16) (hne : msg = [] ∨ 0 < last.length) :
+    macWith ciph 16 k1 k2 (msg ++ last) =
+      ciph (xor (chain ciph (zeros 16) (blocks 16 msg)) (lastBlock 16 k1 k2 last)) := by
   obtain ⟨q, hq⟩ : ∃ q, msg.length = 16 * q := ⟨msg.length / 16, by omega⟩
   have hn : (if (msg ++ last).length = 0 then 1 else ((msg ++ last).length + 16 - 1) / 16) = q + 1 := by
     rw [List.length_append]
@@ -78,9 +78,18 @@ theorem macFull_split (ciph : Cipher) {msg last : List Byte} (hm : msg.length % 
         · subst h; simp only [List.length_nil] at *; omega
         · exact h
       omega
-  simp only [macFull, hn, Nat.add_sub_cancel]
+  simp only [macWith, hn, Nat.add_sub_cancel]
   rw [blocks_eq hm last q hq, chain_append, chain_single,
     List.drop_append_of_le_length (by omega), List.drop_eq_nil_of_le (by omega), List.nil_append]
+
+/-- §6.2 steps 3–6, for a message of whole blocks `msg` followed by `last`. -/
+theorem macFull_split (ciph : Cipher) {msg last : List Byte} (hm : msg.length % 16 = 0)
+    (hl : last.length ≤ 16) (hne : msg = [] ∨ 0 < last.length) :
+    macFull ciph 16 (msg ++ last) =
+      ciph (xor (chain ciph (zeros 16) (blocks 16 msg))
+        (lastBlock 16 (subkeys ciph 16).1 (subkeys ciph 16).2 last)) := by
+  rw [macFull_eq]
+  exact macWith_split ciph _ _ hm hl hne
 
 /-! ## One block of counter mode -/
 

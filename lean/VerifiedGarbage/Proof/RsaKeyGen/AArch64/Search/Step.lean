@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Call
 import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
@@ -31,7 +32,7 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 open VG.Impl.Bignum.AArch64 (movi ld)
 open VG.Impl.RsaKeyGen.AArch64.Search
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult)
 
 /-- A finished search, before `finish` stores its results. -/
 structure SearchDone (p : SearchPublic) (original : State) (result : PrimeSearchResult) (s : State) :
@@ -48,7 +49,7 @@ structure SearchDone (p : SearchPublic) (original : State) (result : PrimeSearch
   len : word s.mem p.F (8 * 1) = BitVec.ofNat 64 p.len
   cap : word s.mem p.F (8 * 2) = BitVec.ofNat 64 (primeEntropy p.len)
   remaining : word s.mem p.F (8 * 0) = BitVec.ofNat 64 result.remaining
-  request : word s.mem p.F (8 * 3) = BitVec.ofNat 64 result.requested
+  request : word s.mem p.F (8 * 3) = BitVec.ofNat 64 (requested p.len result)
   used : word s.mem p.F (8 * 16) = BitVec.ofNat 64 result.used
   status : word s.mem p.F (8 * 17) = BitVec.ofNat 64 result.status
   output : Spec.Rsa.bytesAt s.mem p.op p.len =
@@ -65,7 +66,7 @@ theorem SearchLive.slot {p : SearchPublic} {original s : State} {used remaining 
 theorem done_of_live {p : SearchPublic} {original s : State} {used remaining : Nat}
     {result : PrimeSearchResult} (h : SearchLive p original used remaining s)
     (h0 : word s.mem p.F (8 * 0) = BitVec.ofNat 64 result.remaining)
-    (h3 : word s.mem p.F (8 * 3) = BitVec.ofNat 64 result.requested)
+    (h3 : word s.mem p.F (8 * 3) = BitVec.ofNat 64 (requested p.len result))
     (h16 : word s.mem p.F (8 * 16) = BitVec.ofNat 64 result.used)
     (h17 : word s.mem p.F (8 * 17) = BitVec.ofNat 64 result.status)
     (hout : Spec.Rsa.bytesAt s.mem p.op p.len =
@@ -365,7 +366,7 @@ theorem SearchLive.done_after {p : SearchPublic} {original s t : State} {used re
     (hm : t.mem = writeFrame s.mem p.F values) {rs : List Reg} (kt : Keep rs s t)
     (hrs : ∀ r ∈ preserved, r ∉ rs)
     (h0 : frameValue values 0 (word s.mem p.F (8 * 0)) = BitVec.ofNat 64 result.remaining)
-    (h3 : frameValue values 3 (word s.mem p.F (8 * 3)) = BitVec.ofNat 64 result.requested)
+    (h3 : frameValue values 3 (word s.mem p.F (8 * 3)) = BitVec.ofNat 64 (requested p.len result))
     (h16 : frameValue values 16 (word s.mem p.F (8 * 16)) = BitVec.ofNat 64 result.used)
     (h17 : frameValue values 17 (word s.mem p.F (8 * 17)) = BitVec.ofNat 64 result.status)
     (hout : Spec.Rsa.bytesAt s.mem p.op p.len =
@@ -478,7 +479,7 @@ theorem request_value {p : SearchPublic} {original s : State} {used remaining : 
   simp only [List.take_succ_cons, List.take_zero]
   brun [ldf, h.x19, hv1, h.frame_ld' 8 (by decide), h10, h11, e16,
     subs_ge (show p.randLen - used < 2 ^ 64 by omega) (show 16 * p.len < 2 ^ 64 by omega)]
-  unfold primeRequest Spec.Entropy.request
+  unfold primeRequest Entropy.request
   have hA : p.randLen - used ≤ primeEntropy p.len := by omega
   generalize p.randLen - used = A at *
   generalize primeEntropy p.len = E at *

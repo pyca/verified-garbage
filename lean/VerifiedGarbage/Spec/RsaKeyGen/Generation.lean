@@ -14,10 +14,10 @@ the distance check against the other prime, trial division, the gcd check and
 Miller–Rabin with its blinded witnesses keep their meaning, and candidates too
 close to the other prime still do not count as attempts.
 
-Over one tape long enough, the search finds what `generatePrime` finds, from
-the same octets (`VerifiedGarbageTest/RsaPrimeGeneration.lean` checks it on a
-stream). Over a stream cut into refilled tapes, it finds the same, since only
-an unfinished candidate is ever run again, from its own octets.
+The search is `generatePrime` on the stream of octets the host hands out,
+cut into refilled tapes (`GenerationAgrees.lean` states and proves it,
+`primeSearch_agrees`): only an unfinished candidate is ever run again, from
+its own octets.
 
 It adds one way to fail: an unfinished candidate may use at most
 `primeEntropy` octets (a candidate and 32768 witness draws). This bounds the
@@ -39,21 +39,15 @@ namespace VG.Spec.RsaKeyGen
 witness draws, each of the prime's width. -/
 def primeEntropy (pLen : Nat) : Nat := 32769 * pLen
 
-/-- The next tape's length when `available` octets did not hold a whole
-candidate (`Entropy.request`): at first `32 * pLen`, a candidate and 31
-witness draws. -/
-def primeRequest (pLen available : Nat) : Nat :=
-  Entropy.request (16 * pLen) (primeEntropy pLen) available
-
-/-- The search's four public words: the counted candidates left, the prime's
-width, the entropy budget and the first tape's length. `vg_rsa_keygen_candidate`'s
-checks of the width and of the exponent's length: only full key generation
-requires an odd 32-bit exponent. An exponent of 3 (with any leading zeros)
-allows more candidates (`primeLimit`). -/
+/-- The search's first three public words: the counted candidates left, the
+prime's width and the entropy budget (the fourth, the first tape's length, is
+the code's choice: `primeInitContract`). `vg_rsa_keygen_candidate`'s checks of
+the width and of the exponent's length: only full key generation requires an
+odd 32-bit exponent. An exponent of 3 (with any leading zeros) allows more
+candidates (`primeLimit`). -/
 def primeInit (pLen : Nat) (eB : List Byte) : Option (List Nat) :=
   if 32 ≤ pLen && pLen ≤ 512 && pLen % 8 == 0 && 1 ≤ eB.length && eB.length ≤ 8 then
-    some [primeLimit (8 * pLen) (Rsa.os2ip eB), pLen, primeEntropy pLen,
-      primeRequest pLen 0]
+    some [primeLimit (8 * pLen) (Rsa.os2ip eB), pLen, primeEntropy pLen]
   else none
 
 /-- A prime search's result: its state across a refill is the counted
@@ -80,7 +74,7 @@ def primeSearch (pLen : Nat) (eB pB : List Byte) (remaining : Nat) (rand : Rand)
     match candidateOp pLen eB pB rand with
     | none =>
       if primeEntropy pLen ≤ rand.length then ⟨.exhausted, 0, trace⟩
-      else ⟨.entropy remaining (primeRequest pLen rand.length), 0, trace⟩
+      else ⟨.entropy remaining rand.length, 0, trace⟩
     | some (.prime c, rest) => ⟨.accepted c, rand.length - rest.length, trace⟩
     | some (.close, rest) =>
       -- Every candidate reads its `pLen` octets, at least 32.

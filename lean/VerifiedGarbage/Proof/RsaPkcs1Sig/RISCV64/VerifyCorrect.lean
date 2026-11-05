@@ -36,7 +36,7 @@ theorem verifyId_true_iff (nB eB H sig : List Byte) (x : Nat) :
   unfold Spec.RsaPkcs1Sig.verifyId encodeId
   cases hid : Spec.RsaPkcs1Sig.Hash.ofId x with
   | none => simp
-  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_eq_verifyRfc, Proof.RsaPkcs1Sig.verifyRfc_true]
+  | some h => dsimp only; rw [Proof.RsaPkcs1Sig.verify_true]
 
 /-- The hash function's number. -/
 abbrev hid (s : State) : Nat := ((s.gpr .a4).setWidth 32).toNat

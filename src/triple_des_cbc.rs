@@ -16,23 +16,8 @@ use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cbc::{
     vg_triple_des_cbc_decrypt_chained, vg_triple_des_cbc_encrypt_chained,
 };
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Triple DES-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 or 24 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of eight bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Triple DES key length",
-        IncompleteBlock => "Triple DES-CBC input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Triple DES key, which serves both directions.
 struct Key {
@@ -55,7 +40,7 @@ impl TripleDesCbcEncryptor {
     /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
     /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit is
     /// ignored), to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -65,7 +50,7 @@ impl TripleDesCbcEncryptor {
     /// Encrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -85,7 +70,7 @@ impl TripleDesCbcDecryptor {
     /// Expands a 16- or 24-byte key (a 24-byte key encodes K1, K2 and K3; a
     /// 16-byte key, K1 and K2, with K3 repeating K1; each byte's parity bit is
     /// ignored), to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -95,16 +80,16 @@ impl TripleDesCbcDecryptor {
     /// Decrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
 
 impl Key {
     /// Expands a 16- or 24-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -120,9 +105,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
@@ -144,9 +129,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {

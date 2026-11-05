@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOfb.Rounds
 public import VerifiedGarbage.Impl.AesOfb.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesOfb.Spec
@@ -38,23 +39,23 @@ theorem crypt_ct : ConstantTime isa (modeRISCV64 ofbMode).pre (modeRISCV64 ofbMo
     wrap_ct Proof.Aes.RISCV64.ofbChain_k "vg_aes_ofb_chain" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂)
       hq e₁ e₂
 
-theorem crypt_verified : Verified RISCV64.target crypt (Spec.Ofb.aesContract RISCV64.abi) :=
+theorem crypt_verified : Verified RISCV64.target crypt (Proof.AesOfb.roundsContract RISCV64.abi) :=
   Verified.of_correct crypt_correct crypt_ct
-    { pre := by sig_implies_pre [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
+    { pre := by sig_implies_pre [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
         RISCV64.abi, RISCV64.argRegs]
       -- `ofbMode.chain` counts the blocks, which are `n`.
       post := by
         intro s s' _ h
-        sig_post [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
+        sig_post [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
           RISCV64.argRegs]
-        sig_reduce [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
+        sig_reduce [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
           RISCV64.argRegs] at h
-        sig_simp [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
+        sig_simp [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64, ofbMode, RISCV64.abi,
           RISCV64.argRegs] [] at h
         rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
+      pub := by sig_implies_pub [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
         RISCV64.abi, RISCV64.argRegs]
-      sat := by sig_implies_sat [Spec.Ofb.aesContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
+      sat := by sig_implies_sat [Proof.AesOfb.roundsContract, Spec.Ofb.aesSig, Spec.Cbc.aesSig, modeRISCV64,
         RISCV64.abi, RISCV64.argRegs] [sat] using sat }
 
 end VG.Proof.AesOfb.RISCV64

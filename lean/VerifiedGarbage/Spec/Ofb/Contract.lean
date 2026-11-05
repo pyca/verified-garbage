@@ -36,9 +36,9 @@ namespace VG.Spec.Ofb
 `rounds` is public; `scratch` is working space. -/
 def aesSig : Sig := Cbc.aesSig
 
-/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
-`16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
-with their OFB encryption or decryption (§6.4) by AES with `w`, from the
+/-- For `rounds` of 10, 12 or 14, and every AES key `K` whose key schedule
+is at `schedule` with `rounds` rounds (`Aes.KeySchedule`): replaces the `n` blocks at `data`
+with their OFB encryption or decryption (§6.4) by AES with `K`, from the
 block at `iv`, and that block with the last output block `Oₙ` (unchanged
 if `n = 0`). -/
 def aesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -46,9 +46,10 @@ def aesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _schedule rounds _iv _data _n _scratch _ =>
       rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
     (post := fun schedule rounds iv data n _scratch m m' _ =>
-      let ciph := Cbc.aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
-      Cbc.blocksAt m' data n.toNat = crypt ciph (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat) ∧
-        Aes.bytesAt m' iv 16 = next ciph (Aes.bytesAt m iv 16) n.toNat)
+      ∀ key, Aes.KeySchedule m schedule rounds.toNat key →
+        let ciph := Cbc.aes key
+        Cbc.blocksAt m' data n.toNat = crypt ciph (Aes.bytesAt m iv 16) (Cbc.blocksAt m data n.toNat) ∧
+          Aes.bytesAt m' iv 16 = next ciph (Aes.bytesAt m iv 16) n.toNat)
     (stack := stack)
 
 /-- `vg_aes_ofb` on every target. -/

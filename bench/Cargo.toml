@@ -17,8 +17,9 @@ wildcard_imports = "deny"
 
 [dependencies]
 # `VG_CPU_FEATURES` chooses the implementations benchmarked (see
-# `src/cpu.rs` and `ci/bench_arches.py`).
-verified-garbage = { path = "..", features = ["cpu-features-env"] }
+# `src/cpu.rs` and `ci/bench_arches.py`); `internal-bench` lets the
+# generation benchmarks give the prime searches fixed tapes.
+verified-garbage = { path = "..", features = ["cpu-features-env", "internal-bench"] }
 
 # Low-level KEM calls are not yet wrapped by rust-openssl.
 openssl-sys = { version = "0.9.117", optional = true }

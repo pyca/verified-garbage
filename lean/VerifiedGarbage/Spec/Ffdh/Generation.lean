@@ -1,14 +1,17 @@
 module
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Entropy
 
 
 /-! # Complete FFDH generation control over refillable octet tapes
 
 The caller supplies entropy, not retry decisions. The native controller owns
-candidate-search limits and entropy budgets. On a request for more entropy,
-`used` octets are discarded and the unconsumed suffix is extended to `requested`
-octets. In particular an incomplete candidate is replayed with its exact prefix.
+candidate-search limits and entropy budgets, and chooses how much entropy to
+ask for, within `Entropy.RequestValid`'s bounds. On a request for more entropy,
+`used` octets are discarded and the unconsumed suffix, `available` octets, is
+extended to the requested length. In particular an incomplete candidate is
+replayed with its exact prefix.
 -/
 
 @[expose] public section
@@ -24,26 +27,17 @@ def parameterAttempts (bits : Nat) : Nat := bits * bits * 64
 /-- A per-candidate entropy budget, independent of witness-count policy. -/
 def parameterEntropy (bits : Nat) : Nat := 32769 * ((bits + 7) / 8)
 
-/-- The next entropy request is chosen by verified code: at least twice the
-octets left, and at least 512 octets per octet of p, enough for a candidate
-and the 2 · 128 witnesses of its two Miller–Rabin tests even when about half
-of the witness draws are rejected. A shortage discards an incomplete
-candidate's work, so a request that holds a whole candidate keeps the
-accepted one, by far the most expensive, from being tested again. -/
-def parameterRequest (bits available : Nat) : Nat :=
-  min (2 * max available (256 * ((bits + 7) / 8))) (parameterEntropy bits)
-
-/-- Initialization returns the controller's four public words, followed by
-private workspace. The first request is `parameterRequest bits 0`. All parameter
-validation and policy arithmetic are native. -/
+/-- Initialization's first three public words: the attempt limit, p's width in
+octets and the entropy budget (the fourth, the first tape's length, is the
+code's choice: `parameterInitContract`), followed by private workspace. All
+parameter validation and policy arithmetic are native. -/
 def parameterInit (bits generator : Nat) : Option (List Nat) :=
   if 512 ≤ bits && bits ≤ 8192 && (generator == 2 || generator == 5) then
-    some [parameterAttempts bits, (bits + 7) / 8, parameterEntropy bits,
-      512 * ((bits + 7) / 8)]
+    some [parameterAttempts bits, (bits + 7) / 8, parameterEntropy bits]
   else none
 
 inductive ParameterSearchResult where
-  | entropy (remaining requested used : Nat)
+  | entropy (remaining available used : Nat)
   | accepted (p used : Nat)
   | exhausted (used : Nat)
 
@@ -59,12 +53,20 @@ def ParameterSearchResult.remaining : ParameterSearchResult → Nat
   | .entropy remaining _ _ => remaining
   | _ => 0
 
-def ParameterSearchResult.requested : ParameterSearchResult → Nat
-  | .entropy _ requested _ => requested
+def ParameterSearchResult.available : ParameterSearchResult → Nat
+  | .entropy _ available _ => available
   | _ => 0
 
+/-- The length `requested` the host is asked for after the result `r`: one
+`Entropy.RequestValid` allows for more entropy, and 0 otherwise. -/
+def ParameterSearchResult.Requests (cap : Nat) (r : ParameterSearchResult) (requested : Nat) :
+    Prop :=
+  match r with
+  | .entropy _ available _ => Entropy.RequestValid cap available requested
+  | _ => requested = 0
+
 def ParameterSearchResult.consume (n : Nat) : ParameterSearchResult → ParameterSearchResult
-  | .entropy remaining requested used => .entropy remaining requested (n + used)
+  | .entropy remaining available used => .entropy remaining available (n + used)
   | .accepted p used => .accepted p (n + used)
   | .exhausted used => .exhausted (n + used)
 

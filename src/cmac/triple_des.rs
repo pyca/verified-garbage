@@ -13,10 +13,10 @@
     target_arch = "riscv64"
 ))]
 
-use super::{InvalidKeyLength, InvalidMac};
 use crate::arch::cmac_triple_des::{
     vg_cmac_triple_des_absorb, vg_cmac_triple_des_finish, vg_cmac_triple_des_stream_init,
 };
+use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;
 
 /// The streaming state, in 64-bit words.
@@ -131,7 +131,7 @@ impl TripleDesCmac {
 #[cfg(test)]
 mod tests {
     use super::TripleDesCmac;
-    use crate::cmac::{InvalidKeyLength, InvalidMac};
+    use crate::error::{InvalidKeyLength, InvalidMac};
 
     /// Keys of other lengths are rejected.
     #[test]

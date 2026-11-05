@@ -26,11 +26,7 @@ theorem verifiedResult_eq {g : Geometry} {bs : Fin 5 → List Byte}
     simp only [Bool.false_eq_true, ite_false, Option.bind_none]
     cases Spec.Rsa.publicOpChecked (bs 0) (bs 1) (bs 3) <;> rfl
   | some h =>
-    dsimp only
-    simp only [VG.Proof.RsaPkcs1Sig.verify_eq_verifyRfc]
-    unfold Spec.RsaPkcs1Sig.verifyRfc
-    rw [nlen, ite_eq_left siglen]
-    simp only [Option.bind_some]
+    simp only [Spec.RsaPkcs1Sig.verify, nlen, siglen, ↓reduceIte, Option.bind_some]
     cases Spec.Rsa.publicOpChecked (bs 0) (bs 1) (bs 3) with
     | none => cases Spec.RsaPkcs1Sig.encode h (bs 2) g.length <;> rfl
     | some x =>

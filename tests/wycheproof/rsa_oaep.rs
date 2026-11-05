@@ -25,7 +25,7 @@
 
 use crate::json_struct;
 use verified_garbage::hashes::sha256::Sha256;
-use verified_garbage::rsa::oaep::{Error, Hash, decrypt, encrypt};
+use verified_garbage::rsa::oaep::{Error, Hash};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa::{pkcs1_sig, pss};
 
@@ -99,7 +99,7 @@ fn check(name: &str) -> (usize, usize) {
         let n = trim_zeros(&p.private_key.modulus.0);
         let id = test.tc_id;
         let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
-        let r = decrypt(key, ct, h, g, label);
+        let r = key.decrypt_oaep(ct, h, g, label);
         if test.result == Expectation::Invalid {
             let e = if ct.len() == n.len() {
                 Error::Decryption
@@ -110,8 +110,8 @@ fn check(name: &str) -> (usize, usize) {
             refused.add();
         } else {
             assert_eq!(r.as_deref(), Ok(&msg[..]), "{name} tcId {id}");
-            let again = encrypt(public, msg, h, g, label).unwrap();
-            assert_eq!(decrypt(key, &again, h, g, label), r, "{name} tcId {id}");
+            let again = public.encrypt_oaep(msg, h, g, label).unwrap();
+            assert_eq!(key.decrypt_oaep(&again, h, g, label), r, "{name} tcId {id}");
             valid.add();
         }
     });
@@ -161,9 +161,13 @@ fn rsa_oaep_every_pair() {
     assert_eq!(pairs.len(), 49);
     for (i, &(h, g)) in pairs.iter().enumerate() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
-        let ct = encrypt(&public, &msg, h, g, b"label").unwrap();
-        assert_eq!(decrypt(&key, &ct, h, g, b"label"), Ok(msg), "{h:?} {g:?}");
-        let other = decrypt(&key, &ct, h, g, b"other");
+        let ct = public.encrypt_oaep(&msg, h, g, b"label").unwrap();
+        assert_eq!(
+            key.decrypt_oaep(&ct, h, g, b"label"),
+            Ok(msg),
+            "{h:?} {g:?}"
+        );
+        let other = key.decrypt_oaep(&ct, h, g, b"other");
         assert_eq!(other, Err(Error::Decryption), "{h:?} {g:?}");
         // Ciphertexts as long as the modulus, which reach this pair's
         // decryption and fail in it: one bit flipped; the next pair's
@@ -172,7 +176,7 @@ fn rsa_oaep_every_pair() {
         let mut flipped = ct.clone();
         flipped[k / 2] ^= 1;
         let (h2, g2) = pairs[(i + 1) % pairs.len()];
-        let next = encrypt(&public, b"message", h2, g2, b"label").unwrap();
+        let next = public.encrypt_oaep(b"message", h2, g2, b"label").unwrap();
         for (what, bad) in [
             ("one bit flipped", flipped),
             ("the next pair's", next),
@@ -180,7 +184,7 @@ fn rsa_oaep_every_pair() {
             ("the modulus", n.to_vec()),
             ("every bit set", vec![0xff; k]),
         ] {
-            let r = decrypt(&key, &bad, h, g, b"label");
+            let r = key.decrypt_oaep(&bad, h, g, b"label");
             assert_eq!(r, Err(Error::Decryption), "{h:?} {g:?}: {what}");
         }
     }
@@ -221,55 +225,54 @@ fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
             // buffer, with different workspace lengths. Alternate them, including
             // rejected inputs, and share the key across concurrent callers.
             let d = Sha256::digest(&group.tests[0].case.msg.0).as_ref().to_vec();
-            let sig = pkcs1_sig::sign(&private, &d, pkcs1_sig::Hash::Sha256).unwrap();
-            let pss_sig = pss::sign(&private, &d, pss::Hash::Sha256, pss::Hash::Sha256, 0).unwrap();
+            let sig = private.sign_pkcs1v15(&d, pkcs1_sig::Hash::Sha256).unwrap();
+            let pss_sig = private
+                .sign_pss(&d, pss::Hash::Sha256, pss::Hash::Sha256, 0)
+                .unwrap();
             std::thread::scope(|scope| {
                 for _ in 0..4 {
                     let (public, d, sig, pss_sig) = (&public, &d, &sig, &pss_sig);
                     let private = &private;
                     scope.spawn(move || {
                         for _ in 0..repetitions {
-                            assert!(pkcs1_sig::verify(public, sig, d, pkcs1_sig::Hash::Sha256));
-                            assert!(!pkcs1_sig::verify(
-                                public,
+                            assert!(public.verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256));
+                            assert!(!public.verify_pkcs1v15(
                                 &sig[..sig.len() - 1],
                                 d,
                                 pkcs1_sig::Hash::Sha256
                             ));
-                            assert!(pss::verify(
-                                public,
+                            assert!(public.verify_pss(
                                 pss_sig,
                                 d,
                                 pss::Hash::Sha256,
                                 pss::Hash::Sha256,
                                 pss::SaltLength::Len(0),
                             ));
-                            assert!(!pkcs1_sig::verify(
-                                public,
+                            assert!(!public.verify_pkcs1v15(
                                 sig,
                                 &d[..d.len() - 1],
                                 pkcs1_sig::Hash::Sha256
                             ));
-                            let ciphertext = verified_garbage::rsa::oaep::encrypt(
-                                public,
-                                d,
-                                verified_garbage::rsa::oaep::Hash::Sha256,
-                                verified_garbage::rsa::oaep::Hash::Sha256,
-                                b"",
-                            )
-                            .unwrap();
-                            assert_eq!(
-                                verified_garbage::rsa::oaep::decrypt(
-                                    private,
-                                    &ciphertext,
+                            let ciphertext = public
+                                .encrypt_oaep(
+                                    d,
                                     verified_garbage::rsa::oaep::Hash::Sha256,
                                     verified_garbage::rsa::oaep::Hash::Sha256,
                                     b"",
                                 )
-                                .unwrap(),
+                                .unwrap();
+                            assert_eq!(
+                                private
+                                    .decrypt_oaep(
+                                        &ciphertext,
+                                        verified_garbage::rsa::oaep::Hash::Sha256,
+                                        verified_garbage::rsa::oaep::Hash::Sha256,
+                                        b"",
+                                    )
+                                    .unwrap(),
                                 *d,
                             );
-                            assert!(pkcs1_sig::verify(public, sig, d, pkcs1_sig::Hash::Sha256));
+                            assert!(public.verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256));
                         }
                     });
                 }
