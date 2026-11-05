@@ -55,7 +55,7 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     fun s₂ ⟨h₂, m₂, vN, vP, vQ, vD⟩ => ?_)
   -- `p q = n`.
   refine wp_seqs_append (by simp [pqCheck]) (by simp [invPart]) (WP.mono (cvCheck_ok h₂ L (c := true)
-    (by rw [m₂]; exact hm₁) (by rw [vN]; exact hNo)) fun s₃ ⟨h₃, m₃, p₃⟩ => ?_)
+    (by rw [m₂]; exact hm₁)) fun s₃ ⟨h₃, m₃, p₃⟩ => ?_)
   rw [vP, vQ, vN, Bool.true_and] at m₃
   have vP₃ : wv s₃.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₃ aP (.inl rfl), vP]
   have vQ₃ : wv s₃.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [p₃ aQ (.inr (.inl rfl)), vQ]
