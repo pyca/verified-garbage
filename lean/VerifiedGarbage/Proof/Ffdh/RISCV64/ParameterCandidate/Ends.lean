@@ -361,7 +361,7 @@ theorem Bufs.outW {p : PP} {s : State} (h : Bufs p s) : ∀ i < p.L, InRegions s
   fun _ hi => ⟨_, h.oW, VG.Proof.Bignum.contains_byte _ hi (by have := h.oNW; omega_arith)⟩
 
 /-- p to `out`, then `finish` with the status 1. -/
-theorem pEnd {p : PP} {s : State} {c u : Nat} (h : St p s) (hp : Ph p p.bits s)
+theorem pEnd {C : Nat} {p : PP} {s : State} {c u : Nat} (h : St p s) (hp : Ph p p.bits C s)
     (hn : wv s.mem p.B 256 (wOf p.bits) = c) (hc : c < 2 ^ p.bits)
     (hv : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
     WP isa (.seq writeP (.block (finish 1))) s (CEnd p (some (some c, p.r.drop u))) := by
@@ -519,9 +519,11 @@ theorem saved_notin : ∀ i < 13, saved i ∉ ([.t3, .t4] : List Reg) := by deci
 
 theorem front_ok (s : State) (h : pcPre s) :
     WP isa (.seq (.block entry) zeroOut) s fun t =>
-      St (ppOf s) t ∧ word t.mem (ppOf s).B 152 = BitVec.ofNat 64 (ppOf s).L := by
+      St (ppOf s) t ∧ word t.mem (ppOf s).B 152 = BitVec.ofNat 64 (ppOf s).L ∧
+        Frame [⟨s.gpr .a7, 8 * (stackArg s 0).toNat⟩, ⟨s.gpr .a0, (s.gpr .a1).toNat⟩] s.mem t.mem ∧
+        t.rd = s.rd := by
   obtain ⟨hsp, hsp16, hspT, hrd, hwr, dOU, dOR, dOS, dOA, dUR, dUS, dUA, dRS, dSA, qO, qU, qR, qS, qA, nwO, nwU,
-    nwR, nwS, alU, alS, hb1, hb2, hL, hg, hsw⟩ := h
+    nwR, nwS, alU, alS, hb1, hb2, hL, hg, hsw, -⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsw
   have hn : stackArg s 0 = BitVec.ofNat 64 (stackArg s 0).toNat := (ofNat_toNat _).symm
   have h80 : 104 ≤ 8 * (stackArg s 0).toNat := by omega_arith
@@ -607,7 +609,8 @@ theorem front_ok (s : State) (h : pcPre s) :
     by rw [hwrt, hwr]; simp [ppOf, PP.Z, Nat.mul_comm], hspt, hsp, hsp16,
     by show (below s.sp 96).Disjoint ⟨s.gpr .a7, 8 * (stackArg s 0).toNat⟩; rw [Nat.mul_comm]; exact qS,
     sav⟩,
-    (hd (d := 152) (by decide)).trans (w152.trans ((gS .a1 (by decide)).trans (by rw [← hLe, ofNat_toNat])))⟩
+    (hd (d := 152) (by decide)).trans (w152.trans ((gS .a1 (by decide)).trans (by rw [← hLe, ofNat_toNat]))),
+    fr, by rw [kz.2.1, kc.2.1, hS.rd, ka.2.1]⟩
   · rw [kz.2.1, kc.2.1, hS.rd, ka.2.1, hrd]
     rw [show (ppOf s).r.length = (s.gpr .a6).toNat from hlen] at hi
     exact ⟨⟨s.gpr .a5, (s.gpr .a6).toNat⟩, by simp, VG.Proof.Bignum.contains_byte _ hi (by omega_arith)⟩
