@@ -25,15 +25,13 @@ pub fn bench(c: &mut Criterion) {
     use openssl::bn::BigNum;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::pkcs1_enc::{decrypt, encrypt_with_rng};
+    use verified_garbage::rsa::pkcs1_enc::{decrypt, encrypt};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'
     // size is the modulus' bytes. Each library loads the key once, outside
-    // the measurements. verified-garbage takes its padding string from a
-    // fixed tape (`encrypt` but for `getrandom`); OpenSSL and aws-lc-rs draw
-    // a fresh one per encryption.
+    // the measurements. Each draws a fresh padding string per encryption.
     // aws-lc-rs sets up an `EVP_PKEY_CTX` in every operation, where OpenSSL's
     // `RSA_public_encrypt` and `RSA_private_decrypt` take the key itself.
     let msg = [0x42u8; 32];
@@ -50,14 +48,7 @@ pub fn bench(c: &mut Criterion) {
         .unwrap();
         let mut out = vec![0; k];
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| {
-                let mut tape = fixed_tape(k as u64);
-                encrypt_with_rng(black_box(&vg_key), black_box(&msg), |buf| {
-                    tape(buf);
-                    Ok(())
-                })
-                .unwrap()
-            })
+            b.iter(|| encrypt(black_box(&vg_key), black_box(&msg)).unwrap())
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {

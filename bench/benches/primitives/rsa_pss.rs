@@ -31,9 +31,8 @@ pub const USES: &[&str] = &[
 /// its default blinding when signing; aws-lc-rs through
 /// `KeyPair::sign_digest` and `ParsedPublicKey::verify_digest_sig`, which set
 /// up an `EVP_PKEY_CTX` in every operation and take a salt as long as the
-/// hash value, from a key loaded from its components). verified-garbage
-/// takes its salt from a fixed tape (`sign` but for `getrandom`); OpenSSL and
-/// aws-lc-rs draw a fresh one per signature. Signatures are randomized, so
+/// hash value, from a key loaded from its components). Each draws a fresh
+/// salt per signature. Signatures are randomized, so
 /// aws-lc-rs and verified-garbage verify each other's.
 #[cfg(any(
     target_arch = "x86",
@@ -57,10 +56,10 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey_ctx::PkeyCtx;
     use openssl::rsa::{Padding, Rsa};
     use openssl::sign::RsaPssSaltlen;
-    use verified_garbage::rsa::pss::{Hash, SaltLength, sign, sign_with_rng, verify};
+    use verified_garbage::rsa::pss::{Hash, SaltLength, sign, verify};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-    use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
+    use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
     // Each supported hash function, by the name its modules have and
     // OpenSSL's, and, if aws-lc-rs has it, its hash function, signing
@@ -181,17 +180,12 @@ pub fn bench(c: &mut Criterion) {
             let k = sig.len();
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    let mut tape = fixed_tape(k as u64);
-                    sign_with_rng(
+                    sign(
                         black_box(vg_private),
                         black_box(&digest),
                         hash,
                         hash,
                         digest.len(),
-                        |buf| {
-                            tape(buf);
-                            Ok(())
-                        },
                     )
                     .unwrap()
                 })

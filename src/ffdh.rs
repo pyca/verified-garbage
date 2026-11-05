@@ -157,21 +157,6 @@ impl Parameters {
         self.generate_with(getrandom::fill)
     }
 
-    /// [`generate_private_key`](Self::generate_private_key), with its random
-    /// bytes drawn from `fill` instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The key is secret only if `fill`
-    /// supplies uniformly random bytes.
-    #[cfg(feature = "internal-bench")]
-    #[doc(hidden)]
-    pub fn generate_private_key_with_rng<E>(
-        &self,
-        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    ) -> Result<PrivateKey, Error> {
-        self.generate_with(fill)
-    }
-
     /// Verified code runs the whole search: it draws and checks each scalar
     /// and its public value, retries up to 128 times for an in-range scalar
     /// and up to 128 times for a public value that is not degenerate, and

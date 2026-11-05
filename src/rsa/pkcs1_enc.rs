@@ -124,22 +124,6 @@ pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
     encrypt_from(key, plaintext, os_random)
 }
 
-/// [`encrypt`], with its padding string drawn from `random` instead of the
-/// operating system.
-///
-/// Not part of the API: it lets benchmarks compare implementations on
-/// identical work, from fixed tapes. The ciphertext is secure only if
-/// `random` supplies uniformly random bytes, never reused.
-#[cfg(feature = "internal-bench")]
-#[doc(hidden)]
-pub fn encrypt_with_rng(
-    key: &PublicKey,
-    plaintext: &[u8],
-    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-) -> Result<Vec<u8>, Error> {
-    encrypt_from(key, plaintext, random)
-}
-
 /// [`encrypt`], with its padding string drawn from `random`.
 fn encrypt_from(
     key: &PublicKey,
