@@ -9,8 +9,6 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(not(target_arch = "riscv64"))]
-use super::table::leftmost;
 use super::table::{HmacHash, SignFn, sign_with};
 use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
@@ -26,17 +24,12 @@ use crate::ec::brainpoolp512r1::Mul;
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(q: &[u8; 129], digest: &[u8], signature: &[u8; 128]) -> Result<(), Error> {
     let mut scratch = [0u64; 1024];
-    // Elsewhere the function takes the hash's 64 bytes `e` (FIPS 186-5
-    // §6.4.2); on RISC-V, the hash itself.
-    #[cfg(not(target_arch = "riscv64"))]
-    let e = &leftmost::<64>(digest);
     let ok = match Mul::select(detected()) {
         // SAFETY: `q` is valid for reads of 129 bytes, `digest` of `digest.len()`,
         // `signature` of 128 and `scratch` for reads and writes of 8192; `scratch`
         // is a distinct object from the others, so it overlaps neither them nor the
         // call's stack frame, and, as Rust objects, none wraps around the address
         // space.
-        #[cfg(target_arch = "riscv64")]
         Mul::Baseline => unsafe {
             vg_ecdsa_brainpoolp512r1_verify(
                 q,
@@ -46,18 +39,17 @@ fn verify_with(q: &[u8; 129], digest: &[u8], signature: &[u8; 128]) -> Result<()
                 &mut scratch,
             )
         },
-        // SAFETY: `q` is valid for reads of 129 bytes, `e` of 64,
-        // `signature` of 128 and `scratch` for reads and writes of 8192;
-        // `scratch` is a distinct object from the others, so it overlaps
-        // neither them nor the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        #[cfg(not(target_arch = "riscv64"))]
-        Mul::Baseline => unsafe { vg_ecdsa_brainpoolp512r1_verify(q, e, signature, &mut scratch) },
         // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
         // (`Mul::select`).
         #[cfg(target_arch = "arm")]
         Mul::Umaal => unsafe {
-            vg_ecdsa_brainpoolp512r1_verify_umaal(q, e, signature, &mut scratch)
+            vg_ecdsa_brainpoolp512r1_verify_umaal(
+                q,
+                digest.as_ptr(),
+                digest.len(),
+                signature,
+                &mut scratch,
+            )
         },
     };
     if ok == 1 {
@@ -80,8 +72,8 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
         unsafe { sign_with::<H, 64, 128>(sign, f, d, digest) }
     }
 
-    /// `e` is the leftmost 512 bits of the hash (FIPS 186-5 §6.4.2): its
-    /// first 64 bytes, or the hash after zeros if it is shorter.
+    /// The verified function takes the hash itself, of any length, and
+    /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(q: &[u8; 129], digest: &H::Output, signature: &[u8; 128]) -> Result<(), Error> {
         verify_with(q, digest.as_ref(), signature)
     }
