@@ -12,7 +12,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{Error, P256, PrivateKey};
+use verified_garbage::ec::{P256, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -37,9 +38,13 @@ fn vectors() -> Vec<Vector> {
 fn ecdh_p256() {
     for (peer, d, public, shared) in vectors() {
         let key = PrivateKey::<P256>::from_bytes(&d);
-        assert_eq!(key.public_key(), Ok(public));
-        assert_eq!(key.exchange(&peer), Ok(shared));
-        assert!(key.clone().exchange(&public).is_ok());
+        assert_eq!(key.public_key(), Ok(PublicKey::from_bytes(&public)));
+        assert_eq!(key.exchange(&PublicKey::from_bytes(&peer)), Ok(shared));
+        assert!(
+            key.clone()
+                .exchange(&PublicKey::from_bytes(&public))
+                .is_ok()
+        );
     }
 }
 
@@ -69,13 +74,19 @@ fn ecdh_p256_invalid() {
     bad.push(big_y);
     bad.push([0; 65]);
     for p in &bad {
-        assert_eq!(key.exchange(p), Err(Error::InvalidKey));
+        assert_eq!(
+            key.exchange(&PublicKey::from_bytes(p)),
+            Err(Error::InvalidKey)
+        );
     }
     let n = unhex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
     for d in [[0; 32], n.try_into().unwrap(), [0xff; 32]] {
         let key = PrivateKey::<P256>::from_bytes(&d);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
-        assert_eq!(key.exchange(&peer), Err(Error::InvalidKey));
+        assert_eq!(
+            key.exchange(&PublicKey::from_bytes(&peer)),
+            Err(Error::InvalidKey)
+        );
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
     assert_eq!(Error::InvalidKey.to_string(), "invalid ECDH key");

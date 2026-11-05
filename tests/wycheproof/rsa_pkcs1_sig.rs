@@ -28,8 +28,8 @@ use verified_garbage::hashes::{
     sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224,
     sha512_256::Sha512_256,
 };
+use verified_garbage::rsa::pkcs1_sig::{Hash, recover, sign, verify};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{MsgCase, RsaPrivateKeyGroup, RsaPublicKey, RsaPublicKeyGroup, SigCase};

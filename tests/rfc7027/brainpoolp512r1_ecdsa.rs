@@ -9,7 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{BrainpoolP512r1, Error, SigningKey, VerifyingKey};
+use verified_garbage::ec::{BrainpoolP512r1, PublicKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::value;
@@ -32,8 +33,8 @@ fn ecdsa_and_invalid_keys() {
     let da = value::<64>(CURVE, "dA =");
     let qa = public("x_qA =", "y_qA =");
     let key = SigningKey::<BrainpoolP512r1>::from_bytes(&da);
-    assert_eq!(key.public_key(), Ok(qa));
-    let verifier = VerifyingKey::<BrainpoolP512r1>::from_bytes(&qa);
+    assert_eq!(key.public_key(), Ok(PublicKey::from_bytes(&qa)));
+    let verifier = PublicKey::<BrainpoolP512r1>::from_bytes(&qa);
     let message = b"brainpoolP512r1 API message";
     let sig = key.clone().sign::<Sha512>(message).unwrap();
     assert_eq!(
@@ -48,7 +49,7 @@ fn ecdsa_and_invalid_keys() {
     let mut invalid = qa;
     invalid[0] = 0;
     assert_eq!(
-        VerifyingKey::<BrainpoolP512r1>::from_bytes(&invalid).verify::<Sha512>(message, &sig),
+        PublicKey::<BrainpoolP512r1>::from_bytes(&invalid).verify::<Sha512>(message, &sig),
         Err(Error::InvalidSignature)
     );
     // 0 and 2⁵¹² − 1 (above n) are not in [1, n − 1].

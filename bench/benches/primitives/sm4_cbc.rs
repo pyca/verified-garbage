@@ -21,7 +21,7 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::sm4_cbc::Sm4Cbc;
+    use verified_garbage::sm4_cbc::{Sm4CbcDecryptor, Sm4CbcEncryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
@@ -41,13 +41,13 @@ pub fn bench(c: &mut Criterion) {
                 let mut buffer = crate::InPlace::new(size, &data);
                 group.bench(BenchmarkId::new(VG, size), |b| {
                     b.iter(|| {
-                        let ctx = Sm4Cbc::new(black_box(key));
-                        let mut chain = black_box(iv);
                         buffer.copy_from_slice(black_box(&data));
                         if encrypt {
-                            ctx.encrypt(&mut chain, black_box(&mut buffer)).unwrap();
+                            let mut ctx = Sm4CbcEncryptor::new(black_box(key), &black_box(iv));
+                            ctx.encrypt(black_box(&mut buffer)).unwrap();
                         } else {
-                            ctx.decrypt(&mut chain, black_box(&mut buffer)).unwrap();
+                            let mut ctx = Sm4CbcDecryptor::new(black_box(key), &black_box(iv));
+                            ctx.decrypt(black_box(&mut buffer)).unwrap();
                         }
                         black_box(&buffer);
                     })

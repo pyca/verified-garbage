@@ -16,7 +16,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P224, SignatureHash, VerifyingKey};
+use verified_garbage::ec::{P224, PublicKey};
+use verified_garbage::ecdsa::{Error, SignatureHash};
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha512::Sha512;
@@ -53,7 +54,7 @@ fn check<H: SignatureHash<P224>>(file: &str, sha: &str) {
         let q: [u8; 57] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
-        let key = VerifyingKey::<P224>::from_bytes(&q);
+        let key = PublicKey::<P224>::from_bytes(&q);
         let Ok(sig) = <[u8; 56]>::try_from(&test.case.sig.0[..]) else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;

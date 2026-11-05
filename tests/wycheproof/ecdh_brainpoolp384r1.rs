@@ -19,7 +19,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{BrainpoolP384r1, Error, PrivateKey};
+use verified_garbage::ec::{BrainpoolP384r1, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveEncodingGroup, EcdhCase};
@@ -71,10 +72,12 @@ fn ecdh_brainpoolp384r1_test() {
             one[last] = 1;
             let reference = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
             let valid = BrainpoolP384r1::validate_public_key(&public);
-            let expected = reference.exchange(&public).is_ok();
+            let expected = reference.exchange(&PublicKey::from_bytes(&public)).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
-        let result = key.exchange(&public).map(|z| z.to_vec());
+        let result = key
+            .exchange(&PublicKey::from_bytes(&public))
+            .map(|z| z.to_vec());
         let shared = Ok(test.case.shared.0.clone());
         match test.result {
             Expectation::Valid => {

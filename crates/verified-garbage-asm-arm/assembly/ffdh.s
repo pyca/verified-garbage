@@ -39547,7 +39547,7 @@ vg_ffdh_check_private_umaal:
 	ldr r12, [sp], #56
 	bx lr
 
-vg_ffdh_generate_parameters_sieved:
+vg_ffdh_generate_parameters:
 	push {r4, r9, r10, r11, r12, lr}
 	ldr r4, [sp, #44]
 	str r0, [r4, #40]
@@ -39762,7 +39762,7 @@ vg_ffdh_generate_parameters_sieved:
 	ldr r4, [sp], #24
 	bx lr
 
-vg_ffdh_generate_parameters_sieved_umaal:
+vg_ffdh_generate_parameters_umaal:
 	push {r4, r9, r10, r11, r12, lr}
 	ldr r4, [sp, #44]
 	str r0, [r4, #40]

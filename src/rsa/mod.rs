@@ -122,8 +122,8 @@ use verified_garbage_cpu::Features;
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, and of
 /// the functions built on them
-/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_prime_search`,
-/// `crate::rsa_keygen`).
+/// (`vg_rsa_pkcs1_sign`, `crate::rsa::pkcs1_sig`; `vg_rsa_prime_search`,
+/// `crate::rsa::keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -461,6 +461,12 @@ impl PublicKey {
 
 mod privatekey;
 pub use privatekey::PrivateKey;
+
+pub mod keygen;
+pub mod oaep;
+pub mod pkcs1_enc;
+pub mod pkcs1_sig;
+pub mod pss;
 
 #[cfg(test)]
 pub(crate) mod tests {

@@ -17,14 +17,14 @@ macro_rules! differential {
     ($name:ident, $curve:ident, $len:literal, $nid:ident) => {
         #[test]
         fn $name() {
-            use verified_garbage::ecdh::$curve;
+            use verified_garbage::ec::$curve;
             let group = EcGroup::from_curve_name(Nid::$nid).unwrap();
             let mut ctx = BigNumContext::new().unwrap();
             for d in 1..=16 {
                 let mut private = [0; $len];
                 private[$len - 1] = d;
                 let key = PrivateKey::<$curve>::from_bytes(&private);
-                let public = key.public_key().unwrap();
+                let public = *key.public_key().unwrap().as_bytes();
                 let point = EcPoint::from_bytes(&group, &public, &mut ctx).unwrap();
                 let compressed = $curve::compress_public_key(&public).unwrap();
                 assert_eq!(

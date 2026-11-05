@@ -10,7 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::triple_des_ofb::{InvalidKeyLength, TripleDesOfb};
+use verified_garbage::triple_des_ofb::{Error, TripleDesOfb};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -28,12 +28,15 @@ fn check_file(text: &str) -> usize {
             keys.push(key[..16].to_vec());
         }
         for key in keys {
-            let ctx = TripleDesOfb::new(&key).unwrap();
             let vector = (&plaintext[..], &ciphertext[..]);
             for io in [vector, (&ciphertext[..], &plaintext[..])] {
-                crate::modes::check(crate::modes::Feedback::Output, iv, vector, io, &|iv, b| {
-                    ctx.apply_keystream(iv, b)
-                });
+                crate::modes::check(
+                    iv,
+                    io,
+                    &|iv| TripleDesOfb::new(&key, iv).unwrap(),
+                    TripleDesOfb::apply_keystream,
+                    TripleDesOfb::apply_keystream_final,
+                );
             }
         }
         count += 1;
@@ -61,8 +64,8 @@ fn cavp_mmt() {
 fn errors() {
     for len in [0, 8, 15, 17, 32] {
         assert_eq!(
-            TripleDesOfb::new(&vec![0; len]).err(),
-            Some(InvalidKeyLength)
+            TripleDesOfb::new(&vec![0; len], &[0; 8]).err(),
+            Some(Error::InvalidKeyLength)
         );
     }
 }

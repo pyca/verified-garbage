@@ -1,7 +1,7 @@
 //! ECDSA over brainpoolP512r1: deterministic signatures with HMAC over any hash
 //! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_brainpoolp512r1_sign`), public keys (`vg_ec_brainpoolp512r1_public_key`), and
-//! verification (`vg_ecdsa_brainpoolp512r1_verify`), and their variants on CPUs with the
+//! (`vg_ecdsa_brainpoolp512r1_sign`), and verification
+//! (`vg_ecdsa_brainpoolp512r1_verify`), and their variants on CPUs with the
 //! features their `_FEATURES` constants name: `_umaal` on ARMv7.
 
 #![cfg(any(
@@ -14,7 +14,7 @@
 ))]
 
 use super::table::{HmacHash, SignFn, leftmost, sign_with};
-use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
+use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
 #[cfg(target_arch = "arm")]
@@ -22,19 +22,8 @@ use crate::arch::ecdsa_brainpoolp512r1::{
     vg_ecdsa_brainpoolp512r1_sign_umaal, vg_ecdsa_brainpoolp512r1_verify_umaal,
 };
 use crate::cpu::detected;
-use crate::ec::brainpoolp512r1::{Mul, public_key};
-
-impl SigningKey<BrainpoolP512r1> {
-    /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
-    /// `04 ‖ x ‖ y`, each coordinate 64 bytes, most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<[u8; 129], Error> {
-        public_key(&self.d).ok_or(Error::InvalidKey)
-    }
-}
+use crate::ec::BrainpoolP512r1;
+use crate::ec::brainpoolp512r1::Mul;
 
 /// Whether `signature` verifies with `q` for the hash whose leftmost 64
 /// bytes are `e`.

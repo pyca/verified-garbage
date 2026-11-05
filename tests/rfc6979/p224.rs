@@ -10,7 +10,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P224, SigningKey, VerifyingKey};
+use verified_garbage::ec::{P224, PublicKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha224::Sha224;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -34,7 +35,7 @@ fn sign(key: &SigningKey<P224>, message: &[u8]) -> [Result<[u8; 56], Error>; 2] 
 }
 
 /// Whether `rs` verifies for `message`, of the message and of its hash.
-fn verify(key: &VerifyingKey<P224>, message: &[u8], rs: &[u8; 56]) -> [Result<(), Error>; 2] {
+fn verify(key: &PublicKey<P224>, message: &[u8], rs: &[u8; 56]) -> [Result<(), Error>; 2] {
     [
         key.verify::<Sha224>(message, rs),
         key.verify_prehashed::<Sha224>(&Sha224::digest(message), rs),
@@ -61,7 +62,7 @@ fn p224_sha224() {
 fn p224_sha224_digest_reduction() {
     let (n, x, q, _) = p224();
     let signing = SigningKey::<P224>::from_bytes(&x);
-    let verifying = VerifyingKey::<P224>::from_bytes(&q);
+    let verifying = PublicKey::<P224>::from_bytes(&q);
     for (digest, reduced) in [(n, [0; 28]), (add(&n, 1), add(&[0; 28], 1))] {
         let signature = signing.sign_prehashed::<Sha224>(&digest).unwrap();
         assert_eq!(signing.sign_prehashed::<Sha224>(&reduced), Ok(signature));
@@ -88,12 +89,11 @@ fn p224_sha224_digest_reduction() {
 #[test]
 fn p224_verify() {
     let (_, x, u, signatures) = p224();
-    let key = VerifyingKey::<P224>::from_bytes(&u);
-    assert_eq!(key.to_bytes(), u);
+    let key = PublicKey::<P224>::from_bytes(&u);
+    assert_eq!(key.as_bytes(), &u);
     let other = SigningKey::<P224>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let other = VerifyingKey::<P224>::from_bytes(&other);
     let bad = Err(Error::InvalidSignature);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), message.as_bytes(), rs);
@@ -110,7 +110,10 @@ fn p224_verify() {
 #[test]
 fn p224_public_key() {
     let (_, x, u, _) = p224();
-    assert_eq!(SigningKey::<P224>::from_bytes(&x).public_key(), Ok(u));
+    assert_eq!(
+        SigningKey::<P224>::from_bytes(&x).public_key(),
+        Ok(PublicKey::from_bytes(&u))
+    );
 }
 
 /// A key outside `[1, n − 1]` is refused; those at its ends sign, and have

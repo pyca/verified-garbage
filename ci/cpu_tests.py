@@ -295,7 +295,7 @@ GROUPS = {
         "tests": ["cavp::ffdh"],
     },
     "rsa": {
-        "lib": ["rsa", "rsa_keygen", "rsa_oaep", "rsa_pkcs1_enc", "rsa_pkcs1_sig", "rsa_pss"],
+        "lib": ["rsa"],
         "tests": [
             "cavp::rsa",
             "rsa_guidance::rsa_pkcs1_appendix_b",
@@ -318,8 +318,9 @@ GROUPS = {
     # code: native/SKX's full groups cover them. Keep the unit tests that
     # execute RSA here.
     "rsa_ifma": {
-        "lib": ["rsa", "rsa_keygen::tests::generate_small_d", "rsa_oaep::tests", "rsa_pkcs1_enc",
-                "rsa_pkcs1_sig", "rsa_pss::tests"],
+        "lib": ["rsa::tests", "rsa::precomputed", "rsa::privatekey", "rsa::scratch",
+                "rsa::keygen::tests::generate_small_d", "rsa::oaep::tests", "rsa::pkcs1_enc",
+                "rsa::pkcs1_sig", "rsa::pss::tests"],
         "tests": [
             "rsa_guidance::rsa_pkcs1_appendix_b",
             "rsa_guidance::rsa_pkcs1_bad_keys",

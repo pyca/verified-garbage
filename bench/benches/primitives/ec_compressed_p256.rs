@@ -15,7 +15,7 @@ pub const USES: &[&str] = &["ec_p256_compressed"];
 pub fn bench(c: &mut Criterion) {
     crate::ec_compressed::ec_compressed_bench!(
         c,
-        verified_garbage::ecdh::P256,
+        verified_garbage::ec::P256,
         "p256",
         32,
         X9_62_PRIME256V1

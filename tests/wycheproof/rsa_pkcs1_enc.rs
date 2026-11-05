@@ -24,8 +24,8 @@
     feature = "alloc"
 ))]
 
+use verified_garbage::rsa::pkcs1_enc::{Error, decrypt, encrypt};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
 use super::harness::{self, Count, Expectation, TestFile, TestGroup};
 use super::schema::{EncryptCase, RsaPrivateKeyGroup};

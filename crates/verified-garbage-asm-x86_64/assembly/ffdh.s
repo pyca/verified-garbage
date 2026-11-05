@@ -8426,7 +8426,7 @@ vg_ffdh_check_domain_adx:
 	ret
 	.p2align 6
 
-vg_ffdh_generate_parameters_sieved_adx:
+vg_ffdh_generate_parameters_adx:
 	mov r8d, r8d
 	mov rax, QWORD PTR [rsp+32]
 	mov QWORD PTR [rax+32], r12
@@ -69167,7 +69167,7 @@ vg_ffdh_check_domain:
 	ret
 	.p2align 6
 
-vg_ffdh_generate_parameters_sieved:
+vg_ffdh_generate_parameters:
 	mov r8d, r8d
 	mov rax, QWORD PTR [rsp+32]
 	mov QWORD PTR [rax+32], r12

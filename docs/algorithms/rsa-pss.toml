@@ -1,7 +1,7 @@
 name = "RSASSA-PSS"
 family = "RSA"
 specs = ["RsaPss", "Mgf1"]
-modules = ["src/rsa_pss/mod.rs"]
+modules = ["src/rsa/pss.rs"]
 asm = [
   "rsa_pss",
   "rsa",

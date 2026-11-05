@@ -7,11 +7,11 @@
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
-use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters;
+use crate::arch::ffdh::vg_ffdh_generate_parameters;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_adx as vg_ffdh_generate_parameters_adx;
+use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
 #[cfg(target_arch = "arm")]
-use crate::arch::ffdh::vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal;
+use crate::arch::ffdh::vg_ffdh_generate_parameters_umaal;
 use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
 use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};

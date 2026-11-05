@@ -113,17 +113,14 @@ fn section<const Q: usize, const U: usize, const S: usize>(
 /// of its hash, and not of another message.
 fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
 where
-    C: verified_garbage::ecdsa::Curve<
-            PrivateKey = [u8; Q],
-            PublicKey = [u8; U],
-            Signature = [u8; S],
-        >,
+    C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
     H: verified_garbage::ecdsa::SignatureHash<C>,
 {
-    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    use verified_garbage::ec::PublicKey;
+    use verified_garbage::ecdsa::{Error, SigningKey};
     let (_, x, u, signatures) = section::<Q, U, S>(title, &[hash]);
     let key = SigningKey::<C>::from_bytes(&x);
-    let public = VerifyingKey::<C>::from_bytes(&u);
+    let public = PublicKey::<C>::from_bytes(&u);
     for (_, message, rs) in &signatures {
         let m = message.as_bytes();
         let digest = H::digest(m);
@@ -152,17 +149,14 @@ where
 /// another message.
 fn round_trip<C, H, const Q: usize, const U: usize, const S: usize>(title: &str)
 where
-    C: verified_garbage::ecdsa::Curve<
-            PrivateKey = [u8; Q],
-            PublicKey = [u8; U],
-            Signature = [u8; S],
-        >,
+    C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
     H: verified_garbage::ecdsa::SignatureHash<C>,
 {
-    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    use verified_garbage::ec::PublicKey;
+    use verified_garbage::ecdsa::{Error, SigningKey};
     let (_, x, u, _) = section::<Q, U, S>(title, &[]);
     let key = SigningKey::<C>::from_bytes(&x);
-    let public = VerifyingKey::<C>::from_bytes(&u);
+    let public = PublicKey::<C>::from_bytes(&u);
     for m in [&b"sample"[..], b"test"] {
         let rs = key.sign::<H>(m).unwrap();
         assert_eq!(key.sign_prehashed::<H>(&H::digest(m)), Ok(rs));
@@ -178,7 +172,7 @@ where
 /// curve of the RFC.
 #[test]
 fn other_hashes() {
-    use verified_garbage::ecdsa::{P192, P224, P256, P384, P521};
+    use verified_garbage::ec::{P192, P224, P256, P384, P521};
     use verified_garbage::hashes::md5::Md5;
     use verified_garbage::hashes::sha512_224::Sha512_224;
     use verified_garbage::hashes::sha512_256::Sha512_256;

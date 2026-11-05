@@ -15,7 +15,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdh::{Error, P256, PrivateKey};
+use verified_garbage::ec::{P256, PublicKey};
+use verified_garbage::ecdh::{Error, PrivateKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -42,7 +43,7 @@ fn ecdh_secp256r1_ecpoint_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
-        let result = key.exchange(&public);
+        let result = key.exchange(&PublicKey::from_bytes(&public));
         #[cfg(target_arch = "x86_64")]
         {
             // A scalar of one makes ECDH an independent reference for the
@@ -52,7 +53,7 @@ fn ecdh_secp256r1_ecpoint_test() {
             one[last] = 1;
             let reference = PrivateKey::<P256>::from_bytes(&one);
             let valid = P256::validate_public_key(&public);
-            let expected = reference.exchange(&public).is_ok();
+            let expected = reference.exchange(&PublicKey::from_bytes(&public)).is_ok();
             assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
         }
         match test.result {

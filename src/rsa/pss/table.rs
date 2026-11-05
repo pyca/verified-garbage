@@ -76,9 +76,9 @@ macro_rules! pss_functions {
 
         /// The functions, `(sign, verify)`, for the implementation that a
         /// CPU with the features `f` runs best.
-        pub(in crate::rsa_pss) fn functions(
+        pub(in crate::rsa::pss) fn functions(
             f: verified_garbage_cpu::Features,
-        ) -> (crate::rsa_pss::SignFn, crate::rsa_pss::VerifyFn) {
+        ) -> (crate::rsa::pss::SignFn, crate::rsa::pss::VerifyFn) {
             let rsa = crate::rsa::Backend::select(f);
             (
                 match rsa {

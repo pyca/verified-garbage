@@ -13554,7 +13554,7 @@ vg_ffdh_generate_key_search_cached:
 	ld %r31, 32(%r31)
 	blr
 
-vg_ffdh_generate_parameters_sieved:
+vg_ffdh_generate_parameters:
 	addi %r11, %r1, 96
 	ld %r12, 8(%r11)
 	ld %r11, 0(%r11)

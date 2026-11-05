@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 
 /-! # The parameter-search controller's contract in terms of the machine (AArch64)
 
-`vg_ffdh_generate_parameters_sieved(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_generate_parameters(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7, scratch_len, state)`:
 eight arguments in registers and two on the stack. The controller uses 32
 bytes of stack: the frame saving `x30` and its candidate's frame of 16
