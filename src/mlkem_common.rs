@@ -98,7 +98,9 @@ impl Backend {
 /// loop's bound (for the comments). Encapsulation with a key that keeps the
 /// hash `H(ek)` (one from key generation) is `encaps_h` (and its instances),
 /// which takes it; with one that does not (one from `from_bytes`), `encaps`
-/// (and its instances), which computes it. On x86-64, `scratch_written` gives how many bytes of `scratch` the AVX2 and
+/// (and its instances), which computes it. `from_bytes` does not compute
+/// `H(ek)` itself so that `encaps` can: on AArch64, its paired instances hash
+/// it in Keccak lanes the matrix sampling leaves idle, almost for free. On x86-64, `scratch_written` gives how many bytes of `scratch` the AVX2 and
 /// AVX-512 instances of each may write (their `_SCRATCH_WRITTEN`), if fewer
 /// than all of it; the callers wipe only those.
 macro_rules! ml_kem {
