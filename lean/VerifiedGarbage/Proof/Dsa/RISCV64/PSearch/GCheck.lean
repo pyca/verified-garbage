@@ -351,6 +351,8 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     Nat.le_trans (Nat.mul_le_mul_right _ hj) (hMM ▸ Nat.div_mul_le_self _ _)
   have hWr : G.win u ≤ Spec.Dsa.generatorAttempts * G.pLen := Nat.min_le_right _ _
   have hW64 : G.win u < 2 ^ 64 := by simp only [Spec.Dsa.generatorAttempts] at hWr; omega
+  have hWu : G.win u + u ≤ G.randLen := by
+    have := Nat.min_le_left (G.randLen - u) (Spec.Dsa.generatorAttempts * G.pLen); simp only [GP.win]; omega
   rw [hg]
   -- Whether a candidate is left.
   refine VP.seq (G := fun σ s => St G (gCfg c G u k) X σ s ∧
@@ -394,8 +396,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     have stepVP := gStep_vp (c := gCfg c G u k) (X := XE G X) (H := G.hA u + BitVec.ofNat 64 (k * G.pLen))
       (hb := G.hAt u (k * G.pLen)) hg hgq cert R.hM R.hMv R.hO R.hOv R.hZ R.hZv R.hHl R.hTl R.hkls R.hPc R.hpv
       R.hp2 R.hpo R.hEc R.hev R.hcl (by simp) (by simp [upd, fH, fHLeft, fG])
-      (fun σ ⟨_, hσ, hG⟩ => cand_src hσ hG hpL (by
-        have := Nat.min_le_left (G.randLen - u) (Spec.Dsa.generatorAttempts * G.pLen); omega) (by omega))
+      (fun σ ⟨_, hσ, hG⟩ => cand_src hσ hG hpL (by omega) (by omega))
     by_cases hok : gOk G u pv ev (k * G.pLen)
     · -- It gives g: done.
       have r0 : r = 0 := by rw [ite_eq_left_of_eq_true _ _ (eq_true hok)] at hc; omega
@@ -424,8 +425,8 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
             G.pLen) :: (gCfg c G u k).cl }).setV fG 1).V fH) = G.hA u + BitVec.ofNat 64 (k * G.pLen) := by
         simp [upd, fH, fHLeft, fG]
       rw [e1, eH] at h'
-      refine h'.ofV (by ls_sub) (fun o ho => ?_) (fun y hy => hy) rfl rfl rfl rfl
-      simp only [Cfg.setV, List.mem_cons] at ho
+      refine h'.ofV (by simp only [gFin]; ls_sub) (fun o ho => ?_) (fun y hy => hy) rfl rfl rfl rfl
+      simp only [gFin, Cfg.setV, List.mem_cons] at ho ⊢
       v_eq
     · -- It does not: the next candidate.
       rw [ite_eq_right_of_eq_false _ _ (eq_false hok)] at hc
@@ -445,7 +446,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
         rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), ← eD, Nat.sub_add_eq]
       have e1 : (gCfg c G u k).V fH = G.hA u + BitVec.ofNat 64 (k * G.pLen) := by simp [upd, fH, fHLeft, fG]
       have e2 : (gCfg c G u k).V fHLeft = BitVec.ofNat 64 (G.win u - k * G.pLen) := by
-        simp [upd, fH, fHLeft, fG]
+        simp [upd, fHLeft, fG]
       refine cmpF_vp (x := BitVec.ofNat 64 4) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.gi.slotV (by simp)).trans (by simp [upd, fH, fHLeft, fG]))
         fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega), fun _ => ?_⟩
@@ -455,7 +456,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       · rw [hcnt, GP.gList, GP.gList, hcs, ite_eq_right_of_eq_false _ _ (eq_false hok)]; omega
       · rw [e1, e2, eH, eL] at h'
         refine h'.ofV (by ls_sub) (fun o ho => ?_) (fun y hy => hy) rfl rfl rfl rfl
-        simp only [Cfg.setV, List.mem_cons] at ho
+        simp only [List.mem_cons] at ho
         v_eq
   · -- The window is done: `fG` := 2.
     have hkM' : k = M := by omega
@@ -463,14 +464,14 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     have r0 : r = 0 := by simp only [Nat.sub_self, gCount] at hc; omega
     subst r0
     have hz : G.win u - k * G.pLen < G.pLen := by
-      have := Nat.lt_mul_div_succ (G.win u) hpL; rw [← hMM] at this
-      have := Nat.div_mul_le_self (G.win u) G.pLen; rw [← hMM] at this
-      rw [Nat.mul_comm] at *; omega
+      have h1 := Nat.lt_mul_div_succ (G.win u) hpL
+      rw [show G.win u / G.pLen = k from hMM, Nat.mul_succ, Nat.mul_comm] at h1
+      omega
     have hdone : ((G.winB u).drop (k * G.pLen)).length < G.pLen := by rw [List.length_drop, hWl]; exact hz
     have none0 : Spec.Dsa.generator pv qv (G.gList u 0) = none := by
       rw [← hres, GP.gList, VG.Proof.Dsa.Generation.generationChunks_done hdone]; rfl
     have cnt0 : Proof.Dsa.Generation.generatorCount pv qv (G.gList u 0) = k := by
-      rw [hcnt, GP.gList, VG.Proof.Dsa.Generation.generatorCount_chunks_done hdone]
+      rw [hcnt, GP.gList, VG.Proof.Dsa.Generation.generatorCount_chunks_done hdone, Nat.add_zero]
     refine VP.seq (G := St G ((gCfg c G u k).setV fG (BitVec.ofNat 64 2)) X) (VP.ite hcnd
       (stImm_vp (c := fun _ => gCfg c G u k) (o := fG) (v := 2) (fun σ s h => h.1.1.1) (by decide)
         varOk_fG fun σ s t h h' _ => ⟨h', h.1.1.2⟩)
@@ -480,9 +481,8 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       (fun σ s h => h.1) (by decide) (by decide) (by decide) (fun σ s h => (h.1.gi.slotV (by simp)).trans (by simp [upd]))
       fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; rfl, fun _ => ⟨?_, x⟩, fun h0 => absurd h0 (by decide)⟩
     rw [none0, cnt0]
-    refine h'.ofV (by ls_sub) (fun o ho => ?_) (fun y hy => hy) rfl rfl rfl rfl
-    simp only [gFin, Cfg.setV, List.mem_cons] at ho
-    simp only [gFin]
+    refine h'.ofV (by simp only [gFin]; ls_sub) (fun o ho => ?_) (fun y hy => hy) rfl rfl rfl rfl
+    simp only [gFin, Cfg.setV, List.mem_cons] at ho ⊢
     v_eq
 
 end
