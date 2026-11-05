@@ -2219,7 +2219,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2279,7 +2279,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2299,7 +2299,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2319,7 +2319,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -2379,7 +2379,7 @@ yours to keep:
 
 <td>✅ umaal</td>
 
-<td>✅ SHA extensions</td>
+<td>✅</td>
 
 <td>✅</td>
 

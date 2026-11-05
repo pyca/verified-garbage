@@ -1,4 +1,5 @@
 module
+-- separate module: its facts about the code build in parallel with the proofs of `CT`, which `Table` also imports
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 
