@@ -2,6 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Comb
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scalar
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
+import VerifiedGarbage.Proof.Mont.RangeCover
+import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -140,5 +147,71 @@ theorem scalarC_value {rb : List Byte} {k bits : Nat} (hl : rb.length = k) (hb1 
     (j := 8 - (8 * ((bits + 7) / 8) - bits)) (by omega) (by omega) (by omega) (tbOf_toNat bits)]
   congr 2
   omega
+
+/-! ## x in range -/
+
+/-- What the attempt's body changes in the working space: the header's
+`hI`, `hD` and `hJ`, and the arrays. -/
+abbrev attOut (w : Nat) : List (Nat × Nat) := [(32, 24), (slot w 0, 28 * (8 * (w + 2)))]
+
+theorem comb_att {B : Addr} {w : Nat} {m m' : Mem} (h : Outs B (combOut w) m m') : Outs B (attOut w) m m' :=
+  Outs.cover h fun r hr => by
+    simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [slot]; omega, by simp only [slot]; omega⟩
+
+theorem body_att {B : Addr} {w : Nat} {m m' : Mem} (h : VG.Proof.Ffdh.PPC64LE.Domain.Body B w m m') :
+    Outs B (attOut w) m m' := Outs.of_outside h (by simp [attOut])
+
+theorem attOut_fit {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) : ∀ r ∈ attOut w, r.1 + r.2 ≤ Z := by
+  have := h.hZ
+  intro r hr
+  simp only [attOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · show 32 + 24 ≤ Z; have := VG.Proof.Ffdh.PPC64LE.Domain.slot_eq w 28; omega
+  · show slot w 0 + 28 * (8 * (w + 2)) ≤ Z; rw [← VG.Proof.Ffdh.PPC64LE.Domain.slot28]; exact this
+
+theorem hdr_of_att {B : Addr} {w x : Nat} {m m' : Mem} (ho : Outs B (attOut w) m m') (hx : x + 8 ≤ 32 ∨ 56 ≤ x)
+    (hx' : x + 8 ≤ 256) : m'.readW (off B x) 64 = m.readW (off B x) 64 :=
+  ho.word (d := x) (fun r hr => by
+    simp only [attOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by omega)
+
+/-- The registers `good` writes. -/
+def goodRegs : List Reg := combRegs ++ VG.Proof.Ffdh.PPC64LE.Domain.exOutRegs ++ [.r0, .r3]
+
+/-- `good`: the comb's `g^x mod p` or zeros at `O` (the header's word 10),
+and the status 1 or 3. -/
+theorem goodC_ok {s : State} {B C X O : Addr} {Z w k : Nat} {xb : List Byte} {P G bits : Nat}
+    (h : CombIn s B C X Z w xb P G bits) (ho : Scr s O k) (hk : 1 ≤ k) (hkw : k ≤ 8 * w)
+    (hO : s.mem.readW (off B 80) 64 = off O 0) (hsepO : ∀ x, ofs O x < k → Z ≤ ofs B x) (hpk : P < 256 ^ k)
+    (hk28 : xb.length = k) :
+    WP isa good s fun t =>
+      (Spec.Rsa.bytesAt t.mem O k =
+          (if 1 < Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P ∧
+              Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P < P - 1 then
+            Spec.Rsa.i2osp (Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P) k
+          else List.replicate k 0) ∧
+        t.gpr .r3 = BitVec.ofNat 64 (if 1 < Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P ∧
+            Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P < P - 1 then 1 else 3) ∧
+        ∃ m, Outs B (attOut w) s.mem m ∧ Outside O 0 k m t.mem) ∧ Keep goodRegs s t := by
+  have hZ := h.env.hZ
+  have hw := h.env.hw; have hw' := h.env.hw'
+  have hP : 0 < P := by have := h.row.one; omega
+  unfold good
+  refine WP.seq (WP.mono (comb_ok h) fun s₁ ⟨⟨z1, p1, o1, r10⟩, k1⟩ => ?_)
+  generalize hz : Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P = z at z1 ⊢
+  have hzP : z < P := by rw [← hz, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hP
+  refine WP.seq (WP.mono (VG.Proof.Ffdh.PPC64LE.Domain.exOut_ok (O := O) (k := k) (h.env.hs.congr k1.wr)
+    (ho.congr k1.wr) r10 ((k1.gpr .r29 (by decide)).trans h.env.h29) ((k1.gpr .r11 (by decide)).trans h.env.h11)
+    ((k1.gpr .r23 (by decide)).trans h.h23) (by rw [k1.gpr .r28 (by decide), h.h28, hk28]) hw hw' hZ hk hkw
+    (by rw [hdr_of_comb o1 (by decide) (by decide)]; exact hO) hsepO
+    (by rw [p1]; omega) (by rw [z1, p1]; exact hzP) (by rw [p1]; exact hpk))
+    fun s₂ ⟨⟨ob, o2, m, bm, om⟩, k2⟩ => ?_)
+  rw [z1, p1] at ob o2
+  refine WP.mono (VG.Proof.Ffdh.PPC64LE.Derive.status_ok s₂ (1 < z ∧ z < P - 1) o2) fun t ⟨⟨t3, tm⟩, kt⟩ =>
+    ⟨⟨by rw [tm, ob], t3, m, (comb_att o1).trans (body_att bm), by rw [tm]; exact om⟩,
+      ((k1.trans k2).trans kt).mono (by decide)⟩
 
 end VG.Proof.Ffdh.PPC64LE.Cached
