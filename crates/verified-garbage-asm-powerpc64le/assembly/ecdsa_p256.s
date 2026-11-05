@@ -1702,42 +1702,24 @@ vg_ecdsa_p256_sign:
 	xor %r7, %r7, %r8
 	li %r12, 232
 	stwbrx %r7, %r11, %r12
-	addi %r11, %r1, 0
-	lis %r9, 257
-	ori %r9, %r9, 257
-	li %r10, 0
-	stw %r9, 96(%r11)
-	stw %r10, 32(%r11)
-	stw %r9, 100(%r11)
-	stw %r10, 36(%r11)
-	stw %r9, 104(%r11)
-	stw %r10, 40(%r11)
-	stw %r9, 108(%r11)
-	stw %r10, 44(%r11)
-	stw %r9, 112(%r11)
-	stw %r10, 48(%r11)
-	stw %r9, 116(%r11)
-	stw %r10, 52(%r11)
-	stw %r9, 120(%r11)
-	stw %r10, 56(%r11)
-	stw %r9, 124(%r11)
-	stw %r10, 60(%r11)
-	stw %r9, 128(%r11)
-	stw %r10, 64(%r11)
-	stw %r9, 132(%r11)
-	stw %r10, 68(%r11)
-	stw %r9, 136(%r11)
-	stw %r10, 72(%r11)
-	stw %r9, 140(%r11)
-	stw %r10, 76(%r11)
-	stw %r9, 144(%r11)
-	stw %r10, 80(%r11)
-	stw %r9, 148(%r11)
-	stw %r10, 84(%r11)
-	stw %r9, 152(%r11)
-	stw %r10, 88(%r11)
-	stw %r9, 156(%r11)
-	stw %r10, 92(%r11)
+	addi %r4, %r1, 96
+	li %r5, 64
+	li %r6, 1
+21:
+	stb %r6, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 21b
+	addi %r4, %r1, 32
+	li %r5, 64
+	li %r6, 0
+22:
+	stb %r6, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 22b
 	addi %r11, %r1, 0
 	ld %r9, 176(%r11)
 	ld %r10, 192(%r11)
@@ -1776,65 +1758,60 @@ vg_ecdsa_p256_sign:
 	lwz %r8, 260(%r11)
 	stw %r8, 2317(%r9)
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r4, %r4, %r6
-	addi %r5, %r12, 2256
+	addi %r5, %r3, 2256
 	li %r6, 65
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 65
 	addi %r6, %r1, 32
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 0(%r12)
@@ -1842,124 +1819,37 @@ vg_ecdsa_p256_sign:
 	bctrl
 	addi %r11, %r1, 0
 	ld %r12, 176(%r11)
-	ld %r9, 0(%r12)
-	std %r9, 3072(%r12)
-	ld %r9, 8(%r12)
-	std %r9, 3080(%r12)
-	ld %r9, 16(%r12)
-	std %r9, 3088(%r12)
-	ld %r9, 24(%r12)
-	std %r9, 3096(%r12)
-	ld %r9, 32(%r12)
-	std %r9, 3104(%r12)
-	ld %r9, 40(%r12)
-	std %r9, 3112(%r12)
-	ld %r9, 48(%r12)
-	std %r9, 3120(%r12)
-	ld %r9, 56(%r12)
-	std %r9, 3128(%r12)
-	ld %r9, 64(%r12)
-	std %r9, 3136(%r12)
-	ld %r9, 72(%r12)
-	std %r9, 3144(%r12)
-	ld %r9, 80(%r12)
-	std %r9, 3152(%r12)
-	ld %r9, 88(%r12)
-	std %r9, 3160(%r12)
-	ld %r9, 96(%r12)
-	std %r9, 3168(%r12)
-	ld %r9, 104(%r12)
-	std %r9, 3176(%r12)
-	ld %r9, 112(%r12)
-	std %r9, 3184(%r12)
-	ld %r9, 120(%r12)
-	std %r9, 3192(%r12)
-	ld %r9, 128(%r12)
-	std %r9, 3200(%r12)
-	ld %r9, 136(%r12)
-	std %r9, 3208(%r12)
-	ld %r9, 144(%r12)
-	std %r9, 3216(%r12)
-	ld %r9, 152(%r12)
-	std %r9, 3224(%r12)
-	ld %r9, 160(%r12)
-	std %r9, 3232(%r12)
-	ld %r9, 168(%r12)
-	std %r9, 3240(%r12)
-	ld %r9, 176(%r12)
-	std %r9, 3248(%r12)
-	ld %r9, 184(%r12)
-	std %r9, 3256(%r12)
-	ld %r9, 192(%r12)
-	std %r9, 3264(%r12)
-	ld %r9, 200(%r12)
-	std %r9, 3272(%r12)
-	ld %r9, 208(%r12)
-	std %r9, 3280(%r12)
-	ld %r9, 216(%r12)
-	std %r9, 3288(%r12)
-	ld %r9, 224(%r12)
-	std %r9, 3296(%r12)
-	ld %r9, 232(%r12)
-	std %r9, 3304(%r12)
-	ld %r9, 240(%r12)
-	std %r9, 3312(%r12)
-	ld %r9, 248(%r12)
-	std %r9, 3320(%r12)
-	ld %r9, 256(%r12)
-	std %r9, 3328(%r12)
-	ld %r9, 264(%r12)
-	std %r9, 3336(%r12)
-	ld %r9, 272(%r12)
-	std %r9, 3344(%r12)
-	ld %r9, 280(%r12)
-	std %r9, 3352(%r12)
-	ld %r9, 288(%r12)
-	std %r9, 3360(%r12)
-	ld %r9, 296(%r12)
-	std %r9, 3368(%r12)
-	ld %r9, 304(%r12)
-	std %r9, 3376(%r12)
-	ld %r9, 312(%r12)
-	std %r9, 3384(%r12)
-	ld %r9, 320(%r12)
-	std %r9, 3392(%r12)
-	ld %r9, 328(%r12)
-	std %r9, 3400(%r12)
-	ld %r9, 336(%r12)
-	std %r9, 3408(%r12)
-	ld %r9, 344(%r12)
-	std %r9, 3416(%r12)
-	ld %r9, 352(%r12)
-	std %r9, 3424(%r12)
-	ld %r9, 360(%r12)
-	std %r9, 3432(%r12)
-	ld %r9, 368(%r12)
-	std %r9, 3440(%r12)
-	ld %r9, 376(%r12)
-	std %r9, 3448(%r12)
+	addi %r4, %r12, 0
+	addi %r5, %r12, 3072
+	li %r6, 384
+23:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 23b
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
@@ -2004,150 +1894,61 @@ vg_ecdsa_p256_sign:
 	stw %r8, 2317(%r9)
 	addi %r11, %r1, 0
 	ld %r12, 176(%r11)
-	ld %r9, 3072(%r12)
-	std %r9, 0(%r12)
-	ld %r9, 3080(%r12)
-	std %r9, 8(%r12)
-	ld %r9, 3088(%r12)
-	std %r9, 16(%r12)
-	ld %r9, 3096(%r12)
-	std %r9, 24(%r12)
-	ld %r9, 3104(%r12)
-	std %r9, 32(%r12)
-	ld %r9, 3112(%r12)
-	std %r9, 40(%r12)
-	ld %r9, 3120(%r12)
-	std %r9, 48(%r12)
-	ld %r9, 3128(%r12)
-	std %r9, 56(%r12)
-	ld %r9, 3136(%r12)
-	std %r9, 64(%r12)
-	ld %r9, 3144(%r12)
-	std %r9, 72(%r12)
-	ld %r9, 3152(%r12)
-	std %r9, 80(%r12)
-	ld %r9, 3160(%r12)
-	std %r9, 88(%r12)
-	ld %r9, 3168(%r12)
-	std %r9, 96(%r12)
-	ld %r9, 3176(%r12)
-	std %r9, 104(%r12)
-	ld %r9, 3184(%r12)
-	std %r9, 112(%r12)
-	ld %r9, 3192(%r12)
-	std %r9, 120(%r12)
-	ld %r9, 3200(%r12)
-	std %r9, 128(%r12)
-	ld %r9, 3208(%r12)
-	std %r9, 136(%r12)
-	ld %r9, 3216(%r12)
-	std %r9, 144(%r12)
-	ld %r9, 3224(%r12)
-	std %r9, 152(%r12)
-	ld %r9, 3232(%r12)
-	std %r9, 160(%r12)
-	ld %r9, 3240(%r12)
-	std %r9, 168(%r12)
-	ld %r9, 3248(%r12)
-	std %r9, 176(%r12)
-	ld %r9, 3256(%r12)
-	std %r9, 184(%r12)
-	ld %r9, 3264(%r12)
-	std %r9, 192(%r12)
-	ld %r9, 3272(%r12)
-	std %r9, 200(%r12)
-	ld %r9, 3280(%r12)
-	std %r9, 208(%r12)
-	ld %r9, 3288(%r12)
-	std %r9, 216(%r12)
-	ld %r9, 3296(%r12)
-	std %r9, 224(%r12)
-	ld %r9, 3304(%r12)
-	std %r9, 232(%r12)
-	ld %r9, 3312(%r12)
-	std %r9, 240(%r12)
-	ld %r9, 3320(%r12)
-	std %r9, 248(%r12)
-	ld %r9, 3328(%r12)
-	std %r9, 256(%r12)
-	ld %r9, 3336(%r12)
-	std %r9, 264(%r12)
-	ld %r9, 3344(%r12)
-	std %r9, 272(%r12)
-	ld %r9, 3352(%r12)
-	std %r9, 280(%r12)
-	ld %r9, 3360(%r12)
-	std %r9, 288(%r12)
-	ld %r9, 3368(%r12)
-	std %r9, 296(%r12)
-	ld %r9, 3376(%r12)
-	std %r9, 304(%r12)
-	ld %r9, 3384(%r12)
-	std %r9, 312(%r12)
-	ld %r9, 3392(%r12)
-	std %r9, 320(%r12)
-	ld %r9, 3400(%r12)
-	std %r9, 328(%r12)
-	ld %r9, 3408(%r12)
-	std %r9, 336(%r12)
-	ld %r9, 3416(%r12)
-	std %r9, 344(%r12)
-	ld %r9, 3424(%r12)
-	std %r9, 352(%r12)
-	ld %r9, 3432(%r12)
-	std %r9, 360(%r12)
-	ld %r9, 3440(%r12)
-	std %r9, 368(%r12)
-	ld %r9, 3448(%r12)
-	std %r9, 376(%r12)
+	addi %r4, %r12, 3072
+	addi %r5, %r12, 0
+	li %r6, 384
+24:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 24b
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r4, %r4, %r6
-	addi %r5, %r12, 2256
+	addi %r5, %r3, 2256
 	li %r6, 65
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 65
 	addi %r6, %r1, 32
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 0(%r12)
@@ -2155,124 +1956,37 @@ vg_ecdsa_p256_sign:
 	bctrl
 	addi %r11, %r1, 0
 	ld %r12, 176(%r11)
-	ld %r9, 0(%r12)
-	std %r9, 3072(%r12)
-	ld %r9, 8(%r12)
-	std %r9, 3080(%r12)
-	ld %r9, 16(%r12)
-	std %r9, 3088(%r12)
-	ld %r9, 24(%r12)
-	std %r9, 3096(%r12)
-	ld %r9, 32(%r12)
-	std %r9, 3104(%r12)
-	ld %r9, 40(%r12)
-	std %r9, 3112(%r12)
-	ld %r9, 48(%r12)
-	std %r9, 3120(%r12)
-	ld %r9, 56(%r12)
-	std %r9, 3128(%r12)
-	ld %r9, 64(%r12)
-	std %r9, 3136(%r12)
-	ld %r9, 72(%r12)
-	std %r9, 3144(%r12)
-	ld %r9, 80(%r12)
-	std %r9, 3152(%r12)
-	ld %r9, 88(%r12)
-	std %r9, 3160(%r12)
-	ld %r9, 96(%r12)
-	std %r9, 3168(%r12)
-	ld %r9, 104(%r12)
-	std %r9, 3176(%r12)
-	ld %r9, 112(%r12)
-	std %r9, 3184(%r12)
-	ld %r9, 120(%r12)
-	std %r9, 3192(%r12)
-	ld %r9, 128(%r12)
-	std %r9, 3200(%r12)
-	ld %r9, 136(%r12)
-	std %r9, 3208(%r12)
-	ld %r9, 144(%r12)
-	std %r9, 3216(%r12)
-	ld %r9, 152(%r12)
-	std %r9, 3224(%r12)
-	ld %r9, 160(%r12)
-	std %r9, 3232(%r12)
-	ld %r9, 168(%r12)
-	std %r9, 3240(%r12)
-	ld %r9, 176(%r12)
-	std %r9, 3248(%r12)
-	ld %r9, 184(%r12)
-	std %r9, 3256(%r12)
-	ld %r9, 192(%r12)
-	std %r9, 3264(%r12)
-	ld %r9, 200(%r12)
-	std %r9, 3272(%r12)
-	ld %r9, 208(%r12)
-	std %r9, 3280(%r12)
-	ld %r9, 216(%r12)
-	std %r9, 3288(%r12)
-	ld %r9, 224(%r12)
-	std %r9, 3296(%r12)
-	ld %r9, 232(%r12)
-	std %r9, 3304(%r12)
-	ld %r9, 240(%r12)
-	std %r9, 3312(%r12)
-	ld %r9, 248(%r12)
-	std %r9, 3320(%r12)
-	ld %r9, 256(%r12)
-	std %r9, 3328(%r12)
-	ld %r9, 264(%r12)
-	std %r9, 3336(%r12)
-	ld %r9, 272(%r12)
-	std %r9, 3344(%r12)
-	ld %r9, 280(%r12)
-	std %r9, 3352(%r12)
-	ld %r9, 288(%r12)
-	std %r9, 3360(%r12)
-	ld %r9, 296(%r12)
-	std %r9, 3368(%r12)
-	ld %r9, 304(%r12)
-	std %r9, 3376(%r12)
-	ld %r9, 312(%r12)
-	std %r9, 3384(%r12)
-	ld %r9, 320(%r12)
-	std %r9, 3392(%r12)
-	ld %r9, 328(%r12)
-	std %r9, 3400(%r12)
-	ld %r9, 336(%r12)
-	std %r9, 3408(%r12)
-	ld %r9, 344(%r12)
-	std %r9, 3416(%r12)
-	ld %r9, 352(%r12)
-	std %r9, 3424(%r12)
-	ld %r9, 360(%r12)
-	std %r9, 3432(%r12)
-	ld %r9, 368(%r12)
-	std %r9, 3440(%r12)
-	ld %r9, 376(%r12)
-	std %r9, 3448(%r12)
+	addi %r4, %r12, 0
+	addi %r5, %r12, 3072
+	li %r6, 384
+25:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 25b
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
@@ -2281,131 +1995,44 @@ vg_ecdsa_p256_sign:
 	li %r9, 8
 	addi %r11, %r1, 0
 	std %r9, 168(%r11)
-21:
+26:
 	li %r9, 0
 	addi %r11, %r1, 0
 	std %r9, 160(%r11)
-22:
+27:
 	addi %r11, %r1, 0
 	ld %r12, 176(%r11)
-	ld %r9, 3072(%r12)
-	std %r9, 0(%r12)
-	ld %r9, 3080(%r12)
-	std %r9, 8(%r12)
-	ld %r9, 3088(%r12)
-	std %r9, 16(%r12)
-	ld %r9, 3096(%r12)
-	std %r9, 24(%r12)
-	ld %r9, 3104(%r12)
-	std %r9, 32(%r12)
-	ld %r9, 3112(%r12)
-	std %r9, 40(%r12)
-	ld %r9, 3120(%r12)
-	std %r9, 48(%r12)
-	ld %r9, 3128(%r12)
-	std %r9, 56(%r12)
-	ld %r9, 3136(%r12)
-	std %r9, 64(%r12)
-	ld %r9, 3144(%r12)
-	std %r9, 72(%r12)
-	ld %r9, 3152(%r12)
-	std %r9, 80(%r12)
-	ld %r9, 3160(%r12)
-	std %r9, 88(%r12)
-	ld %r9, 3168(%r12)
-	std %r9, 96(%r12)
-	ld %r9, 3176(%r12)
-	std %r9, 104(%r12)
-	ld %r9, 3184(%r12)
-	std %r9, 112(%r12)
-	ld %r9, 3192(%r12)
-	std %r9, 120(%r12)
-	ld %r9, 3200(%r12)
-	std %r9, 128(%r12)
-	ld %r9, 3208(%r12)
-	std %r9, 136(%r12)
-	ld %r9, 3216(%r12)
-	std %r9, 144(%r12)
-	ld %r9, 3224(%r12)
-	std %r9, 152(%r12)
-	ld %r9, 3232(%r12)
-	std %r9, 160(%r12)
-	ld %r9, 3240(%r12)
-	std %r9, 168(%r12)
-	ld %r9, 3248(%r12)
-	std %r9, 176(%r12)
-	ld %r9, 3256(%r12)
-	std %r9, 184(%r12)
-	ld %r9, 3264(%r12)
-	std %r9, 192(%r12)
-	ld %r9, 3272(%r12)
-	std %r9, 200(%r12)
-	ld %r9, 3280(%r12)
-	std %r9, 208(%r12)
-	ld %r9, 3288(%r12)
-	std %r9, 216(%r12)
-	ld %r9, 3296(%r12)
-	std %r9, 224(%r12)
-	ld %r9, 3304(%r12)
-	std %r9, 232(%r12)
-	ld %r9, 3312(%r12)
-	std %r9, 240(%r12)
-	ld %r9, 3320(%r12)
-	std %r9, 248(%r12)
-	ld %r9, 3328(%r12)
-	std %r9, 256(%r12)
-	ld %r9, 3336(%r12)
-	std %r9, 264(%r12)
-	ld %r9, 3344(%r12)
-	std %r9, 272(%r12)
-	ld %r9, 3352(%r12)
-	std %r9, 280(%r12)
-	ld %r9, 3360(%r12)
-	std %r9, 288(%r12)
-	ld %r9, 3368(%r12)
-	std %r9, 296(%r12)
-	ld %r9, 3376(%r12)
-	std %r9, 304(%r12)
-	ld %r9, 3384(%r12)
-	std %r9, 312(%r12)
-	ld %r9, 3392(%r12)
-	std %r9, 320(%r12)
-	ld %r9, 3400(%r12)
-	std %r9, 328(%r12)
-	ld %r9, 3408(%r12)
-	std %r9, 336(%r12)
-	ld %r9, 3416(%r12)
-	std %r9, 344(%r12)
-	ld %r9, 3424(%r12)
-	std %r9, 352(%r12)
-	ld %r9, 3432(%r12)
-	std %r9, 360(%r12)
-	ld %r9, 3440(%r12)
-	std %r9, 368(%r12)
-	ld %r9, 3448(%r12)
-	std %r9, 376(%r12)
+	addi %r4, %r12, 3072
+	addi %r5, %r12, 0
+	li %r6, 384
+28:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 28b
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
@@ -2417,14 +2044,14 @@ vg_ecdsa_p256_sign:
 	ld %r9, 160(%r11)
 	add %r5, %r5, %r9
 	ld %r6, 208(%r11)
-23:
+29:
 	lbz %r7, 0(%r4)
 	stb %r7, 0(%r5)
 	addi %r4, %r4, 1
 	addi %r5, %r5, 1
 	addi %r6, %r6, -1
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 23b
+	bne %cr0, 29b
 	addi %r11, %r1, 0
 	ld %r9, 160(%r11)
 	ld %r10, 208(%r11)
@@ -2434,7 +2061,7 @@ vg_ecdsa_p256_sign:
 	subfc %r12, %r10, %r9
 	subfe %r12, %r12, %r12
 	cmpldi %cr0, %r12, 0
-	bne %cr0, 22b
+	bne %cr0, 27b
 	addi %r11, %r1, 0
 	ld %r3, 200(%r11)
 	ld %r4, 192(%r11)
@@ -2451,75 +2078,70 @@ vg_ecdsa_p256_sign:
 	subf %r8, %r10, %r8
 	and %r12, %r8, %r9
 	cmpldi %cr0, %r12, 0
-	bne %cr0, 24f
+	bne %cr0, 210f
 	li %r12, 0
-	b 25f
-24:
+	b 211f
+210:
 	addi %r11, %r1, 0
 	ld %r9, 176(%r11)
 	ld %r10, 192(%r11)
 	li %r8, 0
 	stb %r8, 2256(%r9)
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r4, %r4, %r6
-	addi %r5, %r12, 2256
+	addi %r5, %r3, 2256
 	li %r6, 1
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 1
 	addi %r6, %r1, 32
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 0(%r12)
@@ -2527,196 +2149,64 @@ vg_ecdsa_p256_sign:
 	bctrl
 	addi %r11, %r1, 0
 	ld %r12, 176(%r11)
-	ld %r9, 0(%r12)
-	std %r9, 3072(%r12)
-	ld %r9, 8(%r12)
-	std %r9, 3080(%r12)
-	ld %r9, 16(%r12)
-	std %r9, 3088(%r12)
-	ld %r9, 24(%r12)
-	std %r9, 3096(%r12)
-	ld %r9, 32(%r12)
-	std %r9, 3104(%r12)
-	ld %r9, 40(%r12)
-	std %r9, 3112(%r12)
-	ld %r9, 48(%r12)
-	std %r9, 3120(%r12)
-	ld %r9, 56(%r12)
-	std %r9, 3128(%r12)
-	ld %r9, 64(%r12)
-	std %r9, 3136(%r12)
-	ld %r9, 72(%r12)
-	std %r9, 3144(%r12)
-	ld %r9, 80(%r12)
-	std %r9, 3152(%r12)
-	ld %r9, 88(%r12)
-	std %r9, 3160(%r12)
-	ld %r9, 96(%r12)
-	std %r9, 3168(%r12)
-	ld %r9, 104(%r12)
-	std %r9, 3176(%r12)
-	ld %r9, 112(%r12)
-	std %r9, 3184(%r12)
-	ld %r9, 120(%r12)
-	std %r9, 3192(%r12)
-	ld %r9, 128(%r12)
-	std %r9, 3200(%r12)
-	ld %r9, 136(%r12)
-	std %r9, 3208(%r12)
-	ld %r9, 144(%r12)
-	std %r9, 3216(%r12)
-	ld %r9, 152(%r12)
-	std %r9, 3224(%r12)
-	ld %r9, 160(%r12)
-	std %r9, 3232(%r12)
-	ld %r9, 168(%r12)
-	std %r9, 3240(%r12)
-	ld %r9, 176(%r12)
-	std %r9, 3248(%r12)
-	ld %r9, 184(%r12)
-	std %r9, 3256(%r12)
-	ld %r9, 192(%r12)
-	std %r9, 3264(%r12)
-	ld %r9, 200(%r12)
-	std %r9, 3272(%r12)
-	ld %r9, 208(%r12)
-	std %r9, 3280(%r12)
-	ld %r9, 216(%r12)
-	std %r9, 3288(%r12)
-	ld %r9, 224(%r12)
-	std %r9, 3296(%r12)
-	ld %r9, 232(%r12)
-	std %r9, 3304(%r12)
-	ld %r9, 240(%r12)
-	std %r9, 3312(%r12)
-	ld %r9, 248(%r12)
-	std %r9, 3320(%r12)
-	ld %r9, 256(%r12)
-	std %r9, 3328(%r12)
-	ld %r9, 264(%r12)
-	std %r9, 3336(%r12)
-	ld %r9, 272(%r12)
-	std %r9, 3344(%r12)
-	ld %r9, 280(%r12)
-	std %r9, 3352(%r12)
-	ld %r9, 288(%r12)
-	std %r9, 3360(%r12)
-	ld %r9, 296(%r12)
-	std %r9, 3368(%r12)
-	ld %r9, 304(%r12)
-	std %r9, 3376(%r12)
-	ld %r9, 312(%r12)
-	std %r9, 3384(%r12)
-	ld %r9, 320(%r12)
-	std %r9, 3392(%r12)
-	ld %r9, 328(%r12)
-	std %r9, 3400(%r12)
-	ld %r9, 336(%r12)
-	std %r9, 3408(%r12)
-	ld %r9, 344(%r12)
-	std %r9, 3416(%r12)
-	ld %r9, 352(%r12)
-	std %r9, 3424(%r12)
-	ld %r9, 360(%r12)
-	std %r9, 3432(%r12)
-	ld %r9, 368(%r12)
-	std %r9, 3440(%r12)
-	ld %r9, 376(%r12)
-	std %r9, 3448(%r12)
+	addi %r4, %r12, 0
+	addi %r5, %r12, 3072
+	li %r6, 384
+212:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 212b
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
+	ld %r3, 176(%r11)
 	ld %r4, 216(%r11)
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
 	addi %r11, %r1, 0
-	ld %r12, 176(%r11)
-	addi %r3, %r12, 0
-	addi %r4, %r12, 192
+	ld %r3, 176(%r11)
+	addi %r4, %r3, 192
 	ld %r5, 216(%r11)
 	ld %r6, 208(%r11)
 	add %r5, %r5, %r6
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
-	addi %r7, %r12, 384
+	addi %r7, %r3, 384
 	addi %r12, %r1, 0
 	ld %r12, 224(%r12)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
 	li %r12, 1
-25:
+211:
 	cmpldi %cr0, %r12, 0
-	bne %cr0, 21b
-	addi %r11, %r1, 0
-	li %r12, 0
-	std %r12, 32(%r11)
-	std %r12, 40(%r11)
-	std %r12, 48(%r11)
-	std %r12, 56(%r11)
-	std %r12, 64(%r11)
-	std %r12, 72(%r11)
-	std %r12, 80(%r11)
-	std %r12, 88(%r11)
-	std %r12, 96(%r11)
-	std %r12, 104(%r11)
-	std %r12, 112(%r11)
-	std %r12, 120(%r11)
-	std %r12, 128(%r11)
-	std %r12, 136(%r11)
-	std %r12, 144(%r11)
-	std %r12, 152(%r11)
-	std %r12, 232(%r11)
-	std %r12, 240(%r11)
-	std %r12, 248(%r11)
-	std %r12, 256(%r11)
-	std %r12, 264(%r11)
-	std %r12, 272(%r11)
-	std %r12, 280(%r11)
-	std %r12, 288(%r11)
-	std %r12, 296(%r11)
-	std %r12, 304(%r11)
-	std %r12, 312(%r11)
-	std %r12, 320(%r11)
-	std %r12, 328(%r11)
-	std %r12, 336(%r11)
-	std %r12, 344(%r11)
-	std %r12, 352(%r11)
-	std %r12, 360(%r11)
-	std %r12, 368(%r11)
-	std %r12, 376(%r11)
-	std %r12, 384(%r11)
-	std %r12, 392(%r11)
-	std %r12, 400(%r11)
-	std %r12, 408(%r11)
-	std %r12, 416(%r11)
-	std %r12, 424(%r11)
-	std %r12, 432(%r11)
-	std %r12, 440(%r11)
-	std %r12, 448(%r11)
-	std %r12, 456(%r11)
-	std %r12, 464(%r11)
-	std %r12, 472(%r11)
-	std %r12, 480(%r11)
-	std %r12, 488(%r11)
-	std %r12, 496(%r11)
-	std %r12, 504(%r11)
-	std %r12, 512(%r11)
-	std %r12, 520(%r11)
-	std %r12, 528(%r11)
-	std %r12, 536(%r11)
-	std %r12, 544(%r11)
-	std %r12, 552(%r11)
-	std %r12, 560(%r11)
-	std %r12, 568(%r11)
-	std %r12, 576(%r11)
-	std %r12, 584(%r11)
+	bne %cr0, 26b
+	addi %r4, %r1, 32
+	li %r5, 128
+	li %r6, 0
+213:
+	stb %r6, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 213b
+	addi %r4, %r1, 232
+	li %r5, 360
+	li %r6, 0
+214:
+	stb %r6, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 214b
 	addi %r1, %r1, 592
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48

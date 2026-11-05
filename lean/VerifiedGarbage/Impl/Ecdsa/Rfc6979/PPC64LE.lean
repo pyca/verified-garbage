@@ -170,30 +170,32 @@ def tcall (j : Nat) (ts : List (String × Prog isa)) : Prog isa :=
   .seq (.block [.addSp .r12 0, .load .d .r12 .r12 fTab, .load .d .r12 .r12 (8 * j)])
     (Code.icalls .bctrl ts)
 
+/-- `r3 ← scratch` (HMAC's inner state, `scratch + sInner`), with the frame
+in `r11`. -/
+def argBase : List Instr := [.addSp .r11 0, .load .d .r3 .r11 fScratch]
+
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 the working space. -/
 def initArgs : List Instr :=
-  scrBase ++ [.addi .r3 .r12 sInner, .addi .r4 .r12 sOuter, .addSp .r5 fK, .load .d .r6 .r11 fDl,
-    .addi .r7 .r12 sWork]
+  argBase ++ [.addi .r4 .r3 sOuter, .addSp .r5 fK, .load .d .r6 .r11 fDl, .addi .r7 .r3 sWork]
 
 /-- The arguments of the streaming `update` with `V`: the inner state, the
 `B` bytes it holds, `V`'s `D` bytes, the working space. -/
 def updVArgs : List Instr :=
-  scrBase ++ [.addi .r3 .r12 sInner, .load .d .r4 .r11 fBl, .addSp .r5 fV, .load .d .r6 .r11 fDl,
-    .addi .r7 .r12 sWork]
+  argBase ++ [.load .d .r4 .r11 fBl, .addSp .r5 fV, .load .d .r6 .r11 fDl, .addi .r7 .r3 sWork]
 
 /-- The arguments of the streaming `update` with the message: the inner
 state, the `B + D` bytes it holds, the message's `len` bytes, the working
 space. -/
 def updMArgs (len : Nat) : List Instr :=
-  scrBase ++ [.addi .r3 .r12 sInner, .load .d .r4 .r11 fBl, .load .d .r6 .r11 fDl, .add .r4 .r4 .r6,
-    .addi .r5 .r12 sMsg, .li .r6 len, .addi .r7 .r12 sWork]
+  argBase ++ [.load .d .r4 .r11 fBl, .load .d .r6 .r11 fDl, .add .r4 .r4 .r6, .addi .r5 .r3 sMsg, .li .r6 len,
+    .addi .r7 .r3 sWork]
 
 /-- The arguments of HMAC's `finalize`: the states, the `B + D + len` bytes
 the inner one holds, the MAC's place in the frame, the working space. -/
 def finArgs (len dst : Nat) : List Instr :=
-  scrBase ++ [.addi .r3 .r12 sInner, .addi .r4 .r12 sOuter, .load .d .r5 .r11 fBl, .load .d .r6 .r11 fDl,
-    .add .r5 .r5 .r6, .addi .r5 .r5 len, .addSp .r6 dst, .addi .r7 .r12 sWork]
+  argBase ++ [.addi .r4 .r3 sOuter, .load .d .r5 .r11 fBl, .load .d .r6 .r11 fDl, .add .r5 .r5 .r6,
+    .addi .r5 .r5 len, .addSp .r6 dst, .addi .r7 .r3 sWork]
 
 /-- HMAC's states for `K`, by `init`. -/
 def initK : Prog isa := .seq (.block initArgs) (tcall 0 c.f.init)
