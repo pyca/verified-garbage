@@ -20,10 +20,12 @@ addresses of `fns` functions, which the function calls indirectly
    through (HMAC's state is the inner hash's);
 2. HMAC's `finalize`, which writes the MAC (`vg_hmac_<h>_finalize`);
 
-then two words of data, as a table of `Hash` (`Spec/HashTable.lean`) has:
-the index of the hash function `H` in `Mgf1.hashes`, and its digest length
-`hLen` in octets. The table names `H` (`hashAt`) and HMAC over it with `H`'s
-block size (`hmacOf H`).
+then three words of data: the two a table of `Hash` (`Spec/HashTable.lean`)
+has, the index of the hash function `H` in `Mgf1.hashes` and its digest
+length `hLen` in octets, and HMAC's block size, in octets, which the caller
+needs for the counts the streaming `update` and HMAC's `finalize` take (the
+inner hash's input starts with a block of key). The table names `H`
+(`hashAt`) and HMAC over it with `H`'s block size (`hmacOf H`).
 
 A contract says what a function computes with the HMAC its table names. It
 does not say what the table's functions do: the proof of each function
@@ -47,15 +49,11 @@ def iface : String := "Hmac"
 /-- The number of functions of a table. -/
 def fns : Nat := 3
 
-/-- The number of words of a table: its functions', then two of data. -/
-def wordCount : Nat := fns + 2
+/-- The number of words of a table: its functions', then three of data. -/
+def wordCount : Nat := fns + 3
 
 /-- A parameter taking a table of `Hmac`: a `*const [usize; wordCount]`. -/
 def param : Param := .table wordCount
-
-/-- The data of a table of HMAC over `G`: its index in `Mgf1.hashes`, and
-its digest length, as a table of `Hash` of `G` holds. -/
-def dataOf (G : Hash) : List (BitVec 64) := HashTable.dataOf G
 
 /-- The hash function that the table at `p` in the memory `m` names, on a
 target with `ptrBits`-bit pointers: that of `Mgf1.hashes` at the index in
@@ -90,5 +88,13 @@ theorem hmacOf_hash : ∀ H ∈ Mgf1.hashes, ∀ F, hmacOf H = some F → F.hash
       Mgf1.sha3_512, Mgf1.blake2b512, Mgf1.blake2s256, Hmac.md5, Hmac.sha1, Hmac.sha224,
       Hmac.sha256, Hmac.sha384, Hmac.sha512, Hmac.sha512_224, Hmac.sha512_256] <;>
     exact hF ▸ rfl
+
+/-- HMAC's block size over `G`, in octets: that of `hmacOf G`, or 0 if it
+gives none. -/
+def blockSize (G : Hash) : Nat := ((hmacOf G).map (·.blockSize)).getD 0
+
+/-- The data of a table of HMAC over `G`: its index in `Mgf1.hashes` and its
+digest length, as a table of `Hash` of `G` holds, then HMAC's block size. -/
+def dataOf (G : Hash) : List (BitVec 64) := HashTable.dataOf G ++ [BitVec.ofNat 64 (blockSize G)]
 
 end VG.Spec.HmacTable

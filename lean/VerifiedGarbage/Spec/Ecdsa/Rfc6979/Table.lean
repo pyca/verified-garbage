@@ -47,7 +47,7 @@ variable (I : TableInstance)
 
 /-- `(out: *mut [u8; 2 len], d: *const [u8; len], digest: *const u8,
 digest_len: usize, scratch: *mut [u64; I.scratchWords],
-hmac: *const [usize; 5]) -> u32`. -/
+hmac: *const [usize; 6]) -> u32`. -/
 def signSig : Sig where
   params := [("out", .array true .u8 (2 * I.ecdsa.curve.len)),
     ("d", .array false .u8 I.ecdsa.curve.len), ("digest", .slice false .u8 "digest_len"),
