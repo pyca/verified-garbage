@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcTable
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scalar
+public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
+public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scan
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
@@ -13,6 +15,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 
 /-! # FFDH's context on PPC64LE: the width
 
@@ -311,5 +316,95 @@ theorem montgomery_ok {s : State} {B : Addr} {Z w P : Nat} (h : Env s B Z w) (hp
   refine WP.mono (Pub.minv_ok e4.hs e4.h10 (by simp only [slot, hdrBytes] at hZ ⊢; omega) hodd4)
     fun t ⟨⟨r12a, r12b, mt⟩, kt⟩ => ⟨⟨by rw [arr, mt, v4, ← arr, hp], r12a, by rw [mt]; exact r12b, by rw [mt]; exact o4⟩,
       ((k13.trans k4).trans kt).mono (by decide)⟩
+
+/-! ## The context's words -/
+
+theorem precomputedWords_eq (k : Nat) : Spec.Ffdh.generationPrecomputedWords k = 3 + 34 * ((k + 7) / 8) := by
+  simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
+    Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth,
+    Spec.Rsa.modulusWords]
+  omega
+
+/-- Word `q` of a row holding `x`. -/
+theorem row_word {m : Mem} {C : Addr} {w j q x : Nat} (hq : q < w) (hv : rowv m C w j = x) :
+    m.readW (C + BitVec.ofNat 64 (8 * (3 + (j * w + q)))) 64 = BitVec.ofNat 64 (x / 2 ^ (64 * q)) := by
+  have e := VG.Proof.Bignum.word_of_wv m C (rowOff w j) w hq
+  rw [← VG.Proof.Bignum.PPC64LE.Pre.val32_eq_wv] at e
+  rw [show 8 * (3 + (j * w + q)) = rowOff w j + 8 * q by unfold rowOff; rw [Nat.mul_comm w j]; omega]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat]
+  show (VG.Proof.Bignum.word m C (rowOff w j + 8 * q)).toNat = _
+  rw [e]
+  have hv' : val32 m C (rowOff w j) (2 * w) = x := hv
+  rw [hv']
+
+theorem toWords_get? {x w q : Nat} (hq : q < w) :
+    (Spec.Rsa.toWords x w)[q]? = some (BitVec.ofNat 64 (x / 2 ^ (64 * q))) := by
+  simp [Spec.Rsa.toWords, hq]
+
+/-- The context's words from its metadata, its prefix rows and its entries. -/
+theorem ctx_words {m : Mem} {C : Addr} {k : Nat} {dom : List Byte} (hk : 1 ≤ k)
+    (h0 : m.readW (C + BitVec.ofNat 64 0) 64 =
+      BitVec.ofNat 64 (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)))
+    (h8 : m.readW (C + BitVec.ofNat 64 8) 64 =
+      BitVec.ofNat 64 ((Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom) + 7) / 8))
+    (h16 : m.readW (C + BitVec.ofNat 64 16) 64 =
+      BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom))))
+    (hp : rowv m C ((k + 7) / 8) 0 = (Spec.Ffdh.domainOf k dom).p)
+    (hr : rowv m C ((k + 7) / 8) 1 = 2 ^ (128 * ((k + 7) / 8)) % (Spec.Ffdh.domainOf k dom).p)
+    (he : Ents m C (Spec.Ffdh.domainOf k dom).g (Spec.Ffdh.domainOf k dom).p ((k + 7) / 8)
+      (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)) 32) :
+    Spec.Rsa.wordsAt m C (3 + 34 * ((k + 7) / 8)) = VG.Proof.Ffdh.generationValues k dom := by
+  generalize hw : (k + 7) / 8 = w at hp hr he ⊢
+  have hw1 : 1 ≤ w := by omega
+  have hlen : (VG.Proof.Ffdh.generationValues k dom).length = 3 + 34 * w := by
+    rw [VG.Proof.Ffdh.generationValues_length, precomputedWords_eq, hw]
+  apply List.ext_getElem? fun i => ?_
+  by_cases hi : i < 3 + 34 * w
+  · have lhs : (Spec.Rsa.wordsAt m C (3 + 34 * w))[i]? = some (m.readW (C + BitVec.ofNat 64 (8 * i)) 64) := by
+      simp [Spec.Rsa.wordsAt, hi]
+    rw [lhs]
+    by_cases hi3 : i < 3
+    · have e := VG.Proof.Ffdh.generationValues_headers k dom
+      have e' := congrArg (fun l => l[i]?) e
+      simp only [List.getElem?_take, hi3, ↓reduceIte] at e'
+      rw [e']
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+      · simpa using h0
+      · simpa using h8
+      · simpa using h16
+    · obtain ⟨i', rfl⟩ : ∃ i', i = 3 + i' := ⟨i - 3, by omega⟩
+      have hq : i' % w < w := Nat.mod_lt _ (by omega)
+      have hj : i' / w < 34 := by
+        rw [Nat.div_lt_iff_lt_mul (by omega)]; omega
+      have hi' : i' = i' / w * w + i' % w := by rw [Nat.mul_comm]; exact (Nat.div_add_mod i' w).symm
+      generalize hJ : i' / w = j at hj hi'
+      generalize hQ : i' % w = q at hq hi'
+      subst hi'
+      by_cases hj2 : j < 2
+      · have e := VG.Proof.Ffdh.generationValues_montgomery k dom
+        simp only [Spec.Rsa.modulusWords, hw] at e
+        have e' := congrArg (fun l => l[j * w + q]?) e
+        have hjw : j * w + q < 2 * w := by
+          have := Nat.mul_le_mul_right w (show j + 1 ≤ 2 by omega); rw [Nat.succ_mul] at this; omega
+        simp only [List.getElem?_take, hjw, ↓reduceIte, List.getElem?_drop] at e'
+        rw [e']
+        rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+        · rw [Nat.zero_mul, Nat.zero_add, List.getElem?_append_left (by
+            rw [VG.Proof.Rsa.FixedBaseComb.toWords_length]; exact hq), toWords_get? hq]
+          have := row_word (j := 0) hq hp; simp only [Nat.zero_mul, Nat.zero_add] at this; rw [this]
+        · rw [Nat.one_mul, List.getElem?_append_right (by
+            rw [VG.Proof.Rsa.FixedBaseComb.toWords_length]; omega), VG.Proof.Rsa.FixedBaseComb.toWords_length,
+            show w + q - w = q by omega, toWords_get? hq]
+          have := row_word (j := 1) hq hr; simp only [Nat.one_mul] at this; rw [this]
+      · obtain ⟨a, rfl⟩ : ∃ a, j = a + 2 := ⟨j - 2, by omega⟩
+        have e := VG.Proof.Ffdh.generationValues_entry k dom a (by omega)
+        simp only [Spec.Rsa.modulusWords, hw] at e
+        have e' := congrArg (fun l => l[q]?) e
+        simp only [List.getElem?_take, hq, ↓reduceIte, List.getElem?_drop] at e'
+        rw [show 3 + ((a + 2) * w + q) = 3 + (2 + a) * w + q by rw [Nat.add_comm a 2]; omega, e',
+          toWords_get? hq, show 3 + (2 + a) * w + q = 3 + ((a + 2) * w + q) by rw [Nat.add_comm 2 a]; omega,
+          row_word (j := a + 2) hq (he a (by omega))]
+  · rw [List.getElem?_eq_none (by simp [Spec.Rsa.wordsAt]; omega), List.getElem?_eq_none (by omega)]
 
 end VG.Proof.Ffdh.PPC64LE.Cached
