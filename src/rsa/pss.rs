@@ -232,7 +232,7 @@ pub fn sign(
     mgf1_hash: Hash,
     salt_len: usize,
 ) -> Result<Vec<u8>, Error> {
-    sign_with_rng(key, digest, hash, mgf1_hash, salt_len, |buf| {
+    sign_from(key, digest, hash, mgf1_hash, salt_len, |buf| {
         getrandom::fill(buf).map_err(|_| Error::Randomness)
     })
 }
@@ -243,8 +243,21 @@ pub fn sign(
 /// Not part of the API: it lets benchmarks compare implementations on
 /// identical work, from fixed tapes. The signature has the security of
 /// RSASSA-PSS only if `random` supplies uniformly random bytes.
+#[cfg(feature = "internal-bench")]
 #[doc(hidden)]
 pub fn sign_with_rng(
+    key: &PrivateKey,
+    digest: &[u8],
+    hash: Hash,
+    mgf1_hash: Hash,
+    salt_len: usize,
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
+    sign_from(key, digest, hash, mgf1_hash, salt_len, random)
+}
+
+/// [`sign`], with its salt drawn from `random`.
+fn sign_from(
     key: &PrivateKey,
     digest: &[u8],
     hash: Hash,
@@ -285,7 +298,7 @@ fn sign_with(
     // `out_len = n_len` and `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-    // (`hashes::tables::tests::table_words` checks it, and `sign_with_rng`
+    // (`hashes::tables::tests::table_words` checks it, and `sign_from`
     // the length); and the
     // CPU has the features of `f` and of the tables' functions, which
     // `functions`, `table::md_table` and `table::table` chose for the

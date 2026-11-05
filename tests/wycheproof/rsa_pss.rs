@@ -25,7 +25,7 @@ use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
-use verified_garbage::rsa::pss::{Hash, SaltLength, sign, sign_with_rng, verify};
+use verified_garbage::rsa::pss::{Hash, SaltLength, sign, verify};
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
@@ -185,18 +185,6 @@ fn check_signatures(
         let a = sign(&private, &d, *h, *h, 16).unwrap();
         let b = sign(&private, &d, *h, *h, 16).unwrap();
         assert_ne!(a, b, "{name} tcId {id}");
-        // The same salt gives the same signature, as the fixed-tape
-        // benchmark relies on.
-        let fixed = || {
-            sign_with_rng(&private, &d, *h, *h, 16, |buf| {
-                buf.fill(0x5a);
-                Ok(())
-            })
-            .unwrap()
-        };
-        let a = fixed();
-        assert_eq!(a, fixed(), "{name} tcId {id}");
-        assert!(verify(&public, &a, &d, *h, *h, SaltLength::Len(16)));
         // MGF1 over the next of the hash functions: the signature verifies
         // with it, and not with MGF1 over the hash function itself.
         let i = HASHES.iter().position(|(_, x)| x == h).unwrap();

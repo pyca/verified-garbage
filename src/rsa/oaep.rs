@@ -208,7 +208,7 @@ pub fn encrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    encrypt_with_rng(key, plaintext, hash, mgf1_hash, label, os_random)
+    encrypt_from(key, plaintext, hash, mgf1_hash, label, os_random)
 }
 
 /// [`encrypt`], with its seed drawn from `random` instead of the operating
@@ -217,8 +217,21 @@ pub fn encrypt(
 /// Not part of the API: it lets benchmarks compare implementations on
 /// identical work, from fixed tapes. The ciphertext is secure only if
 /// `random` supplies uniformly random bytes, never reused.
+#[cfg(feature = "internal-bench")]
 #[doc(hidden)]
 pub fn encrypt_with_rng(
+    key: &PublicKey,
+    plaintext: &[u8],
+    hash: Hash,
+    mgf1_hash: Hash,
+    label: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
+    encrypt_from(key, plaintext, hash, mgf1_hash, label, random)
+}
+
+/// [`encrypt`], with its seed drawn from `random`.
+fn encrypt_from(
     key: &PublicKey,
     plaintext: &[u8],
     hash: Hash,
@@ -385,7 +398,7 @@ fn decrypt_with(
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, decrypt, encrypt, encrypt_with_rng, vec, with_tables};
+    use super::{Error, Hash, decrypt, encrypt, encrypt_from, vec, with_tables};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -470,7 +483,7 @@ mod tests {
     fn encryption_from_a_fixed_tape_is_deterministic() {
         let (_, public) = composite_key();
         let encrypt = |byte| {
-            encrypt_with_rng(&public, &[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
+            encrypt_from(&public, &[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
                 buf.fill(byte);
                 Ok(())
             })
@@ -478,7 +491,7 @@ mod tests {
         assert_eq!(encrypt(1), encrypt(1));
         assert_ne!(encrypt(1), encrypt(2));
         assert_eq!(
-            encrypt_with_rng(&public, b"", Hash::Sha1, Hash::Sha1, b"", |_| {
+            encrypt_from(&public, b"", Hash::Sha1, Hash::Sha1, b"", |_| {
                 Err(Error::Randomness)
             }),
             Err(Error::Randomness)

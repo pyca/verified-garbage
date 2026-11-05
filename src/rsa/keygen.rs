@@ -178,7 +178,8 @@ impl<'a> Search<'a> {
         }
     }
 
-    /// The most octets a tape may have.
+    /// The most octets a tape may have (only `prime_from` reads it).
+    #[cfg(any(test, feature = "internal-bench"))]
     fn budget(&self) -> usize {
         self.state[2] as usize
     }
@@ -256,6 +257,7 @@ impl Drop for Search<'_> {
 /// one stream (`VG.Spec.RsaKeyGen.generatePrime`), and the number of octets
 /// read, also when it fails; [`Error::NotEnoughRandomness`] if they run out
 /// first.
+#[cfg(any(test, feature = "internal-bench"))]
 fn prime_from(
     len: usize,
     limit: usize,
@@ -422,6 +424,7 @@ pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error
 /// Not part of the API: it lets benchmarks measure [`generate`] on
 /// identical work, from fixed tapes. The key is secret only if `rand` is
 /// uniformly random, and never reused.
+#[cfg(any(test, feature = "internal-bench"))]
 #[doc(hidden)]
 pub fn generate_from(
     bits: usize,

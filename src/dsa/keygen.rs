@@ -98,7 +98,7 @@ impl PrivateKey {
     /// are made, so an invalid `q` returns an error instead of retrying
     /// indefinitely.
     pub fn generate(p: &[u8], q: &[u8], g: &[u8]) -> Result<Self, Error> {
-        Self::generate_with_rng(p, q, g, |buf| {
+        Self::generate_from(p, q, g, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
         })
     }
@@ -109,8 +109,19 @@ impl PrivateKey {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The key is secret only if `random`
     /// supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng(
+        p: &[u8],
+        q: &[u8],
+        g: &[u8],
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+    ) -> Result<Self, Error> {
+        Self::generate_from(p, q, g, random)
+    }
+
+    /// [`generate`](Self::generate), with `x` drawn from `random`.
+    fn generate_from(
         p: &[u8],
         q: &[u8],
         g: &[u8],

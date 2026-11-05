@@ -121,7 +121,7 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
 ///
 /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
 pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-    encrypt_with_rng(key, plaintext, os_random)
+    encrypt_from(key, plaintext, os_random)
 }
 
 /// [`encrypt`], with its padding string drawn from `random` instead of the
@@ -130,8 +130,18 @@ pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
 /// Not part of the API: it lets benchmarks compare implementations on
 /// identical work, from fixed tapes. The ciphertext is secure only if
 /// `random` supplies uniformly random bytes, never reused.
+#[cfg(feature = "internal-bench")]
 #[doc(hidden)]
 pub fn encrypt_with_rng(
+    key: &PublicKey,
+    plaintext: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
+    encrypt_from(key, plaintext, random)
+}
+
+/// [`encrypt`], with its padding string drawn from `random`.
+fn encrypt_from(
     key: &PublicKey,
     plaintext: &[u8],
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
@@ -385,7 +395,7 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod tests {
     use super::{
-        Backend, Error, Sha256Backend, Vec, decrypt, decrypt_fn, encrypt_with_rng, fill_nonzero,
+        Backend, Error, Sha256Backend, Vec, decrypt, decrypt_fn, encrypt_from, fill_nonzero,
         os_random, vec,
     };
     use crate::rsa::tests::composite_key;
@@ -407,7 +417,7 @@ mod tests {
     fn encryption_from_a_fixed_tape_is_deterministic() {
         let (_, public) = composite_key();
         let encrypt = |byte| {
-            encrypt_with_rng(&public, &[7; 53], |buf| {
+            encrypt_from(&public, &[7; 53], |buf| {
                 buf.fill(byte);
                 Ok(())
             })

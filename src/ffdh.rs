@@ -130,6 +130,7 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The parameters are generated as
     /// `generate` documents only if `fill` supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng<E>(
         bits: usize,
@@ -162,6 +163,7 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The key is secret only if `fill`
     /// supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_private_key_with_rng<E>(
         &self,
@@ -325,7 +327,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Parameters, PrivateKey, PublicKey, zeroize};
+    use super::{Error, Parameters, PrivateKey, PublicKey, generation, zeroize};
     use alloc::{format, vec};
     fn composite_domain() -> Parameters {
         // Modulus 2^512-1, generator 2^128: g^4=1 and g^2!=1.
@@ -343,7 +345,7 @@ mod tests {
         let generate = || {
             let mut x = 0x9E37_79B9_7F4A_7C15u64;
             params
-                .generate_private_key_with_rng(|buf: &mut [u8]| {
+                .generate_with(|buf: &mut [u8]| {
                     for b in buf {
                         x ^= x << 13;
                         x ^= x >> 7;
@@ -364,7 +366,7 @@ mod tests {
         // benchmark relies on.
         let generate = || {
             let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            Parameters::generate_with_rng(512, 2, |buf: &mut [u8]| {
+            generation::parameters(512, 2, |buf: &mut [u8]| {
                 for b in buf {
                     x ^= x << 13;
                     x ^= x >> 7;
