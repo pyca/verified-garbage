@@ -114,7 +114,7 @@ def PubFacts (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List Md
     (∀ r ∈ [Reg.x0, .x1, .x2, .x4, .x5], s₁.gpr r = s₂.gpr r) ∧
     T.tried 64 s₁.mem (s₁.gpr .x1) (s₁.gpr .x2) (s₁.gpr .x5) =
       T.tried 64 s₂.mem (s₂.gpr .x1) (s₂.gpr .x2) (s₂.gpr .x5) ∧
-    s₁.syms R.E.tsym = s₂.syms R.E.tsym ∧ ∀ n ∈ names vs, s₁.syms n = s₂.syms n
+    tableAddr R.E s₁.syms = tableAddr R.E s₂.syms ∧ ∀ n ∈ names vs, s₁.syms n = s₂.syms n
 
 theorem tried_eq {w : MdHash} (hw : WOk w) {s : State} (hp : PreW R T vs w s) :
     T.tried 64 s.mem (s.gpr .x1) (s.gpr .x2) (s.gpr .x5) =
@@ -122,7 +122,7 @@ theorem tried_eq {w : MdHash} (hw : WOk w) {s : State} (hp : PreW R T vs w s) :
   simp only [Spec.Ecdsa.Rfc6979.TableInstance.tried, hashAt_tableOf hp.2.1, hw.hmac, tresult_eq]
 
 /-- The public data of `tabK`, from the facts. -/
-theorem pub_of (hne : R.E.tbl.isEmpty = false) (hO : OK vs) {s₁ s₂ : State} (h₁ : PreFacts R T vs s₁)
+theorem pub_of (hO : OK vs) {s₁ s₂ : State} (h₁ : PreFacts R T vs s₁)
     (h₂ : PreFacts R T vs s₂) (hp : PubFacts R T vs s₁ s₂) : (tabK R T vs).pub s₁ s₂ := by
   obtain ⟨⟨w, hv, hh⟩, f₁⟩ := h₁
   obtain ⟨hh', hsp, hg, ht, hc, hn⟩ := hp
@@ -130,14 +130,13 @@ theorem pub_of (hne : R.E.tbl.isEmpty = false) (hO : OK vs) {s₁ s₂ : State} 
   have p₂ := h₂.2 w hv ((hh' w hv).mp hh)
   have hw := hO.2.2.2 w hv
   refine ⟨w, hv, hw, p₁, p₂, hsp, hg .x0 (by simp), hg .x1 (by simp), hg .x2 (by simp), hg .x4 (by simp),
-    hg .x5 (by simp), ?_, by show tableAddr R.E s₁.syms = tableAddr R.E s₂.syms; rw [tableAddr_eq hne,
-      tableAddr_eq hne, hc], hn⟩
+    hg .x5 (by simp), ?_, hc, hn⟩
   show ((instOf T w).result s₁.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 =
     ((instOf T w).result s₂.mem (s₂.gpr .x1) (s₂.gpr .x2)).2
   rw [← tried_eq hw p₁, ← tried_eq hw p₂, ht]
 
 /-- The public data. -/
-theorem pub_facts {s₁ s₂ : State} (h : (specK T [(R.E.tsym, R.E.combWords)] vs).pub s₁ s₂) :
+theorem pub_facts (hne : R.E.tbl.isEmpty = false) {s₁ s₂ : State} (h : (specK T [(R.E.tsym, R.E.combWords)] vs).pub s₁ s₂) :
     PubFacts R T vs s₁ s₂ := by
   sig_pub [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
     Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
@@ -147,7 +146,7 @@ theorem pub_facts {s₁ s₂ : State} (h : (specK T [(R.E.tsym, R.E.combWords)] 
   obtain ⟨hsp, hc₀, hn, hT, htr, e₀, e₁, e₂, -, e₄, e₅⟩ := h
   rw [List.append_eq, List.append_nil] at hn
   refine ⟨fun w hv => hT _ _ rfl rfl _ (List.mem_map_of_mem hv), hsp, fun r hr => ?_, (List.cons.inj htr).1,
-    hc₀, hn⟩
+    by rw [tableAddr_eq hne, tableAddr_eq hne, hc₀], hn⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
@@ -159,7 +158,7 @@ theorem tab_implies (hne : R.E.tbl.isEmpty = false) (hsw : T.scratchWords = 1024
     (hsat : ∃ s, (specK T R.E.combConsts vs).pre s) : (tabK R T vs).Implies (specK T R.E.combConsts vs) := by
   rw [show R.E.combConsts = [(R.E.tsym, R.E.combWords)] from rfl] at hsat ⊢
   refine ⟨fun s h => (pre_facts hne hsw hO h).pre hO, fun s s' h hp => ?_,
-    fun s₁ s₂ h₁ h₂ hp => pub_of hne hO (pre_facts hne hsw hO h₁) (pre_facts hne hsw hO h₂) (pub_facts hp), hsat⟩
+    fun s₁ s₂ h₁ h₂ hp => pub_of hO (pre_facts hne hsw hO h₁) (pre_facts hne hsw hO h₂) (pub_facts hne hp), hsat⟩
   have hk := (pre_facts hne hsw hO h).pre hO
   sig_post [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
     Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
@@ -176,5 +175,86 @@ theorem signT_verified (hC : CurveT R T) (hne : R.E.tbl.isEmpty = false) (hsw : 
   Verified.of_correct (fun _ h => let ⟨t, s', he, ⟨hg, hsp⟩, hp⟩ := signT_ok hC h
       ⟨t, s', he, ⟨hg, hsp, Exec.preservedV he (signT_keepsV R T.tries vs)⟩, hp⟩)
     (signT_ct hC) (tab_implies hne hsw hO hsat)
+
+/-! ## Without comb tables -/
+
+theorem empty_disjoint (a : Addr) (r : Region) : Region.Disjoint ⟨a, 0⟩ r := by
+  intro x hx
+  simp only [Region.Contains] at hx
+  omega
+
+/-- The precondition, for a curve without comb tables. -/
+theorem pre_facts_nil (hne : R.E.tbl.isEmpty = true) (hw0 : R.E.combWords = []) (hsw : T.scratchWords = 1024)
+    (hO : OK vs) {s : State} (h : (specK T [] vs).pre s) : PreFacts R T vs s := by
+  sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, stackT,
+    String.reduceEq, Option.map_some, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left', hsw, tableRegion_eq, List.append_nil, names_eq, below] at h
+  obtain ⟨hsp, ⟨Tb, hTb, hth⟩, hpw, hrd, hwr, od, og, oc, ot, dc, gc, ct,
+    ko, kd, kg, kc, kt, no, nd, ng, nc, n5, hH⟩ := h
+  obtain ⟨w₀, hv₀, rfl⟩ := List.mem_map.mp hTb
+  refine ⟨⟨w₀, hv₀, hth⟩, fun w hv hw' => ?_⟩
+  have hw := hO.2.2.2 w hv
+  have hh := held_tableOf hw'
+  have hlen : (s.gpr .x3).toNat = w.H.D := (hH _ (hashAt_tableOf hh.2.1)).1.trans w.mgf.len
+  rw [hlen] at og gc kg ng hrd
+  rw [List.append_eq, List.append_nil] at hpw
+  rw [hw.blockSize] at hh
+  simp only [hsw, Nat.reduceMul] at hwr oc dc gc kc nc ct
+  have ha : tableAddr R.E s.syms = 0 := by simp only [tableAddr, hne, ite_true]
+  refine ⟨⟨?_, hwr, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, ⟨?_, ?_, ?_⟩, n5, ot.symm, ct.symm,
+    kt.symm, tabOK_of hO.1 hpw hv, hh.1, rfl, rfl⟩, hh.2.1, hh.2.2.1, hh.2.2.2⟩
+  · show s.rd = _
+    rw [hrd]
+    simp only [tableRegions, hne, ite_true, List.append_nil]
+    rfl
+  · intro i hi
+    rw [hw0] at hi
+    exact absurd hi (Nat.not_lt_zero _)
+  · show (tableAddr R.E s.syms).toNat + 8 * R.E.combWords.length ≤ 2 ^ 64
+    rw [ha, hw0]; decide
+  · intro r _
+    show Region.Disjoint ⟨tableAddr R.E s.syms, 8 * R.E.combWords.length⟩ r
+    rw [hw0]; exact empty_disjoint _ _
+
+/-- The public data, for a curve without comb tables. -/
+theorem pub_facts_nil (hne : R.E.tbl.isEmpty = true) {s₁ s₂ : State} (h : (specK T [] vs).pub s₁ s₂) :
+    PubFacts R T vs s₁ s₂ := by
+  sig_pub [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
+    List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
+    List.append_nil, names_eq, below] at h
+  obtain ⟨hsp, hn, hT, htr, e₀, e₁, e₂, -, e₄, e₅⟩ := h
+  rw [List.append_eq, List.append_nil] at hn
+  refine ⟨fun w hv => hT _ _ rfl rfl _ (List.mem_map_of_mem hv), hsp, fun r hr => ?_, (List.cons.inj htr).1,
+    by simp only [tableAddr, hne, ite_true], hn⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+/-- `TableInstance.signContract` with the tables of `vs` implies `tabK`, for
+a curve without comb tables. -/
+theorem tab_implies_nil (hne : R.E.tbl.isEmpty = true) (hw0 : R.E.combWords = []) (hsw : T.scratchWords = 1024)
+    (hO : OK vs) (hsat : ∃ s, (specK T [] vs).pre s) : (tabK R T vs).Implies (specK T [] vs) := by
+  refine ⟨fun s h => (pre_facts_nil hne hw0 hsw hO h).pre hO, fun s s' h hp => ?_,
+    fun s₁ s₂ h₁ h₂ hp => pub_of hO (pre_facts_nil hne hw0 hsw hO h₁) (pre_facts_nil hne hw0 hsw hO h₂)
+      (pub_facts_nil hne hp), hsat⟩
+  have hk := (pre_facts_nil hne hw0 hsw hO h).pre hO
+  sig_post [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
+    List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
+    List.append_nil, names_eq, below]
+  exact post_of hk hp
+
+/-- `vg_ecdsa_<curve>_sign`, for a curve without comb tables, with the
+tables of `vs`, meets `TableInstance.signContract` (given a state that meets it). -/
+theorem signT_verified_nil (hC : CurveT R T) (hne : R.E.tbl.isEmpty = true) (hw0 : R.E.combWords = [])
+    (hsw : T.scratchWords = 1024) (hO : OK vs) (hsat : ∃ s, (specK T [] vs).pre s) :
+    Verified AArch64.target (signCodeT R T.tries vs) (specK T [] vs) :=
+  Verified.of_correct (fun _ h => let ⟨t, s', he, ⟨hg, hsp⟩, hp⟩ := signT_ok hC h
+      ⟨t, s', he, ⟨hg, hsp, Exec.preservedV he (signT_keepsV R T.tries vs)⟩, hp⟩)
+    (signT_ct hC) (tab_implies_nil hne hw0 hsw hO hsat)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

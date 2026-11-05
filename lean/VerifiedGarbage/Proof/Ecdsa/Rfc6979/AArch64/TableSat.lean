@@ -17,8 +17,8 @@ As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/TableSat.lean`): a state meeting
 `TableInstance.signContract` with the tables of `vs` (`satT`): the buffers
 at fixed addresses, the table of a variant `w` of `vs` at `0x300000`, the
 functions of `vs` at distinct addresses (`HashTable.symsOf`), and the
-curve's comb tables at `0x100000`, where the memory `m₀` holds them
-(`sat_one`).
+curve's comb tables, if any, at `0x100000`, where the memory `m₀` holds
+them (`sat_one`, `sat_nil`).
 -/
 
 @[expose] public section
@@ -69,8 +69,8 @@ theorem put6_below {m : Mem} {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) (w₀ w�
 def symT (vs : List MdHash) (n : String) : Addr := if n ∈ names vs then symsOf (names vs) n else 0x100000
 
 /-- A state meeting the contract, for scalars of `Q` bytes, with the table
-of `w` and the memory `m₀` (the curve's comb tables, of `TB` bytes). -/
-def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q TB : Nat) : State where
+of `w` and the memory `m₀` (the curve's comb tables `Tr`). -/
+def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Region) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => BitVec.ofNat 64 w.H.D | .x4 => 0x8000
     | .x5 => 0x300000 | _ => 0
@@ -78,12 +78,12 @@ def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q TB : Nat) : State where
   mem := put6 m₀ 0x300000 (symT vs w.H.hmacInitN) (symT vs w.H.updN) (symT vs w.H.hmacFinN)
     (BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G)) (BitVec.ofNat 64 w.mgf.G.len)
     (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G))
-  rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩, ⟨0x100000, TB⟩]
+  rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩] ++ Tr
   wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩]
   syms := symT vs
 
-theorem satT_held (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q TB : Nat) :
-    Abi.tableHeld 64 (satT vs w m₀ Q TB).mem 0x300000 (FnTable.words isa (satT vs w m₀ Q TB) (tableOf w)) :=
+theorem satT_held (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
+    Abi.tableHeld 64 (satT vs w m₀ Q Tr).mem 0x300000 (FnTable.words isa (satT vs w m₀ Q Tr) (tableOf w)) :=
   put6_held (ws := [symT vs w.H.hmacInitN, symT vs w.H.updN, symT vs w.H.hmacFinN,
     BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G)]) rfl
@@ -101,7 +101,7 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : 
     (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) : ∃ s, (specK T [(n, W)] vs).pre s := by
   obtain ⟨w, hv⟩ := List.exists_mem_of_ne_nil vs hO.2.2.1
   have hw := hO.2.2.2 w hv
-  refine ⟨satT vs w m₀ T.ecdsa.curve.len (8 * W.length), ?_⟩
+  refine ⟨satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩], ?_⟩
   sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
     Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, stackT,
@@ -110,7 +110,7 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : 
   have hD : w.H.D ≤ 64 := by have := w.ok.sizes.DN; have := w.ok.N_le; omega
   have hDn : (BitVec.ofNat 64 w.H.D).toNat = w.H.D := by rw [BitVec.toNat_ofNat]; omega
   have hsym : symT vs n = 0x100000 := by simp only [symT, hna, ite_false]
-  have hG : Spec.HmacTable.hashAt 64 (satT vs w m₀ T.ecdsa.curve.len (8 * W.length)).mem 0x300000 =
+  have hG : Spec.HmacTable.hashAt 64 (satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]).mem 0x300000 =
       some w.mgf.G := hashAt_tableOf (held_tableOf (satT_held vs w m₀ _ _)).2.1
   simp only [hsw, hDn, satT, hsym] at hG ⊢
   sig_and_intros
@@ -133,5 +133,34 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : 
        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
        rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by
          simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
+
+/-- A state meeting the contract, for a curve without comb tables. -/
+theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash} (hO : OK vs)
+    (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) : ∃ s, (specK T [] vs).pre s := by
+  obtain ⟨w, hv⟩ := List.exists_mem_of_ne_nil vs hO.2.2.1
+  have hw := hO.2.2.2 w hv
+  refine ⟨satT vs w (fun _ => 0) T.ecdsa.curve.len [], ?_⟩
+  sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, stackT,
+    String.reduceEq, Option.map_some, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left', hsw, tableRegion_eq, List.append_nil, names_eq, below]
+  have hD : w.H.D ≤ 64 := by have := w.ok.sizes.DN; have := w.ok.N_le; omega
+  have hDn : (BitVec.ofNat 64 w.H.D).toNat = w.H.D := by rw [BitVec.toNat_ofNat]; omega
+  have hG : Spec.HmacTable.hashAt 64 (satT vs w (fun _ => 0) T.ecdsa.curve.len []).mem 0x300000 =
+      some w.mgf.G := hashAt_tableOf (held_tableOf (satT_held vs w _ _ _)).2.1
+  simp only [hsw, hDn, satT] at hG ⊢
+  sig_and_intros
+  all_goals first
+    | decide
+    | rfl
+    | exact ⟨tableOf w, List.mem_map_of_mem hv, satT_held vs w _ _ _⟩
+    | (rw [List.append_eq, List.append_nil]; exact symT_distinct hO.2.1)
+    | exact Region.disjoint_of_sep (by
+        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+    | bv_omega
+    | (intro H hH
+       obtain rfl := Option.some.inj (hH.symm.trans hG)
+       exact ⟨w.mgf.len.symm, by rw [hw.hmac]; rfl⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
