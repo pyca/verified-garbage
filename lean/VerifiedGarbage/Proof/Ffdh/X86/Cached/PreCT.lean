@@ -372,6 +372,148 @@ theorem initial_trace (hP1 : 1 < P) :
       ⟨s₀, A, e, S₅, by show sv _ _ _ _ _ = _; rw [K₅ 7 (by decide)]; exact x⟩) ?_
   exact RelCT.block_nil fun _ _ h => h
 
+/-- Slot 7 to the power `2^rows`: the runs related square by square. -/
+theorem squares_trace {n E : Nat} (hR : 0 < Spec.Rsa.FixedBaseComb.rows bits)
+    (hR' : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639) (hP1 : 1 < P) :
+    RelCT isa (Both (TR Ex base bytes len args sp P G bits n fun u => sv u.mem base len .wide 7 = enc len P G E))
+      squares (Both (TR Ex base bytes len args sp P G bits n fun u =>
+        sv u.mem base len .wide 7 = enc len P G (E * 2 ^ Spec.Rsa.FixedBaseComb.rows bits))) := by
+  have nb : numBase = 3336 := rfl
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have e7 : lo len (.slot .wide 7) = numBase + 7 * st len .wide := rfl
+  have bw := bc_eq_cwc len .wide
+  unfold squares
+  refine VG.RelCT.seq (tr_lift sqHead_check (n' := n) (X' := fun u => sv u.mem base len .wide 7 = enc len P G E ∧
+      w32 u.mem base iOff = Spec.Rsa.FixedBaseComb.rows bits) fun s₀ u S s7 => ?_) ?_
+  · have bl := S.inp.bytes_lt
+    have f7 := S.inp.slot_fit .wide (j := 7) (by decide)
+    refine wp_movS (readW_ok S.inp (d := rowsOff) (by simp only [rowsOff]; omega) S.rows (by omega)) fun s₁ U₁ _ => ?_
+    refine WP.mono (counter_store (S.inp.regs U₁.keeps U₁.mem) (d := iOff) (.inr rfl) .eax)
+      fun s₂ ⟨I₂, O₂, W₂, K₂, _⟩ => ?_
+    have S₁ := S.step (Step.regs S.inp U₁.mem U₁.keeps) (S.ctx.regs U₁.keeps U₁.mem) (by rw [U₁.mem])
+    refine ⟨S₁.iword I₂ O₂ K₂, ?_, ?_⟩
+    · simp only [sv]; rw [O₂.val32 (.inr (by simp only [iOff]; omega)) (by omega), U₁.mem]; exact s7
+    · rw [W₂, U₁.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine (relCT_countLoop (I := fun j => TR Ex base bytes len args sp P G bits n fun u =>
+      sv u.mem base len .wide 7 = enc len P G (E * 2 ^ j) ∧
+        w32 u.mem base iOff = Spec.Rsa.FixedBaseComb.rows bits - j) hR fun j hj => ?_).mono
+    (fun _ _ ⟨⟨s₀, A, e, S, v, w⟩, ⟨s₀', A', e', S', v', w'⟩⟩ =>
+      ⟨⟨s₀, A, e, S, by rw [Nat.pow_zero, Nat.mul_one]; exact v, by rw [Nat.sub_zero]; exact w⟩,
+        ⟨s₀', A', e', S', by rw [Nat.pow_zero, Nat.mul_one]; exact v', by rw [Nat.sub_zero]; exact w'⟩⟩)
+    fun _ _ ⟨⟨s₀, A, e, S, v, _⟩, ⟨s₀', A', e', S', v', _⟩⟩ => ⟨⟨s₀, A, e, S, v⟩, ⟨s₀', A', e', S', v'⟩⟩
+  refine VG.RelCT.seq (tr_mul (o := 7) (a := 7) (b := 7) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) m777_check (X' := fun u => sv u.mem base len .wide 7 = enc len P G (E * 2 ^ (j + 1)) ∧
+      w32 u.mem base iOff = Spec.Rsa.FixedBaseComb.rows bits - j)
+    (fun u x => by rw [x.1]; exact enc_lt (by omega)) fun s₀ u S ⟨V, W⟩ => ?_) ?_
+  · have cp := S.ctx.coprime
+    refine WP.mono (S.mul (o := 7) (a := 7) (b := 7) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by rw [V]; exact enc_lt (by omega))) fun t₁ ⟨S₁', L₁, V₁, _, H₁, _⟩ => ⟨S₁', ?_, ?_⟩
+    · rw [VG.Proof.Rsa.FixedBaseComb.mont_square_encoded cp L₁ V V₁,
+        show 2 * (E * 2 ^ j) = E * 2 ^ (j + 1) by rw [Nat.pow_succ]; ac_rfl]
+    · rw [H₁ iOff (by simp only [iOff]; omega), W]
+  refine taint_both (F := fun u => TR Ex base bytes len args sp P G bits n (fun u =>
+      sv u.mem base len .wide 7 = enc len P G (E * 2 ^ (j + 1)) ∧
+        w32 u.mem base iOff = Spec.Rsa.FixedBaseComb.rows bits - (j + 1)) u ∧
+      u.zf = some (decide (j + 1 = Spec.Rsa.FixedBaseComb.rows bits)))
+    (fun _ _ h₁ h₂ => h₁.run.agree h₂.run) _ dec_check fun u ⟨s₀, A, e, S, V, W⟩ => ?_
+  have bl := S.inp.bytes_lt
+  have f7 := S.inp.slot_fit .wide (j := 7) (by decide)
+  refine WP.mono (dec_ok S.inp (i := Spec.Rsa.FixedBaseComb.rows bits - j) (by omega) (by omega) W)
+    fun t₂ ⟨I, O, W₂, K, z⟩ => ⟨⟨s₀, A, e, S.iword I O K, ?_, ?_⟩, ?_⟩
+  · simp only [sv]; rw [O.val32 (.inr (by simp only [iOff]; omega)) (by omega)]; exact V
+  · rw [W₂]; omega
+  · rw [z]; congr 1; exact decide_eq_decide.mpr (by omega)
+
+/-- Entry `d + j`, entry `j` times entry `d`. -/
+theorem product_trace {k d j : Nat} (hk : k < 4) (hd : d = 2 ^ (k + 1)) (hj1 : 1 ≤ j) (hj : j < d) (hP1 : 1 < P) :
+    RelCT isa (Both (TR Ex base bytes len args sp P G bits (d + j) fun u =>
+      sv u.mem base len .wide 7 = entV len P G bits d)) (product d j)
+      (Both (TR Ex base bytes len args sp P G bits (d + j + 1) fun u =>
+        sv u.mem base len .wide 7 = entV len P G bits d)) := by
+  have p16 : 2 ^ (k + 1) ≤ 16 := (Nat.pow_le_pow_right (show 0 < 2 by decide) (show k + 1 ≤ 4 by omega) :
+    2 ^ (k + 1) ≤ 2 ^ 4)
+  unfold product
+  refine VG.RelCT.seq (loadRow_trace (fun _ h => h.run) (j + 2) 5 load5_check
+    (F := TR Ex base bytes len args sp P G bits (d + j) fun u => sv u.mem base len .wide 7 = entV len P G bits d ∧
+      sv u.mem base len .wide 5 = entV len P G bits j) fun u ⟨s₀, A, e, S, s7⟩ =>
+    WP.mono (S.load (e := j) (a := 5) (by omega) (by decide) (by decide)) fun t₁ ⟨S₁, V₁, O₁⟩ =>
+      ⟨s₀, A, e, S₁, by rw [slotKeep S.inp (a := 5) (b := 7) (by decide) (by decide) O₁]; exact s7, V₁⟩) ?_
+  refine VG.RelCT.seq (tr_mul (o := 8) (a := 5) (b := 7) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) m857_check (X' := fun u => sv u.mem base len .wide 7 = entV len P G bits d ∧
+      sv u.mem base len .wide 8 = entV len P G bits (d + j))
+    (fun u x => by rw [x.1]; exact enc_lt (by omega)) fun s₀ u S ⟨s7, V₁⟩ => ?_) ?_
+  · have cp := S.ctx.coprime
+    refine WP.mono (S.mul (o := 8) (a := 5) (b := 7) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by rw [s7]; exact enc_lt (by omega))) fun t₂ ⟨S₂, L₂, V₂, K₂, _, _⟩ => ⟨S₂, ?_, ?_⟩
+    · rw [K₂ 7 (by decide) (by decide) (by decide)]; exact s7
+    · have v₂ := VG.Proof.Rsa.FixedBaseComb.mont_product_encoded cp L₂ V₁ s7 V₂
+      have ex : Spec.Rsa.FixedBaseComb.exponent bits j + Spec.Rsa.FixedBaseComb.exponent bits d =
+          Spec.Rsa.FixedBaseComb.exponent bits (d + j) := by
+        subst hd
+        rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth bits (k + 1) (by omega), Nat.add_comm (2 ^ (k + 1)) j,
+          show j + 2 ^ (k + 1) = 2 ^ (k + 1) + j by omega,
+          VG.Proof.Rsa.FixedBaseComb.exponent_add_tooth bits (k + 1) j (by omega) hj]
+      rw [ex] at v₂
+      exact v₂
+  exact storeRow_trace (fun _ h => h.run) (d + j + 2) 8 store8_check fun u ⟨s₀, A, e, S, s7, v8⟩ =>
+    WP.mono (S.store (n := d + j) (by omega) (a := 8) (by decide) v8) fun t ⟨St, Kt, _⟩ =>
+      ⟨s₀, A, e, St, by show sv _ _ _ _ _ = _; rw [Kt 7 (by decide)]; exact s7⟩
+
+/-- The tooth `2^(k+1)`. -/
+theorem column_trace {k : Nat} (hk : k < 4) (hR : 0 < Spec.Rsa.FixedBaseComb.rows bits)
+    (hR' : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639) (hP1 : 1 < P) :
+    RelCT isa (Both (TR Ex base bytes len args sp P G bits (2 ^ (k + 1)) fun u =>
+      sv u.mem base len .wide 7 = entV len P G bits (2 ^ k))) (column k)
+      (Both (TR Ex base bytes len args sp P G bits (2 ^ (k + 2)) fun u =>
+        sv u.mem base len .wide 7 = entV len P G bits (2 ^ (k + 1)))) := by
+  have p16 : 2 ^ (k + 1) ≤ 16 := (Nat.pow_le_pow_right (show 0 < 2 by decide) (show k + 1 ≤ 4 by omega) :
+    2 ^ (k + 1) ≤ 2 ^ 4)
+  have p1 : 1 ≤ 2 ^ k := Nat.one_le_two_pow
+  have pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ]; omega
+  have pk2 : 2 ^ (k + 2) = 2 * 2 ^ (k + 1) := by rw [Nat.pow_succ]; omega
+  have et : enc len P G (Spec.Rsa.FixedBaseComb.exponent bits (2 ^ k) * 2 ^ Spec.Rsa.FixedBaseComb.rows bits) =
+      entV len P G bits (2 ^ (k + 1)) := by
+    show _ = enc len P G (Spec.Rsa.FixedBaseComb.exponent bits (2 ^ (k + 1)))
+    rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth bits k (by omega),
+      VG.Proof.Rsa.FixedBaseComb.exponent_tooth bits (k + 1) (by omega), ← Nat.pow_add, Nat.succ_mul]
+  unfold column
+  have sq : RelCT isa (Both (TR Ex base bytes len args sp P G bits (2 ^ (k + 1)) fun u =>
+      sv u.mem base len .wide 7 = entV len P G bits (2 ^ k))) squares
+      (Both (TR Ex base bytes len args sp P G bits (2 ^ (k + 1)) fun u =>
+        sv u.mem base len .wide 7 = entV len P G bits (2 ^ (k + 1)))) :=
+    (squares_trace (n := 2 ^ (k + 1)) (E := Spec.Rsa.FixedBaseComb.exponent bits (2 ^ k)) hR hR' hP1).mono
+      (fun _ _ h => h) fun _ _ ⟨⟨s₀, A, e, S, v⟩, ⟨s₀', A', e', S', v'⟩⟩ =>
+        ⟨⟨s₀, A, e, S, v.trans et⟩, ⟨s₀', A', e', S', v'.trans et⟩⟩
+  refine VG.RelCT.seq sq ?_
+  refine VG.RelCT.seq (storeRow_trace (fun _ h => h.run) (2 ^ (k + 1) + 2) 7 store7_check
+    (F := TR Ex base bytes len args sp P G bits (2 ^ (k + 1) + 0 + 1) fun u =>
+      sv u.mem base len .wide 7 = entV len P G bits (2 ^ (k + 1))) fun u ⟨s₀, A, e, S, v⟩ =>
+    WP.mono (S.store (n := 2 ^ (k + 1)) (by omega) (a := 7) (by decide) v) fun t ⟨S₂, K₂, _⟩ =>
+      ⟨s₀, A, e, S₂, by show sv _ _ _ _ _ = _; rw [K₂ 7 (by decide)]; exact v⟩) ?_
+  rw [List.range_eq_range']
+  refine (relCT_seqs_range (fun j => product (2 ^ (k + 1)) (j + 1)) (fun j => TR Ex base bytes len args sp P G bits
+      (2 ^ (k + 1) + j + 1) fun u => sv u.mem base len .wide 7 = entV len P G bits (2 ^ (k + 1)))
+    (2 ^ (k + 1) - 1) 0 fun j _ hj => ?_).mono (fun _ _ h => h) fun _ _ h => ?_
+  · have := product_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)
+      (P := P) (G := G) (bits := bits) (k := k) (d := 2 ^ (k + 1)) (j := j + 1) hk rfl (by omega) (by omega) hP1
+    rwa [show 2 ^ (k + 1) + (j + 1) = 2 ^ (k + 1) + j + 1 by omega,
+      show 2 ^ (k + 1) + j + 1 + 1 = 2 ^ (k + 1) + (j + 1) + 1 by omega] at this
+  · rwa [show 2 ^ (k + 1) + (0 + (2 ^ (k + 1) - 1)) + 1 = 2 ^ (k + 2) by omega] at h
+
+/-- The table: the runs with the same modulus, generator and width leak the same traces. -/
+theorem table_trace (hR : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR' : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639)
+    (hP1 : 1 < P) :
+    RelCT isa (Both (TR Ex base bytes len args sp P G bits 0 fun u => sv u.mem base len .wide 3 = 1 ∧
+      sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P ∧ sv u.mem base len .wide 10 = G)) table
+      (Both (TR Ex base bytes len args sp P G bits 32 fun _ => True)) := by
+  unfold table
+  refine VG.RelCT.seq (initial_trace hP1) ?_
+  rw [List.range_eq_range']
+  refine (relCT_seqs_range column (fun k => TR Ex base bytes len args sp P G bits (2 ^ (k + 1)) fun u =>
+      sv u.mem base len .wide 7 = entV len P G bits (2 ^ k)) 4 0 fun k _ hk => ?_).mono
+    (fun _ _ h => h) fun _ _ ⟨⟨s₀, A, e, S, _⟩, ⟨s₀', A', e', S', _⟩⟩ => ⟨⟨s₀, A, e, S, trivial⟩, ⟨s₀', A', e', S', trivial⟩⟩
+  exact column_trace (k := k) (by omega) hR hR' hP1
+
 end
 
 end
