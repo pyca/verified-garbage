@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
     use criterion::BenchmarkId;
-    use verified_garbage::scrypt::{scrypt, verify};
+    use verified_garbage::scrypt::{derive, verify};
 
     use crate::{BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("scrypt");
@@ -29,7 +29,7 @@ pub fn bench(c: &mut Criterion) {
         let mut out = [0u8; 64];
         g.bench(BenchmarkId::new(VG, n), |b| {
             b.iter(|| {
-                scrypt(
+                derive(
                     black_box(b"password"),
                     black_box(b"NaCl"),
                     n,
@@ -62,7 +62,7 @@ pub fn bench(c: &mut Criterion) {
     g.sample_size(10);
     for n in [1024u64, 16384] {
         let mut expected = [0u8; 64];
-        scrypt(b"password", b"NaCl", n, 8, 1, usize::MAX, &mut expected).unwrap();
+        derive(b"password", b"NaCl", n, 8, 1, usize::MAX, &mut expected).unwrap();
         g.bench(BenchmarkId::new(VG, n), |b| {
             b.iter(|| {
                 verify(
