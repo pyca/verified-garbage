@@ -302,7 +302,7 @@ theorem results_vp {d : Cfg} {u : Nat} {U A B : BitVec 64} {v : Nat} (hv : v < 2
 theorem zres_vp {d : Cfg} {u : Nat} {U : BitVec 64} {v : Nat} (hv : v < 2 ^ 15) (hU : u ∈ d.LS)
     (hUv : d.V u = U) (hu : u + 8 ≤ hEnd) (hu8 : u % 8 = 0) {P : State → State → Prop}
     (hP : ∀ σ s, P σ s → St G d X σ s) :
-    VP P (.block ([.li .r5 0, .li .r6 0] ++ Geo.results u v))
+    VP P (.block (([.li .r5 0, .li .r6 0] : List Instr) ++ Geo.results u v))
       (St G ((((d.setV fRU U).setV fRet (BitVec.ofNat 64 v)).setV fR0 0).setV fR3 0) X) := by
   refine VP.block_append (G := fun σ s => St G d X σ s ∧ s.gpr .r5 = 0 ∧ s.gpr .r6 = 0)
     (rb_vp hP ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.li .r5 0, .li .r6 0]),
