@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Spec.Blake2.Contract
 
 /-!
 # Argon2 H′: lengths and the streaming BLAKE2b specification
 
 The length lemmas describe H′'s 32-byte prefixes and final 33–64-byte
-hash. `H_stream` connects the RFC definition to the existing streaming
-contract without selecting a BLAKE2b implementation.
+hash. `H_stream` restates `Spec.Blake2.blake2b_eq_finalHash` for H.
 -/
 
 @[expose] public section
@@ -92,45 +92,8 @@ theorem longHash_chain (lastLen r : Nat) (v : List Byte) :
     rw [longHash, ih]
     simp only [chainPrefixes, chainDigest, List.append_assoc]
 
-theorem getD_append_zeros (m : List Byte) (n i : Nat) :
-    (m ++ List.replicate n 0).getD i 0 = m.getD i 0 := by
-  by_cases hi : i < m.length
-  · simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left hi]
-  · simp only [List.getD_eq_getElem?_getD,
-      List.getElem?_append_right (by omega : m.length ≤ i),
-      List.getElem?_eq_none (by omega : m.length ≤ i), Option.getD_none]
-    simp only [List.getElem?_replicate]
-    split <;> rfl
-
-theorem padded_getD (m : List Byte) (i : Nat) :
-    (Spec.Blake2.paddedData 64 [] m).getD i 0 = m.getD i 0 := by
-  simp only [Spec.Blake2.paddedData, List.length_nil, Nat.lt_irrefl,
-    ite_false, List.nil_append]
-  split
-  · rename_i he
-    have hm : m = [] := by
-      have hl : m.length = 0 := by
-        simp only [Spec.Blake2.padZeros, List.length_append, List.length_replicate] at he
-        omega
-      exact List.eq_nil_of_length_eq_zero hl
-    subst m
-    simp only [List.getD_eq_getElem?_getD, List.getElem?_nil, Option.getD_none, List.getElem?_replicate]
-    split <;> rfl
-  · exact getD_append_zeros m _ i
-
-theorem padded_blocks (m : List Byte) :
-    (Spec.Blake2.paddedData 64 [] m).length / 128 - 1 = (m.length - 1) / 128 := by
-  simp only [Spec.Blake2.paddedData, List.length_nil, Nat.lt_irrefl,
-    ite_false, List.nil_append, Spec.Blake2.padZeros,
-    List.length_append, List.length_replicate, Spec.Blake2.blockBytes]
-  split <;> simp only [List.length_replicate, List.length_append]
-  all_goals omega
-
 theorem H_stream (n : Nat) (m : List Byte) :
-    H n m = (Spec.Blake2.finalHash Spec.Blake2.b (Spec.Blake2.init Spec.Blake2.b n 0) m).take n := by
-  simp only [H, Spec.Blake2.blake2b, Spec.Blake2.blake2,
-    Spec.Blake2.finalHash, Spec.Blake2.compressed, Spec.Blake2.compressList,
-    Spec.Blake2.blockBytes, List.length_nil, ite_true]
-  simp only [show 16 * (64 / 8) = 128 from rfl, padded_getD, padded_blocks]
+    H n m = (Spec.Blake2.finalHash Spec.Blake2.b (Spec.Blake2.init Spec.Blake2.b n 0) m).take n :=
+  Spec.Blake2.blake2b_eq_finalHash n [] m (Nat.zero_le _)
 
 end VG.Proof.Argon2
