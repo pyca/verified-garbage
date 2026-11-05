@@ -436,16 +436,3 @@ fn backend_combinations() {
         }
     }
 }
-
-#[test]
-#[cfg(target_arch = "powerpc64")]
-fn backend_combinations() {
-    use crate::arch::dsa::vg_dsa_generate_parameters;
-    // Neither hash has a variant on PPC64LE: every CPU takes the baseline.
-    for features in [Features(0), detected()] {
-        assert!(core::ptr::fn_addr_eq(
-            select(features),
-            vg_dsa_generate_parameters as Generate
-        ));
-    }
-}

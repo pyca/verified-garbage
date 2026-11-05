@@ -224,17 +224,6 @@ fn select_backends(
     }
 }
 
-/// The PPC64LE implementation: neither hash has a variant there, so the
-/// match names only their baselines, and a new hash backend does not compile
-/// until generation handles it.
-#[cfg(target_arch = "powerpc64")]
-fn select(features: Features) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    match (H1::select(features), H256::select(features)) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
-    }
-}
-
 /// The ARMv7 implementations: `vg_dsa_generate_parameters_umaal` where the
 /// operating system runs on A-profile cores alone, on CPUs with the features
 /// its `_FEATURES` constant names, else the baseline.
