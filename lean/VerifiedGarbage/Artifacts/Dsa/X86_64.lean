@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
+import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA parameter search on x86-64 -/
 
