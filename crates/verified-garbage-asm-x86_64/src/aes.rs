@@ -68,12 +68,12 @@ pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = ver
 /// * `key_len` must be 16, 24 or 32.
 /// * The bytes of `schedule` after the key schedule are unspecified on return.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj9//9IieFIg8EIZg927WYPctUfZg9v9WYP/vZmD2/+Zg/+/2ZED2/HZkUP/sBmRQ9vyGZFD/7JZkUPb9FmRQ/+0mZFD2/aZkUP/ttmRQ9v42ZFD/7kSIP+GA=="
+        r#".base64 "Zg927WYPctUfZg9v9WYP/vZmD2/+Zg/+/2ZED2/HZkUP/sBmRQ9vyGZFD/7JZkUPb9FmRQ/+0mZFD2/aZkUP/ttmRQ9v42ZFD/7kSIP+GA=="
 je 20f
 .base64 "SIP+IA=="
 je 22f
@@ -86,7 +86,7 @@ jmp 21f
 20:
 .base64 "8w9vD/MPb1cIZg9z2gjzD38K8w9/UhBmD3DaVWYPc9sBZg9w2wBmDzjd3WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0oYZg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf1IoZg9w2lVmD3PbAWYPcNsAZg843d5mD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KMGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39SQGYPcNpVZg9z2wFmD3DbAGYPON3fZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/SkhmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/UlhmD3DaVWYPc9sBZg9w2wBmQQ843dhmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD39KYGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD39ScGYPcNpVZg9z2wFmD3DbAGZBDzjd2WYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf0p4Zg9w2f9mD2/iZg9z/ARmD+/UZg/v0/MPf5KIAAAAZg9w2lVmD3PbAWYPcNsAZkEPON3aZg9v4WYPc/wEZg/vzGYPb+FmD3P8CGYP78xmD+/L8w9/ipAAAABmD3DZ/2YPb+JmD3P8BGYP79RmD+/T8w9/kqAAAABmD3DaVWYPc9sBZg9w2wBmQQ843dtmD2/hZg9z/ARmD+/MZg9v4WYPc/wIZg/vzGYP78vzD3+KqAAAAGYPcNn/Zg9v4mYPc/wEZg/v1GYP79PzD3+SuAAAAGYPcNpVZg9z2wFmD3DbAGZBDzjd3GYPb+FmD3P8BGYP78xmD2/hZg9z/AhmD+/MZg/vy/MPf4rAAAAA"
 21:
-.base64 "QbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABIjaQkCAIAAMM="
+.base64 "ww=="
 .p2align 6"#,
     )
 }
