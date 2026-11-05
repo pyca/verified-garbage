@@ -31,6 +31,7 @@ pub mod sha512;
 pub mod sha512_224;
 pub mod sha512_256;
 pub mod sm3;
+pub(crate) mod tables;
 
 /// A hash function with an incremental interface, as used by the
 /// constructions that are generic over it (HMAC).
@@ -78,6 +79,14 @@ pub trait HashFunction: Clone {
 /// `digest` calls: the match is exhaustive, so an implementation without one
 /// does not compile. Without it, `digest` uses the streaming functions.
 ///
+/// `tables`, if given, is every implementation's tables of functions
+/// (`crate::arch::fn_tables`), each with the generated constants of the CPU
+/// features it needs (none for the baseline ISA's), which `tables` returns
+/// for the verified functions that take a hash function as a table
+/// (`tables::TableHash`): its table of `Hash` and its table of `MdHash`.
+/// The match is exhaustive, so an implementation without its tables does
+/// not compile.
+///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
@@ -123,6 +132,12 @@ macro_rules! streaming_hash {
             }
             $(, digests: {
                 $($(#[$dattr:meta])* $dvariant:ident => $digest:path),* $(,)?
+            })?
+            $(, tables: {
+                $($(#[$tattr:meta])* $tvariant:ident => {
+                    hash: $thash:path [$($threq:path),*],
+                    md_hash: $tmd:path [$($tmreq:path),*] $(,)?
+                }),* $(,)?
             })? $(,)?
         }
     ) => {
@@ -213,6 +228,22 @@ macro_rules! streaming_hash {
             }
             )?
         }
+
+        $(
+        #[cfg(feature = "alloc")]
+        impl $backend {
+            /// The tables of functions of this implementation, each with
+            /// the CPU features its functions need.
+            pub(crate) fn tables(self) -> $crate::hashes::tables::Tables {
+                match self {
+                    $($(#[$tattr])* Self::$tvariant => $crate::hashes::tables::Tables {
+                        hash: (&$thash, verified_garbage_cpu::Features::all(&[$($threq),*])),
+                        md_hash: (&$tmd, verified_garbage_cpu::Features::all(&[$($tmreq),*])),
+                    },)*
+                }
+            }
+        }
+        )?
 
         $(#[$doc])*
         ///

@@ -5,20 +5,30 @@
 //! rather than one for each hash function or pair of them.
 //!
 //! `table` chooses a hash function's table, as the backends of the hash
-//! functions choose their implementations; each architecture's file
-//! (`x86_64.rs`, …) names its tables (`hash_table`) and its verified
-//! functions for each implementation of the RSA operations
-//! (`oaep_functions!`).
+//! functions choose their implementations (`crate::hashes::tables`); each
+//! architecture's file (`x86_64.rs`, …) names its verified functions for
+//! each implementation of the RSA operations (`oaep_functions!`).
 
-use super::arch::hash_table;
+use crate::hashes::tables::TableHash;
 use crate::rsa_pkcs1_sig::Hash;
 use verified_garbage_cpu::Features;
 
 /// The hash function `hash` as the verified functions take it: the words of
-/// its table for the implementation that a CPU with the features `f` runs
-/// best, or `None` if `hash` is not supported.
+/// its table of `Hash` for the implementation that a CPU with the features
+/// `f` runs best, or `None` if `hash` is not supported (MD5, which RSAES-OAEP
+/// does not use, and SHA-3's, which have no table).
 pub(super) fn table(hash: Hash, f: Features) -> Option<super::Table> {
-    hash_table(hash, f).map(|(t, _)| t.as_ptr())
+    let h = match hash {
+        Hash::Sha1 => TableHash::Sha1,
+        Hash::Sha224 => TableHash::Sha224,
+        Hash::Sha256 => TableHash::Sha256,
+        Hash::Sha384 => TableHash::Sha384,
+        Hash::Sha512 => TableHash::Sha512,
+        Hash::Sha512_224 => TableHash::Sha512_224,
+        Hash::Sha512_256 => TableHash::Sha512_256,
+        _ => return None,
+    };
+    Some(h.hash_table(f))
 }
 
 /// The verified functions: `functions`, which chooses, for a CPU with the
@@ -90,14 +100,13 @@ pub(super) use oaep_functions;
 
 #[cfg(test)]
 mod tests {
-    use super::{Features, Hash, hash_table, table};
+    use super::{Hash, table};
 
-    /// Each table's functions need no CPU feature that was not required to
-    /// choose it, on every set of features; its word 4 is the hash
-    /// function's digest length, which encryption takes as the seed's; and
-    /// every hash function but MD5 and SHA-3's has one.
+    /// Every hash function but MD5 and SHA-3's has a table, whose word 4 is
+    /// the hash function's digest length, which encryption takes as the
+    /// seed's. (`crate::hashes::tables` checks the tables' CPU features.)
     #[test]
-    fn table_features() {
+    fn tables() {
         let all = [
             Hash::Md5,
             Hash::Sha1,
@@ -112,22 +121,16 @@ mod tests {
             Hash::Sha3_384,
             Hash::Sha3_512,
         ];
-        for bits in 0..1u32 << crate::cpu::NAMES.len() {
-            let f = Features(bits);
-            let mut n = 0;
-            for h in all {
-                if let Some((t, need)) = hash_table(h, f) {
-                    assert!(f.contains(need), "{h:?} {bits:#b}");
-                    // SAFETY: `as_ptr` points to the table's five words, of
-                    // an immutable `'static` `repr(C)` value of five
-                    // pointer-sized words.
-                    let len = unsafe { (*t.as_ptr())[4] };
-                    assert_eq!(len, h.digest_len(), "{h:?}");
-                    n += 1;
-                }
-                assert_eq!(table(h, f).is_some(), hash_table(h, f).is_some());
+        let f = crate::cpu::detected();
+        let mut n = 0;
+        for h in all {
+            if let Some(t) = table(h, f) {
+                // SAFETY: `t` points to a table's five words, of an
+                // immutable `'static` `repr(C)` value.
+                assert_eq!(unsafe { (*t)[4] }, h.digest_len(), "{h:?}");
+                n += 1;
             }
-            assert_eq!(n, 7);
         }
+        assert_eq!(n, 7);
     }
 }
