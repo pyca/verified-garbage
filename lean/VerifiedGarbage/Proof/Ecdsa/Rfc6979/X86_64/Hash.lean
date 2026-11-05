@@ -41,7 +41,6 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK CoreOK Callees core hmacInit_ok hmacFin_o
   core_hmacInit_depth core_hmacFin_depth nosp_of)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (initG finG)
 open VG.Impl.Mgf1.X86_64.Table (Fns)
-open VG.Proof.RsaOaep.X86_64.Table (FnsGood)
 
 /-- The digest lengths and block sizes of the hash functions with HMAC on
 x86-64: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and
@@ -63,9 +62,6 @@ structure RfcHash where
   satF : ∃ s, (Proof.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
   /-- The functions an indirect call of a table's functions may reach. -/
   f : Fns
-  fInit : FnsGood f.init
-  fUpd : FnsGood f.upd
-  fFin : FnsGood f.fin
   /-- The instance is of the curve, with this hash function's HMAC and its
   output length, and tries at least one candidate, as many as a 32-bit
   immediate holds. -/
