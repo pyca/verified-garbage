@@ -144,7 +144,7 @@ theorem start_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     rw [m₁, Proof.Cmac.zero2_bytes]
   rw [h₂.out, Proof.CmacAes.PPC64LE.mn, Proof.CmacAes.PPC64LE.ciphAt, sch, cK (d := 240) (k := 16) (by decide),
     cK (d := 256) (k := 16) (by decide), hz, hd, Spec.Siv.s2vStart, Spec.Siv.ctxMac, Spec.Siv.schedCiph,
-    Siv.cmacWith_chained, siv_zero]
+    Siv.macWith_chained, siv_zero]
   rfl
 
 /-! ## The descriptors -/

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.ModesLit
 
 /-! # CAST5-CBC artifacts on baseline RISC-V -/
@@ -15,11 +16,11 @@ def artifacts : List Artifact := [
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cbcEncryptChained
     stack := 128
-    verified := Proof.Cast5.RISCV64.Modes.cbcEncryptChained_verified },
+    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcEncryptChained_verified },
   Spec.Cast5.cbcDecryptChainedApi.artifact RISCV64.target {
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cbcDecryptChained
     stack := 128
-    verified := Proof.Cast5.RISCV64.Modes.cbcDecryptChained_verified }]
+    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcDecryptChained_verified }]
 
 end VG.Artifacts.Cast5Cbc.RISCV64

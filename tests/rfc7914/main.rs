@@ -16,7 +16,8 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::scrypt::{Error, derive, verify};
+use verified_garbage::error::PasswordHashError;
+use verified_garbage::scrypt::{derive, verify};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// One `scrypt (P="…", S="…", N=…, r=…, p=…, dkLen=…) = <hex>` vector.
@@ -101,16 +102,16 @@ fn memory_limit() {
     assert_eq!(derive(b"pw", b"salt", 16, 8, 2, need, &mut dk), Ok(()));
     assert_eq!(
         derive(b"pw", b"salt", 16, 8, 2, need - 1, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     // More than the address space.
     assert_eq!(
         derive(b"pw", b"salt", 1 << 62, 4, 1, usize::MAX, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(
         derive(b"pw", b"salt", 1 << 57, 4, 1, usize::MAX, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
 }
 
@@ -125,7 +126,7 @@ fn allocation_failure() {
     let n = 1 << 22;
     assert_eq!(
         derive(b"pw", b"salt", n, 4, 1, usize::MAX, &mut dk),
-        Err(Error::AllocationFailed)
+        Err(PasswordHashError::AllocationFailed)
     );
 }
 
@@ -134,7 +135,7 @@ fn invalid_parameters() {
     let mut dk = [0u8; 64];
     let bad = |n: u64, r: u32, p: u32, dk: &mut [u8]| {
         let got = derive(b"pw", b"salt", n, r, p, usize::MAX, dk);
-        assert_eq!(got, Err(Error::InvalidParameters));
+        assert_eq!(got, Err(PasswordHashError::InvalidParameters));
     };
     // `n` a power of two greater than 1.
     bad(0, 1, 1, &mut dk);
@@ -152,22 +153,6 @@ fn invalid_parameters() {
     bad(16, 8, (1 << 27) - 1 + 1, &mut dk);
     // The derived key's length.
     bad(16, 1, 1, &mut []);
-    assert_eq!(
-        Error::InvalidParameters.to_string(),
-        "invalid scrypt parameters"
-    );
-    assert_eq!(
-        Error::MemoryLimitExceeded.to_string(),
-        "scrypt would need more than the memory limit"
-    );
-    assert_eq!(
-        Error::AllocationFailed.to_string(),
-        "could not allocate scrypt's memory"
-    );
-    assert_eq!(
-        Error::KeyMismatch.to_string(),
-        "scrypt derived key does not match"
-    );
 }
 
 /// `verify` of the vector `v` with the parameters `n` and the memory limit
@@ -177,7 +162,7 @@ fn check_verify<const N: usize>(
     n: u64,
     max_memory: usize,
     expected: &[u8; N],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     verify(&v.password, &v.salt, n, v.r, v.p, max_memory, expected)
 }
 
@@ -197,7 +182,7 @@ fn verify_keys() {
             bad[i] ^= 1;
             assert_eq!(
                 check_verify(v, v.n, usize::MAX, &bad),
-                Err(Error::KeyMismatch)
+                Err(PasswordHashError::KeyMismatch)
             );
         }
         let short: [u8; 16] = dk[..16].try_into().unwrap();
@@ -209,10 +194,10 @@ fn verify_keys() {
         longer[64] ^= 1;
         assert_eq!(
             check_verify(v, v.n, usize::MAX, &longer),
-            Err(Error::KeyMismatch)
+            Err(PasswordHashError::KeyMismatch)
         );
         let other = verify(b"passwore", &v.salt, v.n, v.r, v.p, usize::MAX, &dk);
-        assert_eq!(other, Err(Error::KeyMismatch));
+        assert_eq!(other, Err(PasswordHashError::KeyMismatch));
     }
 }
 
@@ -223,10 +208,13 @@ fn verify_errors() {
     let v = &vectors()[0];
     let need = 128 * (v.r as usize * (v.n as usize + v.p as usize) + v.r as usize + 2);
     let dk: [u8; 64] = v.dk[..].try_into().unwrap();
-    assert_eq!(check_verify(v, 3, need, &dk), Err(Error::InvalidParameters));
+    assert_eq!(
+        check_verify(v, 3, need, &dk),
+        Err(PasswordHashError::InvalidParameters)
+    );
     assert_eq!(
         check_verify(v, v.n, need - 1, &dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(check_verify(v, v.n, need, &dk), Ok(()));
 }
@@ -238,14 +226,14 @@ fn largest_parameters() {
     let mut dk = [0u8; 64];
     assert_eq!(
         derive(b"pw", b"salt", 1 << 15, 1, 1, 0, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(
         derive(b"pw", b"salt", 16, 1, (1 << 30) - 1, 0, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(
         derive(b"pw", b"salt", 1 << 63, 4, 1, 0, &mut dk),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
 }

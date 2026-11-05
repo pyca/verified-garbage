@@ -144,7 +144,7 @@ def contract (d : Spec.Rc2.Direction) : Contract isa where
       (arg s 4).toNat + 512 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
       16 ≤ (s.gpr .esp).toNat ∧ (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32
   post s s' :=
-    let out := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))) d
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))) d
       (Spec.Rc2.blockAt s.mem (addr32 (arg s 1))) (Spec.Rc2.blocksAt s.mem (addr32 (arg s 2)) (arg s 3).toNat)
     Spec.Rc2.blocksAt s'.mem (addr32 (arg s 2)) (arg s 3).toNat = out.1 ∧
       Spec.Rc2.blockAt s'.mem (addr32 (arg s 1)) = out.2

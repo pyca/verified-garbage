@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 
 /-! # SEED artifacts on RISC-V -/

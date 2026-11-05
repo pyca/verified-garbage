@@ -162,6 +162,7 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI

@@ -1,27 +1,6 @@
 //! ChaCha20-Poly1305 (RFC 8439 §2.8), with a 96-bit nonce.
 //!
-//! Encryption and decryption are the verified assembly functions
-//! `vg_chacha20_poly1305_seal` and `vg_chacha20_poly1305_open` (contracts
-//! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`); this module
-//! only chooses the implementation and checks the length limit. They take the
-//! key, the nonce and the tag by pointer, and keep their working space on
-//! their own stack.
-//!
-//! Their variants, with the same contracts, are those of ChaCha20's
-//! `crate::chacha20::Backend`, each with its suffix. On x86-64, `select`
-//! chooses among `_ifma`, `_avx512vl`, `_avx512` and `_avx2`, in this order,
-//! on CPUs with the features their `_FEATURES` constants name (`_ifma`'s of
-//! both `seal` and `open`); elsewhere it chooses as `Backend::select` does
-//! for ChaCha20: on x86, `_ssse3`; on AArch64, `_sve2`, then `_neon`. The
-//! tests check that each variant needs no feature that this choice does not
-//! check.
-//!
-//! [`ChaCha20Poly1305::encrypt`] encrypts out of place, from a plaintext in
-//! pieces (a list of slices, such as a record's payload and TLS 1.3's
-//! content type, or a single one) into one output buffer: one call of
-//! `vg_chacha20_poly1305_seal_gather`
-//! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), or its variant of the
-//! same suffix.
+//! A nonce must never be used twice with the same key.
 
 #![cfg(any(
     target_arch = "x86_64",

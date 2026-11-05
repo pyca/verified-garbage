@@ -577,9 +577,9 @@ theorem correct (s : State) (h : (Spec.RsaKeyGen.primeInitContract abi).pre s) :
     split at P
     · rename_i hv
       rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
-      refine ⟨by rw [P.1]; rfl, ?_⟩
+      refine ⟨by rw [P.1]; rfl, _, ?_, SearchInit.first_valid hv⟩
       rw [P.2, valid_words _ _ _ _ hv.2.1]
-      simp only [limitOf, decide_eq_true_eq, List.map_cons, List.map_nil]
+      simp only [limitOf, decide_eq_true_eq, List.cons_append, List.nil_append, List.map_cons, List.map_nil]
     · rename_i hv
       rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
       exact ⟨by rw [P.1]; rfl, by rw [P.2, zeros_words]⟩

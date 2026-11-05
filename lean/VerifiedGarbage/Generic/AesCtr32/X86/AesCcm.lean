@@ -34,6 +34,7 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
@@ -76,14 +77,14 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
     stack := 2664
-    verified := seal_framed v
+    verified := Proof.AesCcm.seal_keyed (seal_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Ccm.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
     stack := 2664
-    verified := open_framed v
+    verified := Proof.AesCcm.open_keyed (open_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 

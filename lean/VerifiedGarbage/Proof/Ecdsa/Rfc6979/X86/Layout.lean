@@ -503,7 +503,7 @@ theorem lay_ARGS {s : State} (e588 : 588 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .
 
 end
 
-theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance}
+theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance}
     {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns} {ns : List String} {s : State}
     (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) : (lay I.hashLen I.ecdsa.curve.len cs H f s).Ok := by
   obtain ⟨e588, e28, -, -, od, og, oc, dc, gc, ao, ac, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht, nt, tout, tsc,
@@ -533,7 +533,7 @@ theorem entered_esp (dn q : Nat) (cs : List (String × List (BitVec 64))) (H : I
     (f : Fns) (s : State) : (entered s).gpr .esp = (lay dn q cs H f s).F := by
   simp only [entered, allocState_esp]; rfl
 
-theorem entered_wr {cs : List (String × List (BitVec 64))} {I : Spec.Ecdsa.Rfc6979.Instance}
+theorem entered_wr {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance}
     {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns} {ns : List String} {s : State}
     (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
     (entered s).wr = (lay I.hashLen I.ecdsa.curve.len cs H f s).FR :: s.wr := by

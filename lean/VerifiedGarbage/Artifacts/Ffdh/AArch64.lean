@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 @[expose] public section
 

@@ -387,7 +387,7 @@ def lay (dn q : Nat) (w : HVar) (f : Fns) (s : State) : Lay dn :=
   ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r7, s.gpr .r8, s.sp - BitVec.ofNat 64 736, q, w, f,
     fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0⟩
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
+theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
     (h : (rfcPPC I 736 (tabFacts w f) ns).pre s) :
     (lay I.hashLen I.ecdsa.curve.len w f s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, nt, tout, tsc, tstk, -⟩ := h

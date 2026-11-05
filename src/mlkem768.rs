@@ -1,41 +1,13 @@
-//! ML-KEM-768 (FIPS 203), the module-lattice-based key-encapsulation
-//! mechanism, at security category 3.
+//! ML-KEM-768 (FIPS 203), the module-lattice-based key-encapsulation mechanism,
+//! at security category 3.
 //!
-//! Key generation, encapsulation and decapsulation are the verified
-//! assembly functions `vg_mlkem768_keygen`, `vg_mlkem768_encaps` and
-//! `vg_mlkem768_decaps` (contracts `VG.Spec.MlKem.keyGenContract`,
-//! `encapsContract` and `decapsContract`): FIPS 203's internal algorithms
-//! `ML-KEM.KeyGen_internal`, `ML-KEM.Encaps_internal` and
-//! `ML-KEM.Decaps_internal` (§6). The encapsulation key check of §7.2 is
-//! `vg_mlkem768_check_ek`. This module supplies their randomness and working
-//! space, and destroys the intermediate values (§3.3).
-//!
-//! A decapsulation key is kept as the 64-byte seed `d ‖ z` it is generated
-//! from (§3.3), which [`DecapsulationKey768::from_seed`] expands; the caller
-//! generates the seed with an approved RBG. The expanded decapsulation key is
-//! never exposed, so the decapsulation keys this module uses pass the checks
-//! of §7.3 by construction. An encapsulation key from elsewhere passes the
-//! check of §7.2 in [`EncapsulationKey768::from_bytes`].
-//!
-//! The bound on `SampleNTT`'s loop (280 iterations, as Appendix B allows) is
-//! reached with probability less than 2⁻²⁶¹ for each call; key generation,
-//! encapsulation and decapsulation each call it 9 times (once for each
-//! entry of the matrix `Â`), so an operation reaches it with probability
-//! less than 2⁻²⁵⁸, and then fails with [`Error::SampleBound`].
-//!
-//! Their instances, with the same contracts, are chosen by
-//! `crate::mlkem_common::Backend::select`, on CPUs with the features their
-//! `_FEATURES` constants name: on x86-64, the `_avx512` ones, then the
-//! `_avx2` ones; on AArch64, the `_x2_sha3_keccak_sha3` ones on Apple's
-//! cores and the `_x2_sha3` ones on others.
-//!
-//! An [`EncapsulationKey768`] from key generation keeps the hash
-//! `H(ek)` of the key (FIPS 203 §4.1), which the decapsulation key holds,
-//! and encapsulation with it is `vg_mlkem768_encaps_h` (contract
-//! `encapsHContract`), which takes it rather than computing it each time
-//! (but on AArch64, where it computes it as `vg_mlkem768_encaps` does).
-//! One from [`EncapsulationKey768::from_bytes`] does not, and encapsulation
-//! with it is `vg_mlkem768_encaps`, which computes it.
+//! A decapsulation key is the 64-byte seed `d ‖ z` it is generated from
+//! ([`DecapsulationKey768::from_seed`]), which the caller generates with an
+//! approved RBG; the expanded key is never exposed, so it passes the checks of
+//! §7.3 by construction. An encapsulation key from elsewhere passes the check
+//! of §7.2 in [`EncapsulationKey768::from_bytes`]. An operation fails with
+//! [`MlKemError::SampleBound`] if it reaches the bound on `SampleNTT`'s loop
+//! that Appendix B allows, with probability less than 2⁻²⁵⁸.
 
 #![cfg(any(
     target_arch = "x86_64",

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsgVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Ed25519's verification of a message, on RISC-V -/
 

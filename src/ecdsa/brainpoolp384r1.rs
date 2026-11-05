@@ -1,8 +1,4 @@
-//! ECDSA over brainpoolP384r1: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_brainpoolp384r1_sign`), and verification
-//! (`vg_ecdsa_brainpoolp384r1_verify`), and their variants on CPUs with the
-//! features their `_FEATURES` constants name: `_umaal` on ARMv7.
+//! ECDSA over brainpoolP384r1.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -71,29 +67,3 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
 }
 
 impl<H: HmacHash> SignatureHash<BrainpoolP384r1> for H {}
-
-#[cfg(all(test, target_arch = "arm"))]
-mod umaal_tests {
-    use super::Mul;
-    use crate::arch::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES;
-    use crate::cpu::NAMES;
-    use verified_garbage_cpu::Features;
-
-    /// The CPU features of the signature with the multiplications `m`.
-    fn required(m: Mul) -> Features {
-        match m {
-            Mul::Baseline => Features(0),
-            Mul::Umaal => VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES,
-        }
-    }
-
-    /// The signature needs no CPU feature that the multiplications are not
-    /// selected for: on every set of features that selects them.
-    #[test]
-    fn whole_algorithm_features() {
-        for bits in 0..1u32 << NAMES.len() {
-            let f = Features(bits);
-            assert!(f.contains(required(Mul::select(f))), "{bits:#b}");
-        }
-    }
-}

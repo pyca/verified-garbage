@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Poly1305.Stream
 public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Streaming Poly1305 (RFC 8439 §2.5) on x86-64 -/
 

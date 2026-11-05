@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on ARMv7 -/
 
@@ -15,6 +16,6 @@ def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact Arm.target {
     code := Impl.AesCtr.Arm.crypt
     stack := 8
-    verified := crypt_verified }]
+    verified := Proof.AesCtr.keyed crypt_verified }]
 
 end VG.Artifacts.AesCtr.Arm

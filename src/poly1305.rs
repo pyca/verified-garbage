@@ -1,25 +1,7 @@
 //! Poly1305 (RFC 8439 §2.5), a one-time authenticator.
 //!
-//! Its whole computation is verified assembly: `vg_poly1305_init`,
-//! `vg_poly1305_update` and `vg_poly1305_finalize` (contracts
-//! `VG.Spec.Poly1305.initContract`, `updateContract` and `finalizeContract`)
-//! maintain a streaming state that represents the key and the message
-//! absorbed so far, with the message's last bytes that do not fill a block
-//! buffered in it (`VG.Spec.Poly1305.Buffered`), and compute the tag. This
-//! module only keeps that state together with the message length (modulo
-//! 2⁶⁴), which the contracts take as an argument.
-//!
-//! The variants of `vg_poly1305_update`, with the same contract, are chosen
-//! by `Backend::select`: on x86-64, on CPUs with the features their
-//! `_FEATURES` constants name, `vg_poly1305_update_ifma`,
-//! `vg_poly1305_update_avx512` and `vg_poly1305_update_avx2`, in this order.
-//! On AArch64, `vg_poly1305_update_neon` needs only AdvSIMD, which every
-//! AArch64 CPU has; it is chosen only on Apple's cores (`target_vendor =
-//! "apple"`), because on others, such as Arm's Neoverse N2, the baseline
-//! implementation is faster.
-//!
-//! A key must be used to authenticate only one message: the tags of two
-//! messages under the same key reveal enough to forge others.
+//! A key must authenticate only one message: the tags of two messages under the
+//! same key reveal enough to forge others.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -43,7 +25,7 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-pub use crate::hmac::InvalidMac;
+use crate::error::InvalidMac;
 
 /// The implementations of `vg_poly1305_update`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

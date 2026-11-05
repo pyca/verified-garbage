@@ -1,13 +1,7 @@
-//! RC2-CBC (RFC 2268), without padding: [`Rc2CbcEncryptor`] and
-//! [`Rc2CbcDecryptor`].
-//!
-//! Initialization and updates are the verified streaming primitives
-//! (`VG.Spec.Rc2.cbcInitContract` and `VG.Spec.Rc2.cbcUpdateContract`),
-//! which keep the key schedule, chaining value and pending partial block in
-//! an opaque context. This wrapper keeps only the number of pending bytes;
-//! the direction is the type. Updates write the whole blocks they complete
-//! to the caller's buffer, so nothing is allocated; finalization rejects a
+//! RC2-CBC (RFC 2268), incrementally and without padding: `finalize` rejects a
 //! trailing partial block.
+//!
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -19,9 +13,10 @@
 ))]
 
 use crate::arch::rc2::{vg_rc2_cbc_decrypt_update, vg_rc2_cbc_encrypt_update, vg_rc2_cbc_init};
+use crate::error::{IncompleteBlock, OutputTooSmall};
 use crate::zeroize::zeroize;
 
-/// Why an RC2-CBC operation failed.
+/// Why an RC2-CBC encryptor or decryptor was not created.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     /// The key length is outside 1..=128 bytes.
@@ -30,12 +25,6 @@ pub enum Error {
     InvalidEffectiveBits,
     /// The IV is not eight bytes long.
     InvalidIvLength,
-    /// The total input length is not a multiple of eight bytes.
-    IncompleteBlock,
-    /// The output buffer of an update is shorter than the bytes it would
-    /// write ([`Rc2CbcEncryptor::output_len`],
-    /// [`Rc2CbcDecryptor::output_len`]).
-    OutputTooSmall,
 }
 
 crate::error::impl_error! {
@@ -43,8 +32,6 @@ crate::error::impl_error! {
         InvalidKeyLength => "invalid RC2 key length",
         InvalidEffectiveBits => "invalid RC2 effective key size",
         InvalidIvLength => "invalid RC2-CBC IV length",
-        IncompleteBlock => "RC2-CBC input is not a whole number of blocks",
-        OutputTooSmall => "RC2-CBC output buffer is too small",
     }
 }
 
@@ -95,11 +82,11 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
     /// Processes the whole blocks of the pending bytes and `input` into the
     /// first bytes of `output`, keeps the rest pending, and returns how many
     /// bytes it wrote; changes nothing if `output` is too short.
-    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         // No slice is `usize::MAX` bytes long, so an overflowing length
         // (`output_len` saturates) is too long for any `output`.
         let written = self.output_len(input.len());
-        let output = output.get_mut(..written).ok_or(Error::OutputTooSmall)?;
+        let output = output.get_mut(..written).ok_or(OutputTooSmall)?;
         let update = if DECRYPT {
             vg_rc2_cbc_decrypt_update
         } else {
@@ -126,11 +113,11 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
     }
 
     /// Fails if a partial block remains.
-    fn finalize(self) -> Result<(), Error> {
+    fn finalize(self) -> Result<(), IncompleteBlock> {
         if self.pending_len == 0 {
             Ok(())
         } else {
-            Err(Error::IncompleteBlock)
+            Err(IncompleteBlock)
         }
     }
 }
@@ -179,17 +166,17 @@ impl Rc2CbcEncryptor {
     /// [`output_len`](Self::output_len)`(input.len())`.
     ///
     /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`Error::OutputTooSmall`],
+    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
     /// writing nothing and leaving the encryptor unchanged. An update that
     /// completes no block (an empty one, for example) writes nothing and
     /// keeps the chaining value.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         self.cbc.update(input, output)
     }
 
-    /// Consumes the encryptor. Fails with [`Error::IncompleteBlock`] if a
+    /// Consumes the encryptor. Fails with [`IncompleteBlock`] if a
     /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), Error> {
+    pub fn finalize(self) -> Result<(), IncompleteBlock> {
         self.cbc.finalize()
     }
 }
@@ -232,17 +219,17 @@ impl Rc2CbcDecryptor {
     /// [`output_len`](Self::output_len)`(input.len())`.
     ///
     /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`Error::OutputTooSmall`],
+    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
     /// writing nothing and leaving the decryptor unchanged. An update that
     /// completes no block (an empty one, for example) writes nothing and
     /// keeps the chaining value.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
         self.cbc.update(input, output)
     }
 
-    /// Consumes the decryptor. Fails with [`Error::IncompleteBlock`] if a
+    /// Consumes the decryptor. Fails with [`IncompleteBlock`] if a
     /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), Error> {
+    pub fn finalize(self) -> Result<(), IncompleteBlock> {
         self.cbc.finalize()
     }
 }

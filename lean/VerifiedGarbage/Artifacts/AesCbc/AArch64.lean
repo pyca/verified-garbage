@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 
 /-! # AES-CBC decryption with seven independent AES states -/
@@ -14,7 +15,7 @@ def artifacts : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Impl.AesCbc.AArch64.Decrypt.code
-    verified := Proof.AesCbc.AArch64.Decrypt.verified
+    verified := Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verified
     features := ["aes","sha3"]
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.written }]

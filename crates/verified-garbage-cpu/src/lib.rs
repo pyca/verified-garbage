@@ -51,7 +51,7 @@ impl Features {
     }
 
     /// Whether every feature of `other` is in `self`.
-    pub fn contains(self, other: Features) -> bool {
+    pub const fn contains(self, other: Features) -> bool {
         self.0 & other.0 == other.0
     }
 }

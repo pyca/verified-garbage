@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
 import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64 -/

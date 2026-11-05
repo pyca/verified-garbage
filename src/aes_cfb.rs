@@ -1,22 +1,7 @@
 //! AES-CFB128 (SP 800-38A §6.3, with 128-bit segments) with 128-, 192- and
 //! 256-bit keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`
-//! (`VG.Spec.Cfb.aesEncryptContract`, `aesDecryptContract`) replace whole
-//! blocks with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the
-//! block at `iv`, which they replace with the last ciphertext block, in
-//! constant time. This module holds the key schedule and the chaining value,
-//! and handles a partial last segment: CFB encryption of a zero block is
-//! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
-//! rest of the input, in either direction.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -50,6 +35,7 @@ use crate::arch::aes_cfb::{
 };
 use crate::arch::aes_cfb::{vg_aes_cfb128_decrypt, vg_aes_cfb128_encrypt};
 use crate::cpu::detected;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -118,23 +104,6 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Why an AES-CFB128 operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid AES key length",
-        IncompleteBlock => "AES-CFB128 input is not a whole number of blocks",
-    }
-}
-
 /// An expanded AES key.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
@@ -159,7 +128,7 @@ pub struct AesCfb128Encryptor {
 
 impl AesCfb128Encryptor {
     /// Expands a 16-, 24- or 32-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -170,9 +139,9 @@ impl AesCfb128Encryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
     /// a partial last segment.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.encrypt(&mut self.iv, buffer);
         Ok(())
@@ -208,7 +177,7 @@ pub struct AesCfb128Decryptor {
 
 impl AesCfb128Decryptor {
     /// Expands a 16-, 24- or 32-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -219,9 +188,9 @@ impl AesCfb128Decryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
     /// a partial last segment.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.decrypt(&mut self.iv, buffer);
         Ok(())
@@ -245,9 +214,9 @@ impl Drop for AesCfb128Decryptor {
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(

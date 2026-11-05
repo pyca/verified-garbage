@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -29,7 +29,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
-abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
 /-- The `N` bytes of stack below `sp`. -/
@@ -43,7 +43,7 @@ def TablesOk (cs : List (String × List (BitVec 64))) (sy : String → BitVec 32
     (∀ r∈writes,Region.Disjoint ⟨State.addr (sy c.1),8*c.2.length⟩ r) ∧
     (State.addr (sy c.1)).toNat%64=0
 
-def rfcArm (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64)))
+def rfcArm (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64)))
     (TabFacts : State → Prop) (ns : List String) : Contract Arm.isa where
   pre s :=
     let out : Region := ⟨State.addr (s.gpr .r0), 2 * I.ecdsa.curve.len⟩

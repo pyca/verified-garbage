@@ -1,9 +1,4 @@
-//! Entropy-tape service and safe-prime parameter generation.
-//! The whole parameter search runs in
-//! verified code (`vg_ffdh_generate_parameters`): the candidates, their
-//! Miller–Rabin witnesses, the attempt limit and the length of each entropy
-//! request. Rust allocates, fills the random tape the controller asks for
-//! and selects the implementation for the CPU.
+//! Safe-prime parameter generation.
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;

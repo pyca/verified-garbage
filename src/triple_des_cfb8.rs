@@ -1,14 +1,7 @@
-//! Triple DES-CFB8 (SP 800-38A §6.3 with 8-bit segments, with Triple DES as
-//! in FIPS 46-3), in place.
+//! Triple DES-CFB8 (SP 800-38A §6.3 with 8-bit segments, with Triple DES as in
+//! FIPS 46-3), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_triple_des_expand_key` (contract `VG.Spec.TripleDes.expandKeyContract`)
-//! writes the key schedule, and `vg_triple_des_cfb8_encrypt` and
-//! `vg_triple_des_cfb8_decrypt` (`VG.Spec.TripleDes.cfb8EncryptContract`,
-//! `cfb8DecryptContract`) replace each byte with its XOR with the first byte of
-//! `CIPH_K` of the input block, and the input block at `iv` with the one to
-//! continue from, in constant time: their timing depends on none of the key,
-//! the input block and the data. This module holds the key schedule and the input block.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -21,10 +14,8 @@
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb8::{vg_triple_des_cfb8_decrypt, vg_triple_des_cfb8_encrypt};
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
-
-/// The key does not contain 16 or 24 bytes.
-pub use crate::error::InvalidKeyLength;
 
 /// An expanded Triple DES key, which serves both directions.
 struct Key {

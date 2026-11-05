@@ -227,10 +227,9 @@ def stream : List StreamFn := [
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
-carries, and its `finalize` its own (`stream v`); it carries `v` for
-deterministic ECDSA's functions (`MdHash.sha224`). -/
+carries, and its `finalize` its own (`stream v`). -/
 def variant : MdHash :=
-  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
+  MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha224_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
@@ -243,7 +242,6 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features (stream v) with
-    sha224 := some v }
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224

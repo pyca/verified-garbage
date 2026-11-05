@@ -15,8 +15,8 @@ little-endian. Bytes 512 through 1023 are not read, and
 a change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
 A context `vg_aes_gcm_prepare` wrote (`PreparedPowersRepr`) satisfies
-`PreparedPowers16Repr` too, so these APIs also take it; a context
-`vg_aes_gcm_prepare16` wrote must never be passed to a `*_prepared` or
+`PreparedPowers16Repr` too (`PreparedPowersRepr.prepared16`), so these APIs
+also take it; a context `vg_aes_gcm_prepare16` wrote must never be passed to a `*_prepared` or
 `*_precomputed` API, which may read all 48 powers. The signatures are those of
 the `*_prepared` APIs (a 1024-byte context), and these APIs have the existing
 GCM postconditions, memory bounds, disjointness and secrecy guarantees; only
@@ -39,6 +39,12 @@ def PreparedPowers16Repr (m : Mem) (p : Addr) : Prop :=
       preparedPower (hpow (ctxH m p) (2 * k + 2)) ∧
     m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
       preparedPower (hpow (ctxH m p) (2 * k + 1))
+
+/-- A context `vg_aes_gcm_prepare` wrote is one the `*_prepared16` APIs take
+(`prepared16Safety`): its 24 pairs begin with the 8 of `PreparedPowers16Repr`. -/
+theorem PreparedPowersRepr.prepared16 {m : Mem} {p : Addr} (h : PreparedPowersRepr m p) :
+    PreparedPowers16Repr m p :=
+  fun k hk => h k (by omega)
 
 /-! ## The key context -/
 

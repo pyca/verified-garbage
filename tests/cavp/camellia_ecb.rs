@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::camellia_ecb::{CamelliaEcb, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::camellia_ecb::CamelliaEcb;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -144,7 +146,7 @@ fn invalid_key_lengths() {
     for len in [0, 1, 8, 15, 17, 23, 25, 31, 33, 64] {
         assert_eq!(
             CamelliaEcb::new(&vec![0; len]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }
@@ -156,8 +158,8 @@ fn empty_and_incomplete() {
     assert_eq!(ecb.decrypt(&mut []), Ok(()));
     for len in [1, 8, 15, 17, 31, 33] {
         let mut buffer = vec![0xa5; len];
-        assert_eq!(ecb.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(ecb.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(ecb.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(ecb.decrypt(&mut buffer), Err(IncompleteBlock));
         assert!(crate::bytes::all_equal(&buffer, 0xa5));
     }
 }

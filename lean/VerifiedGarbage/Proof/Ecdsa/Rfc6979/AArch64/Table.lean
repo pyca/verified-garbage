@@ -105,7 +105,7 @@ theorem WOk.blockSize {w : MdHash} (hw : WOk w) : Spec.HmacTable.blockSize w.mgf
   exact w.ok.hB
 
 /-- The instance with `w`'s hash function fixed. -/
-def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Spec.Ecdsa.Rfc6979.Instance where
+def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Proof.Ecdsa.Rfc6979.Instance where
   ecdsa := T.ecdsa
   hash := w.ok.SH.H
   hashLen := w.H.D
@@ -146,7 +146,7 @@ theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : Curv
 /-- RFC 6979's result with `w`'s hash function fixed is the table's. -/
 theorem tresult_eq (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) (m : Mem) (d dg : Addr) :
     (instOf T w).result m d dg = T.result w.mgf.G w.ok.SH.H m d dg := by
-  simp only [Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.mgf.len]
+  simp only [Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.TableInstance.result, instOf, w.mgf.len]
 
 /-! ## The contract on entry -/
 
@@ -182,7 +182,7 @@ def tabK (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List MdHash
 
 /-- The contract the proof is written against, of a state with the same
 arguments, stack pointer, regions, memory and symbols. -/
-theorem rfc_congr {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {S : Nat}
+theorem rfc_congr {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {S : Nat}
     {H : Impl.Pbkdf2.Md.AArch64.Hash} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {ns : List String} {s t : State}
     (h : (rfcAArch64 E I S (tabFacts H f) ns).pre s)
     (hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x4, .x5, .x6, .x7], t.gpr r = s.gpr r) (hsp : t.sp = s.sp)
@@ -302,7 +302,7 @@ theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
 /-! ## Constant time -/
 
 /-- Public data that agree. -/
-theorem pub_trans {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+theorem pub_trans {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {S S' : Nat}
     {F F' : State → Prop} {ns : List String} {a b c : State} (h₁ : (rfcAArch64 E I S F ns).pub a b)
     (h₂ : (rfcAArch64 E I S F ns).pub a c) : (rfcAArch64 E I S' F' ns).pub b c := by
   obtain ⟨p₁, p₂, p₃, p₄, p₅, p₆, p₇, p₈, p₉⟩ := h₁
@@ -310,12 +310,12 @@ theorem pub_trans {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance}
   exact ⟨p₁.symm.trans q₁, p₂.symm.trans q₂, p₃.symm.trans q₃, p₄.symm.trans q₄, p₅.symm.trans q₅,
     p₆.symm.trans q₆, p₇.symm.trans q₇, p₈.symm.trans q₈, fun n hn => (p₉ n hn).symm.trans (q₉ n hn)⟩
 
-theorem pub_refl {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {S : Nat}
+theorem pub_refl {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {S : Nat}
     {F : State → Prop} {ns : List String} (a : State) : (rfcAArch64 E I S F ns).pub a a :=
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
 
 /-- Public data of a state with the same arguments, stack pointer, memory and symbols. -/
-theorem pub_congr {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {S S' : Nat}
+theorem pub_congr {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance} {S S' : Nat}
     {F F' : State → Prop} {ns : List String} {a b c : State} (h : (rfcAArch64 E I S F ns).pub a b)
     (hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x4, .x5], c.gpr r = b.gpr r) (hsp : c.sp = b.sp) (hm : c.mem = b.mem)
     (hsy : c.syms = b.syms) : (rfcAArch64 E I S' F' ns).pub a c := by

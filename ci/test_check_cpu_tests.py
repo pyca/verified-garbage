@@ -123,9 +123,7 @@ class RsaEmulationTests(unittest.TestCase):
         # Exact test paths must be represented by themselves, too.
         for b in cpu_tests.BINARIES:
             listed[b] += [p for g in cpu_tests.GROUPS.values() for p in g[b]]
-        expensive = {"wycheproof::rsa_keygen::rsa_keygen_primes",
-                     "wycheproof::rsa_keygen::rsa_keygen_composites",
-                     "wycheproof::rsa_pss::rsa_pss_sign_test",
+        expensive = {"wycheproof::rsa_pss::rsa_pss_sign_test",
                      "wycheproof::rsa_oaep::rsa_shared_key_leases"}
         listed["tests"] += list(expensive)
         selectors = {"rsa::pss::sha256::tests::backend_features",
@@ -133,7 +131,7 @@ class RsaEmulationTests(unittest.TestCase):
         listed["lib"] += list(selectors) + ["rsa::keygen::tests::primes"]
         runs = self.selected("icx", "tests", listed, emulated=True)
         self.assertFalse(set.union(*runs) & expensive)
-        for path in ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_pkcs1_enc::rsa_pkcs1_test",
+        for path in ["wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::rsa_pkcs1_enc::rsa_pkcs1_test",
                      "wycheproof::rsa_pss::rsa_pss_large_keys",
                      "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke"]:
             listed["tests"].append(path)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Framework.Sig
@@ -30,15 +31,15 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args ret rounds)
 
 theorem sealSpecR_pre {s : State} (h : sealPreK CtxMode.prepared s) :
-    (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s := by
+    (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).pre s := by
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
     a₂₈ a₂₉ a₃₀ a₃₁
   have a₃₂ := h
   clear h
-  sig_pre [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
+  sig_pre [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
+  sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
@@ -47,19 +48,19 @@ theorem sealSpecR_pre {s : State} (h : sealPreK CtxMode.prepared s) :
   all_goals with_reducible assumption
 
 theorem sealSpecR_post {s s' : State} (hR : rounds s)
-    (h : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).post s s') :
+    (h : (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).post s s') :
     Proof.AesGcm.sealX86_64.post s s' := by
-  sig_post [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
-    X86_64.abi, X86_64.argRegs, Spec.Gcm.sealPost] at h
-  sig_reduce [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
+  sig_post [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
+    X86_64.abi, X86_64.argRegs, Proof.AesGcm.sealRoundsPost] at h
+  sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
 theorem sealSpecR_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
-    (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pub s₁ s₂ := by
+    (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
-  sig_reduce [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
+  sig_pub [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈ a₉ a₁₀
   sig_and_intros
@@ -67,7 +68,7 @@ theorem sealSpecR_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
 
 /-- `vg_aes_gcm_seal_prepared` from its shared contract. -/
 def SealFn.ofPrepared (f : Fn)
-    (hv : Verified X86_64.target f.code (Spec.Gcm.sealPreparedContract X86_64.abi 2624))
+    (hv : Verified X86_64.target f.code (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624))
     (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2624)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : SealFn CtxMode.prepared :=
   CallFn.ofSpec f hv (fun _ h => sealSpecR_pre h)

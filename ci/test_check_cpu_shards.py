@@ -153,7 +153,7 @@ class SplitTests(unittest.TestCase):
 # What the stand-in `cargo` lists, for the library and the test binary.
 LIB_TESTS = ["aes_gcm::tests::round_trip", "aes_gcm_siv::tests::errors", "cpu::tests::of_names",
              "rsa::pkcs1_enc::tests::padding", "rsa::pss::tests::sign", "x25519::tests::agreement"]
-TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
+TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
 
 
 class StepTests(unittest.TestCase):
@@ -219,7 +219,7 @@ class StepTests(unittest.TestCase):
             "cpu::tests::of_names rsa::pkcs1_enc::tests::padding rsa::pss::tests::sign "
             "x25519::tests::agreement",
             "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- -Z unstable-options --report-time --exact "
-            "wycheproof::rsa::rsa_oaep_test wycheproof::x25519::x25519_test",
+            "wycheproof::rsa_oaep::rsa_oaep_test wycheproof::x25519::x25519_test",
         ])
         # Every line's groups, not only this shard's, and the CPU's tests.
         self.assertEqual(self.tests_record["cpu"], "icx")

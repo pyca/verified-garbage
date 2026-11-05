@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.Secp256k1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.Secp256k1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Lit
 
 /-! # ECDH over secp256k1 (SP 800-56A §5.7.1.2) on PPC64LE -/

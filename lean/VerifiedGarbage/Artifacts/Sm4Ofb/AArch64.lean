@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM4-OFB artifacts on baseline AArch64 -/
 

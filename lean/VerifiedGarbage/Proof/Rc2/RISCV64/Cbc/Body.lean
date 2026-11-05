@@ -30,11 +30,11 @@ theorem preserved_not : ∀ r ∈ preserved, r ∉ saved.map Prod.fst →
     r ∉ [Reg.t0, .a7, .t1, .t2, .a0, .a1, .a2, .s3, .s4, .s6] := by decide
 
 theorem enc_spec (k : Spec.Rc2.Schedule) (iv b : Spec.Rc2.Block) :
-    Spec.Rc2.cbc k .encrypt iv [b] =
-      ([Spec.Rc2.encryptBlock k (Spec.Rc2.xorBlock b iv)], Spec.Rc2.encryptBlock k (Spec.Rc2.xorBlock b iv)) := rfl
+    Proof.Rc2.cbcBlocks k .encrypt iv [b] =
+      ([Spec.Rc2.encryptBlock k (Proof.Rc2.xorBlock b iv)], Spec.Rc2.encryptBlock k (Proof.Rc2.xorBlock b iv)) := rfl
 
 theorem dec_spec (k : Spec.Rc2.Schedule) (iv b : Spec.Rc2.Block) :
-    Spec.Rc2.cbc k .decrypt iv [b] = ([Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock k b) iv], b) := rfl
+    Proof.Rc2.cbcBlocks k .decrypt iv [b] = ([Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock k b) iv], b) := rfl
 
 theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg → BitVec 64} {m₀ : Mem} {s₀ : State}
     (R : Regions T I D W n) {j : Nat} (hj : j < n) (t : State) (H : Inv d T I D W n g m₀ s₀ j t) :
@@ -86,7 +86,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
     obtain ⟨fS, fV, fB, fD⟩ := step_frame R hj F
     -- the new block and chaining value
     have out : Spec.Rc2.blockAt t₂.mem p =
-        Spec.Rc2.encryptBlock (Spec.Rc2.scheduleAt m₀ T) (Spec.Rc2.xorBlock (Spec.Rc2.blockAt m₀ p)
+        Spec.Rc2.encryptBlock (Spec.Rc2.scheduleAt m₀ T) (Proof.Rc2.xorBlock (Spec.Rc2.blockAt m₀ p)
           (Spec.Rc2.blockAt t.mem I)) := by
       have hs₁ : Spec.Rc2.scheduleAt t₁.mem T = Spec.Rc2.scheduleAt m₀ T := by
         rw [m₁, Proof.Rc2.scheduleAt_frame (Proof.Rc2.frame_store64 _ _ _) T (by simpa using R.TD.sub_right bj),
@@ -144,7 +144,7 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
         · exact R.IW.sub_right (Region.sub_prefix (by decide))), m₁]
     have hs₁ : Spec.Rc2.scheduleAt t₁.mem T = Spec.Rc2.scheduleAt m₀ T := by rw [m₁, H.sched]
     have b₃ : Spec.Rc2.blockAt t₃.mem p =
-        Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt m₀ T) (Spec.Rc2.blockAt m₀ p))
+        Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt m₀ T) (Spec.Rc2.blockAt m₀ p))
           (Spec.Rc2.blockAt t.mem I) := by
       rw [m₃, Proof.Rc2.blockAt_frame (Proof.Rc2.frame_store64 _ _ _) _ (by simpa using pI),
         Proof.Rc2.blockAt_xor, i₂, c₂, hs₁, m₁, b₀]; rfl

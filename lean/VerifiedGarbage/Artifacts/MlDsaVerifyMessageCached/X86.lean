@@ -24,6 +24,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 public import VerifiedGarbage.Proof.MlKem.X86.EncV
 public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 public import VerifiedGarbage.Proof.MlKem.X86.Table
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlDsa.DecideAt

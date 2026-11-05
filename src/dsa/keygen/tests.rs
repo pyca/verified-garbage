@@ -25,7 +25,7 @@ fn cavp_generated_keys() {
         let y = hex(&v["Y"], p.len());
         let x = hex(&v["X"], q.len());
         // A published x is below q, so it is accepted as the first draw.
-        let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
             for chunk in buf.chunks_exact_mut(q.len()) {
                 chunk.copy_from_slice(&x);
             }
@@ -51,7 +51,7 @@ fn generated_key_rejection_and_replay() {
     // Three rejected batches, each a refill that keeps the tape so far and
     // asks only for the bytes after it, then the published scalar.
     let mut draws = 0;
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
         assert_eq!(buf.len(), DRAW_BATCH * q.len());
         if draws < 3 {
             buf.fill(0);
@@ -82,7 +82,7 @@ fn generated_key_rejection_within_batch() {
     let x = hex(&cases[0]["X"], q.len());
     let y = hex(&cases[0]["Y"], p.len());
     let mut requests = 0;
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
         requests += 1;
         buf.fill(0);
         // Reject the first draw and accept the published scalar next,
@@ -130,18 +130,17 @@ fn generation_errors() {
         (&p, &q[1..], &g),
     ] {
         assert_eq!(
-            PrivateKey::generate_with_rng(p, q, g, |_| panic!("no draw for bad widths"))
-                .unwrap_err(),
+            PrivateKey::generate_from(p, q, g, |_| panic!("no draw for bad widths")).unwrap_err(),
             Error::Length
         );
     }
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |_| Err(Error::Randomness)).unwrap_err(),
+        PrivateKey::generate_from(&p, &q, &g, |_| Err(Error::Randomness)).unwrap_err(),
         Error::Randomness
     );
     let mut draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        PrivateKey::generate_from(&p, &q, &g, |buf| {
             draws += 1;
             if draws == 1 {
                 buf.fill(0);
@@ -155,7 +154,7 @@ fn generation_errors() {
     );
     draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        PrivateKey::generate_from(&p, &q, &g, |buf| {
             buf.fill(0);
             draws += 1;
             Ok(())
@@ -169,7 +168,7 @@ fn generation_errors() {
     *minus_one.last_mut().unwrap() -= 1;
     draws = 0;
     assert_eq!(
-        PrivateKey::generate_with_rng(&p, &q, &minus_one, |buf| {
+        PrivateKey::generate_from(&p, &q, &minus_one, |buf| {
             buf.fill(1);
             draws += 1;
             Ok(())
@@ -249,7 +248,7 @@ fn imported_private_components() {
 #[test]
 fn legacy_2048_160_key_generation() {
     let (p, q, g) = crate::dsa::tests::legacy_vectors::parameters();
-    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+    let key = PrivateKey::generate_from(&p, &q, &g, |buf| {
         assert_eq!(buf.len(), DRAW_BATCH * 20);
         buf.fill(0);
         buf[19] = 1;

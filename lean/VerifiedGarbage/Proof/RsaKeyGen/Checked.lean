@@ -35,7 +35,7 @@ theorem generate_checkKey {bits e : Nat} {rand : Rand} {k : Key}
     (h : generate bits e rand = some (.ok k)) :
     checkKey (k.octets k.n) (k.octets k.e) (k.octets k.d) (k.octets k.p) (k.octets k.q)
       (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv) = true := by
-  obtain ⟨_, _, _, _, _, _, _, ⟨_, hv, _⟩, _⟩ := generate_ok h
+  obtain ⟨_, _, _, _, _, _, _, ⟨_, hv, _⟩⟩ := generate_ok h
   exact hv
 
 /-- For every key `generate` returns whose primes are prime, the private

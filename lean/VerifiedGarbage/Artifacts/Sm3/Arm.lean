@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm3.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SM3 (GB/T 32905-2016) on ARMv7 -/
 

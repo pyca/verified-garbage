@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
 public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # RSAES-OAEP on ARMv7, with both hash functions as tables -/
 

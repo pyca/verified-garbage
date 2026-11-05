@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -9,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_aes_gcm_seal_gather` is written against, which the shared one
-(`Spec.Gcm.sealGatherContract`, with the 2640 bytes of stack below the stack
+(`Proof.AesGcm.sealGatherRoundsContract`, with the 2640 bytes of stack below the stack
 pointer that its frame and its call use) implies (`Gather/Verified.lean`):
 `(ctx = r0, rounds = r1, nonce = r2, nonce_len = r3, aad = [sp],
 aad_len = [sp + 4], src = [sp + 8], src_count = [sp + 12], dst = [sp + 16],

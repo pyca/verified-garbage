@@ -149,7 +149,7 @@ theorem ecb_verified (dir : Dir) :
   Verified.of_correct (ecb_correct dir) (ecb_ct dir) (by
     cases dir <;>
     sig_implies [Proof.Camellia.ecbScratchContract, Proof.Camellia.ecbScratchSig, Spec.Camellia.ecbSig,
-      Spec.Camellia.ecbPre, Spec.Camellia.ecbPost, ecbX86, specDir, X86.abi, X86.argSlots, X86.argVal,
+      Spec.Camellia.ecbPre, Proof.Camellia.ecbPostSk, ecbX86, specDir, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes, Impl.Camellia.X86.slots, Impl.Camellia.X86.grpSlot, Impl.Camellia.X86.nSlot,
       Impl.Camellia.X86.dSlot, Impl.Camellia.X86.savedSlot, Impl.Camellia.X86.keySlot, Impl.Camellia.X86.tailSlot]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState)
@@ -168,8 +168,8 @@ def ecbFrameSat : State where
   wr := [⟨0x2000, 0⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Spec.Camellia.ecbContract X86.abi d 2728).pre s := by
-  implies_sat [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Spec.Camellia.ecbPost,
+    ∃ s, (Proof.Camellia.ecbContractSk X86.abi d 2728).pre s := by
+  implies_sat [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Proof.Camellia.ecbPostSk,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [ecbFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using ecbFrameSat
 
@@ -177,9 +177,10 @@ theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
 theorem ecb_framed (dir : Dir) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (ecb dir))
       (Spec.Camellia.ecbContract X86.abi (specDir dir) 2728) :=
+  Proof.Camellia.ecb_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
     (n := 336) (pre := Spec.Camellia.ecbPre X86.abi.ptrBits)
-    (post := Spec.Camellia.ecbPost (specDir dir) X86.abi.ptrBits) (wa := false) (stack := 16)
+    (post := Proof.Camellia.ecbPostSk (specDir dir) X86.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2712) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
     (by decide) (by cases dir <;> lit_decide) (by cases dir <;> lit_decide) (by decide)
     (Proof.Camellia.ecbPre_local _) (Proof.Camellia.ecbPost_local _ _)

@@ -1,19 +1,8 @@
-//! X448 (RFC 7748), Diffie-Hellman on Curve448.
+//! X448 (RFC 7748 §5), Diffie-Hellman on Curve448.
 //!
-//! The whole function is the verified `vg_x448` (contract
-//! `VG.Spec.X448.x448Contract`): `X448(k, u)` of RFC 7748 §5, the
-//! scalar decoded (clamped) and all 448 bits of the u-coordinate reduced
-//! modulo the field prime, in constant time; and
-//! [`public_key`](PrivateKey::public_key) is the verified `vg_x448_base`
-//! (contract `VG.Spec.X448.x448BaseContract`), `X448(k, 5)`. On x86-64 CPUs
-//! with the features their `_FEATURES` constants name, `Backend::select`
-//! chooses their variants `vg_x448_adx` and `vg_x448_base_adx`, with the
-//! same contracts. This module gives them working space, and destroys what
-//! they leave there.
-//!
-//! [`exchange`](PrivateKey::exchange) is `vg_x448` of the private key and
-//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
-//! public key of small order gives (RFC 7748 §6.2), in constant time.
+//! [`exchange`](PrivateKey::exchange) rejects the all-zero shared secret that a
+//! public key of small order gives (§6.2), and returns the shared secret raw,
+//! not passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -31,6 +20,7 @@ use crate::arch::x448::{
     VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES, vg_x448_adx, vg_x448_base_adx,
 };
 use crate::cpu::detected;
+use crate::error::XdhError;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -60,23 +50,6 @@ impl Backend {
     #[cfg(not(target_arch = "x86_64"))]
     fn select(_: Features) -> Backend {
         Backend::Baseline
-    }
-}
-
-/// Why an operation failed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Error {
-    /// The shared secret is all zero: the peer's public key is a point of
-    /// small order (RFC 7748 §6.2).
-    ZeroSharedSecret,
-    /// The operating system's random number generator failed.
-    Randomness,
-}
-
-crate::error::impl_error! {
-    Error {
-        ZeroSharedSecret => "X448 shared secret is all zero",
-        Randomness => "X448 random number generator failed",
     }
 }
 
@@ -143,9 +116,9 @@ impl PrivateKey {
     pub const SIZE: usize = 56;
 
     /// A new private key: 56 random bytes from the operating system.
-    pub fn generate() -> Result<Self, Error> {
+    pub fn generate() -> Result<Self, XdhError> {
         let mut bytes = [0u8; 56];
-        getrandom::fill(&mut bytes).map_err(|_| Error::Randomness)?;
+        getrandom::fill(&mut bytes).map_err(|_| XdhError::Randomness)?;
         Ok(PrivateKey { bytes })
     }
 
@@ -167,14 +140,14 @@ impl PrivateKey {
     }
 
     /// The shared secret with the peer whose public key is `peer`,
-    /// `X448(k, peer)` (RFC 7748 §6.2); [`Error::ZeroSharedSecret`] if it
+    /// `X448(k, peer)` (RFC 7748 §6.2); [`XdhError::ZeroSharedSecret`] if it
     /// is all zero, which is checked without revealing anything else about
     /// it.
-    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, Error> {
+    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, XdhError> {
         let mut bytes = x448(&self.bytes, &peer.bytes);
         if crate::ct::eq(&bytes, &[0; 56]) {
             zeroize(&mut bytes);
-            return Err(Error::ZeroSharedSecret);
+            return Err(XdhError::ZeroSharedSecret);
         }
         Ok(SharedSecret { bytes })
     }
@@ -234,9 +207,10 @@ impl SharedSecret {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, Error, Features, PrivateKey, PublicKey, x448};
+    use super::{Backend, Features, PrivateKey, PublicKey, x448};
     #[cfg(target_arch = "x86_64")]
     use super::{VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES};
+    use crate::error::XdhError;
 
     /// The u-coordinate of the base point, 5 (RFC 7748 §4.2), encoded.
     const BASE_POINT: [u8; 56] = {
@@ -302,7 +276,7 @@ mod tests {
     fn zero_shared_secret() {
         let a = PrivateKey::from_bytes(&[0x42; 56]);
         let zero = PublicKey::from_bytes(&[0; 56]);
-        assert_eq!(a.exchange(&zero).unwrap_err(), Error::ZeroSharedSecret);
+        assert_eq!(a.exchange(&zero).unwrap_err(), XdhError::ZeroSharedSecret);
         assert_eq!(x448(a.as_bytes(), &[0; 56]), [0; 56]);
     }
 }

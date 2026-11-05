@@ -1,21 +1,9 @@
 //! Camellia-CTR (SP 800-38A §6.5, with Camellia as in RFC 3713), in place,
-//! with the standard incrementing function of Appendix B.1 on the whole
-//! counter block (a 128-bit big-endian number, wrapping modulo `2¹²⁸`, as
-//! OpenSSL's Camellia-CTR; RFC 5528's counter blocks, whose last 32 bits
-//! count from 1, are such blocks for messages of fewer than `2³²` blocks).
+//! incrementing the whole counter block as a 128-bit big-endian number modulo
+//! `2¹²⁸` (Appendix B.1, as OpenSSL's Camellia-CTR does; RFC 5528's counter
+//! blocks are such blocks for messages of fewer than `2³²` blocks).
 //!
-//! The block cipher work is verified assembly: `vg_camellia_expand_key`
-//! (contract `VG.Spec.Camellia.expandKeyContract`) writes the subkeys, and
-//! `vg_camellia_ctr` (`VG.Spec.Camellia.ctrContract`) XORs whole blocks with
-//! the output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`,
-//! which it replaces with the counter block to continue from, in constant
-//! time: its timing depends on none of the key, the counter block and the
-//! data. This module holds the subkeys and the counter block, and handles a
-//! partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes
-//! padded to a block XORs them with the first bytes of the next output block.
-//!
-//! The caller chooses the initial counter block, and must never use a
-//! counter block twice with the same key (Appendix B.2).
+//! A counter block must never be used twice with the same key (Appendix B.2).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -28,24 +16,8 @@
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_ctr::vg_camellia_ctr;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Camellia-CTR operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16, 24 or 32 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Camellia key length",
-        IncompleteBlock => "Camellia-CTR input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Camellia key.
 struct Key {
@@ -70,7 +42,7 @@ pub struct CamelliaCtr {
 impl CamelliaCtr {
     /// Expands a 16-, 24- or 32-byte key (16-byte keys use 18 rounds; 24- and
     /// 32-byte keys, 24), to process a message from the counter block `ctr`.
-    pub fn new(key: &[u8], ctr: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], ctr: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             counter: *ctr,
@@ -82,9 +54,9 @@ impl CamelliaCtr {
     /// anything if the buffer's length is not a multiple of 16: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.counter, buffer);
         Ok(())
@@ -100,11 +72,11 @@ impl CamelliaCtr {
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
-            _ => return Err(Error::InvalidKeyLength),
+            _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
         // SAFETY: the key has a validated length; key and schedule are separate

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombVerified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ECDSA over secp256k1 (FIPS 186-5) on 32-bit ARM -/
 

@@ -99,6 +99,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Divstep.Incl
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Word

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -35,10 +35,10 @@ def TblsOk (cs : List (String × List (BitVec 64))) (s : State) (wr : List Regio
     ∀ t ∈ Abi.constRegions (fun n => s.syms n) cs, t.base.toNat + t.len ≤ 2 ^ 64 ∧ ∀ r ∈ wr, t.Disjoint r
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
-abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.Instance) (S : Nat)
+def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Proof.Ecdsa.Rfc6979.Instance) (S : Nat)
     (TabFacts : State → Prop) (ns : List String) : Contract X86_64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .rdi, 2 * I.ecdsa.curve.len⟩

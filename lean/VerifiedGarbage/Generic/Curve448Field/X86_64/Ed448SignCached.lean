@@ -83,6 +83,7 @@ public import VerifiedGarbage.Proof.X448.X86_64.Freeze
 public import VerifiedGarbage.Proof.X448.X86_64.Main
 public import VerifiedGarbage.Proof.X448.X86_64.Pow223
 public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.Recover

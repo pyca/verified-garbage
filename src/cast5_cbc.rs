@@ -1,16 +1,7 @@
-//! CAST5-CBC (SP 800-38A §6.2, with CAST5 as in RFC 2144), in place and
-//! without padding.
+//! CAST5-CBC (SP 800-38A §6.2, with CAST5 as in RFC 2144), in place and without
+//! padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_cast5_expand_key` (contract `VG.Spec.Cast5.expandKeyContract`) writes
-//! the subkeys, and `vg_cast5_cbc_encrypt_chained` and
-//! `vg_cast5_cbc_decrypt_chained` (`VG.Spec.Cast5.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, and the chaining value with the
-//! one to continue from, the last ciphertext block, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the key schedule and the chaining
-//! value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -23,7 +14,7 @@
 
 use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt_chained, vg_cast5_cbc_encrypt_chained};
 use crate::cast5_ecb::Cast5Ecb;
-pub use crate::cast5_ecb::Error;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 
 /// An expanded CAST5 key, which serves both directions.
 struct Key {
@@ -43,7 +34,7 @@ pub struct Cast5CbcEncryptor {
 
 impl Cast5CbcEncryptor {
     /// Expands a key of 5 to 16 bytes, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -53,7 +44,7 @@ impl Cast5CbcEncryptor {
     /// Encrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -71,7 +62,7 @@ pub struct Cast5CbcDecryptor {
 
 impl Cast5CbcDecryptor {
     /// Expands a key of 5 to 16 bytes, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -81,14 +72,14 @@ impl Cast5CbcDecryptor {
     /// Decrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
 
 impl Key {
     /// Expands a key of 5 to 16 bytes.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Cast5Ecb::new(key)?,
         })
@@ -99,9 +90,9 @@ impl Key {
     /// input). Returns an
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
-    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; the buffer holds `len / 8` whole
@@ -125,9 +116,9 @@ impl Key {
     /// input). Returns an
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
-    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {

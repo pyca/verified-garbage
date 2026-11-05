@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
 public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
 public import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Permutation
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

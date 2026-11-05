@@ -33,6 +33,7 @@ public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Init
@@ -75,13 +76,13 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.sealCode v)
     stack := 3824
-    verified := Stitch.sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v
+    verified := Proof.AesGcmSiv.seal_keyed (Stitch.sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v)
     features := v.stitchFeatures },
   Spec.GcmSiv.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.openCode v)
     stack := 3824
-    verified := Stitch.openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v
+    verified := Proof.AesGcmSiv.open_keyed (Stitch.openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v)
     features := v.stitchFeatures }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

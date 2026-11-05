@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.Secp256k1.PPC64LE
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.Lit
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on PPC64LE -/

@@ -67,7 +67,8 @@ json_struct! {
 macro_rules! mldsa_tests {
     ($n:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use super::mldsa::{Sign, SignGroup, Verify, VerifyGroup};
-        use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
+        use verified_garbage::error::MlDsaError;
+        use verified_garbage::$module::{$SigningKey, $VerifyingKey};
 
         use super::harness::{self, Expectation};
         use crate::require_vectors;
@@ -112,7 +113,10 @@ macro_rules! mldsa_tests {
                     assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
                     let msg = &c.msg.as_ref().unwrap().0;
                     assert!(ctx.len() > 255, "tcId {id}");
-                    assert_eq!(key.sign_deterministic(msg, ctx), Err(Error::ContextTooLong));
+                    assert_eq!(
+                        key.sign_deterministic(msg, ctx),
+                        Err(MlDsaError::ContextTooLong)
+                    );
                 }
             });
         }

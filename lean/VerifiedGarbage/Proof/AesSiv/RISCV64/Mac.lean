@@ -33,7 +33,7 @@ computes the CMAC of the string with the context's PRF into the state at
 bytes of the whole blocks before the last 1 to 16 (`Spec.Cmac.chainedLen`),
 into `s8`, chains the `nb` blocks with `vg_cmac_aes_update` and finalizes
 the rest with `vg_cmac_aes_finalize`, from the subkeys in the context
-(`Siv.cmacWith_chained`). As on PPC64LE (`Proof/AesSiv/PPC64LE/Mac.lean`).
+(`Siv.macWith_chained`). As on PPC64LE (`Proof/AesSiv/PPC64LE/Mac.lean`).
 -/
 
 @[expose] public section
@@ -425,7 +425,7 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
   rw [m₄] at out₅
   rw [m₂] at out₃
   rw [out₅, out₃, Proof.CmacAes.RISCV64.mn, Proof.CmacAes.RISCV64.ciphAt, sch₃, k1, k2, rest₃, sch₁, hz, Proof.Cmac.Stream.blocksAt_eq, hcd,
-    pre₁, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS, tk, dr]
+    pre₁, Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS, tk, dr]
   rfl
 
 end VG.Proof.AesSiv.RISCV64

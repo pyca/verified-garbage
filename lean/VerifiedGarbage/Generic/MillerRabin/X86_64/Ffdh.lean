@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
 

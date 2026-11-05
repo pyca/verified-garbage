@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.CtrVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
 
 /-! # SM4-CTR artifacts on baseline x86 (32-bit) -/

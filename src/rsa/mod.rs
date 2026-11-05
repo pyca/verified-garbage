@@ -1,61 +1,18 @@
-//! The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also the
-//! signature verification primitive RSAVP1 (§5.2.2), and the private-key
-//! operation: RSADP (§5.1.2), which is also the signature primitive RSASP1
-//! (§5.2.1), without any padding.
+//! RSA keys (RFC 8017 §3) and their operations: the padding schemes are
+//! methods of the keys ([`PublicKey::encrypt_oaep`],
+//! [`PrivateKey::sign_pss`], …), with each scheme's types in its submodule
+//! ([`oaep`], [`pss`], [`pkcs1_sig`], and for compatibility only
+//! [`pkcs1_enc`]), and key generation is [`keygen::generate`].
 //!
-//! A key's first operation runs the verified `vg_rsa_public_precompute`
-//! (contract `VG.Spec.Rsa.publicPrecomputeContract`), which checks the
-//! modulus and computes what Montgomery multiplication needs of it, once for
-//! the key, as OpenSSL and AWS-LC set up their Montgomery values at a key's
-//! first operation: loading the key only checks the modulus as it does. The
-//! operation is the verified `vg_rsa_public_precomputed_checked` (contract
-//! `VG.Spec.Rsa.publicPrecomputedCheckedContract`), which checks the public
-//! exponent within BoringSSL's limits (odd, from 3 to `2^33 - 1`) and the
-//! input, computes `input^e mod n`, and writes it out. Their timing may
-//! depend on the public key (`n` and `e`) but not on the input.
-//!
-//! The private-key operation, with a key in the Chinese remainder form
-//! `(p, q, dP, dQ, qInv)` (§3.2) and its public exponent `e`, is the verified
-//! `vg_rsa_private_checked` (contract `VG.Spec.Rsa.privateCheckedContract`),
-//! which checks the key and the input, computes the result `m` of §5.1.2's
-//! step 2.b, and releases it only if `m^e mod n` is the input, as BoringSSL
-//! does: a fault in the computation, or a key whose values do not match, is
-//! never released ([`Error::Fault`]). Its timing may depend on the public key
-//! and the lengths of `p` and `q`, but not on the input or on the private
-//! key's values.
-//!
-//! A private key can also be loaded from its modulus, its exponents and its
-//! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
-//! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
-//! computes, or from `(n, e, d)` alone, whose primes the verified
-//! `vg_rsa_recover_primes_det` (contract
-//! `VG.Spec.Rsa.recoverPrimesDetContract`) recovers by SP 800-56B Rev. 2
-//! Appendix C.2. The timing of the first may depend on `n` but not on the
-//! private key; that of the second on `n` and `e` only.
-//!
-//! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
-//! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
-//! `VG.Spec.Rsa.checkKeyContract`): `d < n`, `p q = n`, `d` and the CRT
-//! exponents inverse to `e` modulo `p - 1` and `q - 1`, `qInv < p` and
-//! `q qInv ≡ 1 (mod p)`. Its timing may depend on the public key and the
-//! lengths of the private values, but not on their values. Loading a key does
-//! not run it.
-//!
-//! The variants of `vg_rsa_public_precompute`,
-//! `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, with
-//! the same contracts, are chosen with `Backend::select`, on CPUs with the features their `_FEATURES` constants
-//! (and those of the functions built on them) name: on x86-64, the
-//! `_ifma` ones of `vg_rsa_public_precomputed_checked` and
-//! `vg_rsa_private_checked` (with the `_adx` ones of the others), then the
-//! `_adx` ones; on ARMv7 under Linux, Android and the BSDs, the `_umaal`
-//! ones.
-//!
-//! This module only checks the lengths, the form of the modulus and the
-//! public exponent, and allocates the memory they work in.
-//!
-//! This is a primitive for building padding schemes (OAEP, PSS, PKCS #1
-//! v1.5) on: raw RSA on its own is not a secure encryption or signature
-//! scheme.
+//! Raw RSA is not part of the API: on its own it is not a secure encryption
+//! or signature scheme. Public exponents are odd, from 3 to `2^33 - 1`
+//! (BoringSSL's limits). Every way of loading a [`PrivateKey`] checks it as
+//! BoringSSL's `RSA_check_key` does, and like it does not check that its
+//! factors are prime: every private-key operation releases its result only if
+//! raising it to `e` gives back the input, so a fault, or a key with a
+//! composite factor, never releases one. The timing may depend on the public
+//! key and the lengths of the private values, but not on the private values
+//! themselves.
 
 #![cfg(all(
     any(
@@ -75,28 +32,14 @@ mod scratch;
 pub(crate) use scratch::Scratch;
 use scratch::VerifyScratch;
 
-use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa::vg_rsa_public_precomputed_checked;
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa::vg_rsa_public_precomputed_checked_umaal;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, vg_rsa_public_precomputed_checked_adx,
-    vg_rsa_public_precomputed_checked_ifma,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_PRIME_SEARCH_ADX_FEATURES;
@@ -116,7 +59,6 @@ use crate::arch::{
     rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
     rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
-use crate::cpu::detected;
 use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_rsa_public_precompute`,
@@ -149,21 +91,34 @@ pub(crate) enum Backend {
 }
 
 impl Backend {
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant: every CPU it is chosen for has them, so a function
+    /// chosen with it may need no other, which its caller checks when it
+    /// compiles (`assert!` in a `const`).
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) const REQUIRES: &[Features] = &{
+        let adx = Features::all(&[
+            VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
+            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+            VG_RSA_PRIVATE_CHECKED_ADX_FEATURES,
+            VG_RSA_PKCS1_SIGN_ADX_FEATURES,
+            VG_RSA_PRIME_SEARCH_ADX_FEATURES,
+        ]);
+        let ifma = Features::all(&[
+            adx,
+            VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
+            VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
+        ]);
+        [Features(0), adx, ifma]
+    };
+
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select(f: Features) -> Backend {
-        let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
-            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIME_SEARCH_ADX_FEATURES);
-        if adx
-            && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
-            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
-        {
+        if f.contains(Self::REQUIRES[Backend::Ifma as usize]) {
             Backend::Ifma
-        } else if adx {
+        } else if f.contains(Self::REQUIRES[Backend::Adx as usize]) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -193,6 +148,49 @@ impl Backend {
         Backend::Baseline
     }
 
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant: none, of the only one. (Only the callers' checks
+    /// use it, which the builds without `alloc` leave out.)
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "riscv64",
+        all(
+            target_arch = "arm",
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            ))
+        )
+    ))]
+    #[allow(dead_code)]
+    pub(crate) const REQUIRES: &[Features] = &[Features(0)];
+
+    /// The CPU features `select` requires to choose each implementation, by
+    /// its discriminant.
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    pub(crate) const REQUIRES: &[Features] = &[
+        Features(0),
+        Features::all(&[
+            VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES,
+            VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+            VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
+        ]),
+    ];
+
     /// The best implementation a CPU with the features `f` can run, on
     /// ARMv7.
     #[cfg(all(
@@ -206,10 +204,7 @@ impl Backend {
         )
     ))]
     pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
-            && f.contains(VG_RSA_PRIME_SEARCH_UMAAL_FEATURES)
-        {
+        if f.contains(Self::REQUIRES[Backend::Umaal as usize]) {
             Backend::Umaal
         } else {
             Backend::Baseline
@@ -222,7 +217,7 @@ pub const MIN_MODULUS_LEN: usize = 64;
 /// The longest modulus, in bytes (8192 bits).
 pub const MAX_MODULUS_LEN: usize = 1024;
 
-/// Why an RSA operation was refused.
+/// Why an RSA key was not loaded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     /// The modulus is not an odd number of 512 to 8192 bits, written in
@@ -231,19 +226,11 @@ pub enum Error {
     /// The public exponent is not within BoringSSL's limits: odd, from 3
     /// to `2^33 - 1`.
     InvalidExponent,
-    /// The input or the output is not as long as the modulus.
-    InvalidLength,
-    /// The input, as a number, is not less than the modulus.
-    InputOutOfRange,
-    /// The private key's values are too long for its modulus, the modulus
-    /// is not valid, `p q` is not the modulus, or `qInv` is not less than
-    /// `p`.
+    /// The private key's values are too long for its modulus or fail
+    /// BoringSSL's `RSA_check_key` (`p q = n`, `d < n`, `d`, `dP` and `dQ`
+    /// inverse to `e` modulo `p - 1` and `q - 1`, `qInv` the inverse of `q`
+    /// modulo `p`), or (from `(n, e, d)`) its primes were not found.
     InvalidPrivateKey,
-    /// The private-key operation's result failed the check against the
-    /// public exponent (its `e`-th power modulo `n` is not the input): the
-    /// key's values do not match each other, or the computation was
-    /// faulted. The result is not released.
-    Fault,
 }
 
 impl fmt::Display for Error {
@@ -251,12 +238,7 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Error::InvalidModulus => "invalid RSA modulus",
             Error::InvalidExponent => "invalid RSA public exponent",
-            Error::InvalidLength => "RSA input or output length is not the modulus length",
-            Error::InputOutOfRange => "RSA input is not less than the modulus",
             Error::InvalidPrivateKey => "invalid RSA private key",
-            Error::Fault => {
-                "RSA private-key operation failed its check against the public exponent"
-            }
         })
     }
 }
@@ -336,73 +318,10 @@ impl PublicKey {
         self.pre.get(&self.n, scratch)
     }
 
-    /// The length of the modulus in bytes, which is that of every input and
-    /// output.
+    /// The length of the modulus in bytes, which is that of the key's
+    /// ciphertexts and signatures.
     pub fn modulus_len(&self) -> usize {
         self.n.len()
-    }
-
-    /// RSAEP (RSAVP1): writes `input^e mod n` to `out`, both big-endian and
-    /// [`modulus_len`](Self::modulus_len) bytes long. The input must be
-    /// less than `n`; on an error `out` is left as zeros.
-    pub fn public_op(&self, input: &[u8], out: &mut [u8]) -> Result<(), Error> {
-        let k = self.n.len();
-        if input.len() != k || out.len() != k {
-            return Err(Error::InvalidLength);
-        }
-        let mut scratch = vec![0u64; public_scratch_words(k)];
-        let pre = self.pre(&mut scratch);
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_public_precomputed_checked,
-            // `select` chose it because the CPU has the features it needs.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_public_precomputed_checked_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_public_precomputed_checked_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_public_precomputed_checked_umaal,
-        };
-        // SAFETY: each pointer is valid for its length (`out` for writes,
-        // `scratch` too), and none overlaps another or wraps around, as they
-        // are distinct Rust allocations; `PublicKey::new` and the check above
-        // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
-        // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 8 ⌈out_len / 8⌉ + 48`; `pre` holds what
-        // `vg_rsa_public_precompute` (or its variant, with the same contract)
-        // wrote for the modulus, returning 1; and the CPU has the features of
-        // the function `select` chose.
-        let r = unsafe {
-            f(
-                out.as_mut_ptr(),
-                k,
-                pre.as_ptr(),
-                pre.len(),
-                self.e.as_ptr(),
-                self.e.len(),
-                input.as_ptr(),
-                k,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // The working space holds powers of the input.
-        crate::zeroize::zeroize(&mut scratch);
-        // `pre` holds a valid modulus' values and `e` is within the limits
-        // (`PublicKey::new`), so a refusal means the input is not below `n`.
-        if r == 1 {
-            Ok(())
-        } else {
-            Err(Error::InputOutOfRange)
-        }
     }
 }
 
@@ -430,7 +349,7 @@ pub(crate) mod tests {
     use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
     use super::{
         Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey, Vec,
-        exponent, public_scratch_words, scratch_words, trim, vec,
+        exponent, public_scratch_words, scratch_words, trim,
     };
     #[cfg(target_arch = "x86_64")]
     use super::{
@@ -438,6 +357,7 @@ pub(crate) mod tests {
         VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
     };
     use alloc::string::ToString;
+    use alloc::vec;
 
     #[test]
     fn public_scratch_within_scratch() {
@@ -457,9 +377,10 @@ pub(crate) mod tests {
     /// `n = 2^(16a) - 1`, `dP = p / 3` (`3 dP = (p - 1) + 1`),
     /// `dQ = (2^(8a + 1) + 1) / 3` (`3 dQ = 2 (q - 1) + 1`) and
     /// `qInv = 2^(8a - 1)` (`q ≡ 2 (mod p)`). With `swap`, `p` and `q` are
-    /// the other way round, and still `qInv = 2^(8a - 1)` (`q ≡ -2`). Every
-    /// check of `PrivateKey::from_crt` passes; the private-key operation's
-    /// result for most inputs does not pass its check against `e`.
+    /// the other way round, and still `qInv = 2^(8a - 1)` (`q ≡ -2`). With
+    /// [`composite_d`]'s private exponent, every check of
+    /// `PrivateKey::from_crt` passes; the private-key operation's result for
+    /// most inputs does not pass its check against `e`.
     pub(crate) fn composite(a: usize, swap: bool) -> [Vec<u8>; 6] {
         let ones = vec![0xff; a];
         let mut plus = vec![0; a + 1];
@@ -478,11 +399,35 @@ pub(crate) mod tests {
         }
     }
 
-    /// `composite(32, false)` loaded, with `d = 1`, and its public key.
+    /// The private exponent of `composite(a, swap)`: `d = (2^(8a) - 1)^2 / 3`,
+    /// the product of its factor `2^(8a) - 1` and that factor's `dP` (or
+    /// `dQ`), which is `3⁻¹` modulo `2^(8a) - 2` and `2^(8a)` (`3 d` is 1
+    /// modulo both), and less than `n`.
+    pub(crate) fn composite_d(a: usize) -> Vec<u8> {
+        mul(&vec![0xff; a], &vec![0x55; a])
+    }
+
+    /// `a b`, big-endian, in `a.len() + b.len()` bytes.
+    pub(crate) fn mul(a: &[u8], b: &[u8]) -> Vec<u8> {
+        let mut r = vec![0u32; a.len() + b.len()];
+        for (i, &x) in a.iter().rev().enumerate() {
+            for (j, &y) in b.iter().rev().enumerate() {
+                r[i + j] += u32::from(x) * u32::from(y);
+            }
+            for t in i..r.len() - 1 {
+                r[t + 1] += r[t] >> 8;
+                r[t] &= 0xff;
+            }
+        }
+        r.iter().rev().map(|&x| x as u8).collect()
+    }
+
+    /// `composite(32, false)` loaded, with [`composite_d`], and its public
+    /// key.
     pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         (
-            PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qinv).unwrap(),
+            PrivateKey::from_crt(&n, &[3], &composite_d(32), &p, &q, &dp, &dq, &qinv).unwrap(),
             PublicKey::new(&n, &[3]).unwrap(),
         )
     }
@@ -502,29 +447,6 @@ pub(crate) mod tests {
         n[0] |= 0x80;
         n[k - 1] |= 1;
         n
-    }
-
-    fn minus_one(n: &[u8]) -> Vec<u8> {
-        let mut m = n.to_vec();
-        // `n` is odd: only its last byte changes.
-        *m.last_mut().unwrap() -= 1;
-        m
-    }
-
-    /// `x` as `k` big-endian bytes.
-    pub(super) fn be(x: u64, k: usize) -> Vec<u8> {
-        let mut v = vec![0; k];
-        v[k - 8..].copy_from_slice(&x.to_be_bytes());
-        v
-    }
-
-    fn op(n: &[u8], e: &[u8], x: &[u8]) -> Result<Vec<u8>, Error> {
-        let mut out = vec![0xa5; n.len()];
-        let r = PublicKey::new(n, e)?.public_op(x, &mut out);
-        if r.is_err() {
-            assert_eq!(out, vec![0; n.len()]);
-        }
-        r.map(|()| out)
     }
 
     #[test]
@@ -620,63 +542,6 @@ pub(crate) mod tests {
         }
     }
 
-    /// Identities that hold for every modulus, at every length from 512 to
-    /// 8192 bits, including lengths that are not a whole number of words.
-    #[test]
-    fn identities() {
-        for k in [64, 65, 71, 72, 127, 128, 255, 256, 384, 512, 1023, 1024] {
-            for n in [modulus(k), vec![0xff; k]] {
-                let m1 = minus_one(&n);
-                let one = be(1, k);
-                assert_eq!(op(&n, &[3], &m1), Ok(m1.clone()));
-                assert_eq!(op(&n, &[0, 3], &m1), Ok(m1.clone()));
-                assert_eq!(op(&n, &[3], &one), Ok(one.clone()));
-                assert_eq!(op(&n, &[0x41], &vec![0; k]), Ok(vec![0; k]));
-                // 2^63 and 2^(8 + 63): no reduction.
-                assert_eq!(op(&n, &[63], &be(2, k)), Ok(be(1 << 63, k)));
-                let mut big = vec![0; k];
-                big[k - 9] = 0x80;
-                assert_eq!(op(&n, &[0, 71], &be(2, k)), Ok(big));
-                // The input `n - 1` with the longest exponent, of all ones.
-                assert_eq!(op(&n, &[1, 0xff, 0xff, 0xff, 0xff], &m1), Ok(m1.clone()));
-                // Out of range.
-                assert_eq!(op(&n, &[3], &n), Err(Error::InputOutOfRange));
-                assert_eq!(op(&n, &[3], &vec![0xff; k]), Err(Error::InputOutOfRange));
-            }
-            // For `n = 2^(8k) - 1`, `2^(8k + 1) = 2` and `2^(8k + 5) = 32`.
-            let n = vec![0xff; k];
-            let bits = (8 * k) as u64;
-            assert_eq!(op(&n, &(bits + 1).to_be_bytes(), &be(2, k)), Ok(be(2, k)));
-            assert_eq!(
-                op(&n, &(bits + 5).to_be_bytes()[6..], &be(2, k)),
-                Ok(be(32, k))
-            );
-        }
-    }
-
-    /// Exercise the 65537 shortcut and a neighboring general exponent at
-    /// whole-word and partial-word widths. For n = 2^(8k) - 1, powers of
-    /// two wrap at bit 8k, giving an independent expected result.
-    #[test]
-    fn public_65537_and_neighbor() {
-        for k in [64, 65, 71, 72, 127, 128, 255, 256, 384, 512, 1023, 1024] {
-            let n = vec![0xff; k];
-            for e in [65537_u32, 65539] {
-                let exponent = e.to_be_bytes();
-                let key = PublicKey::new(&n, &exponent[1..]).unwrap();
-                let mut expected = vec![0; k];
-                let bit = e as usize % (8 * k);
-                expected[k - 1 - bit / 8] = 1 << (bit % 8);
-                let mut out = vec![0; k];
-                key.public_op(&be(2, k), &mut out).unwrap();
-                assert_eq!(out, expected, "k={k}, e={e}");
-                key.public_op(&minus_one(&n), &mut out).unwrap();
-                assert_eq!(out, minus_one(&n));
-                assert_eq!(key.public_op(&n, &mut out), Err(Error::InputOutOfRange));
-            }
-        }
-    }
-
     #[test]
     fn invalid() {
         let n = modulus(64);
@@ -697,13 +562,6 @@ pub(crate) mod tests {
         for e in [&[][..], &[1], &[2], &[1; 64]] {
             assert_eq!(PublicKey::new(&n, e), Err(Error::InvalidExponent));
         }
-        let key = PublicKey::new(&n, &[3]).unwrap();
-        let mut out = [0; 64];
-        assert_eq!(key.public_op(&[0; 63], &mut out), Err(Error::InvalidLength));
-        assert_eq!(
-            key.public_op(&[0; 64], &mut out[..63]),
-            Err(Error::InvalidLength)
-        );
     }
 
     #[test]
@@ -711,10 +569,7 @@ pub(crate) mod tests {
         for e in [
             Error::InvalidModulus,
             Error::InvalidExponent,
-            Error::InvalidLength,
-            Error::InputOutOfRange,
             Error::InvalidPrivateKey,
-            Error::Fault,
         ] {
             assert!(!e.to_string().is_empty());
         }

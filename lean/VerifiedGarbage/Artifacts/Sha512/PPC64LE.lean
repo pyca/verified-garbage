@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512_256
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Shared
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on PPC64LE -/
 

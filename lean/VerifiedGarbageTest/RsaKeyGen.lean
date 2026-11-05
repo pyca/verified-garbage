@@ -18,9 +18,8 @@ reads it. These tests check properties instead, on randomness from a fixed
 linear congruential generator:
 
 * Keys of 512, 768 and 1024 bits, with `e` = 65537, 3 and 2^32 − 1, pass
-  the key check (`Rsa.checkKey`) and the pairwise consistency test (with
-  `Rsa.privateChecked`), and their private
-  operation inverts the public one; their primes have half the bits, the two
+  the key check (`Rsa.checkKey`), and their private operation inverts the
+  public one; their primes have half the bits, the two
   most significant set, are probably prime by trial division to 8161, and
   are more than `2^(nlen/2 − 100)` apart, and `d > 2^(nlen/2)`.
 * `generate` gives the same key for any extension of randomness that
@@ -57,7 +56,6 @@ def checkKey (nlen e : Nat) (k : Key) : Except String Unit := do
   let half := nlen / 2
   unless k.e == e do throw "e"
   unless keyValid k do throw "key check"
-  unless pairwiseOk k do throw "pairwise consistency test"
   unless bitLength k.n == nlen && bitLength k.p == half && bitLength k.q == half do
     throw "sizes"
   unless k.p / 2 ^ (half - 2) == 3 && k.q / 2 ^ (half - 2) == 3 do throw "top two bits"
@@ -121,7 +119,6 @@ def checkEdges : Except String Unit := do
   unless tooClose 256 none 0 == false && tooClose 256 (some (2 ^ 156)) 0 == true &&
       tooClose 256 (some (2 ^ 156 + 1)) 0 == false && tooClose 256 (some 0) (2 ^ 156) == true do
     throw "tooClose"
-  unless (pairwiseMessage 64).length == 64 do throw "pairwiseMessage"
 
 #assert_standard_axioms Spec.RsaKeyGen.generate
 #assert_standard_axioms Spec.RsaKeyGen.candidateStep

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gather.RISCV64.Loop
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Contract
 public import VerifiedGarbage.TCB.Artifact
@@ -45,7 +46,7 @@ argument as on PPC64LE (`Proof/AesGcm/PPC64LE/Gather/Fn.lean`).
 
 `vg_aes_gcm_seal_gather`
 calls `vg_aes_gcm_seal`, with its working space in a frame of its own, by
-its shared contract (`Spec.Gcm.sealContract`, with 4624 bytes of stack,
+its shared contract (`Proof.AesGcm.sealRoundsContract`, with 4624 bytes of stack,
 which its frame uses: `seal_sdepth`): its precondition from the layout the
 call gives it (`callPre`: its stack argument `tag` in our frame,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
@@ -88,11 +89,11 @@ def callPre (s : State) : Prop :=
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
-theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract RISCV64.abi 4624).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅, a₂₆, a₂₇⟩ := h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, RISCV64.abi, RISCV64.argRegs, List.getD,
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, RISCV64.abi, RISCV64.argRegs, List.getD,
     stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first
@@ -101,13 +102,13 @@ theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract RISCV6
     | omega
     | exact Region.Disjoint.symm ‹_›
 
-theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract RISCV64.abi 4624).post s s')
+theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).post s s')
     (hR : (s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14) :
     encryptWith (ctxCiph s.mem (s.gpr .a0) (s.gpr .a1).toNat) (ctxH s.mem (s.gpr .a0)) 16
         (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat)
         (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat) =
       (bytesAt s'.mem (s.gpr .a6) (s.gpr .a7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
-  sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, RISCV64.abi, RISCV64.argRegs,
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, RISCV64.abi, RISCV64.argRegs,
     stackArgs_one, List.range, List.range.loop] at h
   exact h hR
 
@@ -115,10 +116,10 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .a0 = s₂.gpr .a0 ∧ s�
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧
     s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.gpr .a7 = s₂.gpr .a7 ∧ s₁.sp = s₂.sp ∧
     stackArg s₁ 0 = stackArg s₂ 0) :
-    (Spec.Gcm.sealContract RISCV64.abi 4624).pub s₁ s₂ := by
+    (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, RISCV64.abi, RISCV64.argRegs, stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 
@@ -134,8 +135,8 @@ open VG.Proof.Gather.RISCV64 (GatherPre gather_wp gatherRegs)
 
 /-- The correctness of `vg_aes_gcm_seal`, in its frame, by its shared contract. -/
 abbrev SealOk : Prop :=
-  ∀ s, (Spec.Gcm.sealContract RISCV64.abi 4624).pre s →
-    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Spec.Gcm.sealContract RISCV64.abi 4624).post s s'
+  ∀ s, (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).pre s →
+    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.sealRoundsContract RISCV64.abi 4624).post s s'
 
 theorem covers_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers rs rs' :=
   Covers.of_sub fun r hr => ⟨r, h r hr, 0, (BitVec.add_zero _).symm, by omega_arith⟩
@@ -579,7 +580,7 @@ theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
     WP isa (.call "vg_aes_gcm_seal" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
-  refine WP.callAny (k := Spec.Gcm.sealContract RISCV64.abi 4624) hv (sealSpec_pre hcp) hcov hw
+  refine WP.callAny (k := Proof.AesGcm.sealRoundsContract RISCV64.abi 4624) hv (sealSpec_pre hcp) hcov hw
     (fun z rd' wr' sp' fr' pres' post' => ?_) (by rw [seal_sdepth]; decide)
   have hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6, c7, c8, c9, c10,

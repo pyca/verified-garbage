@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Triple DES-CFB64 artifacts on baseline AArch64 -/
 

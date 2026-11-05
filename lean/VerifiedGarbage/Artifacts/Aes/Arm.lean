@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Proof.Aes.Ct32.Layers
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -38,9 +39,9 @@ def artifacts : List Artifact := [
     verified := Proof.Aes.Arm.expandKey_framed },
   Spec.Aes.encryptBlocksApi.artifact Arm.target {
     code := Impl.Aes.Arm.encryptBlocks
-    verified := Proof.Aes.Arm.Ecb.encryptBlocks_verified },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.Arm.Ecb.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact Arm.target {
     code := Impl.Aes.Arm.decryptBlocks
-    verified := Proof.Aes.Arm.Ecb.decryptBlocks_verified }]
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.Arm.Ecb.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.Arm

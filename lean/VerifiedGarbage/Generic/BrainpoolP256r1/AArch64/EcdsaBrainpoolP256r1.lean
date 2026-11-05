@@ -37,6 +37,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config

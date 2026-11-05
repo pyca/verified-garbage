@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # SHA-1 (FIPS 180-4) on PPC64LE -/
 

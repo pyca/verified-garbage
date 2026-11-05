@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P521
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.EcdhLit
 
 /-! # ECDH over P-521 (SP 800-56A §5.7.1.2) on RISC-V -/

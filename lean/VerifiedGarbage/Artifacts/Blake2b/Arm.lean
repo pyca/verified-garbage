@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
 public import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # BLAKE2b (RFC 7693) on ARMv7 -/
 

@@ -1,33 +1,11 @@
-//! AES-CCM (NIST SP 800-38C, with the formatting and counter generation of
-//! its Appendix A, as RFC 3610) with 128-, 192- and 256-bit AES keys.
+//! AES-CCM (NIST SP 800-38C, with the formatting and counter generation of its
+//! Appendix A, as RFC 3610) with 128-, 192- and 256-bit keys.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_ccm_seal` and
-//! `vg_aes_ccm_open` (contracts `VG.Spec.Ccm.sealContract` and
-//! `openContract`) are generation-encryption and decryption-verification
-//! (§6.1, §6.2) in one call each, from the AES key schedule that
-//! `vg_aes_expand_key` writes. `open` checks the MAC in constant time and
-//! overwrites the data with zeros when it is wrong. This module checks the
-//! lengths of Appendix A.1, which the assembly does not, and holds the key
-//! schedule.
-//!
-//! # Tags
-//!
-//! The length of the tag (the encrypted MAC) is a parameter of CCM: it is
-//! part of the first block the MAC is computed over. It is a type parameter
-//! here, `T` in [`AesCcm::encrypt_in_place`] and
-//! [`AesCcm::decrypt_in_place`], so that it is fixed in the caller's code
-//! and never comes from a message (see `crate::aes_gcm`): one of the lengths
-//! Appendix A.1 allows, 4, 6, 8, 10, 12, 14 or 16 bytes, checked at compile
-//! time.
-//!
-//! Their variants, with the same contracts, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name: on x86-64, the `_vaes` ones, then the `_aesni` ones
-//! (both with `vg_aes_expand_key_aesni`); on x86, the `_aesni` ones; on
-//! AArch64, the `_aes` ones. On x86-64 and AArch64, when the associated data
-//! and the payload are longer than 32 bytes together (`cbc`), the
-//! `_aesni_cbc` ones (with either x86-64 backend) or the `_aes_cbc` ones run
-//! instead, whose features `select` checks too.
+//! A nonce must never be used twice with the same key. The tag length, 4, 6, 8,
+//! 10, 12, 14 or 16 bytes (Appendix A.1), is a type parameter, `T` in
+//! [`AesCcm::encrypt_in_place`] and [`AesCcm::decrypt_in_place`], so that it is
+//! fixed in the caller's code and never taken from a message (see
+//! `crate::aes_gcm`).
 
 #![cfg(any(
     target_arch = "x86",
@@ -65,6 +43,7 @@ use crate::arch::aes_ccm::{
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -182,8 +161,6 @@ macro_rules! assert_tag_length {
 /// Why an AES-CCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is not 7 to 13 bytes long (Appendix A.1).
     InvalidNonceLength,
     /// The payload is too long for the nonce: at least `2^(8 (15 − n))`
@@ -196,7 +173,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "invalid AES-CCM nonce length",
         InvalidTextLength => "AES-CCM text is too long for the nonce",
         TagMismatch => "AES-CCM tag does not match",
@@ -238,9 +214,9 @@ fn check(nonce: &[u8], len: usize) -> Result<(), Error> {
 
 impl AesCcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut k = AesCcm {
             schedule: [0; 240],
@@ -372,7 +348,7 @@ impl AesCcm {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCcm, Error};
+    use super::{AesCcm, Error, InvalidKeyLength};
 
     /// The `_aes_cbc` (or `_aesni_cbc`) instances run for more than 32 bytes
     /// of associated data and payload together, the others otherwise.
@@ -394,7 +370,7 @@ mod tests {
     fn key_lengths() {
         let key = [0u8; 40];
         for n in [0, 15, 17, 23, 25, 31, 33, 40] {
-            assert_eq!(AesCcm::new(&key[..n]).err(), Some(Error::InvalidKeyLength));
+            assert_eq!(AesCcm::new(&key[..n]).err(), Some(InvalidKeyLength));
         }
     }
 

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Verified
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # FFDH parameter generation calls each shared Miller–Rabin implementation -/
 

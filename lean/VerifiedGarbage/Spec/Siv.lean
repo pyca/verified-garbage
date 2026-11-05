@@ -196,21 +196,6 @@ def decrypt (key : List Byte) (ads : List (List Byte)) (z : List Byte) : Option 
   let k2 := key.drop (key.length / 2)
   if z.length < 16 then none else decryptWith (cmac k1) (Cmac.aes k2) ads (z.take 16) (z.drop 16)
 
-/-! ## With the CMAC subkeys given -/
-
-/-- SP 800-38B §6.2, the 128-bit CMAC of the message `m` with the cipher
-`ciph` and the subkeys `k1`, `k2` given (steps 2–6, step 1 having computed
-them): `Cmac.macFull` with its subkeys (`macFull_eq`). -/
-def cmacWith (ciph : Cipher) (k1 k2 m : List Byte) : List Byte :=
-  let n := if m.length = 0 then 1 else (m.length + 16 - 1) / 16
-  let ms := (List.range (n - 1)).map fun i => (m.drop (16 * i)).take 16
-  Cmac.chain ciph (Cmac.zeros 16) (ms ++ [Cmac.lastBlock 16 k1 k2 (m.drop (16 * (n - 1)))])
-
-/-- AES-CMAC is `cmacWith` with its subkeys. -/
-theorem macFull_eq (ciph : Cipher) (m : List Byte) :
-    Cmac.macFull ciph 16 m = cmacWith ciph (Cmac.subkeys ciph 16).1 (Cmac.subkeys ciph 16).2 m :=
-  rfl
-
 /-! ## The key context
 
 `vg_aes_siv_init` stores what AES-SIV needs of a key `K = K1 ‖ K2` in a
@@ -236,9 +221,9 @@ def schedCiph (m : Mem) (p : Addr) (nr : Nat) : Cipher :=
   Cmac.aesWith nr (Aes.bytesAt m p (16 * (nr + 1)))
 
 /-- The PRF of S2V of the key context at `p` for `nr` rounds: CMAC with the
-cipher of its first key schedule and its subkeys. -/
+cipher of its first key schedule and its subkeys (`Cmac.macWith`). -/
 def ctxMac (m : Mem) (p : Addr) (nr : Nat) : List Byte → List Byte :=
-  cmacWith (schedCiph m p nr) (Aes.bytesAt m (p + 240) 16) (Aes.bytesAt m (p + 256) 16)
+  Cmac.macWith (schedCiph m p nr) 16 (Aes.bytesAt m (p + 240) 16) (Aes.bytesAt m (p + 256) 16)
 
 /-- The cipher of CTR of the key context at `p` for `nr` rounds: AES with
 its second key schedule. -/
@@ -265,7 +250,7 @@ theorem ctxMac_eq {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key) 
   have hr : key.length / 8 = (key.take (key.length / 2)).length / 4 := by
     simp only [List.length_take]; omega
   funext x
-  rw [ctxMac, schedCiph, h1, hs1, hs2, cmac, macFull_eq, Cmac.aes, ← hr]
+  rw [ctxMac, schedCiph, h1, hs1, hs2, cmac, Cmac.macFull_eq, Cmac.aes, ← hr]
 
 /-- The cipher of the key context of `key`, for its number of rounds, is AES
 under `K2`. -/

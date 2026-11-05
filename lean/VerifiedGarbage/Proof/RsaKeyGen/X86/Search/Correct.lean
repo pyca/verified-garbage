@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Loop
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
@@ -26,14 +27,14 @@ open VG VG.X86
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly)
 open VG.Impl.RsaKeyGen.X86.Search
 open VG.Impl.Mont.X86 (at_)
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult)
 open VG.Proof.Ffdh.X86.ParamInit (writes words_halves zero_half writes_append)
 open VG.Proof.Ffdh.X86.KeyInit (read_write_eq read_write_ne)
 
 /-- The state's eight halves, for a finished search, in the order `results` stores them. -/
 def stateWords (p : SearchPublic) (r : PrimeSearchResult) : List (Nat × BitVec 32) :=
   [(0, BitVec.ofNat 32 r.remaining), (2, BitVec.ofNat 32 p.len), (4, BitVec.ofNat 32 (32769 * p.len)),
-    (6, BitVec.ofNat 32 r.requested), (1, 0), (3, 0), (5, 0), (7, 0)]
+    (6, BitVec.ofNat 32 (requested p.len r)), (1, 0), (3, 0), (5, 0), (7, 0)]
 
 /-- The results stored: the state's words, then `used`. -/
 def finished (p : SearchPublic) (m : Mem) (r : PrimeSearchResult) : Mem :=
@@ -177,9 +178,9 @@ theorem finished_used {p : SearchPublic} (m : Mem) (r : PrimeSearchResult) (hr :
     show (0 : BitVec 32) = 0#32 from rfl, halves32 hr]
 
 theorem finished_state {p : SearchPublic} {o : State} (h : SearchInput p o) (m : Mem) (r : PrimeSearchResult)
-    (h0 : r.remaining < 2 ^ 32) (h1 : p.len < 2 ^ 32) (h2 : 32769 * p.len < 2 ^ 32) (h3 : r.requested < 2 ^ 32) :
+    (h0 : r.remaining < 2 ^ 32) (h1 : p.len < 2 ^ 32) (h2 : 32769 * p.len < 2 ^ 32) (h3 : (requested p.len r) < 2 ^ 32) :
     Spec.Rsa.wordsAt (finished p m r) (p.stp.setWidth 64) 4 = [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
-      BitVec.ofNat 64 (32769 * p.len), BitVec.ofNat 64 r.requested] := by
+      BitVec.ofNat 64 (32769 * p.len), BitVec.ofNat 64 (requested p.len r)] := by
   have A := h.abi
   have hs : p.stp = arg o 11 := by rw [← h.2]; rfl
   have hu : p.up = arg o 2 := by rw [← h.2]; rfl
@@ -319,7 +320,8 @@ theorem search_correct_ok (c : Cand) {s : State} (h : contract.pre s) :
     rw [ax4, mem4, BitVec.setWidth_append_eq_right]
     have st := (status_lt (searchResult s)).1
     have pe : primeEntropy p.len = 32769 * p.len := rfl
-    refine ⟨toNat_small32 (by omega), ?_, finished_used _ _ (by omega), ?_⟩
+    refine ⟨toNat_small32 (by omega), ?_, finished_used _ _ (by omega), _, ?_,
+      Search.search_requests _ _ _ _ _⟩
     · exact (finished_bytes hp _ _).trans hd.output
     · exact finished_state hp _ _ (by omega) (by omega) (by omega) (by omega)
 

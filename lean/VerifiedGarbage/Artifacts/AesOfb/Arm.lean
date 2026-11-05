@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on ARMv7 -/
 
@@ -15,6 +16,6 @@ def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact Arm.target {
     code := Impl.AesOfb.Arm.crypt
     stack := 8
-    verified := crypt_verified }]
+    verified := Proof.AesOfb.keyed crypt_verified }]
 
 end VG.Artifacts.AesOfb.Arm

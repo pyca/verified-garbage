@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
@@ -37,7 +37,8 @@ def cbcChainedScratchSig (n : Nat) : Sig where
 def cbcChainedPre (pb : Nat) : Curry (cbcChainedSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
 
-/-- `cbcEncryptChainedContract`'s postcondition. -/
+/-- `cbcEncryptChainedContract`'s postcondition on the subkeys at
+`schedule`, for `rounds` of 18 or 24. -/
 def cbcEncChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds iv data n m m' _ =>
       (rounds.toNat = 18 ∨ rounds.toNat = 24) →
         let cs := Spec.Cbc.encrypt (cipher (subkeysAt m schedule rounds.toNat)) (Spec.Aes.bytesAt m iv 16)
@@ -45,7 +46,8 @@ def cbcEncChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds 
         Spec.Cbc.blocksAt m' data n.toNat = cs ∧
           Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs
 
-/-- `cbcDecryptChainedContract`'s postcondition. -/
+/-- `cbcDecryptChainedContract`'s postcondition on the subkeys at
+`schedule`, for `rounds` of 18 or 24. -/
 def cbcDecChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds iv data n m m' _ =>
       (rounds.toNat = 18 ∨ rounds.toNat = 24) →
         let cs := Spec.Cbc.blocksAt m data n.toNat
@@ -53,7 +55,19 @@ def cbcDecChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds 
             Spec.Cbc.decrypt (invCipher (subkeysAt m schedule rounds.toNat)) (Spec.Aes.bytesAt m iv 16) cs ∧
           Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs
 
-/-- `cbcEncryptChainedContract`, whatever `scratch` is. -/
+/-- `cbcEncryptChainedContract` with `cbcEncChainedPost`. -/
+def cbcEncryptChainedContractSk {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)
+    (post := cbcEncChainedPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `cbcDecryptChainedContract` with `cbcDecChainedPost`. -/
+def cbcDecryptChainedContractSk {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (pre := fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24)
+    (post := cbcDecChainedPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `cbcEncryptChainedContractSk`, whatever `scratch` is. -/
 def cbcEncChainedScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
   (cbcChainedScratchSig n).contract A
     (pre := fun schedule rounds iv data n _scratch => cbcChainedPre A.ptrBits schedule rounds iv data n)
@@ -64,7 +78,7 @@ theorem cbcEncChainedScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
     cbcEncChainedScratchContract A n stack = Sig.scratchContract A cbcChainedSig "scratch" .u64 n
       (cbcChainedPre A.ptrBits) (cbcEncChainedPost A.ptrBits) true stack := rfl
 
-/-- `cbcDecryptChainedContract`, whatever `scratch` is. -/
+/-- `cbcDecryptChainedContractSk`, whatever `scratch` is. -/
 def cbcDecChainedScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
   (cbcChainedScratchSig n).contract A
     (pre := fun schedule rounds iv data n _scratch => cbcChainedPre A.ptrBits schedule rounds iv data n)
@@ -229,5 +243,37 @@ theorem cbcDecChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChain
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
     rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
+
+theorem cbcEncChainedPost_of_sk (pb : Nat) :
+    Curry.Imp _ (cbcEncChainedPost pb) (fun schedule rounds iv data n m m' _ =>
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let cs := Spec.Cbc.encrypt (cipher (expandKey key)) (Spec.Aes.bytesAt m iv 16)
+          (Spec.Cbc.blocksAt m data n.toNat)
+        Spec.Cbc.blocksAt m' data n.toNat = cs ∧
+          Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs) := by
+  intro _ _ _ _ _ _ _ _ h key hk
+  rw [← subkeysAt_of_keySchedule hk]
+  exact h (rounds_of_keySchedule hk)
+
+theorem cbcDecChainedPost_of_sk (pb : Nat) :
+    Curry.Imp _ (cbcDecChainedPost pb) (fun schedule rounds iv data n m m' _ =>
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let cs := Spec.Cbc.blocksAt m data n.toNat
+        Spec.Cbc.blocksAt m' data n.toNat =
+            Spec.Cbc.decrypt (invCipher (expandKey key)) (Spec.Aes.bytesAt m iv 16) cs ∧
+          Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs) := by
+  intro _ _ _ _ _ _ _ _ h key hk
+  rw [← subkeysAt_of_keySchedule hk]
+  exact h (rounds_of_keySchedule hk)
+
+theorem cbcEncryptChained_of_sk {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (cbcEncryptChainedContractSk A stack)) :
+    Verified T c (cbcEncryptChainedContract A stack) :=
+  verified_of_post h (cbcEncChainedPost_of_sk A.ptrBits)
+
+theorem cbcDecryptChained_of_sk {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (cbcDecryptChainedContractSk A stack)) :
+    Verified T c (cbcDecryptChainedContract A stack) :=
+  verified_of_post h (cbcDecChainedPost_of_sk A.ptrBits)
 
 end VG.Proof.Camellia

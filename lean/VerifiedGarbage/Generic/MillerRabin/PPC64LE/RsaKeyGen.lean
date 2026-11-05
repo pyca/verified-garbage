@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Verified
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # The RSA prime search on PPC64LE, its candidates calling each shared Miller–Rabin implementation -/
 

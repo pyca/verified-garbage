@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-! # Triple DES-OFB artifacts on baseline x86-64 -/

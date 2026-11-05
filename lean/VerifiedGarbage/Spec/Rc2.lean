@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.Mem
 
 /-!
-# RC2 and CBC
+# RC2
 
 **Trusted** (as every file in `Spec/`). RC2 is transcribed from RFC 2268
 §§2–4 (https://www.rfc-editor.org/rfc/rfc2268). Words are 16 bits, with
@@ -12,16 +12,7 @@ Keys have 1–128 bytes and effective key lengths have 1–1024 bits. These
 are independent parameters: effective bits may exceed the supplied key's
 bit length. Neither parameter is silently clamped.
 
-CBC uses the recurrence of NIST SP 800-38A §6.2, with RC2's 8-byte block
-size (this does not assert that RC2 is a NIST-approved cipher).
-
-The streaming model follows issue #1's `init(key, iv, direction)`,
-`update(ctx, data)` and `finalize(ctx)`. The default effective bit count is
-eight times the key length; `initWithEffectiveBits` makes it explicit.
-Updates emit all complete blocks and retain a partial block. Finalization
-rejects a partial block; padding is the caller's responsibility. The
-immutable model returns the next context; the Rust API can mutate its own
-context and consume it on finalization.
+RC2-CBC, and its streaming model, are in `Spec/Rc2/Contract.lean`.
 
 These functions describe values, not timing. In particular, neither the
 PITABLE indices nor the mashing-round indices are public in the contracts:
@@ -151,68 +142,6 @@ def decryptBlock (k : Schedule) (b : Block) : Block :=
 
 inductive Direction | encrypt | decrypt
   deriving DecidableEq, Repr
-
-def xorBlock (a b : Block) : Block :=
-  Vector.ofFn fun i => a[i] ^^^ b[i]
-
-/-- CBC (§6.2), returning `(output, next IV)`. Decryption retains the
-original ciphertext as the next IV, including for an in-place caller. -/
-def cbcStep (k : Schedule) (direction : Direction) (iv input : Block) : Block × Block :=
-  match direction with
-  | .encrypt => let out := encryptBlock k (xorBlock input iv); (out, out)
-  | .decrypt => (xorBlock (decryptBlock k input) iv, input)
-
-/-- CBC on complete blocks, including the final chaining value. On empty
-input the output is empty and the IV is unchanged. -/
-def cbc (k : Schedule) (direction : Direction) (iv : Block) :
-    List Block → List Block × Block
-  | [] => ([], iv)
-  | b :: bs =>
-    let (out, iv') := cbcStep k direction iv b
-    let (rest, last) := cbc k direction iv' bs
-    (out :: rest, last)
-
-/-- Complete blocks only; a partial suffix is handled by `update`. -/
-def blocks (data : List Byte) : List Block :=
-  (List.range (data.length / 8)).map fun j =>
-    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
-
-structure Context where
-  schedule : Schedule
-  direction : Direction
-  iv : Block
-  pending : List Byte := []
-
-inductive Error | invalidKeyLength | invalidEffectiveBits | invalidIvLength | incompleteBlock
-  deriving DecidableEq, Repr
-
-/-- Initialize CBC with explicitly selected effective key bits (1–1024). -/
-def initWithEffectiveBits (key iv : List Byte) (direction : Direction) (effectiveBits : Nat) :
-    Except Error Context := do
-  unless 1 ≤ key.length ∧ key.length ≤ 128 do throw .invalidKeyLength
-  unless 1 ≤ effectiveBits ∧ effectiveBits ≤ 1024 do throw .invalidEffectiveBits
-  unless iv.length = 8 do throw .invalidIvLength
-  return {
-    schedule := expandKey key effectiveBits
-    direction := direction
-    iv := Vector.ofFn fun i => iv.getD i 0 }
-
-/-- Issue #1's initialization, defaulting to the supplied key's bit length. -/
-def init (key iv : List Byte) (direction : Direction) : Except Error Context :=
-  initWithEffectiveBits key iv direction (8 * key.length)
-
-/-- Emit all complete blocks, retaining at most seven bytes for the next
-update. Empty updates leave every valid context unchanged. -/
-def update (ctx : Context) (data : List Byte) : Context × List Byte :=
-  let input := ctx.pending ++ data
-  let (output, iv) := cbc ctx.schedule ctx.direction ctx.iv (blocks input)
-  ({ ctx with iv, pending := input.drop (8 * (input.length / 8)) },
-    output.flatMap Vector.toList)
-
-/-- Unpadded CBC: success emits no bytes; a trailing partial block is an
-error in either direction. -/
-def finalize (ctx : Context) : Except Error (List Byte) :=
-  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
 
 /-! ## Memory layouts for the contracts -/
 

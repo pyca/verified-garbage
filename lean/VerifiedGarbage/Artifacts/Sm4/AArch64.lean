@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM4 artifacts on baseline AArch64 -/
 

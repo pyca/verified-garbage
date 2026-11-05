@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem1024.Arm.DecapsCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ML-KEM-1024 (FIPS 203) on 32-bit ARM -/
 

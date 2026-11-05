@@ -1,14 +1,4 @@
-//! The Rust types of BLAKE2b and BLAKE2s (RFC 7693), shared by `blake2b` and
-//! `blake2s`.
-//!
-//! `vg_blake2{b,s}_init`, `vg_blake2{b,s}_update` and
-//! `vg_blake2{b,s}_finalize` for the target architecture (contracts
-//! `VG.Spec.Blake2.initBContract`, … `finalizeSContract`) maintain a
-//! streaming state that represents the data absorbed so far
-//! (`VG.Spec.Blake2.Repr`: the hash state after all its blocks but the last,
-//! followed by that last block, which the final compression needs to know
-//! about). The Rust types only keep that state together with the length of
-//! the data, which the contracts take as an argument.
+//! What BLAKE2b and BLAKE2s (RFC 7693) share.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -63,11 +53,26 @@ macro_rules! blake2 {
         }
 
         impl $backend {
+            /// The CPU features `select` requires to choose each
+            /// implementation, by its discriminant (none for the baseline):
+            /// every CPU it is chosen for has them, so a function chosen
+            /// with it may need no other, which its caller checks when it
+            /// compiles (`assert!` in a `const`). (Without an
+            /// implementation but the baseline, nothing uses it.)
+            #[allow(dead_code)]
+            pub(crate) const REQUIRES: &[verified_garbage_cpu::Features] = &[
+                verified_garbage_cpu::Features(0),
+                $(
+                    $(#[$attr])*
+                    verified_garbage_cpu::Features::all(&[$($req),*]),
+                )*
+            ];
+
             /// The best implementation a CPU with the features `f` can run.
             pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
                 $(
                     $(#[$attr])*
-                    if f.contains(const { verified_garbage_cpu::Features::all(&[$($req),*]) }) {
+                    if f.contains(Self::REQUIRES[Self::$variant as usize]) {
                         return Self::$variant;
                     }
                 )*
@@ -238,11 +243,11 @@ macro_rules! blake2 {
             /// not depend on where, or whether, `mac` differs from it (its
             /// length is public). `mac` must be the whole digest, of `N`
             /// bytes; a truncated one is rejected.
-            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::invalid_mac::InvalidMac> {
+            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::error::InvalidMac> {
                 if $crate::ct::eq(&self.finalize(), mac) {
                     Ok(())
                 } else {
-                    Err($crate::invalid_mac::InvalidMac)
+                    Err($crate::error::InvalidMac)
                 }
             }
 
@@ -291,7 +296,7 @@ pub(super) use blake2;
 mod tests {
     use super::super::blake2b::Blake2b;
     use super::super::blake2s::Blake2s;
-    use crate::invalid_mac::InvalidMac;
+    use crate::error::InvalidMac;
 
     /// `verify`, run by a computation of `mac`, accepts `mac` and rejects
     /// any other: one with a bit flipped in its first, a middle or its last

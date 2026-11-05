@@ -1,16 +1,7 @@
-//! IDEA-CBC (SP 800-38A §6.2, with IDEA as in Lai, 1992), in place and
-//! without padding.
+//! IDEA-CBC (SP 800-38A §6.2, with IDEA as in Lai, 1992), in place and without
+//! padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_idea_expand_key` and `vg_idea_invert_key` (contracts
-//! `VG.Spec.Idea.expandKeyContract`, `invertKeyContract`) write the encryption
-//! and decryption subkeys, and `vg_idea_cbc_encrypt_chained` and
-//! `vg_idea_cbc_decrypt_chained` (`VG.Spec.Idea.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, and the chaining value with the
-//! one to continue from, the last ciphertext block, in constant time: their
-//! timing depends on none of the key, the chaining value and the data. This
-//! module checks the lengths and holds the subkeys.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -23,23 +14,8 @@
 
 use crate::arch::idea::{vg_idea_expand_key, vg_idea_invert_key};
 use crate::arch::idea_cbc::{vg_idea_cbc_decrypt_chained, vg_idea_cbc_encrypt_chained};
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why an IDEA-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of eight bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid IDEA key length",
-        IncompleteBlock => "IDEA-CBC input is not a whole number of blocks",
-    }
-}
 
 /// An IDEA-CBC encryption of one message, without padding.
 ///
@@ -55,7 +31,7 @@ pub struct IdeaCbcEncryptor {
 
 impl IdeaCbcEncryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             schedule: expand(key)?,
             iv: *iv,
@@ -65,9 +41,9 @@ impl IdeaCbcEncryptor {
     /// Encrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
         // value (which the function reads and replaces) and the schedule are
@@ -105,7 +81,7 @@ pub struct IdeaCbcDecryptor {
 
 impl IdeaCbcDecryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         let mut encrypt = expand(key)?;
         let mut schedule = [0; 104];
         // SAFETY: both schedules are separate valid buffers of the required
@@ -118,9 +94,9 @@ impl IdeaCbcDecryptor {
     /// Decrypts whole 8-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `IdeaCbcEncryptor::encrypt`.
         unsafe {
@@ -142,8 +118,8 @@ impl Drop for IdeaCbcDecryptor {
 }
 
 /// The encryption subkeys of a 16-byte key.
-fn expand(key: &[u8]) -> Result<[u8; 104], Error> {
-    let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
+fn expand(key: &[u8]) -> Result<[u8; 104], InvalidKeyLength> {
+    let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
     let mut schedule = [0; 104];
     // SAFETY: the key and the schedule are separate valid buffers of the
     // required sizes.

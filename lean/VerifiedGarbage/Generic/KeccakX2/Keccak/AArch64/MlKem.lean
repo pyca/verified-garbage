@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.EncapsH
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on AArch64, for each Keccak implementation -/
 

@@ -75,7 +75,7 @@ def raise : Prog isa := .seq (.block [.cmp .r0 (.reg .r2), .mov .r3 (.imm 0), .a
 def cap : Prog isa := .seq (.block [.cmp .r0 (.reg .r1), .mov .r3 (.imm 0), .adc .r3 .r3 (.imm 0),
   .cmp .r3 (.imm 0)]) (.ite .eq (.block []) (.block [.mov .r0 (.reg .r1)]))
 
-/-- The next tape's length, `primeRequest`: twice the larger of the octets
+/-- The next tape's length, `VG.Proof.RsaKeyGen.primeRequest`: twice the larger of the octets
 left (`r0`) and 16 per octet of the prime, at most the entropy budget
 (`r1`); the search stops, asking for it. -/
 def request : Prog isa := .seq (.block [.mov .r2 (.shifted .r5 .lsl 4)])

@@ -39,6 +39,7 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Proof.GcmSiv.Words32
 public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
@@ -86,14 +87,14 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
     stack := 2884
-    verified := seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG
+    verified := Proof.AesGcmSiv.seal_keyed (seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.GcmSiv.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
     stack := 2884
-    verified := open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG
+    verified := Proof.AesGcmSiv.open_keyed (open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 

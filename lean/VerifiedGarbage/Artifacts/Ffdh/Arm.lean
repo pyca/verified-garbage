@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # Native FFDH on little-endian AAPCS ARMv7, including baseline and UMAAL arithmetic -/
 

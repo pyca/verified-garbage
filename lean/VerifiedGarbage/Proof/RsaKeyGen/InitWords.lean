@@ -145,7 +145,7 @@ theorem written_words (m : Mem) (B : Addr) (a b c d : BitVec 64) :
 theorem primeInit_eq (L : Nat) (eB : List Byte) :
     Spec.RsaKeyGen.primeInit L eB =
       if initValid L eB.length then
-        some [if Spec.Rsa.os2ip eB = 3 then 64 * L else 40 * L, L, 32769 * L, 32 * L]
+        some [if Spec.Rsa.os2ip eB = 3 then 64 * L else 40 * L, L, 32769 * L]
       else none := by
   unfold Spec.RsaKeyGen.primeInit initValid
   by_cases hv : 32 ≤ L ∧ L ≤ 512 ∧ L % 8 = 0 ∧ 1 ≤ eB.length ∧ eB.length ≤ 8
@@ -154,13 +154,20 @@ theorem primeInit_eq (L : Nat) (eB : List Byte) :
       simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]; omega
     rw [hb, ite_eq_left_of_eq_true _ _ (eq_true rfl),
       ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, h2, h3, h4, h5⟩)]
-    simp only [Spec.RsaKeyGen.primeLimit, Spec.RsaKeyGen.primeRequest, Spec.RsaKeyGen.primeEntropy,
-      Spec.Entropy.request, Option.some.injEq, List.cons.injEq, and_true]
-    exact ⟨by split <;> omega, trivial, trivial, by omega⟩
+    simp only [Spec.RsaKeyGen.primeLimit, Spec.RsaKeyGen.primeEntropy, Option.some.injEq,
+      List.cons.injEq, and_true]
+    split <;> omega
   · have hb : (32 ≤ L && L ≤ 512 && L % 8 == 0 && 1 ≤ eB.length && eB.length ≤ 8) = false := by
       simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not, beq_eq_false_iff_ne, ne_eq]
       omega
     rw [hb, ite_eq_right_of_eq_false _ _ (eq_false hv)]
     rfl
+
+/-- The first tape's length the code asks for, `32 * L`, is one the contract
+allows. -/
+theorem first_valid {L len : Nat} (hv : initValid L len) :
+    Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy L) 0 (32 * L) := by
+  unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
+  omega
 
 end VG.Proof.RsaKeyGen.SearchInit

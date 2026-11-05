@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 
 /-! # Triple DES-OFB artifacts on baseline RISC-V -/

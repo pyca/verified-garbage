@@ -1,22 +1,8 @@
-//! X25519 (RFC 7748), Diffie-Hellman on Curve25519.
+//! X25519 (RFC 7748 §5), Diffie-Hellman on Curve25519.
 //!
-//! The whole function is the verified `vg_x25519` (contract
-//! `VG.Spec.X25519.x25519Contract`): `X25519(k, u)` of RFC 7748 §5, the
-//! scalar decoded (clamped) and the u-coordinate's top bit masked as the RFC
-//! specifies, in constant time. This module gives it working space, and
-//! destroys what it leaves there.
-//!
-//! [`public_key`](PrivateKey::public_key) is the verified `vg_x25519_base`
-//! (contract `VG.Spec.X25519.x25519BaseContract`), `X25519(k, 9)`.
-//!
-//! The variants of both, with the same contracts, are chosen by
-//! `Backend::select` on CPUs with the features their `_FEATURES` constants
-//! name: on x86-64, the `_ifma` ones, then the `_adx` ones; on ARMv7,
-//! `vg_x25519_umaal`.
-//!
-//! [`exchange`](PrivateKey::exchange) is `vg_x25519` of the private key and
-//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
-//! public key of small order gives (RFC 7748 §6.1), in constant time.
+//! [`exchange`](PrivateKey::exchange) rejects the all-zero shared secret that a
+//! public key of small order gives (§6.1), and returns the shared secret raw,
+//! not passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -40,6 +26,7 @@ use crate::arch::x25519::{
 #[cfg(target_arch = "arm")]
 use crate::arch::x25519::{VG_X25519_UMAAL_FEATURES, vg_x25519_umaal};
 use crate::cpu::detected;
+use crate::error::XdhError;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
 use verified_garbage_cpu::Features;
@@ -92,23 +79,6 @@ impl Backend {
     #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
     fn select(_: Features) -> Backend {
         Backend::Baseline
-    }
-}
-
-/// Why an operation failed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Error {
-    /// The shared secret is all zero: the peer's public key is a point of
-    /// small order (RFC 7748 §6.1).
-    ZeroSharedSecret,
-    /// The operating system's random number generator failed.
-    Randomness,
-}
-
-crate::error::impl_error! {
-    Error {
-        ZeroSharedSecret => "X25519 shared secret is all zero",
-        Randomness => "X25519 random number generator failed",
     }
 }
 
@@ -194,9 +164,9 @@ impl PrivateKey {
     pub const SIZE: usize = 32;
 
     /// A new private key: 32 random bytes from the operating system.
-    pub fn generate() -> Result<Self, Error> {
+    pub fn generate() -> Result<Self, XdhError> {
         let mut bytes = [0u8; 32];
-        getrandom::fill(&mut bytes).map_err(|_| Error::Randomness)?;
+        getrandom::fill(&mut bytes).map_err(|_| XdhError::Randomness)?;
         Ok(PrivateKey { bytes })
     }
 
@@ -218,14 +188,14 @@ impl PrivateKey {
     }
 
     /// The shared secret with the peer whose public key is `peer`,
-    /// `X25519(k, peer)` (RFC 7748 §6.1); [`Error::ZeroSharedSecret`] if it
+    /// `X25519(k, peer)` (RFC 7748 §6.1); [`XdhError::ZeroSharedSecret`] if it
     /// is all zero, which is checked without revealing anything else about
     /// it.
-    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, Error> {
+    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, XdhError> {
         let mut bytes = x25519(&self.bytes, &peer.bytes);
         if crate::ct::eq(&bytes, &[0; 32]) {
             zeroize(&mut bytes);
-            return Err(Error::ZeroSharedSecret);
+            return Err(XdhError::ZeroSharedSecret);
         }
         Ok(SharedSecret { bytes })
     }
@@ -287,12 +257,13 @@ impl SharedSecret {
 mod tests {
     #[cfg(target_arch = "arm")]
     use super::VG_X25519_UMAAL_FEATURES;
-    use super::{Backend, Error, Features, PrivateKey, PublicKey, x25519};
+    use super::{Backend, Features, PrivateKey, PublicKey, x25519};
     #[cfg(target_arch = "x86_64")]
     use super::{
         VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
         VG_X25519_IFMA_FEATURES,
     };
+    use crate::error::XdhError;
 
     /// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
     const BASE_POINT: [u8; 32] = {
@@ -384,7 +355,7 @@ mod tests {
     fn zero_shared_secret() {
         let a = PrivateKey::from_bytes(&[0x42; 32]);
         let zero = PublicKey::from_bytes(&[0; 32]);
-        assert_eq!(a.exchange(&zero).unwrap_err(), Error::ZeroSharedSecret);
+        assert_eq!(a.exchange(&zero).unwrap_err(), XdhError::ZeroSharedSecret);
         assert_eq!(x25519(a.as_bytes(), &[0; 32]), [0; 32]);
     }
 }

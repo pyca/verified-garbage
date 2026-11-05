@@ -1,11 +1,4 @@
-//! The implementations of AES, which everything built on it follows: each
-//! mode (AES-GCM in `crate::aes_gcm`, AES-CMAC in `crate::cmac::aes`, …)
-//! chooses one [`Backend`], and runs `vg_aes_expand_key`'s variant for it
-//! and its own functions' variants for it. Those functions may need more
-//! features than the key expansion, so on targets with more than one
-//! implementation each mode selects with `Backend::select_for`, passing the
-//! features its own variants need: a CPU without them runs the baseline
-//! implementation.
+//! AES's implementations, which every module built on AES chooses among.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -21,6 +14,10 @@ use crate::arch::aes::VG_AES_EXPAND_KEY_AES_FEATURES;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES;
 use verified_garbage_cpu::Features;
+
+// Each mode chooses one `Backend`, and runs both `vg_aes_expand_key`'s variant
+// and its own functions' variants for it. Those may need more features than
+// the key expansion, so a mode chooses with `select_for`, given theirs.
 
 /// The implementations of AES: those of `vg_aes_expand_key`, and of the
 /// functions built on it, by suffix.

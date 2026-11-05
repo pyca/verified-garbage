@@ -72,7 +72,7 @@ def next (t : List Byte) (n : Nat) : List Byte := Nat.repeat inc n t
 XORed with the output blocks, the last one truncated to what is left of
 `x` (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
 def aesCtr (key t x : List Byte) : List Byte :=
-  let ciph := Cbc.aesWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
+  let ciph := Cbc.aes key
   List.zipWith (· ^^^ ·) x ((counters t ((x.length + 15) / 16)).map ciph).flatten
 
 end VG.Spec.Ctr

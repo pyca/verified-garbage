@@ -268,6 +268,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 public import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHints
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Simd

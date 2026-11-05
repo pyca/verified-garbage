@@ -1,19 +1,7 @@
-//! AES-CFB8 (SP 800-38A §6.3, with 8-bit segments) with 128-, 192- and
-//! 256-bit keys, in place.
+//! AES-CFB8 (SP 800-38A §6.3, with 8-bit segments) with 128-, 192- and 256-bit
+//! keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`
-//! (`VG.Spec.Cfb8.aesEncryptContract`, `aesDecryptContract`) replace each
-//! byte with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))` or `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`
-//! from the input block at `iv`, which they replace with the one to
-//! continue from, in constant time.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -47,6 +35,7 @@ use crate::arch::aes_cfb8::{
 };
 use crate::arch::aes_cfb8::{vg_aes_cfb8_decrypt, vg_aes_cfb8_encrypt};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -114,9 +103,6 @@ fn select(f: Features) -> Backend {
 fn select(f: Features) -> Backend {
     Backend::select(f)
 }
-
-/// The key is not 16, 24 or 32 bytes long.
-pub use crate::error::InvalidKeyLength;
 
 /// An expanded AES key, which serves both directions.
 struct Key {

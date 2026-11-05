@@ -76,7 +76,9 @@ theorem search_implies_pub (s t : State) (_hs : (primeSearchContract abi stackUs
   simp only [List.cons.injEq, and_true] at hc
   refine ⟨hsp, rdi, rsi, rdx, rcx, r8, r9, fun j hj => ?_,
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he,
-    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hw, hc.1, hc.2.1, hc.2.2, htr⟩
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hw, hc.1, hc.2.1,
+    (by rw [show searchLen s = searchLen t from congrArg BitVec.toNat rsi]
+        exact Entropy.requested_congr hc.1 hc.2.2), htr⟩
   match j, hj with
   | 0, _ => exact a0
   | 1, _ => exact a1

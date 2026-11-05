@@ -1,7 +1,4 @@
-//! Parameter generation for the three supported FIPS 186-4 generation sizes.
-//! Hashing, primality tests, candidate retries, generator selection and final
-//! validation all run in verified assembly. Rust supplies the three entropy
-//! tapes, allocates output and scratch, and selects the CPU implementation.
+//! DSA parameter generation, for the three FIPS 186-4 generation sizes.
 
 #![cfg(any(
     target_arch = "x86",
@@ -10,6 +7,10 @@
     target_arch = "arm",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
+
+// Hashing, primality tests, retries, generator selection and the final
+// validation are all verified code; the Rust supplies the three entropy tapes,
+// allocates the output and working space, and chooses the implementation.
 
 use alloc::{vec, vec::Vec};
 
@@ -59,7 +60,7 @@ impl Parameters {
     /// contract treats the entropy tapes as public: search timing can depend
     /// on their contents. These are domain parameters shared between keys.
     pub fn generate(bits: usize) -> Result<Self, Error> {
-        Self::generate_with_rng(bits, |buf| {
+        Self::generate_from(bits, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
         })
     }
@@ -70,8 +71,18 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The result is generated as FIPS
     /// 186-4 requires only if `random` supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng(
+        bits: usize,
+        random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+    ) -> Result<Self, Error> {
+        Self::generate_from(bits, random)
+    }
+
+    /// [`generate`](Self::generate), with its entropy tapes filled by
+    /// `random`.
+    fn generate_from(
         bits: usize,
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {

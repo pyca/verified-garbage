@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM4-GCM (NIST SP 800-38D with SM4, RFC 8998) on AArch64 -/
 

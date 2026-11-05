@@ -1,23 +1,9 @@
-//! Argon2 version 1.3 (RFC 9106).
+//! Argon2d, Argon2i and Argon2id, version 1.3 (RFC 9106).
 //!
-//! The complete derivation is the verified `vg_argon2`
-//! (`VG.Spec.Argon2.deriveContract`). On x86-64, its variants, with the same
-//! contract, are one for each pair of a backend that `Blake2b` chooses (see
-//! `crate::hashes::blake2b`) and one that `CompressBackend::select` chooses
-//! (`_g_avx512`, then `_g_avx2`, on CPUs with the features their
-//! `VG_ARGON2_G_<SUFFIX>_FEATURES` name): `vg_argon2_blake2b_<b>_g_<g>`,
-//! without the part of a baseline backend. Rust only validates arguments,
-//! checks the memory limit and allocates the matrix and scratch (and, for
-//! [`verify`] and [`verify_keyed`], compares the derived key with the
-//! expected one).
-//!
-//! The costs are the named fields of [`Params`], so that none can be passed
-//! in another's place. Lanes are evaluated serially: [`Params::lanes`] is the
-//! algorithm's parallelism input `p`, which changes the key, not a number of
-//! threads.
-//!
-//! Argon2i leaks no input contents. Argon2d and Argon2id permit the
-//! data-dependent reference indices specified by `VG.Spec.Argon2.references`.
+//! Lanes are computed one after another: [`Params::lanes`] is the algorithm's
+//! parallelism `p`, which changes the key, not a number of threads. Argon2d's
+//! and Argon2id's memory accesses, and so their timing, depend on the password,
+//! as those algorithms define them; Argon2i's depend on no secret.
 
 #![cfg(all(
     any(
@@ -32,7 +18,6 @@
 ))]
 
 use alloc::vec::Vec;
-use core::fmt;
 
 use crate::arch::argon2::vg_argon2;
 #[cfg(target_arch = "x86_64")]
@@ -42,6 +27,7 @@ use crate::arch::argon2::{
     vg_argon2_blake2b_avx512_g_avx2, vg_argon2_blake2b_avx512_g_avx512, vg_argon2_g_avx2,
     vg_argon2_g_avx512,
 };
+use crate::error::PasswordHashError;
 use crate::hashes::blake2b::Blake2bBackend;
 use verified_garbage_cpu::Features;
 
@@ -81,6 +67,26 @@ impl CompressBackend {
     }
 }
 
+// BLAKE2b's `select` chooses `_avx2` exactly when G's `_avx2` features are
+// present, and `_avx512` only when G's `_avx512` features are: so the pairs
+// of BLAKE2b's and G's implementations a CPU gets are scalar with scalar or
+// `_avx512`, `_avx2` with `_avx2` or `_avx512`, and `_avx512` with
+// `_avx512`.
+#[cfg(target_arch = "x86_64")]
+const _: () = {
+    let blake2b_avx2 = Blake2bBackend::REQUIRES[Blake2bBackend::Avx2 as usize];
+    assert!(
+        blake2b_avx2.contains(VG_ARGON2_G_AVX2_FEATURES)
+            && VG_ARGON2_G_AVX2_FEATURES.contains(blake2b_avx2),
+        "BLAKE2b's _avx2 is not chosen for exactly G's _avx2 features"
+    );
+    assert!(
+        Blake2bBackend::REQUIRES[Blake2bBackend::Avx512 as usize]
+            .contains(VG_ARGON2_G_AVX512_FEATURES),
+        "BLAKE2b's _avx512 is chosen without G's _avx512 features"
+    );
+};
+
 /// Argon2's addressing variant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u32)]
@@ -109,38 +115,6 @@ pub struct Params {
     pub lanes: u32,
 }
 
-/// Why [`derive()`] or [`derive_keyed`] refused to derive a key, or [`verify`]
-/// or [`verify_keyed`] to accept one.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// Invalid costs or lengths: iterations must be positive; lanes must be
-    /// in 1..2²⁴; memory must be at least eight KiB per lane; inputs must be
-    /// shorter than 2³² bytes and output must be 4..2³² bytes.
-    InvalidParameters,
-    /// The memory matrix, `1024 · blocks` bytes, exceeds `max_memory` (or the
-    /// address space).
-    MemoryLimitExceeded,
-    /// Allocating the memory matrix or scratch failed.
-    AllocationFailed,
-    /// [`verify`] or [`verify_keyed`] derived a key other than the expected
-    /// one: the password (or another input or a cost) is not the one it was
-    /// derived from.
-    KeyMismatch,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::InvalidParameters => "invalid Argon2 parameters",
-            Self::MemoryLimitExceeded => "Argon2 would need more than the memory limit",
-            Self::AllocationFailed => "could not allocate Argon2's memory",
-            Self::KeyMismatch => "Argon2 derived key does not match",
-        })
-    }
-}
-
-impl core::error::Error for Error {}
-
 /// Fills `out` with the Argon2 version 1.3 key derived from `password` and
 /// `salt` with the costs `params`, if that needs at most `max_memory` bytes:
 /// [`derive_keyed`] with an empty secret and associated data.
@@ -154,7 +128,7 @@ pub fn derive(
     salt: &[u8],
     max_memory: usize,
     out: &mut [u8],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     derive_keyed(params, password, salt, b"", b"", max_memory, out)
 }
 
@@ -170,10 +144,14 @@ pub fn derive(
 ///
 /// # Errors
 ///
-/// [`Error::InvalidParameters`] if `params` or a length is not valid,
-/// [`Error::MemoryLimitExceeded`] if the memory matrix would need more than
-/// `max_memory` bytes, and [`Error::AllocationFailed`] if allocating the
-/// matrix or the working space fails. `out` is unchanged then.
+/// [`PasswordHashError::InvalidParameters`] if `params` or a length is not
+/// valid (iterations must be positive; lanes must be in 1..2²⁴; memory must
+/// be at least eight KiB per lane; inputs must be shorter than 2³² bytes and
+/// output must be 4..2³² bytes), [`PasswordHashError::MemoryLimitExceeded`]
+/// if the memory matrix would need more than `max_memory` bytes (or more
+/// than the address space), and [`PasswordHashError::AllocationFailed`] if
+/// allocating the matrix or the working space fails. `out` is unchanged
+/// then.
 pub fn derive_keyed(
     params: &Params,
     password: &[u8],
@@ -182,7 +160,7 @@ pub fn derive_keyed(
     associated_data: &[u8],
     max_memory: usize,
     out: &mut [u8],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     let inputs = Inputs {
         password,
         salt,
@@ -205,7 +183,7 @@ pub fn verify<const N: usize>(
     salt: &[u8],
     max_memory: usize,
     expected: &[u8; N],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     verify_keyed(params, password, salt, b"", b"", max_memory, expected)
 }
 
@@ -230,8 +208,9 @@ pub fn verify<const N: usize>(
 ///
 /// # Errors
 ///
-/// [`Error::KeyMismatch`] if the derived key is not `expected`; otherwise
-/// as [`derive_keyed`], with `expected` in place of `out`.
+/// [`PasswordHashError::KeyMismatch`] if the derived key is not `expected`:
+/// the password (or another input or a cost) is not the one it was derived
+/// from. Otherwise as [`derive_keyed`], with `expected` in place of `out`.
 pub fn verify_keyed<const N: usize>(
     params: &Params,
     password: &[u8],
@@ -240,7 +219,7 @@ pub fn verify_keyed<const N: usize>(
     associated_data: &[u8],
     max_memory: usize,
     expected: &[u8; N],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     crate::ct::assert_verify_len!(N);
     let inputs = Inputs {
         password,
@@ -256,7 +235,7 @@ pub fn verify_keyed<const N: usize>(
     if matches {
         Ok(())
     } else {
-        Err(Error::KeyMismatch)
+        Err(PasswordHashError::KeyMismatch)
     }
 }
 
@@ -293,7 +272,7 @@ impl<'a> Derivation<'a> {
         inputs: Inputs<'a>,
         max_memory: usize,
         len: usize,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, PasswordHashError> {
         let &Params {
             iterations,
             memory_kib,
@@ -312,7 +291,7 @@ impl<'a> Derivation<'a> {
                 len,
             ],
         ) {
-            return Err(Error::InvalidParameters);
+            return Err(PasswordHashError::InvalidParameters);
         }
         let divisor = 4 * lanes;
         let blocks = (memory_kib / divisor * divisor) as usize;
@@ -320,7 +299,7 @@ impl<'a> Derivation<'a> {
             .checked_mul(1024)
             .is_none_or(|bytes| bytes > max_memory)
         {
-            return Err(Error::MemoryLimitExceeded);
+            return Err(PasswordHashError::MemoryLimitExceeded);
         }
         Ok(Derivation {
             params: *params,
@@ -364,7 +343,8 @@ impl<'a> Derivation<'a> {
             // `VG_ARGON2_G_AVX2_FEATURES` names, and G's `_avx2` is chosen
             // whenever they are present and `VG_ARGON2_G_AVX512_FEATURES` are
             // not; BLAKE2b's `_avx512` backend needs a superset of
-            // `VG_ARGON2_G_AVX512_FEATURES` (`select_pairs` checks it): a CPU
+            // `VG_ARGON2_G_AVX512_FEATURES` (checked when this compiles, by
+            // the assertions after `CompressBackend::select`): a CPU
             // never gets one of the `_avx2` ones without the other, and never
             // BLAKE2b's `_avx512` backend without G's, so these are never
             // chosen.
@@ -428,17 +408,17 @@ fn valid(iterations: u32, memory_kib: u32, lanes: u32, lengths: [usize; 5]) -> b
 }
 
 /// A vector of `len` copies of `zero`, or `AllocationFailed`.
-fn allocate<T: Clone>(len: usize, zero: T) -> Result<Vec<T>, Error> {
+fn allocate<T: Clone>(len: usize, zero: T) -> Result<Vec<T>, PasswordHashError> {
     let mut v = Vec::new();
     v.try_reserve_exact(len)
-        .map_err(|_| Error::AllocationFailed)?;
+        .map_err(|_| PasswordHashError::AllocationFailed)?;
     v.resize(len, zero);
     Ok(v)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Blake2bBackend, CompressBackend, Error, Features, allocate, valid};
+    use super::{CompressBackend, Features, PasswordHashError, allocate, valid};
     #[cfg(target_arch = "x86_64")]
     use super::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
 
@@ -488,35 +468,11 @@ mod tests {
         );
     }
 
-    /// The pairs of a BLAKE2b backend and an implementation of G chosen
-    /// for each set of features: never BLAKE2b's AVX2 backend with scalar
-    /// G, nor G's AVX2 implementation with scalar BLAKE2b, nor BLAKE2b's
-    /// AVX-512 backend with G's scalar or AVX2 implementation.
-    #[test]
-    fn select_pairs() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
-            let pair = (Blake2bBackend::select(f), CompressBackend::select(f));
-            #[cfg(target_arch = "x86_64")]
-            {
-                let never = [
-                    (Blake2bBackend::Scalar, CompressBackend::Avx2),
-                    (Blake2bBackend::Avx2, CompressBackend::Scalar),
-                    (Blake2bBackend::Avx512, CompressBackend::Scalar),
-                    (Blake2bBackend::Avx512, CompressBackend::Avx2),
-                ];
-                assert!(!never.contains(&pair), "{bits:#b}");
-            }
-            #[cfg(not(target_arch = "x86_64"))]
-            assert_eq!(pair, (Blake2bBackend::Scalar, CompressBackend::Scalar));
-        }
-    }
-
     #[test]
     fn allocation_failure() {
         assert_eq!(
             allocate(usize::MAX, [0u64; 128]),
-            Err(Error::AllocationFailed)
+            Err(PasswordHashError::AllocationFailed)
         );
     }
 }

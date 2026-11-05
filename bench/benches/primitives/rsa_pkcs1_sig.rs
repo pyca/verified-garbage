@@ -36,7 +36,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use openssl::pkey_ctx::PkeyCtx;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::pkcs1_sig::{Hash, recover, sign, verify};
+    use verified_garbage::rsa::pkcs1_sig::Hash;
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -58,7 +58,7 @@ pub fn bench(c: &mut Criterion) {
             )
             .unwrap();
             let vg_public = PublicKey::new(&key.n().to_vec(), &key.e().to_vec()).unwrap();
-            let sig = sign(&vg_private, &digest, Hash::Sha256).unwrap();
+            let sig = vg_private.sign_pkcs1v15(&digest, Hash::Sha256).unwrap();
             let (n, e) = (key.n().to_vec(), key.e().to_vec());
             let aws_private = RsaKeyPair::from_components(&KeyPairComponents {
                 public_key: RsaPublicKeyComponents { n: &n, e: &e },
@@ -95,7 +95,11 @@ pub fn bench(c: &mut Criterion) {
     for (pkey, vg_private, _, sig, aws_private, _) in &keys {
         let k = sig.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| sign(black_box(vg_private), black_box(&digest), Hash::Sha256).unwrap())
+            b.iter(|| {
+                black_box(vg_private)
+                    .sign_pkcs1v15(black_box(&digest), Hash::Sha256)
+                    .unwrap()
+            })
         });
         let mut c = ctx(pkey, |c| c.sign_init().unwrap());
         let mut out = vec![0; k];
@@ -142,7 +146,7 @@ pub fn bench(c: &mut Criterion) {
                 let key =
                     PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
                         .unwrap();
-                sign(&key, black_box(&digest), Hash::Sha256).unwrap()
+                key.sign_pkcs1v15(black_box(&digest), Hash::Sha256).unwrap()
             })
         });
         let mut out = vec![0; k];
@@ -192,12 +196,7 @@ pub fn bench(c: &mut Criterion) {
         let k = sig.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
-                assert!(verify(
-                    black_box(vg_public),
-                    black_box(sig),
-                    &digest,
-                    Hash::Sha256
-                ))
+                assert!(black_box(vg_public).verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256))
             })
         });
         let mut c = ctx(pkey, |c| c.verify_init().unwrap());
@@ -226,7 +225,7 @@ pub fn bench(c: &mut Criterion) {
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
                 let key = PublicKey::new(black_box(&n), black_box(&e)).unwrap();
-                assert!(verify(&key, black_box(sig), &digest, Hash::Sha256))
+                assert!(key.verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256))
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
@@ -263,7 +262,11 @@ pub fn bench(c: &mut Criterion) {
     for (pkey, _, vg_public, sig, _, _) in &keys {
         let k = sig.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| recover(black_box(vg_public), black_box(sig), Hash::Sha256).unwrap())
+            b.iter(|| {
+                black_box(vg_public)
+                    .recover_pkcs1v15(black_box(sig), Hash::Sha256)
+                    .unwrap()
+            })
         });
         let mut c = ctx(pkey, |c| c.verify_recover_init().unwrap());
         let mut out = vec![0; k];

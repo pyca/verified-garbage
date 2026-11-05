@@ -89,9 +89,10 @@ def searchPost (s t : State) : Prop :=
         | .accepted p _ => i2osp p (genLen s)
         | _ => List.replicate (genLen s) 0) ∧
     wordsAt t.mem (s.gpr .r5) 1 = [BitVec.ofNat 64 (searchResult s).used] ∧
-    wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
+    ∃ requested, wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
-      BitVec.ofNat 64 (searchResult s).requested]
+      BitVec.ofNat 64 requested] ∧
+      (searchResult s).Requests (parameterEntropy (genBits s)) requested
 
 /-- What timing may depend on: the arguments, the tape, the controller's
 public words and the table's address. -/

@@ -33,6 +33,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.Sha3.AArch64.Call
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt

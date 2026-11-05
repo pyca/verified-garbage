@@ -1,81 +1,24 @@
-//! AES-GCM (NIST SP 800-38D) with 128-, 192- and 256-bit AES keys.
+//! AES-GCM (NIST SP 800-38D) with 128-, 192- and 256-bit keys, for whole
+//! messages and incrementally.
 //!
-//! Key setup, in-place AEAD and the streaming operations are verified
-//! assembly: `vg_aes_gcm_init` (contract `VG.Spec.Gcm.initContract`) writes
-//! the key context (the AES key schedule and the hash subkey `H`),
-//! `vg_aes_gcm_seal` and `vg_aes_gcm_open` (`sealContract`,
-//! `openContract`) are GCM-AE and GCM-AD (§7), and
-//! `vg_aes_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
-//! `_verify` keep a streaming state (`VG.Spec.Gcm.StreamRepr`). `open` and
-//! `verify` check the tag, in constant time, and `open` decrypts only if it
-//! matches. This module checks the lengths of §5.2.1.1, which the assembly
-//! does not, and holds the key context and the state.
-//!
-//! An [`AesGcm`] is a key: it encrypts and decrypts whole messages at once,
-//! and starts incremental ones with [`AesGcm::encryptor`] and
-//! [`AesGcm::decryptor`], which borrow it. **An [`AesGcmDecryptor`]'s
-//! `update` returns plaintext that has not been authenticated yet**: nothing
-//! may act on it before its `finalize` has succeeded. When the whole message
-//! fits in memory, [`AesGcm::decrypt_in_place`] checks the tag before it
-//! decrypts.
-//!
-//! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
-//! list of slices, such as a record's header and payload, or a single one)
-//! into one output buffer: one call of `vg_aes_gcm_seal_gather`
-//! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is,
-//! or, with a prepared key on x86-64, of `vg_aes_gcm_seal_gather_prepared`
-//! (`VG.Spec.Gcm.sealGatherPreparedContract`, or
-//! `sealGatherPrepared16Contract`). On AArch64, it copies the
-//! pieces to its output and seals them there with `seal_with_powers`
-//! (below).
+//! A nonce must never be used twice with the same key. **An
+//! [`AesGcmDecryptor`]'s `update` returns plaintext that has not been
+//! authenticated**: act on none of it before its `finalize` succeeds, or, when
+//! the message fits in memory, use [`AesGcm::decrypt_in_place`], which checks
+//! the tag before it decrypts.
 //!
 //! # Tags
 //!
-//! Encryption returns the full 16-byte tag; a protocol that sends a shorter
-//! one sends its first bytes. Decryption takes a `&[u8; 16]`
-//! ([`AesGcm::decrypt_in_place`], [`AesGcmDecryptor::finalize`]), or, for a
-//! protocol that truncates the tag, a `&[u8; N]` whose length `N` is a type
-//! parameter ([`AesGcm::decrypt_in_place_truncated`],
-//! [`AesGcmDecryptor::finalize_truncated`]): 4 through 16 bytes, checked
-//! at compile time. Lengths 5–7 and 9–11 are extensions to SP 800-38D
-//! §5.2.1.2; the standard allows only 4, 8, 12, 13, 14, 15 and 16 bytes.
-//! The length is never taken from a slice, because a slice's length
-//! often comes from the message: a protocol that splits a message with
-//! `msg.split_at(msg.len().saturating_sub(16))` would, given a 4-byte
-//! message, check an empty ciphertext against a 4-byte tag, which an
-//! attacker forges with probability 2⁻³² instead of 2⁻¹²⁸. Tags of 4 and 8
-//! bytes are only for the applications of SP 800-38D Appendix C, which
-//! bounds the lengths of the messages and the number of decryptions under
-//! one key. These application-level restrictions are the caller's responsibility.
-//! Shorter tags provide less protection against forgery.
-//!
-//! Their variants, with the same contracts, are those of `Backend`, each
-//! with its suffix: `select` chooses the first in `Backend::ALL` whose
-//! `seal`'s `_FEATURES` the CPU has (and the tests check that every other
-//! function of the variant needs no more). On x86-64 these are, in this
-//! order, `_vaes_vpclmul_avx512`, `_vaes_vpclmul`, `_vaes_pclmul`,
-//! `_aesni_vpclmul`, `_aesni_pclmul_avx`, `_aesni_pclmul`, `_vaes`,
-//! `_aesni`, `_vpclmul` and `_pclmul`; on x86, `_aesni_pclmul`, `_aesni`
-//! and `_pclmul`; on AArch64, `_aes_sha3` (whose `_FEATURES` are those of
-//! `seal_with_powers`) and `_aes`.
-//!
-//! On x86-64, with the `alloc` feature, the `_vaes_vpclmul_avx512` variants
-//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), and the
-//! `_vaes_vpclmul` and `_aesni_pclmul_avx` ones `_prepared16` ones
-//! (`VG.Spec.Gcm.PreparedPowers16Repr`), which read powers of the hash
-//! subkey from a larger key context that `vg_aes_gcm_prepare` (or
-//! `vg_aes_gcm_prepare16`) writes from the key context of `vg_aes_gcm_init`.
-//! On a CPU with the features of that function too, `AesGcm::new` computes
-//! the prepared context, and every message and streaming update calls the
-//! `_prepared` variants of `seal`, `open`, `seal_gather` and the streaming
-//! updates.
-//!
-//! On AArch64, the `_aes` and `_aes_sha3` variants of `seal` and `open` have
-//! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), which read `H¹` to `H⁸`
-//! from a 128-byte buffer of the key's own, next to the key context of
-//! `vg_aes_gcm_init`, which `AesGcm::new` fills with
-//! `vg_ghash_store_powers_aes`. Every whole message uses them; streaming
-//! keeps the plain functions.
+//! Encryption returns the full 16-byte tag; a protocol that sends a shorter one
+//! sends its first bytes. Decryption takes a `&[u8; 16]` or, for a truncated
+//! tag, a `&[u8; N]` with `N` from 4 to 16 fixed at compile time
+//! ([`AesGcm::decrypt_in_place_truncated`],
+//! [`AesGcmDecryptor::finalize_truncated`]), never a slice, whose length often
+//! comes from the message: splitting the last 16 bytes off a 4-byte message
+//! would check a 4-byte tag, forged with probability 2⁻³² rather than 2⁻¹²⁸. SP
+//! 800-38D §5.2.1.2 allows only 4, 8 and 12 to 16 bytes (5–7 and 9–11 are
+//! extensions), and 4 and 8 only within its Appendix C's limits on message
+//! lengths and decryptions per key, which the caller enforces.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -201,6 +144,7 @@ use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_vpclmul,
 };
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::MaybeUninit;
 use verified_garbage_cpu::Features;
@@ -925,8 +869,6 @@ impl Backend {
 /// Why an AES-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is empty.
     InvalidNonceLength,
     /// The plaintext or ciphertext is longer than `2^36 − 32` bytes.
@@ -949,7 +891,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "AES-GCM nonce is empty",
         InvalidTextLength => "AES-GCM text is too long",
         InvalidAadLength => "AES-GCM additional data is too long",
@@ -1040,9 +981,9 @@ impl AesGcm {
 
     /// Prepares `key`, which must be 16, 24 or 32 bytes long (AES-128,
     /// AES-192 or AES-256).
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         // The features, read once: each read is a call.
         let f = detected();
@@ -1736,7 +1677,7 @@ impl AesGcmDecryptor<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select};
+    use super::{AesGcm, Backend, Error, InvalidKeyLength, MAX_AAD, MAX_TEXT, add_len, select};
     use crate::cpu::detected;
     use verified_garbage_cpu::Features;
 
@@ -3067,7 +3008,7 @@ mod tests {
 
     #[test]
     fn errors() {
-        assert_eq!(AesGcm::new(&[0; 15]).err(), Some(Error::InvalidKeyLength));
+        assert_eq!(AesGcm::new(&[0; 15]).err(), Some(InvalidKeyLength));
         let k = AesGcm::new(&[0; 32]).unwrap();
         let mut buf = [0u8; 3];
         assert_eq!(

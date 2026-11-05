@@ -93,7 +93,7 @@ specification's progress check does. -/
 def reject : Prog isa := .ite (.zero .x .x10) exhausted
   (.seq (.block advance) (.ite (.zero .x .x13) (.block []) (.block count)))
 
-/-- The next tape's length, `primeRequest`: twice the larger of the octets
+/-- The next tape's length, `VG.Proof.RsaKeyGen.primeRequest`: twice the larger of the octets
 left and 16 per octet of the prime, at most the entropy budget (octets
 left in `x10`, the budget in `x11`). -/
 def request : List Instr := [

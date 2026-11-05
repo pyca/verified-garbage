@@ -1,28 +1,10 @@
-//! AES-OCB (OCB3, RFC 7253) with 128-, 192- and 256-bit AES keys.
+//! AES-OCB (OCB3, RFC 7253) with 128-, 192- and 256-bit keys.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_ocb_init` (contract
-//! `VG.Spec.Ocb.initContract`) writes the key context (the key schedule and
-//! `L_*`), and `vg_aes_ocb_seal` and `vg_aes_ocb_open` (`sealContract`,
-//! `openContract`) are `OCB-ENCRYPT` and `OCB-DECRYPT` (§4.2, §4.3) in one
-//! call each, HASH of the associated data included, in constant time. `open`
-//! checks the tag in constant time and overwrites the data with zeros when it
-//! is wrong. This module checks the nonce's length, which the assembly does
-//! not, and holds the key context.
-//!
-//! # Tags
-//!
-//! The length of the tag is a parameter of OCB: it is part of the nonce's
-//! first block (§4.2). It is a type parameter here, `T` in
-//! [`AesOcb::encrypt_in_place`] and [`AesOcb::decrypt_in_place`], so that it
-//! is fixed in the caller's code and never comes from a message (see
-//! `crate::aes_gcm`): 1 to 16 bytes, checked at compile time. §3.1 defines
-//! the AEADs with tags of 16, 12 and 8 bytes.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones; on x86, the `_aesni` ones; on AArch64, the `_aes`
-//! ones.
+//! A nonce must never be used twice with the same key. The tag length, 1 to 16
+//! bytes, is a type parameter, `T` in [`AesOcb::encrypt_in_place`] and
+//! [`AesOcb::decrypt_in_place`], so that it is fixed in the caller's code and
+//! never taken from a message (see `crate::aes_gcm`); RFC 7253 §3.1 defines the
+//! AEADs with tags of 16, 12 and 8 bytes.
 
 #![cfg(any(
     target_arch = "x86",
@@ -51,6 +33,7 @@ use crate::arch::aes_ocb::{
 };
 use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -134,8 +117,6 @@ macro_rules! assert_tag_length {
 /// Why an AES-OCB operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is not 1 to 15 bytes long (§4.2: at most 120 bits).
     InvalidNonceLength,
     /// The tag does not match: the ciphertext, the associated data or the
@@ -145,7 +126,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "invalid AES-OCB nonce length",
         TagMismatch => "AES-OCB tag does not match",
     }
@@ -181,9 +161,9 @@ fn check(nonce: &[u8]) -> Result<(), Error> {
 
 impl AesOcb {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut k = AesOcb {
             ctx: [0; 32],
@@ -309,13 +289,13 @@ impl AesOcb {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesOcb, Error};
+    use super::{AesOcb, Error, InvalidKeyLength};
 
     #[test]
     fn key_lengths() {
         let key = [0u8; 40];
         for n in [0, 15, 17, 23, 25, 31, 33, 40] {
-            assert_eq!(AesOcb::new(&key[..n]).err(), Some(Error::InvalidKeyLength));
+            assert_eq!(AesOcb::new(&key[..n]).err(), Some(InvalidKeyLength));
         }
     }
 

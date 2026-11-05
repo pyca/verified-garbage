@@ -10,9 +10,9 @@ public import VerifiedGarbage.Spec.RsaPkcs1Sig
   `T` exactly when `EM` is `0x00 ‖ 0x01 ‖ PS ‖ 0x00 ‖ T` with
   `k - tLen - 3 ≥ 8` octets `0xff` in `PS`: the padding is determined by
   `T` and `k`.
-* `verify_eq_verifyRfc`: BoringSSL's verification (check the padding, then
-  compare what follows with the `DigestInfo`) is RFC 8017 §8.2.2's
-  (encode, then compare).
+* `verifyUnpad_eq_verify`: BoringSSL's verification (`verifyUnpad`: check
+  the padding, then compare what follows with the `DigestInfo`) is RFC 8017
+  §8.2.2's (`verify`: encode, then compare).
 * `verify_iff`: verification accepts exactly when `sig` is `k` octets, the
   key is valid, `s < n` and `s^e mod n` is the integer of the encoding of
   the given hash value: there is no other accepted `s`, so nothing a lax
@@ -132,11 +132,22 @@ theorem publicOpChecked_length {nB eB sig em : List Byte}
   · exact publicOp_length h
   · cases h
 
-theorem verify_true (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
-    verify nB eB h H sig = true ↔
+/-- RSASSA-PKCS1-V1_5-VERIFY (§8.2.2) as BoringSSL's `rsa_verify_no_self_test`
+computes it: `sig` must be `k` octets, RSAVP1 must succeed, and what follows
+the padding of the result (`unpad`) must be exactly the `DigestInfo` of `H`,
+which must be `hLen` octets. It equals `verify` (`verifyUnpad_eq_verify`). -/
+def verifyUnpad (nB eB : List Byte) (h : Hash) (H sig : List Byte) : Bool :=
+  if sig.length = nB.length ∧ H.length = h.len then
+    match publicOpChecked nB eB sig with
+    | some em => unpad em == some (digestInfo h H)
+    | none => false
+  else false
+
+theorem verifyUnpad_true (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
+    verifyUnpad nB eB h H sig = true ↔
       sig.length = nB.length ∧ H.length = h.len ∧
         ∃ em, publicOpChecked nB eB sig = some em ∧ unpad em = some (digestInfo h H) := by
-  unfold verify
+  unfold verifyUnpad
   by_cases hc : sig.length = nB.length ∧ H.length = h.len
   · rw [ite_eq_left hc]
     cases hp : publicOpChecked nB eB sig <;> simp [hc]
@@ -144,11 +155,11 @@ theorem verify_true (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
     simp only [Bool.false_eq_true, false_iff]
     exact fun h' => hc ⟨h'.1, h'.2.1⟩
 
-theorem verifyRfc_true (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
-    verifyRfc nB eB h H sig = true ↔
+theorem verify_true (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
+    verify nB eB h H sig = true ↔
       sig.length = nB.length ∧
         ∃ em, publicOpChecked nB eB sig = some em ∧ encode h H nB.length = some em := by
-  unfold verifyRfc
+  unfold verify
   by_cases hc : sig.length = nB.length
   · rw [ite_eq_left hc]
     cases hp : publicOpChecked nB eB sig <;> cases he : encode h H nB.length <;> simp [hc]
@@ -163,9 +174,9 @@ theorem unpad_iff_encode {h : Hash} {H em : List Byte} {k : Nat} (hem : em.lengt
   rw [unpad_eq_some_iff, encode_eq_some_iff, hem]
 
 /-- BoringSSL's verification is RFC 8017 §8.2.2's. -/
-theorem verify_eq_verifyRfc (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
-    verify nB eB h H sig = verifyRfc nB eB h H sig := by
-  rw [Bool.eq_iff_iff, verify_true, verifyRfc_true]
+theorem verifyUnpad_eq_verify (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
+    verifyUnpad nB eB h H sig = verify nB eB h H sig := by
+  rw [Bool.eq_iff_iff, verifyUnpad_true, verify_true]
   refine and_congr_right fun _ => ?_
   constructor
   · rintro ⟨hH, em, hp, hu⟩
@@ -180,7 +191,7 @@ theorem verify_iff_publicOpChecked (nB eB : List Byte) (h : Hash) (H sig : List 
     verify nB eB h H sig = true ↔
       sig.length = nB.length ∧
         ∃ em, encode h H nB.length = some em ∧ publicOpChecked nB eB sig = some em := by
-  rw [verify_eq_verifyRfc, verifyRfc_true]
+  rw [verify_true]
   exact and_congr_right fun _ => exists_congr fun _ => And.comm
 
 /-- Verification accepts exactly when `sig` is `k` octets, the public key is
@@ -215,7 +226,7 @@ theorem verify_iff (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
 /-- `recover` returns `H` exactly when `verify` accepts `H`. -/
 theorem recover_eq_some_iff (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
     recover nB eB h sig = some H ↔ verify nB eB h H sig = true := by
-  rw [verify_true]
+  rw [← verifyUnpad_eq_verify, verifyUnpad_true]
   unfold recover
   by_cases hs : sig.length = nB.length
   · rw [ite_eq_left hs]

@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::blowfish_cfb::{BlowfishCfb64Decryptor, BlowfishCfb64Encryptor, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::blowfish_cfb::{BlowfishCfb64Decryptor, BlowfishCfb64Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -52,11 +54,11 @@ fn errors() {
     for len in [0, 1, 3, 57, 64] {
         assert_eq!(
             BlowfishCfb64Encryptor::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
         assert_eq!(
             BlowfishCfb64Decryptor::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

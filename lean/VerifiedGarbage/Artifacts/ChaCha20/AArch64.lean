@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Streaming ChaCha20 (RFC 8439) on AArch64 -/
 

@@ -44,7 +44,7 @@ structure RfcHash where
   /-- The curve. -/
   R : RfcCurve
   /-- The instance of the contract, with the hash function fixed. -/
-  I : Spec.Ecdsa.Rfc6979.Instance
+  I : Proof.Ecdsa.Rfc6979.Instance
   /-- The functions the code calls through the table, verified. -/
   F : Impl.Pbkdf2.Whole.X86.Fns
   ok : FnsOK F

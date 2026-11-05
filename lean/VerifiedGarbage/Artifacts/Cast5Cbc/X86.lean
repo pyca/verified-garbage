@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
 import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # CAST5-CBC artifacts on baseline x86 (32-bit) -/
 
@@ -15,11 +16,11 @@ def artifacts : List Artifact := [
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed },
+    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed },
   Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }]
+    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }]
 
 end VG.Artifacts.Cast5Cbc.X86

@@ -1,9 +1,4 @@
-//! HMAC-MD5: `vg_hmac_md5_init`, `vg_md5_update` and `vg_hmac_md5_finalize`
-//! (contracts `VG.Spec.Hmac.Instance.initAnyKeyContract` of
-//! `VG.Spec.Hmac.md5I`, `VG.Spec.Md5.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
-//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
-//! keeping the two MD5 streaming states.
+//! HMAC-MD5.
 
 #![cfg(any(
     target_arch = "x86_64",

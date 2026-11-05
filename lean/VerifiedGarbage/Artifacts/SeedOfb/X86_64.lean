@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 
 /-! # SEED-OFB artifacts on baseline x86-64 -/

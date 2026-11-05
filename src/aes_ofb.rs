@@ -1,19 +1,6 @@
 //! AES-OFB (SP 800-38A §6.4) with 128-, 192- and 256-bit keys, in place.
 //!
-//! The block cipher work is verified assembly: `vg_aes_expand_key`
-//! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_ofb` (`VG.Spec.Ofb.aesContract`) XORs whole blocks with the
-//! output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it
-//! replaces with the last output block, in constant time. This module holds the
-//! key schedule and the output block, and handles a partial last block (§6.4,
-//! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
-//! whose first bytes it XORs into the rest of the input.
-//!
-//! The variants of `vg_aes_ofb`, with the same contract, are chosen with
-//! `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, `vg_aes_ofb_vaes`,
-//! then `vg_aes_ofb_aesni` (both with `vg_aes_expand_key_aesni`); on x86,
-//! `vg_aes_ofb_aesni`; on AArch64, `vg_aes_ofb_aes`.
+//! The IV must be unique to each message under a key (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -38,6 +25,7 @@ use crate::arch::aes_ofb::{VG_AES_OFB_AESNI_FEATURES, vg_aes_ofb_aesni};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_ofb::{VG_AES_OFB_VAES_FEATURES, vg_aes_ofb_vaes};
 use crate::cpu::detected;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -90,23 +78,6 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Why an AES-OFB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid AES key length",
-        IncompleteBlock => "AES-OFB input is not a whole number of blocks",
-    }
-}
-
 /// An expanded AES key.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
@@ -132,7 +103,7 @@ pub struct AesOfb {
 
 impl AesOfb {
     /// Expands a 16-, 24- or 32-byte key, to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -144,9 +115,9 @@ impl AesOfb {
     /// anything if the buffer's length is not a multiple of 16: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.iv, buffer);
         Ok(())
@@ -169,9 +140,9 @@ impl Drop for AesOfb {
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(

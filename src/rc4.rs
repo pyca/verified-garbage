@@ -1,10 +1,8 @@
 //! Raw RC4 (ARCFOUR), with an incremental keystream and no initial discard.
 //!
-//! RC4 is obsolete and insecure; this module exists for legacy compatibility.
-//! It provides no nonce or authentication. Initialization and in-place XOR
-//! are the verified primitives (`VG.Spec.Rc4.initContract` and
-//! `VG.Spec.Rc4.applyContract`). Only pointers, lengths and the stream
-//! position modulo 256 may affect the leakage trace.
+//! RC4 is insecure: use it only for compatibility with legacy protocols. It
+//! takes no nonce and does not authenticate. Its timing may depend on the
+//! position in the keystream, but not on the key or the data.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -18,20 +16,8 @@
 use core::mem::MaybeUninit;
 
 use crate::arch::rc4::{vg_rc4_apply, vg_rc4_init};
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize_raw;
-
-/// Why RC4 initialization failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key length is outside 1..=256 bytes.
-    InvalidKeyLength,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid RC4 key length",
-    }
-}
 
 /// An incremental raw RC4 encryptor or decryptor.
 pub struct Rc4 {
@@ -43,7 +29,7 @@ pub struct Rc4 {
 impl Rc4 {
     /// Schedules a key of 1..=256 bytes and starts at stream position zero.
     /// Longer keys are rejected rather than truncated. No bytes are discarded.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let mut c = Self {
             ctx: MaybeUninit::uninit(),
         };
@@ -56,7 +42,7 @@ impl Rc4 {
         if code == 0 {
             Ok(c)
         } else {
-            Err(Error::InvalidKeyLength)
+            Err(InvalidKeyLength)
         }
     }
 

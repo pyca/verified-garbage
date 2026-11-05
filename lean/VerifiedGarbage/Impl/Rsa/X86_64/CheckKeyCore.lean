@@ -139,14 +139,29 @@ def mulXR : List (Prog isa) :=
     .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aAcc)))],
   Crt.mulRows]
 
-/-- `[rbx] := 2 [rbx] + c mod [r10]` over `w` words (`r12`), for the carry
-`c` in `rbp` (0 or all ones): `vg_rsa_public`'s `double` from the carry
-`c`, with the accumulator at `r8` and the temporary at `rsi`. -/
+/-- Select the reduced or unreduced remainder with a conditional move.
+Both sources have fixed addresses; the borrow mask is never branched on. -/
+def selectRem : Prog isa :=
+  wordLoop 0 [.mov .rax (.mem (ix .r8 .r14)), .alu .test .rbp (.reg .rbp),
+    .cmov .e .rax (.mem (ix .rsi .r14)), .store (ix .rbx .r14) .rax]
+
+/-- Double one limb and subtract the corresponding modulus limb while the
+sum is still in `rax`. The doubling carry is in `rbp`, the subtraction
+borrow in `rdx`, both represented as masks. -/
+def dblSubWord : List Instr :=
+  [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .adc .rax (.reg .rax),
+    .store (ix .r8 .r14) .rax, cfToRbp,
+    .alu .add .rdx (.reg .rdx), .alu .sbb .rax (.mem (ix .r10 .r14)),
+    .store (ix .rsi .r14) .rax, .alu .sbb .rdx (.reg .rdx)]
+
+/-- `[rbx] := 2 [rbx] + c mod [r10]` over `w` words (`r12`), with the
+input bit in `rbp`. Doubling and subtraction share one limb scan, then
+`selectRem` chooses the result using the final borrow. -/
 def dblIn : Prog isa :=
-  .seq (wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .adc .rax (.reg .rax),
-      .store (ix .r8 .r14) .rax, cfToRbp])
-    (.seq (.block [.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .r8 .r12) .rax])
-      (.seq subMod selectAcc))
+  .seq (.block [.mov32 .rdx (.imm 0)])
+    (.seq (wordLoop 0 dblSubWord)
+      (.seq (.block [.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .r8 .r12) .rax,
+        .alu .add .rdx (.reg .rdx), .alu .sbb .rax (.imm 0), cfToRbp]) selectRem))
 
 /-- One bit of `x`: the top bit of `r15` shifted out into the mask `rbp`,
 `r := 2 r + b mod m`, and `r11` counted down. -/

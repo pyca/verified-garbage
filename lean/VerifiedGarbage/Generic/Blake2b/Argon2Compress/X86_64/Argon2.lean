@@ -42,6 +42,7 @@ public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.IterationsIndices
 import VerifiedGarbage.Proof.Argon2.Permutation

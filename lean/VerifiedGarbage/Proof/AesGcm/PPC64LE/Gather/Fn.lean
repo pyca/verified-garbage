@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gather.PPC64LE.Loop
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Contract
@@ -40,8 +41,8 @@ open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd LrUpd wp_std wp_ld wp_or wp_mfl
 
 /-- The correctness of `vg_aes_gcm_seal`, in its frame, by its shared contract. -/
 abbrev SealOk : Prop :=
-  ∀ s, (Spec.Gcm.sealContract PPC64LE.abi 2672).pre s →
-    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Spec.Gcm.sealContract PPC64LE.abi 2672).post s s'
+  ∀ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s →
+    ∃ t s', Exec isa sealCode s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).post s s'
 
 theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
     B + BitVec.ofNat 64 a - BitVec.ofNat 64 b = B + BitVec.ofNat 64 (a - b) := by
@@ -590,7 +591,7 @@ theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
     WP isa (.call "vg_aes_gcm_seal" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
-  refine WP.callAny (k := Spec.Gcm.sealContract PPC64LE.abi 2672) hv (sealSpec_pre hcp) hcov hw
+  refine WP.callAny (k := Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) hv (sealSpec_pre hcp) hcov hw
     (fun z rd' wr' sp' fr' pres' post' => ?_) (by rw [seal_sdepth]; decide)
   have hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6, c7, c8, c9, c10,

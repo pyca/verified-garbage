@@ -1,21 +1,7 @@
-//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place
-//! and without padding.
+//! AES-CBC (SP 800-38A §6.2) with 128-, 192- and 256-bit keys, in place and
+//! without padding.
 //!
-//! The whole mode is verified assembly: `vg_aes_expand_key` (contract
-//! `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
-//! `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`VG.Spec.Cbc.aesEncryptContract`,
-//! `aesDecryptContract`) replace each block with its CBC encryption or
-//! decryption and the chaining value with the last ciphertext block, in
-//! constant time. This module checks the lengths, which the assembly does
-//! not, and holds the key schedule and the chaining value.
-//!
-//! The variants of these functions, with the same contracts, are chosen
-//! with `crate::aes::Backend`, on CPUs with the features their `_FEATURES`
-//! constants name (and the key expansion's): on x86-64, the `_vaes` ones,
-//! then the `_aesni` ones (both with `vg_aes_expand_key_aesni`); on x86, the
-//! `_aesni` ones; on AArch64, the `_aes` ones, and for decryption
-//! `vg_aes_cbc_decrypt_aes_sha3` instead of `vg_aes_cbc_decrypt_aes` on CPUs
-//! with the features `VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES` names.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -51,6 +37,7 @@ use crate::arch::aes_cbc::{
 };
 use crate::arch::aes_cbc::{vg_aes_cbc_decrypt, vg_aes_cbc_encrypt};
 use crate::cpu::detected;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -119,22 +106,6 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Why an AES-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid AES key length",
-        IncompleteBlock => "AES-CBC input is not a whole number of blocks",
-    }
-}
-
 /// An expanded AES key, which serves both directions.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
@@ -158,7 +129,7 @@ pub struct AesCbcEncryptor {
 
 impl AesCbcEncryptor {
     /// Expands a 16-, 24- or 32-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -168,7 +139,7 @@ impl AesCbcEncryptor {
     /// Encrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -186,7 +157,7 @@ pub struct AesCbcDecryptor {
 
 impl AesCbcDecryptor {
     /// Expands a 16-, 24- or 32-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -196,16 +167,16 @@ impl AesCbcDecryptor {
     /// Decrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
 
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(
@@ -232,7 +203,7 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         let f = instance!(
             self.backend,
             vg_aes_cbc_encrypt,
@@ -255,7 +226,7 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         #[cfg(target_arch = "aarch64")]
         if self.backend == Backend::Aes && detected().contains(VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES)
         {
@@ -282,9 +253,9 @@ impl Key {
         buffer: &mut [u8],
         f: Cbc,
         scratch_written: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key

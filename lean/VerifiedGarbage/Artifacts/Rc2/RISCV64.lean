@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rc2.RISCV64.KeyVerified
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Stream.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Stream.Lit

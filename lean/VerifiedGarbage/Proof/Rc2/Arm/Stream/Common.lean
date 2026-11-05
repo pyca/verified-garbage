@@ -366,10 +366,10 @@ structure CbcPost (d : Spec.Rc2.Direction) (s : State) (K I D N S : BitVec 32) (
   saved : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r
   frame : Frame [⟨State.addr I, 8⟩, ⟨State.addr D, 8 * N.toNat⟩, ⟨State.addr S, 512⟩, below s] s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (State.addr D) N.toNat =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
       (Spec.Rc2.blocksAt s.mem (State.addr D) N.toNat)).1
   iv : Spec.Rc2.blockAt s'.mem (State.addr I) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
       (Spec.Rc2.blocksAt s.mem (State.addr D) N.toNat)).2
 
 abbrev cbcRd (s : State) (K : BitVec 32) : List Region := [⟨State.addr K, 128⟩, argR s]

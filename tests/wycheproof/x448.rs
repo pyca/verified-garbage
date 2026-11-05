@@ -17,7 +17,8 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use verified_garbage::x448::{Error, PrivateKey, PublicKey};
+use verified_garbage::error::XdhError;
+use verified_garbage::x448::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -43,7 +44,7 @@ fn x448_test() {
         let private: [u8; 56] = test.case.private.0.clone().try_into().unwrap();
         let shared: [u8; 56] = test.case.shared.0.clone().try_into().unwrap();
         let expected = if shared == [0; 56] {
-            Err(Error::ZeroSharedSecret)
+            Err(XdhError::ZeroSharedSecret)
         } else {
             Ok(shared)
         };

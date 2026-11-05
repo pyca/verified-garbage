@@ -238,6 +238,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64

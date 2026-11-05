@@ -1,14 +1,6 @@
 //! CAST5-OFB (SP 800-38A §6.4, with CAST5 as in RFC 2144), in place.
 //!
-//! The block cipher work and the feedback are verified assembly:
-//! `vg_cast5_expand_key` (contract `VG.Spec.Cast5.expandKeyContract`) writes
-//! the subkeys, and `vg_cast5_ofb` (`VG.Spec.Cast5.ofbContract`) XORs whole
-//! blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`,
-//! which it replaces with the last output block, in constant time: its
-//! timing depends on none of the key, the chaining value and the data. This
-//! module holds the subkeys and the output block, and handles a partial last
-//! block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next
-//! output block, whose first bytes it XORs into the rest of the input.
+//! The IV must be unique to each message under a key (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -21,24 +13,8 @@
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
 use crate::cast5_ecb::Cast5Ecb;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a CAST5-OFB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 5 to 16 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid CAST5 key length",
-        IncompleteBlock => "CAST5-OFB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded CAST5 key.
 struct Key {
@@ -60,7 +36,7 @@ pub struct Cast5Ofb {
 
 impl Cast5Ofb {
     /// Expands a key of 5 to 16 bytes, to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -72,9 +48,9 @@ impl Cast5Ofb {
     /// anything if the buffer's length is not a multiple of 8: only
     /// [`apply_keystream_final`](Self::apply_keystream_final) takes a partial
     /// last block.
-    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn apply_keystream(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.apply_keystream(&mut self.iv, buffer);
         Ok(())
@@ -97,9 +73,9 @@ impl Drop for Cast5Ofb {
 
 impl Key {
     /// Expands a key of 5 to 16 bytes.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
-            key: Cast5Ecb::new(key).map_err(|_| Error::InvalidKeyLength)?,
+            key: Cast5Ecb::new(key).map_err(|_| InvalidKeyLength)?,
         })
     }
 

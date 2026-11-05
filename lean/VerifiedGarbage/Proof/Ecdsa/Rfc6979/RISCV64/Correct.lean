@@ -825,7 +825,7 @@ theorem result_unfold (s₀ : State) :
         Spec.Ecdsa.Rfc6979.search P.kit.E.curve P.hH.SH.H P.H.D (xOf P s₀) (eOf P s₀) (kv0 P s₀).1 (kv0 P s₀).2
           P.c.tries
       else (none, 0) := by
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.hct]
+  simp only [result, Proof.Ecdsa.Rfc6979.Instance.result, Spec.Ecdsa.Rfc6979.sign, P.hct]
   rw [P.hE, P.hHash, P.hD, P.kit.len]
   rfl
 

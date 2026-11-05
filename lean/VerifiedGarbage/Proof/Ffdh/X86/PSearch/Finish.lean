@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Call
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
@@ -33,7 +34,7 @@ structure Fin (o : State) (r : ParameterSearchResult) (t : State) : Prop where
   output : Output (ofState o) r t.mem
   policy : Spec.Rsa.wordsAt t.mem (argumentPointer o 9) 4 =
     [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 (arg o 1).toNat,
-      BitVec.ofNat 64 (parameterEntropy (arg o 3).toNat), BitVec.ofNat 64 r.requested]
+      BitVec.ofNat 64 (parameterEntropy (arg o 3).toNat), BitVec.ofNat 64 (Proof.Ffdh.requested (arg o 3).toNat r)]
   used : Spec.Rsa.wordsAt t.mem (argumentPointer o 2) 1 = [BitVec.ofNat 64 r.used]
 
 theorem Done.st {o s : State} {r : ParameterSearchResult} (h : Done (ofState o) o r s) :
@@ -133,7 +134,9 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
     have hl : (arg o 1).toNat < 2 ^ 32 := (arg o 1).isLt
     have hcap' : parameterEntropy (arg o 3).toNat < 2 ^ 32 := by
       have : (ofState o).cap = parameterEntropy (arg o 3).toNat := rfl; omega
-    have hc' : r.requested < 2 ^ 32 := by omega
+    have hc' : (Proof.Ffdh.requested (arg o 3).toNat r) < 2 ^ 32 := by
+      have : (ofState o).bits = (arg o 3).toNat := rfl
+      rw [← this]; omega
     unfold Spec.Rsa.wordsAt
     rw [show List.range 4 = [0, 1, 2, 3] from rfl]
     simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
@@ -144,7 +147,7 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
     · rw [Offset.add_add, ← st_addr A (d := 12) (by decide), W 12 (by decide)]; simp [doneF]
     · rw [← st_addr A (d := 16) (by decide), W 16 (by decide)]; simp [doneF, ofState]
     · rw [Offset.add_add, ← st_addr A (d := 20) (by decide), W 20 (by decide)]; simp [doneF]
-    · rw [← st_addr A (d := 24) (by decide), W 24 (by decide)]; simp [doneF]
+    · rw [← st_addr A (d := 24) (by decide), W 24 (by decide)]; simp [doneF, ofState]
     · rw [Offset.add_add, ← st_addr A (d := 28) (by decide), W 28 (by decide)]; simp [doneF]
   · unfold Spec.Rsa.wordsAt
     rw [show List.range 1 = [0] from rfl]

@@ -1,17 +1,8 @@
 //! scrypt (RFC 7914 §6).
 //!
-//! The whole derivation is the verified `vg_scrypt` (contract
-//! `VG.Spec.Scrypt.scryptContract`). Its variants, with the same contract,
-//! are chosen with the backend `Sha256` chooses (see
-//! `crate::hashes::sha256`): on x86-64 and x86, `vg_scrypt_shani`, then on
-//! x86-64 `vg_scrypt_avx2`; on AArch64, `vg_scrypt_sha2`. This module only
-//! checks the parameters and allocates the memory scrypt works in (and, for
-//! [`verify`], compares the derived key with the expected one).
-//!
-//! scryptROMix reads its table `V` at indices derived from the password, so
-//! its memory accesses (and hence its timing, through the caches) depend on
-//! them. That is inherent to scrypt; the contracts declare that scrypt leaks
-//! these indices and nothing else secret.
+//! scryptROMix reads its table `V` at indices derived from the password, so its
+//! memory accesses, and so its timing through the caches, depend on them, as is
+//! inherent to scrypt; nothing else secret affects them.
 
 #![cfg(all(
     any(
@@ -26,7 +17,6 @@
 ))]
 
 use alloc::vec::Vec;
-use core::fmt;
 
 use crate::arch::scrypt::vg_scrypt;
 #[cfg(target_arch = "x86_64")]
@@ -35,38 +25,8 @@ use crate::arch::scrypt::vg_scrypt_avx2;
 use crate::arch::scrypt::vg_scrypt_sha2;
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 use crate::arch::scrypt::vg_scrypt_shani;
+use crate::error::PasswordHashError;
 use crate::hashes::sha256::Sha256Backend;
-
-/// Why [`derive`](fn@derive) refused to derive a key, or [`verify`] to accept one.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The parameters are not valid (RFC 7914 §2 and §6): `n` must be a
-    /// power of two greater than 1 and less than `2^(128 r / 8)`, `r` and
-    /// `p` must be positive with `p ≤ (2³² − 1) · 32 / (128 r)`, and the
-    /// derived key must be 1 to (2³² − 1) · 32 bytes long.
-    InvalidParameters,
-    /// The memory it needs, `128 · (r · (n + p) + r + 2)` bytes, exceeds
-    /// `max_memory` (or the address space).
-    MemoryLimitExceeded,
-    /// Allocating that memory failed.
-    AllocationFailed,
-    /// [`verify`] derived a key other than the expected one: the password
-    /// (or the salt or a parameter) is not the one it was derived from.
-    KeyMismatch,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Error::InvalidParameters => "invalid scrypt parameters",
-            Error::MemoryLimitExceeded => "scrypt would need more than the memory limit",
-            Error::AllocationFailed => "could not allocate scrypt's memory",
-            Error::KeyMismatch => "scrypt derived key does not match",
-        })
-    }
-}
-
-impl core::error::Error for Error {}
 
 /// The 128-byte chunks of working space scrypt allocates beyond ROMix's
 /// `r + 2`, so that PBKDF2-HMAC-SHA256's 1,600 bytes fit in the `r + 16`
@@ -74,10 +34,10 @@ impl core::error::Error for Error {}
 const PBKDF2_CHUNKS: usize = 14;
 
 /// A zeroed vector of `len` 128-byte chunks, or `AllocationFailed`.
-fn chunks(len: usize) -> Result<Vec<[u8; 128]>, Error> {
+fn chunks(len: usize) -> Result<Vec<[u8; 128]>, PasswordHashError> {
     let mut v = Vec::new();
     v.try_reserve_exact(len)
-        .map_err(|_| Error::AllocationFailed)?;
+        .map_err(|_| PasswordHashError::AllocationFailed)?;
     v.resize(len, [0; 128]);
     Ok(v)
 }
@@ -94,9 +54,13 @@ fn chunks(len: usize) -> Result<Vec<[u8; 128]>, Error> {
 ///
 /// # Errors
 ///
-/// [`Error::InvalidParameters`] if the parameters or `out`'s length are not
-/// valid, [`Error::MemoryLimitExceeded`] if scrypt would need more than
-/// `max_memory` bytes, and [`Error::AllocationFailed`] if allocating them
+/// [`PasswordHashError::InvalidParameters`] if the parameters or `out`'s
+/// length are not valid (RFC 7914 §2 and §6: `n` must be a power of two
+/// greater than 1 and less than `2^(128 r / 8)`, `r` and `p` must be
+/// positive with `p ≤ (2³² − 1) · 32 / (128 r)`, and `out` must be 1 to
+/// (2³² − 1) · 32 bytes long), [`PasswordHashError::MemoryLimitExceeded`] if
+/// scrypt would need more than `max_memory` bytes (or more than the address
+/// space), and [`PasswordHashError::AllocationFailed`] if allocating them
 /// fails. `out` is unchanged then.
 pub fn derive(
     password: &[u8],
@@ -106,7 +70,7 @@ pub fn derive(
     p: u32,
     max_memory: usize,
     out: &mut [u8],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     Memory::new(n, r, p, max_memory, out.len())?.derive(password, salt, out);
     Ok(())
 }
@@ -131,8 +95,10 @@ pub fn derive(
 ///
 /// # Errors
 ///
-/// [`Error::KeyMismatch`] if the derived key is not `expected`; otherwise
-/// as [`derive`](fn@derive), with `expected` in place of `out`.
+/// [`PasswordHashError::KeyMismatch`] if the derived key is not `expected`:
+/// the password (or the salt or a parameter) is not the one it was derived
+/// from. Otherwise as [`derive`](fn@derive), with `expected` in place of
+/// `out`.
 pub fn verify<const N: usize>(
     password: &[u8],
     salt: &[u8],
@@ -141,7 +107,7 @@ pub fn verify<const N: usize>(
     p: u32,
     max_memory: usize,
     expected: &[u8; N],
-) -> Result<(), Error> {
+) -> Result<(), PasswordHashError> {
     crate::ct::assert_verify_len!(N);
     let mut memory = Memory::new(n, r, p, max_memory, N)?;
     let mut key = [0u8; N];
@@ -151,7 +117,7 @@ pub fn verify<const N: usize>(
     if matches {
         Ok(())
     } else {
-        Err(Error::KeyMismatch)
+        Err(PasswordHashError::KeyMismatch)
     }
 }
 
@@ -172,7 +138,13 @@ struct Memory {
 impl Memory {
     /// The memory to derive a key of `len` bytes with parameters `n`, `r`
     /// and `p` in, if they are valid and it is at most `max_memory` bytes.
-    fn new(n: u64, r: u32, p: u32, max_memory: usize, len: usize) -> Result<Memory, Error> {
+    fn new(
+        n: u64,
+        r: u32,
+        p: u32,
+        max_memory: usize,
+        len: usize,
+    ) -> Result<Memory, PasswordHashError> {
         // RFC 7914 §2 and §6, as `VG.Spec.Scrypt.valid` states them.
         let (n64, r64, p64) = (n, u64::from(r), u64::from(p));
         let max_len = (u64::from(u32::MAX)) * 32;
@@ -180,7 +152,7 @@ impl Memory {
         let p_ok = r64 > 0 && p64 > 0 && p64 <= max_len / (128 * r64);
         let len_ok = len != 0 && (len as u64) <= max_len;
         if !(n_ok && p_ok && len_ok) {
-            return Err(Error::InvalidParameters);
+            return Err(PasswordHashError::InvalidParameters);
         }
         // `128 (r (n + p) + r + 2)` bytes, in chunks of 128.
         let size = |n: u64| usize::try_from(n).ok();
@@ -188,10 +160,10 @@ impl Memory {
         let vlen = n.and_then(|n| n.checked_mul(r));
         let total = vlen.and_then(|v| v.checked_add(r * p)?.checked_add(r + 2)?.checked_mul(128));
         let (Some(vlen), Some(total)) = (vlen, total) else {
-            return Err(Error::MemoryLimitExceeded);
+            return Err(PasswordHashError::MemoryLimitExceeded);
         };
         if total > max_memory {
-            return Err(Error::MemoryLimitExceeded);
+            return Err(PasswordHashError::MemoryLimitExceeded);
         }
         Ok(Memory {
             r,
@@ -254,8 +226,8 @@ fn derive_by(
     // and `salt` are only read), so none of them overlaps another written
     // one or the call's stack frame, and, as Rust objects, none wraps around
     // the address space. `scrypt` needs no CPU feature that `backend`, the
-    // implementation of SHA-256, was not selected for
-    // (`tests::backend_features`).
+    // implementation of SHA-256, was not selected for (checked when it
+    // compiles, below).
     unsafe {
         scrypt(
             password.as_ptr(),
@@ -275,45 +247,26 @@ fn derive_by(
     };
 }
 
-#[cfg(all(
-    test,
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")
-))]
-mod tests {
-    use super::Sha256Backend;
-    #[cfg(target_arch = "x86_64")]
-    use crate::arch::scrypt::VG_SCRYPT_AVX2_FEATURES;
-    #[cfg(target_arch = "aarch64")]
-    use crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES;
-    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-    use crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES;
-    use crate::cpu::NAMES;
-    use verified_garbage_cpu::Features;
-
-    /// Each implementation of `vg_scrypt` needs no CPU feature that the
-    /// implementation of SHA-256 is not selected for: on every set of
-    /// features that selects it.
-    #[test]
-    fn backend_features() {
-        #[cfg(target_arch = "x86_64")]
-        let variants = [
-            (Sha256Backend::ShaNi, VG_SCRYPT_SHANI_FEATURES),
-            (Sha256Backend::Avx2, VG_SCRYPT_AVX2_FEATURES),
-        ];
-        #[cfg(target_arch = "x86")]
-        let variants = [(Sha256Backend::ShaNi, VG_SCRYPT_SHANI_FEATURES)];
-        #[cfg(target_arch = "aarch64")]
-        let variants = [(Sha256Backend::Sha2, VG_SCRYPT_SHA2_FEATURES)];
-        for (backend, req) in variants {
-            for bits in 0..1u32 << NAMES.len() {
-                let f = Features(bits);
-                if Sha256Backend::select(f) == backend {
-                    assert!(f.contains(Features::all(&[req])));
-                }
-            }
-        }
-    }
-}
+// Each implementation of `vg_scrypt` needs no CPU feature that SHA-256's
+// `select` does not require to choose its implementation.
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::ShaNi as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_SHANI_FEATURES),
+    "vg_scrypt_shani needs a CPU feature SHA-256's _shani is not chosen for"
+);
+#[cfg(target_arch = "x86_64")]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::Avx2 as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_AVX2_FEATURES),
+    "vg_scrypt_avx2 needs a CPU feature SHA-256's _avx2 is not chosen for"
+);
+#[cfg(target_arch = "aarch64")]
+const _: () = assert!(
+    Sha256Backend::REQUIRES[Sha256Backend::Sha2 as usize]
+        .contains(crate::arch::scrypt::VG_SCRYPT_SHA2_FEATURES),
+    "vg_scrypt_sha2 needs a CPU feature SHA-256's _sha2 is not chosen for"
+);
 
 #[cfg(test)]
 mod derive_tests {

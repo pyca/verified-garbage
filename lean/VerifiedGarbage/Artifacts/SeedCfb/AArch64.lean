@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SEED-CFB128 artifacts on baseline AArch64 -/
 

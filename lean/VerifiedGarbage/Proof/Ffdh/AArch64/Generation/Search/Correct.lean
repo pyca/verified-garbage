@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Entry
 
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
@@ -165,7 +166,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     rw [iteration_depth c]; decide
 
 theorem SReturned.post {s t : State} (h : SReturned (sOfState s) (searchResult s) t) : searchPost s t :=
-  ⟨h.1, h.2.1, h.2.2.2, h.2.2.1⟩
+  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, SievedGeneration.search_requests _ _ _ _⟩
 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by

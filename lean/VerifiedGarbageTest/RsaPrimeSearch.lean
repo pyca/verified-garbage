@@ -32,8 +32,9 @@ def octets (seed n : Nat) : List Byte := Id.run do
   return result.toList
 
 /-- Serve the search from one stream as a host would: each tape keeps what
-the last one did not consume and takes the stream's next octets up to the
-requested length. The prime and the stream's octets consumed. `fuel` bounds
+the last one did not consume and takes the stream's next octets, here to
+twice as many as were left and one more: any length more than the octets left
+is one the search may ask for. The prime and the stream's octets consumed. `fuel` bounds
 this test, not the search. -/
 def refill (eB : List Byte) (source : Rand) : Nat → Nat → Nat → Nat →
     Except String (Nat × Nat)
@@ -45,10 +46,10 @@ def refill (eB : List Byte) (source : Rand) : Nat → Nat → Nat → Nat →
       match r.outcome with
       | .accepted p => .ok (p, offset + r.used)
       | .exhausted => .error "unexpected exhausted search"
-      | .entropy left next =>
-        if r.used > tape.length || next ≤ tape.length - r.used then
-          .error "consumed more than the tape, or asked for no fresh octets"
-        else refill eB source fuel left (offset + r.used) next
+      | .entropy left available =>
+        if r.used > tape.length || available != tape.length - r.used then
+          .error "consumed more than the tape, or miscounted the octets left"
+        else refill eB source fuel left (offset + r.used) (2 * available + 1)
 
 def check : Except String Unit := do
   let eB : List Byte := [1, 0, 1]
@@ -61,8 +62,8 @@ def check : Except String Unit := do
   let direct := primeSearch 32 eB [] limit source
   unless direct.outcome == .accepted expected && direct.used == expectedUsed do
     throw "one tape's search differs from generatePrime"
-  -- Starting from one octet and following the requests: the same.
-  unless (← refill eB source 100 limit 0 1) == (expected, expectedUsed) do
+  -- Starting from one octet and refilling: the same.
+  unless (← refill eB source 10000 limit 0 1) == (expected, expectedUsed) do
     throw "refills changed the prime or the octets consumed"
   -- A tape ending where the prime's test ends is enough; one octet less is not,
   -- and consumes nothing of the prime's candidate.
@@ -78,7 +79,7 @@ def check : Except String Unit := do
   -- A candidate too close to the other prime is consumed but not counted.
   let close := primeSearch 32 eB (Spec.Rsa.i2osp expected 32) limit
     (Spec.Rsa.i2osp expected 32)
-  unless close == ⟨.entropy limit (primeRequest 32 0), 32, [1, 2, 1, 0]⟩ do
+  unless close == ⟨.entropy limit 0, 32, [1, 2, 1, 0]⟩ do
     throw "a too-close candidate was counted, or its trace has its octets"
   -- e = 0 (which `primeInit` allows; full key generation does not) makes every
   -- candidate fail its gcd check: one counted rejection exhausts a budget of one.
@@ -87,18 +88,14 @@ def check : Except String Unit := do
     throw "the budget of counted candidates was not enforced"
   unless primeSearch 32 eB [] 0 source == ⟨.exhausted, 0, []⟩ do
     throw "an exhausted search consumed octets"
-  unless primeSearch 32 eB [] limit [] == ⟨.entropy limit 1024, 0, [1, 0]⟩ do
-    throw "an empty tape did not ask for the first request's length"
+  unless primeSearch 32 eB [] limit [] == ⟨.entropy limit 0, 0, [1, 0]⟩ do
+    throw "an empty tape did not ask for more"
   unless primeInit 32 [3] == primeInit 32 [0, 0, 3] do
     throw "leading zeros changed the exponent"
   unless primeInit 31 eB == none && primeInit 33 eB == none &&
       primeInit 520 eB == none && primeInit 32 [] == none &&
       primeInit 32 (List.replicate 9 1) == none do
     throw "an invalid width or exponent length was accepted"
-  for len in [32, 64, 128, 256, 384, 512] do
-    unless primeRequest len 0 == 32 * len &&
-        primeRequest len (primeEntropy len - 1) == primeEntropy len do
-      throw "requests do not grow to the budget"
 
 /-- The entropy budget, on a one-octet prime (outside the native widths, so
 that reaching the budget takes thousands of one-octet draws rather than
@@ -115,7 +112,7 @@ def checkEntropyBudget : Except String Unit := do
   unless primeSearch 1 [1] [] 1 tape == ⟨.exhausted, 0, [1, 0]⟩ do
     throw "the budget let a candidate through without enough uniform witnesses"
   let short := primeSearch 1 [1] [] 1 (tape.take (primeEntropy 1 - 1))
-  unless short == ⟨.entropy 1 (primeEntropy 1), 0, [1, 0]⟩ do
+  unless short == ⟨.entropy 1 (primeEntropy 1 - 1), 0, [1, 0]⟩ do
     throw "below the budget, the candidate was not kept for a refill"
 
 #assert_standard_axioms Spec.RsaKeyGen.primeInitContract

@@ -1,17 +1,7 @@
 //! SM4-CBC (SP 800-38A §6.2, with SM4 as in GB/T 32907-2016, transcribed in
-//! the Internet-Draft draft-ribose-cfrg-sm4-10), in place and without
-//! padding.
+//! draft-ribose-cfrg-sm4-10), in place and without padding.
 //!
-//! The block cipher work and the chaining are verified assembly:
-//! `vg_sm4_expand_key` (contract `VG.Spec.Sm4.expandKeyContract`) writes the
-//! key schedule, and `vg_sm4_cbc_encrypt_chained` and
-//! `vg_sm4_cbc_decrypt_chained` (`VG.Spec.Sm4.cbcEncryptChainedContract`,
-//! `cbcDecryptChainedContract`) replace each block with its CBC encryption
-//! or decryption from the chaining value at `iv`, and the chaining value with
-//! the one to continue from (the last ciphertext block), in constant time:
-//! their timing depends on none of the key, the chaining value and the data.
-//! This module checks the lengths and holds the key schedule and the chaining
-//! value.
+//! The IV must be unpredictable (SP 800-38A Appendix C).
 
 #![cfg(any(
     target_arch = "x86",
@@ -24,20 +14,8 @@
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt_chained, vg_sm4_cbc_encrypt_chained};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
-
-/// Why an SM4-CBC operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        IncompleteBlock => "SM4-CBC input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SM4 key, which serves both directions.
 struct Key {
@@ -68,7 +46,7 @@ impl Sm4CbcEncryptor {
     /// Encrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.encrypt(&mut self.iv, buffer)
     }
 }
@@ -96,7 +74,7 @@ impl Sm4CbcDecryptor {
     /// Decrypts whole 16-byte blocks in place, continuing the message.
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.key.decrypt(&mut self.iv, buffer)
     }
 }
@@ -118,9 +96,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: the buffer holds `len / 16` whole blocks, and it, the
         // chaining value (which the function reads and replaces) and the
@@ -142,9 +120,9 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
-    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
+    fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {

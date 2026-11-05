@@ -1,4 +1,4 @@
-//! Standalone public-key validation, in one call of a verified function.
+//! Public-key validation on its own.
 
 #![cfg(target_arch = "x86_64")]
 

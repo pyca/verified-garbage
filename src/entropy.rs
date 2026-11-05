@@ -1,13 +1,4 @@
 //! Supplying random bytes to verified code that asks for them.
-//!
-//! The verified operations that need an unknown amount of randomness
-//! (FFDH parameter and key generation, DSA key generation and signing) read
-//! it from a tape of random bytes and, when the tape runs out, return to Rust
-//! with the number of bytes they consumed and how long the next tape must be.
-//! [`serve`] is the one loop that answers them: it discards the consumed
-//! bytes, keeps the rest in order, extends it with fresh bytes to the
-//! requested length and runs the operation again, as their contracts say.
-//! Every tape it allocates is wiped before it is freed.
 
 #![cfg(all(
     any(

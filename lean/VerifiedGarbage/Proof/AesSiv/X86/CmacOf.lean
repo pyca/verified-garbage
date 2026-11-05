@@ -32,7 +32,7 @@ into the state at `W + 144`: the code zeroes the state, computes `16 nb`,
 the bytes of the whole blocks before the last 1 to 16
 (`Spec.Cmac.chainedLen`, `chained_bv`), stores it at `W + nbO`, chains the
 `nb` blocks with `vg_cmac_aes_update` and finalizes the rest with
-`vg_cmac_aes_finalize` from the context's subkeys (`Siv.cmacWith_chained`).
+`vg_cmac_aes_finalize` from the context's subkeys (`Siv.macWith_chained`).
 -/
 
 @[expose] public section
@@ -389,7 +389,7 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
   have aP : w64 (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) =
       w64 P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 k) := Buf.ptr hwc
   rw [o₄, sch₃, k1, k2, aP, rest, m₃, o₂, Proof.Cmac.Stream.blocksAt_eq, chainedLen_div, sch₁, hz, pre,
-    Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS]
+    Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS]
   have tk : (bytesAt s.mem (w64 P) k).take (Spec.Cmac.chainedLen 16 k) =
       bytesAt s.mem (w64 P) (Spec.Cmac.chainedLen 16 k) := by
     have := take_bytesAt s.mem (w64 P) (a := Spec.Cmac.chainedLen 16 k) (b := k - Spec.Cmac.chainedLen 16 k)

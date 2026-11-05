@@ -1,15 +1,7 @@
-//! Triple DES ECB (FIPS 46-3), in place and without padding.
+//! Triple DES-ECB (FIPS 46-3), in place and without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives:
-//! `vg_triple_des_expand_key`, `vg_triple_des_ecb_encrypt` and
-//! `vg_triple_des_ecb_decrypt` (`VG.Spec.TripleDes.expandKeyContract`,
-//! `ecbEncryptContract`, `ecbDecryptContract`). Each operation accepts
-//! complete eight-byte blocks, including empty input.
-//!
-//! The variants of ECB encryption and decryption, with the same contracts,
-//! are chosen by `Backend::select` on CPUs with the features their
-//! `_FEATURES` constants name: on x86-64, `vg_triple_des_ecb_encrypt_avx512`
-//! and `vg_triple_des_ecb_decrypt_avx512`, then the `_avx2` ones.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -31,6 +23,7 @@ use crate::arch::triple_des::{
     vg_triple_des_ecb_decrypt, vg_triple_des_ecb_encrypt, vg_triple_des_expand_key,
 };
 use crate::cpu::detected;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -82,22 +75,6 @@ impl Backend {
     }
 }
 
-/// Why a Triple DES ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 or 24 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of eight bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Triple DES key length",
-        IncompleteBlock => "Triple DES-ECB input is not a whole number of blocks",
-    }
-}
-
 /// An expanded Triple DES key for ECB encryption and decryption.
 ///
 /// A 24-byte key encodes K1, K2 and K3. A 16-byte key encodes K1 and K2,
@@ -110,9 +87,9 @@ pub struct TripleDesEcb {
 
 impl TripleDesEcb {
     /// Expands a 16- or 24-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -128,19 +105,19 @@ impl TripleDesEcb {
 
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, true)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let f = match (self.backend, encrypt) {
             (Backend::Scalar, true) => vg_triple_des_ecb_encrypt,

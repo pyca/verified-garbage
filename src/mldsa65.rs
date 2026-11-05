@@ -1,40 +1,16 @@
-//! ML-DSA-65 (FIPS 204), the module-lattice-based digital signature
-//! algorithm, at security category 3.
+//! ML-DSA-65 (FIPS 204), the module-lattice-based digital signature algorithm,
+//! at security category 3.
 //!
-//! Key generation is the verified assembly function `vg_mldsa65_keygen`
-//! (contract `VG.Spec.MlDsa.keyGenContract` for `mlDsa65`),
-//! `ML-DSA.KeyGen_internal` (FIPS 204 Algorithm 6); signing and verification
-//! are `vg_mldsa65_sign_message` and `vg_mldsa65_verify_message_cached`
-//! (`signMessageContract` and `verifyMessageCachedContract`), `ML-DSA.Sign`
-//! and `ML-DSA.Verify` (Algorithms 2 and 3), which format the message with
-//! its context string, compute the message representative `μ` and call the
-//! internal algorithms on it, `vg_mldsa65_sign` and `vg_mldsa65_verify`
-//! (§6). This module supplies the randomness and working space, and
-//! destroys the intermediate values (§3.6.3).
-//!
-//! Verification takes the hash `tr = H(pk, 64)` of the public key (FIPS 204
-//! Algorithm 8) rather than computing it each time: a [`VerifyingKey65`]
-//! keeps it, computed when the key is made from its bytes or taken from the
-//! private key, which holds it.
-//!
-//! Their variants, with the same contracts, are chosen with
-//! `crate::mldsa_common::Backend` on CPUs with the features their
-//! `_FEATURES` constants name: the `_avx2` ones on x86-64, the `_sha3` ones
-//! on AArch64.
-//!
-//! A private key is kept as the 32-byte seed `ξ` it is generated from
-//! (§3.6.3), which [`SigningKey65::from_seed`] expands; the caller generates
-//! the seed with an approved RBG. The expanded private key is never
-//! exposed. HashML-DSA (§5.4) is not provided.
-//!
-//! Precomputed 64-byte message representatives are supported by
-//! [`SigningKey65::sign_mu`] and [`VerifyingKey65::verify_mu`]. The caller
-//! computes `μ`, including the public-key hash and message formatting,
-//! and supplies the signing randomness.
-//!
-//! The loops FIPS 204 lets an implementation bound (Appendix C) reach their
-//! bounds with probability about 2⁻²⁵⁶ or less; the operation then fails
-//! with [`Error::LoopBound`].
+//! A private key is the 32-byte seed `ξ` it is generated from
+//! ([`SigningKey65::from_seed`]), which the caller generates with an approved
+//! RBG; the expanded private key is never exposed. HashML-DSA (§5.4) is not
+//! provided. [`SigningKey65::sign_mu`] and [`VerifyingKey65::verify_mu`] take a
+//! message representative `μ` that the caller computes (formatting the message
+//! and hashing the public key), and the caller supplies the signing randomness.
+//! Key generation's and signing's timing may depend on values that SHAKE
+//! derives from secrets (see the README's "What the constant-time guarantee
+//! assumes"). An operation fails with [`MlDsaError::LoopBound`] if it reaches
+//! one of the loop bounds of Appendix C, with probability about 2⁻²⁵⁶ or less.
 
 #![cfg(any(
     target_arch = "x86_64",

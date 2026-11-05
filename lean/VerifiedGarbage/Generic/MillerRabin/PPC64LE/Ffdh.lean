@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # FFDH parameter generation calls each shared Miller–Rabin implementation -/
 

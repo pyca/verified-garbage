@@ -1,18 +1,12 @@
-//! Finite-field Diffie–Hellman, for the component API used by cryptography.
+//! Finite-field Diffie–Hellman, with the components API of pyca/cryptography:
+//! parameter and key generation, public-key validation and the exchange.
 //!
-//! Public-key validation and exchange call the verified FFDH operations.
-//! Exchange secret exponentiation follows a fixed schedule over the public encoding
-//! length supplied at import, or the public sampling bound for generated keys.
-//! All domain arithmetic and secret exponentiation run in verified code.
-//! Private-key generation samples and validates the scalar in verified code,
-//! which also retries rejected attempts and asks for the random bytes they
-//! need. Rust obtains random bytes and packs inputs and results. Parameter
-//! generation runs entirely in verified code, including its attempt limit
-//! and entropy requests; Rust allocates and fills the random tape it asks
-//! for. Parameter generation is available on every supported architecture.
-//! Imported parameters receive structural and algebraic checks; callers must
-//! establish primality/provenance. Optional q enables subgroup checks.
-//! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
+//! Imported parameters are checked for structure and consistency, not
+//! primality: their source must be trusted. With `q` given, public keys are
+//! also checked to be in its subgroup. The exchange returns exactly ⌈bits(p)/8⌉
+//! bytes, not passed through a KDF; its timing depends on the length of the
+//! public encoding the private key was imported with (for a generated key, the
+//! public sampling bound), not on the private key's value.
 
 #![cfg(all(
     any(
@@ -24,6 +18,11 @@
     ),
     feature = "alloc"
 ))]
+
+// Every operation, parameter and key generation included (their candidates,
+// retries, attempt limits and requests for random bytes), is verified code;
+// the Rust here lays out and pads the values, allocates the working space,
+// serves the random bytes (`crate::entropy`) and chooses the implementation.
 
 mod arithmetic;
 mod domain;
@@ -131,6 +130,7 @@ impl Parameters {
     /// Not part of the API: it lets benchmarks compare implementations on
     /// identical work, from fixed tapes. The parameters are generated as
     /// `generate` documents only if `fill` supplies uniformly random bytes.
+    #[cfg(feature = "internal-bench")]
     #[doc(hidden)]
     pub fn generate_with_rng<E>(
         bits: usize,
@@ -155,20 +155,6 @@ impl Parameters {
     /// shorter-exponent bounds. Other domains sample uniformly in 1..q, or 1..p-1 when q is absent.
     pub fn generate_private_key(&self) -> Result<PrivateKey, Error> {
         self.generate_with(getrandom::fill)
-    }
-
-    /// [`generate_private_key`](Self::generate_private_key), with its random
-    /// bytes drawn from `fill` instead of the operating system.
-    ///
-    /// Not part of the API: it lets benchmarks compare implementations on
-    /// identical work, from fixed tapes. The key is secret only if `fill`
-    /// supplies uniformly random bytes.
-    #[doc(hidden)]
-    pub fn generate_private_key_with_rng<E>(
-        &self,
-        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    ) -> Result<PrivateKey, Error> {
-        self.generate_with(fill)
     }
 
     /// Verified code runs the whole search: it draws and checks each scalar
@@ -335,50 +321,6 @@ mod tests {
         let mut g = vec![0; 17];
         g[0] = 1;
         Parameters::from_components(&p, &g, None).unwrap()
-    }
-    #[test]
-    fn key_generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same key, as the fixed-tape benchmark
-        // relies on.
-        let params = composite_domain();
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            params
-                .generate_private_key_with_rng(|buf: &mut [u8]| {
-                    for b in buf {
-                        x ^= x << 13;
-                        x ^= x >> 7;
-                        x ^= x << 17;
-                        *b = x as u8;
-                    }
-                    Ok::<_, ()>(())
-                })
-                .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.private_component(), b.private_component());
-        assert_eq!(a.public_key().component(), b.public_key().component());
-    }
-    #[test]
-    fn generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same safe prime, as the fixed-tape
-        // benchmark relies on.
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            Parameters::generate_with_rng(512, 2, |buf: &mut [u8]| {
-                for b in buf {
-                    x ^= x << 13;
-                    x ^= x >> 7;
-                    x ^= x << 17;
-                    *b = x as u8;
-                }
-                Ok::<_, ()>(())
-            })
-            .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.components(), b.components());
-        assert_eq!(a.key_size(), 512);
     }
     #[test]
     fn shared_failure_and_key_wiping() {

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
@@ -133,7 +134,7 @@ calls if `v` does. -/
 theorem sealSel_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees))
-      (Spec.Gcm.sealContract X86_64.abi 2624) := by
+      (Proof.AesGcm.sealRoundsContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCode; split
   · exact sealCode_framed (sealCode_verified (fun s hs => Short.sealM_correct v v.blkB hF s ⟨hs, trivial⟩)
       (ct_of_rel fun _ _ hp hp' hq => Short.sealM_rel hF v v.blkB ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
@@ -149,7 +150,7 @@ theorem sealSel_framed (hF : Short.ShortFacts) :
 theorem openSel_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees))
-      (Spec.Gcm.openContract X86_64.abi 2632) := by
+      (Proof.AesGcm.openRoundsContract X86_64.abi 2632) := by
   unfold GcmImpl.openCode; split
   · exact openCode_framed (openCode_verified (fun s hs => Short.openM_correct v v.blkB hF s ⟨hs, trivial⟩)
       (ct_of_rel fun _ _ hp hp' hq => Short.openM_rel hF v v.blkB ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
@@ -160,7 +161,7 @@ theorem openSel_framed (hF : Short.ShortFacts) :
 theorem sealSelP_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP)))
-      (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624) := by
+      (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624) := by
   unfold GcmImpl.sealCode; split
   · exact sealPCode_framed (sealPCode_verified (Short.sealM_correct v v.blkP hF) (Short.sealM_ct hF v v.blkP))
       (Short.sealM_spSafe v v.blkP) (Short.sealM_xdepth v v.blkP)
@@ -173,7 +174,7 @@ theorem sealSelP_framed (hF : Short.ShortFacts) :
 theorem openSelP_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP)))
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) := by
+      (Proof.AesGcm.openPrecomputedRoundsContract X86_64.abi 2632) := by
   unfold GcmImpl.openCode; split
   · exact openPCode_framed (openPCode_verified (Short.openM_correct v v.blkP hF) (Short.openM_ct hF v v.blkP))
       (Short.openM_spSafe v v.blkP) (Short.openM_xdepth v v.blkP)

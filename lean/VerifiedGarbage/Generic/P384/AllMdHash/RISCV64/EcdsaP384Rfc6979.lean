@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.P384
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # Deterministic ECDSA (RFC 6979) over P-384 on RISC-V, with HMAC as a table -/
 

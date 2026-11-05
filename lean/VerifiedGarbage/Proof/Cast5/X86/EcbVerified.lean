@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.X86.TaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -150,7 +151,7 @@ theorem sat_arg (j : Nat) (hj : j < 5) : arg ecbSat j = satArgs.readW (argAddr e
   rw [ite_eq_right (this j hj b (by omega))]
 
 theorem ecb_sat (up : Bool) :
-    (Spec.Cast5.ecbContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4).pre ecbSat := by
+    (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4).pre ecbSat := by
   have a0 : arg ecbSat 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
   have a1 : arg ecbSat 1 = 16 := (sat_arg 1 (by decide)).trans (by decide)
   have a2 : arg ecbSat 2 = 0x2000 := (sat_arg 2 (by decide)).trans (by decide)
@@ -158,7 +159,7 @@ theorem ecb_sat (up : Bool) :
   have a4 : arg ecbSat 4 = 0x3000 := (sat_arg 4 (by decide)).trans (by decide)
   have held := ecbSatMem_held
   generalize e : ecbSat = s
-  sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
+  sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
   subst s
   rw [a0, a1, a2, a3, a4]
@@ -171,9 +172,9 @@ theorem ecb_sat (up : Bool) :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem ecb_implies (up : Bool) :
-    (ecbX up).Implies (Spec.Cast5.ecbContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4) where
+    (ecbX up).Implies (Proof.Cast5.ecbRoundsContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4) where
   pre s h := by
-    sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
+    sig_pre [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
     obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKD, dKS, dDS, dDA, dSA, -, dRD, dRS, -, dBK, dBD,
       dBS, -, fK, fD, fS, nv⟩ := h
@@ -224,11 +225,11 @@ theorem ecb_implies (up : Bool) :
     · exact nv
   post := by
     intro s t _ h
-    sig_post [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPost, X86.abi, X86.argSlots, X86.argVal,
+    sig_post [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, Proof.Cast5.ecbRoundsPost, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes, ecbConsts_eq, Abi.withConsts]
     exact h
   pub s t _ _ h := by
-    sig_pub [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
+    sig_pub [Proof.Cast5.ecbRoundsContract, Spec.Cast5.ecbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2, h3, h4⟩ := h
     refine ⟨hsp, fun i hi => ?_, hsy⟩
@@ -246,11 +247,11 @@ theorem ecbX_correct (up : Bool) (s : State) (hs : (ecbX up).pre s) :
   exact ⟨t, s', he, ha, hp⟩
 
 theorem ecbEncrypt_verified :
-    Verified X86.target ecbEncrypt (Spec.Cast5.ecbEncryptContract (X86.abi.withConsts ecbConsts) 4) :=
+    Verified X86.target ecbEncrypt (Proof.Cast5.ecbEncryptRoundsContract (X86.abi.withConsts ecbConsts) 4) :=
   Verified.of_correct (ecbX_correct true) ecbEncrypt_ct (ecb_implies true)
 
 theorem ecbDecrypt_verified :
-    Verified X86.target ecbDecrypt (Spec.Cast5.ecbDecryptContract (X86.abi.withConsts ecbConsts) 4) :=
+    Verified X86.target ecbDecrypt (Proof.Cast5.ecbDecryptRoundsContract (X86.abi.withConsts ecbConsts) 4) :=
   Verified.of_correct (ecbX_correct false) ecbDecrypt_ct (ecb_implies false)
 
 end VG.Proof.Cast5.X86

@@ -27,9 +27,13 @@ message.
 
 * `vg_aes_gcm_init` writes a key context (`KeyRepr`): the key schedule and
   the hash subkey `H`. The others read one (with its number of rounds, if
-  they need the cipher), and compute with the cipher and the hash subkey it
-  holds (`ctxCiph`, `ctxH`): with a context `vg_aes_gcm_init` wrote, that
-  is AES-GCM with its key (`encryptWith_ctx`, `decryptWith_ctx`).
+  they need the cipher). Their contracts are stated for every key whose
+  context is in memory with the number of rounds they are given
+  (`KeyRounds`), with that key's cipher and hash subkey (`aes key`,
+  `aes key 0`): AES-GCM with that key. `open`'s leak is stated with the
+  cipher and the hash subkey the context holds (`ctxCiph`, `ctxH`), which
+  for a context `vg_aes_gcm_init` wrote are its key's (`encryptWith_ctx`,
+  `decryptWith_ctx`).
 * `vg_aes_gcm_seal` is GCM-AE (`encryptWith`) with a 16-byte tag, and
   `vg_aes_gcm_open` GCM-AD (`decryptWith`) with a tag of any length
   `tagLenOk` allows; `open` decrypts only if the tag is right, and otherwise
@@ -61,6 +65,15 @@ arguments passed in memory, where the calling convention allows it
 namespace VG.Spec.Gcm
 
 /-! ## AES-GCM: the key context -/
+
+/-- The key context at `ctx` is that of the AES key `key` of 16, 24 or 32
+bytes (`KeyRepr`, as `vg_aes_gcm_init` writes it), and `rounds` is the number
+of rounds `Nr` for a key of its length (FIPS 197 §5). The contracts of the
+functions that read a key context with a number of rounds are stated for
+every key whose context is in memory with the rounds they are given. -/
+def KeyRounds (m : Mem) (ctx : Addr) (rounds : Nat) (key : List Byte) : Prop :=
+  (key.length = 16 ∨ key.length = 24 ∨ key.length = 32) ∧
+    rounds = Aes.rounds (key.length / 4) ∧ KeyRepr m ctx key
 
 /-- `vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32])`. -/
 def initSig : Sig where
@@ -110,21 +123,22 @@ def sealPre (pb : Nat) : Curry (sealSig.words pb) (Mem → Prop) :=
   fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: the `len`
-bytes at `data` are encrypted, with the IV the `nonce_len` bytes at `nonce`
-and the `aad_len` bytes of additional data at `aad` (GCM-AE, `encryptWith`),
-and the 16-byte tag is at `tag`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): the `len` bytes at `data` are encrypted, with the IV the
+`nonce_len` bytes at `nonce` and the `aad_len` bytes of additional data at
+`aad` (GCM-AE under `K`, `aesGcmEncrypt`), and the 16-byte tag is at `tag`. -/
 def sealPost (pb : Nat) : sealSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    encryptWith (ctxCiph m ctx rounds.toNat) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
-        (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    aesGcmEncrypt key 16 (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) =
       (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag 16)
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: encrypts the
-`len` bytes at `data` in place, with the IV the `nonce_len` bytes at `nonce`
-and the `aad_len` bytes of additional data at `aad` (GCM-AE, `encryptWith`),
-and writes the 16-byte tag to `tag`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): encrypts the `len` bytes at `data` in place, with the IV the
+`nonce_len` bytes at `nonce` and the `aad_len` bytes of additional data at
+`aad` (GCM-AE under `K`, `aesGcmEncrypt`), and writes the 16-byte tag to
+`tag`. -/
 def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSig.contract A (pre := sealPre A.ptrBits) (post := sealPost A.ptrBits)
     (writeArgs := true)
@@ -170,17 +184,17 @@ def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
   fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _tagLen _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if `tag_len` is a tag length
-`tagLenOk` allows and the tag is that of the `len` bytes of ciphertext at
-`data` and the `aad_len` bytes of additional data at `aad`, with the IV the
-`nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), the result is 1 and
-the plaintext is at `data`; otherwise the result is 0 and the bytes at
-`data` are as they were. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if `tag_len`
+is a tag length `tagLenOk` allows and the tag is that of the `len` bytes of
+ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, with
+the IV the `nonce_len` bytes at `nonce` (GCM-AD under `K`, `decryptWith`), the
+result is 1 and the plaintext is at `data`; otherwise the result is 0 and the
+bytes at `data` are as they were. -/
 def openPost (pb : Nat) : openSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    match openResult (ctxCiph m ctx rounds.toNat) (ctxH m ctx) tagLen.toNat
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    match openResult (aes key) (aes key 0) tagLen.toNat
         (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
         (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat) with
     | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
@@ -196,11 +210,11 @@ def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
         (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat)).isSome
       then 1 else 0]
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if `tag_len` is a
-supported tag length and the tag is that of the `len` bytes of ciphertext
-at `data` and the `aad_len` bytes of additional data at `aad`, with the IV
-the `nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), returns 1 and
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if `tag_len`
+is a supported tag length and the tag is that of the `len` bytes of ciphertext
+at `data` and the `aad_len` bytes of additional data at `aad`, with the IV the
+`nonce_len` bytes at `nonce` (GCM-AD under `K`, `decryptWith`), returns 1 and
 leaves the plaintext at `data`; otherwise returns 0 and leaves the bytes at
 `data` as they were. May leak which (`openResult`'s outcome). -/
 def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -321,18 +335,18 @@ def streamTextPre (pb : Nat) : Curry (streamCryptSig.words pb) (Mem → Prop) :=
   fun _ctx rounds _state _aadLen _textLen _data _len _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
-streaming state at `state` represents a message with the IV `iv`,
-additional data `a` of `aad_len` bytes and the ciphertext of a plaintext
-`p` of exactly `text_len` bytes (and `aad_len` modulo 2⁶⁴) so far, then afterwards it
-represents the message with the ciphertext of `p` followed by the `len`
-bytes at `data`, whose encryption is written to `data`: the last `len`
-bytes of `GCTR_K(inc₃₂(J₀), p ‖ data)`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): if the streaming state at `state` represents a message with the
+IV `iv`, additional data `a` of `aad_len` bytes and the ciphertext of a
+plaintext `p` of exactly `text_len` bytes (and `aad_len` modulo 2⁶⁴) so far,
+then afterwards it represents the message with the ciphertext of `p` followed
+by the `len` bytes at `data`, whose encryption is written to `data`: the last
+`len` bytes of `GCTR_K(inc₃₂(J₀), p ‖ data)`. -/
 def streamEncryptPost (pb : Nat) : streamCryptSig.Post pb :=
   fun ctx rounds state aadLen textLen data len m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    let ciph := ctxCiph m ctx rounds.toNat
-    let h := ctxH m ctx
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    let ciph := aes key
+    let h := aes key 0
     ∀ iv a p, StreamRepr m state ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
       aadLen = BitVec.ofNat 64 a.length → textLen.toNat = p.length →
       let c := gctr ciph (inc32 (j0 h iv)) (p ++ Aes.bytesAt m data len.toNat)
@@ -363,18 +377,18 @@ def streamEncryptApi : Api where
     data."
   safety := ["`rounds` must be 10, 12 or 14."]
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
-streaming state at `state` represents a message with the IV `iv`,
-additional data `a` of `aad_len` bytes and the ciphertext `c` of `text_len`
-bytes (exactly, and `aad_len` modulo 2⁶⁴) so far, then afterwards it represents the message
-with the ciphertext `c` followed by the `len` bytes at `data`, whose
-decryption is written to `data`: the last `len` bytes of
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): if the streaming state at `state` represents a message with the
+IV `iv`, additional data `a` of `aad_len` bytes and the ciphertext `c` of
+`text_len` bytes (exactly, and `aad_len` modulo 2⁶⁴) so far, then afterwards
+it represents the message with the ciphertext `c` followed by the `len` bytes
+at `data`, whose decryption is written to `data`: the last `len` bytes of
 `GCTR_K(inc₃₂(J₀), c ‖ data)`. -/
 def streamDecryptPost (pb : Nat) : streamCryptSig.Post pb :=
   fun ctx rounds state aadLen textLen data len m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    let ciph := ctxCiph m ctx rounds.toNat
-    let h := ctxH m ctx
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    let ciph := aes key
+    let h := aes key 0
     ∀ iv a c, StreamRepr m state ciph h iv a c →
       aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
       let c' := c ++ Aes.bytesAt m data len.toNat
@@ -419,24 +433,24 @@ def streamFinishPre (pb : Nat) : Curry (streamFinishSig.words pb) (Mem → Prop)
   fun _ctx rounds _state _aadLen _textLen _tag _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
-streaming state at `state` represents a message with the IV `iv`,
-additional data `a` of `aad_len` bytes and the ciphertext `c` of `text_len`
-bytes (exactly, and `aad_len` modulo 2⁶⁴), its 16-byte tag (`fullTag`) is
-at `tag`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): if the streaming state at `state` represents a message with the
+IV `iv`, additional data `a` of `aad_len` bytes and the ciphertext `c` of
+`text_len` bytes (exactly, and `aad_len` modulo 2⁶⁴), its 16-byte tag
+(`fullTag`) is at `tag`. -/
 def streamFinishPost (pb : Nat) : streamFinishSig.Post pb :=
   fun ctx rounds state aadLen textLen tag m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    let ciph := ctxCiph m ctx rounds.toNat
-    let h := ctxH m ctx
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    let ciph := aes key
+    let h := aes key 0
     ∀ iv a c, StreamRepr m state ciph h iv a c →
       aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
       Aes.bytesAt m' tag 16 = fullTag ciph h iv a c
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
-streaming state at `state` represents a message with the IV `iv`,
-additional data `a` of `aad_len` bytes and the ciphertext `c` of `text_len`
-bytes (exactly, and `aad_len` modulo 2⁶⁴), writes its 16-byte tag
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): if the streaming state at `state` represents a message with the
+IV `iv`, additional data `a` of `aad_len` bytes and the ciphertext `c` of
+`text_len` bytes (exactly, and `aad_len` modulo 2⁶⁴), writes its 16-byte tag
 (`fullTag`) to `tag`. -/
 def streamFinishContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamFinishSig.contract A (pre := streamFinishPre A.ptrBits) (post := streamFinishPost A.ptrBits)
@@ -476,31 +490,31 @@ def streamVerifyPre (pb : Nat) : Curry (streamVerifySig.words pb) (Mem → Prop)
   fun _ctx rounds _state _aadLen _textLen _tag _tagLen _ =>
     rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if the streaming state at
-`state` represents a message with the IV `iv`, additional data `a` of
-`aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
-2⁶⁴), and `T` is its 16-byte tag (`fullTag`): the result is 1 if `tag_len`
-is a supported length and the received tag is the first `tag_len`
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if the
+streaming state at `state` represents a message with the IV `iv`, additional
+data `a` of `aad_len` bytes and the ciphertext `c` of `text_len` bytes (both
+modulo 2⁶⁴), and `T` is its 16-byte tag (`fullTag`): the result is 1 if
+`tag_len` is a supported length and the received tag is the first `tag_len`
 bytes of `T` (§7.2 step 8), and 0 otherwise. -/
 def streamVerifyPost (pb : Nat) : streamVerifySig.Post pb :=
   fun ctx rounds state aadLen textLen tag tagLen m _ r =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    let ciph := ctxCiph m ctx rounds.toNat
-    let h := ctxH m ctx
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    let ciph := aes key
+    let h := aes key 0
     ∀ iv a c, StreamRepr m state ciph h iv a c →
       aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
       let t := fullTag ciph h iv a c
       if tagLenOk tagLen.toNat ∧ t.take tagLen.toNat = Aes.bytesAt m tag tagLen.toNat then r = 1
       else r = 0
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if the streaming state at
-`state` represents a message with the IV `iv`, additional data `a` of
-`aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
-2⁶⁴), and `T` is its 16-byte tag (`fullTag`): returns 1 if `tag_len` is a
-supported length and the received tag is the first `tag_len` bytes of
-`T` (§7.2 step 8), and 0 otherwise. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if the
+streaming state at `state` represents a message with the IV `iv`, additional
+data `a` of `aad_len` bytes and the ciphertext `c` of `text_len` bytes (both
+modulo 2⁶⁴), and `T` is its 16-byte tag (`fullTag`): returns 1 if `tag_len` is
+a supported length and the received tag is the first `tag_len` bytes of `T`
+(§7.2 step 8), and 0 otherwise. -/
 def streamVerifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamVerifySig.contract A (pre := streamVerifyPre A.ptrBits) (post := streamVerifyPost A.ptrBits)
     (writeArgs := true)

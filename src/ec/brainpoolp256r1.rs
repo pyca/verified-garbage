@@ -1,7 +1,5 @@
-//! brainpoolp256r1's multiplications, which [`ecdsa`](crate::ecdsa) and
-//! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. `Mul::select` chooses the `_umaal` variants on ARMv7 CPUs with
-//! the features their `_FEATURES` constants name.
+//! brainpoolP256r1's multiplications and public keys, which ECDSA and ECDH
+//! share.
 
 #![cfg(any(
     target_arch = "x86_64",

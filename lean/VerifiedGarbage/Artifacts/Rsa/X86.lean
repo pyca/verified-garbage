@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Timing
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.X86.RtShape
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Public and private CRT RSA on baseline i686 -/
 

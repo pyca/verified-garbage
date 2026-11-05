@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Fn
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
@@ -17,7 +18,7 @@ open VG.Proof.AesGcm.PPC64LE.Gather
 open VG.Proof.ChaCha20Poly1305.PPC64LE.Gather (filter_true' filter_false' filterMap_some' filterMap_none' pairFacts_ro)
 
 
-def contract : Contract isa := Spec.Gcm.sealGatherContract PPC64LE.abi 2960
+def contract : Contract isa := Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2960
 
 structure Layout (s : State) : Prop where
   base : Gather.Lay s
@@ -26,7 +27,7 @@ structure Layout (s : State) : Prop where
 
 
 theorem layout_pre {s : State} (h : contract.pre s) : Layout s := by
-  sig_pre [contract,Spec.Gcm.sealGatherContract,Spec.Gcm.sealGatherSig,Spec.Gcm.sealGatherPre,PPC64LE.abi,
+  sig_pre [contract,Proof.AesGcm.sealGatherRoundsContract,Spec.Gcm.sealGatherSig,Spec.Gcm.sealGatherPre,PPC64LE.abi,
     PPC64LE.argRegs,Gather.stackArgs_three,List.append_eq] at h
   simp only [List.map_append,List.filter_append,List.filter_map,List.map_map,List.filterMap_append,
     List.filterMap_map,List.map_cons,List.map_nil,List.filter_cons,List.filter_nil,Function.comp_def,

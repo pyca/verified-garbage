@@ -456,10 +456,10 @@ theorem CallPost.iv {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s'
 
 structure StepPost (d : Spec.Rc2.Direction) (s s' : State) : Prop extends Pinned s s' where
   data : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r1)) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))).1
   iv : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r4)) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))).2
 
 end VG.Proof.Rc2.Arm.Cbc
@@ -536,10 +536,10 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   have pin₀₃ := pin₂.trans pin₃
   have hp₃ := pin₀₃.pre hp
   have data₃ : Spec.Rc2.blockAt s₃.mem (State.addr (s.gpr .r1)) =
-      Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0)))
+      Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0)))
         (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) := by
     have h : Spec.Rc2.blockAt s₃.mem (State.addr (s₂.gpr .r1)) =
-        Spec.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (State.addr (s₂.gpr .r1))) (Spec.Rc2.blockAt s₂.mem (State.addr (s₂.gpr .r4))) := by
+        Proof.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (State.addr (s₂.gpr .r1))) (Spec.Rc2.blockAt s₂.mem (State.addr (s₂.gpr .r4))) := by
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .r1 (by decide), pin₂.reg .r4 (by decide), output₂, iv₂] at h
     exact h
@@ -651,7 +651,7 @@ theorem encryptStep_ok (s : State) (hp : StepPre s) :
   have hp₁ := pin₁.pre hp
   have key₁ := pin₁.schedule hp
   have data₁ : Spec.Rc2.blockAt s₁.mem (State.addr (s.gpr .r1)) =
-      Spec.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) := by
+      Proof.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
   apply WP.mono (call_ok .encrypt s₁ hp₁.call)
@@ -702,10 +702,10 @@ structure BodyPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (stepWrites s) s.mem s'.mem
   data : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r1)) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))).1
   iv : Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r4)) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) d
       (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r4))) (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))).2
 
 theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n < 2 ^ 32)

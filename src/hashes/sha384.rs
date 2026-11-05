@@ -1,17 +1,4 @@
 //! SHA-384 (FIPS 180-4).
-//!
-//! SHA-384 is SHA-512 from another initial hash value, with its digest the
-//! first 48 bytes of the final hash value. `vg_sha384_init` (contract
-//! `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`) makes a SHA-512
-//! streaming state represent the empty message, hashed from SHA-384's
-//! initial hash value (`VG.Spec.Sha512.Repr`); SHA-512's `vg_sha512_update`
-//! (`updateContract`, which holds for any initial hash value) then absorbs
-//! the message, and `vg_sha384_finalize` (`finalizeDigestContract` for
-//! `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`) outputs its digest, the
-//! result of the whole algorithm.
-//!
-//! The implementations of `update` and `finalize` are chosen as SHA-512's
-//! (see `super::sha512`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -102,10 +89,7 @@ super::streaming_hash!(
 
 #[cfg(test)]
 mod tests {
-    use super::{Sha384, Sha384Backend};
-    use crate::cpu::detected;
-    use crate::hashes::sha512::Sha512Backend;
-    use verified_garbage_cpu::Features;
+    use super::Sha384;
 
     /// Every way of splitting a message into two updates gives the same
     /// digest, for every length around the padding boundaries.
@@ -127,25 +111,6 @@ mod tests {
                 assert_eq!(h.finalize(), expected);
             }
         }
-    }
-
-    /// The implementation chosen for each set of features is SHA-512's.
-    #[test]
-    fn select() {
-        for bits in 0..(1 << crate::cpu::NAMES.len()) {
-            let f = Features(bits);
-            let expected = match Sha512Backend::select(f) {
-                Sha512Backend::Scalar => Sha384Backend::Scalar,
-                #[cfg(target_arch = "aarch64")]
-                Sha512Backend::Sha3 => Sha384Backend::Sha3,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::ShaNi => Sha384Backend::ShaNi,
-                #[cfg(target_arch = "x86_64")]
-                Sha512Backend::Avx2 => Sha384Backend::Avx2,
-            };
-            assert_eq!(Sha384Backend::select(f), expected, "{bits:#b}");
-        }
-        assert_eq!(Sha384::new().backend, Sha384Backend::select(detected()));
     }
 
     /// The `HashFunction` implementation is the inherent functions.

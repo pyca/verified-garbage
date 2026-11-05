@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.RISCV64.ModesConstantTime
 public import VerifiedGarbage.Proof.Cast5.RISCV64.ModeCore
 public import VerifiedGarbage.Proof.Cast5.RISCV64.EcbVerified
@@ -372,43 +373,43 @@ local macro "mode_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =
        rcases hr with hr | hr <;> (subst hr; exact Region.disjoint_of_sep (by decide)))))
 
 theorem cbcEnc_implies :
-    (modePC cbcEncPost).Implies (Spec.Cast5.cbcEncryptChainedContract (abi.withConsts ecbConsts) frameBytes) := by
-  mode_implies [Spec.Cast5.cbcEncryptChainedContract, Spec.Cast5.cbcChainedSig]
+    (modePC cbcEncPost).Implies (Proof.Cast5.cbcEncryptChainedRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  mode_implies [Proof.Cast5.cbcEncryptChainedRoundsContract, Spec.Cast5.cbcChainedSig]
 
 theorem cbcDec_implies :
-    (modePC cbcDecPost).Implies (Spec.Cast5.cbcDecryptChainedContract (abi.withConsts ecbConsts) frameBytes) := by
-  mode_implies [Spec.Cast5.cbcDecryptChainedContract, Spec.Cast5.cbcChainedSig]
+    (modePC cbcDecPost).Implies (Proof.Cast5.cbcDecryptChainedRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  mode_implies [Proof.Cast5.cbcDecryptChainedRoundsContract, Spec.Cast5.cbcChainedSig]
 
-theorem ofb_implies : (modePC ofbPost).Implies (Spec.Cast5.ofbContract (abi.withConsts ecbConsts) frameBytes) := by
-  mode_implies [Spec.Cast5.ofbContract, Spec.Cast5.ofbSig, Spec.Cast5.ofbPre]
+theorem ofb_implies : (modePC ofbPost).Implies (Proof.Cast5.ofbRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  mode_implies [Proof.Cast5.ofbRoundsContract, Spec.Cast5.ofbSig, Spec.Cast5.ofbPre]
 
 theorem cfbEnc_implies :
-    (modePC cfbEncPost).Implies (Spec.Cast5.cfbEncryptContract (abi.withConsts ecbConsts) frameBytes) := by
-  mode_implies [Spec.Cast5.cfbEncryptContract, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre]
+    (modePC cfbEncPost).Implies (Proof.Cast5.cfbEncryptRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  mode_implies [Proof.Cast5.cfbEncryptRoundsContract, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre]
 
 theorem cfbDec_implies :
-    (modePC cfbDecPost).Implies (Spec.Cast5.cfbDecryptContract (abi.withConsts ecbConsts) frameBytes) := by
-  mode_implies [Spec.Cast5.cfbDecryptContract, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre]
+    (modePC cfbDecPost).Implies (Proof.Cast5.cfbDecryptRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  mode_implies [Proof.Cast5.cfbDecryptRoundsContract, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre]
 
 /-! ## Verified -/
 
 theorem cbcEncryptChained_verified : Verified target cbcEncryptChained
-    (Spec.Cast5.cbcEncryptChainedContract (abi.withConsts ecbConsts) frameBytes) :=
+    (Proof.Cast5.cbcEncryptChainedRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct cbcEncryptChained_correct (cbcEncryptChained_constantTime _) cbcEnc_implies
 
 theorem cbcDecryptChained_verified : Verified target cbcDecryptChained
-    (Spec.Cast5.cbcDecryptChainedContract (abi.withConsts ecbConsts) frameBytes) :=
+    (Proof.Cast5.cbcDecryptChainedRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) cbcDec_implies
 
-theorem ofb_verified : Verified target ofb (Spec.Cast5.ofbContract (abi.withConsts ecbConsts) frameBytes) :=
+theorem ofb_verified : Verified target ofb (Proof.Cast5.ofbRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct ofb_correct (ofb_constantTime _) ofb_implies
 
 theorem cfbEncrypt_verified : Verified target cfbEncrypt
-    (Spec.Cast5.cfbEncryptContract (abi.withConsts ecbConsts) frameBytes) :=
+    (Proof.Cast5.cfbEncryptRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct cfbEncrypt_correct (cfbEncrypt_constantTime _) cfbEnc_implies
 
 theorem cfbDecrypt_verified : Verified target cfbDecrypt
-    (Spec.Cast5.cfbDecryptContract (abi.withConsts ecbConsts) frameBytes) :=
+    (Proof.Cast5.cfbDecryptRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) cfbDec_implies
 
 end VG.Proof.Cast5.RISCV64.Modes

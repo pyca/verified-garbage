@@ -26,6 +26,12 @@ absorbed so far. Their contracts are in `Spec/Blake2/Contract.lean`.
 
 namespace VG.Spec.Blake2
 
+-- How this file proves its indices in bounds, and nothing else: a literal
+-- index (`v[12]`) by `decide`, an index `i : Fin n` (`v[a]`) by `i.isLt`,
+-- before core's rules, which rewrite and run `omega`.
+local macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| with_reducible exact Fin.isLt _)
+local macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| decide)
+
 /-- The parameters of a BLAKE2 variant with words of `w` bits (§2.1), and its
 initialization vector (§2.6). -/
 structure Params (w : Nat) where

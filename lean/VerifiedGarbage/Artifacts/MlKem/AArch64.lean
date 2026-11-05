@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
 public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # ML-KEM on AArch64 -/
 

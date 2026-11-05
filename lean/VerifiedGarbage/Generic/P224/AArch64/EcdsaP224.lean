@@ -39,6 +39,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 import VerifiedGarbage.Proof.EcKey.PublicKey

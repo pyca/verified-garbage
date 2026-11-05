@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
 public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
@@ -38,14 +39,14 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
     stack := 3856
-    verified := sealCode_framed v
+    verified := Proof.AesGcmSiv.seal_keyed (sealCode_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v)
     features := features v },
   Spec.GcmSiv.openApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
     stack := 3856
-    verified := openCode_framed v
+    verified := Proof.AesGcmSiv.open_keyed (openCode_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v)
     features := features v }]
 

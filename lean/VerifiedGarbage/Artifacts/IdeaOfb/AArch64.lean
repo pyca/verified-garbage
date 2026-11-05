@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # IDEA-OFB artifacts on baseline AArch64 -/
 

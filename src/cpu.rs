@@ -1,33 +1,24 @@
 //! CPU features, for choosing among implementations of a primitive.
-//!
-//! Some artifacts use instructions beyond their target's baseline ISA. Lean
-//! checks which CPU features those need, and the emitter generates a
-//! [`Features`] constant of them, `<NAME>_FEATURES`, next to the function
-//! (and lists them in its `# Safety` section): the function may only be
-//! called on a CPU that has all of them. They are detected once: with `cpuid` on x86 and x86-64; on AArch64,
-//! by asking the operating system with the `std` feature (which links
-//! `std`, and which `cpu-features-env` enables), and otherwise from the
-//! target features the code was compiled for; on ARMv7, from the operating
-//! system the code was compiled for (`umaal`, on those that run on A-profile
-//! cores alone). Each object that can use such a function chooses its
-//! implementation when it is created, from the features detected. A feature
-//! detection does not know (one without a bit in [`feature`]) cannot be
-//! checked for: a generated constant is the union of the bits of the
-//! features it names, so naming one fails to compile.
-//!
-//! With the `cpu-features-env` Cargo feature, the environment variable
-//! `VG_CPU_FEATURES` restricts the features detected, so that tests and
-//! benchmarks can run every implementation on one machine: `none`, or a
-//! comma-separated list of the names in `NAMES` (e.g. `aes,pclmulqdq`).
-//! Unset or empty, it restricts nothing. It can only remove features, so it
-//! can never choose code the CPU cannot run, and it names only features
-//! this library knows and the CPU has: anything else panics, rather than
-//! quietly testing another configuration. On x86 and x86-64, BMI2 and ADX
-//! are detected only with AVX2, which every CPU that has them has, so
-//! `VG_CPU_FEATURES` naming either without `avx2` panics too. On AArch64, standalone hashing
-//! chooses FEAT_SHA3's Keccak on non-Apple targets only when this variable
-//! names `sha3`, since it is not faster there. ML-DSA and ML-KEM independently select their paired
-//! SHA3 implementations whenever the detected features support them.
+
+// A function that needs features beyond its target's baseline ISA has a
+// generated `<NAME>_FEATURES` constant of them, which Lean checks, and may only
+// be called on a CPU with all of them. They are detected once: with `cpuid` on
+// x86 and x86-64; on AArch64, from the operating system with the `std`
+// feature, and otherwise from the target features compiled for; on ARMv7, from
+// the operating system compiled for (`umaal`, on those that run on A-profile
+// cores alone). Each object chooses its implementation when it is created. A
+// feature without a bit in `feature` cannot be named in a constant, so cannot
+// be checked for by mistake.
+//
+// With `cpu-features-env`, `VG_CPU_FEATURES` (`none`, or names from `NAMES`
+// separated by commas) restricts the features detected, so that tests and
+// benchmarks run every implementation on one machine. It can only remove
+// features, and panics on a name this library does not know or the CPU does
+// not have, rather than quietly test another configuration. On x86 and x86-64,
+// BMI2 and ADX are detected only with AVX2, which every CPU that has them has,
+// so naming either without `avx2` panics too. On AArch64 targets
+// other than Apple's, the SHA-3 functions run FEAT_SHA3's Keccak only when it
+// names `sha3` (`hashes::sha3::Backend::detected`).
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
@@ -68,8 +59,8 @@ static DETECTED: AtomicU32 = AtomicU32::new(0);
 const DETECTED_INIT: u32 = 1 << 30;
 
 /// The features of this CPU, restricted by `VG_CPU_FEATURES` (see the
-/// module's documentation). (Detection is idempotent, so threads racing to
-/// do it store the same value, and `Relaxed` is enough.)
+/// comment at the top of this file). (Detection is idempotent, so threads
+/// racing to do it store the same value, and `Relaxed` is enough.)
 ///
 /// Inlined, it is a load and a test once detection has run; the detection
 /// itself is out of line (`detect`), so callers keep no registers for it.

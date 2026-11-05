@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
@@ -75,42 +76,42 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)
     stack := 2632
-    verified := streamEncrypt_framed v
+    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
     spSafe := withStackScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamDecrypt v.callees)
     stack := 2632
-    verified := streamDecrypt_framed v
+    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
     spSafe := withStackScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2600 8 (Impl.AesGcm.X86.streamFinish v.callees)
     stack := 2628
-    verified := streamFinish_framed v
+    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
     spSafe := withStackScratch_spSafe (streamFinish_spSafe v)
     features := v.features },
   Spec.Gcm.streamVerifyApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamVerify v.callees)
     stack := 2632
-    verified := streamVerify_framed v
+    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
     spSafe := withStackScratch_spSafe (streamVerify_spSafe v)
     features := v.features },
   Spec.Gcm.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» v.callees)
     stack := 2632
-    verified := seal_framed v
+    verified := Proof.AesGcm.seal_keyed (seal_framed v)
     spSafe := withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Gcm.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesGcm.X86.«open» v.callees)
     stack := 2636
-    verified := open_framed v
+    verified := Proof.AesGcm.open_keyed (open_framed v)
     spSafe := withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 
@@ -120,7 +121,7 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesGcm.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
     stack := 2684
-    verified := Gather.sealGather_verified (Gather.sealFn v)
+    verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified (Gather.sealFn v))
     spSafe := Gather.sealGather_spSafe v
     features := v.features }]
 

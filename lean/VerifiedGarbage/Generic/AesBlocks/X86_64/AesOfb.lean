@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOfb.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # AES-OFB (NIST SP 800-38A §6.4) on x86-64 -/
 
@@ -16,7 +17,7 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesOfb.X86_64.crypt v.enc
     stack := 8
-    verified := crypt_verified v
+    verified := Proof.AesOfb.keyed (crypt_verified v)
     spSafe := crypt_spSafe v
     features := v.features }]
 

@@ -27,6 +27,7 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Ocb.State
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn

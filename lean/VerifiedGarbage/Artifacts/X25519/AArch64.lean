@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 

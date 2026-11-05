@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7 -/
 
@@ -15,10 +16,10 @@ def artifacts : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact Arm.target {
     code := Impl.AesCfb.Arm.encrypt
     stack := 8
-    verified := encrypt_verified },
+    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
   Spec.Cfb.aesDecryptApi.artifact Arm.target {
     code := Impl.AesCfb.Arm.decrypt
     stack := 8
-    verified := decrypt_verified }]
+    verified := Proof.AesCfb.decrypt_keyed decrypt_verified }]
 
 end VG.Artifacts.AesCfb.Arm

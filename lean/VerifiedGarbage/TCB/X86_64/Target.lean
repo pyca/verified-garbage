@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -98,10 +98,6 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .rax
-  argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
-    some ("the arguments on the stack", false)
-  reservedDoc n := some (if n = 0 then "the return address on the stack" else
-    s!"the return address on the stack or the {n} bytes of stack below it")
   sym := some fun s name => s.syms name
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
@@ -110,16 +106,7 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
 @[reducible] def target : Target where
   name := "x86_64"
   isa := isa
-  printer := printer
   abiPreserved := abiPreserved
-  -- x32 targets (`x86_64-unknown-linux-gnux32`) have 32-bit pointers. The
-  -- model's baseline includes SSE2 (see `Instr.requires`), which
-  -- `x86_64-unknown-none` and `x86_64-unknown-uefi` turn off; there the Rust
-  -- caller would also not save the SSE registers, of which UEFI's convention
-  -- (the Microsoft x64 one) makes `xmm6`–`xmm15` callee-saved.
-  rustCfg := "all(target_arch = \"x86_64\", target_pointer_width = \"64\", \
-    target_feature = \"sse2\")"
-  rustAbi := "sysv64"
   abi := abi
 
 end VG.X86_64

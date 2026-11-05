@@ -37,27 +37,32 @@ def cfbSig : Sig where
 def cfbPre (pb : Nat) : Curry (cfbSig.words pb) (Mem → Prop) :=
   fun _schedule rounds _iv _data _n _ => rounds.toNat = 12 ∨ rounds.toNat = 16
 
-/-- For `rounds` of 12 or 16, with the subkeys at `schedule`: replaces the `n`
-blocks at `data` with their CFB64 encryption (§6.3) by CAST5, from the block
-at `iv`, and that block with the last ciphertext block (unchanged if
-`n = 0`). -/
+/-- For `rounds` of 12 or 16, and every key `K` whose subkeys are at
+`schedule` with `rounds` rounds (`KeySchedule`): replaces the `n` blocks at
+`data` with their CFB64 encryption (§6.3) by CAST5 under `K`, from the block
+at `iv`, and that block with the last ciphertext block (unchanged if `n = 0`). -/
 def cfbEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cfbSig.contract A (pre := cfbPre A.ptrBits)
     (post := fun schedule rounds iv data n m m' _ =>
-      let cs := Cfb.encrypt (cipher (scheduleAt m schedule) rounds.toNat) (Aes.bytesAt m iv 8) (cbcBlocksAt m data n.toNat)
-      cbcBlocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let cs := Cfb.encrypt (cipher (expandKey key) (Cast5.rounds key.length)) (Aes.bytesAt m iv 8)
+          (cbcBlocksAt m data n.toNat)
+        cbcBlocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
     (writeArgs := true) (stack := stack)
 
-/-- For `rounds` of 12 or 16, with the subkeys at `schedule`: replaces the `n`
-blocks at `data` with their CFB64 decryption (§6.3) by CAST5, from the block
+/-- For `rounds` of 12 or 16, and every key `K` whose subkeys are at
+`schedule` with `rounds` rounds (`KeySchedule`): replaces the `n` blocks at
+`data` with their CFB64 decryption (§6.3) by CAST5 under `K`, from the block
 at `iv`, and that block with the last ciphertext block, the last block at
 `data` on entry (unchanged if `n = 0`). -/
 def cfbDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cfbSig.contract A (pre := cfbPre A.ptrBits)
     (post := fun schedule rounds iv data n m m' _ =>
-      let cs := cbcBlocksAt m data n.toNat
-      cbcBlocksAt m' data n.toNat = Cfb.decrypt (cipher (scheduleAt m schedule) rounds.toNat) (Aes.bytesAt m iv 8) cs ∧
-        Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        let cs := cbcBlocksAt m data n.toNat
+        cbcBlocksAt m' data n.toNat =
+            Cfb.decrypt (cipher (expandKey key) (Cast5.rounds key.length)) (Aes.bytesAt m iv 8) cs ∧
+          Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_cast5_cfb64_encrypt` on every target. -/

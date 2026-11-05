@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # DSA signing and verification for every x86-64 arithmetic backend -/
 

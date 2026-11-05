@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Spec.Gcm.Prepared16
@@ -16,43 +17,43 @@ namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 
 
-/-- `sealPrepared16Contract`, whatever `work` is. -/
+/-- `sealPrepared16RoundsContract`, whatever `work` is. -/
 def sealPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
-      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+      sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
 
 
-/-- `openPrepared16Contract`, whatever `work` is. -/
+/-- `openPrepared16RoundsContract`, whatever `work` is. -/
 def openPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openPreparedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
 
-/-- `streamEncryptPrepared16Contract`, whatever `scratch` is. -/
+/-- `streamEncryptPrepared16RoundsContract`, whatever `scratch` is. -/
 def streamEncryptPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPreparedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamEncryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+      streamEncryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
-/-- `streamDecryptPrepared16Contract`, whatever `scratch` is. -/
+/-- `streamDecryptPrepared16RoundsContract`, whatever `scratch` is. -/
 def streamDecryptPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPreparedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamCryptPrepared16Pre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamDecryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+      streamDecryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
 /-- Prepared powers depend only on bytes within the context. -/

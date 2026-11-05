@@ -45,7 +45,7 @@ fn sample() -> (PrivateKey, Vec<u8>, Vec<u8>) {
 
 /// The signature with the nonce `nonce`, drawn on every request.
 fn sign_with_nonce(key: &PrivateKey, digest: &[u8], nonce: &[u8]) -> Result<Vec<u8>, Error> {
-    key.sign_with_rng(digest, |buf| {
+    key.sign_from(digest, |buf| {
         buf.copy_from_slice(nonce);
         Ok(())
     })
@@ -110,7 +110,7 @@ fn random_tape_rejection_and_replay() {
     let (key, digest, nonce) = sample();
     let mut draws = 0;
     let signature = key
-        .sign_with_rng(&digest, |buf| {
+        .sign_from(&digest, |buf| {
             if draws == 0 {
                 buf.fill(0);
             } else {
@@ -249,14 +249,14 @@ fn malformed_keys_nonces_and_bounded_retries() {
     let y = hex(&v["Y"], p.len());
     let x = hex(&v["X"], q.len());
     assert_eq!(
-        key.sign_with_rng(&digest, |_| Err(Error::Randomness)),
+        key.sign_from(&digest, |_| Err(Error::Randomness)),
         Err(Error::Randomness)
     );
     // Nonces of 0 and q are rejected, each draw, up to a bound.
     for invalid in [vec![0; q.len()], q.clone()] {
         let mut draws = 0;
         assert_eq!(
-            key.sign_with_rng(&digest, |b| {
+            key.sign_from(&digest, |b| {
                 b.copy_from_slice(&invalid);
                 draws += 1;
                 Ok(())
@@ -269,7 +269,7 @@ fn malformed_keys_nonces_and_bounded_retries() {
     let zero_x = PrivateKey::from_components(&p, &q, &g, &y, &vec![0; q.len()]).unwrap();
     let mut draws = 0;
     assert_eq!(
-        zero_x.sign_with_rng(&digest, |b| {
+        zero_x.sign_from(&digest, |b| {
             b.copy_from_slice(&nonce);
             draws += 1;
             Ok(())
@@ -279,7 +279,7 @@ fn malformed_keys_nonces_and_bounded_retries() {
     assert_eq!(draws, 8);
     let zero_q = PrivateKey::from_components(&p, &vec![0; q.len()], &g, &y, &x).unwrap();
     assert_eq!(
-        zero_q.sign_with_rng(&digest, |_| panic!("zero q needs no RNG")),
+        zero_q.sign_from(&digest, |_| panic!("zero q needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
     );
     // An even modulus is rejected, for signing and verifying.
@@ -349,7 +349,7 @@ fn legacy_2048_160_signatures() {
             PrivateKey::from_components(&padded_p, &padded_q, &padded_g, &padded_g, &x).unwrap();
         for digest in [vec![], vec![0x42; 16], vec![0x42; 20], vec![0x42; 32]] {
             let signature = key
-                .sign_with_rng(&digest, |buf| {
+                .sign_from(&digest, |buf| {
                     assert_eq!(buf.len(), q_len);
                     buf.fill(0);
                     buf[19] = 2;

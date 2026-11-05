@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Base
 public import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Blocks
@@ -61,15 +62,15 @@ def blocksSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
 
 theorem encryptBlocks_verified :
-    Verified PPC64LE.target encryptBlocks (Spec.Aes.encryptBlocksContract PPC64LE.abi) :=
+    Verified PPC64LE.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract PPC64LE.abi) :=
   Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Spec.Aes.encryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
+    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat)
 
 theorem decryptBlocks_verified :
-    Verified PPC64LE.target decryptBlocks (Spec.Aes.decryptBlocksContract PPC64LE.abi) :=
+    Verified PPC64LE.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract PPC64LE.abi) :=
   Verified.of_correct decryptBlocks_correct decryptBlocks_ct (by
-    sig_implies [Spec.Aes.decryptBlocksContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
+    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksPPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [blocksSat] using blocksSat)
 
 

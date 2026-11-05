@@ -5,6 +5,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.ModesLit
 
 /-! # IDEA-CFB artifacts on baseline x86 (32-bit) -/

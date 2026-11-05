@@ -1,11 +1,8 @@
-//! CAST5 (CAST-128, RFC 2144) ECB, in place and without padding.
+//! CAST5-ECB (CAST-128, RFC 2144) with 5- to 16-byte keys (§2.5), in place and
+//! without padding.
 //!
-//! Key expansion and ECB encryption/decryption use verified primitives
-//! (`VG.Spec.Cast5.expandKeyContract`, `ecbEncryptContract` and
-//! `ecbDecryptContract`), whose timing depends on neither the key nor the
-//! data. Keys contain 5 to 16 bytes (40 to 128 bits, RFC 2144 §2.5); a key of
-//! up to 10 bytes is used with 12 rounds, a longer one with 16. Each
-//! operation accepts complete eight-byte blocks, including empty input.
+//! ECB encrypts equal blocks to equal blocks, so it reveals patterns in the
+//! data.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -17,23 +14,8 @@
 ))]
 
 use crate::arch::cast5::{vg_cast5_ecb_decrypt, vg_cast5_ecb_encrypt, vg_cast5_expand_key};
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a CAST5 ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 5 to 16 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of eight bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid CAST5 key length",
-        IncompleteBlock => "CAST5 input is not a whole number of blocks",
-    }
-}
 
 /// An expanded CAST5 key for ECB encryption and decryption.
 pub struct Cast5Ecb {
@@ -43,9 +25,9 @@ pub struct Cast5Ecb {
 
 impl Cast5Ecb {
     /// Expands a key of 5 to 16 bytes for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !(5..=16).contains(&key.len()) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 128];
         let mut scratch = [0; 32];
@@ -65,13 +47,13 @@ impl Cast5Ecb {
 
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, vg_cast5_ecb_encrypt)
     }
 
     /// Decrypts complete eight-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, vg_cast5_ecb_decrypt)
     }
 
@@ -85,9 +67,9 @@ impl Cast5Ecb {
         self.rounds
     }
 
-    fn crypt(&self, buffer: &mut [u8], f: Ecb) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], f: Ecb) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let mut scratch = [0; 32];
         // SAFETY: `rounds` is 12 or 16, as `new` chose for the key the

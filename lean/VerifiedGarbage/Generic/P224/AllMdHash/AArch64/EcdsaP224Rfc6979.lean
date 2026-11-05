@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224
+public import VerifiedGarbage.TCB.AArch64.Print
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SEC 1 point conversion with BrainpoolP512r1's existing field backend -/
 

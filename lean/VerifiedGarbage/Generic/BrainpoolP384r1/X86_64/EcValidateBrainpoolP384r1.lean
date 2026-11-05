@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # Standalone BrainpoolP384r1 public-key validation on x86-64 -/
 

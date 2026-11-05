@@ -109,6 +109,7 @@ public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # AES-OCB (RFC 7253) on x86-64 -/
 

@@ -47,7 +47,7 @@ structure RfcHash where
   /-- The curve. -/
   R : RfcCurve
   /-- The instance of the contract, with the hash function fixed. -/
-  I : Spec.Ecdsa.Rfc6979.Instance
+  I : Proof.Ecdsa.Rfc6979.Instance
   /-- The hash function's code. -/
   H : Impl.Pbkdf2.Md.AArch64.Hash
   ok : HashOK H

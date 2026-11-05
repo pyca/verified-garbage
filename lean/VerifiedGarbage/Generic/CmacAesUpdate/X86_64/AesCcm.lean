@@ -48,6 +48,7 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 import VerifiedGarbage.Impl.Gcm.X86_64
 import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
@@ -106,14 +107,14 @@ def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.seal v.callee v.ctr.callee)
     stack := 2624
-    verified := seal_framed v
+    verified := Proof.AesCcm.seal_keyed (seal_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := v.ctr.features },
   Spec.Ccm.openApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.open v.callee v.ctr.callee)
     stack := 2624
-    verified := open_framed v
+    verified := Proof.AesCcm.open_keyed (open_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
     features := v.ctr.features }]
 

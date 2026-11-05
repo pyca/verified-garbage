@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on x86 -/
 

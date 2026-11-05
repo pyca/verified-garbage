@@ -64,7 +64,7 @@ def accept : List Instr := [
   .mov .rax (.mem (field 7)), .mov .rcx (.mem { base := .rax }),
   .mov .rax (.mem (field 12)), .alu .add .rax (.reg .rcx), .store (field 12) .rax] ++ terminal 1
 
-/-- The host receives the exact next length, `parameterRequest`: twice the larger of
+/-- The host receives the exact next length, `VG.Proof.Ffdh.parameterRequest`: twice the larger of
 the octets left and 256 per octet of p, at most the entropy cap. It owns no
 entropy-limit policy. -/
 def request : List Instr := [

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Verified
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on PPC64LE -/
 

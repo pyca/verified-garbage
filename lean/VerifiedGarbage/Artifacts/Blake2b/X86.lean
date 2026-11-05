@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.X86.Blake2b
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # BLAKE2b (RFC 7693) on x86 -/
 

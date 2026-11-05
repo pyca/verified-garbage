@@ -37,6 +37,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
+public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock

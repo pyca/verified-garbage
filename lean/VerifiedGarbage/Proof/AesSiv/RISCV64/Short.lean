@@ -183,9 +183,9 @@ theorem shortTail_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr} {
     rfl
 
 /-- The CMAC of one block. -/
-theorem cmacWith_one (ciph : Spec.Cmac.Cipher) (k1 k2 T : List Byte) (hT : T.length = 16) :
-    Spec.Siv.cmacWith ciph k1 k2 T = ciph (Spec.Cmac.xor (Spec.Cmac.zeros 16) (Spec.Cmac.lastBlock 16 k1 k2 T)) := by
-  rw [Siv.cmacWith_chained, hT, show Spec.Cmac.chainedLen 16 16 = 0 from rfl, List.take_zero, List.drop_zero]
+theorem macWith_one (ciph : Spec.Cmac.Cipher) (k1 k2 T : List Byte) (hT : T.length = 16) :
+    Spec.Cmac.macWith ciph 16 k1 k2 T = ciph (Spec.Cmac.xor (Spec.Cmac.zeros 16) (Spec.Cmac.lastBlock 16 k1 k2 T)) := by
+  rw [Siv.macWith_chained, hT, show Spec.Cmac.chainedLen 16 16 = 0 from rfl, List.take_zero, List.drop_zero]
   rfl
 
 /-- `shortMac`: the CMAC of the tail, one complete block, into `W + out`. -/
@@ -246,7 +246,7 @@ theorem shortMac_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {out : Nat} (
     rw [m₁, Proof.Cmac.zero2_bytes]
   rw [h₂.out, m₆, Proof.CmacAes.RISCV64.mn, Proof.CmacAes.RISCV64.ciphAt, sch, cK (d := 240) (k := 16) (by decide),
     cK (d := 256) (k := 16) (by decide), tl, z, Spec.Siv.ctxMac, Spec.Siv.schedCiph,
-    cmacWith_one _ _ _ _ (Proof.Cmac.bytesAt_length _ _ _)]
+    macWith_one _ _ _ _ (Proof.Cmac.bytesAt_length _ _ _)]
   rfl
 
 /-- S2V's end for a string `P` shorter than a block, into `W + out`. -/

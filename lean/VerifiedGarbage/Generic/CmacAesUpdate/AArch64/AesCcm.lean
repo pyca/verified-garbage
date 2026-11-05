@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
 import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 import VerifiedGarbage.Proof.AesCcm.AArch64.Header
@@ -42,13 +43,13 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.seal v.callee v.ctr.callee)
     stack := 2592
-    verified := seal_framed v
+    verified := Proof.AesCcm.seal_keyed (seal_framed v)
     features := v.features },
   Spec.Ccm.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.open v.callee v.ctr.callee)
     stack := 2592
-    verified := open_framed v
+    verified := Proof.AesCcm.open_keyed (open_framed v)
     features := v.features }]
 
 end VG.Generic.CmacAesUpdate.AArch64.AesCcm

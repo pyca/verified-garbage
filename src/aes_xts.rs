@@ -1,23 +1,6 @@
-//! XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) with 256-, 384- and
-//! 512-bit keys (AES-128, AES-192 and AES-256), in place, with ciphertext
-//! stealing for a data unit that is not of whole blocks.
-//!
-//! The data unit is verified assembly: `vg_aes_expand_key` (contract
-//! `VG.Spec.Aes.expandKeyContract`) writes the key schedules of `Key1` and
-//! `Key2`, and `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`
-//! (`VG.Spec.Xts.aesEncryptUnitContract`, `aesDecryptUnitContract`) replace
-//! a whole data unit with its XTS-AES encryption or decryption (§5.3.2,
-//! §5.4.2), in constant time, ciphertext stealing for a partial last block
-//! included. This module checks the lengths, which the assembly requires.
-//!
-//! Their variants, with the same contracts, are chosen on CPUs with the
-//! features their `_FEATURES` constants name (and the key expansion's): on
-//! x86-64, `crate::aes::Backend` chooses `_vaes`, then `_aesni` (both with
-//! `vg_aes_expand_key_aesni`), and a CPU with the features of
-//! `vg_aes_xts_encrypt_unit_vaes_vpclmul` and
-//! `vg_aes_xts_decrypt_unit_vaes_vpclmul` too runs those instead of the
-//! `_vaes` ones, and one with those of the `_aesni_pclmul` ones those instead
-//! of the `_aesni` ones; on x86, `_aesni`; on AArch64, `_aes`.
+//! XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) with 256-, 384- and 512-bit
+//! keys (AES-128, AES-192 and AES-256), in place, with ciphertext stealing for
+//! a data unit that is not of whole blocks.
 
 #![cfg(any(
     target_arch = "x86_64",

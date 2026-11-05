@@ -1,13 +1,10 @@
-//! Elliptic curve Diffie-Hellman: the ECC CDH primitive of NIST SP 800-56A
-//! Rev. 3, §5.7.1.2.
+//! Elliptic-curve Diffie-Hellman: the ECC CDH primitive of NIST SP 800-56A Rev.
+//! 3 §5.7.1.2, over the curves of [`ec`](crate::ec).
 //!
-//! A [`PrivateKey<C>`] holds a private key on a curve `C` of
-//! [`ec`](crate::ec). Each exchange is one call of verified code
-//! (`vg_ecdh_<curve>`, contract `VG.Spec.Ecdh.Instance.exchangeContract`): it
-//! validates the peer's [`PublicKey<C>`] as SP 800-56A §5.6.2.3.3 requires
-//! (the uncompressed form of SEC 1 §2.3.3, both coordinates below `p`, on
-//! the curve), checks the private key, and returns the x-coordinate of `dQ`,
-//! in constant time.
+//! An exchange validates the peer's [`PublicKey<C>`] as SP 800-56A §5.6.2.3.3
+//! requires (the uncompressed form of SEC 1 §2.3.3, both coordinates below `p`,
+//! on the curve) and returns the x-coordinate of the shared point, which is not
+//! passed through a KDF.
 
 #![cfg(any(
     target_arch = "x86_64",

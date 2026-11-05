@@ -42,7 +42,7 @@ theorem Ctx.kp (hL : L.Ok) {t t' : State} (hc : Ctx L g lr m₀ t) {rs : List Re
   hc.regs hL k.rd k.wr hm k.sp (fun r hr => k.gpr r fun h => hrs r h hr) hsy
 
 /-- The arguments saved in the frame: `Ctx` holds. -/
-theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
+theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
     (h : (rfcPPC I 736 (tabFacts w f) ns).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs) (entered s)
       (Ctx (lay I.hashLen I.ecdsa.curve.len w f s) s.gpr s.lr s.mem) := by

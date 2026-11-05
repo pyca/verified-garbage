@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 After the call (`afterPub_ok`): the encoding of the hash value into `EM₂`
 (`encode_ok`) and the comparison with `EM₁` (`compare_ok`), which is RFC 8017
-§8.2.2's verification (`verify_eq_verifyRfc`). With the length check, the
+§8.2.2's verification (`verify`). With the length check, the
 frame's push, the call (`pub_call`) and the pop: `code_correct`.
 -/
 
@@ -138,8 +138,7 @@ theorem verifyId_eq (nB eB : List Byte) (x : BitVec 32) (H sig : List Byte) (hs 
   | none => simp only; split <;> simp_all
   | some h =>
     simp only
-    rw [verify_eq_verifyRfc]
-    unfold verifyRfc
+    unfold verify
     rw [ite_eq_left hs]
     cases Spec.Rsa.publicOpChecked nB eB sig <;> cases Spec.RsaPkcs1Sig.encode h H nB.length <;> rfl
 
@@ -389,7 +388,7 @@ theorem verifyId_len {nB eB H sig : List Byte} (x : Nat) (h : sig.length ≠ nB.
     verifyId nB eB x H sig = false := by
   unfold verifyId
   split
-  · unfold verify; rw [ite_eq_right_iff.mpr (fun h' => absurd h'.1 h)]
+  · unfold verify; rw [ite_eq_right_iff.mpr (fun h' => absurd h' h)]
   · rfl
 
 theorem code_correct (v : PubImpl) (s : State) (h : verContract.pre s) :

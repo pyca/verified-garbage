@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ML-DSA (FIPS 204) verification on 32-bit ARM -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # AES-CTR (NIST SP 800-38A §6.5) on x86 -/
 
@@ -16,7 +17,7 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesCtr.X86.crypt v.enc
     stack := 24
-    verified := crypt_verified v
+    verified := Proof.AesCtr.keyed (crypt_verified v)
     spSafe := crypt_spSafe v
     features := v.features }]
 

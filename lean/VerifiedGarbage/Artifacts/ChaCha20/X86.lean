@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Streaming ChaCha20 (RFC 8439) on x86 -/
 

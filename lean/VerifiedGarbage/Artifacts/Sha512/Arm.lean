@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MdStream.Arm.DigestInstances
+public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on ARMv7 -/
 

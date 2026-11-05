@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # ML-KEM-1024 on AArch64 -/
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
@@ -60,16 +61,16 @@ def sat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2176⟩]
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (encrypt v.enc) (Spec.Cbc.aesEncryptContract X86_64.abi 8) :=
+    Verified X86_64.target (encrypt v.enc) (Proof.AesCbc.encryptRoundsContract X86_64.abi 8) :=
   Verified.of_correct (encrypt_correct v) (whole_ct (encBody_ok v) (encBody_ct v)) (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcX86_64, modeX86_64, cbcMode,
+    sig_implies [Proof.AesCbc.encryptRoundsContract, Spec.Cbc.aesSig, cbcX86_64, modeX86_64, cbcMode,
       ciphOf, cbc, cts, X86_64.abi,
       X86_64.argRegs] [sat] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (decrypt v.dec) (Spec.Cbc.aesDecryptContract X86_64.abi 8) :=
+    Verified X86_64.target (decrypt v.dec) (Proof.AesCbc.decryptRoundsContract X86_64.abi 8) :=
   Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcX86_64, modeX86_64, cbcMode,
+    sig_implies [Proof.AesCbc.decryptRoundsContract, Spec.Cbc.aesSig, cbcX86_64, modeX86_64, cbcMode,
       ciphOf, cbc, cts, X86_64.abi,
       X86_64.argRegs] [sat] using sat)
 

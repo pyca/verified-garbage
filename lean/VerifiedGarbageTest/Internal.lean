@@ -65,13 +65,13 @@ def internal : List String := ["vg_rc2_cbc_decrypt", "vg_rc2_cbc_encrypt", "vg_r
 
 /-- The lines of `vg_rc2_encrypt_block`'s function, from its code. -/
 def blockLines : List Line :=
-  Rust.bodyLines AArch64.target (AArch64.printer.function Impl.Rc2.AArch64.encryptBlock)
+  Rust.bodyLines (.of AArch64.target) (AArch64.printer.function Impl.Rc2.AArch64.encryptBlock)
 
 -- The internal function's code is the block function's, and so is its text.
 #guard has (file "src/internal/vg_rc2_encrypt_block.rs")
-  (Rust.asmOf AArch64.target blockLines (fun _ => "") "crate")
+  (Rust.asmOf (.of AArch64.target) blockLines (fun _ => "") "crate")
 #guard has (file "assembly/internal/vg_rc2_encrypt_block.s")
-  (Rust.moduleAssembly.functionAssembly AArch64.target "vg_rc2_encrypt_block" blockLines)
+  (Rust.moduleAssembly.functionAssembly (.of AArch64.target) "vg_rc2_encrypt_block" blockLines)
 
 -- An internal function's name is a Rust function's.
 #guard Rust.internalName "vg_rc2_encrypt_block" && Rust.internalName "vg_x25519_2"
