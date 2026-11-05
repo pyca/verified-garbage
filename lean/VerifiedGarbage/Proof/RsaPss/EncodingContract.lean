@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 
 /-!

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash

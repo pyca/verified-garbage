@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.Framework.Sig
