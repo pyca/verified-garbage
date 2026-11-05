@@ -67,8 +67,8 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::cpu::detected;
+pub use crate::rsa::pkcs1_sig::Hash;
 use crate::rsa::{PrivateKey, PublicKey};
-pub use crate::rsa_pkcs1_sig::Hash;
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused.

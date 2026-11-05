@@ -9,7 +9,7 @@
 
 use crate::arch::rsa_oaep::{vg_rsa_oaep_decrypt, vg_rsa_oaep_encrypt_precomputed};
 
-crate::rsa_oaep::table::oaep_functions! {
+crate::rsa::oaep::table::oaep_functions! {
     encrypt: {
         Baseline => vg_rsa_oaep_encrypt_precomputed [],
     },
