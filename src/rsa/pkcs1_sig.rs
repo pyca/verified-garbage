@@ -104,8 +104,8 @@ pub enum Error {
     /// `DigestInfo` of the hash value.
     ModulusTooShort,
     /// The signature failed the private-key operation's check against the
-    /// public exponent (see [`crate::rsa::Error::Fault`]) and is not
-    /// released.
+    /// public exponent (a factor of the key is not prime, or the computation
+    /// was faulted) and is not released.
     Fault,
     /// The signature is not a valid signature of a hash value of the hash
     /// function with the key.

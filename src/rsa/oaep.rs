@@ -62,7 +62,8 @@ pub enum Error {
     /// valid encoded message for the label: which is not told.
     Decryption,
     /// The private-key operation's result failed its check against the
-    /// public exponent (see [`rsa::Error::Fault`](crate::rsa::Error::Fault)).
+    /// public exponent (a factor of the key is not prime, or the computation
+    /// was faulted) and is not released.
     Fault,
     /// The operating system's random number generator failed.
     Randomness,

@@ -1,8 +1,6 @@
-//! The RSA private-key operation (RSADP with the CRT, checked against the
-//! public exponent), without padding, the loading of a private key from
-//! `(n, e, d, p, q, dP, dQ, qInv)`, from `(n, e, d, p, q)` and from
-//! `(n, e, d)`, and the check of a private key (the public-key operation is
-//! `rsa_public`).
+//! The loading of an RSA private key from `(n, e, d, p, q, dP, dQ, qInv)`,
+//! from `(n, e, d, p, q)` and from `(n, e, d)`, each checked as BoringSSL's
+//! `RSA_check_key` checks a key.
 
 use criterion::Criterion;
 
@@ -17,66 +15,6 @@ pub const USES: &[&str] = &["rsa"];
     target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
-    use std::hint::black_box;
-
-    use criterion::BenchmarkId;
-    use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::PrivateKey;
-
-    use crate::{BenchDyn, OPENSSL, VG};
-    let mut g = c.benchmark_group("rsa_private");
-    // The same sizes, each library holding the private key in the CRT form
-    // `(p, q, dP, dQ, qInv)` (OpenSSL with its default blinding). Both check
-    // the result against `e` (OpenSSL's `rsa_ossl_mod_exp` verifies it too).
-    for bits in [2048, 3072, 4096] {
-        let key = Rsa::generate(bits).unwrap();
-        let n = key.n().to_vec();
-        let k = n.len();
-        let vg_key = PrivateKey::from_crt(
-            &n,
-            &key.e().to_vec(),
-            &key.d().to_vec(),
-            &key.p().unwrap().to_vec(),
-            &key.q().unwrap().to_vec(),
-            &key.dmp1().unwrap().to_vec(),
-            &key.dmq1().unwrap().to_vec(),
-            &key.iqmp().unwrap().to_vec(),
-        )
-        .unwrap();
-        let mut input = vec![0x42; k];
-        input[0] = 0;
-        let mut out = vec![0; k];
-        g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| {
-                black_box(&vg_key)
-                    .private_op(black_box(&input), &mut out)
-                    .unwrap()
-            })
-        });
-        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
-            b.iter(|| {
-                black_box(&key)
-                    .private_decrypt(black_box(&input), &mut out, Padding::NONE)
-                    .unwrap()
-            })
-        });
-    }
-    g.finish();
-
-    keys(c);
-}
-
-/// The loading of a private key from `(n, e, d, p, q, dP, dQ, qInv)`, from
-/// `(n, e, d, p, q)` and from `(n, e, d)`, and the check of a private key.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
-fn keys(c: &mut Criterion) {
     use std::hint::black_box;
 
     use aws_lc_rs::rsa::KeyPairComponents;
@@ -178,7 +116,8 @@ fn keys(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_from_crt");
     // The same sizes: the loading of a key from all its values,
     // `(n, e, d, p, q, dP, dQ, qInv)`, as from a PKCS #1 `RSAPrivateKey`.
-    // aws-lc-rs checks the key as it loads it; OpenSSL's
+    // verified-garbage and aws-lc-rs check the key as they load it (with the
+    // checks of BoringSSL's `RSA_check_key`); OpenSSL's
     // `Rsa::from_private_components` checks nothing.
     for bits in [2048, 3072, 4096] {
         let key = Rsa::generate(bits).unwrap();
@@ -289,33 +228,6 @@ fn keys(c: &mut Criterion) {
     }
     g.finish();
 
-    let mut g = c.benchmark_group("rsa_check_key");
-    // The same sizes: each library's `RSA_check_key` of a key it holds.
-    // OpenSSL's also tests `p` and `q` for primality, which BoringSSL's (and
-    // `check_key`) does not.
-    for bits in [2048, 3072, 4096] {
-        let key = Rsa::generate(bits).unwrap();
-        let n = key.n().to_vec();
-        let k = n.len();
-        let vg_key = PrivateKey::from_crt(
-            &n,
-            &key.e().to_vec(),
-            &key.d().to_vec(),
-            &key.p().unwrap().to_vec(),
-            &key.q().unwrap().to_vec(),
-            &key.dmp1().unwrap().to_vec(),
-            &key.dmq1().unwrap().to_vec(),
-            &key.iqmp().unwrap().to_vec(),
-        )
-        .unwrap();
-        g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| assert!(black_box(&vg_key).check_key()))
-        });
-        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
-            b.iter(|| assert!(black_box(&key).check_key().unwrap()))
-        });
-    }
-    g.finish();
 }
 
 #[cfg(not(any(

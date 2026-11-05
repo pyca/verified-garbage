@@ -68,10 +68,9 @@ pub enum Error {
     InvalidLength,
     /// The ciphertext, as a number, is not less than the modulus.
     InputOutOfRange,
-    /// The private exponent `d` is zero or longer than the modulus.
-    InvalidPrivateKey,
     /// The private-key operation's result failed its check against the
-    /// public exponent (see [`rsa::Error::Fault`](crate::rsa::Error::Fault)).
+    /// public exponent (a factor of the key is not prime, or the computation
+    /// was faulted) and is not released.
     Fault,
     /// The operating system's random number generator failed.
     Randomness,
@@ -83,7 +82,6 @@ impl fmt::Display for Error {
             Error::MessageTooLong => "RSA PKCS #1 v1.5 message too long for the modulus",
             Error::InvalidLength => "RSA ciphertext length is not the modulus length",
             Error::InputOutOfRange => "RSA ciphertext is not less than the modulus",
-            Error::InvalidPrivateKey => "invalid RSA private exponent",
             Error::Fault => {
                 "RSA private-key operation failed its check against the public exponent"
             }
@@ -313,9 +311,8 @@ fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
 /// otherwise one derived from `d` and the ciphertext, of at most
 /// [`modulus_len`](PrivateKey::modulus_len)` - 11` bytes. **An invalid
 /// padding is never an error** (see the [module](self) documentation): the
-/// errors are a ciphertext of the wrong length or not below the modulus, a
-/// private exponent of no valid length, and a fault of the private-key
-/// operation. The timing may depend on the public key and the lengths of
+/// errors are a ciphertext of the wrong length or not below the modulus,
+/// and a fault of the private-key operation. The timing may depend on the public key and the lengths of
 /// the primes, not on the ciphertext, the private key, the validity of the
 /// padding or the message (but for the length of the message returned).
 ///
@@ -325,10 +322,8 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
     if ciphertext.len() != k {
         return Err(Error::InvalidLength);
     }
+    // Loading the key checked that `0 < d < n` (`RSA_check_key`).
     let d = trim(&key.d);
-    if d.is_empty() || d.len() > k {
-        return Err(Error::InvalidPrivateKey);
-    }
     let f = decrypt_fn(
         Sha256Backend::select(detected()),
         Backend::select(detected()),
@@ -338,8 +333,8 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
     let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
     // SAFETY: each pointer is valid for its length (`out`, `len` and
     // `scratch` for writes), and none overlaps another or wraps around, as
-    // they are distinct Rust allocations; `PrivateKey::from_crt` and the
-    // checks above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
+    // they are distinct Rust allocations; loading the key and the check
+    // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
     // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
@@ -519,7 +514,6 @@ mod tests {
             Error::MessageTooLong,
             Error::InvalidLength,
             Error::InputOutOfRange,
-            Error::InvalidPrivateKey,
             Error::Fault,
             Error::Randomness,
         ] {
