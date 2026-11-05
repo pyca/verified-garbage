@@ -1,5 +1,7 @@
 //! ECDSA over P-256 with SHA-256 (`EcdsaP1363Verify` vectors of
-//! `ecdsa_secp256r1_sha256_p1363_test.json`, signatures as `r ‖ s`).
+//! `ecdsa_secp256r1_sha256_p1363_test.json`, signatures as `r ‖ s`), and, on
+//! x86-64, where it signs with every hash function with a table, with SHA-512
+//! (`ecdsa_secp256r1_sha512_p1363_test.json`).
 //!
 //! A valid vector must verify, an invalid one must be refused (or, if its
 //! signature is not 64 bytes, cannot be passed).
@@ -13,8 +15,10 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P256, VerifyingKey};
+use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
+#[cfg(target_arch = "x86_64")]
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{EcdsaGroup, SigCase};
@@ -23,11 +27,23 @@ use crate::require_vectors;
 #[test]
 fn ecdsa_secp256r1_sha256_p1363_test() {
     require_vectors!();
-    let file = harness::load::<EcdsaGroup, SigCase>("ecdsa_secp256r1_sha256_p1363_test.json");
+    check::<Sha256>("ecdsa_secp256r1_sha256_p1363_test.json", "SHA-256");
+}
+
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn ecdsa_secp256r1_sha512_p1363_test() {
+    require_vectors!();
+    check::<Sha512>("ecdsa_secp256r1_sha512_p1363_test.json", "SHA-512");
+}
+
+/// The vectors of `file`, with the hash function `H`, named `sha` there.
+fn check<H: SignatureHash<P256>>(file: &str, sha: &str) {
+    let file = harness::load::<EcdsaGroup, SigCase>(file);
     let (verified, refused) = (Count::default(), Count::default());
     file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "secp256r1");
-        assert_eq!(group.params.sha, "SHA-256");
+        assert_eq!(group.params.sha, sha);
         let q: [u8; 65] = group.params.public_key.uncompressed.0[..]
             .try_into()
             .unwrap();
@@ -36,7 +52,7 @@ fn ecdsa_secp256r1_sha256_p1363_test() {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             return;
         };
-        let result = key.verify::<Sha256>(&test.case.msg.0, &sig);
+        let result = key.verify::<H>(&test.case.msg.0, &sig);
         match test.result {
             Expectation::Valid => {
                 assert_eq!(result, Ok(()), "tcId {}", test.tc_id);

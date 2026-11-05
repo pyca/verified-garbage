@@ -1,4 +1,5 @@
 module
+-- separate module: its proofs (the buffers X and h, about 3 s) build in parallel with `Steps`, which `Cand` also imports
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Wide
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
