@@ -34,6 +34,8 @@ including backends with hardware AES but software hashing and vice versa.
 `scalar_avx2`, `aesni_avx2`, and `pclmul_avx2` exercise AVX2 copies
 independently of VAES/VPCLMULQDQ. `aesni_pclmul_avx` also allows AVX2:
 on updated VG it selects the AVX2-copy AES-NI/PCLMUL implementation.
+When both AAD and text are shorter than 128 bytes, VG uses the ordinary
+instance: neither copy loop would use AVX2 at those lengths.
 For example:
 
 ```sh

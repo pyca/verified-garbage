@@ -64,6 +64,16 @@ enum SivBackend {
 }
 
 impl SivBackend {
+    /// Below eight whole blocks neither copy loop uses AVX2. Keep those
+    /// messages on the ordinary instance instead of its extra loop checks.
+    #[cfg(target_arch = "x86_64")]
+    fn for_lengths(self, aad_len: usize, len: usize) -> Self {
+        match self {
+            Self::Avx2(b) if aad_len < 128 && len < 128 => Self::Gcm(b),
+            _ => self,
+        }
+    }
+
     fn gcm(self) -> Backend {
         match self {
             Self::Gcm(b) => b,
@@ -196,7 +206,10 @@ impl AesGcmSiv {
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
         check(aad.len() as u64, data.len() as u64)?;
-        let seal = match self.backend {
+        let backend = self.backend;
+        #[cfg(target_arch = "x86_64")]
+        let backend = backend.for_lengths(aad.len(), data.len());
+        let seal = match backend {
             SivBackend::Gcm(b) => instance!(b, vg_aes_gcm_siv_seal,
             x86_64: [vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vpclmul, vg_aes_gcm_siv_seal_vaes_pclmul,
@@ -250,7 +263,10 @@ impl AesGcmSiv {
         tag: &[u8; 16],
     ) -> Result<(), Error> {
         check(aad.len() as u64, data.len() as u64)?;
-        let open = match self.backend {
+        let backend = self.backend;
+        #[cfg(target_arch = "x86_64")]
+        let backend = backend.for_lengths(aad.len(), data.len());
+        let open = match backend {
             SivBackend::Gcm(b) => instance!(b, vg_aes_gcm_siv_open,
             x86_64: [vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_open_vaes_pclmul,
@@ -388,6 +404,16 @@ mod tests {
             assert!(need.contains(open));
             assert_eq!(select(need).gcm(), super::select_gcm(need));
             assert!(matches!(select(need), SivBackend::Avx2(_)));
+            for aad_len in [0, 127, 128, 129] {
+                for len in [0, 127, 128, 129] {
+                    let chosen = select(need).for_lengths(aad_len, len);
+                    if aad_len < 128 && len < 128 {
+                        assert_eq!(chosen, SivBackend::Gcm(super::select_gcm(need)));
+                    } else {
+                        assert_eq!(chosen, select(need));
+                    }
+                }
+            }
             let key = match b {
                 Backend::Scalar | Backend::Pclmul | Backend::Vpclmul => Features(0),
                 _ => crate::arch::aes::VG_AES_EXPAND_KEY_AESNI_FEATURES,
