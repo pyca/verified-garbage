@@ -62,8 +62,9 @@ theorem checks_vs {R : CurveT} {tries : Nat} (h : Checks (cfgT R tries [])) (vs 
     h.cnt, h.ti, h.ka, h.cl, h.ts, h.ca, h.go, h.ag, h.st, h.fin⟩
 
 /-- What the registrations check of the hash functions whose tables the
-function takes. -/
-def OK (vs : List HVar) : Prop := Coh vs ∧ vs ≠ []
+function takes: the functions of the same name have the same code, there
+are fewer than `2 ^ 32` names, and there is one. -/
+def OK (vs : List HVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ []
 
 instance (vs : List HVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
