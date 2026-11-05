@@ -124,69 +124,105 @@ section
 variable {s₀ : State} (hp : Pre P s₀)
 include hp
 
-/-- One `V` of the candidate. -/
-theorem candStep_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (hj : j < P.nV)
-    (hI : CI P s₀ K V₀ c j u) :
-    WP isa P.c.candStep u fun w => CI P s₀ K V₀ c (j + 1) w ∧
-      isa.eval (.nonzero .t6) w = some (decide (j + 1 < P.nV)) := by
+/-- After `V = HMAC_K(V)` in the candidate's step `j`. -/
+structure CA (P : Rfc) (s₀ : State) (K V₀ : List Byte) (c : BitVec 64) (j : Nat) (u : State) : Prop where
+  kvh : KVH P s₀ K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).2 u
+  s9 : u.gpr .s9 = BitVec.ofNat 64 (j * P.H.D)
+  T : bytesAt u.mem (sA s₀ fT) (j * P.H.D) = (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).1
+  s5 : u.gpr .s5 = c
+  sy : u.syms = s₀.syms
+
+/-- After the arguments of `V`'s copy. -/
+structure CB (P : Rfc) (s₀ : State) (K V₀ : List Byte) (c : BitVec 64) (j : Nat) (u : State) : Prop where
+  ca : CA P s₀ K V₀ c j u
+  a4 : u.gpr .a4 = sA s₀ fV
+  a5 : u.gpr .a5 = sA s₀ (fT + j * P.H.D)
+  a6 : u.gpr .a6 = BitVec.ofNat 64 P.H.D
+
+/-- After `V`'s copy to the end of `T`. -/
+structure CC (P : Rfc) (s₀ : State) (K V₀ : List Byte) (c : BitVec 64) (j : Nat) (u : State) : Prop where
+  kvh : KVH P s₀ K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).2 u
+  s9 : u.gpr .s9 = BitVec.ofNat 64 (j * P.H.D)
+  T : bytesAt u.mem (sA s₀ fT) ((j + 1) * P.H.D) = (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).1
+  s5 : u.gpr .s5 = c
+  sy : u.syms = s₀.syms
+
+omit hp in
+theorem jD_le (P : Rfc) {j : Nat} (hj : j < P.nV) : j * P.H.D + P.H.D ≤ 136 := by
+  have hz := sizes P
+  have := hz.Q
+  obtain ⟨hD0, hD⟩ := hz.D
+  obtain ⟨hN1, hND, -⟩ := nV_facts P
+  have : j + 1 ≤ P.nV := hj
+  have := Nat.mul_le_mul_right P.H.D this
+  rw [Nat.succ_mul] at this
+  omega
+
+theorem cs1_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (hj : j < P.nV)
+    (hI : CI P s₀ K V₀ c j u) : WP isa P.c.hmacV u (CA P s₀ K V₀ c j) := by
+  have hz := sizes P
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hfr : frB = 512 := rfl
+  have hjD' := jD_le P hj
+  have e₂ : (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).2 =
+      Spec.Hmac.hmac P.hH.SH.H K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).2 := by rw [genT_succ]
+  refine VG.RISCV64.WP.mono_syms (hmacV_ok hp hI.kvh hI.sy) fun u₁ ⟨k₁, pr₁, f₁⟩ y₁ => ?_
+  rw [← e₂] at k₁
+  refine ⟨k₁, by rw [pr₁ _ (by decide), hI.s9], ?_, by rw [pr₁ _ (by decide), hI.s5], y₁.trans hI.sy⟩
+  rw [← hI.T]
+  exact fbytes f₁ (hd_apart hp (by simp only [fT]; omega) (.inr (by simp only [fV, fT]; omega))
+    (by simp only [fV]; omega)) (by omega)
+
+omit hp in
+theorem cs2_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (hj : j < P.nV)
+    (hI : CA P s₀ K V₀ c j u) : WP isa (.block Cfg.keepArgs) u (CB P s₀ K V₀ c j) := by
+  have hjD' := jD_le P hj
+  unfold Cfg.keepArgs
+  refine VG.RISCV64.WP.of_syms (wp_addi (by simp only [fV]; omega) fun u₂ v₂ => wp_addi (by simp only [fT]; omega)
+    fun u₃ v₃ => wp_add fun u₄ v₄ => wp_mv fun u₅ v₅ => WP.block_nil fun sy => ?_)
+  have k₁ := hI.kvh
+  have m₅ : u₅.mem = u.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem]
+  refine ⟨⟨⟨(((k₁.kr.upd (by decide) v₂).upd (by decide) v₃).upd (by decide) v₄).upd (by decide) v₅,
+    by rw [m₅]; exact k₁.k, by rw [m₅]; exact k₁.v, by rw [m₅]; exact k₁.h, by rw [m₅]; exact k₁.x⟩, ?_,
+    by rw [m₅]; exact hI.T, ?_, sy.trans hI.sy⟩, ?_, ?_, ?_⟩
+  · rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), hI.s9]
+  · rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), hI.s5]
+  · rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.gpr, k₁.kr.s1]
+  · rw [v₅.other _ (by decide), v₄.gpr, v₃.gpr, v₃.other .s9 (by decide), v₂.other .s1 (by decide),
+      v₂.other .s9 (by decide), k₁.kr.s1, hI.s9, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  · rw [v₅.gpr, v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), k₁.kr.s7]
+
+theorem cs3_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u₅ : State} (hj : j < P.nV)
+    (hI : CB P s₀ K V₀ c j u₅) :
+    WP isa (Impl.Words.RISCV64.copyLoop .t1 .a4 .a5 .a6) u₅ (CC P s₀ K V₀ c j) := by
   have hz := sizes P
   obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
   obtain ⟨hD0, hD⟩ := hz.D
   have hfr : frB = 512 := rfl
-  obtain ⟨hN1, hND, -⟩ := nV_facts P
-  have hjD : (j + 1) * P.H.D ≤ 136 := by
-    have : j + 1 ≤ P.nV := hj
-    have := Nat.mul_le_mul_right P.H.D this
-    omega
-  have hjD' : j * P.H.D + P.H.D ≤ 136 := by rw [Nat.succ_mul] at hjD; exact hjD
-  have e₂ : (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).2 =
-      Spec.Hmac.hmac P.hH.SH.H K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).2 := by rw [genT_succ]
+  have hjD' := jD_le P hj
   have e₁ : (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).1 = (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).1 ++
       Spec.Hmac.hmac P.hH.SH.H K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).2 := by rw [genT_succ]
-  unfold Cfg.candStep
-  refine VG.RISCV64.WP.of_syms ?_
-  refine WP.seq (VG.RISCV64.WP.mono_syms (hmacV_ok hp hI.kvh hI.sy) fun u₁ ⟨k₁, pr₁, f₁⟩ y₁ => ?_)
-  rw [← e₂] at k₁
-  have s9₁ : u₁.gpr .s9 = BitVec.ofNat 64 (j * P.H.D) := by rw [pr₁ _ (by decide), hI.s9]
-  have s5₁ : u₁.gpr .s5 = c := by rw [pr₁ _ (by decide), hI.s5]
-  have T₁ : bytesAt u₁.mem (sA s₀ fT) (j * P.H.D) = (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).1 := by
-    rw [← hI.T]
-    exact fbytes f₁ (hd_apart hp (by simp only [fT]; omega) (.inr (by simp only [fV, fT]; omega))
-      (by simp only [fV]; omega)) (by omega)
-  -- `V` to `T + |T|`
-  refine WP.seq (wp_addi (by simp only [fV]; omega) fun u₂ v₂ => wp_addi (by simp only [fT]; omega)
-    fun u₃ v₃ => wp_add fun u₄ v₄ => wp_mv fun u₅ v₅ => WP.block_nil ?_)
-  have k₅ : KR P s₀ u₅ := (((k₁.kr.upd (by decide) v₂).upd (by decide) v₃).upd (by decide) v₄).upd (by decide) v₅
-  have m₅ : u₅.mem = u₁.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem]
-  have a4 : u₅.gpr .a4 = sA s₀ fV := by
-    rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.gpr, k₁.kr.s1]
-  have a5 : u₅.gpr .a5 = sA s₀ (fT + j * P.H.D) := by
-    rw [v₅.other _ (by decide), v₄.gpr, v₃.gpr, v₃.other .s9 (by decide), v₂.other .s1 (by decide),
-      v₂.other .s9 (by decide), k₁.kr.s1, s9₁, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have a6 : u₅.gpr .a6 = BitVec.ofNat 64 P.H.D := by
-    rw [v₅.gpr, v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), k₁.kr.s7]
-  have s9₅ : u₅.gpr .s9 = BitVec.ofNat 64 (j * P.H.D) := by
-    rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), s9₁]
-  have s5₅ : u₅.gpr .s5 = c := by
-    rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), s5₁]
+  have e₂ : (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K (j + 1) V₀).2 =
+      Spec.Hmac.hmac P.hH.SH.H K (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K j V₀).2 := by rw [genT_succ]
+  have k₅ := hI.ca.kvh.kr
   have rd₅ := k₅.rd
   have wr₅ := k₅.wr
-  refine WP.seq (WP.mono (WP.rdwr (copyLoop_adv (tmp := .t1) (src := .a4) (dst := .a5) (cnt := .a6) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) u₅ hD0 (by omega) a6
+  refine VG.RISCV64.WP.of_syms (WP.mono (WP.rdwr (copyLoop_adv (tmp := .t1) (src := .a4) (dst := .a5)
+    (cnt := .a6) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) u₅ hD0 (by omega) hI.a6
     (fun i hi => by
-      rw [a4, add_ofNat_add']
+      rw [hI.a4, add_ofNat_add']
       exact in_fr' hp wr₅ (o := fV + i) (n := 1) (by simp only [fV]; omega))
     (fun i hi => by
-      rw [a5, add_ofNat_add']
+      rw [hI.a5, add_ofNat_add']
       exact in_fr hp wr₅ (o := fT + j * P.H.D + i) (n := 1) (by simp only [fT]; omega))
     (fun x hx hx' => by
-      rw [a5] at hx
-      rw [a4] at hx'
+      rw [hI.a5] at hx
+      rw [hI.a4] at hx'
       exact part_disj (s₀ := s₀) (a := fT + j * P.H.D) (m := P.H.D) (b := fV) (n := P.H.D)
         (.inr (by simp only [fV, fT]; omega)) (by simp only [fT]; omega) (by simp only [fV]; omega) x hx hx')))
-    fun w ⟨⟨hc, hf, hk, _⟩, hrd, hwr, hsp⟩ => ?_)
-  rw [a5] at hc hf
-  rw [a4] at hc
+    fun w ⟨⟨hc, hf, hk, _⟩, hrd, hwr, hsp⟩ sy => ?_)
+  rw [hI.a5] at hc hf
+  rw [hI.a4] at hc
   have kw : KR P s₀ w := k₅.keep hrd hwr hsp (fun r hr => hk.gpr (by revert r; decide)) hf
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -198,33 +234,49 @@ theorem candStep_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (
       ∀ r ∈ [sR s₀ (fT + j * P.H.D) P.H.D], Region.Disjoint (sR s₀ o n) r := fun ho ho' r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact part_disj ho (by omega) (by simp only [fT]; omega)
-  refine wp_add fun x₁ q₁ => wp_li (imm := P.c.Q) (by omega) fun x₂ q₂ => wp_sltu fun x₃ q₃ => WP.block_nil fun syx => ?_
-  have kx : KR P s₀ x₃ := ((kw.upd (by decide) q₁).upd (by decide) q₂).upd (by decide) q₃
-  have mx : x₃.mem = w.mem := by rw [q₃.mem, q₂.mem, q₁.mem]
-  have s9x : x₃.gpr .s9 = BitVec.ofNat 64 ((j + 1) * P.H.D) := by
-    rw [q₃.other _ (by decide), q₂.other _ (by decide), q₁.gpr, hk.gpr (by decide), s9₅, kw.s7,
-      BitVec.ofNat_add_ofNat, Nat.succ_mul]
-  refine ⟨⟨⟨kx, ?_, ?_, ?_, ?_⟩, s9x, ?_, ?_, ?_⟩, ?_⟩
-  · rw [mx, ← k₁.k, ← m₅]
+  have k₁ := hI.ca.kvh
+  refine ⟨⟨kw, ?_, ?_, ?_, ?_⟩, by rw [hk.gpr (by decide)]; exact hI.ca.s9, ?_,
+    by rw [hk.gpr (by decide)]; exact hI.ca.s5, sy.trans hI.ca.sy⟩
+  · rw [← k₁.k]
     exact fbytes hf (ap (.inl (by simp only [fK, fT]; omega)) (by simp only [fK]; omega)) (by omega)
-  · rw [mx, ← k₁.v, ← m₅]
+  · rw [← k₁.v]
     exact fbytes hf (ap (.inl (by simp only [fV, fT]; omega)) (by simp only [fV]; omega)) (by omega)
-  · rw [mx, ← k₁.h, ← m₅]
+  · rw [← k₁.h]
     have := fHo_in P
     exact fbytes hf (ap (.inl (by simp only [fT] at this ⊢; omega)) (by simp only [fT] at this; omega)) (by omega)
-  · rw [mx, ← k₁.x, ← m₅]
+  · rw [← k₁.x]
     exact fbytes hf (ap (.inl (by simp only [fX, fT]; omega)) (by simp only [fX]; omega)) (by omega)
-  · rw [mx, Nat.succ_mul, VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add', e₁,
-      fbytes hf (ap (.inl (Nat.le_refl _)) (by simp only [fT]; omega)) (by omega), m₅, T₁]
+  · rw [Nat.succ_mul, VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add', e₁,
+      fbytes hf (ap (.inl (Nat.le_refl _)) (by simp only [fT]; omega)) (by omega), hI.ca.T]
     congr 1
     rw [← e₂, ← k₁.v]
     apply List.ext_getElem (by simp [bytesAt])
     intro i h₁ h₂
     simp only [bytesAt, List.getElem_map, List.getElem_range, List.length_map, List.length_range] at h₁ ⊢
-    rw [add_ofNat_add', ← add_ofNat_add', hc i h₁, m₅]
-  · rw [q₃.other _ (by decide), q₂.other _ (by decide), q₁.other _ (by decide), hk.gpr (by decide), s5₅]
-  · exact syx.trans hI.sy
-  · rw [VG.RISCV64.Steps.eval_nonzero, q₃.gpr, q₂.gpr, q₂.other _ (by decide), q₁.gpr, hk.gpr (by decide), s9₅,
+    rw [hc i h₁]
+
+omit hp in
+theorem cs4_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {w : State} (hj : j < P.nV)
+    (hI : CC P s₀ K V₀ c j w) :
+    WP isa (.block P.c.tStep) w fun x => CI P s₀ K V₀ c (j + 1) x ∧
+      isa.eval (.nonzero .t6) x = some (decide (j + 1 < P.nV)) := by
+  have hz := sizes P
+  obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
+  obtain ⟨hD0, hD⟩ := hz.D
+  have hjD' := jD_le P hj
+  have kw := hI.kvh.kr
+  unfold Cfg.tStep
+  refine VG.RISCV64.WP.of_syms (wp_add fun x₁ q₁ => wp_li (imm := P.c.Q) (by omega) fun x₂ q₂ =>
+    wp_sltu fun x₃ q₃ => WP.block_nil fun syx => ?_)
+  have kx : KR P s₀ x₃ := ((kw.upd (by decide) q₁).upd (by decide) q₂).upd (by decide) q₃
+  have mx : x₃.mem = w.mem := by rw [q₃.mem, q₂.mem, q₁.mem]
+  have s9x : x₃.gpr .s9 = BitVec.ofNat 64 ((j + 1) * P.H.D) := by
+    rw [q₃.other _ (by decide), q₂.other _ (by decide), q₁.gpr, hI.s9, kw.s7,
+      BitVec.ofNat_add_ofNat, Nat.succ_mul]
+  refine ⟨⟨⟨kx, by rw [mx]; exact hI.kvh.k, by rw [mx]; exact hI.kvh.v, by rw [mx]; exact hI.kvh.h,
+    by rw [mx]; exact hI.kvh.x⟩, s9x, by rw [mx]; exact hI.T, ?_, syx.trans hI.sy⟩, ?_⟩
+  · rw [q₃.other _ (by decide), q₂.other _ (by decide), q₁.other _ (by decide), hI.s5]
+  · rw [VG.RISCV64.Steps.eval_nonzero, q₃.gpr, q₂.gpr, q₂.other _ (by decide), q₁.gpr, hI.s9,
       kw.s7, BitVec.ofNat_add_ofNat, hcQ]
     have hlt : (BitVec.ofNat 64 (j * P.H.D + P.H.D) < BitVec.ofNat 64 P.Q) = (j * P.H.D + P.H.D < P.Q) := by
       rw [BitVec.lt_def, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
@@ -234,6 +286,15 @@ theorem candStep_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (
     by_cases h' : j * P.H.D + P.H.D < P.Q
     · rw [ite_eq_left (by rw [hlt]; exact h'), decide_eq_true (hn.mpr h')]; rfl
     · rw [ite_eq_right (by rw [hlt]; exact h'), decide_eq_false (fun h'' => h' (hn.mp h''))]; rfl
+
+/-- One `V` of the candidate. -/
+theorem candStep_ok {K V₀ : List Byte} {c : BitVec 64} {j : Nat} {u : State} (hj : j < P.nV)
+    (hI : CI P s₀ K V₀ c j u) :
+    WP isa P.c.candStep u fun w => CI P s₀ K V₀ c (j + 1) w ∧
+      isa.eval (.nonzero .t6) w = some (decide (j + 1 < P.nV)) := by
+  unfold Cfg.candStep
+  exact WP.seq (WP.mono (cs1_ok hp hj hI) fun _ h₁ => WP.seq (WP.mono (cs2_ok hj h₁) fun _ h₂ =>
+    WP.seq (WP.mono (cs3_ok hp hj h₂) fun _ h₃ => cs4_ok hj h₃)))
 
 end
 
