@@ -30,8 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # The AES key expansion on x86-64
 
-`subAll` (`toBs`, the S-box, `fromBs`) applies the S-box to every byte of
-the eight words (`subAll_wp`, from the bitsliced layers' lemmas); each
+`subAll` transposes the words into bit planes, applies the S-box, and
+transposes back, without the round function's byte interleaving. It applies
+the S-box to every byte of the eight words (`subAll_wp`); each
 word of the schedule is then a few scalar instructions around it
 (`word_ok`), and the loop over the words keeps the schedule's bytes so far
 equal to the specification's (`WInv`).
@@ -46,14 +47,25 @@ open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
 
 /-! ## The S-box on every byte -/
 
-/-- The four states that the words hold, as `InRel` relates them. -/
-def stOf (Q : Nat → BitVec 64) (b : Nat) : Spec.Aes.State :=
-  Vector.ofFn fun i => (Q (b + 4 * (i.1 / 8))).extractLsb' (8 * (i.1 % 8)) 8
+/-- The direct transpose exchanges a word index with the bit within a byte. -/
+def subOrthoG (j p : Nat) : List Nat := [64 * (p % 8) + (8 * (p / 8) + j)]
 
-theorem inRel_stOf (Q : Nat → BitVec 64) : InRel Q (stOf Q) := by
-  intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
-  simp [hj]
+theorem subOrtho_check :
+    check (lanes 64 9) linCfg (linExt 0) subOrtho (linEnv qIns)
+      (linPost 9 (qOuts subOrthoG)) = true := by
+  decide +kernel
+
+theorem subOrtho_ok {s : State} (hok : Ok linCfg s) :
+    ∃ s', runBlock isa subOrtho s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p =
+        (Q s (p % 8)).getLsbD (8 * (p / 8) + j)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion linCfg s] s.mem s'.mem := by
+  obtain ⟨s', hs', hout, rest⟩ := q_linear subOrtho_check (by decide) (by decide +kernel) hok (Q s)
+    (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
+  refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
+  rw [hout j hj p hp, subOrthoG, xorBits_cons, xorBits_nil, Bool.xor_false,
+    bitOf_word _ _ _ (by omega_arith)]
 
 theorem subAll_wp {s : State} (hok : Ok linCfg s) {P : State → Prop}
     (h : ∀ s', (∀ k < 8, ∀ t < 8, (Q s' k).extractLsb' (8 * t) 8 = sbox ((Q s k).extractLsb' (8 * t) 8)) →
@@ -62,7 +74,7 @@ theorem subAll_wp {s : State} (hok : Ok linCfg s) {P : State → Prop}
     WP isa (.block subAll) s P := by
   simp only [subAll]
   repeat rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₁, hs₁, h₁, rd₁, wr₁, o₁, f₁⟩ := toBs_ok hok
+  obtain ⟨s₁, hs₁, h₁, rd₁, wr₁, o₁, f₁⟩ := subOrtho_ok hok
   refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
   have hb₁ : s₁.gpr sb = s.gpr sb := o₁ sb (by decide)
   have ok₁ : Ok linCfg s₁ := hok.congr hb₁ hb₁ rd₁ wr₁
@@ -70,19 +82,21 @@ theorem subAll_wp {s : State} (hok : Ok linCfg s) {P : State → Prop}
   refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
   have hb₂ : s₂.gpr sb = s.gpr sb := (o₂ sb (by decide)).trans hb₁
   have ok₂ : Ok linCfg s₂ := hok.congr hb₂ hb₂ (rd₂.trans rd₁) (wr₂.trans wr₁)
-  obtain ⟨s₃, hs₃, h₃, rd₃, wr₃, o₃, f₃⟩ := fromBs_ok ok₂
+  obtain ⟨s₃, hs₃, h₃, rd₃, wr₃, o₃, f₃⟩ := subOrtho_ok ok₂
   refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
-  have hin := in_of_bs h₃ (bs_subBytes h₂ (bs_of_in h₁ (inRel_stOf (Q s))))
   refine h s₃ (fun k hk t ht => ?_) (rd₃.trans (rd₂.trans rd₁)) (wr₃.trans (wr₂.trans wr₁))
     (fun r hr => (o₃ r hr).trans ((o₂ r hr).trans (o₁ r hr))) ?_
-  · refine byte_ext fun j hj => ?_
-    have := hin (k % 4) (by omega_arith) (t + 8 * (k / 4)) (by omega_arith) j hj
-    rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-      show 8 * ((t + 8 * (k / 4)) % 8) + j = 8 * t + j by omega_arith] at this
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, this, getD_eq _ (by omega_arith)]
-    simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
-    rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-      show (t + 8 * (k / 4)) % 8 = t by omega_arith]
+  · have hin : bsByte (Q s₁) (8 * t + k) = (Q s k).extractLsb' (8 * t) 8 := by
+      refine byte_ext fun j hj => ?_
+      rw [getLsbD_bsByte _ _ hj, h₁ j hj _ (by omega_arith),
+        show (8 * t + k) % 8 = k by omega_arith,
+        show (8 * t + k) / 8 = t by omega_arith,
+        BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
+    refine byte_ext fun j hj => ?_
+    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and,
+      h₃ k hk _ (by omega_arith), show (8 * t + j) % 8 = j by omega_arith,
+      show (8 * t + j) / 8 = t by omega_arith,
+      h₂ j hj _ (by omega_arith), hin]
   · have e₁ : slotRegion linCfg s = ⟨s.gpr sb, 8 * 48⟩ := rfl
     have e₂ : slotRegion sboxCfg s₁ = ⟨s.gpr sb, 8 * 48⟩ := by
       simp only [slotRegion, sboxCfg, hb₁]
