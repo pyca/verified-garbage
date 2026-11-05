@@ -37,6 +37,12 @@ namespace VG.Impl.Ffdh.PPC64LE.Cached
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base montOp)
 
+/-- `c₁; c₂; …`. -/
+def seqs : List (Prog isa) → Prog isa
+  | [] => .block []
+  | [c] => c
+  | c :: cs => .seq c (seqs cs)
+
 /-! ## Header words -/
 
 def hCtx : Nat := 0
