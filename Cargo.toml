@@ -27,10 +27,10 @@ std = []
 # implementation on one machine. Reading the environment needs `std`.
 cpu-features-env = ["std"]
 # Not part of the API: exposes the functions that take their random bytes
-# from the caller instead of the operating system (`*_with_rng`,
-# `rsa::keygen::generate_from`), for the benchmarks to compare
-# implementations on identical work, from fixed tapes. Only the benchmarks
-# (`bench/Cargo.toml`) enable it.
+# from the caller instead of the operating system (`*_with_rng`), for the
+# benchmarks to compare implementations on identical work, from fixed tapes.
+# Only the benchmarks (`bench/Cargo.toml`) enable it; nothing else, tests
+# included, may need it.
 internal-bench = []
 
 [lints]

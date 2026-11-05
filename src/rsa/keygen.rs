@@ -53,9 +53,6 @@ pub enum Error {
     /// Too many candidates for a prime were rejected (`5 bits`, or `8 bits`
     /// for `e = 3`, BoringSSL's limit), in each of four generations.
     TooManyIterations,
-    /// The random octets given to `generate_from` ran out before a key was
-    /// generated.
-    NotEnoughRandomness,
     /// The operating system's random number generator failed.
     Randomness,
     /// `e` has no inverse modulo `lcm(p - 1, q - 1)`, `q` none modulo `p`,
@@ -69,7 +66,6 @@ impl fmt::Display for Error {
             Error::InvalidExponent => "invalid RSA public exponent",
             Error::InvalidModulusLength => "invalid RSA modulus length",
             Error::TooManyIterations => "too many RSA prime candidates were rejected",
-            Error::NotEnoughRandomness => "not enough random octets for an RSA key",
             Error::Randomness => "the random number generator failed",
             Error::InvalidKey => "the RSA key from the primes is invalid",
         })
@@ -178,18 +174,12 @@ impl<'a> Search<'a> {
         }
     }
 
-    /// The most octets a tape may have (only `prime_from` reads it).
-    #[cfg(any(test, feature = "internal-bench"))]
-    fn budget(&self) -> usize {
-        self.state[2] as usize
-    }
-
     /// The next tape's length, after the search returned 0.
     fn requested(&self) -> usize {
         self.state[3] as usize
     }
 
-    /// The search over `tape` (at most [`Search::budget`] octets): 1 if it
+    /// The search over `tape` (at most `state[2]` octets): 1 if it
     /// accepted a prime, 0 if the tape ran out inside a candidate, 3 if it
     /// is exhausted; and the octets it consumed, at most `tape.len()`.
     fn run(&mut self, tape: &[u8]) -> (u32, usize) {
@@ -249,35 +239,6 @@ impl Drop for Search<'_> {
     fn drop(&mut self) {
         // The working space holds the prime.
         crate::zeroize::zeroize(&mut self.scratch);
-    }
-}
-
-/// A prime of `len` octets, with the limit of rejected candidates `limit`
-/// (as [`Search::new`] takes them), from the random octets `rand`, read as
-/// one stream (`VG.Spec.RsaKeyGen.generatePrime`), and the number of octets
-/// read, also when it fails; [`Error::NotEnoughRandomness`] if they run out
-/// first.
-#[cfg(any(test, feature = "internal-bench"))]
-fn prime_from(
-    len: usize,
-    limit: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-    rand: &[u8],
-) -> (Result<Vec<u8>, Error>, usize) {
-    let mut search = Search::new(len, limit, public_exponent, other);
-    let mut read = 0;
-    loop {
-        // The stream cut into tapes of the budget, which no request exceeds.
-        let end = rand.len().min(read + search.budget());
-        let (status, used) = search.run(&rand[read..end]);
-        read += used;
-        match status {
-            1 => return (Ok(search.prime()), read),
-            0 if end < rand.len() => {}
-            0 => return (Err(Error::NotEnoughRandomness), read),
-            _ => return (Err(Error::TooManyIterations), read),
-        }
     }
 }
 
@@ -408,39 +369,36 @@ fn generate_once(
 /// zero bytes), from the operating system's random number generator, as
 /// BoringSSL's `RSA_generate_key_ex` makes it (`VG.Spec.RsaKeyGen.generate`).
 pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error> {
-    let (nlen, e) = params(bits, public_exponent)?;
-    let len = nlen / 16;
-    let limit = if e == [3] { 8 * nlen / 2 } else { 5 * nlen / 2 };
-    let mut random = Random::new(fill_random);
-    generate_with(e, &mut |other| random.prime(len, limit, e, other))
+    generate_from(bits, public_exponent, fill_random)
 }
 
-/// [`generate`]'s key from the random octets `rand`, read as one stream
-/// (`VG.Spec.RsaKeyGen.generate`), and the number of octets read;
-/// [`Error::NotEnoughRandomness`] if they run out first. A generation that
-/// fails with too many rejected candidates starts again from where it
-/// stopped reading, up to four times in all.
+/// [`generate`], with its random octets drawn from `random` instead of the
+/// operating system.
 ///
 /// Not part of the API: it lets benchmarks measure [`generate`] on
-/// identical work, from fixed tapes. The key is secret only if `rand` is
-/// uniformly random, and never reused.
-#[cfg(any(test, feature = "internal-bench"))]
+/// identical work, from fixed tapes. The key is secret only if `random`
+/// supplies uniformly random octets, never reused.
+#[cfg(feature = "internal-bench")]
 #[doc(hidden)]
-pub fn generate_from(
+pub fn generate_with_rng(
     bits: usize,
     public_exponent: &[u8],
-    rand: &[u8],
-) -> Result<(PrivateKey, usize), Error> {
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<PrivateKey, Error> {
+    generate_from(bits, public_exponent, random)
+}
+
+/// [`generate`], with its random octets drawn from `random`.
+fn generate_from(
+    bits: usize,
+    public_exponent: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<PrivateKey, Error> {
     let (nlen, e) = params(bits, public_exponent)?;
     let len = nlen / 16;
     let limit = if e == [3] { 8 * nlen / 2 } else { 5 * nlen / 2 };
-    let mut read = 0;
-    let r = generate_with(e, &mut |other| {
-        let (r, used) = prime_from(len, limit, e, other, &rand[read..]);
-        read += used;
-        r
-    });
-    r.map(|key| (key, read))
+    let mut random = Random::new(random);
+    generate_with(e, &mut |other| random.prime(len, limit, e, other))
 }
 
 fn generate_with(
@@ -459,9 +417,64 @@ fn generate_with(
 #[cfg(test)]
 mod tests {
     use super::{
-        Error, PrivateKey, Random, Vec, fill_random, generate, generate_from, generate_with,
-        key_from_primes, prime_from, vec,
+        Error, PrivateKey, Random, Vec, fill_random, generate, generate_with, key_from_primes, vec,
     };
+
+    /// The source of a [`Random`] in [`stream`].
+    type Fill<'a> = &'a mut dyn FnMut(&mut [u8]) -> Result<(), Error>;
+
+    /// `run` over a [`Random`] that reads `rand` as one stream, and the
+    /// octets it read; [`Error::Randomness`] if it needed more than `rand`.
+    /// A refill past its end is padded with zeros, and its result discarded
+    /// if the search read them.
+    fn stream<T>(
+        rand: &[u8],
+        run: impl FnOnce(&mut Random<Fill<'_>>) -> Result<T, Error>,
+    ) -> (Result<T, Error>, usize) {
+        let mut filled = 0;
+        let mut fill = |out: &mut [u8]| {
+            if filled >= rand.len() {
+                return Err(Error::Randomness);
+            }
+            for b in out {
+                *b = rand.get(filled).copied().unwrap_or(0);
+                filled += 1;
+            }
+            Ok(())
+        };
+        let mut random = Random::new(&mut fill as Fill<'_>);
+        let r = run(&mut random);
+        let unread = random.octets.len() - random.read;
+        drop(random);
+        let read = filled - unread;
+        (
+            if read > rand.len() {
+                Err(Error::Randomness)
+            } else {
+                r
+            },
+            read,
+        )
+    }
+
+    /// A prime of 256 bits for `e` from `rand`, as [`stream`] reads it.
+    fn prime_from(
+        limit: usize,
+        e: &[u8],
+        other: Option<&[u8]>,
+        rand: &[u8],
+    ) -> Result<Vec<u8>, Error> {
+        stream(rand, |random| random.prime(32, limit, e, other)).0
+    }
+
+    /// A key of 512 bits for `e` from `rand`, as [`stream`] reads it, and the
+    /// octets read.
+    fn generate_from(e: &[u8], rand: &[u8]) -> (Result<PrivateKey, Error>, usize) {
+        let limit = if e == [3] { 8 * 256 } else { 5 * 256 };
+        stream(rand, |random| {
+            generate_with(e, &mut |other| random.prime(32, limit, e, other))
+        })
+    }
 
     /// Whether `key` loads again from its CRT values: whether BoringSSL's
     /// `RSA_check_key` accepts it (`PrivateKey::from_crt`).
@@ -484,7 +497,6 @@ mod tests {
             Error::InvalidExponent,
             Error::InvalidModulusLength,
             Error::TooManyIterations,
-            Error::NotEnoughRandomness,
             Error::Randomness,
             Error::InvalidKey,
         ] {
@@ -497,7 +509,7 @@ mod tests {
     #[test]
     fn too_many_iterations() {
         let zeros = vec![0u8; 32 * 8 * 256];
-        let from = |e: &[u8], limit, rand: &[u8]| prime_from(32, limit, e, None, rand).0;
+        let from = |e: &[u8], limit, rand: &[u8]| prime_from(limit, e, None, rand);
         assert_eq!(from(&[3], 8 * 256, &zeros), Err(Error::TooManyIterations));
         // `e = 15` rejects them too, but allows only `5 bits` rejections.
         assert_eq!(
@@ -507,7 +519,7 @@ mod tests {
         // One fewer is not enough.
         assert_eq!(
             from(&[3], 8 * 256, &zeros[..32 * (8 * 256 - 1)]),
-            Err(Error::NotEnoughRandomness)
+            Err(Error::Randomness)
         );
     }
 
@@ -520,22 +532,8 @@ mod tests {
         other[31] = 1;
         let zeros = vec![0u8; 32 * 8 * 256 + 32];
         assert_eq!(
-            prime_from(32, 8 * 256, &[3], Some(&other), &zeros).0,
-            Err(Error::NotEnoughRandomness)
-        );
-    }
-
-    /// A stream longer than the search's entropy budget, of candidates
-    /// too close to the other prime: read in tapes of the budget, to its end.
-    #[test]
-    fn longer_than_budget() {
-        let mut other = [0u8; 32];
-        other[0] = 0xc0;
-        other[31] = 1;
-        let zeros = vec![0u8; 32 * 32769 + 64];
-        assert_eq!(
-            prime_from(32, 5 * 256, &[1, 0, 1], Some(&other), &zeros),
-            (Err(Error::NotEnoughRandomness), zeros.len())
+            prime_from(8 * 256, &[3], Some(&other), &zeros),
+            Err(Error::Randomness)
         );
     }
 
@@ -589,17 +587,9 @@ mod tests {
                 generate(bits, &[1, 0, 1]).unwrap_err(),
                 Error::InvalidModulusLength
             );
-            assert_eq!(
-                generate_from(bits, &[1, 0, 1], &[]).unwrap_err(),
-                Error::InvalidModulusLength
-            );
         }
         for e in [&[][..], &[0], &[1], &[2], &[0, 4], &[1, 0, 0, 0, 1]] {
             assert_eq!(generate(512, e).unwrap_err(), Error::InvalidExponent);
-            assert_eq!(
-                generate_from(512, e, &[]).unwrap_err(),
-                Error::InvalidExponent
-            );
         }
     }
 
@@ -622,12 +612,14 @@ mod tests {
     fn generate_too_many_iterations() {
         let zeros = vec![0u8; 4 * 8 * 256 * 32];
         assert_eq!(
-            generate_from(512, &[3], &zeros).unwrap_err(),
+            generate_from(&[3], &zeros).0.unwrap_err(),
             Error::TooManyIterations
         );
         assert_eq!(
-            generate_from(512, &[3], &zeros[..zeros.len() - 1]).unwrap_err(),
-            Error::NotEnoughRandomness
+            generate_from(&[3], &zeros[..zeros.len() - 1])
+                .0
+                .unwrap_err(),
+            Error::Randomness
         );
     }
 
@@ -685,32 +677,6 @@ mod tests {
     /// A witness in the range for every candidate here.
     const W: [u8; 32] = [2; 32];
 
-    /// Compare the refill path with the fixed-stream API across candidate,
-    /// witness and prime boundaries, including a rejected small-d key.
-    #[test]
-    fn refilled_generation() {
-        let mut rand = vec![0xff; 32 * 3]; // Divisible by 3.
-        rand.extend(candidate(&SMALL_D_P, &W));
-        rand.extend(candidate(&SMALL_D_Q, &W));
-        rand.extend(candidate(&PRIME, &W));
-        rand.extend(candidate(&SMALL_D_Q, &W));
-        let (expected, used) = generate_from(512, &[1, 0, 1], &rand).unwrap();
-        let filled = core::cell::Cell::new(0);
-        let mut random = Random::new(|out: &mut [u8]| {
-            for b in out {
-                *b = rand.get(filled.get()).copied().unwrap_or(0);
-                filled.set(filled.get() + 1);
-            }
-            Ok(())
-        });
-        let key = generate_with(&[1, 0, 1], &mut |other| {
-            random.prime(32, 5 * 256, &[1, 0, 1], other)
-        })
-        .unwrap();
-        assert_eq!(key.components(), expected.components());
-        assert_eq!(filled.get() - (random.octets.len() - random.read), used);
-    }
-
     /// Refills preserve rejection counts and release no incomplete prime
     /// when entropy fails, including a failure after witnesses were read.
     #[test]
@@ -760,10 +726,13 @@ mod tests {
         );
     }
 
-    /// The primes with the small `d` are generated, refused, and replaced.
+    /// The primes with the small `d` are generated, refused, and replaced,
+    /// after rejected candidates, across candidate, witness and prime
+    /// boundaries.
     #[test]
     fn generate_small_d() {
-        let mut rand = candidate(&SMALL_D_P, &W);
+        let mut rand = vec![0xff; 32 * 3]; // Divisible by 3.
+        rand.extend(candidate(&SMALL_D_P, &W));
         rand.extend(candidate(&SMALL_D_Q, &W));
         assert!(
             key_from_primes(&[1, 0, 1], &SMALL_D_P, &SMALL_D_Q)
@@ -771,12 +740,13 @@ mod tests {
                 .is_none()
         );
         assert_eq!(
-            generate_from(512, &[1, 0, 1], &rand).unwrap_err(),
-            Error::NotEnoughRandomness
+            generate_from(&[1, 0, 1], &rand).0.unwrap_err(),
+            Error::Randomness
         );
         rand.extend(candidate(&PRIME, &W));
         rand.extend(candidate(&SMALL_D_Q, &W));
-        let (key, read) = generate_from(512, &[1, 0, 1], &rand).unwrap();
+        let (key, read) = generate_from(&[1, 0, 1], &rand);
+        let key = key.unwrap();
         assert_eq!(read, rand.len());
         assert!(reloads(&key));
         let [_, _, _, p, q, ..] = key.components();
@@ -793,7 +763,8 @@ mod tests {
     fn generate_composite() {
         let mut rand = candidate(&COMPOSITE, &LIAR);
         rand.extend(candidate(&SMALL_D_Q, &W));
-        let (key, read) = generate_from(512, &[1, 0, 1], &rand).unwrap();
+        let (key, read) = generate_from(&[1, 0, 1], &rand);
+        let key = key.unwrap();
         assert_eq!(read, rand.len());
         assert!(reloads(&key));
         assert_eq!(key.components()[4], COMPOSITE);
