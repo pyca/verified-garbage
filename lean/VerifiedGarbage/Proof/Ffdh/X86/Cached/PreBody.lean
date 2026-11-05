@@ -232,7 +232,7 @@ theorem pre_row {m m' : Mem} (hp : preV m' args len = preV m args len) {j : Nat}
   rw [e, e, hp]
 
 /-- The precomputation's body: the context of the domain, and 1. -/
-theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
+theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
     (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
     (domC : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (ctxR args len)) (C : CtxW base bytes len args s)
     {T : BitVec 32} (hT : s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym = T) (tfit : T.toNat + 17744 ≤ 2 ^ 32)
