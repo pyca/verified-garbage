@@ -4,10 +4,12 @@
 
 use criterion::Criterion;
 
-/// The module `rsa_pss`, the RSA primitives it calls (`rsa`), and the hash
+/// The module `rsa_pss`, the tables of functions (`fn_tables`), the RSA
+/// primitives it calls (`rsa`), and the hash
 /// functions whose tables it calls (their generated modules).
 pub const USES: &[&str] = &[
     "rsa_pss",
+    "fn_tables",
     "rsa",
     "md5",
     "sha1",
