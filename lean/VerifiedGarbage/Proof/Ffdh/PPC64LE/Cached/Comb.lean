@@ -527,6 +527,35 @@ theorem rows_ok {s₀ u : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P 
   refine WP.mono (step_ok hq hv (by omega)) fun v' hv' => ⟨hv', ?_⟩
   rw [hv'.h24, hc, ofNat_sub_one (by omega) (by omega), Nat.add_sub_cancel]
 
+/-- The comb's first block: the context, x's address, the rows, and `r3 := 1`. -/
+abbrev headBlock : List Instr := [ldh .r30 hCtx, .load .d .r27 .r23 64, ldh .r21 hRows, .li .r3 1]
+
+/-- The comb after its first block. -/
+abbrev combRest : Prog isa := seqs [loadRow 1, .block PublicChecked.minv, PublicChecked.one,
+  PublicChecked.montOp 6 1 7, .block [.addi .r24 .r21 0], .loop step (.nonzero .d .r24), PublicChecked.montOp 4 6 7]
+
+theorem comb_eq : comb = .seq (.block headBlock) combRest := rfl
+
+theorem head_ok {s : State} {B C X : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ : 72 ≤ Z) (h23 : s.gpr .r23 = B)
+    (hC : s.mem.readW (off B hCtx) 64 = C) (hX : s.mem.readW (off B 64) 64 = X)
+    (hRw : s.mem.readW (off B hRows) 64 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits)) :
+    WP isa (.block headBlock) s fun u => (u.gpr .r30 = C ∧ u.gpr .r27 = X ∧
+      u.gpr .r21 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits) ∧ u.gpr .r3 = BitVec.ofNat 64 1 ∧
+      u.mem = s.mem) ∧ Keep [.r3, .r21, .r27, .r30] s u := by
+  have l0 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 0) 8 := by
+    rw [h23]; exact hs.ld (d := 0) (n := 8) (by omega)
+  have l64 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
+    rw [h23]; exact hs.ld (d := 64) (n := 8) (by omega)
+  have l24 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 24) 8 := by
+    rw [h23]; exact hs.ld (d := 24) (n := 8) (by omega)
+  have v0 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 0) 64 = C := by rw [h23]; exact hC
+  have v64 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = X := by rw [h23]; exact hX
+  have v24 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 24) 64 =
+      BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits) := by rw [h23]; exact hRw
+  refine WP.keep [.r3, .r21, .r27, .r30] ?_ (by decide)
+  unfold headBlock ldh
+  prun [hCtx, hRows, l0, l64, l24, v0, v64, v24]
+
 theorem comb_ok {s : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P G bits : Nat}
     (h : CombIn s B C X Z w xb P G bits) :
     WP isa comb s fun t =>
@@ -541,22 +570,10 @@ theorem comb_ok {s : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P G bit
   have cop := VG.Proof.Bignum.coprime_pow2 hq.odd (64 * w)
   have hfit := combOut_fit h.env
   have hB8 : B.toNat + slot w 8 ≤ 2 ^ 64 := by simp only [slot] at hZ ⊢; omega
-  unfold comb
-  simp only [seqs]
+  rw [comb_eq]
+  simp only [combRest, seqs]
   -- The context, x's address, the rows, and `r3 := 1`.
-  have l0 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 0) 8 := by
-    rw [h.h23]; exact h.env.hs.ld (d := 0) (n := 8) (by simp only [slot] at hZ; omega)
-  have l64 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
-    rw [h.h23]; exact h.env.hs.ld (d := 64) (n := 8) (by simp only [slot] at hZ; omega)
-  have l24 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 24) 8 := by
-    rw [h.h23]; exact h.env.hs.ld (d := 24) (n := 8) (by simp only [slot] at hZ; omega)
-  have v0 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 0) 64 = C := by rw [h.h23]; exact h.hC
-  have v64 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = X := by rw [h.h23]; exact h.hX
-  have v24 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 24) 64 =
-      BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits) := by rw [h.h23]; exact h.hRw
-  refine WP.seq (WP.mono (WP.keep [.r3, .r21, .r27, .r30] (Q := fun u => u.gpr .r30 = C ∧ u.gpr .r27 = X ∧
-      u.gpr .r21 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits) ∧ u.gpr .r3 = BitVec.ofNat 64 1 ∧
-      u.mem = s.mem) (by unfold ldh; prun [hCtx, hRows, l0, l64, l24, v0, v64, v24]) (by decide))
+  refine WP.seq (WP.mono (head_ok h.env.hs (by simp only [slot] at hZ; omega) h.h23 h.hC h.hX h.hRw)
     fun s₁ ⟨⟨a30, a27, a21, a3, m1⟩, k1⟩ => ?_)
   have e1 := h.env.keep k1 (by decide)
   -- `R² mod p` into array 1.

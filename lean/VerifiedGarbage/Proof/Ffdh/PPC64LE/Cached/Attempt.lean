@@ -60,18 +60,38 @@ theorem shiftLoop14_ok {s : State} {v c : Nat} (hv : v < 2 ^ 64) (hc : 1 ≤ c) 
       Nat.div_div_eq_div_mul, ← Nat.pow_succ]) (by decide))
     fun u ⟨⟨b14, bm, b17⟩, bk⟩ => ⟨⟨⟨b14, bm.trans am⟩, (ak.trans bk).mono (by decide)⟩, b17⟩
 
-/-- `maskByte`: `r14 :=` the mask of the first octet's bits, from the header's
-bits and bytes. -/
-theorem maskByte_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ : 24 ≤ Z) (h23 : s.gpr .r23 = B)
+/-- `maskByte`'s first block: `r17 :=` the shift, `8 bytes − bits`. -/
+abbrev mbBlock : List Instr := [ldh .r17 hBytes, .lsl .r17 .r17 3, ldh .r18 hBits, .sub .r17 .r17 .r18, .li .r14 255]
+
+/-- `maskByte`'s shift. -/
+abbrev mbIte : Prog isa :=
+  .ite (.zero .d .r17) (.block []) (.loop (.block [.lsr .d .r14 .r14 1, .subi .r17 .r17 1]) (.nonzero .d .r17))
+
+theorem maskByte_eq : maskByte = .seq (.block mbBlock) mbIte := rfl
+
+/-- `mbBlock`: the shift, from the header's bits and bytes. -/
+theorem mb_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ : 24 ≤ Z) (h23 : s.gpr .r23 = B)
     (hbw : s.mem.readW (off B hBits) 64 = BitVec.ofNat 64 bits)
     (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8)) (hb : bits < 2 ^ 32) :
-    WP isa maskByte s fun t => (t.gpr .r14 = (tbOf bits).setWidth 64 ∧ t.mem = s.mem) ∧ Keep [.r14, .r17, .r18] s t := by
+    WP isa (.block mbBlock) s fun t => (t.gpr .r17 = BitVec.ofNat 64 (8 * ((bits + 7) / 8) - bits) ∧
+      t.gpr .r14 = BitVec.ofNat 64 255 ∧ t.mem = s.mem) ∧ Keep [.r14, .r17, .r18] s t := by
   have l8 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 8) 8 := by rw [h23]; exact hs.ld (d := 8) (n := 8) (by omega)
   have l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
     rw [h23]; exact hs.ld (d := 16) (n := 8) (by omega)
   have v8 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 bits := by rw [h23]; exact hbw
   have v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     rw [h23]; exact hyw
+  refine WP.keep [.r14, .r17, .r18] ?_ (by decide)
+  unfold mbBlock ldh
+  prun [hBits, hBytes, l8, l16, v8, v16, ofNat_shl3 (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega),
+    ofNat_sub' (show bits ≤ 8 * ((bits + 7) / 8) by omega) (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega)]
+
+/-- `maskByte`: `r14 :=` the mask of the first octet's bits, from the header's
+bits and bytes. -/
+theorem maskByte_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ : 24 ≤ Z) (h23 : s.gpr .r23 = B)
+    (hbw : s.mem.readW (off B hBits) 64 = BitVec.ofNat 64 bits)
+    (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8)) (hb : bits < 2 ^ 32) :
+    WP isa maskByte s fun t => (t.gpr .r14 = (tbOf bits).setWidth 64 ∧ t.mem = s.mem) ∧ Keep [.r14, .r17, .r18] s t := by
   obtain ⟨d, hd⟩ : ∃ d, d = 8 * ((bits + 7) / 8) - bits := ⟨_, rfl⟩
   have hd8 : d < 8 := by omega
   have htb : (tbOf bits).setWidth 64 = BitVec.ofNat 64 (255 / 2 ^ d) := by
@@ -80,14 +100,9 @@ theorem maskByte_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ :
     unfold tbOf; rw [← hd, BitVec.toNat_ofNat]
     have : 255 / 2 ^ d < 256 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by decide)
     rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega)]
-  rw [htb]
-  unfold maskByte
-  refine WP.seq (WP.mono (WP.keep [.r14, .r17, .r18] (Q := fun t => t.gpr .r17 = BitVec.ofNat 64 d ∧
-      t.gpr .r14 = BitVec.ofNat 64 255 ∧ t.mem = s.mem) (by
-    unfold ldh
-    prun [hBits, hBytes, l8, l16, v8, v16, ofNat_shl3 (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega),
-      ofNat_sub' (show bits ≤ 8 * ((bits + 7) / 8) by omega) (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega)]
-    rw [hd]) (by decide)) fun s₁ ⟨⟨a17, a14, m1⟩, k1⟩ => ?_)
+  rw [htb, maskByte_eq]
+  refine WP.seq (WP.mono (mb_ok hs hZ h23 hbw hyw hb) fun s₁ ⟨⟨a17, a14, m1⟩, k1⟩ => ?_)
+  rw [← hd] at a17
   refine WP.ite (decide (d = 0)) (eval_zero_ofNat _ _ (by omega) a17) (fun hc => ?_) (fun hc => ?_)
   · have hc' : d = 0 := by simpa using hc
     refine WP.mono (WP.keep [] (Q := fun t => t = s₁) (by prun) (by decide)) fun t ⟨ht, _⟩ => ?_
@@ -96,6 +111,35 @@ theorem maskByte_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ :
   · have hc' : d ≠ 0 := by simpa using hc
     refine WP.mono (shiftLoop14_ok (by decide) (by omega) (by omega) a14 a17) fun t ⟨⟨t14, tm⟩, kt⟩ =>
       ⟨⟨t14, tm.trans m1⟩, (k1.trans kt).mono (by decide)⟩
+
+/-- `scalar`'s block: the cut's index, `rand`'s and x's addresses, the count and the index 0. -/
+abbrev sbBlock : List Instr := [ldh .r22 hBytes, .sub .r22 .r28 .r22] ++ ptrs ++ cutSetup
+
+theorem scalar_eq : scalar = .seq maskByte (.seq (.block sbBlock)
+    (VG.Impl.Bignum.PPC64LE.Precompute.countLoop .r6 cutBody)) := rfl
+
+/-- `sbBlock`, from the header's bytes and words 8 and 11. -/
+theorem sb_ok {s : State} {B X R : Addr} {Z k bits : Nat} (hs : Scr s B Z) (hZ : 96 ≤ Z) (h23 : s.gpr .r23 = B)
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : (bits + 7) / 8 ≤ k) (hk' : k < 2 ^ 64)
+    (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8))
+    (hX : s.mem.readW (off B 64) 64 = off X 0) (hR : s.mem.readW (off B 88) 64 = off R 0) :
+    WP isa (.block sbBlock) s fun t =>
+      (t.gpr .r22 = BitVec.ofNat 64 (k - (bits + 7) / 8) ∧ t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧
+        t.gpr .r6 = BitVec.ofNat 64 k ∧ t.gpr .r4 = BitVec.ofNat 64 0 ∧ t.gpr .r14 = s.gpr .r14 ∧ t.mem = s.mem) ∧
+      Keep [.r4, .r6, .r22, .r24, .r25] s t := by
+  have l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
+    rw [h23]; exact hs.ld (d := 16) (n := 8) (by omega)
+  have v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
+    rw [h23]; exact hyw
+  have l88 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 88) 8 := by
+    rw [h23]; exact hs.ld (d := 88) (n := 8) (by omega)
+  have l64 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
+    rw [h23]; exact hs.ld (d := 64) (n := 8) (by omega)
+  have v88 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 88) 64 = off R 0 := by rw [h23]; exact hR
+  have v64 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = off X 0 := by rw [h23]; exact hX
+  refine WP.keep [.r4, .r6, .r22, .r24, .r25] ?_ (by decide)
+  unfold sbBlock ldh ptrs cutSetup
+  prun [hBytes, l16, v16, l88, l64, v88, v64, h28, ofNat_sub' hk hk', BitVec.add_zero]
 
 /-- The registers `scalar` writes. -/
 def scalarCRegs : List Reg := [.r0, .r4, .r6, .r14, .r16, .r17, .r18, .r19, .r20, .r22, .r24, .r25]
@@ -117,24 +161,9 @@ theorem scalarC_ok {s : State} {B X R : Addr} {Z w k bits : Nat} (h : Env s B Z 
   unfold scalar
   refine WP.seq (WP.mono (maskByte_ok h.hs (by omega) h23 hbw hyw (by omega)) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   have g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
-  have hs1 := h.hs.congr k1.wr
-  have l16 : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r23 + BitVec.ofNat 64 16) 8 := by
-    rw [g23]; exact hs1.ld (d := 16) (n := 8) (by omega)
-  have v16 : s₁.mem.readW (s₁.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
-    rw [g23, m1]; exact hyw
-  have l88 : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r23 + BitVec.ofNat 64 88) 8 := by
-    rw [g23]; exact hs1.ld (d := 88) (n := 8) (by omega)
-  have l64 : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r23 + BitVec.ofNat 64 64) 8 := by
-    rw [g23]; exact hs1.ld (d := 64) (n := 8) (by omega)
-  have v88 : s₁.mem.readW (s₁.gpr .r23 + BitVec.ofNat 64 88) 64 = off R 0 := by rw [g23, m1]; exact hR
-  have v64 : s₁.mem.readW (s₁.gpr .r23 + BitVec.ofNat 64 64) 64 = off X 0 := by rw [g23, m1]; exact hX
   have h28' : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
-  refine WP.seq (WP.mono (WP.keep [.r4, .r6, .r22, .r24, .r25] (Q := fun t =>
-      t.gpr .r22 = BitVec.ofNat 64 (k - (bits + 7) / 8) ∧ t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧
-      t.gpr .r6 = BitVec.ofNat 64 k ∧ t.gpr .r4 = BitVec.ofNat 64 0 ∧ t.gpr .r14 = s₁.gpr .r14 ∧ t.mem = s₁.mem) (by
-    unfold ldh ptrs cutSetup
-    prun [hBytes, l16, v16, l88, l64, v88, v64, h28',
-      ofNat_sub' (show (bits + 7) / 8 ≤ k by omega) (show k < 2 ^ 64 by omega), BitVec.add_zero]) (by decide))
+  refine WP.seq (WP.mono (sb_ok (bits := bits) (X := X) (R := R) (h.hs.congr k1.wr) (Nat.le_trans (by decide) hZ') g23 h28' (by omega) (by omega)
+      (by rw [m1]; exact hyw) (by rw [m1]; exact hX) (by rw [m1]; exact hR))
     fun s₂ ⟨⟨a22, a24, a25, a6, a4, a14', m2⟩, k2⟩ => ?_)
   refine WP.mono (cut_ok (tb := tbOf bits) hk (by omega) (show k - (bits + 7) / 8 < k by omega) (hx.congr (k1.trans k2).wr)
     (fun i hi => by rw [(k1.trans k2).rd, (k1.trans k2).wr]; exact hrdR i hi) hsepR a24 a25 a4 a22
