@@ -171,16 +171,6 @@ structure MdHash where
   made (`Generic/MdHash/X86_64/Scrypt.lean`); `none` for the other hash
   functions. -/
   sha256 : Option Proof.Sha256.X86_64.Compress := none
-  /-- For SHA-384's variants, the implementation of the compression
-  function, from which the functions built on SHA-384 alone were made; nothing
-  reads it since deterministic ECDSA takes its HMAC as a table. `none` for the
-  other hash functions. -/
-  sha384 : Option Proof.Sha512.X86_64.Compress := none
-  /-- For SHA-224's variants, the implementation of SHA-256's compression
-  function, from which the functions built on SHA-224 alone were made; nothing
-  reads it since deterministic ECDSA takes its HMAC as a table. `none` for
-  the other hash functions. -/
-  sha224 : Option Proof.Sha256.X86_64.Compress := none
 
 namespace MdHash
 
