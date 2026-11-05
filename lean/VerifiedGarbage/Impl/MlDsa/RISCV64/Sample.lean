@@ -30,10 +30,13 @@ and squeezes `outlen` bytes to `scratch + 840` with `vg_keccak_squeeze`.
 Its addresses and branches depend only on the pointers and the length.
 
 * `vg_mldsa_rej_ntt_poly(seed = a0, a = a1, scratch = a2) -> a0` squeezes
-  1008 bytes of SHAKE128 of the 34 bytes of the seed, which the 336
-  iterations of `RejNTTPoly`'s loop take 3 bytes at a time: the value of the
-  3 bytes is stored to `a[j]` and `j` incremented if it is less than `q` and
-  `j < 256`. It returns `j >> 8`.
+  `3 N` bytes of SHAKE128 of the 34 bytes of the seed, which `N` iterations
+  of `RejNTTPoly`'s loop take 3 bytes at a time: the value of the 3 bytes is
+  stored to `a[j]` and `j` incremented if it is less than `q` and `j < 256`
+  (`rnTry N`). Almost every value is less than `q`, so 840 bytes (280
+  iterations) almost always give 256 coefficients: it tries those first,
+  and only if they fall short tries again from the start with 1008 bytes
+  (336 iterations). It returns `j >> 8`.
 * `vg_mldsa_rej_bounded_poly(seed = a0, eta = a1, a = a2, scratch = a3) -> a0`
   squeezes 544 bytes of SHAKE256 of the 66 bytes of the seed, two half-bytes
   of each of which `CoeffFromHalfByte` takes, for `η` 2 or 4.
@@ -45,8 +48,9 @@ Its addresses and branches depend only on the pointers and the length.
   runs `SampleInBall`'s loop over the 264 bytes after the 8 bytes of sign
   bits.
 
-The loops' branches and the addresses of their stores depend on the XOF
-output, a function of the seed, which the contracts let them leak.
+The loops' branches and the addresses of their stores (and whether
+`vg_mldsa_rej_ntt_poly` tries again) depend on the XOF output, a function
+of the seed, which the contracts let them leak.
 -/
 
 @[expose] public section
@@ -131,14 +135,19 @@ def rnBody : Prog isa :=
   .seq (.block (rnLoad ++ testJ [.sub .t2 .a7 .a4]))
     (.seq (accept .a7) (.block [.addi .a0 .a0 3, .addi .a3 .a3 (-1)]))
 
-/-- The loop, from the XOF output at `scratch + 840`. -/
-def rnLoop : Prog isa :=
-  .seq (.block ([.addi .a0 .s11 840, mov .a1 .s10, .li .a2 0, .li .a3 336] ++ loadQ))
+/-- `N` iterations of the loop, from the XOF output at `scratch + 840`. -/
+def rnLoop (N : Nat) : Prog isa :=
+  .seq (.block ([.addi .a0 .s11 840, mov .a1 .s10, .li .a2 0, .li .a3 N] ++ loadQ))
     (.loop rnBody (.nonzero .a3))
+
+/-- A try: `3 N` bytes of output, and `N` iterations on them. -/
+def rnTry (N : Nat) : Prog isa := .seq (sponge 168 (3 * N)) (rnLoop N)
 
 def rejNTT : Prog isa :=
   .seq (.block (pro .a2 .a1 .a0 [.li .s8 34] []))
-    (.seq (sponge 168 1008) (.seq rnLoop (.block (retJ ++ epi))))
+    (.seq (rnTry 280)
+    (.seq (.block [.shift .srl .d .t0 .a2 8])
+    (.seq (.ite (.zero .t0) (rnTry 336) (.block [])) (.block (retJ ++ epi)))))
 
 /-! ## `vg_mldsa_rej_bounded_poly` -/
 
