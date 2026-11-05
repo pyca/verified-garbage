@@ -28,7 +28,7 @@ use verified_garbage::hashes::{
     sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224,
     sha512_256::Sha512_256,
 };
-use verified_garbage::rsa::pkcs1_sig::{Hash, recover, sign, verify};
+use verified_garbage::rsa::pkcs1_sig::Hash;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
@@ -113,16 +113,16 @@ fn check(
     sig: &[u8],
     result: Expectation,
 ) -> bool {
-    let ok = verify(key, sig, d, h);
+    let ok = key.verify_pkcs1v15(sig, d, h);
     match result {
         Expectation::Valid => assert!(ok, "{name} tcId {id}"),
         Expectation::Invalid => assert!(!ok, "{name} tcId {id}"),
         Expectation::Acceptable => {}
     }
-    match recover(key, sig, h) {
+    match key.recover_pkcs1v15(sig, h) {
         Ok(v) => {
             assert_eq!(v == d, ok, "{name} tcId {id}");
-            assert!(verify(key, sig, &v, h), "{name} tcId {id}");
+            assert!(key.verify_pkcs1v15(sig, &v, h), "{name} tcId {id}");
         }
         Err(_) => assert!(!ok, "{name} tcId {id}"),
     }
@@ -216,19 +216,20 @@ fn rsa_pkcs1_sign_test() {
             for (test, h) in group.tests.iter().take(4).zip(HASHES.iter().cycle()) {
                 let id = test.tc_id;
                 let d = digest(*h, &test.case.msg.0);
-                let sig =
-                    sign(&private, &d, *h).unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+                let sig = private
+                    .sign_pkcs1v15(&d, *h)
+                    .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
                 assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
                 assert!(check(&name, id, &public, *h, &d, &sig, Expectation::Valid));
-                assert_eq!(sign(&private, &d, *h), Ok(sig), "{name} tcId {id}");
+                assert_eq!(private.sign_pkcs1v15(&d, *h), Ok(sig), "{name} tcId {id}");
             }
             for h in HASHES {
                 let d = digest(h, b"");
-                let sig = sign(&private, &d, h).unwrap();
+                let sig = private.sign_pkcs1v15(&d, h).unwrap();
                 assert!(check(&name, 0, &public, h, &d, &sig, Expectation::Valid));
                 let mut other = d.clone();
                 other[0] ^= 1;
-                assert!(!verify(&public, &sig, &other, h), "{name}");
+                assert!(!public.verify_pkcs1v15(&sig, &other, h), "{name}");
             }
         });
     }
