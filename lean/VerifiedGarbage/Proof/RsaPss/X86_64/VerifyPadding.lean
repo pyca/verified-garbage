@@ -45,32 +45,33 @@ theorem ofNat_eq_iff {a : Nat} (ha : a < 2 ^ 64) (b : BitVec 64) : BitVec.ofNat 
   · rintro rfl; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]
   · rintro rfl; simp
 
-/-- What the code computes, against the checks of `verifyEncoding`. -/
-theorem vlogic (G : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) (x mHash : List Byte) {k lo z : Nat} (fixed : Bool)
+/-- What the code computes, against the checks of `verifyEncoding` (MGF1's `G`, the
+digest's `H`). -/
+theorem vlogic (G H : Spec.Mgf1.Hash) (hH : Proof.Mgf1.Valid H) (x mHash : List Byte) {k lo z : Nat} (fixed : Bool)
     (slen : BitVec 64) {sLen : Option Nat} (hsl : sLen = if fixed then some slen.toNat else none)
-    (hx : x.length = k) (hlo : lo ≤ 1) (hfit : G.len + 2 ≤ k - lo) (hk : k ≤ 1024) :
+    (hx : x.length = k) (hlo : lo ≤ 1) (hfit : H.len + 2 ≤ k - lo) (hk : k ≤ 1024) :
     let em := x.drop lo
-    let L := k - lo - G.len - 1
-    let dbL := vDb G em L z
+    let L := k - lo - H.len - 1
+    let dbL := vDb₂ G H em L z
     let fd := decide (lz dbL < L)
     let pos := if lz dbL < L then lz dbL else 0
     let val := if lz dbL < L then dbL.getD (lz dbL) 0 else 0
     (acc1V (acc0V (x.getD (k - 1) 0) (x.getD 0 0) (x.getD lo 0) ((0xFF : Byte) >>> z) lo) fd val fixed
         (BitVec.ofNat 64 (L - pos - 1)) slen = 0 ∧
-      ∀ i < G.len, (G.hash (Spec.RsaPss.zeros 8 ++ mHash ++ dbL.drop (pos + 1))).getD i 0 = (vH G em L).getD i 0) ↔
-    ((lo = 1 → x.getD 0 0 = 0) ∧ EncOk G mHash em (k - lo) z sLen) := by
+      ∀ i < H.len, (H.hash (Spec.RsaPss.zeros 8 ++ mHash ++ dbL.drop (pos + 1))).getD i 0 = (vH H em L).getD i 0) ↔
+    ((lo = 1 → x.getD 0 0 = 0) ∧ EncOk₂ G H mHash em (k - lo) z sLen) := by
   dsimp only
-  have hvH : (vH G (x.drop lo) (k - lo - G.len - 1)).length = G.len := by simp [vH]; omega_arith
+  have hvH : (vH H (x.drop lo) (k - lo - H.len - 1)).length = H.len := by simp [vH]; omega_arith
   rw [acc1V_eq_zero, acc0V_eq_zero _ _ _ _ hlo]
   have e1 : x.getD (k - 1) 0 = (x.drop lo).getD (k - lo - 1) 0 := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]; congr 2; omega_arith
   have e2 : x.getD lo 0 = (x.drop lo).getD 0 0 := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop, Nat.add_zero]
   rw [e1, e2]
-  unfold EncOk
-  rw [← list_eq_iff_getD (hG.2 _) hvH]
-  generalize vDb G (x.drop lo) (k - lo - G.len - 1) z = dbL
-  by_cases hf : lz dbL < k - lo - G.len - 1
+  unfold EncOk₂
+  rw [← list_eq_iff_getD (hH.2 _) hvH]
+  generalize vDb₂ G H (x.drop lo) (k - lo - H.len - 1) z = dbL
+  by_cases hf : lz dbL < k - lo - H.len - 1
   · rw [ifp hf, ifp hf, decide_eq_true hf, ofNat_eq_iff (by omega_arith)]
     subst hsl
     constructor
@@ -91,41 +92,41 @@ theorem vlogic (G : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) (x mHash : List By
     · rintro ⟨⟨_, _, h, _⟩, _⟩; cases h
     · rintro ⟨_, _, _, h, _⟩; exact absurd h hf
 
-variable {G : Spec.Mgf1.Hash}
+/-- What `verifyK.post` asks of `rax`: verification with the hash function
+`Hs` and MGF1's `Gs`. -/
+def verifyOut (Hs Gs : Spec.Mgf1.Hash) (s : State) : Bool :=
+  Spec.RsaPss.verify Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
+    (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) Hs.len)
+    (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
+    (Spec.RsaPss.expectedSaltLen (stackArg s 2) ((stackArg s 3).setWidth 32))
 
-variable (G) in
-/-- What `verifyK.post` asks of `rax`. -/
-def verifyOut (s : State) : Bool :=
-  Spec.RsaPss.verify G G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) G.len)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .rsi).toNat)
-    (Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32))
-
-variable (G) in
 /-- Before the epilogue: the result in `rax`, the saved registers in their
 slots. -/
-structure VDone (s t : State) : Prop where
-  L : Lay t (fb s) (stackArg s 3)
+structure VDone (Hs Gs : Spec.Mgf1.Hash) (s t : State) : Prop where
+  L : Lay t (fb s) (stackArg s 4)
   wr : t.wr = frR s :: s.wr
   cs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r
   rbx : t.mem.readW (off (fb s) sRbx) 64 = s.gpr .rbx
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
-  out : (t.gpr .rax).setWidth 32 = if verifyOut G s then 1 else 0
+  out : (t.gpr .rax).setWidth 32 = if verifyOut Hs Gs s then 1 else 0
 
-variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
+variable {H : Impl.Pbkdf2.Md.X86_64.Hash}
 
-include hH K in
-theorem vmid_safe : (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H]).allInstrs safeI = true := by
+variable {g : Impl.Mgf1.X86_64.Table.Fns} (hg : FnsSafe g)
+
+include hg in
+theorem vmid_safe : (seqs [.block acc0, mgfXor H g, .block clearTop, scanCheck H]).allInstrs safeI = true := by
   simp only [seqs, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck, Code.allInstrs,
-    mgfXor_safe hH K, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
+    mgfXor_safe hg, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
-include K in
-theorem vmid_xd : (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H]).x86_64Depth = 8 := by
+include hg in
+theorem vmid_xd : (seqs [.block acc0, mgfXor H g, .block clearTop, scanCheck H]).x86_64Depth ≤ 16 := by
+  have := mgfXor_xd (H := H) hg
   simp only [seqs, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck, byteLoop, Code.x86_64Depth,
-    mgfXor_xd K]
-  rfl
+    Nat.max_le]
+  omega
 
 theorem ite_setWidth {p : Prop} [Decidable p] {b : Bool} (h : p ↔ b = true) :
     ((if p then 1 else 0 : BitVec 64).setWidth 32) = if b then 1 else 0 := by

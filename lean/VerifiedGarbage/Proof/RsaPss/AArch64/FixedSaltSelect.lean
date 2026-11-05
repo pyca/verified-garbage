@@ -39,8 +39,8 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     (hSl : u.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 sl)
     (hFits : any = 0 → sl < db)
     (hMatch : any = 0 → acc = 0 → sl = db - pos - 1)
-    (hAcc : acc.toNat < 2^63) :
-    WP isa (Impl.RsaPss.AArch64.FixedSalt.select H) u
+    (hAcc : acc.toNat < 2^63) {f : MdFns} {dn : String} (hT : HT H dn f F u.mem u.syms) (hdo : DigOK H.P) :
+    WP isa (Impl.RsaPss.AArch64.FixedSalt.select f H) u
       fun u' => u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
         (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u'.gpr r = u.gpr r) ∧
         (∀ r ∈ preservedV, (u'.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) ∧
@@ -48,7 +48,8 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
         u'.gpr .x0 = resV acc (hH.SH.H.hash (msgV (Spec.Rsa.bytesAt u.mem dig H.D) (fun i => W (e + i)) db pos))
           W e db H.D := by
   unfold Impl.RsaPss.AArch64.FixedSalt.select
-  refine WP.seq (wp_ldrSp (by decide) (ld_slot L (by decide)) fun v O e9 => wp_nil ?_)
+  refine WP.seq (WP.of_syms (wp_ldrSp (by decide) (ld_slot L (by decide)) fun v O e9 => wp_nil fun sy => ?_))
+  have hTv : HT H dn f F v.mem v.syms := by rw [sy, O.mem]; exact hT
   have Lv := L.congr O.sp O.wr (O.get .x20)
   have h9 : v.gpr .x9 = any := by rw [e9, L.sp, hAny]
   have hEmv : ∀ o, oEm ≤ o → o < oY → v.mem (off S o) = W o := by rw [O.mem]; exact hEm
@@ -66,7 +67,7 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     have hp' : db - sl - 1 < db := by omega
     have hrev : db - (db - sl - 1) - 1 = sl := by omega
     refine WP.mono (finish_ok hH Lv hEmv he hfit hp' hdb h19v h21v h24v h25v h26v
-      (by rw [O.mem, hrev, hSl]) hdgv hrv hd) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
+      (by rw [O.mem, hrev, hSl]) hdgv hrv hd hTv hdo) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
     refine ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr, ?_, ?_, O.mem ▸ fr, ?_⟩
     · intro r hr
       rw [cs r hr, O.get r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
@@ -77,7 +78,7 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
         rw [heq]
       · rw [resV_nonzero hAcc hz, resV_nonzero hAcc hz]
   · refine WP.mono (b2_ok hH Lv hEmv he hfit hpos hdb h19v h21v h24v h25v h26v
-      (by rw [O.mem, hP]) hdgv hrv hd) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
+      (by rw [O.mem, hP]) hdgv hrv hd hTv hdo) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
     refine ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr, ?_, ?_, O.mem ▸ fr, ?_⟩
     · intro r hr
       rw [cs r hr, O.get r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]

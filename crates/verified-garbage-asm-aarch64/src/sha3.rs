@@ -3,7 +3,7 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// `vg_keccak_absorb`, with its working space in `*scratch`.
+/// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`. `*scratch` is its working space.
 ///
 /// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///
@@ -508,7 +508,7 @@ b 21f
 /// The CPU features `vg_keccak_absorb_scratch_sha3` requires (`Artifact.features`).
 pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
-/// `vg_keccak_absorb`, with its working space in `*scratch`.
+/// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`. `*scratch` is its working space.
 ///
 /// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///

@@ -28,7 +28,7 @@
 mod arithmetic;
 mod domain;
 mod generation;
-#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
 mod precomputed;
 #[cfg(test)]
 mod vetted_tests;
@@ -182,9 +182,9 @@ impl Parameters {
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
-        #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+        #[cfg(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64"))]
         let exponent_len = self.domain.exponent_len();
-        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+        #[cfg(not(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86_64")))]
         let exponent_len = self.q.as_ref().map_or(len, Vec::len);
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];
@@ -331,7 +331,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Error, Parameters, PrivateKey, PublicKey, zeroize};
     use alloc::{format, vec};
     fn composite_domain() -> Parameters {
         // Modulus 2^512-1, generator 2^128: g^4=1 and g^2!=1.

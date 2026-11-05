@@ -412,7 +412,10 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        Backend, Error, Sha256Backend, Vec, decrypt, decrypt_fn, encrypt_with_rng, fill_nonzero,
+        os_random, vec,
+    };
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 

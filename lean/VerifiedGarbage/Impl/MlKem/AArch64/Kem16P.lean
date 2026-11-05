@@ -178,6 +178,11 @@ def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L 
     (.seq (encryptRestP prf L (placed L (Hybrid.hashPairs (Hybrid.ekSrc L))) .x25 0 .x28 MB .x27 0)
       (.block L.kemEpilogue)))
 
+/-- `vg_mlkem<n>_encaps_h`: `encaps` after `hArgs`, which ignores `h` (`H(ek)` is hashed in the pairs
+that sample the matrix). -/
+def encapsH (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+  .seq (.block hArgs) (encaps hash prf L)
+
 /-- Decapsulation after the matrix: re-encryption from the first `n` PRF
 outputs in their buffers, and the selection (`Kem16.deRest`). -/
 def deRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (n : Nat) : Prog isa :=

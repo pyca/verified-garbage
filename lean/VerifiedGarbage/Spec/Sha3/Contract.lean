@@ -16,7 +16,7 @@ arguments are public. The state and the message are secret; the rate, the
 position within the block and the domain-separation suffix are public.
 
 A hash is computed from the all-zero state (which represents the empty
-message) by `vg_keccak_absorb` on each piece of the message,
+message) by `vg_keccak_absorb_scratch` on each piece of the message,
 `vg_keccak_pad`, and `vg_keccak_squeeze` from position 0: by the
 definitions, the output is then `sponge rate suffix msg outlen`. Further
 calls of `vg_keccak_squeeze`, each from the state and position the previous
@@ -29,10 +29,9 @@ pointer that an implementation's calls and frames use (`stack`, see
 `Sig.contract`), 0 for one that uses none: it depends on the target. They
 may overwrite their arguments passed in memory, where the calling
 convention allows it (`writeArgs`). `scratch` is working space, sized for
-the target with the fewest registers. `vg_keccak_absorb`, `vg_keccak_pad` and
-`vg_keccak_squeeze` keep theirs on the stack; `vg_keccak_absorb_scratch` is
-`vg_keccak_absorb` with its working space passed in `scratch`, for
-callers that have their own (the Rust sponge on AArch64, on its stack).
+the target with the fewest registers, which `vg_keccak_absorb_scratch` is
+passed (the Rust sponge keeps it on its stack); `vg_keccak_pad` and
+`vg_keccak_squeeze` keep theirs on the stack.
 -/
 
 @[expose] public section
@@ -42,8 +41,10 @@ namespace VG.Spec.Sha3
 /-- The rates, in bytes, of the six functions of FIPS 202 (§6). -/
 def rates : List Nat := [72, 104, 136, 144, 168]
 
-/-- `vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize`.
-`rate` and `pos` are public. -/
+/-- The arguments of `vg_keccak_absorb_scratch` but its working space,
+`(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize`,
+which `absorbPre` and `absorbPost` are stated over. `rate` and `pos` are
+public. -/
 def absorbSig : Sig where
   params := [("state", .array true .u64 25), ("rate", .int .usize true),
     ("pos", .int .usize true), ("data", .slice false .u8 "len")]
@@ -62,29 +63,8 @@ def absorbPost (pb : Nat) : absorbSig.Post pb := fun state rate pos data len m m
     Repr m' state rate.toNat (msg ++ bytesAt m data len.toNat)) ∧
   ret.toNat = (pos.toNat + len.toNat) % rate.toNat
 
-/-- `absorbPre` and `absorbPost`. -/
-def absorbContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  absorbSig.contract A (pre := absorbPre A.ptrBits) (post := absorbPost A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_keccak_absorb` on every target. -/
-def absorbApi : Api where
-  module := "sha3"
-  name := "vg_keccak_absorb"
-  sig := absorbSig
-  writeArgs := true
-  contracts := some fun A stack => absorbContract A stack
-  summary := "Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a \
-    message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that \
-    message followed by the `len` bytes at `data`. Returns the position after them, \
-    `(pos + len) % rate`.\n\n\
-    Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and \
-    `len` may affect timing, not the state or the data."
-  safety := ["`rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`."]
-
 /-- `vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize`:
-`vg_keccak_absorb` with its working space passed in `scratch`, for functions
-that call it with theirs. -/
+`absorbSig` with its working space passed in `scratch`. -/
 def absorbScratchSig : Sig where
   params := [("state", .array true .u64 25), ("rate", .int .usize true),
     ("pos", .int .usize true), ("data", .slice false .u8 "len"),
@@ -106,7 +86,10 @@ def absorbScratchApi : Api where
   sig := absorbScratchSig
   writeArgs := true
   contracts := some fun A stack => absorbScratchContract A stack
-  summary := "`vg_keccak_absorb`, with its working space in `*scratch`.\n\n\
+  summary := "Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a \
+    message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that \
+    message followed by the `len` bytes at `data`. Returns the position after them, \
+    `(pos + len) % rate`. `*scratch` is its working space.\n\n\
     Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, \
     `pos` and `len` may affect timing, not the state or the data."
   safety := [

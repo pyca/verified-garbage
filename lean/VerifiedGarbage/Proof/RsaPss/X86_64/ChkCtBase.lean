@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkFrame
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
@@ -25,24 +27,33 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable (G : Spec.Mgf1.Hash)
+variable (T : Tabs)
+
+/-- `chkK.pub`, which does not depend on the hash functions. -/
+def CPub (s₁ s₂ : State) : Prop :=
+  (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .rsp], s₁.gpr r = s₂.gpr r) ∧
+    (s₁.gpr .r9).setWidth 32 = (s₂.gpr .r9).setWidth 32 ∧
+    (List.range 4).map (stackArg s₁) = (List.range 4).map (stackArg s₂) ∧
+    tabWords s₁.mem (stackArg s₁ 2) (stackArg s₁ 3) = tabWords s₂.mem (stackArg s₂ 2) (stackArg s₂ 3)
+
+theorem cpub_eq (Hs Gs : Spec.Mgf1.Hash) : (chkK T Hs Gs).pub = CPub := rfl
 
 /-- The entry state `s` of a run, and the first's, `a`: both meet the
 precondition, and their public data agree. -/
-def VSib (a s : State) : Prop := Pre G a ∧ (chkK G).pub a s ∧ Pre G s
+def VSib (a s : State) : Prop := Pre T a ∧ CPub a s ∧ Pre T s
 
 /-- A predicate of the state of a run, given its entry state, for every run
 whose entry state agrees with `a`. -/
-def VAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, VSib G a s ∧ J s t
+def VAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, VSib T a s ∧ J s t
 
-theorem vpub_refl (s : State) : (chkK G).pub s s :=
+theorem vpub_refl (s : State) : CPub s s :=
   ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
-variable {G}
+variable {T}
 
 namespace VSib
 
-variable {a s : State} (h : VSib G a s)
+variable {a s : State} (h : VSib T a s)
 include h
 
 theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) : s.gpr r = a.gpr r :=
@@ -50,11 +61,40 @@ theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) : s.gp
 
 theorem rsl : s.gpr .r8 = a.gpr .r8 := h.gpr (by decide)
 theorem r9 : (s.gpr .r9).setWidth 32 = (a.gpr .r9).setWidth 32 := h.2.1.2.1.symm
-theorem arg0 : stackArg s 0 = stackArg a 0 := h.2.1.2.2.1.symm
-theorem arg1 : stackArg s 1 = stackArg a 1 := h.2.1.2.2.2.symm
 
-theorem pa : Pre G a := h.1
-theorem ps : Pre G s := h.2.2
+theorem arg {i : Nat} (hi : i < 4) : stackArg s i = stackArg a i := by
+  have := congrArg (fun l => l.getD i 0) h.2.1.2.2.1
+  simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi, Option.map_some,
+    Option.getD_some] at this
+  exact this.symm
+
+theorem arg0 : stackArg s 0 = stackArg a 0 := h.arg (by decide)
+theorem arg1 : stackArg s 1 = stackArg a 1 := h.arg (by decide)
+
+theorem pa : Pre T a := h.1
+theorem ps : Pre T s := h.2.2
+
+/-- The words of the tables. -/
+theorem tws : s.mem.readW (off (stackArg s 2) 0) 64 = a.mem.readW (off (stackArg a 2) 0) 64 ∧
+    s.mem.readW (off (stackArg s 2) 24) 64 = a.mem.readW (off (stackArg a 2) 24) 64 ∧
+    s.mem.readW (off (stackArg s 2) 32) 64 = a.mem.readW (off (stackArg a 2) 32) 64 ∧
+    s.mem.readW (off (stackArg s 3) 0) 64 = a.mem.readW (off (stackArg a 3) 0) 64 ∧
+    s.mem.readW (off (stackArg s 3) 8) 64 = a.mem.readW (off (stackArg a 3) 8) 64 ∧
+    s.mem.readW (off (stackArg s 3) 16) 64 = a.mem.readW (off (stackArg a 3) 16) 64 ∧
+    s.mem.readW (off (stackArg s 3) 32) 64 = a.mem.readW (off (stackArg a 3) 32) 64 := by
+  have := h.2.1.2.2.2.symm
+  simp only [tabWords, List.cons.injEq, and_true] at this
+  exact this
+
+/-- The runs' symbols agree on the tables' functions. -/
+theorem syH : SyH T.H T.dn T.f a.syms s.syms :=
+  ⟨h.ps.tabs.hf, h.ps.tabs.h0.symm.trans (h.tws.1.trans h.pa.tabs.h0),
+    h.ps.tabs.h3.symm.trans (h.tws.2.1.trans h.pa.tabs.h3), h.ps.tabs.h4.symm.trans (h.tws.2.2.1.trans h.pa.tabs.h4)⟩
+
+theorem syG : SyG T.G T.g a.syms s.syms :=
+  ⟨h.ps.tabs.gf, h.ps.tabs.g0.symm.trans (h.tws.2.2.2.1.trans h.pa.tabs.g0),
+    h.ps.tabs.g1.symm.trans (h.tws.2.2.2.2.1.trans h.pa.tabs.g1),
+    h.ps.tabs.g2.symm.trans (h.tws.2.2.2.2.2.1.trans h.pa.tabs.g2)⟩
 
 theorem fb : fb s = fb a := by
   simp only [VG.Proof.RsaPss.X86_64.fb, h.gpr (r := .rsp) (by decide)]
@@ -89,6 +129,13 @@ def vrdx (s : State) : BitVec 64 := if (s.gpr .r9).setWidth 32 = 0 then s.gpr .r
 /-- The public words of the frame, by index. -/
 def vw (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
   match k with
+  | 8 => s.mem.readW (off (stackArg s 2) 0) 64
+  | 9 => s.mem.readW (off (stackArg s 2) 24) 64
+  | 10 => s.mem.readW (off (stackArg s 2) 32) 64
+  | 11 => s.mem.readW (off (stackArg s 3) 0) 64
+  | 12 => s.mem.readW (off (stackArg s 3) 8) 64
+  | 13 => s.mem.readW (off (stackArg s 3) 16) 64
+  | 14 => s.mem.readW (off (stackArg s 3) 32) 64
   | 17 => s.gpr .rdx
   | 21 => stackArg s 0
   | 23 => off (stackArg s 0) (oEm + vlo s)
@@ -107,7 +154,7 @@ def pw (H : Hash) (s : State) (ks : List Nat) : List (Nat × BitVec 64) := ks.ma
 
 namespace VSib
 
-variable {a s : State} (h : VSib G a s)
+variable {a s : State} (h : VSib T a s)
 include h
 
 theorem vlo : vlo s = vlo a := by have _ := h; rfl
@@ -123,7 +170,8 @@ theorem cmask : cmask s = cmask a := by
 theorem vw {H : Hash} (k : Nat) : vw H s k = vw H a k := by
   unfold VG.Proof.RsaPss.X86_64.Chk.vw
   split <;> simp only [h.gpr (r := .rsi) (by decide), h.gpr (r := .rdi) (by decide),
-    h.gpr (r := .rdx) (by decide), h.gpr (r := .r8) (by decide), h.r9, h.arg0, h.vlo, h.vdb, h.vnb, h.cmask]
+    h.gpr (r := .rdx) (by decide), h.gpr (r := .r8) (by decide), h.r9, h.arg0, h.vlo, h.vdb, h.vnb, h.cmask,
+    h.tws.1, h.tws.2.1, h.tws.2.2.1, h.tws.2.2.2.1, h.tws.2.2.2.2.1, h.tws.2.2.2.2.2.1, h.tws.2.2.2.2.2.2]
 
 theorem pw {H : Hash} (ks : List Nat) : pw H s ks = pw H a ks := by
   simp only [VG.Proof.RsaPss.X86_64.Chk.pw, h.vw]
@@ -144,10 +192,10 @@ end VSib
 /-! ## A run's state between pieces -/
 
 /-- The public words after the checks. -/
-def K5 : List Nat := [17, 21, 25, 26, 35, 36, 37, 38]
+def K5 : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 25, 26, 35, 36, 37, 38]
 
 /-- And with `DB`'s. -/
-def KM : List Nat := [17, 21, 23, 24, 25, 26, 35, 36, 37, 38]
+def KM : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 23, 24, 25, 26, 35, 36, 37, 38]
 
 theorem km_k5 {k : Nat} (h : k ∈ KM) (h23 : k ≠ 23) (h24 : k ≠ 24) : k ∈ K5 := by
   simp only [KM, K5, List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega
@@ -164,10 +212,11 @@ structure VS (H : Hash) (s t : State) (ks : List Nat) (rs : List (Reg × BitVec 
   wr : t.wr = frR s :: s.wr
   W : ∃ V W, Rep t.mem (fb s) (stackArg s 0) V W ∧ (∀ k ∈ ks, W k = vw H s k) ∧ X V W
   regs : ∀ p ∈ rs, t.gpr p.1 = p.2
+  sy : t.syms = s.syms
 
 variable {H : Hash}
 
-theorem vs_pub {a s t : State} (S : VSib G a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
+theorem vs_pub {a s t : State} (S : VSib T a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) :
     Pub (fb a) (stackArg a 0) a.wr (pw H a ks) rs X t := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
@@ -182,7 +231,7 @@ theorem vs_pub {a s t : State} (S : VSib G a s) {ks : List Nat} {rs : List (Reg 
 /-- A piece the analysis checks from `pT 1 ks rgs`. -/
 theorem vtwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs : List Reg)
     (rs : State → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s X, VSib G a s ∧ VS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hΦ : ∀ a t, Φ a t → ∃ s X, VSib T a s ∧ VS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 1 ks rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
   two_pub 1 ks rgs fb (fun a => stackArg a 0) State.wr (fun a => pw H a ks) rs
@@ -192,16 +241,17 @@ theorem vtwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs
 /-- `VS` after code that keeps the memory and the registers but `rs'`. -/
 theorem VS.keep {s t t' : State} {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) {rs' : List Reg} (k : Keep rs' t t')
-    (hm : t'.mem = t.mem) (hsp : Reg.rsp ∉ rs') (hrs : ∀ p ∈ rs, p.1 ∉ rs') : VS H s t' ks rs X :=
+    (hm : t'.mem = t.mem) (hsp : Reg.rsp ∉ rs') (hrs : ∀ p ∈ rs, p.1 ∉ rs') (hs : t'.syms = t.syms) :
+    VS H s t' ks rs X :=
   ⟨h.L.congr (k.gpr hsp) k.2.2 (by rw [hm]), k.2.2.trans h.wr, by rw [hm]; exact h.W,
-    fun p hp => (k.gpr (hrs p hp)).trans (h.regs p hp)⟩
+    fun p hp => (k.gpr (hrs p hp)).trans (h.regs p hp), hs.trans h.sy⟩
 
 /-- `VS` after code that keeps the regions and the scratch slot. -/
 theorem VS.next {s t t' : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
     {X X' : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) (L' : Lay t' (fb s) (stackArg s 0))
     (hwr : t'.wr = t.wr) {V' : Nat → Byte} {W' : Nat → BitVec 64} (R' : Rep t'.mem (fb s) (stackArg s 0) V' W')
-    (hw : ∀ k ∈ ks', W' k = vw H s k) (hx : X' V' W') : VS H s t' ks' [] X' :=
-  ⟨L', hwr.trans h.wr, ⟨V', W', R', hw, hx⟩, fun _ hp => by cases hp⟩
+    (hw : ∀ k ∈ ks', W' k = vw H s k) (hx : X' V' W') (hs : t'.syms = t.syms) : VS H s t' ks' [] X' :=
+  ⟨L', hwr.trans h.wr, ⟨V', W', R', hw, hx⟩, (fun _ hp => by cases hp), hs.trans h.sy⟩
 
 
 theorem VS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
@@ -209,13 +259,13 @@ theorem VS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
     (rs' : List (Reg × BitVec 64)) (hrs : ∀ p ∈ rs', t.gpr p.1 = p.2) (hX : ∀ V W, X V W → X' V W) :
     VS H s t ks' rs' X' := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
-  exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs⟩
+  exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs, h.sy⟩
 
 /-- A piece the analysis checks from `pT 1 (ks ++ eks) rgs`: the public
 words `ks` of `vw`, and `ex`, of the anchor. -/
 theorem vtwoX {α : Type} {Φ : α → State → Prop} {c : Prog isa} (π : α → State) (ks : List Nat)
     (ex : α → List (Nat × BitVec 64)) (eks : List Nat) (rgs : List Reg) (rs : α → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s, VSib G (π a) s ∧ VS H s t ks (rs a) fun _ W => ∀ p ∈ ex a, W p.1 = p.2)
+    (hΦ : ∀ a t, Φ a t → ∃ s, VSib T (π a) s ∧ VS H s t ks (rs a) fun _ W => ∀ p ∈ ex a, W p.1 = p.2)
     (he : ∀ a, (ex a).map Prod.fst = eks) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks ++ eks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 1 (ks ++ eks) rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=

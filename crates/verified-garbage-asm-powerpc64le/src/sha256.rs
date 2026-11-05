@@ -270,5 +270,9 @@ pub(crate) mod vg_sha256_compress;
 pub(crate) mod vg_sha256_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_state_digest.rs"]
+pub(crate) mod vg_sha256_state_digest;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_update_scratch.rs"]
 pub(crate) mod vg_sha256_update_scratch;

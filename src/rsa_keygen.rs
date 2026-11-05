@@ -34,12 +34,13 @@
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
 //!
-//! On x86-64, AArch64, PPC64LE and RISC-V, the verified `vg_rsa_prime_search` (contract
+//! On x86-64, AArch64, ARMv7, PPC64LE and RISC-V, the verified `vg_rsa_prime_search` (contract
 //! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
 //! rejected ones and chooses how many random octets to ask for when they run
 //! out, from the state `vg_rsa_prime_search_init` makes
 //! (`VG.Spec.RsaKeyGen.primeInitContract`); on x86-64,
-//! `vg_rsa_prime_search_adx` is its variant for `Adx` and `Ifma`. A candidate may read at most the search's
+//! `vg_rsa_prime_search_adx` is its variant for `Adx` and `Ifma`, and on
+//! ARMv7, `vg_rsa_prime_search_umaal` for `Umaal`. A candidate may read at most the search's
 //! entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream, past which
 //! the generation fails as with too many rejected candidates. Elsewhere this
 //! module runs and counts the candidates itself.
@@ -57,9 +58,9 @@
 //!
 //! This module only checks the lengths and the exponent, allocates the
 //! memory the candidates and the key are computed in, gives the search its
-//! random octets, counts the candidates (but on x86-64, AArch64, PPC64LE
-//! and RISC-V) and the generations, and compares the pairwise test's result with
-//! its message.
+//! random octets, counts the candidates (but on x86-64, AArch64, ARMv7,
+//! PPC64LE and RISC-V) and the generations, and compares the pairwise test's
+//! result with its message.
 
 #![cfg(all(
     any(
@@ -80,10 +81,14 @@ use core::fmt;
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 )))]
 use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
+use crate::arch::rsa_keygen::vg_rsa_keygen_key;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -94,13 +99,11 @@ use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_umaal;
-use crate::arch::rsa_keygen::vg_rsa_keygen_key;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
+use crate::arch::rsa_keygen::vg_rsa_prime_search_umaal;
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
@@ -224,6 +227,7 @@ struct Random<F> {
     #[cfg(not(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
+        target_arch = "arm",
         target_arch = "powerpc64",
         target_arch = "riscv64"
     )))]
@@ -236,6 +240,7 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
         any(
             target_arch = "x86_64",
             target_arch = "aarch64",
+            target_arch = "arm",
             target_arch = "powerpc64",
             target_arch = "riscv64"
         ),
@@ -248,6 +253,7 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
+                target_arch = "arm",
                 target_arch = "powerpc64",
                 target_arch = "riscv64"
             )))]
@@ -261,6 +267,7 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     #[cfg(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
+        target_arch = "arm",
         target_arch = "powerpc64",
         target_arch = "riscv64"
     ))]
@@ -286,6 +293,7 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     #[cfg(not(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
+        target_arch = "arm",
         target_arch = "powerpc64",
         target_arch = "riscv64"
     )))]
@@ -342,6 +350,7 @@ impl<F> Drop for Random<F> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
@@ -356,6 +365,7 @@ struct Search<'a> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
@@ -396,6 +406,17 @@ impl<'a> Search<'a> {
             // `select` chose it because the CPU has the features it needs.
             #[cfg(target_arch = "x86_64")]
             Backend::Adx | Backend::Ifma => vg_rsa_prime_search_adx,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_prime_search_umaal,
         };
         let mut used = [0u64; 1];
         // SAFETY: each pointer is valid for its length (`out`, `used`,
@@ -434,6 +455,7 @@ impl<'a> Search<'a> {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
@@ -464,6 +486,7 @@ pub fn generate_prime_from(
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
@@ -493,6 +516,7 @@ fn prime_from(
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 )))]
@@ -509,6 +533,7 @@ fn prime_from(
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
 )))]
@@ -525,18 +550,6 @@ fn prime_from_counted(
     let mut scratch = vec![0u64; crate::rsa::scratch_words(len)];
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_keygen_candidate,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        Backend::Umaal => vg_rsa_keygen_candidate_umaal,
     };
     let mut read = 0;
     let r = loop {
@@ -798,7 +811,10 @@ fn generate_with(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        Error, Random, Vec, generate, generate_from, generate_prime, generate_prime_from,
+        generate_with, key_from_primes, pairwise_ok, prime_from, vec,
+    };
 
     #[test]
     fn errors_display() {
@@ -1091,6 +1107,7 @@ mod tests {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
+                target_arch = "arm",
                 target_arch = "powerpc64",
                 target_arch = "riscv64"
             )))]
@@ -1100,6 +1117,7 @@ mod tests {
             #[cfg(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
+                target_arch = "arm",
                 target_arch = "powerpc64",
                 target_arch = "riscv64"
             ))]
@@ -1143,6 +1161,7 @@ mod tests {
             #[cfg(not(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
+                target_arch = "arm",
                 target_arch = "powerpc64",
                 target_arch = "riscv64"
             )))]
@@ -1152,6 +1171,7 @@ mod tests {
             #[cfg(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
+                target_arch = "arm",
                 target_arch = "powerpc64",
                 target_arch = "riscv64"
             ))]

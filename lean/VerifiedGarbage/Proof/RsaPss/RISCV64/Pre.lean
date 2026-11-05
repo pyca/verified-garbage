@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -45,33 +46,38 @@ open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_ld wp_mov wp_addSp wp_nil 
   wp_subi wp_li)
 open VG.Proof.RsaOaep.RISCV64 (fb fr save_ok Saves fb_al stackArgAddr_eq)
 
-theorem stackArgs_five (s : State) :
-    List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4] := rfl
+theorem stackArgs_eight (s : State) :
+    List.map (stackArg s) (List.range 8) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7] := rfl
 
 /-- The buffers: `n`, `e`, the digest, the signature, the working space, the
-precomputed values and the arguments on the stack. -/
+precomputed values, the tables of the hash function and of MGF1's, and the
+arguments on the stack. -/
 abbrev nR (s : State) : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
 abbrev eR (s : State) : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
 abbrev dR (D : Nat) (s : State) : Region := ⟨s.gpr .a4, D⟩
-abbrev gR (s : State) : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
-abbrev scR (s : State) : Region := ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
-abbrev pR (s : State) : Region := ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 40⟩
+abbrev gR (s : State) : Region := ⟨s.gpr .a6, (s.gpr .a7).toNat⟩
+abbrev scR (s : State) : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+abbrev pR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
+abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 6) 11
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 5
+abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 64⟩
 
-/-- What the code needs of `verifyPrecomputedContract.pre`, by name, for a
-hash function of `D`-byte digests. -/
+/-- What the code needs of `verifyPrecomputedTableContract.pre`, by name,
+for a hash function of `D`-byte digests (the table `hash`'s). -/
 structure PreP (D : Nat) (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
   sp1 : stackBytes ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 40 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, dR D s, gR s, pR s, aR s]
+  sp2 : s.sp.toNat + 64 ≤ 2 ^ 64
+  hrd : s.rd = [nR s, eR s, dR D s, gR s, pR s, tHR s, tGR s, aR s]
   hwr : s.wr = [scR s]
   ns : (nR s).Disjoint (scR s)
   es : (eR s).Disjoint (scR s)
   ds : (dR D s).Disjoint (scR s)
   gs : (gR s).Disjoint (scR s)
   sp : (scR s).Disjoint (pR s)
+  sth : (scR s).Disjoint (tHR s)
+  stg : (scR s).Disjoint (tGR s)
   sa : (scR s).Disjoint (aR s)
   kn : (kR s).Disjoint (nR s)
   ke : (kR s).Disjoint (eR s)
@@ -79,36 +85,79 @@ structure PreP (D : Nat) (s : State) : Prop where
   kg : (kR s).Disjoint (gR s)
   ksc : (kR s).Disjoint (scR s)
   kp : (kR s).Disjoint (pR s)
+  kth : (kR s).Disjoint (tHR s)
+  ktg : (kR s).Disjoint (tGR s)
   ka : (kR s).Disjoint (aR s)
   wn : (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64
   we : (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64
   wd : (s.gpr .a4).toNat + D ≤ 2 ^ 64
-  wg : (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64
-  wsc : (stackArg s 1).toNat + (stackArg s 2).toNat * 8 ≤ 2 ^ 64
-  wp : (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64
+  wg : (s.gpr .a6).toNat + (s.gpr .a7).toNat ≤ 2 ^ 64
+  wsc : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
+  wp : (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64
+  wth : (stackArg s 6).toNat + 88 ≤ 2 ^ 64
+  wtg : (stackArg s 7).toNat + 40 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .a1).toNat
   k2 : (s.gpr .a1).toNat ≤ 1024
   e1 : 1 ≤ (s.gpr .a3).toNat
   e2 : (s.gpr .a3).toNat ≤ (s.gpr .a1).toNat
-  gk : (s.gpr .a6).toNat = (s.gpr .a1).toNat
-  hs : Spec.RsaPss.publicScratchWords (s.gpr .a1).toNat ≤ (stackArg s 2).toNat
-  hp : (stackArg s 4).toNat = Spec.Rsa.precomputedWords (s.gpr .a1).toNat
-  al1 : (stackArg s 1).toNat % 8 = 0
-  al3 : (stackArg s 3).toNat % 8 = 0
+  gk : (s.gpr .a7).toNat = (s.gpr .a1).toNat
+  hs : Spec.RsaPss.publicScratchWords (s.gpr .a1).toNat ≤ (stackArg s 3).toNat
+  hp : (stackArg s 5).toNat = Spec.Rsa.precomputedWords (s.gpr .a1).toNat
+  al2 : (stackArg s 2).toNat % 8 = 0
+  al4 : (stackArg s 4).toNat % 8 = 0
+  al6 : (stackArg s 6).toNat % 8 = 0
+  al7 : (stackArg s 7).toNat % 8 = 0
 
-theorem preP_of {H : Spec.Mgf1.Hash} {s : State}
-    (h : (Spec.RsaPss.verifyPrecomputedContract H H abi stackBytes).pre s) : PreP H.len s := by
+/-- The contract, with the hash function one of the tables `tsH` of `MdHash`
+and MGF1's one of the tables `tsG` of `Hash`, and the stack of the frame and
+of the streaming hash functions. -/
+abbrev verSpec (tsH tsG : List FnTable) : Contract isa :=
+  Spec.RsaPss.verifyPrecomputedTableContract
+    (abi.withTables Spec.RsaPss.verifyPrecomputedTableSig [("hash", tsH), ("mgf1", tsG)]) stackBytes
+
+/-- Unfolds the precondition at `h`. -/
+macro "ver_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 335 + 1 := rfl
-  rw [e] at h
-  sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
-    stackArgs_five, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at h
-  obtain ⟨spal, sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ksc, kp, ka, wn, we, wd, wg, wsc, wp,
-    k1, k2, e1, e2, gk, hs, hp, al1, al3⟩ := h
-  exact ⟨spal, sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ksc, kp, ka, wn, we, wd, wg, wsc, wp,
-    k1, k2, e1, e2, gk, hs, hp, al1, al3⟩
+  unfold verSpec at $h:ident
+  rw [e] at $h:ident
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
+    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
+    Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
+    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
+    Spec.Rsa.lenValid] at $h:ident
+  simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
+    exists_eq_left'] at $h:ident))
+
+/-- `PreP`, for the hash function `H` that the table at the stack argument 6
+names: the digest has its length. -/
+theorem preP_of {H : Spec.Mgf1.Hash} {tsH tsG : List FnTable} {s : State} (h : (verSpec tsH tsG).pre s)
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 6) = some H) : PreP H.len s := by
+  ver_pre at h
+  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg,
+    ka, wn, we, wd, wg, wsc, wp, wth, wtg, k1, k2, e1, e2, gk, hs, hp, hl, al2, al4, al6, al7⟩ := h
+  have hl := hl H hH
+  rw [hl] at hrd ds kd wd
+  exact ⟨spal, sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sth, stg, sa, kn, ke, kd, kg, ksc, kp, kth, ktg, ka, wn, we,
+    wd, wg, wsc, wp, wth, wtg, k1, k2, e1, e2, gk, hs, hp, al2, al4, al6, al7⟩
+
+/-- The tables, as the contract gives them: the hash function's one of `tsH`
+at the stack argument 6 and MGF1's one of `tsG` at 7, with the functions of
+distinct names at distinct addresses. -/
+theorem spec_tab {tsH tsG : List FnTable} {s : State} (h : (verSpec tsH tsG).pre s) :
+    (∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 6) (FnTable.words isa s T)) ∧
+      (∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s T)) ∧
+      ((tsH.map (fun T : FnTable => T.fns)).flatten ++ (tsG.map (fun T : FnTable => T.fns)).flatten).Pairwise
+        (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
+  ver_pre at h
+  exact ⟨h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩
 
 /-- The working space. -/
-abbrev Sp (s : State) : Addr := stackArg s 1
+abbrev Sp (s : State) : Addr := stackArg s 2
 
 /-- The modulus' first byte, zero-extended. -/
 def n0 (s : State) : BitVec 64 := (s.mem (s.gpr .a0)).setWidth 64
@@ -130,7 +179,7 @@ def cm (s : State) : BitVec 64 := smear s ||| ((BitVec.ofNat 64 0 - lo s) &&& Bi
 def dbLen (D : Nat) (s : State) : BitVec 64 := s.gpr .a1 - lo s - BitVec.ofNat 64 (D + 1)
 
 /-- The salt-length mode, zero-extended. -/
-def anyL (s : State) : BitVec 64 := stackArg s 0 <<< 32 >>> 32
+def anyL (s : State) : BitVec 64 := stackArg s 1 <<< 32 >>> 32
 
 /-- The values `Base` fixes in `s1`–`s4`: `k`, `digest`, `lo` and `dbLen`. -/
 def vP (D : Nat) (s : State) : Reg → BitVec 64
@@ -143,7 +192,7 @@ def vP (D : Nat) (s : State) : Reg → BitVec 64
 /-- `c`, `salt_len` and the salt-length mode in `s5`–`s7`. -/
 structure Xs (s t : State) : Prop where
   s5 : t.gpr .s5 = cm s
-  s6 : t.gpr .s6 = s.gpr .a7
+  s6 : t.gpr .s6 = stackArg s 0
   s7 : t.gpr .s7 = anyL s
 
 theorem Xs.of {s t u : State} (h : Xs s t) (g : ∀ r ∈ [Reg.s5, .s6, .s7], u.gpr r = t.gpr r) : Xs s u :=
@@ -153,7 +202,7 @@ section
 variable {D : Nat} {s : State} (P : PreP D s)
 include P
 
-theorem scLen : oRsa ≤ (stackArg s 2).toNat * 8 := by
+theorem scLen : oRsa ≤ (stackArg s 3).toNat * 8 := by
   have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
 
 theorem sc_sub : Region.Sub (SC Sp s) (scR s) := Region.sub_prefix (scLen P)
@@ -166,7 +215,7 @@ theorem PreP.fits : Fits Sp s where
   sp16 := P.spal
   sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
   ksc := P.ksc.sub_right (sc_sub P)
-  wS := by show (stackArg s 1).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 2).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
 
 end
 
@@ -278,7 +327,7 @@ theorem shV_eq (V : Nat → Byte) {b n a : Nat} (ha : a < 2 ^ 10)
 /-! ## The entry -/
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 5) : (aR s).Contains (stackArgAddr s j) 8 := by
+theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
 
 /-- After the saves and the prologue. -/
@@ -287,14 +336,14 @@ structure Entered (D : Nat) (s t : State) : Prop where
   xs : Xs s t
   s8 : t.gpr .s8 = s.gpr .a2
   s9 : t.gpr .s9 = s.gpr .a3
-  s10 : t.gpr .s10 = s.gpr .a5
+  s10 : t.gpr .s10 = s.gpr .a6
   t1 : t.gpr .t1 = n0 s
 
 section
 variable {D : Nat} {s : State} (P : PreP D s)
 include P
 
-theorem arg_al {j : Nat} (hj : j < 5) : (stackArgAddr s j).toNat % 8 = 0 := by
+theorem arg_al {j : Nat} (hj : j < 8) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
     simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
@@ -305,7 +354,7 @@ theorem fb_al8 : (fb s).toNat % 8 = 0 := by
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 with memory changed only in the stack and our part of the working space. -/
-theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 5)
+theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → Prop} (hj : j < 8)
     (h6 : t.gpr .t6 = s.sp) (hrd : t.rd = s.rd) (hm : Frame [kR s, SC Sp s] s.mem t.mem)
     (k : ∀ t', Only [r] t t' → t'.gpr r = stackArg s j → WP isa (.block is) t' Q)
     (ho : 8 * j < 2048 := by decide) :
@@ -325,18 +374,22 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
   have hrd : v.rd = s.rd := kv.rd
   have hsp : v.sp = fb s := kv.sp
   have hm2 : Frame [kR s, SC Sp s] s.mem v.mem := hm.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp
-  have gs : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a7], v.gpr r = s.gpr r := fun r hr => by
+  have gs : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v.gpr r = s.gpr r := fun r hr => by
     rw [kv.gpr r (by revert r; decide)]; rfl
   simp only [Impl.RsaPss.RISCV64.prologue, Impl.RsaOaep.RISCV64.argBase]
   refine wp_addSp fun v₁ o₁ e₁ => ?_
   have g6 : v₁.gpr .t6 = s.sp := by rw [e₁, hsp, BitVec.sub_add_cancel]
-  refine wp_arg P (j := 0) (by decide) g6 (o₁.rd.trans hrd) (by rw [o₁.mem]; exact hm2) fun v₂ o₂ e₂ => ?_
+  refine wp_arg P (j := 1) (by decide) g6 (o₁.rd.trans hrd) (by rw [o₁.mem]; exact hm2) fun v₂ o₂ e₂ => ?_
   refine wp_sll fun v₃ o₃ e₃ => wp_srl fun v₄ o₄ e₄ => ?_
-  refine wp_arg P (j := 1) (by decide) (by rw [o₄.get .t6, o₃.get .t6, o₂.get .t6, g6])
+  refine wp_arg P (j := 2) (by decide) (by rw [o₄.get .t6, o₃.get .t6, o₂.get .t6, g6])
     (by rw [o₄.rd, o₃.rd, o₂.rd, o₁.rd, hrd]) (by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact hm2)
     fun v₅ o₅ e₅ => ?_
-  refine wp_mov fun v₆ o₆ e₆ => wp_mov fun v₇ o₇ e₇ => wp_mov fun v₈ o₈ e₈ => wp_mov fun v₉ o₉ e₉ =>
-    wp_mov fun v₁₀ o₁₀ e₁₀ => wp_mov fun v₁₁ o₁₁ e₁₁ => ?_
+  refine wp_mov fun v₆ o₆ e₆ => wp_mov fun v₇ o₇ e₇ => ?_
+  refine wp_arg P (j := 0) (by decide)
+    (by rw [o₇.get .t6, o₆.get .t6, o₅.get .t6, o₄.get .t6, o₃.get .t6, o₂.get .t6, g6])
+    (by rw [o₇.rd, o₆.rd, o₅.rd, o₄.rd, o₃.rd, o₂.rd, o₁.rd, hrd])
+    (by rw [o₇.mem, o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact hm2) fun v₈ o₈ e₈ => ?_
+  refine wp_mov fun v₉ o₉ e₉ => wp_mov fun v₁₀ o₁₀ e₁₀ => wp_mov fun v₁₁ o₁₁ e₁₁ => ?_
   have k₁₁ : Only [.t6, .s7, .s0, .s1, .s2, .s6, .s8, .s9, .s10] v v₁₁ :=
     (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans (o₁₀.trans
       o₁₁)))))))))).mono
@@ -363,7 +416,7 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
     rw [hm _ fun r hr hx => by
       rw [List.mem_singleton.mp hr] at hx; exact P.kn _ hx hc]
   -- The registers at `v₁₁`.
-  have a11 : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a7], v₁₁.gpr r = s.gpr r := fun r hr => by
+  have a11 : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a6], v₁₁.gpr r = s.gpr r := fun r hr => by
     rw [k₁₁.gpr r (by revert r; decide), gs r hr]
   have g0 : v₁₁.gpr .s0 = Sp s := by
     rw [o₁₁.get .s0, o₁₀.get .s0, o₉.get .s0, o₈.get .s0, o₇.get .s0, o₆.get .s0, e₅]
@@ -373,14 +426,13 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
   have g2 : v₁₁.gpr .s2 = s.gpr .a4 := by
     rw [o₁₁.get .s2, o₁₀.get .s2, o₉.get .s2, o₈.get .s2, e₇, ← a11 .a4 (by decide), o₁₁.get .a4,
       o₁₀.get .a4, o₉.get .a4, o₈.get .a4, o₇.get .a4]
-  have g6 : v₁₁.gpr .s6 = s.gpr .a7 := by
-    rw [o₁₁.get .s6, o₁₀.get .s6, o₉.get .s6, e₈, ← a11 .a7 (by decide), o₁₁.get .a7, o₁₀.get .a7, o₉.get .a7,
-      o₈.get .a7]
+  have g6 : v₁₁.gpr .s6 = stackArg s 0 := by
+    rw [o₁₁.get .s6, o₁₀.get .s6, o₉.get .s6, e₈]
   have g8 : v₁₁.gpr .s8 = s.gpr .a2 := by
     rw [o₁₁.get .s8, o₁₀.get .s8, e₉, ← a11 .a2 (by decide), o₁₁.get .a2, o₁₀.get .a2, o₉.get .a2]
   have g9 : v₁₁.gpr .s9 = s.gpr .a3 := by
     rw [o₁₁.get .s9, e₁₀, ← a11 .a3 (by decide), o₁₁.get .a3, o₁₀.get .a3]
-  have g10 : v₁₁.gpr .s10 = s.gpr .a5 := by rw [e₁₁, ← a11 .a5 (by decide), o₁₁.get .a5]
+  have g10 : v₁₁.gpr .s10 = s.gpr .a6 := by rw [e₁₁, ← a11 .a6 (by decide), o₁₁.get .a6]
   have g7 : v₁₁.gpr .s7 = anyL s := by
     rw [o₁₁.get .s7, o₁₀.get .s7, o₉.get .s7, o₈.get .s7, o₇.get .s7, o₆.get .s7, o₅.get .s7, e₄, e₃, e₂]; rfl
   -- The parameters.

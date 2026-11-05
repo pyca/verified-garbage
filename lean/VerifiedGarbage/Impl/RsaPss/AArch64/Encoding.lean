@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.AArch64
+public import VerifiedGarbage.Impl.Md5.AArch64.Stream
+public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 
 /-!
 # EMSA-PSS's encoding and its check on AArch64, and RSASSA-PSS around them
 
 `encode` (EMSA-PSS-ENCODE) and `checkEncoding` (EMSA-PSS-VERIFY), for a
-Merkle–Damgård hash function `H` as both the hash function and MGF1's, run
+Merkle–Damgård hash function `H` of a table of `MdHash` and MGF1's of a table
+of `Hash` (their last two arguments, on the stack), run
 the code of `Impl/RsaPss/AArch64.lean` in the same frame (`frameBytes`) and
 the same first 8192 bytes of their working space, as on x86-64
 (`Impl/RsaPss/X86_64/Encoding.lean`): `encode` stores its arguments in the
@@ -17,8 +22,10 @@ with the same slots, and runs verification's checks (`acc0` to
 `z = 8 emLen - emBits`, built a bit at a time (`maskBits`): AArch64 has no
 shift by a register here.
 
-`sign` and `verifyPrecomputed` then depend on the hash function only
-through the function they call: signing finds `emBits` from the modulus'
+`sign` and `verifyPrecomputed` take the tables, and depend on the hash
+function only through the function they call, `encode` or `checkEncoding`
+for the hash function of the index in the table of `MdHash` (`byIdx`, from
+`x27`), to which they pass the tables: signing finds `emBits` from the modulus'
 first byte `n₀` (`8 k + 55 - clz n₀`, `emBitsB`), lets `encode` write the
 encoding at `scratch + oEm + lo` (after a zero byte if `lo = 1`) with the
 working space from `scratch + oEnc`, and calls the private-key operation on
@@ -55,10 +62,19 @@ def fitH (H : Hash) : List Instr := [mov .x9 .x23, .subImm .x .x10 .x9 (H.D + 2)
 /-- 0 returned. -/
 def ret0 : Prog isa := .block [movi .x0 0]
 
+/-- The words of the tables to their slots: the table of `MdHash`'s `init`,
+compression function and digest (its words 0, 3 and 4), from the table at
+the stack argument 0, and the address of the table of `Hash`, the stack
+argument 1. -/
+def tabSlots : List Instr :=
+  [arg .x9 0, .ldr .x .x10 .x9 0] ++ st .x10 sIniH ++ [.ldr .x .x10 .x9 24] ++ st .x10 sCmpH ++
+    [.ldr .x .x10 .x9 32] ++ st .x10 sDigH ++ [arg .x9 1] ++ st .x9 sMgfT
+
 /-! ## `encode`
 
 `encode(em = x0, em_len = x1, digest = x2, salt = x3, salt_len = x4,
-em_bits = x5, scratch = x6, scratch_len = x7)`. -/
+em_bits = x5, scratch = x6, scratch_len = x7, hash, mgf1)`, the last two on
+the stack. -/
 
 /-- The registers saved, the arguments into their slots and registers, and
 the mask. -/
@@ -69,24 +85,25 @@ def encPrologue : List Instr :=
 /-- The encoding's `emLen` bytes copied from `scratch + oEm` to `em`. -/
 def copyOut : Prog isa := .seq (.block [.addImm .x .x11 .x20 oEm, ld .x14 sOut, mov .x12 .x23]) copyLoop
 
-variable (H : Hash)
+variable (f : MdFns) (H : Hash) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns)
 
 /-- The encoding, its copy, and 1. -/
-def encMain : Prog isa := seqs [signEnc H, copyOut, .block [movi .x0 1]]
+def encMain : Prog isa := seqs [signEnc f H g, copyOut, .block [movi .x0 1]]
 
 def encBody : Prog isa :=
-  seqs [.block (encPrologue ++ fitH H),
+  seqs [.block (encPrologue ++ tabSlots ++ fitH H),
     .ite (.nonzero .x .x10) ret0 (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
-      .ite (.nonzero .x .x10) ret0 (encMain H)]),
+      .ite (.nonzero .x .x10) ret0 (encMain f H g)]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_encode`. -/
-def encode : Prog isa := .frame (.alloc frameBytes) (encBody H) (.free frameBytes)
+/-- `vg_rsa_pss_<H>_encode`. -/
+def encode : Prog isa := .frame (.alloc frameBytes) (encBody f H g) (.free frameBytes)
 
 /-! ## `checkEncoding`
 
 `check_encoding(digest = x0, em = x1, em_len = x2, em_bits = x3,
-salt_len = x4, any_salt_len = w5, scratch = x6, scratch_len = x7)`. -/
+salt_len = x4, any_salt_len = w5, scratch = x6, scratch_len = x7, hash,
+mgf1)`, the last two on the stack. -/
 
 /-- `any_salt_len`'s 32 bits, the registers saved, the arguments into their
 slots and registers, and the mask. -/
@@ -99,18 +116,18 @@ def copyIn : Prog isa := .seq (.block [mov .x11 .x1, .addImm .x .x14 .x20 oEm, m
 
 /-- After the checks of the lengths: verification's checks. -/
 def chkMain : Prog isa :=
-  seqs [.block dbRegs, .block acc0, mgfXor H, .block clearTop, posScan, posCheck, FixedSalt.select H]
+  seqs [.block dbRegs, .block acc0, mgfXor H g, .block clearTop, posScan, posCheck, FixedSalt.select f H]
 
 /-- The checks of the lengths: `emLen ≥ hLen + 2`, and the expected salt
 fits. -/
 def chkBody : Prog isa :=
-  seqs [.block chkPrologue, copyIn, .block (fitH H),
+  seqs [.block (chkPrologue ++ tabSlots), copyIn, .block (fitH H),
     .ite (.nonzero .x .x10) ret0 (seqs [expLen, .block (saltFits H),
-      .ite (.nonzero .x .x10) ret0 (chkMain H)]),
+      .ite (.nonzero .x .x10) ret0 (chkMain f H g)]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_check_encoding`. -/
-def checkEncoding : Prog isa := .frame (.alloc frameBytes) (chkBody H) (.free frameBytes)
+/-- `vg_rsa_pss_<H>_check_encoding`. -/
+def checkEncoding : Prog isa := .frame (.alloc frameBytes) (chkBody f H g) (.free frameBytes)
 
 /-! ## The callers -/
 
@@ -131,20 +148,62 @@ after `oEnc`. -/
 def encArgs : List Instr :=
   [.addImm .x .x0 .x20 oEm, movi .x9 0, .strb .x9 .x0 0, .add .x .x0 .x0 .x26, mov .x1 .x25, ld .x2 sDig,
     ld .x3 sSalt, ld .x4 sSaltLen, mov .x5 .x24, .addImm .x .x6 .x20 oEnc, ld .x7 sScrLen,
-    .subImm .x .x7 .x7 (oEnc / 8)]
+    .subImm .x .x7 .x7 (oEnc / 8), .addSp .x16 0, arg .x9 14, .str .x .x9 .x16 0, arg .x9 15,
+    .str .x .x9 .x16 8]
 
-variable (encN : String) (encC : Prog isa) (privN : String) (privC : Prog isa)
+/-! ## The hash function of the table -/
+
+/-- The indices in `Mgf1.hashes` of the hash functions whose tables of
+`MdHash` the functions take: MD5, SHA-1, SHA-224, SHA-256, SHA-384,
+SHA-512, SHA-512/224 and SHA-512/256. -/
+def idxs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7]
+
+/-- The parameters and digest length of the hash function of index `i`. -/
+def shapeOf : Nat → Impl.Pbkdf2.AArch64.Params × Nat
+  | 0 => (Impl.Pbkdf2.AArch64.ofMd Impl.Md5.AArch64.Stream.params, 16)
+  | 1 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha1.AArch64.Stream.params, 20)
+  | 2 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 28)
+  | 3 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 32)
+  | 4 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, 48)
+  | 5 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, 64)
+  | 6 => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, 28)
+  | _ => (Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, 32)
+
+/-- The hash function of index `i`, as the code sees it: its parameters and
+digest length, all that `encode` and `checkEncoding` use of it. -/
+def ofIdx (i : Nat) : Hash :=
+  ⟨(shapeOf i).1, (shapeOf i).2, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+
+/-- The names of `encode` and `checkEncoding` for the hash function of index
+`i`. -/
+def hashName : Nat → String
+  | 0 => "md5" | 1 => "sha1" | 2 => "sha224" | 3 => "sha256" | 4 => "sha384" | 5 => "sha512"
+  | 6 => "sha512_224" | _ => "sha512_256"
+
+def encName (i : Nat) : String := s!"vg_rsa_pss_{hashName i}_encode"
+def chkName (i : Nat) : String := s!"vg_rsa_pss_{hashName i}_check_encoding"
+
+/-- `b i` for the index `i` in `x27`, by comparisons with each of `is`
+(`x9 := x27 - i`): the last is taken for every other value. -/
+def byIdx (b : Nat → Prog isa) : List Nat → Prog isa
+  | [] => .block []
+  | [i] => b i
+  | i :: is => .seq (.block [.subImm .x .x9 .x27 i]) (.ite (.zero .x .x9) (b i) (byIdx b is))
+
+variable (privN : String) (privC : Prog isa)
 
 /-- The check of the modulus, the encoding, then the private-key
 operation. -/
 def signCBody : Prog isa :=
   seqs [.block (signPrologue ++ n0 .x2),
-    .ite (.zero .x .x10) signFail (seqs [.block (emBitsB ++ encArgs), .call encN encC,
+    .ite (.zero .x .x10) signFail (seqs [.block (emBitsB ++ encArgs),
+      byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
       .ite (.zero .w .x0) signFail (.seq (.block privArgs) (.call privN privC))]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`, calling `encode`. -/
-def signC : Prog isa := .frame (.alloc frameBytes) (signCBody encN encC privN privC) (.free frameBytes)
+/-- `vg_rsa_pss_sign`, calling `encode` for the hash function of the table
+`hash`. -/
+def signC : Prog isa := .frame (.alloc frameBytes) (signCBody f g privN privC) (.free frameBytes)
 
 /-- The arguments of the precomputed public operation: its output (`k`
 bytes) at `scratch`, `pre` (`pre_len` words), `e`, the signature (`k` bytes),
@@ -163,17 +222,19 @@ def chkArgs : List Instr :=
     .subImm .x .x26 .x9 1, .lsr .x .x26 .x26 63,
     ld .x0 sDig, mov .x2 .x25, mov .x3 .x24, ld .x4 sSaltLen, ld .x5 sAny,
     .addImm .x .x9 .x23 7, .lsr .x .x9 .x9 3, ld .x7 sScrLen, .sub .x .x7 .x7 .x9, .lsl .x .x9 .x9 3,
-    .add .x .x6 .x20 .x9]
+    .add .x .x6 .x20 .x9, .addSp .x16 0, arg .x9 6, .str .x .x9 .x16 0, arg .x9 7, .str .x .x9 .x16 8]
 
-variable (chkN : String) (chkC : Prog isa) (pubN : String) (pubC : Prog isa)
+variable (pubN : String) (pubC : Prog isa)
 
 def verifyCBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0 .x0),
     .ite (.zero .x .x10) verifyFail (seqs [.block (emBitsB ++ pubArgsC), .call pubN pubC, .block chkArgs,
-      .call chkN chkC, .block [.logic .and .x .x0 .x0 .x26]]),
+      byIdx (fun i => .call (chkName i) (checkEncoding f (ofIdx i) g)) idxs,
+      .block [.logic .and .x .x0 .x0 .x26]]),
     .block restore]
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling `checkEncoding`. -/
-def verifyC : Prog isa := .frame (.alloc frameBytes) (verifyCBody chkN chkC pubN pubC) (.free frameBytes)
+/-- `vg_rsa_pss_verify_precomputed`, calling `checkEncoding` for the hash
+function of the table `hash`. -/
+def verifyC : Prog isa := .frame (.alloc frameBytes) (verifyCBody f g pubN pubC) (.free frameBytes)
 
 end VG.Impl.RsaPss.AArch64

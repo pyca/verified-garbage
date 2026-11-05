@@ -16,8 +16,8 @@
 //! `vg_sha512_update_shani` and `vg_sha512_finalize_shani`, then the `_avx2`
 //! ones; on AArch64, the `_sha3` ones.
 //!
-//! On AArch64, PPC64LE, RISC-V and x86-64, `digest` calls `vg_sha512_digest`,
-//! or its variant with the suffix of the streaming functions chosen (contract
+//! On every target, `digest` calls `vg_sha512_digest`, or its variant with the
+//! suffix of the streaming functions chosen (contract
 //! `VG.Spec.Sha512.digestContract`), which hashes the whole message in one
 //! call, as do SHA-384's, SHA-512/224's and SHA-512/256's.
 
@@ -30,12 +30,6 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "x86_64",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
 use crate::arch::sha512::vg_sha512_digest;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha512::vg_sha512_digest_sha3;
@@ -73,12 +67,7 @@ super::streaming_hash!(
             Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha512_update_avx2, vg_sha512_finalize_avx2),
         },
-        digests: #[cfg(any(
-            target_arch = "aarch64",
-            target_arch = "x86_64",
-            all(target_arch = "powerpc64", target_endian = "little"),
-            target_arch = "riscv64"
-        ))] {
+        digests: {
             Scalar => vg_sha512_digest,
             #[cfg(target_arch = "aarch64")]
             Sha3 => vg_sha512_digest_sha3,

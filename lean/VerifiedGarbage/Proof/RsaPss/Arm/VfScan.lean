@@ -127,7 +127,7 @@ theorem scan_vp (P : EP) (hP : ∃ σ, In h.D P σ) {X : State → Mem → Prop}
   swap
   · exact VP.empty fun σ s h' => hf h'.2.2.1
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi₀ hf
-  have e1 : oEm = 1024 := rfl
+  have e1 : oEm = 0 := rfl
   have e2 : oRsa = 8192 := rfl
   have fit := hg.fit
   let I : Nat → State → State → Prop := fun k τ s => k ≤ dbN h P ∧ Ctx (P.lay h.D) P.scr τ s ∧ X τ s.mem ∧

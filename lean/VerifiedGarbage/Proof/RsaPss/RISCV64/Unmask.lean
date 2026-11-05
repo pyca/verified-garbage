@@ -4,20 +4,22 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-!
 # RSASSA-PSS verification on RISC-V: unmasking `DB`
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Unmask.lean`): `unmask_ok`, `DB` unmasked with MGF1
-of `H` and its first byte ANDed with `c` (`dbV`). MGF1 uses `s6`–`s11`, so
-`c`, `salt_len` and the salt-length mode are saved at `scratch + oV` before
-(`spill_ok`) and loaded back after (`reload_ok`): MGF1 changes our part of
-the working space only in `DB`, the streaming state, the digest and its
-counter (`mgfXor_ok`).
+of `H` with the hash function of the table `mgf1` and its first byte ANDed
+with `c` (`dbV`). MGF1 uses `s6`–`s11`, so `c`, `salt_len` and the
+salt-length mode are saved at `scratch + oV` before (`spill_ok`) and loaded
+back after (`reload_ok`): MGF1 changes our part of the working space only in
+`DB`, the streaming state, the digest and its counter (`mgfXorT_ok`).
 -/
 
 @[expose] public section
@@ -25,10 +27,11 @@ counter (`mgfXor_ok`).
 namespace VG.Proof.RsaPss.RISCV64
 
 open VG VG.RISCV64 VG.Impl.RsaPss.RISCV64
-open VG.Impl.RsaOaep.RISCV64 (oEm oSt oDig oCtr oRsa mgfXor)
+open VG.Impl.RsaOaep.RISCV64 (oEm oSt oDig oCtr oRsa Fns mgfXorT)
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
-open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off off_off view view_w8 sc_in sc_inR sc_inW fx MFit mgfXor_ok Kp offs)
+open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off off_off view view_w8 sc_in sc_inR sc_inW fx MFit mgfXorT_ok Kp offs
+  TabS)
 open VG.Proof.RsaOaep (mixV srcB)
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_li wp_addi wp_add wp_mov wp_and wp_lbu wp_sb wp_sd wp_ld
   wp_nil)
@@ -58,7 +61,7 @@ theorem oV_al (j : Nat) : (off (Sp s) (oV + 8 * j)).toNat % 8 = 0 := by
 theorem spill_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
     WP isa (.block spill) t fun t' => Base Sp (vP D) s t' ∧ (∀ r, t'.gpr r = t.gpr r) ∧
       (∀ o < oSt, view t'.mem (Sp s) o = view t.mem (Sp s) o) ∧
-      t'.mem.readW (off (Sp s) oV) 64 = cm s ∧ t'.mem.readW (off (Sp s) (oV + 8)) 64 = s.gpr .a7 ∧
+      t'.mem.readW (off (Sp s) oV) 64 = cm s ∧ t'.mem.readW (off (Sp s) (oV + 8)) 64 = stackArg s 0 ∧
       t'.mem.readW (off (Sp s) (oV + 16)) 64 = anyL s := by
   have F := L.F
   obtain ⟨_, hSt, _, _, hRs⟩ := offs
@@ -96,7 +99,7 @@ theorem spill_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
 
 /-- `reload`: `c`, `salt_len` and the mode back from `scratch + oV`. -/
 theorem reload_ok {t : State} (h : Base Sp (vP D) s t) (h5 : t.mem.readW (off (Sp s) oV) 64 = cm s)
-    (h6 : t.mem.readW (off (Sp s) (oV + 8)) 64 = s.gpr .a7)
+    (h6 : t.mem.readW (off (Sp s) (oV + 8)) 64 = stackArg s 0)
     (h7 : t.mem.readW (off (Sp s) (oV + 16)) 64 = anyL s) :
     WP isa (.block reload) t fun t' => Base Sp (vP D) s t' ∧ Xs s t' ∧ Only [.s5, .s6, .s7] t t' := by
   have F := L.F
@@ -158,21 +161,23 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega))), hK, fun o ho => ?_⟩
   rw [hm, view_w8 _ _ (by unfold oRsa; omega) (by unfold oSt oRsa at *; omega)]
 
-theorem unmask_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hD : H.D = D) {Gs : Spec.Mgf1.Hash}
-    (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) (hGl : Gs.len = H.D) (hGv : Proof.Mgf1.Valid Gs) {t : State}
-    (h : Base Sp (vP D) s t) (x : Xs s t) {rest : Prog isa} {Q : State → Prop}
-    (k : ∀ t', Base Sp (vP D) s t' → Xs s t' →
+theorem unmask_ok {H : Hash} (hD : H.D = D) {G : Hash} (hG : HashOK G) (hGF : G.F ≤ 208) {g : Fns} {p : Addr}
+    (T : TabS G g 7 Sp s p) {Gs : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs) {t : State}
+    (h : Base Sp (vP D) s t) (hsy : t.syms = s.syms) (x : Xs s t) {rest : Prog isa} {Q : State → Prop}
+    (k : ∀ t', Base Sp (vP D) s t' → Xs s t' → t'.syms = s.syms →
       (∀ o < oSt, view t'.mem (Sp s) o = dbV Gs (view t.mem (Sp s)) lN dN D c o) → WP isa rest t' Q) :
-    WP isa (.seq (.block spill) (.seq (.block (dbArgs H)) (.seq (mgfXor H) (.seq (.block reload)
+    WP isa (.seq (.block spill) (.seq (.block (dbArgs H)) (.seq (mgfXorT g 7) (.seq (.block reload)
       (.seq (.block clearTop) rest))))) t Q := by
   have F := L.F
   have hk := L.hk; have hk2 := L.k2; have hd1 := L.d1
   obtain ⟨_, hSt, _, hCt, hRs⟩ := offs
-  refine WP.seq (WP.mono (spill_ok L h x) fun t₁ ⟨b₁, _, v₁, w5, w6, w7⟩ => ?_)
-  refine WP.seq (WP.mono (dbArgs_ok L hD b₁) fun t₄ ⟨b₄, k₄, x6, x7, x8, x9⟩ => ?_)
+  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (spill_ok L h x) fun t₁ ⟨b₁, _, v₁, w5, w6, w7⟩ sy₁ => ?_))
+  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (dbArgs_ok L hD b₁) fun t₄ ⟨b₄, k₄, x6, x7, x8, x9⟩ sy₄ => ?_))
   subst hD
-  refine WP.seq (WP.mono (mgfXor_ok F hH hF hGh hGl hGv (src := lN + dN) (srcLen := H.D) (dst := lN) (dstLen := dN)
-    ⟨by omega, by omega, .inr (by omega), by omega⟩ b₄ x6 x7 x8 x9) fun t₅ ⟨b₅, v₅⟩ => ?_)
+  refine WP.seq (WP.mono (mgfXorT_ok F hG hGF T hGh hGl hGv (src := lN + dN) (srcLen := H.D) (dst := lN)
+    (dstLen := dN) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₄ (sy₄.trans (sy₁.trans hsy)) x6 x7 x8 x9)
+    fun t₅ ⟨⟨b₅, v₅⟩, sy₅⟩ => ?_)
   have V4 : view t₄.mem (Sp s) = view t₁.mem (Sp s) := by rw [k₄.mem]
   rw [V4] at v₅
   -- The saved words survive MGF1.
@@ -184,10 +189,10 @@ theorem unmask_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) (hD : H.D = D) {
       show t₅.mem (off (off (Sp s) (oV + 8 * j)) i) = t₁.mem (off (off (Sp s) (oV + 8 * j)) i)
       rw [off_off]; exact e
   have w5' : t₅.mem.readW (off (Sp s) oV) 64 = cm s := by have := keepW 0 (by omega); simp at this; rw [this, w5]
-  refine WP.seq (WP.mono (reload_ok L b₅ w5' (by rw [keepW 1 (by omega), w6]) (by rw [keepW 2 (by omega), w7]))
-    fun t₆ ⟨b₆, x₆, k₆⟩ => ?_)
-  refine WP.seq (WP.mono (clearTop_ok L b₆ x₆) fun w ⟨b, kw, v⟩ => k w b (x₆.of fun r hr => kw.gpr r (by
-    revert r; decide)) fun o ho => ?_)
+  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (reload_ok L b₅ w5' (by rw [keepW 1 (by omega), w6])
+    (by rw [keepW 2 (by omega), w7])) fun t₆ ⟨b₆, x₆, k₆⟩ sy₆ => ?_))
+  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (clearTop_ok L b₆ x₆) fun w ⟨b, kw, v⟩ syw => k w b (x₆.of fun r hr => kw.gpr r
+    (by revert r; decide)) (syw.trans (sy₆.trans sy₅)) fun o ho => ?_))
   have V6 : view t₆.mem (Sp s) = view t₅.mem (Sp s) := by rw [k₆.mem]
   have hs : srcB (view t₁.mem (Sp s)) (lN + dN) H.D = srcB (view t.mem (Sp s)) (lN + dN) H.D :=
     srcB_congr fun i hi => v₁ _ (by omega)

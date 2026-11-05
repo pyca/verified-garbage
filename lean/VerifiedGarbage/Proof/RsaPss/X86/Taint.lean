@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.Hash
 meta import VerifiedGarbage.Proof.RsaPss.X86.Hash
+meta import VerifiedGarbage.Impl.RsaPss.X86.Table
 
 /-! # RSASSA-PSS on x86: the taint checks of the pieces that do not depend on the hash function
 
@@ -18,6 +19,16 @@ namespace VG.Proof.RsaPss.X86
 open VG VG.X86 VG.Impl.RsaPss.X86
 
 theorem initArgs_taint : TaintOk [.esp, .ebp] (.block initArgs) := ⟨_, by taint_decide⟩
+theorem hTab22_taint : TaintOk [.esp, .ebp] (.block (hTab 22)) := ⟨_, by taint_decide⟩
+theorem hTab14_taint : TaintOk [.esp, .ebp] (.block (hTab 14)) := ⟨_, by taint_decide⟩
+theorem idxArg22_taint : TaintOk [.esp] (.block [ld .edx (arg 22)]) := ⟨_, by taint_decide⟩
+theorem idxArg14_taint : TaintOk [.esp] (.block [ld .edx (arg 14)]) := ⟨_, by taint_decide⟩
+theorem cmpIdxs_taint : ∀ x ∈ idxs, x < 2 ^ 32 ∧ TaintOk [] (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 x))]) := by
+  intro x hx
+  simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
+theorem idxWord_taint : TaintOk [.esp, .edx] (.block [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 20))]) :=
+  ⟨_, by taint_decide⟩
 theorem compInit_taint : TaintOk [.esp, .ebp] (.block compInit) := ⟨_, by taint_decide⟩
 theorem compNext_taint : TaintOk [.esp, .ebp] (.block compNext) := ⟨_, by taint_decide⟩
 theorem mgfInit_taint : TaintOk [.esp, .ebp] (.block mgfInit) := ⟨_, by taint_decide⟩

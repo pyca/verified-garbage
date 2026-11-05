@@ -15,7 +15,7 @@ open VG VG.X86
 
 theorem md5Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.md5M) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
+    ?_, ?_, NoSp.of_all (by decide +kernel), NoSp.of_all (by decide +kernel)⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- MD5, as RSASSA-PSS on x86 uses it. -/
 def md5 : PssHash where

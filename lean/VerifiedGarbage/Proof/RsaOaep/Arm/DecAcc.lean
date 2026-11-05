@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.DecUnmask
 public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.RsaOaep.Arm.DecUnmask
 meta import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
 meta import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 meta import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 meta import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd

@@ -98,7 +98,7 @@ impl Drop for Sm4Ecb {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Sm4Ecb, vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt};
 
     /// Eight-byte aligned storage for a schedule at an offset.
     #[repr(align(8))]

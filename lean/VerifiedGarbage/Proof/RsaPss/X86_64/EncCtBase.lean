@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncFrame
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
@@ -25,32 +27,68 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable (G : Spec.Mgf1.Hash)
+variable (T : Tabs)
+
+/-- `encK.pub`, which does not depend on the hash functions. -/
+def EPub (s₁ s₂ : State) : Prop :=
+  (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
+    (List.range 4).map (stackArg s₁) = (List.range 4).map (stackArg s₂) ∧
+    tabWords s₁.mem (stackArg s₁ 2) (stackArg s₁ 3) = tabWords s₂.mem (stackArg s₂ 2) (stackArg s₂ 3)
+
+theorem epub_eq (Hs Gs : Spec.Mgf1.Hash) : (encK T Hs Gs).pub = EPub := rfl
 
 /-- The entry state `s` of a run, and the first's, `a`. -/
-def Sib (a s : State) : Prop := (encK G).pre a ∧ (encK G).pub a s ∧ (encK G).pre s
+def Sib (a s : State) : Prop := Pre T a ∧ EPub a s ∧ Pre T s
 
 /-- A predicate of the state of a run, given its entry state, for every run
 whose entry state agrees with `a`. -/
-def At (J : State → State → Prop) (a t : State) : Prop := ∃ s, Sib G a s ∧ J s t
+def At (J : State → State → Prop) (a t : State) : Prop := ∃ s, Sib T a s ∧ J s t
 
-theorem pub_refl (s : State) : (encK G).pub s s := ⟨fun _ _ => rfl, rfl, rfl⟩
+theorem pub_refl (s : State) : EPub s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 
-variable {G}
+variable {T}
 
 namespace Sib
 
-variable {a s : State} (h : Sib G a s)
+variable {a s : State} (h : Sib T a s)
 include h
 
 theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) : s.gpr r = a.gpr r :=
   (h.2.1.1 r hr).symm
 
-theorem arg0 : stackArg s 0 = stackArg a 0 := h.2.1.2.1.symm
-theorem arg1 : stackArg s 1 = stackArg a 1 := h.2.1.2.2.symm
+theorem arg {i : Nat} (hi : i < 4) : stackArg s i = stackArg a i := by
+  have := congrArg (fun l => l.getD i 0) h.2.1.2.1
+  simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi, Option.map_some,
+    Option.getD_some] at this
+  exact this.symm
 
-theorem pa : Pre G a := Pre.of G h.1
-theorem ps : Pre G s := Pre.of G h.2.2
+theorem arg0 : stackArg s 0 = stackArg a 0 := h.arg (by decide)
+theorem arg1 : stackArg s 1 = stackArg a 1 := h.arg (by decide)
+
+theorem pa : Pre T a := h.1
+theorem ps : Pre T s := h.2.2
+
+/-- The words of the tables. -/
+theorem tws : s.mem.readW (off (stackArg s 2) 0) 64 = a.mem.readW (off (stackArg a 2) 0) 64 ∧
+    s.mem.readW (off (stackArg s 2) 24) 64 = a.mem.readW (off (stackArg a 2) 24) 64 ∧
+    s.mem.readW (off (stackArg s 2) 32) 64 = a.mem.readW (off (stackArg a 2) 32) 64 ∧
+    s.mem.readW (off (stackArg s 3) 0) 64 = a.mem.readW (off (stackArg a 3) 0) 64 ∧
+    s.mem.readW (off (stackArg s 3) 8) 64 = a.mem.readW (off (stackArg a 3) 8) 64 ∧
+    s.mem.readW (off (stackArg s 3) 16) 64 = a.mem.readW (off (stackArg a 3) 16) 64 ∧
+    s.mem.readW (off (stackArg s 3) 32) 64 = a.mem.readW (off (stackArg a 3) 32) 64 := by
+  have := h.2.1.2.2.symm
+  simp only [tabWords, List.cons.injEq, and_true] at this
+  exact this
+
+/-- The runs' symbols agree on the tables' functions. -/
+theorem syH : SyH T.H T.dn T.f a.syms s.syms :=
+  ⟨h.ps.tabs.hf, h.ps.tabs.h0.symm.trans (h.tws.1.trans h.pa.tabs.h0),
+    h.ps.tabs.h3.symm.trans (h.tws.2.1.trans h.pa.tabs.h3), h.ps.tabs.h4.symm.trans (h.tws.2.2.1.trans h.pa.tabs.h4)⟩
+
+theorem syG : SyG T.G T.g a.syms s.syms :=
+  ⟨h.ps.tabs.gf, h.ps.tabs.g0.symm.trans (h.tws.2.2.2.1.trans h.pa.tabs.g0),
+    h.ps.tabs.g1.symm.trans (h.tws.2.2.2.2.1.trans h.pa.tabs.g1),
+    h.ps.tabs.g2.symm.trans (h.tws.2.2.2.2.2.1.trans h.pa.tabs.g2)⟩
 
 theorem fb : fb s = fb a := by
   simp only [VG.Proof.RsaPss.X86_64.fb, h.gpr (r := .rsp) (by decide)]
@@ -86,6 +124,13 @@ def smask (s : State) : Byte := (0xFF : Byte) >>> (8 * seml s - (s.gpr .r9).toNa
 /-- The public words of the frame, by index. -/
 def sw (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
   match k with
+  | 8 => s.mem.readW (off (stackArg s 2) 0) 64
+  | 9 => s.mem.readW (off (stackArg s 2) 24) 64
+  | 10 => s.mem.readW (off (stackArg s 2) 32) 64
+  | 11 => s.mem.readW (off (stackArg s 3) 0) 64
+  | 12 => s.mem.readW (off (stackArg s 3) 8) 64
+  | 13 => s.mem.readW (off (stackArg s 3) 16) 64
+  | 14 => s.mem.readW (off (stackArg s 3) 32) 64
   | 16 => s.gpr .rdi
   | 17 => s.gpr .rsi
   | 21 => stackArg s 0
@@ -105,7 +150,7 @@ def spw (H : Hash) (s : State) (ks : List Nat) : List (Nat × BitVec 64) := ks.m
 
 namespace Sib
 
-variable {a s : State} (h : Sib G a s)
+variable {a s : State} (h : Sib T a s)
 include h
 
 theorem seml : seml s = seml a := by simp only [VG.Proof.RsaPss.X86_64.Enc.seml, h.gpr (r := .rsi) (by decide)]
@@ -118,7 +163,8 @@ theorem smask : smask s = smask a := by
 theorem sw {H : Hash} (k : Nat) : sw H s k = sw H a k := by
   unfold VG.Proof.RsaPss.X86_64.Enc.sw
   split <;> simp only [h.gpr (r := .rdi) (by decide), h.gpr (r := .rsi) (by decide), h.gpr (r := .rdx) (by decide),
-    h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide), h.arg0, h.sdb, h.snb, h.ssl, h.smask, slo]
+    h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide), h.arg0, h.sdb, h.snb, h.ssl, h.smask, slo,
+    h.tws.1, h.tws.2.1, h.tws.2.2.1, h.tws.2.2.2.1, h.tws.2.2.2.2.1, h.tws.2.2.2.2.2.1, h.tws.2.2.2.2.2.2]
 
 /-- The frame, `em` and the working space are apart. -/
 theorem rest : RestOk 2 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
@@ -147,10 +193,11 @@ structure SS (H : Hash) (s t : State) (ks : List Nat) (rs : List (Reg × BitVec 
   wr : t.wr = frR s :: s.wr
   W : ∃ V W, Rep t.mem (fb s) (stackArg s 0) V W ∧ (∀ k ∈ ks, W k = sw H s k) ∧ X V W
   regs : ∀ p ∈ rs, t.gpr p.1 = p.2
+  sy : t.syms = s.syms
 
 variable {H : Hash}
 
-theorem ss_pub {a s t : State} (S : Sib G a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
+theorem ss_pub {a s t : State} (S : Sib T a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : SS H s t ks rs X) :
     Pub (fb a) (stackArg a 0) a.wr (spw H a ks) rs X t := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
@@ -165,7 +212,7 @@ theorem ss_pub {a s t : State} (S : Sib G a s) {ks : List Nat} {rs : List (Reg �
 /-- A piece the analysis checks from `pT 2 ks rgs`. -/
 theorem stwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs : List Reg)
     (rs : State → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s X, Sib G a s ∧ SS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hΦ : ∀ a t, Φ a t → ∃ s X, Sib T a s ∧ SS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 2 ks rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
   two_pub 2 ks rgs fb (fun a => stackArg a 0) State.wr (fun a => spw H a ks) rs
@@ -174,21 +221,22 @@ theorem stwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs
 
 theorem SS.keep {s t t' : State} {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : SS H s t ks rs X) {rs' : List Reg} (k : Keep rs' t t')
-    (hm : t'.mem = t.mem) (hsp : Reg.rsp ∉ rs') (hrs : ∀ p ∈ rs, p.1 ∉ rs') : SS H s t' ks rs X :=
+    (hm : t'.mem = t.mem) (hsp : Reg.rsp ∉ rs') (hrs : ∀ p ∈ rs, p.1 ∉ rs') (hs : t'.syms = t.syms) :
+    SS H s t' ks rs X :=
   ⟨h.L.congr (k.gpr hsp) k.2.2 (by rw [hm]), k.2.2.trans h.wr, by rw [hm]; exact h.W,
-    fun p hp => (k.gpr (hrs p hp)).trans (h.regs p hp)⟩
+    fun p hp => (k.gpr (hrs p hp)).trans (h.regs p hp), hs.trans h.sy⟩
 
 theorem SS.next {s t t' : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
     {X X' : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : SS H s t ks rs X) (L' : Lay t' (fb s) (stackArg s 0))
     (hwr : t'.wr = t.wr) {V' : Nat → Byte} {W' : Nat → BitVec 64} (R' : Rep t'.mem (fb s) (stackArg s 0) V' W')
-    (hw : ∀ k ∈ ks', W' k = sw H s k) (hx : X' V' W') : SS H s t' ks' [] X' :=
-  ⟨L', hwr.trans h.wr, ⟨V', W', R', hw, hx⟩, fun _ hp => by cases hp⟩
+    (hw : ∀ k ∈ ks', W' k = sw H s k) (hx : X' V' W') (hs : t'.syms = t.syms) : SS H s t' ks' [] X' :=
+  ⟨L', hwr.trans h.wr, ⟨V', W', R', hw, hx⟩, (fun _ hp => by cases hp), hs.trans h.sy⟩
 
 theorem SS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
     {X X' : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : SS H s t ks rs X) (hks : ∀ k ∈ ks', k ∈ ks)
     (rs' : List (Reg × BitVec 64)) (hrs : ∀ p ∈ rs', t.gpr p.1 = p.2) (hX : ∀ V W, X V W → X' V W) :
     SS H s t ks' rs' X' := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
-  exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs⟩
+  exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs, h.sy⟩
 
 end VG.Proof.RsaPss.X86_64.Enc

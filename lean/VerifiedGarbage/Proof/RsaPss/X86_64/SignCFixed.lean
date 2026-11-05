@@ -23,17 +23,37 @@ open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 
 /-- The checks. -/
 structure SCFixed : Prop where
-  prep : ∃ hc, (taint.check (pT 2 [17, 21, 22, 37, 39, 40] [.rax]) (.block (emBitsB ++ encArgs)) hc).isSome = true
+  pro : ∃ hc, (taint.check (pT 2 [] [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    (.block (signPrologue ++ n0 ++ [.mov .r11 (.mem (arg 16))])) hc).isSome = true
+  idx : ∃ hc, (taint.check (pT 2 [] [.r11]) (.block idxSlot) hc).isSome = true
+  prep : ∃ hc, (taint.check (pT 2 [17, 21, 22, 37, 39, 40, 47] [.rax]) (.block (emBitsB ++ encArgs ++ idxLoad))
+    hc).isSome = true
+  cmp : ∀ j ∈ idxs, ∃ hc, (taint.check (pT 2 [] [.r11]) (.block [.alu .cmp .r11 (.imm (BitVec.ofNat 32 j))])
+    hc).isSome = true
   test : ∃ hc, (taint.check (pT 2 [] []) (.block [.alu32 .test .rax (.reg .rax)]) hc).isSome = true
 
-theorem scFixed : SCFixed := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem scFixed : SCFixed :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, fun j hj => by
+    simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
 
 /-- Verification's. -/
 structure VCFixed : Prop where
+  pro : ∃ hc, (taint.check (pT 1 [] [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    (.block (verifyPrologue ++ n0 ++ [.mov .r11 (.mem (arg 8))])) hc).isSome = true
+  idx : ∃ hc, (taint.check (pT 1 [] [.r11]) (.block idxSlot) hc).isSome = true
   prep : ∃ hc, (taint.check (pT 1 [17, 19, 20, 21, 22, 38] [.rax]) (.block (emBitsB ++ pubArgsC)) hc).isSome = true
-  chkArgs : ∃ hc, (taint.check (pT 1 ([17, 21, 22, 37] ++ [26, 27, 28]) []) (.block chkArgs) hc).isSome = true
+  chkArgs : ∃ hc, (taint.check (pT 1 ([17, 21, 22, 37, 47] ++ [26, 27, 28]) []) (.block (chkArgs ++ idxLoad))
+    hc).isSome = true
+  cmp : ∀ j ∈ idxs, ∃ hc, (taint.check (pT 1 [] [.r11]) (.block [.alu .cmp .r11 (.imm (BitVec.ofNat 32 j))])
+    hc).isSome = true
   acc : ∃ hc, (taint.check (pT 1 [] []) (.block [.alu .and .rax (.mem (sp sAcc))]) hc).isSome = true
 
-theorem vcFixed : VCFixed := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem vcFixed : VCFixed :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, fun j hj => by
+    simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.RsaPss.X86_64

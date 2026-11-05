@@ -64,12 +64,12 @@ call {vg_keccak_pad}
 .insn 4, 0x0a800593
 .insn 2, 0x4601
 .insn 4, 0x348d8693
-.insn 4, 0x3f000713
+.insn 4, 0x34800713
 call {vg_keccak_squeeze}
 .insn 4, 0x348d8513
 .insn 2, 0x85ea
 .insn 2, 0x4601
-.insn 4, 0x15000693
+.insn 4, 0x11800693
 .insn 4, 0x007fe737
 .insn 2, 0x0705
 20:
@@ -96,6 +96,84 @@ j 22f
 .insn 2, 0x050d
 .insn 2, 0x16fd
 bnez a3, 20b
+.insn 4, 0x00865293
+beqz t0, 23f
+j 24f
+23:
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x856e
+.insn 4, 0x0a800593
+.insn 2, 0x4601
+.insn 2, 0x86e6
+.insn 2, 0x8762
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x0a800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x856e
+.insn 4, 0x0a800593
+.insn 2, 0x4601
+.insn 4, 0x348d8693
+.insn 4, 0x3f000713
+call {vg_keccak_squeeze}
+.insn 4, 0x348d8513
+.insn 2, 0x85ea
+.insn 2, 0x4601
+.insn 4, 0x15000693
+.insn 4, 0x007fe737
+.insn 2, 0x0705
+25:
+.insn 4, 0x00054783
+.insn 4, 0x00154803
+.insn 4, 0x00254883
+.insn 2, 0x0822
+.insn 2, 0x18e6
+.insn 4, 0x0298d893
+.insn 2, 0x98c2
+.insn 2, 0x98be
+.insn 4, 0x40e883b3
+.insn 4, 0x03f3d393
+.insn 4, 0xf0060313
+.insn 4, 0x03f35313
+.insn 4, 0x0063f3b3
+beqz t2, 26f
+.insn 4, 0x0115a023
+.insn 2, 0x0591
+.insn 2, 0x0605
+j 27f
+26:
+27:
+.insn 2, 0x050d
+.insn 2, 0x16fd
+bnez a3, 25b
+24:
 .insn 4, 0x00865513
 .insn 4, 0x7f8db083
 .insn 4, 0x7d0dbb83
@@ -105,7 +183,7 @@ bnez a3, 20b
 .insn 4, 0x7f0dbd83
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_absorb = sym crate::sha3::vg_keccak_absorb,
+        vg_keccak_absorb = sym crate::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym crate::sha3::vg_keccak_pad,
         vg_keccak_squeeze = sym crate::sha3::vg_keccak_squeeze,
     )

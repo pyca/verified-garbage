@@ -6,16 +6,19 @@ public import VerifiedGarbage.Impl.Rsa.RISCV64.Priv
 /-!
 # RSASSA-PSS signing (RFC 8017 §8.1.1) on RISC-V
 
-`vg_rsa_pss_<H>_mgf1_<H>_sign(out = a0, out_len = a1, n = a2, n_len = a3,
-e = a4, e_len = a5, p = a6, p_len = a7, q, q_len, dp, dp_len, dq, dq_len,
-qinv, qinv_len, digest, salt, salt_len, scratch, scratch_len)`, the last
-thirteen on the stack, for a hash function `H` (an
-`Impl.Hmac.Stream.RISCV64.Hash`, its streaming functions) as both the hash
-function and MGF1's, which it calls, with `vg_rsa_private_checked`. The
-steps are those of PPC64LE (`Impl/RsaPss/PPC64LE/Sign.lean`).
+`vg_rsa_pss_sign(out = a0, out_len = a1, n = a2, n_len = a3, e = a4,
+e_len = a5, p = a6, p_len = a7, q, q_len, dp, dp_len, dq, dq_len, qinv,
+qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash,
+mgf1)`, the last sixteen on the stack, with the hash function of the table
+`hash`, of the interface `MdHash` (`Spec/MdHashTable.lean`), and MGF1's that
+of the table `mgf1`, of the interface `Hash` (`Spec/HashTable.lean`), which
+it calls (`tcall`), with `vg_rsa_private_checked`. The steps are those of
+PPC64LE (`Impl/RsaPss/PPC64LE/Sign.lean`). As verification does
+(`Impl/RsaPss/RISCV64.lean`), the index of `hash`'s hash function (its word
+5) selects the code for its shape (`byIdx`), before the frame.
 
 It runs in the frame of RSAES-OAEP encryption (`Impl/RsaOaep/RISCV64.lean`),
-with its part of `scratch` and its MGF1 (`mgfXor`), and hashes
+with its part of `scratch` and its MGF1 (`mgfXorT`), and hashes
 `M' = 0⁸ ‖ mHash ‖ salt` at `oY` as verification does for a given salt length
 (`Impl/RsaPss/RISCV64.lean`, `hashFixed`). The values the code keeps across
 the calls are in `s0`–`s4`, all public: `s0` = `scratch`, `s1` = `k = n_len`,
@@ -47,8 +50,8 @@ namespace VG.Impl.RsaPss.RISCV64.Sign
 open VG VG.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 open VG.Impl.RsaPkcs1Sig.RISCV64 (copyLoop fillLoop)
-open VG.Impl.RsaOaep.RISCV64 (frameBytes argBase save restore encFail oEm oDig oRsa mgfXor clearEm)
-open VG.Impl.RsaPss.RISCV64 (oY yBase clearY hashFixed)
+open VG.Impl.RsaOaep.RISCV64 (frameBytes argBase save restore encFail oEm oDig oRsa Fns mgfXorT clearEm)
+open VG.Impl.RsaPss.RISCV64 (oY yBase clearY hashFixed MdFns idxLoad byIdx idxs ofIdx beOf)
 
 /-! ## The saved arguments -/
 
@@ -70,7 +73,7 @@ def cMask : List Instr :=
     .store .d .t2 .s0 (oP + 40)]
 
 /-- The arguments into the registers that keep them. -/
-def prologue : List Instr := [argBase, .load .d .s0 .t6 88, mov .s1 .a3, mov .s2 .a0, .load .d .s4 .t6 80]
+def prologue : List Instr := [argBase, .load .d .s0 .t6 96, mov .s1 .a3, mov .s2 .a0, .load .d .s4 .t6 88]
 
 /-- `n`, `e`, `e_len`, `p` and `p_len` to `scratch + oP`; then `n₀` into
 `t1`, `lo` into `s3` and `c` to `scratch + oP + 40`. A block of its own, as
@@ -95,10 +98,10 @@ def chkSalt : List Instr :=
 
 /-! ## `M'` and its hash -/
 
-/-- `salt_len` bytes of the salt (our stack argument 9) to `a1`, if it is not
-empty. -/
+/-- `salt_len` bytes of the salt (our stack argument 10) to `a1`, if it is
+not empty. -/
 def copySalt : Prog isa :=
-  .seq (.block [argBase, .load .d .a4 .t6 72, mov .a5 .s4]) (.ite (.nonzero .a5) copyLoop (.block []))
+  .seq (.block [argBase, .load .d .a4 .t6 80, mov .a5 .s4]) (.ite (.nonzero .a5) copyLoop (.block []))
 
 /-- `M' = 0⁸ ‖ mHash ‖ salt` at `scratch + oY`. -/
 def mPrime : Prog isa :=
@@ -107,8 +110,11 @@ def mPrime : Prog isa :=
       copyLoop)
       (.seq (.block (yBase .a1 ++ [.addi .a1 .a1 ((8 + H.D : Nat) : Int)])) copySalt))
 
-/-- `H = Hash(M')` to `scratch + oDig`, with `salt_len` in `s6`. -/
-def hashM : Prog isa := .seq (.block [mov .s6 .s4]) (hashFixed H)
+variable (be : Bool) (f : MdFns) (g : Fns)
+
+/-- `H = Hash(M')` to `scratch + oDig`, with `salt_len` in `s6`, with the
+table `hash`, our stack argument 14. -/
+def hashM : Prog isa := .seq (.block [mov .s6 .s4]) (hashFixed H be f 14)
 
 /-! ## `EM` -/
 
@@ -155,7 +161,7 @@ bytes). -/
 def privArgs : List Instr :=
   [.addSp .t0 0, .addSp .t6 (privBytes + frameBytes), .load .d .t1 .s0 (oP + 24), .store .d .t1 .t0 0,
     .load .d .t1 .s0 (oP + 32), .store .d .t1 .t0 8] ++ (List.range 8).flatMap copyArg ++
-    [.li .t1 1024, .shift .sll .d .t1 .t1 3, .add .t1 .s0 .t1, .store .d .t1 .t0 80, .load .d .t1 .t6 96,
+    [.li .t1 1024, .shift .sll .d .t1 .t1 3, .add .t1 .s0 .t1, .store .d .t1 .t0 80, .load .d .t1 .t6 104,
       .addi .t1 .t1 (-1024), .store .d .t1 .t0 88, mov .a0 .s2, mov .a1 .s1, .load .d .a2 .s0 oP, mov .a3 .s1,
       .load .d .a4 .s0 (oP + 8), .load .d .a5 .s0 (oP + 16), .addi .a6 .s0 oEm, mov .a7 .s1]
 
@@ -164,21 +170,27 @@ def priv : Prog isa := .frame (.alloc privBytes) (.seq (.block privArgs) privCal
 
 /-! ## The function -/
 
-/-- After the checks: `M'` and `H`, `EM`, and the private operation. -/
+/-- After the checks: `M'` and `H`, `EM`, and the private operation, with
+MGF1 the table `mgf1`, our stack argument 15. -/
 def signMain : Prog isa :=
-  .seq (mPrime H) (.seq (hashM H) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
-    (.seq (.block (dbArgs H)) (.seq (mgfXor H) (.seq (.block clearTop) priv)))))))
+  .seq (mPrime H) (.seq (hashM H be f) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
+    (.seq (.block (dbArgs H)) (.seq (mgfXorT g 15) (.seq (.block clearTop) priv)))))))
 
 /-- The checks, then `signMain`. -/
 def checks : Prog isa :=
   .ite (.zero .t1) encFail
     (.seq (.block (chkEm H)) (.ite (.nonzero .a0) encFail
-      (.seq (.block (chkSalt H)) (.ite (.nonzero .a0) encFail (signMain H)))))
+      (.seq (.block (chkSalt H)) (.ite (.nonzero .a0) encFail (signMain H be f g)))))
 
 /-- The frame's body. -/
-def body : Prog isa := .seq (.block (save ++ prologue)) (.seq (.block spill) (.seq (checks H) (.block restore)))
+def body : Prog isa :=
+  .seq (.block (save ++ prologue)) (.seq (.block spill) (.seq (checks H be f g) (.block restore)))
 
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
-def sign : Prog isa := .frame (.alloc frameBytes) (body H) (.free frameBytes)
+/-- The code for a hash function of the shape `H`, in its frame. -/
+def signFor : Prog isa := .frame (.alloc frameBytes) (body H be f g) (.free frameBytes)
+
+/-- `vg_rsa_pss_sign`: the code for the hash function of the table `hash`,
+our stack argument 14, by its index. -/
+def sign : Prog isa := .seq (.block (idxLoad 14)) (byIdx (fun i => signFor (ofIdx i) (beOf i) f g) idxs)
 
 end VG.Impl.RsaPss.RISCV64.Sign

@@ -128,7 +128,7 @@ macro_rules! whole_pbkdf2 {
     (
         $hash:ident ($backend:ident) {
             $base:ident => $pbkdf2:path
-            $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => $vpbkdf2:path)*
+            $(, $(#[$attr:meta])* $variant:ident if [$($req:ident),*] => $vpbkdf2:path)*
             $(,)?
         },
         output: $output:literal $(,)?
@@ -176,8 +176,7 @@ macro_rules! whole_pbkdf2 {
 
         #[cfg(test)]
         mod tests {
-            #[allow(unused_imports)]
-            use super::*;
+            use super::$hash;
 
             /// Each implementation's `pbkdf2` needs no CPU feature that the
             /// hash's implementation is not selected for: on every set of
@@ -188,8 +187,8 @@ macro_rules! whole_pbkdf2 {
                     $(#[$attr])*
                     for bits in 0..1u32 << $crate::cpu::NAMES.len() {
                         let f = verified_garbage_cpu::Features(bits);
-                        if $backend::select(f) == $backend::$variant {
-                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$($req),*])));
+                        if super::$backend::select(f) == super::$backend::$variant {
+                            assert!(f.contains(verified_garbage_cpu::Features::all(&[$(super::$req),*])));
                         }
                     }
                 )*

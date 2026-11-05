@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.EncBytes
+import VerifiedGarbage.Proof.RsaPss.CtPad
+import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -25,6 +29,86 @@ against `e`, the specification's signature (`sign_ok`).
 
 @[expose] public section
 
+namespace VG.Proof.RsaPss.Arm
+
+section
+
+open Spec Spec.RsaPss
+open Mgf1 (Hash xorBytes mgf1)
+open Proof.Mgf1 (Valid xorBytes_length mgf1_length)
+open VG.Proof.RsaPss (emT eq_range_map zeros_getD db_getD getD_app ifn zeros_length)
+
+/-- `encodeK_eq` (`Proof/RsaPss/EncBytes.lean`), with MGF1's hash function `G`
+another than `H`. -/
+theorem encodeK_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
+    (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
+    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
+    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
+    (hfit : H.len + salt.length + 2 ≤ emLen) :
+    encodeK H G (n₀ :: rest) mHash salt =
+      some ((List.range (n₀ :: rest).length).map
+        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
+          (mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) := by
+  have hEL := emLength_eq rest h0
+  rw [hb, he] at hEL
+  have hle : emLen ≤ (n₀ :: rest).length := by rw [hEL, List.length_cons]; split <;> omega_arith
+  simp only [encodeK, encode, hb, he, hdb, hlo]
+  rw [ifn (by omega_arith)]
+  simp only [Option.map_some]
+  generalize hgen : H.hash (zeros 8 ++ mHash ++ salt) = h
+  have hh : h.length = H.len := by rw [← hgen]; exact hH.2 _
+  have hmk : (mgf1 G h db).length = db := mgf1_length hG _ _
+  have hdbl : (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt).length = db := by
+    simp only [List.length_append, zeros_length, List.length_cons]; omega_arith
+  have hX : (clearTop (8 * emLen - emBits) (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 0x01 :: salt)
+      (mgf1 G h db))).length = db := by
+    rw [clearTop_length, xorBytes_length, hdbl, hmk, Nat.min_self]
+  refine congrArg some (eq_range_map ?_ fun i hi => ?_)
+  · simp only [List.length_append, zeros_length, hX, hh, List.length_cons, List.length_nil]
+    simp only [List.length_cons] at hlo hle; omega_arith
+  simp only [List.length_cons] at hi hlo hle
+  simp only [emT, getD_app, List.length_append, zeros_length, hX, hh]
+  have hlodb : lo + db + H.len + 1 = rest.length + 1 := by omega_arith
+  by_cases h1 : i < lo
+  · simp only [h1, ↓reduceIte]; exact zeros_getD _ _
+  simp only [h1, ↓reduceIte]
+  by_cases h2 : i - lo < db
+  · have h2' : i - lo < db + H.len := by omega_arith
+    simp only [h2, h2', ↓reduceIte, clearTop_getD]
+    have hx : ∀ j < db, (xorBytes (zeros (emLen - salt.length - H.len - 2) ++ 1 :: salt) (mgf1 G h db)).getD j 0 =
+        (if j < db - salt.length - 1 then 0 else if j = db - salt.length - 1 then 1
+          else salt.getD (j - (db - salt.length)) 0) ^^^ (mgf1 G h db).getD j 0 := fun j hj => by
+      rw [xorBytes_getD (by rw [hdbl]; exact hj) (by rw [hmk]; exact hj), db_getD,
+        show emLen - salt.length - H.len - 2 = db - salt.length - 1 by omega_arith,
+        show j - (db - salt.length - 1) - 1 = j - (db - salt.length) by omega_arith]
+    by_cases h3 : i - lo = 0
+    · simp only [h3, ↓reduceIte]; rw [hx 0 (by omega_arith)]
+    · simp only [h3, ↓reduceIte]; rw [hx _ h2]
+  · simp only [h2, ↓reduceIte]
+    by_cases h4 : i - lo < db + H.len
+    · simp only [h4, ↓reduceIte]
+    · simp only [h4, ↓reduceIte]
+      rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
+
+/-- `sign_eq` (`Proof/RsaPss/SignCases.lean`), with MGF1's hash function `G`
+another than `H`. -/
+theorem sign_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte}
+    {rest eB pB qB dPB dQB qInvB mHash salt : List Byte} (h0 : n₀ ≠ 0)
+    (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
+    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
+    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - H.len - 1 = db)
+    (hfit : H.len + salt.length + 2 ≤ emLen) :
+    sign H G (n₀ :: rest) eB pB qB dPB dQB qInvB mHash salt =
+      Rsa.privateChecked (n₀ :: rest) eB ((List.range (n₀ :: rest).length).map
+        (emT lo db salt.length salt (H.hash (zeros 8 ++ mHash ++ salt))
+          (mgf1 G (H.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits))))
+        pB qB dPB dQB qInvB := by
+  simp only [sign, encodeK_eq₂ H G hH hG h0 hm hb he hlo hdb hfit]
+
+end
+
+end VG.Proof.RsaPss.Arm
+
 namespace VG.Proof.RsaPss.Arm.Sg
 
 open VG VG.Arm VG.Impl.RsaPss.Arm VG.Proof.RsaPkcs1Sig.Arm VG.Proof.RsaPss.Arm
@@ -33,50 +117,10 @@ open VG.Proof.X25519.Arm (dpVal)
 
 variable (h : PssHash)
 
-theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 21) :
+theorem rdArg {L : Lay} (m : Mem) (v : BitVec 32) {d j : Nat} (hd : d + 4 ≤ 64) (hj : j < 24) :
     (m.writeW (L.fr d) v).readW (L.fr (arg j)) 32 = m.readW (L.fr (arg j)) 32 :=
   Lay.readW_fr_other L m v (by unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by
     unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by omega_arith)
-
-theorem rdS {L : Lay} (m : Mem) (v : BitVec 32) {d : Nat} (hd : d + 4 ≤ 64) :
-    (m.writeW (L.fr d) v).readW (L.fr sS) 32 = m.readW (L.fr sS) 32 :=
-  Lay.readW_fr_other L m v (by unfold sS; omega_arith) (by decide) (by omega_arith)
-
-/-- Words written to the frame from slot `k` on. -/
-def wl (L : Lay) : Mem → Nat → List (BitVec 32) → Mem
-  | m, _, [] => m
-  | m, k, v :: vs => wl L (m.writeW (L.fr (4 * k)) v) (k + 1) vs
-
-theorem wl_nil (L : Lay) (m : Mem) (k : Nat) : wl L m k [] = m := rfl
-theorem wl_cons (L : Lay) (m : Mem) (k : Nat) (v : BitVec 32) (vs : List (BitVec 32)) :
-    wl L m k (v :: vs) = wl L (m.writeW (L.fr (4 * k)) v) (k + 1) vs := rfl
-
-theorem wl_other (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k j : Nat), j < k → k + vs.length ≤ 16 →
-    (wl L m k vs).readW (L.fr (4 * j)) 32 = m.readW (L.fr (4 * j)) 32
-  | [], _, _, _, _, _ => rfl
-  | v :: vs, m, k, j, hj, hl => by
-    rw [wl_cons, wl_other L vs _ (k + 1) j (by omega_arith) (by simp at hl; omega_arith),
-      Lay.readW_fr_other _ _ _ (by omega_arith) (by omega_arith) (by simp at hl; omega_arith)]
-
-theorem wl_read (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k i : Nat), k ≤ i → i < k + vs.length →
-    k + vs.length ≤ 16 → (wl L m k vs).readW (L.fr (4 * i)) 32 = vs.getD (i - k) 0
-  | [], _, _, _, h₁, h₂, _ => by simp at h₂; omega_arith
-  | v :: vs, m, k, i, h₁, h₂, hl => by
-    rw [wl_cons]
-    simp only [List.length_cons] at h₂ hl
-    by_cases e : i = k
-    · subst e
-      rw [wl_other L vs _ (i + 1) i (by omega_arith) (by omega_arith), Mem.readW_writeW_self32, Nat.sub_self]; rfl
-    · rw [wl_read L vs _ (k + 1) i (by omega_arith) (by omega_arith) (by omega_arith), show i - k = (i - (k + 1)) + 1 by omega_arith]; rfl
-
-theorem wl_frame (L : Lay) : ∀ (vs : List (BitVec 32)) (m : Mem) (k : Nat), k + vs.length ≤ 16 →
-    Frame [⟨L.fr 0, 64⟩] m (wl L m k vs)
-  | [], _, _, _ => Frame.refl _ _
-  | v :: vs, m, k, hl => by
-    rw [wl_cons]
-    simp only [List.length_cons] at hl
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.zero_le _) (by omega_arith) (by omega_arith))).trans (wl_frame L vs _ (k + 1) (by omega_arith))
 
 /-- The call's stack arguments but the first. -/
 abbrev outv (P : EP) : List (BitVec 32) :=
@@ -104,7 +148,7 @@ theorem pa_wp (P : EP) {σ s : State} (hc : Ctx (P.lay h.D) P.scr σ s) (hi : In
   obtain ⟨a10, r10, v10⟩ := argAt hi hc.st (j := 10) (by decide)
   obtain ⟨a12, r12, v12⟩ := argAt hi hc.st (j := 12) (by decide)
   obtain ⟨a14, r14, v14⟩ := argAt hi hc.st (j := 14) (by decide)
-  obtain ⟨a20, r20, v20⟩ := argAt hi hc.st (j := 20) (by decide)
+  obtain ⟨a20, r20, v20⟩ := argAt hi hc.st (j := 21) (by decide)
   replace v0 : s.mem.readW ((P.lay h.D).fr (arg 0)) 32 = P.out := v0
   replace v2 : s.mem.readW ((P.lay h.D).fr (arg 2)) 32 = P.n := v2
   replace v3 : s.mem.readW ((P.lay h.D).fr (arg 3)) 32 = BitVec.ofNat 32 P.K := v3
@@ -117,11 +161,11 @@ theorem pa_wp (P : EP) {σ s : State} (hc : Ctx (P.lay h.D) P.scr σ s) (hi : In
   replace v10 : s.mem.readW ((P.lay h.D).fr (arg 10)) 32 = P.dp := v10
   replace v12 : s.mem.readW ((P.lay h.D).fr (arg 12)) 32 = P.dq := v12
   replace v14 : s.mem.readW ((P.lay h.D).fr (arg 14)) 32 = P.qinv := v14
-  replace v20 : s.mem.readW ((P.lay h.D).fr (arg 20)) 32 = BitVec.ofNat 32 P.scl := v20
+  replace v20 : s.mem.readW ((P.lay h.D).fr (arg 21)) 32 = BitVec.ofNat 32 P.scl := v20
   have wF : ∀ d, d + 4 ≤ frameBytes → InRegions s.wr ((P.lay h.D).fr d) 4 := fun d hd => hc.st.inFr hd
   have q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
   have w0 : InRegions s.wr (State.addr P.B) 4 := by rw [q0]; exact wF 0 (by decide)
-  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 21 →
+  have rdA0 : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j < 24 →
       (m.writeW (State.addr P.B) v).readW ((P.lay h.D).fr (arg j)) 32 = m.readW ((P.lay h.D).fr (arg j)) 32 :=
     fun m v j hj => by rw [q0]; exact rdArg m v (by decide) hj
   have rdS0 : ∀ (m : Mem) (v : BitVec 32),
@@ -135,14 +179,14 @@ theorem pa_wp (P : EP) {σ s : State} (hc : Ctx (P.lay h.D) P.scr σ s) (hi : In
     Nat.reduceAdd]
 
 /-- Before the call. -/
-abbrev R1 (P : EP) (σ s : State) : Prop :=
-  Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ) ∧
+abbrev R1 (G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop :=
+  Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h G P σ) ∧
     PrivArgs s P.out P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv (P.scr + BitVec.ofNat 32 oRsa)
       P.K P.el P.pl P.ql (P.scl - 1024)
 
-theorem pa_vp (P : EP) :
-    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h P σ)) (.block privArgs)
-      (R1 h P) := by
+theorem pa_vp (G : Spec.Mgf1.Hash) (P : EP) :
+    VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Kp h P σ s.mem ∧ EMv P s.mem (emF h G P σ)) (.block privArgs)
+      (R1 h G P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hk, he⟩ => ?_
   have hi := hk.1
   have hg := hi.geo
@@ -186,9 +230,9 @@ theorem pa_vp (P : EP) :
     by omega_arith, by have := hi.scl32; omega_arith⟩
 
 /-- What the specification signs: RSASP1 of `EM`, checked against `e`. -/
-theorem sign_ok {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
-    Spec.RsaPss.sign h.G h.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ) =
-      Spec.Rsa.privateChecked P.nB P.eB ((List.range P.K).map (emF h P σ)) (pB P σ) (qB P σ) (dpB P σ)
+theorem sign_ok (g : RsaOaep.Arm.OHash) {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
+    Spec.RsaPss.sign h.G g.G P.nB P.eB (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (digB h P σ) (saltB P σ) =
+      Spec.Rsa.privateChecked P.nB P.eB ((List.range P.K).map (emF h g.G P σ)) (pB P σ) (qB P σ) (dpB P σ)
         (dqB P σ) (qiB P σ) := by
   have hl := nB_length hi
   have hK := hi.k64
@@ -219,7 +263,7 @@ theorem sign_ok {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
   have hfit : h.G.len + (saltB P σ).length + 2 ≤
       Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip (b :: rest)) - 1) := by
     rw [gl, RsaPkcs1Sig.Arm.bytesAt_length, hem]; have := hf.2; omega_arith
-  rw [hbr, RsaPss.sign_eq h.G (PssHash.valid h) hb0 hm rfl rfl e1 hdb hfit]
+  rw [hbr, sign_eq₂ h.G g.G (PssHash.valid h) g.valid hb0 hm rfl rfl e1 hdb hfit]
   refine congrArg (fun em => Spec.Rsa.privateChecked (b :: rest) P.eB em (pB P σ) (qB P σ) (dpB P σ) (dqB P σ)
     (qiB P σ)) ?_
   rw [List.length_cons, show rest.length + 1 = P.K by omega_arith]
@@ -252,7 +296,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.D P σ) :
   · rw [inpR, scrR, e1, e2]; exact Offset.disjoint _ (by unfold oEm oRsa; omega_arith) (by unfold oEm; omega_arith)
       (by unfold oRsa; omega_arith)
 
-theorem call_pre {P : EP} {σ s : State} (hr : R1 h P σ s) :
+theorem call_pre {G : Spec.Mgf1.Hash} {P : EP} {σ s : State} (hr : R1 h G P σ s) :
     (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv P.K P.el
         P.pl P.ql) (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
@@ -327,8 +371,8 @@ theorem eB_at {P : EP} {σ s : State} (hi : In h.D P σ) (hs : (P.lay h.D).St σ
     Spec.Rsa.bytesAt s.mem (State.addr P.e) P.el = P.eB := (hs.ro (R := P.E) (by simp)).trans hi.eB
 
 /-- `out` and the result: the call. -/
-theorem call_vp (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
-    VP (R1 h P) (.call (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin h P) := by
+theorem call_vp (g : RsaOaep.Arm.OHash) (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
+    VP (R1 h g.G P) (.call (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin h g.G P) := by
   refine VP.callF (Proof.Rsa.Arm.code_verified v) (privCode_stack v)
     (privRd P.B P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv P.K P.el P.pl P.ql)
     (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024)) (fun _ _ hr => call_pre h hr)
@@ -372,7 +416,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
       · exact ⟨P.SCR, by simp, sS'⟩
       · exact ⟨(P.lay h.D).LOW, by simp, fun _ h => h⟩) rd wr sp
     refine ⟨⟨hi, st⟩, ?_⟩
-    have em : Spec.Rsa.bytesAt s.mem (State.addr (P.scr + BitVec.ofNat 32 oEm)) P.K = (List.range P.K).map (emF h P σ) := by
+    have em : Spec.Rsa.bytesAt s.mem (State.addr (P.scr + BitVec.ofNat 32 oEm)) P.K = (List.range P.K).map (emF h g.G P σ) := by
       unfold Spec.Rsa.bytesAt
       refine List.map_congr_left fun i hi' => ?_
       rw [List.mem_range] at hi'
@@ -380,7 +424,7 @@ theorem call_vp (P : EP) (v : Proof.Rsa.Arm.CrtImpl) :
     have := priv_post pa po
     rw [nB_at h hi hs, eB_at h hi hs, em, hs.ro (R := P.PP) (by simp), hs.ro (R := P.QQ) (by simp),
       hs.ro (R := P.DP) (by simp), hs.ro (R := P.DQ) (by simp), hs.ro (R := P.QI) (by simp)] at this
-    rw [Res, sign_ok h hi hk.2.1]
+    rw [Res, sign_ok h g hi hk.2.1]
     exact this
 
 end VG.Proof.RsaPss.Arm.Sg

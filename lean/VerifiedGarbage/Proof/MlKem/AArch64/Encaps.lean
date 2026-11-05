@@ -45,7 +45,7 @@ def encapsAArch64 (P : KemLay) : Contract AArch64.isa where
     let ct : Region := ⟨s.gpr .x3, P.ctLen⟩
     let scratch : Region := ⟨s.gpr .x4, P.scl⟩
     let stack : Region := ⟨s.sp - 16, 16⟩
-    s.rd = [ek, msg] ∧ s.wr = [key, ct, scratch] ∧ ek.Disjoint key ∧ ek.Disjoint ct ∧
+    ek ∈ s.rd ∧ msg ∈ s.rd ∧ s.wr = [key, ct, scratch] ∧ ek.Disjoint key ∧ ek.Disjoint ct ∧
     ek.Disjoint scratch ∧ msg.Disjoint key ∧ msg.Disjoint ct ∧ msg.Disjoint scratch ∧ key.Disjoint ct ∧
     key.Disjoint scratch ∧ ct.Disjoint scratch ∧ 16 ≤ s.sp.toNat ∧ stack.Disjoint ek ∧ stack.Disjoint msg ∧
     stack.Disjoint key ∧ stack.Disjoint ct ∧ stack.Disjoint scratch
@@ -93,11 +93,13 @@ tactic_template "enk" : tactic => `(tactic| (
   first | decide | omega_using [offs (‹Pre _ _ _›).wf] | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre P (enL P) s₀ := by
-  obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
+  obtain ⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
   refine ⟨by
     intro b hb
     have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
-    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, enL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+    rcases hb' with rfl | rfl
+    · exact rd0
+    · exact rd1, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     by enk, by enk, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [enL] at hb hc hw

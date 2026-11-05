@@ -9,13 +9,6 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &[
     "rsa_oaep",
-    "rsa_oaep_sha1_mgf1",
-    "rsa_oaep_sha224_mgf1",
-    "rsa_oaep_sha256_mgf1",
-    "rsa_oaep_sha384_mgf1",
-    "rsa_oaep_sha512_mgf1",
-    "rsa_oaep_sha512_224_mgf1",
-    "rsa_oaep_sha512_256_mgf1",
     "fn_tables",
     "rsa",
     "sha1",

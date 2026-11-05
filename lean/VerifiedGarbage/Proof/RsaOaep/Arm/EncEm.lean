@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 public import VerifiedGarbage.Proof.RsaOaep.Encode
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
-import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -18,7 +19,7 @@ meta import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 meta import VerifiedGarbage.Proof.RsaOaep.Encode
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 meta import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common

@@ -29,10 +29,11 @@
 //! `_avx2` ones; on AArch64, the `_x2_sha3_keccak_sha3` ones on Apple's
 //! cores and the `_x2_sha3` ones on others.
 //!
-//! On x86-64, an [`EncapsulationKey1024`] from key generation keeps the hash
+//! An [`EncapsulationKey1024`] from key generation keeps the hash
 //! `H(ek)` of the key (FIPS 203 §4.1), which the decapsulation key holds,
 //! and encapsulation with it is `vg_mlkem1024_encaps_h` (contract
-//! `encapsHContract`), which takes it rather than computing it each time.
+//! `encapsHContract`), which takes it rather than computing it each time
+//! (but on AArch64, where it computes it as `vg_mlkem1024_encaps` does).
 //! One from [`EncapsulationKey1024::from_bytes`] does not, and encapsulation
 //! with it is `vg_mlkem1024_encaps`, which computes it.
 
@@ -57,6 +58,7 @@ crate::mlkem_common::ml_kem! {
     keygen_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_keygen_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES),
     encaps_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_encaps_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES),
     decaps_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_decaps_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES),
+    encaps_h_x2_sha3: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_x2_sha3, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_FEATURES),
     keygen_x2_sha3_keccak_sha3: (
         crate::arch::mlkem1024::vg_mlkem1024_keygen_x2_sha3_keccak_sha3,
         crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES,
@@ -68,6 +70,10 @@ crate::mlkem_common::ml_kem! {
     decaps_x2_sha3_keccak_sha3: (
         crate::arch::mlkem1024::vg_mlkem1024_decaps_x2_sha3_keccak_sha3,
         crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES,
+    ),
+    encaps_h_x2_sha3_keccak_sha3: (
+        crate::arch::mlkem1024::vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3,
+        crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES,
     ),
     keygen_avx2: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx2, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_FEATURES),
     keygen_avx512: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx512, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_FEATURES),

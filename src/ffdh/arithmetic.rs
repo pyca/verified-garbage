@@ -3,8 +3,8 @@
 use crate::arch::ffdh::{
     VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
     VG_FFDH_CHECK_PUBLIC_ADX_FEATURES, VG_FFDH_EXCHANGE_ADX_FEATURES,
-    VG_FFDH_GENERATE_KEY_ADX_FEATURES, VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES,
-    VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
+    VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES, VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES,
+    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES, VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
 };
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::{
@@ -56,10 +56,11 @@ impl Backend {
                     VG_FFDH_CHECK_DOMAIN_ADX_FEATURES,
                     VG_FFDH_CHECK_PUBLIC_ADX_FEATURES,
                     VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
-                    VG_FFDH_GENERATE_KEY_ADX_FEATURES,
                     VG_FFDH_EXCHANGE_ADX_FEATURES,
                     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
-                    VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES,
+                    VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES,
+                    VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES,
+                    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES,
                 ])
             },
         ) {
@@ -89,7 +90,7 @@ impl Backend {
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::*;
+    use super::{Backend, Features};
     use verified_garbage_cpu::feature;
 
     #[test]
@@ -144,7 +145,7 @@ mod tests {
 
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
-    use super::*;
+    use super::{Backend, Features};
     use verified_garbage_cpu::feature;
     #[test]
     fn backend_feature_requirements() {

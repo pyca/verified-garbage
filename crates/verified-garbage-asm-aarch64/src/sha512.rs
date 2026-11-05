@@ -1432,6 +1432,10 @@ pub(crate) mod vg_sha512_finalize_scratch;
 pub(crate) mod vg_sha512_finalize_scratch_sha3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_state_digest.rs"]
+pub(crate) mod vg_sha512_state_digest;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_update_scratch.rs"]
 pub(crate) mod vg_sha512_update_scratch;
 

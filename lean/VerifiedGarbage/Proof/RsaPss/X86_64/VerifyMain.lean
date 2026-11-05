@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
 
 /-!
 # RSASSA-PSS verification on x86-64: after the checks
@@ -31,7 +33,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
 theorem WP.seq_inv {A B : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq A B) s Q) :
     WP isa A s fun t => WP isa B t Q := by
@@ -49,9 +51,9 @@ theorem WP.seqs_append : ∀ {l₁ l₂ : List (Prog isa)}, l₁ ≠ [] → l₂
     have ih := @WP.seqs_append (c' :: cs) l₂ (List.cons_ne_nil _ _) h₂
     exact WP.seq (WP.mono (WP.seq_inv h) fun t ht => ih ht)
 
-theorem vframe_keep {s u v : State} (hp : VPre G s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
+theorem vframe_keep {s u v : State} (hp : VPre tsH tsG s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
     (hM : Frame (vwrR s) s.mem u.mem)
-    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 8).Contains a 1 → v.mem a = u.mem a) :
+    (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 → v.mem a = u.mem a) :
     Frame (vwrR s) s.mem v.mem := by
   intro x hx
   refine (hk x (fun r hr hc => ?_) (fun hc => ?_)).trans (hM x hx)
@@ -171,21 +173,23 @@ theorem vscan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
     have hfx : fixed = false := by cases fixed <;> simp_all
     exact generic v kv hm (by simp only [ff, hfx, Bool.false_and])
 
-include hH K in
-theorem vmid_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k lo db z : Nat} {fixed : Bool}
+include hH in
+theorem vmid_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Pbkdf2.Md.X86_64.Calls.StreamOK G) {Gs : Spec.Mgf1.Hash}
+    (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D) (hGv : Proof.Mgf1.Valid Gs)
+    {g : Impl.Mgf1.X86_64.Table.Fns} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) (hGT : GT G g W u.syms) {k lo db z : Nat} {fixed : Bool}
     (hk : W 17 = BitVec.ofNat 64 k) (he : W 23 = off S (oEm + lo)) (hdb : W 24 = BitVec.ofNat 64 db)
     (hc : W 25 = BitVec.setWidth 64 ((0xFF : Byte) >>> z)) (hlo : W 26 = BitVec.ofNat 64 lo)
     (hany : W 35 = if fixed then 0 else 1)
     (hlo1 : lo ≤ 1) (hdb1 : 1 ≤ db) (hlay : lo + db + H.D + 1 = k) (hk2 : k ≤ 1024) :
     let hB := (List.range H.D).map fun i => V (oEm + lo + db + i)
     let dbL := Spec.RsaPss.clearTop z (Spec.Mgf1.xorBytes ((List.range db).map fun i => V (oEm + lo + i))
-      (Spec.Mgf1.mgf1 lk.G hB db))
+      (Spec.Mgf1.mgf1 Gs hB db))
     let ff := fixed && decide ((W 36).toNat < db)
     let fd := decide (lz dbL < db)
     let pos := if ff then db - (W 36).toNat - 1 else if lz dbL < db then lz dbL else 0
     let val := if lz dbL < db then dbL.getD (lz dbL) 0 else 0
-    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, scanCheck H]) u fun u' => Lay u' F S ∧
+    WP isa (seqs [.block acc0, mgfXor H g, .block clearTop, scanCheck H]) u fun u' => Lay u' F S ∧
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], u'.gpr r = u.gpr r) ∧
       ∃ V' W', Rep u'.mem F S V' W' ∧
         (W' 33 = 0 ↔ acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) ((0xFF : Byte) >>> z) lo = 0 ∧
@@ -200,15 +204,15 @@ theorem vmid_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L
   have hDN := hH.hDN
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
-  have hG := validG hH lk.hash lk.len
   simp only [seqs]
   -- `acc0`.
-  refine WP.seq (WP.mono (acc0_ok L R (c := (0xFF : Byte) >>> z) hk he hc hlo (by omega_arith) hk2 (by omega_arith))
-    fun u1 ⟨L1, k1, R1⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (acc0_ok L R (c := (0xFF : Byte) >>> z) hk he hc hlo (by omega_arith) hk2
+    (by omega_arith)) fun u1 ⟨L1, k1, R1⟩ sy1 => ?_)
   set a0 := acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) ((0xFF : Byte) >>> z) lo
   have g1 : ∀ j, j ≠ 33 → upd W 33 a0 j = W j := fun j h => by simp [upd, h]
   -- The mask.
-  refine WP.seq (WP.mono (mgfXor_ok hH K lk.hash lk.len hG L1 R1 (e := oEm + lo) (db := db)
+  refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv H L1 R1
+    (hGT.congr sy1 fun j h1 h2 => g1 j (by omega_arith)) (e := oEm + lo) (db := db)
     ⟨by omega_arith, hdb1, by omega_arith⟩ (by rw [g1 23 (by decide), he]) (by rw [g1 24 (by decide), hdb]))
     fun u2 ⟨L2, rd2, wr2, cs2, V2, W2, R2, hW2, hV2⟩ => ?_)
   -- The top bits.
@@ -218,11 +222,11 @@ theorem vmid_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L
   refine WP.seq (WP.mono (clearTop_ok L2 R2 (e := oEm + lo) h23 h25 (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ => ?_)
   set V3 := upd V2 (oEm + lo) (V2 (oEm + lo) &&& ((0xFF : Byte) >>> z))
   -- `DB`'s bytes.
-  have hmk : (Spec.Mgf1.mgf1 lk.G hB db).length = db := Proof.Mgf1.mgf1_length hG _ _
+  have hmk : (Spec.Mgf1.mgf1 Gs hB db).length = db := Proof.Mgf1.mgf1_length hGv _ _
   have hV3 : ∀ i < db, V3 (oEm + lo + i) = dbL.getD i 0 := fun i hi => by
-    have hm : ∀ o < oRsa, ctOut o → V2 o = mixV V (Spec.Mgf1.mgf1 lk.G hB db) (oEm + lo) db o := hV2
+    have hm : ∀ o < oRsa, ctOut o → V2 o = mixV V (Spec.Mgf1.mgf1 Gs hB db) (oEm + lo) db o := hV2
     have hco : ∀ j < db, ctOut (oEm + lo + j) := fun j hj => ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩
-    have := db_bytes V (Spec.Mgf1.mgf1 lk.G hB db) (e := oEm + lo) (z := z) hmk i hi
+    have := db_bytes V (Spec.Mgf1.mgf1 Gs hB db) (e := oEm + lo) (z := z) hmk i hi
     rw [← this]
     simp only [V3, upd]
     by_cases h0 : i = 0
@@ -262,8 +266,9 @@ theorem vmid_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L
 /-! ## The salt, its hash, and the result -/
 
 include hH K in
-theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
-    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lo db pos : Nat} {dig : Addr}
+theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} {f : MdFns} (hdk : DigOK H)
+    {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) (hT : HT H dn f W u.syms) {lo db pos : Nat} {dig : Addr}
     (he : W 23 = off S (oEm + lo)) (hdb : W 24 = BitVec.ofNat 64 db) (hpos : W 34 = BitVec.ofNat 64 pos)
     (hl : W 27 = BitVec.ofNat 64 (db - pos - 1 + (8 + H.D))) (hdg : W 37 = dig)
     (hlo1 : lo ≤ 1) (hdb1 : 1 ≤ db) (hpd : pos < db) (hfit : lo + db + H.D + 1 ≤ 1024)
@@ -271,7 +276,7 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (
     (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i)) :
     let msg := Spec.RsaPss.zeros 8 ++ (List.range H.D).map (bytesF u.mem dig) ++
       ((List.range db).map fun i => V (oEm + lo + i)).drop (pos + 1)
-    WP isa (seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]) u fun u' =>
+    WP isa (seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash f H, cmpH H]) u fun u' =>
       Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], u'.gpr r = u.gpr r) ∧
       (∃ V' W', Rep u'.mem F S V' W' ∧
         ∀ j < nW, j ≠ 28 → j ≠ 29 → j ≠ 30 → j ≠ 44 → j ≠ 45 → j ≠ 46 → W' j = W j) ∧
@@ -286,19 +291,19 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (
   have c5 : oRsa = 8192 := rfl
   simp only [seqs]
   -- `Y` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 8)
-    (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 16)
+    (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ sy1 => ?_)
   have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   -- `mHash`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 8)
+  refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 16)
     (copyDigest_ok hH L1 R1 (p := dig) hdg hcx1
       (fun i hi => by rw [k1.2.1, k1.2.2]; exact hdR i hi)
       (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2]; exact hdO i hi) (by omega_arith))))
-    fun u2 ⟨⟨L2, k2, R2⟩, f2⟩ => ?_)
+    fun u2 ⟨⟨L2, k2, R2⟩, f2⟩ sy2 => ?_)
   have hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
   -- `DB`.
-  refine WP.seq (WP.mono (copyDb_ok L2 R2 (e := oEm + lo) (db := db) he hdb ((k2.gpr (by decide)).trans hcx1)
-    hdb1 (by omega_arith) (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (copyDb_ok L2 R2 (e := oEm + lo) (db := db) he hdb
+    ((k2.gpr (by decide)).trans hcx1) hdb1 (by omega_arith) (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ sy3 => ?_)
   set V4 := clrV V oY 2048 with hV4
   set V5 := cpV V4 (fun i => u1.mem (dig + BitVec.ofNat 64 i)) (oY + 8) H.D with hV5
   set V6 := cpV V5 (fun i => V5 (oEm + lo + i)) (oY + (8 + H.D)) db with hV6
@@ -307,15 +312,15 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (
   -- The shift.
   have hz : ∀ j, db ≤ j → j < db + 512 → V6 (oY + 8 + H.D + j) = 0 := fun j h1 h2 => by
     simp only [hV6, hV5, hV4, cpV, clrV]; rw [ifn (by omega_arith), ifn (by omega_arith), ifp (by omega_arith)]
-  refine WP.seq (WP.mono (shift_ok hH L3 R3 (pos := pos) (db := db) hpos hdb (by omega_arith) hdb1 (by omega_arith) hz)
-    fun u4 I4 => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (shift_ok hH L3 R3 (pos := pos) (db := db) hpos hdb (by omega_arith) hdb1
+    (by omega_arith) hz) fun u4 I4 sy4 => ?_)
   obtain ⟨V7, W4, R4, -, -, -, hW4, hV7, hO7⟩ := I4.rep
   have hp10 : (pos + 1) % 2 ^ 10 = pos + 1 := Nat.mod_eq_of_lt (by rw [show (2 : Nat) ^ 10 = 1024 from rfl]; omega_arith)
   rw [hp10] at hV7
   have g4 : ∀ j, j ≠ 44 → j ≠ 45 → j ≠ 46 → j < nW → W4 j = W j := fun j a b c d => hW4 j d a b c
   -- `nbm`.
-  refine WP.seq (WP.mono (verifyNb_ok hH I4.L R4 (db := db) (by rw [g4 24 (by decide) (by decide) (by decide)
-    (by decide), hdb]) (by omega_arith)) fun u5 ⟨L5, k5, R5⟩ => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (verifyNb_ok hH I4.L R4 (db := db) (by rw [g4 24 (by decide) (by decide)
+    (by decide) (by decide), hdb]) (by omega_arith)) fun u5 ⟨L5, k5, R5⟩ sy5 => ?_)
   -- The hash of `M'`.
   have hml : msg.length = db - pos - 1 + (8 + H.D) := by
     simp only [msg, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range, List.length_drop]
@@ -340,7 +345,11 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (
     · rw [ifn h3, List.getElem?_eq_none (by simp; omega_arith)]; rfl
   refine WP.seq (WP.mono (ctHash_ok hH K L5 R5 (msg := msg) (nbm := (db + (7 + H.D + H.P.L)) / H.P.B + 1)
       (by rw [hml]; simp only [upd]; rw [ifn (by decide), g4 27 (by decide) (by decide) (by decide) (by decide), hl])
-      (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega_arith) (by rw [Nat.succ_mul]; omega_arith) (fun i hi => ?_))
+      (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega_arith) (by rw [Nat.succ_mul]; omega_arith) (fun i hi => ?_)
+      (hT.congr (sy5.trans (sy4.trans (sy3.trans (sy2.trans sy1))))
+        (by rw [upd_ne' (by decide), g4 8 (by decide) (by decide) (by decide) (by decide)])
+        (by rw [upd_ne' (by decide), g4 9 (by decide) (by decide) (by decide) (by decide)])
+        (by rw [upd_ne' (by decide), g4 10 (by decide) (by decide) (by decide) (by decide)])) hdk)
     fun u6 ⟨L6, rd6, wr6, cs6, V8, W6, R6, hout6, hW6, hdig6⟩ => ?_)
   · rw [hmsg]
     have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_arith

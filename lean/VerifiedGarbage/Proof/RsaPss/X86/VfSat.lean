@@ -1,15 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86.VfBase
+public import VerifiedGarbage.Proof.RsaPss.X86.VfVerified
+public import VerifiedGarbage.Proof.RsaPss.X86.SgSat
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the contract is satisfiable
 
-A state that meets `verifyPrecomputedContract` (`verify_sat_<hash>`), for
-each hash function x86 registers RSASSA-PSS with: a modulus of 64 bytes, `e`
-of one byte, a signature of 64 bytes, the working space it needs, the
-precomputed values' 16 words, and the arguments above `esp = 0x20000`.
+A state that meets `verifyPrecomputedTableContract` (`verify_sat`), with the
+hash function's table that of any variant `w` of `vs` and MGF1's that of any
+variant `wg` of `gs`: a modulus of 64 bytes, `e` of one byte, a signature of
+64 bytes, the working space it needs, the precomputed values' 16 words, the
+arguments above `esp = 0x20000`, and the tables where signing's are
+(`Sg.withTabs`).
 -/
 
 @[expose] public section
@@ -19,195 +22,341 @@ namespace VG.Proof.RsaPss.X86.Vf
 open VG
 open VG.X86 hiding frameBytes
 open VG.Impl.RsaPss.X86 (frameBytes)
+open VG.Proof.MdHashTable.X86 (MVar)
+open VG.Proof.HashTable.X86 (TVar)
+open VG.Proof.HashTable (symsOf32 symsOf32_distinct2)
+open VG.Proof.RsaPss.X86.Sg (withTabs withTabs_arg withTabs_heldH withTabs_held D_mem)
 
-/-- The state, for a digest of `D` bytes. -/
+/-- The state, but for the tables, for a digest of `D` bytes. -/
 def satState (D : Nat) : State where
   gpr r := if r = .esp then 0x20000 else 0
   cf := none
   zf := none
   sf := none
   of := none
-  mem a := if a = 131077 then 0x20 else if a = 131080 then 0x40 else if a = 131085 then 0x21 else
-    if a = 131088 then 0x1 else if a = 131093 then 0x30 else if a = 131097 then 0x31 else
-    if a = 131100 then 0x40 else if a = 131114 then 0x1 else if a = 131116 then 0x20 else
-    if a = 131117 then 0x8 else if a = 131121 then 0x70 else if a = 131124 then 0x10 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, D⟩, ⟨0x3100, 64⟩, ⟨0x7000, 128⟩]
-  wr := [⟨0x10000, 2080 * 8⟩, ⟨0x20004, 52⟩]
+  mem a := if a = 131096 then BitVec.ofNat 8 D else if a = 131077 then 0x20 else if a = 131080 then 0x40 else
+    if a = 131085 then 0x21 else if a = 131088 then 0x1 else if a = 131093 then 0x30 else
+    if a = 131101 then 0x31 else if a = 131104 then 0x40 else if a = 131118 then 0x1 else
+    if a = 131120 then 0x20 else if a = 131121 then 0x8 else if a = 131125 then 0x70 else
+    if a = 131128 then 0x10 else if a = 131134 then 0x30 else if a = 131137 then 0x1 else
+    if a = 131138 then 0x30 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, D⟩, ⟨0x3100, 64⟩, ⟨0x7000, 128⟩, ⟨0x300000, 44⟩, ⟨0x300100, 20⟩]
+  wr := [⟨0x10000, 2080 * 8⟩, ⟨0x20004, 64⟩]
 
-theorem verify_sat_md5 : ∃ s, (spec Spec.Mgf1.md5).pre s := by
-  have a0 : arg (satState 16) 0 = 0x2000 := by decide
-  have a1 : arg (satState 16) 1 = 64 := by decide
-  have a2 : arg (satState 16) 2 = 0x2100 := by decide
-  have a3 : arg (satState 16) 3 = 1 := by decide
-  have a4 : arg (satState 16) 4 = 0x3000 := by decide
-  have a5 : arg (satState 16) 5 = 0x3100 := by decide
-  have a6 : arg (satState 16) 6 = 64 := by decide
-  have a7 : arg (satState 16) 7 = 0 := by decide
-  have a8 : arg (satState 16) 8 = 0 := by decide
-  have a9 : arg (satState 16) 9 = 0x10000 := by decide
-  have a10 : arg (satState 16) 10 = 0x820 := by decide
-  have a11 : arg (satState 16) 11 = 0x7000 := by decide
-  have a12 : arg (satState 16) 12 = 16 := by decide
-  have e : argAddr (satState 16) 0 = 0x20004 := by decide
-  have esp : (satState 16).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat16 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 16) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 16) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 16) vs gs w wg
+  have hhG := withTabs_held (satState 16) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 16) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 16) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 16) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 16) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 16) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 16) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 16) vs gs w wg) 5 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 16) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 16) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 16) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 16) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 16) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 16) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 16) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 16) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 16) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 16) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 16) vs gs w wg) 0 = 0x20004 := show argAddr (satState 16) 0 = _ by decide
+  have esp : (withTabs (satState 16) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 16) vs gs w wg).rd = (satState 16).rd := rfl
+  have wr : (withTabs (satState 16) vs gs w wg).wr = (satState 16).wr := rfl
+  have sy : (withTabs (satState 16) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 16) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 16
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha1 : ∃ s, (spec Spec.Mgf1.sha1).pre s := by
-  have a0 : arg (satState 20) 0 = 0x2000 := by decide
-  have a1 : arg (satState 20) 1 = 64 := by decide
-  have a2 : arg (satState 20) 2 = 0x2100 := by decide
-  have a3 : arg (satState 20) 3 = 1 := by decide
-  have a4 : arg (satState 20) 4 = 0x3000 := by decide
-  have a5 : arg (satState 20) 5 = 0x3100 := by decide
-  have a6 : arg (satState 20) 6 = 64 := by decide
-  have a7 : arg (satState 20) 7 = 0 := by decide
-  have a8 : arg (satState 20) 8 = 0 := by decide
-  have a9 : arg (satState 20) 9 = 0x10000 := by decide
-  have a10 : arg (satState 20) 10 = 0x820 := by decide
-  have a11 : arg (satState 20) 11 = 0x7000 := by decide
-  have a12 : arg (satState 20) 12 = 16 := by decide
-  have e : argAddr (satState 20) 0 = 0x20004 := by decide
-  have esp : (satState 20).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat20 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 20) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 20) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 20) vs gs w wg
+  have hhG := withTabs_held (satState 20) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 20) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 20) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 20) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 20) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 20) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 20) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 20) vs gs w wg) 5 = 0x14 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 20) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 20) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 20) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 20) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 20) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 20) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 20) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 20) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 20) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 20) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 20) vs gs w wg) 0 = 0x20004 := show argAddr (satState 20) 0 = _ by decide
+  have esp : (withTabs (satState 20) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 20) vs gs w wg).rd = (satState 20).rd := rfl
+  have wr : (withTabs (satState 20) vs gs w wg).wr = (satState 20).wr := rfl
+  have sy : (withTabs (satState 20) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 20) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 20
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha224 : ∃ s, (spec Spec.Mgf1.sha224).pre s := by
-  have a0 : arg (satState 28) 0 = 0x2000 := by decide
-  have a1 : arg (satState 28) 1 = 64 := by decide
-  have a2 : arg (satState 28) 2 = 0x2100 := by decide
-  have a3 : arg (satState 28) 3 = 1 := by decide
-  have a4 : arg (satState 28) 4 = 0x3000 := by decide
-  have a5 : arg (satState 28) 5 = 0x3100 := by decide
-  have a6 : arg (satState 28) 6 = 64 := by decide
-  have a7 : arg (satState 28) 7 = 0 := by decide
-  have a8 : arg (satState 28) 8 = 0 := by decide
-  have a9 : arg (satState 28) 9 = 0x10000 := by decide
-  have a10 : arg (satState 28) 10 = 0x820 := by decide
-  have a11 : arg (satState 28) 11 = 0x7000 := by decide
-  have a12 : arg (satState 28) 12 = 16 := by decide
-  have e : argAddr (satState 28) 0 = 0x20004 := by decide
-  have esp : (satState 28).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat28 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 28) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 28) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 28) vs gs w wg
+  have hhG := withTabs_held (satState 28) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 28) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 28) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 28) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 28) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 28) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 28) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 28) vs gs w wg) 5 = 0x1c := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 28) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 28) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 28) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 28) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 28) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 28) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 28) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 28) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 28) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 28) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 28) vs gs w wg) 0 = 0x20004 := show argAddr (satState 28) 0 = _ by decide
+  have esp : (withTabs (satState 28) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 28) vs gs w wg).rd = (satState 28).rd := rfl
+  have wr : (withTabs (satState 28) vs gs w wg).wr = (satState 28).wr := rfl
+  have sy : (withTabs (satState 28) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 28) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 28
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha256 : ∃ s, (spec Spec.Mgf1.sha256).pre s := by
-  have a0 : arg (satState 32) 0 = 0x2000 := by decide
-  have a1 : arg (satState 32) 1 = 64 := by decide
-  have a2 : arg (satState 32) 2 = 0x2100 := by decide
-  have a3 : arg (satState 32) 3 = 1 := by decide
-  have a4 : arg (satState 32) 4 = 0x3000 := by decide
-  have a5 : arg (satState 32) 5 = 0x3100 := by decide
-  have a6 : arg (satState 32) 6 = 64 := by decide
-  have a7 : arg (satState 32) 7 = 0 := by decide
-  have a8 : arg (satState 32) 8 = 0 := by decide
-  have a9 : arg (satState 32) 9 = 0x10000 := by decide
-  have a10 : arg (satState 32) 10 = 0x820 := by decide
-  have a11 : arg (satState 32) 11 = 0x7000 := by decide
-  have a12 : arg (satState 32) 12 = 16 := by decide
-  have e : argAddr (satState 32) 0 = 0x20004 := by decide
-  have esp : (satState 32).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat32 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 32) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 32) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 32) vs gs w wg
+  have hhG := withTabs_held (satState 32) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 32) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 32) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 32) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 32) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 32) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 32) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 32) vs gs w wg) 5 = 0x20 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 32) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 32) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 32) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 32) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 32) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 32) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 32) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 32) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 32) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 32) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 32) vs gs w wg) 0 = 0x20004 := show argAddr (satState 32) 0 = _ by decide
+  have esp : (withTabs (satState 32) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 32) vs gs w wg).rd = (satState 32).rd := rfl
+  have wr : (withTabs (satState 32) vs gs w wg).wr = (satState 32).wr := rfl
+  have sy : (withTabs (satState 32) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 32) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 32
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha384 : ∃ s, (spec Spec.Mgf1.sha384).pre s := by
-  have a0 : arg (satState 48) 0 = 0x2000 := by decide
-  have a1 : arg (satState 48) 1 = 64 := by decide
-  have a2 : arg (satState 48) 2 = 0x2100 := by decide
-  have a3 : arg (satState 48) 3 = 1 := by decide
-  have a4 : arg (satState 48) 4 = 0x3000 := by decide
-  have a5 : arg (satState 48) 5 = 0x3100 := by decide
-  have a6 : arg (satState 48) 6 = 64 := by decide
-  have a7 : arg (satState 48) 7 = 0 := by decide
-  have a8 : arg (satState 48) 8 = 0 := by decide
-  have a9 : arg (satState 48) 9 = 0x10000 := by decide
-  have a10 : arg (satState 48) 10 = 0x820 := by decide
-  have a11 : arg (satState 48) 11 = 0x7000 := by decide
-  have a12 : arg (satState 48) 12 = 16 := by decide
-  have e : argAddr (satState 48) 0 = 0x20004 := by decide
-  have esp : (satState 48).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat48 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 48) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 48) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 48) vs gs w wg
+  have hhG := withTabs_held (satState 48) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 48) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 48) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 48) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 48) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 48) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 48) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 48) vs gs w wg) 5 = 0x30 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 48) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 48) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 48) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 48) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 48) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 48) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 48) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 48) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 48) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 48) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 48) vs gs w wg) 0 = 0x20004 := show argAddr (satState 48) 0 = _ by decide
+  have esp : (withTabs (satState 48) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 48) vs gs w wg).rd = (satState 48).rd := rfl
+  have wr : (withTabs (satState 48) vs gs w wg).wr = (satState 48).wr := rfl
+  have sy : (withTabs (satState 48) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 48) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 48
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha512 : ∃ s, (spec Spec.Mgf1.sha512).pre s := by
-  have a0 : arg (satState 64) 0 = 0x2000 := by decide
-  have a1 : arg (satState 64) 1 = 64 := by decide
-  have a2 : arg (satState 64) 2 = 0x2100 := by decide
-  have a3 : arg (satState 64) 3 = 1 := by decide
-  have a4 : arg (satState 64) 4 = 0x3000 := by decide
-  have a5 : arg (satState 64) 5 = 0x3100 := by decide
-  have a6 : arg (satState 64) 6 = 64 := by decide
-  have a7 : arg (satState 64) 7 = 0 := by decide
-  have a8 : arg (satState 64) 8 = 0 := by decide
-  have a9 : arg (satState 64) 9 = 0x10000 := by decide
-  have a10 : arg (satState 64) 10 = 0x820 := by decide
-  have a11 : arg (satState 64) 11 = 0x7000 := by decide
-  have a12 : arg (satState 64) 12 = 16 := by decide
-  have e : argAddr (satState 64) 0 = 0x20004 := by decide
-  have esp : (satState 64).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
+theorem verify_sat64 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hD : w.h.D = 64) (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hA : ∀ j < 16, (argAddr (satState 64) j).toNat + 4 ≤ 0x300000 := by decide
+  have hhH := withTabs_heldH (satState 64) vs gs w wg
+  have hhG := withTabs_held (satState 64) vs gs w wg
+  have hH := Proof.MdHashTable.X86.hashAt_tableOf (by decide) (Proof.MdHashTable.X86.held_tableOf (by decide) hhH).2.2.2
+  refine ⟨withTabs (satState 64) vs gs w wg, ?_⟩
+  have a0 : arg (withTabs (satState 64) vs gs w wg) 0 = 0x2000 := by rw [withTabs_arg _ vs gs w wg (hA 0 (by decide))]; decide
+  have a1 : arg (withTabs (satState 64) vs gs w wg) 1 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 1 (by decide))]; decide
+  have a2 : arg (withTabs (satState 64) vs gs w wg) 2 = 0x2100 := by rw [withTabs_arg _ vs gs w wg (hA 2 (by decide))]; decide
+  have a3 : arg (withTabs (satState 64) vs gs w wg) 3 = 1 := by rw [withTabs_arg _ vs gs w wg (hA 3 (by decide))]; decide
+  have a4 : arg (withTabs (satState 64) vs gs w wg) 4 = 0x3000 := by rw [withTabs_arg _ vs gs w wg (hA 4 (by decide))]; decide
+  have a5 : arg (withTabs (satState 64) vs gs w wg) 5 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 5 (by decide))]; decide
+  have a6 : arg (withTabs (satState 64) vs gs w wg) 6 = 0x3100 := by rw [withTabs_arg _ vs gs w wg (hA 6 (by decide))]; decide
+  have a7 : arg (withTabs (satState 64) vs gs w wg) 7 = 0x40 := by rw [withTabs_arg _ vs gs w wg (hA 7 (by decide))]; decide
+  have a8 : arg (withTabs (satState 64) vs gs w wg) 8 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 8 (by decide))]; decide
+  have a9 : arg (withTabs (satState 64) vs gs w wg) 9 = 0 := by rw [withTabs_arg _ vs gs w wg (hA 9 (by decide))]; decide
+  have a10 : arg (withTabs (satState 64) vs gs w wg) 10 = 0x10000 := by rw [withTabs_arg _ vs gs w wg (hA 10 (by decide))]; decide
+  have a11 : arg (withTabs (satState 64) vs gs w wg) 11 = 0x820 := by rw [withTabs_arg _ vs gs w wg (hA 11 (by decide))]; decide
+  have a12 : arg (withTabs (satState 64) vs gs w wg) 12 = 0x7000 := by rw [withTabs_arg _ vs gs w wg (hA 12 (by decide))]; decide
+  have a13 : arg (withTabs (satState 64) vs gs w wg) 13 = 0x10 := by rw [withTabs_arg _ vs gs w wg (hA 13 (by decide))]; decide
+  have a14 : arg (withTabs (satState 64) vs gs w wg) 14 = 0x300000 := by rw [withTabs_arg _ vs gs w wg (hA 14 (by decide))]; decide
+  have a15 : arg (withTabs (satState 64) vs gs w wg) 15 = 0x300100 := by rw [withTabs_arg _ vs gs w wg (hA 15 (by decide))]; decide
+  have e : argAddr (withTabs (satState 64) vs gs w wg) 0 = 0x20004 := show argAddr (satState 64) 0 = _ by decide
+  have esp : (withTabs (satState 64) vs gs w wg).gpr .esp = 0x20000 := rfl
+  have rd : (withTabs (satState 64) vs gs w wg).rd = (satState 64).rd := rfl
+  have wr : (withTabs (satState 64) vs gs w wg).wr = (satState 64).wr := rfl
+  have sy : (withTabs (satState 64) vs gs w wg).syms =
+      symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
+  generalize withTabs (satState 64) vs gs w wg = S at *
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 64
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, rd, wr, sy,
+    satState]
+  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals try (exact Region.disjoint_of_sep (by decide))
+  all_goals try (simp only [Spec.Rsa.lenValid]; decide)
+  all_goals try decide
+  · exact ⟨Proof.MdHashTable.X86.tableOf w, List.mem_map_of_mem hw, hhH⟩
+  · exact ⟨Proof.HashTable.X86.tableOf wg, List.mem_map_of_mem hwg, hhG⟩
+  · rw [List.append_eq, List.append_eq, List.append_nil]; exact (symsOf32_distinct2 hl).sublist (List.sublist_append_left _ _)
+  · intro H hH'; rw [hH, Option.some.injEq] at hH'; subst hH'; rw [w.h.glen]; show _ = w.h.D; rw [hD]; rfl
 
-theorem verify_sat_sha512_224 : ∃ s, (spec Spec.Mgf1.sha512_224).pre s := by
-  have a0 : arg (satState 28) 0 = 0x2000 := by decide
-  have a1 : arg (satState 28) 1 = 64 := by decide
-  have a2 : arg (satState 28) 2 = 0x2100 := by decide
-  have a3 : arg (satState 28) 3 = 1 := by decide
-  have a4 : arg (satState 28) 4 = 0x3000 := by decide
-  have a5 : arg (satState 28) 5 = 0x3100 := by decide
-  have a6 : arg (satState 28) 6 = 64 := by decide
-  have a7 : arg (satState 28) 7 = 0 := by decide
-  have a8 : arg (satState 28) 8 = 0 := by decide
-  have a9 : arg (satState 28) 9 = 0x10000 := by decide
-  have a10 : arg (satState 28) 10 = 0x820 := by decide
-  have a11 : arg (satState 28) 11 = 0x7000 := by decide
-  have a12 : arg (satState 28) 12 = 16 := by decide
-  have e : argAddr (satState 28) 0 = 0x20004 := by decide
-  have esp : (satState 28).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
-    argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 28
-
-theorem verify_sat_sha512_256 : ∃ s, (spec Spec.Mgf1.sha512_256).pre s := by
-  have a0 : arg (satState 32) 0 = 0x2000 := by decide
-  have a1 : arg (satState 32) 1 = 64 := by decide
-  have a2 : arg (satState 32) 2 = 0x2100 := by decide
-  have a3 : arg (satState 32) 3 = 1 := by decide
-  have a4 : arg (satState 32) 4 = 0x3000 := by decide
-  have a5 : arg (satState 32) 5 = 0x3100 := by decide
-  have a6 : arg (satState 32) 6 = 64 := by decide
-  have a7 : arg (satState 32) 7 = 0 := by decide
-  have a8 : arg (satState 32) 8 = 0 := by decide
-  have a9 : arg (satState 32) 9 = 0x10000 := by decide
-  have a10 : arg (satState 32) 10 = 0x820 := by decide
-  have a11 : arg (satState 32) 11 = 0x7000 := by decide
-  have a12 : arg (satState 32) 12 = 16 := by decide
-  have e : argAddr (satState 32) 0 = 0x20004 := by decide
-  have esp : (satState 32).gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi,
-    argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, satState, stackBytes, frameBytes,
-      Spec.Rsa.lenValid, Spec.RsaPss.publicScratchWords, Spec.Rsa.publicScratchWords,
-      Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using satState 32
+theorem verify_sat {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ vs) (hwg : wg ∈ gs)
+    (hs : Proof.MdHashTable.X86.Shape w)
+    (hl : (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs).length < 2 ^ 24) :
+    ∃ s, (vspec vs gs).pre s := by
+  have hDm := D_mem hs
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hDm
+  rcases hDm with e | e | e | e | e | e
+  exacts [verify_sat16 hw hwg e hl, verify_sat20 hw hwg e hl, verify_sat28 hw hwg e hl, verify_sat32 hw hwg e hl,
+    verify_sat48 hw hwg e hl, verify_sat64 hw hwg e hl]
 
 end VG.Proof.RsaPss.X86.Vf

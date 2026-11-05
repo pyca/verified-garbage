@@ -133,25 +133,25 @@ theorem copyIn_ok {t : State} (h : Base Sp (vP D) s t) {a b n : Nat} (hn : 0 < n
 
 /-- `copySalt`: the last `salt_len` bytes of `DB` after `mHash`. -/
 theorem salt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
-    (x : Xs s t) (hsl : (s.gpr .a7).toNat + 1 ≤ dN) :
+    (x : Xs s t) (hsl : (stackArg s 0).toNat + 1 ≤ dN) :
     WP isa (copySalt H) t fun t' => Base Sp (vP D) s t' ∧ Kept mpR t t' ∧
-      ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + (s.gpr .a7).toNat then
-        view t.mem (Sp s) (lN + dN - (s.gpr .a7).toNat + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
+      ∀ o < oRsa, view t'.mem (Sp s) o = if oY + 8 + D ≤ o ∧ o < oY + 8 + D + (stackArg s 0).toNat then
+        view t.mem (Sp s) (lN + dN - (stackArg s 0).toNat + (o - (oY + 8 + D))) else view t.mem (Sp s) o := by
   have F := L.F
   have hk := L.hk; have hk2 := L.k2; have hD64 := L.D64
   have hR : oRsa = 8192 := rfl
   have hY : oY = 2048 := rfl
-  generalize hS : (s.gpr .a7).toNat = sl at hsl
+  generalize hS : (stackArg s 0).toNat = sl at hsl
   refine WP.seq (wp_add fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_sub fun t₃ o₃ e₃ => ?_)
   refine wp_yBase (by rw [o₃.get .s0, o₂.get .s0, o₁.get .s0, h.s0]) fun t₄ o₄ e₄ =>
     wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega) fun t₅ o₅ e₅ => wp_mov fun t₆ o₆ e₆ => wp_nil ?_
   have k₆ : Only [.a4, .a1, .a5] t t₆ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono
   have b₆ := h.only F k₆
   have g5 : t₆.gpr .a5 = BitVec.ofNat 64 sl := by
-    rw [e₆, o₅.get .s6, o₄.get .s6, o₃.get .s6, o₂.get .s6, o₁.get .s6, x.s6, ← ofNat_toNat (s.gpr .a7), hS]
+    rw [e₆, o₅.get .s6, o₄.get .s6, o₃.get .s6, o₂.get .s6, o₁.get .s6, x.s6, ← ofNat_toNat (stackArg s 0), hS]
   have g4 : t₆.gpr .a4 = off (Sp s) (lN + dN - sl) := by
     rw [o₆.get .a4, o₅.get .a4, o₄.get .a4, e₃, e₂, e₁, o₂.get .s6, o₁.get .s6, x.s6, o₁.get .s4, h.pdb, L.hdb,
-      h.s0, h.plo, L.hlo, ← ofNat_toNat (s.gpr .a7), hS]
+      h.s0, h.plo, L.hlo, ← ofNat_toNat (stackArg s 0), hS]
     exact (congrArg (· - BitVec.ofNat 64 sl) (off_off (Sp s) lN dN)).trans (off_sub _ (by omega) (by omega))
   have g1 : t₆.gpr .a1 = off (Sp s) (oY + 8 + D) := by
     rw [o₆.get .a1, e₅, e₄, hD]; exact (off_off _ _ _).trans (congrArg _ (Nat.add_assoc _ _ _).symm)

@@ -136,4 +136,21 @@ theorem pass_vp (hg : Geo L scr) {o d n : Nat} (hn : 0 < n) (hd : 0 < d) (ho : o
     · rw [ite_eq_right hc'', ite_eq_right (fun h => hc'' h.2)]
   · rw [show n - k = j + 1 by omega_arith]; exact sk
 
+namespace Vf
+
+theorem mask_bit {v : Nat} (hv : v < 2 ^ 32) : 0 - (BitVec.ofNat 32 v &&& 1) = maskOf (v % 2 = 1) := by
+  have e : BitVec.ofNat 32 v &&& 1 = BitVec.ofNat 32 (v % 2) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
+    rw [show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]; omega_arith
+  rw [e]; unfold maskOf
+  rcases Nat.mod_two_eq_zero_or_one v with e' | e' <;> rw [e'] <;> decide
+
+
+theorem mod_succ (a p : Nat) : a % 2 ^ (p + 1) = a % 2 ^ p + 2 ^ p * (a / 2 ^ p % 2) := by
+  rw [Nat.pow_succ, Nat.mod_mul]
+
+
+end Vf
+
 end VG.Proof.RsaPss.Arm

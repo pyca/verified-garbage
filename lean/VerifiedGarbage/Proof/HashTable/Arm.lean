@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Md5
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha1
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha224
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha256
@@ -46,6 +47,7 @@ structure TVar where
   g : OHash
   idx : Spec.Mgf1.hashes[Spec.HashTable.index g.G]? = some g.G
 
+def md5V : TVar := ⟨.ofPss Proof.RsaPss.Arm.md5, rfl⟩
 def sha1V : TVar := ⟨.ofPss Proof.RsaPss.Arm.sha1, rfl⟩
 def sha224V : TVar := ⟨.ofPss Proof.RsaPss.Arm.sha224, rfl⟩
 def sha256V : TVar := ⟨.ofPss Proof.RsaPss.Arm.sha256, rfl⟩
@@ -55,7 +57,7 @@ def sha512_224V : TVar := ⟨.ofPss Proof.RsaPss.Arm.sha512_224, rfl⟩
 def sha512_256V : TVar := ⟨.ofPss Proof.RsaPss.Arm.sha512_256, rfl⟩
 
 /-- Every hash function. -/
-def vars : List TVar := [sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
+def vars : List TVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
 
 /-- The table of `w`'s streaming functions, `VG_HASH_<HASH>`. -/
 def tableOf (w : TVar) : FnTable where

@@ -118,10 +118,6 @@ fn rsa_pss_test() {
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
             let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
             let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
-            if mgf != h {
-                assert!(!ok && !any, "{name} tcId {id}");
-                return;
-            }
             assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
             assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
             // A signature with the expected salt length has some salt length.
@@ -133,13 +129,9 @@ fn rsa_pss_test() {
             }
         });
         let (accepted, rejected) = (accepted.get(), rejected.get());
-        if name.contains("mgf1sha1") {
-            assert_eq!(accepted + rejected, 0, "{name}");
-        } else {
-            // The miscellaneous vectors are all valid.
-            let both = rejected > 0 || name.contains("misc");
-            assert!(accepted > 0 && both, "{name}");
-        }
+        // The miscellaneous vectors are all valid.
+        let both = rejected > 0 || name.contains("misc");
+        assert!(accepted > 0 && both, "{name}");
     }
 }
 
@@ -205,6 +197,23 @@ fn check_signatures(
         let a = fixed();
         assert_eq!(a, fixed(), "{name} tcId {id}");
         assert!(verify(&public, &a, &d, *h, *h, SaltLength::Len(16)));
+        // MGF1 over the next of the hash functions: the signature verifies
+        // with it, and not with MGF1 over the hash function itself.
+        let i = HASHES.iter().position(|(_, x)| x == h).unwrap();
+        let g = HASHES[(i + 1) % HASHES.len()].1;
+        let sig = sign(&private, &d, *h, g, 16).unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+        assert!(
+            verify(&public, &sig, &d, *h, g, SaltLength::Len(16)),
+            "{name} tcId {id}"
+        );
+        assert!(
+            verify(&public, &sig, &d, *h, g, SaltLength::Any),
+            "{name} tcId {id}"
+        );
+        assert!(
+            !verify(&public, &sig, &d, *h, *h, SaltLength::Any),
+            "{name} tcId {id}"
+        );
     }
 }
 

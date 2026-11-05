@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.GenerationSized
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
@@ -15,12 +14,37 @@ public import VerifiedGarbage.TCB.X86_64.Target
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation.Sized
 open VG VG.X86_64
+open VG.Spec.Dsa
+open VG.Spec.Rsa (bytesAt)
+
+/-- The complete generation contract with `p_len` fixed to `pBytes`: the
+contract of the restricted bodies `vg_dsa_generate_parameters` calls. -/
+def contract {M : ISA} (pBytes : Nat) (A : Abi M) (stack : Nat := 0) : Contract M :=
+  generateParametersSig.contract A
+    (pre := fun _out outLen pLen qLen _seeds seedsLen _hs hsLen _witnesses _witnessesLen
+        _scratch scratchLen _ =>
+      pLen.toNat = pBytes ∧ generationLengthsValid pLen.toNat qLen.toNat ∧
+        outLen.toNat = 2 * pLen.toNat + qLen.toNat ∧
+        seedsLen.toNat % qLen.toNat = 0 ∧ hsLen.toNat % pLen.toNat = 0 ∧
+        generationScratchWords pLen.toNat ≤ scratchLen.toNat)
+    (post := fun out outLen pLen qLen seeds seedsLen hs hsLen witnesses witnessesLen
+        _scratch _scratchLen m m' r =>
+      let res := generateParametersBytes pLen.toNat qLen.toNat (bytesAt m seeds seedsLen.toNat)
+        (bytesAt m hs hsLen.toNat) (bytesAt m witnesses witnessesLen.toNat)
+      r.toNat = signStatus res ∧
+        bytesAt m' out outLen.toNat = res.getD (List.replicate outLen.toNat 0))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen _pLen _qLen seeds seedsLen hs hsLen witnesses witnessesLen
+        _scratch _scratchLen m =>
+      (bytesAt m seeds seedsLen.toNat).map (·.toNat) ++
+        (bytesAt m hs hsLen.toNat).map (·.toNat) ++
+        (bytesAt m witnesses witnessesLen.toNat).map (·.toNat))
 
 theorem pre_of_sized {pBytes : Nat} {s : State}
-    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 536).pre s) :
+    (h : (VG.Proof.Dsa.X86_64.Generation.Sized.contract pBytes abi 536).pre s) :
     (Spec.Dsa.generateParametersContract abi 536).pre s := by
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
@@ -28,10 +52,10 @@ theorem pre_of_sized {pBytes : Nat} {s : State}
   all_goals with_reducible assumption
 
 theorem width_of_sized {pBytes : Nat} {s : State}
-    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 536).pre s) :
+    (h : (VG.Proof.Dsa.X86_64.Generation.Sized.contract pBytes abi 536).pre s) :
     (s.gpr .rdx).toNat = pBytes := by
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
-  sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
+  sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h
   with_reducible assumption
 
@@ -57,11 +81,11 @@ private theorem args_of_sized (p : Nat) :
   decide +kernel
 
 theorem sized_satisfiable (p : Nat) (hp : p = 128 ∨ p = 256 ∨ p = 384) :
-    ∃ s, (Spec.Dsa.GenerationSized.contract p abi 536).pre s := by
+    ∃ s, (VG.Proof.Dsa.X86_64.Generation.Sized.contract p abi 536).pre s := by
   have hargs := args_of_sized p
   refine ⟨sizedSatState p, ?_⟩
   rcases hp with rfl | rfl | rfl
-  all_goals sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
+  all_goals sig_pre [VG.Proof.Dsa.X86_64.Generation.Sized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   all_goals sig_and_intros
   all_goals try simp only [hargs.1, hargs.2.1, hargs.2.2.1, hargs.2.2.2.1,
     hargs.2.2.2.2.1, hargs.2.2.2.2.2]

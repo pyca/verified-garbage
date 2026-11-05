@@ -24,19 +24,19 @@ namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 
-variable {G : Spec.Mgf1.Hash}
+variable {tsH tsG : List FnTable}
 
-theorem fb_toNat {s : State} (hp : SPre G s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
+theorem fb_toNat {s : State} (hp : SPre tsH tsG s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold signStack Proof.Rsa.X86_64.stackBytes at this
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 
-theorem SPre.geo {s : State} (hp : SPre G s) : Geo (fb s) (stackArg s 13) := by
+theorem SPre.geo {s : State} (hp : SPre tsH tsG s) : Geo (fb s) (stackArg s 14) := by
   have hF := fb_toNat hp
   have := hp.sp2
   have hsl := hp.hsl
   have hk := hp.k1
   have wS := hp.wS
-  have sS : Region.Sub ⟨stackArg s 13, oRsa⟩ ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩ :=
+  have sS : Region.Sub ⟨stackArg s 14, oRsa⟩ ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ :=
     Region.sub_prefix (by unfold oRsa; omega)
   refine ⟨by omega, by unfold oRsa; omega, ((hp.dKs.sub_left (frame_sub s)).sub_right sS),
     ((hp.dKs.sub_left (ret_sub s)).sub_right sS)⟩
@@ -54,10 +54,10 @@ theorem allocState_gpr' (bytes : Nat) (s : State) (r : Reg) :
 abbrev frR (s : State) : Region := ⟨fb s, frameBytes⟩
 
 /-- Stack argument `j`, read from memory changed only in the frame. -/
-theorem arg_read {s : State} (hp : SPre G s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 15) :
+theorem arg_read {s : State} (hp : SPre tsH tsG s) {m : Mem} (hf : Frame [frR s] s.mem m) {j : Nat} (hj : j < 18) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
-  refine hf.readW (r := ⟨stackArgAddr s 0, 120⟩) ?_ (fun r' hr' => ?_) (by decide)
+  refine hf.readW (r := ⟨stackArgAddr s 0, 144⟩) ?_ (fun r' hr' => ?_) (by decide)
   · rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
       simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
     exact Offset.contains_base _ (by omega) (by omega)
@@ -65,15 +65,15 @@ theorem arg_read {s : State} (hp : SPre G s) {m : Mem} (hf : Frame [frR s] s.mem
     exact (hp.dKa.sub_left (frame_sub s)).symm
 
 /-- One stack argument copied to a slot. -/
-theorem copy1_ok {s : State} (hp : SPre G s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
-    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 15) (hd : d + 8 ≤ frameBytes) :
+theorem copy1_ok {s : State} (hp : SPre tsH tsG s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
+    (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 18) (hd : d + 8 ≤ frameBytes) :
     WP isa (.block [.mov .rax (.mem (arg j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNat hp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 120⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
     rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
       simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
     exact Offset.contains_base _ (by omega) (by omega)
@@ -82,7 +82,7 @@ theorem copy1_ok {s : State} (hp : SPre G s) {u : State} (hsp : u.gpr .rsp = fb 
       (Offset.contains_base _ (by omega) (by omega))⟩
   xrun [arg, ea_sp, hsp, hin, arg_read hp hf hj, hsc.st (d := d) hd]
 
-theorem frame_w {s : State} (hp : SPre G s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
+theorem frame_w {s : State} (hp : SPre tsH tsG s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
   have hF := fb_toNat hp
   have := hp.sp2
@@ -92,22 +92,22 @@ theorem frame_w {s : State} (hp : SPre G s) {m m' : Mem} (hf : Frame [frR s] m m
 def proW (s : State) : Nat → BitVec 64 :=
   upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (fun k => word s.mem (fb s) (8 * k))
     41 (s.gpr .rbx)) 42 (s.gpr .rbp)) 43 (s.gpr .r12)) 16 (s.gpr .rdi)) 18 (s.gpr .rdx)) 17 (s.gpr .rcx))
-    19 (s.gpr .r8)) 20 (s.gpr .r9)) 37 (stackArg s 10)) 39 (stackArg s 11)) 40 (stackArg s 12)) 21 (stackArg s 13))
-    22 (stackArg s 14)
+    19 (s.gpr .r8)) 20 (s.gpr .r9)) 37 (stackArg s 10)) 39 (stackArg s 12)) 40 (stackArg s 13)) 21 (stackArg s 14))
+    22 (stackArg s 15)
 
 theorem signPrologue_eq : signPrologue =
     ([.store (sp sRbx) .rbx, .store (sp sRbp) .rbp, .store (sp sR12) .r12, .store (sp sOut) .rdi,
       .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8, .store (sp sEl) .r9] : List Instr) ++
     ([.mov .rax (.mem (arg 10)), .store (sp sDig) .rax] : List Instr) ++
-    ([.mov .rax (.mem (arg 11)), .store (sp sSalt) .rax] : List Instr) ++
-    ([.mov .rax (.mem (arg 12)), .store (sp sSaltLen) .rax] : List Instr) ++
-    ([.mov .rax (.mem (arg 13)), .store (sp sScr) .rax] : List Instr) ++
-    ([.mov .rax (.mem (arg 14)), .store (sp sScrLen) .rax] : List Instr) := rfl
+    ([.mov .rax (.mem (arg 12)), .store (sp sSalt) .rax] : List Instr) ++
+    ([.mov .rax (.mem (arg 13)), .store (sp sSaltLen) .rax] : List Instr) ++
+    ([.mov .rax (.mem (arg 14)), .store (sp sScr) .rax] : List Instr) ++
+    ([.mov .rax (.mem (arg 15)), .store (sp sScrLen) .rax] : List Instr) := rfl
 
 /-- The prologue: the slots as `proW` says, the working space untouched. -/
-theorem signPro_ok {s : State} (hp : SPre G s) :
+theorem signPro_ok {s : State} (hp : SPre tsH tsG s) :
     WP isa (.block signPrologue) (allocState frameBytes s) fun t => Keep [.rax] (allocState frameBytes s) t ∧
-      Lay t (fb s) (stackArg s 13) ∧ Rep t.mem (fb s) (stackArg s 13) (fun o => s.mem (off (stackArg s 13) o)) (proW s) ∧
+      Lay t (fb s) (stackArg s 14) ∧ Rep t.mem (fb s) (stackArg s 14) (fun o => s.mem (off (stackArg s 14) o)) (proW s) ∧
       Frame [frR s] s.mem t.mem := by
   have hF := fb_toNat hp
   have := hp.sp2
@@ -116,7 +116,7 @@ theorem signPro_ok {s : State} (hp : SPre G s) :
   have hsp : A.gpr .rsp = fb s := rfl
   have hfr : frR s ∈ A.wr := List.mem_cons_self ..
   have hsc : Scr A (fb s) frameBytes := Scr.of_mem hfr (by omega)
-  have R0 : Rep s.mem (fb s) (stackArg s 13) (fun o => s.mem (off (stackArg s 13) o))
+  have R0 : Rep s.mem (fb s) (stackArg s 14) (fun o => s.mem (off (stackArg s 14) o))
       (fun k => word s.mem (fb s) (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   rw [signPrologue_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
     WP.block_append_iff]
@@ -141,29 +141,29 @@ theorem signPro_ok {s : State} (hp : SPre G s) :
   refine WP.mono (copy1_ok hp sp1 (k1.2.2 ▸ hfr) k1.2.1 f1 (j := 10) (d := sDig) (by decide) (by decide))
     fun t2 ⟨k2, hm2, f2⟩ => ?_
   refine WP.mono (copy1_ok hp ((k2.gpr (by decide)).trans sp1) (k2.2.2 ▸ k1.2.2 ▸ hfr) (k2.2.1.trans k1.2.1) f2
-    (j := 11) (d := sSalt) (by decide) (by decide)) fun t3 ⟨k3, hm3, f3⟩ => ?_
+    (j := 12) (d := sSalt) (by decide) (by decide)) fun t3 ⟨k3, hm3, f3⟩ => ?_
   have k23 := k2.trans k3
   refine WP.mono (copy1_ok hp ((k23.gpr (by decide)).trans sp1) (k23.2.2 ▸ k1.2.2 ▸ hfr) (k23.2.1.trans k1.2.1) f3
-    (j := 12) (d := sSaltLen) (by decide) (by decide)) fun t4 ⟨k4, hm4, f4⟩ => ?_
+    (j := 13) (d := sSaltLen) (by decide) (by decide)) fun t4 ⟨k4, hm4, f4⟩ => ?_
   have k24 := k23.trans k4
   refine WP.mono (copy1_ok hp ((k24.gpr (by decide)).trans sp1) (k24.2.2 ▸ k1.2.2 ▸ hfr) (k24.2.1.trans k1.2.1) f4
-    (j := 13) (d := sScr) (by decide) (by decide)) fun t5 ⟨k5, hm5, f5⟩ => ?_
+    (j := 14) (d := sScr) (by decide) (by decide)) fun t5 ⟨k5, hm5, f5⟩ => ?_
   have k25 := k24.trans k5
   refine WP.mono (copy1_ok hp ((k25.gpr (by decide)).trans sp1) (k25.2.2 ▸ k1.2.2 ▸ hfr) (k25.2.1.trans k1.2.1) f5
-    (j := 14) (d := sScrLen) (by decide) (by decide)) fun t6 ⟨k6, hm6, f6⟩ => ?_
+    (j := 15) (d := sScrLen) (by decide) (by decide)) fun t6 ⟨k6, hm6, f6⟩ => ?_
   have k16 : Keep [.rax] A t6 := (k1.trans (k25.trans k6)).mono (by decide)
-  have R6 : Rep t6.mem (fb s) (stackArg s 13) (fun o => s.mem (off (stackArg s 13) o)) (proW s) := by
+  have R6 : Rep t6.mem (fb s) (stackArg s 14) (fun o => s.mem (off (stackArg s 14) o)) (proW s) := by
     rw [hm6, hm5, hm4, hm3, hm2, hm1]
-    exact ((((R1.wf G' (k := 37) (by decide) (stackArg s 10)).wf G' (k := 39) (by decide) (stackArg s 11)).wf G'
-      (k := 40) (by decide) (stackArg s 12)).wf G' (k := 21) (by decide) (stackArg s 13)).wf G' (k := 22) (by decide)
-      (stackArg s 14)
+    exact ((((R1.wf G' (k := 37) (by decide) (stackArg s 10)).wf G' (k := 39) (by decide) (stackArg s 12)).wf G'
+      (k := 40) (by decide) (stackArg s 13)).wf G' (k := 21) (by decide) (stackArg s 14)).wf G' (k := 22) (by decide)
+      (stackArg s 15)
   have h392 : frameBytes = 392 := rfl
   have hss : signStack = 3656 := rfl
   have := hp.sp1
   refine ⟨k16, ⟨(k16.gpr (by decide)).trans hsp, k16.2.2 ▸ hfr, by omega, by omega, ?_, ?_, G'.dFS, G'.dRS⟩, R6, f6⟩
   · have hsl := hp.hsl
     have hk := hp.k1
-    refine ⟨⟨stackArg s 13, 0, (stackArg s 14).toNat * 8, by rw [k16.2.2, hA]; simp [allocState, hp.hwr], (BitVec.add_zero _).symm,
+    refine ⟨⟨stackArg s 14, 0, (stackArg s 15).toNat * 8, by rw [k16.2.2, hA]; simp [allocState, hp.hwr], (BitVec.add_zero _).symm,
       by unfold oRsa; omega, hp.wS.trans' (by omega)⟩, G'.Sw⟩
   · rw [show sScr = 8 * 21 from rfl]
     exact (R6.fr 21 (by decide)).trans (by simp [proW, upd])

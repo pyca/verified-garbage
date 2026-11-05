@@ -995,6 +995,483 @@ bx lr",
     )
 }
 
+/// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `h` must be valid for reads of 32 bytes.
+/// * `m` must be valid for reads of 32 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `ct` must be valid for reads and writes of 1568 bytes.
+/// * `scratch` must be valid for reads and writes of 49152 bytes.
+/// * `ek` must have passed `vg_mlkem1024_check_ek` (FIPS 203 §7.2).
+/// * `h` must hold `H(ek)`, the SHA3-256 hash of the bytes of `*ek` (FIPS 203 §4.1).
+/// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
+/// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h`, `m` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+    core::arch::naked_asm!(
+        r"ldr r12, [sp, #4]
+str r4, [r12, #840]
+str r5, [r12, #844]
+str r6, [r12, #848]
+str r7, [r12, #852]
+str r8, [r12, #856]
+str r9, [r12, #860]
+str r10, [r12, #864]
+str r11, [r12, #868]
+str lr, [r12, #872]
+mov r4, r0
+mov r5, r2
+mov r6, r3
+mov r7, r12
+mov r9, r1
+ldr r8, [sp, #0]
+add r0, r9, #0
+add r1, r7, #960
+mov r2, #32
+20:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 20b
+add r0, r5, #0
+add r1, r7, #992
+mov r2, #32
+21:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 21b
+add r5, r7, #992
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+mov r2, #0
+mov r0, r7
+mov r1, #72
+add lr, r7, #200
+add r3, r7, #992
+mov r12, #32
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+mov r0, r7
+mov r1, #72
+add lr, r7, #200
+add r3, r7, #960
+mov r12, #32
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+mov r0, r7
+mov r1, #72
+add lr, r7, #200
+mov r3, #6
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+mov r2, #0
+mov r0, r7
+mov r1, #72
+add lr, r7, #200
+add r3, r7, #888
+mov r12, #64
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+add r0, r7, #888
+add r1, r6, #0
+mov r2, #32
+22:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 22b
+add r0, r4, #1536
+add r1, r7, #1216
+mov r2, #32
+23:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 23b
+mov r9, #0
+24:
+add r0, r4, r9, lsl #8
+add r0, r0, r9, lsl #7
+add r1, r7, r9, lsl #10
+add r1, r1, #2048
+bl {vg_mlkem_decode12}
+add r9, r9, #1
+cmp r9, #4
+bne 24b
+mov r9, #0
+25:
+strb r9, [r7, #952]
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r7, #920
+mov r12, #33
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+mov r3, #31
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r7, #1024
+mov r12, #128
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+add r0, r7, #1024
+add r1, r7, r9, lsl #10
+add r1, r1, #6144
+bl {vg_mlkem_cbd2}
+add r0, r7, r9, lsl #10
+add r0, r0, #6144
+add r1, r7, #21504
+bl {vg_mlkem_ntt}
+add r9, r9, #1
+cmp r9, #4
+bne 25b
+mov r9, #4
+26:
+strb r9, [r7, #952]
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r7, #920
+mov r12, #33
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+mov r3, #31
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r7, #1024
+mov r12, #128
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+add r0, r7, #1024
+add r1, r7, r9, lsl #10
+add r1, r1, #6144
+bl {vg_mlkem_cbd2}
+add r9, r9, #1
+cmp r9, #9
+bne 26b
+mov r0, r5
+mov r1, #32
+mov r2, #1
+add r3, r7, #15360
+bl {vg_mlkem_decode_decompress}
+mov r11, #1
+mov r9, #0
+27:
+add r0, r7, #16384
+mov r1, #0
+mov r2, #256
+28:
+str r1, [r0, #0]
+add r0, r0, #4
+subs r2, r2, #1
+bne 28b
+mov r10, #0
+29:
+strb r9, [r7, #1248]
+strb r10, [r7, #1249]
+add r0, r7, #1216
+add r1, r7, #18432
+add r2, r7, #19456
+bl {vg_mlkem_sample_ntt}
+and r11, r11, r0
+cmp r0, #0
+beq 210f
+add r1, r7, #18432
+b 211f
+210:
+add r1, r7, r10, lsl #10
+add r1, r1, #6144
+211:
+add r0, r7, #17408
+add r2, r7, r10, lsl #10
+add r2, r2, #6144
+add r3, r7, #21504
+bl {vg_mlkem_multiply_ntts}
+add r0, r7, #16384
+add r1, r7, #17408
+bl {vg_mlkem_add}
+add r10, r10, #1
+cmp r10, #4
+bne 29b
+add r0, r7, #16384
+add r1, r7, #21504
+bl {vg_mlkem_inv_ntt}
+add r0, r7, #16384
+add r1, r7, r9, lsl #10
+add r1, r1, #10240
+bl {vg_mlkem_add}
+add r0, r7, #16384
+mov r1, #11
+add r2, r8, r9, lsl #8
+add r2, r2, r9, lsl #6
+add r2, r2, r9, lsl #5
+mov r3, #352
+bl {vg_mlkem1024_compress_encode}
+add r9, r9, #1
+cmp r9, #4
+bne 27b
+add r0, r7, #16384
+mov r1, #0
+mov r2, #256
+212:
+str r1, [r0, #0]
+add r0, r0, #4
+subs r2, r2, #1
+bne 212b
+mov r10, #0
+213:
+add r0, r7, #17408
+add r1, r7, r10, lsl #10
+add r1, r1, #2048
+add r2, r7, r10, lsl #10
+add r2, r2, #6144
+add r3, r7, #21504
+bl {vg_mlkem_multiply_ntts}
+add r0, r7, #16384
+add r1, r7, #17408
+bl {vg_mlkem_add}
+add r10, r10, #1
+cmp r10, #4
+bne 213b
+add r0, r7, #16384
+add r1, r7, #21504
+bl {vg_mlkem_inv_ntt}
+add r0, r7, #16384
+add r1, r7, #14336
+bl {vg_mlkem_add}
+add r0, r7, #16384
+add r1, r7, #15360
+bl {vg_mlkem_add}
+add r0, r7, #16384
+mov r1, #5
+add r2, r8, #1408
+mov r3, #160
+bl {vg_mlkem1024_compress_encode}
+mov r0, r11
+mov r3, r7
+ldr r4, [r3, #840]
+ldr r5, [r3, #844]
+ldr r6, [r3, #848]
+ldr r7, [r3, #852]
+ldr r8, [r3, #856]
+ldr r9, [r3, #860]
+ldr r10, [r3, #864]
+ldr r11, [r3, #868]
+ldr lr, [r3, #872]
+bx lr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
+        vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
+        vg_mlkem_ntt = sym super::mlkem1024::vg_mlkem_ntt::vg_mlkem_ntt,
+        vg_mlkem_decode_decompress = sym super::mlkem1024::vg_mlkem_decode_decompress::vg_mlkem_decode_decompress,
+        vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
+        vg_mlkem_multiply_ntts = sym super::mlkem1024::vg_mlkem_multiply_ntts::vg_mlkem_multiply_ntts,
+        vg_mlkem_add = sym super::mlkem1024::vg_mlkem_add::vg_mlkem_add,
+        vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
+        vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode::vg_mlkem1024_compress_encode,
+    )
+}
+
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.

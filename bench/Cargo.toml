@@ -10,6 +10,11 @@ publish = false
 # lints and coverage never build criterion or link OpenSSL or AWS-LC.
 [workspace]
 
+# As the library's (`[workspace.lints]` in its `Cargo.toml`): no glob
+# imports (`clippy.toml`).
+[lints.clippy]
+wildcard_imports = "deny"
+
 [dependencies]
 # `VG_CPU_FEATURES` chooses the implementations benchmarked (see
 # `src/cpu.rs` and `ci/bench_arches.py`).
