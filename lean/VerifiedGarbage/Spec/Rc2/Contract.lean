@@ -1,12 +1,26 @@
 module
 
+public import VerifiedGarbage.Spec.Cbc
 public import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RC2-CBC: contracts on every target
 
-**Trusted.** The signatures derive memory validity, non-overlap, permitted
+**Trusted.** CBC is NIST SP 800-38A §6.2's, `Cbc.encrypt` and `Cbc.decrypt`
+(`Spec/Cbc.lean`, defined for any block cipher), with RC2's encryption and
+decryption (`Spec/Rc2.lean`) on 8-byte blocks (this does not assert that RC2
+is a NIST-approved cipher).
+
+The streaming model follows issue #1's `init(key, iv, direction)`,
+`update(ctx, data)` and `finalize(ctx)`. The default effective bit count is
+eight times the key length; `initWithEffectiveBits` makes it explicit.
+Updates emit all complete blocks and retain a partial block. Finalization
+rejects a partial block; padding is the caller's responsibility. The
+immutable model returns the next context; the Rust API can mutate its own
+context and consume it on finalization.
+
+The signatures derive memory validity, non-overlap, permitted
 writes and public pointers/lengths from `Sig.contract`. Key bytes, expanded
 key words, IV contents and data are secret. Effective key bits are a public
 algorithm parameter, independent of the key's byte length.
@@ -16,7 +30,7 @@ algorithm parameter, independent of the key's byte length.
 ## Streaming
 
 `vg_rc2_cbc_init`, `vg_rc2_cbc_encrypt_update` and
-`vg_rc2_cbc_decrypt_update` implement the streaming model of `Spec/Rc2.lean`
+`vg_rc2_cbc_decrypt_update` implement the streaming model above
 (`initWithEffectiveBits` and `update`) on a context in memory, `contextAt`:
 the key schedule, the chaining value and the pending partial block, all
 secret. The context's public parts are not stored in it: the caller keeps the
@@ -43,6 +57,74 @@ the functions they call.
 @[expose] public section
 
 namespace VG.Spec.Rc2
+
+/-! ## The streaming model -/
+
+/-- RC2 encryption as CBC's forward function `CIPH_K` (`Spec/Cbc.lean`), under
+the schedule `k`, on blocks as lists of 8 bytes. -/
+def cipher (k : Schedule) : Cbc.Cipher := fun b =>
+  (encryptBlock k (Vector.ofFn fun i => b.getD i.val 0)).toList
+
+/-- RC2 decryption as CBC's inverse function `CIPH⁻¹_K`, under the schedule
+`k`, on blocks as lists of 8 bytes. -/
+def invCipher (k : Schedule) : Cbc.Cipher := fun b =>
+  (decryptBlock k (Vector.ofFn fun i => b.getD i.val 0)).toList
+
+/-- Complete blocks only; a partial suffix is handled by `update`. -/
+def blocks (data : List Byte) : List Block :=
+  (List.range (data.length / 8)).map fun j =>
+    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
+
+structure Context where
+  schedule : Schedule
+  direction : Direction
+  iv : Block
+  pending : List Byte := []
+
+inductive Error | invalidKeyLength | invalidEffectiveBits | invalidIvLength | incompleteBlock
+  deriving DecidableEq, Repr
+
+/-- Initialize CBC with explicitly selected effective key bits (1–1024). -/
+def initWithEffectiveBits (key iv : List Byte) (direction : Direction) (effectiveBits : Nat) :
+    Except Error Context := do
+  unless 1 ≤ key.length ∧ key.length ≤ 128 do throw .invalidKeyLength
+  unless 1 ≤ effectiveBits ∧ effectiveBits ≤ 1024 do throw .invalidEffectiveBits
+  unless iv.length = 8 do throw .invalidIvLength
+  return {
+    schedule := expandKey key effectiveBits
+    direction := direction
+    iv := Vector.ofFn fun i => iv.getD i 0 }
+
+/-- Issue #1's initialization, defaulting to the supplied key's bit length. -/
+def init (key iv : List Byte) (direction : Direction) : Except Error Context :=
+  initWithEffectiveBits key iv direction (8 * key.length)
+
+/-- Emit all complete blocks, retaining at most seven bytes for the next
+update. The complete blocks of the pending bytes followed by `data` are
+encrypted or decrypted by CBC (`Cbc.encrypt`, `Cbc.decrypt`) from the
+context's chaining value, which becomes the last ciphertext block
+(`Cbc.next`: the last output block when encrypting, the last input block when
+decrypting, and unchanged if there is no complete block), from which CBC of
+the rest of the message continues (`Spec/Cbc.lean`). Empty updates leave
+every valid context unchanged. -/
+def update (ctx : Context) (data : List Byte) : Context × List Byte :=
+  let input := ctx.pending ++ data
+  let ps := (blocks input).map Vector.toList
+  let output := match ctx.direction with
+    | .encrypt => Cbc.encrypt (cipher ctx.schedule) ctx.iv.toList ps
+    | .decrypt => Cbc.decrypt (invCipher ctx.schedule) ctx.iv.toList ps
+  let ciphertext := match ctx.direction with
+    | .encrypt => output
+    | .decrypt => ps
+  ({ ctx with
+      iv := Vector.ofFn fun i => (Cbc.next ctx.iv.toList ciphertext).getD i.val 0
+      pending := input.drop (8 * (input.length / 8)) },
+    output.flatten)
+
+/-- Unpadded CBC: success emits no bytes; a trailing partial block is an
+error in either direction. -/
+def finalize (ctx : Context) : Except Error (List Byte) :=
+  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
 
 /-! ## Streaming -/
 

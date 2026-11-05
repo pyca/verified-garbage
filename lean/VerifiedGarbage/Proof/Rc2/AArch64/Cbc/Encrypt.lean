@@ -27,7 +27,7 @@ theorem encryptStep_ok (s : State) (hp : StepPre s) :
   have hp₁ := pin₁.pre hp
   have key₁ := pin₁.schedule hp
   have data₁ : Spec.Rc2.blockAt s₁.mem (s.gpr .x1) =
-      Spec.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .x1)) (Spec.Rc2.blockAt s.mem (s.gpr .x23)) := by
+      Proof.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .x1)) (Spec.Rc2.blockAt s.mem (s.gpr .x23)) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
   apply WP.mono (call_ok .encrypt s₁ hp₁.call)

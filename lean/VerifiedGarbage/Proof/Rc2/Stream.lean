@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -112,6 +113,74 @@ theorem blocks_take (xs : List Byte) :
 
 /-! ## `update` -/
 
+/-! ### `cbcBlocks` is CBC
+
+`Spec.Rc2.update` is stated with `Spec.Cbc.encrypt` and `Spec.Cbc.decrypt`
+on blocks as lists of bytes; the internal functions' contracts, with `cbcBlocks`
+on vectors. -/
+
+theorem ofFn_getD_toList (b : Spec.Rc2.Block) : (Vector.ofFn fun i => b.toList.getD i.val 0) = b := by
+  apply Vector.ext
+  intro i hi
+  simp only [Vector.getElem_ofFn]
+  rw [getD_of_lt _ _ (by simpa using hi), Vector.getElem_toList]
+
+theorem xor_toList (a b : Spec.Rc2.Block) : Spec.Cbc.xor a.toList b.toList = (xorBlock a b).toList := by
+  apply List.ext_getElem
+  · simp [Spec.Cbc.xor]
+  · intro i h₁ h₂
+    simp only [Spec.Cbc.xor, List.getElem_zipWith, Vector.getElem_toList, xorBlock, Vector.getElem_ofFn]
+    rfl
+
+theorem cbc_encrypt_eq (k : Spec.Rc2.Schedule) (iv : Spec.Rc2.Block) (bs : List Spec.Rc2.Block) :
+    (cbcBlocks k .encrypt iv bs).1.map Vector.toList =
+      Spec.Cbc.encrypt (Spec.Rc2.cipher k) iv.toList (bs.map Vector.toList) ∧
+    (cbcBlocks k .encrypt iv bs).2 = (cbcBlocks k .encrypt iv bs).1.getLastD iv := by
+  induction bs generalizing iv with
+  | nil => exact ⟨rfl, rfl⟩
+  | cons b bs ih =>
+    obtain ⟨h₁, h₂⟩ := ih (Spec.Rc2.encryptBlock k (xorBlock b iv))
+    simp only [cbcBlocks, cbcStep, List.map_cons, Spec.Cbc.encrypt, Spec.Rc2.cipher, xor_toList,
+      ofFn_getD_toList, h₁, h₂, true_and]
+    cases h : (cbcBlocks k .encrypt (Spec.Rc2.encryptBlock k (xorBlock b iv)) bs).1 <;> rfl
+
+theorem cbc_decrypt_eq (k : Spec.Rc2.Schedule) (iv : Spec.Rc2.Block) (bs : List Spec.Rc2.Block) :
+    (cbcBlocks k .decrypt iv bs).1.map Vector.toList =
+      Spec.Cbc.decrypt (Spec.Rc2.invCipher k) iv.toList (bs.map Vector.toList) ∧
+    (cbcBlocks k .decrypt iv bs).2 = bs.getLastD iv := by
+  induction bs generalizing iv with
+  | nil => exact ⟨rfl, rfl⟩
+  | cons b bs ih =>
+    obtain ⟨h₁, h₂⟩ := ih b
+    simp only [cbcBlocks, cbcStep, List.map_cons, Spec.Cbc.decrypt, Spec.Rc2.invCipher, xor_toList,
+      ofFn_getD_toList, h₁, h₂, true_and]
+    cases bs <;> rfl
+
+theorem next_toList (iv : Spec.Rc2.Block) (bs : List Spec.Rc2.Block) :
+    (Vector.ofFn fun i => (Spec.Cbc.next iv.toList (bs.map Vector.toList)).getD i.val 0) =
+      bs.getLastD iv := by
+  have h : Spec.Cbc.next iv.toList (bs.map Vector.toList) = (bs.getLastD iv).toList := by
+    induction bs generalizing iv with
+    | nil => rfl
+    | cons b bs ih =>
+      simp only [Spec.Cbc.next, List.map_cons, List.getLastD_cons] at ih ⊢
+      exact ih b
+  rw [h, ofFn_getD_toList]
+
+/-- `update`, with CBC as `cbcBlocks`. -/
+theorem update_eq (ctx : Spec.Rc2.Context) (data : List Byte) :
+    Spec.Rc2.update ctx data =
+      let input := ctx.pending ++ data
+      let r := cbcBlocks ctx.schedule ctx.direction ctx.iv (Spec.Rc2.blocks input)
+      ({ ctx with iv := r.2, pending := input.drop (8 * (input.length / 8)) },
+        r.1.flatMap Vector.toList) := by
+  obtain ⟨k, d, iv, pending⟩ := ctx
+  cases d
+  · obtain ⟨h₁, h₂⟩ := cbc_encrypt_eq k iv (Spec.Rc2.blocks (pending ++ data))
+    simp only [Spec.Rc2.update, ← h₁, next_toList, ← h₂, List.flatMap_def]
+  · obtain ⟨h₁, h₂⟩ := cbc_decrypt_eq k iv (Spec.Rc2.blocks (pending ++ data))
+    simp only [Spec.Rc2.update, ← h₁, next_toList, ← h₂, List.flatMap_def]
+
 /-- With no complete block, the data is appended to the pending bytes, and
 the schedule and chaining value are unchanged. -/
 theorem update_post_short {m m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.Direction} {p len : Nat}
@@ -127,7 +196,7 @@ theorem update_post_short {m m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.Direc
     simp only [List.length_append, bytesAt_length]; omega
   have hb : Spec.Rc2.blocks (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len) = [] := by
     simp only [Spec.Rc2.blocks, hlen, List.range_zero, List.map_nil]
-  simp only [Spec.Rc2.update, Spec.Rc2.contextAt, hb, Spec.Rc2.cbc, hlen, Nat.mul_zero, List.drop_zero,
+  simp only [update_eq, Spec.Rc2.contextAt, hb, cbcBlocks, hlen, Nat.mul_zero, List.drop_zero,
     List.flatMap_nil, Nat.mod_eq_of_lt hshort, Nat.div_eq_of_lt hshort, Nat.zero_mul, hs, hiv, hpend]
   simp [Spec.Rc2.bytesAt]
 
@@ -143,9 +212,9 @@ theorem update_post_long {m m₁ m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.D
     (hpend : Spec.Rc2.bytesAt m' (ctx + 136) ((p + len) % 8) =
       Spec.Rc2.bytesAt m (data + BitVec.ofNat 64 ((p + len) / 8 * 8 - p)) ((p + len) % 8))
     (hs : Spec.Rc2.scheduleAt m' ctx = Spec.Rc2.scheduleAt m₁ ctx)
-    (hc₁ : Spec.Rc2.blocksAt m' out ((p + len) / 8) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m₁ ctx) d
+    (hc₁ : Spec.Rc2.blocksAt m' out ((p + len) / 8) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₁ ctx) d
       (Spec.Rc2.blockAt m₁ (ctx + 128)) (Spec.Rc2.blocksAt m₁ out ((p + len) / 8))).1)
-    (hc₂ : Spec.Rc2.blockAt m' (ctx + 128) = (Spec.Rc2.cbc (Spec.Rc2.scheduleAt m₁ ctx) d
+    (hc₂ : Spec.Rc2.blockAt m' (ctx + 128) = (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₁ ctx) d
       (Spec.Rc2.blockAt m₁ (ctx + 128)) (Spec.Rc2.blocksAt m₁ out ((p + len) / 8))).2) :
     let result := Spec.Rc2.update (Spec.Rc2.contextAt m ctx d p) (Spec.Rc2.bytesAt m data len)
     Spec.Rc2.contextAt m' ctx d ((p + len) % 8) = result.1 ∧
@@ -166,7 +235,7 @@ theorem update_post_long {m m₁ m' : Mem} {ctx data out : Addr} {d : Spec.Rc2.D
   have hblocks : Spec.Rc2.blocks (Spec.Rc2.bytesAt m (ctx + 136) p ++ Spec.Rc2.bytesAt m data len) =
       Spec.Rc2.blocksAt m₁ out ((p + len) / 8) := by
     rw [blocks_take, hl, htake, blocks_bytesAt]
-  simp only [Spec.Rc2.update, Spec.Rc2.contextAt, hl, hblocks, hdrop, ← hs₁, ← hiv₁]
+  simp only [update_eq, Spec.Rc2.contextAt, hl, hblocks, hdrop, ← hs₁, ← hiv₁]
   refine ⟨?_, ?_⟩
   · rw [hs, ← hc₂]
   · rw [← hc₁, flatMap_blocksAt, hO]

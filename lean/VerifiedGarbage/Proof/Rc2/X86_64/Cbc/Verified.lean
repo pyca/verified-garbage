@@ -215,10 +215,10 @@ theorem CallPost.iv {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s'
 
 structure StepPost (d : Spec.Rc2.Direction) (s s' : State) : Prop extends Pinned s s' where
   data : Spec.Rc2.blockAt s'.mem (s.gpr .rsi) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .rbx) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).2
 
 end VG.Proof.Rc2.X86_64.Cbc
@@ -301,10 +301,10 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   have pin₀₃ := pin₂.trans pin₃
   have hp₃ := pin₀₃.pre hp
   have data₃ : Spec.Rc2.blockAt s₃.mem (s.gpr .rsi) =
-      Spec.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi))
+      Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi))
         (Spec.Rc2.blockAt s.mem (s.gpr .rsi))) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
     have h : Spec.Rc2.blockAt s₃.mem (s₂.gpr .rsi) =
-        Spec.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rsi)) (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rbx)) := by
+        Proof.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rsi)) (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rbx)) := by
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .rsi (by decide), pin₂.reg .rbx (by decide), output₂, iv₂] at h
     exact h
@@ -410,7 +410,7 @@ theorem encryptStep_ok (s : State) (hp : StepPre s) :
   have hp₁ := pin₁.pre hp
   have key₁ := pin₁.schedule hp
   have data₁ : Spec.Rc2.blockAt s₁.mem (s.gpr .rsi) =
-      Spec.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .rsi)) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
+      Proof.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .rsi)) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
   apply WP.mono (call_ok .encrypt s₁ hp₁.call)
@@ -461,10 +461,10 @@ structure BodyPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (stepWrites s) s.mem s'.mem
   data : Spec.Rc2.blockAt s'.mem (s.gpr .rsi) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .rbx) =
-    (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).2
 
 theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n < 2 ^ 64)
@@ -602,10 +602,10 @@ structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
   wr : s'.wr = s.wr
   mem : Frame (loopWrites s n) s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (s.gpr .rsi) n =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blocksAt s.mem (s.gpr .rsi) n)).1
   iv : Spec.Rc2.blockAt s'.mem (s.gpr .rbx) =
-    (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blocksAt s.mem (s.gpr .rsi) n)).2
 
 theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
@@ -622,10 +622,10 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
       · simp only [eval, h₁.flag, decide_true, Option.map_some, Bool.not_true]
       · refine ⟨h₁.ptr, h₁.count, h₁.reg, h₁.callee, h₁.rd, h₁.wr, h₁.frame (by decide), ?_, ?_⟩
         · rw [blocksAt_cons, blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact congrArg (· :: []) h₁.data
         · rw [blocksAt_cons]
-          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
+          simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp
       obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)
@@ -804,7 +804,7 @@ def contract (d : Spec.Rc2.Direction) : Contract isa where
       stack.Disjoint key ∧ stack.Disjoint iv ∧ stack.Disjoint data ∧ stack.Disjoint buf ∧
       (s.gpr .rdx).toNat + 8 * (s.gpr .rcx).toNat ≤ 2 ^ 64
   post s s' :=
-    let out := Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rsi)) (Spec.Rc2.blocksAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
     Spec.Rc2.blocksAt s'.mem (s.gpr .rdx) (s.gpr .rcx).toNat = out.1 ∧
       Spec.Rc2.blockAt s'.mem (s.gpr .rsi) = out.2
