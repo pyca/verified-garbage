@@ -27,7 +27,8 @@ abbrev searchOf (o : State) : KeySearchResult :=
 
 theorem tail_zero (o : State) :
     Same ((ofState o).tail (randOf o) 0 (ofState o).keys (ofState o).scalars) (searchOf o) := by
-  simp only [Same, KPub.tail, keyTail, after, List.drop_zero, Nat.zero_add, and_self]
+  simp only [Same, KPub.tail, keyTail, after, List.drop_zero, Nat.zero_add]
+  exact ⟨rfl, rfl⟩
 
 theorem operation_ok {o : State} (A : KeySearchABI o) :
     WP isa Impl.Ffdh.X86.Cached.Search.code o (Fin o (searchOf o)) := by

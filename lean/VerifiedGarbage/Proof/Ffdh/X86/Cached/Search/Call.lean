@@ -72,9 +72,10 @@ theorem call_covers {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used +
   rcases List.mem_append.mp hr with hr | hr
   · rw [hrd, A.rd]
     simp only [callRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨dR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨rR o, by simp, used, win_base A hu, hu⟩
+    · exact ⟨cR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   · obtain ⟨r', hr', off, hb⟩ := hw r hr
     exact ⟨r', List.mem_append_right _ hr', off, hb⟩
 
@@ -164,7 +165,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega)
   obtain ⟨hc, hcw⟩ := call_covers (t := t) A hu h.rd h.wr
   refine WP.call Proof.Ffdh.X86.Cached.verified.1 callee_noSp (by rw [callee_stack, hn]; omega)
-    (call_pre A hu h.esp ha) hc hcw fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
+    (call_pre A hu h.esp ha h.frame) hc hcw fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   have hp := hpost
   sig_post [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes] at hp
   simp only [ce_arg A h.esp ha _ _ (show 0 < 13 by decide),
@@ -176,7 +177,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
   have dE := fun v => (entry_bytes h hu v).1
   have rE := fun v => (entry_bytes h hu v).2
   simp only [dE, rE] at hp
-  obtain ⟨hr, hout⟩ := hp A.domValid
+  obtain ⟨hr, hout⟩ := hp
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
   have hS := A.sBound
   have hA : Aligned liveDs := by decide

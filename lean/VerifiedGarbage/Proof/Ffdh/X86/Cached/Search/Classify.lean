@@ -106,7 +106,7 @@ theorem advance_ok {o u : State} {e : BitVec 32} {used keys scalars : Nat}
     refine (S₁₁.sub fun d hd => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd))).congr ?_
     simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
     rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl) <;> simp [upd, liveF, randOff, leftOff, usedOff]
+      rfl | rfl | rfl | rfl) <;> simp [upd, liveF, randOff, leftOff, usedOff]
   · rw [G₁₁, U₁₀.other _ (by decide), o₉ _ (by decide), G₈, U₇.other _ (by decide), o₆ _ (by decide), G₅,
       U₄.other _ (by decide), o₃ _ (by decide), o₂ _ (by decide), U₁.gpr]
 
@@ -216,7 +216,7 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     rw [F.gpr, hed, he]
   have hedT : t.gpr .edx = BitVec.ofNat 32 (attemptStatus .cached (ofState o).a (ofState o).len ((randOf o).drop used)) :=
     hed.trans he
-  have hst := attemptStatus_cases (ofState o).a (ofState o).len ((randOf o).drop used)
+  have hst := attemptStatus_cases (policy := .cached) (ofState o).a (ofState o).len ((randOf o).drop used)
   have hle : attemptStatus .cached (ofState o).a (ofState o).len ((randOf o).drop used) ≤ 3 := by
     rcases hst with h1 | h1 | h1 <;> omega_arith
   rcases hst with h1 | h2 | h3
@@ -250,7 +250,7 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
         ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff]
+        rfl | rfl | rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff]
     · show v.mem.readW (addr (arg o 12) statusOff) 32 = 4
       rw [Sv.words.get (List.mem_cons_self ..)]; simp [upd, statusOff]
   · -- A degenerate public value.
@@ -270,7 +270,7 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
         |>.live (by omega_arith) (by omega_arith) (by decide), ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff, keysOff]
+        rfl | rfl | rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff, keysOff]
     · show v.mem.readW (addr (arg o 12) statusOff) 32 = 4
       rw [Sv.words.get (List.mem_cons_self ..)]; simp [upd, statusOff]
 

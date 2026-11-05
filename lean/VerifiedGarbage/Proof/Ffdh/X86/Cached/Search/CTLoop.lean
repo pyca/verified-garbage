@@ -138,7 +138,7 @@ theorem branch_ct : RelCT isa (Two LiveCT) branch fun _ _ => True := by
   obtain ⟨o, L, hu, st⟩ := hatt q s h
   dsimp only at L hu st
   have hp := L.input.2
-  have hc := attemptStatus_cases q.1.1.a q.1.1.len ((randOf o).drop q.1.2.1)
+  have hc := attemptStatus_cases (policy := .cached) q.1.1.a q.1.1.len ((randOf o).drop q.1.2.1)
   refine WP.mono (attempt_ok L hu) fun u ⟨Su, eu, _⟩ => ⟨o, hp, Su, by rw [eu, st], ?_, hu⟩
   dsimp only; rw [← st]; omega
 
