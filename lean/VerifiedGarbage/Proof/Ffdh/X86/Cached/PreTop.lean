@@ -171,17 +171,21 @@ theorem table_apart {s : State} (hc : ConstsOk pcConsts stack s) :
   rw [VG.Proof.Ffdh.VettedTableFacts.tableWords_length] at T
   exact ⟨T.1, T.2.1, T.2.2 _ (List.mem_cons_of_mem _ List.mem_cons_self)⟩
 
-/-- The body, from the frame's state. -/
-theorem pc_frame_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) (f : State)
+/-- What the body needs, from the frame's state. -/
+theorem pc_frame_facts {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) (f : State)
     (I : In (PRd s) (wsBase pArgs s) (wsSize pArgs s) (pLenOf pArgs s) (synth pArgs (arg s)) f)
     (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame)
-    (Ft : Frame [⟨wsBase pArgs s, wsSize pArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem) (hsy : f.syms = s.syms) :
-    WP isa Impl.Ffdh.X86.Cached.Precompute.body f fun t =>
-      (t.gpr .eax = 1 ∧ Spec.Rsa.wordsAt t.mem (argumentPointer s 0) (arg s 1).toNat =
-        generationValues (pLenOf pArgs s) (pcDom s)) ∧
-      Frame ([ctxR (synth pArgs (arg s)) (pLenOf pArgs s)] ++
-        CrtRt.frameR (wsBase pArgs s) (f.gpr .esp) (fR (pLenOf pArgs s))) f.mem t.mem ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
+    (Ft : Frame [⟨wsBase pArgs s, wsSize pArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
+    DomGeo (synth pArgs (arg s)) (wsBase pArgs s) (wsSize pArgs s) (pLenOf pArgs s) (arg s 3).toNat f.rd f.wr ∧
+      Region.Disjoint ⟨byteAddr (synth pArgs (arg s) 2), (arg s 3).toNat⟩ (below (f.gpr .esp) 96) ∧
+      Region.Disjoint ⟨byteAddr (synth pArgs (arg s) 2), (arg s 3).toNat⟩
+        (ctxR (synth pArgs (arg s)) (pLenOf pArgs s)) ∧
+      CtxW (wsBase pArgs s) (wsSize pArgs s) (pLenOf pArgs s) (synth pArgs (arg s)) f ∧
+      (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym).toNat + 17744 ≤ 2 ^ 32 ∧
+      Spec.Rsa.bytesAt f.mem (byteAddr (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym)) 17744 = VG.Impl.Ffdh.VettedGroups.tableBytes ∧
+      Region.Disjoint ⟨byteAddr (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym), 17744⟩ ⟨wsBase pArgs s, wsSize pArgs s⟩ ∧
+      Region.Disjoint ⟨byteAddr (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym), 17744⟩ (below (f.gpr .esp) 96) ∧
+      KeyGen.domOf f.mem (synth pArgs (arg s)) (arg s 3).toNat = pcDom s := by
   obtain ⟨sub96, subF⟩ := pc_subs A espf
   obtain ⟨tfit, twr, t172⟩ := table_apart hc
   have hE := (s.gpr .esp).isLt
@@ -225,23 +229,12 @@ theorem pc_frame_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) 
       · exact t172.sub_right frameSub) (by decide)]
     have := VettedValidation.consts_bytes hc
     rwa [VG.Proof.Ffdh.VettedTableFacts.tableBytes_length] at this
-  have dv : Spec.Ffdh.domainValid (pLenOf pArgs s) (KeyGen.domOf f.mem (synth pArgs (arg s)) (arg s 3).toNat) := by
-    show Spec.Ffdh.domainValid _ (Spec.Rsa.bytesAt f.mem (argumentPointer s 2) _) = true
-    rw [frame_bytes Ft (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact A.domScratch
-      · exact (A.belowDom.sub_left frameSub).symm) (by have := A.domBound; omega)]
-    exact A.valid
   have tfit' : (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym).toNat + 17744 ≤ 2 ^ 32 := by
     have e : (symAddr s VG.Impl.Ffdh.X86.VettedValidation.tableSym).toNat =
         (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym).toNat := by
       simp only [symAddr, BitVec.toNat_setWidth]
       exact Nat.mod_eq_of_lt (by have := (s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym).isLt; omega)
     rw [e] at tfit; exact tfit
-  refine WP.mono (pcBody_ok I G hb40 domC C (T := s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym)
-    (by rw [hsy]) tfit' I.extra.2.2 tbytes tws
-    (t172.sub_right sub96) dv) fun t ⟨E, F, K, W⟩ => ⟨⟨E, ?_⟩, by rw [List.singleton_append]; exact F, K⟩
   have dd : KeyGen.domOf f.mem (synth pArgs (arg s)) (arg s 3).toNat = pcDom s := by
     show Spec.Rsa.bytesAt f.mem (argumentPointer s 2) _ = _
     exact frame_bytes Ft (fun r hr => by
@@ -249,6 +242,25 @@ theorem pc_frame_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) 
       rcases hr with rfl | rfl
       · exact A.domScratch
       · exact (A.belowDom.sub_left frameSub).symm) (by have := A.domBound; omega)
+  exact ⟨G, hb40, domC, C, tfit', tbytes, tws, t172.sub_right sub96, dd⟩
+
+/-- The body, from the frame's state. -/
+theorem pc_frame_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) (f : State)
+    (I : In (PRd s) (wsBase pArgs s) (wsSize pArgs s) (pLenOf pArgs s) (synth pArgs (arg s)) f)
+    (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame)
+    (Ft : Frame [⟨wsBase pArgs s, wsSize pArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem) (hsy : f.syms = s.syms) :
+    WP isa Impl.Ffdh.X86.Cached.Precompute.body f fun t =>
+      (t.gpr .eax = 1 ∧ Spec.Rsa.wordsAt t.mem (argumentPointer s 0) (arg s 1).toNat =
+        generationValues (pLenOf pArgs s) (pcDom s)) ∧
+      Frame ([ctxR (synth pArgs (arg s)) (pLenOf pArgs s)] ++
+        CrtRt.frameR (wsBase pArgs s) (f.gpr .esp) (fR (pLenOf pArgs s))) f.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
+  obtain ⟨G, hb40, domC, C, tfit', tbytes, tws, t40, dd⟩ := pc_frame_facts A hc f I espf Ft
+  have dv : Spec.Ffdh.domainValid (pLenOf pArgs s) (KeyGen.domOf f.mem (synth pArgs (arg s)) (arg s 3).toNat) := by
+    rw [dd]; exact A.valid
+  refine WP.mono (pcBody_ok I G hb40 domC C (T := s.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym)
+    (by rw [hsy]) tfit' I.extra.2.2 tbytes tws t40 dv) fun t ⟨E, F, K, W⟩ =>
+      ⟨⟨E, ?_⟩, by rw [List.singleton_append]; exact F, K⟩
   rw [dd] at W
   rw [A.ctxLen, pcWords_eq]
   exact W
