@@ -469,7 +469,7 @@ macro_rules! ml_kem {
                     // NO-COVERAGE-END
                 }
                 // `H(ek)`, which the decapsulation key holds before `z`
-                // (FIPS 203 Algorithm 16).
+                // (FIPS 203 Algorithm 16; `VG.Spec.MlKem.keyGenInternal_h`).
                 let mut h = [0u8; 32];
                 h.copy_from_slice(&key.dk[$dk - 64..$dk - 32]);
                 key.ek.h = Some(h);
