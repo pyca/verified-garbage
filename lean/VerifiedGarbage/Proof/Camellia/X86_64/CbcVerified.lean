@@ -175,18 +175,19 @@ theorem cbcDecryptChained_verified :
       Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcDecChainedPost, cbcDecX86_64,
       fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.cbcEncryptChainedContract, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
+theorem cbcEncFrameSat_pre : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
     [fbFrameSat] using fbFrameSat
 
-theorem cbcDecFrameSat_pre : ∃ s, (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3288).pre s := by
-  implies_sat [Spec.Camellia.cbcDecryptChainedContract, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
+theorem cbcDecFrameSat_pre : ∃ s, (Proof.Camellia.cbcDecryptChainedContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.cbcDecryptChainedContractSk, Spec.Camellia.cbcChainedSig, X86_64.abi, X86_64.argRegs]
     [fbFrameSat] using fbFrameSat
 
 /-- CBC encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract X86_64.abi 3288) :=
+  Proof.Camellia.cbcEncryptChained_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
@@ -198,6 +199,7 @@ theorem cbcEncryptChained_framed :
 theorem cbcDecryptChained_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 cbcDecryptChained)
       (Spec.Camellia.cbcDecryptChainedContract X86_64.abi 3288) :=
+  Proof.Camellia.cbcDecryptChained_of_sk <|
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)

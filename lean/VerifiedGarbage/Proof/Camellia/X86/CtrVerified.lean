@@ -44,9 +44,9 @@ theorem wide_implies_ctr :
     (wideContract ctrPost).Implies (Proof.Camellia.ctrScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost] at h
+    sig_pre [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost] at h
     sig_split h
-    sig_reduce [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
+    sig_reduce [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
     sig_and_intros
     sig_close
     all_goals first
@@ -54,9 +54,9 @@ theorem wide_implies_ctr :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost, ciph, ivAt, dataAt]
-  · sig_implies_pub [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
-  · sig_implies_sat [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPost, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
+  · sig_implies_post [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost, ciph, ivAt, dataAt]
+  · sig_implies_pub [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
+  · sig_implies_sat [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Proof.Camellia.ctrPostSk, Spec.Camellia.ctrPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ctrPost]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem frameSat_ctr (post : Spec.Camellia.ctrSig.Post X86.abi.ptrBits) :
@@ -72,8 +72,9 @@ theorem ctr_verified : Verified X86.target ctr (Proof.Camellia.ctrScratchContrac
 theorem ctr_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ctr)
       (Spec.Camellia.ctrContract X86.abi 2772) :=
+  Proof.Camellia.ctr_of_sk <|
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.ctrPre X86.abi.ptrBits) (post := Spec.Camellia.ctrPost X86.abi.ptrBits) (wa := true) (stack := 16)
+    (n := 341) (pre := Spec.Camellia.ctrPre X86.abi.ptrBits) (post := Proof.Camellia.ctrPostSk X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) ctr_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ctrPre_local _)
     (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) (frameSat_ctr _)
