@@ -60,16 +60,12 @@ pub fn bench(c: &mut Criterion) {
     };
     assert_eq!(
         aws_lc_agree(&aws_lc_private, &peer),
-        vg_private.diffie_hellman(&peer).unwrap()
+        vg_private.exchange(&peer).unwrap()
     );
     let mut g = c.benchmark_group("ecdh_p521");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 66), |b| {
-        b.iter(|| {
-            black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
-                .unwrap()
-        })
+        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
     });
     g.bench(BenchmarkId::new(OPENSSL, 66), |b| {
         b.iter(|| {
@@ -103,7 +99,7 @@ pub fn bench(c: &mut Criterion) {
         one[65] = 1;
         let key = PrivateKey::<P521>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 133), |b| {
-            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+            b.iter(|| black_box(&key).exchange(black_box(&peer)).is_ok())
         });
         g.finish();
     }

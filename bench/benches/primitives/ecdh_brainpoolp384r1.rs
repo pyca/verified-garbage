@@ -49,11 +49,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ecdh_brainpoolp384r1");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 48), |b| {
-        b.iter(|| {
-            black_box(&vg_private)
-                .diffie_hellman(black_box(&peer))
-                .unwrap()
-        })
+        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
     });
     g.bench(BenchmarkId::new(OPENSSL, 48), |b| {
         b.iter(|| {
@@ -84,7 +80,7 @@ pub fn bench(c: &mut Criterion) {
         one[47] = 1;
         let key = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 97), |b| {
-            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+            b.iter(|| black_box(&key).exchange(black_box(&peer)).is_ok())
         });
         g.finish();
     }

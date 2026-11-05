@@ -38,7 +38,7 @@ impl PrivateKey<P224> {
     ///
     /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
     /// is not a valid public key (SP 800-56A §5.6.2.3.3).
-    pub fn diffie_hellman(&self, peer: &[u8; 57]) -> Result<[u8; 28], Error> {
+    pub fn exchange(&self, peer: &[u8; 57]) -> Result<[u8; 28], Error> {
         let mut out = [0; 28];
         let mut scratch = [0u64; 1024];
         let ok = match Mul::select(detected()) {

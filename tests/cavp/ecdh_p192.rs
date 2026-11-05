@@ -41,8 +41,8 @@ fn ecdh_p192() {
             assert!(P192::validate_public_key(&peer));
             assert!(P192::validate_public_key(&public));
         }
-        assert_eq!(key.diffie_hellman(&peer), Ok(shared));
-        assert!(key.clone().diffie_hellman(&public).is_ok());
+        assert_eq!(key.exchange(&peer), Ok(shared));
+        assert!(key.clone().exchange(&public).is_ok());
     }
 }
 
@@ -70,14 +70,14 @@ fn ecdh_p192_invalid() {
     bad.push(big_y);
     bad.push([0; 49]);
     for p in &bad {
-        assert_eq!(key.diffie_hellman(p), Err(Error::InvalidKey));
+        assert_eq!(key.exchange(p), Err(Error::InvalidKey));
         #[cfg(target_arch = "x86_64")]
         assert!(!P192::validate_public_key(p));
     }
     for d in [[0; 24], [0xff; 24]] {
         let key = PrivateKey::<P192>::from_bytes(&d);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
-        assert_eq!(key.diffie_hellman(&peer), Err(Error::InvalidKey));
+        assert_eq!(key.exchange(&peer), Err(Error::InvalidKey));
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
     assert_eq!(Error::InvalidKey.to_string(), "invalid ECDH key");

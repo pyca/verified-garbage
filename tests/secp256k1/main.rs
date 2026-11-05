@@ -109,10 +109,7 @@ fn messages_and_keys() {
     assert_eq!(private.public_key(), Ok(public));
     let peer = PrivateKey::<Secp256k1>::from_bytes(&hex(&cases[1].d));
     let peer_public = peer.public_key().unwrap();
-    assert_eq!(
-        private.diffie_hellman(&peer_public),
-        peer.diffie_hellman(&public)
-    );
+    assert_eq!(private.exchange(&peer_public), peer.exchange(&public));
     assert_eq!(verifier.to_bytes(), public);
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
 
@@ -134,14 +131,14 @@ fn messages_and_keys() {
             Err(verified_garbage::ecdh::Error::InvalidKey)
         );
         assert_eq!(
-            bad.diffie_hellman(&public),
+            bad.exchange(&public),
             Err(verified_garbage::ecdh::Error::InvalidKey)
         );
     }
     let mut invalid = public;
     invalid[0] = 0;
     assert_eq!(
-        private.diffie_hellman(&invalid),
+        private.exchange(&invalid),
         Err(verified_garbage::ecdh::Error::InvalidKey)
     );
     assert_eq!(
