@@ -62,25 +62,7 @@ fn generate_from(params: &Parameters, draw: &[u8]) -> PrivateKey {
         .unwrap();
     assert_eq!(calls, 1);
     // The retained schedule is a public encoding width, even for x = 3.
-    #[cfg(any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    ))]
     assert_eq!(key.exponent_len, params.domain.exponent_len());
-    #[cfg(not(any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    )))]
-    assert_eq!(
-        key.exponent_len,
-        params.q.as_ref().map_or(params.p.len(), Vec::len)
-    );
     key
 }
 
@@ -92,27 +74,10 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
             let params = Parameters::from_components(&p, &[2], None).unwrap();
             let draw = marked_draw(p.len(), cap);
             let key = generate_from(&params, &draw);
-            #[cfg(any(
-                target_arch = "arm",
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "x86",
-                target_arch = "x86_64"
-            ))]
             {
                 assert_eq!(key.exponent_len, cap.div_ceil(8));
                 assert_eq!(canonical(key.private_component()), &[3]);
                 assert_eq!(key.public_key().component(), &[8]);
-            }
-            #[cfg(not(any(
-                target_arch = "arm",
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "x86",
-                target_arch = "x86_64"
-            )))]
-            {
-                assert_eq!(key.private_component(), draw);
             }
             // The highest permitted bit must also survive: a cap one bit
             // too small would otherwise pass the truncation check above.
@@ -207,13 +172,6 @@ fn vetted_generation_preserves_entropy_refills() {
     assert_eq!(calls, 2);
 }
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "powerpc64"
-))]
 #[test]
 fn vetted_domain_validation_checks_complete_components() {
     for p in modp_groups().into_iter().chain(ffdhe_groups()) {
