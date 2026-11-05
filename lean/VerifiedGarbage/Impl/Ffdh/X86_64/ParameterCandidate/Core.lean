@@ -14,6 +14,13 @@ The shared Miller–Rabin workspace follows it. Its normal link at slot 16
 points back to the outer header and survives every prepared round call.
 The output buffer temporarily holds q and sampled witnesses; p is restored
 from the original random prefix only when needed.
+
+The candidate is `Spec.Ffdh.sievedParameterCandidate`: p's shape and
+generator congruence, then RSA's trial division of p and of q by its table's
+first 512 entries (1024 above 1024 bits, `Spec.RsaKeyGen.obviouslyComposite`
+for the requested width), then the witnesses of
+`Spec.Ffdh.screenedParameterWitnesses`: one for p, all of q's, then p's
+other `primeChecks − 1`, each phase in a workspace of its modulus's width.
 -/
 
 @[expose] public section
@@ -40,6 +47,13 @@ def oChecks : Nat := 17
 def oIndex : Nat := 18
 def oStatus : Nat := 19
 def oInner : Nat := 20
+
+/-- The requested width, from the outer header through the link, for the
+sieve's count: p's, for q as well. -/
+def sieveBits : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oBits))]
+
+/-- Oddness, then the sieve: ZF means acceptance. -/
+def primeCheck : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
 
 /-- Save the ABI arguments and callee-saved registers in the outer header. -/
 def entry : List Instr :=
@@ -71,18 +85,31 @@ def consumeCandidate : List Instr :=
    .store (hdr oRandPtr) .rax, .mov .rax (.mem (hdr oRandLeft)), .alu .sub .rax (.reg .rcx),
    .store (hdr oRandLeft) .rax, .store (hdr oUsed) .rcx]
 
+/-- Which of its modulus's witnesses a phase draws: all of them, p's first
+alone, or p's others (`Spec.Ffdh.screenedParameterWitnesses`). -/
+inductive Checks where
+  | all
+  | first
+  | rest
+
+/-- The phase's witness count from `primeChecks` in RAX. -/
+def Checks.code : Checks → List Instr
+  | .all => []
+  | .first => [.mov32 .rax (.imm 1)]
+  | .rest => [.alu .sub .rax (.imm 1)]
+
 /-- Width and witness policy for the bit length already in RDX. -/
-def phaseWidth : List Instr :=
+def phaseWidth (c : Checks) : List Instr :=
   [.store (hdr oWitnessBits) .rdx, .mov .rcx (.reg .rdx), .alu .add .rcx (.imm 7), .shift .shr .rcx 3,
    .store (hdr oWitnessLen) .rcx, .mov32 .rax (.imm 64), .mov32 .rcx (.imm 128),
-   .alu .cmp .rdx (.imm 2049), .cmov .ae .rax (.reg .rcx), .store (hdr oChecks) .rax,
+   .alu .cmp .rdx (.imm 2049), .cmov .ae .rax (.reg .rcx)] ++ c.code ++ [.store (hdr oChecks) .rax,
    .mov .rax (.reg .rdi), .alu .add .rax (.imm 256)]
 
 /-- Set the actual modulus width and independent uniform-witness count. -/
-def phaseHead (q : Bool) : List Instr :=
-  [.mov .rdx (.mem (hdr oBits))] ++ (if q then [.alu .sub .rdx (.imm 1)] else []) ++ phaseWidth
+def phaseHead (q : Bool) (c : Checks) : List Instr :=
+  [.mov .rdx (.mem (hdr oBits))] ++ (if q then [.alu .sub .rdx (.imm 1)] else []) ++ phaseWidth c
 
-def phaseSetup (q : Bool) : Prog isa := .seq (.block (phaseHead q))
+def phaseSetup (q : Bool) (c : Checks) : Prog isa := .seq (.block (phaseHead q c))
   (.seq (seqs (wsNew oInner oWitnessLen)) (.block [.mov .rdi (.mem (hdr oInner))]))
 
 /-- Load the p-sized output buffer using this modulus's own word width. -/
@@ -170,22 +197,31 @@ def modulusPolicy : Prog isa := .seq (prepareModulus mul r2) (rounds mul round)
 /-- Return to the outer frame and test whether a modulus passed. -/
 def leaveStatus : Prog isa := .block [leave, .mov .rax (.mem (hdr oStatus)), .alu .cmp .rax (.imm 1)]
 
-/-- The p test follows the successful q test; restore p again for output. -/
-def testP : Prog isa := seqs [shapeOriginal, phaseSetup false, loadOutput, modulusPolicy mul r2 round, leaveStatus,
-  .ite .e shapeOriginal (.block [])]
+/-- One modulus's witnesses: `prep` puts the modulus in the output buffer,
+then its phase's witnesses; `next` runs once they pass. -/
+def phaseTest (prep : Prog isa) (q : Bool) (c : Checks) (next : Prog isa) : Prog isa :=
+  seqs [prep, phaseSetup q c, loadOutput, modulusPolicy mul r2 round, leaveStatus, .ite .e next (.block [])]
 
-def testQ : Prog isa := seqs [halveOutput, phaseSetup true, loadOutput, primeCheck,
-  .ite .e (seqs [modulusPolicy mul r2 round,
-    leaveStatus,
-    .ite .e (testP mul r2 round) (.block [])]) (innerStatus 2)]
+/-- p's other witnesses, last; restore p again for output. -/
+def testP : Prog isa := phaseTest mul r2 round shapeOriginal false .rest shapeOriginal
+
+/-- All of q's witnesses, from q made again from p. -/
+def testQ : Prog isa := phaseTest mul r2 round (.seq shapeOriginal halveOutput) true .all (testP mul r2 round)
+
+/-- p's first witness, before q's. -/
+def testFirst : Prog isa := phaseTest mul r2 round shapeOriginal false .first (testQ mul r2 round)
+
+/-- q's trial division, at its own width, then the witnesses. -/
+def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
+  .ite .e (.seq (.block [leave]) (testFirst mul r2 round)) (innerStatus 2)]
 
 /-- Apply the requested generator's candidate congruence policy. -/
 def generatorPolicy : Prog isa := .seq
   (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck
 
-/-- Trial checks before the independent q and p witness policies. -/
-def candidateFilter : Prog isa := seqs [phaseSetup false, loadOutput, generatorPolicy,
-  .ite .e (.seq primeCheck (.ite .e (.seq (.block [leave]) (testQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
+/-- Trial checks of p and q before any witness. -/
+def candidateFilter : Prog isa := seqs [phaseSetup false .all, loadOutput, generatorPolicy,
+  .ite .e (.seq primeCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
 
 def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, candidateFilter mul r2 round]
 

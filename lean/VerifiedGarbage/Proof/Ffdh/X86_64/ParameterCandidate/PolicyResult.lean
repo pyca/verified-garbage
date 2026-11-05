@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseRounds
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
 
-/-! # FFDH parameter generation on x86-64: compose q and p tape results -/
+/-! # FFDH parameter generation on x86-64: compose the phases' tape results
+
+p's first witness, then q's, then p's others (`policyFirst`), as
+`Spec.Ffdh.screenedParameterWitnesses` draws them.
+-/
 
 @[expose] public section
 
@@ -19,16 +23,32 @@ def TapeOutcome (p : CandidateP) (used consumed : Nat) (result : Option (Bool ×
   | some (pass, rest) => word m p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
       rest = p.rand.drop (used + consumed)
 
-def qPolicy (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) := do
-  if !Spec.Ffdh.primeShape p.Q then return (false, r)
-  let (pass, rest) ← checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) r
+/-- A phase's result, then `next` on the rest of the tape if it passed. -/
+def thenPolicy (r : Option (Bool × List Byte)) (next : List Byte → Option (Bool × List Byte)) :
+    Option (Bool × List Byte) := do
+  let (pass, rest) ← r
   if !pass then return (false, rest)
-  checkWitnesses p.P (Spec.Ffdh.primeChecks (p.phaseBits false)) rest
+  next rest
 
-theorem PhaseOutcome.as_tape {p : CandidateP} {used n : Nat} {q : Bool} {m : Mem}
-    (h : PhaseOutcome p used n q m) :
-    TapeOutcome p used n (checkWitnesses (p.phaseValue q) (Spec.Ffdh.primeChecks (p.phaseBits q))
-      (p.rand.drop used)) m := by
+/-- p's other witnesses. -/
+def policyRest (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  checkWitnesses p.P (p.phaseChecks false .rest) r
+
+/-- q's witnesses, then p's others. -/
+def policyQ (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  thenPolicy (checkWitnesses p.Q (p.phaseChecks true .all) r) (policyRest p)
+
+/-- p's first witness, then q's, then p's others. -/
+def policyFirst (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  thenPolicy (checkWitnesses p.P (p.phaseChecks false .first) r) (policyQ p)
+
+/-- q's trial division, then the witnesses. -/
+def sievedPolicy (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  if p.sieved p.Q then policyFirst p r else some (false, r)
+
+theorem PhaseOutcome.as_tape {p : CandidateP} {used n : Nat} {q : Bool} {c : Checks} {m : Mem}
+    (h : PhaseOutcome p used n q c m) :
+    TapeOutcome p used n (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) m := by
   unfold TapeOutcome PhaseOutcome at *
   exact h
 
@@ -38,23 +58,18 @@ theorem TapeOutcome.congr {p : CandidateP} {used n : Nat} {result : Option (Bool
   unfold TapeOutcome at *
   simpa only [hs] using h
 
-theorem qPolicy_reject {p : CandidateP} {used : Nat} {m : Mem}
-    (hs : Spec.Ffdh.primeShape p.Q = false) (hstatus : word m p.B (8 * oStatus) = 2) :
-    TapeOutcome p used 0 (qPolicy p (p.rand.drop used)) m := by
-  simp [qPolicy, hs, TapeOutcome, hstatus]
+theorem tape_reject {p : CandidateP} {used : Nat} {m : Mem} (hstatus : word m p.B (8 * oStatus) = 2) :
+    TapeOutcome p used 0 (some (false, p.rand.drop used)) m := by
+  simp [TapeOutcome, hstatus]
 
-theorem qPolicy_stop {p : CandidateP} {used n : Nat} {m : Mem}
-    (hs : Spec.Ffdh.primeShape p.Q = true) (h : PhaseOutcome p used n true m)
-    (hn : word m p.B (8 * oStatus) ≠ 1) :
-    TapeOutcome p used n (qPolicy p (p.rand.drop used)) m := by
+theorem tape_stop {p : CandidateP} {used n : Nat} {q : Bool} {c : Checks} {m : Mem}
+    {next : List Byte → Option (Bool × List Byte)}
+    (h : PhaseOutcome p used n q c m) (hn : word m p.B (8 * oStatus) ≠ 1) :
+    TapeOutcome p used n
+      (thenPolicy (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) next) m := by
   unfold PhaseOutcome at h
-  change (match checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop used) with
-    | none => word m p.B (8 * oStatus) = 0
-    | some (pass, rest) => word m p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
-        rest = p.rand.drop (used + n)) at h
-  unfold qPolicy
-  simp only [hs, Bool.not_true, Bool.false_eq_true, ite_false]
-  cases he : checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop used) with
+  unfold thenPolicy
+  cases he : checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
   | none => simpa [he, TapeOutcome] using h
   | some ar =>
     obtain ⟨pass, rest⟩ := ar
@@ -63,28 +78,23 @@ theorem qPolicy_stop {p : CandidateP} {used n : Nat} {m : Mem}
     · simp only [he] at h
       exact False.elim (hn h.1)
 
-theorem qPolicy_pass {p : CandidateP} {used n k : Nat} {m m' : Mem}
-    (hs : Spec.Ffdh.primeShape p.Q = true) (h : PhaseOutcome p used n true m)
-    (hy : word m p.B (8 * oStatus) = 1) (hp : PhaseOutcome p (used + n) k false m') :
-    TapeOutcome p used (n + k) (qPolicy p (p.rand.drop used)) m' := by
+theorem tape_then {p : CandidateP} {used n k : Nat} {q : Bool} {c : Checks} {m m' : Mem}
+    {next : List Byte → Option (Bool × List Byte)}
+    (h : PhaseOutcome p used n q c m) (hy : word m p.B (8 * oStatus) = 1)
+    (hk : TapeOutcome p (used + n) k (next (p.rand.drop (used + n))) m') :
+    TapeOutcome p used (n + k)
+      (thenPolicy (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) next) m' := by
   unfold PhaseOutcome at h
-  change (match checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop used) with
-    | none => word m p.B (8 * oStatus) = 0
-    | some (pass, rest) => word m p.B (8 * oStatus) = BitVec.ofNat 64 (if pass then 1 else 2) ∧
-        rest = p.rand.drop (used + n)) at h
-  cases he : checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop used) with
+  cases he : checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used) with
   | none => simp only [he] at h; simp [hy] at h
   | some ar =>
     obtain ⟨pass, rest⟩ := ar
     cases pass
     · simp only [he] at h; simp [hy] at h
     · simp only [he] at h
-      unfold qPolicy
-      simp only [hs, Bool.not_true, Bool.false_eq_true, ite_false, he, bind, Option.bind_some, h.2]
-      have ht := hp.as_tape
-      change TapeOutcome p (used + n) k
-        (checkWitnesses p.P (Spec.Ffdh.primeChecks (p.phaseBits false)) (p.rand.drop (used + n))) m' at ht
-      unfold TapeOutcome at ht ⊢
-      simpa only [Nat.add_assoc] using ht
+      unfold thenPolicy
+      simp only [Bool.not_true, Bool.false_eq_true, ite_false, bind, Option.bind_some, h.2]
+      unfold TapeOutcome at hk ⊢
+      simpa only [Nat.add_assoc] using hk
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

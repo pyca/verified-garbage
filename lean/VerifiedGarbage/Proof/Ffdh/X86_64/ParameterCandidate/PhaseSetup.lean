@@ -16,10 +16,10 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64
 
 theorem phaseSetup_state_ok {p : CandidateP} {used : Nat} {s : State}
-    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (q : Bool) :
-    WP isa (phaseSetup q) s fun t => ∃ mi,
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (q : Bool) (c : Checks) :
+    WP isa (phaseSetup q c) s fun t => ∃ mi,
       CandidateTape p used t ∧ Good t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi ∧
-      PhaseHeader p q t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧
+      PhaseHeader p q c t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧
       Keep (.rdi :: mmRegs) s t ∧
       Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k := by
   have hws : wsWords (p.phaseLen q) = p.phaseWords q := by
@@ -28,7 +28,7 @@ theorem phaseSetup_state_ok {p : CandidateP} {used : Nat} {s : State}
     exact Nat.max_eq_right (by omega_using [(h.base.phase_room q).1])
   have hbits := h.base.hdr (oBits, BitVec.ofNat 64 p.bits) (by simp [CandidateP.headers])
   refine WP.mono (phaseSetup_ok h.base.scr hdi (by omega_using [h.base.bits1])
-    (by omega_using [h.base.bits2]) hbits q (by
+    (by omega_using [h.base.bits2]) hbits q c (by
       change 256 + slot (wsWords (p.phaseLen q)) 8 ≤ p.Z
       rw [hws]
       omega_using [(h.base.phase_dims q).z, h.base.header_room]))

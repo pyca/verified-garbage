@@ -21,7 +21,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
 def finishPublic (p : CandidateP) : OuterPublic :=
   ⟨p.B, candidateWr p, p.op, p.k, p.up, p.bits,
-    Proof.Ffdh.candidateStatus (Spec.Ffdh.parameterCandidate p.bits p.gen p.rand), p.rp⟩
+    Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand), p.rp⟩
 
 private theorem body_finish (M : Mont) (R : R2Impl M) (K : Kernel) (p : CandidateP) (s : State) (h : CR p s) :
     WP isa (body M.mm R.code K.run) s (FinishHeader (finishPublic p)) := by

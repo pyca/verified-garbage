@@ -25,7 +25,7 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
 def candidateTail (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
-  if Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P then qPolicy p r
+  if Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P then sievedPolicy p r
   else some (false, r)
 
 def CandidateTestPost (p : CandidateP) (s t : State) : Prop :=
@@ -45,7 +45,7 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   have hd₂ : s₂.gpr .rdi = p.B := (k₂.gpr (by decide)).trans hd₁
   unfold candidateFilter
   simp only [seqs]
-  refine WP.seq (WP.mono (phaseSetup_state_ok h₂ hd₂ false)
+  refine WP.seq (WP.mono (phaseSetup_state_ok h₂ hd₂ false .all)
     fun s₃ ⟨mi, h₃, hg₃, hp₃, hs₃, hf₃, k₃, ho₃⟩ => ?_)
   refine WP.seq (WP.mono (loadOutput_ok h₃ hg₃ hp₃ (by rw [ho₃, ho₂]; exact hv₁))
     fun s₄ ⟨h₄, hg₄, hp₄, hn₄, hs₄, hf₄, k₄, ho₄⟩ => ?_)
@@ -66,11 +66,11 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
     have hs'' := hs'.trans hs₆
     have hf'' := hf'.trans hf₆
     have kk'' : Keep (.rdi :: mmRegs) s s₆ := (kk'.trans k₆).mono (by decide)
-    refine WP.ite (Spec.Ffdh.primeShape p.P) (by simpa [eval, CandidateP.phaseValue] using hz₆) ?_ ?_
+    refine WP.ite (p.sieved p.P) (by simpa [eval, CandidateP.phaseValue, CandidateP.sieved] using hz₆) ?_ ?_
     · intro hprime
       refine WP.seq (WP.mono (leavePhase_ok h₆ hg₆.rdi hp₆.link)
         fun s₇ ⟨h₇, hd₇, hm₇, hs₇, hf₇, k₇⟩ => ?_)
-      refine WP.mono (testQ_ok M R K h₇ hd₇ havail (by rw [hm₇, ho₆, hm₅]; exact hv₄))
+      refine WP.mono (sieveQ_ok M R K h₇ hd₇ havail (by rw [hm₇, ho₆, hm₅]; exact hv₄))
         fun t ⟨n, hn, ht, hdt, hr, hv, hst, hft, kt⟩ => ?_
       exact ⟨n, hn, ht, hdt, by simpa only [candidateTail, hgen, hprime, Bool.and_self, ite_true] using hr,
         hv, (hs''.trans hs₇).trans hst, (hf''.trans hf₇).trans hft,

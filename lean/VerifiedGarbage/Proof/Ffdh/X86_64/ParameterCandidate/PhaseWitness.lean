@@ -32,8 +32,8 @@ def CandidateBase.witnessParams {p : CandidateP} {s : State} (h : CandidateBase 
   odd := ho
   n3 := by omega_using [h.phase_large q]
 
-theorem CandidateTape.drawState {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
-    (h : CandidateTape p used s) (hp : PhaseHeader p q s) (ho : p.phaseValue q % 2 = 1)
+theorem CandidateTape.drawState {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
+    (h : CandidateTape p used s) (hp : PhaseHeader p q c s) (ho : p.phaseValue q % 2 = 1)
     (hr : ModulusReady s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi (p.phaseValue q)) :
     DrawState (h.base.witnessParams q mi ho) (off p.rp used) used (p.rand.drop used) s := by
   refine ⟨h.base.scr, hr, hp.link,
