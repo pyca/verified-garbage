@@ -83,9 +83,10 @@ pub trait HashFunction: Clone {
 /// (`crate::arch::fn_tables`), each with the generated constants of the CPU
 /// features it needs (none for the baseline ISA's), which `tables` returns
 /// for the verified functions that take a hash function as a table
-/// (`tables::TableHash`): its table of `Hash` and its table of `MdHash`.
-/// The match is exhaustive, so an implementation without its tables does
-/// not compile.
+/// (`tables::TableHash`): its table of `Hash`, its table of `MdHash` and,
+/// on the architectures with tables of `Hmac` (`tables::Tables`), its table
+/// of `Hmac`. The match is exhaustive, so an implementation without its
+/// tables does not compile.
 ///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
@@ -136,7 +137,8 @@ macro_rules! streaming_hash {
             $(, tables: {
                 $($(#[$tattr:meta])* $tvariant:ident => {
                     hash: $thash:path [$($threq:path),*],
-                    md_hash: $tmd:path [$($tmreq:path),*] $(,)?
+                    md_hash: $tmd:path [$($tmreq:path),*]
+                    $(, hmac: $thmac:path [$($thmreq:path),*])? $(,)?
                 }),* $(,)?
             })? $(,)?
         }
@@ -230,15 +232,19 @@ macro_rules! streaming_hash {
         }
 
         $(
-        #[cfg(feature = "alloc")]
         impl $backend {
             /// The tables of functions of this implementation, each with
             /// the CPU features its functions need.
             pub(crate) fn tables(self) -> $crate::hashes::tables::Tables {
                 match self {
                     $($(#[$tattr])* Self::$tvariant => $crate::hashes::tables::Tables {
+                        #[cfg(feature = "alloc")]
                         hash: (&$thash, verified_garbage_cpu::Features::all(&[$($threq),*])),
+                        #[cfg(feature = "alloc")]
                         md_hash: (&$tmd, verified_garbage_cpu::Features::all(&[$($tmreq),*])),
+                        $(
+                        hmac: (&$thmac, verified_garbage_cpu::Features::all(&[$($thmreq),*])),
+                        )?
                     },)*
                 }
             }

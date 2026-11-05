@@ -1,4 +1,5 @@
-//! RFC 6979 §A.2.6: P-384, with SHA-384.
+//! RFC 6979 §A.2.6: P-384, with SHA-384,
+//! and with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,6 +12,11 @@
 
 use verified_garbage::ecdsa::{Error, P384, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha384::Sha384;
+
+use verified_garbage::hashes::sha1::Sha1;
+use verified_garbage::hashes::sha224::Sha224;
+use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
 
@@ -93,4 +99,40 @@ fn p384_keys() {
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }
+}
+
+/// The signatures with SHA-1, which the curve also signs with.
+#[test]
+fn p384_sha1() {
+    super::sign_with::<P384, Sha1, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-1",
+    );
+}
+
+/// The signatures with SHA-224, which the curve also signs with.
+#[test]
+fn p384_sha224() {
+    super::sign_with::<P384, Sha224, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-224",
+    );
+}
+
+/// The signatures with SHA-256, which the curve also signs with.
+#[test]
+fn p384_sha256() {
+    super::sign_with::<P384, Sha256, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-256",
+    );
+}
+
+/// The signatures with SHA-512, which the curve also signs with.
+#[test]
+fn p384_sha512() {
+    super::sign_with::<P384, Sha512, 48, 97, 96>(
+        "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n",
+        "SHA-512",
+    );
 }
