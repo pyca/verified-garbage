@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchImplies
@@ -172,7 +172,7 @@ namespace VG.Proof.Ffdh.X86_64.Generation
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem search_verified (v : RoundImpl) : Verified target (searchCode v)
-    (Spec.Ffdh.parameterSearchContract abi 160) := by
+    (Spec.Ffdh.sievedParameterSearchContract abi 160) := by
   exact Verified.of_correct (search_correct v) (search_constantTime v) search_implies
 
 end VG.Proof.Ffdh.X86_64.Generation

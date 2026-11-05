@@ -14,7 +14,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.X86_64.ParameterCandidate
 
 def searchCandidate (p : SearchPublic) (used : Nat) :=
-  Spec.Ffdh.parameterCandidate p.c.bits p.c.gen (p.c.rand.drop used)
+  Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen (p.c.rand.drop used)
 
 def candidateUsed (p : SearchPublic) (used : Nat) : Nat :=
   match searchCandidate p used with

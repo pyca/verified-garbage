@@ -31,25 +31,25 @@ theorem halve_outer (d : CandidatePublic) (s : State) (h : OuterValue false d s)
   WP.mono (halveOutput_ok h.1.1.1 h.1.2 h.2)
     fun _ ⟨ht, hd, hv, _, _, k⟩ => ⟨⟨⟨ht, k.2.2.trans h.1.1.2.1, h.1.1.2.2⟩, hd⟩, hv⟩
 
-theorem setup_phase (q : Bool) (d : CandidatePublic) (s : State) (h : OuterValue q d s) :
-    WP isa (phaseSetup q) s (PhaseSet q d) :=
-  WP.mono (phaseSetup_state_ok h.1.1.1 h.1.2 q)
+theorem setup_phase (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : OuterValue q d s) :
+    WP isa (phaseSetup q c) s (PhaseSet q c d) :=
+  WP.mono (phaseSetup_state_ok h.1.1.1 h.1.2 q c)
     fun _ ⟨mi, ht, hg, hp, _, _, k, hv⟩ =>
       ⟨⟨ht, k.2.2.trans h.1.1.2.1, h.1.1.2.2⟩, mi, hg, hp, by rw [hv]; exact h.2⟩
 
-theorem load_phase (q : Bool) (d : CandidatePublic) (s : State) (h : PhaseSet q d s) :
-    WP isa loadOutput s (PhaseLoaded q d) := by
+theorem load_phase (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : PhaseSet q c d s) :
+    WP isa loadOutput s (PhaseLoaded q c d) := by
   obtain ⟨mi, hg, hp, hv⟩ := h.2
   exact WP.mono (loadOutput_ok h.1.1 hg hp hv) fun _ ⟨ht, hgt, hpt, hnt, _, _, k, _⟩ =>
     ⟨⟨ht, k.2.2.trans h.1.2.1, h.1.2.2⟩, mi, hgt, hpt, hnt⟩
 
-private theorem set_link {q : Bool} {d : CandidatePublic} {s : State} (h : PhaseSet q d s) :
+private theorem set_link {q : Bool} {c : Checks} {d : CandidatePublic} {s : State} (h : PhaseSet q c d s) :
     LinkHeader ⟨d.p.B, d.wr⟩ s := by
   obtain ⟨_, hg, hp, _⟩ := h.2
   exact ⟨h.1.2.2, hg.rdi, h.1.2.1, fun e he => by
     simp only [List.mem_singleton] at he; subst e; exact hp.link⟩
 
-private theorem load_number (q : Bool) (d : CandidatePublic) (s : State) (h : PhaseSet q d s) :
+private theorem load_number (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : PhaseSet q c d s) :
     WP isa (.block [.mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax oOut)), .mov .rcx (.mem (ws .rax oLen))]) s
       (InnerNumber (d.inner q)) := by
   obtain ⟨mi, hg, hp, _⟩ := h.2
@@ -70,10 +70,10 @@ private theorem load_number (q : Bool) (d : CandidatePublic) (s : State) (h : Ph
     ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
   exact ⟨⟨h.1.2.2, good_hp hgt (k.2.2.trans h.1.2.1)⟩, hsi, hcx⟩
 
-theorem loadOutput_ct (q : Bool) : RelCT isa (Two (PhaseSet q)) loadOutput fun _ _ => True := by
+theorem loadOutput_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseSet q c)) loadOutput fun _ _ => True := by
   unfold loadOutput
   exact RelCT.seq (two_post
     (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => set_link h) loadOutputHead_ct)
-    (load_number q)) (two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h) inner_loadCandidate_ct)
+    (load_number q c)) (two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h) inner_loadCandidate_ct)
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate
