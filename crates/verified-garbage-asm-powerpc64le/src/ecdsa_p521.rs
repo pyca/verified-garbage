@@ -181,9 +181,103 @@ bl {vg_p521_sub_mod_n}
     )
 }
 
+/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 132 bytes.
+/// * `d` must be valid for reads of 66 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNH/IfggAAH4sf0h+AAAYTnIAGv4wACL+LgAq/iwAOv44AAL+SAAKOnQACv5KAAo6dgAK/kAAGE5AAAgOTABK/k4ASv5QAEr+UgBK/lQASv5WAEr+WABK/loASv5cAEr+dAAy+hCACA5EDBJfRBRSn14Ssx8OFCMfXhiJn1yAaE4UCimfLgAi+g="
+20:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 20b
+.base64 "AABhOQAAIDl4ASv5gAEr+YgBK/mQASv5mAEr+aABK/moASv5sAEr+bgBK/nQAMvouQGhOFAopny4AIvo"
+21:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 21b
+.base64 "AABhObAAa+h4AeE4OgAgOShMB30ACgP5MgAgOShMB30ICgP5KgAgOShMB30QCgP5IgAgOShMB30YCgP5GgAgOShMB30gCgP5EgAgOShMB30oCgP5CgAgOShMB30wCgP5AgAgOShMB304CgP5AAAgOShMB30ghAh5QAoD+QAKg+hC+IR4CAoD6Qb4CHl4Q4R8AAqD+AgKg+hC+IR4EAoD6Qb4CHl4Q4R8CAqD+BAKg+hC+IR4GAoD6Qb4CHl4Q4R8EAqD+BgKg+hC+IR4IAoD6Qb4CHl4Q4R8GAqD+CAKg+hC+IR4KAoD6Qb4CHl4Q4R8IAqD+CgKg+hC+IR4MAoD6Qb4CHl4Q4R8KAqD+DAKg+hC+IR4OAoD6Qb4CHl4Q4R8MAqD+DgKg+hC+IR4QAoD6Qb4CHl4Q4R8OAqD+EAKg+hC+IR4QAqD+AAAQDn//0o5AAqD6DhQhHw6AMA4KDWHfAgKg+g4UIR8MgDAOCg1h3wQCoPoOFCEfCoAwDgoNYd8GAqD6DhQhHwiAMA4KDWHfCAKg+g4UIR8GgDAOCg1h3woCoPoOFCEfBIAwDgoNYd8MAqD6DhQhHwKAMA4KDWHfDgKg+g4UIR8AgDAOCg1h3xACoPoOFCEfALChXgAAKeYAQCHmGAAgThAAKA4AQDAOA=="
+22:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 22b
+.base64 "IACBOEAAoDgAAMA4"
+23:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 23b
+.base64 "AABhObAAK+nAAEvpAAAAOdAICZkAAAqB0QgJkQQACoHVCAmRCAAKgdkICZEMAAqB3QgJkRAACoHhCAmRFAAKgeUICZEYAAqB6QgJkRwACoHtCAmRIAAKgfEICZEkAAqB9QgJkSgACoH5CAmRLAAKgf0ICZEwAAqBAQkJkTQACoEFCQmROAAKgQkJCZE8AAqBDQkJkUAACokRCQmZQQAKiRIJCZkwAQuBEwkJkTQBC4EXCQmROAELgRsJCZE8AQuBHwkJkUABC4EjCQmRRAELgScJCZFIAQuBKwkJkUwBC4EvCQmRUAELgTMJCZFUAQuBNwkJkVgBC4E7CQmRXAELgT8JCZFgAQuBQwkJkWQBC4FHCQmRaAELgUsJCZFsAQuBTwkJkXABC4lTCQmZcQELiVQJCZkAAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvo2ACL6NAAy+gUMoR80AijOIUAwDiAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfIUApTggAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAi+kAAIw4AAysOIABwDg="
+24:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 24b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sAAr6cAAS+kBAAA50AgJmQAAYTmwAIvpAAyMOAAArDiAAcA4"
+25:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 25b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvo2ACL6NAAy+gUMoR80AijOIUAwDiAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfIUApTggAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAi+kAAIw4AAysOIABwDg="
+26:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 26b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4IACA5AABhOagAK/k="
+27:
+.base64 "AAAgOQAAYTmgACv5"
+28:
+.base64 "AABhObAAi+kADIw4AACsOIABwDg="
+29:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 29b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5YACBOMABoTigACvpFEqlfNAAy+g="
+210:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 210b
+.base64 "AABhOaAAK+nQAEvpFFIpfaAAK/lCAEA5EEiKfRBhjH0AACwo"
+bne %cr0, 28b
+.base64 "AABhObAAa+jAAeE4OgAgOShMB30ACgP5MgAgOShMB30ICgP5KgAgOShMB30QCgP5IgAgOShMB30YCgP5GgAgOShMB30gCgP5EgAgOShMB30oCgP5CgAgOShMB30wCgP5AgAgOShMB304CgP5AAAgOShMB30ghAh5QAoD+QAKg+jCyYR4CAoD6YbJCHl4Q4R8AAqD+AgKg+jCyYR4EAoD6YbJCHl4Q4R8CAqD+BAKg+jCyYR4GAoD6YbJCHl4Q4R8EAqD+BgKg+jCyYR4IAoD6YbJCHl4Q4R8GAqD+CAKg+jCyYR4KAoD6YbJCHl4Q4R8IAqD+CgKg+jCyYR4MAoD6YbJCHl4Q4R8KAqD+DAKg+jCyYR4OAoD6YbJCHl4Q4R8MAqD+DgKg+jCyYR4QAoD6YbJCHl4Q4R8OAqD+EAKg+jCyYR4QAqD+AAAQDn//0o5AAqD6DhQhHw6AMA4KDWHfAgKg+g4UIR8MgDAOCg1h3wQCoPoOFCEfCoAwDgoNYd8GAqD6DhQhHwiAMA4KDWHfCAKg+g4UIR8GgDAOCg1h3woCoPoOFCEfBIAwDgoNYd8MAqD6DhQhHwKAMA4KDWHfDgKg+g4UIR8AgDAOCg1h3xACoPoOFCEfALChXgAAKeYAQCHmAAAYTnIAGvowACL6HgBoTjAAcE4sADr6A=="
+bl {vg_ecdsa_p521_sign_k}
+.base64 "AABhOagAK+n//yk5qAAr+QEAQDk4UGh8UEAKfThIDH0AACwo"
+bne %cr0, 211f
+.base64 "AACAOQ=="
+b 212f
+211:
+.base64 "AABhObAAK+nAAEvpAAAAOdAICZkAAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvo2ACL6NAAy+gUMoR80AijOAEAwDiAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAEApTggAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAi+kAAIw4AAysOIABwDg="
+213:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 213b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4BAIA5"
+212:
+.base64 "AAAsKA=="
+bne %cr0, 27b
+.base64 "IACBOIAAoDgAAMA4"
+214:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 214b
+.base64 "6ACBOGgBoDgAAMA4"
+215:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 215b
+.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+        vg_ecdsa_p521_sign_k = sym super::ecdsa_p521::vg_ecdsa_p521_sign_k::vg_ecdsa_p521_sign_k,
+    )
+}
+
 #[rustfmt::skip]
-#[path = "internal/vg_ecdsa_p521_sign.rs"]
-pub(crate) mod vg_ecdsa_p521_sign;
+#[path = "internal/vg_ecdsa_p521_sign_k.rs"]
+pub(crate) mod vg_ecdsa_p521_sign_k;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_add_mod_n.rs"]
+pub(crate) mod vg_p521_add_mod_n;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p521_mul_mod_n.rs"]

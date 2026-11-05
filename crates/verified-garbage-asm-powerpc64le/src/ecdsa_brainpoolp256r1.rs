@@ -202,6 +202,96 @@ bl {vg_brainpoolp256r1_sub_mod_n}
     )
 }
 
+/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNH/IfggAAH4sf0h+AAAYTnIAGv4wACL+LgAq/iwAOv44AAL+SAAKOnQACv5KAAo6dgAK/kAAGE5AAAgOTABK/k4ASv5QAEr+UgBK/lQASv5WAEr+WABK/loASv5cAEr+dAAy+ggACA5EDBJfRBRSn14Ssx8OFCMfXhiJn1QAaE4UCimfLgAi+g="
+20:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 20b
+.base64 "AABhOTABITkAAAA4//8AYP//AGQBAEA5HAAAOSxE6XxgAOuQSJeAPadWjGE4AIx9FALnfFA47HwUUud8IADrkCIA6ngYAAA5LETpfGQA65AekIA9gg6MYTgAjH0UAud8UDjsfBRS53wkAOuQIgDqeBQAADksROl8aADrkGG1gD33poxhOACMfRQC53xQOOx8FFLnfCgA65AiAOp4EAAAOSxE6XxsAOuQOYyAPaN6jGE4AIx9FALnfFA47HwUUud8LADrkCIA6ngMAAA5LETpfHAA65CDnYA9cY2MYTgAjH0UAud8UDjsfBRS53wwAOuQIgDqeAgAADksROl8dADrkGY+gD2QCoxhOACMfRQC53xQOOx8FFLnfDQA65AiAOp4BAAAOSxE6Xx4AOuQ7qGAPbypjGE4AIx9FALnfFA47HwUUud8OADrkCIA6ngAAAA5LETpfHwA65D7qYA921eMYTgAjH0UAud8UDjsfBRS53w8AOuQIgDqeAAAgDlQYEp9YADrgCAAC4F4Ogh9OFAIfXhC53wEAYA5LGXrfGQA64AkAAuBeDoIfThQCH14Qud8AAGAOSxl63xoAOuAKAALgXg6CH04UAh9eELnfPwAgDksZet8bADrgCwAC4F4Ogh9OFAIfXhC53z4AIA5LGXrfHAA64AwAAuBeDoIfThQCH14Qud89ACAOSxl63x0AOuANAALgXg6CH04UAh9eELnfPAAgDksZet8eADrgDgAC4F4Ogh9OFAIfXhC53zsAIA5LGXrfHwA64A8AAuBeDoIfThQCH14Qud86ACAOSxl63xgAIE4QACgOAEAwDg="
+21:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 21b
+.base64 "IACBOEAAoDgAAMA4"
+22:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 22b
+.base64 "AABhObAAK+nAAEvpAAAAOdAICZkAAAqB0QgJkQQACoHVCAmRCAAKgdkICZEMAAqB3QgJkRAACoHhCAmRFAAKgeUICZEYAAqB6QgJkRwACoHtCAmR6AALgfEICZHsAAuB9QgJkfAAC4H5CAmR9AALgf0ICZH4AAuBAQkJkfwAC4EFCQmRAAELgQkJCZEEAQuBDQkJkQAAYTmwAGvowACDOCAAoTjQAMvogAHjOOAAi+kAAIzppgOJfSEEgE4AAGE5sABr6NgAi+hgAKE40ADL6IAB4zjgAIvpCACM6aYDiX0hBIBOAABhObAAa+jYAIvo0ADL6BQyhHzQCKM4QQDAOIAB4zjgAIvpCACM6aYDiX0hBIBOAABhObAAa+jAAIM42ACr6NAAy+gUMqV8QQClOCAAwTiAAeM44ACL6RAAjOmmA4l9IQSATgAAYTmwAGvowACDOCAAoTjQAMvogAHjOOAAi+kAAIzppgOJfSEEgE4AAGE5sACL6QAAjDgADKw4gAHAOA=="
+23:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 23b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sAAr6cAAS+kBAAA50AgJmQAAYTmwAIvpAAyMOAAArDiAAcA4"
+24:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 24b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvo2ACL6NAAy+gUMoR80AijOEEAwDiAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfEEApTggAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAi+kAAIw4AAysOIABwDg="
+25:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 25b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE6AACA5AABhOagAK/k="
+26:
+.base64 "AAAgOQAAYTmgACv5"
+27:
+.base64 "AABhObAAi+kADIw4AACsOIABwDg="
+28:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 28b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5YACBOMABoTigACvpFEqlfNAAy+g="
+29:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 29b
+.base64 "AABhOaAAK+nQAEvpFFIpfaAAK/kgAEA5EEiKfRBhjH0AACwo"
+bne %cr0, 27b
+.base64 "AABhOcgAa+jAAIvoMAGhOMABwTiwAOvo"
+bl {vg_ecdsa_brainpoolp256r1_sign_k}
+.base64 "AABhOagAK+n//yk5qAAr+QEAQDk4UGh8UEAKfThIDH0AACwo"
+bne %cr0, 210f
+.base64 "AACAOQ=="
+b 211f
+210:
+.base64 "AABhObAAK+nAAEvpAAAAOdAICZkAAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvo2ACL6NAAy+gUMoR80AijOAEAwDiAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAEApTggAME4gAHjOOAAi+kQAIzppgOJfSEEgE4AAGE5sABr6MAAgzggAKE40ADL6IAB4zjgAIvpAACM6aYDiX0hBIBOAABhObAAi+kAAIw4AAysOIABwDg="
+212:
+.base64 "AADkiAAA5ZgBAIQ4AQClOP//xjgAACYo"
+bne %cr0, 212b
+.base64 "AABhObAAa+jYAIvoYAChONAAy+iAAeM44ACL6QgAjOmmA4l9IQSATgAAYTmwAGvowACDONgAq+jQAMvoFDKlfAAApThgAME4gAHjOOAAi+kQAIzppgOJfSEEgE4BAIA5"
+211:
+.base64 "AAAsKA=="
+bne %cr0, 26b
+.base64 "IACBOIAAoDgAAMA4"
+213:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 213b
+.base64 "6ACBOGgBoDgAAMA4"
+214:
+.base64 "AADEmAEAhDj//6U4AAAlKA=="
+bne %cr0, 214b
+.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+        vg_ecdsa_brainpoolp256r1_sign_k = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp256r1_add_mod_n.rs"]
+pub(crate) mod vg_brainpoolp256r1_add_mod_n;
+
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp256r1_mul_mod_n.rs"]
 pub(crate) mod vg_brainpoolp256r1_mul_mod_n;
@@ -211,5 +301,5 @@ pub(crate) mod vg_brainpoolp256r1_mul_mod_n;
 pub(crate) mod vg_brainpoolp256r1_sub_mod_n;
 
 #[rustfmt::skip]
-#[path = "internal/vg_ecdsa_brainpoolp256r1_sign.rs"]
-pub(crate) mod vg_ecdsa_brainpoolp256r1_sign;
+#[path = "internal/vg_ecdsa_brainpoolp256r1_sign_k.rs"]
+pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k;
