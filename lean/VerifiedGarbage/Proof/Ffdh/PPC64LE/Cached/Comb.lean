@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.RangeCover
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
+import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 
 /-! # FFDH's context on PPC64LE: the comb's selection
@@ -24,7 +28,7 @@ namespace VG.Proof.Ffdh.PPC64LE.Cached
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.PPC64LE
 open VG.Impl.Ffdh.PPC64LE.Cached VG.Impl.Ffdh.PPC64LE.Cached.Generate
 open VG.Proof.Bignum.PPC64LE
-open VG.Proof.MillerRabin.PPC64LE (Env sel_ok selRegs arr)
+open VG.Proof.MillerRabin.PPC64LE (Env envRegs sel_ok selRegs arr)
 open VG.Proof.Bignum (slot slot_sep)
 
 /-- The context's words. -/
@@ -311,5 +315,230 @@ theorem select_ok {s : State} {B C : Addr} {Z w d : Nat} (h : Env s B Z w) (h23 
     rw [hv'.acc, ite_eq_left (by omega)]
   · refine .inr ⟨by simp; omega, n - 1, by omega, by omega, by omega, ?_⟩
     rw [show 32 - 2 * (n - 1) = 32 - 2 * n + 2 by omega]; exact hv'
+
+/-! ## The rows -/
+
+/-- `g^E R mod p`, in Montgomery form. -/
+abbrev combM (G P w E : Nat) : Nat := Spec.Rsa.powMod G E P * 2 ^ (64 * w) % P
+
+/-- What the comb changes: the header's `hI`, `hD` and `hJ`, and arrays 1 to 7. -/
+abbrev combOut (w : Nat) : List (Nat × Nat) := [(32, 24), (slot w 1, 7 * (8 * (w + 2)))]
+
+theorem to_comb {B : Addr} {w : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m')
+    (hr : ∀ r ∈ rs, (32 ≤ r.1 ∧ r.1 + r.2 ≤ 56) ∨ (slot w 1 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8)) :
+    Outs B (combOut w) m m' :=
+  Outs.cover h fun r hr' => by
+    rcases hr r hr' with h' | h'
+    · exact ⟨_, List.mem_cons_self, h'.1, by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h'.1, by simp only [slot] at h' ⊢; omega⟩
+
+theorem combOut_fit {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) : ∀ r ∈ combOut w, r.1 + r.2 ≤ Z := by
+  have := h.hZ
+  intro r hr
+  simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] at * <;> omega
+
+theorem hdr_of_comb {B : Addr} {w x : Nat} {m m' : Mem} (ho : Outs B (combOut w) m m') (hx : x + 8 ≤ 32 ∨ 56 ≤ x)
+    (hx' : x + 8 ≤ 256) : m'.readW (off B x) 64 = m.readW (off B x) 64 :=
+  ho.word (d := x) (fun r hr => by
+    simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by omega)
+
+/-- x's octets, apart from the working space, are kept. -/
+theorem byte_of_outs {B X : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m')
+    (hr : ∀ r ∈ rs, r.1 + r.2 ≤ Z) {n : Nat} (hsep : ∀ y, ofs B y < Z → off X n ≠ y) : m' (off X n) = m (off X n) :=
+  h _ fun r hr' => Or.inr (by
+    have := hr r hr'
+    by_cases hl : ofs B (off X n) < Z
+    · exact absurd rfl (hsep _ hl)
+    · omega)
+
+/-- The registers a row writes. -/
+def stepRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
+
+/-- The comb with `n` rows left, from `s₀`, the accumulator (array 6) `A`. -/
+structure CS (s₀ : State) (B C X : Addr) (Z w : Nat) (xb : List Byte) (P G bits n A : Nat) (u : State) : Prop where
+  env : Env u B Z w
+  h23 : u.gpr .r23 = B
+  h28 : u.gpr .r28 = BitVec.ofNat 64 xb.length
+  h12 : (u.gpr .r12).toNat < 2 ^ 32
+  hinv : (w32 u.mem B (slot w 0) * (u.gpr .r12).toNat + 1) % 2 ^ 32 = 0
+  ctx : CtxRd u B Z C w
+  ents : ∀ a < 32, ent u.mem C w a = combM G P w (Spec.Rsa.FixedBaseComb.exponent bits a)
+  hp : arr u.mem B w 0 = P
+  hIw : u.mem.readW (off B hI) 64 = BitVec.ofNat 64 n
+  hRw : u.mem.readW (off B hRows) 64 = BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows bits)
+  hX : u.mem.readW (off B 64) 64 = X
+  xrd : ∀ n < xb.length, InRegions (u.rd ++ u.wr) (off X n) 1
+  xsep : ∀ n < xb.length, ∀ y, ofs B y < Z → off X n ≠ y
+  xval : ∀ n (h : n < xb.length), u.mem (off X n) = xb[n]
+  acc : arr u.mem B w 6 = A
+  out : Outs B (combOut w) s₀.mem u.mem
+  keep : Keep stepRegs s₀ u
+
+/-- `CS` after a change of `combOut` that keeps the counters and the
+accumulator, and registers that `CS` does not read. -/
+theorem CS.frame {s₀ u v : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P G bits n A n' A' : Nat}
+    (h : CS s₀ B C X Z w xb P G bits n A u) {rs : List Reg} (ho : Outs B (combOut w) u.mem v.mem)
+    (k : Keep rs u v) (hrs : ∀ r ∈ rs, r ∈ stepRegs := by decide)
+    (hI' : v.mem.readW (off B hI) 64 = BitVec.ofNat 64 n') (hacc : arr v.mem B w 6 = A') :
+    CS s₀ B C X Z w xb P G bits n' A' v := by
+  have hfit := combOut_fit h.env
+  have hZ := h.env.hZ
+  have hnw := h.env.hs.nowrap
+  have hreg : ∀ r ∈ envRegs, r ∉ rs := fun r hr hr' => by
+    have := hrs r hr'; simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> simp [stepRegs] at this
+  have hctx : Outside C (8 * ctxWords w) (2 ^ 64) u.mem v.mem := outs_ctx ho hfit h.ctx.sep
+  refine ⟨h.env.keep k hreg, (k.gpr .r23 fun h' => by simpa [stepRegs] using hrs _ h').trans h.h23,
+    (k.gpr .r28 fun h' => by simpa [stepRegs] using hrs _ h').trans h.h28,
+    by rw [k.gpr .r12 fun h' => by simpa [stepRegs] using hrs _ h']; exact h.h12,
+    by
+      rw [k.gpr .r12 fun h' => by simpa [stepRegs] using hrs _ h', Pub.Outs.w32 ho (fun r hr => by
+        simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by simp only [slot, hdrBytes] at hZ ⊢; omega)]
+      exact h.hinv,
+    h.ctx.congr (by rw [hdr_of_comb ho (by decide) (by decide)]; exact h.ctx.hC) k.rd k.wr,
+    fun a ha => by
+      rw [← h.ents a ha]
+      exact Outside.val32 hctx (Or.inl (by have := row_fits (w := w) ha; omega))
+        (by have := row_fits (w := w) ha; have := h.ctx.hn; omega),
+    by
+      rw [arr, Outs.val32 ho (fun r hr => by
+        simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by simp only [slot, hdrBytes] at hZ ⊢; omega)]
+      exact h.hp,
+    hI', by rw [hdr_of_comb ho (by decide) (by decide)]; exact h.hRw,
+    by rw [hdr_of_comb ho (by decide) (by decide)]; exact h.hX,
+    fun n hn => by rw [k.rd, k.wr]; exact h.xrd n hn, h.xsep,
+    fun n hn => by rw [byte_of_outs ho hfit (h.xsep n hn)]; exact h.xval n hn, hacc,
+    h.out.trans ho, h.keep.trans k |>.mono (fun r hr => by
+      simp only [List.mem_append] at hr; rcases hr with hr | hr
+      · exact hr
+      · exact hrs r hr)⟩
+
+theorem combM_lt {G P w : Nat} (hP : 0 < P) (E : Nat) : combM G P w E < P := Nat.mod_lt _ hP
+
+theorem combDigit_eq (bits x i : Nat) :
+    combDigit x i (Spec.Rsa.FixedBaseComb.rows bits) = Rsa.FixedBaseComb.digit bits x i := rfl
+
+/-- What a row needs besides `CS`. -/
+structure RowP (P bits : Nat) (xb : List Byte) : Prop where
+  odd : P % 2 = 1
+  one : 1 < P
+  rows : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639
+  len : 8 * xb.length < 2 ^ 31
+
+/-- `montOp o a b` in the comb's state: array `o :=` the Montgomery product. -/
+theorem CS.mont {s₀ u : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P G bits n A : Nat}
+    (h : CS s₀ B C X Z w xb P G bits n A u) {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho2 : o ≠ 2)
+    (ho3 : o ≠ 3) (ha2 : a ≠ 2) (hb2 : b ≠ 2) (hB : arr u.mem B w b < P) :
+    WP isa (PublicChecked.montOp o a b) u fun v =>
+      (arr v.mem B w o < P ∧ arr v.mem B w o * 2 ^ (64 * w) % P = arr u.mem B w a * arr u.mem B w b % P ∧
+        Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] u.mem v.mem) ∧
+      Keep Pub.montRegs u v := by
+  have := h.env.hw; have := h.env.hw'; have hZ := h.env.hZ
+  refine WP.mono (Pub.montOp_ok h.env.hs ho ha hb ho2 ho3 ha2 hb2 (by omega) (by omega)
+    (Nat.le_trans (by simp only [slot]; omega) hZ) h.env.h10 h.env.h29 h.env.h11 h.h12 h.hinv
+    (by rw [← arr, ← arr, h.hp]; exact hB)) fun v ⟨⟨lt, eq, out⟩, k⟩ => ⟨⟨?_, ?_, out⟩, k⟩
+  · rw [arr, ← h.hp]; exact lt
+  · rw [arr, ← h.hp]; exact eq
+
+theorem slot_comb (w o : Nat) (ho : 1 ≤ o) (ho' : o < 8) :
+    ∀ r ∈ [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))],
+      (32 ≤ r.1 ∧ r.1 + r.2 ≤ 56) ∨ (slot w 1 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  refine .inr ?_
+  rcases hr with rfl | rfl | rfl <;> simp only [slot] <;>
+    first | omega | exact ⟨Nat.add_le_add_left (Nat.mul_le_mul_right _ ho) _, by
+      have := Nat.mul_le_mul_right (8 * (w + 2)) (show o + 1 ≤ 8 by omega); rw [Nat.succ_mul] at this; omega⟩
+
+theorem hdr_of_comb' {B : Addr} {w o x : Nat} {m m' : Mem}
+    (h : Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] m m')
+    (hx : x + 8 ≤ 256) : m'.readW (off B x) 64 = m.readW (off B x) 64 :=
+  h.word (d := x) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by omega)
+
+/-- One row: from `n + 1` rows left to `n`. -/
+theorem step_ok {s₀ u : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P G bits n : Nat} (hq : RowP P bits xb)
+    (h : CS s₀ B C X Z w xb P G bits (n + 1) (combM G P w (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) (n + 1))) u)
+    (hn : n < Spec.Rsa.FixedBaseComb.rows bits) :
+    WP isa step u fun v =>
+      CS s₀ B C X Z w xb P G bits n (combM G P w (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) n)) v ∧
+        v.gpr .r3 = BitVec.ofNat 64 n := by
+  have hZ := h.env.hZ
+  have hnw := h.env.hs.nowrap
+  have hP : 0 < P := by have := hq.one; omega
+  have cop := VG.Proof.Bignum.coprime_pow2 hq.odd (64 * w)
+  have h1 := hq.rows
+  have hS : slot w 28 = 256 + 28 * (8 * (w + 2)) := rfl
+  generalize hx : Spec.Rsa.os2ip xb = x at h ⊢
+  unfold step
+  simp only [seqs]
+  -- The square.
+  refine WP.seq (WP.mono (h.mont (o := 6) (a := 6) (b := 6) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [h.acc]; exact combM_lt hP _)) fun u₁ ⟨⟨lt1, eq1, o1⟩, k1⟩ => ?_)
+  rw [h.acc] at eq1
+  have a1 := Rsa.FixedBaseComb.mont_square_encoded cop lt1 rfl eq1
+  have c1 := h.frame (to_comb o1 (slot_comb w 6 (by decide) (by decide))) k1 (by decide)
+    (by rw [hdr_of_comb' o1 (by decide)]; exact h.hIw) a1
+  -- The digit.
+  have xc : XCtx u₁ B X Z xb n (Spec.Rsa.FixedBaseComb.rows bits) := ⟨c1.env.hs, by omega, c1.h23, c1.h28,
+    c1.hIw, c1.hRw, c1.hX, c1.xrd, c1.xval, by omega, hq.len⟩
+  refine WP.seq (WP.mono (digit_ok xc) fun u₂ ⟨m2, k2⟩ => ?_)
+  rw [hx, combDigit_eq, show hD = 40 from rfl] at m2
+  have hd := Rsa.FixedBaseComb.digit_lt bits x n
+  have o2 : Outs B (combOut w) u₁.mem u₂.mem := by
+    rw [m2]; exact to_comb (Outs.of_outside (rs := [(40, 8)]) (writeW_outside _ B (d := 40) _ (by omega)) (by simp))
+      (by simp)
+  have c2 := c1.frame (A' := combM G P w (2 * Rsa.FixedBaseComb.high bits x (n + 1))) o2 k2 (by decide)
+    (by rw [m2]; exact (Outside.word (d := hI) (writeW_outside _ B (d := 40) _ (by omega)) (Or.inl (by decide))
+      (by unfold hI; omega)).trans c1.hIw) (by
+    rw [arr, m2, Outside.val32 (writeW_outside _ B (d := 40) _ (by omega)) (Or.inr (by simp only [slot]; omega))
+      (by simp only [slot] at hZ ⊢; omega)]; exact c1.acc)
+  -- The entry.
+  refine WP.seq (WP.mono (select_ok c2.env c2.h23 c2.ctx (by rw [m2]; exact Mem.readW_writeW_self64 _ _ _) hd)
+    fun u₃ ⟨⟨a3, o3⟩, k3⟩ => ?_)
+  rw [c2.ents _ hd] at a3
+  have o3' : Outs B (combOut w) u₂.mem u₃.mem := to_comb o3 (fun r hr => by
+    simp only [selOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact .inl ⟨by decide, by decide⟩
+    · exact .inr ⟨by simp only [slot]; omega, by simp only [slot]; omega⟩)
+  have c3 := c2.frame (A' := combM G P w (2 * Rsa.FixedBaseComb.high bits x (n + 1))) o3' k3 (by decide) (by
+      rw [hdr_of_outs o3 (by decide)]; exact c2.hIw) (by
+    rw [arr, Outs.val32 o3 (fun r hr => by
+      simp only [selOut, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp only [slot, hdrBytes, hJ] <;> omega) (by simp only [slot] at hZ ⊢; omega)]
+    exact c2.acc)
+  -- The product.
+  refine WP.seq (WP.mono (c3.mont (o := 6) (a := 6) (b := 4) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [a3]; exact combM_lt hP _)) fun u₄ ⟨⟨lt4, eq4, o4⟩, k4⟩ => ?_)
+  rw [c3.acc, a3] at eq4
+  have a4 := Rsa.FixedBaseComb.mont_product_encoded cop lt4 rfl rfl eq4
+  rw [← Rsa.FixedBaseComb.high_step bits x n hn] at a4
+  have c4 := c3.frame (to_comb o4 (slot_comb w 6 (by decide) (by decide))) k4 (by decide)
+    (by rw [hdr_of_comb' o4 (by decide)]; exact c3.hIw) a4
+  -- `hI := n`.
+  have l32 : InRegions (u₄.rd ++ u₄.wr) (u₄.gpr .r23 + BitVec.ofNat 64 32) 8 := by
+    rw [c4.h23]; exact c4.env.hs.ld (d := 32) (n := 8) (by simp only [slot] at hZ; omega)
+  have s32 : InRegions u₄.wr (u₄.gpr .r23 + BitVec.ofNat 64 32) 8 := by
+    rw [c4.h23]; exact c4.env.hs.st (d := 32) (n := 8) (by simp only [slot] at hZ; omega)
+  have v32 : u₄.mem.readW (u₄.gpr .r23 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 (n + 1) := by
+    rw [c4.h23]; exact c4.hIw
+  refine WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = BitVec.ofNat 64 n ∧
+      v.mem = u₄.mem.writeW (off B 32) (BitVec.ofNat 64 n)) (by
+    unfold ldh sth
+    prun [hI, l32, s32, v32, ofNat_sub_one (show 1 ≤ n + 1 by omega) (show n + 1 < 2 ^ 64 by omega), Nat.add_sub_cancel]
+    rw [c4.h23]) (by decide)) fun v ⟨⟨a5, m5⟩, k5⟩ => ⟨?_, a5⟩
+  refine c4.frame (by
+      rw [m5]; exact to_comb (Outs.of_outside (rs := [(32, 8)]) (writeW_outside _ B (d := 32) _ (by omega))
+        (by simp)) (by simp)) k5 (by decide)
+    (by rw [m5]; exact Mem.readW_writeW_self64 _ _ _) (by
+    rw [arr, m5, Outside.val32 (writeW_outside _ B (d := 32) _ (by omega)) (Or.inr (by simp only [slot]; omega))
+      (by simp only [slot] at hZ ⊢; omega)]; exact c4.acc)
 
 end VG.Proof.Ffdh.PPC64LE.Cached
