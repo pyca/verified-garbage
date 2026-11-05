@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::idea_ecb::IdeaEcb;
+use verified_garbage::cipher::idea::IdeaEcb;
 use verified_garbage_test_vectors::{Record, unhex};
 
 /// Encrypts or decrypts `input` with `operation`, whole, in two pieces at

@@ -16,7 +16,6 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
@@ -42,6 +41,7 @@ use crate::arch::aes_ccm::{
     vg_aes_ccm_seal_aesni,
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
+use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;

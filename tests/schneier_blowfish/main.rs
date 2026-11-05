@@ -16,7 +16,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
 
-use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
+use verified_garbage::cipher::blowfish::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// The vectors' file (`crate::vectors`).

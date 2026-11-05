@@ -14,7 +14,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::cast5_ecb::Cast5Ecb;
+use verified_garbage::cipher::cast5::Cast5Ecb;
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// Encrypts `plaintext` to `ciphertext` and back, whole and a block at a

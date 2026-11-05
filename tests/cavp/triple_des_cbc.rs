@@ -12,7 +12,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::triple_des_cbc::{TripleDesCbcDecryptor, TripleDesCbcEncryptor};
+use verified_garbage::cipher::triple_des::{TripleDesCbcDecryptor, TripleDesCbcEncryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 

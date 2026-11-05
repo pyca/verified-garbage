@@ -1,5 +1,5 @@
 name = "Blowfish-OFB"
 family = "Ciphers"
 specs = ["Blowfish", "Ofb"]
-modules = ["src/blowfish_ofb.rs"]
+modules = ["src/cipher/blowfish/ofb.rs"]
 asm = ["blowfish_ofb"]

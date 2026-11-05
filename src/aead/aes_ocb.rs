@@ -15,7 +15,6 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AES_FEATURES, VG_AES_OCB_OPEN_AES_FEATURES, VG_AES_OCB_SEAL_AES_FEATURES,
@@ -32,6 +31,7 @@ use crate::arch::aes_ocb::{
     vg_aes_ocb_init_vaes, vg_aes_ocb_open_vaes, vg_aes_ocb_seal_vaes,
 };
 use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
+use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;

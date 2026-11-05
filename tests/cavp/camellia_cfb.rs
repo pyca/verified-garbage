@@ -12,7 +12,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::camellia_cfb::{CamelliaCfb128Decryptor, CamelliaCfb128Encryptor};
+use verified_garbage::cipher::camellia::{CamelliaCfb128Decryptor, CamelliaCfb128Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 

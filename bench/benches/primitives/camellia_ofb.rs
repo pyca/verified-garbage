@@ -21,7 +21,7 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::camellia_ofb::CamelliaOfb;
+    use verified_garbage::cipher::camellia::CamelliaOfb;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

@@ -1,5 +1,5 @@
 name = "Camellia-CBC (128-, 192- and 256-bit keys)"
 family = "Ciphers"
 specs = ["Camellia", "Cbc"]
-modules = ["src/camellia_cbc.rs"]
+modules = ["src/cipher/camellia/cbc.rs"]
 asm = ["camellia_cbc"]

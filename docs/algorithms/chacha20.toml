@@ -1,5 +1,5 @@
 name = "ChaCha20"
 family = "Ciphers"
 specs = ["ChaCha20"]
-modules = ["src/chacha20.rs"]
+modules = ["src/cipher/chacha20.rs"]
 asm = ["chacha20"]

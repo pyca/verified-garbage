@@ -1,5 +1,5 @@
 name = "SEED-CFB128"
 family = "Ciphers"
 specs = ["Seed", "Cfb"]
-modules = ["src/seed_cfb.rs"]
+modules = ["src/cipher/seed/cfb.rs"]
 asm = ["seed_cfb"]

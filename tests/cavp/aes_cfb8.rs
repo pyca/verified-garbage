@@ -10,7 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cfb8::{AesCfb8Decryptor, AesCfb8Encryptor};
+use verified_garbage::cipher::aes::{AesCfb8Decryptor, AesCfb8Encryptor};
 use verified_garbage::error::InvalidKeyLength;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};

@@ -12,7 +12,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor};
+use verified_garbage::cipher::aes::{AesCfb128Decryptor, AesCfb128Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 

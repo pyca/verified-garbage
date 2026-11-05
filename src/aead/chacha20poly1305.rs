@@ -39,7 +39,7 @@ use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_gather_ssse3,
     vg_chacha20_poly1305_seal_ssse3,
 };
-use crate::chacha20::Backend;
+use crate::cipher::chacha20::Backend;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
