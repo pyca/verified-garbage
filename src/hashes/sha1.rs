@@ -78,6 +78,7 @@ super::streaming_hash!(
             Sha2 => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_HASH_SHA1_SHA2_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA1_SHA2 [crate::arch::fn_tables::VG_HMAC_SHA1_SHA2_FEATURES],
             },
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi => {

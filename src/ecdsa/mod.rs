@@ -7,15 +7,15 @@
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]), as
 //! in `key.sign::<Sha256>(message)`.
 //!
-//! On x86-64, every curve signs with every hash function with HMAC: MD5,
+//! On x86-64 and AArch64, every curve signs with every hash function with HMAC: MD5,
 //! SHA-1 and the SHA-2 family. Each signature is one call of verified code
 //! for the curve, `vg_ecdsa_<curve>_sign` (contract
 //! `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which takes HMAC
 //! over the hash function as a table of the interface `Hmac`
 //! (`crate::arch::fn_tables`, chosen by `crate::hashes::tables`): the table
-//! of the implementation of the hash function that this CPU runs; and `_adx`
-//! for the curve's multiplications with BMI2 and ADX, on CPUs with the
-//! features its `_FEATURES` constant names.
+//! of the implementation of the hash function that this CPU runs; and, on
+//! x86-64, `_adx` for the curve's multiplications with BMI2 and ADX, on CPUs
+//! with the features its `_FEATURES` constant names.
 //!
 //! Elsewhere a curve signs with its hash functions (for P-192, SHA-256; for
 //! P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for

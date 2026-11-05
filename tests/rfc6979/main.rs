@@ -1,7 +1,7 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
 //! §A.2.3 (P-192), §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
-//! hash functions the curve signs with: on x86-64 every hash function the
+//! hash functions the curve signs with: on x86-64 and AArch64 every hash function the
 //! RFC signs with (SHA-1 and the SHA-2 family).
 
 #![cfg(any(
@@ -111,7 +111,7 @@ fn section<const Q: usize, const U: usize, const S: usize>(
 /// The signatures with `H`, named `hash` in RFC 6979, of the section
 /// `title`, of the message and of its hash; they verify, of the message and
 /// of its hash, and not of another message.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
 where
     C: verified_garbage::ecdsa::Curve<
@@ -151,7 +151,7 @@ where
 /// SHA-512/256), the key of the section `title` signs: the signature of the
 /// message is that of its hash, verifies with the public key, and not of
 /// another message.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn round_trip<C, H, const Q: usize, const U: usize, const S: usize>(title: &str)
 where
     C: verified_garbage::ecdsa::Curve<
@@ -178,7 +178,7 @@ where
 
 /// The hash functions with HMAC that RFC 6979 does not sign with, on every
 /// curve of the RFC.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[test]
 fn other_hashes() {
     use verified_garbage::ecdsa::{P192, P224, P256, P384, P521};

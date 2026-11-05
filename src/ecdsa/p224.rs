@@ -13,27 +13,25 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use super::table::{HmacHash, leftmost, sign_with};
 use super::{Error, P224, SignatureHash, SigningKey, sealed};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_sign;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify_umaal;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_sha2;
 #[cfg(target_arch = "x86")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_shani;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p224_sha224::vg_ecdsa_p224_sha224_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::p224::{Mul, public_key};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::hashes::sha224::{Sha224, Sha224Backend};
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P224> {
@@ -71,7 +69,7 @@ fn verify_with(q: &[u8; 57], e: &[u8; 28], signature: &[u8; 56]) -> Result<(), E
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: HmacHash> sealed::Functions<P224> for H {
     fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], Error> {
         // SAFETY: `vg_ecdsa_p224_sign` needs no CPU feature.
@@ -85,17 +83,15 @@ impl<H: HmacHash> sealed::Functions<P224> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: HmacHash> SignatureHash<P224> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl sealed::Functions<P224> for Sha224 {
     fn sign(d: &[u8; 28], digest: &[u8; 28]) -> Result<[u8; 56], Error> {
         let f = detected();
         let sign = match (Sha224Backend::select(f), Mul::select(f)) {
             (Sha224Backend::Scalar, Mul::Baseline) => vg_ecdsa_p224_sha224_sign,
-            #[cfg(target_arch = "aarch64")]
-            (Sha224Backend::Sha2, Mul::Baseline) => vg_ecdsa_p224_sha224_sign_sha2,
             #[cfg(target_arch = "x86")]
             (Sha224Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p224_sha224_sign_shani,
             #[cfg(target_arch = "arm")]
@@ -124,5 +120,5 @@ impl sealed::Functions<P224> for Sha224 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl SignatureHash<P224> for Sha224 {}

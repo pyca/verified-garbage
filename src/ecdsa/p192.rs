@@ -1,4 +1,4 @@
-//! ECDSA over p192: deterministic signatures, on x86-64 with HMAC over any
+//! ECDSA over p192: deterministic signatures, on x86-64 and AArch64 with HMAC over any
 //! hash function that has a table (`HmacHash`), taken as that table
 //! (`vg_ecdsa_p192_sign`), and elsewhere with HMAC-SHA-256
 //! (`vg_ecdsa_p192_sha256_sign`), public keys (`vg_ec_p192_public_key`), and
@@ -13,20 +13,18 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use super::table::{HmacHash, leftmost, sign_with};
 use super::{Error, P192, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_sign;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_sha2;
 #[cfg(target_arch = "x86")]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_shani;
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::hashes::sha256::{Sha256, Sha256Backend};
 use crate::zeroize::zeroize;
 
@@ -72,7 +70,7 @@ fn verify_with(q: &[u8; 49], e: &[u8; 24], signature: &[u8; 48]) -> Result<(), E
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: HmacHash> sealed::Functions<P192> for H {
     fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], Error> {
         // SAFETY: `vg_ecdsa_p192_sign` needs no CPU feature.
@@ -86,16 +84,14 @@ impl<H: HmacHash> sealed::Functions<P192> for H {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl<H: HmacHash> SignatureHash<P192> for H {}
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl sealed::Functions<P192> for Sha256 {
     fn sign(d: &[u8; 24], digest: &[u8; 32]) -> Result<[u8; 48], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_p192_sha256_sign,
-            #[cfg(target_arch = "aarch64")]
-            Sha256Backend::Sha2 => vg_ecdsa_p192_sha256_sign_sha2,
             #[cfg(target_arch = "x86")]
             Sha256Backend::ShaNi => vg_ecdsa_p192_sha256_sign_shani,
         };
@@ -123,5 +119,5 @@ impl sealed::Functions<P192> for Sha256 {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 impl SignatureHash<P192> for Sha256 {}
