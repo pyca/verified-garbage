@@ -415,6 +415,64 @@ theorem wordStep_val {w X M u2 u1 Xl d ml T1 T2 T3 b c1 c2 : Nat} (hw : 2 ≤ w)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
+/-- A full input word appended to the remainder. The quotient estimate uses
+only the top two words; the low input word participates in the subtraction. -/
+theorem wordStepDigit_val {w X D M u2 u1 Xl d ml T1 T2 T3 b c1 c2 : Nat} (hw : 2 ≤ w) (hD : D < 2 ^ 64)
+    (hX : X = u2 * 2 ^ (64 * (w - 1)) + u1 * 2 ^ (64 * (w - 2)) + Xl) (hXl : Xl < 2 ^ (64 * (w - 2)))
+    (hM : M = d * 2 ^ (64 * (w - 1)) + ml) (hml : ml < 2 ^ (64 * (w - 1)))
+    (hd : 2 ^ 63 ≤ d) (hd' : d < 2 ^ 64) (hXM : X < M)
+    (hT1 : T1 < 2 ^ (64 * (w + 1))) (hb : b < 2)
+    (h1 : T1 + min ((u2 * 2 ^ 64 + u1) / d) (2 ^ 64 - 1) * M = (X * 2 ^ 64 + D) + 2 ^ (64 * (w + 1)) * b)
+    (hT2 : T2 < 2 ^ (64 * (w + 1))) (hc1 : c1 < 2)
+    (h2 : T2 + 2 ^ (64 * (w + 1)) * c1 = T1 + if 2 ^ (64 * (w + 1)) / 2 ≤ T1 then M else 0)
+    (hT3 : T3 < 2 ^ (64 * (w + 1))) (hc2 : c2 < 2)
+    (h3 : T3 + 2 ^ (64 * (w + 1)) * c2 = T2 + if 2 ^ (64 * (w + 1)) / 2 ≤ T2 then M else 0) :
+    T3 = (X * 2 ^ 64 + D) % M := by
+  generalize hW : 2 ^ (64 * (w + 1)) = W at *
+  have hB : 2 ^ (64 * (w - 1)) = 2 ^ (64 * (w - 2)) * 2 ^ 64 := by
+    rw [show 64 * (w - 1) = 64 * (w - 2) + 64 by omega_using [hw], Nat.pow_add]
+  have hWB : W = 2 ^ (64 * (w - 1)) * 2 ^ 64 * 2 ^ 64 := by
+    rw [← hW, show 64 * (w + 1) = 64 * (w - 1) + 64 + 64 by omega_using [hw], Nat.pow_add, Nat.pow_add]
+  generalize 2 ^ (64 * (w - 1)) = B at *
+  have hM0 : 0 < M := by omega_using [hXM]
+  have hY : X * 2 ^ 64 + D = (u2 * 2 ^ 64 + u1) * B + (Xl * 2 ^ 64 + D) := by
+    rw [hX, hB]; grind
+  have hYl : Xl * 2 ^ 64 + D < B := by
+    rw [hB]
+    have h := Nat.mul_le_mul_right (2 ^ 64) (show Xl + 1 ≤ 2 ^ (64 * (w - 2)) by omega_using [hXl])
+    rw [Nat.add_mul, Nat.one_mul] at h
+    omega_using [hD, h]
+  have hq : (X * 2 ^ 64 + D) / M < 2 ^ 64 := by
+    rw [Nat.div_lt_iff_lt_mul hM0]
+    have h := Nat.mul_le_mul_right (2 ^ 64) (show X + 1 ≤ M by omega_using [hXM])
+    rw [Nat.add_mul, Nat.one_mul] at h
+    omega_using [hD, h]
+  rw [hY, hM] at hq
+  have hge := qhat_ge hYl (by omega_using [hd]) hq
+  have hle := qhat_le hml hd hq
+  rw [← hY, ← hM] at hge hle
+  generalize min ((u2 * 2 ^ 64 + u1) / d) (2 ^ 64 - 1) = qh at *
+  -- `4 m < W / 2`.
+  have hMW : 4 * M < W / 2 := by
+    have : M < B * 2 ^ 64 := by
+      have := Nat.mul_le_mul_right B (show d + 1 ≤ 2 ^ 64 by omega_using [hd'])
+      rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm (2 ^ 64)] at this
+      rw [hM]; omega_using [hml, this]
+    rw [hWB]; omega_using [this]
+  obtain ⟨hfin, hv1, hv2, hw1, hw2⟩ := addBack_two (W := W) hM0 hMW hge hle
+  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
+  have hv1' : -((W : Int) / 2) ≤ addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) := by
+    rw [hfin]; omega_using []
+  have hv2' : addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) < (W : Int) / 2 := by
+    rw [hfin]; have := Nat.mod_lt ((X * 2 ^ 64 + D)) hM0; omega_using [hMW, this]
+  have e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
+  rw [e3, hfin]
+  have hr := Nat.mod_lt ((X * 2 ^ 64 + D)) hM0
+  have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  unfold twos
+  rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
+
 /-- `v = ⌊(2^128 - 1) / d⌋ - 2^64 = ⌊((2^64 - 1 - d) 2^64 + 2^64 - 1) / d⌋`. -/
 theorem recip_eq {d : Nat} (hd : d < 2 ^ 64) (_hd0 : 0 < d) :
     ((2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1)) / d = (2 ^ 128 - 1) / d - 2 ^ 64 := by

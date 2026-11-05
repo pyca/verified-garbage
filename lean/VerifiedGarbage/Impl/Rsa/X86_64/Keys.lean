@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordReduce
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 
 /-!
@@ -467,6 +468,57 @@ def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm
 
 /-! ## `vg_rsa_crt_values` -/
 
+end VG.Impl.Rsa.X86_64.Keys
+
+namespace VG.Impl.Rsa.X86_64.WordDivide
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
+
+def aR : Nat := 3
+def aD : Nat := 5
+def aT : Nat := 8
+def aM : Nat := 9
+def aV : Nat := 16
+
+def wm (d : Nat) : MemOp := { base := .rbp, disp := d }
+
+/-- Invalid factors still enter a normalized, fixed-width computation. -/
+def normalize : List Instr :=
+  ws ++ base aM .r10 ++
+  [.shift .shr .r12 1, .mov .rax (.mem (ix .r10 .r12 (-8))),
+    .movImm64 .rdx 9223372036854775808, .alu .or .rax (.reg .rdx), .store (ix .r10 .r12 (-8)) .rax]
+
+def recipSetup : List Instr :=
+  ws ++ base aM .r10 ++ base aV .r8 ++ [.shift .shr .r12 1]
+
+def countSetup : List Instr :=
+  ws ++ base aV .rbp ++ [.mov .rax (.reg .r12), .store (wm 16) .rax]
+
+def stepLoad : List Instr :=
+  ws ++ base aV .rbp ++ base aD .r11 ++ [.mov .rcx (.mem (wm 16))]
+
+def stepDigit : List Instr :=
+  ([.alu .sub .rcx (.imm 1), .mov .rdx (.mem (ix .r11 .rcx)),
+    .store (wm 8) .rdx] : List Instr) ++
+  base aR .rbx ++ base aM .r10 ++ base aT .r8 ++ [.shift .shr .r12 1]
+
+def stepSetup : List Instr := stepLoad ++ stepDigit
+
+def next : List Instr :=
+  ws ++ base aV .rbp ++ [.mov .rax (.mem (wm 16)), .alu .sub .rax (.imm 1), .store (wm 16) .rax]
+
+def body : Prog isa := seqs [.block stepSetup, WordReduce.step, .block next]
+
+def code : Prog isa := seqs [
+  zeroA aR, .block recipSetup, R2Words.recip, .block countSetup, .loop body .ne]
+
+end VG.Impl.Rsa.X86_64.WordDivide
+
+
+namespace VG.Impl.Rsa.X86_64.Keys
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
+
 namespace CrtValues
 
 /-- Header slots: `n`'s pointer and length in `vg_rsa_public`'s `sN` and
@@ -563,11 +615,27 @@ def invPart : List (Prog isa) :=
 def divisor (j : Nat) : List (Prog isa) :=
   [zeroA aC, copyA aC j, .block (decA aC), zeroA aU, copyA aU aD]
 
+/-- Public pointer setup for the common balanced-key layout. -/
+def wordGuardHead : List Instr := ws ++ [.mov .rdx (.mem (hdr sN))]
+
+/-- Zero exactly for full-word balanced factors and a full-size modulus. -/
+def wordGuardTail : List Instr :=
+  [.mov .rax (.reg .r12), .alu .and .rax (.imm 1),
+    .mov .rcx (.reg .r12), .shift .shl .rcx 3, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
+    .mov .rcx (.mem (hdr sPl)), .shift .shl .rcx 1, .alu .xor .rcx (.mem (hdr sK)), .alu .or .rax (.reg .rcx),
+    .mov .rcx (.mem (hdr sPl)), .alu .xor .rcx (.mem (hdr sQl)), .alu .or .rax (.reg .rcx),
+    .movzx8 .rcx { base := .rdx }, .shift .shr .rcx 7, .alu .xor .rcx (.imm 1), .alu .or .rax (.reg .rcx)]
+
+/-- Word reductions are selected using public lengths and the modulus. -/
+def wordChoice (j : Nat) : Prog isa := .seq (.block wordGuardHead) (.seq (.block wordGuardTail)
+  (.ite .e (.seq (seqs (divisor j)) (.seq (.block WordDivide.normalize) WordDivide.code))
+    (seqs (divisor j ++ [divmod aU aV aC aT]))))
+
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
   .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
   -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
-  divisor aP ++ [divmod aU aV aC aT, zeroA aX₁, copyA aX₁ aV] ++ divisor aQ ++ [divmod aU aV aC aT] ++
+  [wordChoice aP, zeroA aX₁, copyA aX₁ aV, wordChoice aQ] ++
   storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
   [.block retMask])
 

@@ -53,9 +53,9 @@ structure CvPre (I : CvIn) (s : State) : Prop where
 theorem main_eq : main = seqs (([.block head] : List (Prog isa)) ++
     ((loadA aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
       (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl))) ++
-    (pqCheck ++ (invPart ++ ((divisor aP ++ ([divmod aU aV aC aT] : List (Prog isa))) ++
+    (pqCheck ++ (invPart ++ (([wordChoice aP] : List (Prog isa)) ++
     (([zeroA aX₁, copyA aX₁ aV] : List (Prog isa)) ++
-    ((divisor aQ ++ ([divmod aU aV aC aT] : List (Prog isa))) ++
+    (([wordChoice aQ] : List (Prog isa)) ++
     (storeA aX₂ sQi sPl Impl.Bignum.X86_64.Public.sMask ++
       (storeA aX₁ sDp sPl Impl.Bignum.X86_64.Public.sMask ++
         (storeA aV sDq sQl Impl.Bignum.X86_64.Public.sMask ++ ([.block retMask] : List (Prog isa)))))))))))) := by
