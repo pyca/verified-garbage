@@ -182,9 +182,9 @@ def epilogue : List Instr := saved.map fun p => .ldr p.1 .r12 p.2
 
 /-- The call of the table's function `j`, among `ts`: its address (the
 table's word `j`) into `lr`, then `blx lr`, in a frame pushing `rs` (its
-stack arguments) and popping `n` bytes. -/
-def tcall (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) (n : Nat) : Prog isa :=
-  .seq (.block [.ldr .lr .r6 (4 * j)]) (.frame (.push rs) (Code.icalls (.blx .lr) ts) (.pop .r12 n))
+stack arguments) and popping `n` bytes, the first into `r`. -/
+def tcall (j : Nat) (ts : List (String × Prog isa)) (rs : List Reg) (r : Reg) (n : Nat) : Prog isa :=
+  .seq (.block [.ldr .lr .r6 (4 * j)]) (.frame (.push rs) (Code.icalls (.blx .lr) ts) (.pop r n))
 
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 and the working space (pushed). -/
@@ -216,16 +216,16 @@ def finArgs (len dst : Nat) : List Instr :=
       .mov .r3 (imm 0), .dp .add .r10 .r8 (imm dst)] : List Instr) ++ scrAt .r12 sWork
 
 /-- HMAC's states for `K`, by `init`. -/
-def initK : Prog isa := .seq (.block initArgs) (tcall 0 c.f.init [.r12, .lr] 8)
+def initK : Prog isa := .seq (.block initArgs) (tcall 0 c.f.init [.r12, .lr] .r12 8)
 
 /-- The inner state updated with `V`. -/
-def updV : Prog isa := .seq (.block updVArgs) (tcall 1 c.f.upd [.r1, .r7, .r10, .r12] 16)
+def updV : Prog isa := .seq (.block updVArgs) (tcall 1 c.f.upd [.r1, .r7, .r10, .r12] .r1 16)
 
 /-- The inner state updated with the message's `len` bytes. -/
-def updM (len : Nat) : Prog isa := .seq (.block (updMArgs len)) (tcall 1 c.f.upd [.r1, .r7, .r10, .r12] 16)
+def updM (len : Nat) : Prog isa := .seq (.block (updMArgs len)) (tcall 1 c.f.upd [.r1, .r7, .r10, .r12] .r1 16)
 
 /-- The MAC, of `D + len` bytes of text, to the frame at `dst`. -/
-def fin (len dst : Nat) : Prog isa := .seq (.block (finArgs len dst)) (tcall 2 c.f.fin [.r10, .r12] 8)
+def fin (len dst : Nat) : Prog isa := .seq (.block (finArgs len dst)) (tcall 2 c.f.fin [.r10, .r12] .r12 8)
 
 /-- `V = HMAC_K(V)`. -/
 def hmacV : Prog isa := .seq c.initK (.seq c.updV (c.fin 0 fV))
