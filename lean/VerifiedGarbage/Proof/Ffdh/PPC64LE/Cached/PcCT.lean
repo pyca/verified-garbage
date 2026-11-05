@@ -152,7 +152,7 @@ theorem bbA_ok {s : State} {D : Addr} {k L : Nat} (h21 : s.gpr .r21 = D)
     (hk : 1 ≤ k) (hk32 : k < 2 ^ 32) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1) :
     WP isa bbA s fun t =>
       (t.gpr .r14 = BitVec.ofNat 64 (leadOct (VG.Proof.Ffdh.KeyScalar.bnd k (Spec.Rsa.bytesAt s.mem D L))) ∧
-        t.gpr .r15 = BitVec.ofNat 64 0) ∧ Bignum.PPC64LE.Keep ([.r0, .r12] ++ scanRegs ++ [.r15]) s t := by
+        t.gpr .r15 = BitVec.ofNat 64 0) ∧ Bignum.PPC64LE.Keep (([.r0, .r12] : List Reg) ++ scanRegs ++ ([.r15] : List Reg)) s t := by
   unfold bbA
   refine WP.seq (WP.mono (boundPtr_ok h21 h27 h28 (by omega) hk32) fun s₁ ⟨⟨a12, m1⟩, k1⟩ => ?_)
   have hbytes : Spec.Rsa.bytesAt s₁.mem (bptr D k L) k =
@@ -399,14 +399,14 @@ theorem pins_V4 : Pins V4 [.r16, .r23] := by
   · rw [a, a']
   · rw [b, b']
 
-theorem pins_V6 : Pins V6 (baseRegs ++ [.r18]) := by
+theorem pins_V6 : Pins V6 (baseRegs ++ ([.r18] : List Reg)) := by
   rintro q s₁ s₂ ⟨a, b⟩ ⟨a', b'⟩ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact a.pins a' r hr
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; rw [b, b']
 
-theorem pins_V7 : Pins V7 (baseRegs ++ [.r30, .r18]) := by
+theorem pins_V7 : Pins V7 (baseRegs ++ ([.r30, .r18] : List Reg)) := by
   rintro q s₁ s₂ ⟨a, b, c⟩ ⟨a', b', c'⟩ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact a.pins a' r hr
@@ -415,7 +415,7 @@ theorem pins_V7 : Pins V7 (baseRegs ++ [.r30, .r18]) := by
     · rw [b, b']
     · rw [c, c']
 
-theorem pins_V8 : Pins V8 (baseRegs ++ [.r30, .r24]) := by
+theorem pins_V8 : Pins V8 (baseRegs ++ ([.r30, .r24] : List Reg)) := by
   rintro q s₁ s₂ ⟨a, b, c⟩ ⟨a', b', c'⟩ r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact a.pins a' r hr

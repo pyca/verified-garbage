@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # `vg_ffdh_generate_key_cached` on PPC64LE: the function

@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
+-- separate module: the precompute's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # FFDH's context on PPC64LE: the width
 

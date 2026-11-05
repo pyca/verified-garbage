@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+-- separate module: the precompute's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # FFDH's context on PPC64LE: with p valid
 
@@ -105,7 +106,7 @@ theorem storePrefix_ok {B C : Addr} {Z w P : Nat} {M : Mem} {s : State} (h : TS 
     WP isa storePrefix s fun t =>
       (rowv t.mem C w 0 = arr s.mem B w 0 ∧ rowv t.mem C w 1 = arr s.mem B w 1 ∧
         Outside C (rowOff w 0) (16 * w) s.mem t.mem ∧ Outside B Z (2 ^ 64) s.mem t.mem ∧ TS B C Z w P M t) ∧
-      Keep ([.r3] ++ rowRegs) s t := by
+      Keep (([.r3] : List Reg) ++ rowRegs) s t := by
   have hCn := h.hc.nowrap
   unfold storePrefix
   refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = BitVec.ofNat 64 0 ∧ u.mem = s.mem)
