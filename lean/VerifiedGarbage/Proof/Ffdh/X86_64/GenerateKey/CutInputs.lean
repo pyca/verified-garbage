@@ -35,7 +35,7 @@ theorem Inputs.cut_keep {p : GkP} {rb : List Byte} {s t : State} (h : Inputs p r
       h.base.scr.congr hc.keep.2.2, hg, hr,
       ⟨fun i hi => by rw [hc.keep.2.2]; exact h.base.x.wr i hi, h.base.x.sep⟩,
       ⟨fun i hi => by rw [hc.keep.2.2]; exact h.base.y.wr i hi, h.base.y.sep⟩,
-      h.base.xy, h.base.xd, h.base.xr, h.base.yd, h.base.yr, ?_, h.base.valid⟩
+      h.base.xy, h.base.xd, h.base.xr, h.base.yd, h.base.yr, ?_, h.base.valid, h.base.ldk, h.base.cutv⟩
     intro e he
     rw [hh _ (by
       simp only [GkP.headers, List.mem_cons, List.not_mem_nil, or_false] at he

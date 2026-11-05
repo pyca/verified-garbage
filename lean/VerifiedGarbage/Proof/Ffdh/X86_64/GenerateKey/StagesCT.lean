@@ -32,21 +32,21 @@ open VG.Impl.Rsa.X86_64.Crt (stk ws)
 
 def CR (p : GkP) (s : State) : Prop := gkPre s ∧ gkOf s = p
 
-def E1 (p : GkP) (s : State) : Prop := ∃ rb, Base p rb s ∧ s.gpr .rdi = p.B
+def E1 (p : GkP) (s : State) : Prop := ∃ rb, Base p rb s ∧ s.gpr .rdi = p.B ∧ p.Bounded
 
 def CE (p : GkP) (s : State) : Prop := E1 p s ∧ s.zf = some p.mv ∧
   word s.mem p.B (8 * sG) = off p.dp p.k ∧ word s.mem p.B (8 * sQ) = off p.dp (2 * p.k)
 
-private def loads : List Instr :=
+def loads : List Instr :=
   [.mov .rax (.mem (stk 4)), .mov .r10 (.mem (stk 1)), .mov .r11 (.mem (stk 2))]
 
-private def entryTail : List Instr := save .rax ++
+def entryTail : List Instr := save .rax ++
   [.store (ws .rax sX) .rdi, .store (ws .rax sY) .rdx, .store (ws .rax sDom) .r8,
     .store (ws .rax sDomLen) .r9, .store (ws .rax sK) .r10, .store (ws .rax sRand) .r11, .mov .rdi (.reg .rax)]
 
-private def EL (p : GkP) (s : State) : Prop := s.gpr .rax = p.B ∧ WP isa (.block entryTail) s (E1 p)
+def EL (p : GkP) (s : State) : Prop := s.gpr .rax = p.B ∧ WP isa (.block entryTail) s (E1 p)
 
-private theorem loads_ok (s : State) (c : GkCtx s) : WP isa (.block loads) s
+theorem loads_ok (s : State) (c : GkCtx s) : WP isa (.block loads) s
     fun t => t.gpr .rax = stackArg s 3 := by
   have h3 : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 32) 8 := c.ha 3 (by decide)
   have h0 : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) 8) 8 := c.ha 0 (by decide)
@@ -64,7 +64,8 @@ private theorem entry_ct : RelCT isa (Two CR) (.block VG.Impl.Ffdh.X86_64.Domain
   · intro p s h
     have c := gkCtx_of h.1
     have hw : WP isa (.block VG.Impl.Ffdh.X86_64.Domain.GenerateKey.entry) s (E1 p) :=
-      WP.mono (entry_base c) fun t ⟨hb, hd, _⟩ => by rw [h.2] at hb hd; exact ⟨gkRand s, hb, hd⟩
+      WP.mono (entry_base c) fun t ⟨hb, hd, _⟩ => by
+        rw [h.2] at hb hd; exact ⟨gkRand s, hb, hd, h.2 ▸ gkOf_bounded s⟩
     change WP isa (.block (loads ++ entryTail)) s (E1 p) at hw
     refine WP.and ?_ (WP.block_append_iff.mp hw)
     exact WP.mono (loads_ok s c) fun t hh => by rw [← h.2]; exact hh
@@ -72,15 +73,15 @@ private theorem entry_ct : RelCT isa (Two CR) (.block VG.Impl.Ffdh.X86_64.Domain
     simp only [List.mem_singleton] at hr; subst hr; exact h.1) (by taint_decide) fun _ _ h => h.2
 
 private theorem e1_dhp (p : GkP) (s : State) (h : E1 p s) : DHP p.d s := by
-  obtain ⟨rb, hb, hd⟩ := h
+  obtain ⟨rb, hb, hd, _⟩ := h
   have hZ := hb.hZ
   exact ⟨hb.scr, hd, by change 256 ≤ p.Z; omega,
     hb.hdr (sDom, p.dp) (by simp [GkP.headers]),
     hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers])⟩
 
 private theorem e1_ce (p : GkP) (s : State) (h : E1 p s) : WP isa (.block domHead) s (CE p) := by
-  obtain ⟨rb, hb, hd⟩ := h
-  exact WP.mono (dom_base hb hd) fun _ ⟨hb', hz, hd', hG, hQ, _⟩ => ⟨⟨rb, hb', hd'⟩, hz, hG, hQ⟩
+  obtain ⟨rb, hb, hd, hbd⟩ := h
+  exact WP.mono (dom_base hb hd) fun _ ⟨hb', hz, hd', hG, hQ, _⟩ => ⟨⟨rb, hb', hd', hbd⟩, hz, hG, hQ⟩
 
 private theorem ce_eval {p : GkP} {s : State} (h : CE p s) : isa.eval .ne s = some (!p.mv) := by
   simp [eval, h.2.1]
@@ -89,8 +90,8 @@ private theorem ce_zero (p : GkP) (s : State) (h : CE p s ∧ isa.eval .ne s = s
   have he := h.2
   rw [ce_eval h.1] at he
   have hm : p.mv = true := by simpa using he
-  obtain ⟨⟨rb, hb, hd⟩, _, hG, hQ⟩ := h.1
-  exact ⟨rb, hb, hd, hG, hQ, hm⟩
+  obtain ⟨⟨rb, hb, hd, hbd⟩, _, hG, hQ⟩ := h.1
+  exact ⟨rb, hb, hd, hG, hQ, hm, hbd⟩
 
 theorem body_ct (M : Mont) (E : CrtExpL M) (R : R2Impl M) (hE : ExpCTL E sX sXl) :
     RelCT isa (Two CR)
