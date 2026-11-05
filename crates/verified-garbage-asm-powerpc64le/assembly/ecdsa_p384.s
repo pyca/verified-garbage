@@ -2359,8 +2359,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
@@ -2370,8 +2369,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2383,8 +2381,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r3, 2256
 	li %r6, 97
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2397,8 +2394,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 97
 	addi %r6, %r1, 32
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2408,8 +2404,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
@@ -2432,8 +2427,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2446,8 +2440,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2475,8 +2468,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2488,8 +2480,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r3, 2256
 	li %r6, 97
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2502,8 +2493,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 97
 	addi %r6, %r1, 32
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2513,8 +2503,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
@@ -2537,8 +2526,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2551,8 +2539,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2583,8 +2570,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2597,8 +2583,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2657,8 +2642,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
@@ -2668,8 +2652,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2681,8 +2664,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r3, 2256
 	li %r6, 1
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2695,8 +2677,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 1
 	addi %r6, %r1, 32
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl
@@ -2706,8 +2687,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 32
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 0(%r12)
 	mtctr %r12
 	bctrl
@@ -2730,8 +2710,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r1, 96
 	ld %r6, 208(%r11)
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 8(%r12)
 	mtctr %r12
 	bctrl
@@ -2744,8 +2723,7 @@ vg_ecdsa_p384_sign:
 	addi %r5, %r5, 0
 	addi %r6, %r1, 96
 	addi %r7, %r3, 384
-	addi %r12, %r1, 0
-	ld %r12, 224(%r12)
+	ld %r12, 224(%r11)
 	ld %r12, 16(%r12)
 	mtctr %r12
 	bctrl

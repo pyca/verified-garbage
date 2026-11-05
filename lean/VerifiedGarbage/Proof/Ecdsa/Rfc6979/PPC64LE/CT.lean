@@ -229,6 +229,28 @@ theorem two_split {pre rest : List Instr} {Φ : Pred P} (rs : List Reg) (f : Lay
     exact VG.RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ hp => ⟨hp.1, fun r hr =>
       hp.2 r (Taint.mem_ofRegs.mp hr)⟩) h
 
+/-- A block that loads values, the same in both runs, into `rs`, from the
+registers `rs₀` and `sp`, and then addresses memory from them and `sp`. -/
+theorem two_split' {pre rest : List Instr} {Φ : Pred P} (rs₀ : List Reg) (f₀ : Lay P.I.hashLen → Reg → BitVec 64)
+    (hf₀ : ∀ L g lr m₀ (t : State), Φ L g lr m₀ t → ∀ r ∈ rs₀, t.gpr r = f₀ L r) (hpre : TaintOk rs₀ pre)
+    (rs : List Reg) (f : Lay P.I.hashLen → Reg → BitVec 64)
+    (hw : ∀ (L : Lay P.I.hashLen) g lr m₀ (t : State), L.Ok → Ctx L g lr m₀ t → Φ L g lr m₀ t →
+      WP isa (.block pre) t fun t' => t'.sp = t.sp ∧ ∀ r ∈ rs, t'.gpr r = f L r)
+    (hrest : TaintOk rs rest) :
+    RelCT isa (Two P Φ) (.block (pre ++ rest)) fun _ _ => True := by
+  refine RelCT.block_append (RelCT.seq (R := fun (a b : State) => a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r) ?_ ?_)
+  · intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+    obtain ⟨ht, -⟩ := two_prog (Φ := Φ) rs₀ f₀ hf₀ hpre _ _ _ _ _ _ hp e₁ e₂
+    obtain ⟨L, g₁, g₂, lr₁, lr₂, m₁, m₂, h⟩ := hp
+    obtain ⟨_, u₁, x₁, y₁⟩ := hw L g₁ lr₁ m₁ s₁ h.ok h.c₁ h.f₁
+    obtain ⟨_, u₂, x₂, y₂⟩ := hw L g₂ lr₂ m₂ s₂ h.ok h.c₂ h.f₂
+    obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
+    obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
+    exact ⟨ht, by rw [y₁.1, y₂.1, h.c₁.sp, h.c₂.sp], fun r hr => by rw [y₁.2 r hr, y₂.2 r hr]⟩
+  · let ⟨_, h⟩ := hrest
+    exact VG.RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ hp => ⟨hp.1, fun r hr =>
+      hp.2 r (Taint.mem_ofRegs.mp hr)⟩) h
+
 /-- A call of constant-time code whose preconditions hold in both runs and
 whose public data agree. -/
 theorem two_call {n : String} {c : Prog isa} {k : Contract isa}
@@ -325,45 +347,47 @@ def R12 (Φ : Pred P) : Prop :=
     u.syms = t.syms → Φ L g lr m₀ u
 
 /-- The table's address in `r12`. -/
-theorem tabPtr_ok {L : Lay P.I.hashLen} {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 fTab]) t fun t' =>
+theorem tabPtr_ok {L : Lay P.I.hashLen} {t : State} (hc : Ctx L g lr m₀ t)
+    (h11 : t.gpr .r11 = L.B + BitVec.ofNat 64 96) :
+    WP isa (.block [.load .d .r12 .r11 fTab]) t fun t' =>
       t'.sp = t.sp ∧ ∀ r ∈ [Reg.r12], t'.gpr r = L.tab := by
-  refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
-  have hb : t₁.gpr .r12 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
-  refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
-    (hc.inFrK k₁ (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => wp_nil ⟨by rw [k₂.sp, k₁.sp], fun r hr => ?_⟩
+  refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [h11, fr_add]; rfl)
+    (hc.inFrK (Kp.refl [] t) (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => wp_nil ⟨k₂.sp, fun r hr => ?_⟩
   simp only [List.mem_singleton] at hr; subst hr
-  rw [v₂, m₁, hc.pTab]
+  rw [v₂, hc.pTab]
 
 /-- The table's word `j` in `r12`. -/
-theorem tblk_ok {L : Lay P.I.hashLen} {t : State} (hL : L.Ok) (hc : Ctx L g lr m₀ t) {j : Nat} (hj : 8 * j + 8 ≤ 48) :
-    WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 fTab, .load .d .r12 .r12 (8 * j)]) t fun t' =>
+theorem tblk_ok {L : Lay P.I.hashLen} {t : State} (hL : L.Ok) (hc : Ctx L g lr m₀ t)
+    (h11 : t.gpr .r11 = L.B + BitVec.ofNat 64 96) {j : Nat} (hj : 8 * j + 8 ≤ 48) :
+    WP isa (.block [.load .d .r12 .r11 fTab, .load .d .r12 .r12 (8 * j)]) t fun t' =>
       Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧ t'.syms = t.syms ∧ (∀ r, r ≠ .r12 → t'.gpr r = t.gpr r) ∧
         t'.gpr .r12 = m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 := by
-  refine WP.of_syms (stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_)
-  have hb : t₁.gpr .r12 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
-  refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
-    (hc.inFrK k₁ (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => ?_
-  have h12 : t₂.gpr .r12 = L.tab := by rw [v₂, m₁, hc.pTab]
+  refine WP.of_syms (stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [h11, fr_add]; rfl)
+    (hc.inFrK (Kp.refl [] t) (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => ?_)
+  have h12 : t₂.gpr .r12 = L.tab := by rw [v₂, hc.pTab]
   refine stepLd (a := L.tab + BitVec.ofNat 64 (8 * j)) (by decide) ⟨by omega, by omega⟩ (by rw [h12])
-    (by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hc.inTab hL hj) fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
-  have K : Kp [.r12] t t₃ := (k₁.trans k₂).trans k₃
-  have hm : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
-  exact ⟨hc.kp hL K hm hsy, hm, hsy, fun r hr => K.gpr r (by simp [hr]), by rw [v₃, m₂, m₁, hc.tabWord hL hj]⟩
+    (by rw [k₂.rd, k₂.wr]; exact hc.inTab hL hj) fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
+  have K : Kp [.r12] t t₃ := k₂.trans k₃
+  have hm : t₃.mem = t.mem := by rw [m₃, m₂]
+  exact ⟨hc.kp hL K hm hsy, hm, hsy, fun r hr => K.gpr r (by simp [hr]), by rw [v₃, m₂, hc.tabWord hL hj]⟩
 
 /-- The indirect call of the table's function `j`: in both runs of the same
 function, `n`'s (the table's word `j` holds the layout's address of `n`). -/
 theorem tcall_ct {Φ : Pred P} {j : Nat} (hj : 8 * j + 8 ≤ 48) (ht : TaintOk [.r12] [.load .d .r12 .r12 (8 * j)])
     {n : String} {c : Prog isa} {ts : List (String × Prog isa)} (hn : TabFn P j n c ts) (hΦ : R12 Φ)
+    (h11 : ∀ L g lr m₀ (t : State), Φ L g lr m₀ t → t.gpr .r11 = L.B + BitVec.ofNat 64 96)
     (hcall : RelCT isa (Two P Φ) (.call n c) fun _ _ => True) :
     RelCT isa (Two P Φ) (Cfg.tcall j ts) fun _ _ => True := by
   unfold Cfg.tcall
-  have hb : RelCT isa (Two P Φ) (.block [.addSp .r12 0, .load .d .r12 .r12 fTab, .load .d .r12 .r12 (8 * j)])
+  have hb : RelCT isa (Two P Φ) (.block [.load .d .r12 .r11 fTab, .load .d .r12 .r12 (8 * j)])
       (Two P fun L g lr m₀ u => Φ L g lr m₀ u ∧ u.gpr .r12 = L.fa n ∧ u.syms n = L.fa n ∧
         ts.find? (fun q => u.syms q.1 == u.syms n) = some (n, c)) :=
-    two_wp (two_split (pre := [.addSp .r12 0, .load .d .r12 .r12 fTab]) [.r12] (fun L _ => L.tab)
-        ⟨_, by taint_decide⟩ (fun _ _ _ _ _ _ hc => tabPtr_ok hc) ht)
-      fun L g lr m₀ t hL hq hc hφ => WP.mono (tblk_ok hL hc hj) fun u ⟨hc', hm, hs, hr, h12⟩ => by
+    two_wp (two_split' (pre := [.load .d .r12 .r11 fTab]) [.r11] (fun L _ => L.B + BitVec.ofNat 64 96)
+        (fun _ _ _ _ _ hφ r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact h11 _ _ _ _ _ hφ)
+        ⟨_, by taint_decide⟩ [.r12] (fun L _ => L.tab)
+        (fun _ _ _ _ _ _ hc hφ => tabPtr_ok hc (h11 _ _ _ _ _ hφ)) ht)
+      fun L g lr m₀ t hL hq hc hφ => WP.mono (tblk_ok hL hc (h11 _ _ _ _ _ hφ) hj) fun u ⟨hc', hm, hs, hr, h12⟩ => by
         obtain ⟨hw, hf, hfa⟩ := hn L g lr m₀ t hL hq hc
         exact ⟨hc', hΦ _ _ _ _ _ _ hφ hr hm hs, by rw [h12, hw, hfa], by rw [hs, hfa], by rw [hs]; exact hf⟩
   refine hb.seq ?_
@@ -386,7 +410,7 @@ theorem tw2 : TaintOk [.r12] [.load .d .r12 .r12 (8 * 2)] := ⟨_, by taint_deci
 def IA (P : RfcHash) : Pred P := fun L _ _ _ u =>
   u.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .r4 = L.scr + BitVec.ofNat 64 192 ∧
     u.gpr .r5 = L.B + BitVec.ofNat 64 128 ∧ u.gpr .r6 = BitVec.ofNat 64 P.v.H.D ∧
-    u.gpr .r7 = L.scr + BitVec.ofNat 64 384
+    u.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧ u.gpr .r11 = L.B + BitVec.ofNat 64 96
 
 abbrev initRd (P : RfcHash) (L : Lay P.I.hashLen) : List Region := [⟨L.B + BitVec.ofNat 64 128, P.v.H.D⟩]
 abbrev initWr (P : RfcHash) (L : Lay P.I.hashLen) : List Region :=
@@ -397,7 +421,7 @@ theorem initAt {L : Lay P.I.hashLen} (hL : L.Ok) {u : State} (hcu : Ctx L g lr m
     (Proof.Hmac.Instance.initScratchContract P.K.I PPC64LE.abi (P.K.kI + 1)).pre
         (u.callEntry.withRegions (initRd P L) (initWr P L)) ∧
       Covers (initRd P L ++ initWr P L) (u.rd ++ u.wr) ∧ Covers (initWr P L) u.wr := by
-  obtain ⟨h3, h4, h5, h6, h7⟩ := ha
+  obtain ⟨h3, h4, h5, h6, h7, -⟩ := ha
   have hnB := hL.nB
   have eS : P.K.H.S = P.v.H.S := rfl
   have eD : P.K.H.D = P.v.H.D := rfl
@@ -440,13 +464,14 @@ theorem init_call_ct : RelCT isa (Two P (IA P)) (.call P.v.initN P.v.H.init) fun
       sig_pub [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
         Proof.Hmac.initScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
       exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [h.f₁.1, h.f₂.1], by rw [h.f₁.2.1, h.f₂.2.1],
-        by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2, h.f₂.2.2.2.2]⟩
+        by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2.1, h.f₂.2.2.2.2.1]⟩
 
 /-- The arguments of the streaming `update`: the inner state holding `cnt`
 bytes, the `len` bytes at `da L`. -/
 def UA (P : RfcHash) (cnt : Nat) (da : Lay P.I.hashLen → Addr) (len : Nat) : Pred P := fun L _ _ _ u =>
   u.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .r4 = BitVec.ofNat 64 cnt ∧ u.gpr .r5 = da L ∧
-    u.gpr .r6 = BitVec.ofNat 64 len ∧ u.gpr .r7 = L.scr + BitVec.ofNat 64 384
+    u.gpr .r6 = BitVec.ofNat 64 len ∧ u.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧
+    u.gpr .r11 = L.B + BitVec.ofNat 64 96
 
 abbrev updRd (da : Lay P.I.hashLen → Addr) (len : Nat) (L : Lay P.I.hashLen) : List Region := [⟨da L, len⟩]
 abbrev updWr (P : RfcHash) (L : Lay P.I.hashLen) : List Region :=
@@ -457,7 +482,7 @@ theorem updAt {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat} {L : Lay P
     (Proof.Hmac.Stream.PPC64LE.updK P.v.H.S P.v.H.W P.v.ok.SH.Repr).pre
         (u.callEntry.withRegions (updRd da len L) (updWr P L)) ∧
       Covers (updRd da len L ++ updWr P L) (u.rd ++ u.wr) ∧ Covers (updWr P L) u.wr := by
-  obtain ⟨h3, -, h5, h6, h7⟩ := ha
+  obtain ⟨h3, -, h5, h6, h7, -⟩ := ha
   have hnB := hL.nB
   have hS := P.K.hS
   have hSc := P.K.hScr
@@ -502,13 +527,13 @@ theorem upd_call_ct {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat}
         State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r6 ∉ linkRegs by decide),
         State.callEntry_gpr _ (show Reg.r7 ∉ linkRegs by decide)]
       exact ⟨by rw [h.f₁.1, h.f₂.1], by rw [h.f₁.2.1, h.f₂.2.1], by rw [h.f₁.2.2.1, h.f₂.2.2.1],
-        by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2, h.f₂.2.2.2.2], by rw [h.c₁.sp, h.c₂.sp]⟩
+        by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2.1, h.f₂.2.2.2.2.1], by rw [h.c₁.sp, h.c₂.sp]⟩
 
 /-- The arguments of HMAC's `finalize`, for `cnt` bytes the inner state holds and the MAC to `dst`. -/
 def FA (P : RfcHash) (cnt dst : Nat) : Pred P := fun L _ _ _ u =>
   u.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .r4 = L.scr + BitVec.ofNat 64 192 ∧
     u.gpr .r5 = BitVec.ofNat 64 cnt ∧ u.gpr .r6 = L.B + BitVec.ofNat 64 (96 + dst) ∧
-    u.gpr .r7 = L.scr + BitVec.ofNat 64 384
+    u.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧ u.gpr .r11 = L.B + BitVec.ofNat 64 96
 
 abbrev finRd (P : RfcHash) (L : Lay P.I.hashLen) : List Region := [⟨L.scr + BitVec.ofNat 64 192, P.K.H.S⟩]
 abbrev finWr (P : RfcHash) (dst : Nat) (L : Lay P.I.hashLen) : List Region :=
@@ -520,7 +545,7 @@ theorem finAt {cnt dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 176) {L : Lay 
     (Proof.Hmac.Instance.finalizeScratchContract P.K.I PPC64LE.abi (P.K.kF + 1)).pre
         (u.callEntry.withRegions (finRd P L) (finWr P dst L)) ∧
       Covers (finRd P L ++ finWr P dst L) (u.rd ++ u.wr) ∧ Covers (finWr P dst L) u.wr := by
-  obtain ⟨h3, h4, -, h6, h7⟩ := ha
+  obtain ⟨h3, h4, -, h6, h7, -⟩ := ha
   obtain ⟨hd₁, hd₂⟩ := hdst
   have hnB := hL.nB
   have eS : P.K.H.S = P.v.H.S := rfl
@@ -567,18 +592,18 @@ theorem fin_call_ct {cnt dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 176) :
       sig_pub [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
         Proof.Hmac.finalizeScratchSig, PPC64LE.abi, PPC64LE.argRegs, stackBelow]
       exact ⟨by rw [h.c₁.sp, h.c₂.sp], by rw [h.f₁.1, h.f₂.1], by rw [h.f₁.2.1, h.f₂.2.1],
-        by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2, h.f₂.2.2.2.2]⟩
+        by rw [h.f₁.2.2.1, h.f₂.2.2.1], by rw [h.f₁.2.2.2.1, h.f₂.2.2.2.1], by rw [h.f₁.2.2.2.2.1, h.f₂.2.2.2.2.1]⟩
 
-theorem r12_ia : R12 (IA P) := fun _ _ _ _ _ _ ⟨a, b, c, d, e⟩ hr _ _ => ⟨(hr _ (by decide)).trans a,
-  (hr _ (by decide)).trans b, (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e⟩
+theorem r12_ia : R12 (IA P) := fun _ _ _ _ _ _ ⟨a, b, c, d, e, f⟩ hr _ _ => ⟨(hr _ (by decide)).trans a,
+  (hr _ (by decide)).trans b, (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e, (hr _ (by decide)).trans f⟩
 
 theorem r12_ua {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat} : R12 (UA P cnt da len) :=
-  fun _ _ _ _ _ _ ⟨a, b, c, d, e⟩ hr _ _ => ⟨(hr _ (by decide)).trans a, (hr _ (by decide)).trans b,
-    (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e⟩
+  fun _ _ _ _ _ _ ⟨a, b, c, d, e, f⟩ hr _ _ => ⟨(hr _ (by decide)).trans a, (hr _ (by decide)).trans b,
+    (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e, (hr _ (by decide)).trans f⟩
 
 theorem r12_fa {cnt dst : Nat} : R12 (FA P cnt dst) :=
-  fun _ _ _ _ _ _ ⟨a, b, c, d, e⟩ hr _ _ => ⟨(hr _ (by decide)).trans a, (hr _ (by decide)).trans b,
-    (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e⟩
+  fun _ _ _ _ _ _ ⟨a, b, c, d, e, f⟩ hr _ _ => ⟨(hr _ (by decide)).trans a, (hr _ (by decide)).trans b,
+    (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e, (hr _ (by decide)).trans f⟩
 
 /-! ## HMAC through the table -/
 
@@ -593,13 +618,13 @@ theorem finR_taint : TaintOk [] (Cfg.finArgs 1 fK) := ⟨_, by taint_decide⟩
 theorem initK_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).initK fun _ _ => True :=
   (two_wp (Ψ := IA P) (two_blk initArgs_taint) fun _ _ _ _ _ hL hq hc _ =>
     WP.mono (initArgs_ok hL hq.2 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
-    (tcall_ct (by decide) tw0 tfn_init r12_ia init_call_ct)
+    (tcall_ct (by decide) tw0 tfn_init r12_ia (fun _ _ _ _ _ h => h.2.2.2.2.2) init_call_ct)
 
 /-- The inner state updated with `V`. -/
 theorem updV_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).updV fun _ _ => True :=
   (two_wp (Ψ := UA P P.v.H.B (fun L => L.B + BitVec.ofNat 64 192) P.v.H.D) (two_blk updVArgs_taint)
     fun _ _ _ _ _ hL hq hc _ => WP.mono (updVArgs_ok hL hq.2 hc) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
-    (tcall_ct (by decide) tw1 tfn_upd r12_ua (upd_call_ct fun L _ => .inl ⟨192, rfl, by omega, by nums⟩))
+    (tcall_ct (by decide) tw1 tfn_upd r12_ua (fun _ _ _ _ _ h => h.2.2.2.2.2) (upd_call_ct fun L _ => .inl ⟨192, rfl, by omega, by nums⟩))
 
 /-- The inner state updated with the message's `len` bytes. -/
 theorem updM_ct {Φ : Pred P} {len : Nat} (hlen : len ≤ 256) :
@@ -607,7 +632,7 @@ theorem updM_ct {Φ : Pred P} {len : Nat} (hlen : len ≤ 256) :
   (two_wp (Ψ := UA P (P.v.H.B + P.v.H.D) (fun L => L.scr + BitVec.ofNat 64 sMsg) len) (two_blk (updMArgs_taint len))
     fun _ _ _ _ _ hL hq hc _ => WP.mono (updMArgs_ok hL hq.2 hc (len := len) (by omega))
       fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
-    (tcall_ct (by decide) tw1 tfn_upd r12_ua
+    (tcall_ct (by decide) tw1 tfn_upd r12_ua (fun _ _ _ _ _ h => h.2.2.2.2.2)
       (upd_call_ct fun L _ => .inr ⟨sMsg, rfl, by decide, by simp only [sMsg]; omega⟩))
 
 /-- The MAC, of `D + len` bytes of text, to the frame at `dst`. -/
@@ -617,7 +642,7 @@ theorem fin_ct {Φ : Pred P} {len dst : Nat} (hlen : len < 2 ^ 14) (hdst : 32 �
   (two_wp (Ψ := FA P (P.v.H.B + P.v.H.D + len) dst) (two_blk ht) fun _ _ _ _ _ hL hq hc _ =>
     WP.mono (finArgs_ok hL hq.2 hc (len := len) (dst := dst) (by omega) (by omega))
       fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq
-    (tcall_ct (by decide) tw2 tfn_fin r12_fa (fin_call_ct hdst))
+    (tcall_ct (by decide) tw2 tfn_fin r12_fa (fun _ _ _ _ _ h => h.2.2.2.2.2) (fin_call_ct hdst))
 
 /-! ## The states' copies -/
 

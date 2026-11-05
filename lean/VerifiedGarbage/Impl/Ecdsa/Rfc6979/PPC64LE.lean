@@ -164,10 +164,11 @@ def scrBase : List Instr := [.addSp .r11 0, .load .d .r12 .r11 fScratch]
 
 /-! ## HMAC through the table -/
 
-/-- The indirect call of the table's function `j`, among `ts`: the table's
-address into `r12`, its word `j` into `r12`, then `bctrl`. -/
+/-- The indirect call of the table's function `j`, among `ts`, with the
+frame in `r11`: the table's address into `r12`, its word `j` into `r12`,
+then `bctrl`. -/
 def tcall (j : Nat) (ts : List (String × Prog isa)) : Prog isa :=
-  .seq (.block [.addSp .r12 0, .load .d .r12 .r12 fTab, .load .d .r12 .r12 (8 * j)])
+  .seq (.block [.load .d .r12 .r11 fTab, .load .d .r12 .r12 (8 * j)])
     (Code.icalls .bctrl ts)
 
 /-- `r3 ← scratch` (HMAC's inner state, `scratch + sInner`), with the frame

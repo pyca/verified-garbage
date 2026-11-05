@@ -163,7 +163,8 @@ abbrev argRegs : List Reg := [.r3, .r4, .r5, .r6, .r7, .r11, .r12]
 
 /-- The indirect call of the table's function `j`, at the address its word
 `j` holds, of `n`. -/
-theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {j : Nat} (hj : 8 * j + 8 ≤ 48)
+theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) (h11 : t.gpr .r11 = L.B + BitVec.ofNat 64 96)
+    {j : Nat} (hj : 8 * j + 8 ≤ 48)
     {n : String} {c : Prog isa} {ts : List (String × Prog isa)}
     (hw : m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = t.syms n)
     (hf : ts.find? (fun q => t.syms q.1 == t.syms n) = some (n, c)) {Q : State → Prop}
@@ -171,17 +172,15 @@ theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) {j : Nat} (hj 
       WP isa (.call n c) t' Q) :
     WP isa (Cfg.tcall j ts) t Q := by
   unfold Cfg.tcall
-  refine WP.seq (WP.of_syms (stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_))
-  have hb : t₁.gpr .r12 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
-  refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
-    (hc.inFrK k₁ (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => ?_
-  have h12 : t₂.gpr .r12 = L.tab := by rw [v₂, m₁, hc.pTab]
+  refine WP.seq (WP.of_syms (stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide)
+    (by rw [h11, fr_add]; rfl) (hc.inFrK (Kp.refl [] t) (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => ?_))
+  have h12 : t₂.gpr .r12 = L.tab := by rw [v₂, hc.pTab]
   refine stepLd (a := L.tab + BitVec.ofNat 64 (8 * j)) (by decide) ⟨by omega, by omega⟩ (by rw [h12])
-    (by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hc.inTab hL hj) fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
-  have K : Kp [.r12] t t₃ := (k₁.trans k₂).trans k₃
-  have hm : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
+    (by rw [k₂.rd, k₂.wr]; exact hc.inTab hL hj) fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
+  have K : Kp [.r12] t t₃ := k₂.trans k₃
+  have hm : t₃.mem = t.mem := by rw [m₃, m₂]
   have hc₃ : Ctx L g lr m₀ t₃ := hc.kp hL K hm hsy
-  have h12' : t₃.gpr .r12 = t.syms n := by rw [v₃, m₂, m₁, hc.tabWord hL hj, hw]
+  have h12' : t₃.gpr .r12 = t.syms n := by rw [v₃, m₂, hc.tabWord hL hj, hw]
   refine WP.icalls_of_call (a := t.syms n) (by simp only [PPC64LE.icall, h12']) ?_
     (h t₃ hc₃ hm fun r hr => K.gpr r (by simp [hr]))
   show ts.find? (fun q => t₃.syms q.1 == t.syms n) = _
@@ -237,7 +236,8 @@ theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
     WP isa (.block Cfg.initArgs) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧ Kp argRegs t t' ∧
       t'.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ t'.gpr .r4 = L.scr + BitVec.ofNat 64 192 ∧
       t'.gpr .r5 = L.B + BitVec.ofNat 64 128 ∧ t'.gpr .r6 = BitVec.ofNat 64 P.v.H.D ∧
-      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 := by
+      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧
+      t'.gpr .r11 = L.B + BitVec.ofNat 64 96 := by
   refine WP.of_syms (argBase_ok hc fun t₁ k₁ m₁ b₁ s₁ => ?_)
   refine stepAddi (by decide) (by decide) fun t₃ k₃ m₃ v₃ => ?_
   refine stepAddSp (by decide) fun t₄ k₄ m₄ v₄ => ?_
@@ -248,13 +248,14 @@ theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
   refine stepAddi (by decide) (by decide) fun t₆ k₆ m₆ v₆ => wp_nil fun hsy => ?_
   have K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
   have hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
-  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), v₃, s₁]; rfl
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, k₃.sp, k₁.sp, hc.sp, fr_add]; rfl
   · rw [k₆.gpr _ (by decide), v₅, m₄, m₃, m₁]; exact hc.dl hT
   · rw [v₆, k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]; rfl
+  · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), b₁]
 
 /-- HMAC's `init` with the key `K` in the frame: HMAC's states for its block key. -/
 theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ t) :
@@ -265,12 +266,12 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
   have hS := P.K.hS
   have hSc := P.K.hScr
   simp only [sWork, sMsg] at hSc
-  refine WP.seq (WP.mono (initArgs_ok hL hT hc) fun u ⟨hcu, hmu, _, h3, h4, h5, h6, h7⟩ => ?_)
+  refine WP.seq (WP.mono (initArgs_ok hL hT hc) fun u ⟨hcu, hmu, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
   have hok := hcu.tabOk
   have htm := hcu.tabMem
   rw [hT.1, hT.2] at hok
   rw [hT.1] at htm
-  refine tcall_ok hL hcu (j := 0) (by decide) htm.1 hok.i fun u' hc' hm' hk' => ?_
+  refine tcall_ok hL hcu h11 (j := 0) (by decide) htm.1 hok.i fun u' hc' hm' hk' => ?_
   have hsp : u'.sp = L.B + BitVec.ofNat 64 96 := hc'.sp
   have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], u'.gpr r = u.gpr r := fun r hr => hk' r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -335,7 +336,8 @@ theorem updVArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
     WP isa (.block Cfg.updVArgs) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧ Kp argRegs t t' ∧
       t'.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ t'.gpr .r4 = BitVec.ofNat 64 P.v.H.B ∧
       t'.gpr .r5 = L.B + BitVec.ofNat 64 192 ∧ t'.gpr .r6 = BitVec.ofNat 64 P.v.H.D ∧
-      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 := by
+      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧
+      t'.gpr .r11 = L.B + BitVec.ofNat 64 96 := by
   refine WP.of_syms (argBase_ok hc fun t₁ k₁ m₁ b₁ s₁ => ?_)
   refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
     (by rw [b₁, fr_add]; rfl) (hc.inFrK k₁.toA (by omega) (by omega)) fun t₃ k₃ m₃ v₃ => ?_
@@ -347,13 +349,14 @@ theorem updVArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
   refine stepAddi (by decide) (by decide) fun t₆ k₆ m₆ v₆ => wp_nil fun hsy => ?_
   have K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
   have hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
-  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), v₃, m₁]; exact hc.bl hT
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), v₄, k₃.sp, k₁.sp, hc.sp, fr_add]; rfl
   · rw [k₆.gpr _ (by decide), v₅, m₄, m₃, m₁]; exact hc.dl hT
   · rw [v₆, k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]; rfl
+  · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), b₁]
 
 /-- The arguments of the streaming `update` with the message's `len` bytes. -/
 theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ t) {len : Nat}
@@ -361,7 +364,8 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
     WP isa (.block (Cfg.updMArgs len)) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧ Kp argRegs t t' ∧
       t'.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ t'.gpr .r4 = BitVec.ofNat 64 (P.v.H.B + P.v.H.D) ∧
       t'.gpr .r5 = L.scr + BitVec.ofNat 64 sMsg ∧ t'.gpr .r6 = BitVec.ofNat 64 len ∧
-      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 := by
+      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧
+      t'.gpr .r11 = L.B + BitVec.ofNat 64 96 := by
   refine WP.of_syms (argBase_ok hc fun t₁ k₁ m₁ b₁ s₁ => ?_)
   refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
     (by rw [b₁, fr_add]; rfl) (hc.inFrK k₁.toA (by omega) (by omega)) fun t₃ k₃ m₃ v₃ => ?_
@@ -375,7 +379,7 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
   have K : Kp argRegs t t₈ :=
     ((((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA).trans k₇.toA).trans k₈.toA)
   have hm : t₈.mem = t.mem := by rw [m₈, m₇, m₆, m₅, m₄, m₃, m₁]
-  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide),
       k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
@@ -386,12 +390,15 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
   · rw [k₈.gpr _ (by decide), v₇]
   · rw [v₈, k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide),
       k₃.gpr _ (by decide), s₁]; rfl
+  · rw [k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide),
+      k₄.gpr _ (by decide), k₃.gpr _ (by decide), b₁]
 
 /-- The table's `update` of the inner state, holding `text`, with the data. -/
 theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (hu : St P L g lr m₀ k0 text u)
     {da : Addr} {len : Nat} (hd : DataOk L da len) (hlen : len ≤ 256) (htl : text.length + len ≤ 512)
     (h3 : u.gpr .r3 = L.scr + BitVec.ofNat 64 0) (h4 : u.gpr .r4 = BitVec.ofNat 64 (P.v.H.B + text.length))
-    (h5 : u.gpr .r5 = da) (h6 : u.gpr .r6 = BitVec.ofNat 64 len) (h7 : u.gpr .r7 = L.scr + BitVec.ofNat 64 384) :
+    (h5 : u.gpr .r5 = da) (h6 : u.gpr .r6 = BitVec.ofNat 64 len) (h7 : u.gpr .r7 = L.scr + BitVec.ofNat 64 384)
+    (h11 : u.gpr .r11 = L.B + BitVec.ofNat 64 96) :
     WP isa (Cfg.tcall 1 P.f.upd) u fun u' => St P L g lr m₀ k0 (text ++ Spec.Sha256.bytesAt u.mem da len) u' ∧
       Frame (W L) u.mem u'.mem := by
   have hnB := hL.nB
@@ -401,7 +408,7 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
   have htm := hc.tabMem
   rw [hT.1, hT.2] at hok
   rw [hT.1] at htm
-  refine tcall_ok hL hc (j := 1) (by decide) htm.2.1 hok.u fun w hcw hmw hkw => ?_
+  refine tcall_ok hL hc h11 (j := 1) (by decide) htm.2.1 hok.u fun w hcw hmw hkw => ?_
   have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w.gpr r = u.gpr r := fun r hr => hkw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   have hsp : w.sp = L.B + BitVec.ofNat 64 96 := hcw.sp
@@ -463,10 +470,10 @@ theorem updV_step (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu :
     WP isa (cfgOf P).updV u fun u' =>
       St P L g lr m₀ k0 (Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 192) P.v.H.D) u' ∧
       Frame (W L) u.mem u'.mem := by
-  refine WP.seq (WP.mono (updVArgs_ok hL hT hu.ctx) fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7⟩ => ?_)
+  refine WP.seq (WP.mono (updVArgs_ok hL hT hu.ctx) fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
   have hw : St P L g lr m₀ k0 [] w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
   refine WP.mono (upd_call_ok hL hT hw (len := P.v.H.D)
-    (.inl ⟨192, rfl, by omega, by nums⟩) (by nums) (by simp; nums) h3 (by simpa using h4) h5 h6 h7)
+    (.inl ⟨192, rfl, by omega, by nums⟩) (by nums) (by simp; nums) h3 (by simpa using h4) h5 h6 h7 h11)
     fun u' ⟨hs, hf⟩ => ?_
   rw [List.nil_append, hmw] at hs
   exact ⟨hs, hmw ▸ hf⟩
@@ -478,10 +485,10 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State}
       St P L g lr m₀ k0 (text ++ Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 sMsg) len) u' ∧
       Frame (W L) u.mem u'.mem := by
   refine WP.seq (WP.mono (updMArgs_ok hL hT hu.ctx (len := len) (by omega))
-    fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7⟩ => ?_)
+    fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
   have hw : St P L g lr m₀ k0 text w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
   refine WP.mono (upd_call_ok hL hT hw (len := len) (.inr ⟨sMsg, rfl, by decide, by simp only [sMsg]; omega⟩)
-    hlen (by rw [ht]; nums) h3 (by rw [h4, ht]) h5 h6 h7) fun u' ⟨hs, hf⟩ => ?_
+    hlen (by rw [ht]; nums) h3 (by rw [h4, ht]) h5 h6 h7 h11) fun u' ⟨hs, hf⟩ => ?_
   rw [hmw] at hs
   exact ⟨hs, hmw ▸ hf⟩
 
@@ -492,7 +499,8 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀
     WP isa (.block (Cfg.finArgs len dst)) t fun t' => Ctx L g lr m₀ t' ∧ t'.mem = t.mem ∧ Kp argRegs t t' ∧
       t'.gpr .r3 = L.scr + BitVec.ofNat 64 0 ∧ t'.gpr .r4 = L.scr + BitVec.ofNat 64 192 ∧
       t'.gpr .r5 = BitVec.ofNat 64 (P.v.H.B + P.v.H.D + len) ∧ t'.gpr .r6 = L.B + BitVec.ofNat 64 (96 + dst) ∧
-      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 := by
+      t'.gpr .r7 = L.scr + BitVec.ofNat 64 384 ∧
+      t'.gpr .r11 = L.B + BitVec.ofNat 64 96 := by
   refine WP.of_syms (argBase_ok hc fun t₁ k₁ m₁ b₁ s₁ => ?_)
   refine stepAddi (by decide) (by decide) fun t₃ k₃ m₃ v₃ => ?_
   refine stepLd (a := L.B + BitVec.ofNat 64 312) (by decide) (by decide)
@@ -510,7 +518,7 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀
     (((((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA).trans k₇.toA).trans
       k₈.toA).trans k₉.toA)
   have hm : t₉.mem = t.mem := by rw [m₉, m₈, m₇, m₆, m₅, m₄, m₃, m₁]
-  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₉.gpr _ (by decide), k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide),
       k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
@@ -521,6 +529,8 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀
   · rw [k₉.gpr _ (by decide), v₈, k₇.sp, k₆.sp, k₅.sp, k₄.sp, k₃.sp, k₁.sp, hc.sp, fr_add]
   · rw [v₉, k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide),
       k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]; rfl
+  · rw [k₉.gpr _ (by decide), k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide),
+      k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), b₁]
 
 /-- HMAC's `finalize`, for the key `K₀` and the text `text`, of `D + len`
 bytes: the MAC in the frame at `dst`. -/
@@ -538,12 +548,12 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
   have eD : P.K.H.D = P.v.H.D := rfl
   simp only [sWork, sMsg] at hSc
   refine WP.seq (WP.mono (finArgs_ok hL hT hu.ctx (len := len) (dst := dst) (by omega) (by omega))
-    fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7⟩ => ?_)
+    fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
   have hok := hcw.tabOk
   have htm := hcw.tabMem
   rw [hT.1, hT.2] at hok
   rw [hT.1] at htm
-  refine tcall_ok hL hcw (j := 2) (by decide) htm.2.2 hok.f fun w₁ hc₁ hm₁ hk₁ => ?_
+  refine tcall_ok hL hcw h11 (j := 2) (by decide) htm.2.2 hok.f fun w₁ hc₁ hm₁ hk₁ => ?_
   have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w₁.gpr r = w.gpr r := fun r hr => hk₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   have hsp : w₁.sp = L.B + BitVec.ofNat 64 96 := hc₁.sp
