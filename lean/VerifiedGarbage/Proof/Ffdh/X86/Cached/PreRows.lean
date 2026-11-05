@@ -35,10 +35,11 @@ structure CtxW (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (s : S
   ws : Ws s (ctxAddr args) (ctxBytes len)
   apart : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ ⟨base, bytes⟩
   argsApart : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 76⟩ ⟨ctxAddr args, ctxBytes len⟩
+  stk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below (s.gpr .esp) 96)
 
 theorem CtxW.keep {t : State} {rs : List Reg} (C : CtxW base bytes len args s) (K : Keeps rs s t)
     (sp : .esp ∉ rs := by decide) : CtxW base bytes len args t :=
-  ⟨C.ws.of_keeps K, C.apart, by rw [K.1 _ sp]; exact C.argsApart⟩
+  ⟨C.ws.of_keeps K, C.apart, by rw [K.1 _ sp]; exact C.argsApart, by rw [K.1 _ sp]; exact C.stk⟩
 
 theorem CtxW.rd (C : CtxW base bytes len args s) : CtxRd base bytes len args s := by
   refine ⟨⟨?_, ?_⟩, C.apart⟩
