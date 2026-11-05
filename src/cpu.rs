@@ -127,8 +127,8 @@ fn allowed_by(names: &str, runtime: u32) -> u32 {
             lacking.join(",")
         );
     }
-    // BMI2 and ADX are detected only with AVX2 (`decode`): a configuration
-    // with them but not it is none any CPU runs.
+    // `decode` reports BMI2 and ADX only with AVX2, so naming either without
+    // `avx2` asks for a configuration no CPU can have.
     if !names.is_empty()
         && allowed & (feature::BMI2 | feature::ADX) != 0
         && allowed & feature::AVX2 == 0
