@@ -14,20 +14,8 @@
 ))]
 
 use crate::arch::sm4::{vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt, vg_sm4_expand_key};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
-
-/// Why a SM4 ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        IncompleteBlock => "SM4-ECB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SM4 key for ECB encryption and decryption.
 ///
@@ -52,19 +40,19 @@ impl Sm4Ecb {
 
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let f = if encrypt {
             vg_sm4_ecb_encrypt

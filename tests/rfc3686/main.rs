@@ -14,7 +14,8 @@
 
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
-use verified_garbage::aes_ctr::{AesCtr, Error};
+use verified_garbage::aes_ctr::AesCtr;
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
 /// Checks a message truncated, in pieces and with a partial last block
 /// (`crate::modes::check`).
@@ -94,17 +95,14 @@ fn limits_and_lengths() {
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(
-                AesCtr::new(&key, &ctr),
-                Err(Error::InvalidKeyLength)
-            ));
+            assert!(matches!(AesCtr::new(&key, &ctr), Err(InvalidKeyLength)));
             continue;
         }
         // An empty call, and a refused one, change nothing.
         let mut ctx = AesCtr::new(&key, &ctr).unwrap();
         ctx.apply_keystream(&mut []).unwrap();
         let mut data = [0xa5; 20];
-        assert_eq!(ctx.apply_keystream(&mut data), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.apply_keystream(&mut data), Err(IncompleteBlock));
         assert_eq!(data, [0xa5; 20]);
         let mut expected = data;
         AesCtr::new(&key, &ctr)

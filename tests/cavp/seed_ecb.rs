@@ -12,7 +12,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::seed_ecb::{Error, SeedEcb};
+use verified_garbage::error::IncompleteBlock;
+
+use verified_garbage::seed_ecb::SeedEcb;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -32,12 +34,12 @@ fn check_ecb(key: &[u8], plaintext: &[u8], ciphertext: &[u8]) {
     let ctx = SeedEcb::new(&key16(key));
     for (operation, input, expected) in [
         (
-            SeedEcb::encrypt as fn(&SeedEcb, &mut [u8]) -> Result<(), Error>,
+            SeedEcb::encrypt as fn(&SeedEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
             plaintext,
             ciphertext,
         ),
         (
-            SeedEcb::decrypt as fn(&SeedEcb, &mut [u8]) -> Result<(), Error>,
+            SeedEcb::decrypt as fn(&SeedEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
             ciphertext,
             plaintext,
         ),
@@ -101,8 +103,8 @@ fn incomplete() {
     let ctx = SeedEcb::new(&[0; 16]);
     for length in [1, 15, 17, 31] {
         let mut buffer = vec![0x5a; length];
-        assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
         assert!(crate::bytes::all_equal(&buffer, 0x5a));
     }
 }

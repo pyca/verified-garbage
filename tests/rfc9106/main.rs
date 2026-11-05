@@ -12,9 +12,8 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::argon2::{
-    Error, Params, Variant, derive, derive_keyed, verify, verify_keyed,
-};
+use verified_garbage::argon2::{Params, Variant, derive, derive_keyed, verify, verify_keyed};
+use verified_garbage::error::PasswordHashError;
 
 fn bytes(text: &str, label: &str, length: usize) -> Vec<u8> {
     text.split_once(label)
@@ -123,7 +122,7 @@ fn invalid_parameters_preserve_output() {
         let p = params(Variant::Argon2id, passes, memory, lanes);
         assert_eq!(
             derive(&p, b"", b"", usize::MAX, &mut out),
-            Err(Error::InvalidParameters)
+            Err(PasswordHashError::InvalidParameters)
         );
         assert_eq!(out, [0xa5; 4]);
     }
@@ -136,7 +135,7 @@ fn invalid_parameters_preserve_output() {
                 usize::MAX,
                 &mut out[..len]
             ),
-            Err(Error::InvalidParameters)
+            Err(PasswordHashError::InvalidParameters)
         );
     }
 }
@@ -150,7 +149,7 @@ fn memory_limit() {
         let mut out = [0xa5; 4];
         assert_eq!(
             derive(&p, b"", b"", blocks * 1024 - 1, &mut out),
-            Err(Error::MemoryLimitExceeded)
+            Err(PasswordHashError::MemoryLimitExceeded)
         );
         assert_eq!(out, [0xa5; 4]);
         derive(&p, b"", b"", blocks * 1024, &mut out).unwrap();
@@ -164,7 +163,7 @@ fn memory_limit() {
     let limit = usize::try_from(bytes - 1).unwrap_or(usize::MAX);
     assert_eq!(
         derive(&largest, b"", b"", limit, &mut out),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(out, [0xa5; 4]);
 }
@@ -172,16 +171,19 @@ fn memory_limit() {
 #[test]
 fn errors() {
     for (error, message) in [
-        (Error::InvalidParameters, "invalid Argon2 parameters"),
         (
-            Error::MemoryLimitExceeded,
-            "Argon2 would need more than the memory limit",
+            PasswordHashError::InvalidParameters,
+            "invalid password hashing parameters",
         ),
         (
-            Error::AllocationFailed,
-            "could not allocate Argon2's memory",
+            PasswordHashError::MemoryLimitExceeded,
+            "derivation would need more than the memory limit",
         ),
-        (Error::KeyMismatch, "Argon2 derived key does not match"),
+        (
+            PasswordHashError::AllocationFailed,
+            "could not allocate the derivation's memory",
+        ),
+        (PasswordHashError::KeyMismatch, "derived key does not match"),
     ] {
         assert_eq!(error.to_string(), message);
         let _: &dyn std::error::Error = &error;
@@ -191,12 +193,15 @@ fn errors() {
 
 /// `check` accepts `key` and rejects it with a bit flipped in its first, a
 /// middle or its last byte.
-fn check_verify<const N: usize>(key: &[u8; N], check: impl Fn(&[u8; N]) -> Result<(), Error>) {
+fn check_verify<const N: usize>(
+    key: &[u8; N],
+    check: impl Fn(&[u8; N]) -> Result<(), PasswordHashError>,
+) {
     assert_eq!(check(key), Ok(()));
     for i in [0, N / 2, N - 1] {
         let mut bad = *key;
         bad[i] ^= 1;
-        assert_eq!(check(&bad), Err(Error::KeyMismatch));
+        assert_eq!(check(&bad), Err(PasswordHashError::KeyMismatch));
     }
 }
 
@@ -235,7 +240,7 @@ fn rfc9106_verify_keyed() {
         other[0] ^= 1;
         assert_eq!(
             verify_keyed(&p, &other, &salt, &secret, &ad, usize::MAX, &expected),
-            Err(Error::KeyMismatch)
+            Err(PasswordHashError::KeyMismatch)
         );
     }
 }
@@ -252,18 +257,18 @@ fn verify_is_unkeyed() {
         check_verify(&key, |e| verify(&p, b"password", b"saltsalt", 32 << 10, e));
         assert_eq!(
             verify(&p, b"passwore", b"saltsalt", 32 << 10, &key),
-            Err(Error::KeyMismatch)
+            Err(PasswordHashError::KeyMismatch)
         );
         let prefix: [u8; 16] = key[..16].try_into().unwrap();
         assert_eq!(
             verify(&p, b"password", b"saltsalt", 32 << 10, &prefix),
-            Err(Error::KeyMismatch)
+            Err(PasswordHashError::KeyMismatch)
         );
         let mut longer = [0; 33];
         longer[..32].copy_from_slice(&key);
         assert_eq!(
             verify(&p, b"password", b"saltsalt", 32 << 10, &longer),
-            Err(Error::KeyMismatch)
+            Err(PasswordHashError::KeyMismatch)
         );
     }
 }
@@ -277,7 +282,7 @@ fn verify_errors() {
     derive(&p, b"", b"", 8 << 10, &mut key).unwrap();
     assert_eq!(
         verify(&params(Variant::Argon2id, 0, 8, 1), b"", b"", 8 << 10, &key),
-        Err(Error::InvalidParameters)
+        Err(PasswordHashError::InvalidParameters)
     );
     assert_eq!(
         verify_keyed(
@@ -289,11 +294,11 @@ fn verify_errors() {
             8 << 10,
             &key
         ),
-        Err(Error::InvalidParameters)
+        Err(PasswordHashError::InvalidParameters)
     );
     assert_eq!(
         verify(&p, b"", b"", (8 << 10) - 1, &key),
-        Err(Error::MemoryLimitExceeded)
+        Err(PasswordHashError::MemoryLimitExceeded)
     );
     assert_eq!(verify(&p, b"", b"", 8 << 10, &key), Ok(()));
 }

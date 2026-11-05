@@ -9,8 +9,8 @@
 //! and hashing the public key), and the caller supplies the signing randomness.
 //! Key generation's and signing's timing may depend on values that SHAKE
 //! derives from secrets (see the README's "What the constant-time guarantee
-//! assumes"). An operation fails with [`Error::LoopBound`] if it reaches one of
-//! the loop bounds of Appendix C, with probability about 2⁻²⁵⁶ or less.
+//! assumes"). An operation fails with [`MlDsaError::LoopBound`] if it reaches
+//! one of the loop bounds of Appendix C, with probability about 2⁻²⁵⁶ or less.
 
 #![cfg(any(
     target_arch = "x86_64",

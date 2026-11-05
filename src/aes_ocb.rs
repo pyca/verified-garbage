@@ -33,6 +33,7 @@ use crate::arch::aes_ocb::{
 };
 use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::detected;
+use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
@@ -116,8 +117,6 @@ macro_rules! assert_tag_length {
 /// Why an AES-OCB operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
     /// The nonce is not 1 to 15 bytes long (§4.2: at most 120 bits).
     InvalidNonceLength,
     /// The tag does not match: the ciphertext, the associated data or the
@@ -127,7 +126,6 @@ pub enum Error {
 
 crate::error::impl_error! {
     Error {
-        InvalidKeyLength => "invalid AES key length",
         InvalidNonceLength => "invalid AES-OCB nonce length",
         TagMismatch => "AES-OCB tag does not match",
     }
@@ -163,9 +161,9 @@ fn check(nonce: &[u8]) -> Result<(), Error> {
 
 impl AesOcb {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let mut k = AesOcb {
             ctx: [0; 32],
@@ -291,13 +289,13 @@ impl AesOcb {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesOcb, Error};
+    use super::{AesOcb, Error, InvalidKeyLength};
 
     #[test]
     fn key_lengths() {
         let key = [0u8; 40];
         for n in [0, 15, 17, 23, 25, 31, 33, 40] {
-            assert_eq!(AesOcb::new(&key[..n]).err(), Some(Error::InvalidKeyLength));
+            assert_eq!(AesOcb::new(&key[..n]).err(), Some(InvalidKeyLength));
         }
     }
 

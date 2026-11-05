@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::seed_cfb::{Error, SeedCfb128Decryptor, SeedCfb128Encryptor};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::seed_cfb::{SeedCfb128Decryptor, SeedCfb128Encryptor};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -52,11 +54,11 @@ fn errors() {
     for len in [0, 8, 15, 17, 24, 32] {
         assert_eq!(
             SeedCfb128Encryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
         assert_eq!(
             SeedCfb128Decryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

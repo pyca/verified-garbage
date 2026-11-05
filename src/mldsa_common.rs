@@ -48,12 +48,12 @@ impl Backend {
     }
 }
 
-/// Defines the API of one ML-DSA parameter set: its `Error`, `SigningKey`
-/// and `VerifyingKey`, over its verified `keygen`, `sign_message` and
-/// `verify_message_cached` functions (which takes the hash `tr` of the
-/// public key the `VerifyingKey` keeps), its
-/// `sign` and `verify` functions (which take a precomputed `μ`)
-/// and its sizes.
+/// Defines the API of one ML-DSA parameter set: its `SigningKey` and
+/// `VerifyingKey`, whose functions fail with `crate::error::MlDsaError`,
+/// over its verified `keygen`, `sign_message` and `verify_message_cached`
+/// functions (which takes the hash `tr` of the public key the
+/// `VerifyingKey` keeps), its `sign` and `verify` functions (which take a
+/// precomputed `μ`) and its sizes.
 macro_rules! ml_dsa {
     (
         name: $name:literal,
@@ -82,6 +82,7 @@ macro_rules! ml_dsa {
     ) => {
         use $crate::zeroize::zeroize;
         use $crate::mldsa_common::Backend;
+        use $crate::error::MlDsaError;
 
         /// Select from the generated requirements of every accelerated caller.
         fn backend() -> Backend {
@@ -107,30 +108,6 @@ macro_rules! ml_dsa {
                 $crate::cpu::detected(),
                 const { verified_garbage_cpu::Features::all(REQUIRED) },
             )
-        }
-
-        /// Why an operation failed.
-        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        pub enum Error {
-            /// A loop reached its bound (FIPS 204 Appendix C), which happens
-            /// with probability about 2⁻²⁵⁶ or less.
-            LoopBound,
-            /// The context string is longer than 255 bytes (FIPS 204
-            /// Algorithms 2 and 3).
-            ContextTooLong,
-            /// The signature is not valid.
-            InvalidSignature,
-            /// The operating system's random number generator failed.
-            Randomness,
-        }
-
-        $crate::error::impl_error! {
-            Error {
-                LoopBound => concat!($name, " loop reached its bound"),
-                ContextTooLong => concat!($name, " context is longer than 255 bytes"),
-                InvalidSignature => concat!("invalid ", $name, " signature"),
-                Randomness => concat!($name, " random number generator failed"),
-            }
         }
 
         /// The working space of the assembly functions on `μ`.
@@ -180,10 +157,11 @@ macro_rules! ml_dsa {
             /// `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3):
             /// whether `sig` is a valid signature of the message `msg` with
             /// the context string `ctx`. Fails with
-            /// [`Error::InvalidSignature`] if it is not (or, with probability
-            /// about 2⁻²⁵⁶ or less, if a loop reaches its bound), and
-            /// [`Error::ContextTooLong`] if `ctx` is longer than 255 bytes.
-            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), Error> {
+            /// [`MlDsaError::InvalidSignature`] if it is not (or, with
+            /// probability about 2⁻²⁵⁶ or less, if a loop reaches its bound),
+            /// and [`MlDsaError::ContextTooLong`] if `ctx` is longer than 255
+            /// bytes.
+            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -206,8 +184,8 @@ macro_rules! ml_dsa {
                 };
                 match r {
                     1 => Ok(()),
-                    2 => Err(Error::ContextTooLong),
-                    _ => Err(Error::InvalidSignature),
+                    2 => Err(MlDsaError::ContextTooLong),
+                    _ => Err(MlDsaError::InvalidSignature),
                 }
             }
 
@@ -217,8 +195,8 @@ macro_rules! ml_dsa {
             /// len(ctx) || ctx || msg, 64)`, where `tr = SHAKE256(pk, 64)`
             /// and `len(ctx)` is one byte (at most 255). This method does
             /// not hash the message or apply context formatting.
-            /// Returns [`Error::InvalidSignature`] if verification fails.
-            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
+            /// Returns [`MlDsaError::InvalidSignature`] if verification fails.
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
@@ -236,7 +214,7 @@ macro_rules! ml_dsa {
                         Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
-                if r == 1 { Ok(()) } else { Err(Error::InvalidSignature) }
+                if r == 1 { Ok(()) } else { Err(MlDsaError::InvalidSignature) }
             }
         }
 
@@ -272,7 +250,7 @@ macro_rules! ml_dsa {
             /// (FIPS 204 Algorithm 6). The seed must be 32 random bytes from
             /// an approved RBG (FIPS 204 §3.6.1, Algorithm 1), or a seed so
             /// generated before.
-            pub fn from_seed(seed: &[u8; 32]) -> Result<Self, Error> {
+            pub fn from_seed(seed: &[u8; 32]) -> Result<Self, MlDsaError> {
                 let mut key = $SigningKey {
                     seed: *seed,
                     vk: $VerifyingKey {
@@ -306,7 +284,7 @@ macro_rules! ml_dsa {
                     // A loop reaches its bound with probability about 2^-256
                     // or less; dropping `key` destroys it.
                     // NO-COVERAGE-START
-                    return Err(Error::LoopBound);
+                    return Err(MlDsaError::LoopBound);
                     // NO-COVERAGE-END
                 }
                 // keyGenInternal encodes SHAKE256(pk, 64) at sk[64..128].
@@ -328,11 +306,11 @@ macro_rules! ml_dsa {
             /// `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2), hedged: a
             /// signature of the message `msg` with the context string `ctx`,
             /// with 32 bytes of randomness from the operating system. Fails
-            /// with [`Error::ContextTooLong`] if `ctx` is longer than 255
+            /// with [`MlDsaError::ContextTooLong`] if `ctx` is longer than 255
             /// bytes.
-            pub fn sign(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], Error> {
+            pub fn sign(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], MlDsaError> {
                 let mut rnd = [0u8; 32];
-                getrandom::fill(&mut rnd).map_err(|_| Error::Randomness)?;
+                getrandom::fill(&mut rnd).map_err(|_| MlDsaError::Randomness)?;
                 let r = self.sign_with(msg, ctx, &rnd);
                 zeroize(&mut rnd);
                 r
@@ -342,11 +320,11 @@ macro_rules! ml_dsa {
             /// 204 Algorithm 2, with `rnd` = 32 zero bytes). FIPS 204 §3.4
             /// recommends the hedged [`sign`](Self::sign) where side channels
             /// are a concern.
-            pub fn sign_deterministic(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], Error> {
+            pub fn sign_deterministic(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], MlDsaError> {
                 self.sign_with(msg, ctx, &[0; 32])
             }
 
-            fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
+            fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
@@ -378,13 +356,13 @@ macro_rules! ml_dsa {
                 unsafe { $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of_val(&scratch)) };
                 match r {
                     1 => Ok(sig),
-                    2 => Err(Error::ContextTooLong),
+                    2 => Err(MlDsaError::ContextTooLong),
                     // A loop reaches its bound with probability about 2^-256
                     // or less.
                     // NO-COVERAGE-START
                     _ => {
                         zeroize(&mut sig);
-                        Err(Error::LoopBound)
+                        Err(MlDsaError::LoopBound)
                     }
                     // NO-COVERAGE-END
                 }
@@ -400,9 +378,9 @@ macro_rules! ml_dsa {
             /// Supply 32 fresh random bytes from an approved RBG as `rnd`
             /// for hedged signing, or all zeros for deterministic signing.
             /// FIPS 204 §3.4 recommends hedged signing where side channels
-            /// are a concern. Returns [`Error::LoopBound`] if a loop reaches
-            /// its bound.
-            pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
+            /// are a concern. Returns [`MlDsaError::LoopBound`] if a loop
+            /// reaches its bound.
+            pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -431,7 +409,7 @@ macro_rules! ml_dsa {
                     // or less.
                     // NO-COVERAGE-START
                     zeroize(&mut sig);
-                    return Err(Error::LoopBound);
+                    return Err(MlDsaError::LoopBound);
                     // NO-COVERAGE-END
                 }
                 Ok(sig)
@@ -444,7 +422,8 @@ pub(crate) use ml_dsa;
 
 #[cfg(test)]
 mod tests {
-    use crate::mldsa44::{Error, SigningKey44};
+    use crate::error::MlDsaError;
+    use crate::mldsa44::SigningKey44;
 
     #[cfg(target_arch = "aarch64")]
     #[test]
@@ -466,10 +445,10 @@ mod tests {
         let sig = key.sign_deterministic(b"msg", &[0; 255]).unwrap();
         let vk = key.verifying_key();
         assert_eq!(vk.verify(b"msg", &[0; 255], &sig), Ok(()));
-        assert_eq!(key.sign(b"msg", &[0; 256]), Err(Error::ContextTooLong));
+        assert_eq!(key.sign(b"msg", &[0; 256]), Err(MlDsaError::ContextTooLong));
         assert_eq!(
             vk.verify(b"msg", &[0; 256], &sig),
-            Err(Error::ContextTooLong)
+            Err(MlDsaError::ContextTooLong)
         );
     }
 }

@@ -18,8 +18,6 @@ use crate::arch::blake2b::{
 };
 use crate::arch::blake2b::{vg_blake2b_finalize, vg_blake2b_init, vg_blake2b_update};
 
-pub use crate::invalid_mac::InvalidMac;
-
 super::blake2::blake2!(
     /// An incremental BLAKE2b computation of an `N`-byte digest.
     Blake2b {

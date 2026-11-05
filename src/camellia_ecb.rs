@@ -15,23 +15,8 @@
 use crate::arch::camellia::{
     vg_camellia_ecb_decrypt, vg_camellia_ecb_encrypt, vg_camellia_expand_key,
 };
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a Camellia ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16, 24 or 32 bytes.
-    InvalidKeyLength,
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid Camellia key length",
-        IncompleteBlock => "Camellia-ECB input is not a whole number of blocks",
-    }
-}
 
 /// An expanded Camellia key for ECB encryption and decryption.
 ///
@@ -44,11 +29,11 @@ pub struct CamelliaEcb {
 
 impl CamelliaEcb {
     /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
-            _ => return Err(Error::InvalidKeyLength),
+            _ => return Err(InvalidKeyLength),
         };
         let mut schedule = [0; 272];
         // SAFETY: the key has a validated length; key and schedule are separate
@@ -61,19 +46,19 @@ impl CamelliaEcb {
 
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         self.crypt(buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         let f = if encrypt {
             vg_camellia_ecb_encrypt

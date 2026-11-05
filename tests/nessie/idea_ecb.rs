@@ -12,7 +12,9 @@
 
 use std::collections::BTreeMap;
 
-use verified_garbage::idea_ecb::{Error, IdeaEcb};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::idea_ecb::IdeaEcb;
 use verified_garbage_test_vectors::{Record, unhex};
 
 /// Encrypts or decrypts `input` with `operation`, whole, in two pieces at
@@ -20,7 +22,7 @@ use verified_garbage_test_vectors::{Record, unhex};
 /// time, and checks each against `expected`.
 fn check(
     ctx: &IdeaEcb,
-    operation: fn(&IdeaEcb, &mut [u8]) -> Result<(), Error>,
+    operation: fn(&IdeaEcb, &mut [u8]) -> Result<(), IncompleteBlock>,
     input: &[u8],
     expected: &[u8],
 ) {
@@ -97,16 +99,13 @@ fn nessie() {
 #[test]
 fn errors() {
     for len in [0, 15, 17, 24, 32] {
-        assert!(matches!(
-            IdeaEcb::new(&vec![0; len]),
-            Err(Error::InvalidKeyLength)
-        ));
+        assert!(matches!(IdeaEcb::new(&vec![0; len]), Err(InvalidKeyLength)));
     }
     let ctx = IdeaEcb::new(&[0; 16]).unwrap();
     for len in [1, 7, 9, 15] {
         let mut buffer = vec![0xa5; len];
-        assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
         assert!(crate::bytes::all_equal(&buffer, 0xa5));
     }
 }

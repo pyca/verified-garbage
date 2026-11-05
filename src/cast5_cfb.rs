@@ -14,24 +14,8 @@
 
 use crate::arch::cast5_cfb::{vg_cast5_cfb64_decrypt, vg_cast5_cfb64_encrypt};
 use crate::cast5_ecb::Cast5Ecb;
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why a CAST5-CFB64 operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 5 to 16 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid CAST5 key length",
-        IncompleteBlock => "CAST5-CFB64 input is not a whole number of blocks",
-    }
-}
 
 /// An expanded CAST5 key.
 struct Key {
@@ -52,7 +36,7 @@ pub struct Cast5Cfb64Encryptor {
 
 impl Cast5Cfb64Encryptor {
     /// Expands a key of 5 to 16 bytes, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -63,9 +47,9 @@ impl Cast5Cfb64Encryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8: only [`encrypt_final`](Self::encrypt_final) takes
     /// a partial last segment.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.encrypt(&mut self.iv, buffer);
         Ok(())
@@ -101,7 +85,7 @@ pub struct Cast5Cfb64Decryptor {
 
 impl Cast5Cfb64Decryptor {
     /// Expands a key of 5 to 16 bytes, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -112,9 +96,9 @@ impl Cast5Cfb64Decryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8: only [`decrypt_final`](Self::decrypt_final) takes
     /// a partial last segment.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.decrypt(&mut self.iv, buffer);
         Ok(())
@@ -151,9 +135,9 @@ type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8;
 
 impl Key {
     /// Expands a key of 5 to 16 bytes.
-    fn new(key: &[u8]) -> Result<Self, Error> {
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
-            key: Cast5Ecb::new(key).map_err(|_| Error::InvalidKeyLength)?,
+            key: Cast5Ecb::new(key).map_err(|_| InvalidKeyLength)?,
         })
     }
 

@@ -10,7 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -159,11 +161,11 @@ fn limits_and_lengths() {
         if !matches!(len, 16 | 24 | 32) {
             assert!(matches!(
                 AesCfb128Encryptor::new(&key, &iv),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             assert!(matches!(
                 AesCfb128Decryptor::new(&key, &iv),
-                Err(Error::InvalidKeyLength)
+                Err(InvalidKeyLength)
             ));
             continue;
         }
@@ -175,7 +177,7 @@ fn limits_and_lengths() {
         let mut encryptor = AesCfb128Encryptor::new(&key, &iv).unwrap();
         encryptor.encrypt(&mut []).unwrap();
         let mut odd = [0x5a; 17];
-        assert_eq!(encryptor.encrypt(&mut odd), Err(Error::IncompleteBlock));
+        assert_eq!(encryptor.encrypt(&mut odd), Err(IncompleteBlock));
         assert_eq!(odd, [0x5a; 17]);
         let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
         let mut ciphertext = message.clone();

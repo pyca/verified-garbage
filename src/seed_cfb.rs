@@ -14,24 +14,8 @@
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_cfb::{vg_seed_cfb128_decrypt, vg_seed_cfb128_encrypt};
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// Why an SEED-CFB128 operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key does not contain 16 bytes.
-    InvalidKeyLength,
-    /// The input of a call that does not end the message is not a whole
-    /// number of blocks.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid SEED key length",
-        IncompleteBlock => "SEED-CFB128 input is not a whole number of blocks",
-    }
-}
 
 /// An expanded SEED key.
 struct Key {
@@ -53,7 +37,7 @@ pub struct SeedCfb128Encryptor {
 
 impl SeedCfb128Encryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -64,9 +48,9 @@ impl SeedCfb128Encryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`encrypt_final`](Self::encrypt_final) takes
     /// a partial last segment.
-    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.encrypt(&mut self.iv, buffer);
         Ok(())
@@ -102,7 +86,7 @@ pub struct SeedCfb128Decryptor {
 
 impl SeedCfb128Decryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, Error> {
+    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
@@ -113,9 +97,9 @@ impl SeedCfb128Decryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16: only [`decrypt_final`](Self::decrypt_final) takes
     /// a partial last segment.
-    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         self.key.decrypt(&mut self.iv, buffer);
         Ok(())
@@ -152,8 +136,8 @@ type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], 
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, Error> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| Error::InvalidKeyLength)?;
+    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.

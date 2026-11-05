@@ -1,5 +1,5 @@
-//! What ML-KEM-768 and ML-KEM-1024 share: their `Error`, and their API, defined
-//! once by `ml_kem!`.
+//! What ML-KEM-768 and ML-KEM-1024 share: their API, defined once by
+//! `ml_kem!`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -9,28 +9,6 @@
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
-
-/// Why an operation failed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Error {
-    /// A `SampleNTT` reached the bound on its loop's iterations (FIPS 203
-    /// Appendix B), which happens with probability less than 2⁻²⁶¹ for each
-    /// call: less than 2⁻²⁵⁸ in an ML-KEM-768 operation (9 calls) and 2⁻²⁵⁷
-    /// in an ML-KEM-1024 one (16 calls).
-    SampleBound,
-    /// The encapsulation key failed the check of FIPS 203 §7.2.
-    InvalidKey,
-    /// The operating system's random number generator failed.
-    Randomness,
-}
-
-crate::error::impl_error! {
-    Error {
-        SampleBound => "ML-KEM sampling loop reached its bound",
-        InvalidKey => "invalid ML-KEM encapsulation key",
-        Randomness => "ML-KEM random number generator failed",
-    }
-}
 
 /// The implementations of key generation, encapsulation and decapsulation:
 /// each but `Scalar` is their instances with its suffix.
@@ -148,7 +126,7 @@ macro_rules! ml_kem {
             decaps: $decaps_written:expr $(,)?
         })? $(,)?
     ) => {
-        pub use $crate::mlkem_common::Error;
+        use $crate::error::MlKemError;
         use $crate::mlkem_common::Backend;
         use $crate::zeroize::zeroize;
 
@@ -249,8 +227,8 @@ macro_rules! ml_kem {
 
             /// The encapsulation key `bytes`, if it passes the encapsulation
             /// key check of FIPS 203 §7.2 (every integer it encodes is less
-            /// than `q`); [`Error::InvalidKey`] otherwise.
-            pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, Error> {
+            /// than `q`); [`MlKemError::InvalidKey`] otherwise.
+            pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, MlKemError> {
                 // SAFETY: `bytes` is valid for reads of its size, and a Rust
                 // object, so it does not overlap the stack or wrap around the
                 // end of the address space. The CPU has the features of
@@ -268,7 +246,7 @@ macro_rules! ml_kem {
                 if r == 1 {
                     Ok($EncapsulationKey { bytes: *bytes, h: None })
                 } else {
-                    Err(Error::InvalidKey)
+                    Err(MlKemError::InvalidKey)
                 }
             }
 
@@ -280,9 +258,9 @@ macro_rules! ml_kem {
             /// `ML-KEM.Encaps` (FIPS 203 Algorithm 20): a shared secret key
             /// and its ciphertext, with 32 bytes of randomness from the
             /// operating system.
-            pub fn encapsulate(&self) -> Result<([u8; 32], [u8; $ct]), Error> {
+            pub fn encapsulate(&self) -> Result<([u8; 32], [u8; $ct]), MlKemError> {
                 let mut m = [0u8; 32];
-                getrandom::fill(&mut m).map_err(|_| Error::Randomness)?;
+                getrandom::fill(&mut m).map_err(|_| MlKemError::Randomness)?;
                 let r = self.encapsulate_internal(&m);
                 zeroize(&mut m);
                 r
@@ -294,7 +272,7 @@ macro_rules! ml_kem {
             /// fresh random bytes from an approved RBG, which
             /// [`encapsulate`](Self::encapsulate) draws.
             #[doc(hidden)]
-            pub fn encapsulate_internal(&self, m: &[u8; 32]) -> Result<([u8; 32], [u8; $ct]), Error> {
+            pub fn encapsulate_internal(&self, m: &[u8; 32]) -> Result<([u8; 32], [u8; $ct]), MlKemError> {
                 // SAFETY: `backend()` chose an implementation whose features
                 // the CPU has.
                 unsafe { self.encapsulate_with(m, backend()) }
@@ -307,7 +285,7 @@ macro_rules! ml_kem {
             /// The CPU has the features of `backend`'s instances.
             unsafe fn encapsulate_with(
                 &self, m: &[u8; 32], backend: Backend,
-            ) -> Result<([u8; 32], [u8; $ct]), Error> {
+            ) -> Result<([u8; 32], [u8; $ct]), MlKemError> {
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
@@ -366,7 +344,7 @@ macro_rules! ml_kem {
                     // NO-COVERAGE-START
                     zeroize(&mut key);
                     zeroize(&mut ct);
-                    return Err(Error::SampleBound);
+                    return Err(MlKemError::SampleBound);
                     // NO-COVERAGE-END
                 }
                 Ok((key, ct))
@@ -406,7 +384,7 @@ macro_rules! ml_kem {
             /// Algorithm 16). The seed must be 64 random bytes from an
             /// approved RBG (FIPS 203 §3.3, Algorithm 19), or a seed so
             /// generated before.
-            pub fn from_seed(seed: &[u8; 64]) -> Result<Self, Error> {
+            pub fn from_seed(seed: &[u8; 64]) -> Result<Self, MlKemError> {
                 // SAFETY: `backend()` chose an implementation whose features
                 // the CPU has.
                 unsafe { Self::from_seed_with(seed, backend()) }
@@ -417,7 +395,7 @@ macro_rules! ml_kem {
             /// # Safety
             ///
             /// The CPU has the features of `backend`'s instances.
-            unsafe fn from_seed_with(seed: &[u8; 64], backend: Backend) -> Result<Self, Error> {
+            unsafe fn from_seed_with(seed: &[u8; 64], backend: Backend) -> Result<Self, MlKemError> {
                 let mut key = $DecapsulationKey {
                     seed: *seed,
                     ek: $EncapsulationKey { bytes: [0; $ek], h: None },
@@ -465,7 +443,7 @@ macro_rules! ml_kem {
                     // the module's documentation gives; dropping `key`
                     // destroys it.
                     // NO-COVERAGE-START
-                    return Err(Error::SampleBound);
+                    return Err(MlKemError::SampleBound);
                     // NO-COVERAGE-END
                 }
                 // `H(ek)`, which the decapsulation key holds before `z`
@@ -490,7 +468,7 @@ macro_rules! ml_kem {
             /// of the ciphertext `ct`, which is the implicit rejection key
             /// `J(z ‖ ct)` if `ct` is not a ciphertext of this key (in
             /// constant time: nothing tells whether it was rejected).
-            pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], Error> {
+            pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], MlKemError> {
                 // SAFETY: `backend()` chose an implementation whose features
                 // the CPU has.
                 unsafe { self.decapsulate_with(ct, backend()) }
@@ -501,7 +479,7 @@ macro_rules! ml_kem {
             /// # Safety
             ///
             /// The CPU has the features of `backend`'s instances.
-            unsafe fn decapsulate_with(&self, ct: &[u8; $ct], backend: Backend) -> Result<[u8; 32], Error> {
+            unsafe fn decapsulate_with(&self, ct: &[u8; $ct], backend: Backend) -> Result<[u8; 32], MlKemError> {
                 let mut key = [0u8; 32];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -545,7 +523,7 @@ macro_rules! ml_kem {
                     // the module's documentation gives.
                     // NO-COVERAGE-START
                     zeroize(&mut key);
-                    return Err(Error::SampleBound);
+                    return Err(MlKemError::SampleBound);
                     // NO-COVERAGE-END
                 }
                 Ok(key)

@@ -13,6 +13,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::error::{IncompleteBlock, InvalidKeyLength};
 use core::mem::MaybeUninit;
 
 use crate::aes::Backend;
@@ -103,22 +104,6 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Why an AES-ECB operation failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The key is not 16, 24 or 32 bytes long.
-    InvalidKeyLength,
-    /// The input length is not a multiple of 16 bytes.
-    IncompleteBlock,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKeyLength => "invalid AES key length",
-        IncompleteBlock => "AES-ECB input is not a whole number of blocks",
-    }
-}
-
 /// An expanded AES key for ECB encryption and decryption.
 ///
 /// No padding is added or removed: each operation takes whole 16-byte
@@ -135,9 +120,9 @@ pub struct AesEcb {
 
 impl AesEcb {
     /// Expands a 16-, 24- or 32-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
-            return Err(Error::InvalidKeyLength);
+            return Err(InvalidKeyLength);
         }
         let backend = select(detected());
         let expand = instance!(
@@ -162,7 +147,7 @@ impl AesEcb {
     /// Encrypts whole 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is not a
     /// multiple of 16.
-    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         let f = instance!(
             self.backend,
             vg_aes_encrypt_blocks,
@@ -183,7 +168,7 @@ impl AesEcb {
     /// Decrypts whole 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is not a
     /// multiple of 16.
-    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         let f = instance!(
             self.backend,
             vg_aes_decrypt_blocks,
@@ -203,9 +188,9 @@ impl AesEcb {
 
     /// Applies `f`, which writes at most the first `written` bytes of its
     /// working space, to the blocks of `buffer`.
-    fn crypt(&self, buffer: &mut [u8], f: Blocks, written: usize) -> Result<(), Error> {
+    fn crypt(&self, buffer: &mut [u8], f: Blocks, written: usize) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
-            return Err(Error::IncompleteBlock);
+            return Err(IncompleteBlock);
         }
         // The contracts hold whatever the working space holds, so it need
         // not be initialized.

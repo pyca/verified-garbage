@@ -11,7 +11,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::blowfish_ofb::{BlowfishOfb, Error};
+use verified_garbage::error::InvalidKeyLength;
+
+use verified_garbage::blowfish_ofb::BlowfishOfb;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -47,7 +49,7 @@ fn errors() {
     for len in [0, 1, 3, 57, 64] {
         assert_eq!(
             BlowfishOfb::new(&vec![0; len], &[0; 8]).err(),
-            Some(Error::InvalidKeyLength)
+            Some(InvalidKeyLength)
         );
     }
 }

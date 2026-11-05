@@ -10,11 +10,13 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_ecb::{AesEcb, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::aes_ecb::AesEcb;
 
 use verified_garbage_test_vectors::{Record, cavp_records, unhex};
 
-type Operation = fn(&AesEcb, &mut [u8]) -> Result<(), Error>;
+type Operation = fn(&AesEcb, &mut [u8]) -> Result<(), IncompleteBlock>;
 
 /// Checks a vector in both directions, in one call; with `split`, also in
 /// two calls split at each block boundary and one call per block.
@@ -241,7 +243,7 @@ fn limits_and_empty_input() {
     for len in 0..=40 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 16 | 24 | 32) {
-            assert!(matches!(AesEcb::new(&key), Err(Error::InvalidKeyLength)));
+            assert!(matches!(AesEcb::new(&key), Err(InvalidKeyLength)));
             continue;
         }
         let ctx = AesEcb::new(&key).unwrap();
@@ -252,9 +254,9 @@ fn limits_and_empty_input() {
                 continue;
             }
             let mut buffer = vec![0x5a; n];
-            assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
+            assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
-            assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+            assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
             assert_eq!(buffer, vec![0x5a; n]);
         }
         // Many blocks in one call round-trip, and equal blocks encrypt to

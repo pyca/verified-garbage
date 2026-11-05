@@ -6,8 +6,8 @@
 //! approved RBG; the expanded key is never exposed, so it passes the checks of
 //! §7.3 by construction. An encapsulation key from elsewhere passes the check
 //! of §7.2 in [`EncapsulationKey768::from_bytes`]. An operation fails with
-//! [`Error::SampleBound`] if it reaches the bound on `SampleNTT`'s loop that
-//! Appendix B allows, with probability less than 2⁻²⁵⁸.
+//! [`MlKemError::SampleBound`] if it reaches the bound on `SampleNTT`'s loop
+//! that Appendix B allows, with probability less than 2⁻²⁵⁸.
 
 #![cfg(any(
     target_arch = "x86_64",

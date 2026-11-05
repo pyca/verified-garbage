@@ -12,7 +12,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::cast5_ecb::{Cast5Ecb, Error};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+
+use verified_garbage::cast5_ecb::Cast5Ecb;
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// Encrypts `plaintext` to `ciphertext` and back, whole and a block at a
@@ -92,16 +94,13 @@ fn botan() {
 #[test]
 fn errors_and_empty_input() {
     for len in [0, 4, 17, 32] {
-        assert_eq!(
-            Cast5Ecb::new(&vec![0; len]).err(),
-            Some(Error::InvalidKeyLength)
-        );
+        assert_eq!(Cast5Ecb::new(&vec![0; len]).err(), Some(InvalidKeyLength));
     }
     let cipher = Cast5Ecb::new(&[1; 16]).unwrap();
     for len in [1, 7, 9, 15] {
         let mut data = vec![0xa5; len];
-        assert_eq!(cipher.encrypt(&mut data), Err(Error::IncompleteBlock));
-        assert_eq!(cipher.decrypt(&mut data), Err(Error::IncompleteBlock));
+        assert_eq!(cipher.encrypt(&mut data), Err(IncompleteBlock));
+        assert_eq!(cipher.decrypt(&mut data), Err(IncompleteBlock));
         assert!(crate::bytes::all_equal(&data, 0xa5));
     }
     cipher.encrypt(&mut []).unwrap();

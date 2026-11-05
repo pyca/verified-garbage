@@ -14,7 +14,9 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_ecb::{Error, Sm4Ecb};
+use verified_garbage::error::IncompleteBlock;
+
+use verified_garbage::sm4_ecb::Sm4Ecb;
 
 use super::{field, section};
 
@@ -38,12 +40,12 @@ fn check_ecb(key: &[u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
     let ctx = Sm4Ecb::new(key);
     for (operation, input, expected) in [
         (
-            Sm4Ecb::encrypt as fn(&Sm4Ecb, &mut [u8]) -> Result<(), Error>,
+            Sm4Ecb::encrypt as fn(&Sm4Ecb, &mut [u8]) -> Result<(), IncompleteBlock>,
             plaintext,
             ciphertext,
         ),
         (
-            Sm4Ecb::decrypt as fn(&Sm4Ecb, &mut [u8]) -> Result<(), Error>,
+            Sm4Ecb::decrypt as fn(&Sm4Ecb, &mut [u8]) -> Result<(), IncompleteBlock>,
             ciphertext,
             plaintext,
         ),
@@ -169,8 +171,8 @@ fn incomplete_block() {
     let ctx = Sm4Ecb::new(&[0; 16]);
     for len in [1, 15, 17, 31] {
         let mut buffer = vec![0x5a; len];
-        assert_eq!(ctx.encrypt(&mut buffer), Err(Error::IncompleteBlock));
-        assert_eq!(ctx.decrypt(&mut buffer), Err(Error::IncompleteBlock));
+        assert_eq!(ctx.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(ctx.decrypt(&mut buffer), Err(IncompleteBlock));
         assert_eq!(buffer, vec![0x5a; len]);
     }
 }
