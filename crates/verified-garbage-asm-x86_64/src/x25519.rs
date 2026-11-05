@@ -142,7 +142,7 @@ call {vg_ed25519_r64_double_ext}
 je 24f
 .base64 "SInZSAHJSYnJSAHJSAHJTAHJSYnZSIP7Gg=="
 jb 26f
-.base64 "SIHpBAEAAEmD6Ro="
+.base64 "QbkzAAAASSnZTInJSAHJSAHJTAHJSAHJ"
 jmp 27f
 26:
 .base64 "SIPBBQ=="
@@ -206,7 +206,7 @@ call {vg_ed25519_r64_double_ext_adx}
 je 24f
 .base64 "SInZSAHJSYnJSAHJSAHJTAHJSYnZSIP7Gg=="
 jb 26f
-.base64 "SIHpBAEAAEmD6Ro="
+.base64 "QbkzAAAASSnZTInJSAHJSAHJTAHJSAHJ"
 jmp 27f
 26:
 .base64 "SIPBBQ=="

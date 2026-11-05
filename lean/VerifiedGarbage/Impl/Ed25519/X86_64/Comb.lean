@@ -14,7 +14,10 @@ Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G']B`, for
 `G' = 33 G / 32` modulo the group's order, the odd digits `d_{2j+1}` are added
 first, one from each table, as the entry `|d|` or its negation; five doublings
 multiply their sum by 32, which makes `[G']B` into `[33 G]B`; then the even
-digits `d_{2j}` are added from the same tables. The top digit, `d_51`, is
+digits `d_{2j}` are added from the same tables, in the reverse order (`combIndexR`, from
+table 25 down), so that the tables the odd digits read last, still in the data cache, are
+read first: the 26 tables, 39 KiB, are more than a 32 KiB cache holds, and in the same order
+each pass would evict every table the next needs. The top digit, `d_51`, is
 bit 255 minus 16, so the comb starts at `[G' + d_51 1024^25]B`, one of two
 constants (`combStart`) chosen in constant time, and its step (`rbx = 25`)
 adds nothing. That is 51 additions of affine cached points and five
@@ -160,6 +163,18 @@ def combIndex : Prog isa :=
     (.ite .b (.block [.alu .add .rcx (.imm 5)])
       (.block [.alu .sub .rcx (.imm 260), .alu .sub .r9 (.imm 26)]))
 
+/-- `rcx` = the bit index of chunk `2 rbx + 1` (odd chunks, `rbx < 26`) or `2 (51 - rbx)`,
+and `r9` = its table, `rbx` or `51 - rbx`: `combIndex`, but the even chunks' tables in the
+reverse order, from the last the odd chunks read. -/
+def combIndexR : Prog isa :=
+  .seq (.block [.mov .rcx (.reg .rbx), .alu .add .rcx (.reg .rcx), .mov .r9 (.reg .rcx),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r9),
+    .mov .r9 (.reg .rbx), .alu .cmp .rbx (.imm 26)])
+    (.ite .b (.block [.alu .add .rcx (.imm 5)])
+      (.block [.mov32 .r9 (.imm 51), .alu .sub .r9 (.reg .rbx), .mov .rcx (.reg .r9),
+        .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r9),
+        .alu .add .rcx (.reg .rcx)]))
+
 /-- The chunk at `rcx` into `rax`: bit 255 alone for step `rbx = 25` (chunk 51), else five
 bits. -/
 def combChunk : Prog isa :=
@@ -169,11 +184,12 @@ def combChunk : Prog isa :=
 def combDouble (pt : Point64.Ops) : Prog isa :=
   .seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (pt.dbl true))))
 
-/-- The digit of step `rbx` (five bits: not the top chunk's): the entry of table `r9`
+/-- The digit of step `rbx` (five bits: not the top chunk's, at the index `combIndexR`
+gives): the entry of table `r9`
 (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit, added by
 `pt`. -/
 def combAdd (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
-  .seq combIndex <|
+  .seq combIndexR <|
   .seq (.block combDigit) <|
   .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel ++ combNeg)) pt.aff
 

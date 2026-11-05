@@ -8105,8 +8105,13 @@ vg_x25519_base:
 	mov r9, rbx
 	cmp rbx, 26
 	jb 26f
-	sub rcx, 260
-	sub r9, 26
+	mov r9d, 51
+	sub r9, rbx
+	mov rcx, r9
+	add rcx, rcx
+	add rcx, rcx
+	add rcx, r9
+	add rcx, rcx
 	jmp 27f
 26:
 	add rcx, 5
@@ -9312,8 +9317,13 @@ vg_x25519_base_adx:
 	mov r9, rbx
 	cmp rbx, 26
 	jb 26f
-	sub rcx, 260
-	sub r9, 26
+	mov r9d, 51
+	sub r9, rbx
+	mov rcx, r9
+	add rcx, rcx
+	add rcx, rcx
+	add rcx, r9
+	add rcx, rcx
 	jmp 27f
 26:
 	add rcx, 5
