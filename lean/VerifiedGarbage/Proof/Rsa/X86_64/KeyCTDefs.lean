@@ -70,6 +70,9 @@ structure KS (p : KPub) (s : State) : Prop where
   pl2 : p.pl ≤ 8 * p.w
   ql1 : 1 ≤ p.ql
   ql2 : p.ql ≤ 8 * p.w
+  word_w1 : 4 ≤ p.w
+  word_w2 : p.w < 2 ^ 24
+  word_room : slot p.w 8 + slot p.w 17 ≤ p.Z
 
 /-- In the checks' context, from some entry state. -/
 def KK (p : KPub) (t : State) : Prop := ∃ s minv N, KCtx s t p.B p.Z p.w minv N ∧ KS p s
