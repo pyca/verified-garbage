@@ -26,18 +26,18 @@ theorem candidateFilter_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
   unfold candidateFilter
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine RelCT.seq (two_post
-    (two_map CandidatePublic.outer (fun _ _ h => h.1.header) (phaseSetup_ct false)) (setup_phase false)) ?_
-  refine RelCT.seq (two_post (loadOutput_ct false) load_initial) ?_
+    (two_map CandidatePublic.outer (fun _ _ h => h.1.header) (phaseSetup_ct false .all)) (setup_phase false .all)) ?_
+  refine RelCT.seq (two_post (loadOutput_ct false .all) load_initial) ?_
   refine RelCT.seq (two_post
     (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1) generatorPolicy_ct) generator_initial) ?_
   refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.2, h₂.2]) ?_ ?_
   · refine RelCT.seq (two_post
-      (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1.1.1) (primeCheck_ct false))
+      (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1.1.1) (primeCheck_ct false .all))
       (fun d s h => prime_initial d s h.1.1)) ?_
     refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.2, h₂.2]) ?_ ?_
     · exact RelCT.seq (two_post
         (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.1.link) leave_ct)
-        (fun d s h => leave_initial d s h.1.1)) (testQ_ct M R K)
+        (fun d s h => leave_initial d s h.1.1)) (sieveQ_ct M R K)
     · exact two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.1.link) innerReject_ct
   · exact two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.1.link) innerReject_ct
 

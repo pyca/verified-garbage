@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native controller's local transitions implement the complete search -/
@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 namespace VG.Proof.Ffdh.X86_64.Generation
 
-open VG VG.Proof.Ffdh.Generation
+open VG VG.Proof.Ffdh.SievedGeneration
 
 def searchTail (p : SearchPublic) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
-  (Spec.Ffdh.parameterSearch p.c.bits p.c.gen remaining (p.c.rand.drop used)).consume used
+  (Spec.Ffdh.sievedParameterSearch p.c.bits p.c.gen remaining (p.c.rand.drop used)).consume used
 
 theorem searchTail_zero (p : SearchPublic) (used : Nat) : searchTail p used 0 = .exhausted used := rfl
 
@@ -24,7 +24,7 @@ theorem searchTail_short {p : SearchPublic} {used remaining : Nat} (hr : 0 < rem
   | zero => omega_using [hr]
   | succ n =>
     unfold searchTail
-    rw [Spec.Ffdh.parameterSearch, show Spec.Ffdh.parameterCandidate p.c.bits p.c.gen
+    rw [Spec.Ffdh.sievedParameterSearch, show Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen
       (p.c.rand.drop used) = none from hc]
     simp only [List.length_drop]
     by_cases hb : Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.rand.length - used <;>
@@ -37,7 +37,7 @@ theorem searchTail_accept {p : SearchPublic} {used remaining prime : Nat} {rest 
   | zero => omega_using [hr]
   | succ n =>
     unfold searchTail
-    rw [Spec.Ffdh.parameterSearch, show Spec.Ffdh.parameterCandidate p.c.bits p.c.gen
+    rw [Spec.Ffdh.sievedParameterSearch, show Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen
       (p.c.rand.drop used) = some (some prime, rest) from hc]
     simp only [Spec.Ffdh.ParameterSearchResult.consume, List.length_drop]
 

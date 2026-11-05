@@ -19,13 +19,13 @@ open VG.Impl.Rsa.X86_64.Crt
 open VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
 
-theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
+theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
-    (hp : PhaseHeader p q s)
+    (hp : PhaseHeader p q c s)
     (hv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem p.op p.k) = p.phaseValue q) :
     WP isa loadOutput s fun t => CandidateTape p used t ∧
-      Good t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi ∧ PhaseHeader p q t ∧
+      Good t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi ∧ PhaseHeader p q c t ∧
       wv t.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q ∧
       CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t ∧
       Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k := by

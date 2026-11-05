@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: timing of the requested generator policy -/
@@ -16,7 +16,7 @@ open VG.Impl.Rsa.X86_64.Crt (sLink ws)
 open VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.MlKem.X86_64 VG.Proof.RsaKeyGen.X86_64
 
-private theorem generator_header (d : CandidatePublic) (s : State) (h : PhaseLoaded false d s) :
+private theorem generator_header (d : CandidatePublic) (s : State) (h : PhaseLoaded false .all d s) :
     WP isa (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) s
       (fun t => InnerHeader (d.inner false) t ∧ t.gpr .rdx = (d.inner false).gen) := by
   obtain ⟨mi, hg, hp, _⟩ := h.2
@@ -33,7 +33,7 @@ private theorem generator_header (d : CandidatePublic) (s : State) (h : PhaseLoa
     ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
   exact ⟨⟨h.1.2.2, good_hp hgt (k.2.2.trans h.1.2.1)⟩, hdx⟩
 
-theorem generatorPolicy_ct : RelCT isa (Two (PhaseLoaded false)) generatorPolicy fun _ _ => True := by
+theorem generatorPolicy_ct : RelCT isa (Two (PhaseLoaded false .all)) generatorPolicy fun _ _ => True := by
   unfold generatorPolicy
   exact RelCT.seq (two_post
     (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.link) generatorHead_ct)

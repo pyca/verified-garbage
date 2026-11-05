@@ -15,13 +15,13 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem modulusPolicy_ok (M : Mont) (R : R2Impl M) (K : Kernel)
-    {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
+    {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
-    (hp : PhaseHeader p q s)
+    (hp : PhaseHeader p q c s)
     (hn : wv s.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q)
     (ho : p.phaseValue q % 2 = 1) :
-    WP isa (modulusPolicy M.mm R.code K.run) s (PhaseRoundsPost p used q s) := by
+    WP isa (modulusPolicy M.mm R.code K.run) s (PhaseRoundsPost p used q c s) := by
   unfold modulusPolicy
   refine WP.seq (WP.mono (prepareModulus_state_ok M R h hg hp hn ho)
     fun u ⟨mi', hu, hr, hp', hs, hf, ku⟩ => ?_)

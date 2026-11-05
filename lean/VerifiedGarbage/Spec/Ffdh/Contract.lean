@@ -269,26 +269,6 @@ def generateKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let a := domainOf pLen.toNat dom
       dom.map (·.toNat) ++ [keyStatus a (scalarOfOctets a (bytesAt m rand randLen.toNat))])
 
-def generateKeyApi : Api where
-  module := "ffdh"
-  name := "vg_ffdh_generate_key"
-  sig := generateKeySig
-  writeArgs := true
-  contracts := some fun A stack => generateKeyContract A stack
-  summary := "One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 \
-    §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, \
-    takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is \
-    the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` \
-    (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as \
-    `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes \
-    each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For \
-    2 and 3 the caller tries again with fresh random bytes.\n\n\
-    Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, \
-    the lengths, the domain and the value returned, not otherwise on `rand` or x; the \
-    exponentiation may run over the bytes of q (`p − 1`)."
-  safety := domainSafety ++ ["`x_len`, `y_len` and `rand_len` must be `p_len`.",
-    checkedSafety] ++ scratchSafety
-
 /-! ## `vg_ffdh_exchange` -/
 
 /-- The shared value of the scalar x with the peer's public value y in the

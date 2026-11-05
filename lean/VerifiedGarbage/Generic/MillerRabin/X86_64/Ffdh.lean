@@ -52,7 +52,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     verified := Proof.Ffdh.X86_64.VettedValidation.verified v
     spSafe := Proof.Ffdh.X86_64.VettedValidation.sp_safe v
     features := v.features },
-  Spec.Ffdh.parameterSearchApi.artifact X86_64.target {
+  Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target {
     suffix := v.suffix
     stack := 160
     code := Proof.Ffdh.X86_64.Generation.searchCode v

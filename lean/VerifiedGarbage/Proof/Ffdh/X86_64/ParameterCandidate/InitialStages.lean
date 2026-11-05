@@ -29,9 +29,9 @@ theorem consume_initial (d : CandidatePublic) (s : State) (h : OuterValue false 
         rw [hv]; exact h.1.2⟩
 
 def InitialLoaded (d : CandidatePublic) (s : State) : Prop :=
-  PhaseLoaded false d s ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.P
+  PhaseLoaded false .all d s ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.p.op d.p.k) = d.p.P
 
-theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false d s) :
+theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false .all d s) :
     WP isa loadOutput s (InitialLoaded d) := by
   obtain ⟨mi, hg, hp, hv⟩ := h.2
   exact WP.mono (loadOutput_ok h.1.1 hg hp hv)
@@ -50,7 +50,7 @@ theorem generator_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d
         by rw [hm]; exact h.2⟩, hz⟩
 
 def InitialPrime (d : CandidatePublic) (s : State) : Prop :=
-  InitialLoaded d s ∧ s.zf = some (Spec.Ffdh.primeShape d.p.P)
+  InitialLoaded d s ∧ s.zf = some (d.p.sieved d.p.P)
 
 theorem prime_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d s) :
     WP isa primeCheck s (InitialPrime d) := by
