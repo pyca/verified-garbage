@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn, TableHash, sign_with};
+use super::table::{HmacHash, SignFn, sign_with};
 use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
@@ -81,7 +81,7 @@ fn verify_with(q: &[u8; 133], e: &[u8; 66], signature: &[u8; 132]) -> Result<(),
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<P521> for H {
+impl<H: HmacHash> sealed::Functions<P521> for H {
     fn sign(d: &[u8; 66], digest: &H::Output) -> Result<[u8; 132], Error> {
         let f = detected();
         let sign: SignFn<66, 132> = match Mul::select(f) {
@@ -101,7 +101,7 @@ impl<H: TableHash> sealed::Functions<P521> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<P521> for H {}
+impl<H: HmacHash> SignatureHash<P521> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P521> for Sha512 {

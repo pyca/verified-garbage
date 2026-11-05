@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{TableHash, leftmost, sign_with};
+use super::table::{HmacHash, leftmost, sign_with};
 use super::{Error, Secp256k1, SignatureHash, SigningKey, sealed};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign;
@@ -72,7 +72,7 @@ fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), E
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<Secp256k1> for H {
+impl<H: HmacHash> sealed::Functions<Secp256k1> for H {
     fn sign(d: &[u8; 32], digest: &H::Output) -> Result<[u8; 64], Error> {
         // SAFETY: `vg_ecdsa_secp256k1_sign` needs no CPU feature.
         unsafe { sign_with::<H, 32, 64>(vg_ecdsa_secp256k1_sign, detected(), d, digest) }
@@ -86,7 +86,7 @@ impl<H: TableHash> sealed::Functions<Secp256k1> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<Secp256k1> for H {}
+impl<H: HmacHash> SignatureHash<Secp256k1> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<Secp256k1> for Sha256 {

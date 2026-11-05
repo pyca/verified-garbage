@@ -12,10 +12,10 @@
 //! for the curve, `vg_ecdsa_<curve>_sign` (contract
 //! `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which takes HMAC
 //! over the hash function as a table of the interface `Hmac`
-//! (`crate::arch::fn_tables`, chosen in `x86_64`): the table of the
-//! implementation of the hash function that this CPU runs; and `_adx` for
-//! the curve's multiplications with BMI2 and ADX, on CPUs with the features
-//! its `_FEATURES` constant names.
+//! (`crate::arch::fn_tables`, chosen by `crate::hashes::tables`): the table
+//! of the implementation of the hash function that this CPU runs; and `_adx`
+//! for the curve's multiplications with BMI2 and ADX, on CPUs with the
+//! features its `_FEATURES` constant names.
 //!
 //! Elsewhere a curve signs with its hash functions (for P-192, SHA-256; for
 //! P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
@@ -64,7 +64,7 @@ mod p256;
 mod p384;
 mod p521;
 mod secp256k1;
-mod x86_64;
+mod table;
 
 pub use crate::ec::{
     BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, P192, P224, P256, P384, P521,

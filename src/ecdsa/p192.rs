@@ -1,5 +1,5 @@
 //! ECDSA over p192: deterministic signatures, on x86-64 with HMAC over any
-//! hash function that has a table (`TableHash`), taken as that table
+//! hash function that has a table (`HmacHash`), taken as that table
 //! (`vg_ecdsa_p192_sign`), and elsewhere with HMAC-SHA-256
 //! (`vg_ecdsa_p192_sha256_sign`), public keys (`vg_ec_p192_public_key`), and
 //! verification (`vg_ecdsa_p192_verify`).
@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{TableHash, leftmost, sign_with};
+use super::table::{HmacHash, leftmost, sign_with};
 use super::{Error, P192, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
 #[cfg(target_arch = "x86_64")]
@@ -73,7 +73,7 @@ fn verify_with(q: &[u8; 49], e: &[u8; 24], signature: &[u8; 48]) -> Result<(), E
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<P192> for H {
+impl<H: HmacHash> sealed::Functions<P192> for H {
     fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], Error> {
         // SAFETY: `vg_ecdsa_p192_sign` needs no CPU feature.
         unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, crate::cpu::detected(), d, digest) }
@@ -87,7 +87,7 @@ impl<H: TableHash> sealed::Functions<P192> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<P192> for H {}
+impl<H: HmacHash> SignatureHash<P192> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P192> for Sha256 {

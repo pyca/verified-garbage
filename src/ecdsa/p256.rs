@@ -1,5 +1,5 @@
 //! ECDSA over P-256: deterministic signatures, on x86-64 with HMAC over any
-//! hash function that has a table (`TableHash`), taken as that table
+//! hash function that has a table (`HmacHash`), taken as that table
 //! (`vg_ecdsa_p256_sign`), and elsewhere with HMAC-SHA-256 or HMAC-SHA-384
 //! (`vg_ecdsa_p256_<hash>_sign`), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`), and their variants on CPUs with
@@ -16,7 +16,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn, TableHash, leftmost, sign_with};
+use super::table::{HmacHash, SignFn, leftmost, sign_with};
 use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "arm")]
@@ -178,7 +178,7 @@ impl sealed::Functions<P256> for Sha384 {
 impl SignatureHash<P256> for Sha384 {}
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<P256> for H {
+impl<H: HmacHash> sealed::Functions<P256> for H {
     fn sign(d: &[u8; 32], digest: &H::Output) -> Result<[u8; 64], Error> {
         let f = detected();
         let sign: SignFn<32, 64> = match Mul::select(f) {
@@ -198,7 +198,7 @@ impl<H: TableHash> sealed::Functions<P256> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<P256> for H {}
+impl<H: HmacHash> SignatureHash<P256> for H {}
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {

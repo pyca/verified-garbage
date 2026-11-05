@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{TableHash, leftmost, sign_with};
+use super::table::{HmacHash, leftmost, sign_with};
 use super::{Error, P224, SignatureHash, SigningKey, sealed};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_sign;
@@ -72,7 +72,7 @@ fn verify_with(q: &[u8; 57], e: &[u8; 28], signature: &[u8; 56]) -> Result<(), E
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<P224> for H {
+impl<H: HmacHash> sealed::Functions<P224> for H {
     fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], Error> {
         // SAFETY: `vg_ecdsa_p224_sign` needs no CPU feature.
         unsafe { sign_with::<H, 28, 56>(vg_ecdsa_p224_sign, detected(), d, digest) }
@@ -86,7 +86,7 @@ impl<H: TableHash> sealed::Functions<P224> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<P224> for H {}
+impl<H: HmacHash> SignatureHash<P224> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P224> for Sha224 {

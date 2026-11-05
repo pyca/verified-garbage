@@ -80,6 +80,7 @@ super::streaming_hash!(
             Scalar => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512 [],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512 [],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512 [],
             },
             #[cfg(target_arch = "aarch64")]
             Sha3 => {
@@ -90,11 +91,13 @@ super::streaming_hash!(
             ShaNi => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_SHANI [crate::arch::fn_tables::VG_HASH_SHA512_SHANI_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA512_SHANI_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_SHANI [crate::arch::fn_tables::VG_HMAC_SHA512_SHANI_FEATURES],
             },
             #[cfg(target_arch = "x86_64")]
             Avx2 => {
                 hash: crate::arch::fn_tables::VG_HASH_SHA512_AVX2 [crate::arch::fn_tables::VG_HASH_SHA512_AVX2_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA512_AVX2 [crate::arch::fn_tables::VG_MD_HASH_SHA512_AVX2_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA512_AVX2 [crate::arch::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES],
             },
         },
     }

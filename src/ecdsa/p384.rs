@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{SignFn, TableHash, leftmost, sign_with};
+use super::table::{HmacHash, SignFn, leftmost, sign_with};
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
 #[cfg(target_arch = "arm")]
@@ -76,7 +76,7 @@ fn verify_with(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), E
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<P384> for H {
+impl<H: HmacHash> sealed::Functions<P384> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], Error> {
         let f = detected();
         let sign: SignFn<48, 96> = match Mul::select(f) {
@@ -96,7 +96,7 @@ impl<H: TableHash> sealed::Functions<P384> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<P384> for H {}
+impl<H: HmacHash> SignatureHash<P384> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P384> for Sha384 {

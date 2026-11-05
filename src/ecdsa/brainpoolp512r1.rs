@@ -14,7 +14,7 @@
 ))]
 
 #[cfg(target_arch = "x86_64")]
-use super::x86_64::{TableHash, leftmost, sign_with};
+use super::table::{HmacHash, leftmost, sign_with};
 use super::{BrainpoolP512r1, Error, SignatureHash, SigningKey, sealed};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
@@ -72,7 +72,7 @@ fn verify_with(q: &[u8; 129], e: &[u8; 64], signature: &[u8; 128]) -> Result<(),
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> sealed::Functions<BrainpoolP512r1> for H {
+impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
     fn sign(d: &[u8; 64], digest: &H::Output) -> Result<[u8; 128], Error> {
         // SAFETY: `vg_ecdsa_brainpoolp512r1_sign` needs no CPU feature.
         unsafe { sign_with::<H, 64, 128>(vg_ecdsa_brainpoolp512r1_sign, detected(), d, digest) }
@@ -86,7 +86,7 @@ impl<H: TableHash> sealed::Functions<BrainpoolP512r1> for H {
 }
 
 #[cfg(target_arch = "x86_64")]
-impl<H: TableHash> SignatureHash<BrainpoolP512r1> for H {}
+impl<H: HmacHash> SignatureHash<BrainpoolP512r1> for H {}
 
 #[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<BrainpoolP512r1> for Sha512 {
