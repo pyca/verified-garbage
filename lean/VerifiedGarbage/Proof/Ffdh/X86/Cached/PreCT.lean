@@ -734,6 +734,151 @@ theorem front_trace {Q : State → State → Prop} {rest : Prog isa}
     rw [e, show pN len D + 8 * (len - 1 - pLd len D) = Spec.RsaKeyGen.bitLength ((pBnd len D).getD (pLd len D) 0).toNat +
       8 * (len - 1 - pLd len D) from rfl, width_spec P.dv P.rp.geo.lower size]
 
+/-- The context's stages, with the start's public values. -/
+def MQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (dlen : Nat) (D : List Byte) (T : BitVec 32) (X : State → Prop) (u : State) : Prop :=
+  ∃ x₀, PE Ex base bytes len args sp dlen D T x₀ ∧ In Ex base bytes len args u ∧ CtxW base bytes len args u ∧
+    Frame (ctxR args len :: frameR base sp (fR len)) x₀.mem u.mem ∧
+    Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] x₀ u ∧
+    w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows (pW len D) ∧ X u
+
+theorem MQ.run {X : State → Prop} {u : State} (h : MQ Ex base bytes len args sp dlen D T X u) :
+    Run Ex base bytes len args sp u :=
+  let ⟨_, P, I, _, _, K, _⟩ := h
+  ⟨I, P.ok.keep K, (K.1 _ (by decide)).trans P.rp.esp⟩
+
+/-- p's context and the rows, with the start's public values. -/
+def CQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (D : List Byte) (u : State) : Prop :=
+  CtxOk Ex base bytes len args .wide (Spec.Ffdh.domainOf len D).p u ∧ CtxW base bytes len args u ∧ ArgsOk u ∧
+    u.gpr .esp = sp ∧ w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows (pW len D) ∧
+    sv u.mem base len .wide 3 = 1 ∧ sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % (Spec.Ffdh.domainOf len D).p ∧
+    sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g
+
+theorem CQ.run {u : State} (h : CQ Ex base bytes len args sp D u) : Run Ex base bytes len args sp u :=
+  ⟨h.1.inp, h.2.2.1, h.2.2.2.1⟩
+
+/-- The stages after the width. -/
+theorem middle_trace (dv : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024) :
+    RelCT isa (Both (SQ Ex base bytes len args sp dlen D T fun _ u => u.gpr .eax = BitVec.ofNat 32 (pW len D)))
+      (.seq (.block metadata) (.seq VG.Impl.Ffdh.X86.pSetup (.seq (load (.slot .wide 10) (one .wide) 4 5)
+        (.seq VG.Impl.Ffdh.X86.ctxP (.seq (storeRow (rowImm 0) 9) (.seq (storeRow (rowImm 1) 4)
+          (.seq table (VG.Impl.Ffdh.X86.ret 1)))))))) fun _ _ => True := by
+  have upB : ∀ {m m' : Mem}, Frame (frameR base sp (fR len)) m m' →
+      Frame (ctxR args len :: frameR base sp (fR len)) m m' :=
+    fun F => F.mono fun r hr => List.mem_cons_of_mem _ hr
+  -- The metadata.
+  refine VG.RelCT.seq (aRel (fun _ h => h.run) metadata_check (F := MQ Ex base bytes len args sp dlen D T fun _ => True)
+    fun u ⟨x₀, P, S, ea⟩ => ?_) ?_
+  · have bf := VG.Proof.Ffdh.ContextRows.genBits_facts P.dv
+    have up := P.rp.geo.upper
+    refine WP.mono (metadata_ok S.inp (P.cw.keep S.keeps) ea (by have := bf.2; unfold pW; omega))
+      fun t ⟨I, C, F, K, _, wr, _⟩ => ?_
+    have e : u.gpr .esp = sp := S.esp.trans P.rp.esp
+    rw [e] at F
+    have Fs := S.frame
+    rw [P.rp.esp] at Fs
+    exact ⟨x₀, P, I, C, (upB Fs).trans F, S.keeps.trans (K.mono (by decide)), wr, trivial⟩
+  -- p, one and `p − 1`.
+  refine VG.RelCT.seq (aRel (fun _ h => h.run) pSetup_check' (F := MQ Ex base bytes len args sp dlen D T fun u =>
+      sv u.mem base len .wide 9 = (Spec.Ffdh.domainOf len D).p) fun u ⟨x₀, P, I, C, F, K, wr, _⟩ => ?_) ?_
+  · have G := P.rp.geo
+    have dl := G.dl
+    have lw := G.lower
+    have dfit := G.fit
+    have G₆ := G.keep ⟨rfl, rfl⟩ K
+    have hb := P.rp.b40
+    rw [← P.rp.esp] at hb F
+    refine WP.mono (pSetup_ok I G.e3 (by omega)
+      (by have := VG.CallLay.inRegions_sub G₆.rd (off := 0) (l := len) (by omega) (by omega)
+          rwa [BitVec.add_zero] at this)
+      (G.apart.sub_left (Region.sub_prefix (by omega)))) fun t ⟨I₇, F₇, k₇, v9, _, _, K₇⟩ => ?_
+    rw [CheckDomain.argNum_comp, comp_keepC P.rp.inp G hb P.domC F (by omega), comp_p x₀.mem args (dlen := dlen) (by omega),
+      P.rp.dom] at v9
+    have e : u.gpr .esp = sp := (K.1 _ (by decide)).trans P.rp.esp
+    rw [e] at F₇
+    rw [P.rp.esp] at F
+    exact ⟨x₀, P, I₇, C.keep K₇, F.trans (upB F₇), K.trans K₇,
+      by rw [k₇.word_eq (by simp only [rowsOff, numBase]; decide)]; exact wr, v9⟩
+  -- g.
+  refine VG.RelCT.seq (aRel (fun _ h => h.run) loadG_check' (F := MQ Ex base bytes len args sp dlen D T fun u =>
+      sv u.mem base len .wide 9 = (Spec.Ffdh.domainOf len D).p ∧
+        sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g) fun u ⟨x₀, P, I, C, F, K, wr, v9⟩ => ?_) ?_
+  · have G := P.rp.geo
+    have dl := G.dl
+    have hb := P.rp.b40
+    rw [← P.rp.esp] at hb F
+    refine WP.mono (loadComp_ok I (G.keep ⟨rfl, rfl⟩ K) (k := 1) (j := 10) (by decide) (by omega) (by decide))
+      fun t ⟨v10, O, K₈⟩ => ?_
+    rw [comp_keepC P.rp.inp G hb P.domC F (by omega), comp_g x₀.mem args (dlen := dlen) (by omega), P.rp.dom] at v10
+    have S₈ : Step Ex base bytes len args u t := Step.slot I (by decide) O K₈
+    have e : u.gpr .esp = sp := (K.1 _ (by decide)).trans P.rp.esp
+    have F₈ := S₈.frame
+    rw [e] at F₈
+    rw [P.rp.esp] at F
+    exact ⟨x₀, P, S₈.inp, C.keep S₈.keeps, F.trans (upB F₈), K.trans S₈.keeps,
+      by rw [(kept_slot I (a := 10) O).word_eq (by simp only [rowsOff, numBase]; decide)]; exact wr,
+      by rw [(kept_slot I (a := 10) O).slot_eq]; exact v9, v10⟩
+  -- p's context.
+  refine VG.RelCT.seq (relCT_both (F := CQ Ex base bytes len args sp D)
+    ((VG.Proof.Ffdh.X86.ctxP_relCT (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args)
+      (sp := sp)).mono (fun _ _ h => ⟨h.1.run, h.2.run⟩) fun _ _ _ => trivial)
+    fun u ⟨x₀, P, I, C, F, K, wr, v9, v10⟩ => ?_) ?_
+  · obtain ⟨hodd, h1p, -⟩ := VG.Proof.Bignum.valid_facts (VG.Proof.Ffdh.domainValid_mod P.dv) P.rp.geo.lower
+    refine WP.mono (ctxP_ok I (P := (Spec.Ffdh.domainOf len D).p) (by rw [v9]; exact safeM_of h1p hodd))
+      fun t ⟨Cx, s3, s4, _, k₉, K₉⟩ => ⟨Cx, C.keep K₉, P.ok.keep (K.trans K₉),
+        ((K.trans K₉).1 _ (by decide)).trans P.rp.esp,
+        by rw [k₉.word_eq (by simp only [rowsOff, numBase]; decide)]; exact wr, s3, s4,
+        by rw [k₉.slot_eq]; exact v10⟩
+  -- Rows 0 and 1.
+  have keepCQ : ∀ {u t : State}, CQ Ex base bytes len args sp D u →
+      CtxOk Ex base bytes len args .wide (Spec.Ffdh.domainOf len D).p t → CtxW base bytes len args t →
+      (∀ {d N : Nat}, d + 4 * N ≤ bytes → val32 t.mem base d N = val32 u.mem base d N) →
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u t → CQ Ex base bytes len args sp D t :=
+    fun {u t} Q Cx C W K => by
+      have bl := Q.1.inp.bytes_lt
+      have nd := Q.1.inp.need
+      have nb : numBase = 3336 := rfl
+      have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
+      have est : st len .wide = 2 * bc len .wide + 32 := rfl
+      have bw := bc_eq_cwc len .wide
+      have sl : ∀ j, j ≤ 27 → sv t.mem base len .wide j = sv u.mem base len .wide j := fun j hj => by
+        have := Q.1.inp.slot_fit .wide (j := j) hj
+        exact W (by omega)
+      refine ⟨Cx, C, Q.2.2.1.keep K, (K.1 _ (by decide)).trans Q.2.2.2.1, ?_, by rw [sl 3 (by decide)]; exact Q.2.2.2.2.2.1,
+        by rw [sl 4 (by decide)]; exact Q.2.2.2.2.2.2.1, by rw [sl 10 (by decide)]; exact Q.2.2.2.2.2.2.2⟩
+      rw [← w32_val32_one, W (by simp only [rowsOff]; omega), w32_val32_one]; exact Q.2.2.2.2.1
+  refine VG.RelCT.seq (storeRow_trace (fun _ h => h.run) 0 9 store9_check (F := CQ Ex base bytes len args sp D)
+    fun u Q => WP.mono (storePre_ok Q.1 Q.2.1 (j := 0) (a := 9) (by decide) (by decide))
+      fun t ⟨Cx, C, _, _, W, _, K⟩ => keepCQ Q Cx C W K) ?_
+  refine VG.RelCT.seq (storeRow_trace (fun _ h => h.run) 1 4 store4_check (F := CQ Ex base bytes len args sp D)
+    fun u Q => WP.mono (storePre_ok Q.1 Q.2.1 (j := 1) (a := 4) (by decide) (by decide))
+      fun t ⟨Cx, C, _, _, W, _, K⟩ => keepCQ Q Cx C W K) ?_
+  -- The table.
+  refine VG.RelCT.seq (P := Both (CQ Ex base bytes len args sp D)) ?_
+    (aEnd (P := TR Ex base bytes len args sp (Spec.Ffdh.domainOf len D).p (Spec.Ffdh.domainOf len D).g (pW len D) 32
+      fun _ => True) (fun _ h => h.run) ret1_check)
+  intro x y tx ty x' y' h ex ey
+  obtain ⟨Q₁, Q₂⟩ := h
+  have P1 := Q₁.1.gt
+  have bf' := VG.Proof.Ffdh.ContextRows.genBits_facts dv
+  have bf : pW len D ≤ 8192 := by unfold pW; omega
+  have hR := VG.Proof.Rsa.FixedBaseComb.rows_small bf
+  have rp : 0 < Spec.Rsa.FixedBaseComb.rows (pW len D) := VG.Proof.Rsa.FixedBaseComb.rows_pos (by unfold pW; omega)
+  have toTR : ∀ {u : State}, CQ Ex base bytes len args sp D u → TR Ex base bytes len args sp
+      (Spec.Ffdh.domainOf len D).p (Spec.Ffdh.domainOf len D).g (pW len D) 0 (fun u =>
+        sv u.mem base len .wide 3 = 1 ∧ sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) %
+          (Spec.Ffdh.domainOf len D).p ∧ sv u.mem base len .wide 10 = (Spec.Ffdh.domainOf len D).g) u :=
+    fun {u} Q => ⟨u, Q.2.2.1, Q.2.2.2.1, ⟨Q.1, Q.2.1, by omega, fun e he => absurd he (Nat.not_lt_zero _),
+      Q.2.2.2.2.1, rfl, Frame.refl _ _, Keeps.refl _ _⟩, Q.2.2.2.2.2⟩
+  exact table_trace rp hR.1 P1 x y tx ty x' y' ⟨toTR Q₁, toTR Q₂⟩ ex ey
+
+/-- The precomputation's body: runs from the same public start leak the same traces. -/
+theorem pcBody_trace (dv : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024) :
+    RelCT isa (Both (PE Ex base bytes len args sp dlen D T)) Precompute.body fun _ _ => True := by
+  unfold Precompute.body
+  exact front_trace (middle_trace dv hl)
+
 end
 
 end
