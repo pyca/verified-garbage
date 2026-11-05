@@ -39,16 +39,10 @@ theorem coreK_p192 : coreK Impl.Ecdsa.X86_64.p192 = Proof.Ecdsa.X86_64.P192.sign
     implies_true, and_true, Proof.Ecdsa.X86_64.P192.signX86_64]
   rfl
 
-/-! ## The blocks for each hash function's sizes -/
+/-! ## The curve's blocks -/
 
-theorem p192_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 16 64) := by rfcT_decide
-theorem p192_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 20 64) := by rfcT_decide
-theorem p192_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 28 64) := by rfcT_decide
-theorem p192_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 32 64) := by rfcT_decide
-theorem p192_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 48 128) := by rfcT_decide
-theorem p192_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 64 128) := by rfcT_decide
-theorem p192_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 28 128) := by rfcT_decide
-theorem p192_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p192 false 0 32 128) := by rfcT_decide
+theorem p192_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p192 false 0) := by rfcT_decide
+
 
 /-- p192, with the group law `hL` and the inversions'
 soundness `hI`. -/
@@ -57,7 +51,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   E := Impl.Ecdsa.X86_64.p192
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inr ⟨rfl, .inr rfl⟩, Proof.Ecdsa.X86_64.P192.p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
@@ -70,15 +64,14 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  blkT := blkT_of p192_blk₀ p192_blk₁ p192_blk₂ p192_blk₃ p192_blk₄ p192_blk₅ p192_blk₆ p192_blk₇
+  blk := p192_blk
 
 
 /-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
 theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs) :
-    Verified X86_64.target (signCode (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
+    Verified X86_64.target (signCodeT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
       (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86_64.p192.combConsts vs) := by
   have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p192) h (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat

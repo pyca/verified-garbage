@@ -44,16 +44,10 @@ theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.sign
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P224.signX86_64, Proof.Ecdsa.X86_64.P224.TblHeld]
   rfl
 
-/-! ## The blocks for each hash function's sizes -/
+/-! ## The curve's blocks -/
 
-theorem p224_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 16 64) := by rfcT_decide
-theorem p224_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 20 64) := by rfcT_decide
-theorem p224_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 28 64) := by rfcT_decide
-theorem p224_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 32 64) := by rfcT_decide
-theorem p224_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 48 128) := by rfcT_decide
-theorem p224_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 64 128) := by rfcT_decide
-theorem p224_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 28 128) := by rfcT_decide
-theorem p224_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p224 false 0 32 128) := by rfcT_decide
+theorem p224_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p224 false 0) := by rfcT_decide
+
 
 /-- P-224, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
@@ -63,7 +57,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   E := Impl.Ecdsa.X86_64.p224
   inst := Spec.Ecdsa.P224.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inr ⟨rfl, .inl rfl⟩, Proof.Ecdsa.X86_64.P224.p224_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
@@ -76,16 +70,15 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  blkT := blkT_of p224_blk₀ p224_blk₁ p224_blk₂ p224_blk₃ p224_blk₄ p224_blk₅ p224_blk₆ p224_blk₇
+  blk := p224_blk
 
 
 /-- `vg_ecdsa_p224_sign`, with the tables of `vs`. -/
 theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
-    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P224_COMB" ∉ Proof.HashTable.X86_64.names vs) :
-    Verified X86_64.target (signCode (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.X86_64.names vs) :
+    Verified X86_64.target (signCodeT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
       (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.X86_64.p224.combConsts vs) := by
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 Proof.Ecdsa.X86_64.P224.satMem h.2
     (by rw [Proof.Ecdsa.X86_64.P224.p224W_length]; decide) Proof.Ecdsa.X86_64.P224.satMem_held (by decide) rfl
