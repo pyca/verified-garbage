@@ -10,6 +10,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
@@ -125,9 +126,10 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 namespace VG.Generic.P192.X86_64.EcdsaP192
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Artifact := [
-  Spec.Ecdsa.P192.verifyApi.artifact X86_64.target {
-    code := Impl.Ecdsa.Verify.X86_64.verifyP192
-    stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.P192.verify_verified h.law h.inv }]
+  Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target {
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.verifyP192
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_verified h.law h.inv }]
 
 end VG.Generic.P192.X86_64.EcdsaP192

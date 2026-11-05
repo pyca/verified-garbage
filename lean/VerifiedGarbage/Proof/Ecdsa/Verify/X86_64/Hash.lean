@@ -35,7 +35,7 @@ memory.
 
 @[expose] public section
 
-namespace VG.Proof.Ecdsa.Verify.X86_64
+namespace VG.Proof.Ecdsa.Verify.X86_64.Hash
 
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64.VerifyHash
 
@@ -1369,4 +1369,4 @@ theorem hashSat_cons {c₀ : String × List (BitVec 64)} {cs : List (String × L
 
 end
 
-end VG.Proof.Ecdsa.Verify.X86_64
+end VG.Proof.Ecdsa.Verify.X86_64.Hash
