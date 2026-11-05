@@ -6,13 +6,32 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP256r1Order.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Sign
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignLit
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignVerified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP256r1Order.Lit
 
 /-!
 # Deterministic ECDSA on RISC-V: brainpoolp256r1's kit
 
-brainpoolp256r1's scalars, the functions of its order, and `vg_ecdsa_brainpoolp256r1_sign`, whose
+brainpoolp256r1's scalars, the functions of its order, and `vg_ecdsa_brainpoolp256r1_sign_k` (the signature with a given `k`), whose
 `[k]G` reads the comb's table: its calls against `signRVC` (`WP.call`, since
 it pushes no frames), from what `CoreArgs` gives.
+
+Then `vg_ecdsa_brainpoolp256r1_sign`, with HMAC as a table: the curve for the body
+(`curveT`), the taint checks of its pieces (`checksP`), which the kernel
+evaluates, and its verification against `TableInstance.signContract` with
+the tables of `vs` (`verifiedT`).
 -/
 
 @[expose] public section
@@ -126,5 +145,45 @@ def kit (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) : Kit where
   K := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
   core_call h _ hQ := core_call hL h hQ
   core_rel h := core_rel hL h
+
+/-! ## `vg_ecdsa_brainpoolp256r1_sign`, with HMAC as a table -/
+
+/-- brainpoolP256r1 as the body's curve, for its group law `hL`. -/
+def curveT (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) : CurveT where
+  kit := kit hL
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
+  big := false
+  hbig := (by decide : (false = true ↔ 64 < 32))
+  hGv := rfl
+  hsh := fun _ => rfl
+
+/-- The body's configuration without the tables, which the taint checks see. -/
+def cfgP : Impl.Ecdsa.Rfc6979.RISCV64.Cfg where
+  f := Proof.HmacTable.RISCV64.fnsOf []
+  FN := Impl.Ecdsa.RISCV64.brainpoolp256r1Order
+  coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
+  coreC := Impl.Ecdsa.RISCV64.signBrainpoolP256r1
+  tries := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries
+  nw := 4
+  Q := 32
+  big := false
+  G := 32
+
+theorem checksP : Checks cfgP := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, trivial⟩, ⟨?_, trivial⟩, ⟨?_, trivial⟩, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> refine ⟨?_, ?_⟩
+  taint_decide_all
+
+theorem checksT (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) :
+    Checks (cfgT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries []) := checksP
+
+/-- `vg_ecdsa_brainpoolp256r1_sign`, with the tables of `vs`. -/
+theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) (vs : List Proof.HmacTable.RISCV64.HVar)
+    (h : OK vs ∧ Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1Sym ∉ Proof.HmacTable.RISCV64.names vs) :
+    Verified RISCV64.target (signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 (kit hL).K vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1) h.1 VG.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Comb.combSatMem h.2
+    (by rw [VG.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Comb.combSatMem_held (by decide) rfl
+  exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h.1 hsat
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1
