@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.P521.Comb7
@@ -130,26 +131,28 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 namespace VG.Generic.P521.X86_64.EcdsaP521
 
-/-- The function of `Spec.Ecdsa.P521.verifyApi`, multiplying modulo `p` with
+/-- The function of `Spec.Ecdsa.P521.verifyHashApi`, multiplying modulo `p` with
 BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
 instruction writing `rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
+      (Spec.Ecdsa.P521.inst.verifyHashContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P521.verifyApi.artifact X86_64.target {
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
-    stack := 8
+    stack := 96
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
-  verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP521
-    (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified h.law (Proof.P521.combOk7 h.law) h.inv),
-  verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
-    (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv)]
+  verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+    Impl.Ecdsa.Verify.X86_64.jointVerifyP521)
+    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified h.law (Proof.P521.combOk7 h.law) h.inv),
+  verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+    Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx)
+    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv)]
 
 end VG.Generic.P521.X86_64.EcdsaP521

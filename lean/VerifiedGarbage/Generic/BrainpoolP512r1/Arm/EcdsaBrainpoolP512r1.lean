@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.Arm
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Tactic.SplitIfs
@@ -76,13 +77,17 @@ import VerifiedGarbage.Proof.X25519.Field
 namespace VG.Generic.BrainpoolP512r1.Arm.EcdsaBrainpoolP512r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.verifyApi.artifact Arm.target {
-    code := Impl.Ecdsa.Verify.Arm.verifyBrainpoolP512r1
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verify_verified h.law },
-  Spec.Ecdsa.BrainpoolP512r1.verifyApi.artifact Arm.target {
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact Arm.target {
+    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
+      Impl.Ecdsa.Verify.Arm.verifyBrainpoolP512r1
+    stack := 96
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHash_verified h.law },
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Ecdsa.Verify.Arm.verifyBrainpoolP512r1U
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyU_verified h.law
+    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
+      Impl.Ecdsa.Verify.Arm.verifyBrainpoolP512r1U
+    stack := 96
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHashU_verified h.law
     features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP512r1.Arm.EcdsaBrainpoolP512r1

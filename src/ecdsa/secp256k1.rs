@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, SignFn, leftmost, sign_with};
+use super::table::{HmacHash, SignFn, sign_with};
 use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_sign;
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify;
@@ -21,21 +21,30 @@ use crate::cpu::detected;
 use crate::ec::Secp256k1;
 use crate::ec::secp256k1::Mul;
 
-/// Whether `signature` verifies with `q` for the hash whose leftmost 32
-/// bytes are `e`.
-fn verify_with(q: &[u8; 65], e: &[u8; 32], signature: &[u8; 64]) -> Result<(), Error> {
+/// Whether `signature` verifies with `q` for the hash `digest`.
+fn verify_with(q: &[u8; 65], digest: &[u8], signature: &[u8; 64]) -> Result<(), Error> {
     let mut scratch = [0u64; 1024];
     let ok = match Mul::select(detected()) {
-        // SAFETY: `q` is valid for reads of 65 bytes, `e` of 32,
-        // `signature` of 64 and `scratch` for reads and writes of 8192;
-        // `scratch` is a distinct object from the others, so it overlaps
-        // neither them nor the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ecdsa_secp256k1_verify(q, e, signature, &mut scratch) },
+        // SAFETY: `q` is valid for reads of 65 bytes, `digest` of `digest.len()`,
+        // `signature` of 64 and `scratch` for reads and writes of 8192; `scratch`
+        // is a distinct object from the others, so it overlaps neither them nor the
+        // call's stack frame, and, as Rust objects, none wraps around the address
+        // space.
+        Mul::Baseline => unsafe {
+            vg_ecdsa_secp256k1_verify(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        },
         // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
         // (`Mul::select`).
         #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe { vg_ecdsa_secp256k1_verify_umaal(q, e, signature, &mut scratch) },
+        Mul::Umaal => unsafe {
+            vg_ecdsa_secp256k1_verify_umaal(
+                q,
+                digest.as_ptr(),
+                digest.len(),
+                signature,
+                &mut scratch,
+            )
+        },
     };
     if ok == 1 {
         Ok(())
@@ -57,10 +66,10 @@ impl<H: HmacHash> sealed::Functions<Secp256k1> for H {
         unsafe { sign_with::<H, 32, 64>(sign, f, d, digest) }
     }
 
-    /// `e` is the leftmost 256 bits of the hash (FIPS 186-5 §6.4.2): its
-    /// first 32 bytes, or the hash after zeros if it is shorter.
+    /// The verified function takes the hash itself, of any length, and
+    /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(q: &[u8; 65], digest: &H::Output, signature: &[u8; 64]) -> Result<(), Error> {
-        verify_with(q, &leftmost::<32>(digest.as_ref()), signature)
+        verify_with(q, digest.as_ref(), signature)
     }
 }
 

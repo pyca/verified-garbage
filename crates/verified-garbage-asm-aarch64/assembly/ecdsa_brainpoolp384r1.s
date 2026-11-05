@@ -5,6 +5,203 @@
 // gives.
 
 vg_ecdsa_brainpoolp384r1_verify:
+	sub sp, sp, #80
+	add x5, sp, #0
+	lsr x10, x2, #7
+	movz x11, #127, lsl #0
+	and x12, x2, x11
+	add x12, x12, #80
+	lsr x12, x12, #7
+	orr x11, x10, x12
+	cbnz x11, 20f
+	movz x12, #0, lsl #0
+	strb w12, [x5, #0]
+	strb w12, [x5, #1]
+	strb w12, [x5, #2]
+	strb w12, [x5, #3]
+	strb w12, [x5, #4]
+	strb w12, [x5, #5]
+	strb w12, [x5, #6]
+	strb w12, [x5, #7]
+	strb w12, [x5, #8]
+	strb w12, [x5, #9]
+	strb w12, [x5, #10]
+	strb w12, [x5, #11]
+	strb w12, [x5, #12]
+	strb w12, [x5, #13]
+	strb w12, [x5, #14]
+	strb w12, [x5, #15]
+	strb w12, [x5, #16]
+	strb w12, [x5, #17]
+	strb w12, [x5, #18]
+	strb w12, [x5, #19]
+	strb w12, [x5, #20]
+	strb w12, [x5, #21]
+	strb w12, [x5, #22]
+	strb w12, [x5, #23]
+	strb w12, [x5, #24]
+	strb w12, [x5, #25]
+	strb w12, [x5, #26]
+	strb w12, [x5, #27]
+	strb w12, [x5, #28]
+	strb w12, [x5, #29]
+	strb w12, [x5, #30]
+	strb w12, [x5, #31]
+	strb w12, [x5, #32]
+	strb w12, [x5, #33]
+	strb w12, [x5, #34]
+	strb w12, [x5, #35]
+	strb w12, [x5, #36]
+	strb w12, [x5, #37]
+	strb w12, [x5, #38]
+	strb w12, [x5, #39]
+	strb w12, [x5, #40]
+	strb w12, [x5, #41]
+	strb w12, [x5, #42]
+	strb w12, [x5, #43]
+	strb w12, [x5, #44]
+	strb w12, [x5, #45]
+	strb w12, [x5, #46]
+	strb w12, [x5, #47]
+	strb w12, [x5, #48]
+	strb w12, [x5, #49]
+	strb w12, [x5, #50]
+	strb w12, [x5, #51]
+	strb w12, [x5, #52]
+	strb w12, [x5, #53]
+	strb w12, [x5, #54]
+	strb w12, [x5, #55]
+	strb w12, [x5, #56]
+	strb w12, [x5, #57]
+	strb w12, [x5, #58]
+	strb w12, [x5, #59]
+	strb w12, [x5, #60]
+	strb w12, [x5, #61]
+	strb w12, [x5, #62]
+	strb w12, [x5, #63]
+	strb w12, [x5, #64]
+	strb w12, [x5, #65]
+	strb w12, [x5, #66]
+	strb w12, [x5, #67]
+	strb w12, [x5, #68]
+	strb w12, [x5, #69]
+	strb w12, [x5, #70]
+	strb w12, [x5, #71]
+	add x13, x5, #48
+	sub x13, x13, x2
+	cbz x2, 22f
+24:
+	ldrb w9, [x1, #0]
+	strb w9, [x13, #0]
+	add x1, x1, #1
+	add x13, x13, #1
+	sub x2, x2, #1
+	cbnz x2, 24b
+	b 23f
+22:
+23:
+	b 21f
+20:
+	ldrb w9, [x1, #0]
+	strb w9, [x5, #0]
+	ldrb w9, [x1, #1]
+	strb w9, [x5, #1]
+	ldrb w9, [x1, #2]
+	strb w9, [x5, #2]
+	ldrb w9, [x1, #3]
+	strb w9, [x5, #3]
+	ldrb w9, [x1, #4]
+	strb w9, [x5, #4]
+	ldrb w9, [x1, #5]
+	strb w9, [x5, #5]
+	ldrb w9, [x1, #6]
+	strb w9, [x5, #6]
+	ldrb w9, [x1, #7]
+	strb w9, [x5, #7]
+	ldrb w9, [x1, #8]
+	strb w9, [x5, #8]
+	ldrb w9, [x1, #9]
+	strb w9, [x5, #9]
+	ldrb w9, [x1, #10]
+	strb w9, [x5, #10]
+	ldrb w9, [x1, #11]
+	strb w9, [x5, #11]
+	ldrb w9, [x1, #12]
+	strb w9, [x5, #12]
+	ldrb w9, [x1, #13]
+	strb w9, [x5, #13]
+	ldrb w9, [x1, #14]
+	strb w9, [x5, #14]
+	ldrb w9, [x1, #15]
+	strb w9, [x5, #15]
+	ldrb w9, [x1, #16]
+	strb w9, [x5, #16]
+	ldrb w9, [x1, #17]
+	strb w9, [x5, #17]
+	ldrb w9, [x1, #18]
+	strb w9, [x5, #18]
+	ldrb w9, [x1, #19]
+	strb w9, [x5, #19]
+	ldrb w9, [x1, #20]
+	strb w9, [x5, #20]
+	ldrb w9, [x1, #21]
+	strb w9, [x5, #21]
+	ldrb w9, [x1, #22]
+	strb w9, [x5, #22]
+	ldrb w9, [x1, #23]
+	strb w9, [x5, #23]
+	ldrb w9, [x1, #24]
+	strb w9, [x5, #24]
+	ldrb w9, [x1, #25]
+	strb w9, [x5, #25]
+	ldrb w9, [x1, #26]
+	strb w9, [x5, #26]
+	ldrb w9, [x1, #27]
+	strb w9, [x5, #27]
+	ldrb w9, [x1, #28]
+	strb w9, [x5, #28]
+	ldrb w9, [x1, #29]
+	strb w9, [x5, #29]
+	ldrb w9, [x1, #30]
+	strb w9, [x5, #30]
+	ldrb w9, [x1, #31]
+	strb w9, [x5, #31]
+	ldrb w9, [x1, #32]
+	strb w9, [x5, #32]
+	ldrb w9, [x1, #33]
+	strb w9, [x5, #33]
+	ldrb w9, [x1, #34]
+	strb w9, [x5, #34]
+	ldrb w9, [x1, #35]
+	strb w9, [x5, #35]
+	ldrb w9, [x1, #36]
+	strb w9, [x5, #36]
+	ldrb w9, [x1, #37]
+	strb w9, [x5, #37]
+	ldrb w9, [x1, #38]
+	strb w9, [x5, #38]
+	ldrb w9, [x1, #39]
+	strb w9, [x5, #39]
+	ldrb w9, [x1, #40]
+	strb w9, [x5, #40]
+	ldrb w9, [x1, #41]
+	strb w9, [x5, #41]
+	ldrb w9, [x1, #42]
+	strb w9, [x5, #42]
+	ldrb w9, [x1, #43]
+	strb w9, [x5, #43]
+	ldrb w9, [x1, #44]
+	strb w9, [x5, #44]
+	ldrb w9, [x1, #45]
+	strb w9, [x5, #45]
+	ldrb w9, [x1, #46]
+	strb w9, [x5, #46]
+	ldrb w9, [x1, #47]
+	strb w9, [x5, #47]
+21:
+	add x1, x5, #0
+	add x2, x3, #0
+	add x3, x4, #0
 	add x4, x3, #0
 	add x6, x0, #0
 	add x3, x2, #0
@@ -501,7 +698,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #2176]
 	movz x19, #48, lsl #0
 	movz x5, #1, lsl #0
-20:
+25:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1552]
@@ -530,7 +727,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #2231]
-	cbnz x19, 20b
+	cbnz x19, 25b
 	ldr x5, [x8, #40]
 	rev x5, x5
 	str x5, [x0, #1504]
@@ -766,7 +963,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	umov x30, v29.d[0]
 	movz x19, #48, lsl #0
 	movz x5, #1, lsl #0
-21:
+26:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1696]
@@ -795,10 +992,10 @@ vg_ecdsa_brainpoolp384r1_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #2951]
-	cbnz x19, 21b
+	cbnz x19, 26b
 	movz x19, #48, lsl #0
 	movz x5, #1, lsl #0
-22:
+27:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1744]
@@ -827,7 +1024,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #3335]
-	cbnz x19, 22b
+	cbnz x19, 27b
 	movz x1, #47092, lsl #0
 	movk x1, #53586, lsl #16
 	movk x1, #63914, lsl #32
@@ -859,39 +1056,39 @@ vg_ecdsa_brainpoolp384r1_verify:
 	movk x1, #17152, lsl #48
 	str x1, [x0, #680]
 	movz x19, #1, lsl #0
-23:
+28:
 	sub x2, x19, #15
-	cbz x2, 24f
+	cbz x2, 29f
 	sub x2, x19, #14
-	cbz x2, 26f
+	cbz x2, 211f
 	sub x2, x19, #13
-	cbz x2, 28f
+	cbz x2, 213f
 	sub x2, x19, #12
-	cbz x2, 210f
+	cbz x2, 215f
 	sub x2, x19, #11
-	cbz x2, 212f
+	cbz x2, 217f
 	sub x2, x19, #10
-	cbz x2, 214f
+	cbz x2, 219f
 	sub x2, x19, #9
-	cbz x2, 216f
+	cbz x2, 221f
 	sub x2, x19, #8
-	cbz x2, 218f
+	cbz x2, 223f
 	sub x2, x19, #7
-	cbz x2, 220f
+	cbz x2, 225f
 	sub x2, x19, #6
-	cbz x2, 222f
+	cbz x2, 227f
 	sub x2, x19, #5
-	cbz x2, 224f
+	cbz x2, 229f
 	sub x2, x19, #4
-	cbz x2, 226f
+	cbz x2, 231f
 	sub x2, x19, #3
-	cbz x2, 228f
+	cbz x2, 233f
 	sub x2, x19, #2
-	cbz x2, 230f
+	cbz x2, 235f
 	sub x2, x19, #1
-	cbz x2, 232f
-	b 233f
-232:
+	cbz x2, 237f
+	b 238f
+237:
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -1018,9 +1215,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-233:
-	b 231f
-230:
+238:
+	b 236f
+235:
 	ldr x1, [x0, #5280]
 	str x1, [x0, #736]
 	ldr x1, [x0, #5288]
@@ -1093,9 +1290,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-231:
-	b 229f
-228:
+236:
+	b 234f
+233:
 	ldr x1, [x0, #5424]
 	str x1, [x0, #736]
 	ldr x1, [x0, #5432]
@@ -1168,9 +1365,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-229:
-	b 227f
-226:
+234:
+	b 232f
+231:
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -1297,9 +1494,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-227:
-	b 225f
-224:
+232:
+	b 230f
+229:
 	ldr x1, [x0, #5712]
 	str x1, [x0, #736]
 	ldr x1, [x0, #5720]
@@ -1372,9 +1569,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-225:
-	b 223f
-222:
+230:
+	b 228f
+227:
 	ldr x1, [x0, #5856]
 	str x1, [x0, #736]
 	ldr x1, [x0, #5864]
@@ -1447,9 +1644,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-223:
-	b 221f
-220:
+228:
+	b 226f
+225:
 	ldr x1, [x0, #6000]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6008]
@@ -1522,9 +1719,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-221:
-	b 219f
-218:
+226:
+	b 224f
+223:
 	ldr x1, [x0, #5712]
 	str x1, [x0, #736]
 	ldr x1, [x0, #5720]
@@ -1597,9 +1794,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-219:
-	b 217f
-216:
+224:
+	b 222f
+221:
 	ldr x1, [x0, #6288]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6296]
@@ -1672,9 +1869,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-217:
-	b 215f
-214:
+222:
+	b 220f
+219:
 	ldr x1, [x0, #6432]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6440]
@@ -1747,9 +1944,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-215:
-	b 213f
-212:
+220:
+	b 218f
+217:
 	ldr x1, [x0, #6576]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6584]
@@ -1822,9 +2019,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-213:
-	b 211f
-210:
+218:
+	b 216f
+215:
 	ldr x1, [x0, #6288]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6296]
@@ -1897,9 +2094,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-211:
-	b 29f
-28:
+216:
+	b 214f
+213:
 	ldr x1, [x0, #6864]
 	str x1, [x0, #736]
 	ldr x1, [x0, #6872]
@@ -1972,9 +2169,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-29:
-	b 27f
-26:
+214:
+	b 212f
+211:
 	ldr x1, [x0, #7008]
 	str x1, [x0, #736]
 	ldr x1, [x0, #7016]
@@ -2047,9 +2244,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-27:
-	b 25f
-24:
+212:
+	b 210f
+29:
 	ldr x1, [x0, #7152]
 	str x1, [x0, #736]
 	ldr x1, [x0, #7160]
@@ -2122,7 +2319,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #1872]
 	ldr x1, [x0, #344]
 	str x1, [x0, #1880]
-25:
+210:
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #2032, lsl #0
@@ -3291,37 +3488,37 @@ vg_ecdsa_brainpoolp384r1_verify:
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
 	sub x2, x19, #15
-	cbz x2, 234f
+	cbz x2, 239f
 	sub x2, x19, #14
-	cbz x2, 236f
+	cbz x2, 241f
 	sub x2, x19, #13
-	cbz x2, 238f
+	cbz x2, 243f
 	sub x2, x19, #12
-	cbz x2, 240f
+	cbz x2, 245f
 	sub x2, x19, #11
-	cbz x2, 242f
+	cbz x2, 247f
 	sub x2, x19, #10
-	cbz x2, 244f
+	cbz x2, 249f
 	sub x2, x19, #9
-	cbz x2, 246f
+	cbz x2, 251f
 	sub x2, x19, #8
-	cbz x2, 248f
+	cbz x2, 253f
 	sub x2, x19, #7
-	cbz x2, 250f
+	cbz x2, 255f
 	sub x2, x19, #6
-	cbz x2, 252f
+	cbz x2, 257f
 	sub x2, x19, #5
-	cbz x2, 254f
+	cbz x2, 259f
 	sub x2, x19, #4
-	cbz x2, 256f
+	cbz x2, 261f
 	sub x2, x19, #3
-	cbz x2, 258f
+	cbz x2, 263f
 	sub x2, x19, #2
-	cbz x2, 260f
+	cbz x2, 265f
 	sub x2, x19, #1
-	cbz x2, 262f
-	b 263f
-262:
+	cbz x2, 267f
+	b 268f
+267:
 	ldr x1, [x0, #736]
 	str x1, [x0, #5280]
 	ldr x1, [x0, #744]
@@ -3358,9 +3555,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #5408]
 	ldr x1, [x0, #872]
 	str x1, [x0, #5416]
-263:
-	b 261f
-260:
+268:
+	b 266f
+265:
 	ldr x1, [x0, #736]
 	str x1, [x0, #5424]
 	ldr x1, [x0, #744]
@@ -3397,9 +3594,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #5552]
 	ldr x1, [x0, #872]
 	str x1, [x0, #5560]
-261:
-	b 259f
-258:
+266:
+	b 264f
+263:
 	ldr x1, [x0, #736]
 	str x1, [x0, #5568]
 	ldr x1, [x0, #744]
@@ -3436,9 +3633,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #5696]
 	ldr x1, [x0, #872]
 	str x1, [x0, #5704]
-259:
-	b 257f
-256:
+264:
+	b 262f
+261:
 	ldr x1, [x0, #736]
 	str x1, [x0, #5712]
 	ldr x1, [x0, #744]
@@ -3475,9 +3672,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #5840]
 	ldr x1, [x0, #872]
 	str x1, [x0, #5848]
-257:
-	b 255f
-254:
+262:
+	b 260f
+259:
 	ldr x1, [x0, #736]
 	str x1, [x0, #5856]
 	ldr x1, [x0, #744]
@@ -3514,9 +3711,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #5984]
 	ldr x1, [x0, #872]
 	str x1, [x0, #5992]
-255:
-	b 253f
-252:
+260:
+	b 258f
+257:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6000]
 	ldr x1, [x0, #744]
@@ -3553,9 +3750,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6128]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6136]
-253:
-	b 251f
-250:
+258:
+	b 256f
+255:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6144]
 	ldr x1, [x0, #744]
@@ -3592,9 +3789,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6272]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6280]
-251:
-	b 249f
-248:
+256:
+	b 254f
+253:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6288]
 	ldr x1, [x0, #744]
@@ -3631,9 +3828,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6416]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6424]
-249:
-	b 247f
-246:
+254:
+	b 252f
+251:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6432]
 	ldr x1, [x0, #744]
@@ -3670,9 +3867,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6560]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6568]
-247:
-	b 245f
-244:
+252:
+	b 250f
+249:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6576]
 	ldr x1, [x0, #744]
@@ -3709,9 +3906,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6704]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6712]
-245:
-	b 243f
-242:
+250:
+	b 248f
+247:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6720]
 	ldr x1, [x0, #744]
@@ -3748,9 +3945,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6848]
 	ldr x1, [x0, #872]
 	str x1, [x0, #6856]
-243:
-	b 241f
-240:
+248:
+	b 246f
+245:
 	ldr x1, [x0, #736]
 	str x1, [x0, #6864]
 	ldr x1, [x0, #744]
@@ -3787,9 +3984,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #6992]
 	ldr x1, [x0, #872]
 	str x1, [x0, #7000]
-241:
-	b 239f
-238:
+246:
+	b 244f
+243:
 	ldr x1, [x0, #736]
 	str x1, [x0, #7008]
 	ldr x1, [x0, #744]
@@ -3826,9 +4023,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #7136]
 	ldr x1, [x0, #872]
 	str x1, [x0, #7144]
-239:
-	b 237f
-236:
+244:
+	b 242f
+241:
 	ldr x1, [x0, #736]
 	str x1, [x0, #7152]
 	ldr x1, [x0, #744]
@@ -3865,9 +4062,9 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #7280]
 	ldr x1, [x0, #872]
 	str x1, [x0, #7288]
-237:
-	b 235f
-234:
+242:
+	b 240f
+239:
 	ldr x1, [x0, #736]
 	str x1, [x0, #7296]
 	ldr x1, [x0, #744]
@@ -3904,10 +4101,10 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #7424]
 	ldr x1, [x0, #872]
 	str x1, [x0, #7432]
-235:
+240:
 	add x19, x19, #1
 	sub x6, x19, #16
-	cbnz x6, 23b
+	cbnz x6, 28b
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -3999,7 +4196,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	movk x1, #0, lsl #48
 	str x1, [x0, #872]
 	movz x19, #192, lsl #0
-264:
+269:
 	sub x19, x19, #1
 	ldr x1, [x0, #736]
 	str x1, [x0, #2032]
@@ -6426,7 +6623,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	add x2, x2, x4
 	lsl x2, x2, #2
 	add x2, x2, x6
-	cbz x2, 265f
+	cbz x2, 270f
 	sub x2, x2, #1
 	movz x17, #144, lsl #0
 	mul x2, x2, x17
@@ -7636,10 +7833,10 @@ vg_ecdsa_brainpoolp384r1_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-	b 266f
-265:
-266:
-	cbnz x19, 264b
+	b 271f
+270:
+271:
+	cbnz x19, 269b
 	movz x1, #19422, lsl #0
 	movk x1, #16566, lsl #16
 	movk x1, #61439, lsl #32
@@ -8422,6 +8619,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	ldr x30, [x0, #56]
 	movz x1, #1, lsl #0
 	and x0, x3, x1
+	add sp, sp, #80
 	ret
 	.p2align 6
 

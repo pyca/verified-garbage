@@ -108,6 +108,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over P-384 (FIPS 186-5) on x86 (32-bit) -/
@@ -117,9 +118,10 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Generic.P384.X86.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
-  Spec.Ecdsa.P384.verifyApi.artifact X86.target {
-    code := Impl.Ecdsa.Verify.X86.verifyP384
-    stack := 28
-    verified := Proof.Ecdsa.Verify.X86.P384.verify_verified h.law }]
+  Spec.Ecdsa.P384.verifyHashApi.artifact X86.target {
+    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
+      Impl.Ecdsa.Verify.X86.verifyP384
+    stack := 136
+    verified := Proof.Ecdsa.Verify.X86.P384.verifyHash_verified h.law }]
 
 end VG.Generic.P384.X86.EcdsaP384

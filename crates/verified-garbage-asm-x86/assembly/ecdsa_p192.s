@@ -5,6 +5,119 @@
 // gives.
 
 vg_ecdsa_p192_verify:
+	lea esp, [esp-108]
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+124]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+128]
+	mov DWORD PTR [esp+20], eax
+	mov eax, esp
+	add eax, 28
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+12]
+	cmp eax, 24
+	jb 20f
+	mov ecx, DWORD PTR [esp+8]
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [esp+28], al
+	movzx eax, BYTE PTR [ecx+1]
+	mov BYTE PTR [esp+29], al
+	movzx eax, BYTE PTR [ecx+2]
+	mov BYTE PTR [esp+30], al
+	movzx eax, BYTE PTR [ecx+3]
+	mov BYTE PTR [esp+31], al
+	movzx eax, BYTE PTR [ecx+4]
+	mov BYTE PTR [esp+32], al
+	movzx eax, BYTE PTR [ecx+5]
+	mov BYTE PTR [esp+33], al
+	movzx eax, BYTE PTR [ecx+6]
+	mov BYTE PTR [esp+34], al
+	movzx eax, BYTE PTR [ecx+7]
+	mov BYTE PTR [esp+35], al
+	movzx eax, BYTE PTR [ecx+8]
+	mov BYTE PTR [esp+36], al
+	movzx eax, BYTE PTR [ecx+9]
+	mov BYTE PTR [esp+37], al
+	movzx eax, BYTE PTR [ecx+10]
+	mov BYTE PTR [esp+38], al
+	movzx eax, BYTE PTR [ecx+11]
+	mov BYTE PTR [esp+39], al
+	movzx eax, BYTE PTR [ecx+12]
+	mov BYTE PTR [esp+40], al
+	movzx eax, BYTE PTR [ecx+13]
+	mov BYTE PTR [esp+41], al
+	movzx eax, BYTE PTR [ecx+14]
+	mov BYTE PTR [esp+42], al
+	movzx eax, BYTE PTR [ecx+15]
+	mov BYTE PTR [esp+43], al
+	movzx eax, BYTE PTR [ecx+16]
+	mov BYTE PTR [esp+44], al
+	movzx eax, BYTE PTR [ecx+17]
+	mov BYTE PTR [esp+45], al
+	movzx eax, BYTE PTR [ecx+18]
+	mov BYTE PTR [esp+46], al
+	movzx eax, BYTE PTR [ecx+19]
+	mov BYTE PTR [esp+47], al
+	movzx eax, BYTE PTR [ecx+20]
+	mov BYTE PTR [esp+48], al
+	movzx eax, BYTE PTR [ecx+21]
+	mov BYTE PTR [esp+49], al
+	movzx eax, BYTE PTR [ecx+22]
+	mov BYTE PTR [esp+50], al
+	movzx eax, BYTE PTR [ecx+23]
+	mov BYTE PTR [esp+51], al
+	jmp 21f
+20:
+	mov eax, 0
+	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+36], eax
+	mov DWORD PTR [esp+40], eax
+	mov DWORD PTR [esp+44], eax
+	mov DWORD PTR [esp+48], eax
+	mov DWORD PTR [esp+52], eax
+	mov DWORD PTR [esp+56], eax
+	mov DWORD PTR [esp+60], eax
+	mov DWORD PTR [esp+64], eax
+	mov DWORD PTR [esp+68], eax
+	mov DWORD PTR [esp+72], eax
+	mov DWORD PTR [esp+76], eax
+	mov DWORD PTR [esp+80], eax
+	mov DWORD PTR [esp+84], eax
+	mov DWORD PTR [esp+88], eax
+	mov DWORD PTR [esp+92], eax
+	mov DWORD PTR [esp+96], eax
+	mov ecx, DWORD PTR [esp+8]
+	mov edx, esp
+	add edx, 52
+	mov eax, DWORD PTR [esp+12]
+	sub edx, eax
+	test eax, eax
+	je 22f
+24:
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [edx], al
+	add ecx, 1
+	add edx, 1
+	mov eax, edx
+	sub eax, esp
+	cmp eax, 52
+	jne 24b
+	jmp 23f
+22:
+23:
+21:
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -263,7 +376,7 @@ vg_ecdsa_p192_verify:
 	mov eax, -1
 	mov DWORD PTR [edi+1120], eax
 	mov esi, 24
-20:
+25:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -305,9 +418,9 @@ vg_ecdsa_p192_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 20b
+	jne 25b
 	mov esi, 24
-21:
+26:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -349,9 +462,9 @@ vg_ecdsa_p192_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4299], dl
 	test esi, esi
-	jne 21b
+	jne 26b
 	mov esi, 24
-22:
+27:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -393,7 +506,7 @@ vg_ecdsa_p192_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4495], dl
 	test esi, esi
-	jne 22b
+	jne 27b
 	mov ebx, DWORD PTR [esp+12]
 	add ebx, 24
 	mov eax, DWORD PTR [ebx+20]
@@ -792,7 +905,7 @@ vg_ecdsa_p192_verify:
 	mov eax, DWORD PTR [edi+348]
 	mov DWORD PTR [edi+780], eax
 	mov esi, 192
-23:
+28:
 	sub esi, 1
 	mov eax, 760
 	mov ecx, 760
@@ -860,7 +973,7 @@ vg_ecdsa_p192_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+780], eax
 	test esi, esi
-	jne 23b
+	jne 28b
 	mov eax, 304
 	mov ecx, 832
 	mov edx, 1024
@@ -934,7 +1047,7 @@ vg_ecdsa_p192_verify:
 	pop eax
 	pop eax
 	mov esi, 24
-24:
+29:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -976,7 +1089,7 @@ vg_ecdsa_p192_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 24b
+	jne 29b
 	mov eax, DWORD PTR [edi+256]
 	mov DWORD PTR [edi+3576], eax
 	mov eax, DWORD PTR [edi+260]
@@ -1038,7 +1151,7 @@ vg_ecdsa_p192_verify:
 	mov eax, DWORD PTR [edi+252]
 	mov DWORD PTR [edi+3692], eax
 	mov esi, 192
-25:
+210:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+400]
 	mov DWORD PTR [edi+3504], eax
@@ -1234,7 +1347,7 @@ vg_ecdsa_p192_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+468], eax
 	test esi, esi
-	jne 25b
+	jne 210b
 	mov eax, DWORD PTR [edi+400]
 	mov DWORD PTR [edi+1048], eax
 	mov eax, DWORD PTR [edi+404]
@@ -1308,7 +1421,7 @@ vg_ecdsa_p192_verify:
 	mov eax, 0
 	mov DWORD PTR [edi+468], eax
 	mov esi, 24
-26:
+211:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -1350,7 +1463,7 @@ vg_ecdsa_p192_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 26b
+	jne 211b
 	mov eax, DWORD PTR [edi+976]
 	mov DWORD PTR [edi+3576], eax
 	mov eax, DWORD PTR [edi+980]
@@ -1412,7 +1525,7 @@ vg_ecdsa_p192_verify:
 	mov eax, DWORD PTR [edi+252]
 	mov DWORD PTR [edi+3692], eax
 	mov esi, 192
-27:
+212:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+400]
 	mov DWORD PTR [edi+3504], eax
@@ -1608,7 +1721,7 @@ vg_ecdsa_p192_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+468], eax
 	test esi, esi
-	jne 27b
+	jne 212b
 	mov eax, 400
 	mov ecx, 1048
 	mov edx, 616
@@ -2138,7 +2251,7 @@ vg_ecdsa_p192_verify:
 	mov eax, DWORD PTR [edi+204]
 	mov DWORD PTR [edi+780], eax
 	mov esi, 192
-28:
+213:
 	sub esi, 1
 	mov eax, 760
 	mov ecx, 760
@@ -2206,7 +2319,7 @@ vg_ecdsa_p192_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+780], eax
 	test esi, esi
-	jne 28b
+	jne 213b
 	mov eax, 760
 	mov ecx, 400
 	mov edx, 880
@@ -2288,6 +2401,7 @@ vg_ecdsa_p192_verify:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	lea esp, [esp+108]
 	ret
 	.p2align 6
 

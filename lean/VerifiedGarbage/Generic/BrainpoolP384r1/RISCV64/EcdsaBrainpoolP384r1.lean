@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.SignLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.VerifyLit
@@ -19,8 +20,10 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.VerifyLit
 namespace VG.Generic.BrainpoolP384r1.RISCV64.EcdsaBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact RISCV64.target {
-    code := Impl.Ecdsa.RISCV64.verifyBrainpoolP384r1
-    verified := Proof.Ecdsa.RISCV64.BrainpoolP384r1.verify_verified h.law }]
+  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact RISCV64.target {
+    code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
+      Impl.Ecdsa.RISCV64.verifyBrainpoolP384r1
+    stack := 80
+    verified := Proof.Ecdsa.RISCV64.BrainpoolP384r1.verifyHash_verified h.law }]
 
 end VG.Generic.BrainpoolP384r1.RISCV64.EcdsaBrainpoolP384r1

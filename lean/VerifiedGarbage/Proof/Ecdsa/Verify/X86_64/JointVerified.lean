@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
@@ -24,6 +28,27 @@ import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointErased
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
+meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
+meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 /-! The joint implementation satisfies the unchanged shared verification contract. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointCT.lean`, which only this module imported.
@@ -114,6 +139,28 @@ theorem jointVerify_verified_adx : Verified X86_64.target jointVerifyP256Adx
   Verified.of_inline (k₀ := verifyGK₀) jointVerifyP256Adx_inlineOk (fun s hs => jointVerify_x86_adx hL hT hI hO s (impliesG.pre _ hs))
     (jointVerify_adx_ct hL hT hI hO) impliesG8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (impliesG.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
+
+/-- `vg_ecdsa_p256_verify`, taking the hash function's output: `jointVerify_verified`,
+run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified : Verified X86_64.target
+    (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false jointVerifyP256)
+    (Spec.Ecdsa.P256.inst.verifyHashContract (X86_64.abi.withConsts p256v.combConsts) 96) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p256_len (by decide) (jointVerify_verified hL hT hI hO)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Hash.hashSat_cons (by decide) satG_spec8 (by decide) fun r hr => by
+      simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+/-- `vg_ecdsa_p256_verify_adx`, taking the hash function's output: `jointVerify_verified_adx`,
+run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified_adx : Verified X86_64.target
+    (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false jointVerifyP256Adx)
+    (Spec.Ecdsa.P256.inst.verifyHashContract (X86_64.abi.withConsts p256v.combConsts) 96) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p256_len (by decide) (jointVerify_verified_adx hL hT hI hO)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Hash.hashSat_cons (by decide) satG_spec8 (by decide) fun r hr => by
+      simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64

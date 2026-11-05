@@ -5,6 +5,995 @@
 // gives.
 
 vg_ecdsa_p521_verify:
+	lea esp, [esp-108]
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+124]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+128]
+	mov DWORD PTR [esp+20], eax
+	mov eax, esp
+	add eax, 28
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+12]
+	cmp eax, 66
+	jb 20f
+	mov ecx, DWORD PTR [esp+8]
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [esp+28], al
+	movzx eax, BYTE PTR [ecx+1]
+	mov BYTE PTR [esp+29], al
+	movzx eax, BYTE PTR [ecx+2]
+	mov BYTE PTR [esp+30], al
+	movzx eax, BYTE PTR [ecx+3]
+	mov BYTE PTR [esp+31], al
+	movzx eax, BYTE PTR [ecx+4]
+	mov BYTE PTR [esp+32], al
+	movzx eax, BYTE PTR [ecx+5]
+	mov BYTE PTR [esp+33], al
+	movzx eax, BYTE PTR [ecx+6]
+	mov BYTE PTR [esp+34], al
+	movzx eax, BYTE PTR [ecx+7]
+	mov BYTE PTR [esp+35], al
+	movzx eax, BYTE PTR [ecx+8]
+	mov BYTE PTR [esp+36], al
+	movzx eax, BYTE PTR [ecx+9]
+	mov BYTE PTR [esp+37], al
+	movzx eax, BYTE PTR [ecx+10]
+	mov BYTE PTR [esp+38], al
+	movzx eax, BYTE PTR [ecx+11]
+	mov BYTE PTR [esp+39], al
+	movzx eax, BYTE PTR [ecx+12]
+	mov BYTE PTR [esp+40], al
+	movzx eax, BYTE PTR [ecx+13]
+	mov BYTE PTR [esp+41], al
+	movzx eax, BYTE PTR [ecx+14]
+	mov BYTE PTR [esp+42], al
+	movzx eax, BYTE PTR [ecx+15]
+	mov BYTE PTR [esp+43], al
+	movzx eax, BYTE PTR [ecx+16]
+	mov BYTE PTR [esp+44], al
+	movzx eax, BYTE PTR [ecx+17]
+	mov BYTE PTR [esp+45], al
+	movzx eax, BYTE PTR [ecx+18]
+	mov BYTE PTR [esp+46], al
+	movzx eax, BYTE PTR [ecx+19]
+	mov BYTE PTR [esp+47], al
+	movzx eax, BYTE PTR [ecx+20]
+	mov BYTE PTR [esp+48], al
+	movzx eax, BYTE PTR [ecx+21]
+	mov BYTE PTR [esp+49], al
+	movzx eax, BYTE PTR [ecx+22]
+	mov BYTE PTR [esp+50], al
+	movzx eax, BYTE PTR [ecx+23]
+	mov BYTE PTR [esp+51], al
+	movzx eax, BYTE PTR [ecx+24]
+	mov BYTE PTR [esp+52], al
+	movzx eax, BYTE PTR [ecx+25]
+	mov BYTE PTR [esp+53], al
+	movzx eax, BYTE PTR [ecx+26]
+	mov BYTE PTR [esp+54], al
+	movzx eax, BYTE PTR [ecx+27]
+	mov BYTE PTR [esp+55], al
+	movzx eax, BYTE PTR [ecx+28]
+	mov BYTE PTR [esp+56], al
+	movzx eax, BYTE PTR [ecx+29]
+	mov BYTE PTR [esp+57], al
+	movzx eax, BYTE PTR [ecx+30]
+	mov BYTE PTR [esp+58], al
+	movzx eax, BYTE PTR [ecx+31]
+	mov BYTE PTR [esp+59], al
+	movzx eax, BYTE PTR [ecx+32]
+	mov BYTE PTR [esp+60], al
+	movzx eax, BYTE PTR [ecx+33]
+	mov BYTE PTR [esp+61], al
+	movzx eax, BYTE PTR [ecx+34]
+	mov BYTE PTR [esp+62], al
+	movzx eax, BYTE PTR [ecx+35]
+	mov BYTE PTR [esp+63], al
+	movzx eax, BYTE PTR [ecx+36]
+	mov BYTE PTR [esp+64], al
+	movzx eax, BYTE PTR [ecx+37]
+	mov BYTE PTR [esp+65], al
+	movzx eax, BYTE PTR [ecx+38]
+	mov BYTE PTR [esp+66], al
+	movzx eax, BYTE PTR [ecx+39]
+	mov BYTE PTR [esp+67], al
+	movzx eax, BYTE PTR [ecx+40]
+	mov BYTE PTR [esp+68], al
+	movzx eax, BYTE PTR [ecx+41]
+	mov BYTE PTR [esp+69], al
+	movzx eax, BYTE PTR [ecx+42]
+	mov BYTE PTR [esp+70], al
+	movzx eax, BYTE PTR [ecx+43]
+	mov BYTE PTR [esp+71], al
+	movzx eax, BYTE PTR [ecx+44]
+	mov BYTE PTR [esp+72], al
+	movzx eax, BYTE PTR [ecx+45]
+	mov BYTE PTR [esp+73], al
+	movzx eax, BYTE PTR [ecx+46]
+	mov BYTE PTR [esp+74], al
+	movzx eax, BYTE PTR [ecx+47]
+	mov BYTE PTR [esp+75], al
+	movzx eax, BYTE PTR [ecx+48]
+	mov BYTE PTR [esp+76], al
+	movzx eax, BYTE PTR [ecx+49]
+	mov BYTE PTR [esp+77], al
+	movzx eax, BYTE PTR [ecx+50]
+	mov BYTE PTR [esp+78], al
+	movzx eax, BYTE PTR [ecx+51]
+	mov BYTE PTR [esp+79], al
+	movzx eax, BYTE PTR [ecx+52]
+	mov BYTE PTR [esp+80], al
+	movzx eax, BYTE PTR [ecx+53]
+	mov BYTE PTR [esp+81], al
+	movzx eax, BYTE PTR [ecx+54]
+	mov BYTE PTR [esp+82], al
+	movzx eax, BYTE PTR [ecx+55]
+	mov BYTE PTR [esp+83], al
+	movzx eax, BYTE PTR [ecx+56]
+	mov BYTE PTR [esp+84], al
+	movzx eax, BYTE PTR [ecx+57]
+	mov BYTE PTR [esp+85], al
+	movzx eax, BYTE PTR [ecx+58]
+	mov BYTE PTR [esp+86], al
+	movzx eax, BYTE PTR [ecx+59]
+	mov BYTE PTR [esp+87], al
+	movzx eax, BYTE PTR [ecx+60]
+	mov BYTE PTR [esp+88], al
+	movzx eax, BYTE PTR [ecx+61]
+	mov BYTE PTR [esp+89], al
+	movzx eax, BYTE PTR [ecx+62]
+	mov BYTE PTR [esp+90], al
+	movzx eax, BYTE PTR [ecx+63]
+	mov BYTE PTR [esp+91], al
+	movzx eax, BYTE PTR [ecx+64]
+	mov BYTE PTR [esp+92], al
+	movzx eax, BYTE PTR [ecx+65]
+	mov BYTE PTR [esp+93], al
+	jmp 21f
+20:
+	mov eax, 0
+	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+36], eax
+	mov DWORD PTR [esp+40], eax
+	mov DWORD PTR [esp+44], eax
+	mov DWORD PTR [esp+48], eax
+	mov DWORD PTR [esp+52], eax
+	mov DWORD PTR [esp+56], eax
+	mov DWORD PTR [esp+60], eax
+	mov DWORD PTR [esp+64], eax
+	mov DWORD PTR [esp+68], eax
+	mov DWORD PTR [esp+72], eax
+	mov DWORD PTR [esp+76], eax
+	mov DWORD PTR [esp+80], eax
+	mov DWORD PTR [esp+84], eax
+	mov DWORD PTR [esp+88], eax
+	mov DWORD PTR [esp+92], eax
+	mov DWORD PTR [esp+96], eax
+	mov ecx, DWORD PTR [esp+8]
+	mov edx, esp
+	add edx, 94
+	mov eax, DWORD PTR [esp+12]
+	sub edx, eax
+	test eax, eax
+	je 22f
+24:
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [edx], al
+	add ecx, 1
+	add edx, 1
+	mov eax, edx
+	sub eax, esp
+	cmp eax, 94
+	jne 24b
+	jmp 23f
+22:
+23:
+	movzx eax, BYTE PTR [esp+28]
+	movzx ecx, BYTE PTR [esp+29]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+28], al
+	movzx eax, BYTE PTR [esp+29]
+	movzx ecx, BYTE PTR [esp+30]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+29], al
+	movzx eax, BYTE PTR [esp+30]
+	movzx ecx, BYTE PTR [esp+31]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+30], al
+	movzx eax, BYTE PTR [esp+31]
+	movzx ecx, BYTE PTR [esp+32]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+31], al
+	movzx eax, BYTE PTR [esp+32]
+	movzx ecx, BYTE PTR [esp+33]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+32], al
+	movzx eax, BYTE PTR [esp+33]
+	movzx ecx, BYTE PTR [esp+34]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+33], al
+	movzx eax, BYTE PTR [esp+34]
+	movzx ecx, BYTE PTR [esp+35]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+34], al
+	movzx eax, BYTE PTR [esp+35]
+	movzx ecx, BYTE PTR [esp+36]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+35], al
+	movzx eax, BYTE PTR [esp+36]
+	movzx ecx, BYTE PTR [esp+37]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+36], al
+	movzx eax, BYTE PTR [esp+37]
+	movzx ecx, BYTE PTR [esp+38]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+37], al
+	movzx eax, BYTE PTR [esp+38]
+	movzx ecx, BYTE PTR [esp+39]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+38], al
+	movzx eax, BYTE PTR [esp+39]
+	movzx ecx, BYTE PTR [esp+40]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+39], al
+	movzx eax, BYTE PTR [esp+40]
+	movzx ecx, BYTE PTR [esp+41]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+40], al
+	movzx eax, BYTE PTR [esp+41]
+	movzx ecx, BYTE PTR [esp+42]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+41], al
+	movzx eax, BYTE PTR [esp+42]
+	movzx ecx, BYTE PTR [esp+43]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+42], al
+	movzx eax, BYTE PTR [esp+43]
+	movzx ecx, BYTE PTR [esp+44]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+43], al
+	movzx eax, BYTE PTR [esp+44]
+	movzx ecx, BYTE PTR [esp+45]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+44], al
+	movzx eax, BYTE PTR [esp+45]
+	movzx ecx, BYTE PTR [esp+46]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+45], al
+	movzx eax, BYTE PTR [esp+46]
+	movzx ecx, BYTE PTR [esp+47]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+46], al
+	movzx eax, BYTE PTR [esp+47]
+	movzx ecx, BYTE PTR [esp+48]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+47], al
+	movzx eax, BYTE PTR [esp+48]
+	movzx ecx, BYTE PTR [esp+49]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+48], al
+	movzx eax, BYTE PTR [esp+49]
+	movzx ecx, BYTE PTR [esp+50]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+49], al
+	movzx eax, BYTE PTR [esp+50]
+	movzx ecx, BYTE PTR [esp+51]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+50], al
+	movzx eax, BYTE PTR [esp+51]
+	movzx ecx, BYTE PTR [esp+52]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+51], al
+	movzx eax, BYTE PTR [esp+52]
+	movzx ecx, BYTE PTR [esp+53]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+52], al
+	movzx eax, BYTE PTR [esp+53]
+	movzx ecx, BYTE PTR [esp+54]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+53], al
+	movzx eax, BYTE PTR [esp+54]
+	movzx ecx, BYTE PTR [esp+55]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+54], al
+	movzx eax, BYTE PTR [esp+55]
+	movzx ecx, BYTE PTR [esp+56]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+55], al
+	movzx eax, BYTE PTR [esp+56]
+	movzx ecx, BYTE PTR [esp+57]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+56], al
+	movzx eax, BYTE PTR [esp+57]
+	movzx ecx, BYTE PTR [esp+58]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+57], al
+	movzx eax, BYTE PTR [esp+58]
+	movzx ecx, BYTE PTR [esp+59]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+58], al
+	movzx eax, BYTE PTR [esp+59]
+	movzx ecx, BYTE PTR [esp+60]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+59], al
+	movzx eax, BYTE PTR [esp+60]
+	movzx ecx, BYTE PTR [esp+61]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+60], al
+	movzx eax, BYTE PTR [esp+61]
+	movzx ecx, BYTE PTR [esp+62]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+61], al
+	movzx eax, BYTE PTR [esp+62]
+	movzx ecx, BYTE PTR [esp+63]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+62], al
+	movzx eax, BYTE PTR [esp+63]
+	movzx ecx, BYTE PTR [esp+64]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+63], al
+	movzx eax, BYTE PTR [esp+64]
+	movzx ecx, BYTE PTR [esp+65]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+64], al
+	movzx eax, BYTE PTR [esp+65]
+	movzx ecx, BYTE PTR [esp+66]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+65], al
+	movzx eax, BYTE PTR [esp+66]
+	movzx ecx, BYTE PTR [esp+67]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+66], al
+	movzx eax, BYTE PTR [esp+67]
+	movzx ecx, BYTE PTR [esp+68]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+67], al
+	movzx eax, BYTE PTR [esp+68]
+	movzx ecx, BYTE PTR [esp+69]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+68], al
+	movzx eax, BYTE PTR [esp+69]
+	movzx ecx, BYTE PTR [esp+70]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+69], al
+	movzx eax, BYTE PTR [esp+70]
+	movzx ecx, BYTE PTR [esp+71]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+70], al
+	movzx eax, BYTE PTR [esp+71]
+	movzx ecx, BYTE PTR [esp+72]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+71], al
+	movzx eax, BYTE PTR [esp+72]
+	movzx ecx, BYTE PTR [esp+73]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+72], al
+	movzx eax, BYTE PTR [esp+73]
+	movzx ecx, BYTE PTR [esp+74]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+73], al
+	movzx eax, BYTE PTR [esp+74]
+	movzx ecx, BYTE PTR [esp+75]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+74], al
+	movzx eax, BYTE PTR [esp+75]
+	movzx ecx, BYTE PTR [esp+76]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+75], al
+	movzx eax, BYTE PTR [esp+76]
+	movzx ecx, BYTE PTR [esp+77]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+76], al
+	movzx eax, BYTE PTR [esp+77]
+	movzx ecx, BYTE PTR [esp+78]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+77], al
+	movzx eax, BYTE PTR [esp+78]
+	movzx ecx, BYTE PTR [esp+79]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+78], al
+	movzx eax, BYTE PTR [esp+79]
+	movzx ecx, BYTE PTR [esp+80]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+79], al
+	movzx eax, BYTE PTR [esp+80]
+	movzx ecx, BYTE PTR [esp+81]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+80], al
+	movzx eax, BYTE PTR [esp+81]
+	movzx ecx, BYTE PTR [esp+82]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+81], al
+	movzx eax, BYTE PTR [esp+82]
+	movzx ecx, BYTE PTR [esp+83]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+82], al
+	movzx eax, BYTE PTR [esp+83]
+	movzx ecx, BYTE PTR [esp+84]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+83], al
+	movzx eax, BYTE PTR [esp+84]
+	movzx ecx, BYTE PTR [esp+85]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+84], al
+	movzx eax, BYTE PTR [esp+85]
+	movzx ecx, BYTE PTR [esp+86]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+85], al
+	movzx eax, BYTE PTR [esp+86]
+	movzx ecx, BYTE PTR [esp+87]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+86], al
+	movzx eax, BYTE PTR [esp+87]
+	movzx ecx, BYTE PTR [esp+88]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+87], al
+	movzx eax, BYTE PTR [esp+88]
+	movzx ecx, BYTE PTR [esp+89]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+88], al
+	movzx eax, BYTE PTR [esp+89]
+	movzx ecx, BYTE PTR [esp+90]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+89], al
+	movzx eax, BYTE PTR [esp+90]
+	movzx ecx, BYTE PTR [esp+91]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+90], al
+	movzx eax, BYTE PTR [esp+91]
+	movzx ecx, BYTE PTR [esp+92]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+91], al
+	movzx eax, BYTE PTR [esp+92]
+	movzx ecx, BYTE PTR [esp+93]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+92], al
+	movzx eax, BYTE PTR [esp+93]
+	movzx ecx, BYTE PTR [esp+94]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	shr ecx, 1
+	add eax, ecx
+	mov BYTE PTR [esp+93], al
+21:
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -877,7 +1866,7 @@ vg_ecdsa_p521_verify:
 	mov eax, -1
 	mov DWORD PTR [edi+3232], eax
 	mov esi, 72
-20:
+25:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -919,9 +1908,9 @@ vg_ecdsa_p521_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 20b
+	jne 25b
 	mov esi, 72
-21:
+26:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -963,9 +1952,9 @@ vg_ecdsa_p521_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4683], dl
 	test esi, esi
-	jne 21b
+	jne 26b
 	mov esi, 72
-22:
+27:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -1007,7 +1996,7 @@ vg_ecdsa_p521_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+5263], dl
 	test esi, esi
-	jne 22b
+	jne 27b
 	mov ebx, DWORD PTR [esp+12]
 	add ebx, 66
 	mov eax, DWORD PTR [ebx+62]
@@ -1862,7 +2851,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+924]
 	mov DWORD PTR [edi+2220], eax
 	mov esi, 576
-23:
+28:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -2002,7 +2991,7 @@ vg_ecdsa_p521_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+2220], eax
 	test esi, esi
-	jne 23b
+	jne 28b
 	mov eax, 784
 	mov ecx, 2368
 	mov edx, 2944
@@ -3140,7 +4129,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+492]
 	mov DWORD PTR [edi+2220], eax
 	mov esi, 576
-24:
+29:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -3280,7 +4269,7 @@ vg_ecdsa_p521_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+2220], eax
 	test esi, esi
-	jne 24b
+	jne 29b
 	mov eax, 2152
 	mov ecx, 1072
 	mov edx, 2512
@@ -3386,6 +4375,7 @@ vg_ecdsa_p521_verify:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	lea esp, [esp+108]
 	ret
 	.p2align 6
 

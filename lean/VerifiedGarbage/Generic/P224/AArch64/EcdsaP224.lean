@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P224.Comb7
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
@@ -69,9 +70,11 @@ import VerifiedGarbage.Proof.Weierstrass.MulContract
 namespace VG.Generic.P224.AArch64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List Artifact := [
-  Spec.Ecdsa.P224.verifyApi.artifact AArch64.target {
+  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
     consts := Impl.Ecdsa.AArch64.p224.combConsts
-    code := Impl.Ecdsa.Verify.AArch64.verifyP224
-    verified := Proof.Ecdsa.Verify.AArch64.P224.verify_verified h.law h.inv (Proof.P224.combOk7 h.law) }]
+    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
+      Impl.Ecdsa.Verify.AArch64.verifyP224
+    stack := 80
+    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified h.law h.inv (Proof.P224.combOk7 h.law) }]
 
 end VG.Generic.P224.AArch64.EcdsaP224

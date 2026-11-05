@@ -9,22 +9,22 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, leftmost, sign_with};
+use super::table::{HmacHash, sign_with};
 use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_sign;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
 use crate::ec::P192;
 
-/// Whether `signature` verifies with `q` for the hash whose leftmost 24
-/// bytes are `e`.
-fn verify_with(q: &[u8; 49], e: &[u8; 24], signature: &[u8; 48]) -> Result<(), Error> {
+/// Whether `signature` verifies with `q` for the hash `digest`.
+fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), Error> {
     let mut scratch = [0u64; 1024];
-    // SAFETY: `q` is valid for reads of 49 bytes, `e` of 24, `signature` of
-    // 48 and `scratch` for reads and writes of 8192; `scratch` is a distinct
-    // object from the others, so it overlaps neither them nor the call's
-    // stack frame, and, as Rust objects, none wraps around the address
+    // SAFETY: `q` is valid for reads of 49 bytes, `digest` of `digest.len()`,
+    // `signature` of 48 and `scratch` for reads and writes of 8192; `scratch`
+    // is a distinct object from the others, so it overlaps neither them nor the
+    // call's stack frame, and, as Rust objects, none wraps around the address
     // space.
-    let ok = unsafe { vg_ecdsa_p192_verify(q, e, signature, &mut scratch) };
+    let ok =
+        unsafe { vg_ecdsa_p192_verify(q, digest.as_ptr(), digest.len(), signature, &mut scratch) };
     if ok == 1 {
         Ok(())
     } else {
@@ -38,10 +38,10 @@ impl<H: HmacHash> sealed::Functions<P192> for H {
         unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, crate::cpu::detected(), d, digest) }
     }
 
-    /// `e` is the leftmost 192 bits of the hash (FIPS 186-5 §6.4.2): its
-    /// first 24 bytes.
+    /// The verified function takes the hash itself, of any length, and
+    /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(q: &[u8; 49], digest: &H::Output, signature: &[u8; 48]) -> Result<(), Error> {
-        verify_with(q, &leftmost::<24>(digest.as_ref()), signature)
+        verify_with(q, digest.as_ref(), signature)
     }
 }
 

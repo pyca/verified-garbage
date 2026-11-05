@@ -7,6 +7,237 @@
 vg_ecdsa_secp256k1_verify:
 	.option push
 	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a5, sp, 0
+	addi t0, zero, 32
+	bltu a2, t0, 20f
+	lbu t1, 0(a1)
+	sb t1, 0(a5)
+	lbu t1, 1(a1)
+	sb t1, 1(a5)
+	lbu t1, 2(a1)
+	sb t1, 2(a5)
+	lbu t1, 3(a1)
+	sb t1, 3(a5)
+	lbu t1, 4(a1)
+	sb t1, 4(a5)
+	lbu t1, 5(a1)
+	sb t1, 5(a5)
+	lbu t1, 6(a1)
+	sb t1, 6(a5)
+	lbu t1, 7(a1)
+	sb t1, 7(a5)
+	lbu t1, 8(a1)
+	sb t1, 8(a5)
+	lbu t1, 9(a1)
+	sb t1, 9(a5)
+	lbu t1, 10(a1)
+	sb t1, 10(a5)
+	lbu t1, 11(a1)
+	sb t1, 11(a5)
+	lbu t1, 12(a1)
+	sb t1, 12(a5)
+	lbu t1, 13(a1)
+	sb t1, 13(a5)
+	lbu t1, 14(a1)
+	sb t1, 14(a5)
+	lbu t1, 15(a1)
+	sb t1, 15(a5)
+	lbu t1, 16(a1)
+	sb t1, 16(a5)
+	lbu t1, 17(a1)
+	sb t1, 17(a5)
+	lbu t1, 18(a1)
+	sb t1, 18(a5)
+	lbu t1, 19(a1)
+	sb t1, 19(a5)
+	lbu t1, 20(a1)
+	sb t1, 20(a5)
+	lbu t1, 21(a1)
+	sb t1, 21(a5)
+	lbu t1, 22(a1)
+	sb t1, 22(a5)
+	lbu t1, 23(a1)
+	sb t1, 23(a5)
+	lbu t1, 24(a1)
+	sb t1, 24(a5)
+	lbu t1, 25(a1)
+	sb t1, 25(a5)
+	lbu t1, 26(a1)
+	sb t1, 26(a5)
+	lbu t1, 27(a1)
+	sb t1, 27(a5)
+	lbu t1, 28(a1)
+	sb t1, 28(a5)
+	lbu t1, 29(a1)
+	sb t1, 29(a5)
+	lbu t1, 30(a1)
+	sb t1, 30(a5)
+	lbu t1, 31(a1)
+	sb t1, 31(a5)
+	j 21f
+20:
+	addi t1, zero, 0
+	sb t1, 0(a5)
+	addi t1, zero, 0
+	sb t1, 1(a5)
+	addi t1, zero, 0
+	sb t1, 2(a5)
+	addi t1, zero, 0
+	sb t1, 3(a5)
+	addi t1, zero, 0
+	sb t1, 4(a5)
+	addi t1, zero, 0
+	sb t1, 5(a5)
+	addi t1, zero, 0
+	sb t1, 6(a5)
+	addi t1, zero, 0
+	sb t1, 7(a5)
+	addi t1, zero, 0
+	sb t1, 8(a5)
+	addi t1, zero, 0
+	sb t1, 9(a5)
+	addi t1, zero, 0
+	sb t1, 10(a5)
+	addi t1, zero, 0
+	sb t1, 11(a5)
+	addi t1, zero, 0
+	sb t1, 12(a5)
+	addi t1, zero, 0
+	sb t1, 13(a5)
+	addi t1, zero, 0
+	sb t1, 14(a5)
+	addi t1, zero, 0
+	sb t1, 15(a5)
+	addi t1, zero, 0
+	sb t1, 16(a5)
+	addi t1, zero, 0
+	sb t1, 17(a5)
+	addi t1, zero, 0
+	sb t1, 18(a5)
+	addi t1, zero, 0
+	sb t1, 19(a5)
+	addi t1, zero, 0
+	sb t1, 20(a5)
+	addi t1, zero, 0
+	sb t1, 21(a5)
+	addi t1, zero, 0
+	sb t1, 22(a5)
+	addi t1, zero, 0
+	sb t1, 23(a5)
+	addi t1, zero, 0
+	sb t1, 24(a5)
+	addi t1, zero, 0
+	sb t1, 25(a5)
+	addi t1, zero, 0
+	sb t1, 26(a5)
+	addi t1, zero, 0
+	sb t1, 27(a5)
+	addi t1, zero, 0
+	sb t1, 28(a5)
+	addi t1, zero, 0
+	sb t1, 29(a5)
+	addi t1, zero, 0
+	sb t1, 30(a5)
+	addi t1, zero, 0
+	sb t1, 31(a5)
+	addi t1, zero, 0
+	sb t1, 32(a5)
+	addi t1, zero, 0
+	sb t1, 33(a5)
+	addi t1, zero, 0
+	sb t1, 34(a5)
+	addi t1, zero, 0
+	sb t1, 35(a5)
+	addi t1, zero, 0
+	sb t1, 36(a5)
+	addi t1, zero, 0
+	sb t1, 37(a5)
+	addi t1, zero, 0
+	sb t1, 38(a5)
+	addi t1, zero, 0
+	sb t1, 39(a5)
+	addi t1, zero, 0
+	sb t1, 40(a5)
+	addi t1, zero, 0
+	sb t1, 41(a5)
+	addi t1, zero, 0
+	sb t1, 42(a5)
+	addi t1, zero, 0
+	sb t1, 43(a5)
+	addi t1, zero, 0
+	sb t1, 44(a5)
+	addi t1, zero, 0
+	sb t1, 45(a5)
+	addi t1, zero, 0
+	sb t1, 46(a5)
+	addi t1, zero, 0
+	sb t1, 47(a5)
+	addi t1, zero, 0
+	sb t1, 48(a5)
+	addi t1, zero, 0
+	sb t1, 49(a5)
+	addi t1, zero, 0
+	sb t1, 50(a5)
+	addi t1, zero, 0
+	sb t1, 51(a5)
+	addi t1, zero, 0
+	sb t1, 52(a5)
+	addi t1, zero, 0
+	sb t1, 53(a5)
+	addi t1, zero, 0
+	sb t1, 54(a5)
+	addi t1, zero, 0
+	sb t1, 55(a5)
+	addi t1, zero, 0
+	sb t1, 56(a5)
+	addi t1, zero, 0
+	sb t1, 57(a5)
+	addi t1, zero, 0
+	sb t1, 58(a5)
+	addi t1, zero, 0
+	sb t1, 59(a5)
+	addi t1, zero, 0
+	sb t1, 60(a5)
+	addi t1, zero, 0
+	sb t1, 61(a5)
+	addi t1, zero, 0
+	sb t1, 62(a5)
+	addi t1, zero, 0
+	sb t1, 63(a5)
+	addi t1, zero, 0
+	sb t1, 64(a5)
+	addi t1, zero, 0
+	sb t1, 65(a5)
+	addi t1, zero, 0
+	sb t1, 66(a5)
+	addi t1, zero, 0
+	sb t1, 67(a5)
+	addi t1, zero, 0
+	sb t1, 68(a5)
+	addi t1, zero, 0
+	sb t1, 69(a5)
+	addi t1, zero, 0
+	sb t1, 70(a5)
+	addi t1, zero, 0
+	sb t1, 71(a5)
+	addi t2, a5, 32
+	sub t2, t2, a2
+	beqz a2, 22f
+24:
+	lbu t1, 0(a1)
+	sb t1, 0(t2)
+	addi a1, a1, 1
+	addi t2, t2, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	j 23f
+22:
+23:
+21:
+	addi a1, a5, 0
+	addi a2, a3, 0
+	addi a3, a4, 0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -1068,76 +1299,6 @@ vg_ecdsa_secp256k1_verify:
 	ld t0, 1784(s0)
 	sd t0, 1016(s0)
 	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_n}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_n}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_n}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_n}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_n}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
 25:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1487,7 +1648,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 230:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1499,9 +1660,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 231:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1513,9 +1674,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 232:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1527,7 +1688,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
 	addi s1, zero, 4
 233:
@@ -1541,7 +1702,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
 	addi s1, zero, 4
 234:
@@ -1555,9 +1716,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 235:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1569,9 +1730,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 5
 236:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1583,9 +1744,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1696
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 237:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1597,9 +1758,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1600
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 238:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1611,9 +1772,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1600
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 239:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1625,9 +1786,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 240:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1641,7 +1802,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1728
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 2
 241:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1653,9 +1814,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1536
+	addi a3, zero, 1568
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 242:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1667,9 +1828,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1600
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 10
+	addi s1, zero, 6
 243:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1681,9 +1842,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1728
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 244:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1695,9 +1856,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1696
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 245:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1709,9 +1870,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1728
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 3
 246:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1723,9 +1884,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1536
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 247:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1737,9 +1898,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1664
+	addi a3, zero, 1600
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 10
 248:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1751,7 +1912,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_n}
 	addi s1, zero, 4
 249:
@@ -1765,7 +1926,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_n}
 	addi s1, zero, 5
 250:
@@ -1779,9 +1940,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 251:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1793,9 +1954,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 10
+	addi s1, zero, 5
 252:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1807,9 +1968,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1728
+	addi a3, zero, 1664
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 253:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1821,9 +1982,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1664
+	addi a3, zero, 1696
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 9
+	addi s1, zero, 4
 254:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1835,9 +1996,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1664
+	addi a3, zero, 1728
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 255:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1849,9 +2010,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1568
 	call {vg_secp256k1_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 6
 256:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -1860,6 +2021,76 @@ vg_ecdsa_secp256k1_verify:
 	addi a3, zero, 992
 	call {vg_secp256k1_mul_mod_n}
 	bnez s1, 256b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1728
+	call {vg_secp256k1_mul_mod_n}
+	addi s1, zero, 10
+257:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_n}
+	bnez s1, 257b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1728
+	call {vg_secp256k1_mul_mod_n}
+	addi s1, zero, 4
+258:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_n}
+	bnez s1, 258b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1664
+	call {vg_secp256k1_mul_mod_n}
+	addi s1, zero, 9
+259:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_n}
+	bnez s1, 259b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1664
+	call {vg_secp256k1_mul_mod_n}
+	addi s1, zero, 4
+260:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_n}
+	bnez s1, 260b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_secp256k1_mul_mod_n}
+	addi s1, zero, 1
+261:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_n}
+	bnez s1, 261b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
@@ -2462,76 +2693,6 @@ vg_ecdsa_secp256k1_verify:
 	sd t0, 1008(s0)
 	ld t0, 1784(s0)
 	sd t0, 1016(s0)
-	addi s1, zero, 4
-257:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_p}
-	bnez s1, 257b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 4
-258:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_p}
-	bnez s1, 258b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 4
-259:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_p}
-	bnez s1, 259b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 4
-260:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_p}
-	bnez s1, 260b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 4
-261:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_secp256k1_mul_mod_p}
-	bnez s1, 261b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_secp256k1_mul_mod_p}
 	addi s1, zero, 4
 262:
 	addi s1, s1, -1
@@ -3218,7 +3379,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2111:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3230,9 +3391,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1632
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2112:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3288,7 +3449,7 @@ vg_ecdsa_secp256k1_verify:
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 3
 2116:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3300,9 +3461,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1760
+	addi a3, zero, 1632
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 5
 2117:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3314,9 +3475,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1568
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 8
+	addi s1, zero, 4
 2118:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3328,9 +3489,9 @@ vg_ecdsa_secp256k1_verify:
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
-	addi a3, zero, 1696
+	addi a3, zero, 1760
 	call {vg_secp256k1_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 4
 2119:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3339,6 +3500,76 @@ vg_ecdsa_secp256k1_verify:
 	addi a3, zero, 992
 	call {vg_secp256k1_mul_mod_p}
 	bnez s1, 2119b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_secp256k1_mul_mod_p}
+	addi s1, zero, 4
+2120:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_p}
+	bnez s1, 2120b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_secp256k1_mul_mod_p}
+	addi s1, zero, 4
+2121:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_p}
+	bnez s1, 2121b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1760
+	call {vg_secp256k1_mul_mod_p}
+	addi s1, zero, 2
+2122:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_p}
+	bnez s1, 2122b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1568
+	call {vg_secp256k1_mul_mod_p}
+	addi s1, zero, 8
+2123:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_p}
+	bnez s1, 2123b
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 1696
+	call {vg_secp256k1_mul_mod_p}
+	addi s1, zero, 2
+2124:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 992
+	addi a2, zero, 992
+	addi a3, zero, 992
+	call {vg_secp256k1_mul_mod_p}
+	bnez s1, 2124b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
@@ -3411,6 +3642,7 @@ vg_ecdsa_secp256k1_verify:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi sp, sp, 80
 	ret
 	.option pop
 

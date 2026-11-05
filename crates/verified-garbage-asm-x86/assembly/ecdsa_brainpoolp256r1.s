@@ -5,6 +5,135 @@
 // gives.
 
 vg_ecdsa_brainpoolp256r1_verify:
+	lea esp, [esp-108]
+	mov eax, DWORD PTR [esp+112]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+116]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+120]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+124]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+128]
+	mov DWORD PTR [esp+20], eax
+	mov eax, esp
+	add eax, 28
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+12]
+	cmp eax, 32
+	jb 20f
+	mov ecx, DWORD PTR [esp+8]
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [esp+28], al
+	movzx eax, BYTE PTR [ecx+1]
+	mov BYTE PTR [esp+29], al
+	movzx eax, BYTE PTR [ecx+2]
+	mov BYTE PTR [esp+30], al
+	movzx eax, BYTE PTR [ecx+3]
+	mov BYTE PTR [esp+31], al
+	movzx eax, BYTE PTR [ecx+4]
+	mov BYTE PTR [esp+32], al
+	movzx eax, BYTE PTR [ecx+5]
+	mov BYTE PTR [esp+33], al
+	movzx eax, BYTE PTR [ecx+6]
+	mov BYTE PTR [esp+34], al
+	movzx eax, BYTE PTR [ecx+7]
+	mov BYTE PTR [esp+35], al
+	movzx eax, BYTE PTR [ecx+8]
+	mov BYTE PTR [esp+36], al
+	movzx eax, BYTE PTR [ecx+9]
+	mov BYTE PTR [esp+37], al
+	movzx eax, BYTE PTR [ecx+10]
+	mov BYTE PTR [esp+38], al
+	movzx eax, BYTE PTR [ecx+11]
+	mov BYTE PTR [esp+39], al
+	movzx eax, BYTE PTR [ecx+12]
+	mov BYTE PTR [esp+40], al
+	movzx eax, BYTE PTR [ecx+13]
+	mov BYTE PTR [esp+41], al
+	movzx eax, BYTE PTR [ecx+14]
+	mov BYTE PTR [esp+42], al
+	movzx eax, BYTE PTR [ecx+15]
+	mov BYTE PTR [esp+43], al
+	movzx eax, BYTE PTR [ecx+16]
+	mov BYTE PTR [esp+44], al
+	movzx eax, BYTE PTR [ecx+17]
+	mov BYTE PTR [esp+45], al
+	movzx eax, BYTE PTR [ecx+18]
+	mov BYTE PTR [esp+46], al
+	movzx eax, BYTE PTR [ecx+19]
+	mov BYTE PTR [esp+47], al
+	movzx eax, BYTE PTR [ecx+20]
+	mov BYTE PTR [esp+48], al
+	movzx eax, BYTE PTR [ecx+21]
+	mov BYTE PTR [esp+49], al
+	movzx eax, BYTE PTR [ecx+22]
+	mov BYTE PTR [esp+50], al
+	movzx eax, BYTE PTR [ecx+23]
+	mov BYTE PTR [esp+51], al
+	movzx eax, BYTE PTR [ecx+24]
+	mov BYTE PTR [esp+52], al
+	movzx eax, BYTE PTR [ecx+25]
+	mov BYTE PTR [esp+53], al
+	movzx eax, BYTE PTR [ecx+26]
+	mov BYTE PTR [esp+54], al
+	movzx eax, BYTE PTR [ecx+27]
+	mov BYTE PTR [esp+55], al
+	movzx eax, BYTE PTR [ecx+28]
+	mov BYTE PTR [esp+56], al
+	movzx eax, BYTE PTR [ecx+29]
+	mov BYTE PTR [esp+57], al
+	movzx eax, BYTE PTR [ecx+30]
+	mov BYTE PTR [esp+58], al
+	movzx eax, BYTE PTR [ecx+31]
+	mov BYTE PTR [esp+59], al
+	jmp 21f
+20:
+	mov eax, 0
+	mov DWORD PTR [esp+28], eax
+	mov DWORD PTR [esp+32], eax
+	mov DWORD PTR [esp+36], eax
+	mov DWORD PTR [esp+40], eax
+	mov DWORD PTR [esp+44], eax
+	mov DWORD PTR [esp+48], eax
+	mov DWORD PTR [esp+52], eax
+	mov DWORD PTR [esp+56], eax
+	mov DWORD PTR [esp+60], eax
+	mov DWORD PTR [esp+64], eax
+	mov DWORD PTR [esp+68], eax
+	mov DWORD PTR [esp+72], eax
+	mov DWORD PTR [esp+76], eax
+	mov DWORD PTR [esp+80], eax
+	mov DWORD PTR [esp+84], eax
+	mov DWORD PTR [esp+88], eax
+	mov DWORD PTR [esp+92], eax
+	mov DWORD PTR [esp+96], eax
+	mov ecx, DWORD PTR [esp+8]
+	mov edx, esp
+	add edx, 60
+	mov eax, DWORD PTR [esp+12]
+	sub edx, eax
+	test eax, eax
+	je 22f
+24:
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [edx], al
+	add ecx, 1
+	add edx, 1
+	mov eax, edx
+	sub eax, esp
+	cmp eax, 60
+	jne 24b
+	jmp 23f
+22:
+23:
+21:
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax], ebx
 	mov DWORD PTR [eax+4], esi
@@ -345,7 +474,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, -1
 	mov DWORD PTR [edi+1472], eax
 	mov esi, 32
-20:
+25:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -387,9 +516,9 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 20b
+	jne 25b
 	mov esi, 32
-21:
+26:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -431,9 +560,9 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4363], dl
 	test esi, esi
-	jne 21b
+	jne 26b
 	mov esi, 32
-22:
+27:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -475,7 +604,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4623], dl
 	test esi, esi
-	jne 22b
+	jne 27b
 	mov ebx, DWORD PTR [esp+12]
 	add ebx, 32
 	mov eax, DWORD PTR [ebx+28]
@@ -993,7 +1122,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov DWORD PTR [edi+1792], eax
 	mov eax, 20
 	mov DWORD PTR [edi+1820], eax
-23:
+28:
 	mov eax, DWORD PTR [edi+1504]
 	mov DWORD PTR [edi+1796], eax
 	mov eax, DWORD PTR [edi+1540]
@@ -1007,7 +1136,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, 1
 	mov DWORD PTR [edi+1816], eax
 	mov esi, 30
-24:
+29:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+1800]
 	mov edx, DWORD PTR [edi+1792]
@@ -1063,7 +1192,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov DWORD PTR [edi+1808], ebx
 	mov DWORD PTR [edi+1816], eax
 	test esi, esi
-	jne 24b
+	jne 29b
 	mov eax, 0
 	mov DWORD PTR [edi+1712], eax
 	mov DWORD PTR [edi+1716], eax
@@ -2772,7 +2901,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	sub esi, 1
 	mov DWORD PTR [edi+1820], esi
 	test esi, esi
-	jne 23b
+	jne 28b
 	mov eax, -545608076
 	mov DWORD PTR [edi+1640], eax
 	mov eax, 1443593074
@@ -2942,7 +3071,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	pop eax
 	pop eax
 	mov esi, 32
-25:
+210:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -2984,7 +3113,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 25b
+	jne 210b
 	mov eax, DWORD PTR [edi+320]
 	mov DWORD PTR [edi+3424], eax
 	mov eax, DWORD PTR [edi+324]
@@ -3066,7 +3195,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, DWORD PTR [edi+316]
 	mov DWORD PTR [edi+3580], eax
 	mov esi, 256
-26:
+211:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+512]
 	mov DWORD PTR [edi+3328], eax
@@ -3322,7 +3451,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+604], eax
 	test esi, esi
-	jne 26b
+	jne 211b
 	mov eax, DWORD PTR [edi+512]
 	mov DWORD PTR [edi+1376], eax
 	mov eax, DWORD PTR [edi+516]
@@ -3420,7 +3549,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, 0
 	mov DWORD PTR [edi+604], eax
 	mov esi, 32
-27:
+212:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -3462,7 +3591,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 27b
+	jne 212b
 	mov eax, DWORD PTR [edi+1280]
 	mov DWORD PTR [edi+3424], eax
 	mov eax, DWORD PTR [edi+1284]
@@ -3544,7 +3673,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, DWORD PTR [edi+316]
 	mov DWORD PTR [edi+3580], eax
 	mov esi, 256
-28:
+213:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+512]
 	mov DWORD PTR [edi+3328], eax
@@ -3800,7 +3929,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+604], eax
 	test esi, esi
-	jne 28b
+	jne 213b
 	mov eax, 512
 	mov ecx, 1376
 	mov edx, 800
@@ -4389,7 +4518,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov DWORD PTR [edi+1792], eax
 	mov eax, 20
 	mov DWORD PTR [edi+1820], eax
-29:
+214:
 	mov eax, DWORD PTR [edi+1504]
 	mov DWORD PTR [edi+1796], eax
 	mov eax, DWORD PTR [edi+1540]
@@ -4403,7 +4532,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov eax, 1
 	mov DWORD PTR [edi+1816], eax
 	mov esi, 30
-210:
+215:
 	sub esi, 1
 	mov eax, DWORD PTR [edi+1800]
 	mov edx, DWORD PTR [edi+1792]
@@ -4459,7 +4588,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov DWORD PTR [edi+1808], ebx
 	mov DWORD PTR [edi+1816], eax
 	test esi, esi
-	jne 210b
+	jne 215b
 	mov eax, 0
 	mov DWORD PTR [edi+1712], eax
 	mov DWORD PTR [edi+1716], eax
@@ -6168,7 +6297,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	sub esi, 1
 	mov DWORD PTR [edi+1820], esi
 	test esi, esi
-	jne 29b
+	jne 214b
 	mov eax, -143891673
 	mov DWORD PTR [edi+1640], eax
 	mov eax, -1795210147
@@ -6350,6 +6479,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
+	lea esp, [esp+108]
 	ret
 	.p2align 6
 

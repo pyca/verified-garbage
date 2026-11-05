@@ -7,6 +7,269 @@
 vg_ecdsa_p384_verify:
 	.option push
 	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a5, sp, 0
+	addi t0, zero, 48
+	bltu a2, t0, 20f
+	lbu t1, 0(a1)
+	sb t1, 0(a5)
+	lbu t1, 1(a1)
+	sb t1, 1(a5)
+	lbu t1, 2(a1)
+	sb t1, 2(a5)
+	lbu t1, 3(a1)
+	sb t1, 3(a5)
+	lbu t1, 4(a1)
+	sb t1, 4(a5)
+	lbu t1, 5(a1)
+	sb t1, 5(a5)
+	lbu t1, 6(a1)
+	sb t1, 6(a5)
+	lbu t1, 7(a1)
+	sb t1, 7(a5)
+	lbu t1, 8(a1)
+	sb t1, 8(a5)
+	lbu t1, 9(a1)
+	sb t1, 9(a5)
+	lbu t1, 10(a1)
+	sb t1, 10(a5)
+	lbu t1, 11(a1)
+	sb t1, 11(a5)
+	lbu t1, 12(a1)
+	sb t1, 12(a5)
+	lbu t1, 13(a1)
+	sb t1, 13(a5)
+	lbu t1, 14(a1)
+	sb t1, 14(a5)
+	lbu t1, 15(a1)
+	sb t1, 15(a5)
+	lbu t1, 16(a1)
+	sb t1, 16(a5)
+	lbu t1, 17(a1)
+	sb t1, 17(a5)
+	lbu t1, 18(a1)
+	sb t1, 18(a5)
+	lbu t1, 19(a1)
+	sb t1, 19(a5)
+	lbu t1, 20(a1)
+	sb t1, 20(a5)
+	lbu t1, 21(a1)
+	sb t1, 21(a5)
+	lbu t1, 22(a1)
+	sb t1, 22(a5)
+	lbu t1, 23(a1)
+	sb t1, 23(a5)
+	lbu t1, 24(a1)
+	sb t1, 24(a5)
+	lbu t1, 25(a1)
+	sb t1, 25(a5)
+	lbu t1, 26(a1)
+	sb t1, 26(a5)
+	lbu t1, 27(a1)
+	sb t1, 27(a5)
+	lbu t1, 28(a1)
+	sb t1, 28(a5)
+	lbu t1, 29(a1)
+	sb t1, 29(a5)
+	lbu t1, 30(a1)
+	sb t1, 30(a5)
+	lbu t1, 31(a1)
+	sb t1, 31(a5)
+	lbu t1, 32(a1)
+	sb t1, 32(a5)
+	lbu t1, 33(a1)
+	sb t1, 33(a5)
+	lbu t1, 34(a1)
+	sb t1, 34(a5)
+	lbu t1, 35(a1)
+	sb t1, 35(a5)
+	lbu t1, 36(a1)
+	sb t1, 36(a5)
+	lbu t1, 37(a1)
+	sb t1, 37(a5)
+	lbu t1, 38(a1)
+	sb t1, 38(a5)
+	lbu t1, 39(a1)
+	sb t1, 39(a5)
+	lbu t1, 40(a1)
+	sb t1, 40(a5)
+	lbu t1, 41(a1)
+	sb t1, 41(a5)
+	lbu t1, 42(a1)
+	sb t1, 42(a5)
+	lbu t1, 43(a1)
+	sb t1, 43(a5)
+	lbu t1, 44(a1)
+	sb t1, 44(a5)
+	lbu t1, 45(a1)
+	sb t1, 45(a5)
+	lbu t1, 46(a1)
+	sb t1, 46(a5)
+	lbu t1, 47(a1)
+	sb t1, 47(a5)
+	j 21f
+20:
+	addi t1, zero, 0
+	sb t1, 0(a5)
+	addi t1, zero, 0
+	sb t1, 1(a5)
+	addi t1, zero, 0
+	sb t1, 2(a5)
+	addi t1, zero, 0
+	sb t1, 3(a5)
+	addi t1, zero, 0
+	sb t1, 4(a5)
+	addi t1, zero, 0
+	sb t1, 5(a5)
+	addi t1, zero, 0
+	sb t1, 6(a5)
+	addi t1, zero, 0
+	sb t1, 7(a5)
+	addi t1, zero, 0
+	sb t1, 8(a5)
+	addi t1, zero, 0
+	sb t1, 9(a5)
+	addi t1, zero, 0
+	sb t1, 10(a5)
+	addi t1, zero, 0
+	sb t1, 11(a5)
+	addi t1, zero, 0
+	sb t1, 12(a5)
+	addi t1, zero, 0
+	sb t1, 13(a5)
+	addi t1, zero, 0
+	sb t1, 14(a5)
+	addi t1, zero, 0
+	sb t1, 15(a5)
+	addi t1, zero, 0
+	sb t1, 16(a5)
+	addi t1, zero, 0
+	sb t1, 17(a5)
+	addi t1, zero, 0
+	sb t1, 18(a5)
+	addi t1, zero, 0
+	sb t1, 19(a5)
+	addi t1, zero, 0
+	sb t1, 20(a5)
+	addi t1, zero, 0
+	sb t1, 21(a5)
+	addi t1, zero, 0
+	sb t1, 22(a5)
+	addi t1, zero, 0
+	sb t1, 23(a5)
+	addi t1, zero, 0
+	sb t1, 24(a5)
+	addi t1, zero, 0
+	sb t1, 25(a5)
+	addi t1, zero, 0
+	sb t1, 26(a5)
+	addi t1, zero, 0
+	sb t1, 27(a5)
+	addi t1, zero, 0
+	sb t1, 28(a5)
+	addi t1, zero, 0
+	sb t1, 29(a5)
+	addi t1, zero, 0
+	sb t1, 30(a5)
+	addi t1, zero, 0
+	sb t1, 31(a5)
+	addi t1, zero, 0
+	sb t1, 32(a5)
+	addi t1, zero, 0
+	sb t1, 33(a5)
+	addi t1, zero, 0
+	sb t1, 34(a5)
+	addi t1, zero, 0
+	sb t1, 35(a5)
+	addi t1, zero, 0
+	sb t1, 36(a5)
+	addi t1, zero, 0
+	sb t1, 37(a5)
+	addi t1, zero, 0
+	sb t1, 38(a5)
+	addi t1, zero, 0
+	sb t1, 39(a5)
+	addi t1, zero, 0
+	sb t1, 40(a5)
+	addi t1, zero, 0
+	sb t1, 41(a5)
+	addi t1, zero, 0
+	sb t1, 42(a5)
+	addi t1, zero, 0
+	sb t1, 43(a5)
+	addi t1, zero, 0
+	sb t1, 44(a5)
+	addi t1, zero, 0
+	sb t1, 45(a5)
+	addi t1, zero, 0
+	sb t1, 46(a5)
+	addi t1, zero, 0
+	sb t1, 47(a5)
+	addi t1, zero, 0
+	sb t1, 48(a5)
+	addi t1, zero, 0
+	sb t1, 49(a5)
+	addi t1, zero, 0
+	sb t1, 50(a5)
+	addi t1, zero, 0
+	sb t1, 51(a5)
+	addi t1, zero, 0
+	sb t1, 52(a5)
+	addi t1, zero, 0
+	sb t1, 53(a5)
+	addi t1, zero, 0
+	sb t1, 54(a5)
+	addi t1, zero, 0
+	sb t1, 55(a5)
+	addi t1, zero, 0
+	sb t1, 56(a5)
+	addi t1, zero, 0
+	sb t1, 57(a5)
+	addi t1, zero, 0
+	sb t1, 58(a5)
+	addi t1, zero, 0
+	sb t1, 59(a5)
+	addi t1, zero, 0
+	sb t1, 60(a5)
+	addi t1, zero, 0
+	sb t1, 61(a5)
+	addi t1, zero, 0
+	sb t1, 62(a5)
+	addi t1, zero, 0
+	sb t1, 63(a5)
+	addi t1, zero, 0
+	sb t1, 64(a5)
+	addi t1, zero, 0
+	sb t1, 65(a5)
+	addi t1, zero, 0
+	sb t1, 66(a5)
+	addi t1, zero, 0
+	sb t1, 67(a5)
+	addi t1, zero, 0
+	sb t1, 68(a5)
+	addi t1, zero, 0
+	sb t1, 69(a5)
+	addi t1, zero, 0
+	sb t1, 70(a5)
+	addi t1, zero, 0
+	sb t1, 71(a5)
+	addi t2, a5, 48
+	sub t2, t2, a2
+	beqz a2, 22f
+24:
+	lbu t1, 0(a1)
+	sb t1, 0(t2)
+	addi a1, a1, 1
+	addi t2, t2, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	j 23f
+22:
+23:
+21:
+	addi a1, a5, 0
+	addi a2, a3, 0
+	addi a3, a4, 0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -1593,81 +1856,6 @@ vg_ecdsa_p384_verify:
 	ld t0, 601(t0)
 	sd t0, 1496(s0)
 	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_n}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_n}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_n}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_n}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_n}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
 25:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2297,7 +2485,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 4
 247:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2310,9 +2498,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 248:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2325,9 +2513,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 369
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 249:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2340,9 +2528,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 250:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2355,9 +2543,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 513
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 4
 251:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2370,9 +2558,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 513
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 2
 252:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2385,9 +2573,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 225
+	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 10
+	addi s1, zero, 6
 253:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2400,7 +2588,7 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 561
+	addi a3, a3, 369
 	call {vg_p384_mul_mod_n}
 	addi s1, zero, 3
 254:
@@ -2415,9 +2603,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 321
+	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 7
 255:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2432,7 +2620,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 513
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 6
 256:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2445,9 +2633,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 513
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 1
 257:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2460,9 +2648,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 465
+	addi a3, a3, 225
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 10
 258:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2475,9 +2663,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 369
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 259:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2490,9 +2678,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 561
+	addi a3, a3, 321
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 8
 260:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2505,9 +2693,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 321
+	addi a3, a3, 513
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 2
 261:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2522,7 +2710,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 10
+	addi s1, zero, 6
 262:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2535,9 +2723,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 513
+	addi a3, a3, 465
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 9
+	addi s1, zero, 4
 263:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2550,9 +2738,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 513
+	addi a3, a3, 369
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 264:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2565,9 +2753,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 465
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 265:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2580,7 +2768,7 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 417
+	addi a3, a3, 321
 	call {vg_p384_mul_mod_n}
 	addi s1, zero, 3
 266:
@@ -2595,9 +2783,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 225
+	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 10
 267:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2610,9 +2798,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 465
+	addi a3, a3, 513
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 9
 268:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2625,9 +2813,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 321
+	addi a3, a3, 513
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 269:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2640,9 +2828,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 369
+	addi a3, a3, 465
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 6
 270:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2655,9 +2843,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 561
+	addi a3, a3, 417
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 271:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2670,9 +2858,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 465
+	addi a3, a3, 225
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 7
 272:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2687,7 +2875,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 465
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 7
 273:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2700,9 +2888,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 369
+	addi a3, a3, 321
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 274:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2715,9 +2903,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 369
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 5
 275:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2730,9 +2918,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 276:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2760,9 +2948,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 321
+	addi a3, a3, 465
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 278:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2775,9 +2963,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 273
+	addi a3, a3, 369
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 3
 279:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2792,7 +2980,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 7
 280:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2820,9 +3008,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 321
+	addi a3, a3, 465
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 282:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2837,7 +3025,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 321
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 283:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2850,9 +3038,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 465
+	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 4
 284:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -2865,7 +3053,7 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 225
+	addi a3, a3, 273
 	call {vg_p384_mul_mod_n}
 	addi s1, zero, 4
 285:
@@ -2876,6 +3064,81 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 1456
 	call {vg_p384_mul_mod_n}
 	bnez s1, 285b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 273
+	call {vg_p384_mul_mod_n}
+	addi s1, zero, 6
+286:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_n}
+	bnez s1, 286b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 321
+	call {vg_p384_mul_mod_n}
+	addi s1, zero, 5
+287:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_n}
+	bnez s1, 287b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 321
+	call {vg_p384_mul_mod_n}
+	addi s1, zero, 6
+288:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_n}
+	bnez s1, 288b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 465
+	call {vg_p384_mul_mod_n}
+	addi s1, zero, 1
+289:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_n}
+	bnez s1, 289b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 225
+	call {vg_p384_mul_mod_n}
+	addi s1, zero, 4
+290:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_n}
+	bnez s1, 290b
 	addi a0, s0, 0
 	addi a1, zero, 1456
 	addi a2, zero, 1456
@@ -3698,81 +3961,6 @@ vg_ecdsa_p384_verify:
 	addi t0, s0, 2047
 	ld t0, 601(t0)
 	sd t0, 1496(s0)
-	addi s1, zero, 4
-286:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_p}
-	bnez s1, 286b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
-287:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_p}
-	bnez s1, 287b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
-288:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_p}
-	bnez s1, 288b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
-289:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_p}
-	bnez s1, 289b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
-290:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 1456
-	call {vg_p384_mul_mod_p}
-	bnez s1, 290b
-	addi a0, s0, 0
-	addi a1, zero, 1456
-	addi a2, zero, 1456
-	addi a3, zero, 2047
-	addi a3, a3, 561
-	call {vg_p384_mul_mod_p}
 	addi s1, zero, 4
 291:
 	addi s1, s1, -1
@@ -4628,7 +4816,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 561
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2148:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4641,9 +4829,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 369
+	addi a3, a3, 561
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2149:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4703,7 +4891,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 561
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 3
 2153:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4716,9 +4904,9 @@ vg_ecdsa_p384_verify:
 	addi a1, zero, 1456
 	addi a2, zero, 1456
 	addi a3, zero, 2047
-	addi a3, a3, 561
+	addi a3, a3, 369
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 5
 2154:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4763,7 +4951,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 561
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 68
+	addi s1, zero, 4
 2157:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4838,7 +5026,7 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 561
 	call {vg_p384_mul_mod_p}
-	addi s1, zero, 4
+	addi s1, zero, 68
 2162:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4877,6 +5065,81 @@ vg_ecdsa_p384_verify:
 	addi a3, zero, 1456
 	call {vg_p384_mul_mod_p}
 	bnez s1, 2164b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 561
+	call {vg_p384_mul_mod_p}
+	addi s1, zero, 4
+2165:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_p}
+	bnez s1, 2165b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 561
+	call {vg_p384_mul_mod_p}
+	addi s1, zero, 4
+2166:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_p}
+	bnez s1, 2166b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 561
+	call {vg_p384_mul_mod_p}
+	addi s1, zero, 4
+2167:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_p}
+	bnez s1, 2167b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 561
+	call {vg_p384_mul_mod_p}
+	addi s1, zero, 4
+2168:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_p}
+	bnez s1, 2168b
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 2047
+	addi a3, a3, 561
+	call {vg_p384_mul_mod_p}
+	addi s1, zero, 4
+2169:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 1456
+	addi a2, zero, 1456
+	addi a3, zero, 1456
+	call {vg_p384_mul_mod_p}
+	bnez s1, 2169b
 	addi a0, s0, 0
 	addi a1, zero, 1456
 	addi a2, zero, 1456
@@ -4965,6 +5228,7 @@ vg_ecdsa_p384_verify:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi sp, sp, 80
 	ret
 	.option pop
 

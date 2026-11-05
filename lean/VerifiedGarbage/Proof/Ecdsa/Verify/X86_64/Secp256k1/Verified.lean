@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
@@ -25,6 +29,29 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Contract
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointErased
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`
@@ -250,6 +277,17 @@ theorem verify_verified : Verified X86_64.target verifySecp256k1
   Verified.of_inline (k₀ := verifyK₀) verify_inlineOk (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
     (jointVerify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
+
+/-- `vg_ecdsa_secp256k1_verify`, taking the hash function's output: `verify_verified`,
+run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
+theorem verifyHash_verified : Verified X86_64.target
+    (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verifySecp256k1)
+    (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (X86_64.abi.withConsts secp256k1v.combConsts) 96) :=
+  Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.secp256k1_len (by decide) (verify_verified hL hT hI)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
+      simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1

@@ -5,6 +5,203 @@
 // gives.
 
 vg_ecdsa_p384_verify:
+	sub sp, sp, #80
+	add x5, sp, #0
+	lsr x10, x2, #7
+	movz x11, #127, lsl #0
+	and x12, x2, x11
+	add x12, x12, #80
+	lsr x12, x12, #7
+	orr x11, x10, x12
+	cbnz x11, 20f
+	movz x12, #0, lsl #0
+	strb w12, [x5, #0]
+	strb w12, [x5, #1]
+	strb w12, [x5, #2]
+	strb w12, [x5, #3]
+	strb w12, [x5, #4]
+	strb w12, [x5, #5]
+	strb w12, [x5, #6]
+	strb w12, [x5, #7]
+	strb w12, [x5, #8]
+	strb w12, [x5, #9]
+	strb w12, [x5, #10]
+	strb w12, [x5, #11]
+	strb w12, [x5, #12]
+	strb w12, [x5, #13]
+	strb w12, [x5, #14]
+	strb w12, [x5, #15]
+	strb w12, [x5, #16]
+	strb w12, [x5, #17]
+	strb w12, [x5, #18]
+	strb w12, [x5, #19]
+	strb w12, [x5, #20]
+	strb w12, [x5, #21]
+	strb w12, [x5, #22]
+	strb w12, [x5, #23]
+	strb w12, [x5, #24]
+	strb w12, [x5, #25]
+	strb w12, [x5, #26]
+	strb w12, [x5, #27]
+	strb w12, [x5, #28]
+	strb w12, [x5, #29]
+	strb w12, [x5, #30]
+	strb w12, [x5, #31]
+	strb w12, [x5, #32]
+	strb w12, [x5, #33]
+	strb w12, [x5, #34]
+	strb w12, [x5, #35]
+	strb w12, [x5, #36]
+	strb w12, [x5, #37]
+	strb w12, [x5, #38]
+	strb w12, [x5, #39]
+	strb w12, [x5, #40]
+	strb w12, [x5, #41]
+	strb w12, [x5, #42]
+	strb w12, [x5, #43]
+	strb w12, [x5, #44]
+	strb w12, [x5, #45]
+	strb w12, [x5, #46]
+	strb w12, [x5, #47]
+	strb w12, [x5, #48]
+	strb w12, [x5, #49]
+	strb w12, [x5, #50]
+	strb w12, [x5, #51]
+	strb w12, [x5, #52]
+	strb w12, [x5, #53]
+	strb w12, [x5, #54]
+	strb w12, [x5, #55]
+	strb w12, [x5, #56]
+	strb w12, [x5, #57]
+	strb w12, [x5, #58]
+	strb w12, [x5, #59]
+	strb w12, [x5, #60]
+	strb w12, [x5, #61]
+	strb w12, [x5, #62]
+	strb w12, [x5, #63]
+	strb w12, [x5, #64]
+	strb w12, [x5, #65]
+	strb w12, [x5, #66]
+	strb w12, [x5, #67]
+	strb w12, [x5, #68]
+	strb w12, [x5, #69]
+	strb w12, [x5, #70]
+	strb w12, [x5, #71]
+	add x13, x5, #48
+	sub x13, x13, x2
+	cbz x2, 22f
+24:
+	ldrb w9, [x1, #0]
+	strb w9, [x13, #0]
+	add x1, x1, #1
+	add x13, x13, #1
+	sub x2, x2, #1
+	cbnz x2, 24b
+	b 23f
+22:
+23:
+	b 21f
+20:
+	ldrb w9, [x1, #0]
+	strb w9, [x5, #0]
+	ldrb w9, [x1, #1]
+	strb w9, [x5, #1]
+	ldrb w9, [x1, #2]
+	strb w9, [x5, #2]
+	ldrb w9, [x1, #3]
+	strb w9, [x5, #3]
+	ldrb w9, [x1, #4]
+	strb w9, [x5, #4]
+	ldrb w9, [x1, #5]
+	strb w9, [x5, #5]
+	ldrb w9, [x1, #6]
+	strb w9, [x5, #6]
+	ldrb w9, [x1, #7]
+	strb w9, [x5, #7]
+	ldrb w9, [x1, #8]
+	strb w9, [x5, #8]
+	ldrb w9, [x1, #9]
+	strb w9, [x5, #9]
+	ldrb w9, [x1, #10]
+	strb w9, [x5, #10]
+	ldrb w9, [x1, #11]
+	strb w9, [x5, #11]
+	ldrb w9, [x1, #12]
+	strb w9, [x5, #12]
+	ldrb w9, [x1, #13]
+	strb w9, [x5, #13]
+	ldrb w9, [x1, #14]
+	strb w9, [x5, #14]
+	ldrb w9, [x1, #15]
+	strb w9, [x5, #15]
+	ldrb w9, [x1, #16]
+	strb w9, [x5, #16]
+	ldrb w9, [x1, #17]
+	strb w9, [x5, #17]
+	ldrb w9, [x1, #18]
+	strb w9, [x5, #18]
+	ldrb w9, [x1, #19]
+	strb w9, [x5, #19]
+	ldrb w9, [x1, #20]
+	strb w9, [x5, #20]
+	ldrb w9, [x1, #21]
+	strb w9, [x5, #21]
+	ldrb w9, [x1, #22]
+	strb w9, [x5, #22]
+	ldrb w9, [x1, #23]
+	strb w9, [x5, #23]
+	ldrb w9, [x1, #24]
+	strb w9, [x5, #24]
+	ldrb w9, [x1, #25]
+	strb w9, [x5, #25]
+	ldrb w9, [x1, #26]
+	strb w9, [x5, #26]
+	ldrb w9, [x1, #27]
+	strb w9, [x5, #27]
+	ldrb w9, [x1, #28]
+	strb w9, [x5, #28]
+	ldrb w9, [x1, #29]
+	strb w9, [x5, #29]
+	ldrb w9, [x1, #30]
+	strb w9, [x5, #30]
+	ldrb w9, [x1, #31]
+	strb w9, [x5, #31]
+	ldrb w9, [x1, #32]
+	strb w9, [x5, #32]
+	ldrb w9, [x1, #33]
+	strb w9, [x5, #33]
+	ldrb w9, [x1, #34]
+	strb w9, [x5, #34]
+	ldrb w9, [x1, #35]
+	strb w9, [x5, #35]
+	ldrb w9, [x1, #36]
+	strb w9, [x5, #36]
+	ldrb w9, [x1, #37]
+	strb w9, [x5, #37]
+	ldrb w9, [x1, #38]
+	strb w9, [x5, #38]
+	ldrb w9, [x1, #39]
+	strb w9, [x5, #39]
+	ldrb w9, [x1, #40]
+	strb w9, [x5, #40]
+	ldrb w9, [x1, #41]
+	strb w9, [x5, #41]
+	ldrb w9, [x1, #42]
+	strb w9, [x5, #42]
+	ldrb w9, [x1, #43]
+	strb w9, [x5, #43]
+	ldrb w9, [x1, #44]
+	strb w9, [x5, #44]
+	ldrb w9, [x1, #45]
+	strb w9, [x5, #45]
+	ldrb w9, [x1, #46]
+	strb w9, [x5, #46]
+	ldrb w9, [x1, #47]
+	strb w9, [x5, #47]
+21:
+	add x1, x5, #0
+	add x2, x3, #0
+	add x3, x4, #0
 	add x4, x3, #0
 	add x6, x0, #0
 	add x3, x2, #0
@@ -501,7 +698,7 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #2176]
 	movz x19, #48, lsl #0
 	movz x5, #1, lsl #0
-20:
+25:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1552]
@@ -530,7 +727,7 @@ vg_ecdsa_p384_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #2231]
-	cbnz x19, 20b
+	cbnz x19, 25b
 	ldr x5, [x8, #40]
 	rev x5, x5
 	str x5, [x0, #1504]
@@ -777,17 +974,17 @@ vg_ecdsa_p384_verify:
 	movz x15, #1, lsl #0
 	movz x19, #385, lsl #0
 	add x20, x0, #3152
-21:
+26:
 	and x1, x5, x15
-	cbnz x1, 22f
+	cbnz x1, 27f
 	movz x2, #0, lsl #0
-	b 23f
-22:
+	b 28f
+27:
 	and x2, x5, x12
 	and x3, x2, x13
 	lsl x3, x3, #1
 	sub x2, x2, x3
-23:
+28:
 	strb w2, [x20, #0]
 	lsr x3, x2, #8
 	strb w3, [x20, #1]
@@ -809,7 +1006,7 @@ vg_ecdsa_p384_verify:
 	extr x10, x11, x10, #1
 	lsr x11, x11, #1
 	sub x19, x19, #1
-	cbnz x19, 21b
+	cbnz x19, 26b
 	ldr x5, [x0, #1744]
 	ldr x6, [x0, #1752]
 	ldr x7, [x0, #1760]
@@ -823,17 +1020,17 @@ vg_ecdsa_p384_verify:
 	movz x15, #1, lsl #0
 	movz x19, #385, lsl #0
 	add x20, x0, #2704
-24:
+29:
 	and x1, x5, x15
-	cbnz x1, 25f
+	cbnz x1, 210f
 	movz x2, #0, lsl #0
-	b 26f
-25:
+	b 211f
+210:
 	and x2, x5, x12
 	and x3, x2, x13
 	lsl x3, x3, #1
 	sub x2, x2, x3
-26:
+211:
 	strb w2, [x20, #0]
 	add x20, x20, #1
 	lsr x3, x2, #63
@@ -853,7 +1050,7 @@ vg_ecdsa_p384_verify:
 	extr x10, x11, x10, #1
 	lsr x11, x11, #1
 	sub x19, x19, #1
-	cbnz x19, 24b
+	cbnz x19, 29b
 	ldr x1, [x0, #1888]
 	str x1, [x0, #736]
 	ldr x1, [x0, #1896]
@@ -1545,7 +1742,7 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #856]
 	str x12, [x0, #864]
 	str x13, [x0, #872]
-27:
+212:
 	movz x7, #0, lsl #0
 	ldr x8, [x0, #1024]
 	ldr x9, [x0, #1032]
@@ -1934,7 +2131,7 @@ vg_ecdsa_p384_verify:
 	str x4, [x20, #4376]
 	add x20, x20, #144
 	sub x19, x19, #1
-	cbnz x19, 27b
+	cbnz x19, 212b
 	ldr x1, [x0, #4336]
 	str x1, [x0, #1264]
 	ldr x1, [x0, #4344]
@@ -2412,7 +2609,7 @@ vg_ecdsa_p384_verify:
 	movz x19, #384, lsl #0
 	add x16, x0, x19
 	ldrb w2, [x16, #2704]
-	cbnz x2, 28f
+	cbnz x2, 213f
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -2449,8 +2646,8 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-	b 29f
-28:
+	b 214f
+213:
 	lsr x3, x2, #7
 	lsl x4, x3, #8
 	sub x2, x2, x4
@@ -2530,9 +2727,9 @@ vg_ecdsa_p384_verify:
 	add x16, x0, x19
 	ldrb w3, [x16, #2704]
 	lsr x3, x3, #7
-	cbnz x3, 210f
-	b 211f
-210:
+	cbnz x3, 215f
+	b 216f
+215:
 	movz x7, #0, lsl #0
 	ldr x8, [x0, #208]
 	ldr x9, [x0, #216]
@@ -2577,7 +2774,7 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #1096]
 	str x12, [x0, #1104]
 	str x13, [x0, #1112]
-211:
+216:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #976]
 	ldr x2, [x0, #984]
@@ -2593,7 +2790,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 212f
+	cbnz x2, 217f
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1120]
 	ldr x2, [x0, #1128]
@@ -2609,7 +2806,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 214f
+	cbnz x2, 219f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #976, lsl #0
@@ -2749,7 +2946,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 216f
+	cbnz x2, 221f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #1312, lsl #0
@@ -3018,8 +3215,8 @@ vg_ecdsa_p384_verify:
 	movz x3, #1312, lsl #0
 	bl {vg_p384_mul_mod_p}
 	umov x30, v29.d[0]
-	b 217f
-216:
+	b 222f
+221:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1408]
 	ldr x2, [x0, #1416]
@@ -3035,7 +3232,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 218f
+	cbnz x2, 223f
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -3126,8 +3323,8 @@ vg_ecdsa_p384_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #872]
-	b 219f
-218:
+	b 224f
+223:
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #976, lsl #0
@@ -3711,10 +3908,10 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #808]
 	str x12, [x0, #816]
 	str x13, [x0, #824]
+224:
+222:
+	b 220f
 219:
-217:
-	b 215f
-214:
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -3751,9 +3948,9 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-215:
-	b 213f
-212:
+220:
+	b 218f
+217:
 	ldr x1, [x0, #1024]
 	str x1, [x0, #736]
 	ldr x1, [x0, #1032]
@@ -3790,15 +3987,15 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1160]
 	str x1, [x0, #872]
-213:
-29:
+218:
+214:
 	add x16, x0, x19
 	add x16, x16, x19
 	ldrb w2, [x16, #3152]
 	ldrb w3, [x16, #3153]
-	cbnz x2, 220f
-	b 221f
-220:
+	cbnz x2, 225f
+	b 226f
+225:
 	lsr x3, x3, #7
 	lsl x4, x3, #8
 	sub x2, x2, x4
@@ -3854,9 +4051,9 @@ vg_ecdsa_p384_verify:
 	add x16, x16, x19
 	ldrb w3, [x16, #3153]
 	lsr x3, x3, #7
-	cbnz x3, 222f
-	b 223f
-222:
+	cbnz x3, 227f
+	b 228f
+227:
 	movz x7, #0, lsl #0
 	ldr x8, [x0, #208]
 	ldr x9, [x0, #216]
@@ -3901,7 +4098,7 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #1096]
 	str x12, [x0, #1104]
 	str x13, [x0, #1112]
-223:
+228:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #832]
 	ldr x2, [x0, #840]
@@ -3917,7 +4114,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 224f
+	cbnz x2, 229f
 	ldr x1, [x0, #736]
 	str x1, [x0, #1264]
 	ldr x1, [x0, #744]
@@ -4069,7 +4266,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 226f
+	cbnz x2, 231f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #1312, lsl #0
@@ -4332,8 +4529,8 @@ vg_ecdsa_p384_verify:
 	movz x3, #1312, lsl #0
 	bl {vg_p384_mul_mod_p}
 	umov x30, v29.d[0]
-	b 227f
-226:
+	b 232f
+231:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1408]
 	ldr x2, [x0, #1416]
@@ -4349,7 +4546,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 228f
+	cbnz x2, 233f
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -4440,8 +4637,8 @@ vg_ecdsa_p384_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #1016]
-	b 229f
-228:
+	b 234f
+233:
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #832, lsl #0
@@ -5025,10 +5222,10 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #952]
 	str x12, [x0, #960]
 	str x13, [x0, #968]
+234:
+232:
+	b 230f
 229:
-227:
-	b 225f
-224:
 	ldr x1, [x0, #1024]
 	str x1, [x0, #880]
 	ldr x1, [x0, #1032]
@@ -5065,7 +5262,7 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #1008]
 	ldr x1, [x0, #1160]
 	str x1, [x0, #1016]
-225:
+230:
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -5102,8 +5299,8 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-221:
-230:
+226:
+235:
 	sub x19, x19, #1
 	ldr x1, [x0, #832]
 	ldr x2, [x0, #840]
@@ -7497,7 +7694,7 @@ vg_ecdsa_p384_verify:
 	str x4, [x0, #968]
 	add x16, x0, x19
 	ldrb w2, [x16, #2704]
-	cbnz x2, 231f
+	cbnz x2, 236f
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -7534,8 +7731,8 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-	b 232f
-231:
+	b 237f
+236:
 	lsr x3, x2, #7
 	lsl x4, x3, #8
 	sub x2, x2, x4
@@ -7615,9 +7812,9 @@ vg_ecdsa_p384_verify:
 	add x16, x0, x19
 	ldrb w3, [x16, #2704]
 	lsr x3, x3, #7
-	cbnz x3, 233f
-	b 234f
-233:
+	cbnz x3, 238f
+	b 239f
+238:
 	movz x7, #0, lsl #0
 	ldr x8, [x0, #208]
 	ldr x9, [x0, #216]
@@ -7662,7 +7859,7 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #1096]
 	str x12, [x0, #1104]
 	str x13, [x0, #1112]
-234:
+239:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #976]
 	ldr x2, [x0, #984]
@@ -7678,7 +7875,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 235f
+	cbnz x2, 240f
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1120]
 	ldr x2, [x0, #1128]
@@ -7694,7 +7891,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 237f
+	cbnz x2, 242f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #976, lsl #0
@@ -7834,7 +8031,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 239f
+	cbnz x2, 244f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #1312, lsl #0
@@ -8103,8 +8300,8 @@ vg_ecdsa_p384_verify:
 	movz x3, #1312, lsl #0
 	bl {vg_p384_mul_mod_p}
 	umov x30, v29.d[0]
-	b 240f
-239:
+	b 245f
+244:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1408]
 	ldr x2, [x0, #1416]
@@ -8120,7 +8317,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 241f
+	cbnz x2, 246f
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -8211,8 +8408,8 @@ vg_ecdsa_p384_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #872]
-	b 242f
-241:
+	b 247f
+246:
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #976, lsl #0
@@ -8796,10 +8993,10 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #808]
 	str x12, [x0, #816]
 	str x13, [x0, #824]
+247:
+245:
+	b 243f
 242:
-240:
-	b 238f
-237:
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -8836,9 +9033,9 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-238:
-	b 236f
-235:
+243:
+	b 241f
+240:
 	ldr x1, [x0, #1024]
 	str x1, [x0, #736]
 	ldr x1, [x0, #1032]
@@ -8875,15 +9072,15 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1160]
 	str x1, [x0, #872]
-236:
-232:
+241:
+237:
 	add x16, x0, x19
 	add x16, x16, x19
 	ldrb w2, [x16, #3152]
 	ldrb w3, [x16, #3153]
-	cbnz x2, 243f
-	b 244f
-243:
+	cbnz x2, 248f
+	b 249f
+248:
 	lsr x3, x3, #7
 	lsl x4, x3, #8
 	sub x2, x2, x4
@@ -8939,9 +9136,9 @@ vg_ecdsa_p384_verify:
 	add x16, x16, x19
 	ldrb w3, [x16, #3153]
 	lsr x3, x3, #7
-	cbnz x3, 245f
-	b 246f
-245:
+	cbnz x3, 250f
+	b 251f
+250:
 	movz x7, #0, lsl #0
 	ldr x8, [x0, #208]
 	ldr x9, [x0, #216]
@@ -8986,7 +9183,7 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #1096]
 	str x12, [x0, #1104]
 	str x13, [x0, #1112]
-246:
+251:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #832]
 	ldr x2, [x0, #840]
@@ -9002,7 +9199,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 247f
+	cbnz x2, 252f
 	ldr x1, [x0, #736]
 	str x1, [x0, #1264]
 	ldr x1, [x0, #744]
@@ -9154,7 +9351,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 249f
+	cbnz x2, 254f
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #1312, lsl #0
@@ -9417,8 +9614,8 @@ vg_ecdsa_p384_verify:
 	movz x3, #1312, lsl #0
 	bl {vg_p384_mul_mod_p}
 	umov x30, v29.d[0]
-	b 250f
-249:
+	b 255f
+254:
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #1408]
 	ldr x2, [x0, #1416]
@@ -9434,7 +9631,7 @@ vg_ecdsa_p384_verify:
 	movz x5, #1, lsl #0
 	subs x16, x1, x5
 	sbc x2, x7, x7
-	cbnz x2, 251f
+	cbnz x2, 256f
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -9525,8 +9722,8 @@ vg_ecdsa_p384_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #1016]
-	b 252f
-251:
+	b 257f
+256:
 	mov v29.d[0], x30
 	movz x1, #1168, lsl #0
 	movz x2, #832, lsl #0
@@ -10110,10 +10307,10 @@ vg_ecdsa_p384_verify:
 	str x11, [x0, #952]
 	str x12, [x0, #960]
 	str x13, [x0, #968]
+257:
+255:
+	b 253f
 252:
-250:
-	b 248f
-247:
 	ldr x1, [x0, #1024]
 	str x1, [x0, #880]
 	ldr x1, [x0, #1032]
@@ -10150,7 +10347,7 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #1008]
 	ldr x1, [x0, #1160]
 	str x1, [x0, #1016]
-248:
+253:
 	ldr x1, [x0, #880]
 	str x1, [x0, #736]
 	ldr x1, [x0, #888]
@@ -10187,8 +10384,8 @@ vg_ecdsa_p384_verify:
 	str x1, [x0, #864]
 	ldr x1, [x0, #1016]
 	str x1, [x0, #872]
-244:
-	cbnz x19, 230b
+249:
+	cbnz x19, 235b
 	ldr x1, [x0, #736]
 	str x1, [x0, #1024]
 	ldr x1, [x0, #744]
@@ -11151,6 +11348,7 @@ vg_ecdsa_p384_verify:
 	ldr x30, [x0, #56]
 	movz x1, #1, lsl #0
 	and x0, x3, x1
+	add sp, sp, #80
 	ret
 	.p2align 6
 

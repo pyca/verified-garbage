@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.Arm
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P192.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Tactic.SplitIfs
@@ -74,8 +75,10 @@ import VerifiedGarbage.Proof.X25519.Field
 namespace VG.Generic.P192.Arm.EcdsaP192
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) : List Artifact := [
-  Spec.Ecdsa.P192.verifyApi.artifact Arm.target {
-    code := Impl.Ecdsa.Verify.Arm.verifyP192
-    verified := Proof.Ecdsa.Verify.Arm.P192.verify_verified h.law }]
+  Spec.Ecdsa.P192.verifyHashApi.artifact Arm.target {
+    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+      Impl.Ecdsa.Verify.Arm.verifyP192
+    stack := 96
+    verified := Proof.Ecdsa.Verify.Arm.P192.verifyHash_verified h.law }]
 
 end VG.Generic.P192.Arm.EcdsaP192

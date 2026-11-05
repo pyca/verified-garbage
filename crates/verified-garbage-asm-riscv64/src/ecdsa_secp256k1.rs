@@ -3,24 +3,255 @@
 //! `assembly/ecdsa_secp256k1.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature verification over secp256k1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+/// ECDSA signature verification over secp256k1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
-/// * `digest` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `sig` must be valid for reads of 64 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_secp256k1_verify(public: *const [u8; 65], digest: *const [u8; 32], sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_secp256k1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
+.insn 2, 0x715d
+.insn 2, 0x878a
+.insn 4, 0x02000293
+bltu a2, t0, 20f
+.insn 4, 0x0005c303
+.insn 4, 0x00678023
+.insn 4, 0x0015c303
+.insn 4, 0x006780a3
+.insn 4, 0x0025c303
+.insn 4, 0x00678123
+.insn 4, 0x0035c303
+.insn 4, 0x006781a3
+.insn 4, 0x0045c303
+.insn 4, 0x00678223
+.insn 4, 0x0055c303
+.insn 4, 0x006782a3
+.insn 4, 0x0065c303
+.insn 4, 0x00678323
+.insn 4, 0x0075c303
+.insn 4, 0x006783a3
+.insn 4, 0x0085c303
+.insn 4, 0x00678423
+.insn 4, 0x0095c303
+.insn 4, 0x006784a3
+.insn 4, 0x00a5c303
+.insn 4, 0x00678523
+.insn 4, 0x00b5c303
+.insn 4, 0x006785a3
+.insn 4, 0x00c5c303
+.insn 4, 0x00678623
+.insn 4, 0x00d5c303
+.insn 4, 0x006786a3
+.insn 4, 0x00e5c303
+.insn 4, 0x00678723
+.insn 4, 0x00f5c303
+.insn 4, 0x006787a3
+.insn 4, 0x0105c303
+.insn 4, 0x00678823
+.insn 4, 0x0115c303
+.insn 4, 0x006788a3
+.insn 4, 0x0125c303
+.insn 4, 0x00678923
+.insn 4, 0x0135c303
+.insn 4, 0x006789a3
+.insn 4, 0x0145c303
+.insn 4, 0x00678a23
+.insn 4, 0x0155c303
+.insn 4, 0x00678aa3
+.insn 4, 0x0165c303
+.insn 4, 0x00678b23
+.insn 4, 0x0175c303
+.insn 4, 0x00678ba3
+.insn 4, 0x0185c303
+.insn 4, 0x00678c23
+.insn 4, 0x0195c303
+.insn 4, 0x00678ca3
+.insn 4, 0x01a5c303
+.insn 4, 0x00678d23
+.insn 4, 0x01b5c303
+.insn 4, 0x00678da3
+.insn 4, 0x01c5c303
+.insn 4, 0x00678e23
+.insn 4, 0x01d5c303
+.insn 4, 0x00678ea3
+.insn 4, 0x01e5c303
+.insn 4, 0x00678f23
+.insn 4, 0x01f5c303
+.insn 4, 0x00678fa3
+j 21f
+20:
+.insn 2, 0x4301
+.insn 4, 0x00678023
+.insn 2, 0x4301
+.insn 4, 0x006780a3
+.insn 2, 0x4301
+.insn 4, 0x00678123
+.insn 2, 0x4301
+.insn 4, 0x006781a3
+.insn 2, 0x4301
+.insn 4, 0x00678223
+.insn 2, 0x4301
+.insn 4, 0x006782a3
+.insn 2, 0x4301
+.insn 4, 0x00678323
+.insn 2, 0x4301
+.insn 4, 0x006783a3
+.insn 2, 0x4301
+.insn 4, 0x00678423
+.insn 2, 0x4301
+.insn 4, 0x006784a3
+.insn 2, 0x4301
+.insn 4, 0x00678523
+.insn 2, 0x4301
+.insn 4, 0x006785a3
+.insn 2, 0x4301
+.insn 4, 0x00678623
+.insn 2, 0x4301
+.insn 4, 0x006786a3
+.insn 2, 0x4301
+.insn 4, 0x00678723
+.insn 2, 0x4301
+.insn 4, 0x006787a3
+.insn 2, 0x4301
+.insn 4, 0x00678823
+.insn 2, 0x4301
+.insn 4, 0x006788a3
+.insn 2, 0x4301
+.insn 4, 0x00678923
+.insn 2, 0x4301
+.insn 4, 0x006789a3
+.insn 2, 0x4301
+.insn 4, 0x00678a23
+.insn 2, 0x4301
+.insn 4, 0x00678aa3
+.insn 2, 0x4301
+.insn 4, 0x00678b23
+.insn 2, 0x4301
+.insn 4, 0x00678ba3
+.insn 2, 0x4301
+.insn 4, 0x00678c23
+.insn 2, 0x4301
+.insn 4, 0x00678ca3
+.insn 2, 0x4301
+.insn 4, 0x00678d23
+.insn 2, 0x4301
+.insn 4, 0x00678da3
+.insn 2, 0x4301
+.insn 4, 0x00678e23
+.insn 2, 0x4301
+.insn 4, 0x00678ea3
+.insn 2, 0x4301
+.insn 4, 0x00678f23
+.insn 2, 0x4301
+.insn 4, 0x00678fa3
+.insn 2, 0x4301
+.insn 4, 0x02678023
+.insn 2, 0x4301
+.insn 4, 0x026780a3
+.insn 2, 0x4301
+.insn 4, 0x02678123
+.insn 2, 0x4301
+.insn 4, 0x026781a3
+.insn 2, 0x4301
+.insn 4, 0x02678223
+.insn 2, 0x4301
+.insn 4, 0x026782a3
+.insn 2, 0x4301
+.insn 4, 0x02678323
+.insn 2, 0x4301
+.insn 4, 0x026783a3
+.insn 2, 0x4301
+.insn 4, 0x02678423
+.insn 2, 0x4301
+.insn 4, 0x026784a3
+.insn 2, 0x4301
+.insn 4, 0x02678523
+.insn 2, 0x4301
+.insn 4, 0x026785a3
+.insn 2, 0x4301
+.insn 4, 0x02678623
+.insn 2, 0x4301
+.insn 4, 0x026786a3
+.insn 2, 0x4301
+.insn 4, 0x02678723
+.insn 2, 0x4301
+.insn 4, 0x026787a3
+.insn 2, 0x4301
+.insn 4, 0x02678823
+.insn 2, 0x4301
+.insn 4, 0x026788a3
+.insn 2, 0x4301
+.insn 4, 0x02678923
+.insn 2, 0x4301
+.insn 4, 0x026789a3
+.insn 2, 0x4301
+.insn 4, 0x02678a23
+.insn 2, 0x4301
+.insn 4, 0x02678aa3
+.insn 2, 0x4301
+.insn 4, 0x02678b23
+.insn 2, 0x4301
+.insn 4, 0x02678ba3
+.insn 2, 0x4301
+.insn 4, 0x02678c23
+.insn 2, 0x4301
+.insn 4, 0x02678ca3
+.insn 2, 0x4301
+.insn 4, 0x02678d23
+.insn 2, 0x4301
+.insn 4, 0x02678da3
+.insn 2, 0x4301
+.insn 4, 0x02678e23
+.insn 2, 0x4301
+.insn 4, 0x02678ea3
+.insn 2, 0x4301
+.insn 4, 0x02678f23
+.insn 2, 0x4301
+.insn 4, 0x02678fa3
+.insn 2, 0x4301
+.insn 4, 0x04678023
+.insn 2, 0x4301
+.insn 4, 0x046780a3
+.insn 2, 0x4301
+.insn 4, 0x04678123
+.insn 2, 0x4301
+.insn 4, 0x046781a3
+.insn 2, 0x4301
+.insn 4, 0x04678223
+.insn 2, 0x4301
+.insn 4, 0x046782a3
+.insn 2, 0x4301
+.insn 4, 0x04678323
+.insn 2, 0x4301
+.insn 4, 0x046783a3
+.insn 4, 0x02078393
+.insn 4, 0x40c383b3
+beqz a2, 22f
+24:
+.insn 4, 0x0005c303
+.insn 4, 0x00638023
+.insn 2, 0x0585
+.insn 2, 0x0385
+.insn 2, 0x167d
+bnez a2, 24b
+j 23f
+22:
+23:
+21:
+.insn 2, 0x85be
+.insn 2, 0x8636
+.insn 2, 0x86ba
 .insn 2, 0xe280
 .insn 2, 0xe684
 .insn 4, 0x0126b823
@@ -1082,76 +1313,6 @@ call {vg_secp256k1_mul_mod_n}
 .insn 4, 0x6f843283
 .insn 4, 0x3e543c23
 .insn 2, 0x4491
-20:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_n}
-bnez s1, 20b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
-21:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_n}
-bnez s1, 21b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
-22:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_n}
-bnez s1, 22b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
-23:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_n}
-bnez s1, 23b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
-24:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_n}
-bnez s1, 24b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
 25:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1501,7 +1662,7 @@ bnez s1, 229b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 230:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1513,9 +1674,9 @@ bnez s1, 230b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4491
 231:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1527,9 +1688,9 @@ bnez s1, 231b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 232:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1541,7 +1702,7 @@ bnez s1, 232b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
 .insn 2, 0x4491
 233:
@@ -1555,7 +1716,7 @@ bnez s1, 233b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
 .insn 2, 0x4491
 234:
@@ -1569,9 +1730,9 @@ bnez s1, 234b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 235:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1583,9 +1744,9 @@ bnez s1, 235b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4495
 236:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1597,9 +1758,9 @@ bnez s1, 236b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x6a000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 237:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1611,9 +1772,9 @@ bnez s1, 237b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x64000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 238:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1625,9 +1786,9 @@ bnez s1, 238b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x64000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4491
 239:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1639,9 +1800,9 @@ bnez s1, 239b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 240:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1655,7 +1816,7 @@ bnez s1, 240b
 .insn 4, 0x3e000613
 .insn 4, 0x6c000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4489
 241:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1667,9 +1828,9 @@ bnez s1, 241b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x60000693
+.insn 4, 0x62000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4495
 242:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1681,9 +1842,9 @@ bnez s1, 242b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x64000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x44a9
+.insn 2, 0x4499
 243:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1695,9 +1856,9 @@ bnez s1, 243b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6c000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 244:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1709,9 +1870,9 @@ bnez s1, 244b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6a000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4491
 245:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1723,9 +1884,9 @@ bnez s1, 245b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x6c000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x448d
 246:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1737,9 +1898,9 @@ bnez s1, 246b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x60000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4499
 247:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1751,9 +1912,9 @@ bnez s1, 247b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x68000693
+.insn 4, 0x64000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x44a9
 248:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1765,7 +1926,7 @@ bnez s1, 248b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_n}
 .insn 2, 0x4491
 249:
@@ -1779,7 +1940,7 @@ bnez s1, 249b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_n}
 .insn 2, 0x4495
 250:
@@ -1793,9 +1954,9 @@ bnez s1, 250b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 251:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1807,9 +1968,9 @@ bnez s1, 251b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x44a9
+.insn 2, 0x4495
 252:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1821,9 +1982,9 @@ bnez s1, 252b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6c000693
+.insn 4, 0x68000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4499
 253:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1835,9 +1996,9 @@ bnez s1, 253b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x68000693
+.insn 4, 0x6a000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x44a5
+.insn 2, 0x4491
 254:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1849,9 +2010,9 @@ bnez s1, 254b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x68000693
+.insn 4, 0x6c000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 255:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1863,9 +2024,9 @@ bnez s1, 255b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x62000693
 call {vg_secp256k1_mul_mod_n}
-.insn 2, 0x4485
+.insn 2, 0x4499
 256:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1874,6 +2035,76 @@ call {vg_secp256k1_mul_mod_n}
 .insn 4, 0x3e000693
 call {vg_secp256k1_mul_mod_n}
 bnez s1, 256b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6c000693
+call {vg_secp256k1_mul_mod_n}
+.insn 2, 0x44a9
+257:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_n}
+bnez s1, 257b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6c000693
+call {vg_secp256k1_mul_mod_n}
+.insn 2, 0x4491
+258:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_n}
+bnez s1, 258b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x68000693
+call {vg_secp256k1_mul_mod_n}
+.insn 2, 0x44a5
+259:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_n}
+bnez s1, 259b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x68000693
+call {vg_secp256k1_mul_mod_n}
+.insn 2, 0x4491
+260:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_n}
+bnez s1, 260b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_secp256k1_mul_mod_n}
+.insn 2, 0x4485
+261:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_n}
+bnez s1, 261b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
@@ -2476,76 +2707,6 @@ call {vg_secp256k1_mul_mod_p}
 .insn 4, 0x3e543823
 .insn 4, 0x6f843283
 .insn 4, 0x3e543c23
-.insn 2, 0x4491
-257:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_p}
-bnez s1, 257b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4491
-258:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_p}
-bnez s1, 258b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4491
-259:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_p}
-bnez s1, 259b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4491
-260:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_p}
-bnez s1, 260b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4491
-261:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x3e000693
-call {vg_secp256k1_mul_mod_p}
-bnez s1, 261b
-.insn 2, 0x8522
-.insn 4, 0x3e000593
-.insn 4, 0x3e000613
-.insn 4, 0x6e000693
-call {vg_secp256k1_mul_mod_p}
 .insn 2, 0x4491
 262:
 .insn 2, 0x14fd
@@ -3232,7 +3393,7 @@ bnez s1, 2110b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x4491
 2111:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3244,9 +3405,9 @@ bnez s1, 2111b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x66000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4491
 2112:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3302,7 +3463,7 @@ bnez s1, 2115b
 .insn 4, 0x3e000613
 .insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x448d
 2116:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3314,9 +3475,9 @@ bnez s1, 2116b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6e000693
+.insn 4, 0x66000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4495
 2117:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3328,9 +3489,9 @@ bnez s1, 2117b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x62000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x44a1
+.insn 2, 0x4491
 2118:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3342,9 +3503,9 @@ bnez s1, 2118b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
-.insn 4, 0x6a000693
+.insn 4, 0x6e000693
 call {vg_secp256k1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4491
 2119:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -3353,6 +3514,76 @@ call {vg_secp256k1_mul_mod_p}
 .insn 4, 0x3e000693
 call {vg_secp256k1_mul_mod_p}
 bnez s1, 2119b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_secp256k1_mul_mod_p}
+.insn 2, 0x4491
+2120:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_p}
+bnez s1, 2120b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_secp256k1_mul_mod_p}
+.insn 2, 0x4491
+2121:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_p}
+bnez s1, 2121b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6e000693
+call {vg_secp256k1_mul_mod_p}
+.insn 2, 0x4489
+2122:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_p}
+bnez s1, 2122b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x62000693
+call {vg_secp256k1_mul_mod_p}
+.insn 2, 0x44a1
+2123:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_p}
+bnez s1, 2123b
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x6a000693
+call {vg_secp256k1_mul_mod_p}
+.insn 2, 0x4489
+2124:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x3e000593
+.insn 4, 0x3e000613
+.insn 4, 0x3e000693
+call {vg_secp256k1_mul_mod_p}
+bnez s1, 2124b
 .insn 2, 0x8522
 .insn 4, 0x3e000593
 .insn 4, 0x3e000613
@@ -3425,6 +3656,7 @@ call {vg_secp256k1_sub_mod_n}
 .insn 2, 0x6404
 .insn 4, 0x02043983
 .insn 2, 0x6000
+.insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
         vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,

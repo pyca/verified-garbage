@@ -10,6 +10,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
@@ -125,9 +126,10 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 namespace VG.Generic.BrainpoolP384r1.X86_64.EcdsaBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact X86_64.target {
-    code := Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP384r1
-    stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verify_verified h.law h.inv }]
+  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86_64.target {
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP384r1
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verifyHash_verified h.law h.inv }]
 
 end VG.Generic.BrainpoolP384r1.X86_64.EcdsaBrainpoolP384r1

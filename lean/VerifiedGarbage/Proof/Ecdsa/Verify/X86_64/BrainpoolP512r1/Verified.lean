@@ -30,6 +30,10 @@ meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
@@ -116,5 +120,23 @@ theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : 
     Verified X86_64.target verifyBrainpoolP512r1 (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract X86_64.abi 8) :=
   Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
     (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
+
+/-- `satState` satisfies the precondition with 8 bytes of stack. -/
+theorem verify_pre8 : (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract X86_64.abi 8).pre satState := by
+  sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, satState]
+  repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | rfl | constructor)
+
+/-- `vg_ecdsa_brainpoolp512r1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    Verified X86_64.target
+      (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false verifyBrainpoolP512r1)
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract X86_64.abi 96) :=
+  Proof.Ecdsa.Verify.X86_64.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide)
+    (verify_verified hL hI) (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Proof.Ecdsa.Verify.X86_64.Hash.hashSat_nil (by decide) verify_pre8 (by decide) fun r hr => by
+      simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end VG.Proof.Ecdsa.Verify.X86_64.BrainpoolP512r1

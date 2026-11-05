@@ -5,6 +5,155 @@
 // gives.
 
 vg_ecdsa_p192_verify:
+	sub sp, sp, #80
+	add x5, sp, #0
+	lsr x10, x2, #7
+	movz x11, #127, lsl #0
+	and x12, x2, x11
+	add x12, x12, #104
+	lsr x12, x12, #7
+	orr x11, x10, x12
+	cbnz x11, 20f
+	movz x12, #0, lsl #0
+	strb w12, [x5, #0]
+	strb w12, [x5, #1]
+	strb w12, [x5, #2]
+	strb w12, [x5, #3]
+	strb w12, [x5, #4]
+	strb w12, [x5, #5]
+	strb w12, [x5, #6]
+	strb w12, [x5, #7]
+	strb w12, [x5, #8]
+	strb w12, [x5, #9]
+	strb w12, [x5, #10]
+	strb w12, [x5, #11]
+	strb w12, [x5, #12]
+	strb w12, [x5, #13]
+	strb w12, [x5, #14]
+	strb w12, [x5, #15]
+	strb w12, [x5, #16]
+	strb w12, [x5, #17]
+	strb w12, [x5, #18]
+	strb w12, [x5, #19]
+	strb w12, [x5, #20]
+	strb w12, [x5, #21]
+	strb w12, [x5, #22]
+	strb w12, [x5, #23]
+	strb w12, [x5, #24]
+	strb w12, [x5, #25]
+	strb w12, [x5, #26]
+	strb w12, [x5, #27]
+	strb w12, [x5, #28]
+	strb w12, [x5, #29]
+	strb w12, [x5, #30]
+	strb w12, [x5, #31]
+	strb w12, [x5, #32]
+	strb w12, [x5, #33]
+	strb w12, [x5, #34]
+	strb w12, [x5, #35]
+	strb w12, [x5, #36]
+	strb w12, [x5, #37]
+	strb w12, [x5, #38]
+	strb w12, [x5, #39]
+	strb w12, [x5, #40]
+	strb w12, [x5, #41]
+	strb w12, [x5, #42]
+	strb w12, [x5, #43]
+	strb w12, [x5, #44]
+	strb w12, [x5, #45]
+	strb w12, [x5, #46]
+	strb w12, [x5, #47]
+	strb w12, [x5, #48]
+	strb w12, [x5, #49]
+	strb w12, [x5, #50]
+	strb w12, [x5, #51]
+	strb w12, [x5, #52]
+	strb w12, [x5, #53]
+	strb w12, [x5, #54]
+	strb w12, [x5, #55]
+	strb w12, [x5, #56]
+	strb w12, [x5, #57]
+	strb w12, [x5, #58]
+	strb w12, [x5, #59]
+	strb w12, [x5, #60]
+	strb w12, [x5, #61]
+	strb w12, [x5, #62]
+	strb w12, [x5, #63]
+	strb w12, [x5, #64]
+	strb w12, [x5, #65]
+	strb w12, [x5, #66]
+	strb w12, [x5, #67]
+	strb w12, [x5, #68]
+	strb w12, [x5, #69]
+	strb w12, [x5, #70]
+	strb w12, [x5, #71]
+	add x13, x5, #24
+	sub x13, x13, x2
+	cbz x2, 22f
+24:
+	ldrb w9, [x1, #0]
+	strb w9, [x13, #0]
+	add x1, x1, #1
+	add x13, x13, #1
+	sub x2, x2, #1
+	cbnz x2, 24b
+	b 23f
+22:
+23:
+	b 21f
+20:
+	ldrb w9, [x1, #0]
+	strb w9, [x5, #0]
+	ldrb w9, [x1, #1]
+	strb w9, [x5, #1]
+	ldrb w9, [x1, #2]
+	strb w9, [x5, #2]
+	ldrb w9, [x1, #3]
+	strb w9, [x5, #3]
+	ldrb w9, [x1, #4]
+	strb w9, [x5, #4]
+	ldrb w9, [x1, #5]
+	strb w9, [x5, #5]
+	ldrb w9, [x1, #6]
+	strb w9, [x5, #6]
+	ldrb w9, [x1, #7]
+	strb w9, [x5, #7]
+	ldrb w9, [x1, #8]
+	strb w9, [x5, #8]
+	ldrb w9, [x1, #9]
+	strb w9, [x5, #9]
+	ldrb w9, [x1, #10]
+	strb w9, [x5, #10]
+	ldrb w9, [x1, #11]
+	strb w9, [x5, #11]
+	ldrb w9, [x1, #12]
+	strb w9, [x5, #12]
+	ldrb w9, [x1, #13]
+	strb w9, [x5, #13]
+	ldrb w9, [x1, #14]
+	strb w9, [x5, #14]
+	ldrb w9, [x1, #15]
+	strb w9, [x5, #15]
+	ldrb w9, [x1, #16]
+	strb w9, [x5, #16]
+	ldrb w9, [x1, #17]
+	strb w9, [x5, #17]
+	ldrb w9, [x1, #18]
+	strb w9, [x5, #18]
+	ldrb w9, [x1, #19]
+	strb w9, [x5, #19]
+	ldrb w9, [x1, #20]
+	strb w9, [x5, #20]
+	ldrb w9, [x1, #21]
+	strb w9, [x5, #21]
+	ldrb w9, [x1, #22]
+	strb w9, [x5, #22]
+	ldrb w9, [x1, #23]
+	strb w9, [x5, #23]
+21:
+	add x1, x5, #0
+	add x2, x3, #0
+	add x3, x4, #0
 	add x4, x3, #0
 	add x6, x0, #0
 	add x3, x2, #0
@@ -349,7 +498,7 @@ vg_ecdsa_p192_verify:
 	str x1, [x0, #1472]
 	movz x19, #32, lsl #0
 	movz x5, #1, lsl #0
-20:
+25:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1056]
@@ -378,7 +527,7 @@ vg_ecdsa_p192_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #1511]
-	cbnz x19, 20b
+	cbnz x19, 25b
 	ldr x5, [x8, #16]
 	rev x5, x5
 	str x5, [x0, #1024]
@@ -1973,7 +2122,7 @@ vg_ecdsa_p192_verify:
 	str x9, [x0, #1208]
 	movz x19, #32, lsl #0
 	movz x5, #1, lsl #0
-21:
+26:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1152]
@@ -2002,10 +2151,10 @@ vg_ecdsa_p192_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #2951]
-	cbnz x19, 21b
+	cbnz x19, 26b
 	movz x19, #32, lsl #0
 	movz x5, #1, lsl #0
-22:
+27:
 	sub x19, x19, #1
 	add x16, x0, x19
 	ldrb w1, [x16, #1184]
@@ -2034,7 +2183,7 @@ vg_ecdsa_p192_verify:
 	lsr x2, x1, #7
 	and x2, x2, x5
 	strb w2, [x17, #3207]
-	cbnz x19, 22b
+	cbnz x19, 27b
 	movz x1, #5012, lsl #0
 	movk x1, #1858, lsl #16
 	movk x1, #52304, lsl #32
@@ -2056,15 +2205,15 @@ vg_ecdsa_p192_verify:
 	movk x1, #0, lsl #48
 	str x1, [x0, #472]
 	movz x19, #15, lsl #0
-23:
+28:
 	sub x19, x19, #1
 	movz x5, #3, lsl #0
 	and x2, x19, x5
 	eor x2, x2, x5
-	cbz x2, 24f
+	cbz x2, 29f
 	movz x2, #14, lsl #0
 	sub x2, x2, x19
-	cbz x2, 26f
+	cbz x2, 211f
 	sub x2, x2, #1
 	movz x17, #96, lsl #0
 	mul x2, x2, x17
@@ -2095,8 +2244,8 @@ vg_ecdsa_p192_verify:
 	str x4, [x0, #592]
 	ldr x4, [x16, #88]
 	str x4, [x0, #600]
-	b 27f
-26:
+	b 212f
+211:
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -2157,7 +2306,7 @@ vg_ecdsa_p192_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #600]
-27:
+212:
 	ldr x1, [x0, #320]
 	str x1, [x0, #1376]
 	ldr x1, [x0, #328]
@@ -2182,11 +2331,11 @@ vg_ecdsa_p192_verify:
 	str x1, [x0, #1264]
 	ldr x1, [x0, #248]
 	str x1, [x0, #1272]
-	b 25f
-24:
+	b 210f
+29:
 	movz x2, #11, lsl #0
 	sub x2, x2, x19
-	cbz x2, 28f
+	cbz x2, 213f
 	sub x2, x2, #1
 	movz x17, #96, lsl #0
 	mul x2, x2, x17
@@ -2217,8 +2366,8 @@ vg_ecdsa_p192_verify:
 	str x4, [x0, #592]
 	ldr x4, [x16, #88]
 	str x4, [x0, #600]
-	b 29f
-28:
+	b 214f
+213:
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -2279,7 +2428,7 @@ vg_ecdsa_p192_verify:
 	movk x1, #0, lsl #32
 	movk x1, #0, lsl #48
 	str x1, [x0, #600]
-29:
+214:
 	ldr x1, [x0, #1280]
 	str x1, [x0, #1376]
 	ldr x1, [x0, #1288]
@@ -2304,7 +2453,7 @@ vg_ecdsa_p192_verify:
 	str x1, [x0, #1264]
 	ldr x1, [x0, #248]
 	str x1, [x0, #1272]
-25:
+210:
 	movz x7, #0, lsl #0
 	ldr x4, [x0, #512]
 	ldr x5, [x0, #520]
@@ -5635,7 +5784,7 @@ vg_ecdsa_p192_verify:
 	str x4, [x16, #80]
 	ldr x4, [x0, #600]
 	str x4, [x16, #88]
-	cbnz x19, 23b
+	cbnz x19, 28b
 	movz x1, #0, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -5697,7 +5846,7 @@ vg_ecdsa_p192_verify:
 	movk x1, #0, lsl #48
 	str x1, [x0, #600]
 	movz x19, #96, lsl #0
-210:
+215:
 	sub x19, x19, #1
 	ldr x1, [x0, #512]
 	str x1, [x0, #1376]
@@ -12362,7 +12511,7 @@ vg_ecdsa_p192_verify:
 	add x2, x2, x4
 	lsl x2, x2, #2
 	add x2, x2, x6
-	cbz x2, 211f
+	cbz x2, 216f
 	sub x2, x2, #1
 	movz x17, #96, lsl #0
 	mul x2, x2, x17
@@ -15691,10 +15840,10 @@ vg_ecdsa_p192_verify:
 	str x1, [x0, #592]
 	ldr x1, [x0, #696]
 	str x1, [x0, #600]
-	b 212f
-211:
-212:
-	cbnz x19, 210b
+	b 217f
+216:
+217:
+	cbnz x19, 215b
 	movz x1, #2, lsl #0
 	movk x1, #0, lsl #16
 	movk x1, #0, lsl #32
@@ -16366,6 +16515,7 @@ vg_ecdsa_p192_verify:
 	ldr x30, [x0, #56]
 	movz x1, #1, lsl #0
 	and x0, x3, x1
+	add sp, sp, #80
 	ret
 	.p2align 6
 

@@ -114,6 +114,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 (32-bit) -/
@@ -123,9 +124,10 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Generic.BrainpoolP512r1.X86.EcdsaBrainpoolP512r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.verifyApi.artifact X86.target {
-    code := Impl.Ecdsa.Verify.X86.verifyBrainpoolP512r1
-    stack := 20
-    verified := Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verify_verified h.law }]
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact X86.target {
+    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
+      Impl.Ecdsa.Verify.X86.verifyBrainpoolP512r1
+    stack := 128
+    verified := Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verifyHash_verified h.law }]
 
 end VG.Generic.BrainpoolP512r1.X86.EcdsaBrainpoolP512r1

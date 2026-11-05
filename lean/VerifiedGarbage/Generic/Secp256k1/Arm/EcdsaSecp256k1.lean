@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombVerified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # ECDSA over secp256k1 (FIPS 186-5) on 32-bit ARM -/
@@ -15,15 +16,19 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Generic.Secp256k1.Arm.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyApi.artifact Arm.target {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts
-    code := Impl.Ecdsa.Arm.verifySecp256k1Comb
-    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.combVerify_verified h.law },
-  Spec.Ecdsa.Secp256k1.verifyApi.artifact Arm.target {
+    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+      Impl.Ecdsa.Arm.verifySecp256k1Comb
+    stack := 96
+    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHash_verified h.law },
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts
-    code := Impl.Ecdsa.Arm.verifySecp256k1CombU
-    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.combVerifyU_verified h.law
+    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+      Impl.Ecdsa.Arm.verifySecp256k1CombU
+    stack := 96
+    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHashU_verified h.law
     features := ["umaal"] }]
 
 end VG.Generic.Secp256k1.Arm.EcdsaSecp256k1

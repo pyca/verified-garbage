@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, SignFn, leftmost, sign_with};
+use super::table::{HmacHash, SignFn, sign_with};
 use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_sign;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
@@ -19,21 +19,24 @@ use crate::cpu::detected;
 use crate::ec::P224;
 use crate::ec::p224::Mul;
 
-/// Whether `signature` verifies with `q` for the hash whose leftmost 28
-/// bytes are `e`.
-fn verify_with(q: &[u8; 57], e: &[u8; 28], signature: &[u8; 56]) -> Result<(), Error> {
+/// Whether `signature` verifies with `q` for the hash `digest`.
+fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), Error> {
     let mut scratch = [0u64; 1024];
     let ok = match Mul::select(detected()) {
-        // SAFETY: `q` is valid for reads of 57 bytes, `e` of 28,
-        // `signature` of 56 and `scratch` for reads and writes of 8192;
-        // `scratch` is a distinct object from the others, so it overlaps
-        // neither them nor the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ecdsa_p224_verify(q, e, signature, &mut scratch) },
+        // SAFETY: `q` is valid for reads of 57 bytes, `digest` of `digest.len()`,
+        // `signature` of 56 and `scratch` for reads and writes of 8192; `scratch`
+        // is a distinct object from the others, so it overlaps neither them nor the
+        // call's stack frame, and, as Rust objects, none wraps around the address
+        // space.
+        Mul::Baseline => unsafe {
+            vg_ecdsa_p224_verify(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        },
         // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
         // (`Mul::select`).
         #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe { vg_ecdsa_p224_verify_umaal(q, e, signature, &mut scratch) },
+        Mul::Umaal => unsafe {
+            vg_ecdsa_p224_verify_umaal(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        },
     };
     if ok == 1 {
         Ok(())
@@ -55,10 +58,10 @@ impl<H: HmacHash> sealed::Functions<P224> for H {
         unsafe { sign_with::<H, 28, 56>(sign, f, d, digest) }
     }
 
-    /// `e` is the leftmost 224 bits of the hash (FIPS 186-5 §6.4.2): its
-    /// first 28 bytes, or the hash after zeros if it is shorter.
+    /// The verified function takes the hash itself, of any length, and
+    /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(q: &[u8; 57], digest: &H::Output, signature: &[u8; 56]) -> Result<(), Error> {
-        verify_with(q, &leftmost::<28>(digest.as_ref()), signature)
+        verify_with(q, digest.as_ref(), signature)
     }
 }
 

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P192.Contract
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -28,6 +31,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 
 /-!
 # ECDSA verification over P-192 on x86 (32-bit): `Verified`
@@ -210,5 +215,15 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve) :
     exact h
   · intro s t _ _ h
     simpa only [verifyWide, verifyX86, arg_withRegions, State.withRegions_gpr] using h
+
+/-- `vg_ecdsa_p192_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash, in a frame of
+`frameBytes` more bytes of stack (`Hash.verifyHash_verified`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified X86.target
+      (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192)
+      (Spec.Ecdsa.P192.inst.verifyHashContract X86.abi (28 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+  Hash.verifyHash_verified Proof.Ecdsa.Verify.p192_len (by decide) (verify_verified hL)
+    verify_sp.1 verify_sp.2 (by taint_decide) (Hash.hashSat (n := 135) (by decide) (by decide))
 
 end VG.Proof.Ecdsa.Verify.X86.P192

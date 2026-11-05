@@ -140,20 +140,6 @@ pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
     }
 }
 
-/// The integer of a hash's leftmost bits, as many as the curve's order has
-/// (FIPS 186-5 §6.4.2), as `Q` bytes, most significant first, for an order
-/// of `8 Q` bits or a hash shorter than it: the hash's first `Q` bytes, or
-/// the hash after zeros.
-pub(super) fn leftmost<const Q: usize>(digest: &[u8]) -> [u8; Q] {
-    let mut e = [0; Q];
-    if digest.len() >= Q {
-        e.copy_from_slice(&digest[..Q]);
-    } else {
-        e[Q - digest.len()..].copy_from_slice(digest);
-    }
-    e
-}
-
 #[cfg(test)]
 mod tests {
     use super::{HmacHash, Md5, Sha1, Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};

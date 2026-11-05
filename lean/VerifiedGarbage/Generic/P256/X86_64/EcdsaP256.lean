@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
 public import VerifiedGarbage.Proof.P256.Comb7
 public import VerifiedGarbage.Proof.P256.GTable9
@@ -127,27 +128,29 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 namespace VG.Generic.P256.X86_64.EcdsaP256
 
-/-- The function of `Spec.Ecdsa.P256.verifyApi`, multiplying with BMI2 and ADX
+/-- The function of `Spec.Ecdsa.P256.verifyHashApi`, multiplying with BMI2 and ADX
 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
 `rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.P256.X86_64.p256v.combConsts) 8))
+      (Spec.Ecdsa.P256.inst.verifyHashContract (X86_64.abi.withConsts Impl.P256.X86_64.p256v.combConsts) 96))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P256.verifyApi.artifact X86_64.target {
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     consts := Impl.P256.X86_64.p256v.combConsts
     code
-    stack := 8
+    stack := 96
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP256
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.gtabOk9 h.law) h.inv h.prime),
-  verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.gtabOk9 h.law) h.inv
+  verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+    Impl.Ecdsa.Verify.X86_64.jointVerifyP256)
+    (Proof.Ecdsa.Verify.X86_64.verifyHash_verified h.law (Proof.P256.gtabOk9 h.law) h.inv h.prime),
+  verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+    Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx)
+    (Proof.Ecdsa.Verify.X86_64.verifyHash_verified_adx h.law (Proof.P256.gtabOk9 h.law) h.inv
       h.prime)]
 
 end VG.Generic.P256.X86_64.EcdsaP256
