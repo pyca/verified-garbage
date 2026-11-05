@@ -209,7 +209,7 @@ theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 
         (.seq (.ite .b (.block []) (.block [.mov .rax (.reg .rcx)]))
           (.seq (.block [.alu .add .rax (.reg .rax), .alu .cmp .rax (.reg .rdx)])
             (.ite .b (.block [.mov .rdx (.reg .rax)]) (.block []))))) s fun t =>
-      t.gpr .rdx = BitVec.ofNat 64 (Spec.Entropy.request (256 * pLen) B L) ∧ t.mem = s.mem ∧
+      t.gpr .rdx = BitVec.ofNat 64 (VG.Proof.Entropy.request (256 * pLen) B L) ∧ t.mem = s.mem ∧
         Keep [.rax, .rcx, .rdx] s t := by
   refine WP.seq (WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (256 * pLen) ∧
     t.cf = some (decide (L < 256 * pLen)) ∧ t.mem = s.mem ∧ t.gpr .rcx = BitVec.ofNat 64 L) ?_ rfl)
@@ -219,7 +219,7 @@ theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 
   have step2 : ∀ u' : State, u'.gpr .rax = BitVec.ofNat 64 (max L (256 * pLen)) → u'.mem = s.mem →
       Keep [.rax, .rcx] s u' → WP isa (.seq (.block [.alu .add .rax (.reg .rax), .alu .cmp .rax (.reg .rdx)])
         (.ite .b (.block [.mov .rdx (.reg .rax)]) (.block []))) u' fun t =>
-      t.gpr .rdx = BitVec.ofNat 64 (Spec.Entropy.request (256 * pLen) B L) ∧ t.mem = s.mem ∧
+      t.gpr .rdx = BitVec.ofNat 64 (VG.Proof.Entropy.request (256 * pLen) B L) ∧ t.mem = s.mem ∧
         Keep [.rax, .rcx, .rdx] s t := by
     intro u' ra' mu' ku'
     have hrdx' : u'.gpr .rdx = BitVec.ofNat 64 B := (ku'.gpr (by decide)).trans hrdx
@@ -236,10 +236,10 @@ theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 
       refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 (2 * max L (256 * pLen)) ∧
         t.mem = w.mem) (by xrun [rw]) rfl) fun t ⟨⟨rt, mt⟩, kt⟩ => ⟨?_, mt.trans (mw.trans mu'),
           ((ku'.trans kw).trans kt).mono (by decide)⟩
-      rw [rt, Spec.Entropy.request, Nat.min_eq_left (by omega)]
+      rw [rt, VG.Proof.Entropy.request, Nat.min_eq_left (by omega)]
     · refine WP.ite false (by simp only [eval, cw, h2, decide_false]) (fun hh => Bool.noConfusion hh)
         (fun _ => WP.block_nil ⟨?_, mw.trans mu', (ku'.trans kw).mono (by decide)⟩)
-      rw [hrdxw, Spec.Entropy.request, Nat.min_eq_right (by omega)]
+      rw [hrdxw, VG.Proof.Entropy.request, Nat.min_eq_right (by omega)]
   apply WP.seq
   by_cases h1 : L < 256 * pLen
   · refine WP.ite true (by simp only [eval, cu, h1, decide_true]) (fun _ => WP.block_nil ?_)
@@ -262,7 +262,7 @@ theorem ranOut_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State} (h
     (h3 : s.mem.readW (off p.geo.F 320) 64 = BitVec.ofNat 64 c) (h15 : W 15 = BitVec.ofNat 64 len)
     (hc : c ≤ len) (hl : len < 2 ^ 32) {pLen : Nat} (hp : pLen ≤ 384) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.ranOut pLen) s fun t => Keep [.rax, .rcx, .rdx] s t ∧
-      ((len - c < 32769 * pLen ∧ t.gpr .rdx = BitVec.ofNat 64 (Spec.Dsa.parameterRequest pLen (len - c)) ∧
+      ((len - c < 32769 * pLen ∧ t.gpr .rdx = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.parameterRequest pLen (len - c)) ∧
           GenerationMemory p W t ∧ t.mem = s.mem) ∨
         (32769 * pLen ≤ len - c ∧ GenerationMemory p (upd W 19 2) t ∧ Frame p.changed s.mem t.mem)) := by
   obtain ⟨V, R⟩ := hm.rep
@@ -376,7 +376,7 @@ def ResultsDone (v t : State) : Prop :=
     GenerationMemory ((refillContext h).withHs hs) W t ∧
     Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem m₁ ∧
     t.mem = written m₁ (stackArg s₀ 1) (s₀.gpr .rdx) r0 r3 uv ∧
-    r0 = BitVec.ofNat 64 (total h).remaining ∧ r3 = BitVec.ofNat 64 (total h).requested ∧
+    r0 = BitVec.ofNat 64 (total h).remaining ∧ r3 = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested pBytes (total h)) ∧
     uv = BitVec.ofNat 64 (total h).used ∧ (if W 19 = 2 then 3 else W 19) = BitVec.ofNat 64 (total h).status ∧
     ((W 19 ≠ 1 ∧ expectedOf (total h) = none) ∨
       (W 19 = 1 ∧ ∃ a, expectedOf (total h) = some a ∧

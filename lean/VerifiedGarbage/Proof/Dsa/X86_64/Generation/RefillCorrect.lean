@@ -124,7 +124,7 @@ def BodyPost (u t : State) : Prop :=
   Spec.Rsa.wordsAt t.mem (s₀.gpr .rdx) 1 = [BitVec.ofNat 64 (total h).used] ∧
   Spec.Rsa.wordsAt t.mem (stackArg s₀ 1) 4 = [BitVec.ofNat 64 (total h).remaining,
     s₀.mem.readW (stackArg s₀ 1 + BitVec.ofNat 64 8) 64, s₀.mem.readW (stackArg s₀ 1 + BitVec.ofNat 64 16) 64,
-    BitVec.ofNat 64 (total h).requested] ∧
+    BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested pBytes (total h))] ∧
   Frame (bodyRegions h) u.mem t.mem ∧ t.gpr .rsp = u.gpr .rsp ∧ t.rd = u.rd ∧ t.wr = u.wr
 
 variable {checkName : String}
@@ -267,7 +267,7 @@ def RefillRes (t : State) : Prop :=
   Spec.Rsa.wordsAt t.mem (s₀.gpr .rdx) 1 = [BitVec.ofNat 64 (total h).used] ∧
   Spec.Rsa.wordsAt t.mem (stackArg s₀ 1) 4 = [BitVec.ofNat 64 (total h).remaining,
     s₀.mem.readW (stackArg s₀ 1 + BitVec.ofNat 64 8) 64, s₀.mem.readW (stackArg s₀ 1 + BitVec.ofNat 64 16) 64,
-    BitVec.ofNat 64 (total h).requested]
+    BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested pBytes (total h))]
 
 theorem RefillRes.congr {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t.gpr .rax) (hm : t'.mem = t.mem) :
     RefillRes h t' := by
@@ -432,8 +432,11 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
       have := h.budget; rw [h.width] at this; exact this
     have outLen : (s.gpr .rsi).toNat = 2 * pBytes + Spec.Dsa.generationQLen pBytes := by
       rw [h.outLength, h.width]
+    have hp : 0 < pBytes := by
+      have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
     rw [hw, ht]
-    refine ⟨?_, ?_, used, ?_⟩
+    refine ⟨?_, ?_, used, VG.Proof.Dsa.Generation.requested pBytes (total h), ?_,
+      VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
     · have hs : (total h).status < 4 := by
         unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
       rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]

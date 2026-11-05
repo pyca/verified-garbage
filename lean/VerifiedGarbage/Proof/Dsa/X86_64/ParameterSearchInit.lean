@@ -41,7 +41,8 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64.ParameterSearch
 open VG.Proof.RsaKeyGen.SearchInit (written written_words shl_ofNat add_ofNat)
 
-/-- The four words `parameterInit` gives for a supported width `L`. -/
+/-- The four words the code writes for a supported width `L`: `parameterInit`'s
+three and the first tape's length. -/
 def words (L : Nat) : List (BitVec 64) :=
   [BitVec.ofNat 64 4096, BitVec.ofNat 64 L, BitVec.ofNat 64 (32769 * L), BitVec.ofNat 64 (512 * L)]
 
@@ -168,8 +169,9 @@ def initPost (s t : State) : Prop :=
   match Spec.Dsa.parameterInit (s.gpr .rsi).toNat with
   | none => ((t.gpr .rax).setWidth 32).toNat = 0 ∧
       Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = List.replicate 4 0
-  | some values => ((t.gpr .rax).setWidth 32).toNat = 1 ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = values.map (BitVec.ofNat 64)
+  | some values => ((t.gpr .rax).setWidth 32).toNat = 1 ∧ ∃ first,
+      Spec.Rsa.wordsAt t.mem (s.gpr .rdi) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+      Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .rsi).toNat) 0 first
 
 def initPub (s t : State) : Prop :=
   s.gpr .rdi = t.gpr .rdi ∧ s.gpr .rsi = t.gpr .rsi
@@ -179,10 +181,6 @@ def initContract : Contract isa where
   post := initPost
   pub := initPub
 
-theorem request_zero (L : Nat) : Spec.Dsa.parameterRequest L 0 = 512 * L := by
-  simp only [Spec.Dsa.parameterRequest, Spec.Entropy.request, Spec.Dsa.parameterEntropy]
-  omega
-
 private theorem result_post {s t : State} (h : InitPost (s.gpr .rsi).toNat s.mem (s.gpr .rdi) t) :
     initPost s t := by
   unfold InitPost at h
@@ -190,9 +188,14 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .rsi).toNat s.mem
   split at h
   · rename_i hv
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
-    refine ⟨by rw [h.1]; rfl, ?_⟩
-    rw [h.2, words, written_words, request_zero]
-    rfl
+    have hp : 0 < (s.gpr .rsi).toNat := by
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
+      omega
+    refine ⟨by rw [h.1]; rfl, 512 * (s.gpr .rsi).toNat, ?_, ?_⟩
+    · rw [h.2, words, written_words]
+      rfl
+    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy
+      omega
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [h.1]; rfl, by rw [h.2, written_words]; rfl⟩

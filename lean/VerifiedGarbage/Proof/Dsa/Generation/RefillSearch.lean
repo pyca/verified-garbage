@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
+public import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
@@ -15,7 +16,8 @@ result is the search from `R.drop c`, with those `c` octets consumed before
 it. Each lemma here is one way a step of the controller ends: no seeds left,
 a tape too short for the next seed, or the seed's attempt (`refillAttempt`,
 `RefillSeed.lean`) running out, rejecting the seed or accepting
-parameters. -/
+parameters. It also states the next tape's length every target's code asks
+for (`parameterRequest`) and why `parameterSearchContract` allows it. -/
 
 @[expose] public section
 
@@ -52,11 +54,48 @@ theorem consume_consume (r : ParameterSearchResult) (a b : Nat) :
     (r.consume b []).consume a [] = r.consume (a + b) [] := by
   simp only [Spec.Entropy.Result.consume, Nat.add_assoc, List.nil_append]
 
+/-! ## The next tape's length -/
+
+/-- The next tape's length the code asks for when `available` octets did not
+hold a whole seed (`Entropy.request`): at first `512 * pLen`, enough for a
+seed, the tests of its `p` candidates and the 128 witnesses of `p`'s, most of
+the time. -/
+def parameterRequest (pLen available : Nat) : Nat :=
+  Entropy.request (256 * pLen) (parameterEntropy pLen) available
+
+/-- The length the code writes after the result `r`. -/
+def requested (pLen : Nat) (r : ParameterSearchResult) : Nat :=
+  Entropy.requested (parameterRequest pLen) r
+
+/-- A search that ran out had fewer octets left than its budget. -/
+theorem parameterSearch_available {pLen : Nat} :
+    ∀ (k : Nat) (R : List Byte) {s a : Nat}, (parameterSearch pLen k R).outcome = .entropy s a →
+      a < parameterEntropy pLen
+  | 0, _, _, _, h => by simp [parameterSearch] at h
+  | k + 1, R, s, a, h => by
+    rw [parameterSearch] at h
+    split at h
+    · split at h
+      · simp at h
+      · simp only [Spec.Entropy.Outcome.entropy.injEq] at h
+        omega
+    · simp at h
+    · exact parameterSearch_available k _ h
+
+/-- The code's request is one `parameterSearchContract` allows. -/
+theorem requested_requests {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte) :
+    (parameterSearch pLen k R).Requests (parameterEntropy pLen)
+      (requested pLen (parameterSearch pLen k R)) :=
+  Entropy.requested_requests fun _ _ h =>
+    Entropy.request_valid (by omega) (parameterSearch_available k R h)
+
+/-! ## The search's steps -/
+
 /-- How a search ends with a tape too short for its next seed, `available`
 octets left after `c` consumed, and `k` seeds it may still reject. -/
 def ranOutResult (pLen k available c : Nat) : ParameterSearchResult :=
   if parameterEntropy pLen ≤ available then ⟨.exhausted, c, []⟩
-  else ⟨.entropy k (parameterRequest pLen available), c, []⟩
+  else ⟨.entropy k available, c, []⟩
 
 theorem search_zero (pLen : Nat) (R : List Byte) (c : Nat) :
     (parameterSearch pLen 0 R).consume c [] = ⟨.exhausted, c, []⟩ := by

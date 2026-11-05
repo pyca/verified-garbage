@@ -34,8 +34,10 @@ def contract {M : ISA} (pBytes : Nat) (A : Abi M) (stack : Nat := 0) : Contract 
           | .accepted a => encodeParams pLen (generationQLen pLen) a
           | _ => List.replicate outLen.toNat 0) ∧
       wordsAt m' used 1 = [BitVec.ofNat 64 result.used] ∧
-      wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 pLen,
-        BitVec.ofNat 64 (parameterEntropy pLen), BitVec.ofNat 64 result.requested])
+      ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
+        BitVec.ofNat 64 pLen, BitVec.ofNat 64 (parameterEntropy pLen),
+        BitVec.ofNat 64 requested] ∧
+        result.Requests (parameterEntropy pLen) requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _used rand randLen _scratch _scratchLen state m =>
       (wordsAt m state 4).map (·.toNat) ++ (bytesAt m rand randLen.toNat).map (·.toNat))

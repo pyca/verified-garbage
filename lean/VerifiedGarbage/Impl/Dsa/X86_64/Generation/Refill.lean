@@ -102,7 +102,7 @@ def budget (pLen : Nat) : Nat := 32769 * pLen
 
 /-- A seed that ran out: the octets left from its start, in `rcx`, exhaust
 the search if they reach the budget (status 2); otherwise the next tape's
-length (`Spec.Dsa.parameterRequest`) goes in `ctl 3`'s place in `state`,
+length (`VG.Proof.Dsa.Generation.parameterRequest`) goes in `ctl 3`'s place in `state`,
 computed into `rdx`. -/
 def ranOut (pLen : Nat) : Prog isa :=
   .seq (.block [.mov .rcx (.mem (sp 120)), .alu .sub .rcx (.mem (ctl 3)),
