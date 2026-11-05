@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+import VerifiedGarbage.Proof.Rsa.X86_64.WordValidationMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
@@ -359,7 +359,7 @@ theorem ckCode_correct (hmx : Impl.Rsa.X86_64.CheckCrtKey.code.allInstrs (fun i 
           (by rw [hmt]; exact h₄.inScr c) ?_
       simp only [ckOf, Spec.Rsa.checkCrtKey, Spec.Rsa.crtKeyValid, bytesAt_length, hm, Bool.false_and]
     · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = true := by simpa using hb
-      refine WP.mono (crtMain_ok (h₄.mainPre c hv hm) hv) fun t ⟨hax, hsv, hin, _, _, kk⟩ =>
+      refine WP.mono (crtMainChoice_ok (h₄.mainPre c hv hm) hv) fun t ⟨hax, hsv, hin, _, _, kk⟩ =>
         ckFin c h₁ hax (fun i hi => (hsv i hi).trans (h₄.saved i hi)) ((kk.gpr (by decide)).trans rsp₄)
           ((h₄.inScr c).trans hin) ?_
       simp only [ckOf, Spec.Rsa.checkCrtKey, bytesAt_length]

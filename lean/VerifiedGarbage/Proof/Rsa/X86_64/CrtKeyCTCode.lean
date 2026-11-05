@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.WordValidationCTChoice
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.WordValidationCTChoice
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -129,19 +129,19 @@ theorem ckCode_ct : RelCT isa (Two CkRel) Impl.Rsa.X86_64.CheckCrtKey.code fun _
   refine two_ite (fun p s₁ s₂ ⟨_, _, _, _, _, _, z₁, _⟩ ⟨_, _, _, _, _, _, z₂, _⟩ => by simp only [eval, z₁, z₂]) ?_ ?_
   · exact two_taint [.rdi] (fun p s₁ s₂ ⟨⟨σ₁, _, _, _, c₁, _, _, h₁⟩, _⟩ ⟨⟨σ₂, _, _, _, c₂, _, _, h₂⟩, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rdi, h₂.rdi, c₁.B, c₂.B]) (by taint_decide)
-  · have toM : ∀ p t, CC4 p t ∧ isa.eval .ne t = some false → M0 p.m t := by
+  · have toM : ∀ p t, CC4 p t ∧ isa.eval .ne t = some false → MFixed (p.m, p.nb) t := by
       rintro p t ⟨⟨s, t₁, t₂, t₃, hs, hv, hz, h⟩, he⟩
       have c := ckArgs_of hs.1
       obtain ⟨-, -, hB, hZ, hk, hnp, -, -, hpd, hdl, hpp, hpl, hpq, hql, hpdp, hpdq, hpqi, hnb, heb, hw⟩ := hs
-      unfold M0; rw [hpp, hpl]
+      unfold MFixed; rw [hpp, hpl]
       have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = true := by
         simp only [eval, hz] at he; rw [hnb, hk]; simpa using he
       rw [← heb] at hv
       have := h.mainPre c hv hm
-      rw [hB, hZ, hk, hnp, hpd, hpq, hpdp, hpdq, hpqi] at this
-      exact ⟨_, _, _, _, _, _, _, _, this, hw, by rw [bytesAt_length, hdl], by rw [bytesAt_length, hdl],
+      rw [hB, hZ, hk, hnp, hpd, hpq, hpdp, hpdq, hpqi, hnb] at this
+      exact ⟨_, _, _, _, _, _, _, this, hw, by rw [bytesAt_length, hdl], by rw [bytesAt_length, hdl],
         by rw [bytesAt_length, hql]⟩
-    exact ckMain_ct.mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h)
+    exact validationChoice_ct.mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ⟨(p.m, p.nb), toM p t₁ h₁, toM p t₂ h₂⟩) h)
       fun _ _ h => h
 
 /-- The public data of a state. -/

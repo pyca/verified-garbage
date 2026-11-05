@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordValidation
 
 /-!
 # The checks of `RSA_check_key` on the CRT form on x86-64
@@ -33,6 +34,12 @@ at the end.
   `r` starts as `x`'s words from `c` up, which are `⌊x / 2^(64 c)⌋ < m`, and
   only `x`'s low `c` words are divided, a bit at a time. When it does not
   hold, the remainder is not used: the mask is clear.
+
+For balanced factors with byte lengths `k / 2`, `k` divisible by 16 and
+`n`'s high bit set, `mainFast` replaces the last reduction with the verified
+word reducer. The choice uses only public lengths and `n`. For accepted
+keys, `p q = n` makes each factor fill its half-width and `qInv < p` makes
+the product fit in the low `w` words. Other layouts retain `main`.
 -/
 
 @[expose] public section
@@ -107,12 +114,26 @@ def main : Prog isa := seqs (
   loadNum aR sQ sQlen ++ mulXR ++ reduceTop sPlen topQ ++ eqOne ++
   [.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)])
 
+/-- Balanced full-width factors use word division for `q qInv mod p`;
+the small-quotient exponent checks retain their existing reduction. -/
+def mainFast : Prog isa := seqs (
+  [.block head, loadBE,
+    .block [.mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)], setWord aOne .rcx,
+    .block [.mov32 .rax (.imm 0), .alu .sub .rax (.imm 1), .store (hdr sMask) .rax]] ++
+  -- `p q = n`
+  loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ Crt.eqCheck ++
+  -- modulo `p - 1` and `q - 1`
+  modChecks sP sPlen sDP ++ modChecks sQ sQlen sDQ ++
+  -- `qInv < p` and `q qInv ≡ 1 (mod p)`
+  [WordValidation.qinv] ++
+  [.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)])
+
 /-- `vg_rsa_check_crt_key`. -/
 def code : Prog isa := seqs [
   .block entry,
   Checked.expCheck,
   .ite .ne (.block fail)
     (seqs [.block (([.store (hdr sEv) .r11, .mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid),
-      .ite .ne (.block fail) main])]
+      .ite .ne (.block fail) (WordValidation.choice mainFast main)])]
 
 end VG.Impl.Rsa.X86_64.CheckCrtKey
