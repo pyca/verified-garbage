@@ -40,6 +40,8 @@ structure SearchPublic where
   words : Nat
   remaining : Nat
   eB : List Byte
+  /-- RSA's table, which the candidate reads. -/
+  tab : BitVec 32
 
 def searchOfState (s : State) : SearchPublic where
   op := arg s 0
@@ -57,6 +59,7 @@ def searchOfState (s : State) : SearchPublic where
   words := (arg s 10).toNat
   remaining := searchRemaining s
   eB := searchE s
+  tab := s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
 
 def SearchInput (p : SearchPublic) (s : State) : Prop := contract.pre s ∧ searchOfState s = p
 

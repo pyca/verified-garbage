@@ -48,6 +48,18 @@ theorem RelCT.seq_block_append {M : ISA} {P Q : M.State → M.State → Prop} {l
       simp only [List.append_assoc] at ht ⊢
       exact ⟨ht, hq⟩
 
+/-- Two postconditions of a block, which runs one way. -/
+theorem WP.block_and {M : ISA} {is : List M.Instr} {s : M.State} {Q₁ Q₂ : M.State → Prop}
+    (h₁ : WP M (.block is) s Q₁) (h₂ : WP M (.block is) s Q₂) : WP M (.block is) s fun t => Q₁ t ∧ Q₂ t := by
+  induction is generalizing s with
+  | nil => exact WP.block_nil_iff.mpr ⟨WP.block_nil_iff.mp h₁, WP.block_nil_iff.mp h₂⟩
+  | cons i is ih =>
+    obtain ⟨a, ea, ha⟩ := WP.block_cons_iff.mp h₁
+    obtain ⟨b, eb, hb⟩ := WP.block_cons_iff.mp h₂
+    rw [ea] at eb
+    cases eb
+    exact WP.block_cons_iff.mpr ⟨a, ea, ih ha hb⟩
+
 /-- A point of the loop: octets consumed, counted candidates left, trace so far. -/
 abbrev Pt := Nat × Nat × List Nat
 
