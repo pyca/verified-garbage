@@ -12,7 +12,7 @@ interface has it: the curve, its name in the functions' names (in the module
 `Instance` in a file of its own (`Spec/Ecdsa/P256.lean`, …), and needs
 nothing else. The contracts of its functions are those of its verification
 (`Spec/Ecdsa/Verify/Generic.lean`) and of its deterministic signature
-(`Spec/Ecdsa/Rfc6979/Generic.lean`), which take the hash as `len` octets as
+(`Spec/Ecdsa/Rfc6979/Table.lean`), which take the hash as `len` octets as
 `digestDoc` says, and the private key and the signature as `len` and
 `2 len` octets read by `bytesAt`.
 -/

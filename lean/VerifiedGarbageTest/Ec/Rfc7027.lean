@@ -4,8 +4,8 @@ public import VerifiedGarbageTest.Ec.Cdh
 public meta import VerifiedGarbageTest.Ec.Cdh
 public import VerifiedGarbageTest.Ec.RfcSign
 public meta import VerifiedGarbageTest.Ec.RfcSign
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+public meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public meta import VerifiedGarbage.Spec.Ecdsa.Verify
 
@@ -64,21 +64,22 @@ def checkEcdh (C : Curve) (start stop : String) (text : String) : Except String 
   Cdh.checkCurve C
 
 /-- The ECDSA checks of the section from `start` to `stop`, for the curve's
-RFC 6979 instance `I`. -/
-def checkEcdsa (C : Curve) (I : Rfc6979.Instance) (start stop : String) (text : String) :
+instance of the contract `T` with the hash function `H`, of `hlen` octets. -/
+def checkEcdsa (C : Curve) (T : Rfc6979.TableInstance) (H : Spec.Hmac.HashFunction) (hlen : Nat)
+    (start stop : String) (text : String) :
     Except String Unit := do
   let vals ← parse start stop text
   let g := get vals
   let (d, x, y, xB, yB) := (← g "dA", ← g "x_qA", ← g "y_qA", ← g "x_qB", ← g "y_qB")
   RfcSign.checkCurve C d x y
-  unless I.ecdsa.curve.n == C.n && I.ecdsa.curve.len == C.len do throw "instance"
+  unless T.ecdsa.curve.n == C.n && T.ecdsa.curve.len == C.len do throw "instance"
   let pub := point C.len x y
   for m in ["sample", "test"] do
-    let h1 := I.hash.hash (utf8 m)
-    unless h1.length == I.hashLen do throw "hash length"
-    let (some (r, s), tries) := Rfc6979.sign C I.hash I.hashLen I.tries d h1
+    let h1 := H.hash (utf8 m)
+    unless h1.length == hlen do throw "hash length"
+    let (some (r, s), tries) := Rfc6979.sign C H hlen T.tries d h1
       | throw s!"{m}: no signature"
-    unless 1 ≤ tries ∧ tries ≤ I.tries do throw s!"{m}: {tries} candidates"
+    unless 1 ≤ tries ∧ tries ≤ T.tries do throw s!"{m}: {tries} candidates"
     let e := hashToInt C h1
     let sig := toBytes C.len r ++ toBytes C.len s
     unless verify C pub e sig do throw s!"{m}: signature does not verify"
