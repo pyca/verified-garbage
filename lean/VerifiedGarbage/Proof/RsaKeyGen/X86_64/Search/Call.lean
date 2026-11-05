@@ -56,7 +56,7 @@ private theorem template_depth (mul : Nat → Nat → Nat → Prog isa) (body : 
 
 /-- The candidate, as the search calls it. -/
 def candidateCall (v : RoundImpl) : Prog isa :=
-  .call (Spec.RsaKeyGen.candidateApi.name ++ v.suffix) (sharedCandidateCode v)
+  .call ("vg_rsa_keygen_candidate" ++ v.suffix) (sharedCandidateCode v)
 
 /-- Code without calls or frames uses no stack. -/
 private theorem depth_noCalls : ∀ {c : Prog isa}, c.noCalls = true → c.x86_64Depth = 0

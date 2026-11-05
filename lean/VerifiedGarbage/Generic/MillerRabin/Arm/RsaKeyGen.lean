@@ -235,19 +235,13 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.Primes
 
-/-! # RSA candidates, and the prime search calling them, on ARMv7 call each shared Miller–Rabin implementation -/
+/-! # The RSA prime search on ARMv7, its candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.Arm.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.candidateApi.artifact Arm.target {
-    suffix := v.suffix
-    code := Impl.RsaKeyGen.Arm.Candidate.code v.name v.code
-    stack := 112
-    verified := Proof.RsaKeyGen.Arm.Cand.cand_verified v
-    features := v.features },
   Spec.RsaKeyGen.primeSearchApi.artifact Arm.target {
     suffix := v.suffix
     stack := 184

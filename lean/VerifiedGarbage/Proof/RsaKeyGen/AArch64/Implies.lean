@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-!
 # A candidate for an RSA prime on AArch64: the shared contract implies `candContract`
@@ -26,25 +27,25 @@ def candSat : State where
 theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem cand_implies : candContract.Implies (Spec.RsaKeyGen.candidateContract abi) where
+theorem cand_implies : candContract.Implies (Proof.RsaKeyGen.candidateContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
+    sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
       stackArgs_three, List.append_eq] at h
-    sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
+    sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
       stackArgs_three, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
+    sig_reduce [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPre,
       stackArgs_three, List.append_eq]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs,
+  post := by sig_implies_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs,
     candContract, candPre, candPost, candRes, stackArgs_three, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPub,
+    sig_pub [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, candContract, candPub,
       candLeak, stackArgs_three, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2⟩ := h
@@ -55,7 +56,7 @@ theorem cand_implies : candContract.Implies (Spec.RsaKeyGen.candidateContract ab
       · exact a0
       · exact a1
       · exact a2
-  sat := by sig_implies_sat [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs,
+  sat := by sig_implies_sat [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs,
     candContract, candPre, stackArgs_three, List.append_eq] [candSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using candSat
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # The RSA prime search's contract in terms of the machine (ARMv7)
 
@@ -30,7 +31,7 @@ its name, its code, the stack it uses and its proof. -/
 structure Cand where
   name : String
   code : Prog isa
-  verified : Verified target code (Spec.RsaKeyGen.candidateContract abi 112)
+  verified : Verified target code (Proof.RsaKeyGen.candidateContract abi 112)
   stack : FrameStack.armStack code ≤ 112
 
 /-- The candidate, as the search calls it. -/

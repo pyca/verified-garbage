@@ -99,9 +99,7 @@ use crate::arch::rsa::{
     vg_rsa_public_precomputed_checked_ifma,
 };
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::{
-    VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES, VG_RSA_PRIME_SEARCH_ADX_FEATURES,
-};
+use crate::arch::rsa_keygen::VG_RSA_PRIME_SEARCH_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
 #[cfg(all(
@@ -115,7 +113,7 @@ use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SI
     )
 ))]
 use crate::arch::{
-    rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES,
+    rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
     rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
 use crate::cpu::detected;
@@ -124,8 +122,8 @@ use verified_garbage_cpu::Features;
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, and of
 /// the functions built on them
-/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_keygen_candidate` and
-/// `vg_rsa_prime_search`, `crate::rsa_keygen`).
+/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_prime_search`,
+/// `crate::rsa_keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -158,7 +156,6 @@ impl Backend {
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
-            && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES)
             && f.contains(VG_RSA_PRIME_SEARCH_ADX_FEATURES);
         if adx
             && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
@@ -211,7 +208,7 @@ impl Backend {
     pub(crate) fn select(f: Features) -> Backend {
         if f.contains(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
-            && f.contains(VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES)
+            && f.contains(VG_RSA_PRIME_SEARCH_UMAAL_FEATURES)
         {
             Backend::Umaal
         } else {

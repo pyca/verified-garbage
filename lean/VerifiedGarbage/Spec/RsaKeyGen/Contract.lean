@@ -6,16 +6,14 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 /-!
 # RSA key generation: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). In the module `rsa_keygen`, the two
-parts of `RsaKeyGen.generate` that compute with secrets; the Rust that calls
-them runs the loops, counts the tries, supplies the randomness and runs the
-pairwise consistency test with `vg_rsa_private_checked` and
-`vg_rsa_public_precomputed_checked`:
-
-* `vg_rsa_keygen_candidate`: one candidate for a prime
-  (`RsaKeyGen.candidateStep`), from the random octets given;
-* `vg_rsa_keygen_key`: the key from its two primes
-  (`RsaKeyGen.keyFromPrimes`).
+**Trusted** (as every file in `Spec/`). In the module `rsa_keygen`,
+`vg_rsa_keygen_key`, the key from its two primes (`RsaKeyGen.keyFromPrimes`),
+and what the prime search (`GenerationContract.lean`) is built on: a
+candidate for a prime (`RsaKeyGen.candidateStep`) from the random octets
+given (`candidateOp`), its status and what its timing may depend on. The
+Rust that calls them supplies the randomness, counts the generations and
+runs the pairwise consistency test with `vg_rsa_private_checked` and
+`vg_rsa_public_precomputed_checked`.
 
 Every number is a slice of octets, most significant first, with a length of
 its own. A prime is `p_len` octets (`out_len` for a candidate), a multiple of
@@ -86,76 +84,6 @@ def candidateLeak (pLen : Nat) (eB pB rand : List Byte) : List Nat :=
   | some (.prime _, rest) => [1, rand.length - rest.length]
   | some (.close, _) => [2]
   | some (.rejected, rest) => 3 :: (rand.take (rand.length - rest.length)).map (·.toNat)
-
-/-! ## `vg_rsa_keygen_candidate` -/
-
-/-- `vg_rsa_keygen_candidate(out: *mut u8, out_len: usize, used: *mut [u64; 1],
-e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8,
-rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
-def candidateSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("used", .array true .u64 1),
-    ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
-    ("rand", .slice false .u8 "rand_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- One candidate for a prime (`candidateOp`): 1 and the prime at `out` if it
-is accepted; 2 if it is too close to `p`; 3 if it is rejected otherwise;
-with the number of octets of `rand` read at `used`; or 0 if `rand` is too
-short. Zeros at `out` but for a prime, and at `used` for 0. Constant time
-but for `e` and `candidateLeak`. -/
-def candidateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  candidateSig.contract A
-    (pre := fun _out outLen _used _e eLen _p pLen _rand _randLen _scratch scratchLen _ =>
-      primeLenValid outLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ 8 ∧
-        (pLen.toNat = 0 ∨ pLen.toNat = outLen.toNat) ∧
-        scratchWords outLen.toNat ≤ scratchLen.toNat)
-    (post := fun out outLen used e eLen p pLen rand randLen _scratch _scratchLen m m' r =>
-      let res := candidateOp outLen.toNat (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
-        (bytesAt m rand randLen.toNat)
-      r.toNat = candidateStatus res ∧
-        bytesAt m' out outLen.toNat =
-          (match res with
-            | some (.prime c, _) => i2osp c outLen.toNat
-            | _ => List.replicate outLen.toNat 0) ∧
-        wordsAt m' used 1 =
-          [BitVec.ofNat 64 (match res with
-            | some (_, rest) => randLen.toNat - rest.length
-            | none => 0)])
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out outLen _used e eLen p pLen rand randLen _scratch _scratchLen m =>
-      (bytesAt m e eLen.toNat).map (·.toNat) ++
-        candidateLeak outLen.toNat (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
-          (bytesAt m rand randLen.toNat))
-
-def candidateApi : Api where
-  module := "rsa_keygen"
-  name := "vg_rsa_keygen_candidate"
-  sig := candidateSig
-  writeArgs := true
-  contracts := some fun A stack => candidateContract A stack
-  summary := "One candidate for a prime of an RSA key, as BoringSSL's `generate_prime` \
-    tests it (FIPS 186-5 Appendix A.1.3 steps 4 and 5). Reads from the front of `rand` \
-    `out_len` octets, most significant first, sets the two most significant bits and the \
-    least significant bit, and tests the candidate `c`: too close to `p` \
-    (`|p − c| ≤ 2^(8 out_len − 100)`, if `p_len` is not 0); then divisible by one of the \
-    first 512 primes (1024 above 1024 bits) but 2; then `gcd(c − 1, e) ≠ 1`; then \
-    Miller–Rabin (FIPS 186-5 B.3.1), with the witnesses read from `rand` after the \
-    candidate, at least 16 of them and as many as it takes for `BN_prime_checks_for_size` \
-    of them to be uniform. Returns 1 and writes `c` to `out` if it passes, 2 if it is too \
-    close to `p`, 3 if it fails otherwise, and writes the number of octets of `rand` it \
-    read to `used`; or returns 0 if `rand` is too short, for which the caller calls it \
-    again with `rand` extended by more random octets. `out` is zeros but for 1, and `used` \
-    is 0 for 0. `e` (`e_len` bytes) and `p` (`p_len` bytes) are most significant first.\n\n\
-    Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, \
-    the lengths, `e`, and on what became of the candidate: for a probable prime, on how \
-    many octets of `rand` were read; for a candidate rejected for being too close to `p`, \
-    on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not \
-    on `p`, or on the candidate if it is accepted."
-  safety := ["`out_len` must be a multiple of 8 in 32..=512.", "`e_len` must be in 1..=8.",
-    "`p_len` must be 0 or `out_len`.",
-    "`scratch_len` must be at least `16 * out_len + 32`.",
-    "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
-      must destroy them after use."]
 
 /-! ## `vg_rsa_keygen_key` -/
 

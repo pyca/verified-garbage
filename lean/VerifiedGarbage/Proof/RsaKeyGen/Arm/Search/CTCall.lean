@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # A candidate call is constant time (ARMv7)
 
@@ -68,7 +70,7 @@ def CallCT (p : SearchPublic) (T : List Nat) (q : Pt) (u : State) : Prop :=
 
 theorem call_pub {p : SearchPublic} {T : List Nat} {q : Pt} {u₁ u₂ : State}
     (h₁ : CallCT p T q u₁) (h₂ : CallCT p T q u₂) (sp : u₁.sp = u₂.sp) :
-    (Spec.RsaKeyGen.candidateContract abi 112).pub (u₁.callEntry.withRegions (callRd p q.1) (callWr p))
+    (Proof.RsaKeyGen.candidateContract abi 112).pub (u₁.callEntry.withRegions (callRd p q.1) (callWr p))
       (u₂.callEntry.withRegions (callRd p q.1) (callWr p)) := by
   obtain ⟨o₁, s₁, T₁, l₁, f₁, hk, hroom, d₁⟩ := h₁
   obtain ⟨o₂, s₂, T₂, l₂, f₂, -, -, d₂⟩ := h₂
@@ -81,7 +83,7 @@ theorem call_pub {p : SearchPublic} {T : List Nat} {q : Pt} {u₁ u₂ : State}
   obtain ⟨eB₂, pB₂, rB₂⟩ := call_inputs l₂ rfl d₂ (by omega)
   have lk₁ := leak_of T₁ f₁ hk
   have lk₂ := leak_of T₂ f₂ hk
-  sig_pub [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
+  sig_pub [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [d₁.sa0, d₁.sa1, d₁.sa2, d₁.sa3, d₁.sa4, d₁.sa5, d₁.sa6, d₂.sa0, d₂.sa1, d₂.sa2, d₂.sa3, d₂.sa4,
     d₂.sa5, d₂.sa6, d₁.2.1, d₁.2.2.1, d₁.2.2.2.1, d₁.2.2.2.2, d₂.2.1, d₂.2.2.1, d₂.2.2.2.1, d₂.2.2.2.2,
     toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by omega),

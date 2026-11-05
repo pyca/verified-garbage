@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTCode
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTFront
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTTail
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # RSA candidate verification with a shared Miller–Rabin kernel -/
 
@@ -21,7 +22,7 @@ open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 
 theorem sharedCandidate_verified (M : Mont) (R : Kernel) :
     Verified target (VG.Impl.RsaKeyGen.AArch64.Candidate.codeWith M.mm R.run)
-      (Spec.RsaKeyGen.candidateContract abi) := by
+      (Proof.RsaKeyGen.candidateContract abi) := by
   exact Verified.of_correct (sharedCode_correct M R)
     (sharedCode_constantTime M R (sharedKMain_ct M R (sharedTail_ct M R))) cand_implies
 
