@@ -35,7 +35,7 @@ section
 
 /-! # Packing and final validation implement the last seed-acceptance decision -/
 
-section
+@[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
