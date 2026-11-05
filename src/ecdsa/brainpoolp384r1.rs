@@ -9,7 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, SignFn, leftmost, sign_with};
+#[cfg(not(target_arch = "riscv64"))]
+use super::table::leftmost;
+use super::table::{HmacHash, SignFn, sign_with};
 use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
@@ -21,16 +23,35 @@ use crate::cpu::detected;
 use crate::ec::BrainpoolP384r1;
 use crate::ec::brainpoolp384r1::Mul;
 
-/// Whether `signature` verifies with `q` for the hash whose leftmost 48
-/// bytes are `e`.
-fn verify_with(q: &[u8; 97], e: &[u8; 48], signature: &[u8; 96]) -> Result<(), Error> {
+/// Whether `signature` verifies with `q` for the hash `digest`.
+fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), Error> {
     let mut scratch = [0u64; 1024];
+    // Elsewhere the function takes the hash's 48 bytes `e` (FIPS 186-5
+    // §6.4.2); on RISC-V, the hash itself.
+    #[cfg(not(target_arch = "riscv64"))]
+    let e = &leftmost::<48>(digest);
     let ok = match Mul::select(detected()) {
+        // SAFETY: `q` is valid for reads of 97 bytes, `digest` of `digest.len()`,
+        // `signature` of 96 and `scratch` for reads and writes of 8192; `scratch`
+        // is a distinct object from the others, so it overlaps neither them nor the
+        // call's stack frame, and, as Rust objects, none wraps around the address
+        // space.
+        #[cfg(target_arch = "riscv64")]
+        Mul::Baseline => unsafe {
+            vg_ecdsa_brainpoolp384r1_verify(
+                q,
+                digest.as_ptr(),
+                digest.len(),
+                signature,
+                &mut scratch,
+            )
+        },
         // SAFETY: `q` is valid for reads of 97 bytes, `e` of 48,
         // `signature` of 96 and `scratch` for reads and writes of 8192;
         // `scratch` is a distinct object from the others, so it overlaps
         // neither them nor the call's stack frame, and, as Rust objects,
         // none wraps around the address space.
+        #[cfg(not(target_arch = "riscv64"))]
         Mul::Baseline => unsafe { vg_ecdsa_brainpoolp384r1_verify(q, e, signature, &mut scratch) },
         // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
         // (`Mul::select`).
@@ -62,7 +83,7 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
     /// `e` is the leftmost 384 bits of the hash (FIPS 186-5 §6.4.2): its
     /// first 48 bytes, or the hash after zeros if it is shorter.
     fn verify(q: &[u8; 97], digest: &H::Output, signature: &[u8; 96]) -> Result<(), Error> {
-        verify_with(q, &leftmost::<48>(digest.as_ref()), signature)
+        verify_with(q, digest.as_ref(), signature)
     }
 }
 

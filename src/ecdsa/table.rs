@@ -144,6 +144,7 @@ pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
 /// (FIPS 186-5 §6.4.2), as `Q` bytes, most significant first, for an order
 /// of `8 Q` bits or a hash shorter than it: the hash's first `Q` bytes, or
 /// the hash after zeros.
+#[cfg(not(target_arch = "riscv64"))]
 pub(super) fn leftmost<const Q: usize>(digest: &[u8]) -> [u8; Q] {
     let mut e = [0; Q];
     if digest.len() >= Q {

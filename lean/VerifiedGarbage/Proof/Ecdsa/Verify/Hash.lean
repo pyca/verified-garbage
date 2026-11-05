@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Words
 import Mathlib.Tactic.Ring
 
+-- separate module: target-independent, for each target's verification of the hash function's output
+
 /-!
 # ECDSA verification of the hash function's output: the hash's `len` bytes
 

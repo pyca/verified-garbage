@@ -3,24 +3,287 @@
 //! `assembly/ecdsa_brainpoolp384r1.s`.
 #![allow(dead_code)]
 
-/// ECDSA signature verification over brainpoolP384r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (its leftmost 48 bytes, or, for a shorter hash, the hash padded on the left with zeros to 48 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+/// ECDSA signature verification over brainpoolP384r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 384 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 97 bytes.
-/// * `digest` must be valid for reads of 48 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
 /// * `sig` must be valid for reads of 96 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_verify(public: *const [u8; 97], digest: *const [u8; 48], sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_verify(public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
+.insn 2, 0x715d
+.insn 2, 0x878a
+.insn 4, 0x03000293
+bltu a2, t0, 20f
+.insn 4, 0x0005c303
+.insn 4, 0x00678023
+.insn 4, 0x0015c303
+.insn 4, 0x006780a3
+.insn 4, 0x0025c303
+.insn 4, 0x00678123
+.insn 4, 0x0035c303
+.insn 4, 0x006781a3
+.insn 4, 0x0045c303
+.insn 4, 0x00678223
+.insn 4, 0x0055c303
+.insn 4, 0x006782a3
+.insn 4, 0x0065c303
+.insn 4, 0x00678323
+.insn 4, 0x0075c303
+.insn 4, 0x006783a3
+.insn 4, 0x0085c303
+.insn 4, 0x00678423
+.insn 4, 0x0095c303
+.insn 4, 0x006784a3
+.insn 4, 0x00a5c303
+.insn 4, 0x00678523
+.insn 4, 0x00b5c303
+.insn 4, 0x006785a3
+.insn 4, 0x00c5c303
+.insn 4, 0x00678623
+.insn 4, 0x00d5c303
+.insn 4, 0x006786a3
+.insn 4, 0x00e5c303
+.insn 4, 0x00678723
+.insn 4, 0x00f5c303
+.insn 4, 0x006787a3
+.insn 4, 0x0105c303
+.insn 4, 0x00678823
+.insn 4, 0x0115c303
+.insn 4, 0x006788a3
+.insn 4, 0x0125c303
+.insn 4, 0x00678923
+.insn 4, 0x0135c303
+.insn 4, 0x006789a3
+.insn 4, 0x0145c303
+.insn 4, 0x00678a23
+.insn 4, 0x0155c303
+.insn 4, 0x00678aa3
+.insn 4, 0x0165c303
+.insn 4, 0x00678b23
+.insn 4, 0x0175c303
+.insn 4, 0x00678ba3
+.insn 4, 0x0185c303
+.insn 4, 0x00678c23
+.insn 4, 0x0195c303
+.insn 4, 0x00678ca3
+.insn 4, 0x01a5c303
+.insn 4, 0x00678d23
+.insn 4, 0x01b5c303
+.insn 4, 0x00678da3
+.insn 4, 0x01c5c303
+.insn 4, 0x00678e23
+.insn 4, 0x01d5c303
+.insn 4, 0x00678ea3
+.insn 4, 0x01e5c303
+.insn 4, 0x00678f23
+.insn 4, 0x01f5c303
+.insn 4, 0x00678fa3
+.insn 4, 0x0205c303
+.insn 4, 0x02678023
+.insn 4, 0x0215c303
+.insn 4, 0x026780a3
+.insn 4, 0x0225c303
+.insn 4, 0x02678123
+.insn 4, 0x0235c303
+.insn 4, 0x026781a3
+.insn 4, 0x0245c303
+.insn 4, 0x02678223
+.insn 4, 0x0255c303
+.insn 4, 0x026782a3
+.insn 4, 0x0265c303
+.insn 4, 0x02678323
+.insn 4, 0x0275c303
+.insn 4, 0x026783a3
+.insn 4, 0x0285c303
+.insn 4, 0x02678423
+.insn 4, 0x0295c303
+.insn 4, 0x026784a3
+.insn 4, 0x02a5c303
+.insn 4, 0x02678523
+.insn 4, 0x02b5c303
+.insn 4, 0x026785a3
+.insn 4, 0x02c5c303
+.insn 4, 0x02678623
+.insn 4, 0x02d5c303
+.insn 4, 0x026786a3
+.insn 4, 0x02e5c303
+.insn 4, 0x02678723
+.insn 4, 0x02f5c303
+.insn 4, 0x026787a3
+j 21f
+20:
+.insn 2, 0x4301
+.insn 4, 0x00678023
+.insn 2, 0x4301
+.insn 4, 0x006780a3
+.insn 2, 0x4301
+.insn 4, 0x00678123
+.insn 2, 0x4301
+.insn 4, 0x006781a3
+.insn 2, 0x4301
+.insn 4, 0x00678223
+.insn 2, 0x4301
+.insn 4, 0x006782a3
+.insn 2, 0x4301
+.insn 4, 0x00678323
+.insn 2, 0x4301
+.insn 4, 0x006783a3
+.insn 2, 0x4301
+.insn 4, 0x00678423
+.insn 2, 0x4301
+.insn 4, 0x006784a3
+.insn 2, 0x4301
+.insn 4, 0x00678523
+.insn 2, 0x4301
+.insn 4, 0x006785a3
+.insn 2, 0x4301
+.insn 4, 0x00678623
+.insn 2, 0x4301
+.insn 4, 0x006786a3
+.insn 2, 0x4301
+.insn 4, 0x00678723
+.insn 2, 0x4301
+.insn 4, 0x006787a3
+.insn 2, 0x4301
+.insn 4, 0x00678823
+.insn 2, 0x4301
+.insn 4, 0x006788a3
+.insn 2, 0x4301
+.insn 4, 0x00678923
+.insn 2, 0x4301
+.insn 4, 0x006789a3
+.insn 2, 0x4301
+.insn 4, 0x00678a23
+.insn 2, 0x4301
+.insn 4, 0x00678aa3
+.insn 2, 0x4301
+.insn 4, 0x00678b23
+.insn 2, 0x4301
+.insn 4, 0x00678ba3
+.insn 2, 0x4301
+.insn 4, 0x00678c23
+.insn 2, 0x4301
+.insn 4, 0x00678ca3
+.insn 2, 0x4301
+.insn 4, 0x00678d23
+.insn 2, 0x4301
+.insn 4, 0x00678da3
+.insn 2, 0x4301
+.insn 4, 0x00678e23
+.insn 2, 0x4301
+.insn 4, 0x00678ea3
+.insn 2, 0x4301
+.insn 4, 0x00678f23
+.insn 2, 0x4301
+.insn 4, 0x00678fa3
+.insn 2, 0x4301
+.insn 4, 0x02678023
+.insn 2, 0x4301
+.insn 4, 0x026780a3
+.insn 2, 0x4301
+.insn 4, 0x02678123
+.insn 2, 0x4301
+.insn 4, 0x026781a3
+.insn 2, 0x4301
+.insn 4, 0x02678223
+.insn 2, 0x4301
+.insn 4, 0x026782a3
+.insn 2, 0x4301
+.insn 4, 0x02678323
+.insn 2, 0x4301
+.insn 4, 0x026783a3
+.insn 2, 0x4301
+.insn 4, 0x02678423
+.insn 2, 0x4301
+.insn 4, 0x026784a3
+.insn 2, 0x4301
+.insn 4, 0x02678523
+.insn 2, 0x4301
+.insn 4, 0x026785a3
+.insn 2, 0x4301
+.insn 4, 0x02678623
+.insn 2, 0x4301
+.insn 4, 0x026786a3
+.insn 2, 0x4301
+.insn 4, 0x02678723
+.insn 2, 0x4301
+.insn 4, 0x026787a3
+.insn 2, 0x4301
+.insn 4, 0x02678823
+.insn 2, 0x4301
+.insn 4, 0x026788a3
+.insn 2, 0x4301
+.insn 4, 0x02678923
+.insn 2, 0x4301
+.insn 4, 0x026789a3
+.insn 2, 0x4301
+.insn 4, 0x02678a23
+.insn 2, 0x4301
+.insn 4, 0x02678aa3
+.insn 2, 0x4301
+.insn 4, 0x02678b23
+.insn 2, 0x4301
+.insn 4, 0x02678ba3
+.insn 2, 0x4301
+.insn 4, 0x02678c23
+.insn 2, 0x4301
+.insn 4, 0x02678ca3
+.insn 2, 0x4301
+.insn 4, 0x02678d23
+.insn 2, 0x4301
+.insn 4, 0x02678da3
+.insn 2, 0x4301
+.insn 4, 0x02678e23
+.insn 2, 0x4301
+.insn 4, 0x02678ea3
+.insn 2, 0x4301
+.insn 4, 0x02678f23
+.insn 2, 0x4301
+.insn 4, 0x02678fa3
+.insn 2, 0x4301
+.insn 4, 0x04678023
+.insn 2, 0x4301
+.insn 4, 0x046780a3
+.insn 2, 0x4301
+.insn 4, 0x04678123
+.insn 2, 0x4301
+.insn 4, 0x046781a3
+.insn 2, 0x4301
+.insn 4, 0x04678223
+.insn 2, 0x4301
+.insn 4, 0x046782a3
+.insn 2, 0x4301
+.insn 4, 0x04678323
+.insn 2, 0x4301
+.insn 4, 0x046783a3
+.insn 4, 0x03078393
+.insn 4, 0x40c383b3
+beqz a2, 22f
+24:
+.insn 4, 0x0005c303
+.insn 4, 0x00638023
+.insn 2, 0x0585
+.insn 2, 0x0385
+.insn 2, 0x167d
+bnez a2, 24b
+j 23f
+22:
+23:
+21:
+.insn 2, 0x85be
+.insn 2, 0x8636
+.insn 2, 0x86ba
 .insn 2, 0xe280
 .insn 2, 0xe684
 .insn 4, 0x0126b823
@@ -1607,81 +1870,6 @@ call {vg_brainpoolp384r1_mul_mod_n}
 .insn 4, 0x1092b283
 .insn 4, 0x5c543c23
 .insn 2, 0x4495
-20:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_n}
-bnez s1, 20b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x11168693
-call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
-21:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_n}
-bnez s1, 21b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x1d168693
-call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
-22:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_n}
-bnez s1, 22b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x1a168693
-call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x449d
-23:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_n}
-bnez s1, 23b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x23168693
-call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4489
-24:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_n}
-bnez s1, 24b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x0e168693
-call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
 25:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1694,9 +1882,9 @@ bnez s1, 25b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4499
 26:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1709,9 +1897,9 @@ bnez s1, 26b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4491
 27:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1724,9 +1912,9 @@ bnez s1, 27b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x449d
 28:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1739,9 +1927,9 @@ bnez s1, 28b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4489
 29:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1754,9 +1942,9 @@ bnez s1, 29b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x44a1
 210:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1771,7 +1959,7 @@ bnez s1, 210b
 .insn 4, 0x7ff00693
 .insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4489
 211:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1784,9 +1972,9 @@ bnez s1, 211b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44ad
+.insn 2, 0x4495
 212:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1799,7 +1987,7 @@ bnez s1, 212b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4495
 213:
@@ -1814,9 +2002,9 @@ bnez s1, 213b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x44a1
 214:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1829,9 +2017,9 @@ bnez s1, 214b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 215:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1844,9 +2032,9 @@ bnez s1, 215b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4495
 216:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1859,9 +2047,9 @@ bnez s1, 216b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x44ad
 217:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1876,7 +2064,7 @@ bnez s1, 217b
 .insn 4, 0x7ff00693
 .insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4495
 218:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1889,9 +2077,9 @@ bnez s1, 218b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 219:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1906,7 +2094,7 @@ bnez s1, 219b
 .insn 4, 0x7ff00693
 .insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x449d
+.insn 2, 0x4495
 220:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1919,9 +2107,9 @@ bnez s1, 220b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x448d
 221:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1934,9 +2122,9 @@ bnez s1, 221b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4495
 222:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1949,9 +2137,9 @@ bnez s1, 222b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4489
 223:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1964,7 +2152,7 @@ bnez s1, 223b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4495
 224:
@@ -1979,9 +2167,9 @@ bnez s1, 224b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4485
+.insn 2, 0x449d
 225:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -1994,9 +2182,9 @@ bnez s1, 225b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 226:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2009,9 +2197,9 @@ bnez s1, 226b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 227:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2024,9 +2212,9 @@ bnez s1, 227b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x44a1
 228:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2039,9 +2227,9 @@ bnez s1, 228b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 229:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2054,9 +2242,9 @@ bnez s1, 229b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4485
 230:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2071,7 +2259,7 @@ bnez s1, 230b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4499
 231:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2084,9 +2272,9 @@ bnez s1, 231b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4495
 232:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2099,7 +2287,7 @@ bnez s1, 232b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4495
 233:
@@ -2114,7 +2302,7 @@ bnez s1, 233b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4491
 234:
@@ -2129,9 +2317,9 @@ bnez s1, 234b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4491
 235:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2146,7 +2334,7 @@ bnez s1, 235b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x44a1
 236:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2159,9 +2347,9 @@ bnez s1, 236b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 237:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2174,9 +2362,9 @@ bnez s1, 237b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4495
 238:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2189,7 +2377,7 @@ bnez s1, 238b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4491
 239:
@@ -2204,9 +2392,9 @@ bnez s1, 239b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x449d
+.insn 2, 0x4489
 240:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2219,9 +2407,9 @@ bnez s1, 240b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4485
+.insn 2, 0x4499
 241:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2234,9 +2422,9 @@ bnez s1, 241b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x449d
+.insn 2, 0x4495
 242:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2249,9 +2437,9 @@ bnez s1, 242b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x448d
 243:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2264,9 +2452,9 @@ bnez s1, 243b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4489
+.insn 2, 0x4491
 244:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2281,7 +2469,7 @@ bnez s1, 244b
 .insn 4, 0x7ff00693
 .insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x449d
 245:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2294,9 +2482,9 @@ bnez s1, 245b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4485
 246:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2309,9 +2497,9 @@ bnez s1, 246b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x449d
 247:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2326,7 +2514,7 @@ bnez s1, 247b
 .insn 4, 0x7ff00693
 .insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4499
 248:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2339,9 +2527,9 @@ bnez s1, 248b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a1
+.insn 2, 0x4489
 249:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2354,9 +2542,9 @@ bnez s1, 249b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4499
 250:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2371,7 +2559,7 @@ bnez s1, 250b
 .insn 4, 0x7ff00693
 .insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 251:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2384,9 +2572,9 @@ bnez s1, 251b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 252:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2399,9 +2587,9 @@ bnez s1, 252b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x44a1
 253:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2414,9 +2602,9 @@ bnez s1, 253b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x44a1
 254:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2429,9 +2617,9 @@ bnez s1, 254b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 255:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2444,9 +2632,9 @@ bnez s1, 255b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x4499
 256:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2459,9 +2647,9 @@ bnez s1, 256b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 257:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2474,9 +2662,9 @@ bnez s1, 257b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 258:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2489,9 +2677,9 @@ bnez s1, 258b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 259:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2504,9 +2692,9 @@ bnez s1, 259b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 260:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2536,7 +2724,7 @@ bnez s1, 261b
 .insn 4, 0x7ff00693
 .insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x448d
 262:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2549,9 +2737,9 @@ bnez s1, 262b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x4495
 263:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2564,9 +2752,9 @@ bnez s1, 263b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x4491
 264:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2579,9 +2767,9 @@ bnez s1, 264b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4491
+.insn 2, 0x448d
 265:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2594,9 +2782,9 @@ bnez s1, 265b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44a5
+.insn 2, 0x4495
 266:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2609,7 +2797,7 @@ bnez s1, 266b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4491
 267:
@@ -2624,7 +2812,7 @@ bnez s1, 267b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x4491
 268:
@@ -2639,9 +2827,9 @@ bnez s1, 268b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x449d
+.insn 2, 0x4499
 269:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2656,7 +2844,7 @@ bnez s1, 269b
 .insn 4, 0x7ff00693
 .insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 270:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2671,7 +2859,7 @@ bnez s1, 270b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x44ad
+.insn 2, 0x44a5
 271:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2684,9 +2872,9 @@ bnez s1, 271b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 272:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2699,9 +2887,9 @@ bnez s1, 272b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x448d
+.insn 2, 0x4491
 273:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2716,7 +2904,7 @@ bnez s1, 273b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4499
+.insn 2, 0x449d
 274:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2729,9 +2917,9 @@ bnez s1, 274b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 275:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2744,9 +2932,9 @@ bnez s1, 275b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x44ad
 276:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2759,7 +2947,7 @@ bnez s1, 276b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_n}
 .insn 2, 0x448d
 277:
@@ -2774,9 +2962,9 @@ bnez s1, 277b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_n}
-.insn 2, 0x4495
+.insn 2, 0x448d
 278:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -2785,6 +2973,81 @@ call {vg_brainpoolp384r1_mul_mod_n}
 .insn 4, 0x5b000693
 call {vg_brainpoolp384r1_mul_mod_n}
 bnez s1, 278b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x0e168693
+call {vg_brainpoolp384r1_mul_mod_n}
+.insn 2, 0x4499
+279:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_n}
+bnez s1, 279b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x0e168693
+call {vg_brainpoolp384r1_mul_mod_n}
+.insn 2, 0x4495
+280:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_n}
+bnez s1, 280b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x11168693
+call {vg_brainpoolp384r1_mul_mod_n}
+.insn 2, 0x4495
+281:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_n}
+bnez s1, 281b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x14168693
+call {vg_brainpoolp384r1_mul_mod_n}
+.insn 2, 0x448d
+282:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_n}
+bnez s1, 282b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x11168693
+call {vg_brainpoolp384r1_mul_mod_n}
+.insn 2, 0x4495
+283:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_n}
+bnez s1, 283b
 .insn 2, 0x8522
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
@@ -6472,7 +6735,7 @@ call {vg_brainpoolp384r1_add_mod_p}
 .insn 4, 0x0f843283
 .insn 4, 0x36543423
 .insn 4, 0x0c000493
-279:
+284:
 .insn 2, 0x14fd
 .insn 4, 0x0054d313
 .insn 2, 0x030e
@@ -8234,7 +8497,7 @@ call {vg_brainpoolp384r1_mul_mod_p}
 .insn 4, 0x34000613
 .insn 4, 0x49000693
 call {vg_brainpoolp384r1_add_mod_p}
-bnez s1, 279b
+bnez s1, 284b
 .insn 2, 0x8522
 .insn 4, 0x7ff00593
 .insn 4, 0x0e158593
@@ -8324,81 +8587,6 @@ call {vg_brainpoolp384r1_mul_mod_p}
 .insn 4, 0x1092b283
 .insn 4, 0x5c543c23
 .insn 2, 0x4495
-280:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_p}
-bnez s1, 280b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x11168693
-call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
-281:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_p}
-bnez s1, 281b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x1d168693
-call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
-282:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_p}
-bnez s1, 282b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x1a168693
-call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x449d
-283:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_p}
-bnez s1, 283b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x23168693
-call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4489
-284:
-.insn 2, 0x14fd
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x5b000693
-call {vg_brainpoolp384r1_mul_mod_p}
-bnez s1, 284b
-.insn 2, 0x8522
-.insn 4, 0x5b000593
-.insn 4, 0x5b000613
-.insn 4, 0x7ff00693
-.insn 4, 0x0e168693
-call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a1
 285:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8411,9 +8599,9 @@ bnez s1, 285b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4499
 286:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8426,9 +8614,9 @@ bnez s1, 286b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4491
 287:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8441,9 +8629,9 @@ bnez s1, 287b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x449d
 288:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8456,9 +8644,9 @@ bnez s1, 288b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a1
+.insn 2, 0x4489
 289:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8471,9 +8659,9 @@ bnez s1, 289b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x44a1
 290:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8488,7 +8676,7 @@ bnez s1, 290b
 .insn 4, 0x7ff00693
 .insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4489
 291:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8501,9 +8689,9 @@ bnez s1, 291b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44ad
+.insn 2, 0x4495
 292:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8516,7 +8704,7 @@ bnez s1, 292b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 293:
@@ -8531,9 +8719,9 @@ bnez s1, 293b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x44a1
 294:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8546,9 +8734,9 @@ bnez s1, 294b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x448d
 295:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8561,9 +8749,9 @@ bnez s1, 295b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x4495
 296:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8576,9 +8764,9 @@ bnez s1, 296b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x44ad
 297:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8593,7 +8781,7 @@ bnez s1, 297b
 .insn 4, 0x7ff00693
 .insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4495
 298:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8606,9 +8794,9 @@ bnez s1, 298b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x448d
 299:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8623,7 +8811,7 @@ bnez s1, 299b
 .insn 4, 0x7ff00693
 .insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x449d
+.insn 2, 0x4495
 2100:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8636,9 +8824,9 @@ bnez s1, 2100b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x448d
 2101:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8651,9 +8839,9 @@ bnez s1, 2101b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x4495
 2102:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8666,9 +8854,9 @@ bnez s1, 2102b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a1
+.insn 2, 0x4489
 2103:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8681,7 +8869,7 @@ bnez s1, 2103b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 2104:
@@ -8696,9 +8884,9 @@ bnez s1, 2104b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4485
+.insn 2, 0x449d
 2105:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8711,9 +8899,9 @@ bnez s1, 2105b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x4491
 2106:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8726,9 +8914,9 @@ bnez s1, 2106b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x448d
 2107:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8741,9 +8929,9 @@ bnez s1, 2107b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x44a1
 2108:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8756,9 +8944,9 @@ bnez s1, 2108b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4495
 2109:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8771,9 +8959,9 @@ bnez s1, 2109b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4485
 2110:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8788,7 +8976,7 @@ bnez s1, 2110b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a1
+.insn 2, 0x4499
 2111:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8801,9 +8989,9 @@ bnez s1, 2111b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x4495
 2112:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8816,7 +9004,7 @@ bnez s1, 2112b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 2113:
@@ -8831,7 +9019,7 @@ bnez s1, 2113b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4491
 2114:
@@ -8846,9 +9034,9 @@ bnez s1, 2114b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4491
 2115:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8863,7 +9051,7 @@ bnez s1, 2115b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x44a1
 2116:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8876,9 +9064,9 @@ bnez s1, 2116b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x448d
 2117:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8891,7 +9079,7 @@ bnez s1, 2117b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 2118:
@@ -8908,7 +9096,7 @@ bnez s1, 2118b
 .insn 4, 0x7ff00693
 .insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a5
+.insn 2, 0x4491
 2119:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8921,9 +9109,9 @@ bnez s1, 2119b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4489
 2120:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8936,7 +9124,7 @@ bnez s1, 2120b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4499
 2121:
@@ -8951,7 +9139,7 @@ bnez s1, 2121b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 2122:
@@ -8968,7 +9156,7 @@ bnez s1, 2122b
 .insn 4, 0x7ff00693
 .insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x4495
 2123:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8981,9 +9169,9 @@ bnez s1, 2123b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x44a5
 2124:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -8996,9 +9184,9 @@ bnez s1, 2124b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4495
 2125:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9011,9 +9199,9 @@ bnez s1, 2125b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4499
 2126:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9026,9 +9214,9 @@ bnez s1, 2126b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4495
 2127:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9041,9 +9229,9 @@ bnez s1, 2127b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1d168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4485
+.insn 2, 0x4499
 2128:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9056,9 +9244,9 @@ bnez s1, 2128b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4499
 2129:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9071,9 +9259,9 @@ bnez s1, 2129b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x449d
+.insn 2, 0x4491
 2130:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9086,9 +9274,9 @@ bnez s1, 2130b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x23168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x4491
 2131:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9101,9 +9289,9 @@ bnez s1, 2131b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4491
 2132:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9118,7 +9306,7 @@ bnez s1, 2132b
 .insn 4, 0x7ff00693
 .insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x4485
 2133:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9131,9 +9319,9 @@ bnez s1, 2133b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4491
 2134:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9146,9 +9334,9 @@ bnez s1, 2134b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x449d
 2135:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9163,7 +9351,7 @@ bnez s1, 2135b
 .insn 4, 0x7ff00693
 .insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4489
+.insn 2, 0x4499
 2136:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9176,7 +9364,7 @@ bnez s1, 2136b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4495
 2137:
@@ -9191,9 +9379,9 @@ bnez s1, 2137b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x1d168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4499
 2138:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9206,9 +9394,9 @@ bnez s1, 2138b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x448d
+.insn 2, 0x4495
 2139:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9221,9 +9409,9 @@ bnez s1, 2139b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a9
+.insn 2, 0x4495
 2140:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9236,7 +9424,7 @@ bnez s1, 2140b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4489
 2141:
@@ -9251,9 +9439,9 @@ bnez s1, 2141b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x449d
+.insn 2, 0x4495
 2142:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9266,9 +9454,9 @@ bnez s1, 2142b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x14168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x4491
 2143:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9281,9 +9469,9 @@ bnez s1, 2143b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4495
+.insn 2, 0x448d
 2144:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9296,9 +9484,9 @@ bnez s1, 2144b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x11168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x449d
+.insn 2, 0x44a9
 2145:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9328,7 +9516,7 @@ bnez s1, 2146b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x449d
 2147:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9341,9 +9529,9 @@ bnez s1, 2147b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x17168693
+.insn 4, 0x20168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44bd
+.insn 2, 0x4495
 2148:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9356,9 +9544,9 @@ bnez s1, 2148b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4495
 2149:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9371,9 +9559,9 @@ bnez s1, 2149b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x1a168693
+.insn 4, 0x11168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4485
+.insn 2, 0x449d
 2150:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9386,9 +9574,9 @@ bnez s1, 2150b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x4489
 2151:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9403,7 +9591,7 @@ bnez s1, 2151b
 .insn 4, 0x7ff00693
 .insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x44a5
+.insn 2, 0x4499
 2152:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9416,9 +9604,9 @@ bnez s1, 2152b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x23168693
+.insn 4, 0x17168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4491
+.insn 2, 0x44bd
 2153:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9431,9 +9619,9 @@ bnez s1, 2153b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x20168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4485
+.insn 2, 0x4491
 2154:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9446,9 +9634,9 @@ bnez s1, 2154b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x0e168693
+.insn 4, 0x1a168693
 call {vg_brainpoolp384r1_mul_mod_p}
-.insn 2, 0x4499
+.insn 2, 0x4485
 2155:
 .insn 2, 0x14fd
 .insn 2, 0x8522
@@ -9461,7 +9649,7 @@ bnez s1, 2155b
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
 .insn 4, 0x7ff00693
-.insn 4, 0x14168693
+.insn 4, 0x0e168693
 call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x4491
 2156:
@@ -9472,6 +9660,81 @@ call {vg_brainpoolp384r1_mul_mod_p}
 .insn 4, 0x5b000693
 call {vg_brainpoolp384r1_mul_mod_p}
 bnez s1, 2156b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x0e168693
+call {vg_brainpoolp384r1_mul_mod_p}
+.insn 2, 0x44a5
+2157:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_p}
+bnez s1, 2157b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x23168693
+call {vg_brainpoolp384r1_mul_mod_p}
+.insn 2, 0x4491
+2158:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_p}
+bnez s1, 2158b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x20168693
+call {vg_brainpoolp384r1_mul_mod_p}
+.insn 2, 0x4485
+2159:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_p}
+bnez s1, 2159b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x0e168693
+call {vg_brainpoolp384r1_mul_mod_p}
+.insn 2, 0x4499
+2160:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_p}
+bnez s1, 2160b
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x7ff00693
+.insn 4, 0x14168693
+call {vg_brainpoolp384r1_mul_mod_p}
+.insn 2, 0x4491
+2161:
+.insn 2, 0x14fd
+.insn 2, 0x8522
+.insn 4, 0x5b000593
+.insn 4, 0x5b000613
+.insn 4, 0x5b000693
+call {vg_brainpoolp384r1_mul_mod_p}
+bnez s1, 2161b
 .insn 2, 0x8522
 .insn 4, 0x5b000593
 .insn 4, 0x5b000613
@@ -9560,6 +9823,7 @@ call {vg_brainpoolp384r1_sub_mod_n}
 .insn 2, 0x6404
 .insn 4, 0x02043983
 .insn 2, 0x6000
+.insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
         vg_brainpoolp384r1_check_point = sym super::ec_brainpoolp384r1_compressed::vg_brainpoolp384r1_check_point::vg_brainpoolp384r1_check_point,

@@ -7,6 +7,701 @@
 vg_ecdsa_p521_verify:
 	.option push
 	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a5, sp, 0
+	addi t0, zero, 66
+	bltu a2, t0, 20f
+	lbu t1, 0(a1)
+	sb t1, 0(a5)
+	lbu t1, 1(a1)
+	sb t1, 1(a5)
+	lbu t1, 2(a1)
+	sb t1, 2(a5)
+	lbu t1, 3(a1)
+	sb t1, 3(a5)
+	lbu t1, 4(a1)
+	sb t1, 4(a5)
+	lbu t1, 5(a1)
+	sb t1, 5(a5)
+	lbu t1, 6(a1)
+	sb t1, 6(a5)
+	lbu t1, 7(a1)
+	sb t1, 7(a5)
+	lbu t1, 8(a1)
+	sb t1, 8(a5)
+	lbu t1, 9(a1)
+	sb t1, 9(a5)
+	lbu t1, 10(a1)
+	sb t1, 10(a5)
+	lbu t1, 11(a1)
+	sb t1, 11(a5)
+	lbu t1, 12(a1)
+	sb t1, 12(a5)
+	lbu t1, 13(a1)
+	sb t1, 13(a5)
+	lbu t1, 14(a1)
+	sb t1, 14(a5)
+	lbu t1, 15(a1)
+	sb t1, 15(a5)
+	lbu t1, 16(a1)
+	sb t1, 16(a5)
+	lbu t1, 17(a1)
+	sb t1, 17(a5)
+	lbu t1, 18(a1)
+	sb t1, 18(a5)
+	lbu t1, 19(a1)
+	sb t1, 19(a5)
+	lbu t1, 20(a1)
+	sb t1, 20(a5)
+	lbu t1, 21(a1)
+	sb t1, 21(a5)
+	lbu t1, 22(a1)
+	sb t1, 22(a5)
+	lbu t1, 23(a1)
+	sb t1, 23(a5)
+	lbu t1, 24(a1)
+	sb t1, 24(a5)
+	lbu t1, 25(a1)
+	sb t1, 25(a5)
+	lbu t1, 26(a1)
+	sb t1, 26(a5)
+	lbu t1, 27(a1)
+	sb t1, 27(a5)
+	lbu t1, 28(a1)
+	sb t1, 28(a5)
+	lbu t1, 29(a1)
+	sb t1, 29(a5)
+	lbu t1, 30(a1)
+	sb t1, 30(a5)
+	lbu t1, 31(a1)
+	sb t1, 31(a5)
+	lbu t1, 32(a1)
+	sb t1, 32(a5)
+	lbu t1, 33(a1)
+	sb t1, 33(a5)
+	lbu t1, 34(a1)
+	sb t1, 34(a5)
+	lbu t1, 35(a1)
+	sb t1, 35(a5)
+	lbu t1, 36(a1)
+	sb t1, 36(a5)
+	lbu t1, 37(a1)
+	sb t1, 37(a5)
+	lbu t1, 38(a1)
+	sb t1, 38(a5)
+	lbu t1, 39(a1)
+	sb t1, 39(a5)
+	lbu t1, 40(a1)
+	sb t1, 40(a5)
+	lbu t1, 41(a1)
+	sb t1, 41(a5)
+	lbu t1, 42(a1)
+	sb t1, 42(a5)
+	lbu t1, 43(a1)
+	sb t1, 43(a5)
+	lbu t1, 44(a1)
+	sb t1, 44(a5)
+	lbu t1, 45(a1)
+	sb t1, 45(a5)
+	lbu t1, 46(a1)
+	sb t1, 46(a5)
+	lbu t1, 47(a1)
+	sb t1, 47(a5)
+	lbu t1, 48(a1)
+	sb t1, 48(a5)
+	lbu t1, 49(a1)
+	sb t1, 49(a5)
+	lbu t1, 50(a1)
+	sb t1, 50(a5)
+	lbu t1, 51(a1)
+	sb t1, 51(a5)
+	lbu t1, 52(a1)
+	sb t1, 52(a5)
+	lbu t1, 53(a1)
+	sb t1, 53(a5)
+	lbu t1, 54(a1)
+	sb t1, 54(a5)
+	lbu t1, 55(a1)
+	sb t1, 55(a5)
+	lbu t1, 56(a1)
+	sb t1, 56(a5)
+	lbu t1, 57(a1)
+	sb t1, 57(a5)
+	lbu t1, 58(a1)
+	sb t1, 58(a5)
+	lbu t1, 59(a1)
+	sb t1, 59(a5)
+	lbu t1, 60(a1)
+	sb t1, 60(a5)
+	lbu t1, 61(a1)
+	sb t1, 61(a5)
+	lbu t1, 62(a1)
+	sb t1, 62(a5)
+	lbu t1, 63(a1)
+	sb t1, 63(a5)
+	lbu t1, 64(a1)
+	sb t1, 64(a5)
+	lbu t1, 65(a1)
+	sb t1, 65(a5)
+	j 21f
+20:
+	addi t1, zero, 0
+	sb t1, 0(a5)
+	addi t1, zero, 0
+	sb t1, 1(a5)
+	addi t1, zero, 0
+	sb t1, 2(a5)
+	addi t1, zero, 0
+	sb t1, 3(a5)
+	addi t1, zero, 0
+	sb t1, 4(a5)
+	addi t1, zero, 0
+	sb t1, 5(a5)
+	addi t1, zero, 0
+	sb t1, 6(a5)
+	addi t1, zero, 0
+	sb t1, 7(a5)
+	addi t1, zero, 0
+	sb t1, 8(a5)
+	addi t1, zero, 0
+	sb t1, 9(a5)
+	addi t1, zero, 0
+	sb t1, 10(a5)
+	addi t1, zero, 0
+	sb t1, 11(a5)
+	addi t1, zero, 0
+	sb t1, 12(a5)
+	addi t1, zero, 0
+	sb t1, 13(a5)
+	addi t1, zero, 0
+	sb t1, 14(a5)
+	addi t1, zero, 0
+	sb t1, 15(a5)
+	addi t1, zero, 0
+	sb t1, 16(a5)
+	addi t1, zero, 0
+	sb t1, 17(a5)
+	addi t1, zero, 0
+	sb t1, 18(a5)
+	addi t1, zero, 0
+	sb t1, 19(a5)
+	addi t1, zero, 0
+	sb t1, 20(a5)
+	addi t1, zero, 0
+	sb t1, 21(a5)
+	addi t1, zero, 0
+	sb t1, 22(a5)
+	addi t1, zero, 0
+	sb t1, 23(a5)
+	addi t1, zero, 0
+	sb t1, 24(a5)
+	addi t1, zero, 0
+	sb t1, 25(a5)
+	addi t1, zero, 0
+	sb t1, 26(a5)
+	addi t1, zero, 0
+	sb t1, 27(a5)
+	addi t1, zero, 0
+	sb t1, 28(a5)
+	addi t1, zero, 0
+	sb t1, 29(a5)
+	addi t1, zero, 0
+	sb t1, 30(a5)
+	addi t1, zero, 0
+	sb t1, 31(a5)
+	addi t1, zero, 0
+	sb t1, 32(a5)
+	addi t1, zero, 0
+	sb t1, 33(a5)
+	addi t1, zero, 0
+	sb t1, 34(a5)
+	addi t1, zero, 0
+	sb t1, 35(a5)
+	addi t1, zero, 0
+	sb t1, 36(a5)
+	addi t1, zero, 0
+	sb t1, 37(a5)
+	addi t1, zero, 0
+	sb t1, 38(a5)
+	addi t1, zero, 0
+	sb t1, 39(a5)
+	addi t1, zero, 0
+	sb t1, 40(a5)
+	addi t1, zero, 0
+	sb t1, 41(a5)
+	addi t1, zero, 0
+	sb t1, 42(a5)
+	addi t1, zero, 0
+	sb t1, 43(a5)
+	addi t1, zero, 0
+	sb t1, 44(a5)
+	addi t1, zero, 0
+	sb t1, 45(a5)
+	addi t1, zero, 0
+	sb t1, 46(a5)
+	addi t1, zero, 0
+	sb t1, 47(a5)
+	addi t1, zero, 0
+	sb t1, 48(a5)
+	addi t1, zero, 0
+	sb t1, 49(a5)
+	addi t1, zero, 0
+	sb t1, 50(a5)
+	addi t1, zero, 0
+	sb t1, 51(a5)
+	addi t1, zero, 0
+	sb t1, 52(a5)
+	addi t1, zero, 0
+	sb t1, 53(a5)
+	addi t1, zero, 0
+	sb t1, 54(a5)
+	addi t1, zero, 0
+	sb t1, 55(a5)
+	addi t1, zero, 0
+	sb t1, 56(a5)
+	addi t1, zero, 0
+	sb t1, 57(a5)
+	addi t1, zero, 0
+	sb t1, 58(a5)
+	addi t1, zero, 0
+	sb t1, 59(a5)
+	addi t1, zero, 0
+	sb t1, 60(a5)
+	addi t1, zero, 0
+	sb t1, 61(a5)
+	addi t1, zero, 0
+	sb t1, 62(a5)
+	addi t1, zero, 0
+	sb t1, 63(a5)
+	addi t1, zero, 0
+	sb t1, 64(a5)
+	addi t1, zero, 0
+	sb t1, 65(a5)
+	addi t1, zero, 0
+	sb t1, 66(a5)
+	addi t1, zero, 0
+	sb t1, 67(a5)
+	addi t1, zero, 0
+	sb t1, 68(a5)
+	addi t1, zero, 0
+	sb t1, 69(a5)
+	addi t1, zero, 0
+	sb t1, 70(a5)
+	addi t1, zero, 0
+	sb t1, 71(a5)
+	addi t2, a5, 66
+	sub t2, t2, a2
+	beqz a2, 22f
+24:
+	lbu t1, 0(a1)
+	sb t1, 0(t2)
+	addi a1, a1, 1
+	addi t2, t2, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	j 23f
+22:
+23:
+	lbu t1, 0(a5)
+	lbu t2, 1(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 0(a5)
+	lbu t1, 1(a5)
+	lbu t2, 2(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 1(a5)
+	lbu t1, 2(a5)
+	lbu t2, 3(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 2(a5)
+	lbu t1, 3(a5)
+	lbu t2, 4(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 3(a5)
+	lbu t1, 4(a5)
+	lbu t2, 5(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 4(a5)
+	lbu t1, 5(a5)
+	lbu t2, 6(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 5(a5)
+	lbu t1, 6(a5)
+	lbu t2, 7(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 6(a5)
+	lbu t1, 7(a5)
+	lbu t2, 8(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 7(a5)
+	lbu t1, 8(a5)
+	lbu t2, 9(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 8(a5)
+	lbu t1, 9(a5)
+	lbu t2, 10(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 9(a5)
+	lbu t1, 10(a5)
+	lbu t2, 11(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 10(a5)
+	lbu t1, 11(a5)
+	lbu t2, 12(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 11(a5)
+	lbu t1, 12(a5)
+	lbu t2, 13(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 12(a5)
+	lbu t1, 13(a5)
+	lbu t2, 14(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 13(a5)
+	lbu t1, 14(a5)
+	lbu t2, 15(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 14(a5)
+	lbu t1, 15(a5)
+	lbu t2, 16(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 15(a5)
+	lbu t1, 16(a5)
+	lbu t2, 17(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 16(a5)
+	lbu t1, 17(a5)
+	lbu t2, 18(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 17(a5)
+	lbu t1, 18(a5)
+	lbu t2, 19(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 18(a5)
+	lbu t1, 19(a5)
+	lbu t2, 20(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 19(a5)
+	lbu t1, 20(a5)
+	lbu t2, 21(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 20(a5)
+	lbu t1, 21(a5)
+	lbu t2, 22(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 21(a5)
+	lbu t1, 22(a5)
+	lbu t2, 23(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 22(a5)
+	lbu t1, 23(a5)
+	lbu t2, 24(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 23(a5)
+	lbu t1, 24(a5)
+	lbu t2, 25(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 24(a5)
+	lbu t1, 25(a5)
+	lbu t2, 26(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 25(a5)
+	lbu t1, 26(a5)
+	lbu t2, 27(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 26(a5)
+	lbu t1, 27(a5)
+	lbu t2, 28(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 27(a5)
+	lbu t1, 28(a5)
+	lbu t2, 29(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 28(a5)
+	lbu t1, 29(a5)
+	lbu t2, 30(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 29(a5)
+	lbu t1, 30(a5)
+	lbu t2, 31(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 30(a5)
+	lbu t1, 31(a5)
+	lbu t2, 32(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 31(a5)
+	lbu t1, 32(a5)
+	lbu t2, 33(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 32(a5)
+	lbu t1, 33(a5)
+	lbu t2, 34(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 33(a5)
+	lbu t1, 34(a5)
+	lbu t2, 35(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 34(a5)
+	lbu t1, 35(a5)
+	lbu t2, 36(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 35(a5)
+	lbu t1, 36(a5)
+	lbu t2, 37(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 36(a5)
+	lbu t1, 37(a5)
+	lbu t2, 38(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 37(a5)
+	lbu t1, 38(a5)
+	lbu t2, 39(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 38(a5)
+	lbu t1, 39(a5)
+	lbu t2, 40(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 39(a5)
+	lbu t1, 40(a5)
+	lbu t2, 41(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 40(a5)
+	lbu t1, 41(a5)
+	lbu t2, 42(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 41(a5)
+	lbu t1, 42(a5)
+	lbu t2, 43(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 42(a5)
+	lbu t1, 43(a5)
+	lbu t2, 44(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 43(a5)
+	lbu t1, 44(a5)
+	lbu t2, 45(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 44(a5)
+	lbu t1, 45(a5)
+	lbu t2, 46(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 45(a5)
+	lbu t1, 46(a5)
+	lbu t2, 47(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 46(a5)
+	lbu t1, 47(a5)
+	lbu t2, 48(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 47(a5)
+	lbu t1, 48(a5)
+	lbu t2, 49(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 48(a5)
+	lbu t1, 49(a5)
+	lbu t2, 50(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 49(a5)
+	lbu t1, 50(a5)
+	lbu t2, 51(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 50(a5)
+	lbu t1, 51(a5)
+	lbu t2, 52(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 51(a5)
+	lbu t1, 52(a5)
+	lbu t2, 53(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 52(a5)
+	lbu t1, 53(a5)
+	lbu t2, 54(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 53(a5)
+	lbu t1, 54(a5)
+	lbu t2, 55(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 54(a5)
+	lbu t1, 55(a5)
+	lbu t2, 56(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 55(a5)
+	lbu t1, 56(a5)
+	lbu t2, 57(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 56(a5)
+	lbu t1, 57(a5)
+	lbu t2, 58(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 57(a5)
+	lbu t1, 58(a5)
+	lbu t2, 59(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 58(a5)
+	lbu t1, 59(a5)
+	lbu t2, 60(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 59(a5)
+	lbu t1, 60(a5)
+	lbu t2, 61(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 60(a5)
+	lbu t1, 61(a5)
+	lbu t2, 62(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 61(a5)
+	lbu t1, 62(a5)
+	lbu t2, 63(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 62(a5)
+	lbu t1, 63(a5)
+	lbu t2, 64(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 63(a5)
+	lbu t1, 64(a5)
+	lbu t2, 65(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 64(a5)
+	lbu t1, 65(a5)
+	lbu t2, 66(a5)
+	slli t1, t1, 7
+	srli t2, t2, 1
+	add t1, t1, t2
+	sb t1, 65(a5)
+21:
+	addi a1, a5, 0
+	addi a2, a3, 0
+	addi a3, a4, 0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -2491,106 +3186,6 @@ vg_ecdsa_p521_verify:
 	sd t0, 169(s0)
 	addi s0, s0, -2047
 	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_n}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_n}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_n}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_n}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_n}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
 25:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3788,9 +4383,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 265:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3808,9 +4403,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1473
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 266:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3828,9 +4423,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1401
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 4
 267:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3848,9 +4443,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 4
 268:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3870,7 +4465,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 4
 269:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3888,7 +4483,7 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
 	addi s1, zero, 5
 270:
@@ -3908,9 +4503,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1833
+	addi a3, a3, 1473
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 5
 271:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3930,7 +4525,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1401
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 8
 272:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3948,9 +4543,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 8
 273:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3968,9 +4563,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 8
 274:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -3988,9 +4583,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 5
 275:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4008,9 +4603,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 2
 276:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4028,9 +4623,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1401
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 277:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4048,9 +4643,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1833
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 3
 278:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4068,9 +4663,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1833
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 279:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4088,9 +4683,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1401
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 12
+	addi s1, zero, 6
 280:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4108,9 +4703,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1473
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 281:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4128,9 +4723,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1329
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 282:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4168,9 +4763,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 8
+	addi s1, zero, 4
 284:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4188,9 +4783,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1617
+	addi a3, a3, 1401
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 12
 285:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4210,7 +4805,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1473
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 286:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4228,9 +4823,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1329
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 7
 287:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4248,9 +4843,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1473
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 9
+	addi s1, zero, 4
 288:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4270,7 +4865,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 8
 289:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4288,9 +4883,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1617
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 290:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4308,9 +4903,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1473
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 291:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4328,9 +4923,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 3
 292:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4348,9 +4943,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1617
+	addi a3, a3, 1473
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 9
 293:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4368,9 +4963,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 1
+	addi s1, zero, 4
 294:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4388,9 +4983,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1329
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 5
 295:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4408,9 +5003,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1329
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 296:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4428,9 +5023,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1617
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 6
 297:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4450,7 +5045,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1617
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 4
 298:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4468,9 +5063,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1401
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 1
 299:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4490,7 +5085,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1329
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 4
 2100:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4508,9 +5103,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1833
+	addi a3, a3, 1329
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 7
 2101:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4528,9 +5123,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1617
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2102:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4548,9 +5143,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1473
+	addi a3, a3, 1617
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 2
 2103:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4568,9 +5163,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1401
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2104:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4588,9 +5183,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1329
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 4
+	addi s1, zero, 7
 2105:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4608,9 +5203,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1689
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 5
 2106:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4628,9 +5223,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 3
 2107:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4648,9 +5243,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1761
+	addi a3, a3, 1473
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 4
 2108:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4668,9 +5263,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1401
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 5
 2109:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4688,9 +5283,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1833
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 5
+	addi s1, zero, 4
 2110:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4708,9 +5303,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1617
+	addi a3, a3, 1689
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 7
+	addi s1, zero, 3
 2111:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4728,9 +5323,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1617
+	addi a3, a3, 1545
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 2
+	addi s1, zero, 5
 2112:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4748,9 +5343,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1401
+	addi a3, a3, 1761
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 6
+	addi s1, zero, 2
 2113:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4770,7 +5365,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1401
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 3
+	addi s1, zero, 7
 2114:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4788,9 +5383,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1329
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_n}
-	addi s1, zero, 10
+	addi s1, zero, 5
 2115:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -4802,6 +5397,106 @@ vg_ecdsa_p521_verify:
 	addi a3, a3, 105
 	call {vg_p521_mul_mod_n}
 	bnez s1, 2115b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1617
+	call {vg_p521_mul_mod_n}
+	addi s1, zero, 7
+2116:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_n}
+	bnez s1, 2116b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1617
+	call {vg_p521_mul_mod_n}
+	addi s1, zero, 2
+2117:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_n}
+	bnez s1, 2117b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1401
+	call {vg_p521_mul_mod_n}
+	addi s1, zero, 6
+2118:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_n}
+	bnez s1, 2118b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1401
+	call {vg_p521_mul_mod_n}
+	addi s1, zero, 3
+2119:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_n}
+	bnez s1, 2119b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1329
+	call {vg_p521_mul_mod_n}
+	addi s1, zero, 10
+2120:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_n}
+	bnez s1, 2120b
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 105
@@ -9483,7 +10178,7 @@ vg_ecdsa_p521_verify:
 	ld t0, 344(s0)
 	sd t0, 1280(s0)
 	addi s1, zero, 288
-2116:
+2121:
 	addi s1, s1, -1
 	srli t1, s1, 5
 	slli t1, t1, 3
@@ -11935,7 +12630,7 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 1216
 	addi a3, zero, 1792
 	call {vg_p521_add_mod_p}
-	bnez s1, 2116b
+	bnez s1, 2121b
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 1329
@@ -12051,106 +12746,6 @@ vg_ecdsa_p521_verify:
 	addi s0, s0, 2047
 	sd t0, 169(s0)
 	addi s0, s0, -2047
-	addi s1, zero, 4
-2117:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_p}
-	bnez s1, 2117b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_p}
-	addi s1, zero, 4
-2118:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_p}
-	bnez s1, 2118b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_p}
-	addi s1, zero, 4
-2119:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_p}
-	bnez s1, 2119b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_p}
-	addi s1, zero, 4
-2120:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_p}
-	bnez s1, 2120b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_p}
-	addi s1, zero, 4
-2121:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 105
-	call {vg_p521_mul_mod_p}
-	bnez s1, 2121b
-	addi a0, s0, 0
-	addi a1, zero, 2047
-	addi a1, a1, 105
-	addi a2, zero, 2047
-	addi a2, a2, 105
-	addi a3, zero, 2047
-	addi a3, a3, 1833
-	call {vg_p521_mul_mod_p}
 	addi s1, zero, 4
 2122:
 	addi s1, s1, -1
@@ -14611,7 +15206,7 @@ vg_ecdsa_p521_verify:
 	addi a3, zero, 2047
 	addi a3, a3, 1833
 	call {vg_p521_mul_mod_p}
-	addi s1, zero, 3
+	addi s1, zero, 4
 2245:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -14629,9 +15224,9 @@ vg_ecdsa_p521_verify:
 	addi a2, zero, 2047
 	addi a2, a2, 105
 	addi a3, zero, 2047
-	addi a3, a3, 1545
+	addi a3, a3, 1833
 	call {vg_p521_mul_mod_p}
-	addi s1, zero, 2
+	addi s1, zero, 4
 2246:
 	addi s1, s1, -1
 	addi a0, s0, 0
@@ -14643,6 +15238,106 @@ vg_ecdsa_p521_verify:
 	addi a3, a3, 105
 	call {vg_p521_mul_mod_p}
 	bnez s1, 2246b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1833
+	call {vg_p521_mul_mod_p}
+	addi s1, zero, 4
+2247:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_p}
+	bnez s1, 2247b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1833
+	call {vg_p521_mul_mod_p}
+	addi s1, zero, 4
+2248:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_p}
+	bnez s1, 2248b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1833
+	call {vg_p521_mul_mod_p}
+	addi s1, zero, 4
+2249:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_p}
+	bnez s1, 2249b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1833
+	call {vg_p521_mul_mod_p}
+	addi s1, zero, 3
+2250:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_p}
+	bnez s1, 2250b
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 1545
+	call {vg_p521_mul_mod_p}
+	addi s1, zero, 2
+2251:
+	addi s1, s1, -1
+	addi a0, s0, 0
+	addi a1, zero, 2047
+	addi a1, a1, 105
+	addi a2, zero, 2047
+	addi a2, a2, 105
+	addi a3, zero, 2047
+	addi a3, a3, 105
+	call {vg_p521_mul_mod_p}
+	bnez s1, 2251b
 	addi a0, s0, 0
 	addi a1, zero, 2047
 	addi a1, a1, 105
@@ -14752,6 +15447,7 @@ vg_ecdsa_p521_verify:
 	ld s1, 8(s0)
 	ld s3, 32(s0)
 	ld s0, 0(s0)
+	addi sp, sp, 80
 	ret
 	.option pop
 
