@@ -1,5 +1,11 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Lit
@@ -127,5 +133,26 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
           Spec.Ecdsa.Instance.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
+
+/-- `satState` satisfies the precondition. -/
+theorem verify_sat : (Spec.Ecdsa.P521.inst.verifyContract Arm.abi).pre satState := by
+  sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.P521.curve, Spec.Ecdsa.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr, satState]
+  repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | constructor)
+
+/-- `satState`'s 100 bytes below `sp + 4` are free. -/
+theorem hash_sat : ∃ s, (Spec.Ecdsa.P521.inst.verifyHashContract Arm.abi 96).pre s :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.hashSat_nil (by decide) verify_sat (by decide) (by decide) fun r hr => by
+    simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+
+/-- `vg_ecdsa_p521_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.P521.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true verifyP521)
+      (Spec.Ecdsa.P521.inst.verifyHashContract Arm.abi 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.p521_len (by decide) (verify_verified hL)
+    ⟨_, by taint_decide⟩ hash_sat
 
 end VG.Proof.Ecdsa.Verify.Arm.P521

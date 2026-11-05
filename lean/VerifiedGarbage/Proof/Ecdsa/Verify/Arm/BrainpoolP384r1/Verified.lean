@@ -1,5 +1,11 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.Lit
@@ -147,5 +153,34 @@ theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
 theorem verifyU_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
     Verified Arm.target verifyBrainpoolP384r1U (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract Arm.abi) :=
   verifyWith_verified hL true verifyU_ct
+
+/-- `satState` satisfies the precondition. -/
+theorem verify_sat : (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract Arm.abi).pre satState := by
+  sig_pre [Spec.Ecdsa.BrainpoolP384r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.BrainpoolP384r1.curve, Spec.Ecdsa.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr, satState]
+  repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | constructor)
+
+/-- `satState`'s 100 bytes below `sp + 4` are free. -/
+theorem hash_sat : ∃ s, (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract Arm.abi 96).pre s :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.hashSat_nil (by decide) verify_sat (by decide) (by decide) fun r hr => by
+    simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+
+/-- `vg_ecdsa_brainpoolp384r1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false verifyBrainpoolP384r1)
+      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract Arm.abi 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.brainpoolP384r1_len (by decide) (verify_verified hL)
+    ⟨_, by taint_decide⟩ hash_sat
+
+/-- `vg_ecdsa_brainpoolp384r1_verify_umaal`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHashU_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false verifyBrainpoolP384r1U)
+      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract Arm.abi 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.brainpoolP384r1_len (by decide) (verifyU_verified hL)
+    ⟨_, by taint_decide⟩ hash_sat
 
 end VG.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1
