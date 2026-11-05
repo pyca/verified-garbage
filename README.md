@@ -2836,7 +2836,7 @@ implementation, but in some algorithms it does part of the cryptography:
 * **AES-GCM**: the length limits of SP 800-38D §5.2.1.1 (a nonempty
   nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of additional
   data) and the order of the streaming calls are checked in Rust
-  (`src/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
+  (`src/aead/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
   length block and the comparison of the tag, is verified end to end, as
   are ChaCha20-Poly1305 and ML-KEM.
 * **ML-DSA**: the verified functions take the message representative `μ`.

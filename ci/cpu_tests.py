@@ -64,7 +64,7 @@ GROUPS = {
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
-        "lib": ["aes_ccm"],
+        "lib": ["aead::aes_ccm"],
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
@@ -72,15 +72,15 @@ GROUPS = {
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
-        "lib": ["aes_gcm", "aes_gcm_siv"],
+        "lib": ["aead::aes_gcm", "aead::aes_gcm_siv"],
         "tests": ["cavp::aes_gcm", "wycheproof::aes_gcm", "wycheproof::aes_gcm_siv"],
     },
     "aes_gcm_siv": {
-        "lib": ["aes_gcm_siv"],
+        "lib": ["aead::aes_gcm_siv"],
         "tests": ["wycheproof::aes_gcm_siv"],
     },
     "aes_ocb": {
-        "lib": ["aes_ocb"],
+        "lib": ["aead::aes_ocb"],
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
@@ -104,7 +104,7 @@ GROUPS = {
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
-        "lib": ["aes_siv"],
+        "lib": ["aead::aes_siv"],
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
@@ -146,7 +146,7 @@ GROUPS = {
         ],
     },
     "chacha20": {
-        "lib": ["chacha20", "chacha20poly1305"],
+        "lib": ["chacha20", "aead::chacha20poly1305"],
         "tests": [
             "rfc8439::chacha20",
             "rfc8439::chacha20poly1305",
@@ -273,7 +273,7 @@ GROUPS = {
         "tests": ["rfc6979::p384::p384_sha384"],
     },
     "poly1305": {
-        "lib": ["chacha20poly1305", "poly1305"],
+        "lib": ["aead::chacha20poly1305", "poly1305"],
         "tests": [
             "rfc8439::chacha20::rfc8439_chacha20_poly1305_key_generation",
             "rfc8439::chacha20poly1305",
@@ -468,7 +468,7 @@ GROUPS = {
         ],
     },
     "sm4_gcm": {
-        "lib": ["sm4_gcm"],
+        "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
     "triple_des_ecb": {

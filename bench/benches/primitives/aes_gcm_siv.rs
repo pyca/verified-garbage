@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
 
     use aws_lc_rs::aead::{AES_128_GCM_SIV, AES_256_GCM_SIV, Aad, LessSafeKey, Nonce, UnboundKey};
     use criterion::{BenchmarkId, Throughput};
-    use verified_garbage::aes_gcm_siv::AesGcmSiv;
+    use verified_garbage::aead::aes_gcm_siv::AesGcmSiv;
 
     use crate::{AWS_LC, BenchDyn, SIZES, VG};
 

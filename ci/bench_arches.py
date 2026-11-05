@@ -52,6 +52,9 @@ files changed:
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
     call it;
+  * a module's list of its modules (`src/aead/mod.rs`), as `src/lib.rs`
+    is: the modules it adds or removes, and every benchmark for any other
+    change;
   * any other file a Rust file of `bench/` includes (`#[path = "…"] mod`,
     `include!`, e.g. `bench/support/ffdh.rs` or `tests/cavp/dsa_vectors.rs`),
     at base or now: those of the files including it, on the architectures
@@ -193,11 +196,18 @@ CPU_CRATE = "crates/verified-garbage-cpu/"
 MOVED = {
     "src/ec/ecdh/": "src/ecdh/",
     "src/ec/ecdsa/": "src/ecdsa/",
+    "src/aead/aes_ccm.rs": "src/aes_ccm.rs",
+    "src/aead/aes_gcm.rs": "src/aes_gcm.rs",
+    "src/aead/aes_gcm_siv.rs": "src/aes_gcm_siv.rs",
+    "src/aead/aes_ocb.rs": "src/aes_ocb.rs",
+    "src/aead/aes_siv.rs": "src/aes_siv.rs",
+    "src/aead/chacha20poly1305.rs": "src/chacha20poly1305.rs",
+    "src/aead/sm4_gcm.rs": "src/sm4_gcm.rs",
 }
 
 # The lists of modules, `src/lib.rs`'s and those of the modules that group
 # others: a change to them adds or removes modules (`registrations`).
-REGISTRIES = ("src/lib.rs",)
+REGISTRIES = ("src/lib.rs", "src/aead/mod.rs")
 
 
 def logical(path):

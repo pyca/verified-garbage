@@ -16,7 +16,7 @@
 //! truncated tag, a `&[u8; N]` with `N` from 4 to 16 fixed at compile time
 //! ([`Sm4Gcm::decrypt_in_place_truncated`],
 //! [`Sm4GcmDecryptor::finalize_truncated`]), as AES-GCM's does: see
-//! [`crate::aes_gcm`] for why the length is never a slice's, and for which
+//! [`crate::aead::aes_gcm`] for why the length is never a slice's, and for which
 //! lengths SP 800-38D allows.
 
 #![cfg(any(

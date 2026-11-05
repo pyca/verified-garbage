@@ -13,7 +13,7 @@
 mod oracle;
 
 use openssl::cipher::Cipher;
-use verified_garbage::aes_gcm_siv::AesGcmSiv;
+use verified_garbage::aead::aes_gcm_siv::AesGcmSiv;
 
 #[test]
 fn matches_openssl() {

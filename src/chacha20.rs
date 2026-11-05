@@ -36,7 +36,7 @@ use core::mem::MaybeUninit;
 use verified_garbage_cpu::Features;
 
 /// The implementations of `vg_chacha20_apply`, which ChaCha20-Poly1305
-/// follows (`crate::chacha20poly1305`): each variant but `Scalar` is the
+/// follows (`crate::aead::chacha20poly1305`): each variant but `Scalar` is the
 /// one with its suffix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
