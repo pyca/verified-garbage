@@ -14,9 +14,9 @@
 //! name: on x86-64, the `_ifma` ones, then the `_adx` ones; on ARMv7,
 //! `vg_x25519_umaal`.
 //!
-//! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
-//! shared secret that a public key of small order gives (RFC 7748 §6.1), in
-//! constant time; [`x25519`] is the function itself, which does not.
+//! [`exchange`](PrivateKey::exchange) is `vg_x25519` of the private key and
+//! the peer's [`PublicKey`], and rejects the all-zero shared secret that a
+//! public key of small order gives (RFC 7748 §6.1), in constant time.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -112,15 +112,8 @@ crate::error::impl_error! {
     }
 }
 
-/// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
-pub const BASE_POINT: [u8; 32] = {
-    let mut b = [0; 32];
-    b[0] = 9;
-    b
-};
-
 /// `X25519(scalar, u)` (RFC 7748 §5), which may be all zero.
-pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
+fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     // Uninitialized: the function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
@@ -197,8 +190,7 @@ impl Drop for PrivateKey {
 }
 
 impl PrivateKey {
-    /// The size of a private key, of a public key and of a shared secret, in
-    /// bytes.
+    /// The size of a private key, in bytes.
     pub const SIZE: usize = 32;
 
     /// A new private key: 32 random bytes from the operating system.
@@ -219,21 +211,75 @@ impl PrivateKey {
     }
 
     /// The public key, `X25519(k, 9)` (RFC 7748 §6.1).
-    pub fn public_key(&self) -> [u8; 32] {
-        base(&self.bytes)
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey {
+            bytes: base(&self.bytes),
+        }
     }
 
     /// The shared secret with the peer whose public key is `peer`,
     /// `X25519(k, peer)` (RFC 7748 §6.1); [`Error::ZeroSharedSecret`] if it
     /// is all zero, which is checked without revealing anything else about
     /// it.
-    pub fn diffie_hellman(&self, peer: &[u8; 32]) -> Result<[u8; 32], Error> {
-        let mut shared = x25519(&self.bytes, peer);
-        if crate::ct::eq(&shared, &[0; 32]) {
-            zeroize(&mut shared);
+    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, Error> {
+        let mut bytes = x25519(&self.bytes, &peer.bytes);
+        if crate::ct::eq(&bytes, &[0; 32]) {
+            zeroize(&mut bytes);
             return Err(Error::ZeroSharedSecret);
         }
-        Ok(shared)
+        Ok(SharedSecret { bytes })
+    }
+}
+
+/// An X25519 public key: the u-coordinate of a point, 32 bytes (RFC 7748
+/// §5).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PublicKey {
+    bytes: [u8; 32],
+}
+
+impl PublicKey {
+    /// The size of a public key, in bytes.
+    pub const SIZE: usize = 32;
+
+    /// The public key `bytes`. Any 32 bytes are one: X25519 ignores the top
+    /// bit (RFC 7748 §5), and [`PrivateKey::exchange`] rejects the keys of
+    /// small order.
+    pub fn from_bytes(bytes: &[u8; 32]) -> Self {
+        PublicKey { bytes: *bytes }
+    }
+
+    /// The bytes of the key.
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.bytes
+    }
+}
+
+/// The shared secret of an X25519 exchange, never all zero. It is wiped
+/// when dropped.
+pub struct SharedSecret {
+    bytes: [u8; 32],
+}
+
+impl core::fmt::Debug for SharedSecret {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SharedSecret").finish_non_exhaustive()
+    }
+}
+
+impl Drop for SharedSecret {
+    fn drop(&mut self) {
+        zeroize(&mut self.bytes);
+    }
+}
+
+impl SharedSecret {
+    /// The size of a shared secret, in bytes.
+    pub const SIZE: usize = 32;
+
+    /// The bytes of the secret.
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.bytes
     }
 }
 
@@ -241,11 +287,18 @@ impl PrivateKey {
 mod tests {
     #[cfg(target_arch = "arm")]
     use super::VG_X25519_UMAAL_FEATURES;
-    use super::{BASE_POINT, Backend, Error, Features, PrivateKey, x25519};
+    use super::{Backend, Error, Features, PrivateKey, PublicKey, x25519};
     #[cfg(target_arch = "x86_64")]
     use super::{
         VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
         VG_X25519_IFMA_FEATURES,
+    };
+
+    /// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
+    const BASE_POINT: [u8; 32] = {
+        let mut b = [0; 32];
+        b[0] = 9;
+        b
     };
 
     /// A generated key agrees with itself: both sides compute the same
@@ -257,9 +310,13 @@ mod tests {
         assert_ne!(a.as_bytes(), b.as_bytes());
         let ka = a.public_key();
         let kb = b.public_key();
-        assert_eq!(a.diffie_hellman(&kb), b.diffie_hellman(&ka));
+        assert_eq!(
+            a.exchange(&kb).unwrap().as_bytes(),
+            b.exchange(&ka).unwrap().as_bytes()
+        );
         assert_eq!(PrivateKey::from_bytes(a.as_bytes()).public_key(), ka);
         assert_eq!(a.clone().public_key(), ka);
+        assert_eq!(PublicKey::from_bytes(ka.as_bytes()), ka);
     }
 
     /// The public key is `X25519(k, 9)` for many scalars: random ones, ones
@@ -269,7 +326,7 @@ mod tests {
     fn public_key_is_x25519_of_base_point() {
         let check = |k: &[u8; 32]| {
             assert_eq!(
-                PrivateKey::from_bytes(k).public_key(),
+                *PrivateKey::from_bytes(k).public_key().as_bytes(),
                 x25519(k, &BASE_POINT)
             );
         };
@@ -326,7 +383,8 @@ mod tests {
     #[test]
     fn zero_shared_secret() {
         let a = PrivateKey::from_bytes(&[0x42; 32]);
-        assert_eq!(a.diffie_hellman(&[0; 32]), Err(Error::ZeroSharedSecret));
+        let zero = PublicKey::from_bytes(&[0; 32]);
+        assert_eq!(a.exchange(&zero).unwrap_err(), Error::ZeroSharedSecret);
         assert_eq!(x25519(a.as_bytes(), &[0; 32]), [0; 32]);
     }
 }
