@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaPss.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.Framework.Sig

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.RsaPss.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.X86.Base

@@ -1,34 +1,62 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
 # RSASSA-PSS with its hash functions given as tables
 
-**Trusted** (as every file in `Spec/`). In the module `rsa_pss`, the
-functions of `Spec/RsaPss/Contract.lean` and `Spec/RsaPss/Precomputed.lean`
-with neither the hash function nor MGF1's fixed but given at run time: two
-last parameters, `hash`, a table of the interface `MdHash`
+**Trusted** (as every file in `Spec/`). In the module `rsa_pss`, each with
+two last parameters, `hash`, a table of the interface `MdHash`
 (`Spec/MdHashTable.lean`), naming the hash function `H` of the digest and
 of EMSA-PSS (`MdHashTable.hashAt`), and `mgf1`, a table of the interface
-`Hash` (`Spec/HashTable.lean`), naming MGF1's `G` (`HashTable.hashAt`).
-`H` is a table of its compression function because verification hashes
+`Hash` (`Spec/HashTable.lean`), naming MGF1's `G` (`HashTable.hashAt`):
+
+* `vg_rsa_pss_sign`: `RSASSA-PSS-SIGN` of a digest with a salt, with the
+  private key checked against the public exponent (`RsaPss.sign H G`);
+* `vg_rsa_pss_verify_precomputed`: `RSASSA-PSS-VERIFY` of a signature for a
+  digest (`RsaPss.verify H G`), expecting a salt length or any, given the
+  modulus' `Rsa.publicPrecompute` values `pre`.
+
+So one function serves every pair of hash functions, with every
+implementation of each, rather than a function for each pair. `H` is a
+table of its compression function because verification hashes
 `M' = 0⁸ ‖ mHash ‖ salt`, whose length is secret when any salt length is
 accepted: it pads `M'` itself and compresses a public number of blocks.
 
-* `vg_rsa_pss_sign`: as `vg_rsa_pss_<H>_mgf1_<G>_sign`;
-* `vg_rsa_pss_verify_precomputed`: as
-  `vg_rsa_pss_<H>_mgf1_<G>_verify_precomputed`;
+Numbers are as in `Spec/Rsa/Contract.lean`: slices of octets, most
+significant first, with the modulus `n` of `n_len` octets, from 64 to 1024,
+and `e` of at most `n_len`; the private key is as `vg_rsa_private_checked`
+takes it. The digest is a slice of `digest_len` octets, which must be `H`'s
+length. These are preconditions, on the public lengths; everything about
+the values is checked. Signing returns 1 and writes the signature, or
+writes zeros and returns 0 (the encoding or the key refused) or 2 (the
+internal error: the result failed its check against `e`); verification
+returns 1 for a valid signature and 0 otherwise. With a `pre` that does
+not hold the values for `n`, what verification returns is unspecified, as
+in `Rsa.publicPrecomputedCheckedContract`.
 
-for the hash functions `H` and `G` the tables name. So one function serves
-every pair of hash functions, with every implementation of each, rather
-than a function for each pair and each implementation. The digest is a
-slice of `digest_len` octets, which must be `H`'s length (a precondition,
-on a public length: which tables `hash` and `mgf1` are is public,
-`Abi.withTables`). Everything else, the timing guarantee included, is that
-of the contracts with `H` and `G` fixed; the tables' own memory is
-read-only.
+The signature determines memory validity, separation and that the pointers,
+the lengths and the salt length arguments are public, through
+`Sig.contract` (among them the salt's length when signing); which tables
+`hash` and `mgf1` are, is public too (`Abi.withTables`), and the tables'
+own memory is read-only. The public key, `n` and `e`, and `pre` are
+public, and may affect timing (`leak`). Nothing else is: when signing, the
+private key, the digest, the salt and everything computed from them; when
+verifying, the digest, the signature, and everything verification computes
+from them (`EM`, `DB`, where its padding ends, the salt and its length,
+whether each check passes) are secret, and only the returned bit tells
+whether the signature is valid.
+
+`scratch` is working space of at least `scratchWords n_len` `u64`s when
+signing and `publicScratchWords n_len` when verifying (that of the RSA
+primitive, and room for the encoding, the hash functions' states and their
+working space), whose contents on return are unspecified.
+`stack` is the number of bytes below the stack pointer that an
+implementation's calls and frames use. The functions may overwrite their
+arguments passed in memory, where the calling convention allows it
+(`writeArgs`).
 -/
 
 @[expose] public section
@@ -63,9 +91,13 @@ def digestLenOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (digestLen : B
 
 /-! ## `vg_rsa_pss_sign` -/
 
-/-- `signSig`, with the digest a slice and two last parameters
-`hash: *const [usize; 11]`, a table of `MdHash`, and
-`mgf1: *const [usize; 5]`, a table of `Hash`. -/
+/-- The parameters of signing: `(out: *mut u8, out_len: usize, n: *const u8,
+n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize,
+q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8,
+dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8,
+digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64,
+scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5])
+-> u32`, with `hash` a table of `MdHash` and `mgf1` one of `Hash`. -/
 def signTableSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
@@ -76,8 +108,10 @@ def signTableSig : Sig where
     ("mgf1", HashTable.param)]
   ret := some .u32
 
-/-- `signContract H G` for `H` and `G` the hash functions `hash` and `mgf1`
-name. -/
+/-- `RSASSA-PSS-SIGN` of the digest with the salt, with the private key
+`(p, q, dP, dQ, qInv)` of the modulus `n` checked against the public exponent
+`e` (`sign H G`), for `H` and `G` the hash functions `hash` and `mgf1` name.
+Constant time but for the public key. -/
 def signTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   signTableSig.contract A
     (pre := fun _out outLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen
@@ -132,9 +166,13 @@ def signTableApi : Api where
 
 /-! ## `vg_rsa_pss_verify_precomputed` -/
 
-/-- `verifyPrecomputedSig`, with the digest a slice and two last parameters
-`hash: *const [usize; 11]`, a table of `MdHash`, and
-`mgf1: *const [usize; 5]`, a table of `Hash`. -/
+/-- The parameters of verification: `(n: *const u8, n_len: usize,
+e: *const u8, e_len: usize, digest: *const u8, digest_len: usize,
+sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32,
+scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize,
+hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32`, with `pre` the
+modulus' precomputed `u64` words, `hash` a table of `MdHash` and `mgf1` one
+of `Hash`. -/
 def verifyPrecomputedTableSig : Sig where
   params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
     ("digest", .slice false .u8 "digest_len"), ("sig", .slice false .u8 "sig_len"),
@@ -143,8 +181,12 @@ def verifyPrecomputedTableSig : Sig where
     ("hash", MdHashTable.param), ("mgf1", HashTable.param)]
   ret := some .u32
 
-/-- `verifyPrecomputedContract H G` for `H` and `G` the hash functions `hash`
-and `mgf1` name. -/
+/-- `RSASSA-PSS-VERIFY` of the signature for the digest with the public key
+`(n, e)`, expecting the salt length `expectedSaltLen salt_len any_salt_len`
+(`verify H G`), for `H` and `G` the hash functions `hash` and `mgf1` name,
+given precomputed values `pre` for the modulus: returns 1 if it is valid and
+0 otherwise, if `pre` holds `Rsa.publicPrecompute n`. Constant time but for
+the public key and `pre`. -/
 def verifyPrecomputedTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   verifyPrecomputedTableSig.contract A
     (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _saltLen _anySaltLen _scratch

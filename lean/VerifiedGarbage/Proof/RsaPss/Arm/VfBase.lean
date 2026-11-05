@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.RsaPss.Arm.TabCall
 public import VerifiedGarbage.Proof.Framework.Sig

@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.RsaOaep.PPC64LE
 # RSASSA-PSS verification on PPC64LE: the precondition
 
 Untrusted: everything here is checked by Lean. `PreP D s`: the shared
-contract's precondition (`Spec.RsaPss.verifyPrecomputedContract`, with the
+contract's precondition (`Spec.RsaPss.verifyPrecomputedTableContract`, with the
 stack of the frame and of the streaming hash functions, 304 bytes), by name
 (`preP_of`); the working space and the values `Base` fixes (`Sp`, `vP`: the
 encoding's parameters `lo`, `c` and `dbLen` from the modulus' first byte),

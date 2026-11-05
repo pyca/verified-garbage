@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx

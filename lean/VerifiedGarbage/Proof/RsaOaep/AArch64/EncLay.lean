@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
