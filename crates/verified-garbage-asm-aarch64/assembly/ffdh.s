@@ -24097,7 +24097,7 @@ vg_ffdh_generate_key_search:
 	ret
 	.p2align 6
 
-vg_ffdh_generate_parameters:
+vg_ffdh_generate_parameters_sieved:
 	add x14, sp, #0
 	ldr x8, [x14, #8]
 	ldr x9, [x14, #0]
@@ -24131,7 +24131,7 @@ vg_ffdh_generate_parameters:
 	ldr x9, [x19, #120]
 	add x11, sp, #0
 	str x9, [x11, #0]
-	bl {vg_ffdh_parameter_candidate}
+	bl {vg_ffdh_parameter_candidate_sieved}
 	add sp, sp, #16
 	add w9, w0, #0
 	ldr x11, [x19, #56]

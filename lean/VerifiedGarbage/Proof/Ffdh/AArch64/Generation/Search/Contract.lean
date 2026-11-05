@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
-public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 
 /-! # The parameter-search controller's contract in terms of the machine (AArch64)
 
-`vg_ffdh_generate_parameters(out = x0, out_len = x1, used = x2, bits = x3,
+`vg_ffdh_generate_parameters_sieved(out = x0, out_len = x1, used = x2, bits = x3,
 generator = w4, rand = x5, rand_len = x6, scratch = x7, scratch_len, state)`:
 eight arguments in registers and two on the stack. The controller uses 32
 bytes of stack: the frame saving `x30` and its candidate's frame of 16
@@ -24,7 +24,7 @@ open VG.Proof.Ffdh.AArch64.ParameterCandidate (pcContract pcPre pcPub)
 /-- The stack the controller uses below the stack pointer. -/
 abbrev stackUse : Nat := 32
 
-/-- An implementation of `vg_ffdh_parameter_candidate`, as the controller
+/-- An implementation of `vg_ffdh_parameter_candidate_sieved`, as the controller
 calls it: its name, its code, which has no frames, and its proofs. -/
 structure Cand where
   name : String
@@ -70,7 +70,7 @@ def searchPre (s : State) : Prop :=
     (s.gpr .x6).toNat ≤ parameterEntropy (genBits s)
 
 def searchResult (s : State) : ParameterSearchResult :=
-  parameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
+  sievedParameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
 
 def searchPost (s t : State) : Prop :=
   ((t.gpr .x0).setWidth 32).toNat = (searchResult s).status ∧

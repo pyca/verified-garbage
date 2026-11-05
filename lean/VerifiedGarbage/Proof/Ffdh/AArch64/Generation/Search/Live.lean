@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
-import VerifiedGarbage.Proof.Ffdh.GenerationTape
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
+import VerifiedGarbage.Proof.Ffdh.SievedTape
 
 /-! # What keeps the parameter search's loop state (AArch64), and where the search goes -/
 
@@ -136,37 +137,37 @@ theorem SDone.keep {p : SPub} {original s t : State} {result : ParameterSearchRe
 /-! ## Where the search goes from a loop state -/
 
 theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used := by
-  simp only [SPub.tail, parameterSearch, ParameterSearchResult.consume, Nat.add_zero]
+  simp only [SPub.tail, sievedParameterSearch, ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = none) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = none) :
     p.tail used k = if parameterEntropy p.bits ≤ p.randLen - used then .exhausted used
       else .entropy k (parameterRequest p.bits (p.randLen - used)) used := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
   split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]
 
 theorem SPub.tail_accept {p : SPub} {used k q : Nat} {rest : List Byte} (hk : k ≠ 0)
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (some q, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (some q, rest)) :
     p.tail used k = .accepted q (used + ((p.randLen - used) - rest.length)) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
-  simp only [SPub.tail, parameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
 
 theorem SPub.tail_reject {p : SPub} {used k : Nat} {rest : List Byte} (hk : k ≠ 0)
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (none, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (none, rest)) :
     p.tail used k = p.tail (used + ((p.randLen - used) - rest.length)) (k - 1) := by
-  have := Proof.Ffdh.Generation.search_reject (Nat.pos_of_ne_zero hk) hc
+  have := Proof.Ffdh.SievedGeneration.search_reject (Nat.pos_of_ne_zero hk) hc
   simp only [List.length_drop, hl] at this
   exact this
 
 /-- The octets a candidate reads are in the tape. -/
 theorem candidate_used_le {p : SPub} {used : Nat} {value : Option Nat} {rest : List Byte}
     (hl : p.rand.length = p.randLen)
-    (hc : parameterCandidate p.bits p.gen (p.rand.drop used) = some (value, rest)) :
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (value, rest)) :
     rest.length ≤ p.randLen - used := by
-  obtain ⟨n, _, hr⟩ := Proof.Ffdh.Generation.candidate_suffix hc
+  obtain ⟨n, _, hr⟩ := Proof.Ffdh.SievedGeneration.candidate_suffix hc
   rw [hr]
   simp only [List.length_drop, hl]
   omega

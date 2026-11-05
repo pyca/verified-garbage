@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 # An FFDH parameter candidate on AArch64: constant time of the shape's checks
 
 The congruence (`residue_ct`), RSA's table (`tableWrite_ct`), the sieve
-(`sieve_ct`, RSA's `trialEntry_ct` for 13 words and an entry) and `q`
+(`sieve_ct`, RSA's `trialEntry_ct` for `trialN w` words) and `q`
 (`halveQ_ct`), each from the working space and what it reads.
 -/
 
@@ -66,24 +66,24 @@ def SV (L : WsP) (s : State) : Prop :=
 /-- Before word `k` of the table. -/
 def SI (L : WsP) (k : Nat) (s : State) : Prop :=
   Ws s L.B L.Z L.w ∧ slot L.w aTab + 2048 ≤ L.Z ∧ s.gpr .x9 = off L.B (slot L.w aTab + 8 * k) ∧
-    s.gpr .x10 = BitVec.ofNat 64 (13 - k) ∧ s.gpr .x7 = 0 ∧ s.gpr .x8 = mask true ∧ TabOk s.mem L.B L.w ∧
+    s.gpr .x10 = BitVec.ofNat 64 (trialN L.w - k) ∧ s.gpr .x7 = 0 ∧ s.gpr .x8 = mask true ∧ TabOk s.mem L.B L.w ∧
     s.gpr .x1 = mask (anyPre (wv s.mem L.B (slot L.w aN) L.w) (4 * k))
 
 /-- After the loop. -/
-def SIE (L : WsP) (s : State) : Prop :=
-  Ws s L.B L.Z L.w ∧ slot L.w aTab + 2048 ≤ L.Z ∧ s.gpr .x9 = off L.B (slot L.w aTab + 8 * 13) ∧
-    s.gpr .x7 = 0 ∧ s.gpr .x8 = mask true ∧ TabOk s.mem L.B L.w
+def SIE (L : WsP) (s : State) : Prop := Ws s L.B L.Z L.w
 
-theorem sieveIter_ok {L : WsP} {k : Nat} {s : State} (hk : k < 13) (h : SI L k s) :
+theorem trialN_le (w : Nat) : trialN w ≤ 256 ∧ 1 ≤ trialN w := by unfold trialN; split <;> omega
+
+theorem sieveIter_ok {L : WsP} {k : Nat} {s : State} (hk : k < trialN L.w) (h : SI L k s) :
     WP isa (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) s fun t =>
-      isa.eval (.nonzero .x .x10) t = some (decide (k + 1 < 13)) ∧ (k + 1 < 13 → SI L (k + 1) t) ∧
-        (k + 1 = 13 → SIE L t) := by
+      isa.eval (.nonzero .x .x10) t = some (decide (k + 1 < trialN L.w)) ∧ (k + 1 < trialN L.w → SI L (k + 1) t) ∧
+        (k + 1 = trialN L.w → SIE L t) := by
   obtain ⟨hw, hT, h9, h10, h7, h8, htab, h1⟩ := h
+  have hN := trialN_le L.w
   refine WP.mono (tlIter_ok (s₀ := s) rfl hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9 h1)
     fun t ⟨⟨hI, h9', h1'⟩, h10'⟩ => ⟨?_, fun _ => ⟨hI.ws, hT, h9', ?_, hI.x7, hI.x8, fun i hi => by
-      rw [hI.mem]; exact htab i hi, by rw [h1', hI.mem]⟩, fun e => ⟨hI.ws, hT, by rw [h9', e], hI.x7, hI.x8,
-        fun i hi => by rw [hI.mem]; exact htab i hi⟩⟩
+      rw [hI.mem]; exact htab i hi, by rw [h1', hI.mem]⟩, fun _ => hI.ws⟩
   · rw [eval_nonzero, h10', h10, sub1_bne (by omega) (by omega)]
     exact congrArg some (decide_eq_decide.mpr (by omega))
   · rw [h10', h10]
@@ -91,7 +91,7 @@ theorem sieveIter_ok {L : WsP} {k : Nat} {s : State} (hk : k < 13) (h : SI L k s
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega
 
-theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < 13 ∧ SI a.1 a.2 s)
+theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < trialN a.1.w ∧ SI a.1 a.2 s)
     (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) fun _ _ => True := by
   simp only [List.append_assoc, List.singleton_append]
@@ -101,6 +101,7 @@ theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < 13 ∧ SI 
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.2.1, h₂.2.2.2.1]) (by taint_decide))
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -⟩ := h
+    have hN := trialN_le p.1.w
     exact WP.mono (tlLoad_ok hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
       ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega, h17,
         (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
@@ -114,31 +115,16 @@ theorem sieveBody_ct : RelCT isa (Two fun (a : WsP × Nat) s => a.2 < 13 ∧ SI 
 /-- The sieve leaks the same in runs with the same working space. -/
 theorem sieve_ct : RelCT isa (Two SV) (seqs sieve) fun _ _ => True := by
   rw [sieve_eq]
-  refine RelCT.seqs_append (by simp) (by simp [trialEntry]) (RelCT.seq (R := Two fun L s => TBI (fpubOf L, 13) s) ?_ ?_)
-  · simp only [seqs]
-    refine RelCT.seq (two_post (ws_block_ct0 (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w)
-      (fun _ _ h => h.1) (by taint_decide)) (Ψ := fun L s => 0 < 13 ∧ SI L 0 s) fun L s ⟨hw, hT, htab⟩ => ?_)
-      (RelCT.seq (two_loop (Φ := SI) (Ψ := SIE) (fun _ => 13) sieveBody_ct fun _ _ _ hk h => sieveIter_ok hk h)
-        (two_post (two_taint [.x9] (fun L s₁ s₂ h₁ h₂ r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.1, h₂.2.2.1]) (by taint_decide))
-          fun L s ⟨hw, hT, h9, h7, h8, htab⟩ => ?_))
-    · refine WP.mono (sieveInit_ok hw) fun t ⟨⟨h9, h10, h1, h7, h8, hm⟩, k⟩ => ⟨by decide, ?_⟩
-      exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), hT, h9, h10, h7, h8,
-        fun i hi => by rw [hm]; exact htab i hi, by rw [h1, Nat.mul_zero, anyPre_zero]; rfl⟩
-    · have hld : InRegions (s.rd ++ s.wr) (off L.B (slot L.w aTab + 8 * 13)) 8 := hw.scr.ld (by omega)
-      have ht13 : s.mem.readW (L.B + BitVec.ofNat 64 (slot L.w aTab + 8 * 13)) 64 = BitVec.ofNat 64 (tabWord 13) :=
-        htab 13 (by decide)
-      exact WP.mono (WP.keep (c := .block [ld .x17 .x9]) [.x17] (Q := fun t =>
-          t.gpr .x17 = BitVec.ofNat 64 (tabWord 13) ∧ t.mem = s.mem) (by brun [h9, hld, ht13])
-        (by decide) (by decide) (by decide +kernel))
-        fun t ⟨⟨h17, hm⟩, k⟩ => ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide),
-          show 13 < 256 by decide, h17, (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
-  · refine two_map (Φ' := TBI) (fun L : WsP => (fpubOf L, 13)) (fun _ _ h => h) ?_
-    refine RelCT.seqs_append (by simp [trialEntry]) (by simp)
-      (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
-    rw [seqs_one]
-    exact two_taint [.x0] (pins_ws' (fun p : VG.Proof.RsaKeyGen.AArch64.FPub × Nat => p.1.B) (fun p : VG.Proof.RsaKeyGen.AArch64.FPub × Nat => p.1.Z)
-      (fun p : VG.Proof.RsaKeyGen.AArch64.FPub × Nat => p.1.w) fun _ _ h => h.1) (by taint_decide)
+  simp only [seqs]
+  refine RelCT.seq (two_post (ws_block_ct0 (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w)
+    (fun _ _ h => h.1) (by taint_decide)) (Ψ := fun L s => 0 < trialN L.w ∧ SI L 0 s) fun L s ⟨hw, hT, htab⟩ => ?_)
+    (RelCT.seq (two_loop (Φ := SI) (Ψ := SIE) (fun L => trialN L.w) sieveBody_ct fun _ _ _ hk h => sieveIter_ok hk h)
+      (two_taint [.x0] (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) fun _ _ h => h)
+        (by taint_decide)))
+  refine WP.mono (sieveInit_ok hw) fun t ⟨⟨h9, h10, h1, h7, h8, hm⟩, k⟩ => ⟨(trialN_le L.w).2, ?_⟩
+  exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), hT, h9,
+    by rw [h10, Nat.sub_zero], h7, h8, fun i hi => by rw [hm]; exact htab i hi,
+    by rw [h1, Nat.mul_zero, anyPre_zero]; rfl⟩
 
 /-! ## `q` -/
 
