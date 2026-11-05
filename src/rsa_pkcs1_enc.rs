@@ -396,8 +396,8 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
             scratch.len(),
         )
     };
-    // `PrivateKey::from_crt` checked `n`, `e` and the key, so a refusal
-    // means the ciphertext is not below the modulus.
+    // For a validated key, a refusal means the ciphertext is not below
+    // the modulus. An unchecked key may also be refused.
     match r {
         1 => {
             // The function returns at most `n_len - 11` bytes.

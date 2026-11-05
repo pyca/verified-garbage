@@ -345,8 +345,8 @@ fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result
         salt,
         &mut scratch
     ));
-    // `PrivateKey::from_crt` checked the key, so a refusal means the encoding
-    // does not fit.
+    // For a validated key, a refusal means the encoding does not fit.
+    // An unchecked key may also be refused.
     match r {
         1 => Ok(out),
         2 => Err(Error::Fault),

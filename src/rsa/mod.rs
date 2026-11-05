@@ -39,7 +39,9 @@
 //! exponents inverse to `e` modulo `p - 1` and `q - 1`, `qInv < p` and
 //! `q qInv ≡ 1 (mod p)`. Its timing may depend on the public key and the
 //! lengths of the private values, but not on their values. Loading a key does
-//! not run it.
+//! not run it. [`PrivateKey::from_crt_unchecked`] also skips the CRT
+//! arithmetic checks, for callers that run `check_key` themselves or
+//! explicitly choose to skip validation.
 //!
 //! The variants of `vg_rsa_public_precompute`,
 //! `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, with

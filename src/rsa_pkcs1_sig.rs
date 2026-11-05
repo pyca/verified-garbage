@@ -204,8 +204,8 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
             scratch.len(),
         )
     };
-    // `PrivateKey::from_crt` checked the key and the length of `digest` is
-    // checked above, so a refusal means the encoding does not fit.
+    // For a validated key, with the digest length checked above, a refusal
+    // means the encoding does not fit. An unchecked key may also be refused.
     match r {
         1 => Ok(out),
         2 => Err(Error::Fault),

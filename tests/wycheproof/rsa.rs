@@ -51,6 +51,12 @@ fn check_group(
         &k.coefficient.0,
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
+    // The unchecked import must preserve the representation and the verified
+    // operation's output/range/fault checks, across the published vectors.
+    let [kn, e, d, p, q, dp, dq, qi] = key.components();
+    let unchecked = PrivateKey::from_crt_unchecked(kn, e, d, p, q, dp, dq, qi).unwrap();
+    assert_eq!(unchecked.components(), key.components());
+    let key = unchecked;
     let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
     for test in &group.tests {
         let id = test.tc_id;

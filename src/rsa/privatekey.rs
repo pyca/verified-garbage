@@ -148,11 +148,47 @@ impl PrivateKey {
         dq: &[u8],
         qinv: &[u8],
     ) -> Result<Self, Error> {
+        let key = Self::from_crt_unchecked(n, e, d, p, q, dp, dq, qinv)?;
+        if key.crt_valid() {
+            Ok(key)
+        } else {
+            Err(Error::InvalidPrivateKey)
+        }
+    }
+
+    /// Loads the CRT values without checking their arithmetic relationships.
+    ///
+    /// Accepts the same encodings and enforces the same modulus, exponent
+    /// and component-length limits as [`from_crt`](Self::from_crt), but does
+    /// not check `p q = n`, the CRT exponents or the inverse. `d` is kept as
+    /// given. Use this when the caller will run [`check_key`](Self::check_key)
+    /// anyway, to avoid checking the CRT values twice, or when the caller
+    /// explicitly chooses to skip key validation.
+    ///
+    /// This is safe for arbitrary inputs. Private operations still check
+    /// their result against the public exponent before releasing it. An
+    /// inconsistent key can fail with any of the operation's errors; the
+    /// error does not identify the invalid component. Neither this method
+    /// nor `check_key` tests that the factors are prime.
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_crt_unchecked(
+        n: &[u8],
+        e: &[u8],
+        d: &[u8],
+        p: &[u8],
+        q: &[u8],
+        dp: &[u8],
+        dq: &[u8],
+        qinv: &[u8],
+    ) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
+        if !super::precomputed::modulus_valid(n) {
+            return Err(Error::InvalidPrivateKey);
+        }
         let (p, q) = (trim(p), trim(q));
         if p.is_empty() || p.len() >= k || q.is_empty() || q.len() >= k {
             return Err(Error::InvalidPrivateKey);
@@ -162,7 +198,7 @@ impl PrivateKey {
         else {
             return Err(Error::InvalidPrivateKey);
         };
-        let key = PrivateKey {
+        Ok(PrivateKey {
             n: n.to_vec(),
             e: e.to_vec(),
             d: d.to_vec(),
@@ -171,12 +207,7 @@ impl PrivateKey {
             dp,
             dq,
             qinv,
-        };
-        if key.crt_valid() {
-            Ok(key)
-        } else {
-            Err(Error::InvalidPrivateKey)
-        }
+        })
     }
 
     /// Whether the key passes `from_crt`'s checks of its values:
@@ -353,8 +384,9 @@ impl PrivateKey {
     /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)` (the
     /// modulus and `e` were checked when the key was loaded). Like
     /// `RSA_check_key`, it does not check that `p` and `q` are prime. Loading
-    /// a key runs all of these checks but those of `d` (see
-    /// [`from_crt`](Self::from_crt)).
+    /// a key with [`from_crt`](Self::from_crt) runs all of these checks but
+    /// those of `d`; [`from_crt_unchecked`](Self::from_crt_unchecked) runs
+    /// none of the arithmetic checks.
     pub fn check_key(&self) -> bool {
         let k = self.n.len();
         let d = trim(&self.d);
@@ -464,8 +496,8 @@ impl PrivateKey {
                 scratch.len(),
             )
         };
-        // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
-        // the input is not below the modulus.
+        // For a key checked by `from_crt`, a refusal means the input is
+        // not below the modulus. An unchecked key may also be refused.
         match r {
             1 => Ok(()),
             2 => Err(Error::Fault),
@@ -677,6 +709,67 @@ mod tests {
         assert_eq!(c[..3], [&n[..], &[3][..], &[1][..]]);
         let again = PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
         assert_eq!(again.components(), c);
+    }
+
+    /// Construction can defer the arithmetic check without changing the
+    /// representation, and the operations still refuse a faulty result.
+    #[test]
+    fn unchecked_crt() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
+                let d = mul(ones, third);
+                let new =
+                    || PrivateKey::from_crt_unchecked(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                let key = new();
+                assert!(key.check_key());
+                let checked = PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                assert_eq!(key.components(), checked.components());
+                for x in [be(0, n.len()), be(1, n.len()), be(2, n.len())] {
+                    assert_eq!(private(&key, &x), private(&checked, &x));
+                }
+                // Unlike from_crt, the constructor accepts mismatched CRT
+                // components; check_key and the operation detect them.
+                for component in 1..6 {
+                    let mut values = [
+                        n.clone(),
+                        p.clone(),
+                        q.clone(),
+                        dp.clone(),
+                        dq.clone(),
+                        qi.clone(),
+                    ];
+                    *values[component].last_mut().unwrap() ^= 1;
+                    let [n, p, q, dp, dq, qi] = values;
+                    let bad = PrivateKey::from_crt_unchecked(&n, &[3], &d, &p, &q, &dp, &dq, &qi)
+                        .unwrap();
+                    assert!(!bad.check_key());
+                    assert!(private(&bad, &be(2, n.len())).is_err());
+                }
+                let mut wrong_n = n.clone();
+                wrong_n[1] ^= 1;
+                let bad = PrivateKey::from_crt_unchecked(&wrong_n, &[3], &d, &p, &q, &dp, &dq, &qi)
+                    .unwrap();
+                assert!(!bad.check_key());
+                assert_eq!(private(&bad, &be(1, n.len())), Err(Error::InputOutOfRange));
+                for d in [&[][..], &[0], &[1; 1025]] {
+                    let bad =
+                        PrivateKey::from_crt_unchecked(&n, &[3], d, &p, &q, &dp, &dq, &qi).unwrap();
+                    assert!(!bad.check_key());
+                }
+            }
+        }
+        let [n, p, q, dp, dq, qi] = composite(32, false);
+        for (p, q, dp, dq, qi) in [
+            (&[1][..], &q[..], &[0][..], &dq[..], &[0][..]),
+            (&p[..], &[1][..], &dp[..], &[0][..], &qi[..]),
+            (&p[..], &q[..], &dp[..], &dq[..], &p[..]),
+        ] {
+            let bad = PrivateKey::from_crt_unchecked(&n, &[3], &[1], p, q, dp, dq, qi).unwrap();
+            assert!(!bad.check_key());
+            assert!(private(&bad, &be(1, n.len())).is_err());
+        }
     }
 
     #[test]

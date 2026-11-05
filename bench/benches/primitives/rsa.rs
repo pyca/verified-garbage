@@ -213,6 +213,15 @@ fn keys(c: &mut Criterion) {
                     .unwrap()
             })
         });
+        g.bench(BenchmarkId::new("verified-garbage-unchecked", k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                PrivateKey::from_crt_unchecked(
+                    &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7],
+                )
+                .unwrap()
+            })
+        });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {
                 let v = black_box(&v)
@@ -238,6 +247,56 @@ fn keys(c: &mut Criterion) {
                     qInv: &v[7][..],
                 })
                 .unwrap()
+            })
+        });
+    }
+    g.finish();
+
+    // Callers that validate a loaded key should pay for the full check once.
+    let mut g = c.benchmark_group("rsa_from_crt_and_check");
+    for bits in [2048, 3072, 4096] {
+        let key = key_for(bits);
+        let v = [
+            key.n(),
+            key.e(),
+            key.d(),
+            key.p().unwrap(),
+            key.q().unwrap(),
+            key.dmp1().unwrap(),
+            key.dmq1().unwrap(),
+            key.iqmp().unwrap(),
+        ]
+        .map(|x| x.to_vec());
+        let k = v[0].len();
+        g.bench(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                let key =
+                    PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
+                        .unwrap();
+                assert!(key.check_key());
+                key
+            })
+        });
+        g.bench(BenchmarkId::new("verified-garbage-unchecked", k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                let key = PrivateKey::from_crt_unchecked(
+                    &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7],
+                )
+                .unwrap();
+                assert!(key.check_key());
+                key
+            })
+        });
+        g.bench(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| {
+                let [n, e, d, p, q, dp, dq, qi] = black_box(&v)
+                    .each_ref()
+                    .map(|x| BigNum::from_slice(x).unwrap());
+                let key = Rsa::from_private_components(n, e, d, p, q, dp, dq, qi).unwrap();
+                assert!(key.check_key().unwrap());
+                key
             })
         });
     }
