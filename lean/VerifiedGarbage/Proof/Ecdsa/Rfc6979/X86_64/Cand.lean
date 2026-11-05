@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 
 /-!
 # Deterministic ECDSA on x86-64: the candidate
@@ -246,5 +248,138 @@ theorem step_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} 
       exact (hL.stk_scr (by simp only [fT]; omega) (by decide)).symm
     · simp only [List.mem_singleton] at hr; subst hr
       exact (hL.stk_scr (by simp only [fTlen]; omega) (by decide)).symm
+
+/-- The number of `V`s in a candidate: `⌈Q / D⌉`. -/
+abbrev RfcHash.nV (P : RfcHash) : Nat := (P.Q + P.H.D - 1) / P.H.D
+
+theorem nV_lt (P : RfcHash) (j : Nat) : j + 1 < P.nV ↔ (j + 1) * P.H.D < P.Q := by
+  obtain ⟨-, -, -, -, -, -, hD16, -, -, -, -, -, -, -, hQ8, -, -, -⟩ := P.sizes
+  rw [RfcHash.nV, Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le (by omega), Nat.succ_mul (j + 1)]
+  omega
+
+theorem nV_facts (P : RfcHash) : 1 ≤ P.nV ∧ P.nV * P.H.D ≤ P.Q + P.H.D - 1 ∧ P.Q ≤ P.nV * P.H.D := by
+  obtain ⟨-, -, -, -, -, -, hD16, -, -, -, -, -, -, -, hQ8, -, -, -⟩ := P.sizes
+  have e₁ := Nat.div_mul_le_self (P.Q + P.H.D - 1) P.H.D
+  have e₂ := Nat.lt_mul_div_succ (P.Q + P.H.D - 1) (show 0 < P.H.D by omega)
+  have e₃ : 1 ≤ P.nV := (Nat.le_div_iff_mul_le (by omega)).mpr (by omega)
+  simp only [RfcHash.nV] at e₃ ⊢
+  generalize (P.Q + P.H.D - 1) / P.H.D = N at e₁ e₂ e₃ ⊢
+  rw [Nat.mul_succ, Nat.mul_comm] at e₂
+  omega
+
+/-- RFC 6979's number of blocks is `⌈Q / D⌉`. -/
+theorem nV_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.H.D = P.nV := by
+  obtain ⟨-, -, -, -, -, -, hD16, -, -, -, -, -, -, -, hQ8, -, -, -⟩ := P.sizes
+  have hl := P.R.nBits_len
+  have e₁ := Nat.div_mul_le_self (P.Q + P.H.D - 1) P.H.D
+  have e₂ := Nat.lt_mul_div_succ (P.Q + P.H.D - 1) (show 0 < P.H.D by omega)
+  rw [Spec.Ecdsa.Rfc6979.blocks]
+  simp only [RfcHash.nV, RfcHash.Q] at e₁ e₂ hQ8 ⊢
+  generalize (P.R.E.C.len + P.H.D - 1) / P.H.D = N at e₁ e₂ ⊢
+  rw [Nat.mul_succ, Nat.mul_comm] at e₂
+  have h₁ : N * (8 * P.H.D) = 8 * (N * P.H.D) := Nat.mul_left_comm _ _ _
+  have h₂ : (N + 1) * (8 * P.H.D) = 8 * (N * P.H.D) + 8 * P.H.D := by
+    rw [Nat.add_mul, Nat.one_mul, Nat.mul_left_comm]
+  exact Nat.div_eq_of_lt_le (by omega) (by omega)
+
+/-- The loop: `nV` `V`s. -/
+theorem loop_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} {u : State}
+    (hI : CI P L g m₀ t₀ K V₀ 0 u) :
+    WP isa (.loop (cfgOf P).candStep .b) u (CI P L g m₀ t₀ K V₀ P.nV) := by
+  obtain ⟨hN1, hND, -⟩ := nV_facts P
+  obtain ⟨-, -, -, -, -, -, -, hD64, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
+  refine WP.loop (M := isa) (fun (n : Nat) (s : State) => ∃ j, n = P.nV - j ∧ j < P.nV ∧ CI P L g m₀ t₀ K V₀ j s)
+    ?_ (P.nV - 0) u ⟨0, rfl, hN1, hI⟩
+  rintro n s ⟨j, rfl, hj, hIj⟩
+  have hb : (j + 1) * P.H.D ≤ 136 :=
+    Nat.le_trans (Nat.mul_le_mul (show j + 1 ≤ P.nV by omega) (Nat.le_refl P.H.D)) (by omega)
+  refine WP.mono (step_ok hL hT hb hIj) fun s' ⟨hI', hcf⟩ => ?_
+  by_cases hlt : j + 1 < P.nV
+  · exact .inr ⟨by show s'.cf = some true; rw [hcf, decide_eq_true ((nV_lt P j).mp hlt)],
+      P.nV - (j + 1), by omega, j + 1, rfl, hlt, hI'⟩
+  · refine .inl ⟨by show s'.cf = some false; rw [hcf, decide_eq_false (fun h => hlt ((nV_lt P j).mpr h))], ?_⟩
+    rw [show P.nV = j + 1 by omega]; exact hI'
+
+/-! ## The candidate -/
+
+theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p n).length = n := by
+  simp [Spec.Sha256.bytesAt]
+
+/-- The candidate: `nV` successive `V = HMAC_K(V)`, and `k`, whose number is
+`bits2int` of their concatenation, where `core` reads it. -/
+theorem cand_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
+    (hS : SavedK P L t.mem (kOf P L t.mem)) :
+    WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ Frame (CW L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
+      vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).2 ∧
+      Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (kArg P L) P.Q) =
+        Spec.Ecdsa.Rfc6979.bits2int P.R.E.C
+          (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 ∧
+      SavedK P L u.mem (kOf P L t.mem) := by
+  have he := L.he
+  obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, hQ8, hQ66, -, -⟩ := P.sizes
+  have hl := P.R.nBits_len
+  obtain ⟨-, hND, hQN⟩ := nV_facts P
+  rw [Cfg.cand]
+  refine WP.seq (WP.mono (tInit_ok hL hc) fun u₀ ⟨hc₀, hf₀, hl₀⟩ => ?_)
+  have kv0 : ∀ {o : Nat}, 24 ≤ o → o + P.H.D ≤ 152 →
+      Spec.Sha256.bytesAt u₀.mem (L.B + BitVec.ofNat 64 o) P.H.D =
+        Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 o) P.H.D := fun h₁ h₂ =>
+    bytesAt_frame hf₀ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint _ (.inl (by simp only [fTlen]; omega)) (by omega) (by simp only [fTlen]; omega))
+      (by omega)
+  have hI0 : CI P L g m₀ t (kOf P L t.mem) (vOf P L t.mem) 0 u₀ :=
+    { ctx := hc₀
+      frame := hf₀.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨⟨L.B, 160⟩, by simp, Offset.sub_base _ (by decide)⟩
+      k := kv0 (by decide) (by omega)
+      v := kv0 (by decide) (by omega)
+      len := by rw [hl₀, Nat.zero_mul]
+      t := by simp [Spec.Sha256.bytesAt, Spec.Ecdsa.Rfc6979.genT]
+      saved := hS.frame hf₀ fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (hL.stk_scr (by simp only [fTlen]; omega) (by decide)).symm }
+  refine WP.seq (WP.mono (loop_ok hL hT hI0) fun u₁ hI₁ => ?_)
+  have hTl := genT_length P (kOf P L t.mem) P.nV (vOf P L t.mem)
+  have hbits : Spec.Ecdsa.Rfc6979.bits2int P.R.E.C
+      (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
+      Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u₁.mem (kArg P L) P.Q) >>> P.R.sh := by
+    rw [Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
+      (by rw [hTl]; exact hQN),
+      show (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nV (vOf P L t.mem)).1 =
+        Spec.Sha256.bytesAt u₁.mem (kArg P L) (P.nV * P.H.D) from hI₁.t.symm,
+      ← bytesAt_take _ _ hQN, show 8 * P.Q - Spec.Ecdsa.nBits P.R.E.C = P.R.sh by rw [hl.2.2]]
+  cases hb : P.R.big
+  · have hsh : P.R.sh = 0 := by have := (P.R.sizesA hb).2.2.1; omega
+    rw [show (cfgOf P).candTop = [] by simp only [Cfg.candTop, show (cfgOf P).big = false from hb,
+      Bool.false_eq_true, ite_false], WP.block_nil_iff]
+    exact ⟨hI₁.ctx, hI₁.frame, hI₁.k, hI₁.v, by rw [hbits, hsh, Nat.shiftRight_zero], hI₁.saved⟩
+  · have hsh8 : P.R.sh < 8 := by omega
+    have hsh0 : P.R.sh ≠ 0 := by have := (P.R.sizesW hb); omega
+    refine WP.mono (candTop_ok hL hb hsh0 hsh8 hI₁.ctx) fun u ⟨hcu, hf, hbu⟩ => ?_
+    have kv : ∀ {o : Nat}, 24 ≤ o → o + P.H.D ≤ 152 →
+        Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 o) P.H.D =
+          Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 o) P.H.D := fun h₁ h₂ =>
+      bytesAt_frame hf (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hL.stk_scr (by omega) (by decide)
+        · exact Offset.disjoint _ (.inl (by simp only [fT]; omega)) (by omega) (by simp only [fT]; omega)) (by omega)
+    refine ⟨hcu, hI₁.frame.trans (hf.sub fun r hr => ?_), (kv (by decide) (by omega)).trans hI₁.k,
+      (kv (by decide) (by omega)).trans hI₁.v, ?_, ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨L.SCR, by simp, Offset.sub_base _ (by decide)⟩
+      · exact ⟨⟨L.B + BitVec.ofNat 64 (24 + fT), 136⟩, by simp, Region.sub_prefix (by omega)⟩
+    · rw [show kArg P L = L.B + BitVec.ofNat 64 (24 + fT) from rfl, hbu, hbits,
+        ofBytes_toBytes _ _ (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (by
+          have := ofBytes_lt (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 (24 + fT)) P.Q)
+          rwa [length_bytesAt] at this))]
+    · refine hI₁.saved.frame hf fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+      · exact (hL.stk_scr (by simp only [fT]; omega) (by decide)).symm
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

@@ -190,9 +190,6 @@ theorem cnt_ne {T i : Nat} (hT : T < 2 ^ 32) : BitVec.ofNat 64 (T - (i + 1)) ≠
   simp only [BitVec.toNat_ofNat, h0]
   omega_arith
 
-theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p n).length = n := by
-  simp [Spec.Sha256.bytesAt]
-
 /-- `core`'s signature is the candidate's: it reads the private key, its
 digest, and `k`, whose number is `bits2int` of the candidate. -/
 theorem coreSig_eq (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hdg : DgOk P L m₀ t.mem)
