@@ -376,6 +376,106 @@ theorem recognize_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo 
         (kept_word h₅ (d := recOff) (by simp only [recOff]; omega) (by decide) O).mono
     · rw [W, U₅.other _ (by decide), ea₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (recognize_lt _ _)]
 
+/-- The bit length of the bound's first nonzero byte, `n`, from its mask `2^n − 1`. -/
+theorem maskBits_ok (h : In Ex base bytes len args s) {n : Nat} (hn1 : 1 ≤ n) (hn8 : n ≤ 8)
+    (ht : w32 s.mem base tOff = 2 ^ n - 1) :
+    WP isa maskBits s fun u => u.gpr .eax = BitVec.ofNat 32 n ∧ u.mem = s.mem ∧ Keeps [.eax, .ecx] s u := by
+  have nb : numBase = 3336 := rfl
+  have p8 : 2 ^ n ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hn8
+  have half : ∀ m < 9, 1 ≤ m → (2 ^ m - 1) / 2 = 2 ^ (m - 1) - 1 := by decide
+  have zero : ∀ m < 9, (BitVec.ofNat 32 (2 ^ m - 1) == 0) = decide (m = 0) := by decide
+  unfold maskBits
+  refine WP.seq (wp_movS rfl fun s₁ U₁ _ => wp_movS (readW_ok (h.regs U₁.keeps U₁.mem) (d := tOff) (v := 2 ^ n - 1)
+    (by decide) (by rw [U₁.mem]; exact ht) (by omega)) fun s₂ U₂ _ => WP.block_nil ?_)
+  have K₂ : Keeps [.eax, .ecx] s s₂ := (U₁.keeps.mono (by decide)).widen U₂.keeps
+  refine WP.mono (KeyScan.count_loop (n := n) (by omega)
+    (fun j t => t.gpr .eax = BitVec.ofNat 32 j ∧ t.gpr .ecx = BitVec.ofNat 32 (2 ^ (n - j) - 1) ∧ t.mem = s.mem ∧
+      Keeps [.eax, .ecx] s t) (fun j hj t ⟨ea, ec, mt, Kt⟩ => ?_)
+    ⟨by rw [U₂.other _ (by decide), U₁.gpr]; rfl, by rw [U₂.gpr, Nat.sub_zero], by rw [U₂.mem, U₁.mem], K₂⟩)
+    fun t ⟨ea, _, mt, Kt⟩ => ⟨ea, mt, Kt⟩
+  have pj : 2 ^ (n - j) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+  have sh : BitVec.ofNat 32 (2 ^ (n - j) - 1) >>> 1 = BitVec.ofNat 32 (2 ^ (n - (j + 1)) - 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+      Nat.shiftRight_eq_div_pow, Nat.pow_one, half (n - j) (by omega) (by omega),
+      show n - j - 1 = n - (j + 1) by omega]
+    have : 2 ^ (n - (j + 1)) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+    rw [Nat.mod_eq_of_lt (by omega)]
+  refine wp_addS rfl fun t₁ V₁ _ => wp_shr (by decide) fun t₂ V₂ _ => wp_testS rfl fun t₃ V₃ z₃ =>
+    WP.block_nil ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [V₃.gpr, V₂.other _ (by decide), V₁.gpr, ea, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_add_ofNat]
+  · rw [V₃.gpr, V₂.gpr, V₁.other _ (by decide), ec, sh]
+  · rw [V₃.mem, V₂.mem, V₁.mem, mt]
+  · exact Kt.trans (((V₁.keeps.mono (by decide)).widen V₂.keeps).trans ((V₃.keeps []).mono (by decide)))
+  · rw [z₃, V₂.gpr, V₁.other _ (by decide), ec, sh, BitVec.and_self, zero _ (by omega)]
+    congr 1
+    exact decide_eq_decide.mpr (by omega)
+
+/-- The bound's bit length, from its first nonzero byte's: `8 (len − 1 − ld)` more. -/
+theorem boundBits_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len) {ld n : Nat}
+    (hld : w32 s.mem base ldOff = ld) (hl : ld < len) (he : s.gpr .eax = BitVec.ofNat 32 n) :
+    WP isa (.block boundBits) s fun u =>
+      u.gpr .eax = BitVec.ofNat 32 (n + 8 * (len - 1 - ld)) ∧ u.mem = s.mem ∧ Keeps [.eax, .ecx] s u := by
+  have nb : numBase = 3336 := rfl
+  have up := h.upper
+  unfold boundBits
+  refine wp_movS (h.arg (i := 3) (by decide)) fun s₁ U₁ _ => wp_subS rfl fun s₂ U₂ _ => ?_
+  have K₂ : Keeps [.ecx] s s₂ := U₁.keeps.trans U₂.keeps
+  have m₂ : s₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
+  refine wp_subS (readW_ok (h.regs K₂ m₂) (d := ldOff) (v := ld) (by decide) (by rw [m₂]; exact hld)
+    (by omega)) fun s₃ U₃ _ => wp_addS rfl fun s₄ U₄ _ => wp_addS rfl fun s₅ U₅ _ => wp_addS rfl fun s₆ U₆ _ =>
+      wp_addS rfl fun s₇ U₇ _ => WP.block_nil ⟨?_, ?_, ?_⟩
+  · have c₃ : s₃.gpr .ecx = BitVec.ofNat 32 (len - 1 - ld) := by
+      rw [U₃.gpr, U₂.gpr, U₁.gpr, h3, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    rw [U₇.gpr, U₆.other _ (by decide), U₆.gpr, U₅.gpr, U₄.gpr, c₃, U₅.other _ (by decide), U₄.other _ (by decide),
+      U₃.other _ (by decide), U₂.other _ (by decide), U₁.other _ (by decide), he]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  · rw [U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, m₂]
+  · exact (K₂.mono (by decide) : Keeps [.eax, .ecx] s s₂).trans (((((U₃.keeps.mono (by decide) :
+      Keeps [.eax, .ecx] s₂ s₃).widen U₄.keeps).widen U₅.keeps).widen U₆.keeps).widen U₇.keeps)
+
+/-- The width the code chooses: the recognized width `r` where it is not zero and below the bound's
+bit length `b`. -/
+def pick (r b : Nat) : Nat := if r = 0 then b else if r < b then r else b
+
+/-- The recognized width, where it is not zero and below the bound's bit length. -/
+theorem cap_ok (h : In Ex base bytes len args s) {r b : Nat} (hr : w32 s.mem base recOff = r) (hrl : r < 2 ^ 32)
+    (he : s.gpr .eax = BitVec.ofNat 32 b) (hb : b < 2 ^ 32) :
+    WP isa cap s fun u => u.gpr .eax = BitVec.ofNat 32 (pick r b) ∧ u.mem = s.mem ∧ Keeps [.eax, .edx] s u := by
+  have nb : numBase = 3336 := rfl
+  unfold cap
+  refine WP.seq (wp_movS (readW_ok h (d := recOff) (by simp only [recOff]; omega) hr hrl) fun s₁ U₁ _ =>
+    wp_testS rfl fun s₂ V₂ z₂ => WP.block_nil ?_)
+  have ed₂ : s₂.gpr .edx = BitVec.ofNat 32 r := by rw [V₂.gpr, U₁.gpr]
+  have ea₂ : s₂.gpr .eax = BitVec.ofNat 32 b := by rw [V₂.gpr, U₁.other _ (by decide), he]
+  have K₂ : Keeps [.edx] s s₂ := U₁.keeps.trans ((V₂.keeps []).mono (by decide))
+  have m₂ : s₂.mem = s.mem := by rw [V₂.mem, U₁.mem]
+  have z : (BitVec.ofNat 32 r &&& BitVec.ofNat 32 r == 0) = decide (r = 0) := by
+    rw [BitVec.and_self]
+    by_cases e : r = 0
+    · subst e; rfl
+    · simp only [e, decide_false, beq_eq_false_iff_ne, ne_eq]
+      intro c
+      have := congrArg BitVec.toNat c
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hrl] at this
+      exact e this
+  refine WP.ite (decide (r = 0)) (by show s₂.zf = _; rw [z₂, U₁.gpr, z]) (fun hz => WP.block_nil ?_) (fun hz => ?_)
+  · have e : r = 0 := of_decide_eq_true hz
+    refine ⟨by rw [ea₂, pick, ite_eq_left e], m₂, K₂.mono (by decide)⟩
+  · have e : r ≠ 0 := of_decide_eq_false hz
+    refine WP.seq (wp_cmp fun s₃ V₃ c₃ _ => WP.block_nil ?_)
+    rw [ed₂, ea₂, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hrl, Nat.mod_eq_of_lt hb] at c₃
+    refine WP.ite (decide (r < b)) c₃ (fun hc => wp_movS rfl fun s₄ U₄ _ => WP.block_nil ?_) (fun hc => WP.block_nil ?_)
+    · refine ⟨by rw [U₄.gpr, V₃.gpr, ed₂, pick, ite_eq_right e, ite_eq_left (of_decide_eq_true hc)],
+        by rw [U₄.mem, V₃.mem, m₂], (K₂.mono (by decide) : Keeps [.eax, .edx] s s₂).trans
+          (((V₃.keeps []).mono (by decide) : Keeps [.eax, .edx] s₂ s₃).widen U₄.keeps)⟩
+    · refine ⟨by rw [V₃.gpr, ea₂, pick, ite_eq_right e, ite_eq_right (of_decide_eq_false hc)], by rw [V₃.mem, m₂],
+        K₂.trans ((V₃.keeps []).mono (by decide)) |>.mono (by decide)⟩
+
 end
 
 end VG.Proof.Ffdh.X86.Cached
