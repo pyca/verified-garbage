@@ -476,6 +476,183 @@ theorem cap_ok (h : In Ex base bytes len args s) {r b : Nat} (hr : w32 s.mem bas
     · refine ⟨by rw [V₃.gpr, ea₂, pick, ite_eq_right e, ite_eq_right (of_decide_eq_false hc)], by rw [V₃.mem, m₂],
         K₂.trans ((V₃.keeps []).mono (by decide)) |>.mono (by decide)⟩
 
+/-- A word of the context written through `ecx = ctx`. -/
+theorem ctx_store (h : In Ex base bytes len args s) (C : CtxW base bytes len args s) (hc : s.gpr .ecx = args ctxArg)
+    {d : Nat} (hd : d + 4 ≤ 24) (r : Reg) {is : List Instr} {Q : State → Prop}
+    (k : ∀ u, In Ex base bytes len args u → CtxW base bytes len args u →
+      u.mem = s.mem.writeW (off (ctxAddr args) d) (s.gpr r) → u.gpr = s.gpr → Keeps [] s u →
+      Frame [ctxR args len] s.mem u.mem → WP isa (.block is) u Q) :
+    WP isa (.block (.store ⟨.ecx, d⟩ r :: is)) s Q := by
+  have afit := C.rd.afit
+  have nw := C.ws.nowrap
+  have ad : s.ea ⟨.ecx, d⟩ = off (ctxAddr args) d := by
+    rw [ea_mk, hc]; exact addr_eq (by simp only [ctxBytes] at afit; omega)
+  have cin : (ctxR args len).Contains (off (ctxAddr args) d) 4 :=
+    Offset.contains_base _ (by simp only [ctxBytes]; omega) (by omega)
+  refine wp_storeS ad ⟨_, C.ws.wr, cin⟩ fun u M => ?_
+  have F : Frame [ctxR args len] s.mem u.mem := by
+    rw [M.mem]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ cin
+  have K := M.keeps []
+  exact k u (KeyCut.in_keepOut h K (by decide) (by decide) F C.argsApart) (C.keep K) M.mem M.gpr K F
+
+/-- A header word written in CPS. -/
+theorem hdr_storeK (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ numBase) (r : Reg) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ u, In Ex base bytes len args u → u.mem = s.mem.writeW (off base d) (s.gpr r) → u.gpr = s.gpr →
+      Keeps [] s u → Outside base d 4 s.mem u.mem → WP isa (.block is) u Q) :
+    WP isa (.block (.store (sc d) r :: is)) s Q := by
+  have bl := h.bytes_lt
+  have nd := h.need
+  have nb : numBase = 3336 := rfl
+  have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
+  refine wp_storeS (h.scratch.ea (d := d) (by omega_arith)) (h.scratch.write (d := d) (n := 4) (by omega_arith))
+    fun u M => ?_
+  have O : Outside base d 4 s.mem u.mem := by rw [M.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  exact k u (h.keep (M.keeps []) (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_arith))) M.mem M.gpr
+    (M.keeps []) O
+
+/-- A word read through the write of another of the same base. -/
+theorem w32_other {m : Mem} {P : Addr} {d e : Nat} {v : BitVec 32} (hde : d + 4 ≤ e ∨ e + 4 ≤ d)
+    (hd : d + 4 ≤ 2 ^ 64) (he : e + 4 ≤ 2 ^ 64) : w32 (m.writeW (off P e) v) P d = w32 m P d :=
+  congrArg BitVec.toNat (Mem.readW_writeW_sep (Offset.sep P hde hd he) (by decide))
+
+/-- A word of a region read through a write of another, apart from it. -/
+theorem w32_far {m : Mem} {P Q : Addr} {d e n k : Nat} {v : BitVec 32}
+    (hR : Region.Disjoint ⟨P, n⟩ ⟨Q, k⟩) (hd : d + 4 ≤ n) (he : e + 4 ≤ k) (hn : n < 2 ^ 64) (hk : k < 2 ^ 64) :
+    w32 (m.writeW (off Q e) v) P d = w32 m P d :=
+  congrArg BitVec.toNat (Mem.readW_writeW_sep (hR.sep (Offset.contains_base _ hd (by omega))
+    (Offset.contains_base _ he (by omega))) (by decide))
+
+theorem w32_ofNat_self {m : Mem} {P : Addr} {d v : Nat} (hv : v < 2 ^ 32) :
+    w32 (m.writeW (off P d) (BitVec.ofNat 32 v)) P d = v := by
+  rw [w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
+
+/-- The width `W` and its metadata: to the header, its width and rows, and to the context's first six
+words, the width, its bytes and its rows, 64 bits each. -/
+theorem metadata_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len args s) {W : Nat}
+    (he : s.gpr .eax = BitVec.ofNat 32 W) (hW : W ≤ 8192) :
+    WP isa (.block metadata) s fun u => In Ex base bytes len args u ∧ CtxW base bytes len args u ∧
+      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Keeps [.eax, .ecx, .edx] s u ∧ w32 u.mem base bitsOff = W ∧
+      w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows W ∧
+      w32 u.mem (ctxAddr args) 0 = W ∧ w32 u.mem (ctxAddr args) 4 = 0 ∧
+      w32 u.mem (ctxAddr args) 8 = (W + 7) / 8 ∧ w32 u.mem (ctxAddr args) 12 = 0 ∧
+      w32 u.mem (ctxAddr args) 16 = Spec.Rsa.FixedBaseComb.rows W ∧ w32 u.mem (ctxAddr args) 20 = 0 := by
+  have nb : numBase = 3336 := rfl
+  have bl := h.bytes_lt
+  have nd := h.need
+  have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
+  have cb : 24 ≤ ctxBytes len := by simp only [ctxBytes]; omega
+  have cl : ctxBytes len < 2 ^ 64 := by have := C.ws.nowrap; omega
+  have ap := C.apart
+  have bo : bitsOff = 52 := rfl
+  have ro : rowsOff = 56 := rfl
+  have rw' : Spec.Rsa.FixedBaseComb.rows W = (W + 4) * 52429 / 2 ^ 18 := by
+    simp only [Spec.Rsa.FixedBaseComb.rows, Spec.Rsa.FixedBaseComb.teeth]; omega
+  have rl : Spec.Rsa.FixedBaseComb.rows W < 2 ^ 32 := by rw [rw']; omega
+  -- Through each kind of write.
+  have cc : ∀ {m : Mem} {d e : Nat} {v : BitVec 32}, d + 4 ≤ 24 → e + 4 ≤ 24 → (d + 4 ≤ e ∨ e + 4 ≤ d) →
+      w32 (m.writeW (off (ctxAddr args) e) v) (ctxAddr args) d = w32 m (ctxAddr args) d :=
+    fun hd he hde => w32_other hde (by omega) (by omega)
+  have cbw : ∀ {m : Mem} {d e : Nat} {v : BitVec 32}, d + 4 ≤ 24 → e + 4 ≤ bytes →
+      w32 (m.writeW (off base e) v) (ctxAddr args) d = w32 m (ctxAddr args) d :=
+    fun hd he => w32_far ap (by omega) he cl (by omega)
+  have bcw : ∀ {m : Mem} {d e : Nat} {v : BitVec 32}, d + 4 ≤ bytes → e + 4 ≤ 24 →
+      w32 (m.writeW (off (ctxAddr args) e) v) base d = w32 m base d :=
+    fun hd he => w32_far ap.symm hd (by omega) (by omega) cl
+  unfold metadata
+  refine hdr_storeK h (d := bitsOff) (by omega) .eax fun s₁ h₁ M₁ G₁ K₁ O₁ => ?_
+  have C₁ := C.keep K₁
+  refine wp_movS (h₁.arg (i := ctxArg) (by decide)) fun s₂ U₂ _ => ?_
+  have h₂ := h₁.regs U₂.keeps U₂.mem
+  have C₂ := C₁.keep U₂.keeps
+  refine ctx_store h₂ C₂ U₂.gpr (d := 0) (by decide) .eax fun s₃ h₃ C₃ M₃ G₃ K₃ F₃ => ?_
+  refine wp_movS rfl fun s₄ U₄ _ => wp_addS rfl fun s₅ U₅ _ => wp_shr (by decide) fun s₆ U₆ _ => ?_
+  have K₆ : Keeps [.edx] s₃ s₆ := ((U₄.keeps.widen U₅.keeps).widen U₆.keeps)
+  have m₆ : s₆.mem = s₃.mem := by rw [U₆.mem, U₅.mem, U₄.mem]
+  have h₆ := h₃.regs K₆ m₆
+  have C₆ := C₃.keep K₆
+  have ec₆ : s₆.gpr .ecx = args ctxArg := by
+    rw [U₆.other _ (by decide), U₅.other _ (by decide), U₄.other _ (by decide), G₃, U₂.gpr]
+  refine ctx_store h₆ C₆ ec₆ (d := 8) (by decide) .edx fun s₇ h₇ C₇ M₇ G₇ K₇ F₇ => ?_
+  refine wp_addS rfl fun s₈ U₈ _ => wp_movS rfl fun s₉ U₉ _ => wp_mul fun s₁₀ U₁₀ => wp_shr (by decide) fun s₁₁ U₁₁ _ => ?_
+  have K₁₁ : Keeps [.eax, .edx] s₇ s₁₁ := ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      rw [U₁₁.other _ hr.1, U₁₀.other _ hr.1 hr.2, U₉.other _ hr.2, U₈.other _ hr.1],
+    by rw [U₁₁.rd, U₁₀.rd, U₉.rd, U₈.rd], by rw [U₁₁.wr, U₁₀.wr, U₉.wr, U₈.wr]⟩
+  have m₁₁ : s₁₁.mem = s₇.mem := by rw [U₁₁.mem, U₁₀.mem, U₉.mem, U₈.mem]
+  have h₁₁ := h₇.regs K₁₁ m₁₁
+  have C₁₁ := C₇.keep K₁₁
+  have ea₁₁ : s₁₁.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows W) := by
+    rw [U₁₁.gpr, U₁₀.eax, U₉.gpr, U₉.other _ (by decide), U₈.gpr, G₇, U₆.other _ (by decide), U₅.other _ (by decide),
+      U₄.other _ (by decide), G₃, U₂.other _ (by decide), G₁, he]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_add, Nat.shiftRight_eq_div_pow]
+    rw [rw']
+    have : (52429 : BitVec 32).toNat = 52429 := rfl
+    have h4 : (4 : BitVec 32).toNat = 4 := rfl
+    rw [this, h4, Nat.mod_eq_of_lt (show W < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show W + 4 < 2 ^ 32 by omega),
+      Nat.mod_eq_of_lt (show (W + 4) * 52429 < 2 ^ 32 by omega),
+      Nat.mod_eq_of_lt (show (W + 4) * 52429 / 2 ^ 18 < 2 ^ 32 by omega)]
+  refine hdr_storeK h₁₁ (d := rowsOff) (by omega) .eax fun s₁₂ h₁₂ M₁₂ G₁₂ K₁₂ O₁₂ => ?_
+  have C₁₂ := C₁₁.keep K₁₂
+  refine wp_movS (h₁₂.arg (i := ctxArg) (by decide)) fun s₁₃ U₁₃ _ => ?_
+  have h₁₃ := h₁₂.regs U₁₃.keeps U₁₃.mem
+  have C₁₃ := C₁₂.keep U₁₃.keeps
+  refine ctx_store h₁₃ C₁₃ U₁₃.gpr (d := 16) (by decide) .eax fun s₁₄ h₁₄ C₁₄ M₁₄ G₁₄ K₁₄ F₁₄ => ?_
+  refine wp_movS rfl fun s₁₅ U₁₅ _ => ?_
+  have h₁₅ := h₁₄.regs U₁₅.keeps U₁₅.mem
+  have C₁₅ := C₁₄.keep U₁₅.keeps
+  have ec₁₅ : s₁₅.gpr .ecx = args ctxArg := by rw [U₁₅.other _ (by decide), G₁₄, U₁₃.gpr]
+  refine ctx_store h₁₅ C₁₅ ec₁₅ (d := 4) (by decide) .eax fun s₁₆ h₁₆ C₁₆ M₁₆ G₁₆ K₁₆ F₁₆ => ?_
+  refine ctx_store h₁₆ C₁₆ (by rw [G₁₆]; exact ec₁₅) (d := 12) (by decide) .eax fun s₁₇ h₁₇ C₁₇ M₁₇ G₁₇ K₁₇ F₁₇ => ?_
+  refine ctx_store h₁₇ C₁₇ (by rw [G₁₇, G₁₆]; exact ec₁₅) (d := 20) (by decide) .eax
+    fun u hu Cu Mu Gu Ku Fu => WP.block_nil ?_
+  have v3 : s₂.gpr .eax = BitVec.ofNat 32 W := by rw [U₂.other _ (by decide), G₁, he]
+  have v7 : s₆.gpr .edx = BitVec.ofNat 32 ((W + 7) / 8) := by
+    rw [U₆.gpr, U₅.gpr, U₄.gpr, G₃, v3]
+    apply BitVec.eq_of_toNat_eq
+    have h7 : (7 : BitVec 32).toNat = 7 := rfl
+    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_add, Nat.shiftRight_eq_div_pow, h7]
+    rw [Nat.mod_eq_of_lt (show W < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show W + 7 < 2 ^ 32 by omega),
+      Nat.mod_eq_of_lt (show (W + 7) / 2 ^ 3 < 2 ^ 32 by omega)]
+  have v14 : s₁₃.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows W) := by
+    rw [U₁₃.other _ (by decide), G₁₂, ea₁₁]
+  have v16 : s₁₅.gpr .eax = 0 := U₁₅.gpr
+  have v17 : s₁₆.gpr .eax = 0 := by rw [G₁₆, v16]
+  have vu : s₁₇.gpr .eax = 0 := by rw [G₁₇, v17]
+  have mu : u.mem = (((((((s.mem.writeW (off base bitsOff) (BitVec.ofNat 32 W)).writeW (off (ctxAddr args) 0)
+      (BitVec.ofNat 32 W)).writeW (off (ctxAddr args) 8) (BitVec.ofNat 32 ((W + 7) / 8))).writeW (off base rowsOff)
+      (BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows W))).writeW (off (ctxAddr args) 16)
+      (BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows W))).writeW (off (ctxAddr args) 4) (0 : BitVec 32)).writeW
+      (off (ctxAddr args) 12) (0 : BitVec 32)).writeW (off (ctxAddr args) 20) (0 : BitVec 32) := by
+    rw [Mu, vu, M₁₇, v17, M₁₆, v16, U₁₅.mem, M₁₄, v14, U₁₃.mem, M₁₂, ea₁₁, m₁₁, M₇, v7, m₆, M₃, v3, U₂.mem, M₁, he]
+  rw [U₂.mem] at F₃
+  rw [m₆] at F₇
+  rw [m₁₁] at O₁₂
+  rw [U₁₃.mem] at F₁₄
+  rw [U₁₅.mem] at F₁₆
+  have up : ∀ {m m' : Mem}, Frame [ctxR args len] m m' →
+      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+    fun F => F.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_self ..
+  have upB : ∀ {m m' : Mem}, Frame (frameR base (s.gpr .esp) (fR len)) m m' →
+      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+    fun F => F.mono fun r hr => List.mem_cons_of_mem _ hr
+  have Fb₁ := upB (fR_of_outside h O₁ (.inr ⟨by omega, by omega⟩))
+  have Fb₁₂ := upB (fR_of_outside h O₁₂ (.inr ⟨by omega, by omega⟩))
+  refine ⟨hu, Cu, ((((((Fb₁.trans (up F₃)).trans (up F₇)).trans Fb₁₂).trans (up F₁₄)).trans (up F₁₆)).trans
+      (up F₁₇)).trans (up Fu), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact (((((((((((((K₁.mono (by decide) : Keeps [.eax, .ecx, .edx] s s₁).widen U₂.keeps).widen K₃).widen K₆).widen
+      K₇).widen K₁₁).widen K₁₂).widen U₁₃.keeps).widen K₁₄).widen U₁₅.keeps).widen K₁₆).widen K₁₇).widen Ku)
+  · rw [mu, bcw, bcw, bcw, bcw, w32_other, bcw, bcw, w32_ofNat_self] <;> omega
+  · rw [mu, bcw, bcw, bcw, bcw, w32_ofNat_self] <;> omega
+  · rw [mu, cc, cc, cc, cc, cbw, cc, w32_ofNat_self] <;> omega
+  · rw [mu, cc, cc, w32_write_self] <;> first | rfl | omega
+  · rw [mu, cc, cc, cc, cc, cbw, w32_ofNat_self] <;> omega
+  · rw [mu, cc, w32_write_self] <;> first | rfl | omega
+  · rw [mu, cc, cc, cc, w32_ofNat_self] <;> omega
+  · rw [mu, w32_write_self]; rfl
+
 end
 
 end VG.Proof.Ffdh.X86.Cached
