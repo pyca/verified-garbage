@@ -352,14 +352,16 @@ def reduce : List Instr :=
     (List.range c.w).flatMap c.subWord ++ ([.sbc .x .x6 .x7 .x7] : List Instr) ++
     (List.range c.w).flatMap c.selWord
 
+/-- `conv`'s block, with `scratch` in `x0`. -/
+def convB (o s : Nat) : List Instr :=
+  .addSp .x6 o :: Impl.Weierstrass.AArch64.loadBytes c.len c.w sSlot .x6 ++
+    Impl.Weierstrass.AArch64.shrWords c.w sSlot s ++
+    ([.movz .x .x3 0 0, .subImm .x .x3 .x3 1] : List Instr) ++ Impl.Weierstrass.AArch64.storeBytes c.len c.w .x6 0 sSlot
+
 /-- The `Q` bytes at `sp + o`, as a big-endian number, shifted right by `s`
 bits in place (`0 < s < 64`), through the words at `scratch + sSlot`, with
 `scratch` in `x0` (loaded first) and `sp + o` in `x6`. -/
-def conv (o s : Nat) : Prog isa :=
-  .seq (.block [.ldrSp .x0 fScratch]) <| .block <|
-    .addSp .x6 o :: Impl.Weierstrass.AArch64.loadBytes c.len c.w sSlot .x6 ++
-      Impl.Weierstrass.AArch64.shrWords c.w sSlot s ++
-      ([.movz .x .x3 0 0, .subImm .x .x3 .x3 1] : List Instr) ++ Impl.Weierstrass.AArch64.storeBytes c.len c.w .x6 0 sSlot
+def conv (o s : Nat) : Prog isa := .seq (.block [.ldrSp .x0 fScratch]) (.block (c.convB o s))
 
 /-- The arguments of the copy of `core`'s digest, if `big`: it cleared;
 then `x13 = D`, the digest in `x11` and `fXc + Q - 1 - D` in `x12`. -/
