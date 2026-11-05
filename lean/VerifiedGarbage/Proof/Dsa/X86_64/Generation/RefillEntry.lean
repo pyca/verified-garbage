@@ -81,31 +81,31 @@ theorem headerA_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F)
 
 /-! ## The controller's words -/
 
-theorem ctl_contains (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) {k : Nat} (hk : k < 4) :
+theorem ctl_contains (F : Addr) {k : Nat} (hk : k < 4) :
     (ctlRegion F).Contains (off F (296 + 8 * k)) 8 :=
   Offset.contains F (e := 296) (by omega) (by omega) (by omega)
 
-theorem ctl_frame (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) :
+theorem ctl_frame (F : Addr) :
     (ctlRegion F).Disjoint ⟨F, frameBytes⟩ :=
   (Offset.base_disjoint F (e := 296) (n := 32) (k := frameBytes) (by decide) (by omega)).symm
 
-theorem ctl_below (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) :
+theorem ctl_below (F : Addr) :
     (ctlRegion F).Disjoint (below F 192) :=
   Offset.disjoint_below F (n := 192) (d := 296) (k := 32) (by omega)
 
-theorem ctl_write (m : Mem) (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) {k : Nat} (hk : k < 4) (v : BitVec 64) :
+theorem ctl_write (m : Mem) (F : Addr) {k : Nat} (hk : k < 4) (v : BitVec 64) :
     Frame [ctlRegion F] m (m.writeW (off F (296 + 8 * k)) v) :=
-  (Frame.refl _ _).writeW (List.mem_singleton_self _) v (ctl_contains F hb hk)
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) v (ctl_contains F hk)
 
 theorem ctlWord_frame {rs : List Region} {m m' : Mem} {F : Addr} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (ctlRegion F).Disjoint r) (hb : F.toNat + 328 ≤ 2 ^ 64) {k : Nat} (hk : k < 4) :
+    (hd : ∀ r ∈ rs, (ctlRegion F).Disjoint r) {k : Nat} (hk : k < 4) :
     ctlWord m' F k = ctlWord m F k :=
-  hf.readW (ctl_contains F hb hk) hd (by decide)
+  hf.readW (ctl_contains F hk) hd (by decide)
 
 theorem ctlWord_write_self (m : Mem) (F : Addr) (k : Nat) (v : BitVec 64) :
     ctlWord (m.writeW (off F (296 + 8 * k)) v) F k = v := Mem.readW_writeW_self64 ..
 
-theorem ctlWord_write_other (m : Mem) (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) {j k : Nat} (hj : j < 4)
+theorem ctlWord_write_other (m : Mem) (F : Addr) {j k : Nat} (hj : j < 4)
     (hk : k < 4) (hne : j ≠ k) (v : BitVec 64) :
     ctlWord (m.writeW (off F (296 + 8 * k)) v) F j = ctlWord m F j := by
   unfold ctlWord
@@ -113,10 +113,10 @@ theorem ctlWord_write_other (m : Mem) (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64)
     (by omega) (by omega)) (by decide)]
 
 theorem rep_ctl {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W)
-    (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩) (hb : F.toNat + 328 ≤ 2 ^ 64) {k : Nat} (hk : k < 4) (v : BitVec 64) :
+    (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩) {k : Nat} (hk : k < 4) (v : BitVec 64) :
     Rep (m.writeW (off F (296 + 8 * k)) v) F S V W :=
-  rep_of_disjoint_frame R (ctl_write m F hb hk v)
-    (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact (ctl_frame F hb).symm)
+  rep_of_disjoint_frame R (ctl_write m F hk v)
+    (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact (ctl_frame F).symm)
     (fun r hr => by rcases List.mem_singleton.mp hr with rfl; exact hS.symm)
 
 /-! ## The entry -/
@@ -128,34 +128,34 @@ def wordsA (W : Nat → BitVec 64) (g : Reg → BitVec 64) (pLen qLen : Nat) : N
     18 (BitVec.ofNat 64 qLen)) 28 (BitVec.ofNat 64 qLen)
 
 theorem chainA_rep {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (G : Geo F S)
-    (R : Rep m F S V W) (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩) (hb : F.toNat + 328 ≤ 2 ^ 64)
+    (R : Rep m F S V W) (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩)
     (g : Reg → BitVec 64) (pLen qLen : Nat) :
-    Rep (chainA m F g pLen qLen) F S V (wordsA W g pLen qLen) :=
-  (((((((((((((R.wf G (k := 6) (by decide) _).wf G (k := 7) (by decide) _).rep_ctl' hS hb).wf G (k := 8) (by decide) _).wf
+    Rep (chainA m F g pLen qLen) F S V (wordsA W g pLen qLen) := by
+  have R2 := (R.wf G (k := 6) (by decide) (g .rdi)).wf G (k := 7) (by decide) (g .rsi)
+  have R3 := rep_ctl R2 hS (k := 0) (by decide) (g .rdx)
+  exact ((((((((((R3.wf G (k := 8) (by decide) _).wf
     G (k := 9) (by decide) _).wf G (k := 13) (by decide) _).wf G (k := 15) (by decide) _).wf G (k := 11) (by decide)
     _).wf G (k := 12) (by decide) _).wf G (k := 10) (by decide) _).wf G (k := 5) (by decide) _).wf
     G (k := 17) (by decide) _).wf G (k := 18) (by decide) _).wf G (k := 28) (by decide) _
-where
-  Rep.rep_ctl' {m : Mem} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W)
-      (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩) (hb : F.toNat + 328 ≤ 2 ^ 64) :
-      Rep (m.writeW (off F 296) (g .rdx)) F S V W :=
-    rep_ctl R hS hb (k := 0) (by decide) _
 
-theorem chainA_frame (m : Mem) (F : Addr) (hb : F.toNat + 328 ≤ 2 ^ 64) (g : Reg → BitVec 64) (pLen qLen : Nat) :
+theorem chainA_frame (m : Mem) (F : Addr) (g : Reg → BitVec 64) (pLen qLen : Nat) :
     Frame [⟨F, frameBytes⟩, ctlRegion F] m (chainA m F g pLen qLen) := by
   have fc : ∀ d, d + 8 ≤ frameBytes → (⟨F, frameBytes⟩ : Region).Contains (off F d) 8 := fun d hd =>
-    Offset.contains_base F hd (by omega)
+    Offset.contains_base F hd (by unfold frameBytes at hd; omega)
   unfold chainA
   refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW
     (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
     (List.mem_cons_self ..) _ (fc 48 (by decide))) (List.mem_cons_self ..) _ (fc 56 (by decide)))
-    (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (ctl_contains F hb (k := 0) (by decide)))
+    (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (ctl_contains F (k := 0) (by decide)))
     (List.mem_cons_self ..) _ (fc 64 (by decide))) (List.mem_cons_self ..) _ (fc 72 (by decide)))
     (List.mem_cons_self ..) _ (fc 104 (by decide))) (List.mem_cons_self ..) _ (fc 120 (by decide)))
     (List.mem_cons_self ..) _ (fc 88 (by decide))) (List.mem_cons_self ..) _ (fc 96 (by decide)))
     (List.mem_cons_self ..) _ (fc 80 (by decide))) (List.mem_cons_self ..) _ (fc 40 (by decide)))
     (List.mem_cons_self ..) _ (fc 136 (by decide))) (List.mem_cons_self ..) _ (fc 144 (by decide)))
     (List.mem_cons_self ..) _ (fc 224 (by decide))
+
+theorem ea_at0' (t : State) (b : Reg) : t.ea (at0 b) = t.gpr b := by
+  simp only [State.ea, at0, BitVec.ofInt_ofNat, BitVec.add_zero]
 
 theorem headerB_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F) (hctl : ctlRegion F ∈ s.wr)
     (hb : F.toNat + 328 ≤ 2 ^ 64) {a v : BitVec 64}
@@ -169,6 +169,6 @@ theorem headerB_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F) (hctl : ctlRegi
   have c2 : InRegions s.wr (off F 312) 8 := by simpa [off_off] using cs.st (d := 16) (by decide)
   refine WP.keep [.rax] ?_ rfl
   xrun [headerB, Impl.Dsa.X86_64.Generation.Refill.ctl, Impl.Dsa.X86_64.Generation.Refill.frameBytes,
-    ea_sp, ea_at0, at0, hsp, c1, c2, ha, hav, hv, hvv]
+    ea_sp, ea_at0', hsp, c1, c2, ha, hav, hv, hvv]
 
 end VG.Proof.Dsa.X86_64.Generation.Refill
