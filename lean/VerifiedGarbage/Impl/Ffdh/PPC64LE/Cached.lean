@@ -63,14 +63,13 @@ def rowPtr : List Instr :=
   [ldh .r8 hCtx, .lsr .d .r9 .r11 1, .mul .r9 .r9 .r3, .lsl .r9 .r9 3, .add .r8 .r8 .r9,
     .addi .r8 .r8 24]
 
-/-- Array `a`'s `w` words to the context's row `r3` (`selectAcc64` of a
-source with itself). -/
+/-- Array `a`'s `w` words to the context's row `r3`. -/
 def storeRow (a : Nat) : Prog isa :=
-  .seq (.block (rowPtr ++ [.addi .r5 .r8 0] ++ base .r8 a ++ base .r9 a)) selectAcc64
+  .seq (.block (rowPtr ++ [.addi .r14 .r8 0] ++ base .r15 a)) VG.Impl.Bignum.PPC64LE.Precompute.copyWords
 
 /-- The context's row `r3` to array `a`'s `w` words. -/
 def loadRow (a : Nat) : Prog isa :=
-  .seq (.block (rowPtr ++ [.addi .r9 .r8 0] ++ base .r5 a)) selectAcc64
+  .seq (.block (rowPtr ++ [.addi .r15 .r8 0] ++ base .r14 a)) VG.Impl.Bignum.PPC64LE.Precompute.copyWords
 
 namespace Precompute
 
@@ -204,20 +203,25 @@ def tooth (j : Nat) : Prog isa :=
 def digit : Prog isa :=
   .seq (.block [.li .r16 0]) (.seq (seqs ((List.range 5).map tooth)) (.block [sth .r16 hD]))
 
-/-- Entry `e` (the header's `hJ`) into array 5 under the mask of `e = d`. -/
-def selectStep : Prog isa :=
-  .seq (.block ([ldh .r3 hJ, .addi .r3 .r3 2] ++ rowPtr ++ base .r9 5 ++
-      [.addi .r5 .r9 0, ldh .r0 hJ, ldh .r4 hD, .logic .xor .r0 .r0 .r4, .subi .r0 .r0 1,
-        .lsr .d .r0 .r0 63, .li .r4 0, .sub .r20 .r4 .r0]))
-    (.seq selectAcc64 (.block [ldh .r3 hJ, .addi .r3 .r3 1, sth .r3 hJ, .subi .r3 .r3 32]))
+/-- Entry `e` (the header's `hJ`) into array 3, then array `o :=` it if
+`e = d`, else array `t`; `e` advanced. -/
+def selEntry (o t : Nat) : Prog isa :=
+  .seq (.block ([ldh .r3 hJ, .addi .r3 .r3 2] ++ rowPtr ++ [.addi .r15 .r8 0] ++ base .r14 3))
+    (.seq VG.Impl.Bignum.PPC64LE.Precompute.copyWords
+      (.seq (.block ([ldh .r0 hJ, ldh .r4 hD, .logic .xor .r0 .r0 .r4, .subi .r0 .r0 1, .lsr .d .r0 .r0 63,
+          .li .r4 0, .sub .r20 .r4 .r0] ++ base .r8 3 ++ base .r9 t ++ base .r5 o))
+        (.seq selectAcc64 (.block [ldh .r3 hJ, .addi .r3 .r3 1, sth .r3 hJ]))))
 
-/-- Array 5 `:=` the digit's entry, reading every entry. -/
+/-- Array 4 `:=` the digit's entry, reading every entry: two at a time,
+alternately into arrays 5 and 4, from 0 in array 4. -/
 def select : Prog isa :=
-  .seq (.block (base .r14 5)) (.seq VG.Impl.Bignum.PPC64LE.Precompute.zeroWords
-    (.seq (.block [.li .r3 0, sth .r3 hJ]) (.loop selectStep (.nonzero .d .r3))))
+  .seq (.block (base .r14 4)) (.seq VG.Impl.Bignum.PPC64LE.Precompute.zeroWords
+    (.seq (.block [.li .r3 0, sth .r3 hJ])
+      (.loop (.seq (selEntry 5 4) (.seq (selEntry 4 5) (.block [ldh .r3 hJ, .subi .r3 .r3 32])))
+        (.nonzero .d .r3))))
 
 /-- One row: the square, the digit's entry and the product. -/
-def step : Prog isa := seqs [montOp 6 6 6, digit, select, montOp 6 6 5,
+def step : Prog isa := seqs [montOp 6 6 6, digit, select, montOp 6 6 4,
   .block [ldh .r3 hI, .subi .r3 .r3 1, sth .r3 hI]]
 
 /-- `g^x mod p` into array 4, by the context's comb: `R² mod p` from the
