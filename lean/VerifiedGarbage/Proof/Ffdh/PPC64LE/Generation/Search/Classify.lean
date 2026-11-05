@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Call
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -316,7 +317,7 @@ theorem request_value {p : SPub} {original s : State} {used k : Nat} (h : SLive 
     List.take_zero]
   prun [ldf, h.r31, hv2, hv6, hv11, a.ld 16 (by decide), a.ld 48 (by decide), a.ld 88 (by decide),
     shl8_ofNat, m1, e2, m2]
-  unfold parameterRequest
+  unfold parameterRequest Entropy.request
   rw [show p.len * 256 = 256 * ((p.bits + 7) / 8) by omega_arith]
 
 theorem search_request {p : SPub} {original s : State} {used k : Nat}

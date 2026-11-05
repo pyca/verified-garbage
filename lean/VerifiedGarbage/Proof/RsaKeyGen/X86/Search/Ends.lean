@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Leaf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86.Common
@@ -24,7 +25,7 @@ open VG VG.X86
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly)
 open VG.Impl.RsaKeyGen.X86.Search
 open VG.Impl.Mont.X86 (at_)
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeLimit primeRequest)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeLimit)
 
 /-- Writes to `out` keep the frame and what the search may write. -/
 theorem out_changes {o : State} {m m' : Mem} (h : Frame [oR o] m m') : Frame (changes o) m m' :=
@@ -126,7 +127,7 @@ theorem request_ok {p : SearchPublic} {o s : State} {left : Nat} (h : SearchBase
     · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hl))]; congr 1; omega
     · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hl))]; congr 1; omega
   rw [hm, double32, toNat_small32 (show 2 * max left (16 * p.len) < 2 ^ 32 by omega)]
-  unfold primeRequest Spec.Entropy.request primeEntropy
+  unfold primeRequest Entropy.request primeEntropy
   by_cases hc : 32769 * p.len < 2 * max left (16 * p.len)
   · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hc))]; congr 1; omega
   · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hc))]; congr 1; omega
@@ -159,7 +160,7 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
     (hk : k ≤ p.remaining)
     (hout : Spec.Rsa.bytesAt s.mem (p.op.setWidth 64) p.len = List.replicate p.len 0) (tr : List Nat) :
     WP isa short s (SearchDone p o (if primeEntropy p.len ≤ p.randLen - used then ⟨.exhausted, used, tr⟩
-      else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used, tr⟩)) := by
+      else ⟨.entropy k (p.randLen - used), used, tr⟩)) := by
   have hi := h.input
   have f := hi.facts
   have hv := hi.len_valid
@@ -189,6 +190,7 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
       fun t ⟨⟨h10, h11, hmt⟩, kt, syt⟩ => ⟨hu'.step kt (by decide) syt hmt, (kt.gpr (by decide)).trans hsi',
         (kt.gpr (by decide)).trans ((k'.gpr (by decide)).trans hdi), h10, h11,
         by rw [hmt, hm]; exact hout, hu, hk, by
-          unfold primeRequest Spec.Entropy.request; exact Nat.min_le_right _ _⟩
+          show primeRequest p.len (p.randLen - used) ≤ _
+          unfold primeRequest Entropy.request; exact Nat.min_le_right _ _⟩
 
 end VG.Proof.RsaKeyGen.X86.Search

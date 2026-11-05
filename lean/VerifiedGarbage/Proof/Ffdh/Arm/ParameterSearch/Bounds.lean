@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Spec.Ffdh.Generation
 
@@ -48,9 +49,9 @@ theorem Policy.double_fits {bits available : Nat} (h : Policy bits)
   omega
 
 theorem Policy.request_bounds {bits available : Nat} (h : Policy bits) :
-    512 * ((bits + 7) / 8) ≤ Spec.Ffdh.parameterRequest bits available ∧
-      Spec.Ffdh.parameterRequest bits available ≤ Spec.Ffdh.parameterEntropy bits := by
-  unfold Spec.Ffdh.parameterRequest Spec.Ffdh.parameterEntropy
+    512 * ((bits + 7) / 8) ≤ parameterRequest bits available ∧
+      parameterRequest bits available ≤ Spec.Ffdh.parameterEntropy bits := by
+  unfold parameterRequest Entropy.request Spec.Ffdh.parameterEntropy
   have width := h.width_bounds
   have maximum := Nat.le_max_right available (256 * ((bits + 7) / 8))
   constructor

@@ -17,13 +17,17 @@ def parameterInitSig : Sig where
   params := [("state", .array true .u64 4), ("p_len", .int .usize true)]
   ret := some .u32
 
-/-- `parameterInit`: 1 and its four words, or 0 and four zeros. -/
+/-- `parameterInit`: 1, its three words and the first tape's length, any that
+`Entropy.RequestValid` allows with no octets available, or 0 and four
+zeros. -/
 def parameterInitContract {M : ISA} (A : Abi M) : Contract M :=
   parameterInitSig.contract A
     (post := fun state pLen _m m' r =>
       match parameterInit pLen.toNat with
       | none => r.toNat = 0 ∧ wordsAt m' state 4 = List.replicate 4 0
-      | some values => r.toNat = 1 ∧ wordsAt m' state 4 = values.map (BitVec.ofNat 64))
+      | some values => r.toNat = 1 ∧ ∃ first,
+        wordsAt m' state 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
+        Entropy.RequestValid (parameterEntropy pLen.toNat) 0 first)
     (leak := some fun _state _pLen _m => [])
 
 def parameterInitApi : Api where
@@ -55,8 +59,9 @@ def parameterSearchSig : Sig where
 modulus width in `state[1]`: its status (`Entropy.Outcome.status`), the
 parameters `p || q || g` at `out` (zeros otherwise), the octets it consumed at
 `used`, and the state for the next call, whose last word is the next tape's
-length (0 if there is none). Everything here is public: its timing may depend
-on all of it, the tape included. -/
+length: any that `Entropy.Result.Requests` allows (0 if there is none).
+Everything here is public: its timing may depend on all of it, the tape
+included. -/
 def parameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   parameterSearchSig.contract A
     (pre := fun _out outLen _used _rand randLen _scratch scratchLen state m =>
@@ -76,8 +81,10 @@ def parameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
           | .accepted a => encodeParams pLen (generationQLen pLen) a
           | _ => List.replicate outLen.toNat 0) ∧
       wordsAt m' used 1 = [BitVec.ofNat 64 result.used] ∧
-      wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 pLen,
-        BitVec.ofNat 64 (parameterEntropy pLen), BitVec.ofNat 64 result.requested])
+      ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
+        BitVec.ofNat 64 pLen, BitVec.ofNat 64 (parameterEntropy pLen),
+        BitVec.ofNat 64 requested] ∧
+        result.Requests (parameterEntropy pLen) requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _used rand randLen _scratch _scratchLen state m =>
       (wordsAt m state 4).map (·.toNat) ++ (bytesAt m rand randLen.toNat).map (·.toNat))
@@ -95,9 +102,10 @@ def parameterSearchApi : Api where
     `out` once parameters are found; 3 if the search is exhausted, by too many rejected \
     seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out \
     inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for \
-    the next call to `state`, whose last word is, for 0, the length of the next tape: \
-    keep the octets of `rand` after the first `used`, in order, and append fresh random \
-    octets up to that length. `out` is zeros but for 1. Accepted parameters pass \
+    the next call to `state`, whose last word is, for 0, the length of the next tape, \
+    more than the octets of `rand` after the first `used` and at most the entropy \
+    budget: keep those octets, in order, and append fresh random octets up to that \
+    length. `out` is zeros but for 1. Accepted parameters pass \
     probable-prime tests, not primality certification.\n\n\
     Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, \
     `rand` included: these are public domain parameters."

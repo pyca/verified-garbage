@@ -33,8 +33,10 @@ def sievedParameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
           | .accepted p _ => i2osp p outLen.toNat
           | _ => List.replicate outLen.toNat 0) ∧
       wordsAt m' used 1 = [BitVec.ofNat 64 result.used] ∧
-      wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 outLen.toNat,
-        BitVec.ofNat 64 (parameterEntropy bits.toNat), BitVec.ofNat 64 result.requested])
+      ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
+        BitVec.ofNat 64 outLen.toNat, BitVec.ofNat 64 (parameterEntropy bits.toNat),
+        BitVec.ofNat 64 requested] ∧
+        result.Requests (parameterEntropy bits.toNat) requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _used _bits _generator rand randLen _scratch _scratchLen state m =>
       (bytesAt m rand randLen.toNat).map (·.toNat) ++ (wordsAt m state 4).map (·.toNat))

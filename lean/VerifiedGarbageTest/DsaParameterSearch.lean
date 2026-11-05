@@ -44,8 +44,9 @@ def rejectedSeeds (pLen : Nat) : Nat → Rand → Except String Nat
     | some (none, rest) => return (← rejectedSeeds pLen fuel rest) + 1
 
 /-- Serve the search from one stream as a host would: each tape keeps what
-the last one did not consume and takes the stream's next octets up to the
-requested length. The parameters and the stream's octets consumed. `fuel`
+the last one did not consume and takes the stream's next octets, here to
+twice as many as were left and one more: any length more than the octets left
+is one the search may ask for. The parameters and the stream's octets consumed. `fuel`
 bounds this test, not the search. -/
 def refill (pLen : Nat) (source : Rand) : Nat → Nat → Nat → Nat →
     Except String (Params × Nat)
@@ -57,10 +58,10 @@ def refill (pLen : Nat) (source : Rand) : Nat → Nat → Nat → Nat →
       match r.outcome with
       | .accepted a => .ok (a, offset + r.used)
       | .exhausted => .error "unexpected exhausted search"
-      | .entropy left next =>
-        if r.used > tape.length || next ≤ tape.length - r.used then
-          .error "consumed more than the tape, or asked for no fresh octets"
-        else refill pLen source fuel left (offset + r.used) next
+      | .entropy left available =>
+        if r.used > tape.length || available != tape.length - r.used then
+          .error "consumed more than the tape, or miscounted the octets left"
+        else refill pLen source fuel left (offset + r.used) (2 * available + 1)
 
 def check : Except String Unit := do
   let pLen := 128
@@ -72,8 +73,8 @@ def check : Except String Unit := do
     throw "the parameters are invalid or of the wrong widths"
   unless direct.trace == [] do throw "the trace is not empty"
   let used := direct.used
-  -- Starting from one octet and following the requests: the same.
-  unless (← refill pLen source 100 parameterSeeds 0 1) == (a, used) do
+  -- Starting from one octet and refilling: the same.
+  unless (← refill pLen source 10000 parameterSeeds 0 1) == (a, used) do
     throw "refills changed the parameters or the octets consumed"
   -- A tape ending where the accepted seed ends is enough; one octet less is
   -- not, and consumes nothing of that seed.
@@ -96,8 +97,8 @@ def check : Except String Unit := do
   unless parameterSearch pLen 0 source == ⟨.exhausted, 0, []⟩ do
     throw "an exhausted search consumed octets"
   unless parameterSearch pLen parameterSeeds [] ==
-      ⟨.entropy parameterSeeds (512 * pLen), 0, []⟩ do
-    throw "an empty tape did not ask for the first request's length"
+      ⟨.entropy parameterSeeds 0, 0, []⟩ do
+    throw "an empty tape did not ask for more"
 
 /-- The entropy budget, on a one-octet modulus width (so that the budget is
 a few thousand octets): a seed whose `q` passes trial division, followed by
@@ -113,16 +114,14 @@ def checkEntropyBudget : Except String Unit := do
   unless parameterSearch 1 1 tape == ⟨.exhausted, 0, []⟩ do
     throw "the budget let a seed through without enough uniform witnesses"
   let short := parameterSearch 1 1 (tape.take (parameterEntropy 1 - 1))
-  unless short == ⟨.entropy 1 (parameterEntropy 1), 0, []⟩ do
+  unless short == ⟨.entropy 1 (parameterEntropy 1 - 1), 0, []⟩ do
     throw "below the budget, the seed was not kept for a refill"
 
 def checkInit : Except String Unit := do
   for pLen in [128, 256, 384] do
     unless parameterInit pLen ==
-        some [parameterSeeds, pLen, parameterEntropy pLen, 512 * pLen] do
+        some [parameterSeeds, pLen, parameterEntropy pLen] do
       throw "a supported width's words are wrong"
-    unless parameterRequest pLen (parameterEntropy pLen - 1) == parameterEntropy pLen do
-      throw "requests do not grow to the budget"
   for pLen in [0, 20, 32, 127, 192, 512] do
     unless parameterInit pLen == none do throw "an unsupported width was accepted"
   unless generationQLen 128 == 20 && generationQLen 256 == 32 && generationQLen 384 == 32 &&

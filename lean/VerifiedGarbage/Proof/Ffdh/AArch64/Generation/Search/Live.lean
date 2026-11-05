@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
@@ -142,7 +143,7 @@ theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used
 theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
     (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = none) :
     p.tail used k = if parameterEntropy p.bits ≤ p.randLen - used then .exhausted used
-      else .entropy k (parameterRequest p.bits (p.randLen - used)) used := by
+      else .entropy k (p.randLen - used) used := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
   split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]

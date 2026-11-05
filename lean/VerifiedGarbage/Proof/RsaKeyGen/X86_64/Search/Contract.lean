@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation
 import VerifiedGarbage.TCB.X86_64.Isa
@@ -71,9 +72,10 @@ def searchPost (s t : State) : Prop :=
         | .accepted c => i2osp c (searchLen s)
         | _ => List.replicate (searchLen s) 0) ∧
     wordsAt t.mem (s.gpr .rdx) 1 = [BitVec.ofNat 64 (searchResult s).used] ∧
-    wordsAt t.mem (stackArg s 5) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
+    ∃ requested, wordsAt t.mem (stackArg s 5) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (searchLen s), BitVec.ofNat 64 (primeEntropy (searchLen s)),
-      BitVec.ofNat 64 (searchResult s).requested]
+      BitVec.ofNat 64 requested] ∧
+      (searchResult s).Requests (primeEntropy (searchLen s)) requested
 
 /-- What timing may depend on: the arguments but the octets of `p` and the
 tape, `e`, the state's public words, and the result's status, consumption,
@@ -85,7 +87,7 @@ def searchPub (s t : State) : Prop :=
     (∀ j < 6, stackArg s j = stackArg t j) ∧
     searchE s = searchE t ∧ wordsAt s.mem (stackArg s 5) 4 = wordsAt t.mem (stackArg t 5) 4 ∧
     (searchResult s).status = (searchResult t).status ∧ (searchResult s).used = (searchResult t).used ∧
-    (searchResult s).requested = (searchResult t).requested ∧
+    (requested (searchLen s) (searchResult s)) = (requested (searchLen t) (searchResult t)) ∧
     (searchResult s).trace = (searchResult t).trace
 
 def searchContract : Contract isa where

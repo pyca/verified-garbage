@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Input
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Sat
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -62,7 +63,8 @@ theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
   rw [BitVec.setWidth_append_eq_right]
   simp only [args.out, args.used, args.tape, args.control, widthNat, bitsNat, genNat, tapeNat, bytes, attemptsNat]
   rw [← same]
-  refine ⟨?_, result.output, result.used, result.policy⟩
+  refine ⟨?_, result.output, result.used, _, result.policy,
+    by rw [same]; exact SievedGeneration.search_requests _ _ _ _⟩
   rw [result.status, BitVec.toNat_ofNat, Nat.mod_eq_of_lt statusFits]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
