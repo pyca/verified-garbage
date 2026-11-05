@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.TopCT
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
@@ -71,12 +72,12 @@ theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-            Spec.GcmSiv.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi,
+            Proof.AesGcmSiv.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi,
             PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-            Spec.GcmSiv.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi,
+            Proof.AesGcmSiv.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi,
             PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
           sig_and_intros
           sig_close
@@ -87,17 +88,17 @@ theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
             | bv_omega
         post := by
           sig_implies_post [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
             PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
         pub := by
           sig_implies_pub [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
             PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig,
-            Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
+            Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds,
             PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
             List.range.loop]
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
@@ -108,12 +109,12 @@ theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
       { pre := by
           intro s h
           sig_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openOut,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openOut,
             args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD,
             List.range, List.range.loop] at h
           sig_split h
           sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openOut,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openOut,
             args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD,
             List.range, List.range.loop]
           sig_and_intros
@@ -129,11 +130,11 @@ theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
         post := by
           intro s s' _ h
           sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes,
             args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD,
             List.range, List.range.loop]
           sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
-            Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes,
+            Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes,
             args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD,
             List.range, List.range.loop] at h
           intro _
@@ -141,12 +142,12 @@ theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
           split at h <;> rename_i heq <;> rw [heq] <;> exact h
         pub := by
           sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-            Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay,
             onePub, openRes, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg,
             PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
         sat := by
           sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-            Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openPPC64LE, openPre, oneLay,
             onePub, openRes, openOut, args, rounds, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg,
             PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
             [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat }
@@ -158,18 +159,18 @@ working space: no stack arguments. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩], wr := [⟨0x4000, 0⟩, ⟨0x4800, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract PPC64LE.abi 3936).pre s := by
-  implies_sat [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Spec.GcmSiv.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 3936).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «seal»)
-      (Spec.GcmSiv.sealContract PPC64LE.abi 3936) :=
+      (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.sealPre PPC64LE.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
+    (post := Proof.AesGcmSiv.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
     (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
     sealFrameSat_pre
 
@@ -178,18 +179,18 @@ working space: no stack arguments. -/
 def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4800, 16⟩], wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract PPC64LE.abi 3936).pre s := by
-  implies_sat [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Spec.GcmSiv.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 3936).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «open»)
-      (Spec.GcmSiv.openContract PPC64LE.abi 3936) :=
+      (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 3936) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.openPre PPC64LE.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
+    (post := Proof.AesGcmSiv.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak PPC64LE.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)
