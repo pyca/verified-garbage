@@ -34,7 +34,7 @@
 //! [`generate_prime_from`] does the same with given random octets, which it
 //! reads as one stream, each candidate from where the last one stopped.
 //!
-//! On x86-64, AArch64, ARMv7, PPC64LE and RISC-V, the verified `vg_rsa_prime_search` (contract
+//! The verified `vg_rsa_prime_search` (contract
 //! `VG.Spec.RsaKeyGen.primeSearchContract`) runs the candidates, counts the
 //! rejected ones and chooses how many random octets to ask for when they run
 //! out, from the state `vg_rsa_prime_search_init` makes
@@ -42,8 +42,7 @@
 //! `vg_rsa_prime_search_adx` is its variant for `Adx` and `Ifma`, and on
 //! ARMv7, `vg_rsa_prime_search_umaal` for `Umaal`. A candidate may read at most the search's
 //! entropy budget (`VG.Spec.RsaKeyGen.primeEntropy`) of the stream, past which
-//! the generation fails as with too many rejected candidates. Elsewhere this
-//! module runs and counts the candidates itself.
+//! the generation fails as with too many rejected candidates.
 //!
 //! [`key_from_primes`] derives the private key from its two primes and the
 //! public exponent, as BoringSSL's `rsa_generate_key_impl` does after
@@ -58,8 +57,7 @@
 //!
 //! This module only checks the lengths and the exponent, allocates the
 //! memory the candidates and the key are computed in, gives the search its
-//! random octets, counts the candidates (but on x86-64, AArch64, ARMv7,
-//! PPC64LE and RISC-V) and the generations, and compares the pairwise test's
+//! random octets, counts the generations, and compares the pairwise test's
 //! result with its message.
 
 #![cfg(all(
@@ -78,14 +76,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-)))]
-use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
 use crate::arch::rsa_keygen::vg_rsa_keygen_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
@@ -100,13 +90,6 @@ use crate::arch::rsa_keygen::vg_rsa_prime_search_adx;
     )
 ))]
 use crate::arch::rsa_keygen::vg_rsa_prime_search_umaal;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 use crate::arch::rsa_keygen::{vg_rsa_prime_search, vg_rsa_prime_search_init};
 use crate::cpu::detected;
 use crate::rsa::PublicKey;
@@ -204,7 +187,7 @@ pub fn generate_prime(
     other: Option<&[u8]>,
 ) -> Result<Vec<u8>, Error> {
     let (len, limit) = check(bits, public_exponent, other)?;
-    Random::new(len, fill_random).prime(len, limit, public_exponent, other)
+    Random::new(fill_random).prime(len, limit, public_exponent, other)
 }
 
 /// Fill from the operating system; injectable at the buffer boundary in tests.
@@ -223,54 +206,20 @@ fn fill_random(out: &mut [u8]) -> Result<(), Error> {
 struct Random<F> {
     octets: Vec<u8>,
     read: usize,
-    /// The first tape's length, where this module chooses it.
-    #[cfg(not(any(
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    )))]
-    initial: usize,
     fill: F,
 }
 
 impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
-    #[cfg_attr(
-        any(
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "powerpc64",
-            target_arch = "riscv64"
-        ),
-        allow(unused_variables)
-    )]
-    fn new(len: usize, fill: F) -> Self {
+    fn new(fill: F) -> Self {
         Self {
             octets: Vec::new(),
             read: 0,
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            )))]
-            initial: 16 * len,
             fill,
         }
     }
 
     /// The verified search over the stream, refilled to the length it asks
     /// for.
-    #[cfg(any(
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    ))]
     fn prime(
         &mut self,
         len: usize,
@@ -286,42 +235,6 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
                 1 => return Ok(search.prime()),
                 0 => self.refill(search.requested())?,
                 _ => return Err(Error::TooManyIterations),
-            }
-        }
-    }
-
-    #[cfg(not(any(
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64",
-        target_arch = "riscv64"
-    )))]
-    fn prime(
-        &mut self,
-        len: usize,
-        limit: usize,
-        e: &[u8],
-        other: Option<&[u8]>,
-    ) -> Result<Vec<u8>, Error> {
-        let mut rejected = 0;
-        loop {
-            let (r, used) = prime_from_counted(
-                len,
-                limit,
-                e,
-                other,
-                &self.octets[self.read..],
-                &mut rejected,
-            );
-            self.read += used;
-            match r {
-                // Geometric growth limits how often an unfinished
-                // Miller–Rabin test is replayed.
-                Err(Error::NotEnoughRandomness) => {
-                    self.refill((2 * self.octets.len()).max(self.initial))?
-                }
-                r => return r,
             }
         }
     }
@@ -347,13 +260,6 @@ impl<F> Drop for Random<F> {
 }
 
 /// The verified prime search's buffers and state, for one prime.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 struct Search<'a> {
     e: &'a [u8],
     other: &'a [u8],
@@ -362,13 +268,6 @@ struct Search<'a> {
     state: [u64; 4],
 }
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 impl<'a> Search<'a> {
     /// The search for a prime of `len` octets with the exponent `e`, which
     /// [`check`] accepted with the limit of rejected candidates `limit`.
@@ -452,13 +351,6 @@ impl<'a> Search<'a> {
     }
 }
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 impl Drop for Search<'_> {
     fn drop(&mut self) {
         // The working space holds the prime.
@@ -483,13 +375,6 @@ pub fn generate_prime_from(
 /// [`generate_prime_from`] of arguments [`check`] accepted (the prime's
 /// length `len` in bytes, and the limit of rejected candidates), and the
 /// number of octets read, also when it fails.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-))]
 fn prime_from(
     len: usize,
     limit: usize,
@@ -511,90 +396,6 @@ fn prime_from(
             _ => return (Err(Error::TooManyIterations), read),
         }
     }
-}
-
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-)))]
-fn prime_from(
-    len: usize,
-    limit: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-    rand: &[u8],
-) -> (Result<Vec<u8>, Error>, usize) {
-    prime_from_counted(len, limit, public_exponent, other, rand, &mut 0)
-}
-
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64",
-    target_arch = "riscv64"
-)))]
-fn prime_from_counted(
-    len: usize,
-    limit: usize,
-    public_exponent: &[u8],
-    other: Option<&[u8]>,
-    rand: &[u8],
-    rejected: &mut usize,
-) -> (Result<Vec<u8>, Error>, usize) {
-    let other = other.unwrap_or(&[]);
-    let mut out = vec![0u8; len];
-    let mut scratch = vec![0u64; crate::rsa::scratch_words(len)];
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_rsa_keygen_candidate,
-    };
-    let mut read = 0;
-    let r = loop {
-        let rest = &rand[read..];
-        let mut used = [0u64; 1];
-        // SAFETY: each pointer is valid for its length (`out`, `used` and
-        // `scratch` for writes), and none overlaps another or wraps around,
-        // as they are distinct Rust allocations; `check` gives
-        // `out_len = bits / 8`, a multiple of 8 in 32..=512, `e_len` in
-        // 1..=8 and `p_len` 0 or `out_len`; `scratch_len = 16 out_len + 32`; and
-        // the CPU has the features of the function `select` chose.
-        let status = unsafe {
-            f(
-                out.as_mut_ptr(),
-                len,
-                &mut used,
-                public_exponent.as_ptr(),
-                public_exponent.len(),
-                other.as_ptr(),
-                other.len(),
-                rest.as_ptr(),
-                rest.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // `used` is at most `rest.len()` (`VG.Spec.RsaKeyGen.candidateOp`
-        // reads no more than it has).
-        read += used[0] as usize;
-        match status {
-            0 => break Err(Error::NotEnoughRandomness),
-            1 => break Ok(()),
-            // Too close to the other prime: not counted.
-            2 => {}
-            _ => {
-                *rejected += 1;
-                if *rejected >= limit {
-                    break Err(Error::TooManyIterations);
-                }
-            }
-        }
-    };
-    // The working space holds the prime.
-    crate::zeroize::zeroize(&mut scratch);
-    (r.map(|()| out), read)
 }
 
 /// The private key with the primes `p` and `q` (big-endian, as long as each
@@ -763,7 +564,7 @@ pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error
     let (nlen, e) = params(bits, public_exponent)?;
     let len = nlen / 16;
     let limit = if e == [3] { 8 * nlen / 2 } else { 5 * nlen / 2 };
-    let mut random = Random::new(len, fill_random);
+    let mut random = Random::new(fill_random);
     generate_with(e, &mut |other| random.prime(len, limit, e, other))
 }
 
@@ -1094,48 +895,27 @@ mod tests {
         rand.extend(candidate(&PRIME, &W));
         rand.extend(candidate(&SMALL_D_Q, &W));
         let (expected, used) = generate_from(512, &[1, 0, 1], &rand).unwrap();
-        for initial in [1, 31, 32, 33, 511, 512, 896, 897, 4096] {
-            let filled = core::cell::Cell::new(0);
-            let mut random = Random::new(32, |out: &mut [u8]| {
-                for b in out {
-                    *b = rand.get(filled.get()).copied().unwrap_or(0);
-                    filled.set(filled.get() + 1);
-                }
-                Ok(())
-            });
-            // Where the search chooses the tapes' lengths, each run is the same.
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            )))]
-            {
-                random.initial = initial;
+        let filled = core::cell::Cell::new(0);
+        let mut random = Random::new(|out: &mut [u8]| {
+            for b in out {
+                *b = rand.get(filled.get()).copied().unwrap_or(0);
+                filled.set(filled.get() + 1);
             }
-            #[cfg(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
-            let _ = initial;
-            let key = generate_with(&[1, 0, 1], &mut |other| {
-                random.prime(32, 5 * 256, &[1, 0, 1], other)
-            })
-            .unwrap();
-            assert_eq!(key.components(), expected.components());
-            assert_eq!(filled.get() - (random.octets.len() - random.read), used);
-        }
+            Ok(())
+        });
+        let key = generate_with(&[1, 0, 1], &mut |other| {
+            random.prime(32, 5 * 256, &[1, 0, 1], other)
+        })
+        .unwrap();
+        assert_eq!(key.components(), expected.components());
+        assert_eq!(filled.get() - (random.octets.len() - random.read), used);
     }
 
     /// Refills preserve rejection counts and release no incomplete prime
     /// when entropy fails, including a failure after witnesses were read.
     #[test]
     fn refilled_errors() {
-        let mut random = Random::new(32, |out: &mut [u8]| {
+        let mut random = Random::new(|out: &mut [u8]| {
             out.fill(0xff); // Every candidate is divisible by 3.
             Ok(())
         });
@@ -1143,49 +923,29 @@ mod tests {
             random.prime(32, 5 * 256, &[1, 0, 1], None),
             Err(Error::TooManyIterations)
         );
-        for initial in [1, 32, 512, 896] {
-            let mut fills = 0;
-            let rand = candidate(&PRIME, &W);
-            let mut position = 0;
-            let mut random = Random::new(32, |out: &mut [u8]| {
-                fills += 1;
-                if fills == 2 {
-                    return Err(Error::Randomness);
-                }
-                for b in out {
-                    *b = rand.get(position).copied().unwrap_or(0);
-                    position += 1;
-                }
-                Ok(())
-            });
-            #[cfg(not(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            )))]
-            {
-                random.initial = initial;
-            }
-            #[cfg(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64",
-                target_arch = "riscv64"
-            ))]
-            let _ = initial;
-            assert_eq!(
-                generate_with(&[1, 0, 1], &mut |other| {
-                    random.prime(32, 5 * 256, &[1, 0, 1], other)
-                })
-                .unwrap_err(),
-                Error::Randomness
-            );
-        }
         let mut fills = 0;
-        let mut random = Random::new(32, |out: &mut [u8]| {
+        let rand = candidate(&PRIME, &W);
+        let mut position = 0;
+        let mut random = Random::new(|out: &mut [u8]| {
+            fills += 1;
+            if fills == 2 {
+                return Err(Error::Randomness);
+            }
+            for b in out {
+                *b = rand.get(position).copied().unwrap_or(0);
+                position += 1;
+            }
+            Ok(())
+        });
+        assert_eq!(
+            generate_with(&[1, 0, 1], &mut |other| {
+                random.prime(32, 5 * 256, &[1, 0, 1], other)
+            })
+            .unwrap_err(),
+            Error::Randomness
+        );
+        let mut fills = 0;
+        let mut random = Random::new(|out: &mut [u8]| {
             fills += 1;
             if fills == 3 {
                 return Err(Error::Randomness);

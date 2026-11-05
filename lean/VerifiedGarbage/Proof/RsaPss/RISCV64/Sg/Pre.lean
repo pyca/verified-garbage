@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Sg/Pre.lean`, `Sg/Entry.lean`), with the frame of
 RSAES-OAEP decryption (`Proof/RsaOaep/RISCV64/Dc/Priv.lean`): `PreS D s`, the
-shared contract's precondition (`Spec.RsaPss.signContract`, with the stack of
+shared contract's precondition (`Spec.RsaPss.signTableContract`, with the stack of
 the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preS_of`), for a digest of `D` bytes; the working space `Ss s` and the
 values `Base` fixes in `s1`–`s4` (`vS s`: `k`, `out`, `lo` and `salt_len`),

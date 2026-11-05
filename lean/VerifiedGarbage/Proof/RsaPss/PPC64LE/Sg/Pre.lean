@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSASSA-PSS signing on PPC64LE: the precondition
 
 Untrusted: everything here is checked by Lean. `PreS D s`: the shared
-contract's precondition (`Spec.RsaPss.signContract`, with the stack of the
+contract's precondition (`Spec.RsaPss.signTableContract`, with the stack of the
 frames and of `vg_rsa_private_checked`, `stackBytes`), by name (`preS_of`),
 for a digest of `D` bytes; the working space `Ss s` and the values the code
 keeps in `r15`–`r23` (`vS s`), both functions of the entry state `s` alone,

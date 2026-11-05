@@ -21,8 +21,10 @@ public import Init.Core
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Verified
+public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
 
-/-! # Native RSA candidates call every shared i686 Miller–Rabin implementation -/
+/-! # Native RSA candidates, and the prime search calling them, call every shared i686 Miller–Rabin implementation -/
 
 @[expose] public section
 namespace VG.Generic.MillerRabin.X86.RsaKeyGen
@@ -37,6 +39,14 @@ def artifacts (v : RoundImpl) : List Artifact := [
     verified := Proof.RsaKeyGen.X86.Candidate.verified Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack
         v.verified v.noSp v.stack
     spSafe := Proof.RsaKeyGen.X86.Candidate.code_all compact_noSp v.noSp montName v.name
+    features := v.features },
+  Spec.RsaKeyGen.primeSearchApi.artifact target {
+    suffix := v.suffix
+    code := Proof.RsaKeyGen.X86.Search.searchCode v
+    stack := 216
+    consts := Impl.RsaKeyGen.TrialTable32.consts
+    verified := Proof.RsaKeyGen.X86.Search.search_verified v
+    spSafe := Proof.RsaKeyGen.X86.Search.search_all v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86.RsaKeyGen

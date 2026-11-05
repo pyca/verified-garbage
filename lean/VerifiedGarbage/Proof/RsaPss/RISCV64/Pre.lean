@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Precomputed
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -20,7 +19,7 @@ import all Init.Data.Nat.Bitwise.Basic
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Pre.lean`, `Params.lean`, `ShiftV.lean`): `PreP D s`,
-the shared contract's precondition (`Spec.RsaPss.verifyPrecomputedContract`,
+the shared contract's precondition (`Spec.RsaPss.verifyPrecomputedTableContract`,
 with the stack of the frame and of the streaming hash functions,
 `stackBytes`), by name (`preP_of`); the working space and the values `Base`
 fixes in `s1`–`s4` (`Sp`, `vP`: `k`, the digest, and the encoding's
