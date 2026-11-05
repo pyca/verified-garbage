@@ -37,7 +37,7 @@ variable {checkName : String}
 /-! ## The iteration's public states -/
 
 def Begun (n pLen qLen : Nat) (P : LoopPublic) (t : State) : Prop :=
-  LoopBefore n pLen qLen P t ∧ Refill.ctlWord t.mem P.ctx.geo.F 3 = BitVec.ofNat 64 P.start ∧
+  RefillLoopBefore n pLen qLen P t ∧ Refill.ctlWord t.mem P.ctx.geo.F 3 = BitVec.ofNat 64 P.start ∧
   t.gpr .rax = BitVec.ofNat 64 P.start
 
 def Started (n pLen qLen : Nat) (P : LoopPublic) (t : State) : Prop :=
@@ -78,7 +78,7 @@ def Tested (n pLen qLen : Nat) (P : LoopPublic) (t : State) : Prop :=
 
 /-! ## Each piece -/
 
-theorem head_ready {n pLen qLen : Nat} {P : LoopPublic} {s : State} (h : LoopBefore n pLen qLen P s) :
+theorem head_ready {n pLen qLen : Nat} {P : LoopPublic} {s : State} (h : RefillLoopBefore n pLen qLen P s) :
     WP isa (.block [.mov .rax (.mem (sp 128)), .store (Impl.Dsa.X86_64.Generation.Refill.ctl 3) .rax,
         .mov .rcx (.mem (Impl.Dsa.X86_64.Generation.Refill.ctl 2)), .alu .test .rcx (.reg .rcx)]) s
       (Started n pLen qLen P) := by
@@ -296,7 +296,7 @@ theorem iteration_ct_of {n pLen qLen : Nat} (m : Nat) {attempt : Prog isa}
         .alu .cmp .rcx (.imm (BitVec.ofNat 32 qLen))]) hc).isSome = true)
     (tseed : ∃ hc, (taint.check (Taint.ofRegs [.rsp])
         (.block (Impl.Dsa.X86_64.Generation.Refill.seedStart qLen)) hc).isSome = true) :
-    RelCT isa (Two fun P s => LoopBefore n pLen qLen P s ∧ P.left = m)
+    RelCT isa (Two fun P s => RefillLoopBefore n pLen qLen P s ∧ P.left = m)
       (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qLen) (Two (LoopPost n pLen qLen m)) := by
   unfold Impl.Dsa.X86_64.Generation.Refill.iteration
   simp only [VG.Impl.Bignum.X86_64.seqs]
@@ -336,14 +336,14 @@ theorem iteration_ct_of {n pLen qLen : Nat} (m : Nat) {attempt : Prog isa}
       fun P s h => stop_ready h.1.1 h.2).mono (fun _ _ h => h) fun _ _ h => two_image _ h
 
 theorem loop_ct_of {n pLen qLen : Nat} {attempt : Prog isa}
-    (hstep : ∀ m, RelCT isa (Two fun P s => LoopBefore n pLen qLen P s ∧ P.left = m)
+    (hstep : ∀ m, RelCT isa (Two fun P s => RefillLoopBefore n pLen qLen P s ∧ P.left = m)
       (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qLen) (Two (LoopPost n pLen qLen m))) :
-    RelCT isa (Two (LoopBefore n pLen qLen))
+    RelCT isa (Two (RefillLoopBefore n pLen qLen))
       (.loop (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qLen) .e) (Two (DoneAt n pLen qLen)) := by
-  have step : ∀ m, RelCT isa (Two fun P s => LoopBefore n pLen qLen P s ∧ P.left = m)
+  have step : ∀ m, RelCT isa (Two fun P s => RefillLoopBefore n pLen qLen P s ∧ P.left = m)
       (Impl.Dsa.X86_64.Generation.Refill.iteration attempt qLen) fun s t =>
         isa.eval .e s = isa.eval .e t ∧ (isa.eval .e s = some false → Two (DoneAt n pLen qLen) s t) ∧
-        (isa.eval .e s = some true → ∃ k < m, Two (fun P s => LoopBefore n pLen qLen P s ∧ P.left = k) s t) := by
+        (isa.eval .e s = some true → ∃ k < m, Two (fun P s => RefillLoopBefore n pLen qLen P s ∧ P.left = k) s t) := by
     intro m
     refine (hstep m).mono (fun _ _ h => h) ?_
     rintro s t ⟨x, hs, ht⟩
@@ -354,12 +354,12 @@ theorem loop_ct_of {n pLen qLen : Nat} {attempt : Prog isa}
     | inr D =>
       exact ⟨hs.1.trans ht.1.symm, fun _ => ⟨D, hs.2, ht.2⟩, fun hf => absurd (hs.1.symm.trans hf) (by simp)⟩
   rintro s t a b s' t' ⟨P, hs, ht⟩ es et
-  exact RelCT.loop (fun m => Two fun P s => LoopBefore n pLen qLen P s ∧ P.left = m) step P.left
+  exact RelCT.loop (fun m => Two fun P s => RefillLoopBefore n pLen qLen P s ∧ P.left = m) step P.left
     s t a b s' t' ⟨P, ⟨hs, rfl⟩, ⟨ht, rfl⟩⟩ es et
 
 theorem controller_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
-    RelCT isa (Two (LoopBefore 6 pLen qLen))
+    RelCT isa (Two (RefillLoopBefore 6 pLen qLen))
       (Impl.Dsa.X86_64.Generation.Refill.controller (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen)
       (Two (DoneAt 6 pLen qLen)) := by
   have width : qLen = 20 ∨ qLen = 32 := by

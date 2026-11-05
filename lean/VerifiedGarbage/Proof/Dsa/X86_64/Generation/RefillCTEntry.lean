@@ -180,7 +180,7 @@ def RefillInit (pBytes : Nat) (P : LoopPublic) (u : State) : Prop :=
 theorem entry_ready {pBytes qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {P : LoopPublic}
     {u : State} (hi : RefillInit pBytes P u) :
     WP isa (.block (Impl.Dsa.X86_64.Generation.Refill.entryHeader pBytes qBytes ++
-      Impl.Dsa.X86_64.Generation.entryDerived)) u (LoopBefore 6 pBytes qBytes P) := by
+      Impl.Dsa.X86_64.Generation.entryDerived)) u (RefillLoopBefore 6 pBytes qBytes P) := by
   obtain ⟨s₀, h, a, hwr, rfl⟩ := hi
   refine WP.mono (Refill.entry_ok h a hq) fun v ⟨W, hm, h16, h10, c0, c1, c2, _, kV⟩ => ?_
   have wv : v.wr = refillWr s₀ := kV.2.2.trans hwr
@@ -232,7 +232,7 @@ theorem entry_ct (pBytes qBytes : Nat) (hp : pBytes = 128 ∨ pBytes = 256 ∨ p
     (hq : qBytes = Spec.Dsa.generationQLen pBytes) :
     RelCT isa (Two (RefillInit pBytes))
       (.block (Impl.Dsa.X86_64.Generation.Refill.entryHeader pBytes qBytes ++ Impl.Dsa.X86_64.Generation.entryDerived))
-      (Two (LoopBefore 6 pBytes qBytes)) := by
+      (Two (RefillLoopBefore 6 pBytes qBytes)) := by
   have t₁ : ∃ hc, (taint.check (Taint.ofRegs [.rsp])
       (.block (Refill.headerA pBytes qBytes ++ ([.mov .rax (.mem (sp (Impl.Dsa.X86_64.Generation.Refill.frameBytes + 32 + 48 + 16))),
       .store (Impl.Dsa.X86_64.Generation.Refill.ctl 1) .rax] : List Instr))) hc).isSome = true := by

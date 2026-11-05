@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
+-- separate module: its proofs build in parallel with the correctness ones, `RefillBackend`
+
 /-! # The refillable-tape search for one width is constant time
 
 `refill_ct`: two runs from states whose public data agree (the arguments in

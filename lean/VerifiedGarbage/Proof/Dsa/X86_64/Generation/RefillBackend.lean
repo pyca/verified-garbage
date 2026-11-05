@@ -31,6 +31,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 
+-- separate module: its proofs build in parallel with the constant-time ones, `RefillCT`
+
 /-! # The refillable-tape search with the hash and Miller–Rabin backends, on x86-64
 
 For one width, `Refill.code` (`Impl/Dsa/X86_64/Generation/Refill.lean`) uses

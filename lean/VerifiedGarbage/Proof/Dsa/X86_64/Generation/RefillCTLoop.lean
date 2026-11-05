@@ -198,7 +198,7 @@ def CtlAt (F : Addr) (c0 c1 : BitVec 64) (left : Nat) (t : State) : Prop :=
   Refill.ctlWord t.mem F 0 = c0 ∧ Refill.ctlWord t.mem F 1 = c1 ∧
   Refill.ctlWord t.mem F 2 = BitVec.ofNat 64 left ∧ Refill.ctlRegion F ∈ t.wr
 
-def LoopBefore (n pLen qLen : Nat) (P : LoopPublic) (t : State) : Prop :=
+def RefillLoopBefore (n pLen qLen : Nat) (P : LoopPublic) (t : State) : Prop :=
   (∃ W, GenerationMemory P.context W t ∧ W 16 = BitVec.ofNat 64 P.start ∧ W 10 = 0) ∧
   CtlAt P.ctx.geo.F P.c0 P.c1 P.left t ∧ FrV n P.ctx.geo.F P.ws t ∧ t.wr = P.wr ∧
   P.ctx.geo.pLen = pLen ∧ P.ctx.geo.qLen = qLen
@@ -212,28 +212,28 @@ def DoneAt (n pLen qLen : Nat) (D : DonePublic) (t : State) : Prop :=
 
 /-- Before the iteration's last status test. -/
 def LoopMid (n pLen qLen m : Nat) : LoopPublic ⊕ DonePublic → State → Prop
-  | .inl P, t => LoopBefore n pLen qLen P t ∧ (∃ W, GenerationMemory P.context W t ∧ W 19 = 3) ∧ P.left < m
+  | .inl P, t => RefillLoopBefore n pLen qLen P t ∧ (∃ W, GenerationMemory P.context W t ∧ W 19 = 3) ∧ P.left < m
   | .inr D, t => DoneAt n pLen qLen D t
 
 def LoopPost (n pLen qLen m : Nat) : LoopPublic ⊕ DonePublic → State → Prop
-  | .inl P, t => isa.eval .e t = some true ∧ LoopBefore n pLen qLen P t ∧ P.left < m
+  | .inl P, t => isa.eval .e t = some true ∧ RefillLoopBefore n pLen qLen P t ∧ P.left < m
   | .inr D, t => isa.eval .e t = some false ∧ DoneAt n pLen qLen D t
 
 theorem two_image {α β : Type} {Φ : β → State → Prop} (f : α → β) {s t : State}
     (h : Two (fun a s => Φ (f a) s) s t) : Two Φ s t :=
   let ⟨a, h₁, h₂⟩ := h; ⟨f a, h₁, h₂⟩
 
-theorem loopBefore_rsp {n pLen qLen : Nat} {P : LoopPublic} {t : State} (h : LoopBefore n pLen qLen P t) :
+theorem loopBefore_rsp {n pLen qLen : Nat} {P : LoopPublic} {t : State} (h : RefillLoopBefore n pLen qLen P t) :
     t.gpr .rsp = P.ctx.geo.F := h.2.2.1.rsp
 
-theorem loopBefore_pins (n pLen qLen : Nat) : Pins (LoopBefore n pLen qLen) [.rsp] := by
+theorem loopBefore_pins (n pLen qLen : Nat) : Pins (RefillLoopBefore n pLen qLen) [.rsp] := by
   intro P s t hs ht r hr
   obtain rfl := List.mem_singleton.mp hr
   exact (loopBefore_rsp hs).trans (loopBefore_rsp ht).symm
 
-/-- `LoopBefore` across a step that keeps the memory but `rax` and `rcx`. -/
-theorem loopBefore_keep {n pLen qLen : Nat} {P : LoopPublic} {s t : State} (h : LoopBefore n pLen qLen P s)
-    (hm : t.mem = s.mem) (hk : Keep [.rax, .rcx] s t) : LoopBefore n pLen qLen P t := by
+/-- `RefillLoopBefore` across a step that keeps the memory but `rax` and `rcx`. -/
+theorem loopBefore_keep {n pLen qLen : Nat} {P : LoopPublic} {s t : State} (h : RefillLoopBefore n pLen qLen P s)
+    (hm : t.mem = s.mem) (hk : Keep [.rax, .rcx] s t) : RefillLoopBefore n pLen qLen P t := by
   obtain ⟨⟨W, hW, h16, h10⟩, ⟨c0, c1, c2, cw⟩, hf, hw, hp, hq⟩ := h
   refine ⟨⟨W, hW.congr2 hm hk, h16, h10⟩, ⟨?_, ?_, ?_, hk.2.2 ▸ cw⟩, hf.congr (hk.gpr (by decide)) hk.2.2,
     hk.2.2.trans hw, hp, hq⟩
