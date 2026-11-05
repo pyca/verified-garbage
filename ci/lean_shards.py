@@ -47,7 +47,8 @@ overlap the parallel work. Compare those times plus SHARD_OVERHEAD with a
 single runner's time; among plans within SLACK of the fastest, choose the
 least total module work (counting duplicated imports), then fewer runners.
 Finally, a bounded search moves targets to reuse shared imports without
-exceeding the same finish-time budget.
+making the chosen packing's estimate any longer: SLACK chooses among
+packings, and the search spends none of it.
 
   lean_shards.py plan MANIFEST PLAN     write the plan for the sources (with
                                         the manifest's build, which may be
@@ -130,6 +131,9 @@ PARALLELISM = 5.4
 # finished 9% sooner, but 12 left one shard much slower): the plan tries
 # each and keeps the fastest by the simulation.
 REUSE_WEIGHTS = (1.0, 2.0, 4.0, 6.0, 8.0)
+# How far `refine` searches: the moves it simulates and accepts at most.
+REFINE_SIMULATIONS = 256
+REFINE_MOVES = 64
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
@@ -756,55 +760,99 @@ def pack(
 
 
 def refine(imps, closure, cost, path, packed, limit, simulator=None):
-    """Move targets to reuse imports, within the chosen latency budget.
+    """Move targets to reuse imports, within the latency budget `limit`.
 
     Greedy packing cannot reconsider an early assignment. Rank moves by
     module work saved, reject those whose lower bound exceeds the budget,
-    then simulate the two affected shards. Bound the search to 16 attempted
-    moves and three accepted moves, independently of project size.
+    then simulate the two affected shards. A move changes only its two
+    shards, so what each target saves where it is and adds elsewhere is
+    kept between moves and updated for those two alone, and a move the
+    simulation rejected is not simulated again until one of its shards
+    changes. The search is bounded by `REFINE_SIMULATIONS` simulated moves
+    and `REFINE_MOVES` accepted ones, independently of project size.
     """
     loads, targets, built = packed
     if simulator is None:
         simulator = _BuildGraph(imps, cost)
-    attempts = 0
-    for _ in range(3):
-        moves = []
-        work = [math.fsum(map(cost.__getitem__, part)) for part in built]
+    count = len(built)
+    owner = {t: i for i, ts in enumerate(targets) for t in ts}
+    work = [math.fsum(map(cost.__getitem__, part)) for part in built]
+    # Of each shard's modules, how many of its targets need it, and the sum
+    # of their numbers: which one needs it, when one does.
+    names = list(owner)
+    number = {t: n for n, t in enumerate(names)}
+    uses: list[dict[str, list[int]]] = [{} for _ in range(count)]
+    for t, i in owner.items():
+        for m in closure[t]:
+            c = uses[i].setdefault(m, [0, 0])
+            c[0] += 1
+            c[1] += number[t]
+    # What each target saves leaving its shard (the modules no other target
+    # of the shard needs), and adds to each other shard.
+    removed = {t: {m for m in closure[t] if uses[i][m][0] == 1} for t, i in owner.items()}
+    saved = {t: math.fsum(map(cost.__getitem__, removed[t])) for t in owner}
+    adding = {t: [math.fsum(map(cost.__getitem__, closure[t] - part)) for part in built] for t in owner}
+    rejected: set[tuple[str, int]] = set()
+    simulated = 0
+    for _ in range(REFINE_MOVES):
         longest = [max((path[t] for t in ts), default=0.0) for ts in targets]
-        for src, ts in enumerate(targets):
-            if len(ts) < 2:
+        moves = []
+        for t, src in owner.items():
+            if len(targets[src]) < 2:
                 continue
-            uses = {}
-            for t in ts:
-                for m in closure[t]:
-                    uses[m] = uses.get(m, 0) + 1
-            for t in ts:
-                removed = {m for m in closure[t] if uses[m] == 1}
-                saved = math.fsum(map(cost.__getitem__, removed))
-                for dst, part in enumerate(built):
-                    if src == dst:
-                        continue
-                    added = math.fsum(map(cost.__getitem__, closure[t] - part))
-                    if saved <= added + 1e-9:
-                        continue
-                    if estimate(work[dst] + added, max(longest[dst], path[t])) <= limit:
-                        moves.append((added - saved, src, dst, t, removed))
-        accepted = False
-        for _, src, dst, t, removed in sorted(moves, key=lambda m: m[:4]):
-            if attempts == 16:
+            for dst in range(count):
+                added = adding[t][dst]
+                if (dst == src or saved[t] <= added + 1e-9 or (t, dst) in rejected
+                        or estimate(work[dst] + added, max(longest[dst], path[t])) > limit):
+                    continue
+                moves.append((added - saved[t], src, dst, t))
+        moves.sort()
+        for _, src, dst, t in moves:
+            if simulated == REFINE_SIMULATIONS:
                 return loads, targets, built
-            attempts += 1
-            parts = {src: built[src] - removed, dst: built[dst] | closure[t]}
+            simulated += 1
+            parts = {src: built[src] - removed[t], dst: built[dst] | closure[t]}
             times = {i: simulator.time(part) for i, part in parts.items()}
             if max(times.values()) > limit + 1e-9:
+                rejected.add((t, dst))
                 continue
+            # Each target adds to the two shards what they lost or no
+            # longer what they gained.
+            lost, gained = removed[t], closure[t] - built[dst]
+            for u, add in adding.items():
+                add[src] += math.fsum(map(cost.__getitem__, lost & closure[u]))
+                add[dst] -= math.fsum(map(cost.__getitem__, gained & closure[u]))
             for i in parts:
                 built[i], loads[i] = parts[i], times[i]
+                work[i] = math.fsum(map(cost.__getitem__, built[i]))
             targets[src].remove(t)
             targets[dst].append(t)
-            accepted = True
+            owner[t] = dst
+            # Moves to or from a shard that changed may fit or not fit now.
+            rejected = {(u, i) for u, i in rejected if i not in parts and owner[u] not in parts}
+            # The targets that need a module alone now that t left, or no
+            # longer alone now that t joined.
+            changed = {t}
+            for m in closure[t]:
+                c = uses[src][m]
+                c[0] -= 1
+                c[1] -= number[t]
+                if not c[0]:
+                    del uses[src][m]
+                elif c[0] == 1:
+                    removed[names[c[1]]].add(m)
+                    changed.add(names[c[1]])
+                c = uses[dst].setdefault(m, [0, 0])
+                if c[0] == 1:
+                    removed[names[c[1]]].discard(m)
+                    changed.add(names[c[1]])
+                c[0] += 1
+                c[1] += number[t]
+            removed[t] = {m for m in closure[t] if uses[dst][m][0] == 1}
+            for u in changed:
+                saved[u] = math.fsum(map(cost.__getitem__, removed[u]))
             break
-        if not accepted:
+        else:
             break
     return loads, targets, built
 
@@ -1020,7 +1068,10 @@ def schedule(
                  key=lambda c: (c[1], c[2], c[0]))
     packed = chosen[3]
     if chosen[2]:
-        packed = refine(imps, required, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
+        # Within the packing's own estimate: SLACK chose among packings,
+        # and refining spends none of it, so that it saves work without
+        # making the plan slower.
+        packed = refine(imps, required, cost, path, packed, max(packed[0]), simulator)
     return work, path, report(packed)
 
 
