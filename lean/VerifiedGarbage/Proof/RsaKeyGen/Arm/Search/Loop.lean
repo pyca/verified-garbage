@@ -22,7 +22,7 @@ open VG VG.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 open VG.Proof.Ffdh.Arm (withRest_all)
 open VG.Impl.RsaKeyGen.Arm.Search
-open VG.Spec.RsaKeyGen (primeSearch primeEntropy primeRequest PrimeSearchResult candidateOp)
+open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult candidateOp)
 
 theorem cmp_ok {u : State} {r : Reg} {n c : Nat} (hr : u.gpr r = BitVec.ofNat 32 n) (hn : n < 2 ^ 32)
     (hc : c < 256) :
@@ -74,7 +74,7 @@ theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : Pr
     have hop : candidateOp p.len p.eB (searchP o) ((searchRand o).drop used) = none :=
       op_short (by rw [List.length_drop, hlen]; exact z)
     have e : final = if primeEntropy p.len ≤ p.randLen - used then ⟨.exhausted, used, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩
-        else ⟨.entropy k (primeRequest p.len (p.randLen - used)), used, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
+        else ⟨.entropy k (p.randLen - used), used, tr ++ Search.entry p.len p.eB (searchP o) ((searchRand o).drop used)⟩ := by
       rw [hfin, tailOf, Search.search_short hk hop, List.length_drop, hlen]
       split <;> rfl
     rw [e]

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Contract
 public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -69,7 +70,7 @@ theorem search_implies_pub₀ (s t : State) (h : (primeSearchContract abi stackU
     (∀ j < 4, stackArg s j = stackArg t j) ∧
     searchE s = searchE t ∧ Spec.Rsa.wordsAt s.mem (stackArg s 3) 4 = Spec.Rsa.wordsAt t.mem (stackArg t 3) 4 ∧
     (searchResult s).status = (searchResult t).status ∧ (searchResult s).used = (searchResult t).used ∧
-    (searchResult s).requested = (searchResult t).requested ∧
+    (requested (searchLen s) (searchResult s)) = (requested (searchLen t) (searchResult t)) ∧
     (searchResult s).trace = (searchResult t).trace := by
   sig_pub [primeSearchContract, primeSearchSig, abi, argRegs, stackArgs_four, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
@@ -87,7 +88,9 @@ theorem search_implies_pub₀ (s t : State) (h : (primeSearchContract abi stackU
   simp only [List.cons.injEq, and_true] at hc
   refine ⟨hsp, r3, r4, r5, r6, r7, r8, r9, r10, fun j hj => ?_,
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he,
-    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hw, hc.1, hc.2.1, hc.2.2, htr⟩
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hw, hc.1, hc.2.1,
+    (by rw [show searchLen s = searchLen t from congrArg BitVec.toNat r4]
+        exact Entropy.requested_congr hc.1 hc.2.2), htr⟩
   match j, hj with
   | 0, _ => exact a0
   | 1, _ => exact a1

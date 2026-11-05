@@ -98,7 +98,7 @@ def reject : Prog isa := .seq (.block ([.mov .rdx (.reg .rax)] ++ loadUsed ++ [.
   (.ite .e exhausted (.seq (.block (advance ++ [.alu .cmp .rdx (.imm 2)]))
     (.ite .e (.block []) (.block count))))
 
-/-- The next tape's length, `primeRequest`: twice the larger of the octets
+/-- The next tape's length, `VG.Proof.RsaKeyGen.primeRequest`: twice the larger of the octets
 left and 16 per octet of the prime, at most the entropy budget. -/
 def request : List Instr := [
   .mov .rcx (.mem (field 1)), .shift .shl .rcx 4, .alu .cmp .rax (.reg .rcx),

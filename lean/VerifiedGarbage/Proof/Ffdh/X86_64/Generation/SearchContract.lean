@@ -53,10 +53,11 @@ def searchPost (s t : State) : Prop :=
         | .accepted p _ => Spec.Rsa.i2osp p (s.gpr .rsi).toNat
         | _ => List.replicate (s.gpr .rsi).toNat 0) ∧
     Spec.Rsa.wordsAt t.mem (s.gpr .rdx) 1 = [BitVec.ofNat 64 (searchResult s).used] ∧
-    Spec.Rsa.wordsAt t.mem (stackArg s 3) 4 =
+    ∃ requested, Spec.Rsa.wordsAt t.mem (stackArg s 3) 4 =
       [BitVec.ofNat 64 (searchResult s).remaining, s.gpr .rsi,
         BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat),
-        BitVec.ofNat 64 (searchResult s).requested]
+        BitVec.ofNat 64 requested] ∧
+      (searchResult s).Requests (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat) requested
 
 def searchPub (s t : State) : Prop :=
   pcPub s t ∧ stackArg s 3 = stackArg t 3 ∧

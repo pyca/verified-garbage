@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
@@ -15,7 +16,7 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (lowWord)
 
 def requestResult (p : SearchParams) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
-  .entropy remaining (Spec.Ffdh.parameterRequest p.c.bits (p.c.bytes.length - used)) used
+  .entropy remaining (p.c.bytes.length - used) used
 
 theorem SearchLive.exhausted {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) :

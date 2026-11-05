@@ -71,7 +71,7 @@ def exhausted : Prog isa := .seq (.block (terminal 3)) zeroOut
 /-- The prime: its candidate's octets (`ecx`) consumed. -/
 def accept : List Instr := .alu .add .esi (.reg .ecx) :: terminal 1
 
-/-- The next tape's length, `primeRequest`: twice the larger of the octets
+/-- The next tape's length, `VG.Proof.RsaKeyGen.primeRequest`: twice the larger of the octets
 left (`eax`) and 16 per octet of the prime, at most the entropy budget
 (`ebp`); the search stops, asking for it. The larger and the smaller come
 from masks of the borrows: every value is public. -/

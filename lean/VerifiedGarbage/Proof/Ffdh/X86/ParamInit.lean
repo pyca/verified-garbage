@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
+import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -403,13 +404,13 @@ theorem correct (s : State) (h : (Spec.Ffdh.parameterInitContract abi).pre s) :
     by_cases hv : Valid (arg s 1).toNat (arg s 2).toNat
     · have e : Spec.Ffdh.parameterInit (arg s 1).toNat (arg s 2).toNat =
           some [(arg s 1).toNat * (arg s 1).toNat * 64, ((arg s 1).toNat + 7) / 8,
-            32769 * (((arg s 1).toNat + 7) / 8), 512 * (((arg s 1).toNat + 7) / 8)] := by
+            32769 * (((arg s 1).toNat + 7) / 8)] := by
         obtain ⟨h1, h2, h3⟩ := hv
         simp only [Spec.Ffdh.parameterInit, Spec.Ffdh.parameterAttempts, Spec.Ffdh.parameterEntropy, h1, h2,
           decide_true, Bool.true_and]
         rcases h3 with h3 | h3 <;> simp [h3]
       rw [e, ite_eq_left hv, ite_eq_left hv, initial_words _ _ hv.2.1]
-      exact ⟨rfl, rfl⟩
+      exact ⟨rfl, _, rfl, Proof.Ffdh.first_valid hv.1⟩
     · have e : Spec.Ffdh.parameterInit (arg s 1).toNat (arg s 2).toNat = none := by
         simp only [Spec.Ffdh.parameterInit]
         rw [ite_eq_right]

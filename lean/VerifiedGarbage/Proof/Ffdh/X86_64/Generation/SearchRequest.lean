@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
@@ -24,7 +25,7 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
     WP isa (.block request) s fun t =>
       t.gpr .rax = 0 ∧
       t.mem = writeController s.mem p.control
-        [(3, BitVec.ofNat 64 (Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)] ∧
+        [(3, BitVec.ofNat 64 (parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)] ∧
       Keep [.rax, .rcx] s t := by
   have scr := h.input.control_scr h.wr
   have hs : ∀ d, d + 8 ≤ 128 → InRegions s.wr (p.control + BitVec.ofNat 64 d) 8 :=
@@ -46,7 +47,7 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
   have hc64 : Spec.Ffdh.parameterEntropy p.c.bits < 2 ^ 64 := by omega_using [hc]
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t =>
     t.gpr .rax = 0 ∧ t.mem = writeController s.mem p.control
-      [(3, BitVec.ofNat 64 (Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)]) ?_ rfl)
+      [(3, BitVec.ofNat 64 (parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)]) ?_ rfl)
     fun _ ⟨⟨hr, hm⟩, k⟩ => ⟨hr, hm, k⟩
   have hmaxeq : max (p.c.rand.length - used) (256 * p.c.k) =
       if p.c.rand.length - used < 256 * p.c.k then 256 * p.c.k else p.c.rand.length - used := by
@@ -59,10 +60,10 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
     · simp [hb, Nat.min_eq_left (Nat.le_of_lt hb)]
     · have hk : b ≤ a := by omega_using [hb]
       simp [hb, Nat.min_eq_right hk]
-  have hreq : Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used) =
+  have hreq : parameterRequest p.c.bits (p.c.rand.length - used) =
       if 2 * max (p.c.rand.length - used) (256 * p.c.k) < Spec.Ffdh.parameterEntropy p.c.bits
       then 2 * max (p.c.rand.length - used) (256 * p.c.k) else Spec.Ffdh.parameterEntropy p.c.bits := by
-    rw [Spec.Ffdh.parameterRequest, ← h.input.width_bits, hmin]
+    rw [parameterRequest, Entropy.request, ← h.input.width_bits, hmin]
   have ha2 : (p.c.rand.length - used) * 2 < 2 ^ 64 := by
     omega_using [hmax, Nat.le_max_left (p.c.rand.length - used) (256 * p.c.k)]
   have hk2 : p.c.k * 256 * 2 < 2 ^ 64 := by omega_using [hk]

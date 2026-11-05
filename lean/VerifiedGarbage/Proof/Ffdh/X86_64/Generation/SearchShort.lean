@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequestDone
@@ -50,7 +51,7 @@ theorem short_guard {p : SearchPublic} {original s : State} {used remaining : Na
 
 def shortResult (p : SearchPublic) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
   if Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.rand.length - used then .exhausted used
-  else .entropy remaining (Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used)) used
+  else .entropy remaining (p.c.rand.length - used) used
 
 theorem search_short {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s)

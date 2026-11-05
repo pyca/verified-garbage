@@ -99,7 +99,7 @@ def sel (d a b : Reg) (lt : Bool) : List Instr :=
   [.sltu .t0 a b, .li d 0, .sub .t0 d .t0, .logic .xor d a b, .logic .and d d .t0,
     .logic .xor d d (if lt then b else a)]
 
-/-- The next tape's length, `primeRequest`: twice the larger of the octets
+/-- The next tape's length, `VG.Proof.RsaKeyGen.primeRequest`: twice the larger of the octets
 left and 16 per octet of the prime, at most the entropy budget (octets
 left in `t2`, the budget in `t3`). -/
 def request : List Instr :=

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
@@ -35,14 +36,14 @@ structure SearchDone (p : SearchPublic) (original : State) (result : Spec.Ffdh.P
   status : word s.mem p.control 112 = BitVec.ofNat 64 result.status
   policy : Spec.Rsa.wordsAt s.mem p.control 4 =
     [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.c.k,
-      BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 result.requested]
+      BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result)]
   output : SearchOutput p result s.mem
 
 theorem done_of_live {p : SearchPublic} {original s : State} {used remaining : Nat}
     {result : Spec.Ffdh.ParameterSearchResult} (h : SearchLive p original used remaining s)
     (hu : result.used = used) (hr : result.remaining = remaining)
     (hs : word s.mem p.control 112 = BitVec.ofNat 64 result.status)
-    (hq : word s.mem p.control 24 = BitVec.ofNat 64 result.requested)
+    (hq : word s.mem p.control 24 = BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result))
     (ho : SearchOutput p result s.mem) : SearchDone p original result s := by
   refine ⟨h.input, h.rd, h.wr, h.rsp, h.r12, h.saved, h.savedR12,
     h.headers (5, p.c.op) (by simp [SearchPublic.headers]),

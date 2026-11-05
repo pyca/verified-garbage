@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequest
@@ -18,10 +19,10 @@ theorem search_request_done {p : SearchPublic} {original s : State} {used remain
     (ha : s.gpr .rax = BitVec.ofNat 64 (p.c.rand.length - used))
     (hout : Spec.Rsa.bytesAt s.mem p.c.op p.c.k = List.replicate p.c.k 0) :
     WP isa (.block request) s (SearchDone p original
-      (.entropy remaining (Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used)) used)) := by
+      (.entropy remaining (p.c.rand.length - used) used)) := by
   refine WP.mono (request_ok h ha) fun t ⟨_, hm, k⟩ => ?_
   let values : List (Nat × BitVec 64) :=
-    [(3, BitVec.ofNat 64 (Spec.Ffdh.parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)]
+    [(3, BitVec.ofNat 64 (parameterRequest p.c.bits (p.c.rand.length - used))), (14, 0)]
   have hb : ∀ e ∈ values, e.1 < 16 := by
     simp only [values, List.mem_cons, List.not_mem_nil, or_false]
     rintro _ (rfl | rfl) <;> dsimp only <;> decide

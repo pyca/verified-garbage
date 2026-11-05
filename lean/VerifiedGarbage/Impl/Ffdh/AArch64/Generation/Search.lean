@@ -69,7 +69,7 @@ def reject : List Instr := [
   .sub .x .x13 .x13 .x10, .subImm .x .x14 .x14 1, movi .x15 4, stf .x11 12, stf .x12 10, stf .x13 11, stf .x14 0,
   stf .x15 14]
 
-/-- The next request, `parameterRequest`: twice the larger of the octets
+/-- The next request, `VG.Proof.Ffdh.parameterRequest`: twice the larger of the octets
 left and 256 per octet of `p`, at most the entropy cap. -/
 def request : List Instr := [
   ldf .x10 11, ldf .x11 6, ldf .x12 2, .lsl .x .x11 .x11 8, .subs .x .x13 .x10 .x11, .csel .x .x10 .x10 .x11,
