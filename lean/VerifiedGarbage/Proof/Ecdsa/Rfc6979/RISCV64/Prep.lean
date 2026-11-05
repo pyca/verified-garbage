@@ -268,4 +268,136 @@ abbrev vOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ 
 abbrev xOfM (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ fX) P.Q
 abbrev hOf (P : Rfc) (s₀ : State) (m : Mem) : List Byte := bytesAt m (sA s₀ P.c.fHo) P.Q
 
+section
+variable {s₀ : State} (hp : Pre P s₀)
+include hp
+
+omit hp in
+theorem xArgs_eq : P.c.xArgs = .li .t0 0 :: (((List.range 9).map fun j => (Reg.t0, fX + 8 * j)).map
+    (fun q => .store .d q.1 .s1 q.2) ++
+    [.li .t1 P.c.Q, .sub .t2 .s7 .t1, .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3,
+      .logic .and .t2 .t2 .t3, .add .a6 .t1 .t2, mov .a4 .s4, .addi .a5 .s1 (fX + P.c.Q), .sub .a5 .a5 .a6]) := by
+  rw [Cfg.xArgs, List.map_map]; rfl
+
+/-- `X`: `Q - min(D, Q)` zero bytes, then the digest's leftmost `min(D, Q)`. -/
+theorem prepX_ok {s : State} (h : KR P s₀ s) :
+    WP isa P.c.prepX s fun t => KR P s₀ t ∧ xOfM P s₀ t.mem = xSpec P s₀ ∧ Frame [sR s₀ fX 72] s.mem t.mem := by
+  have hz := sizes P
+  have hfr : frB = 512 := rfl
+  obtain ⟨hQ1, hQ2, hcQ, -⟩ := hz.Q
+  obtain ⟨hD0, hD64⟩ := hz.D
+  unfold Cfg.prepX
+  rw [xArgs_eq, hcQ]
+  refine WP.seq (wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_)
+  have k₁ := h.upd (by decide) u₁
+  refine sds_ok hp _ (fun q hq => by
+      simp only [List.mem_map, List.mem_range] at hq
+      obtain ⟨j, hj, rfl⟩ := hq
+      simp only [fX]; omega) (by decide) k₁ fun t₂ k₂ g₂ f₂ v₂ => ?_
+  refine wp_li (imm := P.Q) (by omega) fun s₃ u₃ => wp_sub fun s₄ u₄ => wp_srl (by decide) fun s₅ u₅ =>
+    wp_li (imm := 0) (by decide) fun s₆ u₆ => wp_sub fun s₇ u₇ => VG.Proof.X25519.RISCV64.wp_and fun s₈ u₈ =>
+    wp_add fun s₉ u₉ => wp_mv fun s₁₀ u₁₀ => wp_addi (by simp only [fX]; omega) fun s₁₁ u₁₁ =>
+    wp_sub fun s₁₂ u₁₂ => WP.block_nil ?_
+  have k₁₂ : KR P s₀ s₁₂ := (((((((((k₂.upd (by decide) u₃).upd (by decide) u₄).upd (by decide) u₅).upd (by decide)
+    u₆).upd (by decide) u₇).upd (by decide) u₈).upd (by decide) u₉).upd (by decide) u₁₀).upd (by decide) u₁₁).upd
+    (by decide) u₁₂
+  have m₁₂ : s₁₂.mem = t₂.mem := by
+    rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem]
+  -- the count, `min(D, Q)`
+  have hN : s₁₂.gpr .a6 = BitVec.ofNat 64 (min P.Q P.H.D) := by
+    upd_simp [u₁₂.gpr, u₁₂.other, u₁₁.gpr, u₁₁.other, u₁₀.gpr, u₁₀.other, u₉.gpr, u₉.other, u₈.gpr, u₈.other,
+      u₇.gpr, u₇.other, u₆.gpr, u₆.other, u₅.gpr, u₅.other, u₄.gpr, u₄.other, u₃.gpr, u₃.other]
+    rw [g₂, u₁.other _ (by decide), h.s7]
+    exact minSel (by omega) (by omega)
+  have hmin : min P.Q P.H.D = min P.H.D P.Q := Nat.min_comm _ _
+  rw [hmin] at hN
+  generalize hm : min P.H.D P.Q = m at hN
+  have hm1 : 0 < m := by omega
+  have hm2 : m ≤ P.Q := by omega
+  have hm3 : m ≤ P.H.D := by omega
+  have hsrc : s₁₂.gpr .a4 = dg s₀ := by
+    upd_simp [u₁₂.other, u₁₁.other, u₁₀.gpr]
+    rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
+      u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), h.s4]
+  have hdst : s₁₂.gpr .a5 = sA s₀ (fX + (P.Q - m)) := by
+    have hN11 : s₁₁.gpr .a6 = BitVec.ofNat 64 m := by rw [← u₁₂.other .a6 (by decide)]; exact hN
+    have hs1 : s₁₀.gpr .s1 = s₀.sp := by
+      rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
+        u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), g₂,
+        u₁.other _ (by decide), h.s1]
+    rw [u₁₂.gpr, u₁₁.gpr, hN11, hs1]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, fX]
+    have := hp.top
+    omega
+  have rd₁₂ := k₁₂.rd
+  have wr₁₂ := k₁₂.wr
+  refine WP.mono (WP.rdwr (copyLoop_adv (tmp := .t1) (src := .a4) (dst := .a5) (cnt := .a6) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) s₁₂ hm1 (by omega) hN
+    (fun i hi => by
+      rw [hsrc, rd₁₂]
+      exact ⟨dgR P s₀, List.mem_append_left _ (by rw [hp.rd]; simp),
+        Offset.contains_base _ (by omega) (by have := hp.ng; omega)⟩)
+    (fun i hi => by
+      rw [hdst]
+      have := in_fr hp wr₁₂ (o := fX + (P.Q - m) + i) (n := 1) (by simp only [fX]; omega)
+      rwa [add_ofNat_add'])
+    (fun x hx hx' => by
+      rw [hdst] at hx
+      rw [hsrc] at hx'
+      have d := (hp.f_g.sub_left (part_sub (s₀ := s₀) (o := fX + (P.Q - m)) (n := m) (by simp only [fX]; omega))).sub_right
+        (Region.sub_prefix (base := dg s₀) hm3)
+      exact d x hx hx'))) fun t ⟨⟨hc, hf, hk, _⟩, hrd, hwr, hsp⟩ => ?_
+  rw [hdst] at hc hf
+  have F₃ : Frame [sR s₀ fX 72] s.mem t.mem := by
+    rw [← m₁₂] at f₂
+    have f₂' : Frame [sR s₀ fX 72] s₁.mem s₁₂.mem := f₂.sub fun r hr => by
+      simp only [List.map_map, List.mem_map, List.mem_range] at hr
+      obtain ⟨j, hj, rfl⟩ := hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by simp only [fX]; omega) (by simp only [fX]; omega)⟩
+    rw [u₁.mem] at f₂'
+    exact f₂'.trans (hf.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by simp only [fX]; omega) (by simp only [fX]; omega)⟩)
+  refine ⟨k₁₂.keep hrd hwr hsp (fun r hr => hk.gpr (by revert r; decide)) hf
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact part_disj (.inl (by simp only [fX]; omega)) (by decide) (by simp only [fX]; omega))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, by simp, part_sub (by simp only [fX]; omega)⟩), ?_, F₃⟩
+  -- the bytes
+  have z₂ : bytesAt t₂.mem (sA s₀ fX) (8 * 9) = List.replicate 72 0 := by
+    rw [bytesAt_of_readW (k := 9) _ _ 0 fun j hj => by
+      have := v₂ (Reg.t0, fX + 8 * j) (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩)
+      rw [add_ofNat_add', this]; exact u₁.gpr]
+    decide
+  have hsp' : P.Q = (P.Q - m) + m := by omega
+  show bytesAt t.mem (sA s₀ fX) P.Q =
+    List.replicate (P.Q - min P.H.D P.Q) 0 ++ (hBOf P s₀).take (min P.H.D P.Q)
+  rw [hm]
+  conv => lhs; rw [hsp']
+  rw [VG.Proof.Hmac.Common.bytesAt_add, add_ofNat_add']
+  congr 1
+  · rw [fbytes hf (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact part_disj (.inl (by omega)) (by simp only [fX]; omega) (by simp only [fX]; omega)) (by omega), m₁₂,
+      bytesAt_take _ _ (show P.Q - m ≤ 8 * 9 by omega), z₂, replicate_take _ _ _ (by omega)]
+  · rw [hBOf, ← bytesAt_take _ _ hm3]
+    apply List.ext_getElem (by simp [bytesAt])
+    intro i h₁ h₂
+    simp only [bytesAt, List.getElem_map, List.getElem_range, List.length_map, List.length_range] at h₁ ⊢
+    rw [hc i h₁, hsrc, m₁₂]
+    rw [show dg s₀ + BitVec.ofNat 64 i = (dgR P s₀).base + BitVec.ofNat 64 i from rfl]
+    rw [k₂.frame.bytes (R := dgR P s₀) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hp.f_g.symm
+      · exact hp.o_g.symm
+      · exact hp.g_c
+      · exact hp.b_g.symm) (by show P.H.D ≤ 2 ^ 64; omega)
+        (by show i < P.H.D; have := bytesAt_length s₀.mem (dg s₀) m; omega)]
+
+end
+
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
