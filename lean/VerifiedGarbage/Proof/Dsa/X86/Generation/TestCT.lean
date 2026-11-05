@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
 import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.X86.Generation.ABIEnv
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingBase
@@ -44,7 +43,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
   refine RelCT.seq (both_post (Ψ := fun p t => ∃ s, TPre E bits p s ∧
       TestHead E.base (E.wit.setWidth 32) E.witLen p.1 s t)
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1) (tcheck _ _ (by decide +kernel)))
-    fun p s h => WP.mono (testHead_ok h.1.scr psz h.1.witW h.1.witLenW h.2.1 h.2.2.1 v.lens.2.2)
+    fun p s h => WP.mono (testHead_ok h.1.scr psz h.1.witW h.1.witLenW h.2.1 h.2.2.1 v.witLen32)
       fun t H => ⟨s, h, H⟩) ?_
   have pins₁ : ∀ (p : Nat × Nat) t, (∃ s, TPre E bits p s ∧ TestHead E.base (E.wit.setWidth 32) E.witLen p.1 s t) →
       ∀ r ∈ [Reg.esp, .edi], t.gpr r = baseVal E r := by

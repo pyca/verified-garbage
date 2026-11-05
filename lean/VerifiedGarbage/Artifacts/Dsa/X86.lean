@@ -10,11 +10,12 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
 public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Init
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Framework.Registration
 
-/-! # DSA key generation, signing with a sampled nonce, and verification, on baseline i686 -/
+/-! # DSA key generation, signing with a sampled nonce, verification, and the start of the parameter search, on baseline i686 -/
 
 @[expose] public section
 
@@ -40,6 +41,9 @@ def artifacts : List Artifact := [
   Spec.Dsa.verifyPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Prevalidated.verify
     verified := Proof.Dsa.X86.prevalidated_verified
-    stack := 108 }]
+    stack := 108 },
+  Spec.Dsa.parameterInitApi.artifact X86.target {
+    code := Impl.Dsa.X86.Generation.init
+    verified := Proof.Dsa.X86.Generation.Init.init_verified }]
 
 end VG.Artifacts.Dsa.X86
