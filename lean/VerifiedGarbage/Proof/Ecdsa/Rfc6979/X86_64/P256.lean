@@ -51,16 +51,10 @@ theorem coreK_p256 : coreK Impl.Ecdsa.X86_64.p256 = Proof.Ecdsa.X86_64.signX86_6
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.signX86_64, Proof.Ecdsa.X86_64.TblHeld]
   rfl
 
-/-! ## The blocks for each hash function's sizes -/
+/-! ## The curve's blocks -/
 
-theorem p256_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 16 64) := by rfcT_decide
-theorem p256_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 20 64) := by rfcT_decide
-theorem p256_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 28 64) := by rfcT_decide
-theorem p256_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 32 64) := by rfcT_decide
-theorem p256_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 48 128) := by rfcT_decide
-theorem p256_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 64 128) := by rfcT_decide
-theorem p256_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 28 128) := by rfcT_decide
-theorem p256_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p256 false 0 32 128) := by rfcT_decide
+theorem p256_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p256 false 0) := by rfcT_decide
+
 
 /-- P-256, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
@@ -70,7 +64,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   E := Impl.Ecdsa.X86_64.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
@@ -83,7 +77,6 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  blkT := blkT_of p256_blk₀ p256_blk₁ p256_blk₂ p256_blk₃ p256_blk₄ p256_blk₅ p256_blk₆ p256_blk₇
+  blk := p256_blk
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

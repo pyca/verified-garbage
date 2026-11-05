@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 # Deterministic ECDSA on x86-64: P-521
 
 P-521 as the proof's curve (`p521`): scalars of 9 words and 66 bytes, longer
-than any hash function's output (`wide`), the order `n` of 521 bits, so that
+than any hash function's output (`big`), the order `n` of 521 bits, so that
 the signature drops 7 bits of a 66-byte digest, and `vg_ecdsa_p521_sign`,
 proven correct (given the group law and the comb's tables) and constant time
 against its contract (`coreK` at P-521's sizes, which is
@@ -40,16 +40,10 @@ theorem coreK_p521 : coreK Impl.Ecdsa.X86_64.p521 = Proof.Ecdsa.X86_64.P521.sign
     implies_true, and_true, Proof.Ecdsa.X86_64.P521.signX86_64, Proof.Ecdsa.X86_64.P521.TblHeld]
   rfl
 
-/-! ## The blocks for each hash function's sizes -/
+/-! ## The curve's blocks -/
 
-theorem p521_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 16 64) := by rfcT_decide
-theorem p521_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 20 64) := by rfcT_decide
-theorem p521_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 28 64) := by rfcT_decide
-theorem p521_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 32 64) := by rfcT_decide
-theorem p521_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 48 128) := by rfcT_decide
-theorem p521_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 64 128) := by rfcT_decide
-theorem p521_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 28 128) := by rfcT_decide
-theorem p521_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 32 128) := by rfcT_decide
+theorem p521_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p521 true 7) := by rfcT_decide
+
 
 /-- P-521, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
@@ -59,7 +53,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   E := Impl.Ecdsa.X86_64.p521
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
-  wide := true
+  big := true
   sizes := ⟨rfl, rfl, Proof.Ecdsa.X86_64.P521.p521_nBits⟩
   n_lt := by decide +kernel
   sh := 7
@@ -72,7 +66,6 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := nofun
-  blkT := blkT_of p521_blk₀ p521_blk₁ p521_blk₂ p521_blk₃ p521_blk₄ p521_blk₅ p521_blk₆ p521_blk₇
+  blk := p521_blk
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

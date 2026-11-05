@@ -45,7 +45,7 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   E := Impl.Ecdsa.X86_64.p256x
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  wide := false
+  big := false
   sizes := ⟨.inl rfl, .inl rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
@@ -58,8 +58,7 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
-  blkT := blkT_of p256_blk₀ p256_blk₁ p256_blk₂ p256_blk₃ p256_blk₄ p256_blk₅ p256_blk₆ p256_blk₇
+  blk := by exact p256_blk
 
 /-- P-256 with BMI2 and ADX (`adx`) or without. -/
 def p256Of (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
@@ -72,8 +71,8 @@ def p256Of (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
 theorem p256T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
-    (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HashTable.X86_64.names vs) :
-    Verified X86_64.target (signCode (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
+    (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.X86_64.names vs) :
+    Verified X86_64.target (signCodeT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
       (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86_64.p256.combConsts vs) := by
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p256) h.1 Proof.Ecdsa.X86_64.satMem h.2
     (by rw [Proof.Ecdsa.X86_64.p256W_length]; decide) Proof.Ecdsa.X86_64.satMem_held (by decide) rfl

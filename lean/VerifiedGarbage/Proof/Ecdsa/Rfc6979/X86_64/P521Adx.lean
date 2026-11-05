@@ -51,7 +51,7 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   E := Impl.Ecdsa.X86_64.p521x
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
-  wide := true
+  big := true
   sizes := ⟨rfl, rfl, Proof.Ecdsa.X86_64.P521.p521_nBits⟩
   n_lt := by decide +kernel
   sh := 7
@@ -64,8 +64,7 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   coreSp := by lit_decide
   coreMx := by lit_decide
   coreD := by lit_decide
-  reduceT := nofun
-  blkT := blkT_of p521_blk₀ p521_blk₁ p521_blk₂ p521_blk₃ p521_blk₄ p521_blk₅ p521_blk₆ p521_blk₇
+  blk := by exact p521_blk
 
 /-- P-521 with BMI2 and ADX (`adx`) or without. -/
 def p521Of (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
@@ -78,8 +77,8 @@ def p521Of (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
 theorem p521T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
-    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HashTable.X86_64.names vs) :
-    Verified X86_64.target (signCode (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
+    (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.X86_64.names vs) :
+    Verified X86_64.target (signCodeT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
       (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.X86_64.p521.combConsts vs) := by
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p521) h.1 Proof.Ecdsa.X86_64.P521.satMem h.2
     (by rw [Proof.Ecdsa.X86_64.P521.p521W_length]; decide) Proof.Ecdsa.X86_64.P521.satMem_held (by decide) rfl
