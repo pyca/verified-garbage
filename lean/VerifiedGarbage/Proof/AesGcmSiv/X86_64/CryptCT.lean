@@ -488,10 +488,10 @@ theorem tail_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
 /-- The start of `crypt`, in a run. -/
 theorem head_cinv {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
     (O : One K W SP R N A D al n t) (hD : Buf K W SP t D n) :
-    WP isa (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) t fun t₁ =>
+    WP isa (.block (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+        ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr))) t fun t₁ =>
       CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)) := by
   obtain ⟨t₁, run₁, hm₁, h12₁, hbp₁, hbx₁, hzf₁, hg₁, hrd₁, hwr₁⟩ := cryptHead_ok L O.env O.sl hD
   refine WP.of_runBlock ⟨t₁, run₁, ⟨⟨O.env.keep (fun r hr => by
@@ -503,10 +503,10 @@ theorem head_cinv {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al 
     hbp₁⟩, hzf₁⟩
 
 theorem head_check : ∃ hc, (taint.check (sivT [])
-    (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) hc).isSome = true :=
+    (.block (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+        ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr))) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 theorem test_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp]) (.block [.alu .test .rbp (.reg .rbp)]) hc).isSome =

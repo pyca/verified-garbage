@@ -545,7 +545,7 @@ theorem chunks_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
 theorem tailPre_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
     (.seq (.block (zero16 bO ++ ptr .rdi .r15 bO ++ ([.mov .rsi (.reg .r12), .mov .rcx (.reg .rbp)] : List Instr)))
       (.seq copyLoop (.block (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax,
-        .bswap .rdx, .store (at_ .r15 revO) .rdx, .store (at_ .r15 (revO + 8)) .rax] : List Instr) ++ ghArgs ++
+        .bswap .rdx] : List Instr) ++ store2 (at_ .r15 revO) .rdx .rax ++ ghArgs ++
         ptr .rdx .r15 revO ++ ([.mov32 .rcx (imm 1)] : List Instr))))) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The last bytes, in two runs. -/
@@ -672,9 +672,9 @@ theorem absorb_rel (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
 
 theorem lensArgs_check : ∃ hc, (taint.check (sivT []) (.block (([.mov .rax (.mem (at_ .r15 lenO)),
     .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax,
-    .store (at_ .r15 bO) .rax, .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
-    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] :
-      List Instr) ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr))) hc).isSome = true :=
+    .mov .rdx (.mem (at_ .r15 alenO)), .alu .add .rdx (.reg .rdx),
+    .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .bswap .rdx] :
+      List Instr) ++ store2 (at_ .r15 bO) .rax .rdx ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr))) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 /-- `lens`, in two runs with the same public arguments. -/
@@ -685,9 +685,9 @@ theorem lens_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D
     RelCT isa P (lens v.callees) fun _ _ => True := by
   have pre : ∀ {t : State}, One K W SP R N A D al n t → WP isa (.block (([.mov .rax (.mem (at_ .r15 lenO)),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax,
-      .store (at_ .r15 bO) .rax, .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
-      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] :
-        List Instr) ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr))) t fun t₁ =>
+      .mov .rdx (.mem (at_ .r15 alenO)), .alu .add .rdx (.reg .rdx),
+      .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .bswap .rdx] :
+        List Instr) ++ store2 (at_ .r15 bO) .rax .rdx ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr))) t fun t₁ =>
       GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 128)
         (W + BitVec.ofNat 64 1512) 1 ∧ t₁.gpr .rsp = SP := fun O => by
     obtain ⟨t₁, run₁, -, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ := lensArgs_ok O.env O.sl.alen O.sl.len hal hn'

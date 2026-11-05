@@ -372,6 +372,74 @@ tactic_template "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
                      Nat.reduceAdd, Nat.reduceMod, Nat.reducePow, setWidth_imm, and_self, and_true, true_and, BitVec.add_zero,
                      readW_writeW_W, $ts,*]) <;> try rfl)
 
+/-! ### 128-bit stores of two quadwords
+
+The code writes a block built in two general-purpose registers with one
+128-bit store (`movq` of each into an SSE register, `punpcklqdq`, `movdqu`),
+rather than with two 64-bit stores, so that the 16-byte loads that read it
+next can take it from the store buffer. Its memory is the two stores'. -/
+
+/-- A 128-bit value written as its two quadwords, the low one first. -/
+theorem writeW128_app (m : Mem) (p : Addr) (hi lo : BitVec 64) :
+    m.writeW p (hi ++ lo) = (m.writeW p lo).writeW (p + BitVec.ofNat 64 8) hi := by
+  funext x
+  simp only [Mem.writeW, Mem.write, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]
+  have e : (x - (p + BitVec.ofNat 64 8)).toNat = ((x - p).toNat + (2 ^ 64 - 8)) % 2 ^ 64 := by
+    rw [show x - (p + BitVec.ofNat 64 8) = (x - p) + BitVec.ofNat 64 (2 ^ 64 - 8) by bv_omega,
+      BitVec.toNat_add, BitVec.toNat_ofNat]
+  rw [e]
+  have ht := (x - p).isLt
+  generalize (x - p).toNat = t at *
+  by_cases h8 : t < 8
+  · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega, h8, show t < 16 by omega, ↓reduceIte]
+    ext j hj
+    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show 8 * t + j < 64 by omega, ↓reduceIte]
+  · by_cases h16 : t < 16
+    · simp only [show (t + (2 ^ 64 - 8)) % 2 ^ 64 = t - 8 by omega, show t - 8 < 8 by omega, h16, ↓reduceIte]
+      ext j hj
+      simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show ¬ 8 * t + j < 64 by omega, ↓reduceIte,
+        show 8 * t + j - 64 = 8 * (t - 8) + j by omega]
+    · simp only [show ¬ (t + (2 ^ 64 - 8)) % 2 ^ 64 < 8 by omega, h8, h16, ↓reduceIte]
+
+/-- 16 bytes read as two quadwords. -/
+theorem readW128_app (m : Mem) (a : Addr) :
+    m.readW a 128 = m.readW (a + BitVec.ofNat 64 8) 64 ++ m.readW a 64 := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  rw [BitVec.getLsbD_append]
+  have r (k : Nat) (hk : k < 16) (i : Nat) (hi : i < 8) :
+      (m.readW a 128).getLsbD (8 * k + i) = (m (a + BitVec.ofNat 64 k)).getLsbD i := by
+    have e : (m.readW a 128).extractLsb' (8 * k) 8 = m (a + BitVec.ofNat 64 k) := by
+      rw [← Mem.extractLsb'_read m a (n := 16) hk]; simp only [Mem.readW]; rfl
+    rw [← e, BitVec.getLsbD_extractLsb']; simp [hi]
+  have r8 (b : Addr) (k : Nat) (hk : k < 8) (i : Nat) (hi : i < 8) :
+      (m.readW b 64).getLsbD (8 * k + i) = (m (b + BitVec.ofNat 64 k)).getLsbD i := by
+    have e : (m.readW b 64).extractLsb' (8 * k) 8 = m (b + BitVec.ofNat 64 k) := by
+      rw [← Mem.extractLsb'_read m b (n := 8) hk]; simp only [Mem.readW]; rfl
+    rw [← e, BitVec.getLsbD_extractLsb']; simp [hi]
+  rw [show j = 8 * (j / 8) + j % 8 by omega, r (j / 8) (by omega) (j % 8) (by omega)]
+  by_cases h : j < 64
+  · simp only [show 8 * (j / 8) + j % 8 < 64 by omega, ↓reduceIte]
+    rw [r8 a (j / 8) (by omega) (j % 8) (by omega)]
+  · simp only [show ¬ 8 * (j / 8) + j % 8 < 64 by omega, ↓reduceIte]
+    rw [show 8 * (j / 8) + j % 8 - 64 = 8 * (j / 8 - 8) + j % 8 by omega,
+      r8 _ (j / 8 - 8) (by omega) (j % 8) (by omega), BitVec.add_assoc, ofNat_add_ofNat,
+      show 8 + (j / 8 - 8) = j / 8 by omega]
+
+/-- `punpcklqdq` of two registers `movq` wrote. -/
+theorem punpck_movq (a b : BitVec 64) :
+    XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ a) ((0 : BitVec 64) ++ b) = b ++ a := by
+  simp only [XBinOp.eval, qword, Nat.mul_zero]
+  congr 1 <;> (ext i hi; simp only [BitVec.getElem_extractLsb', Nat.zero_add, BitVec.getLsbD_append, hi,
+    ↓reduceIte, BitVec.getLsbD_eq_getElem hi])
+
+theorem pxor_self (a : BitVec 128) : XBinOp.eval .pxor a a = 0#64 ++ 0#64 := by
+  simp only [XBinOp.eval, BitVec.xor_self]; rfl
+
+/-- Runs a block of the instructions the AES-GCM-SIV code uses, SSE ones too. -/
+tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+  srun [XOp.exec, State.store128, State.load128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm,
+    xmm_setXmm_self, xmm_setXmm_of_ne, $ts,*])
+
 /-- A callee-saved register is none of the registers the code uses for its
 arguments and scratch, so reads of it skip their writes. -/
 theorem ne_of_calleeSaved {r : Reg} (h : r ∈ calleeSaved) :

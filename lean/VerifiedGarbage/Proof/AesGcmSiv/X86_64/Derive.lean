@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -120,6 +121,19 @@ theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (h
 abbrev blkBody : List Instr :=
   deriveBlock ++ ([.alu .add .rdi (imm 16), .alu .add .rbx (imm 1), .alu .cmp .rbx (.reg .rbp)] : List Instr)
 
+/-- The bytes of a 64-bit word made of two 32-bit ones. -/
+theorem le8_join (x y : BitVec 32) :
+    Proof.Cmac.le8 (x.setWidth 64 <<< 32 ||| y.setWidth 64) = Proof.Cmac.le4 y ++ Proof.Cmac.le4 x := by
+  simp only [Proof.Cmac.le8, Proof.Cmac.le4, show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl,
+    show List.range 4 = [0, 1, 2, 3] from rfl, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+  simp only [List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> ext j hj <;>
+    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
+      BitVec.getLsbD_setWidth, Nat.reduceMul, Nat.zero_add] <;>
+    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true,
+      Bool.not_false, Bool.or_false, Bool.false_or, Bool.and_true, Bool.and_false, BitVec.getLsbD_of_ge] <;>
+    (try (congr 1; omega))
+
 /-- One block: `little_endian_uint32(i) ‖ nonce` at `W + 488 + 16 i`. -/
 theorem blkStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {σ : State}
     (S : Slots W R N A D al n σ.mem) (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩)
@@ -131,53 +145,55 @@ theorem blkStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al
   have rN := St.nonce
   have hN' := hN.of_eq I.rd I.wr
   have n₀ := in_off (d := 0) (n := 4) hN'.rd (by decide) (by decide)
-  have n₄ := in_off (d := 4) (n := 4) hN'.rd (by decide) (by decide)
-  have n₈ := in_off (d := 8) (n := 4) hN'.rd (by decide) (by decide)
+  have n₄ := in_off (d := 4) (n := 8) hN'.rd (by decide) (by decide)
   simp only [BitVec.add_zero] at n₀
   have rS := E.perm.wR (show 208 + 8 ≤ 3816 by decide)
   have hw := L.ww
-  have P := W + BitVec.ofNat 64 (488 + 16 * i)
-  have w₀ := E.perm.wW (d := 488 + 16 * i) (n := 4) (by omega_arith)
-  have w₄ := E.perm.wW (d := 488 + 16 * i + 4) (n := 4) (by omega_arith)
-  have w₈ := E.perm.wW (d := 488 + 16 * i + 8) (n := 4) (by omega_arith)
-  have w₁₂ := E.perm.wW (d := 488 + 16 * i + 12) (n := 4) (by omega_arith)
-  rw [← add_ofNat_assoc] at w₄ w₈ w₁₂
-  rw [← I.rdi] at w₀ w₄ w₈ w₁₂
+  have w₀ := E.perm.wW (d := 488 + 16 * i) (n := 16) (by omega_arith)
+  rw [← I.rdi] at w₀
+  have hi32 : ((BitVec.ofNat 64 i).setWidth 32).setWidth 64 = BitVec.ofNat 64 i := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show i < 2 ^ 32 by omega_arith),
+      Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith)]
   obtain ⟨t', run', hm', bx', bp', di', zf', hg', hrd', hwr'⟩ : ∃ t' : State, runBlock isa blkBody t = some t' ∧
-      t'.mem = Proof.Cmac.store4 t.mem (t.gpr .rdi) ((BitVec.ofNat 64 i).setWidth 32)
-        (t.mem.readW N 32) (t.mem.readW (N + BitVec.ofNat 64 4) 32) (t.mem.readW (N + BitVec.ofNat 64 8) 32) ∧
+      t'.mem = (t.mem.writeW (t.gpr .rdi) ((t.mem.readW N 32).setWidth 64 <<< 32 |||
+          ((BitVec.ofNat 64 i).setWidth 32).setWidth 64)).writeW
+        (t.gpr .rdi + BitVec.ofNat 64 8) (t.mem.readW (N + BitVec.ofNat 64 4) 64) ∧
       t'.gpr .rbx = BitVec.ofNat 64 (i + 1) ∧ t'.gpr .rbp = BitVec.ofNat 64 cnt ∧
       t'.gpr .rdi = W + BitVec.ofNat 64 (488 + 16 * (i + 1)) ∧ t'.zf = some (decide (i + 1 = cnt)) ∧
       (∀ r ∈ [Reg.r13, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-    refine ⟨_, by srun [blkBody, deriveBlock, h15, rN, rS, n₀, n₄, n₈, w₀, w₄, w₈, w₁₂, I.rbx], ?_, ?_, ?_, ?_, ?_, ?_,
+    refine ⟨_, by xrun [blkBody, deriveBlock, store2, h15, rN, rS, n₀, n₄, w₀, I.rbx], ?_, ?_, ?_, ?_, ?_, ?_,
       ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, Proof.Cmac.store4, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
-        reduceCtorEq, I.rbx]
-      simp only [BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbx, ofNat_add_ofNat]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbp]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rdi, add_ofNat_assoc]
+    · simp only [mem_setReg, mem_setFlags, mem_arithFlags, mem_setXmm, gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false,
+        reduceCtorEq, I.rbx, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, hi32]
+    · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbx, ofNat_add_ofNat]
+    · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbp]
+    · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rdi, add_ofNat_assoc]
       rw [show 488 + 16 * i + 16 = 488 + 16 * (i + 1) by omega_arith]
-    · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbx, I.rbp,
+    · simp only [zf_arithFlags, zf_setXmm, zf_setReg, gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rbx, I.rbp,
         ofNat_add_ofNat, Proof.AesGcm.X86_64.sub_beq (show i + 1 < 2 ^ 64 by omega_arith) (show cnt < 2 ^ 64 by omega_arith)]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+      rcases hr with rfl | rfl | rfl <;> simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
+  have fr := Proof.Cmac.frame_store2 (m := t.mem) (t.gpr .rdi) ((t.mem.readW N 32).setWidth 64 <<< 32 |||
+    ((BitVec.ofNat 64 i).setWidth 32).setWidth 64) (t.mem.readW (N + BitVec.ofNat 64 4) 64)
   refine WP.of_runBlock ⟨t', run', ⟨E.keep hg' hrd' hwr', by rw [hrd', I.rd], by rw [hwr', I.wr], bx', bp', di',
     by omega_arith, ?_, fun k hk => ?_⟩, zf'⟩
-  · rw [hm', I.rdi]
-    exact I.frame.trans ((Proof.Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨_, List.mem_cons_of_mem _ List.mem_cons_self,
+  · rw [hm']
+    rw [I.rdi] at fr ⊢
+    exact I.frame.trans (fr.sub fun r hr => ⟨_, List.mem_cons_of_mem _ List.mem_cons_self,
       by simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub W (by omega_arith) (by omega_arith)⟩)
   · have eN : bytesAt t.mem N 12 = bytesAt σ.mem N 12 := buf_derR hN I.frame
-    rw [hm', I.rdi]
+    rw [hm']
+    rw [I.rdi] at fr ⊢
     by_cases hki : k < i
-    · rw [Proof.AesGcm.X86_64.bytesAt_frame (Proof.Cmac.frame_store4 _ _ _ _ _) (fun r hr => by
+    · rw [Proof.AesGcm.X86_64.bytesAt_frame fr (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide), I.blk k hki]
     · obtain rfl : k = i := by omega_arith
-      rw [Proof.Cmac.bytesAt_store4, GcmSiv.le4_le32, Proof.Cmac.le4_readW, Proof.Cmac.le4_readW,
-        Proof.Cmac.le4_readW, ← eN, show (12 : Nat) = 4 + (4 + 4) from rfl, Proof.Cmac.bytesAt_add,
-        Proof.Cmac.bytesAt_add, add_ofNat_assoc]
+      rw [Proof.Cmac.bytesAt_store2, le8_join, GcmSiv.le4_le32, Proof.Cmac.le4_readW, Proof.Cmac.le8_readW,
+        ← eN, show (12 : Nat) = 4 + 8 from rfl, Proof.Cmac.bytesAt_add]
       simp only [List.append_assoc]
 
 /-- The blocks of `derive`. -/
