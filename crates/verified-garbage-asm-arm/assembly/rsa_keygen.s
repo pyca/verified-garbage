@@ -9851,6 +9851,133 @@ vg_rsa_keygen_key:
 	ldr r12, [sp], #56
 	bx lr
 
+vg_rsa_prime_search_init:
+	cmp r1, #32
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 20f
+	mov r12, #512
+	cmp r12, r1
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 22f
+	and r12, r1, #7
+	cmp r12, #0
+	bne 24f
+	cmp r3, #0
+	beq 26f
+	mov r12, #8
+	cmp r12, r3
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 28f
+	mov r12, #0
+	str r12, [r0, #4]
+	str r12, [r0, #12]
+	str r12, [r0, #20]
+	str r12, [r0, #28]
+	str r1, [r0, #8]
+	lsl r12, r1, #15
+	add r12, r12, r1
+	str r12, [r0, #16]
+	lsl r12, r1, #5
+	str r12, [r0, #24]
+	mov r1, #0
+	subs r3, r3, #1
+	beq 210f
+212:
+	ldrb r12, [r2, #0]
+	orr r1, r1, r12
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 212b
+	b 211f
+210:
+211:
+	ldrb r12, [r2, #0]
+	eor r12, r12, #3
+	orr r1, r1, r12
+	subs r1, r1, #1
+	mov r1, #0
+	adc r1, r1, #0
+	ldr r12, [r0, #8]
+	lsl r3, r12, #3
+	add r3, r3, r12, lsl #4
+	mul r1, r1, r3
+	lsl r12, r12, #6
+	sub r12, r12, r1
+	str r12, [r0, #0]
+	mov r0, #1
+	b 29f
+28:
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+29:
+	b 27f
+26:
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+27:
+	b 25f
+24:
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+25:
+	b 23f
+22:
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+23:
+	b 21f
+20:
+	mov r12, #0
+	str r12, [r0, #0]
+	str r12, [r0, #4]
+	str r12, [r0, #8]
+	str r12, [r0, #12]
+	str r12, [r0, #16]
+	str r12, [r0, #20]
+	str r12, [r0, #24]
+	str r12, [r0, #28]
+	mov r0, #0
+21:
+	bx lr
+
 vg_rsa_keygen_candidate:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	add r12, sp, #0
@@ -17575,6 +17702,226 @@ vg_rsa_keygen_candidate:
 	ldr r12, [sp], #56
 	bx lr
 
+vg_rsa_prime_search:
+	push {r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
+	ldr r12, [sp, #68]
+	ldr r9, [r12, #0]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	mov r7, r3
+	mov r8, #0
+	mov r10, #0
+	mov r11, #4
+20:
+	cmp r9, #0
+	beq 21f
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	cmp r0, r5
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 23f
+	sub sp, sp, #32
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
+	mov r3, r7
+	add lr, sp, #0
+	ldr r12, [sp, #72]
+	str r12, [lr, #0]
+	ldr r12, [sp, #76]
+	str r12, [lr, #4]
+	ldr r12, [sp, #80]
+	str r12, [lr, #8]
+	ldr r12, [sp, #84]
+	add r12, r12, r8
+	str r12, [lr, #12]
+	ldr r12, [sp, #88]
+	sub r12, r12, r8
+	str r12, [lr, #16]
+	ldr r12, [sp, #92]
+	str r12, [lr, #20]
+	ldr r12, [sp, #96]
+	str r12, [lr, #24]
+	bl {vg_rsa_keygen_candidate}
+	add sp, sp, #32
+	ldr r12, [r6, #0]
+	cmp r0, #1
+	beq 25f
+	cmp r0, #0
+	beq 27f
+	cmp r12, #0
+	beq 29f
+	add r8, r8, r12
+	cmp r0, #3
+	beq 211f
+	b 212f
+211:
+	sub r9, r9, #1
+212:
+	b 210f
+29:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+213:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 213b
+210:
+	b 28f
+27:
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	lsl r1, r5, #15
+	add r1, r1, r5
+	cmp r0, r1
+	beq 214f
+	lsl r2, r5, #4
+	cmp r0, r2
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 216f
+	b 217f
+216:
+	mov r0, r2
+217:
+	add r0, r0, r0
+	cmp r0, r1
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 218f
+	mov r0, r1
+	b 219f
+218:
+219:
+	mov r10, r0
+	mov r11, #0
+	b 215f
+214:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+220:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 220b
+215:
+28:
+	b 26f
+25:
+	add r8, r8, r12
+	mov r9, #0
+	mov r10, #0
+	mov r11, #1
+26:
+	b 24f
+23:
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+221:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 221b
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	lsl r1, r5, #15
+	add r1, r1, r5
+	cmp r0, r1
+	beq 222f
+	lsl r2, r5, #4
+	cmp r0, r2
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 224f
+	b 225f
+224:
+	mov r0, r2
+225:
+	add r0, r0, r0
+	cmp r0, r1
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 226f
+	mov r0, r1
+	b 227f
+226:
+227:
+	mov r10, r0
+	mov r11, #0
+	b 223f
+222:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+228:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 228b
+223:
+24:
+	b 22f
+21:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+229:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 229b
+22:
+	cmp r11, #4
+	beq 20b
+	ldr r12, [sp, #68]
+	mov r0, #0
+	lsl r1, r5, #15
+	add r1, r1, r5
+	str r9, [r12, #0]
+	str r0, [r12, #4]
+	str r5, [r12, #8]
+	str r0, [r12, #12]
+	str r1, [r12, #16]
+	str r0, [r12, #20]
+	str r10, [r12, #24]
+	str r0, [r12, #28]
+	str r8, [r6, #0]
+	str r0, [r6, #4]
+	mov r0, r11
+	ldr r5, [sp, #4]
+	ldr r6, [sp, #8]
+	ldr r7, [sp, #12]
+	ldr r8, [sp, #16]
+	ldr r9, [sp, #20]
+	ldr r10, [sp, #24]
+	ldr r11, [sp, #28]
+	ldr lr, [sp, #36]
+	ldr r4, [sp], #40
+	bx lr
+
 vg_rsa_keygen_candidate_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	add r12, sp, #0
@@ -25297,4 +25644,224 @@ vg_rsa_keygen_candidate_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	bx lr
+
+vg_rsa_prime_search_umaal:
+	push {r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
+	ldr r12, [sp, #68]
+	ldr r9, [r12, #0]
+	mov r4, r0
+	mov r5, r1
+	mov r6, r2
+	mov r7, r3
+	mov r8, #0
+	mov r10, #0
+	mov r11, #4
+20:
+	cmp r9, #0
+	beq 21f
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	cmp r0, r5
+	mov r12, #0
+	adc r12, r12, #0
+	cmp r12, #0
+	beq 23f
+	sub sp, sp, #32
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
+	mov r3, r7
+	add lr, sp, #0
+	ldr r12, [sp, #72]
+	str r12, [lr, #0]
+	ldr r12, [sp, #76]
+	str r12, [lr, #4]
+	ldr r12, [sp, #80]
+	str r12, [lr, #8]
+	ldr r12, [sp, #84]
+	add r12, r12, r8
+	str r12, [lr, #12]
+	ldr r12, [sp, #88]
+	sub r12, r12, r8
+	str r12, [lr, #16]
+	ldr r12, [sp, #92]
+	str r12, [lr, #20]
+	ldr r12, [sp, #96]
+	str r12, [lr, #24]
+	bl {vg_rsa_keygen_candidate_umaal}
+	add sp, sp, #32
+	ldr r12, [r6, #0]
+	cmp r0, #1
+	beq 25f
+	cmp r0, #0
+	beq 27f
+	cmp r12, #0
+	beq 29f
+	add r8, r8, r12
+	cmp r0, #3
+	beq 211f
+	b 212f
+211:
+	sub r9, r9, #1
+212:
+	b 210f
+29:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+213:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 213b
+210:
+	b 28f
+27:
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	lsl r1, r5, #15
+	add r1, r1, r5
+	cmp r0, r1
+	beq 214f
+	lsl r2, r5, #4
+	cmp r0, r2
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 216f
+	b 217f
+216:
+	mov r0, r2
+217:
+	add r0, r0, r0
+	cmp r0, r1
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 218f
+	mov r0, r1
+	b 219f
+218:
+219:
+	mov r10, r0
+	mov r11, #0
+	b 215f
+214:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+220:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 220b
+215:
+28:
+	b 26f
+25:
+	add r8, r8, r12
+	mov r9, #0
+	mov r10, #0
+	mov r11, #1
+26:
+	b 24f
+23:
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+221:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 221b
+	ldr r0, [sp, #56]
+	sub r0, r0, r8
+	lsl r1, r5, #15
+	add r1, r1, r5
+	cmp r0, r1
+	beq 222f
+	lsl r2, r5, #4
+	cmp r0, r2
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 224f
+	b 225f
+224:
+	mov r0, r2
+225:
+	add r0, r0, r0
+	cmp r0, r1
+	mov r3, #0
+	adc r3, r3, #0
+	cmp r3, #0
+	beq 226f
+	mov r0, r1
+	b 227f
+226:
+227:
+	mov r10, r0
+	mov r11, #0
+	b 223f
+222:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+228:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 228b
+223:
+24:
+	b 22f
+21:
+	mov r9, #0
+	mov r10, #0
+	mov r11, #3
+	mov r0, r4
+	mov lr, r5
+	mov r2, #0
+229:
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 229b
+22:
+	cmp r11, #4
+	beq 20b
+	ldr r12, [sp, #68]
+	mov r0, #0
+	lsl r1, r5, #15
+	add r1, r1, r5
+	str r9, [r12, #0]
+	str r0, [r12, #4]
+	str r5, [r12, #8]
+	str r0, [r12, #12]
+	str r1, [r12, #16]
+	str r0, [r12, #20]
+	str r10, [r12, #24]
+	str r0, [r12, #28]
+	str r8, [r6, #0]
+	str r0, [r6, #4]
+	mov r0, r11
+	ldr r5, [sp, #4]
+	ldr r6, [sp, #8]
+	ldr r7, [sp, #12]
+	ldr r8, [sp, #16]
+	ldr r9, [sp, #20]
+	ldr r10, [sp, #24]
+	ldr r11, [sp, #28]
+	ldr lr, [sp, #36]
+	ldr r4, [sp], #40
 	bx lr
