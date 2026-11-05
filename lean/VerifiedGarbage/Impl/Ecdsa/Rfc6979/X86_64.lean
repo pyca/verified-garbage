@@ -20,7 +20,7 @@ and takes their leftmost `qlen` bits (`bits2int`, a right shift by
 
 One body serves every hash function: the digest length `D` and HMAC's block
 size `B` are the table's words of data 4 and 5, which the code copies to the
-frame (`hdr`) and reads wherever it needs them, as the lengths and counts it
+frame (`entry`, `pushRs`) and reads wherever it needs them, as the lengths and counts it
 passes (all public). Nothing in the code depends on the hash function but
 those two words and the table's functions.
 
@@ -50,20 +50,21 @@ count is public, each `V` appended to `T` by `cpLoop`), shifted right by `sh`
 bits in place if `big` (`candTop`).
 
 Everything runs in one stack frame of `28 + extra` words (`pushRs`), pushed
-from `r9` (the table, `fTab`), `extra` copies of `rax`, `rdi`, `rsi`, `rdx`,
-`rcx` (`scratch`, moved from `r8`) and 23 copies of `rax`: from `rsp`, `K`
-and `V` (64 bytes each, of which the first `D` are used), 48 bytes unused,
-the number of candidates left, then the pointers `scratch`, `digest`, `d`
-and `out`; above them, the length of `T`, `D`, `B`, a word below `h`
-(`reduce` stores the zero bytes of a short top word there), `h`, `X` and
-`core`'s digest if `big` (72 bytes each), and `T` (136 bytes); then the
-table's address. The calls use only `scratch`, which `core` overwrites
+from `r9` (the table, `fTab`), `extra - 2` copies of `rax`, `r11` and `r10`
+(`B` and `D`, loaded from the table on entry), `rdi`, `rsi`, `rdx`, `rcx`
+(`scratch`, moved from `r8`) and 23 copies of `rax`: from `rsp`, `K` and `V`
+(64 bytes each, of which the first `D` are used), the length of `T`, 40
+bytes unused, the number of candidates left, then the pointers `scratch`,
+`digest`, `d` and `out`; above them, `D`, `B`, a word below `h` (`reduce`
+stores the zero bytes of a short top word there), `h`, `X` and `core`'s
+digest if `big` (72 bytes each), and `T` (136 bytes); then the table's
+address. The calls use only `scratch`, which `core` overwrites
 entirely, and the stack below the frame; `K`, `V` and the words above the
-pointers are cleared before the frame is popped. In `scratch`: HMAC's inner and outer streaming states (192
+pointers but `D` and `B` are cleared before the frame is popped. In `scratch`: HMAC's inner and outer streaming states (192
 bytes each), the working space of the table's functions, the message, the
 words of a shift, and the copy of the states for `K`.
 
-1. `hdr`; `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
+1. `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
 2. Steps d to g: `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`, `V = HMAC_K(V)`,
    `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`.
 3. At most `tries` times: the candidate `k` (`cand`) and
@@ -75,7 +76,7 @@ words of a shift, and the copy of the states for `K`.
 `core` writes the signature or zeros to `out`, and its return value is ours.
 
 A block addresses memory only at `rsp`, at `rsp` plus a constant, at the
-table (through `r9`, before any call), or at a pointer an earlier block
+table (through `r9`, on entry), or at a pointer an earlier block
 loaded from the frame (`msgPtrs`, `scrPtr`, the table's address in
 `tcall`), plus public offsets: the taint analysis of each block, once for
 each curve, knows its addresses are public.
@@ -98,16 +99,16 @@ def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 /-! Where things are in the frame. -/
 def fK : Nat := 0
 def fV : Nat := 64
+/-- The length of `T`. -/
+def fTlen : Nat := 128
 def fCnt : Nat := 176
 def fScratch : Nat := 184
 def fDigest : Nat := 192
 def fD : Nat := 200
 def fOut : Nat := 208
-/-- Above the pointers: the length of `T`. -/
-def fTlen : Nat := 216
-/-- The digest length `D` and HMAC's block size `B`. -/
-def fDl : Nat := 224
-def fBl : Nat := 232
+/-- Above the pointers: the digest length `D` and HMAC's block size `B`. -/
+def fDl : Nat := 216
+def fBl : Nat := 224
 /-- `h` (72 bytes), unless `big`, after a word that `reduce` may write. -/
 def fH : Nat := 248
 /-- `X` (72 bytes): the digest's leftmost bytes, as a `Q`-byte number; `h` if `big`. -/
@@ -283,10 +284,6 @@ def cpBody : List Instr := [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8) .r
 counting from 0. -/
 def cpLoop : Prog isa := Impl.Mgf1.X86_64.byteLoop cpBody (.reg .rcx)
 
-/-- `D` and `B`, the table's words of data 4 and 5, to the frame. -/
-def hdr : List Instr :=
-  [.mov .rax (.mem (at_ .r9 32)), .store (stk fDl) .rax, .mov .rax (.mem (at_ .r9 40)), .store (stk fBl) .rax]
-
 /-- Nine zero words at `rsp + o`. -/
 def zero9 (o : Nat) : List Instr :=
   (List.range 9).flatMap fun j => [.alu32 .xor .rax (.reg .rax), .store (stk (o + 8 * j)) .rax]
@@ -426,34 +423,38 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- `K` and `V`, and the words above the pointers, cleared (`rax`, the
-result, kept). -/
+/-- `K` and `V`, and the words above the pointers but `D` and `B`, cleared
+(`rax`, the result, kept). -/
 def wipe : List Instr :=
   ([.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++ (List.range 16).map (fun j => .store (stk (8 * j)) .rcx) ++
-    (List.range extra).map fun j => .store (stk (fTlen + 8 * j)) .rcx
+    (List.range (extra - 2)).map fun j => .store (stk (fBl + 8 + 8 * j)) .rcx
 
 /-- The frame's body. -/
 def body : Prog isa :=
-  .seq (.block hdr)
-  (.seq c.prepX
+  .seq c.prepX
   (.seq c.prepH
   (.seq (.block initKV)
   (.seq (c.rekeyFull 0)
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne .ne)
-    (.block wipe))))))))
+    (.block wipe)))))))
 
-/-- The registers the frame's push stores. -/
-def pushRs : List Reg := .r9 :: (List.replicate extra .rax ++ [.rdi, .rsi, .rdx, .rcx] ++ List.replicate 23 .rax)
+/-- The registers the frame's push stores: the table's address, then `B`
+(in `r11`) and `D` (in `r10`) at their places above the pointers, the
+pointers, and copies of `rax`. -/
+def pushRs : List Reg :=
+  .r9 :: ((List.replicate (extra - 2) .rax ++ [.r11, .r10]) ++ [.rdi, .rsi, .rdx, .rcx] ++
+    List.replicate 23 .rax)
 
 /-- The frame. -/
 def sign : Prog isa := .frame (.push pushRs) c.body (.pop .rcx (28 + extra))
 
 end Cfg
 
-/-- `scratch` to `rcx`, for the frame's push. -/
-def entry : List Instr := [.mov .rcx (.reg .r8)]
+/-- `scratch` to `rcx`, and `D` and `B`, the table's words of data 4 and 5,
+to `r10` and `r11`, for the frame's push. -/
+def entry : List Instr := [.mov .rcx (.reg .r8), .mov .r10 (.mem (at_ .r9 32)), .mov .r11 (.mem (at_ .r9 40))]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signCode (c : Cfg) : Prog isa := .seq (.block entry) c.sign

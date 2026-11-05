@@ -7,6 +7,13 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 
 /-!
 # Deterministic ECDSA on x86-64: P-521
@@ -33,6 +40,17 @@ theorem coreK_p521 : coreK Impl.Ecdsa.X86_64.p521 = Proof.Ecdsa.X86_64.P521.sign
     implies_true, and_true, Proof.Ecdsa.X86_64.P521.signX86_64, Proof.Ecdsa.X86_64.P521.TblHeld]
   rfl
 
+/-! ## The blocks for each hash function's sizes -/
+
+theorem p521_blk₀ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 16 64) := by rfcT_decide
+theorem p521_blk₁ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 20 64) := by rfcT_decide
+theorem p521_blk₂ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 28 64) := by rfcT_decide
+theorem p521_blk₃ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 32 64) := by rfcT_decide
+theorem p521_blk₄ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 48 128) := by rfcT_decide
+theorem p521_blk₅ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 64 128) := by rfcT_decide
+theorem p521_blk₆ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 28 128) := by rfcT_decide
+theorem p521_blk₇ : RfcT (cfgS Impl.Ecdsa.X86_64.p521 false 7 32 128) := by rfcT_decide
+
 /-- P-521, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve)
@@ -46,7 +64,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   n_lt := by decide +kernel
   sh := 7
   sh_eq := Proof.Ecdsa.X86_64.P521.p521_sh
-  coreN := "vg_ecdsa_p521_sign"
+  coreN := "vg_ecdsa_p521_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP521
   coreX := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_ct
@@ -55,7 +73,6 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   coreMx := by lit_decide
   coreD := by lit_decide
   reduceT := nofun
-  reduceSp := nofun
-  reduceMx := nofun
+  blkT := blkT_of p521_blk₀ p521_blk₁ p521_blk₂ p521_blk₃ p521_blk₄ p521_blk₅ p521_blk₆ p521_blk₇
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

@@ -64,11 +64,12 @@ theorem keyOf_frame_scr (hL : L.Ok) {m m' : Mem} {o n : Nat} (hon : o + n ≤ 81
 /-- After `init`: the states copied to `scratch + 3072`, and `Inited` again
 from the state after the copy. -/
 theorem save_ok (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) :
-    WP isa (.seq (.block Cfg.scrPtr) (.block (Cfg.copyStates true))) u fun u' =>
+    WP isa (.block (Cfg.scrPtr ++ Cfg.copyStates true)) u fun u' =>
       Inited P L g m₀ u' u' ∧ SavedK P L u'.mem (keyOf P L t.mem) ∧ keyOf P L u'.mem = keyOf P L t.mem ∧
       Frame [SaveR L] u.mem u'.mem := by
   have hle := state_le P
-  refine WP.seq (WP.mono (scrPtr_ok hL hu.ctx) fun u₁ ⟨hc₁, hm₁, hd₁⟩ => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono (scrPtr_ok hL hu.ctx) fun u₁ ⟨hc₁, hm₁, hd₁⟩ => ?_
   rw [show Cfg.copyStates true = Cfg.copyN 48 .rdi sInner .rdi sSave from rfl]
   refine WP.mono (copy_ok hL hc₁ (src := .rdi) (S := L.scr) hd₁ (by decide) hd₁ (so := 0) (d := 3072) (K := 48)
     (by decide) (fun j hj => hc₁.inScr (by omega)) (Offset.disjoint _ (by decide) (by decide) (by decide)))
@@ -105,11 +106,12 @@ theorem save_ok (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) :
 /-- The copy back: HMAC's states for the key `K` in the frame, `Inited` from
 the state after it, the copy kept. -/
 theorem restore_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (keyOf P L t.mem)) :
-    WP isa (.seq (.block Cfg.scrPtr) (.block (Cfg.copyStates false))) t fun u =>
+    WP isa (.block (Cfg.scrPtr ++ Cfg.copyStates false)) t fun u =>
       Inited P L g m₀ u u ∧ keyOf P L u.mem = keyOf P L t.mem ∧
       Frame [⟨L.scr + BitVec.ofNat 64 0, 8 * 48⟩] t.mem u.mem ∧ SavedK P L u.mem (keyOf P L t.mem) := by
   have hle := state_le P
-  refine WP.seq (WP.mono (scrPtr_ok hL hc) fun u₁ ⟨hc₁, hm₁, hd₁⟩ => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono (scrPtr_ok hL hc) fun u₁ ⟨hc₁, hm₁, hd₁⟩ => ?_
   rw [show Cfg.copyStates false = Cfg.copyN 48 .rdi sSave .rdi sInner from rfl]
   refine WP.mono (copy_ok hL hc₁ (src := .rdi) (S := L.scr) hd₁ (by decide) hd₁ (so := 3072) (d := 0) (K := 48)
     (by decide) (fun j hj => hc₁.inScr (by omega)) (Offset.disjoint _ (by decide) (by decide) (by decide)))
@@ -153,12 +155,12 @@ theorem done_save (hL : L.Ok) {dst : Nat} (hdst : dst + P.H.D ≤ 168) :
 
 /-- `HMAC_K(data)` (`hmacS`), the states for `K` copied to `scratch + 3072`
 after `init`. -/
-theorem hmacS_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : Addr} {len dst : Nat}
+theorem hmacS_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : Addr} {len dst : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
     (hds : Region.Disjoint ⟨da, len⟩ (SaveR L)) (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa ((cfgOf P).hmacS dataA len dst) t (DoneS P L g m₀ t da len dst) :=
-  seq_seq (init_step hL hc) fun u hu => seq_seq (save_ok hL hu) fun u' ⟨hI, hS, hk, hf⟩ =>
-    seq_seq (upd_step hL hI hdA hd hlen) fun _ hw => WP.mono (fin_step hL hw hlen hdst) fun t' hD => by
+  WP.seq (WP.mono (init_step hL hT hc) fun u hu => WP.seq (WP.mono (save_ok hL hu) fun u' ⟨hI, hS, hk, hf⟩ =>
+    WP.seq (WP.mono (upd_step hL hT hI hdA hd hlen) fun _ hw => WP.mono (fin_step hL hT hw hlen hdst) fun t' hD => by
       have hfu : Frame [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 24⟩, SaveR L] t.mem u'.mem :=
         (hu.frame.mono fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]).trans
@@ -184,18 +186,18 @@ theorem hmacS_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Ins
         · exact ⟨⟨L.scr, 3456⟩, by simp, Region.sub_prefix (by decide)⟩
         · exact ⟨⟨L.B, 24⟩, by simp, sub_refl _⟩
         · exact ⟨_, by simp, sub_refl _⟩
-      · rw [hD.mac, hk, hdb]
+      · rw [hD.mac, hk, hdb])))
 
 /-- `HMAC_K(data)` (`hmacR`), from the copy of the states for `K`: `Done`'s
 facts, the copy kept. -/
-theorem hmacR_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (keyOf P L t.mem))
+theorem hmacR_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L t.mem (keyOf P L t.mem))
     {dataA : List Instr} {da : Addr} {len dst : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
     (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa ((cfgOf P).hmacR dataA len dst) t fun t' => Done P L g m₀ t da len dst t' ∧
       SavedK P L t'.mem (keyOf P L t.mem) :=
-  seq_seq (restore_ok hL hc hS) fun u ⟨hI, hk, hf, hS'⟩ =>
-    seq_seq (upd_step hL hI hdA hd hlen) fun _ hw => WP.mono (fin_step hL hw hlen hdst) fun t' hD => by
+  WP.seq (WP.mono (restore_ok hL hc hS) fun u ⟨hI, hk, hf, hS'⟩ =>
+    WP.seq (WP.mono (upd_step hL hT hI hdA hd hlen) fun _ hw => WP.mono (fin_step hL hT hw hlen hdst) fun t' hD => by
       have hfs : Frame [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 24⟩, ⟨L.B + BitVec.ofNat 64 (24 + dst), P.H.D⟩] t.mem u.mem :=
         hf.sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -204,6 +206,6 @@ theorem hmacR_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hS : SavedK P L 
         bytesAt_frame hf (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact hd.work hL (by decide)) (by omega)
-      exact ⟨⟨hD.ctx, hfs.trans hD.frame, by rw [hD.mac, hk, hdb]⟩, hk ▸ hS'.frame hD.frame (done_save hL hdst)⟩
+      exact ⟨⟨hD.ctx, hfs.trans hD.frame, by rw [hD.mac, hk, hdb]⟩, hk ▸ hS'.frame hD.frame (done_save hL hdst)⟩))
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
