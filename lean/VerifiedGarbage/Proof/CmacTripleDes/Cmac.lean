@@ -47,7 +47,7 @@ theorem macFull_split8 (ciph : Cipher) {msg last : List Byte} (hm : msg.length %
         · subst h; simp only [List.length_nil] at *; omega
         · exact h
       omega
-  simp only [macFull, hn, Nat.add_sub_cancel]
+  simp only [macFull, macWith, hn, Nat.add_sub_cancel]
   rw [blocks_eq8 last q hq, chain_append, chain_single,
     List.drop_append_of_le_length (by omega), List.drop_eq_nil_of_le (by omega), List.nil_append]
 

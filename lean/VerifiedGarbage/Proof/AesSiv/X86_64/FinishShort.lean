@@ -397,7 +397,7 @@ theorem finishShort_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (h
   have lm : (Spec.Siv.xor (Spec.Siv.dbl (Spec.Aes.bytesAt s.mem D 16)) (Spec.Siv.pad (Spec.Aes.bytesAt s.mem P L))).length
       = 16 := by
     rw [Siv.length_xor, Siv.length_pad hlen, Spec.Siv.dbl, Proof.Cmac.dbl_length (Proof.Cmac.bytesAt_length _ _ _)]; rfl
-  have split := Siv.cmacWith_split (Spec.Siv.schedCiph s.mem C R) (Spec.Aes.bytesAt s.mem (C + 240) 16)
+  have split := Siv.macWith_split (Spec.Siv.schedCiph s.mem C R) (Spec.Aes.bytesAt s.mem (C + 240) 16)
     (Spec.Aes.bytesAt s.mem (C + 256) 16) (msg := [])
     (last := Spec.Siv.xor (Spec.Siv.dbl (Spec.Aes.bytesAt s.mem D 16)) (Spec.Siv.pad (Spec.Aes.bytesAt s.mem P L)))
     rfl (by omega_arith) (Or.inl rfl)
