@@ -20,6 +20,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
+open VG.Proof.HmacTable.Arm (tA)
 open VG.Proof.X25519.Arm (Upd Mupd wp_movw wp_mov wp_dp op2_reg op2_imm dpVal)
 
 section
@@ -33,6 +34,12 @@ theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 256)
     (by simp only [exec, h, ↓reduceIte]) (k _ (Upd.setReg _ _ _))
 
 end
+
+/-- An immediate below 256 is encodable (rotation 0). -/
+theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
+    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega : n % 2 ^ 32 < 256)⟩
 
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
@@ -102,5 +109,39 @@ theorem movr_ok {t : State} (hc : Ctx L g m₀ t) {d r : Reg} (hd : d ∉ ptrReg
       (∀ q, q ≠ d → t'.gpr q = t.gpr q) → WP isa (.block is) t' Q) :
     WP isa (.block (.mov d (.reg r) :: is)) t Q :=
   wp_movS (op2_reg _ _) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+
+/-- `d ← [r6 + o]`, a word of the table, as on entry. -/
+theorem tabLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : o + 4 ≤ 24) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = m₀.readW (tA L.tab o) 32 →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 o :: is)) t Q :=
+  wp_ldrS (a := tA L.tab o) (by omega) (by rw [hc.r6]) (hc.inTab hL ho) fun t₁ u₁ =>
+    k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, hc.tabWord hL ho]) u₁.other
+
+/-- `d ← D`, the table's digest length. -/
+theorem ldD_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 L.F.H.D →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 tD :: is)) t Q :=
+  tabLd_ok hL hc hd (by decide) fun t' c' m' v' k' => k t' c' m' (v'.trans hc.tabD) k'
+
+/-- `d ← B`, HMAC's block size. -/
+theorem ldB_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 L.F.H.B →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 tB :: is)) t Q :=
+  tabLd_ok hL hc hd (by decide) fun t' c' m' v' k' => k t' c' m' (v'.trans hc.tabB) k'
+
+/-- `d ← [r8 + o]`, a word of the frame. -/
+theorem frLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : o + 4 ≤ 512) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = t.mem.readW (L.B + BitVec.ofNat 64 (24 + o)) 32 →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r8 o :: is)) t Q :=
+  wp_ldrS (a := L.B + BitVec.ofNat 64 (24 + o)) (by omega) (by rw [hc.r8]; exact hL.fpA (by omega))
+    (hc.inFr (by omega) (by omega)) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
