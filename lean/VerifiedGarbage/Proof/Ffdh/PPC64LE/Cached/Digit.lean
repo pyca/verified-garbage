@@ -121,16 +121,19 @@ theorem bit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j : N
     rw [h23]; exact hs.ld (d := 24) (n := 8) (by omega)
   have v0 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 (i + 1) := by rw [h23]; exact hIw
   have v1 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 24) 64 = BitVec.ofNat 64 rows := by rw [h23]; exact hRw
+  have l2 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
+    rw [h23]; exact hs.ld (d := 64) (n := 8) (by omega)
+  have v2 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = X := by rw [h23]; exact hX
   obtain ⟨k, hk_def⟩ : ∃ k, k = i + j * rows := ⟨_, rfl⟩
   rw [← hk_def] at hk ⊢
   unfold bit
-  refine WP.seq (WP.mono (WP.keep [.r0, .r18, .r19] (Q := fun t => t.gpr .r19 = BitVec.ofNat 64 k ∧
-      t.gpr .r18 = BitVec.ofNat 64 (if k < 8 * xb.length then 1 else 0) ∧ t.mem = s.mem) (by
+  refine WP.seq (WP.mono (WP.keep [.r0, .r17, .r18, .r19] (Q := fun t => t.gpr .r19 = BitVec.ofNat 64 k ∧
+      t.gpr .r18 = BitVec.ofNat 64 (if k < 8 * xb.length then 1 else 0) ∧ t.gpr .r17 = X ∧ t.mem = s.mem) (by
     unfold ldh
-    prun [hI, hRows, l0, l1, v0, v1, h28, exec_li (show j < 2 ^ 15 by omega), ofNat_sub_one (show 1 ≤ i + 1 by omega) (show i + 1 < 2 ^ 64 by omega),
+    prun [hI, hRows, l0, l1, v0, v1, l2, v2, h28, exec_li (show j < 2 ^ 15 by omega), ofNat_sub_one (show 1 ≤ i + 1 by omega) (show i + 1 < 2 ^ 64 by omega),
       Nat.add_sub_cancel, ofNat_mul', ofNat_add', ofNat_shl3 (show 8 * xb.length < 2 ^ 64 by omega)]
     rw [show i + rows * j = k by rw [hk_def, Nat.mul_comm rows j]]
-    exact ⟨rfl, sign_bit (by omega) (by omega)⟩) rfl) fun s₁ ⟨⟨a19, a18, m1⟩, k1⟩ => ?_)
+    exact ⟨rfl, sign_bit (by omega) (by omega)⟩) rfl) fun s₁ ⟨⟨a19, a18, a17, m1⟩, k1⟩ => ?_)
   refine WP.ite (decide ¬ k < 8 * xb.length) (by
       rw [eval_zero, a18]; by_cases hc : k < 8 * xb.length <;> simp [hc]) (fun hb => ?_) (fun hb => ?_)
   · -- From `8 L` up: 0.
@@ -146,10 +149,6 @@ theorem bit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j : N
     obtain ⟨n, hn⟩ : ∃ n, n = xb.length - 1 - k / 8 := ⟨_, rfl⟩
     have hidx : n < xb.length := by omega
     have hn' : xb.length - k / 8 - 1 = n := by omega
-    have l2 : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r23 + BitVec.ofNat 64 64) 8 := by
-      rw [k1.rd, k1.wr, k1.gpr .r23 (by decide), h23]; exact hs.ld (d := 64) (n := 8) (by omega)
-    have v2 : s₁.mem.readW (s₁.gpr .r23 + BitVec.ofNat 64 64) 64 = X := by
-      rw [m1, k1.gpr .r23 (by decide), h23]; exact hX
     have h28' : s₁.gpr .r28 = BitVec.ofNat 64 xb.length := (k1.gpr .r28 (by decide)).trans h28
     have l3 : InRegions (s₁.rd ++ s₁.wr) (X + BitVec.ofNat 64 n) 1 := by
       rw [k1.rd, k1.wr]; exact hrd _ hidx
@@ -160,7 +159,7 @@ theorem bit_ok {s : State} {B X : Addr} {Z : Nat} {xb : List Byte} {i rows j : N
     refine WP.seq (WP.mono (WP.keep [.r0, .r17, .r18, .r20] (Q := fun t =>
         t.gpr .r20 = BitVec.ofNat 64 (xb[n]'hidx).toNat ∧
         t.gpr .r18 = BitVec.ofNat 64 (k % 8) ∧ t.mem = s₁.mem) (by
-      prun [l2, v2, h28', a19, ofNat_shr3 (show k < 2 ^ 64 by omega),
+      prun [a17, h28', a19, ofNat_shr3 (show k < 2 ^ 64 by omega),
         ofNat_sub' (show k / 8 ≤ xb.length by omega) (show xb.length < 2 ^ 64 by omega),
         ofNat_sub_one (show 1 ≤ xb.length - k / 8 by omega) (show xb.length - k / 8 < 2 ^ 64 by omega),
         hn', exec_lbz' (show Reg.r17 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), l3, v3, ofNat_and7]) rfl) fun s₂ ⟨⟨b20, b18, m2⟩, k2⟩ => ?_)
