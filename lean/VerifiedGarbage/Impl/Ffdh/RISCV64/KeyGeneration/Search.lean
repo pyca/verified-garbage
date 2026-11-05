@@ -2,22 +2,21 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontMul
 
-/-! # The native FFDH key-generation controller on RISC-V
+/-! # The native FFDH key-generation controller's blocks on RISC-V
 
-As on PPC64LE (`Impl/Ffdh/PPC64LE/KeyGeneration/Search.lean`): repeats an
-attempt of `vg_ffdh_generate_key` on successive `p_len` octets of the
-random tape until it gives a key, a budget runs out, or the tape does. The
-first four state words are the budgets, the width and the next request; the
-rest are private working space, whose base is kept in the callee-saved
-`s0` (the caller's `s0` saved in word 4). The loop runs in a frame saving
-`ra`, which the calls change; each attempt in a frame of 32 bytes holding
-its three stack arguments. The tape is short when its length left is below
-`p_len`, unsigned (`bltu`).
+As on PPC64LE (`Impl/Ffdh/PPC64LE/KeyGeneration/Search.lean`), the blocks of
+the controller that repeats an attempt on successive `p_len` octets of the
+random tape until it gives a key, a budget runs out, or the tape does
+(`Impl/Ffdh/RISCV64/CachedSearch.lean`). The first four state words are the
+budgets, the width and the next request; the rest are private working space,
+whose base is kept in the callee-saved `s0` (the caller's `s0` saved in word
+4). The tape is short when its length left is below `p_len`, unsigned
+(`bltu`).
 
-`vg_ffdh_generate_key_search(x = a0, x_len = a1, y = a2, y_len = a3,
+The controller's arguments: `x = a0, x_len = a1, y = a2, y_len = a3,
 used = a4, domain = a5, domain_len = a6, p_len = a7, rand = [sp],
 rand_len = [sp + 8], scratch = [sp + 16], scratch_len = [sp + 24],
-state = [sp + 32])`.
+state = [sp + 32]`.
 -/
 
 @[expose] public section
@@ -41,8 +40,8 @@ def entry : List Instr :=
     stf .a0 5, stf .a2 6, stf .a5 7, stf .a6 8, stf .a4 15,
     stf .t3 9, stf .t4 10, .li .t1 0, stf .t1 11, stf .t5 12, stf .t6 13]
 
-/-- `vg_ffdh_generate_key`'s arguments, for `p_len` octets at the tape's
-current pointer: its stack arguments at the frame's base. -/
+/-- The attempt's arguments, for `p_len` octets at the tape's current
+pointer: its first three stack arguments at the frame's base (`t2`). -/
 def arguments : List Instr :=
   [ldf .a0 5, ldf .a1 2, ldf .a2 6, ldf .a3 2, ldf .a4 7, ldf .a5 8, ldf .a6 2, ldf .a7 9,
     ldf .t0 12, ldf .t1 13, .addSp .t2 0, .store .d .a1 .t2 0, .store .d .t0 .t2 8,
@@ -90,28 +89,7 @@ def request : Prog isa := .seq (.block [ldf .t1 2, .li .t2 0, stf .t1 3, stf .t2
 /-- The tape's length left (`t0`) and `p_len` (`t1`). -/
 def room : List Instr := [ldf .t0 10, ldf .t1 2]
 
-variable (attempt : Prog isa)
-
-/-- The attempt, a call of `vg_ffdh_generate_key`, in a frame of its stack
-arguments. -/
-def attemptRun : Prog isa := .frame (.alloc 32) (.seq (.block arguments) attempt) (.free 32)
-
-def attemptOrRequest : Prog isa := .seq (.block room)
-  (.ite (.ltu .t0 .t1) request (.seq (attemptRun attempt) classify))
-
-def branch : Prog isa :=
-  .ite (.zero .t0) exhausted (.seq (.block [ldf .t0 1])
-    (.ite (.zero .t0) exhausted (attemptOrRequest attempt)))
-
-/-- The loop goes on while the status is 4, a rejection: `t0 := status − 4`. -/
-def iteration : Prog isa :=
-  .seq (.block [ldf .t0 0]) (.seq (branch attempt) (.block [ldf .t0 14, .addi .t0 .t0 (-4)]))
-
-def search : Prog isa := .frame (.push .ra) (.loop (iteration attempt) (.zero .t0)) (.pop .ra)
-
 /-- `used`, the status, and the caller's `s0` restored. -/
 def finish : List Instr := [ldf .t0 15, ldf .t1 11, ldf .a0 14, .store .d .t1 .t0 0, ldf .s0 4]
-
-def code : Prog isa := .seq (.block entry) (.seq (search attempt) (.block finish))
 
 end VG.Impl.Ffdh.RISCV64.KeyGeneration.Search
