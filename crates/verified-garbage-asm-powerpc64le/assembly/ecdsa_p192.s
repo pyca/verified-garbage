@@ -5,6 +5,157 @@
 // gives.
 
 vg_ecdsa_p192_verify:
+	stdu %r1, -112(%r1)
+	addi %r8, %r1, 32
+	li %r11, 24
+	subf %r12, %r11, %r5
+	xor %r11, %r5, %r12
+	and %r12, %r11, %r12
+	rldicl %r12, %r12, 1, 63
+	cmpldi %cr0, %r12, 0
+	bne %cr0, 20f
+	lbz %r9, 0(%r4)
+	stb %r9, 0(%r8)
+	lbz %r9, 1(%r4)
+	stb %r9, 1(%r8)
+	lbz %r9, 2(%r4)
+	stb %r9, 2(%r8)
+	lbz %r9, 3(%r4)
+	stb %r9, 3(%r8)
+	lbz %r9, 4(%r4)
+	stb %r9, 4(%r8)
+	lbz %r9, 5(%r4)
+	stb %r9, 5(%r8)
+	lbz %r9, 6(%r4)
+	stb %r9, 6(%r8)
+	lbz %r9, 7(%r4)
+	stb %r9, 7(%r8)
+	lbz %r9, 8(%r4)
+	stb %r9, 8(%r8)
+	lbz %r9, 9(%r4)
+	stb %r9, 9(%r8)
+	lbz %r9, 10(%r4)
+	stb %r9, 10(%r8)
+	lbz %r9, 11(%r4)
+	stb %r9, 11(%r8)
+	lbz %r9, 12(%r4)
+	stb %r9, 12(%r8)
+	lbz %r9, 13(%r4)
+	stb %r9, 13(%r8)
+	lbz %r9, 14(%r4)
+	stb %r9, 14(%r8)
+	lbz %r9, 15(%r4)
+	stb %r9, 15(%r8)
+	lbz %r9, 16(%r4)
+	stb %r9, 16(%r8)
+	lbz %r9, 17(%r4)
+	stb %r9, 17(%r8)
+	lbz %r9, 18(%r4)
+	stb %r9, 18(%r8)
+	lbz %r9, 19(%r4)
+	stb %r9, 19(%r8)
+	lbz %r9, 20(%r4)
+	stb %r9, 20(%r8)
+	lbz %r9, 21(%r4)
+	stb %r9, 21(%r8)
+	lbz %r9, 22(%r4)
+	stb %r9, 22(%r8)
+	lbz %r9, 23(%r4)
+	stb %r9, 23(%r8)
+	b 21f
+20:
+	li %r9, 0
+	stb %r9, 0(%r8)
+	stb %r9, 1(%r8)
+	stb %r9, 2(%r8)
+	stb %r9, 3(%r8)
+	stb %r9, 4(%r8)
+	stb %r9, 5(%r8)
+	stb %r9, 6(%r8)
+	stb %r9, 7(%r8)
+	stb %r9, 8(%r8)
+	stb %r9, 9(%r8)
+	stb %r9, 10(%r8)
+	stb %r9, 11(%r8)
+	stb %r9, 12(%r8)
+	stb %r9, 13(%r8)
+	stb %r9, 14(%r8)
+	stb %r9, 15(%r8)
+	stb %r9, 16(%r8)
+	stb %r9, 17(%r8)
+	stb %r9, 18(%r8)
+	stb %r9, 19(%r8)
+	stb %r9, 20(%r8)
+	stb %r9, 21(%r8)
+	stb %r9, 22(%r8)
+	stb %r9, 23(%r8)
+	stb %r9, 24(%r8)
+	stb %r9, 25(%r8)
+	stb %r9, 26(%r8)
+	stb %r9, 27(%r8)
+	stb %r9, 28(%r8)
+	stb %r9, 29(%r8)
+	stb %r9, 30(%r8)
+	stb %r9, 31(%r8)
+	stb %r9, 32(%r8)
+	stb %r9, 33(%r8)
+	stb %r9, 34(%r8)
+	stb %r9, 35(%r8)
+	stb %r9, 36(%r8)
+	stb %r9, 37(%r8)
+	stb %r9, 38(%r8)
+	stb %r9, 39(%r8)
+	stb %r9, 40(%r8)
+	stb %r9, 41(%r8)
+	stb %r9, 42(%r8)
+	stb %r9, 43(%r8)
+	stb %r9, 44(%r8)
+	stb %r9, 45(%r8)
+	stb %r9, 46(%r8)
+	stb %r9, 47(%r8)
+	stb %r9, 48(%r8)
+	stb %r9, 49(%r8)
+	stb %r9, 50(%r8)
+	stb %r9, 51(%r8)
+	stb %r9, 52(%r8)
+	stb %r9, 53(%r8)
+	stb %r9, 54(%r8)
+	stb %r9, 55(%r8)
+	stb %r9, 56(%r8)
+	stb %r9, 57(%r8)
+	stb %r9, 58(%r8)
+	stb %r9, 59(%r8)
+	stb %r9, 60(%r8)
+	stb %r9, 61(%r8)
+	stb %r9, 62(%r8)
+	stb %r9, 63(%r8)
+	stb %r9, 64(%r8)
+	stb %r9, 65(%r8)
+	stb %r9, 66(%r8)
+	stb %r9, 67(%r8)
+	stb %r9, 68(%r8)
+	stb %r9, 69(%r8)
+	stb %r9, 70(%r8)
+	stb %r9, 71(%r8)
+	addi %r10, %r8, 24
+	subf %r10, %r5, %r10
+	cmpldi %cr0, %r5, 0
+	beq %cr0, 22f
+24:
+	lbz %r9, 0(%r4)
+	stb %r9, 0(%r10)
+	addi %r4, %r4, 1
+	addi %r10, %r10, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 24b
+	b 23f
+22:
+23:
+21:
+	or %r4, %r8, %r8
+	or %r5, %r6, %r6
+	or %r6, %r7, %r7
 	std %r14, 0(%r6)
 	std %r31, 8(%r6)
 	mflr %r0
@@ -331,7 +482,7 @@ vg_ecdsa_p192_verify:
 	std %r4, 1120(%r3)
 	or %r12, %r5, %r5
 	li %r31, 24
-20:
+25:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 808(%r4)
@@ -362,9 +513,9 @@ vg_ecdsa_p192_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 20b
+	bne %cr0, 25b
 	li %r31, 24
-21:
+26:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 352(%r4)
@@ -395,9 +546,9 @@ vg_ecdsa_p192_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4295(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 21b
+	bne %cr0, 26b
 	li %r31, 24
-22:
+27:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 376(%r4)
@@ -428,7 +579,7 @@ vg_ecdsa_p192_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4487(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 22b
+	bne %cr0, 27b
 	addi %r6, %r12, 24
 	li %r9, 16
 	ldbrx %r8, %r6, %r9
@@ -808,7 +959,7 @@ vg_ecdsa_p192_verify:
 	ld %r4, 344(%r3)
 	std %r4, 776(%r3)
 	li %r31, 192
-23:
+28:
 	addi %r31, %r31, -1
 	li %r4, 760
 	li %r5, 760
@@ -841,7 +992,7 @@ vg_ecdsa_p192_verify:
 	xor %r4, %r4, %r5
 	std %r4, 776(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 23b
+	bne %cr0, 28b
 	li %r4, 1024
 	li %r5, 832
 	li %r6, 304
@@ -867,7 +1018,7 @@ vg_ecdsa_p192_verify:
 	li %r6, 160
 	bl {vg_p192_mul_mod_n}
 	li %r31, 24
-24:
+29:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 880(%r4)
@@ -898,7 +1049,7 @@ vg_ecdsa_p192_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 24b
+	bne %cr0, 29b
 	ld %r4, 256(%r3)
 	std %r4, 3576(%r3)
 	ld %r4, 264(%r3)
@@ -930,7 +1081,7 @@ vg_ecdsa_p192_verify:
 	ld %r4, 248(%r3)
 	std %r4, 3688(%r3)
 	li %r31, 192
-25:
+210:
 	addi %r31, %r31, -1
 	ld %r4, 400(%r3)
 	std %r4, 3504(%r3)
@@ -1029,7 +1180,7 @@ vg_ecdsa_p192_verify:
 	xor %r4, %r4, %r5
 	std %r4, 464(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 25b
+	bne %cr0, 210b
 	ld %r4, 400(%r3)
 	std %r4, 1048(%r3)
 	ld %r4, 408(%r3)
@@ -1103,7 +1254,7 @@ vg_ecdsa_p192_verify:
 	ori %r11, %r11, 0
 	stw %r11, 468(%r3)
 	li %r31, 24
-26:
+211:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 904(%r4)
@@ -1134,7 +1285,7 @@ vg_ecdsa_p192_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 26b
+	bne %cr0, 211b
 	ld %r4, 976(%r3)
 	std %r4, 3576(%r3)
 	ld %r4, 984(%r3)
@@ -1166,7 +1317,7 @@ vg_ecdsa_p192_verify:
 	ld %r4, 248(%r3)
 	std %r4, 3688(%r3)
 	li %r31, 192
-27:
+212:
 	addi %r31, %r31, -1
 	ld %r4, 400(%r3)
 	std %r4, 3504(%r3)
@@ -1265,7 +1416,7 @@ vg_ecdsa_p192_verify:
 	xor %r4, %r4, %r5
 	std %r4, 464(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 27b
+	bne %cr0, 212b
 	li %r4, 616
 	li %r5, 1048
 	li %r6, 400
@@ -1451,7 +1602,7 @@ vg_ecdsa_p192_verify:
 	ld %r4, 200(%r3)
 	std %r4, 776(%r3)
 	li %r31, 192
-28:
+213:
 	addi %r31, %r31, -1
 	li %r4, 760
 	li %r5, 760
@@ -1484,7 +1635,7 @@ vg_ecdsa_p192_verify:
 	xor %r4, %r4, %r5
 	std %r4, 776(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 28b
+	bne %cr0, 213b
 	li %r4, 880
 	li %r5, 400
 	li %r6, 760
@@ -1540,6 +1691,7 @@ vg_ecdsa_p192_verify:
 	ld %r14, 0(%r3)
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
+	addi %r1, %r1, 112
 	blr
 
 vg_ecdsa_p192_sign:

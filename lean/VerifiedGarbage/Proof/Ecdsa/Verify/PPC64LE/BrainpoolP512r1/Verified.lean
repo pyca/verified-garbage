@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
+public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
+meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.PPC64LE
@@ -86,5 +91,15 @@ theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
           Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
           [satState] using satState }
+
+/-- `vg_ecdsa_brainpoolp512r1_verify`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash
+(`Hash.verifyHash_verified`). -/
+theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    Verified PPC64LE.target
+      (Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false verifyBrainpoolP512r1)
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract PPC64LE.abi 112) :=
+  Proof.Ecdsa.Verify.PPC64LE.Hash.verifyHash_verified Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide)
+    (verify_verified hL) (by taint_decide)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1
