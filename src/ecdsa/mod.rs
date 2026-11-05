@@ -1,9 +1,7 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
-//! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], [`P384`], `P521`, `P192`, `P224`, `BrainpoolP256r1`,
-//! `BrainpoolP384r1`, `BrainpoolP512r1` and `Secp256k1`), and
-//! signs with a hash
+//! A [`SigningKey<C>`] holds a private key on a curve `C` of
+//! [`ec`](crate::ec), and signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]), as
 //! in `key.sign::<Sha256>(message)`.
 //!
@@ -25,12 +23,8 @@
 //! Signing is constant time except for the number of candidates for `k`
 //! that it tries, almost always one.
 //!
-//! `public_key` derives a key's public key `Q = dG`, by one call of
-//! verified code (`vg_ec_<curve>_public_key`, contract
-//! `VG.Spec.EcKey.Instance.publicKeyContract`), in constant time.
-//!
-//! A [`VerifyingKey<C>`] holds a public key, and checks a signature with a
-//! hash function `H` (`key.verify::<Sha256>(message, signature)`) by one
+//! A [`PublicKey<C>`] checks a signature with a hash function `H`
+//! (`key.verify::<Sha256>(message, signature)`) by one
 //! call of verified code (`vg_ecdsa_<curve>_verify`, contract
 //! `VG.Spec.Ecdsa.Instance.verifyContract`) with the hash's leftmost bits,
 //! as many as the curve's order has (FIPS 186-5 §6.4.2), which also checks
@@ -57,11 +51,7 @@ mod p521;
 mod secp256k1;
 mod table;
 
-pub use crate::ec::{
-    BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, P192, P224, P256, P384, P521,
-    Secp256k1,
-};
-
+use crate::ec::{Curve, PublicKey};
 use crate::zeroize::zeroize;
 
 mod sealed {
@@ -127,6 +117,15 @@ impl<C: Curve> SigningKey<C> {
         Self { d: d.clone() }
     }
 
+    /// The public key `Q = dG`, which verifies the key's signatures.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
+    pub fn public_key(&self) -> Result<PublicKey<C>, Error> {
+        PublicKey::derive(&self.d).ok_or(Error::InvalidKey)
+    }
+
     /// Signs the hash of `message` with the hash function `H`, deriving `k`
     /// with HMAC with `H` (RFC 6979 §3.2): the signature `r ‖ s`.
     ///
@@ -169,25 +168,8 @@ impl<C: Curve> Drop for SigningKey<C> {
     }
 }
 
-/// An ECDSA public key on the curve `C`, for verifying signatures.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct VerifyingKey<C: Curve> {
-    q: C::PublicKey,
-}
-
-impl<C: Curve> VerifyingKey<C> {
-    /// Imports a public key, in the uncompressed form of SEC 1 §2.3.3.
-    /// Verifying checks that it is valid: a key that is not is never
-    /// accepted.
-    pub fn from_bytes(q: &C::PublicKey) -> Self {
-        Self { q: q.clone() }
-    }
-
-    /// The public key, as [`from_bytes`](Self::from_bytes) takes it.
-    pub fn to_bytes(&self) -> C::PublicKey {
-        self.q.clone()
-    }
-
+/// Verifying ECDSA signatures.
+impl<C: Curve> PublicKey<C> {
     /// Verifies the signature `r ‖ s` of the hash of `message` with the hash
     /// function `H` (FIPS 186-5 §6.4.2).
     ///

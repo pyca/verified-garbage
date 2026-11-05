@@ -10,7 +10,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ecdsa::{Error, P521, SigningKey, VerifyingKey};
+use verified_garbage::ec::{P521, PublicKey};
+use verified_garbage::ecdsa::{Error, SigningKey};
 use verified_garbage::hashes::sha512::Sha512;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -34,7 +35,7 @@ fn sign(key: &SigningKey<P521>, message: &[u8]) -> [Result<[u8; 132], Error>; 2]
 }
 
 /// Whether `rs` verifies for `message`, of the message and of its hash.
-fn verify(key: &VerifyingKey<P521>, message: &[u8], rs: &[u8; 132]) -> [Result<(), Error>; 2] {
+fn verify(key: &PublicKey<P521>, message: &[u8], rs: &[u8; 132]) -> [Result<(), Error>; 2] {
     [
         key.verify::<Sha512>(message, rs),
         key.verify_prehashed::<Sha512>(&Sha512::digest(message), rs),
@@ -59,12 +60,11 @@ fn p521_sha512() {
 #[test]
 fn p521_verify() {
     let (_, x, u, signatures) = p521();
-    let key = VerifyingKey::<P521>::from_bytes(&u);
-    assert_eq!(key.to_bytes(), u);
+    let key = PublicKey::<P521>::from_bytes(&u);
+    assert_eq!(key.as_bytes(), &u);
     let other = SigningKey::<P521>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let other = VerifyingKey::<P521>::from_bytes(&other);
     let bad = Err(Error::InvalidSignature);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), message.as_bytes(), rs);
@@ -81,7 +81,10 @@ fn p521_verify() {
 #[test]
 fn p521_public_key() {
     let (_, x, u, _) = p521();
-    assert_eq!(SigningKey::<P521>::from_bytes(&x).public_key(), Ok(u));
+    assert_eq!(
+        SigningKey::<P521>::from_bytes(&x).public_key(),
+        Ok(PublicKey::from_bytes(&u))
+    );
 }
 
 /// A key outside `[1, n − 1]` is refused; those at its ends sign, and have

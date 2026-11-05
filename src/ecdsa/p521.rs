@@ -1,8 +1,7 @@
-//! ECDSA over P-521: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_p521_sign`), public keys (`vg_ec_p521_public_key`), and
-//! verification (`vg_ecdsa_p521_verify`), and their variants on CPUs with the
-//! features their `_FEATURES` constants name: `_adx` on x86-64.
+//! ECDSA over P-521: deterministic signatures with HMAC over any hash function
+//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p521_sign`),
+//! and verification (`vg_ecdsa_p521_verify`), and their variants on CPUs with
+//! the features their `_FEATURES` constants name: `_adx` on x86-64.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -14,25 +13,14 @@
 ))]
 
 use super::table::{HmacHash, SignFn, sign_with};
-use super::{Error, P521, SignatureHash, SigningKey, sealed};
+use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign;
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::{vg_ecdsa_p521_sign_adx, vg_ecdsa_p521_verify_adx};
 use crate::cpu::detected;
-use crate::ec::p521::{Mul, public_key};
-
-impl SigningKey<P521> {
-    /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
-    /// `04 ‖ x ‖ y`, each coordinate 66 bytes, most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<[u8; 133], Error> {
-        public_key(&self.d).ok_or(Error::InvalidKey)
-    }
-}
+use crate::ec::P521;
+use crate::ec::p521::Mul;
 
 /// The 66 bytes `vg_ecdsa_p521_verify` takes for a hash shorter than them:
 /// the hash's integer shifted left by 7 bits, so that its leftmost 521 bits

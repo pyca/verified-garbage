@@ -1,9 +1,8 @@
-//! ECDSA over P-256: deterministic signatures with HMAC over any hash
-//! function that has a table (`HmacHash`), taken as that table
-//! (`vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
-//! verification (`vg_ecdsa_p256_verify`), and their variants on CPUs with the
-//! features their `_FEATURES` constants name: `_adx` on x86-64, `_umaal`
-//! on ARMv7.
+//! ECDSA over P-256: deterministic signatures with HMAC over any hash function
+//! that has a table (`HmacHash`), taken as that table (`vg_ecdsa_p256_sign`),
+//! and verification (`vg_ecdsa_p256_verify`), and their variants on CPUs with
+//! the features their `_FEATURES` constants name: `_adx` on x86-64, `_umaal` on
+//! ARMv7.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -15,7 +14,7 @@
 ))]
 
 use super::table::{HmacHash, SignFn, leftmost, sign_with};
-use super::{Error, P256, SignatureHash, SigningKey, sealed};
+use super::{Error, SignatureHash, sealed};
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_sign;
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
@@ -23,19 +22,8 @@ use crate::arch::ecdsa_p256::{vg_ecdsa_p256_sign_adx, vg_ecdsa_p256_verify_adx};
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_p256::{vg_ecdsa_p256_sign_umaal, vg_ecdsa_p256_verify_umaal};
 use crate::cpu::detected;
-use crate::ec::p256::{Mul, public_key};
-
-impl SigningKey<P256> {
-    /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
-    /// `04 ‖ x ‖ y`, each coordinate 32 bytes, most significant first.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<[u8; 65], Error> {
-        public_key(&self.d).ok_or(Error::InvalidKey)
-    }
-}
+use crate::ec::P256;
+use crate::ec::p256::Mul;
 
 /// Whether `signature` verifies with `q` for the hash whose leftmost 32
 /// bytes are `e`.

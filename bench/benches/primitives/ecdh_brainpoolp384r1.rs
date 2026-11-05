@@ -25,16 +25,18 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ecdh::{BrainpoolP384r1, PrivateKey};
+    use verified_garbage::ec::{BrainpoolP384r1, PublicKey};
+    use verified_garbage::ecdh::PrivateKey;
 
     use crate::{BenchDyn, OPENSSL, VG};
 
     // Keys below brainpoolP384r1's order.
     let d = [0x42; 48];
     let peer_d = [0x24; 48];
-    let peer = PrivateKey::<BrainpoolP384r1>::from_bytes(&peer_d)
+    let peer = *PrivateKey::<BrainpoolP384r1>::from_bytes(&peer_d)
         .public_key()
-        .unwrap();
+        .unwrap()
+        .as_bytes();
     let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P384R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(&d).unwrap();
@@ -49,7 +51,11 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ecdh_brainpoolp384r1");
     // The ids' size is the bytes of the shared secret.
     g.bench(BenchmarkId::new(VG, 48), |b| {
-        b.iter(|| black_box(&vg_private).exchange(black_box(&peer)).unwrap())
+        b.iter(|| {
+            black_box(&vg_private)
+                .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                .unwrap()
+        })
     });
     g.bench(BenchmarkId::new(OPENSSL, 48), |b| {
         b.iter(|| {
@@ -80,7 +86,11 @@ pub fn bench(c: &mut Criterion) {
         one[47] = 1;
         let key = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
         g.bench(BenchmarkId::new("scalar-multiply", 97), |b| {
-            b.iter(|| black_box(&key).exchange(black_box(&peer)).is_ok())
+            b.iter(|| {
+                black_box(&key)
+                    .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                    .is_ok()
+            })
         });
         g.finish();
     }
