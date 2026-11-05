@@ -227,7 +227,6 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
-
 }
 
 #[cfg(not(any(

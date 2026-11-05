@@ -66,7 +66,6 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
-
 }
 
 /// The shortest stream of octets from a splitmix64 generator seeded with
