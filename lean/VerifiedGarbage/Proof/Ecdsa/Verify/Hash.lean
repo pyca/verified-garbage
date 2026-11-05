@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Words
-import Mathlib.Tactic.Ring
 
 -- separate module: target-independent, for each target's verification of the hash function's output
 
@@ -73,7 +72,7 @@ theorem half_step (a b P Y Z : Nat) (_ha : a < 256) (hb : b < 256) (hY : Y < P)
   have hZP : Z < P := by omega
   have e1 : b * P + Y = (b % 2 * P + Y) + (b / 2 * P) * 2 := by
     conv => lhs; rw [← Nat.div_add_mod b 2]
-    ring
+    grind
   have e2 : (b * P + Y) / 2 = Z + b / 2 * P := by
     rw [e1, Nat.add_mul_div_right _ _ (by decide), hZ]
   have e3 : (b * P + Y) / 2 % P = Z := by
@@ -82,7 +81,7 @@ theorem half_step (a b P Y Z : Nat) (_ha : a < 256) (hb : b < 256) (hY : Y < P)
       (b % 2 * P + Y + ((a % 2 * 128 + b / 2) * P + a / 2 * (256 * P)) * 2) := by
     rw [e1]
     conv => lhs; rw [← Nat.div_add_mod a 2]
-    ring
+    grind
   rw [e3, e4, Nat.add_mul_div_right _ _ (by decide), ← hZ, ← Nat.add_assoc, Nat.add_comm Z,
     Nat.add_mul_mod_self_right]
   refine (Nat.mod_eq_of_lt ?_).symm
