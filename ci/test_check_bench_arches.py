@@ -376,27 +376,6 @@ class Selection(unittest.TestCase):
             self.assertIn('src/rsa/pss/x86_64.rs', planner.sources('rsa_pss'))
             self.assertEqual(planner.requirements('x86_64', {'rsa_pss'}, [None]), {frozenset({'adx'})})
 
-    def test_moved_files_are_named_by_their_path_at_the_root(self):
-        # `aead::aes_gcm` is `aes_gcm`, and `src/aead/mod.rs` is a list of
-        # modules.
-        self.assertEqual(planner.logical('src/aead/aes_gcm.rs'), 'src/aes_gcm.rs')
-        self.assertEqual(planner.logical('src/aead/mod.rs'), 'src/aead/mod.rs')
-        self.assertEqual(planner.physical('src/aes_gcm_siv.rs'), 'src/aead/aes_gcm_siv.rs')
-        self.assertEqual(planner.physical('src/aes_cbc.rs'), 'src/aes_cbc.rs')
-        self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
-        self.assertEqual(planner.crate_path('aes'), 'aes')
-        self.catalog.update({'aes_gcm': {'aes_gcm'}, 'aes_gcm_siv': {'aes_gcm_siv', 'aes_gcm'}})
-        self.files.update({
-            'src/lib.rs': 'mod aes;\npub mod aead;\n',
-            'src/aes.rs': 'pub(crate) enum Backend {}\n',
-            'src/aes_gcm.rs': 'use crate::aes::Backend;\n',
-            'src/aes_gcm_siv.rs': 'use crate::aead::aes_gcm::Backend;\n',
-        })
-        self.assertEqual({r['modules'] for r in self.rows(['src/aead/aes_gcm_siv.rs'])}, {'aes_gcm_siv'})
-        # A private helper's users, at their paths in the crate.
-        self.assertEqual({r['modules'] for r in self.rows(['src/aes.rs'])}, {'aes_gcm'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'])}, {'triple_des_ecb'})
-
     def test_shared_hash_code_selects_every_hash(self):
         # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
         self.files['src/hashes/sha256.rs'] = ''
@@ -526,6 +505,27 @@ class Selection(unittest.TestCase):
             with self.subTest(parent=parent):
                 self.files['src/old.rs'] = parent
                 self.assertEqual(len(self.rows(['src/shared.rs'])), self.full_matrix())
+
+    def test_aead_files_are_named_by_their_path_at_the_root(self):
+        # `aead::aes_gcm` is `aes_gcm`, and `src/aead/mod.rs` is a list of
+        # modules.
+        self.assertEqual(planner.logical('src/aead/aes_gcm.rs'), 'src/aes_gcm.rs')
+        self.assertEqual(planner.logical('src/aead/mod.rs'), 'src/aead/mod.rs')
+        self.assertEqual(planner.physical('src/aes_gcm_siv.rs'), 'src/aead/aes_gcm_siv.rs')
+        self.assertEqual(planner.physical('src/aes_cbc.rs'), 'src/aes_cbc.rs')
+        self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
+        self.assertEqual(planner.crate_path('aes'), 'aes')
+        self.catalog.update({'aes_gcm': {'aes_gcm'}, 'aes_gcm_siv': {'aes_gcm_siv', 'aes_gcm'}})
+        self.files.update({
+            'src/lib.rs': 'mod aes;\npub mod aead;\n',
+            'src/aes.rs': 'pub(crate) enum Backend {}\n',
+            'src/aes_gcm.rs': 'use crate::aes::Backend;\n',
+            'src/aes_gcm_siv.rs': 'use crate::aead::aes_gcm::Backend;\n',
+        })
+        self.assertEqual({r['modules'] for r in self.rows(['src/aead/aes_gcm_siv.rs'])}, {'aes_gcm_siv'})
+        # A private helper's users, at their paths in the crate.
+        self.assertEqual({r['modules'] for r in self.rows(['src/aes.rs'])}, {'aes_gcm'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'])}, {'triple_des_ecb'})
 
     def test_private_helpers_select_the_modules_using_them(self):
         self.files.update({
