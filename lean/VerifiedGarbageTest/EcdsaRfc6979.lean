@@ -2,10 +2,8 @@ module
 
 import Lean.Elab.Command
 meta import Lean.Elab.Command
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
-meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
-meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
+import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbageTest.Ec.Rfc6979
 meta import VerifiedGarbageTest.Ec.Rfc6979
 import VerifiedGarbage.Spec.Sha1
@@ -28,8 +26,7 @@ From the byte-for-byte vendored RFC:
   a placeholder.
 * The ten signatures of §A.2.5 (P-256; "sample" and "test" with SHA-1,
   SHA-224, SHA-256, SHA-384 and SHA-512), with the checks of
-  `Ec/Rfc6979.lean`: the contracts' instances are `P256Sha256.inst` and
-  `P256Sha384.inst`.
+  `Ec/Rfc6979.lean`: the contract's instance is `Curves.p256`.
 -/
 
 namespace VG.Test.EcdsaRfc6979
@@ -99,7 +96,7 @@ run_cmd do
   let result := do
     checkDetailed text
     VG.Test.Ec.Rfc6979.check Spec.P256.curve
-      [("SHA-256", Spec.Ecdsa.Rfc6979.P256Sha256.inst), ("SHA-384", Spec.Ecdsa.Rfc6979.P256Sha384.inst)]
+      Spec.Ecdsa.Rfc6979.Curves.p256
       "A.2.5.  ECDSA, 256 Bits" "A.2.6." text
   match result with
   | .ok () => pure ()

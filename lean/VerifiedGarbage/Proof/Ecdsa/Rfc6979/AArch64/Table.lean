@@ -109,8 +109,6 @@ def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Spec.Ecdsa.Rfc6
   ecdsa := T.ecdsa
   hash := w.ok.SH.H
   hashLen := w.H.D
-  hashName := ""
-  hashTitle := ""
   tries := T.tries
 
 /-- What each curve's file shows of its curve and instance. -/

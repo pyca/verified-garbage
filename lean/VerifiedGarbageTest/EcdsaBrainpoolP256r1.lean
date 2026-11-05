@@ -4,15 +4,17 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbageTest.Ec.Rfc7027
 meta import VerifiedGarbageTest.Ec.Rfc7027
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256
-meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256
+import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Spec.Hmac
+meta import VerifiedGarbage.Spec.Hmac
 
 /-!
 # ECDSA brainpoolP256r1 specification tests
 
 The first key pair of RFC 7027 §A.1 (brainpoolP256r1), parsed from the
 byte-for-byte vendored RFC, with the checks of `Ec/Rfc7027.lean`: the group
-law, and the signatures of `BrainpoolP256r1Sha256.inst`, which verify.
+law, and the signatures of `Curves.brainpoolp256r1` with HMAC-SHA-256, which verify.
 -/
 
 open Lean Elab Command in
@@ -22,7 +24,7 @@ run_cmd do
     | throwError "no repository root above {file}"
   let text ← IO.FS.readFile (root / "vectors" / "rfc7027" / "rfc7027.txt")
   match (VG.Test.Ec.Rfc7027.checkEcdsa VG.Spec.BrainpoolP256r1.curve
-      VG.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst
+      VG.Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 VG.Spec.Hmac.sha256 32
       "A.1.  256-Bit Curve" "A.2.") text with
   | .ok () => pure ()
   | .error e => throwError "rfc7027.txt: {e}"

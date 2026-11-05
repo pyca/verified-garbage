@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 public import VerifiedGarbage.Proof.HmacTable.X86_64
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Instrs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -112,8 +113,6 @@ def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : MdHash) : Spec.Ecdsa.Rfc6
   ecdsa := T.ecdsa
   hash := w.ok.SH.H
   hashLen := w.H.D
-  hashName := ""
-  hashTitle := ""
   tries := T.tries
 
 /-- What each curve's file shows of its curve and instance. -/
