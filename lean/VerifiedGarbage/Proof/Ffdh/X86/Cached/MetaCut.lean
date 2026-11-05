@@ -43,13 +43,13 @@ theorem ctxWord_read (C : CtxRd base bytes len args s) (hc : s.gpr .ecx = args c
   exact hv
 
 /-- The cut's first byte and mask from the context's width `bits` and its bytes. -/
-theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len args s)
+theorem metaHead_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len args s)
     (h3 : args 3 = BitVec.ofNat 32 len) {bits : Nat} (hb1 : 1 ≤ bits) (hb : bits ≤ 8 * len)
     (w0 : w32 s.mem (ctxAddr args) 0 = bits) (w8 : w32 s.mem (ctxAddr args) 8 = (bits + 7) / 8) :
-    WP isa Generate.metaCut s fun u => Step Ex base bytes len args s u ∧
-      Kept base len [] [ldOff, tOff] s.mem u.mem ∧
-      w32 u.mem base ldOff = len - VG.Proof.Ffdh.ScalarWidth.width bits ∧
-      w32 u.mem base tOff = (VG.Proof.Ffdh.ScalarWidth.mask bits).toNat := by
+    WP isa (.block metaHead) s fun u => Step Ex base bytes len args s u ∧
+      Kept base len [] [ldOff] s.mem u.mem ∧ w32 u.mem base ldOff = len - (bits + 7) / 8 ∧
+      u.gpr .edx = BitVec.ofNat 32 (bits + 8 - 8 * ((bits + 7) / 8)) ∧ u.gpr .eax = BitVec.ofNat 32 1 ∧
+      Outside base ldOff 4 s.mem u.mem := by
   have lw := h.lower
   have up := h.upper
   have lo : ldOff = 24 := rfl
@@ -59,8 +59,8 @@ theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
   have hd : VG.Proof.Ffdh.ScalarWidth.headBits bits = bits + 8 - 8 * ((bits + 7) / 8) := by
     simp only [VG.Proof.Ffdh.ScalarWidth.headBits, wd]; omega
   have hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega
-  unfold Generate.metaCut
-  refine WP.seq (wp_movS (h.arg (i := ctxArg) (by decide)) fun s₁ U₁ _ => ?_)
+  unfold metaHead
+  refine wp_movS (h.arg (i := ctxArg) (by decide)) fun s₁ U₁ _ => ?_
   have C₁ := C.keep U₁.keeps
   refine wp_movS (ctxWord_read C₁ U₁.gpr (d := 8) (v := (bits + 7) / 8) (by decide) (by rw [U₁.mem]; exact w8) (by omega))
     fun s₂ U₂ _ => ?_
@@ -116,11 +116,35 @@ theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
   have K₅₁₂ : Keeps [.eax, .ecx, .edx] s₅ s₁₂ := (K₅₈.mono (by decide)).trans
     ((((U₉.keeps.mono (by decide)).widen U₁₀.keeps).widen U₁₁.keeps).widen U₁₂.keeps)
   have m₁₂ : s₁₂.mem = s₅.mem := by rw [U₁₂.mem, U₁₁.mem, U₁₀.mem, U₉.mem, m₅₈]
+  have K₁₂ : Keeps [.eax, .ecx, .edx] s s₁₂ := K₅.trans K₅₁₂
+  have O₁₂ : Outside base ldOff 4 s.mem s₁₂.mem := by rw [m₁₂]; exact O₅
+  refine ⟨Step.word h (d := ldOff) (by decide) O₁₂ K₁₂, (kept_word h (d := ldOff) (by decide) (by decide) O₁₂).mono,
+    by rw [m₁₂]; exact W₅, edx₁₂, eax₁₂, O₁₂⟩
+
+theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len args s)
+    (h3 : args 3 = BitVec.ofNat 32 len) {bits : Nat} (hb1 : 1 ≤ bits) (hb : bits ≤ 8 * len)
+    (w0 : w32 s.mem (ctxAddr args) 0 = bits) (w8 : w32 s.mem (ctxAddr args) 8 = (bits + 7) / 8) :
+    WP isa Generate.metaCut s fun u => Step Ex base bytes len args s u ∧
+      Kept base len [] [ldOff, tOff] s.mem u.mem ∧
+      w32 u.mem base ldOff = len - VG.Proof.Ffdh.ScalarWidth.width bits ∧
+      w32 u.mem base tOff = (VG.Proof.Ffdh.ScalarWidth.mask bits).toNat := by
+  have lw := h.lower
+  have up := h.upper
+  have lo : ldOff = 24 := rfl
+  have to : tOff = 28 := rfl
+  have wd : VG.Proof.Ffdh.ScalarWidth.width bits = (bits + 7) / 8 := by
+    simp only [VG.Proof.Ffdh.ScalarWidth.width]; omega
+  have hd : VG.Proof.Ffdh.ScalarWidth.headBits bits = bits + 8 - 8 * ((bits + 7) / 8) := by
+    simp only [VG.Proof.Ffdh.ScalarWidth.headBits, wd]; omega
+  have hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega
+  unfold Generate.metaCut
+  refine WP.seq (WP.mono (metaHead_ok h C h3 hb1 hb w0 w8) fun s₁₂ ⟨S₅, k₅, W₅, edx₁₂, eax₁₂, _⟩ => ?_)
+  have h₅ := S₅.inp
   generalize hN : bits + 8 - 8 * ((bits + 7) / 8) = N at edx₁₂ hb8 hd
   refine WP.seq (WP.mono (VG.Proof.Ffdh.X86.KeyScan.count_loop (n := N) (by omega)
-    (fun j t => t.gpr .eax = BitVec.ofNat 32 (2 ^ j) ∧ t.gpr .edx = BitVec.ofNat 32 (N - j) ∧ t.mem = s₅.mem ∧
+    (fun j t => t.gpr .eax = BitVec.ofNat 32 (2 ^ j) ∧ t.gpr .edx = BitVec.ofNat 32 (N - j) ∧ t.mem = s₁₂.mem ∧
       Keeps [.eax, .edx] s₁₂ t) (fun j hj t ⟨ea, ed, mt, Kt⟩ => ?_) ⟨by simpa using eax₁₂, by simpa using edx₁₂,
-      m₁₂, Keeps.refl _ _⟩) fun t ⟨ea, _, mt, Kt⟩ => ?_)
+      rfl, Keeps.refl _ _⟩) fun t ⟨ea, _, mt, Kt⟩ => ?_)
   · refine wp_addS rfl fun t₁ V₁ _ => wp_subZ rfl fun t₂ V₂ z₂ => WP.block_nil ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
     · rw [V₂.other _ (by decide), V₁.gpr, ea, BitVec.ofNat_add_ofNat, Nat.pow_succ, Nat.mul_two]
     · rw [V₂.gpr, V₁.other _ (by decide), ed, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
@@ -138,20 +162,17 @@ theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
         simp at this; omega
   · refine wp_subS rfl fun t₁ V₁ _ => ?_
-    have K₅₁ : Keeps [.eax, .ecx, .edx] s₅ t₁ :=
-      (K₅₁₂.trans (Kt.mono (by decide))).trans (V₁.keeps.mono (by decide))
-    have m₁ : t₁.mem = s₅.mem := by rw [V₁.mem, mt]
+    have K₅₁ : Keeps [.eax, .ecx, .edx] s₁₂ t₁ := (Kt.mono (by decide)).trans (V₁.keeps.mono (by decide))
+    have m₁ : t₁.mem = s₁₂.mem := by rw [V₁.mem, mt]
     have h₁ : In Ex base bytes len args t₁ := h₅.regs K₅₁ m₁
     have p8 : 2 ^ N ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hb8.2
     have eax₁ : t₁.gpr .eax = BitVec.ofNat 32 (2 ^ N - 1) := by
       rw [V₁.gpr, ea, VG.Proof.Mont.X86.Dynamic.counter_sub (by omega) (Nat.two_pow_pos N)]
     refine WP.mono (storeW_ok h₁ (d := tOff) (by decide) .eax) fun u ⟨I, O, W, K⟩ => ⟨?_, ?_, ?_, ?_⟩
     · rw [m₁] at O
-      exact (Step.word h (d := ldOff) (by decide) O₅ K₅).trans (Step.word h₅ (d := tOff) (by decide) O
-        (K₅₁.trans (K.mono (by decide))))
+      exact S₅.trans (Step.word h₅ (d := tOff) (by decide) O (K₅₁.trans (K.mono (by decide))))
     · rw [m₁] at O
-      exact (kept_word h (d := ldOff) (by decide) (by decide) O₅).mono.trans
-        (kept_word h (d := tOff) (by decide) (by decide) O).mono
+      exact k₅.mono.trans (kept_word h₅ (d := tOff) (by decide) (by decide) O).mono
     · rw [O.w32 (by decide) (by decide), m₁, W₅, wd]
     · rw [W, eax₁, VG.Proof.Ffdh.ScalarWidth.mask_toNat, hd, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
 

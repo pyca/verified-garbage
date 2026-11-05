@@ -161,13 +161,17 @@ namespace Generate
 /-- `vg_ffdh_generate_key`'s arguments, then `(ctx, ctx_len)`. -/
 def args : Args := { GenerateKey.args with ctx := some 11 }
 
+/-- `ld := p_len − bytes` stored, `edx := width − 8 (bytes − 1)` and `eax := 1`. -/
+def metaHead : List Instr :=
+  [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 8)), .mov .edx (.mem (argAt 0 3)),
+    .alu .sub .edx (.reg .eax), .store (sc ldOff) .edx, .alu .add .eax (.reg .eax),
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .mov .edx (.mem (at_ .ecx 0)),
+    .alu .sub .edx (.reg .eax), .alu .add .edx (.imm 8), .mov .eax (.imm 1)]
+
 /-- The cut at the context's public width: `ld := p_len − bytes`, and the mask
 `t := 2^(width − 8 (bytes − 1)) − 1` of the first byte kept. -/
 def metaCut : Prog isa :=
-  .seq (.block [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 8)), .mov .edx (.mem (argAt 0 3)),
-      .alu .sub .edx (.reg .eax), .store (sc ldOff) .edx, .alu .add .eax (.reg .eax),
-      .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .mov .edx (.mem (at_ .ecx 0)),
-      .alu .sub .edx (.reg .eax), .alu .add .edx (.imm 8), .mov .eax (.imm 1)])
+  .seq (.block metaHead)
     (.seq (.loop (.block [.alu .add .eax (.reg .eax), .alu .sub .edx (.imm 1)]) .ne)
       (.block [.alu .sub .eax (.imm 1), .store (sc tOff) .eax]))
 
@@ -204,16 +208,17 @@ def select : Prog isa :=
 
 /-- One row: the square, the digit's entry and the product; the row counted down. -/
 def step : Prog isa :=
-  .seq (square .wide) <| .seq digit <| .seq select <| .seq (mul .wide 6 6 7)
+  .seq (square .wide) <| .seq (.seq digit select) <| .seq (mul .wide 6 6 7)
     (.block [.mov .eax (.mem (sc iOff)), .alu .sub .eax (.imm 1), .store (sc iOff) .eax])
 
 /-- Slot 6 `g^x mod p` by the context's comb over its rows: Montgomery one, the rows from the
 top, and the product with one. -/
-def comb : Prog isa :=
+def combHead : Prog isa :=
   .seq ctxP <| .seq (mul .wide 6 4 3) <|
-  .seq (.block [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax,
-    .store (sc iOff) .eax]) <|
-  .seq (.loop step .ne) (mul .wide 6 6 3)
+  .block [.mov .ecx (.mem (argAt 0 ctxArg)), .mov .eax (.mem (at_ .ecx 16)), .store (sc rowsOff) .eax,
+    .store (sc iOff) .eax]
+
+def comb : Prog isa := .seq combHead (.seq (.loop step .ne) (mul .wide 6 6 3))
 
 /-- `GenerateKey.tail` with the comb. -/
 def tail : Prog isa :=
