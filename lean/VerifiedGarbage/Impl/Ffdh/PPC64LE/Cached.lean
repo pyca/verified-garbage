@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.GenerateKey
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.VettedValidation
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Search
+public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Round
 
 /-!
 # FFDH key generation from a reusable public comb context on PPC64LE
@@ -206,11 +207,10 @@ def digit : Prog isa :=
 /-- Entry `e` (the header's `hJ`) into array 3, then array `o :=` it if
 `e = d`, else array `t`; `e` advanced. -/
 def selEntry (o t : Nat) : Prog isa :=
-  .seq (.block ([ldh .r3 hJ, .addi .r3 .r3 2] ++ rowPtr ++ [.addi .r15 .r8 0] ++ base .r14 3))
-    (.seq VG.Impl.Bignum.PPC64LE.Precompute.copyWords
-      (.seq (.block ([ldh .r0 hJ, ldh .r4 hD, .logic .xor .r0 .r0 .r4, .subi .r0 .r0 1, .lsr .d .r0 .r0 63,
-          .li .r4 0, .sub .r20 .r4 .r0] ++ base .r8 3 ++ base .r9 t ++ base .r5 o))
-        (.seq selectAcc64 (.block [ldh .r3 hJ, .addi .r3 .r3 1, sth .r3 hJ]))))
+  .seq (.block [ldh .r3 hJ, .addi .r3 .r3 2]) (.seq (loadRow 3)
+    (.seq (.block [ldh .r4 hJ, ldh .r0 hD, .logic .xor .r4 .r4 .r0, .subi .r4 .r4 1, .lsr .d .r4 .r4 63,
+        .li .r0 0, .sub .r20 .r0 .r4])
+      (.seq (VG.Impl.MillerRabin.PPC64LE.sel o 3 t) (.block [ldh .r3 hJ, .addi .r3 .r3 1, sth .r3 hJ]))))
 
 /-- Array 4 `:=` the digit's entry, reading every entry: two at a time,
 alternately into arrays 5 and 4, from 0 in array 4. -/
