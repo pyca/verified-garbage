@@ -21,10 +21,10 @@ def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
     stack := 5904
-    verified := seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG },
+    verified := Proof.AesGcmSiv.seal_keyed (seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) },
   Spec.GcmSiv.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
     stack := 5904
-    verified := open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG }]
+    verified := Proof.AesGcmSiv.open_keyed (open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) }]
 
 end VG.Artifacts.AesGcmSiv.RISCV64

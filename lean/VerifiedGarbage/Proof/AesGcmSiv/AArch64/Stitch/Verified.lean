@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
@@ -69,7 +70,7 @@ theorem seal_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Stitch.«seal» e3 v.callees) (Proof.AesGcmSiv.sealScratchContract AArch64.abi 476) :=
   Verified.of_correct (seal_correct hP gh e3 v) (seal_ct hP gh e3 v) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Spec.GcmSiv.sealPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+      Proof.AesGcmSiv.sealRoundsPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
       AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat] using sealSat)
 
@@ -77,7 +78,7 @@ theorem open_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Stitch.«open» e3 v.callees) (Proof.AesGcmSiv.openScratchContract AArch64.abi 476) :=
   Verified.of_correct (open_correct hP gh e3 v) (open_ct hP gh e3 v)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       -- `h` and the goal match on the same outcome of `decryptWith` with
@@ -86,38 +87,38 @@ theorem open_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
       post := by
         intro s s' _ h
         sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-          Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
         intro _
         split at h <;> rename_i heq <;> rw [heq] <;> exact h
       pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
         openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
         AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat] using openSat }
 
 theorem seal_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«seal» e3 v.callees))
-      (Spec.GcmSiv.sealContract AArch64.abi 3824) :=
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) :=
   AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
-    (post := Spec.GcmSiv.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+    (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (seal_verified hP gh e3 v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 theorem open_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«open» e3 v.callees))
-      (Spec.GcmSiv.openContract AArch64.abi 3824) :=
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) :=
   AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
-    (post := Spec.GcmSiv.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+    (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hP gh e3 v)) (by decide) (by decide) (openPre_local _)
     (openPost_local _) openFrameSat_pre
@@ -135,7 +136,7 @@ def openCode (v : GcmImpl) : Prog isa :=
 
 theorem sealCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (sealCode v))
-      (Spec.GcmSiv.sealContract AArch64.abi 3824) := by
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) := by
   unfold sealCode
   split
   · exact seal_framed hP gh v.stitch v
@@ -143,7 +144,7 @@ theorem sealCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
 
 theorem openCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (openCode v))
-      (Spec.GcmSiv.openContract AArch64.abi 3824) := by
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) := by
   unfold openCode
   split
   · exact open_framed hP gh v.stitch v
