@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 
 @[expose] public section
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.CrtRt (In)
@@ -300,4 +300,4 @@ theorem pc_sat : ∃ s, pcContract.pre s := by
 theorem pc_verified : Verified target Impl.Ffdh.X86.Cached.Precompute.code pcContract :=
   ⟨pc_correct, pc_constantTime, pc_sat⟩
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre

@@ -68,7 +68,7 @@ def artifacts : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
     consts := Impl.Ffdh.X86.VettedValidation.tableConsts
     code := Impl.Ffdh.X86.Cached.Precompute.code
-    verified := Proof.Ffdh.X86.Cached.pc_verified
+    verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
     spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe
     stack := 172 },
   Spec.Ffdh.cachedGenerateKeyApi.artifact X86.target {

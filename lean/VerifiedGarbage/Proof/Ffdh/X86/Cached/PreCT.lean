@@ -58,7 +58,7 @@ rest the taint analysis checks from the arguments.
 
 @[expose] public section
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
@@ -883,4 +883,4 @@ end
 
 end
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre

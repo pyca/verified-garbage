@@ -89,7 +89,7 @@ a row of it, `loadRow_ok` a row back to a slot, each by `selectLoop` with an
 all-ones mask.
 -/
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
@@ -273,9 +273,9 @@ theorem loadRow_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
 
 end
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
@@ -647,9 +647,9 @@ theorem table_ok {u : State} (S : TS Ex base bytes len args P G bits s₀ 0 u)
 
 end
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
@@ -1354,9 +1354,9 @@ theorem metadata_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len a
 
 end
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt VG.Proof.Ffdh.X86
@@ -1747,9 +1747,9 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
 
 end
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre
 
-namespace VG.Proof.Ffdh.X86.Cached
+namespace VG.Proof.Ffdh.X86.Cached.Pre
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.CrtRt (In mw)
@@ -2032,4 +2032,4 @@ theorem pc_correct (s : State) (h : pcContract.pre s) :
   rw [VG.Proof.Ffdh.generationPrecompute_eq dlen (VG.Proof.Ffdh.domainValid_mod A.valid)]
   exact congrArg some W.symm
 
-end VG.Proof.Ffdh.X86.Cached
+end VG.Proof.Ffdh.X86.Cached.Pre

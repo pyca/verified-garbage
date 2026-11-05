@@ -520,7 +520,7 @@ jmp 251f
 251:
 .base64 "ww=="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
     )
 }
@@ -755,7 +755,7 @@ jmp 211f
 211:
 .base64 "jWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -1032,7 +1032,7 @@ jmp 222f
 222:
 .base64 "jWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -1253,7 +1253,7 @@ jne 243b
 jne 244b
 .base64 "i0cIg+ABjWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -1534,7 +1534,7 @@ jne 260b
 220:
 .base64 "jWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -2031,7 +2031,7 @@ jne 2107b
 21:
 .base64 "jWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -2768,7 +2768,7 @@ call {vg_rsa_mont_mul_at}
 jne 2146b
 .base64 "i3wkRLgBAAAAjWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
     )
 }
@@ -3498,7 +3498,7 @@ jne 2187b
 21:
 .base64 "jWQkTItfIItvJIt3KIt/LMM="
 .p2align 6"#,
-        vg_rsa_mont_mul_at = sym super::ffdh::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
+        vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
 }
 
@@ -3724,7 +3724,3 @@ je 20b
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_parameter_candidate_sieved.rs"]
 pub(crate) mod vg_ffdh_parameter_candidate_sieved;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rsa_mont_mul_at.rs"]
-pub(crate) mod vg_rsa_mont_mul_at;

@@ -455,9 +455,6 @@ theorem frameBody_all :
 abbrev entryDom (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat
 abbrev entryRand (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (argumentPointer s 7) (arg s 8).toNat
 
-/-- The context. -/
-abbrev ctxR (s : State) : Region := ⟨argumentPointer s 11, (arg s 12).toNat * 8⟩
-
 /-- What the body may read: the domain, `rand` and the context; and write: x and y. -/
 abbrev Rd (s : State) : List Region → List Region → Prop :=
   fun rd wr => InRegions (rd ++ wr) (argumentPointer s 4) (arg s 5).toNat ∧
