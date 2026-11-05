@@ -50,7 +50,26 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v)
     features := features v }]
 
+/-- Add an AVX2 copy/XOR instance for every combination of callees, so that
+all their variants reach both the ordinary and the AVX2-copy callers. -/
+def wideArtifactsOf (v : GcmImpl) : List Artifact := [
+    Spec.GcmSiv.sealApi.artifact X86_64.target {
+      suffix := v.suffix ++ "_avx2"
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
+      stack := 3856
+      verified := Proof.AesGcmSiv.seal_keyed (wideSeal_framed v)
+      spSafe := X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
+      features := (features v ++ ["avx", "avx2"]).dedup },
+    Spec.GcmSiv.openApi.artifact X86_64.target {
+      suffix := v.suffix ++ "_avx2"
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
+      stack := 3856
+      verified := Proof.AesGcmSiv.open_keyed (wideOpen_framed v)
+      spSafe := X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
+      features := (features v ++ ["avx", "avx2"]).dedup }]
+
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ wideArtifactsOf v.impl
 
 end VG.Generic.AesGcm.X86_64.AesGcmSiv
