@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 
 /-!
@@ -32,8 +33,8 @@ by `inverseN` at the primes' width `⌈max(p_len, q_len) / 8⌉` (and'ing
 `gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
 `divmod` (with the divisor `p` or `q` with its low bit cleared: `p - 1` for
 an odd `p`, which `p q = n` implies). Each result is written out masked.
-`p q = n` is checked by `divmod` too, as `n mod p = 0`, `n / p = q` and `p`
-odd.
+`p q = n` is checked by multiplying the factors into two contiguous
+arrays and comparing the full product with `n`.
 -/
 
 @[expose] public section
@@ -535,11 +536,16 @@ def andOdd (j : Nat) : List Instr :=
   ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
     .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx] : List Instr)
 
-/-- The mask of `p q = n` and'ed into `sMask`, as `n mod p = 0`,
-`n / p = q` and `p` odd (which `p q = n` implies, `n` being odd). -/
+/-- The factors' bases and widths for `mulRows`, and the product's base.
+The product occupies arrays 2 and 3, leaving the factors and `d` alone. -/
+def productSetup : List Instr :=
+  ws ++ base aP .r11 ++ base aQ .rax ++ base aU .r8 ++
+    ([.mov .r9 (.reg .rax), .mov .r10 (.reg .r12)] : List Instr)
+
+/-- The mask of `p q = n` and'ed into `sMask`, comparing all `2 w + 2`
+words of the product so an overflowing product cannot pass. -/
 def pqCheck : List (Prog isa) :=
-  [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
-    [.block andZero, .block (andOdd aP)]
+  Crt.zeroAccs ++ [.block productSetup, Crt.mulRows] ++ Crt.eqCheck
 
 /-- `r13 := ⌈max(p_len, q_len) / 8⌉`, the primes' width in words, without a
 branch (`cmovb`). -/
