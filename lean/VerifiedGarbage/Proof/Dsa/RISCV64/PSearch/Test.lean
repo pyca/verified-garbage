@@ -412,6 +412,16 @@ theorem wB_facts {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) :
     hEnd ≤ wB L ∧ wB L / 4096 < 8 ∧ wB L % 4096 = 0 := by
   rcases hL with rfl | rfl | rfl <;> decide
 
+/-- `ClOk` of a claim at `o + 0` past `wB`, stated with `o` a variable so
+that no one checks `wB pLen + 0 ≡ wB pLen` by unfolding `wB`. -/
+theorem clOk_w0 {o : Nat} {l : List Byte} (h1 : hEnd ≤ o) (h2 : wB G.pLen ≤ o) (h3 : o + l.length ≤ G.scrLen * 8) :
+    ClOk G (o + 0, l) :=
+  ⟨h1, .inr h2, h3⟩
+
+theorem clOk_rep0 {o n : Nat} (h1 : hEnd ≤ o) (h2 : wB G.pLen ≤ o) (h3 : o + n ≤ G.scrLen * 8) :
+    ClOk G (o + 0, List.replicate n 0) :=
+  clOk_w0 h1 h2 (by simp only [List.length_replicate]; exact h3)
+
 theorem cert_big (x o n : Nat) :
     (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s6])
       (.block (([scr .a0 x] : List Instr) ++ (scrB .a1 o ++ ([.addi .a1 .a1 0] : List Instr)) ++ ([.li .a2 n] : List Instr)))
@@ -419,6 +429,12 @@ theorem cert_big (x o n : Nat) :
         (.block (([scr .a0 x] : List Instr) ++ (scrB .a1 o ++ ([.addi .a1 .a1 0] : List Instr)) ++
           ([.li .a2 n] : List Instr))))).isSome = true := by
   kernel_rfl
+
+theorem St.c0 {σ s : State} {n : Nat} (hn : n < 2048) (h : St G c X σ s) :
+    wB G.pLen + n ≤ G.scrLen * 8 ∧ n ≤ 256 * G.pLen ∧ hEnd ≤ wB G.pLen ∧ kB G.pLen ≤ wB G.pLen ∧
+      G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 64 := by
+  have h1 := h.1.gi.wBig; have h3 := h.1.gi.kBig; have h4 := h.1.gi.scrFit; have h5 := h.1.lens
+  exact ⟨by omega, by omega, (wB_facts h.1.lens).1, by omega, by omega⟩
 
 /-- The stage after copying the candidate `cb` to byte 0 of the working space
 of the functions we call. -/
@@ -441,21 +457,17 @@ theorem test_vp {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : St
       (St G (testCfg c cl' G.randLen (tRes G cb u)) X) := by
   have hc0' : ∀ σ s, St G c X σ s → wB G.pLen + cb.length ≤ G.scrLen * 8 ∧ cb.length ≤ 256 * G.pLen ∧
       hEnd ≤ wB G.pLen ∧ kB G.pLen ≤ wB G.pLen ∧ G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 64 :=
-    fun σ s ⟨h, _⟩ => by
-      have := h.gi.wBig; have := h.lens; have := h.gi.kBig; have := h.gi.scrFit
-      have hw : hEnd ≤ wB G.pLen := (wB_facts h.lens).1
-      refine ⟨by omega, by omega, hw, by omega, by omega⟩
+    fun σ s h => St.c0 hn2 h
   have wl : ∀ σ s, St G c X σ s → wB G.pLen / 4096 < 8 ∧ wB G.pLen % 4096 = 0 := fun σ s ⟨h, _⟩ =>
     (wB_facts h.lens).2
   simp only [test, Impl.Rsa.RISCV64.Keys.seqs]
-  refine VP.seq (G := St G (candCfg G c cb) X) (copyN_vp (c := fun _ => c) (o := wB G.pLen + 0)
+  refine VP.seq (G := St G (candCfg G c cb) X) (copyN_vp (c := fun _ => c) (o := wB G.pLen + 0) (S := G.sa src)
     (fun σ s h => h.1) hn0 (by omega) (cert_big _ _ _)
     (fun σ s hs => pro_scr_big (c := fun _ => c) (fun σ s h => h.1) hs2 (wl σ s hs).2 (wl σ s hs).1 (by decide)
       hn2 σ s hs)
     (fun σ s h => by
       obtain ⟨k1, _, k3, _, _⟩ := hc0' σ s h
-      exact ⟨by omega, by simp only [List.length_replicate]; exact .inr (by omega),
-        by simp only [List.length_replicate]; omega⟩)
+      exact clOk_rep0 k3 (Nat.le_refl _) k1)
     (fun σ s h => by
       have gi := h.1.gi
       have sS := (h.1.clOk _ hsrc).2.2
@@ -467,7 +479,7 @@ theorem test_vp {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : St
       h'.ksl, h'.kslOk⟩
     rcases List.mem_cons.mp hy with rfl | hy
     · obtain ⟨k1, _, k3, _, _⟩ := hc0' σ s ⟨h, x⟩
-      exact ⟨by omega, .inr (by omega), by omega⟩
+      exact clOk_w0 k3 (Nat.le_refl _) k1
     · exact h'.clOk y hy
   have hcb : (wB G.pLen + L.candidate, cb) ∈ (candCfg G c cb).cl := by rw [hc0]; exact List.mem_cons_self
   refine VP.assoc (VP.seq (targs_vp (c := candCfg G c cb) hu hU hUv)

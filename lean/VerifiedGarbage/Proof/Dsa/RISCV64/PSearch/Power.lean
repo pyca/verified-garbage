@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
+-- separate module: the power in the P space imports the modular exponentiation's proofs, which the key
+-- working space's arithmetic (`PArith`) does not need
+
 /-! # DSA parameter search on RISC-V: the power in the P space
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Power.lean` and `GPow.lean`). `power
@@ -419,6 +422,11 @@ theorem hPtr_vp {pv : Nat} {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
 /-- The certificate of `powC`. -/
 abbrev CertC (pLen qLen : Nat) : Prop := ∃ hc, (VG.Taint.check VG.RISCV64.taint
   (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0]) (powC pLen qLen) hc).isSome = true
+
+/-- `powC`'s certificate, for any widths. -/
+theorem certC (pLen qLen : Nat) : CertC pLen qLen :=
+  ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0]) (powC pLen qLen),
+    by kernel_rfl⟩
 
 /-- h into array 4, its power, and the range check. -/
 theorem powC_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen G.qLen)

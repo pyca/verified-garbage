@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
+-- separate module: the key working space's pieces, which both p's arithmetic (`PArith`) and the generator's step
+-- (`GStep`) build on, apart from the key operations' many proofs it imports
+
 /-! # DSA parameter search on RISC-V: steps in the key working space
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/KS.lean`, `KSOps.lean`, `KSSetup.lean`,
