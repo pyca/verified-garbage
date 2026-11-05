@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.EncV
 meta import VerifiedGarbage.Proof.MlKem.X86.EncV
 public import VerifiedGarbage.Impl.MlKem.X86.Encaps
+public import VerifiedGarbage.Proof.MlKem.EncapsHSat
 meta import VerifiedGarbage.Impl.MlKem.X86.Encaps
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -276,5 +277,244 @@ theorem post (hη : L.p.η₁ = 2 ∧ L.p.η₂ = 2) {s₀ s : State} (h : Fin L
     show encapsInternal L.p M (ek L s₀) (msg s₀) = _
     rw [KPke.encapsInternal_eq, KPke.kpkeEncrypt_some hη hM, h.key, h.ct e, er, kr_eq]
     rfl
+
+
+/-! ## `encapsH`: `H(ek)` given at `h`
+
+The layout of the arguments (`YH L`: `ek`, `h`, `m`, `key`, `ct`, `scratch`).
+`ek`, `m` and `h` are copied into `scratch`, `h` where `encaps` hashes `H(ek)`
+to, and `G(m ‖ h)` hashed (`startH_piece`); the rest is `encaps`'s, with `key`
+and `ct` arguments 3 and 4 (`finH_piece`). The pieces compute `K ‖ r` from `h`
+(`krH`), which the precondition of the contract makes `G(m ‖ H(ek))` (`postH`).
+-/
+
+/-- `ek`, `h` and `m` (read), `key`, `ct` and `scratch` (written); 88 bytes of stack. -/
+def YH (L : KemLay) : Lay :=
+  ⟨[(L.p.ekLen, false), (32, false), (32, false), (32, true), (L.p.ctLen, true), (L.scratch, true)], 5, 88⟩
+
+section
+variable (L : KemLay) (s₀ : State)
+/-- `h`. -/
+@[irreducible] def hv : List Byte := bytesAt s₀.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32
+/-- `m`, argument 2. -/
+@[irreducible] def msgH : List Byte := bytesAt s₀.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32
+/-- `G(m ‖ h)`, as 64 bytes. -/
+@[irreducible] def krH : List Byte := sha3_512 (msgH s₀ ++ hv s₀)
+end
+
+theorem hv_eq (s₀ : State) : hv s₀ = bytesAt s₀.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 := by unfold hv; rfl
+theorem msgH_eq (s₀ : State) : msgH s₀ = bytesAt s₀.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 := by unfold msgH; rfl
+theorem krH_eq (s₀ : State) : krH s₀ = sha3_512 (msgH s₀ ++ hv s₀) := by unfold krH; rfl
+
+/-- The inputs of K-PKE.Encrypt. -/
+abbrev IH (L : KemLay) : Enc.Inp := ⟨ek L, msgH, krH⟩
+
+theorem hSH (L : KemLay) : Enc.SOK L (YH L) := ⟨of_decide_eq_true rfl, rfl, rfl, rfl⟩
+
+theorem hρH (L : KemLay) : Enc.RhoPub L (YH L) (lk L) (IH L) := fun _ _ _ _ hq => hq.2.2
+
+/-- `h`'s copy. -/
+abbrev bHH (L : KemLay) : Buf := ⟨(YH L).sc, L.eH, 32⟩
+
+/-- The facts of the layout that encapsulation with `H(ek)` given uses. -/
+class EncapsHOK (L : KemLay) : Prop where
+  ekc : ((YH L).ok ⟨0, 0, L.p.ekLen⟩ && (YH L).okW ⟨(YH L).sc, L.eEK, L.p.ekLen⟩ &&
+    (YH L).sep ⟨0, 0, L.p.ekLen⟩ ⟨(YH L).sc, L.eEK, L.p.ekLen⟩) = true
+  mc : ((YH L).ok ⟨2, 0, 32⟩ && (YH L).okW ⟨(YH L).sc, L.eM, 32⟩ &&
+    (YH L).sep ⟨2, 0, 32⟩ ⟨(YH L).sc, L.eM, 32⟩) = true
+  hc : ((YH L).ok ⟨1, 0, 32⟩ && (YH L).okW (bHH L) && (YH L).sep ⟨1, 0, 32⟩ (bHH L)) = true
+  ek4 : 4 * (L.p.ekLen / 4) = L.p.ekLen ∧ 0 < L.p.ekLen / 4 ∧ L.p.ekLen / 4 < 2 ^ 30 ∧ L.p.ekLen < 2 ^ 32
+  ct4 : 4 * (L.p.ctLen / 4) = L.p.ctLen ∧ 0 < L.p.ctLen / 4 ∧ L.p.ctLen / 4 < 2 ^ 30
+  aEM : (YH L).apart (Enc.bEK L (YH L).sc) [⟨(YH L).sc, L.eM, 32⟩] = true
+  aH : (YH L).apart (Enc.bEK L (YH L).sc) [bHH L] = true ∧ (YH L).apart (Enc.bM L (YH L).sc) [bHH L] = true
+  g : ((YH L).okW ⟨(YH L).sc, L.eST, 200⟩ && (YH L).okW ⟨(YH L).sc, L.eWK, 640⟩ && (YH L).ok (Enc.bM L (YH L).sc) &&
+    (YH L).ok (bHH L) && (YH L).okW (Enc.bKR L (YH L).sc) && (YH L).sep ⟨(YH L).sc, L.eST, 200⟩ ⟨(YH L).sc, L.eWK, 640⟩ &&
+    (YH L).sep (Enc.bM L (YH L).sc) ⟨(YH L).sc, L.eST, 200⟩ && (YH L).sep (Enc.bM L (YH L).sc) ⟨(YH L).sc, L.eWK, 640⟩ &&
+    (YH L).sep (bHH L) ⟨(YH L).sc, L.eST, 200⟩ && (YH L).sep (bHH L) ⟨(YH L).sc, L.eWK, 640⟩ &&
+    (YH L).sep ⟨(YH L).sc, L.eST, 200⟩ (Enc.bKR L (YH L).sc) &&
+    (YH L).sep (Enc.bKR L (YH L).sc) ⟨(YH L).sc, L.eWK, 640⟩) = true
+  aG : (YH L).apart (Enc.bEK L (YH L).sc) [⟨(YH L).sc, L.eST, 200⟩, ⟨(YH L).sc, L.eWK, 640⟩, Enc.bKR L (YH L).sc] = true ∧
+    (YH L).apart (Enc.bM L (YH L).sc) [⟨(YH L).sc, L.eST, 200⟩, ⟨(YH L).sc, L.eWK, 640⟩, Enc.bKR L (YH L).sc] = true
+  key : ((YH L).ok ⟨(YH L).sc, L.eKR, 32⟩ && (YH L).okW ⟨3, 0, 32⟩ &&
+    (YH L).sep ⟨(YH L).sc, L.eKR, 32⟩ ⟨3, 0, 32⟩) = true
+  ct : ((YH L).ok ⟨(YH L).sc, L.eC, L.p.ctLen⟩ && (YH L).okW ⟨4, 0, L.p.ctLen⟩ &&
+    (YH L).sep ⟨(YH L).sc, L.eC, L.p.ctLen⟩ ⟨4, 0, L.p.ctLen⟩) = true
+  dKey : Enc.safe L (YH L) [⟨3, 0, 32⟩] = true ∧
+    (YH L).apart ⟨(YH L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ [⟨3, 0, 32⟩] = true
+  dCt : Enc.safe L (YH L) [⟨4, 0, L.p.ctLen⟩] = true ∧
+    (YH L).apart ⟨(YH L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ [⟨4, 0, L.p.ctLen⟩] = true ∧
+    (YH L).apart ⟨3, 0, 32⟩ [⟨4, 0, L.p.ctLen⟩] = true ∧ (YH L).apart (Enc.bACC L (YH L).sc) [⟨4, 0, L.p.ctLen⟩] = true
+  acc : (YH L).ok (Enc.bACC L (YH L).sc) = true ∧ Enc.safe L (YH L) [] = true ∧
+    (YH L).apart ⟨(YH L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ [] = true
+
+/-- `sc_taint`, for code with `scratch` at `(YH L).sc`. -/
+macro "yh_taint" : tactic =>
+  `(tactic| plain_simp_names ((try simp only [show ∀ L, (YH L).sc = 5 from fun _ => rfl]); sc_taint))
+
+/-- After `ek` is copied. -/
+structure Q1H (L : KemLay) (s₀ s : State) : Prop where
+  ctx : Ctx (YH L) s₀ s
+  ekc : bytesAt s.mem (Buf.addr s₀ (Enc.bEK L (YH L).sc)) L.p.ekLen = ek L s₀
+
+/-- After `m` is copied. -/
+structure Q2H (L : KemLay) (s₀ s : State) : Prop extends Q1H L s₀ s where
+  mc : bytesAt s.mem (Buf.addr s₀ (Enc.bM L (YH L).sc)) 32 = msgH s₀
+
+/-- After `h` is copied. -/
+structure Q3H (L : KemLay) (s₀ s : State) : Prop extends Q2H L s₀ s where
+  hh : bytesAt s.mem (Buf.addr s₀ (bHH L)) 32 = hv s₀
+
+section
+variable {L : KemLay} [EncapsHOK L]
+
+/-- The inputs of K-PKE.Encrypt, then `c`. -/
+theorem startH_piece {Q : State → State → Prop} {c : Prog isa}
+    (hc : Piece (TPre (YH L)) (TPub (YH L) (lk L)) (Enc.Base L (YH L) (IH L)) Q c) :
+    Piece (TPre (YH L)) (TPub (YH L) (lk L)) (fun s₀ s => s = P0 s₀) Q
+      (.seq (.block [.mov .esi (.mem (at_ .esp 40))]) <|
+        .seq (copyW 5 ⟨0, 0, L.p.ekLen⟩ ⟨5, L.eEK, L.p.ekLen⟩ (L.p.ekLen / 4)) <|
+        .seq (copyW 5 ⟨2, 0, 32⟩ ⟨5, L.eM, 32⟩ 8) <|
+        .seq (copyW 5 ⟨1, 0, 32⟩ ⟨5, L.eH, 32⟩ 8) <|
+        .seq (hash2 5 L.eST L.eWK 72 6 ⟨5, L.eM, 32⟩ ⟨5, L.eH, 32⟩ ⟨5, L.eKR, 64⟩) c) := by
+  obtain ⟨e₁, e₂, e₃, e₄⟩ := EncapsHOK.ek4 (L := L)
+  have ekc := EncapsHOK.ekc (L := L)
+  have hok : (YH L).ok ⟨0, 0, L.p.ekLen⟩ = true := by simp only [Bool.and_eq_true] at ekc; exact ekc.1.1
+  have mc := EncapsHOK.mc (L := L)
+  have hokm : (YH L).ok ⟨2, 0, 32⟩ = true := by simp only [Bool.and_eq_true] at mc; exact mc.1.1
+  have hc' := EncapsHOK.hc (L := L)
+  have hokh : (YH L).ok ⟨1, 0, 32⟩ = true := by simp only [Bool.and_eq_true] at hc'; exact hc'.1.1
+  refine Piece.seq (ldsc_piece (Y := YH L) (by yh_taint)) ?_
+  refine Piece.seq (B := Q1H L) (copyW_piece' (Y := YH L) 0 0 5 L.eEK (L.p.ekLen / 4) L.p.ekLen e₁ e₂ e₃ ekc
+    (by yh_taint) (by taint_decide) (fun _ _ _ h => h) fun s₀ s s' hp h h' _ post => ⟨h', ?_⟩) ?_
+  · show bytesAt s'.mem (Buf.addr s₀ ⟨5, L.eEK, L.p.ekLen⟩) L.p.ekLen = _
+    rw [post, ek_eq]
+    exact h.roBytes hp (b := ⟨0, 0, L.p.ekLen⟩) hok rfl
+  refine Piece.seq (B := Q2H L) (copyW_piece (Y := YH L) 2 0 5 L.eM 8 (by rdecide) (by rdecide) mc
+    (by yh_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post =>
+      ⟨⟨h', by rw [keepBytes hp (N := 0) (by rdecide) EncapsHOK.aEM (fr1 fr)]; exact h.ekc⟩, ?_⟩) ?_
+  · show bytesAt s'.mem (Buf.addr s₀ ⟨5, L.eM, 4 * 8⟩) (4 * 8) = _
+    rw [post, msgH_eq]
+    exact h.ctx.roBytes hp (b := ⟨2, 0, 32⟩) hokm rfl
+  obtain ⟨a₁, a₂⟩ := EncapsHOK.aH (L := L)
+  refine Piece.seq (B := Q3H L) (copyW_piece (Y := YH L) 1 0 5 L.eH 8 (by rdecide) (by rdecide) hc'
+    (by yh_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post =>
+      ⟨⟨⟨h', by rw [keepBytes hp (N := 0) (by rdecide) a₁ (fr1 fr)]; exact h.ekc⟩,
+        by rw [keepBytes hp (N := 0) (by rdecide) a₂ (fr1 fr)]; exact h.mc⟩, ?_⟩) ?_
+  · show bytesAt s'.mem (Buf.addr s₀ ⟨5, L.eH, 4 * 8⟩) (4 * 8) = _
+    rw [post, hv_eq]
+    exact h.ctx.roBytes hp (b := ⟨1, 0, 32⟩) hokh rfl
+  obtain ⟨g₁, g₂⟩ := EncapsHOK.aG (L := L)
+  refine Piece.seq (hash2_piece (Y := YH L) L.eST L.eWK 72 6 (Enc.bM L (YH L).sc) (bHH L) (Enc.bKR L (YH L).sc)
+    rate72 EncapsHOK.g (by rdecide) (by rdecide) (by rdecide) (by rdecide) (by taint_rfl) (by yh_taint)
+    (by yh_taint) (by yh_taint) (by yh_taint) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr out =>
+      ⟨h', by rw [keepBytes hp (by rdecide) g₁ fr]; exact h.ekc,
+        by rw [keepBytes hp (by rdecide) g₂ fr]; exact h.mc, ?_⟩) hc
+  rw [out, h.mc, h.hh, show (BitVec.ofNat 32 6).setWidth 8 = sha3Suffix from sha3Suffix32, ← padded, ← sha3_512_eq]
+  exact (krH_eq s₀).symm
+
+omit [EncapsHOK L] in
+theorem doneH_keep {s₀ s s' : State} (hp : TPre (YH L) s₀) {bs : List Buf} {M : Nat} (hM : M + 16 ≤ (YH L).stk)
+    (hs : Enc.safe L (YH L) bs = true)
+    (hc : (YH L).apart ⟨(YH L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ bs = true)
+    (fr : Frame (FR s₀ bs M) s.mem s'.mem) (h : Enc.Done L (YH L) (IH L) s₀ s) (c : Ctx (YH L) s₀ s') :
+    Enc.Done L (YH L) (IH L) s₀ s' :=
+  ⟨h.toB.keep hp hM hs (Nat.le_refl _) fr c, by rw [keepBytes hp hM hc fr]; exact h.cv⟩
+
+end
+
+/-- After `K` is copied into `key`. -/
+structure F1H (L : KemLay) (s₀ s : State) : Prop extends Enc.Done L (YH L) (IH L) s₀ s where
+  key : bytesAt s.mem (Buf.addr s₀ ⟨3, 0, 32⟩) 32 = (krH s₀).take 32
+
+/-- After the ciphertext is copied into `ct`. -/
+structure F2H (L : KemLay) (s₀ s : State) : Prop extends F1H L s₀ s where
+  ct : Enc.accE L (YH L) s₀ s = 1 → bytesAt s.mem (Buf.addr s₀ ⟨4, 0, L.p.ctLen⟩) L.p.ctLen =
+    KPke.ct L.p (Enc.aE L (IH L) s₀) (Encaps.ek L s₀) (msgH s₀) (Enc.rE (IH L) s₀)
+
+/-- After `eACC` is loaded, to be returned. -/
+structure FinH (L : KemLay) (s₀ s : State) : Prop extends F2H L s₀ s where
+  eax : s.gpr .eax = Enc.accE L (YH L) s₀ s
+
+section
+variable {L : KemLay} [EncapsHOK L]
+
+theorem finH_piece [Enc.VOK L] :
+    Piece (TPre (YH L)) (TPub (YH L) (lk L)) (Enc.Done L (YH L) (IH L)) (FinH L)
+      (.seq (copyW 5 ⟨5, L.eKR, 32⟩ ⟨3, 0, 32⟩ 8) <|
+        .seq (copyW 5 ⟨5, L.eC, L.p.ctLen⟩ ⟨4, 0, L.p.ctLen⟩ (L.p.ctLen / 4))
+          (.block [.mov .eax (.mem (at_ .esi L.eACC))])) := by
+  obtain ⟨c₁, c₂, c₃⟩ := EncapsHOK.ct4 (L := L)
+  obtain ⟨d₁, d₂⟩ := EncapsHOK.dKey (L := L)
+  obtain ⟨d₃, d₄, d₅, d₆⟩ := EncapsHOK.dCt (L := L)
+  obtain ⟨u₁, u₂, u₃⟩ := EncapsHOK.acc (L := L)
+  refine Piece.seq (B := F1H L) (copyW_piece (Y := YH L) 5 L.eKR 3 0 8 (by rdecide) (by rdecide) EncapsHOK.key
+    (by yh_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post =>
+      ⟨doneH_keep hp (M := 0) (by rdecide) d₁ d₂ (fr1 fr) h h', ?_⟩) ?_
+  · show bytesAt s'.mem (Buf.addr s₀ ⟨3, 0, 4 * 8⟩) (4 * 8) = _
+    rw [post, show krH s₀ = (IH L).kr s₀ from rfl, ← h.kr, bytesAt_take _ _ (show 32 ≤ 64 by decide)]
+    rfl
+  refine Piece.seq (B := F2H L) (copyW_piece' (Y := YH L) 5 L.eC 4 0 (L.p.ctLen / 4) L.p.ctLen c₁ c₂ c₃
+    EncapsHOK.ct (by yh_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post =>
+      ⟨⟨doneH_keep hp (M := 0) (by rdecide) d₃ d₄ (fr1 fr) h.toDone h',
+        by rw [keepBytes hp (N := 0) (by rdecide) d₅ (fr1 fr)]; exact h.key⟩, fun e => ?_⟩) ?_
+  · have ea : Enc.accE L (YH L) s₀ s' = Enc.accE L (YH L) s₀ s := keepW hp (N := 0) (by rdecide) d₆ (fr1 fr)
+    rw [post]
+    exact Enc.ct_eq (hSH L) hp h.toDone (ea ▸ e)
+  exact ld32_piece (Y := YH L) L.eACC u₁ (by taint_rfl) (fun _ _ _ h => h.ctx)
+    fun s₀ s s' hp h h' m' e => ⟨⟨⟨doneH_keep hp (bs := []) (M := 0) (by rdecide) u₂ u₃
+      (m' ▸ Frame.refl _ _) h.toDone h', by rw [m']; exact h.key⟩, fun e₁ => by
+        rw [m']; exact h.ct (by show s.mem.readW _ 32 = _; rw [← m']; exact e₁)⟩,
+      by rw [e]; show _ = s'.mem.readW _ 32; rw [m']⟩
+
+theorem bodyH_piece [CeOK L] [Enc.BaseOK L] [Enc.YOK L] [Enc.EntOK L] [Enc.RowOK L] [Enc.VOK L] (hk : 0 < L.p.k) :
+    Piece (TPre (YH L)) (TPub (YH L) (lk L)) (fun s₀ s => s = P0 s₀) (FinH L) (encapsHBody L) :=
+  startH_piece <| .seq (Enc.encrypt_piece (hSH L) (hρH L) hk) finH_piece
+
+theorem pieceH [CeOK L] [Enc.BaseOK L] [Enc.YOK L] [Enc.EntOK L] [Enc.RowOK L] [Enc.VOK L] (hk : 0 < L.p.k)
+    (hsp : NoSp (encapsHBody L)) :
+    Piece (TPre (YH L)) (TPub (YH L) (lk L)) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (FinH L s₀) s₀ s')
+      (leaf (encapsHBody L)) :=
+  topLeaf hsp ((bodyH_piece hk).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨h.ctx, h⟩)
+
+omit [EncapsHOK L] in
+/-- The postcondition, from the final state of the body, when `h` holds `H(ek)`. -/
+theorem postH (hη : L.p.η₁ = 2 ∧ L.p.η₂ = 2) {s₀ s : State} (hh : hv s₀ = H (ek L s₀)) (h : FinH L s₀ s) :
+    Outcome (fun iters => encapsInternal L.p iters (ek L s₀) (msgH s₀)) (Enc.accE L (YH L) s₀ s)
+      (bytesAt s.mem (Buf.addr s₀ ⟨3, 0, 32⟩) 32, bytesAt s.mem (Buf.addr s₀ ⟨4, 0, L.p.ctLen⟩) L.p.ctLen) := by
+  have ek' : krH s₀ = sha3_512 (msgH s₀ ++ H (ek L s₀)) := by rw [krH_eq, hh]
+  have er : Enc.rE (IH L) s₀ = (G (msgH s₀ ++ H (ek L s₀))).2 := by
+    show (krH s₀).drop 32 = _; rw [ek']; rfl
+  rcases h.acc with e | e
+  · obtain ⟨k, hk, hn⟩ := h.fail e
+    have hk0 : 0 < L.p.k := Nat.pos_of_ne_zero fun h0 => by rw [h0] at hk; exact absurd hk (by rdecide)
+    refine .inr ⟨e, ?_⟩
+    show encapsInternal L.p minIterations (ek L s₀) (msgH s₀) = none
+    rw [KPke.encapsInternal_eq, KPke.kpkeEncrypt_none (i := k % L.p.k) (j := k / L.p.k) (Nat.mod_lt _ hk0)
+      (Nat.div_lt_of_lt_mul hk) hn]
+    rfl
+  · obtain ⟨M, hM⟩ := Enc.samples h.toDone e
+    refine .inl ⟨e, M, ?_⟩
+    show encapsInternal L.p M (ek L s₀) (msgH s₀) = _
+    rw [KPke.encapsInternal_eq, KPke.kpkeEncrypt_some hη hM, h.key, h.ct e, er, ek']
+    rfl
+
+end
+
+/-- Memory with the arguments `0x1000`, `0x2000`, `0x3000`, `0x4000`, `0x6000` and `0x10000` at `0x5004`,
+and `H(ek)` at `h` (`hMem`). -/
+def satMemH (n : Nat) : Mem := fun a =>
+  if a = 0x5005 then 0x10 else if a = 0x5009 then 0x20 else if a = 0x500d then 0x30 else if a = 0x5011 then 0x40
+  else if a = 0x5015 then 0x60 else if a = 0x501a then 1 else VG.Proof.MlKem.hMem n a
+
+theorem satMemH_low {n : Nat} : ∀ a : Addr, a.toNat < 0x2020 → satMemH n a = VG.Proof.MlKem.hMem n a := by
+  intro a ha
+  have n1 : a ≠ 0x5005 := by rintro rfl; exact absurd ha (by decide)
+  have n2 : a ≠ 0x5009 := by rintro rfl; exact absurd ha (by decide)
+  have n3 : a ≠ 0x500d := by rintro rfl; exact absurd ha (by decide)
+  have n4 : a ≠ 0x5011 := by rintro rfl; exact absurd ha (by decide)
+  have n5 : a ≠ 0x5015 := by rintro rfl; exact absurd ha (by decide)
+  have n6 : a ≠ 0x501a := by rintro rfl; exact absurd ha (by decide)
+  simp only [satMemH, n1, n2, n3, n4, n5, n6, ite_false]
+
 
 end VG.Proof.MlKem.X86.Encaps
