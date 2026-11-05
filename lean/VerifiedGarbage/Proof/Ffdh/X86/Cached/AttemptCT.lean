@@ -206,6 +206,96 @@ theorem prefix_trace (hD : Spec.Ffdh.domainValid len D = true) :
       (A.vals_step S).w8) fun t ⟨St, _⟩ => run_step (run_step A.run S) St
   exact aEnd (fun _ R => R) cutLoad_check
 
+
+/-- The prefix's run, with the cut at the context's width. -/
+theorem prefixC_ok (hD : Spec.Ffdh.domainValid len D = true) {x : State}
+    (A : KAtC Ex base bytes len dlen args sp D St x) :
+    WP isa (Prog.chain (KeyGen.prefixWith Generate.metaCut) (.block [])) x
+      (KeyGen.PrefW Ex base bytes len dlen args x (Spec.Rsa.os2ip (Spec.Rsa.bytesAt x.mem (byteAddr (args 10)) len) %
+        2 ^ cBits len D)) := by
+  have bf := VG.Proof.Ffdh.ContextRows.genBits_facts hD
+  have lw := A.geo.dom.lower
+  have sp' := A.run.2.2
+  have wlt : len - VG.Proof.Ffdh.ScalarWidth.width (cBits len D) < len := by
+    have := VG.Proof.Ffdh.ScalarWidth.width_pos (cBits len D); omega
+  rw [← cut_vetted bf.2 (by omega)]
+  exact KeyGen.prefixWith_ok A.run.1 A.geo.dom (by rw [sp']; exact A.geo.dom40) (by rw [sp']; exact A.geo.cut)
+    A.geo.rWs (by rw [sp']; exact A.geo.r40) A.geo.domX wlt fun w Sw =>
+      WP.mono (metaCut_ok Sw.inp (A.rd.keep Sw.keeps) A.geo.dom.e3 bf.1 bf.2 (A.vals_step Sw).w0
+        (A.vals_step Sw).w8) fun t ⟨St', k, ld, tt⟩ => ⟨St', k.mono, ld, tt⟩
+
+theorem front_trace (hD : Spec.Ffdh.domainValid len D = true) :
+    RelCT isa (Both (KAtC Ex base bytes len dlen args sp D St))
+      (Prog.chain (KeyGen.mainFrontWith Generate.metaCut) (.block [])) fun _ _ => True := by
+  show RelCT isa _ (Prog.chain (KeyGen.prefixWith Generate.metaCut) (.seq Impl.Ffdh.X86.CheckPrivate.bound
+    (Prog.chain [Impl.Ffdh.X86.CheckPrivate.scalarMask, testMask] (.block [])))) _
+  apply VG.RelCT.chain
+  refine VG.RelCT.seq (relCT_both (F := CheckPrivate.RG Ex base bytes len dlen args sp) (prefix_trace hD)
+    fun x A => ?_) (VG.RelCT.seq CheckPrivate.bound_relCT (aEnd (fun _ h => h) CheckPrivate.mask_check))
+  exact WP.mono (prefixC_ok hD A) fun u P => ⟨⟨P.inp, A.run.2.1.keep P.keeps, (P.keeps.1 _ (by decide)).trans A.run.2.2⟩,
+    A.geo.dom.keep ⟨rfl, rfl⟩ P.keeps⟩
+
+/-- A run the tail starts from: the comb's, and the tail's. -/
+abbrev TC (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
+    (sp : BitVec 32) (D : List Byte) (u : State) : Prop :=
+  KeyGen.TP Ex base bytes len dlen args sp u ∧ CS Ex base bytes len args sp (Spec.Ffdh.domainOf len D).p (cBits len D) u
+
+/-- The front's runs: the tail's start, and the gate on the scalar, whether the status is 2. -/
+theorem frontC_ok (hD : Spec.Ffdh.domainValid len D = true) (hm : KeyGen.modOk len D) {x : State}
+    (A : KAtC Ex base bytes len dlen args sp D St x) :
+    WP isa (Prog.chain (KeyGen.mainFrontWith Generate.metaCut) (.block [])) x fun u =>
+      TC Ex base bytes len dlen args sp D u ∧ Gate u (St = 2) := by
+  have G := A.geo.dom
+  have dl := G.dl
+  have lw := G.lower
+  have h2 : 2 * len ≤ dlen := by omega_arith
+  have bf := VG.Proof.Ffdh.ContextRows.genBits_facts hD
+  have sm := (VG.Proof.Rsa.FixedBaseComb.rows_small (bits := cBits len D)
+    (Nat.le_trans bf.2 (by have := G.upper; omega_arith))).1
+  refine WP.mono (KeyGen.frontWith_ok G (prefixC_ok hD A)) fun u F => ?_
+  have sp' := A.run.2.2
+  have Fu := F.frame
+  rw [sp'] at Fu
+  have hn : ctxBytes len < 2 ^ 64 := by
+    have := A.rd.afit; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
+    omega
+  have Vu := A.vals.keep Fu (fun r hr => by
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact A.cx
+    · exact ctx_frameR A.rd A.stk (fR_fit A.run.1) r hr) hn
+  have spu : u.gpr .esp = sp := (F.keeps.1 _ (by decide)).trans sp'
+  have pa : comp x.mem args len 0 = (Spec.Ffdh.domainOf len D).p := by rw [comp_p x.mem args h2]; rw [← A.dom]
+  have mv : Spec.Rsa.modulusValid (Spec.Ffdh.domainOf len D).p len = true := hm
+  unfold Spec.Rsa.modulusValid at mv
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
+  have p1 : 1 < (Spec.Ffdh.domainOf len D).p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith
+  refine ⟨⟨⟨⟨F.inp, A.run.2.1.keep F.keeps, spu⟩, G.keep ⟨rfl, rfl⟩ F.keeps⟩, _, _,
+    Nat.mod_lt _ (Nat.two_pow_pos _), F.inp, ⟨A.rd.keep F.keeps, by rw [spu]; exact A.stk, Vu.ents, F.v13, sm⟩,
+    by rw [F.v9, pa]; exact safeM_of p1 mv.1.1.1, Vu.w16, A.run.2.1.keep F.keeps, spu⟩, F.gate.congr ?_⟩
+  have hp : CheckPrivate.params x.mem args len dlen = Spec.Ffdh.domainOf len D := congrArg (Spec.Ffdh.domainOf len) A.dom
+  rw [← A.st, KeyGen.keyStatus_two, hp]
+  rfl
+
+theorem main_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024) :
+    RelCT isa (Both fun x => KAtC Ex base bytes len dlen args sp D St x ∧ KeyGen.modOk len D) Generate.main
+      fun _ _ => True := by
+  have bf := VG.Proof.Ffdh.ContextRows.genBits_facts hD
+  have hR0 := VG.Proof.Rsa.FixedBaseComb.rows_pos (bits := cBits len D) (Nat.lt_of_lt_of_le Nat.zero_lt_one bf.1)
+  have hR : Spec.Rsa.FixedBaseComb.rows (cBits len D) ≤ 1639 :=
+    (VG.Proof.Rsa.FixedBaseComb.rows_small (bits := cBits len D) (Nat.le_trans bf.2 ?_)).1
+  rw [show Generate.main = Prog.chain (KeyGen.mainFrontWith Generate.metaCut)
+    (.ite .e Impl.Ffdh.X86.GenerateKey.fail (KeyGen.tailWith Generate.comb)) from rfl]
+  apply VG.RelCT.chain
+  refine VG.RelCT.seq (relCT_both (F := fun u => TC Ex base bytes len dlen args sp D u ∧ Gate u (St = 2))
+    ((front_trace hD).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) fun x ⟨A, hm⟩ => frontC_ok hD hm A) ?_
+  refine gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) KeyGen.fail_check) ?_
+  · refine KeyGen.tailWith_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (dlen := dlen)
+      (args := args) (sp := sp) (relCT_both ((comb_trace (P := (Spec.Ffdh.domainOf len D).p) hR0 hR).mono
+      (fun _ _ h => ⟨h.1.1.1.2, h.2.1.1.2⟩) fun _ _ h => h) fun x T => ?_)
+    obtain ⟨⟨⟨T, G, xx, hx, h, E, hP, hrows, _, _⟩, _⟩, _⟩ := T
+    exact WP.mono (combStage_ok h E hP hx hR0 hrows) fun u ⟨S, _, _⟩ => KeyGen.tp_step T S
+  · omega
+
 end
 
 end VG.Proof.Ffdh.X86.Cached
