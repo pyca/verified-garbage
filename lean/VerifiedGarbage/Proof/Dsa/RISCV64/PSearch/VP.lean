@@ -129,6 +129,13 @@ theorem loop {I : Nat → State → State → Prop} {body : Prog isa} {c : Cond}
 theorem of_false {c : Prog isa} (h : ∀ σ s, ¬ F σ s) : VP F c G :=
   ⟨fun σ s hs => absurd hs (h σ s), fun _ _ _ _ _ _ ⟨σ, _, h₁, _⟩ => absurd h₁.1 (h σ _)⟩
 
+/-- A stage's pure facts, as hypotheses. -/
+theorem intro {P : Prop} {F Q : State → State → Prop} {c : Prog isa} (h : P → VP F c Q) :
+    VP (fun σ s => P ∧ F σ s) c Q := by
+  by_cases hp : P
+  · exact (h hp).mono (fun σ s h => h.2) fun _ _ h => h
+  · exact VP.of_false fun σ s h => hp h.1
+
 end VP
 
 end VG.Proof.Dsa.RISCV64.PSearch

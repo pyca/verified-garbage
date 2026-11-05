@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
+-- separate module: q's part (`qPart_vp`), which the seed's attempt uses beside the search for p (`PPart`)
+
 /-! # DSA parameter search on RISC-V: q
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/QPart.lean`). `qPart` (`qPart_vp`):
@@ -41,6 +43,8 @@ abbrev qClaims {B N L : Nat} (md : MdStream.Md B N L) (G : GP) (k : Nat) : Claim
 /-- The key working space starts past the bytes below 8192. -/
 theorem kB_ge (L : Nat) : 8192 ≤ kB L := by unfold kB pB; omega
 
+theorem kB_le_wB (L : Nat) : kB L ≤ wB L := by unfold wB; omega
+
 section
 variable {G : GP} {STK : Nat} {σ s : State} {V : Nat → BitVec 64} {LS : List Nat}
 
@@ -48,7 +52,7 @@ variable {G : GP} {STK : Nat} {σ s : State} {V : Nat → BitVec 64} {LS : List 
 theorem GI.seedBytes (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.randLen) (hq0 : 0 < G.qLen) :
     Spec.Rsa.bytesAt s.mem (G.rand + BitVec.ofNat 64 k) G.qLen = seedAt G k := by
   have e := h.randBytes (u := k) (by omega)
-  rw [GP.randP, if_neg (show k ≠ G.randLen by omega)] at e
+  rw [GP.randP, ite_eq_right (by omega)] at e
   obtain ⟨d, hd⟩ : ∃ d, G.randLen - k = G.qLen + d := ⟨G.randLen - k - G.qLen, by omega⟩
   rw [hd, VG.Proof.Dsa.Generation.bytesAt_append] at e
   show _ = (G.randB.drop k).take G.qLen
@@ -76,8 +80,8 @@ abbrev shapeOps (N : Nat) : List Instr :=
 theorem shape_cert {N : Nat} (hN : N = 20 ∨ N = 32) :
     ∃ hc, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s6]) (.block (shapeOps N)) hc).isSome = true := by
   rcases hN with rfl | rfl
-  · exact ⟨_, by kernel_rfl⟩
-  · exact ⟨_, by kernel_rfl⟩
+  · exact ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6]) (.block (shapeOps 20)), by kernel_rfl⟩
+  · exact ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6]) (.block (shapeOps 32)), by kernel_rfl⟩
 
 theorem or_byte (b : Byte) (v : Nat) :
     (b.setWidth 64 ||| BitVec.ofNat 64 v).setWidth 8 = b ||| BitVec.ofNat 8 v := by
@@ -160,7 +164,8 @@ theorem shapeQ_vp {P Q : State → State → Prop} {c : State → Cfg} {N : Nat}
       (Offset.add_ofNat_ne G.scr (a := sQ + (N - 1)) (b := sQ) (by omega) (by omega) (by omega))
   have mt : t.mem = (s.mem.writeW (G.sa sQ) (s.mem (G.sa sQ) ||| 128#8)).writeW
       (G.sa sQ + BitVec.ofNat 64 (N - 1)) (s.mem (G.sa sQ + BitVec.ofNat 64 (N - 1)) ||| 1#8) := by
-    rw [m₆.mem, u₅.gpr, u₄.gpr, u₅.mem, u₄.mem, b₃, or_byte, ← m₃', GP.sa_add]; rfl
+    rw [m₆.mem, u₅.gpr, u₄.gpr, u₅.mem, u₄.mem, b₃, ← m₃', GP.sa_add]
+    exact congrArg _ (or_byte _ 1)
   have hb' := hb σ s hs
   have bl : bs.length = N := by rw [← hb']; simp [Spec.Rsa.bytesAt]
   refine k σ s t hs K sp ?_ ?_
@@ -254,8 +259,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
   · -- The hash.
     refine hash_vp HO (c := fun _ => c1) (fun σ s h => h.1) (msg := fun _ => sd) (dst := sQ)
       (fun σ s ⟨h, _⟩ => ⟨by omega, ?_⟩) (by decide) (by decide) fun σ s t ⟨h, x⟩ K sp f e => ⟨?_, x⟩
-    · rw [← hpd] at hpad ⊢
-      exact h.blk_bytes (by simp [c1]) hsl (by rw [hpd]; simp [c1])
+    · exact h.blk_bytes (md := HO.md) (by simp [c1]) hsl (by rw [hpd]; simp [c1])
     have qB := q_bounds G h.gi
     refine h.of_scrs K sp (os := [(sState, 32), (sCS, 80), (sQ, 4 * g.G.k)]) (fun p hp => ?_)
       (f.mono fun r hr => List.mem_append_left _ hr) fun y hy => ?_
