@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.TaintSum
@@ -13,6 +15,8 @@ import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 import VerifiedGarbage.Proof.X25519.X86.Arith
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -60,5 +64,12 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   blk := by rfcT_decide
+
+/-- `vg_ecdsa_p521_sign`, with the tables of `vs`. -/
+theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs) :
+    Verified X86.target (signCodeT (p521 hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.X86.p521.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p521) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86

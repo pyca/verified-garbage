@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 public import VerifiedGarbage.Spec.Ecdsa.P256
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
@@ -10,6 +13,9 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 meta import VerifiedGarbage.Spec.Ecdsa.P256
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
@@ -94,5 +100,18 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   blk := by rfcT_decide
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`. -/
+theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds)
+    (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.X86.names vs) :
+    Verified X86.target (signCodeT (p256 hL hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86.p256Comb.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p256) h.1 Proof.Ecdsa.X86.combSatMem h.2
+    (by rw [Proof.Ecdsa.X86.p256W_length]; decide) Proof.Ecdsa.X86.combSatMem_held (by decide) rfl
+  rw [show Impl.Ecdsa.X86.p256Comb.combConsts = [("VG_P256_COMB", Proof.Ecdsa.X86.p256W)] from
+    Proof.Ecdsa.X86.p256Comb_consts]
+  exact signT_verified (R := p256 hL hI) ⟨rfl, by decide, by decide⟩ rfl h.1
+    (by rw [show (p256 hL hI).E.combConsts = [("VG_P256_COMB", Proof.Ecdsa.X86.p256W)] from
+      Proof.Ecdsa.X86.p256Comb_consts]; exact hsat)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

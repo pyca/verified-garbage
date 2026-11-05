@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P384
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
+meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.P384
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
@@ -68,5 +72,12 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   blk := by rfcT_decide
+
+/-- `vg_ecdsa_p384_sign`, with the tables of `vs`. -/
+theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs) :
+    Verified X86.target (signCodeT (p384 hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.X86.p384.combConsts vs) := by
+  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p384) h (by decide) rfl
+  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
 
 end VG.Proof.Ecdsa.Rfc6979.X86
