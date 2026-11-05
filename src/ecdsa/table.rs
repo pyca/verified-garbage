@@ -1,6 +1,6 @@
 //! ECDSA's signatures with HMAC as a table: one verified function for each
-//! curve (`vg_ecdsa_<curve>_sign`, and `_adx` for the curves with BMI2 and
-//! ADX multiplications; contract
+//! curve (`vg_ecdsa_<curve>_sign`, and on x86-64 `_adx` for the curves with
+//! BMI2 and ADX multiplications; contract
 //! `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`), which takes HMAC
 //! over the hash function as a table of the interface `Hmac`
 //! (`crate::arch::fn_tables`), so that a curve signs with every hash
@@ -9,7 +9,7 @@
 //! chooses for this CPU, as with its other uses
 //! (`crate::hashes::tables::TableHash::hmac_table`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
 
 use super::Error;
 use crate::hashes::HashFunction;
@@ -84,7 +84,20 @@ impl HmacHash for Sha512_256 {
 
 /// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
 /// signatures of `S = 2 Q`.
+#[cfg(target_arch = "x86_64")]
 pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" fn(
+    *mut [u8; S],
+    *const [u8; Q],
+    *const u8,
+    usize,
+    *mut [u64; 1024],
+    *const [usize; 6],
+) -> u32;
+
+/// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
+/// signatures of `S = 2 Q`.
+#[cfg(target_arch = "riscv64")]
+pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
     *mut [u8; S],
     *const [u8; Q],
     *const u8,

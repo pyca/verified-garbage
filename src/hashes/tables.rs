@@ -11,7 +11,7 @@
 //! it (its backend's `select`), so a table's functions are those the hash
 //! function would call itself.
 
-#![cfg(any(feature = "alloc", target_arch = "x86_64"))]
+#![cfg(any(feature = "alloc", target_arch = "x86_64", target_arch = "riscv64"))]
 
 use crate::arch::fn_tables;
 use crate::hashes::md5::Md5Backend;
@@ -37,7 +37,7 @@ pub(crate) struct Tables {
     pub(crate) md_hash: (&'static fn_tables::MdHash, Features),
     /// Its table of `Hmac`: HMAC's `init`, the streaming `update` and HMAC's
     /// `finalize`, with its index, digest length and block size.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
     pub(crate) hmac: (&'static fn_tables::Hmac, Features),
 }
 
@@ -94,7 +94,7 @@ impl TableHash {
     }
 
     /// Its table of `Hmac`, as the verified functions take it.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
     pub(crate) fn hmac_table(self, f: Features) -> *const [usize; 6] {
         self.tables(f).hmac.0.as_ptr()
     }
@@ -137,7 +137,7 @@ mod tests {
                     assert_eq!((g[3], g[4]), (i, len), "{h:?}");
                     assert_eq!((md[5], md[6]), (i, len), "{h:?}");
                 }
-                #[cfg(target_arch = "x86_64")]
+                #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
                 {
                     assert!(f.contains(t.hmac.1), "{h:?} {bits:#b}");
                     // SAFETY: `as_ptr` points to the table's words, of an
@@ -147,7 +147,7 @@ mod tests {
                     assert_eq!((m[3], m[4], m[5]), (i, len, block), "{h:?}");
                 }
                 // HMAC's block size is only in tables of `Hmac`.
-                #[cfg(not(target_arch = "x86_64"))]
+                #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
                 let _ = block;
             }
         }
