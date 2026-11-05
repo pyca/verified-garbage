@@ -10,11 +10,11 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 /-!
 # Deterministic ECDSA on x86-64: the contract with the hash function as a table
 
-`TableInstance.signContract`, with the tables of `vs` for `hash`, the
+`TableInstance.signContract`, with the tables of `vs` for `hmac`, the
 curve's tables of constants and `stackT` bytes of stack, implies `tabK`
-(`tab_implies`): the table `hash` points to is one of `vs`', whose words
-give the contract the proof of its hash function's code is written against,
-on entry (`preW_of`); its hash function is the one the table names, so the
+(`tab_implies`): the table `hmac` points to is one of `vs`', whose words
+give the contract the proof of the body is written against, after the entry
+(`preW_of`); its hash function is the one the table names, so the
 results agree; and two runs whose public data agree take the same table.
 -/
 
@@ -24,14 +24,14 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
 open VG VG.X86_64 VG.Impl.Ecdsa.Rfc6979.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
-open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf mem_names tabOK_of held_tableOf hashAt_tableOf)
+open VG.Proof.HmacTable.X86_64 (tables fnsOf names Coh tableOf mem_names tabOK_of held_tableOf hashAt_tableOf)
 
 variable {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash}
 
 /-- The facts of the contract with the table of `w`, on entry. -/
-theorem preW_of {w : MdHash} (hv : w ∈ vs) (hc : Coh vs) {s : State}
-    (hsp : 520 ≤ (s.gpr .rsp).toNat)
-    (hrd : s.rd = [⟨s.gpr .rsi, T.ecdsa.curve.len⟩, ⟨s.gpr .rdx, w.H.D⟩, ⟨s.gpr .r9, 40⟩] ++
+theorem preW_of {w : MdHash} (hv : w ∈ vs) (hc : Coh vs) (hw : WOk w) {s : State}
+    (hsp : 632 ≤ (s.gpr .rsp).toNat)
+    (hrd : s.rd = [⟨s.gpr .rsi, T.ecdsa.curve.len⟩, ⟨s.gpr .rdx, w.H.D⟩, ⟨s.gpr .r9, 48⟩] ++
       Abi.constRegions (fun n => s.syms n) R.E.combConsts)
     (hwr : s.wr = [⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩, ⟨s.gpr .r8, 8192⟩])
     (od : Region.Disjoint ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
@@ -43,38 +43,39 @@ theorem preW_of {w : MdHash} (hv : w ∈ vs) (hc : Coh vs) {s : State}
     (rd : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
     (rg : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, w.H.D⟩)
     (rc : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r8, 8192⟩)
-    (ko : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩ ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩ ⟨s.gpr .rdx, w.H.D⟩)
-    (kc : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩ ⟨s.gpr .r8, 8192⟩)
+    (ko : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩)
+    (kd : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
+    (kg : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rdx, w.H.D⟩)
+    (kc : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .r8, 8192⟩)
     (no : (s.gpr .rdi).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 64)
     (nd : (s.gpr .rsi).toNat + T.ecdsa.curve.len ≤ 2 ^ 64) (ng : (s.gpr .rdx).toNat + w.H.D ≤ 2 ^ 64)
     (nc : (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblsOk R.E.combConsts s [⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rsp, 8⟩,
-      ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩])
-    (n9 : (s.gpr .r9).toNat + 40 ≤ 2 ^ 64)
-    (tout : Region.Disjoint ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩ ⟨s.gpr .r9, 40⟩)
-    (tsc : Region.Disjoint ⟨s.gpr .r8, 8192⟩ ⟨s.gpr .r9, 40⟩)
-    (tret : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r9, 40⟩)
-    (tstk : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 520, 520⟩ ⟨s.gpr .r9, 40⟩)
+      ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩])
+    (n9 : (s.gpr .r9).toNat + 48 ≤ 2 ^ 64)
+    (tout : Region.Disjoint ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩ ⟨s.gpr .r9, 48⟩)
+    (tsc : Region.Disjoint ⟨s.gpr .r8, 8192⟩ ⟨s.gpr .r9, 48⟩)
+    (tret : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r9, 48⟩)
+    (tstk : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .r9, 48⟩)
     (hheld : Abi.tableHeld 64 s.mem (s.gpr .r9) (FnTable.words isa s (tableOf w)))
     (hpw : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) :
     PreW R T vs w s := by
   have hh := held_tableOf hheld
-  refine ⟨⟨hsp, hrd, hwr, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, ht, n9, tout.symm,
-    tsc.symm, tret.symm, tstk.symm, by obtain ⟨a, b, c⟩ := tabOK_of hc hpw hv; exact ⟨a, b, c⟩, by have := hh.1; exact this⟩, hh.2.1⟩
+  rw [hw.blockSize] at hh
+  exact ⟨⟨hsp, hrd, hwr, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, ht, n9, tout.symm,
+    tsc.symm, tret.symm, tstk.symm, tabOK_of hc hpw hv, hh.1, rfl, rfl⟩, hh.2.1, hh.2.2.1, hh.2.2.2⟩
 
 
 /-- The contract on the arguments, with the tables of `vs`. -/
 abbrev specK (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × List (BitVec 64))) (vs : List MdHash) :
     Contract isa :=
-  T.signContract ((X86_64.abi.withConsts cs).withTables T.signSig [("hash", tables vs)]) stackT
+  T.signContract ((X86_64.abi.withConsts cs).withTables T.signSig [("hmac", tables vs)]) stackT
 
-theorem tableRegion_eq (p : Addr) : Sig.tableRegion 64 p 5 = ⟨p, 40⟩ := rfl
+theorem tableRegion_eq (p : Addr) : Sig.tableRegion 64 p 6 = ⟨p, 48⟩ := rfl
 
 theorem names_eq (vs : List MdHash) : (List.map (fun x => x.fns) (tables vs)).flatten = names vs := rfl
 
-/-- The table `hash` points to holds `w`'s. -/
+/-- The table `hmac` points to holds `w`'s. -/
 abbrev HeldW (w : MdHash) (s : State) : Prop := Abi.tableHeld 64 s.mem (s.gpr .r9) (FnTable.words isa s (tableOf w))
 
 /-- What the precondition says: the table is of one of `vs`, and with any
@@ -87,7 +88,7 @@ theorem pre_cons (hsw : T.scratchWords = 1024) (hO : OK vs) {c : String × List 
     {cs : List (String × List (BitVec 64))} (hcs : R.E.combConsts = c :: cs) {s : State}
     (h : (specK T (c :: cs) vs).pre s) : PreFacts R T vs s := by
   sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
     List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', hsw, tableRegion_eq,
     List.append_nil, names_eq] at h
@@ -100,7 +101,7 @@ theorem pre_cons (hsw : T.scratchWords = 1024) (hO : OK vs) {c : String × List 
   rw [hlen] at og gc rg kg ng htake
   rw [hsw] at hwr oc dc gc rc kc nc ct
   rw [List.append_eq, List.append_nil] at hpw
-  refine preW_of hv hO.1 hsp ?_ hwr od og oc dc gc ro rd rg rc ko kd kg kc no nd ng nc ?_ n9
+  refine preW_of hv hO.1 (hO.2.2.2 w hv) hsp ?_ hwr od og oc dc gc ro rd rg rc ko kd kg kc no nd ng nc ?_ n9
     ot ct rt kt hheld hpw
   · rw [hcs, ← List.take_append_drop (s.rd.length - (cs.length + 1)) s.rd, htake, hdrop]
   · rw [hcs]
@@ -117,7 +118,7 @@ theorem pre_cons (hsw : T.scratchWords = 1024) (hO : OK vs) {c : String × List 
 theorem pre_nil (hsw : T.scratchWords = 1024) (hO : OK vs) (hcs : R.E.combConsts = []) {s : State}
     (h : (specK T [] vs).pre s) : PreFacts R T vs s := by
   sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
     List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', hsw, tableRegion_eq,
     List.append_nil, names_eq] at h
@@ -130,7 +131,7 @@ theorem pre_nil (hsw : T.scratchWords = 1024) (hO : OK vs) (hcs : R.E.combConsts
   rw [hlen] at og gc rg kg ng hrd
   rw [hsw] at hwr oc dc gc rc kc nc ct
   rw [List.append_eq, List.append_nil] at hpw
-  refine preW_of hv hO.1 hsp ?_ hwr od og oc dc gc ro rd rg rc ko kd kg kc no nd ng nc ?_ n9
+  refine preW_of hv hO.1 (hO.2.2.2 w hv) hsp ?_ hwr od og oc dc gc ro rd rg rc ko kd kg kc no nd ng nc ?_ n9
     ot ct rt kt hheld hpw
   · rw [hcs, hrd]; rfl
   · rw [hcs]; exact ⟨fun _ h => absurd h (by simp), fun _ h => absurd h (by simp [Abi.constRegions])⟩
@@ -139,7 +140,7 @@ theorem pre_nil (hsw : T.scratchWords = 1024) (hO : OK vs) (hcs : R.E.combConsts
 /-- The postcondition: the hash function the table names is its variant's. -/
 theorem post_of {s s' : State} (hk : (tabK R T vs).pre s) (hp : (tabK R T vs).post s s') :
     ∀ (H : Spec.Mgf1.Hash) (F : Spec.Hmac.HashFunction),
-      Spec.HashTable.hashAt 64 s.mem (s.gpr .r9) = some H → Spec.Ecdsa.Rfc6979.hmacOf H = some F →
+      Spec.HmacTable.hashAt 64 s.mem (s.gpr .r9) = some H → Spec.HmacTable.hmacOf H = some F →
         match (T.result H F s.mem (s.gpr .rsi) (s.gpr .rdx)).fst with
         | some rs => BitVec.setWidth 32 (s'.gpr .rax) = 1 ∧
             Spec.Ecdsa.bytesAt s'.mem (s.gpr .rdi) (2 * T.ecdsa.curve.len) = Spec.Ecdsa.encode T.ecdsa.curve rs
@@ -148,7 +149,7 @@ theorem post_of {s s' : State} (hk : (tabK R T vs).pre s) (hp : (tabK R T vs).po
               List.replicate (2 * T.ecdsa.curve.len) 0 := by
   intro H F hH hF
   obtain ⟨w, hv, hw, hpre⟩ := hk
-  obtain rfl := Option.some.inj (hH.symm.trans (hashAt_tableOf hpre.2))
+  obtain rfl := Option.some.inj (hH.symm.trans (hashAt_tableOf hpre.2.1))
   obtain rfl := Option.some.inj (hF.symm.trans hw.hmac)
   exact hp w hv hw hpre
 
@@ -162,7 +163,7 @@ def PubFacts (R : RfcCurve) (T : Spec.Ecdsa.Rfc6979.TableInstance) (vs : List Md
 theorem tried_eq {w : MdHash} (hw : WOk w) {s : State} (hp : PreW R T vs w s) :
     T.tried 64 s.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .r9) =
       ((instOf T w).result s.mem (s.gpr .rsi) (s.gpr .rdx)).2 := by
-  simp only [Spec.Ecdsa.Rfc6979.TableInstance.tried, hashAt_tableOf hp.2, hw.hmac, tresult_eq]
+  simp only [Spec.Ecdsa.Rfc6979.TableInstance.tried, hashAt_tableOf hp.2.1, hw.hmac, tresult_eq]
 
 /-- The public data of `tabK`, from the facts. -/
 theorem pub_of (hO : OK vs) {s₁ s₂ : State} (h₁ : PreFacts R T vs s₁) (h₂ : PreFacts R T vs s₂)
@@ -183,7 +184,7 @@ theorem pub_cons {c : String × List (BitVec 64)} {cs : List (String × List (Bi
     (hcs : R.E.combConsts = c :: cs) {s₁ s₂ : State}
     (h : (specK T (c :: cs) vs).pub s₁ s₂) : PubFacts R T vs s₁ s₂ := by
   sig_pub [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
     List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
     List.append_nil, names_eq] at h
@@ -202,7 +203,7 @@ theorem pub_cons {c : String × List (BitVec 64)} {cs : List (String × List (Bi
 theorem pub_nil (hcs : R.E.combConsts = []) {s₁ s₂ : State}
     (h : (specK T [] vs).pub s₁ s₂) : PubFacts R T vs s₁ s₂ := by
   sig_pub [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
     List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
     List.append_nil, names_eq] at h
@@ -235,7 +236,7 @@ theorem tab_implies (hsw : T.scratchWords = 1024) (hO : OK vs)
   cases cs
   all_goals
     sig_post [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
       X86_64.abi, X86_64.argRegs, Abi.withConsts, stackBelow, stackT, String.reduceEq, Option.map_some,
       List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq, exists_eq_left', tableRegion_eq,
       List.append_nil, names_eq]
@@ -245,9 +246,9 @@ theorem tab_implies (hsw : T.scratchWords = 1024) (hO : OK vs)
 `TableInstance.signContract` (given a state that meets it). -/
 theorem signT_verified (hC : CurveT R T) (hsw : T.scratchWords = 1024) (hO : OK vs)
     (hsat : ∃ s, (specK T R.E.combConsts vs).pre s) :
-    Verified X86_64.target (signCode R T.tries vs) (specK T R.E.combConsts vs) :=
+    Verified X86_64.target (signCodeT R T.tries vs) (specK T R.E.combConsts vs) :=
   Verified.of_correct (fun _ h => let ⟨t, s', he, hg, hp⟩ := signT_ok hC h
       ⟨t, s', he, abiPreserved_of_exec (signCode_mx R T.tries vs) he hg, hp⟩)
-    (signT_ct hC hO.2.2.2) (tab_implies hsw hO hsat)
+    (signT_ct hC) (tab_implies hsw hO hsat)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
