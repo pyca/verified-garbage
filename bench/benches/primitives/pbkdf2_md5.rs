@@ -17,7 +17,7 @@ pub const USES: &[&str] = &["pbkdf2_md5", "hmac_md5", "md5"];
 pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
     use verified_garbage::hashes::md5::Md5;
-    use verified_garbage::pbkdf2::pbkdf2_hmac;
+    use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
 
     crate::pbkdf2_group(
         c,

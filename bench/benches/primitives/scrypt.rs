@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
     use criterion::BenchmarkId;
-    use verified_garbage::scrypt::{derive, verify};
+    use verified_garbage::kdf::scrypt::{derive, verify};
 
     use crate::{BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("scrypt");

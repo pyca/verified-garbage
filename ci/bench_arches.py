@@ -203,11 +203,14 @@ MOVED = {
     "src/aead/aes_siv.rs": "src/aes_siv.rs",
     "src/aead/chacha20poly1305.rs": "src/chacha20poly1305.rs",
     "src/aead/sm4_gcm.rs": "src/sm4_gcm.rs",
+    "src/kdf/argon2.rs": "src/argon2.rs",
+    "src/kdf/pbkdf2/": "src/pbkdf2/",
+    "src/kdf/scrypt.rs": "src/scrypt.rs",
 }
 
 # The lists of modules, `src/lib.rs`'s and those of the modules that group
 # others: a change to them adds or removes modules (`registrations`).
-REGISTRIES = ("src/lib.rs", "src/aead/mod.rs")
+REGISTRIES = ("src/lib.rs", "src/aead/mod.rs", "src/kdf/mod.rs")
 
 
 def logical(path):

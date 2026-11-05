@@ -7,8 +7,9 @@ declare it) and each benchmark (the `#[cfg(...)]` of its `pub fn bench`,
 and the `#[cfg(not(...))]` of the empty one for the other architectures)
 must name exactly the architectures that every library module it uses
 (`verified_garbage::<path>`) states in its inner `#![cfg(...)]`. Where a construction over hash functions has a file per hash
-(`src/<family>/<hash>.rs`, e.g. `src/hmac/sha256.rs`), a file that uses
-both `<family>` and `hashes::<hash>` needs that file's architectures too;
+(`src/<family>/<hash>.rs`, e.g. `src/hmac/sha256.rs`, or
+`src/kdf/pbkdf2/sha256.rs`), a file that uses both `<family>` and
+`hashes::<hash>` needs that file's architectures too;
 and an item named for a module's file (`ec::P384`, of `src/ec/p384.rs`,
 a curve's file) needs that file's.
 
@@ -99,7 +100,7 @@ def required(text, mods):
     for u in used:
         for h in hashes:
             per_hash = f"{u}::{h}"
-            if "::" not in u and per_hash in mods:
+            if per_hash in mods:
                 archs &= mods[per_hash]
     return archs, used
 

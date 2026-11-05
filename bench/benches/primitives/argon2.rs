@@ -23,7 +23,9 @@ pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
     use criterion::BenchmarkId;
-    use verified_garbage::argon2::{Params, Variant, derive, derive_keyed, verify, verify_keyed};
+    use verified_garbage::kdf::argon2::{
+        Params, Variant, derive, derive_keyed, verify, verify_keyed,
+    };
 
     use crate::{BenchDyn, VG};
     for (variant, name) in [
