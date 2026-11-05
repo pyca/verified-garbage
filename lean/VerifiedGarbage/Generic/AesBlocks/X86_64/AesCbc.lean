@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Caller
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
@@ -15,17 +15,21 @@ open VG.Proof.AesCbc.X86_64
 def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.AesCbc.X86_64.encrypt v.enc
+    code := Caller.encrypt v
     stack := 8
-    verified := Proof.AesCbc.encrypt_keyed (encrypt_verified v)
-    spSafe := encrypt_spSafe v
-    features := v.features },
+    verified := Proof.AesCbc.encrypt_keyed (Caller.verified v)
+    spSafe := Caller.spSafe v
+    written := Caller.written v
+    writtenOk := Caller.written_ok v
+    features := Caller.encFeatures v },
   Spec.Cbc.aesDecryptApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.AesCbc.X86_64.decrypt v.dec
+    code := Caller.decrypt v
     stack := 8
-    verified := Proof.AesCbc.decrypt_keyed (decrypt_verified v)
-    spSafe := decrypt_spSafe v
-    features := v.features }]
+    verified := Proof.AesCbc.decrypt_keyed (Caller.decryptVerified v)
+    spSafe := Caller.decryptSpSafe v
+    written := Caller.decWritten v
+    writtenOk := Caller.decWritten_ok v
+    features := Caller.decFeatures v }]
 
 end VG.Generic.AesBlocks.X86_64.AesCbc

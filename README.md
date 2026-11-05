@@ -683,7 +683,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, AVX2</td>
+<td>✅ AES-NI, VAES, AVX-512F, AVX2</td>
 
 <td>✅ AES, PMULL, SHA extensions</td>
 

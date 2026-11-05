@@ -12,6 +12,7 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(not(target_arch = "x86_64"))]
 use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
@@ -32,8 +33,11 @@ use crate::arch::aes_cbc::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_cbc::{
-    VG_AES_CBC_DECRYPT_VAES_FEATURES, VG_AES_CBC_ENCRYPT_VAES_FEATURES, vg_aes_cbc_decrypt_vaes,
-    vg_aes_cbc_encrypt_vaes,
+    VG_AES_CBC_DECRYPT_AESNI_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES,
+    VG_AES_CBC_DECRYPT_VAES_AVX512_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_FEATURES,
+    VG_AES_CBC_DECRYPT_VAES_SCRATCH_WRITTEN, VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN,
+    VG_AES_CBC_ENCRYPT_VAES_FEATURES, VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN,
+    vg_aes_cbc_decrypt_vaes, vg_aes_cbc_decrypt_vaes_avx512, vg_aes_cbc_encrypt_vaes,
 };
 use crate::arch::aes_cbc::{vg_aes_cbc_decrypt, vg_aes_cbc_encrypt};
 use crate::cpu::detected;
@@ -41,16 +45,28 @@ use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
+/// CBC implementations selected when expanding a key.
+#[cfg(target_arch = "x86_64")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Backend {
+    Scalar,
+    AesNi,
+    Vaes,
+    VaesAvx512,
+}
+
 /// The variant of a function for `backend`: the baseline one, or its
-/// `_aesni`, `_vaes` or `_aes` one.
+/// `_aesni`, `_vaes`, `_vaes_avx512` or `_aes` one.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
+    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $vaes512:ident, $aes:ident) => {
         match $backend {
             Backend::Scalar => $scalar,
             #[cfg(target_arch = "x86_64")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "x86_64")]
             Backend::Vaes => $vaes,
+            #[cfg(target_arch = "x86_64")]
+            Backend::VaesAvx512 => $vaes512,
             #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "aarch64")]
@@ -71,7 +87,19 @@ fn select(f: Features) -> Backend {
         VG_AES_CBC_ENCRYPT_VAES_FEATURES,
         VG_AES_CBC_DECRYPT_VAES_FEATURES,
     ]);
-    Backend::select_for(f, VAES, AESNI)
+    const VAES512: Features = Features::all(&[
+        VG_AES_CBC_ENCRYPT_VAES_FEATURES,
+        VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES,
+    ]);
+    if f.contains(VAES512) {
+        Backend::VaesAvx512
+    } else if f.contains(VAES) {
+        Backend::Vaes
+    } else if f.contains(AESNI) {
+        Backend::AesNi
+    } else {
+        Backend::Scalar
+    }
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
@@ -184,6 +212,7 @@ impl Key {
             vg_aes_expand_key,
             vg_aes_expand_key_aesni,
             vg_aes_expand_key_aesni,
+            vg_aes_expand_key_aesni,
             vg_aes_expand_key_aes
         );
         let mut schedule = [0; 240];
@@ -209,6 +238,7 @@ impl Key {
             vg_aes_cbc_encrypt,
             vg_aes_cbc_encrypt_aesni,
             vg_aes_cbc_encrypt_vaes,
+            vg_aes_cbc_encrypt_vaes,
             vg_aes_cbc_encrypt_aes
         );
         #[cfg(target_arch = "aarch64")]
@@ -216,7 +246,13 @@ impl Key {
             Backend::Aes => VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN,
             Backend::Scalar => 2176,
         };
-        #[cfg(not(target_arch = "aarch64"))]
+        #[cfg(target_arch = "x86_64")]
+        let scratch_written = match self.backend {
+            Backend::Scalar => 2176,
+            Backend::AesNi => VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN,
+            Backend::Vaes | Backend::VaesAvx512 => VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN,
+        };
+        #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
         let scratch_written = 2176;
         self.crypt(iv, buffer, f, scratch_written)
     }
@@ -242,9 +278,19 @@ impl Key {
             vg_aes_cbc_decrypt,
             vg_aes_cbc_decrypt_aesni,
             vg_aes_cbc_decrypt_vaes,
+            vg_aes_cbc_decrypt_vaes_avx512,
             vg_aes_cbc_decrypt_aes
         );
-        self.crypt(iv, buffer, f, 2176)
+        #[cfg(target_arch = "x86_64")]
+        let scratch_written = match self.backend {
+            Backend::Scalar => 2176,
+            Backend::AesNi => VG_AES_CBC_DECRYPT_AESNI_SCRATCH_WRITTEN,
+            Backend::Vaes => VG_AES_CBC_DECRYPT_VAES_SCRATCH_WRITTEN,
+            Backend::VaesAvx512 => VG_AES_CBC_DECRYPT_VAES_AVX512_SCRATCH_WRITTEN,
+        };
+        #[cfg(not(target_arch = "x86_64"))]
+        let scratch_written = 2176;
+        self.crypt(iv, buffer, f, scratch_written)
     }
 
     fn crypt(
@@ -336,7 +382,7 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
     #[test]
     fn select_features() {
-        use crate::aes::Backend;
+        use super::Backend;
         use verified_garbage_cpu::{Features, feature};
         assert_eq!(select(Features(0)), Backend::Scalar);
         #[cfg(target_arch = "x86_64")]
@@ -349,6 +395,10 @@ mod tests {
                 feature::AES | feature::AVX | feature::AVX2 | feature::SSSE3 | feature::VAES,
             );
             assert_eq!(select(vaes), Backend::Vaes);
+            assert_eq!(
+                select(Features(vaes.0 | feature::AVX512F)),
+                Backend::VaesAvx512
+            );
         }
         #[cfg(target_arch = "x86")]
         assert_eq!(select(Features(feature::AES)), Backend::AesNi);
