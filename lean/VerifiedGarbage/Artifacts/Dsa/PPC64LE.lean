@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -33,6 +34,9 @@ def artifacts : List Artifact := [
     verified := Proof.Dsa.PPC64LE.validate_verified },
   Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Prevalidated.verify
-    verified := Proof.Dsa.PPC64LE.prevalidated_verified }]
+    verified := Proof.Dsa.PPC64LE.prevalidated_verified },
+  Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Generation.init
+    verified := Proof.Dsa.PPC64LE.Gen.init_verified }]
 
 end VG.Artifacts.Dsa.PPC64LE

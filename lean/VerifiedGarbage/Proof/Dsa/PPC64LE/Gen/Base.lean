@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
@@ -13,12 +13,13 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # DSA parameter generation on PPC64LE: the public parameters
 
-`mkG s`: the public parameters of a call from `s`, the tapes' bytes among
-them, which the contract makes public, and the address of the table of
-small primes the probable-prime tests read (`kT`), which the contract's
-calling convention adds to the readable regions. `CIn s`: the contract's
-precondition (`cin_of_pre`), for the functions we call using at most `STK`
-bytes below the stack pointer.
+`mkG s`: the public parameters of a call of `vg_dsa_parameter_search` from
+`s`: its arguments, the state's first two words (the seeds left and the
+modulus's width) and the tape's bytes, which the contract makes public, and
+the address of the table of small primes the probable-prime tests read
+(`kT`), which the contract's calling convention adds to the readable regions.
+`CIn s`: the contract's precondition (`cin_of_pre`), for the functions we
+call using at most `STK` bytes below the stack pointer.
 -/
 
 @[expose] public section
@@ -32,38 +33,37 @@ structure GP where
   sp : Addr
   out : Addr
   outLen : Nat
-  pLen : Nat
-  qLen : Nat
-  seeds : Addr
-  seedsLen : Nat
-  hs : Addr
-  hsLen : Nat
+  usedP : Addr
+  /-- `rand`, which holds the seeds, the witnesses and the `h` candidates. -/
   wit : Addr
   witLen : Nat
   scr : Addr
   scrLen : Nat
-  seedsB : List Byte
-  hsB : List Byte
+  stP : Addr
+  /-- The seeds left, `state[0]`. -/
+  k0 : Nat
+  pLen : Nat
+  qLen : Nat
   witB : List Byte
   tab : Addr
+
+/-- The modulus's width, `state[1]`. -/
+abbrev pLenOf (s : State) : Nat := (s.mem.readW (s.gpr .r10 + 8) 64).toNat
 
 def mkG (s : State) : GP where
   sp := s.sp
   out := s.gpr .r3
   outLen := (s.gpr .r4).toNat
-  pLen := (s.gpr .r5).toNat
-  qLen := (s.gpr .r6).toNat
-  seeds := s.gpr .r7
-  seedsLen := (s.gpr .r8).toNat
-  hs := s.gpr .r9
-  hsLen := (s.gpr .r10).toNat
-  wit := stackArg s 0
-  witLen := (stackArg s 1).toNat
-  scr := stackArg s 2
-  scrLen := (stackArg s 3).toNat
-  seedsB := Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat
-  hsB := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat
-  witB := Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat
+  usedP := s.gpr .r5
+  wit := s.gpr .r6
+  witLen := (s.gpr .r7).toNat
+  scr := s.gpr .r8
+  scrLen := (s.gpr .r9).toNat
+  stP := s.gpr .r10
+  k0 := (s.mem.readW (s.gpr .r10) 64).toNat
+  pLen := pLenOf s
+  qLen := Spec.Dsa.generationQLen (pLenOf s)
+  witB := Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat
   tab := s.syms Impl.RsaKeyGen.TrialTable32.symbol
 
 /-- The table of small primes the probable-prime tests read. -/
@@ -72,12 +72,17 @@ abbrev kT : List (String × List (BitVec 64)) := Impl.RsaKeyGen.TrialTable32.con
 namespace GP
 variable (G : GP)
 
+/-- The seeds are read from `rand`. -/
+abbrev seeds : Addr := G.wit
+abbrev seedsLen : Nat := G.witLen
+abbrev seedsB : List Byte := G.witB
+
 abbrev rScr : Region := ⟨G.scr, G.scrLen * 8⟩
 abbrev rOut : Region := ⟨G.out, G.outLen⟩
-abbrev rSeeds : Region := ⟨G.seeds, G.seedsLen⟩
-abbrev rHs : Region := ⟨G.hs, G.hsLen⟩
+abbrev rUsed : Region := ⟨G.usedP, 8⟩
 abbrev rWit : Region := ⟨G.wit, G.witLen⟩
-abbrev rArgs : Region := ⟨G.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0)), 32⟩
+abbrev rSeeds : Region := G.rWit
+abbrev rSt : Region := ⟨G.stP, 32⟩
 abbrev rTab : Region := ⟨G.tab, 8192⟩
 
 end GP
@@ -85,87 +90,84 @@ end GP
 /-- The stack below the stack pointer the functions we call use. -/
 abbrev rBelow (σ : State) (STK : Nat) : Region := ⟨σ.sp - BitVec.ofNat 64 STK, STK⟩
 
-theorem stackArgs_four (s : State) :
-    List.map (stackArg s) (List.range 4) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
-
 /-- The precondition under `abi`, for `STK` bytes of stack. -/
 structure CIn0 (STK : Nat) (s : State) : Prop where
   spLo : STK ≤ s.sp.toNat
-  spHi : s.sp.toNat + 32 + 96 ≤ 2 ^ 64
-  rd : s.rd = [(mkG s).rSeeds, (mkG s).rHs, (mkG s).rWit, (mkG s).rArgs]
-  wr : s.wr = [(mkG s).rOut, (mkG s).rScr]
-  oS : (mkG s).rOut.Disjoint (mkG s).rSeeds
-  oH : (mkG s).rOut.Disjoint (mkG s).rHs
+  rd : s.rd = [(mkG s).rWit]
+  wr : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt]
+  oU : (mkG s).rOut.Disjoint (mkG s).rUsed
   oW : (mkG s).rOut.Disjoint (mkG s).rWit
   oC : (mkG s).rOut.Disjoint (mkG s).rScr
-  oA : (mkG s).rOut.Disjoint (mkG s).rArgs
-  sC : (mkG s).rSeeds.Disjoint (mkG s).rScr
-  hC : (mkG s).rHs.Disjoint (mkG s).rScr
+  oS : (mkG s).rOut.Disjoint (mkG s).rSt
+  uW : (mkG s).rUsed.Disjoint (mkG s).rWit
+  uC : (mkG s).rUsed.Disjoint (mkG s).rScr
+  uS : (mkG s).rUsed.Disjoint (mkG s).rSt
   wC : (mkG s).rWit.Disjoint (mkG s).rScr
-  cA : (mkG s).rScr.Disjoint (mkG s).rArgs
+  wS : (mkG s).rWit.Disjoint (mkG s).rSt
+  cS : (mkG s).rScr.Disjoint (mkG s).rSt
   bO : (rBelow s STK).Disjoint (mkG s).rOut
-  bS : (rBelow s STK).Disjoint (mkG s).rSeeds
-  bH : (rBelow s STK).Disjoint (mkG s).rHs
+  bU : (rBelow s STK).Disjoint (mkG s).rUsed
   bW : (rBelow s STK).Disjoint (mkG s).rWit
   bC : (rBelow s STK).Disjoint (mkG s).rScr
-  bA : (rBelow s STK).Disjoint (mkG s).rArgs
+  bS : (rBelow s STK).Disjoint (mkG s).rSt
   nO : (s.gpr .r3).toNat + (s.gpr .r4).toNat ≤ 2 ^ 64
-  nS : (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
-  nH : (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64
-  nW : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64
-  nC : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
-  lens : Spec.Dsa.generationLengthsValid (s.gpr .r5).toNat (s.gpr .r6).toNat
-  outLen : (s.gpr .r4).toNat = 2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat
-  seedsMod : (s.gpr .r8).toNat % (s.gpr .r6).toNat = 0
-  hsMod : (s.gpr .r10).toNat % (s.gpr .r5).toNat = 0
-  scrLen : Spec.Dsa.generationScratchWords (s.gpr .r5).toNat ≤ (stackArg s 3).toNat
+  nU : (s.gpr .r5).toNat + 8 ≤ 2 ^ 64
+  nW : (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64
+  nC : (s.gpr .r8).toNat + (s.gpr .r9).toNat * 8 ≤ 2 ^ 64
+  nS : (s.gpr .r10).toNat + 32 ≤ 2 ^ 64
+  valid : Spec.Dsa.generationPLenValid (pLenOf s)
+  outLen : (s.gpr .r4).toNat = 2 * pLenOf s + Spec.Dsa.generationQLen (pLenOf s)
+  scrLen : Spec.Dsa.generationScratchWords (pLenOf s) ≤ (s.gpr .r9).toNat
+  seeds : (s.mem.readW (s.gpr .r10) 64).toNat ≤ Spec.Dsa.parameterSeeds
+  budget : s.mem.readW (s.gpr .r10 + 16) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
+  randLen : (s.gpr .r7).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
-theorem cin0_of_pre {n : Nat} (s : State) (h : (Spec.Dsa.generateParametersContract abi (n + 1)).pre s) :
+theorem cin0_of_pre {n : Nat} (s : State) (h : (Spec.Dsa.parameterSearchContract abi (n + 1)).pre s) :
     CIn0 (n + 1) s := by
-  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_four,
-    List.append_eq, List.range, List.range.loop] at h
-  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_four,
-    List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, bO, bS, bH, bW, bC, bA, nO, nS, nH, nW, nC,
-    lens, outLen, seedsMod, hsMod, scrLen⟩ := h
-  exact ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, bO, bS, bH, bW, bC, bA, nO, nS, nH, nW, nC,
-    lens, outLen, seedsMod, hsMod, scrLen⟩
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackBelow] at h
+  sig_split h
+  constructor
+  all_goals try dsimp only [mkG, GP.rOut, GP.rUsed, GP.rWit, GP.rScr, GP.rSt, pLenOf]
+  all_goals with_reducible assumption
 
 /-- The contract's precondition, for `STK` bytes of stack. -/
 structure CIn (STK : Nat) (s : State) : Prop where
   spLo : STK ≤ s.sp.toNat
-  spHi : s.sp.toNat + 32 + 96 ≤ 2 ^ 64
-  rd : s.rd = [(mkG s).rSeeds, (mkG s).rHs, (mkG s).rWit, (mkG s).rArgs, (mkG s).rTab]
-  wr : s.wr = [(mkG s).rOut, (mkG s).rScr]
-  oS : (mkG s).rOut.Disjoint (mkG s).rSeeds
-  oH : (mkG s).rOut.Disjoint (mkG s).rHs
+  rd : s.rd = [(mkG s).rWit, (mkG s).rTab]
+  wr : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt]
+  oU : (mkG s).rOut.Disjoint (mkG s).rUsed
   oW : (mkG s).rOut.Disjoint (mkG s).rWit
   oC : (mkG s).rOut.Disjoint (mkG s).rScr
-  oA : (mkG s).rOut.Disjoint (mkG s).rArgs
-  sC : (mkG s).rSeeds.Disjoint (mkG s).rScr
-  hC : (mkG s).rHs.Disjoint (mkG s).rScr
+  oS : (mkG s).rOut.Disjoint (mkG s).rSt
+  uW : (mkG s).rUsed.Disjoint (mkG s).rWit
+  uC : (mkG s).rUsed.Disjoint (mkG s).rScr
+  uS : (mkG s).rUsed.Disjoint (mkG s).rSt
   wC : (mkG s).rWit.Disjoint (mkG s).rScr
-  cA : (mkG s).rScr.Disjoint (mkG s).rArgs
+  wS : (mkG s).rWit.Disjoint (mkG s).rSt
+  cS : (mkG s).rScr.Disjoint (mkG s).rSt
   bO : (rBelow s STK).Disjoint (mkG s).rOut
-  bS : (rBelow s STK).Disjoint (mkG s).rSeeds
-  bH : (rBelow s STK).Disjoint (mkG s).rHs
+  bU : (rBelow s STK).Disjoint (mkG s).rUsed
   bW : (rBelow s STK).Disjoint (mkG s).rWit
   bC : (rBelow s STK).Disjoint (mkG s).rScr
-  bA : (rBelow s STK).Disjoint (mkG s).rArgs
+  bS : (rBelow s STK).Disjoint (mkG s).rSt
   nO : (s.gpr .r3).toNat + (s.gpr .r4).toNat ≤ 2 ^ 64
-  nS : (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
-  nH : (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64
-  nW : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64
-  nC : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
-  lens : Spec.Dsa.generationLengthsValid (s.gpr .r5).toNat (s.gpr .r6).toNat
-  outLen : (s.gpr .r4).toNat = 2 * (s.gpr .r5).toNat + (s.gpr .r6).toNat
-  seedsMod : (s.gpr .r8).toNat % (s.gpr .r6).toNat = 0
-  hsMod : (s.gpr .r10).toNat % (s.gpr .r5).toNat = 0
-  scrLen : Spec.Dsa.generationScratchWords (s.gpr .r5).toNat ≤ (stackArg s 3).toNat
+  nU : (s.gpr .r5).toNat + 8 ≤ 2 ^ 64
+  nW : (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64
+  nC : (s.gpr .r8).toNat + (s.gpr .r9).toNat * 8 ≤ 2 ^ 64
+  nS : (s.gpr .r10).toNat + 32 ≤ 2 ^ 64
+  valid : Spec.Dsa.generationPLenValid (pLenOf s)
+  outLen : (s.gpr .r4).toNat = 2 * pLenOf s + Spec.Dsa.generationQLen (pLenOf s)
+  scrLen : Spec.Dsa.generationScratchWords (pLenOf s) ≤ (s.gpr .r9).toNat
+  seeds : (s.mem.readW (s.gpr .r10) 64).toNat ≤ Spec.Dsa.parameterSeeds
+  budget : s.mem.readW (s.gpr .r10 + 16) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
+  randLen : (s.gpr .r7).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
   held : Abi.constsHeld s.mem (fun name => s.syms name) kT
   tFit : (mkG s).tab.toNat + 8192 ≤ 2 ^ 64
   tO : (mkG s).rTab.Disjoint (mkG s).rOut
+  tU : (mkG s).rTab.Disjoint (mkG s).rUsed
   tC : (mkG s).rTab.Disjoint (mkG s).rScr
+  tS : (mkG s).rTab.Disjoint (mkG s).rSt
   tB : (mkG s).rTab.Disjoint (rBelow s STK)
   tAl : (mkG s).tab.toNat % 64 = 0
 
@@ -176,9 +178,9 @@ theorem constRegs_kT (s : State) : constRegs kT s = [(mkG s).rTab] := by
   rfl
 
 theorem cin_of_pre {n : Nat} (s : State)
-    (h : (Spec.Dsa.generateParametersContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
+    (h : (Spec.Dsa.parameterSearchContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
   obtain ⟨h₀, hk⟩ := (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
-    (cs := []) (sig := Spec.Dsa.generateParametersSig)).mp h
+    (cs := []) (sig := Spec.Dsa.parameterSearchSig)).mp h
   have c := cin0_of_pre (stripConsts kT s) h₀
   obtain ⟨hd, held, ht, hal⟩ := hk
   have e : constRegs [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] s = _ :=
@@ -189,10 +191,17 @@ theorem cin_of_pre {n : Nat} (s : State)
       s.rd.drop (s.rd.length - [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)].length) :=
     (List.take_append_drop _ _).symm
   rw [hd, c.rd] at hrd
-  have hw : s.wr = [(mkG s).rOut, (mkG s).rScr] := c.wr
-  exact ⟨c.spLo, c.spHi, hrd, hw, c.oS, c.oH, c.oW, c.oC, c.oA, c.sC, c.hC, c.wC, c.cA, c.bO, c.bS, c.bH, c.bW,
-    c.bC, c.bA, c.nO, c.nS, c.nH, c.nW, c.nC, c.lens, c.outLen, c.seedsMod, c.hsMod, c.scrLen, held, tFit,
-    tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp), tR _ (by simp [abi, stackBelow]),
-    hal _ (List.mem_cons_self (l := []))⟩
+  have hw : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt] := c.wr
+  exact ⟨c.spLo, hrd, hw, c.oU, c.oW, c.oC, c.oS, c.uW, c.uC, c.uS, c.wC, c.wS, c.cS, c.bO, c.bU, c.bW, c.bC, c.bS, c.nO, c.nU, c.nW, c.nC, c.nS, c.valid, c.outLen, c.scrLen, c.seeds, c.budget, c.randLen, held, tFit,
+    tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp),
+    tR _ (by simp [abi, stackBelow]), hal _ (List.mem_cons_self (l := []))⟩
+
+theorem CIn.lens {STK : Nat} {s : State} (h : CIn STK s) :
+    ((mkG s).pLen = 128 ∧ (mkG s).qLen = 20) ∨ ((mkG s).pLen = 256 ∧ (mkG s).qLen = 32) ∨
+      ((mkG s).pLen = 384 ∧ (mkG s).qLen = 32) := by
+  have := h.valid
+  simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
+  simp only [mkG, Spec.Dsa.generationQLen]
+  rcases this with (e | e) | e <;> simp [e]
 
 end VG.Proof.Dsa.PPC64LE.Gen
