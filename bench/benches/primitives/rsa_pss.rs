@@ -57,7 +57,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey_ctx::PkeyCtx;
     use openssl::rsa::{Padding, Rsa};
     use openssl::sign::RsaPssSaltlen;
-    use verified_garbage::rsa::pss::{Hash, SaltLength, sign, sign_with_rng, verify};
+    use verified_garbage::rsa::pss::{Hash, SaltLength};
     use verified_garbage::rsa::{PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG, fixed_tape};
@@ -159,7 +159,11 @@ pub fn bench(c: &mut Criterion) {
         };
         let sigs: Vec<_> = sizes
             .iter()
-            .map(|(_, vg_private, ..)| sign(vg_private, &digest, hash, hash, digest.len()).unwrap())
+            .map(|(_, vg_private, ..)| {
+                vg_private
+                    .sign_pss(&digest, hash, hash, digest.len())
+                    .unwrap()
+            })
             .collect();
         // aws-lc-rs's public keys, loaded from `(n, e)` for the hash's
         // parameters.
@@ -182,18 +186,12 @@ pub fn bench(c: &mut Criterion) {
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
                     let mut tape = fixed_tape(k as u64);
-                    sign_with_rng(
-                        black_box(vg_private),
-                        black_box(&digest),
-                        hash,
-                        hash,
-                        digest.len(),
-                        |buf| {
+                    black_box(vg_private)
+                        .sign_pss_with_rng(black_box(&digest), hash, hash, digest.len(), |buf| {
                             tape(buf);
                             Ok(())
-                        },
-                    )
-                    .unwrap()
+                        })
+                        .unwrap()
                 })
             });
             let mut c = ctx(pkey, &md, |c| c.sign_init().unwrap());
@@ -210,8 +208,7 @@ pub fn bench(c: &mut Criterion) {
                 aws_sign(&digest, &mut out);
                 let d = Digest::import_less_safe(&digest, alg).unwrap();
                 aws_public.verify_digest_sig(&d, sig).unwrap();
-                assert!(verify(
-                    vg_public,
+                assert!(vg_public.verify_pss(
                     &out,
                     &digest,
                     hash,
@@ -232,8 +229,7 @@ pub fn bench(c: &mut Criterion) {
             let k = sig.len();
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    assert!(verify(
-                        black_box(vg_public),
+                    assert!(black_box(vg_public).verify_pss(
                         black_box(sig),
                         &digest,
                         hash,
