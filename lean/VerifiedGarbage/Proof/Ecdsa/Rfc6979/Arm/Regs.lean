@@ -35,6 +35,12 @@ theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 256)
 
 end
 
+/-- An immediate below 256 is encodable (rotation 0). -/
+theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
+    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega : n % 2 ^ 32 < 256)⟩
+
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
     Spec.Sha256.bytesAt m' p n = Spec.Sha256.bytesAt m p n := by
