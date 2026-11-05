@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Verified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcCT
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
@@ -43,13 +41,6 @@ def artifacts : List Artifact := [
   Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
     verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
-  Spec.Ffdh.generateKeyApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.GenerateKey.generateKey
-    verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified },
-  Spec.Ffdh.keySearchApi.artifact PPC64LE.target {
-    stack := 176
-    code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode
-    verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified },
   Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
     consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
     code := Impl.Ffdh.PPC64LE.Cached.Precompute.code

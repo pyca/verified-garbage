@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.DeriveVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
-public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
@@ -55,16 +53,6 @@ def artifacts : List Artifact := [
   Spec.Ffdh.keyInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.KeyInit.code
     verified := Proof.Ffdh.X86.KeyInit.verified },
-  Spec.Ffdh.generateKeyApi.artifact X86.target {
-    code := Impl.Ffdh.X86.GenerateKey.code
-    verified := Proof.Ffdh.X86.KeyGen.verified
-    spSafe := Proof.Ffdh.X86.Shape.generateKey_spSafe
-    stack := 172 },
-  Spec.Ffdh.keySearchApi.artifact X86.target {
-    code := Impl.Ffdh.X86.KeySearch.code
-    verified := Proof.Ffdh.X86.KeySearch.verified
-    spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
-    stack := 220 },
   Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
     consts := Impl.Ffdh.X86.VettedValidation.tableConsts
     code := Impl.Ffdh.X86.Cached.Precompute.code

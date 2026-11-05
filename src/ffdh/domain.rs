@@ -1,20 +1,12 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
 //! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARMv7,
-//! AArch64, PPC64LE and x86-64).
+//! (`vg_ffdh_generate_key_search_cached`, from the public context
+//! `vg_ffdh_generate_key_precompute` computes once per domain).
 //! Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
-#[cfg(not(any(
-    target_arch = "arm",
-    target_arch = "aarch64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "x86_64"
-)))]
-use crate::arch::ffdh::vg_ffdh_generate_key_search;
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
     vg_ffdh_key_generation_init,
@@ -37,13 +29,6 @@ fn scratch(p_len: usize) -> Scratch {
 pub(super) struct Domain {
     bytes: alloc::vec::Vec<u8>,
     p_len: usize,
-    #[cfg(any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    ))]
     precomputed: super::precomputed::Precomputed,
 }
 
@@ -86,35 +71,14 @@ impl Domain {
         if ok != 1 {
             return None;
         }
-        #[cfg(any(
-            target_arch = "arm",
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        ))]
         let precomputed = super::precomputed::Precomputed::new(&bytes, p_len, &mut ws);
         Some(Self {
             bytes,
             p_len,
-            #[cfg(any(
-                target_arch = "arm",
-                target_arch = "aarch64",
-                target_arch = "powerpc64",
-                target_arch = "x86",
-                target_arch = "x86_64"
-            ))]
             precomputed,
         })
     }
 
-    #[cfg(any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    ))]
     pub(super) fn exponent_len(&self) -> usize {
         self.precomputed.exponent_len()
     }
@@ -227,9 +191,8 @@ impl Domain {
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request.
-    /// ARMv7, AArch64, PPC64LE and x86-64 call `vg_ffdh_generate_key_search_cached`,
-    /// given the public context `new` computed; other architectures
-    /// `vg_ffdh_generate_key_search`.
+    /// It calls `vg_ffdh_generate_key_search_cached`, given the public
+    /// context `new` computed.
     pub(super) fn key_search(
         &self,
         state: &mut [u64; 16],
@@ -239,29 +202,12 @@ impl Domain {
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        #[cfg(any(
-            target_arch = "arm",
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        ))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_search_cached,
             #[cfg(target_arch = "arm")]
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_adx,
-        };
-        #[cfg(not(any(
-            target_arch = "arm",
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        )))]
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_generate_key_search,
         };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
@@ -287,21 +233,7 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
                 state,
-                #[cfg(any(
-                    target_arch = "arm",
-                    target_arch = "aarch64",
-                    target_arch = "powerpc64",
-                    target_arch = "x86",
-                    target_arch = "x86_64"
-                ))]
                 self.precomputed.words().as_ptr(),
-                #[cfg(any(
-                    target_arch = "arm",
-                    target_arch = "aarch64",
-                    target_arch = "powerpc64",
-                    target_arch = "x86",
-                    target_arch = "x86_64"
-                ))]
                 self.precomputed.words().len(),
             )
         };
@@ -312,16 +244,7 @@ impl Domain {
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value (the cached
     /// entry point of `vg_ffdh_generate_key`).
-    #[cfg(all(
-        test,
-        any(
-            target_arch = "arm",
-            target_arch = "aarch64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "x86_64"
-        )
-    ))]
+    #[cfg(test)]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
@@ -395,16 +318,7 @@ impl Domain {
     }
 }
 
-#[cfg(all(
-    test,
-    any(
-        target_arch = "arm",
-        target_arch = "aarch64",
-        target_arch = "powerpc64",
-        target_arch = "x86",
-        target_arch = "x86_64"
-    )
-))]
+#[cfg(test)]
 mod cache_tests {
     use super::Domain;
     #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]

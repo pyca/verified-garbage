@@ -2,9 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
-public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Impl.Ffdh.X86.Derive
-public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
 public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
@@ -34,9 +32,6 @@ private theorem windowStep_all : (Impl.Bignum.X86.CrtRt.windowStep .wide).allIns
 private theorem candidate_all : (Impl.Ffdh.X86.Candidate.code).allInstrs noSp = true := by
   rsa_stack_shape [prepare_all, windowStep_all]
 
-private theorem generateKey_all : (Impl.Ffdh.X86.GenerateKey.code).allInstrs noSp = true := by
-  rsa_stack_shape [prepare_all, windowStep_all]
-
 theorem checkDomain_spSafe : (Impl.Ffdh.X86.CheckDomain.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape [prepare_all, windowStep_all])
 
@@ -52,14 +47,6 @@ theorem exchange_spSafe : (Impl.Ffdh.X86.Exchange.code).all (fun i => !isa.write
 theorem derivePublic_spSafe :
     (Impl.Ffdh.X86.DerivePublic.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape [prepare_all, windowStep_all])
-
-theorem generateKey_spSafe :
-    (Impl.Ffdh.X86.GenerateKey.code).all (fun i => !isa.writesSp i) = true :=
-  VG.Proof.Rsa.X86.RtShape.all_spSafe generateKey_all
-
-theorem keySearch_spSafe :
-    (Impl.Ffdh.X86.KeySearch.code).all (fun i => !isa.writesSp i) = true :=
-  VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape [prepare_all, windowStep_all, generateKey_all])
 
 theorem candidate_spSafe :
     (Impl.Ffdh.X86.Candidate.code).all (fun i => !isa.writesSp i) = true :=
