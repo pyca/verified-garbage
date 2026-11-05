@@ -218,7 +218,7 @@ theorem repr_chain {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : Spec.Cm
 theorem aesCmac_eq (key msg : List Byte) : aesCmac key 16 msg = macFull (aes key) 16 msg := by
   simp only [aesCmac, mac]
   apply List.take_of_length_le
-  simp only [macFull, chain_append, chain_single, aes, aesWith_length, Nat.le_refl]
+  simp only [macFull, macWith, chain_append, chain_single, aes, aesWith_length, Nat.le_refl]
 
 /-- What `vg_cmac_aes_finalize` takes of a state that represents `msg`. -/
 theorem repr_finish {m : Mem} {p : Addr} {key msg : List Byte} (hr : Spec.Cmac.Repr m p key msg) :
