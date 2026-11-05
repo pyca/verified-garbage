@@ -45,14 +45,4 @@ theorem request_bounds {bits available : Nat} (hbits : 512 ≤ bits)
   refine ⟨Nat.lt_min.mpr ⟨?_, hroom⟩, Nat.min_le_right _ _⟩
   omega_using [hmax₁, hmax₂, hlen]
 
-theorem candidate_rest {bits generator : Nat} {rand rest : Rand} {value : Option Nat}
-    (h : parameterCandidate bits generator rand = some (value, rest)) :
-    rest = rand.drop (rand.length - rest.length) := by
-  obtain ⟨used, hu, hr⟩ := candidate_suffix h
-  have hl : rand.length - rest.length = used := by
-    rw [hr, List.length_drop]
-    omega_using [hu]
-  rw [hl]
-  exact hr
-
 end VG.Proof.Ffdh.Generation

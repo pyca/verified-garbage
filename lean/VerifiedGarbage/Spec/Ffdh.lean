@@ -180,23 +180,6 @@ def drawWitnesses (w : Nat) : Nat → Rand → Option (List Nat × Rand)
       return (a :: as, r)
     else return ([a], r)
 
-/-- One element of `generateParameters`' list from the tape, and whether it
-is accepted: the candidate p from `⌈bits/8⌉` octets (`candidateOf`); if it
-has the generator's shape and p and q = (p-1)/2 pass `primeShape`, the
-witnesses for q and then, if q is a probable prime, those for p. Returns
-the accepted p, if it is, and the octets left. -/
-def parameterCandidate (bits generator : Nat) (r : Rand) : Option (Option Nat × Rand) := do
-  let (x, r) ← draw ((bits + 7) / 8) r
-  let p := candidateOf bits x
-  let q := (p - 1) / 2
-  if !(generationShape bits generator p && primeShape p && primeShape q) then
-    return (none, r)
-  let (wq, r) ← drawWitnesses q (primeChecks (bitLength q)) r
-  let (wp, r) ← if probablePrime q wq then drawWitnesses p (primeChecks (bitLength p)) r
-    else some ([], r)
-  return (if generationShape bits generator p && probablePrime p wp && probablePrime q wq
-    then some p else none, r)
-
 /-- Select a word by the low bit, used by the fixed-schedule exponentiation.
 Both candidate words and the bit are secret. -/
 def choose (a b bit : BitVec 64) : BitVec 64 :=
