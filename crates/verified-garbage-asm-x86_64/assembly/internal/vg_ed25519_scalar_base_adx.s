@@ -605,12 +605,9 @@ vg_ed25519_scalar_base_adx:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	mulx rcx, rax, r12
-	shl r11, 1
-	sbb rbp, rbp
-	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	shld r12, r11, 1
+	btr r11, 63
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
@@ -689,12 +686,9 @@ vg_ed25519_scalar_base_adx:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	mulx rcx, rax, r12
-	shl r11, 1
-	sbb rbp, rbp
-	shr r11, 1
-	and rbp, 19
-	add rax, rbp
+	shld r12, r11, 1
+	btr r11, 63
+	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
 	adc r10, 0
