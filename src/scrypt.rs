@@ -37,7 +37,7 @@ use crate::arch::scrypt::vg_scrypt_sha2;
 use crate::arch::scrypt::vg_scrypt_shani;
 use crate::hashes::sha256::Sha256Backend;
 
-/// Why [`derive`] refused to derive a key, or [`verify`] to accept one.
+/// Why [`derive`](fn@derive) refused to derive a key, or [`verify`] to accept one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     /// The parameters are not valid (RFC 7914 §2 and §6): `n` must be a
@@ -113,11 +113,11 @@ pub fn derive(
 
 /// Checks a password against a stored derived key: derives a key of `N`
 /// bytes from `password` and `salt` by scrypt with parameters `n`, `r` and
-/// `p` (as [`derive`] does), if that needs at most `max_memory` bytes, and
+/// `p` (as [`derive`](fn@derive) does), if that needs at most `max_memory` bytes, and
 /// compares it with `expected`.
 ///
 /// The comparison is constant time: the time taken does not depend on
-/// where, or whether, the keys differ. The derivation is [`derive`]'s, whose
+/// where, or whether, the keys differ. The derivation is [`derive`](fn@derive)'s, whose
 /// memory accesses depend on the password (see the module's documentation).
 /// `N` is public. The derived key is wiped before returning.
 ///
@@ -132,7 +132,7 @@ pub fn derive(
 /// # Errors
 ///
 /// [`Error::KeyMismatch`] if the derived key is not `expected`; otherwise
-/// as [`derive`], with `expected` in place of `out`.
+/// as [`derive`](fn@derive), with `expected` in place of `out`.
 pub fn verify<const N: usize>(
     password: &[u8],
     salt: &[u8],
