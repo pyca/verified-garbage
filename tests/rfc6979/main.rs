@@ -1,7 +1,8 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
 //! §A.2.3 (P-192), §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
-//! hash functions the curve signs with here.
+//! hash functions the curve signs with: on x86-64 every hash function the
+//! RFC signs with (SHA-1 and the SHA-2 family).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -105,6 +106,105 @@ fn section<const Q: usize, const U: usize, const S: usize>(
     }
     assert_eq!(signatures.len(), 2 * hashes.len());
     (q, x, u, signatures)
+}
+
+/// The signatures with `H`, named `hash` in RFC 6979, of the section
+/// `title`, of the message and of its hash; they verify, of the message and
+/// of its hash, and not of another message.
+#[cfg(target_arch = "x86_64")]
+fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
+where
+    C: verified_garbage::ecdsa::Curve<
+            PrivateKey = [u8; Q],
+            PublicKey = [u8; U],
+            Signature = [u8; S],
+        >,
+    H: verified_garbage::ecdsa::SignatureHash<C>,
+{
+    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    let (_, x, u, signatures) = section::<Q, U, S>(title, &[hash]);
+    let key = SigningKey::<C>::from_bytes(&x);
+    let public = VerifyingKey::<C>::from_bytes(&u);
+    for (_, message, rs) in &signatures {
+        let m = message.as_bytes();
+        let digest = H::digest(m);
+        assert_eq!(key.sign::<H>(m), Ok(*rs), "{hash} {message}");
+        assert_eq!(
+            key.sign_prehashed::<H>(&digest),
+            Ok(*rs),
+            "{hash} {message}"
+        );
+        assert_eq!(public.verify::<H>(m, rs), Ok(()), "{hash} {message}");
+        assert_eq!(
+            public.verify_prehashed::<H>(&digest, rs),
+            Ok(()),
+            "{hash} {message}"
+        );
+        assert_eq!(
+            public.verify::<H>(b"other", rs),
+            Err(Error::InvalidSignature)
+        );
+    }
+}
+
+/// With `H`, which RFC 6979 does not sign with (MD5, SHA-512/224,
+/// SHA-512/256), the key of the section `title` signs: the signature of the
+/// message is that of its hash, verifies with the public key, and not of
+/// another message.
+#[cfg(target_arch = "x86_64")]
+fn round_trip<C, H, const Q: usize, const U: usize, const S: usize>(title: &str)
+where
+    C: verified_garbage::ecdsa::Curve<
+            PrivateKey = [u8; Q],
+            PublicKey = [u8; U],
+            Signature = [u8; S],
+        >,
+    H: verified_garbage::ecdsa::SignatureHash<C>,
+{
+    use verified_garbage::ecdsa::{Error, SigningKey, VerifyingKey};
+    let (_, x, u, _) = section::<Q, U, S>(title, &[]);
+    let key = SigningKey::<C>::from_bytes(&x);
+    let public = VerifyingKey::<C>::from_bytes(&u);
+    for m in [&b"sample"[..], b"test"] {
+        let rs = key.sign::<H>(m).unwrap();
+        assert_eq!(key.sign_prehashed::<H>(&H::digest(m)), Ok(rs));
+        assert_eq!(public.verify::<H>(m, &rs), Ok(()));
+        assert_eq!(
+            public.verify::<H>(b"other", &rs),
+            Err(Error::InvalidSignature)
+        );
+    }
+}
+
+/// The hash functions with HMAC that RFC 6979 does not sign with, on every
+/// curve of the RFC.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn other_hashes() {
+    use verified_garbage::ecdsa::{P192, P224, P256, P384, P521};
+    use verified_garbage::hashes::md5::Md5;
+    use verified_garbage::hashes::sha512_224::Sha512_224;
+    use verified_garbage::hashes::sha512_256::Sha512_256;
+    const A3: &str = "\nA.2.3.  ECDSA, 192 Bits (Prime Field)\n";
+    const A4: &str = "\nA.2.4.  ECDSA, 224 Bits (Prime Field)\n";
+    const A5: &str = "\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n";
+    const A6: &str = "\nA.2.6.  ECDSA, 384 Bits (Prime Field)\n";
+    const A7: &str = "\nA.2.7.  ECDSA, 521 Bits (Prime Field)\n";
+    round_trip::<P192, Md5, 24, 49, 48>(A3);
+    round_trip::<P192, Sha512_224, 24, 49, 48>(A3);
+    round_trip::<P192, Sha512_256, 24, 49, 48>(A3);
+    round_trip::<P224, Md5, 28, 57, 56>(A4);
+    round_trip::<P224, Sha512_224, 28, 57, 56>(A4);
+    round_trip::<P224, Sha512_256, 28, 57, 56>(A4);
+    round_trip::<P256, Md5, 32, 65, 64>(A5);
+    round_trip::<P256, Sha512_224, 32, 65, 64>(A5);
+    round_trip::<P256, Sha512_256, 32, 65, 64>(A5);
+    round_trip::<P384, Md5, 48, 97, 96>(A6);
+    round_trip::<P384, Sha512_224, 48, 97, 96>(A6);
+    round_trip::<P384, Sha512_256, 48, 97, 96>(A6);
+    round_trip::<P521, Md5, 66, 133, 132>(A7);
+    round_trip::<P521, Sha512_224, 66, 133, 132>(A7);
+    round_trip::<P521, Sha512_256, 66, 133, 132>(A7);
 }
 
 /// The integer `x + delta` (mod 2^(8N)) of the `N` bytes `x`.

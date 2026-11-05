@@ -1,4 +1,5 @@
 module
+-- separate module: its proofs (the candidate loop, about 2 s) build in parallel with `Core`'s, which `Loop` also imports
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Steps
