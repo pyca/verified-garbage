@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
@@ -79,7 +80,7 @@ theorem toNat_diff {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 32) :
 
 theorem call_pre {p : SearchPublic} {o a u : State} {used : Nat} (h : ArgDone p o a used u)
     (hu : used ≤ p.randLen) :
-    (Spec.RsaKeyGen.candidateContract abi 112).pre (u.callEntry.withRegions (callRd p used) (callWr p)) := by
+    (Proof.RsaKeyGen.candidateContract abi 112).pre (u.callEntry.withRegions (callRd p used) (callWr p)) := by
   have hi := h.1.input
   have f := hi.facts
   have cf := hi.callFacts hu
@@ -87,7 +88,7 @@ theorem call_pre {p : SearchPublic} {o a u : State} {used : Nat} (h : ArgDone p 
   unfold Spec.RsaKeyGen.primeLenValid at hl
   have rl := f.randLen
   unfold Spec.RsaKeyGen.primeEntropy at rl
-  sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
+  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [h.sa0, h.sa1, h.sa2, h.sa3, h.sa4, h.sa5, h.sa6, h.argAddr, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2,
     h.1.sp, toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by have := f.e8; omega),
     toNat_small (n := p.plen) (by rcases f.plen with e | e <;> omega),
@@ -271,7 +272,7 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
       change Spec.Rsa.bytesAt u.mem (State.addr (p.rp + BitVec.ofNat 32 used)) (p.randLen - used) = _
       rw [VG.Arm.addr_add (by have := f.nR; omega), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
     change CandPost p (searchP o) (searchRand o) used t
-    sig_post [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
+    sig_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
       Loc.val] at hpost
     simp only [hd.sa0, hd.sa1, hd.sa2, hd.sa3, hd.sa4, hd.2.1, hd.2.2.1, hd.2.2.2.1, hd.2.2.2.2,
       toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by have := f.e8; omega),

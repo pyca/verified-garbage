@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
@@ -176,8 +178,8 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega)
     (call_pre hi hroom F.esp a F.syms F.frame) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy => ?_)
   have hp := hpost
-  sig_post [VG.Proof.RsaKeyGen.X86.Candidate.contract, Spec.RsaKeyGen.candidateContract,
-    Spec.RsaKeyGen.candidateSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
+  sig_post [VG.Proof.RsaKeyGen.X86.Candidate.contract, Proof.RsaKeyGen.candidateContract,
+    Proof.RsaKeyGen.candidateSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
     VG.Impl.RsaKeyGen.TrialTable32.consts] at hp
   simp only [ce_arg hi F.esp a _ _ (show 0 < 11 by decide), ce_arg hi F.esp a _ _ (show 1 < 11 by decide),
     ce_arg hi F.esp a _ _ (show 2 < 11 by decide), ce_arg hi F.esp a _ _ (show 3 < 11 by decide),

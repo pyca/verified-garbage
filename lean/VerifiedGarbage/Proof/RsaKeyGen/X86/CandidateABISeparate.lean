@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # The candidate signature separates every writable buffer from live inputs and the call frame -/
 
@@ -25,7 +26,7 @@ structure CallSeparation (s : State) : Prop where
     t.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ∧ t.Disjoint (reservedRegion s)
 
 theorem call_separation {s : State} (h : contract.pre s) : CallSeparation s := by
-  sig_pre [contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pre [contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts,
     packed_length, stackBelow] at h
   sig_split h

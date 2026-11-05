@@ -49,7 +49,7 @@ theorem candidate_stack (v : RoundImpl) :
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := Spec.RsaKeyGen.candidateApi.name ++ v.suffix
+  name := "vg_rsa_keygen_candidate" ++ v.suffix
   code := Impl.RsaKeyGen.RISCV64.Candidate.code (Impl.RsaKeyGen.RISCV64.Trial.trial hTrial) v.name v.code
   stack := candidate_stack v
   correct := fun _ h₁ h₂ => Cand.code_correct Cand.TrialOk.trial_divOk v h₁ h₂

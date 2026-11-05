@@ -136,7 +136,7 @@ theorem search_verified_of (c : Cand) : Verified target (code c.call) contract :
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
 calls it. -/
 def Cand.ofRound (v : RoundImpl) : Cand where
-  name := Spec.RsaKeyGen.candidateApi.name ++ v.suffix
+  name := "vg_rsa_keygen_candidate" ++ v.suffix
   code := Impl.RsaKeyGen.X86.Candidate.code montName montCode v.name v.code
   verified := Proof.RsaKeyGen.X86.Candidate.verified Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack
     v.verified v.noSp v.stack

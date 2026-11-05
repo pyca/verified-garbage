@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Call
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the search's constant-time proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
@@ -79,7 +81,7 @@ theorem callee_pub {p : SearchPublic} {T : List Nat} {q : Pt} {t₁ t₂ : State
   have e₂ : searchE o₂ = p.eB := by rw [← i₂.2]; rfl
   have l₁ : (arg o₁ 1).toNat = p.len := by rw [← i₁.2]; rfl
   have l₂ : (arg o₂ 1).toNat = p.len := by rw [← i₂.2]; rfl
-  sig_pub [VG.Proof.RsaKeyGen.X86.Candidate.contract, Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig,
+  sig_pub [VG.Proof.RsaKeyGen.X86.Candidate.contract, Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   simp only [ce_arg i₁ F₁.esp a₁ rd wr (show 0 < 11 by decide), ce_arg i₁ F₁.esp a₁ rd wr (show 1 < 11 by decide),
     ce_arg i₁ F₁.esp a₁ rd wr (show 2 < 11 by decide), ce_arg i₁ F₁.esp a₁ rd wr (show 3 < 11 by decide),

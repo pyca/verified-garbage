@@ -4,11 +4,13 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-!
 # A candidate on RISC-V: the contract's arguments
 
-`CIn s`: the shared contract's precondition (`Spec.RsaKeyGen.candidateContract`,
+`CIn s`: the shared contract's precondition (`Proof.RsaKeyGen.candidateContract`,
 with the `stackBytes` of stack of the frame and the round's), without the
 table of small primes, as the proof uses it (`cin_of_pre`): `(out, out_len,
 used, e, e_len, p, p_len, rand)` in `a0`–`a7`, and `rand_len`, `scratch` and
@@ -85,11 +87,11 @@ structure CIn (s : State) : Prop where
 theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
-theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.candidateContract RISCV64.abi stackBytes).pre s) :
+theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract RISCV64.abi stackBytes).pre s) :
     CIn s := by
   have e : stackBytes = 287 + 1 := rfl
   rw [e] at h
-  sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, RISCV64.abi, RISCV64.argRegs,
+  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_three, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp16, spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp,
     Fr, FS, FA, fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr, alU, alS⟩ := h
