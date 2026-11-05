@@ -673,6 +673,15 @@ structure KVH (P : Rfc) (s₀ : State) (K V : List Byte) (t : State) : Prop wher
 theorem fHo_cases (P : Rfc) : P.c.fHo = fX ∨ P.c.fHo = fH := by
   unfold Cfg.fHo; split <;> simp
 
+/-- `h` lies between `K`, `V` and `T`. -/
+theorem fHo_in (P : Rfc) : fX ≤ P.c.fHo ∧ P.c.fHo + P.Q ≤ fT := by
+  have hz := sizes P
+  unfold Cfg.fHo
+  cases hb : P.c.big
+  · have := hz.big.1; rw [hb] at this; simp only [Bool.false_eq_true, false_iff, Nat.not_lt] at this
+    simp only [Bool.false_eq_true, ↓reduceIte, fX, fH, fT]; omega
+  · have := hz.Q; simp only [↓reduceIte, fX, fT]; omega
+
 section
 variable {s₀ : State} (hp : Pre P s₀)
 include hp
@@ -833,7 +842,7 @@ theorem sep_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) {b : Nat} (h
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.syms = s₀.syms) :
     WP isa P.c.hmacV s fun t => KVH P s₀ K (Spec.Hmac.hmac P.hH.SH.H K V) t ∧
-      ∀ r ∈ preserved, t.gpr r = s.gpr r := by
+      (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ Frame [stR s₀, sR s₀ fV P.H.D, stk P s₀] s.mem t.mem := by
   have hz := sizes P
   have hQ := hz.Q
   obtain ⟨hD0, hD⟩ := hz.D
@@ -848,7 +857,7 @@ theorem hmacV_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.s
   have hm : msgOf P s.mem s₀ [(.s1, fV, (true, 0))] = V := by
     simp only [msgOf, List.append_nil, plen, lval, ↓reduceIte, Nat.add_zero]; exact h.v
   obtain ⟨e₁, e₂, e₃, -⟩ := hd_keep hp (.inr rfl) hd h.h h.x
-  refine ⟨⟨hd.1, ?_, ?_, e₁, e₂⟩, hd.2.2.2⟩
+  refine ⟨⟨hd.1, ?_, ?_, e₁, e₂⟩, hd.2.2.2, hd.2.2.1⟩
   · rw [e₃ rfl, h.k]
   · show bytesAt t.mem (sA s₀ fV) P.H.D = _
     rw [hd.2.1, hm, h.k]
@@ -914,7 +923,7 @@ theorem rekey_ok {s : State} {K V : List Byte} (h : KVH P s₀ K V s) (hsy : s.s
   obtain ⟨e₁, e₂, -, e₄⟩ := hd_keep hp (.inl rfl) hd h₁.h h₁.x
   refine WP.mono (hmacV_ok hp (K := Spec.Hmac.hmac P.hH.SH.H K (V ++ [0])) (V := V) ⟨hd.1, ?_, ?_, e₁, e₂⟩
     (y₂.trans (y₁.trans hsy)))
-    fun u hu => ⟨hu.1, fun r hr => (hu.2 r hr).trans ((hd.2.2.2 r hr).trans (pr₁ r hr))⟩
+    fun u hu => ⟨hu.1, fun r hr => (hu.2.1 r hr).trans ((hd.2.2.2 r hr).trans (pr₁ r hr))⟩
   · show bytesAt t.mem (sA s₀ fK) P.H.D = _
     rw [hd.2.1]
     simp only [msgOf, List.append_nil, pA, regV, plen, lval, ↓reduceIte]
