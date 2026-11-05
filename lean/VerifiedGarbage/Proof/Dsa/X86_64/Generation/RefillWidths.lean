@@ -1,5 +1,7 @@
 module
 
+-- separate module: its proofs (about 5 s) build in parallel with `RefillCorrect`'s, which `RefillBackend` also imports
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardCall

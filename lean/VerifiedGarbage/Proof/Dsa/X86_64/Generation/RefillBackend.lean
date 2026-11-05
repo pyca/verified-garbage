@@ -50,6 +50,7 @@ namespace VG.Proof.Dsa.X86_64.Generation.RefillBackend
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Dsa.X86_64.Generation.Refill
 open VG.Proof.Dsa.X86_64.Generation VG.Proof.Pbkdf2.Md.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
+open VG.Impl.Mgf1.X86_64 (sp)
 
 variable {checkName : String}
 
@@ -103,9 +104,14 @@ theorem code_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256
         (callerDepth.of (finish_depth pLen)))
   unfold callerDepth at body
   simp only [Refill.code, Code.x86_64Depth, Instr.frameBytes, Nat.zero_max, Nat.max_zero, frameBytes]
-  omega
+  exact Nat.add_le_add_right (Nat.add_le_add_right (Nat.add_le_add_right body 296) 32) 48
 
 /-! ## Instructions -/
+
+theorem safe_frame {body : Prog isa} (h : generationSafe body) (bytes : Nat) :
+    generationSafe (.frame (.alloc bytes) body (.free bytes)) := by
+  change ((true && _) && true) = true
+  rw [h]; rfl
 
 theorem refillAttempt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
     (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Prog isa)
@@ -143,8 +149,8 @@ theorem code_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H25
   have body : generationSafe (Refill.body (checkName := checkName) H1 H256 sq mul prime pLen qLen) :=
     (show generationSafe (.block (entryHeader pLen qLen ++ entryDerived)) from rfl).seq
       ((it.loop _).seq (show generationSafe (finish pLen) from rfl))
-  exact ((show generationSafe (.block saveRegisters) from rfl).seq
-    (((body.frame frameBytes).frame 32).seq (show generationSafe (.block restoreRegisters) from rfl))).frame 48
+  exact safe_frame ((show generationSafe (.block saveRegisters) from rfl).seq
+    ((safe_frame (safe_frame body frameBytes) 32).seq (show generationSafe (.block restoreRegisters) from rfl))) 48
 
 /-! ## With the hash and Miller–Rabin backends -/
 
@@ -173,7 +179,7 @@ theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) (pBytes : Nat) :
       have h := checkParameters_depth_bound arith.inlineMont.toS.mm arith.inlineMont.mm
         (n := 0) (by rw [VG.Proof.Bignum.X86_64.Mont.toS, arith.inlineDepth])
         (fun o a b => by rw [arith.inlineDepth])
-      change (VG.Impl.Dsa.X86_64.Generate.checkParameters _ _).x86_64Depth + 8 ≤ 128
+      change (VG.Impl.Dsa.X86_64.Generate.checkParameters arith.inlineMont.toS.mm arith.inlineMont.mm).x86_64Depth + 8 ≤ 128
       omega) _ _
 
 /-! ## Verified -/

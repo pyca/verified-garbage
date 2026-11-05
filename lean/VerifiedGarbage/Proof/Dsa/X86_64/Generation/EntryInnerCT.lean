@@ -98,7 +98,7 @@ theorem generationRegions_lengths {s : State} (h : GenerationABI s) :
 
 theorem generationRegions_header {s : State} (h : GenerationABI s) :
     PrimeHeaderLayout (stackArg s 4) (generationRegions s) := by
-  refine ⟨_, _, _, (stackArg s 5).toNat * 8, rfl, ?_, generationRegions_pairwise h, generationRegions_lengths h⟩
+  refine Or.inl ⟨_, _, _, (stackArg s 5).toNat * 8, rfl, ?_, generationRegions_pairwise h, generationRegions_lengths h⟩
   have hs := generation_scratch_size h
   change 28928 ≤ (stackArg s 5).toNat * 8
   change 40960 + 128 * (s.gpr .rdx).toNat ≤ (stackArg s 5).toNat * 8 at hs
