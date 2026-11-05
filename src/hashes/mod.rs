@@ -232,7 +232,11 @@ macro_rules! streaming_hash {
         }
 
         $(
-        #[cfg(any(feature = "alloc", target_arch = "x86_64"))]
+        #[cfg(any(
+            feature = "alloc",
+            target_arch = "x86_64",
+            all(target_arch = "powerpc64", target_endian = "little")
+        ))]
         impl $backend {
             /// The tables of functions of this implementation, each with
             /// the CPU features its functions need.
@@ -244,7 +248,10 @@ macro_rules! streaming_hash {
                         #[cfg(feature = "alloc")]
                         md_hash: (&$tmd, verified_garbage_cpu::Features::all(&[$($tmreq),*])),
                         $(
-                        #[cfg(target_arch = "x86_64")]
+                        #[cfg(any(
+                            target_arch = "x86_64",
+                            all(target_arch = "powerpc64", target_endian = "little")
+                        ))]
                         hmac: (&$thmac, verified_garbage_cpu::Features::all(&[$($thmreq),*])),
                         )?
                     },)*

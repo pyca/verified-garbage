@@ -1,5 +1,5 @@
 //! RFC 6979 §A.2.3: P-192, with SHA-256,
-//! and on x86-64 with the RFC's other hash functions.
+//! and on x86-64 and PPC64LE with the RFC's other hash functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -13,13 +13,25 @@
 use verified_garbage::ecdsa::{Error, P192, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use verified_garbage::hashes::sha1::Sha1;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use verified_garbage::hashes::sha224::Sha224;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use verified_garbage::hashes::sha384::Sha384;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::{Signatures, add};
@@ -105,8 +117,11 @@ fn p192_keys() {
     }
 }
 
-/// The signatures with SHA-1, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-1, which the curve also signs with on x86-64 and PPC64LE.
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 #[test]
 fn p192_sha1() {
     super::sign_with::<P192, Sha1, 24, 49, 48>(
@@ -115,8 +130,11 @@ fn p192_sha1() {
     );
 }
 
-/// The signatures with SHA-224, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-224, which the curve also signs with on x86-64 and PPC64LE.
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 #[test]
 fn p192_sha224() {
     super::sign_with::<P192, Sha224, 24, 49, 48>(
@@ -125,8 +143,11 @@ fn p192_sha224() {
     );
 }
 
-/// The signatures with SHA-384, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-384, which the curve also signs with on x86-64 and PPC64LE.
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 #[test]
 fn p192_sha384() {
     super::sign_with::<P192, Sha384, 24, 49, 48>(
@@ -135,8 +156,11 @@ fn p192_sha384() {
     );
 }
 
-/// The signatures with SHA-512, which the curve also signs with on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// The signatures with SHA-512, which the curve also signs with on x86-64 and PPC64LE.
+#[cfg(any(
+    target_arch = "x86_64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 #[test]
 fn p192_sha512() {
     super::sign_with::<P192, Sha512, 24, 49, 48>(
