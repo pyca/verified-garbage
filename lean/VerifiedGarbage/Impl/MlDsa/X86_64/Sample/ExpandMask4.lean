@@ -30,6 +30,9 @@ needs and the 576 of `γ₁ = 2¹⁷`), in a loop (`squeezes`, as in
 with the loop of `vg_mldsa_expand_mask_poly` (`emBody`, for `c = 18` or
 `20`, chosen by a branch on the public `γ₁`).
 
+`fast` uses the AVX-512VL four-state permutation in all five squeezes,
+with the same state layout and output.
+
 There is no branch on data, and every address depends only on the pointers
 and `γ₁`: it is constant time.
 -/
@@ -85,11 +88,11 @@ def extract : List Instr :=
     [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbp (680 * k + 8 * i)) .rax]
 
 /-- Permute the states and squeeze a block to `rbp`. -/
-def squeeze : Prog isa :=
-  .seq (.block permArgs) (.seq permute4 (.block extract))
+def squeeze (fast : Bool := false) : Prog isa :=
+  .seq (.block permArgs) (.seq (permute4 fast) (.block extract))
 
 /-- Squeeze the five blocks. -/
-def squeezes : Prog isa := blocks oBuf 136 5 squeeze
+def squeezes (fast : Bool := false) : Prog isa := blocks oBuf 136 5 (squeeze fast)
 
 /-- The coefficients of polynomial `k` from the output of seed `k`, `c` bits each. -/
 def unpack (c k : Nat) : Prog isa :=
@@ -101,9 +104,9 @@ def unpack4 (c : Nat) : Prog isa := .seq (unpack c 0) (.seq (unpack c 1) (.seq (
 
 /-- `vg_mldsa_expand_mask_poly4_avx2`. `vzeroupper` clears the upper halves
 of the vector registers after the last permutation. -/
-def expandMask4Avx2 : Prog isa :=
+def expandMask4Avx2 (fast : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq squeezes
+    (.seq (squeezes fast)
       (.seq (.block [.vop .vzeroupper, .alu32 .cmp .r14 (.imm 0x20000)])
         (.seq (.ite .e (unpack4 18) (unpack4 20)) (.block epi))))
 
