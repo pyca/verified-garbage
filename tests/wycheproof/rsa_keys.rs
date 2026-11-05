@@ -31,7 +31,7 @@
 use std::collections::BTreeMap;
 
 use verified_garbage::rsa::pkcs1_sig::Hash;
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Fields, TestFile};
 use super::schema::{RsaAnyKeyGroup, RsaAnyPrivateKey};
@@ -59,7 +59,11 @@ fn triple(x: &[u8]) -> Vec<u8> {
 /// exponent `dP`: Appendix C.2 does not find its primes, so
 /// `from_components` refuses it.
 fn check_triple(name: &str, e: &[u8], p: &[u8], dp: &[u8]) {
-    let key = PrivateKey::from_components(&triple(p), e, dp);
+    let key = PrivateKey::from_components(
+        BigUint::from_be_bytes(&triple(p)),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(dp),
+    );
     assert!(
         matches!(key, Err(verified_garbage::rsa::Error::InvalidPrivateKey)),
         "{name}: 3 p"
@@ -73,7 +77,7 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         &k.public_exponent.0,
         &k.private_exponent.as_ref().unwrap().0,
     );
-    let public = PublicKey::new(n, e).unwrap();
+    let public = PublicKey::new(BigUint::from_be_bytes(n), BigUint::from_be_bytes(e)).unwrap();
     let (p, q, dp, dq, qi) = (
         &k.prime1,
         &k.prime2,
@@ -82,7 +86,12 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         &k.coefficient,
     );
     // The key from `(n, e, d)`.
-    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
+    let key = PrivateKey::from_components(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+    )
+    .unwrap_or_else(|err| panic!("{name}: {err}"));
     assert_eq!(key.modulus_len(), n.len(), "{name}");
     // A signature that verifies; RSASSA-PKCS1-v1_5 is deterministic.
     let digest = [0x5a; 32];
@@ -91,22 +100,42 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         public.verify_pkcs1v15(&expect, &digest, Hash::Sha256),
         "{name}"
     );
-    let values = key.components()[..3].concat();
+    let values = key.components().map(BigUint::as_be_bytes)[..3].concat();
     let check = |key: &PrivateKey, how: &str| {
         assert_eq!(
             key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap(),
             expect,
             "{name}: {how}"
         );
-        assert_eq!(key.components()[..3].concat(), values, "{name}: {how}");
+        assert_eq!(
+            key.components().map(BigUint::as_be_bytes)[..3].concat(),
+            values,
+            "{name}: {how}"
+        );
     };
     let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
         return false;
     };
-    let key =
-        PrivateKey::from_primes(n, e, d, &p.0, &q.0).unwrap_or_else(|err| panic!("{name}: {err}"));
+    let key = PrivateKey::from_primes(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+        BigUint::from_be_bytes(&p.0),
+        BigUint::from_be_bytes(&q.0),
+    )
+    .unwrap_or_else(|err| panic!("{name}: {err}"));
     check(&key, "from_primes");
-    let key = PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap();
+    let key = PrivateKey::from_crt(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(e),
+        BigUint::from_be_bytes(d),
+        BigUint::from_be_bytes(&p.0),
+        BigUint::from_be_bytes(&q.0),
+        BigUint::from_be_bytes(&dp.0),
+        BigUint::from_be_bytes(&dq.0),
+        BigUint::from_be_bytes(&qi.0),
+    )
+    .unwrap();
     check(&key, "from_crt");
     check_triple(name, e, &p.0, &dp.0);
     check_triple(name, e, &q.0, &dq.0);
@@ -121,7 +150,16 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
     for (i, how) in ["d", "dP", "dQ", "qInv"].iter().enumerate() {
         let mut v = [d.clone(), dp.0.clone(), dq.0.clone(), qi.0.clone()];
         v[i] = flip(&v[i]);
-        let key = PrivateKey::from_crt(n, e, &v[0], &p.0, &q.0, &v[1], &v[2], &v[3]);
+        let key = PrivateKey::from_crt(
+            BigUint::from_be_bytes(n),
+            BigUint::from_be_bytes(e),
+            BigUint::from_be_bytes(&v[0]),
+            BigUint::from_be_bytes(&p.0),
+            BigUint::from_be_bytes(&q.0),
+            BigUint::from_be_bytes(&v[1]),
+            BigUint::from_be_bytes(&v[2]),
+            BigUint::from_be_bytes(&v[3]),
+        );
         assert!(key.is_err(), "{name}: {how}");
     }
     true

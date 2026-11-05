@@ -19,7 +19,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::BigNum;
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa::PublicKey;
+    use verified_garbage::rsa::{BigUint, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     let mut g = c.benchmark_group("rsa_public_key");
@@ -33,7 +33,13 @@ pub fn bench(c: &mut Criterion) {
         let (n, e) = (key.n().to_vec(), key.e().to_vec());
         let k = n.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
-            b.iter(|| PublicKey::new(black_box(&n), black_box(&e)).unwrap())
+            b.iter(|| {
+                PublicKey::new(
+                    BigUint::from_be_bytes(black_box(&n)),
+                    BigUint::from_be_bytes(black_box(&e)),
+                )
+                .unwrap()
+            })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| {

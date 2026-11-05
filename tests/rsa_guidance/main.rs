@@ -17,7 +17,7 @@
 ))]
 
 use verified_garbage::rsa::pkcs1_enc::Error;
-use verified_garbage::rsa::{PrivateKey, PublicKey};
+use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 use verified_garbage_test_vectors::unhex;
 
 /// The vectors' file (`crate::vectors`).
@@ -104,8 +104,21 @@ fn components(der: &[u8]) -> Vec<&[u8]> {
 /// The key of a PKCS #8 `PrivateKeyInfo` holding an `RSAPrivateKey`.
 fn key(der: &[u8]) -> (PrivateKey, PublicKey) {
     let v = components(der);
-    let private = PrivateKey::from_crt(v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]).unwrap();
-    (private, PublicKey::new(v[1], v[2]).unwrap())
+    let private = PrivateKey::from_crt(
+        BigUint::from_be_bytes(v[1]),
+        BigUint::from_be_bytes(v[2]),
+        BigUint::from_be_bytes(v[3]),
+        BigUint::from_be_bytes(v[4]),
+        BigUint::from_be_bytes(v[5]),
+        BigUint::from_be_bytes(v[6]),
+        BigUint::from_be_bytes(v[7]),
+        BigUint::from_be_bytes(v[8]),
+    )
+    .unwrap();
+    (
+        private,
+        PublicKey::new(BigUint::from_be_bytes(v[1]), BigUint::from_be_bytes(v[2])).unwrap(),
+    )
 }
 
 /// The hex lines of `lines`, joined.
@@ -252,7 +265,17 @@ fn rsa_pkcs1_bad_keys() {
     let v = components(&der);
     let ct = &keys()[0].2[0].ct;
     let with_d = |d: &[u8]| {
-        PrivateKey::from_crt(v[1], v[2], d, v[4], v[5], v[6], v[7], v[8]).map_err(|e| {
+        PrivateKey::from_crt(
+            BigUint::from_be_bytes(v[1]),
+            BigUint::from_be_bytes(v[2]),
+            BigUint::from_be_bytes(d),
+            BigUint::from_be_bytes(v[4]),
+            BigUint::from_be_bytes(v[5]),
+            BigUint::from_be_bytes(v[6]),
+            BigUint::from_be_bytes(v[7]),
+            BigUint::from_be_bytes(v[8]),
+        )
+        .map_err(|e| {
             assert_eq!(e, verified_garbage::rsa::Error::InvalidPrivateKey);
         })
     };
@@ -270,7 +293,16 @@ fn rsa_pkcs1_bad_keys() {
     // A `dP` that does not match `e`: the key is refused.
     let mut dp = v[6].to_vec();
     *dp.last_mut().unwrap() ^= 2;
-    let key = PrivateKey::from_crt(v[1], v[2], v[3], v[4], v[5], &dp, v[7], v[8]);
+    let key = PrivateKey::from_crt(
+        BigUint::from_be_bytes(v[1]),
+        BigUint::from_be_bytes(v[2]),
+        BigUint::from_be_bytes(v[3]),
+        BigUint::from_be_bytes(v[4]),
+        BigUint::from_be_bytes(v[5]),
+        BigUint::from_be_bytes(&dp),
+        BigUint::from_be_bytes(v[7]),
+        BigUint::from_be_bytes(v[8]),
+    );
     assert_eq!(
         key.map(|_| ()),
         Err(verified_garbage::rsa::Error::InvalidPrivateKey)
@@ -294,8 +326,16 @@ fn rsa_crt_truncated_factors() {
         ] {
             // Shorten the CRT values too, so the public length checks pass
             // and validation reaches the arithmetic check that p*q != n.
-            let key =
-                PrivateKey::from_crt(v[1], v[2], v[3], p, q, &v[6][..1], &v[7][..1], &v[8][..1]);
+            let key = PrivateKey::from_crt(
+                BigUint::from_be_bytes(v[1]),
+                BigUint::from_be_bytes(v[2]),
+                BigUint::from_be_bytes(v[3]),
+                BigUint::from_be_bytes(p),
+                BigUint::from_be_bytes(q),
+                BigUint::from_be_bytes(&v[6][..1]),
+                BigUint::from_be_bytes(&v[7][..1]),
+                BigUint::from_be_bytes(&v[8][..1]),
+            );
             assert_eq!(
                 key.map(|_| ()),
                 Err(verified_garbage::rsa::Error::InvalidPrivateKey)
@@ -306,7 +346,16 @@ fn rsa_crt_truncated_factors() {
     // is.
     let oversized = &v[1][..v[1].len() - 1];
     for (p, q) in [(oversized, v[5]), (v[4], oversized)] {
-        let key = PrivateKey::from_crt(v[1], v[2], v[3], p, q, v[6], v[7], v[8]);
+        let key = PrivateKey::from_crt(
+            BigUint::from_be_bytes(v[1]),
+            BigUint::from_be_bytes(v[2]),
+            BigUint::from_be_bytes(v[3]),
+            BigUint::from_be_bytes(p),
+            BigUint::from_be_bytes(q),
+            BigUint::from_be_bytes(v[6]),
+            BigUint::from_be_bytes(v[7]),
+            BigUint::from_be_bytes(v[8]),
+        );
         assert_eq!(
             key.map(|_| ()),
             Err(verified_garbage::rsa::Error::InvalidPrivateKey)

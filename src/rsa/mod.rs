@@ -4,15 +4,16 @@
 //! ([`oaep`], [`pss`], [`pkcs1_sig`], and for compatibility only
 //! [`pkcs1_enc`]), and key generation is [`keygen::generate`].
 //!
-//! Raw RSA is not part of the API: on its own it is not a secure encryption
-//! or signature scheme. Public exponents are odd, from 3 to `2^33 - 1`
-//! (BoringSSL's limits). Every way of loading a [`PrivateKey`] checks it as
-//! BoringSSL's `RSA_check_key` does, and like it does not check that its
-//! factors are prime: every private-key operation releases its result only if
-//! raising it to `e` gives back the input, so a fault, or a key with a
-//! composite factor, never releases one. The timing may depend on the public
-//! key and the lengths of the private values, but not on the private values
-//! themselves.
+//! The keys' values (`n`, `e`, `d`, the primes and the CRT values) are
+//! [`BigUint`]s, made from and read as big-endian bytes. Raw RSA is not part
+//! of the API: on its own it is not a secure encryption or signature scheme.
+//! Public exponents are odd, from 3 to `2^33 - 1` (BoringSSL's limits). Every
+//! way of loading a [`PrivateKey`] checks it as BoringSSL's `RSA_check_key`
+//! does, and like it does not check that its factors are prime: every
+//! private-key operation releases its result only if raising it to `e` gives
+//! back the input, so a fault, or a key with a composite factor, never
+//! releases one. The timing may depend on the public key and the lengths of
+//! the private values, but not on the private values themselves.
 
 #![cfg(all(
     any(
@@ -294,11 +295,17 @@ pub struct PublicKey {
 }
 
 impl PublicKey {
-    /// The key with the modulus `n` and the public exponent `e`, both
-    /// big-endian. `n` must be odd, from 512 to 8192 bits long, with no
-    /// leading zero byte; `e` must be odd, from 3 to `2^33 - 1` (with any
-    /// number of leading zero bytes), as BoringSSL requires.
-    pub fn new(n: &[u8], e: &[u8]) -> Result<Self, Error> {
+    /// The key with the modulus `n` and the public exponent `e`. `n` must be
+    /// odd, from 512 to 8192 bits long, with no leading zero byte; `e` must be
+    /// odd, from 3 to `2^33 - 1` (with any number of leading zero bytes), as
+    /// BoringSSL requires.
+    pub fn new(n: BigUint<'_>, e: BigUint<'_>) -> Result<Self, Error> {
+        Self::from_bytes(n.as_be_bytes(), e.as_be_bytes())
+    }
+
+    /// [`new`](Self::new) of `n` and `e`, big-endian: `n` with no leading
+    /// zero byte, `e` with any number of them.
+    pub(crate) fn from_bytes(n: &[u8], e: &[u8]) -> Result<Self, Error> {
         if !modulus_valid(n) {
             return Err(Error::InvalidModulus);
         }
@@ -325,6 +332,8 @@ impl PublicKey {
     }
 }
 
+mod biguint;
+pub use biguint::BigUint;
 mod privatekey;
 pub use privatekey::PrivateKey;
 
@@ -348,8 +357,8 @@ pub(crate) mod tests {
     ))]
     use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
     use super::{
-        Backend, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey, Vec,
-        exponent, public_scratch_words, scratch_words, trim,
+        Backend, BigUint, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey,
+        Vec, exponent, public_scratch_words, scratch_words, trim,
     };
     #[cfg(target_arch = "x86_64")]
     use super::{
@@ -427,8 +436,9 @@ pub(crate) mod tests {
     pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         (
-            PrivateKey::from_crt(&n, &[3], &composite_d(32), &p, &q, &dp, &dq, &qinv).unwrap(),
-            PublicKey::new(&n, &[3]).unwrap(),
+            PrivateKey::from_crt_bytes(&n, &[3], &composite_d(32), &p, &q, &dp, &dq, &qinv)
+                .unwrap(),
+            PublicKey::from_bytes(&n, &[3]).unwrap(),
         )
     }
 
@@ -545,7 +555,7 @@ pub(crate) mod tests {
     #[test]
     fn invalid() {
         let n = modulus(64);
-        assert_eq!(PublicKey::new(&n, &[3]).unwrap().modulus_len(), 64);
+        assert_eq!(PublicKey::from_bytes(&n, &[3]).unwrap().modulus_len(), 64);
         let mut half = n.clone();
         half[0] = 0x7f;
         let mut zero = modulus(65);
@@ -554,14 +564,26 @@ pub(crate) mod tests {
         *even.last_mut().unwrap() ^= 1;
         let mut ok = modulus(65);
         ok[0] = 1;
-        assert!(PublicKey::new(&ok, &[3]).is_ok());
+        assert!(PublicKey::from_bytes(&ok, &[3]).is_ok());
         let bad: [&[u8]; 6] = [&modulus(63), &half, &zero, &even, &modulus(1025), &[]];
         for bad in bad {
-            assert_eq!(PublicKey::new(bad, &[3]), Err(Error::InvalidModulus));
+            assert_eq!(PublicKey::from_bytes(bad, &[3]), Err(Error::InvalidModulus));
         }
         for e in [&[][..], &[1], &[2], &[1; 64]] {
-            assert_eq!(PublicKey::new(&n, e), Err(Error::InvalidExponent));
+            assert_eq!(PublicKey::from_bytes(&n, e), Err(Error::InvalidExponent));
         }
+        let key = PublicKey::from_bytes(&n, &[3]).unwrap();
+        // `new` is `from_bytes` of the integers' bytes, as they are.
+        let big = BigUint::from_be_bytes;
+        assert_eq!(PublicKey::new(big(&n), big(&[0, 3])), Ok(key));
+        assert_eq!(
+            PublicKey::new(big(&zero), big(&[3])),
+            Err(Error::InvalidModulus)
+        );
+        assert_eq!(
+            PublicKey::new(big(&n), big(&[2])),
+            Err(Error::InvalidExponent)
+        );
     }
 
     #[test]

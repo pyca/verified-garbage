@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::bn::BigNum;
     use openssl::pkey::PKey;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::{PrivateKey, PublicKey};
+    use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537; the ids'
@@ -39,7 +39,8 @@ pub fn bench(c: &mut Criterion) {
         let key = Rsa::generate(bits).unwrap();
         let (n, e) = (key.n().to_vec(), key.e().to_vec());
         let k = n.len();
-        let vg_key = PublicKey::new(&n, &e).unwrap();
+        let vg_key =
+            PublicKey::new(BigUint::from_be_bytes(&n), BigUint::from_be_bytes(&e)).unwrap();
         let openssl_key = Rsa::from_public_components(
             BigNum::from_slice(&n).unwrap(),
             BigNum::from_slice(&e).unwrap(),
@@ -89,14 +90,14 @@ pub fn bench(c: &mut Criterion) {
         let n = key.n().to_vec();
         let k = n.len();
         let vg_key = PrivateKey::from_crt(
-            &n,
-            &key.e().to_vec(),
-            &key.d().to_vec(),
-            &key.p().unwrap().to_vec(),
-            &key.q().unwrap().to_vec(),
-            &key.dmp1().unwrap().to_vec(),
-            &key.dmq1().unwrap().to_vec(),
-            &key.iqmp().unwrap().to_vec(),
+            BigUint::from_be_bytes(&n),
+            BigUint::from_be_bytes(&key.e().to_vec()),
+            BigUint::from_be_bytes(&key.d().to_vec()),
+            BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+            BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
         )
         .unwrap();
         let mut ct = vec![0; k];

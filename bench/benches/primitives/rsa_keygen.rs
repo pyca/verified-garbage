@@ -19,6 +19,7 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
     use openssl::rsa::Rsa;
+    use verified_garbage::rsa::BigUint;
     use verified_garbage::rsa::keygen::generate_with_rng;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -48,7 +49,7 @@ pub fn bench(c: &mut Criterion) {
                     .map(|i| {
                         let mut next = splitmix64(bits + i);
                         let mut tape = Vec::new();
-                        generate_with_rng(bits, &[1, 0, 1], |buf| {
+                        generate_with_rng(bits, BigUint::from_be_bytes(&[1, 0, 1]), |buf| {
                             buf.fill_with(&mut next);
                             tape.extend_from_slice(buf);
                             Ok(())
@@ -64,12 +65,16 @@ pub fn bench(c: &mut Criterion) {
                 // The generation draws the same octets, in the same pieces,
                 // as it did from the stream.
                 let mut rest = &rand[..];
-                generate_with_rng(black_box(bits), black_box(&[1, 0, 1]), |buf| {
-                    let (now, later) = rest.split_at(buf.len());
-                    buf.copy_from_slice(now);
-                    rest = later;
-                    Ok(())
-                })
+                generate_with_rng(
+                    black_box(bits),
+                    BigUint::from_be_bytes(black_box(&[1, 0, 1])),
+                    |buf| {
+                        let (now, later) = rest.split_at(buf.len());
+                        buf.copy_from_slice(now);
+                        rest = later;
+                        Ok(())
+                    },
+                )
                 .unwrap()
             })
         });
