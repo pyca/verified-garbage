@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.AesSiv.Arm
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Siv.Contract
 public import Batteries.Logic
@@ -31,33 +32,33 @@ namespace VG.Proof.AesSiv.Arm
 
 open VG VG.Arm VG.Impl.AesSiv.Arm
 
-theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract Arm.abi 2624).pre s := by
-  implies_sat [Spec.Siv.encryptContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Spec.Siv.encryptPost,
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract Arm.abi 2624).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Proof.AesSiv.encryptRoundsPost,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [encSat, sivSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩, ⟨0x8000, 12⟩] [⟨0, 0⟩, ⟨0x5000, 16⟩]
 
 theorem encrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 3 encrypt)
-      (Spec.Siv.encryptContract Arm.abi 2624) :=
+      (Proof.AesSiv.encryptRoundsContract Arm.abi 2624) :=
   Arm.Verified.stackScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64)
     (n := 322) (pre := Spec.Siv.encryptPre Arm.abi.ptrBits)
-    (post := Spec.Siv.encryptPost Arm.abi.ptrBits) (wa := true) (stack := 16)
+    (post := Proof.AesSiv.encryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 3) encrypt_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
 
-theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract Arm.abi 2624).pre s := by
-  implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract Arm.abi 2624).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [encSat, sivSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩, ⟨0x8000, 12⟩] [⟨0, 0⟩]
 
 theorem decrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 3 decrypt)
-      (Spec.Siv.decryptContract Arm.abi 2624) :=
+      (Proof.AesSiv.decryptRoundsContract Arm.abi 2624) :=
   Arm.Verified.stackScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64)
     (n := 322) (pre := Spec.Siv.decryptPre Arm.abi.ptrBits)
-    (post := Spec.Siv.decryptPost Arm.abi.ptrBits) (wa := true) (stack := 16)
+    (post := Proof.AesSiv.decryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Siv.decryptLeak Arm.abi.ptrBits))
     (m := 3) decrypt_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _) decFrameSat_pre

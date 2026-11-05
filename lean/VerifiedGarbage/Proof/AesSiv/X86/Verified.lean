@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Proof.AesSiv.X86.EncCT
 import VerifiedGarbage.Proof.AesSiv.X86.Init
 public import VerifiedGarbage.Proof.AesSiv.Scratch
@@ -219,7 +220,7 @@ theorem encrypt_verified :
   · obtain ⟨E, hTw, hTd⟩ := encPre_of hs
     obtain ⟨t, s', he, hq⟩ := encrypt_wp v E.pre hTw hTd
     refine ⟨t, s', he, hq.1, ?_⟩
-    sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPost,
+    sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Proof.AesSiv.encryptRoundsPost,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     exact fun _ => hq.2
   · sig_pub [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, X86.abi, X86.argSlots,
@@ -240,7 +241,7 @@ theorem decrypt_verified :
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, decSat_pre⟩
   · obtain ⟨t, s', he, hq⟩ := decrypt_wp v (decPre_of hs).pre
     refine ⟨t, s', he, hq.1, ?_⟩
-    sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPost,
+    sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Proof.AesSiv.decryptRoundsPost,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [setWidth_ret]
     exact fun _ => hq.2
@@ -280,14 +281,14 @@ theorem decrypt_stackUse : stackUse (decrypt v.callee v.suffix) ≤ 56 := by
     ctrCall, mask, sivIn, stackUse, Proof.CmacAes.X86.update_stack v, Proof.CmacAes.X86.finalize_stack v, v.stack]
   decide +kernel
 
-theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract X86.abi 2668).pre s := by
-  implies_sat [Spec.Siv.encryptContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Spec.Siv.encryptPost,
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86.abi 2668).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Proof.AesSiv.encryptRoundsPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [encSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 28⟩]
 
-theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract X86.abi 2668).pre s := by
-  implies_sat [Spec.Siv.decryptContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Spec.Siv.decryptPost,
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86.abi 2668).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [encSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x8004, 28⟩]
@@ -296,18 +297,18 @@ theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract X86.abi 2668).pre s :
 argument slots, the working space's address and its 2576 bytes. -/
 theorem encrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2612 7 (encrypt v.callee v.suffix))
-      (Spec.Siv.encryptContract X86.abi 2668) :=
+      (Proof.AesSiv.encryptRoundsContract X86.abi 2668) :=
   X86.Verified.stackScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.encryptPre X86.abi.ptrBits) (post := Spec.Siv.encryptPost X86.abi.ptrBits)
+    (pre := Spec.Siv.encryptPre X86.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 56) (bytes := 2612) (encrypt_verified v) (by decide) (encrypt_noEsp v)
     (encrypt_stackUse v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
 
 /-- `decrypt` in a frame of 2612 bytes, as `encrypt`. -/
 theorem decrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2612 7 (decrypt v.callee v.suffix))
-      (Spec.Siv.decryptContract X86.abi 2668) :=
+      (Proof.AesSiv.decryptRoundsContract X86.abi 2668) :=
   X86.Verified.stackScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
-    (pre := Spec.Siv.decryptPre X86.abi.ptrBits) (post := Spec.Siv.decryptPost X86.abi.ptrBits)
+    (pre := Spec.Siv.decryptPre X86.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 56) (leak := some (Spec.Siv.decryptLeak X86.abi.ptrBits)) (bytes := 2612)
     (decrypt_verified v) (by decide) (decrypt_noEsp v) (decrypt_stackUse v) (Proof.AesSiv.decryptPre_local _)
     (Proof.AesSiv.decryptPost_local _) decFrameSat_pre (hleak := Proof.AesSiv.decryptLeak_local _)

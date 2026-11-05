@@ -71,13 +71,13 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.seal (callees v))
     stack := 2592
-    verified := seal_framed v
+    verified := Proof.AesOcb.seal_keyed (seal_framed v)
     features := v.features },
   Spec.Ocb.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.open (callees v))
     stack := 2592
-    verified := open_framed v
+    verified := Proof.AesOcb.open_keyed (open_framed v)
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesOcb

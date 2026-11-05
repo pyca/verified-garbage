@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -61,7 +62,7 @@ def encryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (pre := fun ctx rounds ads adsCount data len siv _work =>
       encryptPre A.ptrBits ctx rounds ads adsCount data len siv)
     (post := fun ctx rounds ads adsCount data len siv _work =>
-      encryptPost A.ptrBits ctx rounds ads adsCount data len siv)
+      encryptRoundsPost A.ptrBits ctx rounds ads adsCount data len siv)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_siv_decrypt` with `work: *mut [u64; 322]`. -/
@@ -77,7 +78,7 @@ def decryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (pre := fun ctx rounds ads adsCount data len siv _work =>
       decryptPre A.ptrBits ctx rounds ads adsCount data len siv)
     (post := fun ctx rounds ads adsCount data len siv _work =>
-      decryptPost A.ptrBits ctx rounds ads adsCount data len siv)
+      decryptRoundsPost A.ptrBits ctx rounds ads adsCount data len siv)
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds ads adsCount data len siv _work =>
       decryptLeak A.ptrBits ctx rounds ads adsCount data len siv)
@@ -237,8 +238,8 @@ of slices -/
 theorem encryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (encryptSig.words pb).length →
     (∀ b ∈ Sig.bufs encryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ encryptSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (encryptSig.words pb) (encryptPost pb) vs m₁ m' r →
-      Curry.apply (encryptSig.words pb) (encryptPost pb) vs m₂ m' r := by
+    Curry.apply (encryptSig.words pb) (encryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (encryptSig.words pb) (encryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb hl h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -259,10 +260,10 @@ theorem encryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (encryptSig.words
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   simp only [encryptSig, Sig.lists, List.append_nil] at hl
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (encryptPost pb) _ m₁ m' r at h
+    ArgWord.int pb, ArgWord.addr] (encryptRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (encryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, encryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    ArgWord.int pb, ArgWord.addr] (encryptRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, encryptRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   obtain ⟨e₁, e₂, e₃, e₄, -⟩ := inputs_local (pb := pb) (siv := siv) (le14 hr) (agree_of hb.1) (agree_of hb.2.1)
     (agree_of hb.2.2) hl
@@ -274,8 +275,8 @@ of slices -/
 theorem decryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (decryptSig.words pb).length →
     (∀ b ∈ Sig.bufs decryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ decryptSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (decryptSig.words pb) (decryptPost pb) vs m₁ m' r →
-      Curry.apply (decryptSig.words pb) (decryptPost pb) vs m₂ m' r := by
+    Curry.apply (decryptSig.words pb) (decryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (decryptSig.words pb) (decryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb hl h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -296,10 +297,10 @@ theorem decryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (decryptSig.words
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   simp only [decryptSig, Sig.lists, List.append_nil] at hl
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (decryptPost pb) _ m₁ m' r at h
+    ArgWord.int pb, ArgWord.addr] (decryptRoundsPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (decryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, decryptPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    ArgWord.int pb, ArgWord.addr] (decryptRoundsPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, decryptRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := inputs_local (pb := pb) (le14 hr) (agree_of hb.1) (agree_of hb.2.1)
     (agree_of hb.2.2) hl

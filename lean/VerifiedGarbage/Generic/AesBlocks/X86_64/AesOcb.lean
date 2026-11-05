@@ -131,14 +131,14 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.seal (callees v))
     stack := 3640
-    verified := seal_framed v
+    verified := Proof.AesOcb.seal_keyed (seal_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Ocb.openApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.open (callees v))
     stack := 3640
-    verified := open_framed v
+    verified := Proof.AesOcb.open_keyed (open_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
     features := v.features }]
 

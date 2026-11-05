@@ -16,10 +16,12 @@ associated data, texts and tags) is secret.
 
 * `vg_aes_ocb_init` writes a key context (`KeyRepr`): the key schedule and
   `L_* = ENCIPHER(K, zeros(128))`. The others read one, with its number of
-  rounds, and compute with the ciphers of its key schedule and its `L_*`
-  (`ctxCiph`, `ctxInv`, `ctxLstar`): with a context `vg_aes_ocb_init`
-  wrote, that is AES-OCB with its key (`encryptWith_ctx`,
-  `decryptWith_ctx`).
+  rounds. Their contracts are stated for every key whose context is in
+  memory with the number of rounds they are given (`KeyRounds`), with that
+  key's ciphers and `L_*` (`aes key`, `aesInv key`, `aes key 0`): AES-OCB
+  with that key (`encryptWith_ctx`, `decryptWith_ctx`). `open`'s leak is
+  stated with the ciphers of the context's schedule and its `L_*`
+  (`ctxCiph`, `ctxInv`, `ctxLstar`).
 * `vg_aes_ocb_seal` is `OCB-ENCRYPT` (`encryptWith`): it encrypts the data in
   place and writes the tag of `tag_len` bytes.
 * `vg_aes_ocb_open` is `OCB-DECRYPT` (`decryptWith`): given the encrypted
@@ -33,10 +35,10 @@ algorithm depends on, are preconditions (`lengthsOk`: a tag of 1 to 16
 bytes, a nonce of 1 to 15 bytes), which the caller checks; RFC 7253 bounds
 no other length (§3.1). `seal` writes the tag to the `tag_len` bytes at
 `tag`, and `open` reads the received tag from the `tag_len` bytes at `tag`.
-The functions keep their working space on the stack. The postconditions
-(and `open`'s leak) are stated for `rounds` of 10, 12 or 14, which the
-preconditions require, so that they read only the buffers (the key
-context's round keys for those rounds and its `L_*`).
+The functions keep their working space on the stack. `open`'s leak is
+stated for `rounds` of 10, 12 or 14, which the preconditions require, so
+that it reads only the buffers (the key context's round keys for those
+rounds and its `L_*`).
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -87,6 +89,15 @@ def initApi : Api where
 
 /-! ## Encryption and decryption -/
 
+/-- The key context at `ctx` is that of the AES key `key` of 16, 24 or 32
+bytes (`KeyRepr`, as `vg_aes_ocb_init` writes it), and `rounds` is the number
+of rounds `Nr` for a key of its length (FIPS 197 §5). The contracts of the
+functions that read a key context with a number of rounds are stated for
+every key whose context is in memory with the rounds they are given. -/
+def KeyRounds (m : Mem) (ctx : Addr) (rounds : Nat) (key : List Byte) : Prop :=
+  (key.length = 16 ∨ key.length = 24 ∨ key.length = 32) ∧
+    rounds = Aes.rounds (key.length / 4) ∧ KeyRepr m ctx key
+
 /-- `vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize)`.
 `rounds` and `tag_len` are public. -/
 def sealSig : Sig where
@@ -109,23 +120,23 @@ def sealPre (pb : Nat) : Curry (sealSig.words pb) (Mem → Prop) :=
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       lengthsOk tagLen.toNat nonceLen.toNat
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: the `len`
-bytes at `data` are encrypted, with the nonce at `nonce` and the `aad_len`
-bytes of associated data at `aad` (`encryptWith`), and the tag of `tag_len`
-bytes is at `tag`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`): the `len` bytes at `data` are encrypted, with the nonce at
+`nonce` and the `aad_len` bytes of associated data at `aad` (`encryptWith`
+under `K`), and the tag of `tag_len` bytes is at `tag`. -/
 def sealPost (pb : Nat) : sealSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    encryptWith (ctxCiph m ctx rounds.toNat) (ctxLstar m ctx) tagLen.toNat
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    encryptWith (aes key) (aes key 0) tagLen.toNat
         (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m aad aadLen.toNat)
         (Aes.bytesAt m data len.toNat) =
       (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag tagLen.toNat)
 
 /-- For `rounds` of 10, 12 or 14, a tag of 1 to 16 bytes and a nonce of 1 to
-15 bytes, with the key context at `ctx`: encrypts the `len` bytes at `data`
-in place, with the nonce at `nonce` and the `aad_len` bytes of associated
-data at `aad` (`encryptWith`), and writes the tag of `tag_len` bytes to
-`tag`. -/
+15 bytes, and every AES key `K` whose key context is at `ctx` with `rounds`
+rounds (`KeyRounds`): encrypts the `len` bytes at `data` in place, with the
+nonce at `nonce` and the `aad_len` bytes of associated data at `aad`
+(`encryptWith` under `K`), and writes the tag of `tag_len` bytes to `tag`. -/
 def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSig.contract A (pre := sealPre A.ptrBits) (post := sealPost A.ptrBits)
     (writeArgs := true)
@@ -158,17 +169,17 @@ def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       lengthsOk tagLen.toNat nonceLen.toNat
 
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag the `tag_len` bytes at `tag`: if the tag is right for the `len`
-bytes of encrypted data at `data`, the nonce at `nonce` and the `aad_len`
-bytes of associated data at `aad` (`decryptWith`), the result is 1 and the
-plaintext is at `data`; otherwise the result is 0 and zeros are at
-`data`. -/
+/-- For every AES key `K` whose key context is at `ctx` with `rounds` rounds
+(`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if the tag is
+right for the `len` bytes of encrypted data at `data`, the nonce at `nonce`
+and the `aad_len` bytes of associated data at `aad` (`decryptWith` under `K`),
+the result is 1 and the plaintext is at `data`; otherwise the result is 0 and
+zeros are at `data`. -/
 def openPost (pb : Nat) : openSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
-    match decryptWith (ctxCiph m ctx rounds.toNat) (ctxInv m ctx rounds.toNat)
-        (ctxLstar m ctx) tagLen.toNat (Aes.bytesAt m nonce nonceLen.toNat)
+    ∀ key, KeyRounds m ctx rounds.toNat key →
+    match decryptWith (aes key) (aesInv key) (aes key 0) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat)
         (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m data len.toNat)
         (Aes.bytesAt m tag tagLen.toNat) with
     | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
@@ -186,12 +197,12 @@ def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
       then 1 else 0]
 
 /-- For `rounds` of 10, 12 or 14, a tag of 1 to 16 bytes and a nonce of 1 to
-15 bytes, with the key context at `ctx` and the received tag the `tag_len`
-bytes at `tag`: if the tag is right for the `len` bytes of encrypted data at
-`data`, the nonce at `nonce` and the `aad_len` bytes of associated data at
-`aad` (`decryptWith`), returns 1 and leaves the plaintext at `data`;
-otherwise returns 0 and leaves zeros at `data`. May leak which
-(`decryptWith`'s outcome). -/
+15 bytes, and every AES key `K` whose key context is at `ctx` with `rounds`
+rounds (`KeyRounds`) and the received tag the `tag_len` bytes at `tag`: if the
+tag is right for the `len` bytes of encrypted data at `data`, the nonce at
+`nonce` and the `aad_len` bytes of associated data at `aad` (`decryptWith`
+under `K`), returns 1 and leaves the plaintext at `data`; otherwise returns 0
+and leaves zeros at `data`. May leak which (`decryptWith`'s outcome). -/
 def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openSig.contract A (pre := openPre A.ptrBits) (post := openPost A.ptrBits)
     (writeArgs := true)

@@ -21,10 +21,10 @@ def artifacts : List Artifact := [
   Spec.Ocb.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«seal»
     stack := 2600
-    verified := seal_framed },
+    verified := Proof.AesOcb.seal_keyed seal_framed },
   Spec.Ocb.openApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«open»
     stack := 2600
-    verified := open_framed }]
+    verified := Proof.AesOcb.open_keyed open_framed }]
 
 end VG.Artifacts.AesOcb.Arm

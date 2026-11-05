@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesSiv.Rounds
 import VerifiedGarbage.Proof.AesSiv.X86_64.Init
 public import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -427,7 +428,7 @@ theorem encrypt_verified (v : UpdateImpl) :
     (fun s hs => (encPre_of hs).1)
     (fun s t s₁ hs he => narrow_exec (encWrE_covers (encPre_of hs).2) he)
     (fun s t s₁ hs he ha hq => ⟨ha, by
-      sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPost,
+      sig_post [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Proof.AesSiv.encryptRoundsPost,
         X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq]
       exact fun _ => hq⟩)
     (fun s₁ s₂ _ _ hp => encPub_of hp) encSat_pre
@@ -440,7 +441,7 @@ theorem decrypt_verified (v : UpdateImpl) :
     (fun s hs => (decPre_of hs).1)
     (fun s t s₁ hs he => narrow_exec (encWrD_covers (decPre_of hs).2) he)
     (fun s t s₁ hs he ha hq => ⟨ha, by
-      sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPost,
+      sig_post [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Proof.AesSiv.decryptRoundsPost,
         X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq]
       exact fun _ => hq⟩)
     (fun s₁ s₂ _ _ hp => decPub_of hp) decSat_pre

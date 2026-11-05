@@ -86,14 +86,14 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
     stack := 2668
-    verified := encrypt_framed v
+    verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v)
     features := v.features },
   Spec.Siv.decryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
     stack := 2668
-    verified := decrypt_framed v
+    verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v)
     features := v.features }]
 

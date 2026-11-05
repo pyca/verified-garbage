@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.AesOcb.Rounds
 public import VerifiedGarbage.Proof.AesOcb.X86.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
@@ -96,8 +97,8 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩],
                  wr := [⟨0x3000, 0⟩, ⟨0x4000, 4⟩, ⟨0x8004, 40⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Ocb.sealContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Ocb.sealContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Spec.Ocb.sealPost,
+theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract X86.abi 2632).pre s := by
+  implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
 
@@ -107,8 +108,8 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩, ⟨0x4000, 4⟩],
                  wr := [⟨0x3000, 0⟩, ⟨0x8004, 40⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Ocb.openContract X86.abi 2632).pre s := by
-  implies_sat [Spec.Ocb.openContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Spec.Ocb.openPost,
+theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract X86.abi 2632).pre s := by
+  implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost,
     Spec.Ocb.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
@@ -123,17 +124,17 @@ theorem initFrameSat_pre : ∃ s, (Spec.Ocb.initContract X86.abi 2604).pre s := 
 
 theorem seal_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2608 10 («seal» (callees v)))
-      (Spec.Ocb.sealContract X86.abi 2632) :=
+      (Proof.AesOcb.sealRoundsContract X86.abi 2632) :=
   X86.Verified.stackScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Ocb.sealPre X86.abi.ptrBits) (post := Spec.Ocb.sealPost X86.abi.ptrBits)
+    (pre := Spec.Ocb.sealPre X86.abi.ptrBits) (post := Proof.AesOcb.sealRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 24) (bytes := 2608) (seal_verified v) (by decide) (seal_noEsp v)
     (seal_stackUse v) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 theorem open_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2608 10 («open» (callees v)))
-      (Spec.Ocb.openContract X86.abi 2632) :=
+      (Proof.AesOcb.openRoundsContract X86.abi 2632) :=
   X86.Verified.stackScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64) (n := 320)
-    (pre := Spec.Ocb.openPre X86.abi.ptrBits) (post := Spec.Ocb.openPost X86.abi.ptrBits)
+    (pre := Spec.Ocb.openPre X86.abi.ptrBits) (post := Proof.AesOcb.openRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 24) (leak := some (Spec.Ocb.openLeak X86.abi.ptrBits)) (bytes := 2608)
     (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (openPre_local _) (openPost_local _)
     openFrameSat_pre (hleak := openLeak_local _)
