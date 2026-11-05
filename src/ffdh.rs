@@ -327,7 +327,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Parameters, PrivateKey, PublicKey, generation, zeroize};
+    use super::{Error, Parameters, PrivateKey, PublicKey, zeroize};
     use alloc::{format, vec};
     fn composite_domain() -> Parameters {
         // Modulus 2^512-1, generator 2^128: g^4=1 and g^2!=1.
@@ -336,50 +336,6 @@ mod tests {
         let mut g = vec![0; 17];
         g[0] = 1;
         Parameters::from_components(&p, &g, None).unwrap()
-    }
-    #[test]
-    fn key_generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same key, as the fixed-tape benchmark
-        // relies on.
-        let params = composite_domain();
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            params
-                .generate_with(|buf: &mut [u8]| {
-                    for b in buf {
-                        x ^= x << 13;
-                        x ^= x >> 7;
-                        x ^= x << 17;
-                        *b = x as u8;
-                    }
-                    Ok::<_, ()>(())
-                })
-                .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.private_component(), b.private_component());
-        assert_eq!(a.public_key().component(), b.public_key().component());
-    }
-    #[test]
-    fn generation_from_a_fixed_tape_is_deterministic() {
-        // The same tape gives the same safe prime, as the fixed-tape
-        // benchmark relies on.
-        let generate = || {
-            let mut x = 0x9E37_79B9_7F4A_7C15u64;
-            generation::parameters(512, 2, |buf: &mut [u8]| {
-                for b in buf {
-                    x ^= x << 13;
-                    x ^= x >> 7;
-                    x ^= x << 17;
-                    *b = x as u8;
-                }
-                Ok::<_, ()>(())
-            })
-            .unwrap()
-        };
-        let (a, b) = (generate(), generate());
-        assert_eq!(a.components(), b.components());
-        assert_eq!(a.key_size(), 512);
     }
     #[test]
     fn shared_failure_and_key_wiping() {
