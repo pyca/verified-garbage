@@ -80,6 +80,9 @@ def main():
             for estimate in sorted((run_dir / "target/criterion").glob("**/new/estimates.json")):
                 relative = estimate.relative_to(run_dir / "target/criterion")
                 group, library, size = relative.parts[:3]
+                if library == "verified-garbage" and size.endswith("-unchecked"):
+                    library = "verified-garbage-unchecked"
+                    size = size.removesuffix("-unchecked")
                 stats = json.loads(estimate.read_text())["mean"]
                 rows.append([round_index + 1, name, group, library, size,
                              stats["point_estimate"],

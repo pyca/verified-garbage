@@ -213,7 +213,7 @@ fn keys(c: &mut Criterion) {
                     .unwrap()
             })
         });
-        g.bench(BenchmarkId::new("verified-garbage-unchecked", k), |b| {
+        g.bench(BenchmarkId::new(VG, format!("{k}-unchecked")), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 PrivateKey::from_crt_unchecked(
@@ -278,7 +278,7 @@ fn keys(c: &mut Criterion) {
                 key
             })
         });
-        g.bench(BenchmarkId::new("verified-garbage-unchecked", k), |b| {
+        g.bench(BenchmarkId::new(VG, format!("{k}-unchecked")), |b| {
             b.iter(|| {
                 let v = black_box(&v);
                 let key = PrivateKey::from_crt_unchecked(
