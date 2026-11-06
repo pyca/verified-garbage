@@ -11,6 +11,19 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+import VerifiedGarbage.Proof.Idea.X86_64.CfbFinalLit
+meta import VerifiedGarbage.Proof.Idea.X86_64.CfbFinalLit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
+meta import VerifiedGarbage.Impl.Idea.X86_64.CfbFinal
+meta import VerifiedGarbage.Proof.Modes.X86_64.CfbFinal
+meta import VerifiedGarbage.Spec.Idea.CfbFinal
+meta import VerifiedGarbage.Proof.Modes.CfbFinal
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # IDEA-CFB64 of a message's last piece on x86-64 meets its contract
@@ -585,5 +598,6 @@ theorem cfbDecryptFinal_wp {s₀ : State} (hp : finalPre s₀) :
       · rw [bytesAt_frame f₃ (two (dVD.sub_right hRsub) dKV') (by decide), H4, ← Modes.cfbDecFinalNext_of,
           ite_eq_right hr]
         rfl
+
 
 end VG.Proof.Idea.X86_64
