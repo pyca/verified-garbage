@@ -128,8 +128,10 @@ impl PublicKey {
         let pre = self.pre(&mut scratch);
         let backend = Backend::select(detected());
         let mut status = 0;
-        // The padding string needs at least as many random bytes as it has.
-        let drawn = entropy::serve(k - plaintext.len() - 3, random, |tape| {
+        // The padding string needs at least as many random bytes as it has;
+        // 32 more make a tape too short for it (more than 32 of at most 1045
+        // uniform bytes zero) all but impossible, sparing a second step.
+        let drawn = entropy::serve(k - plaintext.len() - 3 + 32, random, |tape| {
             let mut counts = [0u64; 2];
             macro_rules! encrypt {
                 ($function:path) => {
@@ -431,30 +433,30 @@ mod tests {
     #[test]
     fn padding_from_tape() {
         let (_, public) = composite_key();
-        // The padding string has 8 bytes: a source of zeros and ones in
-        // turn fills a tape of 8 bytes, then extends it by what it lacks
-        // (4, 2, 1 and 1 bytes), and the padding string is its ones, as
-        // from a tape of ones.
+        // The padding string has 8 bytes. The first tape, of 40, is all
+        // zeros, and so are the first 4 bytes of the next, of 48: the tape is
+        // extended by 8, then by the 4 it still lacks, and the padding string
+        // is the ones that follow, as from a tape of ones.
         let mut fills = Vec::new();
-        let mut next = 0;
-        let alternating = public
+        let mut zeros = 44;
+        let extended = public
             .encrypt_pkcs1v15_from(&[7; 53], |buf| {
                 fills.push(buf.len());
                 for b in buf {
-                    *b = next;
-                    next ^= 1;
+                    *b = if zeros > 0 { 0 } else { 1 };
+                    zeros -= usize::from(zeros > 0);
                 }
                 Ok(())
             })
             .unwrap();
-        assert_eq!(fills, [8, 4, 2, 1, 1]);
+        assert_eq!(fills, [40, 8, 4]);
         let ones = public
             .encrypt_pkcs1v15_from(&[7; 53], |buf| {
                 buf.fill(1);
                 Ok(())
             })
             .unwrap();
-        assert_eq!(alternating, ones);
+        assert_eq!(extended, ones);
         let mut drawn = 0;
         let r = public.encrypt_pkcs1v15_from(&[7; 53], |buf| {
             drawn += buf.len();
