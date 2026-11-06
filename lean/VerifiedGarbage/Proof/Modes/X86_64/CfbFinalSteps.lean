@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # CFB of a message's last piece on x86-64: straight-line steps
@@ -190,5 +191,18 @@ theorem sub_add_ofNat (x : Addr) {a b : Nat} (h : b ≤ a) :
     x - BitVec.ofNat 64 a + BitVec.ofNat 64 b = x - BitVec.ofNat 64 (a - b) := by
   rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
     rw [← BitVec.ofNat_add, Nat.sub_add_cancel h], ← BitVec.sub_sub, BitVec.sub_add_cancel]
+
+/-- A block that loads no MXCSR keeps it. -/
+theorem runBlock_mxcsr : ∀ (is : List Instr) (s s' : State), (∀ i ∈ is, loadsMxcsr i = false) →
+    runBlock isa is s = some s' → s'.mxcsr = s.mxcsr
+  | [], s, s', _, h => by simp only [runBlock_nil, Option.some.injEq] at h; rw [h]
+  | i :: is, s, s', hc, h => by
+    rw [runBlock_cons] at h
+    cases e : exec i s with
+    | none => rw [e] at h; simp [runStep] at h
+    | some s₁ =>
+      rw [e, runStep_some] at h
+      rw [runBlock_mxcsr is s₁ s' (fun j hj => hc j (List.mem_cons_of_mem _ hj)) h,
+        exec_mxcsr (hc i List.mem_cons_self) e]
 
 end VG.Proof.Modes.X86_64
