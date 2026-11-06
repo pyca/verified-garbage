@@ -231,8 +231,7 @@ theorem swapPieceX_ok {s : State} {base : Addr} (hs : Scratch s base) {d e : Nat
   · rw [tx, vx]; exact ux
   · rw [tsy, vsy, usy]
 
-/-- `swapFieldX`: the slots `a` and `b = a + 1` exchanged under the mask `rcx`,
-as `swapFieldWide_ok` has it for `cswap`. -/
+/-- `swapFieldX`: the slots `a` and `b = a + 1` exchanged under the mask `rcx`. -/
 theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slot)
     (hab : b.val = a.val + 1) (ha : offset a + 64 ≤ 768) {sw : Bool}
     (hm : s.gpr .rcx = VG.Proof.X25519.X86_64.mask sw) :
@@ -483,7 +482,7 @@ theorem negField_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat}
       rw [h0, VG.Proof.X25519.toFe_zero]; grind
 
 /-- `negField_ok` for the whole scratch (the comb's regions), by running it on
-the first 4096 bytes, as `swapFieldWide_ok` does for `cswap`. -/
+the first 4096 bytes. -/
 theorem negFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) {x : Nat}
     (hx : VG.Proof.X25519.X86_64.Slot x) {sw : Bool}
     (hm : s.gpr .rcx = VG.Proof.X25519.X86_64.mask sw) :

@@ -119,17 +119,8 @@ theorem bytesAt_ws {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hs : �
   intro i hi
   exact bytes_ws hf hs hd hn (List.mem_range.mp hi)
 
-theorem table_sub {o : Nat} (ho : o + 128 ≤ 8192) : Region.Sub ⟨b + BitVec.ofNat 64 o, 128⟩ ⟨b, 8192⟩ :=
-  Offset.sub_base b ho
-
 /-- What `[S] P` writes, with a table entry. -/
 abbrev sideW (b : Addr) (o : Nat) : List Region := ⟨b + BitVec.ofNat 64 o, 128⟩ :: pmulW b
-
-theorem sideW_sub {o : Nat} (ho : o + 128 ≤ 8192) : ∀ r ∈ sideW b o, Region.Sub r ⟨b, 8192⟩ := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · exact table_sub ho
-  · exact mulW_sub r hr
 
 /-- The registers `[S] P` writes. -/
 abbrev sideR : List Reg := .s5 :: .a4 :: batchR

@@ -54,9 +54,6 @@ theorem saveList_regs : saveList.map Prod.fst = savedRegs := by decide
 
 theorem SAVE_eq : SAVE = 1024 := rfl
 
-/-- The save slots, within the working space at `b`. -/
-abbrev SV (b : Addr) : Region := ⟨b + BitVec.ofNat 64 SAVE, 96⟩
-
 /-! ## The bytes of an element -/
 
 /-- The 32 bytes at `q` whose words are an element's. -/

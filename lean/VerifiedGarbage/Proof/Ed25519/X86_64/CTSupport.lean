@@ -62,14 +62,6 @@ theorem taintFld {P : State → State → Prop} {c : Prog isa} (τ : VG.X86_64.T
     RelCT isa P c fun _ _ => True :=
   let ⟨_, h⟩ := h; VG.RelCT.taint (A := VG.X86_64.taint) τ hp h
 
-/-- `RelCT.taintRegs`, with the hint found by `fld_taint_decide`. -/
-theorem taintRegsFld {τ : VG.X86_64.Taint.T} {P : State → State → Prop} {c : Prog isa}
-    (hp : ∀ s₁ s₂, P s₁ s₂ → VG.X86_64.Taint.Agree τ s₁ s₂) (rs : List Reg)
-    (h : ∃ hc : VG.Taint.Hint VG.X86_64.Taint.T,
-      ((VG.X86_64.taint.check τ c hc).map fun τ' => (RegSet.ofList rs).subset τ'.regs) = some true) :
-    RelCT isa P c fun s₁ s₂ => ∀ r ∈ rs, s₁.gpr r = s₂.gpr r :=
-  let ⟨_, h⟩ := h; VG.X86_64.RelCT.taintRegs hp rs h
-
 theorem execBlock_append_seq {xs ys : List Instr} {s t : State} {tr : List Leak}
     (h : Exec isa (.block (xs ++ ys)) s tr t) :
     Exec isa (.seq (.block xs) (.block ys)) s tr t := by

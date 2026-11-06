@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Power
-public import VerifiedGarbage.Impl.Ed25519.RISCV64.Point
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
 meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Power
-meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Point
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
+public import VerifiedGarbage.Impl.Ed25519.RISCV64.FieldMemory
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 on RISC-V: the field and point functions are constant time
@@ -71,30 +71,5 @@ theorem mulZext_rel : RelCT isa mulAgreeLo (.block Impl.Ed25519.RISCV64.mulZext)
   · rw [g1, g2, h3]
   · have hr' : r ∈ [Reg.a1, .a2, .a3] := by simpa using hr
     rw [k1 r hr', k2 r hr', hlo r hr']
-
-theorem mulFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → mulAgreeLo s₁ s₂) :
-    ConstantTime isa Pre Pub Impl.Ed25519.RISCV64.mulFn := by
-  refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  unfold Impl.Ed25519.RISCV64.mulFn
-  refine RelCT.seq (mulZext_rel.mono (fun _ _ ⟨h₁, h₂, hp⟩ => hpub _ _ h₁ h₂ hp) fun _ _ h => h) ?_
-  exact RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-    (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (by simpa using h)⟩) (by taint_decide)
-
-theorem pow250Fn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0) :
-    ConstantTime isa Pre Pub Impl.Ed25519.RISCV64.pow250Fn :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0])
-    (fun s₁ s₂ h₁ h₂ hp => by
-      obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
-      exact ⟨hsp, fun r h => by rw [show r = .a0 by simpa using h]; exact hr⟩) (by taint_decide)
-
-theorem addFn_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0) :
-    ConstantTime isa Pre Pub Impl.Ed25519.RISCV64.addFn :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0])
-    (fun s₁ s₂ h₁ h₂ hp => by
-      obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
-      exact ⟨hsp, fun r h => by rw [show r = .a0 by simpa using h]; exact hr⟩) (by taint_decide)
 
 end VG.Proof.Ed25519.RISCV64

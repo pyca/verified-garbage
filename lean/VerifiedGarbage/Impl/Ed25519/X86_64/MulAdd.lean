@@ -21,8 +21,6 @@ The eight output words occupy r8–r15. -/
 def wideAccumulate (a b : Nat) : List Instr :=
   row a b 0 ++ row a b 1 ++ row a b 2 ++ row a b 3
 
-def wideMul (a b : Nat) : List Instr := zero4 ++ wideAccumulate a b
-
 def mulAddSave : List Instr := saved.map fun (r, d) => .store (at_ .r8 d) r
 
 def loadWords (src : Reg) : List Instr :=

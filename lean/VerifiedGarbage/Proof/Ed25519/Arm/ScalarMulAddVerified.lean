@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
@@ -46,6 +45,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddEngine`. -/
 
@@ -799,28 +799,8 @@ theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLoc
   · rw [scalarMulAdd_argByte, scalarMulAdd_argByte, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
-def scalarMulAddSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x8001 then 0x50 else 0
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩, ⟨0x8000, 4⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x5000, 8192⟩]
-
 theorem scalarMulAdd_ok (s : State) (hs : scalarMulAddLocal.pre s) :
     ∃ t s', Exec isa scalarMulAdd s t s' ∧ abiPreserved s s' ∧ scalarMulAddLocal.post s s' :=
   scalarMulAdd_correct (ScalarMulAddPre.of hs)
-
-theorem scalarMulAdd_verified : Verified Arm.target scalarMulAdd
-    (Proof.Ed25519.scalarMulAddContract Arm.abi) :=
-  Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
-      Spec.Ed25519.scratchWords, scalarMulAddLocal, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [scalarMulAddSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarMulAddSat)
 
 end VG.Proof.Ed25519.Arm

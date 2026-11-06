@@ -125,8 +125,6 @@ theorem vstore_eq : vstore = VG.Impl.X25519.X86_64.Ifma.carry id ++
 
 def packS : Sym := symOf vpackE
 
-theorem packS_st : packS.st.map Prod.fst = [160, 128, 96, 64] := by decide +kernel
-
 /-- The term stored at `64 + 32 m`. -/
 def packT (m : Nat) : T := ((packS.st.reverse).getD m (0, .zero)).2
 

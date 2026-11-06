@@ -56,19 +56,6 @@ theorem byte_out {b : Addr} {i e k : Nat} (hi : i + 1 ≤ 8192) (he : e + k ≤ 
     ¬ (⟨b + BitVec.ofNat 64 e, k⟩ : Region).Contains (b + BitVec.ofNat 64 i) 1 := fun hc =>
   Offset.disjoint b (d := i) (n := 1) (e := e) (k := k) (by omega) (by omega) (by omega) _ (Region.contains_self _ _) hc
 
-/-- `mul`'s `Keeps`, from its frame. -/
-theorem keeps_mul {b : Addr} {o : BitVec 32} (ho : o.toNat + 32 ≤ 768) {m m' : Mem}
-    (hf : Frame (opFrame b o.toNat) m m') : Proof.X25519.Field32.Keeps b o m m' := by
-  intro i hi hown hoi
-  simp only [Proof.X25519.Field32.wsBytes, Proof.X25519.Field32.ownAt, Proof.X25519.Field32.ownEnd,
-    Proof.X25519.Field32.elemBytes] at hi hown hoi
-  have hA := ACC_eq
-  refine hf _ fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact byte_out (by omega) (by omega) hoi
-  · exact byte_out (by omega) (by omega) (by omega)
-
 /-- `pow250`'s `Keeps₂`, from its frame. -/
 theorem keeps_pow {b : Addr} {m m' : Mem} (hf : Frame [PR b] m m') : Proof.X25519.Field32.Keeps₂ b m m' := by
   intro i hi hown

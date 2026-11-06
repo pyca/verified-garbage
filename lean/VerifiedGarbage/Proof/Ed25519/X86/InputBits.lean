@@ -251,12 +251,4 @@ theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
     by rw [← mu]; exact ft, fun k hk => ?_⟩
   rw [bt k (by omega_using [hk]), inputBytes_same hi hu]
 
-theorem inputBits_ok {s₀ s : State} {scidx argc i n : Nat}
-    (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
-    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) (hn1 : 1 ≤ n) :
-    WP isa (inputBits i (4 * n)) s fun t => Saved s₀ (arg s₀ scidx) t ∧
-      (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) :=
-  WP.mono (inputBits_frame hp hi hs hia hn hn1) fun _ h => ⟨h.1, h.2.2⟩
-
 end VG.Proof.Ed25519.X86

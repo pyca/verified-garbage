@@ -428,10 +428,6 @@ theorem LPost.of {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {s₀ s : State} (
   ⟨scr, gpr, rd, wr, mem, _, by have := ladderAfter_swap_le k u (n := 0) (by omega); omega, swap,
     by rw [x2, x3], by rw [z2, z3]⟩
 
-theorem LInv.post {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {s₀ s : State} (h : LInv base k u s₀ s 0) :
-    LPost base k u s₀ s :=
-  LPost.of h.scr h.gpr h.rd h.wr (h.mem.mono (by decide) (by decide)) h.x2 h.z2 h.x3 h.z3 h.swap
-
 /-- What a ladder starts from: the bits of `k` in `BITS`, `x1 = u` and the
 ladder's first state in the slots 2–6, and `swap = 0`. -/
 structure LPre (base : Addr) (k : Nat) (u : Spec.X25519.Fe) (s : State) : Prop where

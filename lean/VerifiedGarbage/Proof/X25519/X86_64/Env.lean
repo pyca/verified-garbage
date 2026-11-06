@@ -50,9 +50,6 @@ structure Keep (base : Addr) (s s' : State) : Prop where
   wr : s'.wr = s.wr
   mem : Outside base 64 576 s.mem s'.mem
 
-theorem Keep.refl (base : Addr) (s : State) : Keep base s s :=
-  ⟨fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
-
 theorem Keep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : Keep base s₁ s₂) (h₂ : Keep base s₂ s₃) :
     Keep base s₁ s₃ :=
   ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
@@ -147,25 +144,6 @@ theorem mulE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho :
   WP.mono (hf.mul hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
-include hf in
-theorem sqrE {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
-    WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opMul o a a (E s.mem base) :=
-  WP.mono (hf.sqr hs (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
-
-theorem addE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
-    WP isa (.block (add (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opAdd o a b (E s.mem base) :=
-  WP.mono (add_ok hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
-
-theorem subE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
-    WP isa (.block (sub (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opSub o a b (E s.mem base) :=
-  WP.mono (sub_ok hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
-
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
     (hy : LSlot y) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .rcx = mask sw) :
     WP isa (.block (cswap (32 * x.val) (32 * y.val))) s fun s' =>
@@ -224,25 +202,6 @@ theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (
         Outside base (32 * o.val) 32 s.mem s'.mem :=
   WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
-
-theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
-    (hy : LSlot y) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .rcx = mask sw) :
-    WP isa (.block (cswap (32 * x.val) (32 * y.val))) s fun s' =>
-      Keep base s s' ∧ s'.gpr .rcx = s.gpr .rcx ∧ E s'.mem base = opSwap x y sw (E s.mem base) ∧
-        (∀ d, d + 32 ≤ 4096 → (d + 32 ≤ 32 * x.val ∨ 32 * x.val + 32 ≤ d) →
-          (d + 32 ≤ 32 * y.val ∨ 32 * y.val + 32 ≤ d) → fe s'.mem base d = fe s.mem base d) ∧
-        fe s'.mem base (32 * x.val) =
-          (if sw then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
-        fe s'.mem base (32 * y.val) =
-          (if sw then fe s.mem base (32 * x.val) else fe s.mem base (32 * y.val)) := by
-  have hne : x.val ≠ y.val := fun h => hxy (Fin.ext h)
-  refine WP.mono (cswap_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hm)
-    fun s' ⟨g, gc, rd, wr, ⟨m₁, o₁, o₂, f₁⟩, fx, fy⟩ => ?_
-  refine ⟨⟨g, rd, wr, (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))⟩, gc, ?_,
-    fun d hd h1 h2 => by rw [o₂.fe h2 (by omega_arith), o₁.fe h1 (by omega_arith)], fx, fy⟩
-  rw [E_update o₂, E_update o₁]
-  simp only [F, f₁, fy]
-  cases sw <;> rfl
 
 theorem muxEB {s : State} {base : Addr} (hs : Scr s base) (o x y : Fin 128) (ho : LSlot o)
     {zf : Bool} (hz : s.zf = some zf) :

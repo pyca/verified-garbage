@@ -41,16 +41,4 @@ def sat : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
-theorem x25519_ct : ConstantTime isa Proof.X25519.x25519AArch64.pre Proof.X25519.x25519AArch64.pub
-    Impl.X25519.AArch64.x25519 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem x25519_verified :
-    Verified AArch64.target Impl.X25519.AArch64.x25519 (Spec.X25519.x25519Contract AArch64.abi) :=
-  Verified.of_correct x25519_ok x25519_ct
-    (by sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, AArch64.abi, AArch64.argRegs,
-      Proof.X25519.x25519AArch64]
-      [sat] using sat)
-
 end VG.Proof.X25519.AArch64

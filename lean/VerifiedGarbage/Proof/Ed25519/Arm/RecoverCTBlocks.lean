@@ -35,9 +35,4 @@ theorem returnFlag_ct (b : Bool) :
 
 theorem recoverInvalid_ct : CT (fun _ _ => True) recoverInvalid (fun _ _ => True) := returnFlag_ct false
 
-theorem recoverSuccess_ct (base : BitVec 32) :
-    CT (fun x y => x.gpr .r0 = base ∧ y.gpr .r0 = base) recoverSuccess (fun _ _ => True) := by
-  apply ctRegs [.r0] _ (by native_taint_decide)
-  exact fun _ _ h => r0_agree h.1 h.2
-
 end VG.Proof.Ed25519.Arm

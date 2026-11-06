@@ -115,14 +115,6 @@ theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 72) (h₂ : e + k �
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
 
-theorem stk_out (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 72) (h₂ : e + k ≤ 32) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.out + BitVec.ofNat 64 e, k⟩ :=
-  (h.ko.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
-
-theorem out_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
-    Region.Disjoint ⟨L.out, 32⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  h.oc.sub_right (Offset.sub_base _ h₂)
-
 theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 72) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
 
@@ -345,9 +337,6 @@ theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.of
   show (⟨L.B + BitVec.ofNat 64 16 - BitVec.ofNat 64 8, 8⟩ : Region) = _
   rw [sub8']
 
-theorem ce_rsp (hc : Ctx L g mx m₀ t) : t.callEntry.gpr .rsp = L.B + BitVec.ofNat 64 8 := by
-  rw [State.callEntry_rsp, hc.rsp, sub8]
-
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
   ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
@@ -359,9 +348,6 @@ theorem inFrW (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8
 theorem inScr (hc : Ctx L g mx m₀ t) {o : Nat} (h : o + 8 ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) 8 :=
   ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
-
-theorem ea_fr (hc : Ctx L g mx m₀ t) (d : Nat) : t.ea (stk d) = L.B + BitVec.ofNat 64 (16 + d) := by
-  rw [ea_stk, hc.rsp, add_add]
 
 end Ctx
 

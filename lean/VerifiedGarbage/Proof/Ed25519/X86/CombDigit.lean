@@ -32,9 +32,6 @@ structure DigitKeep (x : BitVec 32) (s t : State) : Prop where
   keep : Keep s t
   frame : Frame [sub x 1024 136] s.mem t.mem
 
-theorem DigitKeep.trans {x : BitVec 32} {s t u : State} (h : DigitKeep x s t) (k : DigitKeep x t u) :
-    DigitKeep x s u := ⟨h.keep.trans k.keep, h.frame.trans k.frame⟩
-
 theorem wp_xori {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
     (k : ∀ s', Wp.Upd s s' d (s.gpr d ^^^ v) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .xor d (.imm v) :: is)) s Q :=

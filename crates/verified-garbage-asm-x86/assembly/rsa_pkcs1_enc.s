@@ -106,6 +106,172 @@ vg_rsa_pkcs1_encrypt_precomputed:
 	ret
 	.p2align 6
 
+vg_rsa_pkcs1_encrypt_random:
+	push ebx
+	push ebp
+	push esi
+	push edi
+	lea esp, [esp-1088]
+	mov edx, DWORD PTR [esp+1124]
+	mov eax, DWORD PTR [esp+1140]
+	sub edx, eax
+	sub edx, 3
+	mov esi, DWORD PTR [esp+1144]
+	mov ecx, DWORD PTR [esp+1148]
+	mov edi, esp
+	add edi, 64
+	cmp ecx, 0
+	jne 20f
+	jmp 21f
+20:
+22:
+	movzx eax, BYTE PTR [esi]
+	add esi, 1
+	sub ecx, 1
+	test eax, eax
+	jne 23f
+	jmp 24f
+23:
+	mov BYTE PTR [edi], al
+	add edi, 1
+	sub edx, 1
+24:
+	cmp edx, 0
+	je 25f
+	test ecx, ecx
+	jmp 26f
+25:
+26:
+	jne 22b
+21:
+	cmp edx, 0
+	je 27f
+	mov esi, DWORD PTR [esp+1108]
+	mov ecx, DWORD PTR [esp+1124]
+	mov eax, 0
+29:
+	mov BYTE PTR [esi], al
+	add esi, 1
+	sub ecx, 1
+	jne 29b
+	mov ecx, DWORD PTR [esp+1124]
+	mov eax, DWORD PTR [esp+1140]
+	sub ecx, eax
+	sub ecx, 3
+	sub ecx, edx
+	mov esi, esp
+	add esi, 64
+	mov eax, 0
+	test ecx, ecx
+	jne 210f
+	jmp 211f
+210:
+212:
+	mov BYTE PTR [esi], al
+	add esi, 1
+	sub ecx, 1
+	jne 212b
+211:
+	mov eax, DWORD PTR [esp+1148]
+	mov ebx, DWORD PTR [esp+1124]
+	mov ecx, DWORD PTR [esp+1140]
+	sub ebx, ecx
+	add ebx, 125
+	mov esi, DWORD PTR [esp+1116]
+	cmp eax, ebx
+	jae 213f
+	add eax, edx
+	cmp ebx, eax
+	jb 215f
+	jmp 216f
+215:
+	mov eax, ebx
+216:
+	mov ebx, 0
+	mov DWORD PTR [esi], ebx
+	mov DWORD PTR [esi+4], ebx
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], ebx
+	mov eax, 0
+	jmp 214f
+213:
+	mov DWORD PTR [esi], eax
+	mov eax, 0
+	mov DWORD PTR [esi+4], eax
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], eax
+	mov eax, 3
+214:
+	jmp 28f
+27:
+	mov eax, DWORD PTR [esp+1116]
+	mov ebx, DWORD PTR [esp+1148]
+	sub ebx, ecx
+	mov DWORD PTR [eax], ebx
+	mov ebx, 0
+	mov DWORD PTR [eax+4], ebx
+	mov DWORD PTR [eax+8], ebx
+	mov DWORD PTR [eax+12], ebx
+	mov eax, DWORD PTR [esp+1108]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+1124]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+1120]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+1124]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+1128]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+1132]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+1136]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+1140]
+	mov DWORD PTR [esp+28], eax
+	mov eax, esp
+	add eax, 64
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+1124]
+	mov ebx, DWORD PTR [esp+1140]
+	sub eax, ebx
+	sub eax, 3
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+1152]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+1156]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+1160]
+	mov DWORD PTR [esp+48], eax
+	mov eax, DWORD PTR [esp+1164]
+	mov DWORD PTR [esp+52], eax
+	call {vg_rsa_pkcs1_encrypt_precomputed}
+	mov ebx, 2
+	sub ebx, eax
+	mov esi, esp
+	add esi, 64
+	mov ecx, DWORD PTR [esp+1124]
+	mov eax, DWORD PTR [esp+1140]
+	sub ecx, eax
+	sub ecx, 3
+	mov eax, 0
+217:
+	mov BYTE PTR [esi], al
+	add esi, 1
+	sub ecx, 1
+	jne 217b
+	mov eax, ebx
+28:
+	lea esp, [esp+1088]
+	mov edi, DWORD PTR [esp]
+	mov esi, DWORD PTR [esp+4]
+	mov ebp, DWORD PTR [esp+8]
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	ret
+	.p2align 6
+
 vg_rsa_pkcs1_decrypt:
 	push ebx
 	push ebp

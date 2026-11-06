@@ -3319,6 +3319,138 @@ vg_rsa_pkcs1_encrypt_precomputed_adx:
 	ret
 	.p2align 6
 
+vg_rsa_pkcs1_encrypt_random_adx:
+	lea rsp, [rsp-1160]
+	mov rax, r8
+	sub rax, QWORD PTR [rsp+1184]
+	sub rax, 3
+	mov rsi, QWORD PTR [rsp+1192]
+	mov r11, QWORD PTR [rsp+1200]
+	mov QWORD PTR [rsp+64], rdi
+	mov QWORD PTR [rsp+72], rdx
+	mov QWORD PTR [rsp+80], rcx
+	mov QWORD PTR [rsp+88], r8
+	mov QWORD PTR [rsp+96], r9
+	mov QWORD PTR [rsp+104], rax
+	mov rdi, rsp
+	add rdi, 128
+	mov ecx, 0
+	mov edx, 0
+	test r11, r11
+	jne 20f
+	jmp 21f
+20:
+22:
+	movzx eax, BYTE PTR [rsi+rcx*1]
+	add rcx, 1
+	test rax, rax
+	jne 23f
+	jmp 24f
+23:
+	mov BYTE PTR [rdi+rdx*1], al
+	add rdx, 1
+24:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 25f
+	mov rax, r11
+	sub rax, rcx
+	jmp 26f
+25:
+	mov eax, 0
+	test rax, rax
+26:
+	jne 22b
+21:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 27f
+	mov rdi, QWORD PTR [rsp+64]
+	mov r10, QWORD PTR [rsp+88]
+	mov eax, 0
+29:
+	mov BYTE PTR [rdi], al
+	add rdi, 1
+	sub r10, 1
+	jne 29b
+	mov rdi, rsp
+	add rdi, 128
+	mov r10d, 0
+	mov rcx, rdx
+	test rdx, rdx
+	jne 210f
+	jmp 211f
+210:
+212:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 212b
+211:
+	mov r10, QWORD PTR [rsp+104]
+	add r10, 128
+	mov r8, QWORD PTR [rsp+72]
+	cmp r11, r10
+	jae 213f
+	mov eax, 0
+	mov QWORD PTR [r8], rax
+	mov r9, QWORD PTR [rsp+104]
+	add r9, r11
+	sub r9, rdx
+	cmp r10, r9
+	cmovb r9, r10
+	mov QWORD PTR [r8+8], r9
+	jmp 214f
+213:
+	mov QWORD PTR [r8], r11
+	mov eax, 0
+	mov QWORD PTR [r8+8], rax
+	mov eax, 3
+214:
+	jmp 28f
+27:
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rax], rcx
+	mov r10d, 0
+	mov QWORD PTR [rax+8], r10
+	mov rax, QWORD PTR [rsp+1176]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+1184]
+	mov QWORD PTR [rsp+8], rax
+	mov QWORD PTR [rsp+16], rdi
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+1208]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+1216]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+1224]
+	mov QWORD PTR [rsp+48], rax
+	mov rax, QWORD PTR [rsp+1232]
+	mov QWORD PTR [rsp+56], rax
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+88]
+	mov rdx, QWORD PTR [rsp+80]
+	mov rcx, QWORD PTR [rsp+88]
+	mov r8, QWORD PTR [rsp+96]
+	mov r9, QWORD PTR [rsp+1168]
+	call {vg_rsa_pkcs1_encrypt_precomputed_adx}
+	mov r11d, 2
+	sub r11d, eax
+	mov rdi, rsp
+	add rdi, 128
+	mov rcx, QWORD PTR [rsp+104]
+	mov r10d, 0
+	mov eax, 0
+215:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 215b
+	mov eax, r11d
+28:
+	lea rsp, [rsp+1160]
+	ret
+	.p2align 6
+
 vg_rsa_pkcs1_encrypt_precomputed:
 	lea rsp, [rsp-1112]
 	mov r10, QWORD PTR [rsp+1152]
@@ -3403,6 +3535,138 @@ vg_rsa_pkcs1_encrypt_precomputed:
 	ret
 	.p2align 6
 
+vg_rsa_pkcs1_encrypt_random:
+	lea rsp, [rsp-1160]
+	mov rax, r8
+	sub rax, QWORD PTR [rsp+1184]
+	sub rax, 3
+	mov rsi, QWORD PTR [rsp+1192]
+	mov r11, QWORD PTR [rsp+1200]
+	mov QWORD PTR [rsp+64], rdi
+	mov QWORD PTR [rsp+72], rdx
+	mov QWORD PTR [rsp+80], rcx
+	mov QWORD PTR [rsp+88], r8
+	mov QWORD PTR [rsp+96], r9
+	mov QWORD PTR [rsp+104], rax
+	mov rdi, rsp
+	add rdi, 128
+	mov ecx, 0
+	mov edx, 0
+	test r11, r11
+	jne 20f
+	jmp 21f
+20:
+22:
+	movzx eax, BYTE PTR [rsi+rcx*1]
+	add rcx, 1
+	test rax, rax
+	jne 23f
+	jmp 24f
+23:
+	mov BYTE PTR [rdi+rdx*1], al
+	add rdx, 1
+24:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 25f
+	mov rax, r11
+	sub rax, rcx
+	jmp 26f
+25:
+	mov eax, 0
+	test rax, rax
+26:
+	jne 22b
+21:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 27f
+	mov rdi, QWORD PTR [rsp+64]
+	mov r10, QWORD PTR [rsp+88]
+	mov eax, 0
+29:
+	mov BYTE PTR [rdi], al
+	add rdi, 1
+	sub r10, 1
+	jne 29b
+	mov rdi, rsp
+	add rdi, 128
+	mov r10d, 0
+	mov rcx, rdx
+	test rdx, rdx
+	jne 210f
+	jmp 211f
+210:
+212:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 212b
+211:
+	mov r10, QWORD PTR [rsp+104]
+	add r10, 128
+	mov r8, QWORD PTR [rsp+72]
+	cmp r11, r10
+	jae 213f
+	mov eax, 0
+	mov QWORD PTR [r8], rax
+	mov r9, QWORD PTR [rsp+104]
+	add r9, r11
+	sub r9, rdx
+	cmp r10, r9
+	cmovb r9, r10
+	mov QWORD PTR [r8+8], r9
+	jmp 214f
+213:
+	mov QWORD PTR [r8], r11
+	mov eax, 0
+	mov QWORD PTR [r8+8], rax
+	mov eax, 3
+214:
+	jmp 28f
+27:
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rax], rcx
+	mov r10d, 0
+	mov QWORD PTR [rax+8], r10
+	mov rax, QWORD PTR [rsp+1176]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+1184]
+	mov QWORD PTR [rsp+8], rax
+	mov QWORD PTR [rsp+16], rdi
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+1208]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+1216]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+1224]
+	mov QWORD PTR [rsp+48], rax
+	mov rax, QWORD PTR [rsp+1232]
+	mov QWORD PTR [rsp+56], rax
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+88]
+	mov rdx, QWORD PTR [rsp+80]
+	mov rcx, QWORD PTR [rsp+88]
+	mov r8, QWORD PTR [rsp+96]
+	mov r9, QWORD PTR [rsp+1168]
+	call {vg_rsa_pkcs1_encrypt_precomputed}
+	mov r11d, 2
+	sub r11d, eax
+	mov rdi, rsp
+	add rdi, 128
+	mov rcx, QWORD PTR [rsp+104]
+	mov r10d, 0
+	mov eax, 0
+215:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 215b
+	mov eax, r11d
+28:
+	lea rsp, [rsp+1160]
+	ret
+	.p2align 6
+
 vg_rsa_pkcs1_encrypt_precomputed_ifma:
 	lea rsp, [rsp-1112]
 	mov r10, QWORD PTR [rsp+1152]
@@ -3484,5 +3748,137 @@ vg_rsa_pkcs1_encrypt_precomputed_ifma:
 	jne 24b
 	mov rax, r11
 	lea rsp, [rsp+1112]
+	ret
+	.p2align 6
+
+vg_rsa_pkcs1_encrypt_random_ifma:
+	lea rsp, [rsp-1160]
+	mov rax, r8
+	sub rax, QWORD PTR [rsp+1184]
+	sub rax, 3
+	mov rsi, QWORD PTR [rsp+1192]
+	mov r11, QWORD PTR [rsp+1200]
+	mov QWORD PTR [rsp+64], rdi
+	mov QWORD PTR [rsp+72], rdx
+	mov QWORD PTR [rsp+80], rcx
+	mov QWORD PTR [rsp+88], r8
+	mov QWORD PTR [rsp+96], r9
+	mov QWORD PTR [rsp+104], rax
+	mov rdi, rsp
+	add rdi, 128
+	mov ecx, 0
+	mov edx, 0
+	test r11, r11
+	jne 20f
+	jmp 21f
+20:
+22:
+	movzx eax, BYTE PTR [rsi+rcx*1]
+	add rcx, 1
+	test rax, rax
+	jne 23f
+	jmp 24f
+23:
+	mov BYTE PTR [rdi+rdx*1], al
+	add rdx, 1
+24:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 25f
+	mov rax, r11
+	sub rax, rcx
+	jmp 26f
+25:
+	mov eax, 0
+	test rax, rax
+26:
+	jne 22b
+21:
+	cmp rdx, QWORD PTR [rsp+104]
+	je 27f
+	mov rdi, QWORD PTR [rsp+64]
+	mov r10, QWORD PTR [rsp+88]
+	mov eax, 0
+29:
+	mov BYTE PTR [rdi], al
+	add rdi, 1
+	sub r10, 1
+	jne 29b
+	mov rdi, rsp
+	add rdi, 128
+	mov r10d, 0
+	mov rcx, rdx
+	test rdx, rdx
+	jne 210f
+	jmp 211f
+210:
+212:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 212b
+211:
+	mov r10, QWORD PTR [rsp+104]
+	add r10, 128
+	mov r8, QWORD PTR [rsp+72]
+	cmp r11, r10
+	jae 213f
+	mov eax, 0
+	mov QWORD PTR [r8], rax
+	mov r9, QWORD PTR [rsp+104]
+	add r9, r11
+	sub r9, rdx
+	cmp r10, r9
+	cmovb r9, r10
+	mov QWORD PTR [r8+8], r9
+	jmp 214f
+213:
+	mov QWORD PTR [r8], r11
+	mov eax, 0
+	mov QWORD PTR [r8+8], rax
+	mov eax, 3
+214:
+	jmp 28f
+27:
+	mov rax, QWORD PTR [rsp+72]
+	mov QWORD PTR [rax], rcx
+	mov r10d, 0
+	mov QWORD PTR [rax+8], r10
+	mov rax, QWORD PTR [rsp+1176]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+1184]
+	mov QWORD PTR [rsp+8], rax
+	mov QWORD PTR [rsp+16], rdi
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+1208]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+1216]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+1224]
+	mov QWORD PTR [rsp+48], rax
+	mov rax, QWORD PTR [rsp+1232]
+	mov QWORD PTR [rsp+56], rax
+	mov rdi, QWORD PTR [rsp+64]
+	mov rsi, QWORD PTR [rsp+88]
+	mov rdx, QWORD PTR [rsp+80]
+	mov rcx, QWORD PTR [rsp+88]
+	mov r8, QWORD PTR [rsp+96]
+	mov r9, QWORD PTR [rsp+1168]
+	call {vg_rsa_pkcs1_encrypt_precomputed_ifma}
+	mov r11d, 2
+	sub r11d, eax
+	mov rdi, rsp
+	add rdi, 128
+	mov rcx, QWORD PTR [rsp+104]
+	mov r10d, 0
+	mov eax, 0
+215:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 215b
+	mov eax, r11d
+28:
+	lea rsp, [rsp+1160]
 	ret
 	.p2align 6

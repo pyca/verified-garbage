@@ -43,8 +43,6 @@ def packW (x : Nat → Nat) (m m13 m26 m39 : Nat) : Nat → Nat
 
 def packS : Sym := symOf vpack
 
-theorem packS_st : packS.st.map Prod.fst = [Z3, X3, Z2, X2] := by decide +kernel
-
 /-- The term stored at `X2 + 32 m`. -/
 def packT (m : Nat) : T := ((packS.st.reverse).getD m (0, .zero)).2
 
