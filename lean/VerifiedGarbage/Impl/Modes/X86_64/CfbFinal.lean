@@ -20,8 +20,8 @@ the data's length, which is `len` bytes rather than `n` blocks of
 * `whole` runs on the `n = len >> lg` whole blocks; it leaves the last
   ciphertext block `c` in the IV.
 * The register that saved the data's address now holds the address of the
-  rest, `data + (len & −2^lg)`, and the one that saved the length the
-  number of bytes left, `r = len & (2^lg − 1)`.
+  rest, `data + 2^lg n`, and the one that saved the length the number of
+  bytes left, `r = len − 2^lg n = len mod 2^lg`.
 * If `r ≠ 0`: the block at `rsp + 8` is zeroed and `enc` runs on it, one block,
   leaving `CIPH_K(c)` both there and in the IV; its first `r` bytes are
   XORed into the rest of the data, a byte at a time, and the block is zeroed
@@ -86,13 +86,11 @@ def toBlocks : List Instr := [.shift .shr (a.arg a.lenIx) a.lg]
 def reload : List Instr := (List.range a.regs.length).map fun i => .mov (a.arg i) (.reg (saved i))
 
 /-- The rest's address and length, in the registers that saved the data's
-address and the length: `data + (len & −2^lg)` and `len & (2^lg − 1)`. -/
+address and the length: with `w = (len >> lg) << lg`, the length of the
+whole blocks, `data + w` and `len − w = len mod 2^lg`; ZF set if that is 0. -/
 def rest : List Instr :=
-  [.mov .rax (.reg (saved a.lenIx)),
-    .alu .and .rax (.imm (BitVec.ofInt 32 (-(a.blk : Int)))),
-    .alu .add (saved a.dataIx) (.reg .rax),
-    .alu .and (saved a.lenIx) (.imm (BitVec.ofNat 32 (a.blk - 1))),
-    .alu .test (saved a.lenIx) (.reg (saved a.lenIx))]
+  [.mov .rax (.reg (saved a.lenIx)), .shift .shr .rax a.lg, .shift .shl .rax a.lg,
+    .alu .add (saved a.dataIx) (.reg .rax), .alu .sub (saved a.lenIx) (.reg .rax)]
 
 /-- Zeroes the working block, through `rax`. -/
 def zeroBlock : List Instr :=
