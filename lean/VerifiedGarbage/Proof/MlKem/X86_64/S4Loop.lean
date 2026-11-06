@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Wide
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Zmm
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -76,13 +77,19 @@ structure LVW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop wh
   lat : LAtW w16 σ s₀ K b t s
   vc : w16 = true → (Lt σ K (b + t)).length < 241 → VC s
 
-theorem setup_eq (K : Nat) (w16 : Bool) : setup K w16 = [.mov .rsi (.reg .rbx),
+theorem setup_eq (K : Nat) (w16 : Bool) (n : Nat) : setup K w16 n = [.mov .rsi (.reg .rbx),
     .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * K))), .mov32 .rdi (.imm 0), .mov .rbp (.reg .r13),
-    .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov32 .r10 (.imm 21)] := rfl
+    .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov32 .r10 (.imm (BitVec.ofNat 32 n))] := rfl
 
-theorem contSetup_eq (K : Nat) (w16 : Bool) : contSetup K w16 = [.mov .rsi (.reg .rbx),
+theorem contSetup_eq (K : Nat) (w16 : Bool) (n : Nat) : contSetup K w16 n = [.mov .rsi (.reg .rbx),
     .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * K))), .mov .rdi (.mem (at_ .rbx (oCnt + 8 * K))),
-    .mov .rbp (.reg .r13), .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))), .mov32 .r10 (.imm 14)] := rfl
+    .mov .rbp (.reg .r13), .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * K))),
+    .mov32 .r10 (.imm (BitVec.ofNat 32 n))] := rfl
+
+theorem zext_ofNat {n : Nat} (hn : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega_arith
 
 theorem cstLoad_eq : cstLoad = [.vmovdquTbl .xmm8 (at_ .r11 (oCst + 32 * 0)) tblName tblWords,
     .vmovdquTbl .xmm9 (at_ .r11 (oCst + 32 * 1)) tblName tblWords,
@@ -94,8 +101,8 @@ include hp
 
 omit hp in
 /-- The constants of the vector code, from the static. -/
-theorem cst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀ K b t s) :
-    WP isa (.block cstLoad) s fun s' => LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+theorem cstV_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀ K b t s) :
+    WP isa (.block cstLoad) s fun s' => LAtW w16 σ s₀ K b t s' ∧ VC s' ∧ s'.gpr .r10 = s.gpr .r10 := by
   have tab := l₁.lb.tab
   have hl : ∀ c < 3, (512 + 4 * c) + 4 ≤ tblWords.length := fun c hc => by rw [tblWords_length]; omega_arith
   rw [cstLoad_eq]
@@ -108,8 +115,8 @@ theorem cst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀
   have m : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem]
   obtain ⟨⟨c0, c1⟩, ⟨c2, c3⟩, ⟨c4, c5⟩⟩ := cst_vals
   have cl : ∀ c < 3, ∀ l < 2, _ := fun c (hc : c < 3) l (hl : l < 2) => cst_lane hc hl
-  refine ⟨⟨l₁.same g m (by rw [u₄.rd, u₃.rd, u₂.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr]) (by rw [u₄.syms, u₃.syms, u₂.syms]),
-    fun _ _ => ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩⟩, by rw [g]⟩
+  refine ⟨l₁.same g m (by rw [u₄.rd, u₃.rd, u₂.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr]) (by rw [u₄.syms, u₃.syms, u₂.syms]),
+    ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, by rw [g]⟩
   · rw [u₄.other _ (by decide) l hl, u₃.other _ (by decide) l hl, u₂.val l hl, cl 0 (by decide) l hl]
     rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c0, c1]
   · rw [u₄.other _ (by decide) l hl, u₃.val l hl, cl 1 (by decide) l hl]
@@ -117,37 +124,56 @@ theorem cst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀
   · rw [u₄.val l hl, cl 2 (by decide) l hl]
     rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c4, c5]
 
+omit hp in
+/-- The constants of the vector code, from the static. -/
+theorem cst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀ K b t s) :
+    WP isa (.block cstLoad) s fun s' => LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = s.gpr .r10 :=
+  WP.mono (cstV_ok l₁) fun _ ⟨l, v, h10⟩ => ⟨⟨l, fun _ _ => v⟩, h10⟩
+
+/-- The setup of the first 168 iterations on seed `K`, from `LBW w16 σ s K 0`, with `r10 := n`. -/
+theorem setupN_ok {K : Nat} (hK : K < 4) {n : Nat} (hn : n < 2 ^ 32) {s : State} (h : LBW w16 σ s K 0 s) :
+    WP isa (.block (setup K w16 n)) s fun s' => LAtW w16 σ s K 0 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 n := by
+  rw [setup_eq]
+  refine WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
+      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = 0 ∧ s'.gpr .rbp = poly4W w16 (aP σ) K ∧
+      s'.gpr .r10 = BitVec.ofNat 64 n)
+    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
+      sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega), zext_ofNat hn]) rfl)
+    fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ⟨⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero],
+      by rw [hdi]; rfl, hbp, fun k hk => absurd hk (by simp [sampleAfter])⟩, h10⟩
+
 /-- The setup of the first 168 iterations on seed `K`, from `LBW w16 σ s K 0`. -/
 theorem setup_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 0 s) :
     WP isa (.block (setup K w16 ++ cstLoad)) s fun s' => LVW w16 σ s K 0 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 21 := by
-  rw [WP.block_append_iff, setup_eq]
-  refine WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = 0 ∧ s'.gpr .rbp = poly4W w16 (aP σ) K ∧
-      s'.gpr .r10 = BitVec.ofNat 64 21)
-    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
-      sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega)]) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ?_
-  have l₁ : LAtW w16 σ s K 0 0 s₁ := ⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero], by rw [hdi]; rfl,
-    hbp, fun k hk => absurd hk (by simp [sampleAfter])⟩
-  exact WP.mono (cst_ok l₁) fun s' ⟨h', h10'⟩ => ⟨h', by rw [h10', h10]⟩
+  rw [WP.block_append_iff]
+  exact WP.mono (setupN_ok hp hK (by decide) h) fun s₁ ⟨l₁, h10⟩ =>
+    WP.mono (cst_ok l₁) fun s' ⟨h', h10'⟩ => ⟨h', by rw [h10', h10]⟩
 
 /-- The setup of the 112 more iterations on seed `K`, from `LBW w16 σ s K 168`, with
 the coefficients of the first 168 stored and their number kept. -/
+theorem contSetupN_ok {K : Nat} (hK : K < 4) {n : Nat} (hn : n < 2 ^ 32) {s : State} (h : LBW w16 σ s K 168 s)
+    (hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length)
+    (hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168)) :
+    WP isa (.block (contSetup K w16 n)) s fun s' => LAtW w16 σ s K 168 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 n := by
+  have hin : InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oCnt + 8 * K)) 8 :=
+    in_scr' hp h.env.rd h.env.wr (by simp only [oCnt]; omega_arith)
+  rw [contSetup_eq]
+  exact WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
+      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = BitVec.ofNat 64 (Lt σ K 168).length ∧
+      s'.gpr .rbp = poly4W w16 (aP σ) K ∧ s'.gpr .r10 = BitVec.ofNat 64 n)
+    (by
+      xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
+        sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega), hin, hj, zext_ofNat hn]) rfl)
+    fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ⟨⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero], hdi,
+      hbp, by rw [hm]; exact hst⟩, h10⟩
+
 theorem contSetup_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 168 s)
     (hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length)
     (hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168)) :
     WP isa (.block (contSetup K w16 ++ cstLoad)) s fun s' => LVW w16 σ s K 168 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 14 := by
-  have hin : InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oCnt + 8 * K)) 8 :=
-    in_scr' hp h.env.rd h.env.wr (by simp only [oCnt]; omega_arith)
-  rw [WP.block_append_iff, contSetup_eq]
-  refine WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
-      s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = BitVec.ofNat 64 (Lt σ K 168).length ∧
-      s'.gpr .rbp = poly4W w16 (aP σ) K ∧ s'.gpr .r10 = BitVec.ofNat 64 14)
-    (by
-      xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
-        sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega), hin, hj]) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ?_
-  have l₁ : LAtW w16 σ s K 168 0 s₁ := ⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero], hdi,
-    hbp, by rw [hm]; exact hst⟩
-  exact WP.mono (cst_ok l₁) fun s' ⟨h', h10'⟩ => ⟨h', by rw [h10', h10]⟩
+  rw [WP.block_append_iff]
+  exact WP.mono (contSetupN_ok hp hK (by decide) h hj hst) fun s₁ ⟨l₁, h10⟩ =>
+    WP.mono (cst_ok l₁) fun s' ⟨h', h10'⟩ => ⟨h', by rw [h10', h10]⟩
 
 /-- Eight iterations of `vg_mlkem_sample_ntt`'s loop. -/
 theorem sca_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) (hbt : b + t + 8 ≤ 280) {s : State}
@@ -440,6 +466,249 @@ theorem loop_ok {s₀ : State} {K b N : Nat} (hK : K < 4) (hN : 0 < N) (hN' : 8 
   have e : 8 * i + 8 = 8 * (i + 1) := by bdd_omega
   rw [e] at h₂
   exact ⟨⟨h₂.lat.same' hm k sy, fun hw h' => (h₂.vc hw h').same hl⟩, by rw [h10', g₂], by rw [hz, g₂]⟩
+
+/-! ## Sixteen iterations with AVX-512 -/
+
+omit hp in
+/-- The 48 bytes of the iterations `b + t` to `b + t + 15`. -/
+theorem zbytes {s₀ : State} {K b t : Nat} (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280) {s : State}
+    (h : LAtW w16 σ s₀ K b t s) {i : Nat} (hi : i < 48) :
+    (byteZ (s.mem.readW (s.gpr .rsi) 512) i).toNat = (xofByte (B σ K) (3 * (b + t) + i)).toNat := by
+  rw [byteZ, byte_readW _ _ (by bdd_omega), out_byte h (by bdd_omega) (by bdd_omega)]
+
+omit hp in
+/-- Candidate `k` of the 48 bytes, candidate `k % 8` of the four chunks of its lane. -/
+theorem zcand_eq {s₀ : State} {K b t : Nat} (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280) {s : State}
+    (h : LAtW w16 σ s₀ K b t s) {k : Nat} (hk : k < 32) :
+    candN (fun i => (byteZ (s.mem.readW (s.gpr .rsi) 512) i).toNat) k =
+      cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * (k / 8)) (k % 8) := by
+  unfold candN cand4 cb
+  dsimp only
+  rw [zbytes ht hbt h (i := 3 * (k / 2) + k % 2) (by bdd_omega),
+    zbytes ht hbt h (i := 3 * (k / 2) + k % 2 + 1) (by bdd_omega), show k % 8 % 2 = k % 2 by omega_arith]
+  have e : 3 * (b + t) + 12 * (k / 8) + 3 * (k % 8 / 2) = 3 * (b + t) + 3 * (k / 2) := by omega_arith
+  split
+  · rw [show 3 * (b + t) + (3 * (k / 2) + k % 2) = 3 * (b + t) + 3 * (k / 2) by bdd_omega,
+      show 3 * (b + t) + (3 * (k / 2) + k % 2 + 1) = 3 * (b + t) + 3 * (k / 2) + 1 by bdd_omega, e]
+  · rw [show 3 * (b + t) + (3 * (k / 2) + k % 2) = 3 * (b + t) + 3 * (k / 2) + 1 by bdd_omega,
+      show 3 * (b + t) + (3 * (k / 2) + k % 2 + 1) = 3 * (b + t) + 3 * (k / 2) + 2 by bdd_omega, e]
+
+omit hp in
+/-- The coefficients of the four chunks from byte `p` are those of the lane's mask's bits. -/
+theorem zacc_mask {X : BitVec 512} {out : Nat → Byte} {p l : Nat}
+    (hc : ∀ k < 8, candN (fun i => (byteZ X i).toNat) (8 * l + k) = cand4 out p k) :
+    acc4 out p = (setBits (zmaskL X l)).map fun k => ofNat (cand4 out p k) := by
+  rw [acc4, zmaskL, setBits_bsum, q_eq]
+  congr 1
+  apply List.filter_congr
+  intro k hk
+  rw [hc k (List.mem_range.mp hk)]
+
+omit hp in
+/-- The words of a lane after the compaction are its coefficients. -/
+theorem zcomp_words {X : BitVec 512} {out : Nat → Byte} {p l : Nat}
+    (hc : ∀ k < 8, candN (fun i => (byteZ X i).toNat) (8 * l + k) = cand4 out p k) :
+    ∀ i < (acc4 out p).length, ((zcompW X l).extractLsb' (cw true * i) (cw true)).toNat = ((acc4 out p).getD i 0).val := by
+  intro i hi
+  rw [zacc_mask hc, List.length_map] at hi
+  rw [zacc_mask hc]
+  have hs := setBits_lt hi
+  have hq : cand4 out p ((setBits (zmaskL X l)).getD i 0) < q := by
+    have hmem : (setBits (zmaskL X l)).getD i 0 ∈ setBits (zmaskL X l) := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]; exact List.getElem_mem hi
+    generalize (setBits (zmaskL X l)).getD i 0 = x at hmem ⊢
+    rw [zmaskL, setBits_bsum, List.mem_filter, decide_eq_true_eq] at hmem
+    rw [← hc _ (List.mem_range.mp hmem.1), q_eq]; exact hmem.2
+  show (word (zcompW X l) i).toNat = _
+  rw [zcompW, pshufb_idxV _ hi, zcandW_word X hs, hc _ hs]
+  simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_getElem hi, Option.map_some,
+    Option.getD_some, ofNat, Fin.val_ofNat] at hq ⊢
+  exact (Nat.mod_eq_of_lt hq).symm
+
+/-- The coefficients after the iterations `b + t` to `b + t + 4 l - 1`, while
+they are sampled 32 at a time. -/
+def Lz (σ : State) (K b t : Nat) : Nat → List Zq
+  | 0 => Lt σ K (b + t)
+  | l + 1 => Lz σ K b t l ++ acc4 (xofByte (B σ K)) (3 * (b + t) + 12 * l)
+
+omit hp in
+theorem Lz_len (σ : State) (K b t : Nat) : ∀ l, (Lz σ K b t l).length ≤ (Lt σ K (b + t)).length + 8 * l
+  | 0 => by simp [Lz]
+  | l + 1 => by
+    have := Lz_len σ K b t l
+    have := acc4_length (xofByte (B σ K)) (3 * (b + t) + 12 * l)
+    simp only [Lz, List.length_append]; omega_arith
+
+omit hp in
+/-- Sixteen iterations from at most 224 coefficients add those of the four lanes. -/
+theorem Lz_four {K b t : Nat} (hl : (Lt σ K (b + t)).length < 225) : Lt σ K (b + (t + 16)) = Lz σ K b t 4 := by
+  have hA := acc4_length (xofByte (B σ K)) (3 * (b + t))
+  have hA' := acc4_length (xofByte (B σ K)) (3 * (b + t) + 12)
+  have e8 : Lt σ K (b + t + 8) = Lt σ K (b + t) ++ acc4 (xofByte (B σ K)) (3 * (b + t)) ++
+      acc4 (xofByte (B σ K)) (3 * (b + t) + 12) :=
+    sampleAfter_eight (by rw [n_eq]; exact (show (Lt σ K (b + t)).length + 16 ≤ 256 by omega_arith))
+  have l8 := congrArg List.length e8
+  simp only [List.length_append] at l8
+  have e16 : Lt σ K (b + t + 8 + 8) = Lt σ K (b + t + 8) ++ acc4 (xofByte (B σ K)) (3 * (b + t + 8)) ++
+      acc4 (xofByte (B σ K)) (3 * (b + t + 8) + 12) :=
+    sampleAfter_eight (by rw [n_eq]; exact (show (Lt σ K (b + t + 8)).length + 16 ≤ 256 by omega_arith))
+  rw [show b + (t + 16) = b + t + 8 + 8 by omega_arith, e16, e8, show 3 * (b + t + 8) = 3 * (b + t) + 12 * 2 by omega_arith]
+  simp only [Lz, Nat.mul_zero, Nat.add_zero, Nat.mul_one,
+    show 3 * (b + t) + 12 * 2 + 12 = 3 * (b + t) + 12 * 3 by omega_arith]
+
+/-- Before lane `l` of the AVX-512 code's stores, from `s` at iteration `b + t`. -/
+structure ZLI (σ s₀ : State) (K b t : Nat) (X : BitVec 512) (E : Nat) (s : State) (l : Nat) (s' : State) : Prop where
+  z0 : ∀ i < 4, s'.zlane .xmm0 i = zcandW X i
+  rax : (s'.gpr .rax).toNat = E
+  zc : ZC s'
+  rdi : s'.gpr .rdi = BitVec.ofNat 64 (Lz σ K b t l).length
+  stored : Stored true s'.mem (poly4W true (aP σ) K) (Lz σ K b t l)
+  fr : Frame [cRegion true (poly4W true (aP σ) K)] s.mem s'.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  syms : s'.syms = s.syms
+  gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → s'.gpr r = s.gpr r
+
+/-- The stores of lane `l`'s coefficients. -/
+theorem zlane_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) {s : State} (h : LAtW w16 σ s₀ K b t s)
+    (hlen : (Lt σ K (b + t)).length < 225) {X : BitVec 512}
+    (hc : ∀ l < 4, ∀ k < 8, candN (fun i => (byteZ X i).toNat) (8 * l + k) =
+      cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * l) k)
+    {l : Nat} (hl : l < 4) {s' : State}
+    (hz : ZLI σ s₀ K b t X (zmaskL X 0 + 256 * zmaskL X 1 + 65536 * zmaskL X 2 + 16777216 * zmaskL X 3) s l s') :
+    WP isa (.block (zputL l)) s'
+      (ZLI σ s₀ K b t X (zmaskL X 0 + 256 * zmaskL X 1 + 65536 * zmaskL X 2 + 16777216 * zmaskL X 3) s (l + 1)) := by
+  subst hw
+  have hL := Lz_len σ K b t l
+  have hA := acc4_length (xofByte (B σ K)) (3 * (b + t) + 12 * l)
+  have hdi : (s'.gpr .rdi).toNat = (Lz σ K b t l).length := by rw [hz.rdi, ofNat64_toNat (by omega_arith)]
+  have hbp : s'.gpr .rbp = poly4W true (aP σ) K := by rw [hz.gpr _ (by decide) (by decide) (by decide), h.rbp]
+  refine WP.mono (zputL_ok hz.zc hl hz.z0 hz.rax
+    (by rw [hz.gpr _ (by decide) (by decide) (by decide), hz.syms]; exact h.lb.tab) (by rw [hdi]; omega_arith)
+    (by rw [hbp, hdi]; exact out_reg hp rfl hK h hz.wr (by omega_arith))) fun s'' hv => ?_
+  have e0 : zcntL X l = (acc4 (xofByte (B σ K)) (3 * (b + t) + 12 * l)).length := by
+    rw [zcntL, zacc_mask (hc l hl), List.length_map]
+  have ca : ∀ n, cAddr true (poly4W true (aP σ) K) n = poly4W true (aP σ) K + BitVec.ofNat 64 (2 * n) := fun _ => rfl
+  have st := stored_write8 hz.stored (by omega_arith) hA (zcompW X l) (zcomp_words (hc l hl))
+  rw [ca] at st
+  refine ⟨fun i hi => by rw [hv.z0 i hi, hz.z0 i hi], by rw [hv.gpr _ (by decide) (by decide)]; exact hz.rax, hv.zc,
+    ?_, by rw [hv.mem, hbp, hdi]; exact st, ?_, hv.rd.trans hz.rd, hv.wr.trans hz.wr, hv.syms.trans hz.syms,
+    fun r h1 h2 h3 => by rw [hv.gpr r h2 h3, hz.gpr r h1 h2 h3]⟩
+  · apply BitVec.eq_of_toNat_eq
+    rw [hv.rdi, hdi, e0, BitVec.toNat_ofNat, Lz, List.length_append]
+    omega_arith
+  · rw [hv.mem, hbp, hdi]
+    exact hz.fr.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (by simp only [cw, ↓reduceIte]; omega_arith) (by omega_arith)))
+
+omit hp in
+theorem add48_ok (s : State) :
+    WP isa (.block [.alu .add .rsi (.imm 48)]) s fun s' => (s'.mem = s.mem ∧
+      s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 48 ∧ (∀ x i, s'.zlane x i = s.zlane x i) ∧ s'.syms = s.syms) ∧
+        Keep [.rsi] s s' := by
+  refine WP.keep _ ?_ (by decide)
+  xrun [show BitVec.signExtend 64 (48 : BitVec 32) = BitVec.ofNat 64 48 by decide]
+  exact ⟨fun _ _ => rfl, rfl⟩
+
+/-- Sixteen iterations with the AVX-512 code, from at most 224 coefficients. -/
+theorem zvec_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280)
+    {s : State} (h : LAtW w16 σ s₀ K b t s) (hc : ZC s) (hl : (Lt σ K (b + t)).length < 225) :
+    WP isa (.block (zcand ++ zput)) s fun s' =>
+      LAtW w16 σ s₀ K b (t + 16) s' ∧ ZC s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+  subst hw
+  have hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * t) := by rw [h.rsi, at', at', Offset.add_add]
+  have hin : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 64 := by
+    rw [hrsi]; exact in_scr' hp h.lb.env.rd h.lb.env.wr (by simp only [oBuf]; omega_arith)
+  have hc' : ∀ l < 4, ∀ k < 8, candN (fun i => (byteZ (s.mem.readW (s.gpr .rsi) 512) i).toNat) (8 * l + k) =
+      cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * l) k := fun l hl k hk => by
+    rw [zcand_eq ht hbt h (by omega_arith), show (8 * l + k) / 8 = l by omega_arith,
+      show (8 * l + k) % 8 = k by omega_arith]
+  rw [show zput = zputL 0 ++ (zputL 1 ++ (zputL 2 ++ (zputL 3 ++ [.alu .add .rsi (.imm 48)]))) from rfl]
+  refine WP.block_append_iff.mpr (WP.mono (zcand_ok hc hin) fun s1 ⟨hax, h0, c1, m1, rd1, wr1, sy1, g1⟩ => ?_)
+  have z1 : ZLI σ s₀ K b t (s.mem.readW (s.gpr .rsi) 512) (zmaskL (s.mem.readW (s.gpr .rsi) 512) 0 +
+      256 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 1 + 65536 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 2 +
+      16777216 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 3) s 0 s1 :=
+    ⟨h0, hax, c1, by rw [g1 _ (by decide), h.rdi]; rfl, by rw [m1]; exact h.stored, by rw [m1]; exact Frame.refl _ _,
+      rd1, wr1, sy1, fun r hr _ _ => g1 r hr⟩
+  refine WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z1) fun s2 z2 =>
+    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z2) fun s3 z3 =>
+    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z3) fun s4 z4 =>
+    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z4) fun s5 z5 =>
+    WP.mono (add48_ok s5) fun s6 ⟨⟨m6, hsi6, zl6, sy6⟩, k6⟩ => ?_))))
+  have g6 : ∀ r, r ≠ .rsi → s6.gpr r = s5.gpr r := fun r hr => k6.gpr (by simp [hr])
+  have rd6 : s6.rd = s5.rd := k6.2.1
+  have wr6 : s6.wr = s5.wr := k6.2.2
+  have gk : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → r ≠ .rsi → s6.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+    rw [g6 r h4, z5.gpr r h1 h2 h3]
+  have e4 := Lz_four (σ := σ) hl
+  refine ⟨⟨h.lb.poly hp hK (by rw [m6]; exact z5.fr) (rd6.trans z5.rd) (wr6.trans z5.wr) (fun r hr => gk r ?_ ?_ ?_ ?_)
+      (sy6.trans z5.syms), ?_, ?_, by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbp],
+      by rw [e4, m6]; exact z5.stored⟩, z5.zc.same fun r _ i _ => zl6 r i,
+    gk _ (by decide) (by decide) (by decide) (by decide)⟩
+  all_goals try (simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+                 rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  · rw [hsi6, z5.gpr _ (by decide) (by decide) (by decide), h.rsi, Offset.add_add]
+    exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega_arith)
+  · rw [g6 _ (by decide), z5.rdi, e4]
+
+omit hp in
+theorem cmp225_ok (s : State) :
+    WP isa (.block [.alu .cmp .rdi (.imm 225)]) s fun s' =>
+      s'.cf = some (decide ((s.gpr .rdi).toNat < 225)) ∧ s'.mem = s.mem ∧ s'.gpr = s.gpr ∧
+        s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ x l, s'.lane x l = s.lane x l) ∧ ∀ x l, s'.zlane x l = s.zlane x l := by
+  xrun [show BitVec.signExtend 64 (225 : BitVec 32) = 225 by decide, show (225 : BitVec 64).toNat = 225 from rfl]
+  exact ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+
+omit hp in
+theorem sub10Z_ok (s : State) :
+    WP isa (.block [.alu .sub .r10 (.imm 1)]) s fun s' => (s'.mem = s.mem ∧ s'.gpr .r10 = s.gpr .r10 - 1 ∧
+      s'.zf = some (s.gpr .r10 - 1 == 0) ∧ (∀ x l, s'.lane x l = s.lane x l) ∧ ∀ x l, s'.zlane x l = s.zlane x l) ∧
+        Keep [.r10] s s' := by
+  refine WP.keep _ ?_ (by decide)
+  xrun
+  exact ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+
+/-- At iteration `b + t` of the loop with AVX-512: the constants of the
+AVX2 code while there are fewer than 241 coefficients, and those of the
+AVX-512 code while there are fewer than 225. -/
+structure LZW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop where
+  lv : LVW w16 σ s₀ K b t s
+  zc : (Lt σ K (b + t)).length < 225 → ZC s
+
+/-- Sixteen iterations of the loop. -/
+theorem zgrp_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280)
+    {s : State} (h : LZW w16 σ s₀ K b t s) :
+    WP isa zgrp s fun s' => LZW w16 σ s₀ K b (t + 16) s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+  subst hw
+  refine WP.seq (WP.mono_syms (cmp225_ok s) fun s₁ ⟨hcf, hm, hg, hrd, hwr, hln, hl⟩ sy => ?_)
+  have l₁ : LAtW true σ s₀ K b t s₁ := h.lv.lat.same hg hm hrd hwr sy
+  have hlen : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
+  rw [h.lv.lat.rdi, ofNat64_toNat (by bdd_omega)] at hcf
+  refine WP.ite _ hcf (fun hb => ?_) fun hb => ?_
+  · have hb' : (Lt σ K (b + t)).length < 225 := of_decide_eq_true hb
+    exact WP.mono (zvec_ok hp rfl hK ht hbt l₁ ((h.zc hb').same fun r _ i _ => hl r i) hb') fun s' ⟨l', c', h10⟩ =>
+      ⟨⟨⟨l', fun _ _ => c'.vc⟩, fun _ => c'⟩, by rw [h10, hg]⟩
+  · have hb' : ¬ (Lt σ K (b + t)).length < 225 := of_decide_eq_false hb
+    have v₁ : LVW true σ s₀ K b t s₁ := ⟨l₁, fun hw h' => (h.lv.vc hw h').same hln⟩
+    refine WP.seq (WP.mono (vgrp_ok hp hK (by omega_arith) (by omega_arith) v₁) fun s₂ ⟨v₂, g₂⟩ =>
+      WP.mono (vgrp_ok hp hK (by omega_arith) (by omega_arith) v₂) fun s₃ ⟨v₃, g₃⟩ => ?_)
+    rw [show t + 8 + 8 = t + 16 by omega_arith] at v₃
+    exact ⟨⟨v₃, fun h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ K (b + t) 16) (by rwa [Nat.add_assoc])) hb'⟩,
+      by rw [g₃, g₂, hg]⟩
+
+/-- `N` iterations of `zbody`: `16 N` iterations of `SampleNTT`'s loop. -/
+theorem zloop_ok (hw : w16 = true) {s₀ : State} {K b N : Nat} (hK : K < 4) (hN : 0 < N) (hN' : 16 * N ≤ 168)
+    (hbN : b + 16 * N ≤ 280) {s : State} (h : LZW w16 σ s₀ K b 0 s) (h10 : s.gpr .r10 = BitVec.ofNat 64 N) :
+    WP isa (.loop zbody .ne) s (LZW w16 σ s₀ K b (16 * N)) := by
+  refine wp_countdown (cnt := .r10) (N := N) (by bdd_omega) hN (fun i s => LZW w16 σ s₀ K b (16 * i) s)
+    (fun i hi s hs _ => ?_) (fun _ h => h) h h10
+  unfold zbody
+  refine WP.seq (WP.mono (zgrp_ok hp hw hK (by bdd_omega) (by bdd_omega) hs) fun s₂ ⟨h₂, g₂⟩ =>
+      WP.mono_syms (sub10Z_ok s₂) fun s₃ ⟨⟨hm, h10', hz, hl, zl⟩, k⟩ sy => ?_)
+  have e : 16 * i + 16 = 16 * (i + 1) := by bdd_omega
+  rw [e] at h₂
+  exact ⟨⟨⟨h₂.lv.lat.same' hm k sy, fun hw h' => (h₂.lv.vc hw h').same hl⟩, fun h' => (h₂.zc h').same fun r _ j _ => zl r j⟩,
+    by rw [h10', g₂], by rw [hz, g₂]⟩
 
 omit hp in
 /-- `vzeroupper` changes no register or memory the invariants see. -/

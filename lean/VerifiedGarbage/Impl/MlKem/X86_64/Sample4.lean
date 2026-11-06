@@ -159,6 +159,23 @@ def consts : List (BitVec 64) :=
     0x0fff0fff0fff0fff, 0x0fff0fff0fff0fff, 0x0fff0fff0fff0fff, 0x0fff0fff0fff0fff,
     0x0d010d010d010d01, 0x0d010d010d010d01, 0x0d010d010d010d01, 0x0d010d010d010d01]
 
+/-- Quadword `i` (0 to 7) of the indices of `vpermw` (`zmm12`): words `6l` to
+`6l + 5` (bytes `12l` to `12l + 11` of the 48) to words 0 to 5 of lane `l`, and
+word 0 to its words 6 and 7. -/
+def permQ (i : Nat) : BitVec 64 :=
+  let w (j : Nat) : BitVec 16 := if j % 8 < 6 then BitVec.ofNat 16 (6 * (j / 8) + j % 8) else 0
+  w (4 * i + 3) ++ w (4 * i + 2) ++ w (4 * i + 1) ++ w (4 * i)
+
+/-- The constants of the AVX-512 code, after the counts (from byte `oZ`):
+the indices of `vpermw`, and the counts of `vpsrlvw` (`zmm13`), 0 in the
+even words and 4 in the odd ones, for one lane. -/
+def zconsts : List (BitVec 64) :=
+  (List.range 8).map permQ ++ [0x0004000000040000, 0x0004000000040000, 0x0004000000040000, 0x0004000000040000]
+
+/-- The offset of the AVX-512 code's constants in the static, after the
+counts. -/
+def oZ : Nat := 6240
+
 /-- The offset of the constants in the static, after the masks. -/
 def oCst : Nat := 4096
 
@@ -171,7 +188,7 @@ constants and, from `oNum`, the number of set bits of each byte
 it carry, and the emitter writes. -/
 def tblWords : List (BitVec 64) :=
   (List.range 512).map (fun i => idxQ (i / 2) (i % 2)) ++ consts ++
-    (List.range 256).map fun m => BitVec.ofNat 64 (setBits m).length
+    (List.range 256).map (fun m => BitVec.ofNat 64 (setBits m).length) ++ zconsts
 
 /-- The static's name. -/
 def tblName : String := "VG_MLKEM_SAMPLE_TBL"
@@ -183,6 +200,16 @@ def tabAddr : List Instr := [.leaSym .r11 tblName]
 def cstLoad : List Instr :=
   [.vmovdquTbl .xmm8 (at_ .r11 oCst) tblName tblWords, .vmovdquTbl .xmm9 (at_ .r11 (oCst + 32)) tblName tblWords,
     .vmovdquTbl .xmm10 (at_ .r11 (oCst + 64)) tblName tblWords]
+
+/-- The constants of the AVX-512 code, from the static at `r11`: those of
+`cstLoad`, with `ymm8`'s low lane, `0xfff` and `q` in each lane of `zmm11`,
+`zmm9` and `zmm10` (`vshufi32x4` of lane 0), and the indices of `vpermw` and
+the counts of `vpsrlvw` in `zmm12` and `zmm13`. -/
+def zcstLoad : List Instr :=
+  cstLoad ++ [.vmovdquTbl .xmm12 (at_ .r11 oZ) tblName tblWords, .vmovdquTbl .xmm13 (at_ .r11 (oZ + 32)) tblName tblWords,
+    .zop (.vshufi32x4 .xmm12 .xmm12 .xmm13 0x44), .vmovdquTbl .xmm13 (at_ .r11 (oZ + 64)) tblName tblWords,
+    .zop (.vshufi32x4 .xmm13 .xmm13 .xmm13 0), .zop (.vshufi32x4 .xmm11 .xmm8 .xmm8 0),
+    .zop (.vshufi32x4 .xmm9 .xmm9 .xmm9 0), .zop (.vshufi32x4 .xmm10 .xmm10 .xmm10 0)]
 
 /-- `[r11 + 8 r]`: the mask of `m`, for `r = 2 m`. -/
 def idxE (r : Reg) : MemOp := { base := .r11, index := some r, scale := 8 }
@@ -230,6 +257,33 @@ def vputB : List Instr :=
 /-- The candidates less than `q` to `a[j..]`, and `j` and `rsi` advanced. -/
 def vput : List Instr := vputA ++ vputB
 
+/-- The 32 candidates of the 48 bytes at `rsi` in the words of `zmm0`, the
+first eight in lane 0, and in `eax` the mask of those less than `q`, bit `i`
+for candidate `i`: of the 64 bytes at `rsi`, `vpermw` puts bytes `12 l` to
+`12 l + 11` at the bottom of lane `l`; `vpshufb`, `vpsrlvw` and `vpandq` make
+candidate `8 l + i` word `i` of lane `l`, as `vcand` does. -/
+def zcand : List Instr :=
+  [.vmovdqu32Load .xmm0 (at_ .rsi 0), .zop (.vpermw .xmm0 .xmm12 .xmm0), .zop (.zbin .vpshufb .xmm0 .xmm0 .xmm11),
+    .zop (.vpsrlvw .xmm0 .xmm0 .xmm13), .zop (.zbin .vpandq .xmm0 .xmm0 .xmm9), .vpcmpltuw .rax .xmm0 .xmm10]
+
+/-- `rdx := 2 m`, for the byte `m` of `eax` of lane `l`. -/
+def zidx (l : Nat) : List Instr :=
+  [.mov32 .rdx (.reg .rax)] ++ (if l = 0 then [] else [.shift32 .shr .rdx (8 * l)]) ++
+    (if l = 3 then [] else [.alu32 .and .rdx (.imm 0xff)]) ++ [.alu32 .add .rdx (.reg .rdx)]
+
+/-- The candidates less than `q` of lane `l` to `a[j..]`, and `j` advanced by
+their count: `rdx` becomes `2 m` for the byte `m` of `eax` of lane `l`, whose
+mask moves them to the bottom of the lane (`vpshufb`), and the lane's eight
+words go to `a[j]`. -/
+def zputL (l : Nat) : List Instr :=
+  zidx l ++ [.vmovdquTbl .xmm2 (idxE .rdx) tblName tblWords] ++
+    (if l = 0 then [.vop (.vbin .vpshufb .l128 .xmm1 .xmm0 .xmm2)]
+      else [.zop (.vextracti32x4 .xmm1 .xmm0 (BitVec.ofNat 8 l)), .vop (.vbin .vpshufb .l128 .xmm1 .xmm1 .xmm2)]) ++
+    [.vmovdquStore .l128 aJ16 .xmm1, .aluTbl .add .rdi (numE .rdx) tblName tblWords]
+
+/-- The candidates less than `q` to `a[j..]`, and `j` and `rsi` advanced. -/
+def zput : List Instr := zputL 0 ++ zputL 1 ++ zputL 2 ++ zputL 3 ++ [.alu .add .rsi (.imm 48)]
+
 /-- Eight iterations of the loop of `vg_mlkem_sample_ntt` (`snBody`). -/
 def sca8 (w16 : Bool) : Prog isa := .seq (.block [.mov32 .rcx (.imm 8)]) (.loop (snBody w16) .ne)
 
@@ -247,11 +301,19 @@ def vgrp (w16 : Bool := false) : Prog isa :=
 /-- Eight iterations of the loop; `r10` counts down. -/
 def vbody (w16 : Bool := false) : Prog isa := .seq (vgrp w16) (.block [.alu .sub .r10 (.imm 1)])
 
+/-- Sixteen iterations of the loop, for 16-bit coefficients: with AVX-512 if
+`j ≤ 224` (so that its stores end by `a[256]`), and otherwise as two `vgrp`. -/
+def zgrp : Prog isa :=
+  .seq (.block [.alu .cmp .rdi (.imm 225)]) (.ite .b (.block (zcand ++ zput)) (.seq (vgrp true) (vgrp true)))
+
+/-- Sixteen iterations of the loop; `r10` counts down. -/
+def zbody : Prog isa := .seq zgrp (.block [.alu .sub .r10 (.imm 1)])
+
 /-- The setup of the loop of seed `k`. -/
-def setup (k : Nat) (w16 : Bool := false) : List Instr :=
+def setup (k : Nat) (w16 : Bool := false) (n : Nat := 21) : List Instr :=
   [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * k))),
     .mov32 .rdi (.imm 0), .mov .rbp (.reg .r13), .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * k))),
-    .mov32 .r10 (.imm 21)]
+    .mov32 .r10 (.imm (BitVec.ofNat 32 n))]
 
 /-- Return `r14`, and restore the callee-saved registers (`rbx` last). -/
 def epi : List Instr :=
@@ -261,19 +323,23 @@ def epi : List Instr :=
 
 /-- 168 iterations of the loop on the buffer of seed `k`, to polynomial
 `k`, and `j` kept. -/
-def run1 (k : Nat) (w16 : Bool := false) : Prog isa :=
-  .seq (.block (setup k w16 ++ cstLoad)) (.seq (.loop (vbody w16) .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
+def run1 (k : Nat) (w16 : Bool := false) (z : Bool := false) : Prog isa :=
+  if z ∧ w16 then
+    .seq (.block (setup k w16 10 ++ zcstLoad))
+      (.seq (.loop zbody .ne) (.seq (vgrp w16) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi])))
+  else .seq (.block (setup k w16 ++ cstLoad)) (.seq (.loop (vbody w16) .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
 
 /-- The setup of the continuation of seed `k`: from `j` kept. -/
-def contSetup (k : Nat) (w16 : Bool := false) : List Instr :=
+def contSetup (k : Nat) (w16 : Bool := false) (n : Nat := 14) : List Instr :=
   [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 (oBuf + 504 * k))),
     .mov .rdi (.mem (at_ .rbx (oCnt + 8 * k))), .mov .rbp (.reg .r13),
-    .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * k))), .mov32 .r10 (.imm 14)]
+    .alu .add .rbp (.imm (BitVec.ofNat 32 (pBytes w16 * k))), .mov32 .r10 (.imm (BitVec.ofNat 32 n))]
 
 /-- 112 more iterations of the loop, on the buffer of seed `k` (bytes 504
 to 839 of its output), and `j` kept. -/
-def run2 (k : Nat) (w16 : Bool := false) : Prog isa :=
-  .seq (.block (contSetup k w16 ++ cstLoad)) (.seq (.loop (vbody w16) .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
+def run2 (k : Nat) (w16 : Bool := false) (z : Bool := false) : Prog isa :=
+  if z ∧ w16 then .seq (.block (contSetup k w16 7 ++ zcstLoad)) (.seq (.loop zbody .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
+  else .seq (.block (contSetup k w16 ++ cstLoad)) (.seq (.loop (vbody w16) .ne) (.block [.store (at_ .rbx (oCnt + 8 * k)) .rdi]))
 
 /-- `r14` is 1 if every seed has 256 coefficients, and 0 otherwise: the AND of
 the seeds' `j >> 8` (`j ≤ 256`). -/
@@ -283,7 +349,7 @@ def cntFlags : List Instr := .mov32 .r14 (.imm 1) :: (List.range 4).flatMap fun 
 /-- Two more blocks of each seed, and 112 more iterations on each. -/
 def more4 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast) (.seq (.block tabAddr)
-    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.seq (run2 3 w16) (.block cntFlags)))))))
+    (.seq (run2 0 w16 fast) (.seq (run2 1 w16 fast) (.seq (run2 2 w16 fast) (.seq (run2 3 w16 fast) (.block cntFlags)))))))
 
 /-- If a seed has fewer than 256 coefficients, `more4`; then the return
 value. `vzeroupper` clears the upper halves of the vector registers, so that
@@ -296,7 +362,7 @@ def tail4 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
 def sampleNTT4Avx2 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
     (.seq (squeezes 0 3 fast) (.seq (.block tabAddr)
-      (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (.seq (run1 3 w16) (tail4 fast w16)))))))
+      (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (.seq (run1 3 w16 fast) (tail4 fast w16)))))))
 
 /-- `vg_mlkem_sample_ntt` on seed `k`, and `r14 ← r14 ∧ result`. -/
 def callK (k : Nat) (w16 : Bool := false) : Prog isa :=
