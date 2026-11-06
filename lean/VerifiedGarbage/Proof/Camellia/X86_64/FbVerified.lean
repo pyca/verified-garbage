@@ -39,12 +39,12 @@ namespace VG.Proof.Camellia.X86_64
 
 open VG VG.X86_64 VG.Impl.Camellia.X86_64
 
-/-- The precondition of the feedback modes on x86-64, with the working
-space at `r8`. -/
-def fbPre (s : State) : Prop :=
+/-- The precondition of the feedback modes on x86-64, with the data `len`
+bytes long and the working space at `r9`. -/
+def fbPre (len : State → Nat) (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .rdi, 272⟩
   let iv : Region := ⟨s.gpr .rdx, 16⟩
-  let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
+  let data : Region := ⟨s.gpr .rcx, len s⟩
   let scratch : Region := ⟨s.gpr .r9, 8 * 409⟩
   let ret : Region := ⟨s.gpr .rsp, 8⟩
   let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩
@@ -53,8 +53,14 @@ def fbPre (s : State) : Prop :=
     ret.Disjoint iv ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
     stk.Disjoint iv ∧ stk.Disjoint data ∧ stk.Disjoint scratch ∧ 8 ≤ (s.gpr .rsp).toNat ∧
     (s.gpr .rdi).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * 409 ≤ 2 ^ 64 ∧
+    (s.gpr .rcx).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * 409 ≤ 2 ^ 64 ∧
     ((s.gpr .rsi).toNat = 18 ∨ (s.gpr .rsi).toNat = 24)
+
+/-- `n` blocks. -/
+abbrev blkLen (s : State) : Nat := 16 * (s.gpr .r8).toNat
+
+theorem blkLen_congr : ∀ s t : State, s.gpr .r8 = t.gpr .r8 → blkLen s = blkLen t := fun _ _ h => by
+  simp only [blkLen, h]
 
 /-- The public arguments. -/
 def fbPub (s₁ s₂ : State) : Prop :=
@@ -68,20 +74,20 @@ abbrev ivOf (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .rdx) 16
 abbrev blocksOf (s : State) (m : Mem) : List (List Byte) := Spec.Cbc.blocksAt m (s.gpr .rcx) (s.gpr .r8).toNat
 
 def ofbX86_64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Ofb.crypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 16 = Spec.Ofb.next (ciphOf s) (ivOf s) (s.gpr .r8).toNat
   pub := fbPub
 
 def cfbEncX86_64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
   pub := fbPub
 
 def cfbDecX86_64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
@@ -95,7 +101,7 @@ theorem encCipher_eq (m : Mem) (p : Addr) (R : Nat) :
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
-theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
+theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) :
     WP isa ((dirCore .encrypt).fb mo ⟨.rdx, .rcx, .r8, .r9⟩) s₀ fun s' => gprPreserved s₀ s' ∧
       Modes.blocksOf 16 s'.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat =
         (List.range (s₀.gpr .r8).toNat).map (Modes.fbOut mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .rcx) (ivOf s₀)) ∧
@@ -156,13 +162,13 @@ def fbTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], flags := false,
     lens := [16, 0, 8 * 409], bases := [(.r9, 2, 0)] }
 
-theorem fbTaint_wf (s : State) (hs : fbPre s) : Taint.Wf fbTaint s := by
+theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.Wf fbTaint s := by
   obtain ⟨_, hwr, _, _, _, dVD, dVS, dDS, _, _, _, _, _, _, _, _, fitV, fitD, fitB, _⟩ := hs
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
     · exact List.Forall₂.cons (by change 16 ≤ 16; omega)
-        (List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .r8).toNat; omega)
+        (List.Forall₂.cons (by change 0 ≤ len s; omega)
         (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
@@ -175,7 +181,7 @@ theorem fbTaint_wf (s : State) (hs : fbPre s) : Taint.Wf fbTaint s := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · change 16 ≤ 2 ^ 64; omega
-      · change 16 * (s.gpr .r8).toNat ≤ 2 ^ 64; omega
+      · change len s ≤ 2 ^ 64; omega
       · change 8 * 409 ≤ 2 ^ 64; omega
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
@@ -185,8 +191,8 @@ theorem fbTaint_wf (s : State) (hs : fbPre s) : Taint.Wf fbTaint s := by
     change s.gpr .r9 = s.gpr .r9 + (0 : BitVec 64)
     exact (BitVec.add_zero _).symm
 
-theorem fbTaint_agree (s t : State) (hs : fbPre s) (ht : fbPre t) (hp : fbPub s t) :
-    X86_64.Taint.Agree fbTaint s t := by
+theorem fbTaint_agree {len : State → Nat} (hlen : ∀ s t, s.gpr .r8 = t.gpr .r8 → len s = len t) (s t : State)
+    (hs : fbPre len s) (ht : fbPre len t) (hp : fbPub s t) : X86_64.Taint.Agree fbTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5, p6, p7⟩ := hp
   refine ⟨?_, ?_, fbTaint_wf s hs, fbTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · constructor
@@ -198,7 +204,7 @@ theorem fbTaint_agree (s t : State) (hs : fbPre s) (ht : fbPre t) (hp : fbPub s 
       change false = true at h
       contradiction
   · intro _
-    rw [hs.2.1, ht.2.1, p3, p4, p5, p6]
+    rw [hs.2.1, ht.2.1, p3, p4, p6, hlen s t p5]
   · intro slot hslot
     change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
     exact False.elim (List.not_mem_nil hslot)
@@ -235,7 +241,7 @@ def fbFrameSat : State where
 
 
 theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
-  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem ofb_verified :
     Verified X86_64.target ofb (Proof.Camellia.ofbScratchContract X86_64.abi 409 8) :=
@@ -252,7 +258,7 @@ theorem ofbFrameSat_pre : ∃ s, (Proof.Camellia.ofbContractSk X86_64.abi 3288).
     Proof.Camellia.ofbPostSk, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
-  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cfbEncrypt_verified :
     Verified X86_64.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86_64.abi 409 8) :=
@@ -269,7 +275,7 @@ theorem cfbEncryptFrameSat_pre : ∃ s, (Proof.Camellia.cfbEncryptContractSk X86
     Proof.Camellia.cfbEncryptPostSk, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
 theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
-  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cfbDecrypt_verified :
     Verified X86_64.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86_64.abi 409 8) :=

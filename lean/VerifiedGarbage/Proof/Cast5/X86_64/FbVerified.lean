@@ -67,27 +67,33 @@ def cbcPub (s₁ s₂ : State) : Prop :=
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.syms s1234Sym = s₂.syms s1234Sym
 
+/-- `n` blocks. -/
+abbrev blkLen (s : State) : Nat := (s.gpr .r8).toNat * 8
+
+theorem blkLen_congr : ∀ s t : State, s.gpr .r8 = t.gpr .r8 → blkLen s = blkLen t := fun _ _ h => by
+  simp only [blkLen, h]
+
 /-- The facts of the feedback modes' precondition on this target, with the
-working space at `r9`. -/
-structure FPre (s : State) : Prop where
+data `len` bytes long and the working space at `r9`. -/
+structure FPre (len : State → Nat) (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .rdi, 128⟩, ⟨s.syms s1234Sym, 4096⟩]
-  wr : s.wr = [⟨s.gpr .rdx, 8⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩, ⟨s.gpr .r9, 232⟩]
+  wr : s.wr = [⟨s.gpr .rdx, 8⟩, ⟨s.gpr .rcx, len s⟩, ⟨s.gpr .r9, 232⟩]
   held : ∀ i < 512, s.mem.readW (s.syms s1234Sym + BitVec.ofNat 64 (8 * i)) 64 = s1234.getD i 0
   fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 64
   dTV : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .rdx, 8⟩
-  dTD : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩
+  dTD : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .rcx, len s⟩
   dTS : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .r9, 232⟩
   dKV : Region.Disjoint ⟨s.gpr .rdi, 128⟩ ⟨s.gpr .rdx, 8⟩
-  dKD : Region.Disjoint ⟨s.gpr .rdi, 128⟩ ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩
+  dKD : Region.Disjoint ⟨s.gpr .rdi, 128⟩ ⟨s.gpr .rcx, len s⟩
   dKS : Region.Disjoint ⟨s.gpr .rdi, 128⟩ ⟨s.gpr .r9, 232⟩
-  dVD : Region.Disjoint ⟨s.gpr .rdx, 8⟩ ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩
+  dVD : Region.Disjoint ⟨s.gpr .rdx, 8⟩ ⟨s.gpr .rcx, len s⟩
   dVS : Region.Disjoint ⟨s.gpr .rdx, 8⟩ ⟨s.gpr .r9, 232⟩
-  dDS : Region.Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩ ⟨s.gpr .r9, 232⟩
+  dDS : Region.Disjoint ⟨s.gpr .rcx, len s⟩ ⟨s.gpr .r9, 232⟩
   dRV : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, 8⟩
-  dRD : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8⟩
+  dRD : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, len s⟩
   dRS : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r9, 232⟩
   fK : (s.gpr .rdi).toNat + 128 ≤ 2 ^ 64
-  fD : (s.gpr .rcx).toNat + (s.gpr .r8).toNat * 8 ≤ 2 ^ 64
+  fD : (s.gpr .rcx).toNat + len s ≤ 2 ^ 64
   fS : (s.gpr .r9).toNat + 232 ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 16
 
@@ -95,25 +101,25 @@ structure FPre (s : State) : Prop where
 abbrev ciphOf (s : State) : Spec.Cbc.Cipher := Spec.Cast5.cipher (keyOf s) (s.gpr .rsi).toNat
 
 def ofbX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Ofb.crypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 8 = Spec.Ofb.next (ciphOf s) (ivOf s) (s.gpr .r8).toNat
   pub := cbcPub
 
 def cfbEncX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Cfb.encrypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 8 = Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (dataOf s s.mem))
   pub := cbcPub
 
 def cfbDecX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 8 = Spec.Cbc.next (ivOf s) (dataOf s s.mem)
   pub := cbcPub
 
 /-- The table, as the core needs it. -/
-theorem FPre.tabAt {s : State} (h : FPre s) : TabAt s :=
+theorem FPre.tabAt {len : State → Nat} {s : State} (h : FPre len s) : TabAt s :=
   ⟨by rw [h.rd]; simp, h.fitT, fun i hi => h.held i (by rw [s1234_length] at hi; exact hi), fun w hw => by
     rw [h.wr] at hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -217,7 +223,7 @@ theorem keepsIv_core : Modes.X86_64.KeepsIv (dirCore true).prepare ∧ Modes.X86
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
-theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre s₀) :
+theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre blkLen s₀) :
     WP isa ((dirCore true).fb mo modeRegs) s₀ fun s' => gprPreserved s₀ s' ∧
       Modes.blocksOf 8 s'.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat =
         (List.range (s₀.gpr .r8).toNat).map (Modes.fbOut mo 8 (ciphOf s₀) s₀.mem (s₀.gpr .rcx) (ivOf s₀)) ∧
@@ -279,12 +285,12 @@ def fbTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], flags := false,
     lens := [8, 0, 8 * 29], bases := [(.r9, 2, 0)] }
 
-theorem fbTaint_wf (s : State) (hs : FPre s) : Taint.Wf fbTaint s := by
+theorem fbTaint_wf {len : State → Nat} (s : State) (hs : FPre len s) : Taint.Wf fbTaint s := by
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hs.wr]
     refine ⟨?_, ?_, ?_⟩
     · exact List.Forall₂.cons (by change 8 ≤ 8; omega) (List.Forall₂.cons
-        (by change 0 ≤ (s.gpr .r8).toNat * 8; omega)
+        (by change 0 ≤ len s; omega)
         (List.Forall₂.cons (by change 8 * 29 ≤ 232; omega) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
@@ -297,7 +303,7 @@ theorem fbTaint_wf (s : State) (hs : FPre s) : Taint.Wf fbTaint s := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · change 8 ≤ 2 ^ 64; omega
-      · change (s.gpr .r8).toNat * 8 ≤ 2 ^ 64
+      · change len s ≤ 2 ^ 64
         have := hs.fD; omega
       · change 232 ≤ 2 ^ 64; omega
   · intro p hp
@@ -308,7 +314,8 @@ theorem fbTaint_wf (s : State) (hs : FPre s) : Taint.Wf fbTaint s := by
     change s.gpr .r9 = s.gpr .r9 + (0 : BitVec 64)
     exact (BitVec.add_zero _).symm
 
-theorem fbTaint_agree (s t : State) (hs : FPre s) (ht : FPre t) (hp : cbcPub s t) :
+theorem fbTaint_agree {len : State → Nat} (hlen : ∀ s t, s.gpr .r8 = t.gpr .r8 → len s = len t) (s t : State)
+    (hs : FPre len s) (ht : FPre len t) (hp : cbcPub s t) :
     X86_64.Taint.AgreeS [s1234Sym] fbTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8⟩ := hp
   refine ⟨⟨?_, ?_, fbTaint_wf s hs, fbTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩, fun n hn => ?_⟩
@@ -321,7 +328,7 @@ theorem fbTaint_agree (s t : State) (hs : FPre s) (ht : FPre t) (hp : cbcPub s t
       change false = true at h
       contradiction
   · intro _
-    rw [hs.wr, ht.wr, p3, p4, p5, p6]
+    rw [hs.wr, ht.wr, p3, p4, p6, hlen s t p5]
   · intro slot hslot
     change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
     exact False.elim (List.not_mem_nil hslot)
@@ -335,13 +342,13 @@ theorem fbTaint_agree (s t : State) (hs : FPre s) (ht : FPre t) (hp : cbcPub s t
     exact p8
 
 theorem ofb_ct : ConstantTime isa ofbX.pre ofbX.pub ofb :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cfbEncrypt_ct : ConstantTime isa cfbEncX.pre cfbEncX.pub cfbEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cfbDecrypt_ct : ConstantTime isa cfbDecX.pre cfbDecX.pub cfbDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 /-! ## The contracts -/
 
@@ -367,7 +374,7 @@ def fbSat : State where
 
 theorem fb_implies {postX : State → State → Prop} {post : Spec.Cast5.ofbSig.Post X86_64.abi.ptrBits}
     (hpost : ∀ s s', postX s s' → (fbK post).post s s') :
-    ({ pre := FPre, post := postX, pub := cbcPub } : Contract isa).Implies (fbK post) where
+    ({ pre := FPre blkLen, post := postX, pub := cbcPub } : Contract isa).Implies (fbK post) where
   pre s h := by
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig,
       Spec.Cast5.ofbPre, X86_64.abi, X86_64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,
