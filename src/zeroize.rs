@@ -11,17 +11,16 @@
 
 // What is wiped: every object holding key material (private keys, and the
 // ciphers', AEADs', MACs' and hash functions' states, which hold the key under
-// HMAC, PBKDF2 or keyed BLAKE2) when it is dropped, and so are X25519's and
-// X448's `SharedSecret`s; the asymmetric operations' intermediate values and
-// working space (FIPS 203 §3.3, FIPS 204 §3.6.3); and the key the password
-// KDFs' `verify` functions derive, once compared.
+// HMAC, PBKDF2 or keyed BLAKE2) when it is dropped; the asymmetric operations'
+// intermediate values and working space (FIPS 203 §3.3, FIPS 204 §3.6.3); and
+// the key the password KDFs' `verify` functions derive, once compared.
 //
 // What is not: the symmetric algorithms' `scratch`; the verified functions'
 // stack, which their contracts do not promise to wipe (but RC4's); copies of
 // states the Rust code makes on the stack when it moves them (e.g. each
 // ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
 // calls overwrite; and what is returned to the caller (a MAC, a derived key or
-// another shared secret).
+// a shared secret).
 
 mod sealed {
     pub trait Sealed {}

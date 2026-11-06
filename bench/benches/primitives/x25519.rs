@@ -48,7 +48,7 @@ pub fn bench(c: &mut Criterion) {
     let peer_bytes = *peer.as_bytes();
     assert_eq!(
         aws_lc_agree(&aws_lc_private, &peer_bytes),
-        vg_private.exchange(&peer).unwrap().as_bytes()
+        vg_private.exchange(&peer).unwrap()
     );
     assert_eq!(
         aws_lc_private.compute_public_key().unwrap().as_ref(),
