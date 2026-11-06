@@ -101,11 +101,11 @@ def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig (finFn compress).s
 def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig (digFn compress).stack (digFn compress).code
 
 theorem updRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updKs
-    (chunks (updFn compress).stack) := RScrub.resOk_reg (updFn compress).reg updKs (by taint_decide)
+    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).reg updKs (by taint_decide)
 theorem finRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finKs
-    (chunks (finFn compress).stack) := RScrub.resOk_reg (finFn compress).reg finKs (by taint_decide)
+    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).reg finKs (by taint_decide)
 theorem digRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digKs
-    (chunks (digFn compress).stack) := RScrub.resOk_reg (digFn compress).reg digKs (by taint_decide)
+    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).reg digKs (by taint_decide)
 
 def update : StreamFn := (updFn compress).scrub .sse updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
   (by decide) (updOut compress) updRes

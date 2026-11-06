@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+public import VerifiedGarbage.Impl.Scrub.X86_64
 
 /-!
 # What code without AVX or AVX-512 instructions keeps (x86-64)
@@ -143,5 +145,45 @@ theorem Exec.vecKeep1 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel ≤ 1)
       simp only [isa, call, Option.some.injEq] at hc; subst hc
       simp only [isa, ret] at hr; split at hr <;> cases hr
       exact hb) h
+
+theorem pushRegs_xmm (s : State) (rs : List Reg) : (pushRegs s rs).xmm = s.xmm := by
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih => exact ih _
+
+theorem popReg_xmm (s : State) (r : Reg) (k : Nat) : (popReg s r k).xmm = s.xmm := by
+  induction k generalizing s with
+  | zero => rfl
+  | succ k ih => exact ih _
+
+private theorem writesVec_eq (i : Instr) : Impl.Scrub.X86_64.writesVec i = KeepReg.writesVec i := by
+  cases i <;> rfl
+
+/-- Code that writes no vector register keeps the SSE registers. -/
+theorem Exec.xmmKeep {c : Prog isa} (hc : ∀ i ∈ instrs c, Impl.Scrub.X86_64.writesVec i = false)
+    {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.xmm = s.xmm :=
+  Exec.keep (fun s : State => s.xmm) (ok := fun i : Instr => Impl.Scrub.X86_64.writesVec i = false)
+    (fun {i s s'} hi he => KeepReg.exec_xmm (by rw [← writesVec_eq]; exact hi) he)
+    (fun {i j s s₁ s₂ s'} _ hp hq hb => by
+      have e₁ : s₁.xmm = s.xmm := by
+        cases i <;> simp only [isa, push, reduceCtorEq] at hp
+        case push rs => split at hp <;> cases hp; exact pushRegs_xmm s rs
+        case alloc => split at hp <;> cases hp; rfl
+      have e₂ : s'.xmm = s₂.xmm := by
+        cases j <;> simp only [isa, pop, reduceCtorEq] at hq
+        case pop r k => split at hq <;> cases hq; exact popReg_xmm s₂ _ _
+        case free => split at hq <;> cases hq; rfl
+      show s'.xmm = s.xmm
+      rw [e₂, show s₂.xmm = s₁.xmm from hb, e₁]) hc
+    (.inr fun _ _ _ _ hc hr hb => by
+      simp only [isa, call, Option.some.injEq] at hc; subst hc
+      simp only [isa, ret] at hr; split at hr <;> cases hr
+      exact hb) h
+
+/-- An instruction that writes no vector register and is at level at most
+1 is at level 0. -/
+theorem vecLevel_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = false) (hl : i.vecLevel ≤ 1) :
+    i.vecLevel = 0 := by
+  cases i <;> simp_all [Impl.Scrub.X86_64.writesVec, Instr.vecLevel]
 
 end VG.X86_64.Residue

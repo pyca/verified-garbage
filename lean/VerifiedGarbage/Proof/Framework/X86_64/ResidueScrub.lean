@@ -54,9 +54,9 @@ def allX : RegSet XReg := RegSet.ofList
    .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14, .xmm15]
 
 /-- Where the analysis of a function of signature `sig` starts. -/
-def init (sig : Sig) (stack : Nat) : FT :=
+def init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat) := []) : FT :=
   let ws := wrInfo sig.params 0
-  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, [], .empty, allX⟩
+  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, pubs, .empty, allX⟩
   ⟨true, t, 0, 0, stack, [], [], [], none, []⟩
 
 /-- The writable buffers. -/
@@ -216,8 +216,8 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- What the precondition gives of the writable regions. -/
-theorem init_wf (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post wa stack leak).pre s) :
-    Wf (init sig stack).t s ∧ List.Forall₂ (fun r l => l ≤ r.len) s.wr (init sig stack).t.lens := by
+theorem init_wf (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s : State} (h : (sig.contract A pre post wa stack leak).pre s) :
+    Wf (init sig stack pubs).t s ∧ List.Forall₂ (fun r l => l ≤ r.len) s.wr (init sig stack pubs).t.lens := by
   simp only [Sig.contract] at h
   split at h
   · exact h.elim
@@ -264,17 +264,31 @@ theorem init_wf (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post wa s
     rw [← hv, ← hb]
     simp [region, hw, BitVec.add_zero]
 
-theorem init_agree (hA : ScrubAbi A) {s₁ s₂ : State} (h₁ : (sig.contract A pre post wa stack leak).pre s₁)
+/-- The bytes `pubs` lists (`(i, o, n)`: the `n` bytes at offset `o` of writable buffer `i`) are
+the same in two runs whose entry states agree on what the contract says is public. -/
+def PubOk (k : Contract isa) (pubs : List (Nat × Nat × Nat)) : Prop :=
+  ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ →
+    ∀ sl ∈ pubs, ∀ j, sl.2.1 ≤ j → j < sl.2.1 + sl.2.2 → s₁.mem (byteAddr s₁ sl.1 j) = s₂.mem (byteAddr s₂ sl.1 j)
+
+/-- Every range of `pubs` lies in its buffer, as the signature gives its length. -/
+def pubsFit (sig : Sig) (pubs : List (Nat × Nat × Nat)) : Bool :=
+  pubs.all fun sl => sl.2.1 + sl.2.2 ≤ ((wrInfo sig.params 0).map (·.2)).getD sl.1 0
+
+theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : pubsFit sig pubs = true)
+    (hpub : PubOk (sig.contract A pre post wa stack leak) pubs)
+    {s₁ s₂ : State} (h₁ : (sig.contract A pre post wa stack leak).pre s₁)
     (h₂ : (sig.contract A pre post wa stack leak).pre s₂) (ho : Outside 0 s₁ s₂)
-    (hu : s₁.unknowns = s₂.unknowns) : Agree (init sig stack) s₁ s₂ := by
+    (hp : (sig.contract A pre post wa stack leak).pub s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns) : Agree (init sig stack pubs) s₁ s₂ := by
   intro _
+  have hag := hpub s₁ s₂ h₁ h₂ hp ho
   obtain ⟨hrd, hwr, hg, hrax, hcf, hzf, hsf, hof, hx, -, -, -, -, -, hm⟩ := ho
   have hgr : ∀ r, s₁.gpr r = s₂.gpr r := fun r => by
     by_cases h : r = .rax
     · subst h; simpa using hrax
     · exact hg r h
-  obtain ⟨wf₁, hF⟩ := init_wf (stack := stack) hA h₁
-  have wf₂ := (init_wf (stack := stack) hA h₂).1
+  obtain ⟨wf₁, hF⟩ := init_wf (stack := stack) (pubs := pubs) hA h₁
+  have wf₂ := (init_wf (stack := stack) (pubs := pubs) hA h₂).1
   obtain ⟨hst, hdis⟩ := contract_pre_scrub hA h₁
   have hne : ∀ r ∈ s₁.rd ++ s₁.wr, (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Disjoint r := by
     intro r hr
@@ -283,7 +297,8 @@ theorem init_agree (hA : ScrubAbi A) {s₁ s₂ : State} (h₁ : (sig.contract A
     · exact (hdis r hr).2 h0
   have hrsp := (s₁.gpr .rsp).isLt
   refine ⟨⟨⟨fun r _ => hgr r, fun _ => ⟨hcf, hzf, hsf, hof⟩⟩, fun _ => hwr, wf₁, wf₂,
-      fun _ h => (by cases h), fun _ h => (by cases h), noLo, fun r _ => (by rw [hx])⟩,
+      fun sl h => by simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit; exact hfit sl h,
+      fun sl h k h1 h2 => hag sl h k h1 h2, noLo, fun r _ => (by rw [hx])⟩,
     hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h)⟩,
@@ -312,20 +327,22 @@ def resOkB (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
 
 /-- The analysis of the code, from `init`, proves the bytes of the window
 outside the granules `ks` the same in both runs. -/
-theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} (hA : ScrubAbi A)
+theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Nat × Nat)} (hA : ScrubAbi A)
     (hv : Verified target c (sig.contract A pre post wa stack leak)) (hcs : cs.sum = stack)
     {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init sig stack) c h).any (resOkB · stack ks cs) = true) :
+    (hfit : pubsFit sig pubs = true) (hpub : PubOk (sig.contract A pre post wa stack leak) pubs)
+    (hc : (VG.Taint.check rtaint (init sig stack pubs) c h).any (resOkB · stack ks cs) = true) :
     ResOk c (sig.contract A pre post wa stack leak) stack ks cs := by
-  obtain ⟨τf, hτ, hb⟩ : ∃ τf, VG.Taint.check rtaint (init sig stack) c h = some τf ∧ resOkB τf stack ks cs = true := by
-    cases h' : VG.Taint.check rtaint (init sig stack) c h with
+  obtain ⟨τf, hτ, hb⟩ : ∃ τf, VG.Taint.check rtaint (init sig stack pubs) c h = some τf ∧
+      resOkB τf stack ks cs = true := by
+    cases h' : VG.Taint.check rtaint (init sig stack pubs) c h with
     | none => rw [h'] at hc; cases hc
     | some τf => rw [h'] at hc; exact ⟨τf, rfl, hc⟩
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
     Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
-  obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA h₁ h₂ ho hu) e₁ e₂
+  obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
   have inv := ha hok
   obtain ⟨hcor, -, -⟩ := hv
   have hsp : u₁.gpr .rsp = s₁.gpr .rsp := by
@@ -379,30 +396,45 @@ def keepOf (sec : List (Nat × Nat)) (cs : List Nat) : List Nat :=
 /-! ## Registrations -/
 
 /-- `resOk_of_check` for a registration. -/
-theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
+theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pubs : List (Nat × Nat × Nat)}
+    (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs) {h : VG.Taint.Hint FT}
+    (hc : (VG.Taint.check rtaint (init api.sig r.stack pubs) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
     ResOk r.code r.contract r.stack ks (chunks r.stack) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
-  rw [e] at hv ⊢
-  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hc
+  have hp := hpub
+  rw [e] at hv hp ⊢
+  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hfit hp hc
+
+theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
+
+/-- `resOk_reg`, with no bytes of the buffers known public. -/
+theorem resOk_reg0 {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
+    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
+    ResOk r.code r.contract r.stack ks (chunks r.stack) :=
+  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) hc
 
 /-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,
 which the check then rejects). -/
-def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) : List Nat :=
-  match VG.Taint.hint rtaint 256 (init sig stack) code with
+def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat × Nat) := []) : List Nat :=
+  match VG.Taint.hint rtaint 256 (init sig stack pubs) code with
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
 
 end VG.X86_64.RScrub
 
-open Lean Elab Term Meta in
 /-- `keep_for% sig stack code`: `RScrub.keepFor sig stack code`, computed in
 compiled code, as a literal (for the kernel, which then checks it with the
 analysis, `RScrub.resOk_reg`, rather than computing it too). -/
-elab "keep_for% " sig:term:max stack:term:max code:term:max : term => do
-  let e ← elabTerm (← `(VG.X86_64.RScrub.keepFor $sig $stack $code)) none
+syntax "keep_for% " term:max term:max term:max (term:max)? : term
+
+open Lean Elab Term Meta in
+elab_rules : term
+  | `(keep_for% $sig $stack $code $[$pubs]?) => do
+  let e ← match pubs with
+    | some p => elabTerm (← `(VG.X86_64.RScrub.keepFor $sig $stack $code $p)) none
+    | none => elabTerm (← `(VG.X86_64.RScrub.keepFor $sig $stack $code)) none
   synthesizeSyntheticMVarsNoPostponing
   let e ← instantiateMVars e
   let v ← unsafe evalExpr (List Nat) (← inferType e) e

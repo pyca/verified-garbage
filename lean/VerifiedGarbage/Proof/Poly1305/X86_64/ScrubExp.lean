@@ -57,11 +57,11 @@ def updKs : List Nat := keep_for% Spec.Poly1305.updateApi.sig updR.stack updR.co
 def finKs : List Nat := keep_for% Spec.Poly1305.finalizeApi.sig finR.stack finR.code
 
 theorem initRes : ResOk initR.code initR.contract initR.stack initKs (chunks initR.stack) :=
-  resOk_reg initR initKs (by taint_decide)
+  resOk_reg0 initR initKs (by taint_decide)
 theorem updRes : ResOk updR.code updR.contract updR.stack updKs (chunks updR.stack) :=
-  resOk_reg updR updKs (by taint_decide)
+  resOk_reg0 updR updKs (by taint_decide)
 theorem finRes : ResOk finR.code finR.contract finR.stack finKs (chunks finR.stack) :=
-  resOk_reg finR finKs (by taint_decide)
+  resOk_reg0 finR finKs (by taint_decide)
 
 def init := scrubReg initR .sse initKs (by lit_decide) (by decide) (by decide) (by lit_decide) (by decide)
   (initOut _) initRes rfl

@@ -102,12 +102,44 @@ def chunksAux : Nat → Nat → List Nat
 
 def chunks (n : Nat) : List Nat := chunksAux (n / 4080 + 1) n
 
-/-- The clearing. -/
-def scrubTail (v : VecLevel) (retBits : Nat) (ks cs : List Nat) : Prog isa :=
-  .seq (.block (clearVec v ++ [zeroR .r11])) (.seq (wipe ks cs) (.block (clearGpr retBits)))
+/-- The clearing: the SSE registers `xs` and the general-purpose registers
+`ps` (`xmm0` and `r11`, which the wipe stores, if it stores any), the stack,
+then the result's upper bits and the general-purpose registers `gs`. -/
+def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) :
+    Prog isa :=
+  .seq (.block (xs.map (zeroX v) ++ ps.map zeroR)) (.seq (wipe ks cs) (.block (retFix retBits ++ gs.map zeroR)))
 
 /-- `c`, then the clearing. -/
-def scrub (v : VecLevel) (retBits : Nat) (ks cs : List Nat) (c : Prog isa) : Prog isa :=
-  .seq c (scrubTail v retBits ks cs)
+def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa) :
+    Prog isa :=
+  .seq c (scrubTail v retBits xs ps gs ks cs)
+
+/-! ## What to clear
+
+Only what `c` may have written: a register it never writes holds what it
+held on entry (`Proof/Framework/X86_64/Scrub.lean`). -/
+
+/-- Whether an instruction may write a vector register (as `KeepReg.writesVec`). -/
+def writesVec : Instr → Bool
+  | .movdquLoad .. | .movdquTbl .. | .xop _ | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
+  | .zop _
+  | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
+  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. | .kLoad8 .. => true
+  | _ => false
+
+/-- The SSE registers to clear: all of them, if `c` may write one; otherwise
+`xmm0` if the wipe stores it (`ks` not empty). -/
+def xsOf (c : Prog isa) (ks : List Nat) : List XReg :=
+  if c.all (fun i => !writesVec i) then (if ks = [] then [] else [.xmm0]) else xregs
+
+/-- `r11`, if the wipe stores it. -/
+def psOf (ks : List Nat) : List Reg := if ks = [] then [] else [.r11]
+
+/-- The scratch registers `c` may write (`Taint.clobbers`, as `dstOf` and
+the frames' and `mul`'s registers), or `r11` alone if none, so that the last
+`xor` leaves known flags. -/
+def gsOf (clobbers : Instr → Reg → Bool) (c : Prog isa) : List Reg :=
+  let w := scratchRegs.filter fun r => !c.all (fun i => !clobbers i r)
+  if w = [] then [.r11] else w
 
 end VG.Impl.Scrub.X86_64
