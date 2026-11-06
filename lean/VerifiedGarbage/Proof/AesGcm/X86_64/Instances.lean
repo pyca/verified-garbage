@@ -41,6 +41,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
@@ -48,8 +49,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 The interleaved loops a variant names, with their proofs (which import the
 algebra of `Proof/Gcm/Poly.lean`, so that the variants need not), the
 implementations a variant names, resolved (`GcmVariant.impl`), and the
-instances of the functions its callers call (`sealFn`, `toFn`, …), with their
-proofs, for `Generic/AesGcm/X86_64/AesGcm.lean`; and the lengths at which
+instances of the functions its callers call (`sealFn`, `toFn`, `openFn`, …),
+with their proofs, for `Generic/AesGcm/X86_64/AesGcm.lean`; and the lengths at which
 `vg_aes_gcm_seal_gather` changes path (`copyBelow`, `splitFrom`).
 -/
 
@@ -539,5 +540,61 @@ def shortFnR16 (v : GcmVariant) (hs : v.impl.short = false) (hz : ∀ n, v.impl.
   .ofBoth (sealFnR16 v hs) (splitFnR16 v hz) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
 
 end Prepared16
+
+/-! ## The instances `vg_aes_gcm_open_to` calls -/
+
+/-- How many bytes at a time `vg_aes_gcm_open_to` of the implementations `v`
+copies: 32, with AVX's `vmovdqu`, if their CPUs have AVX, else 16 with SSE2's
+`movdqu`. -/
+def GcmImpl.copyW (v : GcmImpl) : Impl.ChaCha20Poly1305.X86_64.SealGather.Width :=
+  if v.features.contains "avx" then .y32 else .x16
+
+theorem openCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.openCode (v.withBlk B)).x86_64Depth ≤ 24 := by
+  unfold GcmImpl.openCode; split
+  · exact Short.openM_xdepth v B
+  · exact openM_xdepth v B
+
+theorem openCode_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.openCode (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold GcmImpl.openCode; split
+  · exact Short.openM_mx v B
+  · exact openM_mx v B
+
+theorem openCodeP_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.openCodeP (v.withBlk B)).x86_64Depth ≤ 24 := by
+  unfold GcmImpl.openCodeP; split
+  · exact Short.openMP_xdepth v B
+  · exact Short.openFinP_xdepth v B
+
+theorem openCodeP_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.openCodeP (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold GcmImpl.openCodeP; split
+  · exact Short.openMP_mx v B
+  · exact Short.openFinP_mx v B
+
+/-- The instance of `vg_aes_gcm_open` calling the implementations `v`. -/
+def openFn (v : GcmImpl) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBase ⟨Spec.Gcm.openApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)⟩
+    (openSel_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB))
+    (StreamTo.framed_xdepth (openCode_xdepth v v.blkB)) (StreamTo.framed_mx (openCode_mx v v.blkB))
+
+/-- The instance of `vg_aes_gcm_open_prepared` of a variant. -/
+def openFnR (v : GcmVariant) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))⟩
+    (openSelPrepared_framed v.impl (blkR v) Short.shortFacts)
+    (X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v)))
+    (StreamTo.framed_xdepth (openCodeP_xdepth v.impl (blkR v))) (StreamTo.framed_mx (openCodeP_mx v.impl (blkR v)))
+
+/-- The instance of `vg_aes_gcm_open_prepared16` of a variant. -/
+def openFnR16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
+  .ofPrepared16 ⟨Spec.Gcm.openPrepared16Api.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR16 v)))⟩
+    (openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
+    (X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR16 v)))
+    (StreamTo.framed_xdepth (openCodeP_xdepth v.impl (blkR16 v)))
+    (StreamTo.framed_mx (openCodeP_mx v.impl (blkR16 v)))
 
 end VG.Proof.AesGcm.X86_64
