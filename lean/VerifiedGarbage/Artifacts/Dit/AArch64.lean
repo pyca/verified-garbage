@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dit.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Entering and leaving data independent timing (PSTATE.DIT) on AArch64 -/
 
