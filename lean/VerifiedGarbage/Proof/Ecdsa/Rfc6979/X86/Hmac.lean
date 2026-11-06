@@ -234,13 +234,6 @@ theorem scr_work' (hL : L.Ok) {e k : Nat} (he : e < 8192) (h : e + k ≤ 2256) :
     Region.Sub ⟨(L.sc + BitVec.ofNat 32 e).setWidth 64, k⟩ ⟨L.scr, 2256⟩ := by
   rw [hL.scrv he]; exact scr_work h
 
-theorem W_safe : ∀ r ∈ W L, Safe L r := by
-  intro r hr
-  simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact .inr (.inl (Region.sub_prefix (by omega_arith)))
-  · exact .inr (.inr (.inl (Region.sub_prefix (by omega_arith))))
-
 /-- The writes of a call, within HMAC's working space and the stack below the frame. -/
 theorem safe_call (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {ws : List Region} (hs : ∀ r ∈ ws, Safe L r) {n : Nat}
     (hn : n ≤ 76) : ∀ r ∈ ws ++ [below (u.gpr .esp) n], Safe L r := by

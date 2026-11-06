@@ -92,12 +92,4 @@ theorem sign_call_x86_adx (hL : Law Spec.P256.curve)
   ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86_adx hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
-theorem sign_verified_adx (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (hI : InvSounds) :
-    Verified X86_64.target signP256Adx
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (sign_x86_adx hL hT hI) sign_ct_adx implies8
-    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
-
 end VG.Proof.Ecdsa.X86_64

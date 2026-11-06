@@ -25,27 +25,6 @@ open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 
 variable {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
-/-- `8 K` bytes copied to `scratch + e + d` by `copyN`, with `Ctx` kept. -/
-theorem copy_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : Addr} (hs : u.gpr src = S)
-    (hsr : src ≠ .x11) {dst : Reg} (hdr : dst ≠ .x11) {e : Nat} (hdi : u.gpr dst = L.scr + BitVec.ofNat 64 e)
-    {so d K : Nat} (hd : e + d + 8 * K ≤ 8192) (hso : so % 8 = 0 ∧ so + 8 * K ≤ 32768)
-    (hdo : d % 8 = 0 ∧ d + 8 * K ≤ 32768)
-    (hr : ∀ j < K, InRegions (u.rd ++ u.wr) (S + BitVec.ofNat 64 (so + 8 * j)) 8)
-    (hsep : Region.Disjoint ⟨S + BitVec.ofNat 64 so, 8 * K⟩ ⟨L.scr + BitVec.ofNat 64 (e + d), 8 * K⟩) :
-    WP isa (.block (Cfg.copyN K src so dst d)) u fun u' => Ctx L g m₀ u' ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
-      (∀ r, r ≠ .x11 → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 (e + d), 8 * K⟩] u.mem u'.mem ∧
-      Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 (e + d)) (8 * K) =
-        Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 so) (8 * K) := by
-  have hsep' := hsep
-  rw [← Offset.add_add] at hsep'
-  refine WP.mono_syms (copyN_ok (K := K) hdr hsr hsep' (by omega_arith) hso hdo K (Nat.le_refl _) u hs hdi hr
-    fun j hj => by rw [Offset.add_add]; exact hc.inScrW (by omega_arith))
-    fun u' ⟨hrd, hwr, hsp, hg, hf, hb⟩ hsy => ?_
-  rw [Offset.add_add] at hf hb
-  exact ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hg r (ne_cs hr (by decide))) hf (hsy := hsy)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd),
-    hrd, hwr, hg, hf, hb⟩
-
 /-- The pointers: `scratch` in `x9`, `d` in `x10` and the frame in `x15`. -/
 theorem ptrs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.msgPtrs) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧ u.gpr .x9 = L.scr ∧
@@ -119,41 +98,6 @@ theorem strW_ok {u : State} {t dst : Reg} {D : Addr} (hd : u.gpr dst = D) {d : N
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, hdo, and_self, ite_true,
     Option.bind_some, State.store, State.read, Size.bits, BitVec.setWidth_eq, hd, hw, write8,
     Option.some.injEq, exists_eq_left']
-
-/-- A word copied from `S + so` to `scratch + e`, with `Ctx` kept. -/
-theorem copyScr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src dst : Reg} {S : Addr} {e : Nat}
-    (hs : u.gpr src = S)
-    (hdi : u.gpr dst = L.scr + BitVec.ofNat 64 e) (hdr : dst ≠ .x11) (he : e + 8 ≤ 8192)
-    (hr : InRegions (u.rd ++ u.wr) S 8) :
-    WP isa (.block [.ldr .x .x11 src 0, .str .x .x11 dst 0]) u fun u' => Ctx L g m₀ u' ∧
-      (∀ r, r ≠ .x11 → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 e, 8⟩] u.mem u'.mem ∧
-      u'.mem = u.mem.writeW (L.scr + BitVec.ofNat 64 e) (u.mem.readW S 64) := by
-  refine WP.mono_syms (copyW_ok (so := 0) (d := 0) hs hdi ⟨rfl, by decide⟩ ⟨rfl, by decide⟩
-    (by rw [add_ofNat_zero]; exact hr) (by rw [add_ofNat_zero]; exact hc.inScrW he) hdr)
-    fun u' ⟨hrd, hwr, hsp, hg, hm⟩ hsy => ?_
-  rw [add_ofNat_zero, add_ofNat_zero] at hm
-  have hf : Frame [⟨L.scr + BitVec.ofNat 64 e, 8⟩] u.mem u'.mem := by
-    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  exact ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hg r (ne_cs hr (by decide))) hf (hsy := hsy)
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L he), hg, hf, hm⟩
-
-/-- A zero word at `scratch + o`, through `x13`. -/
-theorem zeroScr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {o : Nat}
-    (h13 : u.gpr .x13 = L.scr + BitVec.ofNat 64 o) (ho : o + 8 ≤ 8192) :
-    WP isa (.block [.movz .x .x11 0 0, .str .x .x11 .x13 0]) u fun u' => Ctx L g m₀ u' ∧
-      (∀ r, r ≠ .x11 → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 o, 8⟩] u.mem u'.mem ∧
-      ∀ k ≤ 8, Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 o) k = List.replicate k 0 := by
-  rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (movz_ok hL hc (d := .x11) (by decide) (n := 0) (by decide)) fun u₁ h₁ => ?_
-  refine WP.mono_syms (strW_ok (t := .x11) (dst := .x13) (D := L.scr + BitVec.ofNat 64 o) (d := 0) (by rw [h₁.keep _ (by decide), h13])
-    ⟨rfl, by decide⟩ (by rw [add_ofNat_zero]; exact h₁.ctx.inScrW ho)) fun u₂ ⟨hrd, hwr, hsp, hg, _, hm⟩ hsy => ?_
-  rw [add_ofNat_zero, h₁.val] at hm
-  have hf : Frame [⟨L.scr + BitVec.ofNat 64 o, 8⟩] u₁.mem u₂.mem := by
-    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨h₁.ctx.keep hL hrd hwr hsp (fun r _ _ => by rw [hg]) hf (hsy := hsy)
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L ho),
-    fun r hr => by rw [hg, h₁.keep _ hr], h₁.mem ▸ hf, fun k hk => by
-      rw [hm]; exact bytesAt_writeW_zero64 _ _ hk⟩
 
 /-- `copyBytes`: `len` bytes copied from `S` to `scratch + e`, with `Ctx` kept. -/
 theorem copyB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src dst : Reg} {S : Addr} {e len : Nat}

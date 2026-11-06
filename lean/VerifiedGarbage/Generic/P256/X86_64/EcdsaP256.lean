@@ -23,7 +23,6 @@ import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
@@ -40,7 +39,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots

@@ -35,9 +35,6 @@ theorem p224v_combConsts : p224v.combConsts = [("VG_P224_COMB", p224W)] := p224_
 
 theorem p224v_ok (hI : InvSounds) : CfgOk p224v := cfgOk_pubVerify (p224_ok hI) true
 
-theorem p224v_tbls (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
-    CombTbls p224v := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
-
 theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p224v s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7, held, fit, hdw⟩ := h
   refine ⟨by rw [h1, p224v_combConsts, show p224v.C.len = 28 from rfl]; simp only [Abi.constRegions_cons,

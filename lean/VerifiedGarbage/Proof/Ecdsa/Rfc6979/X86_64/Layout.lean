@@ -127,13 +127,6 @@ theorem constRegions_congr {f f' : String → Addr} {cs : List (String × List (
 /-- `r` lies at an offset within `R`. -/
 def Within (r R : Region) : Prop := ∃ off, r.base = R.base + BitVec.ofNat 64 off ∧ off + r.len ≤ R.len
 
-theorem Within.sub {r R : Region} (h : Within r R) : Region.Sub r R := by
-  obtain ⟨off, hb, hl⟩ := h
-  obtain ⟨b, n⟩ := r
-  simp only at hb hl
-  subst hb
-  exact Offset.sub_base _ hl
-
 theorem within_off (p : Addr) {d n k : Nat} (h : d + n ≤ k) :
     Within ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p, k⟩ := ⟨d, rfl, h⟩
 
@@ -191,9 +184,6 @@ theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 248 + 8 * L.e) :
 theorem stk_D (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 248 + 8 * L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.D := h.kd.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_DG (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 248 + 8 * L.e) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.DG := h.kg.sub_left (Offset.sub_base _ h₁)
-
 theorem stk_d (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 248 + 8 * L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.d, L.q⟩ := h.stk_D h₁
 
@@ -206,15 +196,6 @@ theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
   · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
   · have := L.he
     exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
-
-/-- The buffers that are only read are apart from every safe region. -/
-theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.od.symm.sub_right hs
-  · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · have := L.he
-    exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 /-- The frame's slots of `D` and `B` are apart from every safe region. -/
 theorem db_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
@@ -234,22 +215,6 @@ theorem ts_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TS.Disjoint r := by
   · exact (Offset.disjoint_base _ (by omega_arith) (by have := L.he; omega_arith)).sub_right hs
   · have := L.he
     exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
-
-/-- The table is apart from every safe region. -/
-theorem tab_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TAB.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.to.sub_right hs
-  · exact h.tc.sub_right hs
-  · exact (h.tk.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · exact (h.tk.sub_right (Offset.sub_base _ (by have := L.he; omega_arith))).sub_right hs
-
-theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.og.symm.sub_right hs
-  · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · have := L.he
-    exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 end Lay.Ok
 

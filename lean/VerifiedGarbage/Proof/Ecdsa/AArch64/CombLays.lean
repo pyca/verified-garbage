@@ -29,8 +29,6 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 variable {c : Cfg}
 
-theorem combJ_eq (c : Cfg) : c.combCfg.J = Cfg.combJ c.n := rfl
-
 theorem combW_eq (c : Cfg) : combW c.combCfg.toComb = slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
     T4, T5, DX, DY, DZ, TMP] := rfl
 
@@ -135,8 +133,6 @@ theorem combA (hc : BaseCfgOk c) : CombA c.combCfg.toComb where
       i < 45 ∧ i ≠ TMP := by decide
     exact sl_own c hc.n10 (this i hi).1 (this i hi).2
 
-theorem mont_zero (c : Cfg) : c.mont 0 = 0 := by simp [Cfg.mont]
-
 theorem mont_lt (hc : BaseCfgOk c) (x : Nat) : c.mont x < c.C.p :=
   Nat.mod_lt _ (by have := hc.p_ge; omega_arith)
 
@@ -200,26 +196,6 @@ theorem fixedOk_tcombW : FixedOk c (tcombW c.combCfg) := by
   refine FixedOk.append (fixedOk_slW (by decide)) fun w hw => ?_
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (i := 12) (by decide) 0 _))
-
-/-- The flag word apart from what the comb writes. -/
-theorem flag_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combCfg) m m')
-    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
-    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  rw [tcombW_eq] at hu
-  refine hu.word (fun w hw => ?_) (by omega_arith)
-  rcases apart_append (apart_slW (c := c) (i := FLAG) (by decide)) (apart_zw (c := c) (i := FLAG)
-    (by decide)) w hw with h | h
-  · exact Or.inl (by omega_arith)
-  · exact Or.inr h
-
-/-- A slot apart from what the comb writes. -/
-theorem sv_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combCfg) m m')
-    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
-    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) :
-    wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
-  rw [tcombW_eq] at hu
-  exact sv_unch hu h7 hn hi (apart_append (apart_slW hl) (apart_zw hi))
 
 /-- What the signature's comb (`Cfg.combP`) writes: the comb's ranges, and
 `EM`'s slot, where it may copy `b`. -/

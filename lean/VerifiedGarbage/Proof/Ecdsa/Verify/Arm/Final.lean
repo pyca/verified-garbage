@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 As on x86 (`Proof/Ecdsa/Verify/X86/Final.lean`).
 
-`vtail_ok`: from what `points_ok` leaves, the signature's power gives
+`vtail_ok`: from what `pointsWith_ok` leaves, the signature's power gives
 `Z^(p-2)`, and `final` computes `x = X Z^(p-2)` out of Montgomery's form,
 `x R mod n` and `x R - r R mod n`, ands the masks of `Z ≠ 0` and of that
 difference being zero (`x ≡ r` modulo `n`) into the flag, returns its low

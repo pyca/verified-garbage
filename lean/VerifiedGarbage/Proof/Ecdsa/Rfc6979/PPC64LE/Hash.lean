@@ -83,10 +83,6 @@ theorem len_words : 24 ≤ R.Q ∧ R.Q ≤ 66 ∧ 8 * R.w ≤ R.Q + 7 ∧ R.Q �
   · have := R.sizesA h; simp only [Q] at *; omega
   · have := R.sizesW h; simp only [Q] at *; omega
 
-/-- Unless `big`, the scalars are a multiple of 4 bytes, at most 64. -/
-theorem len4 (h : R.big = false) : R.Q % 4 = 0 ∧ R.Q ≤ 64 := by
-  have := (R.sizesA h).1; simp only [Q] at *; omega
-
 /-- If `big`, `sh` is P-521's 7. -/
 theorem sh7 (h : R.big = true) : R.sh = 7 := by
   have := R.sizesW h; simp only [Q] at this; rw [R.sh_eq]; omega
@@ -170,9 +166,6 @@ theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.v.H.D < P.Q := 
   have h₁ := P.R.sizesW h
   have h₂ := P.sizes.2.2.2.2.1
   exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega⟩
-
-/-- The curve's scalars are `Q` bytes. -/
-theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa]
 
 end RfcHash
 

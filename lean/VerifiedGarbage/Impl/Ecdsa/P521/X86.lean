@@ -21,7 +21,4 @@ def p521 : Cfg where
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
 
-/-- `vg_p521_mul`. -/
-def mulP521 : Prog isa := p521.mulFn
-
 end VG.Impl.Ecdsa.X86

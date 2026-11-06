@@ -166,24 +166,6 @@ theorem spA_add {i : Nat} (hi : i < 8) :
 theorem buf_in {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (bufA s + BitVec.ofNat 64 d) n :=
   VG.Proof.AesGcm.Arm.in_off hp.wr h (by decide)
 
-/-- A byte of the buffer is not one of the hash's. -/
-theorem buf_ne_hash {j i : Nat} (hj : j < 80) (hi : i < (s.gpr .r2).toNat) :
-    bufA s + BitVec.ofNat 64 j ≠ State.addr (s.gpr .r1) + BitVec.ofNat 64 i := by
-  intro e
-  have h₁ : (⟨bufA s, 80⟩ : Region).Contains (bufA s + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
-  have h₂ : (⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩ : Region).Contains
-      (State.addr (s.gpr .r1) + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) (by omega)
-  rw [← e] at h₂
-  exact hp.sep _ h₁ h₂
-
-omit hp in
-/-- Nothing outside the buffer is in it. -/
-theorem out_buf {x : Addr} (hx : ¬ (⟨bufA s, 80⟩ : Region).Contains x 1) {j : Nat} (hj : j < 80) :
-    x ≠ bufA s + BitVec.ofNat 64 j := by
-  rintro rfl
-  exact hx (Offset.contains_base _ (by omega) (by omega))
-
 end
 
 /-! ## The head -/
@@ -230,9 +212,6 @@ theorem head_ok (hp : CPre len s) : WP isa (.block (head len)) s (HPost len s) :
 
 /-! ## Memory -/
 
-theorem byte_writeW_other (m : Mem) {a x : Addr} (b : Byte) (h : x ≠ a) : (m.writeW a b) x = m x := by
-  simp only [WriteBytes.writeW8_apply, h, ite_false]
-
 /-- What the conversion keeps after the head (`s₁`): it writes only the
 buffer's first 72 bytes. -/
 structure After (s s₁ u : State) : Prop where
@@ -255,11 +234,6 @@ theorem head_frame : Frame [⟨bufA s, 80⟩] s.mem s₁.mem := by
   refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
   rw [bufA_add hp (by decide)]
   exact Offset.contains_base _ (by decide) (by decide)
-
-theorem head_low {j : Nat} (hj : j < 76) :
-    s₁.mem (bufA s + BitVec.ofNat 64 j) = s.mem (bufA s + BitVec.ofNat 64 j) := by
-  rw [hh.mem, bufA_add hp (by decide : sigOff < 80)]
-  exact VG.Arm.writeW32_other _ (VG.Arm.off_disjoint _ (by simp only [sigOff]; omega) (by omega) (by decide))
 
 /-- A byte outside the buffer, in a state after the head. -/
 theorem out_after {u : State} (ha : After s s₁ u) {x : Addr} (hx : ¬ (⟨bufA s, 80⟩ : Region).Contains x 1) :

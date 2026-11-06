@@ -61,8 +61,6 @@ theorem frame_of_outside {base : Addr} {d n : Nat} {m m' : Mem} (h : Outside bas
   simp only [ofs]
   omega_arith)
 
-theorem rev64_rev64 (a : BitVec 64) : rev64 (rev64 a) = a := Proof.Gcm.byteRev64_byteRev64 a
-
 /-- An 8-byte access at an aligned offset of at most `32760`. -/
 theorem addr8 (s : State) (n : Reg) {o : Nat} (h₁ : o % 8 = 0) (h₂ : o < 32768) :
     addr s 8 n o = some (s.gpr n + BitVec.ofNat 64 o) := by
@@ -471,13 +469,6 @@ theorem sels_ok (hA : P.R.big = false) {t : State} (hc : Ctx L g m₀ t) {u : St
       cases b <;> rfl
 
 /-! ## The whole of it -/
-
-theorem dg_ofBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {k : Nat} (hn : k ≤ dn) :
-    Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg k) =
-      Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem L.dg k) := by
-  congr 1
-  simp only [Spec.Sha256.bytesAt]
-  exact List.map_congr_left fun i hi => (hc.dg_byte hL (by have := List.mem_range.mp hi; omega_arith)).symm
 
 /-- `x7 = 0` and the frame in `x15`. -/
 theorem setup_ok {t : State} (hc : Ctx L g m₀ t) :

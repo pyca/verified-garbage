@@ -209,13 +209,6 @@ abbrev W (L : Lay dn) : List Region := [⟨L.scr, 2256⟩, ⟨L.B, 96⟩]
 theorem scr_work {e k : Nat} (h : e + k ≤ 2256) : Region.Sub ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr, 2256⟩ :=
   Offset.sub_base _ h
 
-theorem W_safe : ∀ r ∈ W L, Safe L r := by
-  intro r hr
-  simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact .inr (.inl (Region.sub_prefix (by omega)))
-  · exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
-
 theorem xorPad_length (k : List Byte) (p : Byte) : (Spec.Hmac.xorPad k p).length = k.length :=
   List.length_map _
 

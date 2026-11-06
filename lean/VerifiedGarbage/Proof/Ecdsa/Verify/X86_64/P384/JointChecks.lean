@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.P384.X86_64.Joint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
@@ -23,7 +22,6 @@ meta import VerifiedGarbage.Impl.P384.X86_64.Joint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
