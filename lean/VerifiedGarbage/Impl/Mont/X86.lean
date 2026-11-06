@@ -76,7 +76,7 @@ def redDigit (M : Mod) (acc : Nat) : List Instr :=
 def redRow (M : Mod) (acc : Nat) : List Instr :=
   if p256RedEnabled M then p256Red acc else mulRow acc M.mo (words M)
 
-/-- An iteration of `mul`: the window `+= a_i [b]`, then `+= u m` with
+/-- An iteration of the multiplication: the window `+= a_i [b]`, then `+= u m` with
 `u = t₀ m' mod 2³²`, after which its low word is zero; then the window
 moves up a word, and `ebp` is compared with `edi + 4N` (the end of the
 loop). -/
