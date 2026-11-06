@@ -13,12 +13,10 @@ namespace VG.Artifacts.Cast5Cbc.X86
 
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
     stack := 336
     verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed },
   Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
     stack := 336
     verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }]

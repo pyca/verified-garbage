@@ -25,7 +25,6 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) (vs : Li
     suffix := if adx then "_adx" else ""
     tables := [("hmac", tables vs)]
     code := signCodeT (p256Of adx h.law (Proof.P256.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
-    consts := Impl.Ecdsa.X86_64.p256.combConsts
     stack := stackT
     verified := p256T_verified adx h.law (Proof.P256.combOk7 h.law) h.inv vs hv
     spSafe := signCode_sp _ _ _

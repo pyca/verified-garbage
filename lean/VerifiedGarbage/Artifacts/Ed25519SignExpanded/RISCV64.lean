@@ -13,7 +13,6 @@ namespace VG.Artifacts.Ed25519SignExpanded.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.signExpandedApi.artifact RISCV64.target {
-    consts := Impl.Ed25519.RISCV64.combConsts
     code := Impl.Ed25519.RISCV64.Whole.signExpandedCode
     stack := 496
     verified := Proof.Ed25519.RISCV64.Whole.signExpanded_framed }]

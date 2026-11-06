@@ -19,7 +19,6 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.X25519.RISCV64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact RISCV64.target {
-    consts := Impl.Ed25519.RISCV64.combConsts
     code := Impl.X25519.RISCV64.Base.x25519Base
     verified := Proof.X25519.RISCV64.Base.x25519Base_verified }]
 

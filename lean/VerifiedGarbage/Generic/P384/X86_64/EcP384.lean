@@ -124,7 +124,6 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.EcKey.P384.publicKeyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     stack := 8
     verified := hv

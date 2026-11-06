@@ -21,7 +21,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
     verified := Proof.EcKey.Compressed.RISCV64.P224.compress_verified },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.decompressP224
-    consts := Impl.EcKey.Compressed.RISCV64.sqrtConsts
     verified := Proof.EcKey.Compressed.RISCV64.P224.decompress_verified h.law }]
 
 end VG.Generic.P224.RISCV64.EcCompressedP224

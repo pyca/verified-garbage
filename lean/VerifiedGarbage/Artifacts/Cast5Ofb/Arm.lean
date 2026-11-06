@@ -12,7 +12,6 @@ namespace VG.Artifacts.Cast5Ofb.Arm
 
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact Arm.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.ofb
     stack := 336
     verified := Proof.Cast5.ofb_keyed Proof.Cast5.Arm.ofb_framed }]

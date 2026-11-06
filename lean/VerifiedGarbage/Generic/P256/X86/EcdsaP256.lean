@@ -195,7 +195,6 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
   Spec.Ecdsa.P256.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Proof.Ecdsa.Verify.X86.vCombCode
-    consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 128
     verified := Proof.Ecdsa.Verify.X86.vCombHash_verified h.law h.inv }]
 

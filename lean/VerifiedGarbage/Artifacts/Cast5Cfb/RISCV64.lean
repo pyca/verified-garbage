@@ -13,12 +13,10 @@ namespace VG.Artifacts.Cast5Cfb.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact RISCV64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cfbEncrypt
     stack := 128
     verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Cast5.cfbDecryptApi.artifact RISCV64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cfbDecrypt
     stack := 128
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.RISCV64.Modes.cfbDecrypt_verified }]

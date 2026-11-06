@@ -19,7 +19,6 @@ def artifacts (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256.X86.Va
     suffix := Emit.qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
     code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
     stack := 216
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     verified := verified v1 v256 v
     spSafe := code_all v1 v256 v
     features := hashes ++ v.features.filter (!hashes.contains ·) }]

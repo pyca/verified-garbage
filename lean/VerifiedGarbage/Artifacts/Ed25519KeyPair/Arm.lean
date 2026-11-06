@@ -12,7 +12,6 @@ namespace VG.Artifacts.Ed25519KeyPair.Arm
 
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact Arm.target {
-    consts := Impl.Ed25519.Arm.combConsts
     code := Impl.Ed25519.Arm.KeyPair.keyPair Spec.Sha512.digest512Api.name
       Proof.Ed25519.Arm.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.Arm.PublicKey.codeExpanded

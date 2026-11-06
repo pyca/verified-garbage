@@ -30,7 +30,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.PPC64LE.Domain.checkPublic
     verified := Proof.Ffdh.PPC64LE.Domain.cp_verified },
   Spec.Ffdh.checkDomainApi.artifact PPC64LE.target {
-    consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
     code := Impl.Ffdh.PPC64LE.VettedValidation.code
     verified := Proof.Ffdh.PPC64LE.VettedValidation.verified },
   Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
@@ -43,7 +42,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
     verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
   Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
-    consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
     code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
     verified := Proof.Ffdh.PPC64LE.Cached.pc_verified },
   Spec.Ffdh.cachedGenerateKeyApi.artifact PPC64LE.target {

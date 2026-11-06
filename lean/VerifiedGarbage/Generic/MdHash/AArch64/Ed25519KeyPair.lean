@@ -30,7 +30,6 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     code := Impl.Ed25519.AArch64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ v.suffix)
       (Proof.Ed25519.AArch64.KeyPair.dgCode v) "vg_ed25519_public_key_expanded"
       Impl.Ed25519.AArch64.PublicKey.codeExpanded
-    consts := Impl.Ed25519.AArch64.combConsts
     stack := 944
     verified := Proof.Ed25519.AArch64.KeyPair.verified v
     features := v.features }]

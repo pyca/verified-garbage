@@ -526,7 +526,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.signMessage44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign44Api.name ++ v.callee.suffix)
       (Impl.MlDsa.AArch64.Sign.Optimized.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa44
         (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
@@ -535,7 +534,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.signMessage65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign65Api.name ++ v.callee.suffix)
       (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
     stack := 16
@@ -543,7 +541,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.signMessage87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign87Api.name ++ v.callee.suffix)
       (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
     stack := 16

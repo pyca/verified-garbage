@@ -19,7 +19,6 @@ namespace VG.Artifacts.Ed25519SignExpanded.X86
 
 def artifacts : List Artifact := [
   Spec.Ed25519.signExpandedApi.artifact X86.target {
-    consts := Impl.Ed25519.X86.combConsts
     code := Impl.Ed25519.X86.SignCached.codeExpanded
     stack := 280
     verified := Proof.Ed25519.X86.SignCached.signExpanded_verified }]

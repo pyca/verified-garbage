@@ -24,7 +24,6 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   | some v => [
     Spec.Ed25519.verifyApi.artifact AArch64.target {
       suffix := v.suffix
-      consts := Impl.Ed25519.AArch64.bConsts
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
       stack := 352
       verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v

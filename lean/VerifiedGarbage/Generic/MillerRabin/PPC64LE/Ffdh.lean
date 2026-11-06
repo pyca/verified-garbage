@@ -14,7 +14,6 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
   Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target {
     suffix := v.suffix
     stack := 336
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     code := Proof.Ffdh.PPC64LE.Generation.searchCode v
     verified := Proof.Ffdh.PPC64LE.Generation.search_verified v
     features := v.features }]

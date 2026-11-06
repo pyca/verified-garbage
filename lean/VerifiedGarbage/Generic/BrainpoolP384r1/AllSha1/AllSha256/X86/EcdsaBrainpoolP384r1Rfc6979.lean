@@ -19,7 +19,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) (vs1 : L
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (brainpoolp384r1 h.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries (vars vs1 vs256)
-      consts := Impl.Ecdsa.X86.brainpoolp384r1.combConsts
       stack := stackT
       verified := brainpoolp384r1T_verified h.law (vars vs1 vs256) hv
       spSafe := signCode_sp _ _ _ }]

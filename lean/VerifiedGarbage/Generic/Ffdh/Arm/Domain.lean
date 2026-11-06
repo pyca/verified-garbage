@@ -12,7 +12,6 @@ open VG
 
 def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
-    consts := Impl.Ffdh.Arm.VettedGroups.tableConsts
     suffix := v.suffix
     features := v.features
     stack := 128

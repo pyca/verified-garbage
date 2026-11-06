@@ -17,7 +17,6 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
   Spec.RsaKeyGen.primeSearchApi.artifact PPC64LE.target {
     suffix := v.suffix
     stack := 768
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     code := Proof.RsaKeyGen.PPC64LE.Search.searchCode v
     verified := Proof.RsaKeyGen.PPC64LE.Search.search_verified v
     features := v.features }]

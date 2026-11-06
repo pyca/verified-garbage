@@ -19,7 +19,6 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) (vs
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (secp256k1 h.law h.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries (vars vs1 vs256)
-      consts := Impl.Ecdsa.X86.secp256k1.combConsts
       stack := stackT
       verified := secp256k1T_verified h.law h.inv (vars vs1 vs256) hv
       spSafe := signCode_sp _ _ _ }]
