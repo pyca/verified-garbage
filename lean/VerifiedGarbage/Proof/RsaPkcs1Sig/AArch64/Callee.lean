@@ -178,7 +178,7 @@ theorem pubCallCT (c : PubChecked) {P : State → State → Prop}
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
 
 /-- `vg_rsa_public_precomputed_checked` and its variants. -/
-abbrev PdChecked := Callee fun K => Spec.Rsa.publicPrecomputedCheckedContract abi K
+abbrev PdChecked := Callee fun K => Proof.Rsa.publicPrecomputedCheckedContract abi K
 
 /-- What a call of a precomputed public operation needs: as `PubOk`, with
 the precomputed values of a modulus (`x3` words at `x2`) for the modulus,
@@ -196,10 +196,10 @@ structure PdOk (K : Nat) (t : State) : Prop where
   hs : Spec.Rsa.publicScratchWords (t.gpr .x1).toNat ≤ (stackArg t 1).toNat
 
 theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi K).pre (t.callEntry.withRegions (pdRd t) (pubWr t)) := by
+    (Proof.Rsa.publicPrecomputedCheckedContract abi K).pre (t.callEntry.withRegions (pdRd t) (pubWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq, List.range, List.range.loop]
   simp only [sa0]
   exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa,
@@ -219,11 +219,11 @@ theorem pdCall (c : PdChecked) {t : State} {Q : State → Prop} (h : PdOk c.stac
           (Spec.Rsa.publicOpChecked nB (Spec.Rsa.bytesAt t.mem (t.gpr .x4) (t.gpr .x5).toNat)
             (Spec.Rsa.bytesAt t.mem (t.gpr .x6) (t.gpr .x1).toNat))) → Q s') :
     WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Spec.Rsa.publicPrecomputedCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
+  refine WP.callFV (k := Proof.Rsa.publicPrecomputedCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
@@ -241,13 +241,13 @@ theorem pdCallCT (c : PdChecked) {P : State → State → Prop}
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     stackArgs_two, List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
 
 /-- `vg_rsa_private_checked` and its variants. -/
-abbrev PrivChecked := Callee fun K => Spec.Rsa.privateCheckedContract abi K
+abbrev PrivChecked := Callee fun K => Proof.Rsa.privateCheckedContract abi K
 
 theorem stackArgs_twelve (s : State) :
     List.map (stackArg s) (List.range 12) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
@@ -339,10 +339,10 @@ structure PrivOk (K : Nat) (t : State) : Prop where
   hs : Spec.Rsa.scratchWords (t.gpr .x3).toNat ≤ (stackArg t 11).toNat
 
 theorem PrivOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PrivOk K t) :
-    (Spec.Rsa.privateCheckedContract abi K).pre (t.callEntry.withRegions (privRd t) (privWr t)) := by
+    (Proof.Rsa.privateCheckedContract abi K).pre (t.callEntry.withRegions (privRd t) (privWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop]
   simp only [sa0]
   exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.op, hl.oq, hl.odp, hl.odq, hl.oqi, hl.os,
@@ -367,11 +367,11 @@ theorem privCall (c : PrivChecked) {t : State} {Q : State → Prop} (h : PrivOk 
           (Spec.Rsa.bytesAt t.mem (stackArg t 6) (stackArg t 3).toNat)
           (Spec.Rsa.bytesAt t.mem (stackArg t 8) (stackArg t 1).toNat)) → Q s') :
     WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Spec.Rsa.privateCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
+  refine WP.callFV (k := Proof.Rsa.privateCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
@@ -389,7 +389,7 @@ theorem privCallCT (c : PrivChecked) {P : State → State → Prop}
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide),

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: the call
@@ -146,7 +147,7 @@ theorem inpA (P : EP) {σ : State} (h : In P σ) : State.addr (P.B + BitVec.ofNa
   h.ok.addrB (by show oEM < frameBytes + 56 + 68; decide)
 
 theorem call_pre {σ s : State} (h : R1 P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e (P.B + BitVec.ofNat 32 oEM) P.p P.q P.dp P.dq P.qinv P.K P.el
         P.pl P.ql) (privWr P.out P.scr P.K P.sl)) := by
   have hs := h.1.1

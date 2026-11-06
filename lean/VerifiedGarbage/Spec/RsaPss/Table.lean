@@ -35,7 +35,7 @@ writes zeros and returns 0 (the encoding or the key refused) or 2 (the
 internal error: the result failed its check against `e`); verification
 returns 1 for a valid signature and 0 otherwise. With a `pre` that does
 not hold the values for `n`, what verification returns is unspecified, as
-in `Rsa.publicPrecomputedCheckedContract`.
+in `Proof.Rsa.publicPrecomputedCheckedContract`.
 
 The signature determines memory validity, separation and that the pointers,
 the lengths and the salt length arguments are public, through

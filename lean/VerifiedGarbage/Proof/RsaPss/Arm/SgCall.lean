@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSASSA-PSS signing on ARMv7: the call of `vg_rsa_private_checked`
@@ -297,7 +298,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {G : Spec.Mgf1.Hash} {P : EP} {σ s : State} (hr : R1 h G P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv P.K P.el
         P.pl P.ql) (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨hc, hk, -, pa⟩ := hr

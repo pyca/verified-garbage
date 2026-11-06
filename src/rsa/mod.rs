@@ -37,15 +37,14 @@ use alloc::vec::Vec;
 use core::fmt;
 
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa::{
-    VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
-};
+use crate::arch::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_PRIME_SEARCH_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
+use crate::arch::rsa_pkcs1_sig::{
+    VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
+    VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES, VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES,
+};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -57,16 +56,16 @@ use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SI
     )
 ))]
 use crate::arch::{
-    rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
-    rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+    rsa_keygen::VG_RSA_PRIME_SEARCH_UMAAL_FEATURES, rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
 };
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_rsa_public_precompute`,
-/// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, and of
-/// the functions built on them
-/// (`vg_rsa_pkcs1_sign`, `crate::rsa::pkcs1_sig`; `vg_rsa_prime_search`,
-/// `crate::rsa::keygen`).
+/// The implementations of `vg_rsa_public_precompute` and of the functions
+/// built on the verified code's own RSA operations,
+/// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked` (which
+/// only verified code calls): the padding schemes' (`vg_rsa_pkcs1_sign`,
+/// `crate::rsa::pkcs1_sig`, …) and `vg_rsa_prime_search`
+/// (`crate::rsa::keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -100,15 +99,13 @@ impl Backend {
     pub(crate) const REQUIRES: &[Features] = &{
         let adx = Features::all(&[
             VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
-            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-            VG_RSA_PRIVATE_CHECKED_ADX_FEATURES,
+            VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES,
             VG_RSA_PKCS1_SIGN_ADX_FEATURES,
             VG_RSA_PRIME_SEARCH_ADX_FEATURES,
         ]);
         let ifma = Features::all(&[
             adx,
-            VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-            VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES,
+            VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES,
             VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
         ]);
         [Features(0), adx, ifma]
@@ -186,7 +183,6 @@ impl Backend {
     pub(crate) const REQUIRES: &[Features] = &[
         Features(0),
         Features::all(&[
-            VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES,
             VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
             VG_RSA_PRIME_SEARCH_UMAAL_FEATURES,
         ]),
@@ -355,15 +351,15 @@ pub(crate) mod tests {
             target_os = "openbsd"
         )
     ))]
-    use super::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES;
+    use super::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES;
     use super::{
         Backend, BigUint, Error, Features, MAX_MODULUS_LEN, MIN_MODULUS_LEN, PrivateKey, PublicKey,
         Vec, exponent, public_scratch_words, scratch_words, trim,
     };
     #[cfg(target_arch = "x86_64")]
     use super::{
-        VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
-        VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+        VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
+        VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES,
     };
     use alloc::string::ToString;
     use alloc::vec;
@@ -477,7 +473,7 @@ pub(crate) mod tests {
     #[test]
     fn backends_arm() {
         assert_eq!(
-            Backend::select(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES),
+            Backend::select(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES),
             Backend::Umaal
         );
     }
@@ -489,25 +485,25 @@ pub(crate) mod tests {
             Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
             Backend::Baseline
         );
-        // `VG_RSA_PRIVATE_CHECKED_ADX_FEATURES` names AVX2 too.
+        // `VG_RSA_PKCS1_SIGN_ADX_FEATURES` names AVX2 too.
         assert_eq!(
-            Backend::select(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES),
+            Backend::select(VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES),
             Backend::Baseline
         );
         assert_eq!(
             Backend::select(Features::all(&[
-                VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+                VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES,
                 Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2),
             ])),
             Backend::Adx
         );
         assert_eq!(
-            Backend::select(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES),
+            Backend::select(VG_RSA_PKCS1_SIGN_ADX_FEATURES),
             Backend::Adx
         );
         assert_eq!(
             Backend::select(Features::all(&[
-                VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+                VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
                 Features(verified_garbage_cpu::feature::AVX2),
             ])),
             Backend::Ifma

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The x86 RSA padding functions: their callee `vg_rsa_private_checked`
@@ -71,7 +72,7 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
       Region.Disjoint (below (s.gpr .esp) 3448) r)
     (fit : ∀ r ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql,
       r.base.toNat + r.len ≤ 2 ^ 32) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pre
       (s.callEntry.withRegions (privRd n e inp p q dp dq qinv K el pl ql) (privWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
   have el32 : el < 2 ^ 32 := by have := h.elK; omega
@@ -82,7 +83,7 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
   have hsp := h.sp
   have hfit := h.fit
   have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes,
     stackBelow]
   simp only [a (by decide : 0 < 20), a (by decide : 1 < 20), a (by decide : 2 < 20), a (by decide : 3 < 20),
     a (by decide : 4 < 20), a (by decide : 5 < 20), a (by decide : 6 < 20), a (by decide : 7 < 20),
@@ -131,12 +132,12 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     (hdn : (below (s₁.gpr .esp) 3448).Disjoint ⟨n.setWidth 64, K⟩)
     (hde : (below (s₁.gpr .esp) 3448).Disjoint ⟨e.setWidth 64, el⟩)
     (rd wr : List Region) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
   have a₁ := fun {i} (hi : i < 20) => h₁.arg rd wr hi
   have a₂ := fun {i} (hi : i < 20) => h₂.arg rd wr hi
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes]
   simp only [a₁ (by decide : 0 < 20), a₁ (by decide : 1 < 20), a₁ (by decide : 2 < 20), a₁ (by decide : 3 < 20),
     a₁ (by decide : 4 < 20), a₁ (by decide : 5 < 20), a₁ (by decide : 6 < 20), a₁ (by decide : 7 < 20),
     a₁ (by decide : 8 < 20), a₁ (by decide : 9 < 20), a₁ (by decide : 10 < 20), a₁ (by decide : 11 < 20),
@@ -168,7 +169,7 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
 /-- The call's result: what it writes to `out` and returns. -/
 theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     {rd wr : List Region}
-    (hp : (Spec.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).post
+    (hp : (Proof.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).post
       (s.callEntry.withRegions rd wr) t) :
     Spec.Rsa.writtenOutcome t.mem (out.setWidth 64) K (t.gpr .eax)
       (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.callEntry.mem (n.setWidth 64) K)
@@ -177,7 +178,7 @@ theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K
         (Spec.Rsa.bytesAt s.callEntry.mem (dp.setWidth 64) pl) (Spec.Rsa.bytesAt s.callEntry.mem (dq.setWidth 64) ql)
         (Spec.Rsa.bytesAt s.callEntry.mem (qinv.setWidth 64) pl)) := by
   have a := fun {i} (hi : i < 20) => h.arg rd wr hi
-  sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes] at hp
+  sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes] at hp
   simp only [a (by decide : 0 < 20), a (by decide : 2 < 20), a (by decide : 3 < 20),
     a (by decide : 4 < 20), a (by decide : 5 < 20), a (by decide : 6 < 20),
     a (by decide : 8 < 20), a (by decide : 9 < 20), a (by decide : 10 < 20), a (by decide : 11 < 20),

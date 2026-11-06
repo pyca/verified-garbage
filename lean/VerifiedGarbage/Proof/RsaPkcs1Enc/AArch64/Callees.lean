@@ -17,8 +17,8 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 implies it with any (`public_stack`): the stack is only in the
 precondition, which asks less of the caller with less. With one byte, it is
 a `PubImpl` (`pubImpl`). For each implementation `c` of `vg_rsa_private_crt`
-(a variant of `RsaPrivateCrt`), `vg_rsa_private_checked` calling it, as
-`Generic/RsaPrivateCrt/AArch64/Rsa.lean` emits it, is a `PrivImpl`
+(a variant of `RsaPrivateCrt`), `vg_rsa_private_checked` calling it, the
+internal function the padding functions call, is a `PrivImpl`
 (`privOf`).
 -/
 

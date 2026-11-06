@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_public_precomputed_checked` on AArch64
@@ -99,37 +100,37 @@ def pdSatState : State where
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
 theorem precomputedChecked_implies :
-    pdChkContract.Implies (Spec.Rsa.publicPrecomputedCheckedContract abi) where
+    pdChkContract.Implies (Proof.Rsa.publicPrecomputedCheckedContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_reduce [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  post := by sig_implies_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
+    sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract,
       pdContract, pdArgs, stackArgs_two, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, s0, s1⟩ := h
     obtain ⟨hw, he⟩ := leak_eq2 (by simp [Spec.Rsa.wordsAt, a3]) hl
     exact ⟨hsp, a0, a1, a2, a3, a4, a5, a6, a7, s0, s1, hw, he⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sat := by sig_implies_sat [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     pdChkContract, pdContract, pdArgs, stackArgs_two, List.append_eq] [pdSatState, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using pdSatState
 
 /-- `vg_rsa_public_precomputed_checked` with Montgomery multiplication `M`. -/
 theorem precomputedChecked_verified (M : Mont) :
-    Verified target (precomputedChecked M.mm) (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
+    Verified target (precomputedChecked M.mm) (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
   have hct : ConstantTime isa pdChkContract.pre pdChkContract.pub (precomputedChecked M.mm) :=
     precomputedChecked_constantTime M
   Verified.of_correct (k := pdChkContract) (precomputedChecked_correct M) hct precomputedChecked_implies

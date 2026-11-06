@@ -253,7 +253,7 @@ abbrev R2 (P : EP) (σ s : State) : Prop :=
     OcK P σ
 
 /-- The name of `vg_rsa_private_checked` over `v`. -/
-def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 /-- `EM` and the result: the call. -/
 theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :

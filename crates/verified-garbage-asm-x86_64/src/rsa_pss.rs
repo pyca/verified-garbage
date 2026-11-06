@@ -116,7 +116,7 @@ jne 219b
         vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
         vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
         vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
     )
 }
 
@@ -229,7 +229,7 @@ jne 219b
         vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
         vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
         vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
 
@@ -346,7 +346,7 @@ jne 219b
         vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
         vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
         vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
     )
 }
 
@@ -439,7 +439,7 @@ jmp 21f
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
+        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx::vg_rsa_public_precomputed_checked_adx,
         vg_rsa_pss_sha512_256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,
         vg_rsa_pss_sha512_224_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_224_check_encoding::vg_rsa_pss_sha512_224_check_encoding,
         vg_rsa_pss_sha512_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_check_encoding::vg_rsa_pss_sha512_check_encoding,
@@ -536,7 +536,7 @@ jmp 21f
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
         vg_rsa_pss_sha512_256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,
         vg_rsa_pss_sha512_224_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_224_check_encoding::vg_rsa_pss_sha512_224_check_encoding,
         vg_rsa_pss_sha512_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_check_encoding::vg_rsa_pss_sha512_check_encoding,
@@ -637,7 +637,7 @@ jmp 21f
 21:
 .base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
         vg_rsa_pss_sha512_256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,
         vg_rsa_pss_sha512_224_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_224_check_encoding::vg_rsa_pss_sha512_224_check_encoding,
         vg_rsa_pss_sha512_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_check_encoding::vg_rsa_pss_sha512_check_encoding,

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the call
@@ -143,7 +144,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.H.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {P : EP} {σ s : State} (hr : V1 h g P σ s) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e (P.scr + BitVec.ofNat 32 oEm) P.K P.el P.rl)
         (pdWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨⟨⟨hc, hi, -⟩, -⟩, pa⟩ := hr

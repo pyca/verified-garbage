@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # `vg_rsa_check_crt_key` on ARMv7: correctness
 
@@ -26,8 +27,8 @@ abbrev insC : List (Nat × Nat) := [(0, aP), (2, aQ), (4, aDP), (6, aDQ), (8, aQ
 
 theorem code_eq : VG.Impl.Rsa.Arm.CheckCrtKey.code = fn (4 * 10) (insC.map fun p => (4 * p.1, p.2)) crtBody := rfl
 
-theorem cck_pre (s : State) (h : (Spec.Rsa.checkCrtKeyContract abi 0).pre s) : FnPre 12 10 insC s := by
-  sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
+theorem cck_pre (s : State) (h : (Proof.Rsa.checkCrtKeyContract abi 0).pre s) : FnPre 12 10 insC s := by
+  sig_pre [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
     State.addr] at h
   obtain ⟨sp, rd, wr, dN, dE, dP, dQ, dDP, dDQ, dQI, dA, fN, fE, fP, fQ, fDP, fDQ, fQI, fS, v, e1, e2, p1, p2,
     q1, q2, l1, l2, l3, scr⟩ := h
@@ -97,16 +98,16 @@ end VG.Proof.Rsa.Arm.CheckCrtKey
 namespace VG.Proof.Rsa.Arm.CheckCrtKey
 open VG VG.Arm VG.Proof.Rsa.Arm.KeyCheck
 
-theorem cck_contract_correct (s : State) (h : (Spec.Rsa.checkCrtKeyContract abi 0).pre s) :
+theorem cck_contract_correct (s : State) (h : (Proof.Rsa.checkCrtKeyContract abi 0).pre s) :
     ∃ tr t, Exec isa VG.Impl.Rsa.Arm.CheckCrtKey.code s tr t ∧ abiPreserved s t ∧
-      (Spec.Rsa.checkCrtKeyContract abi 0).post s t := by
+      (Proof.Rsa.checkCrtKeyContract abi 0).post s t := by
   have pre := cck_pre s h
-  sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
+  sig_pre [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
     State.addr] at h
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, p2, -, q2, l1, l2, l3, -⟩ := h
   obtain ⟨tr, t, run, pres, r0⟩ := cck_ok pre l1 l2 l3 p2 q2
   refine ⟨tr, t, run, pres, ?_⟩
-  sig_post [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_post [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   exact r0
 

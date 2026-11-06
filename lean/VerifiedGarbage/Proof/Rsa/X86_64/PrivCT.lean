@@ -22,6 +22,8 @@ meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on x86-64: constant time
@@ -414,7 +416,7 @@ its independently verified public operation, meets the shared
 contract. -/
 theorem code_verified (v : CrtImpl) (pcName pdName : String) :
     Verified target (code v.name v.code pcName v.pc pdName
-      (v.pubOp.code)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
+      (v.pubOp.code)) (Proof.Rsa.privateCheckedContract abi stackBytes) :=
   have hct : ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName
       v.pc pdName (v.pubOp.code)) := code_constantTime v pcName pdName
   Verified.of_correct (k := chkContract) (code_correct v pcName pdName) hct private_checked_implies

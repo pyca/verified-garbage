@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPubCall
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: constant time
@@ -40,11 +42,11 @@ def dataOf (s : State) : List (BitVec 64) × List (BitVec 64) × List Nat × Add
     (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat ++ Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat).map
       (·.toNat), s.sp)
 
-theorem pub_data {s₁ s₂ : State} (h : (Spec.Rsa.privateCheckedContract abi frameBytes).pub s₁ s₂) :
+theorem pub_data {s₁ s₂ : State} (h : (Proof.Rsa.privateCheckedContract abi frameBytes).pub s₁ s₂) :
     dataOf s₁ = dataOf s₂ := by
   have e : frameBytes = 3327 + 1 := rfl
   rw [e] at h
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
@@ -75,7 +77,7 @@ theorem same_of {s₁ s₂ : State} (h : dataOf s₁ = dataOf s₂) : Same s₁ 
 
 /-- On entry, with the public data `d`. -/
 def Φ0 (d : List (BitVec 64) × List (BitVec 64) × List Nat × Addr) (s : State) : Prop :=
-  (Spec.Rsa.privateCheckedContract abi frameBytes).pre s ∧ dataOf s = d
+  (Proof.Rsa.privateCheckedContract abi frameBytes).pre s ∧ dataOf s = d
 
 /-- Two states for the same public data. -/
 theorem same {d} {s₁ s₂ : State} (h₁ : Φ0 d s₁) (h₂ : Φ0 d s₂) : Same s₁ s₂ := same_of (h₁.2.trans h₂.2.symm)
@@ -90,10 +92,10 @@ theorem pub_of {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp) (hr : ∀ r ∈ arg
     (ha : ∀ i < 12, stackArg s₁ i = stackArg s₂ i)
     (hn : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r5) (s₁.gpr .r6).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r5) (s₂.gpr .r6).toNat)
     (he : Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r7) (s₁.gpr .r8).toNat = Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r7) (s₂.gpr .r8).toNat) :
-    (Spec.Rsa.privateCheckedContract abi frameBytes).pub s₁ s₂ := by
+    (Proof.Rsa.privateCheckedContract abi frameBytes).pub s₁ s₂ := by
   have e : frameBytes = 3327 + 1 := rfl
   rw [e]
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
     List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
   exact ⟨hsp, by rw [hn, he], hr .r3 (by decide), hr .r4 (by decide), hr .r5 (by decide), hr .r6 (by decide),
@@ -248,8 +250,8 @@ theorem code_rel : RelCT isa (Two Φ0) code fun _ _ => True :=
   RelCT.alloc (fun _ _ ⟨_, _, _, hsp⟩ => hsp) (body_rel.mono (fun a b ⟨s, t, ⟨d, φs, φt, hsp⟩, ea, eb⟩ =>
     ⟨d, ⟨s, φs, ea⟩, ⟨t, φt, eb⟩, by rw [ea, eb]; simp only [allocated, hsp]⟩) fun _ _ h => h)
 
-theorem code_ct : ConstantTime isa (Spec.Rsa.privateCheckedContract abi frameBytes).pre
-    (Spec.Rsa.privateCheckedContract abi frameBytes).pub code :=
+theorem code_ct : ConstantTime isa (Proof.Rsa.privateCheckedContract abi frameBytes).pre
+    (Proof.Rsa.privateCheckedContract abi frameBytes).pub code :=
   RelCT.constantTime (code_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 # `vg_rsa_check_key` and `vg_rsa_check_crt_key` on PPC64LE: the contracts the proofs are written against
 
 The shared contracts (`Spec.Rsa.checkKeyContract`,
-`Spec.Rsa.checkCrtKeyContract`) stated on the registers and the stack.
+`Proof.Rsa.checkCrtKeyContract`) stated on the registers and the stack.
 `vg_rsa_check_key`: `(n, n_len, e, e_len, d, d_len, p, p_len)` in
 `r3`–`r10` and `q`, `q_len`, `dp`, `dp_len`, `dq`, `dq_len`, `qinv`,
 `qinv_len`, `scratch` and `scratch_len` the stack arguments 0–9;

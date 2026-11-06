@@ -138,7 +138,7 @@ theorem R1.privArgs {σ s : State} (h : R1 P σ s) :
   · rw [hsp]; omega
 
 /-- The name of `vg_rsa_private_checked` over `v`. -/
-def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     VP (R1 P) (.call (privName v) (Proof.Rsa.X86.PrivChecked.privCode v)) (R2 P) := by

@@ -403,7 +403,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
@@ -538,7 +538,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -948,7 +948,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal,
+        vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal::vg_rsa_private_checked_umaal,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
@@ -1089,6 +1089,6 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal,
+        vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
     )
 }
