@@ -28,7 +28,9 @@ meta import VerifiedGarbage.TCB.AArch64.Target
 
 `enter_verified` and `clear_verified` prove the functions against their
 contracts (`Spec/Dit.lean`), which say what every contract can: no memory
-written, the calling convention's preserved state kept, constant time.
+written, the calling convention's preserved state kept, constant time, with
+PSTATE.DIT public for `vg_dit_enter`, which leaks whether it was off
+(`enter_leak`): it writes PSTATE.DIT only then.
 
 `enter_dit` and `clear_dit` prove what the contracts cannot name, the
 functions' effect on PSTATE.DIT, of every run of their code in the model:
@@ -41,16 +43,48 @@ and 0 if it was 0; after `vg_dit_clear`, it is 0.
 namespace VG.Proof.Dit.AArch64
 open VG VG.AArch64 VG.Impl.Dit.AArch64 RegUpd
 
+/-- The head of `vg_dit_enter`: PSTATE.DIT into `x0`, shifted down to bit 0,
+leaking nothing. -/
+theorem enter_head (s : State) :
+    execBlock isa [.mrsDit .x0, .lsr .x .x0 .x0 24] s =
+      some ((s.write .x .x0 (if s.dit then 0x1000000#64 else 0#64)).write .x .x0
+        ((if s.dit then 0x1000000#64 else 0#64) >>> 24), []) := by
+  simp [execBlock, isa, exec, addrs, State.read, gpr_write_self, Size.bits]
+
 /-- From any state, `vg_dit_enter` runs and ends with PSTATE.DIT on, `x0`
 its old value (1 or 0), and the memory and regions unchanged. -/
 theorem enter_wp (s : State) :
     WP isa enter s fun t => t.dit = true ∧ t.gpr .x0 = (if s.dit then 1 else 0) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  apply WP.of_runBlock
-  cases hd : s.dit <;>
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, hd, gpr_write_self,
-      mem_write, rd_write, wr_write, BitVec.setWidth_eq, Size.bits, Option.some.injEq,
-      exists_eq_left', ite_true, ite_false, Nat.reduceLT, Bool.false_eq_true] <;> decide
+  refine WP.seq (WP.block ⟨_, enter_head s, ?_⟩)
+  cases hd : s.dit
+  · refine WP.ite true (by simp [eval, State.read, gpr_write_self]) (fun _ => ?_)
+      (fun h => nomatch h)
+    exact WP.block ⟨_, rfl, by simp [State.write, hd]⟩
+  · refine WP.ite false (by simp [eval, State.read, gpr_write_self]) (fun h => nomatch h)
+      (fun _ => WP.block_nil ?_)
+    simp [State.write, hd]
+
+/-- Every run of `vg_dit_enter` leaks only whether PSTATE.DIT was off: the
+branch it takes, to turn it on only then. -/
+theorem enter_leak {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
+    t = [.branch (!s.dit)] := by
+  cases h with
+  | seq h₁ h₂ =>
+    rw [Exec.block_iff, enter_head] at h₁
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h₁)
+    cases h₂ with
+    | iteT hc h =>
+      rw [Exec.block_iff] at h
+      simp only [execBlock, isa, exec, addrs, Option.map_some, List.map_nil, List.append_nil,
+        Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨-, rfl⟩ := h
+      cases hd : s.dit <;> simp [hd, eval, State.read, gpr_write_self] at hc ⊢
+    | iteF hc h =>
+      rw [Exec.block_iff] at h
+      simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨-, rfl⟩ := h
+      cases hd : s.dit <;> simp [hd, eval, State.read, gpr_write_self] at hc ⊢
 
 /-- Every run of `vg_dit_enter` ends with PSTATE.DIT on, and with `x0` 1 if
 PSTATE.DIT was on on entry and 0 if it was off. -/
@@ -91,8 +125,12 @@ def sat : State where
   rd := []
   wr := []
 
+/-- `vg_dit_enter`'s contract as it is proven: `contract`, with PSTATE.DIT
+public too, as `Spec.Dit.enterContract` makes it (`Abi.withMode`). -/
+def enterK : Contract isa := { contract with pub s t := s.sp = t.sp ∧ s.dit = t.dit }
+
 theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) := by
-  apply Verified.of_correct (k := contract)
+  apply Verified.of_correct (k := enterK)
   · intro s _
     obtain ⟨tr, t, he, -⟩ := enter_wp s
     refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, trivial⟩
@@ -100,15 +138,21 @@ theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) := b
     have hc := instrs_keeps (c := enter) (rs := preserved) (by decide +kernel)
     apply Exec.gpr (fun i hi => ?_) he
     simpa using List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
-  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs []) ?_ (by taint_decide)
-    intro s t _ _ h
-    exact ⟨h, fun r hr => by simp at hr⟩
+  · exact ConstantTime.of_leakage (fun s => [.branch (!s.dit)]) (fun _ _ _ _ h => enter_leak h)
+      fun _ _ _ _ h => by rw [h.2]
   · exact {
-      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, contract, abi, argRegs]
+      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+        contract, abi, argRegs]
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
-      pub := by sig_implies_pub [Spec.Dit.enterContract, Spec.Dit.enterSig, contract, abi, argRegs]
-      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, contract, abi, argRegs] [sat] using sat }
+      pub := by
+        intro s₁ s₂ _ _ h
+        sig_pub [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, abi, argRegs] at h
+        sig_split h
+        refine ⟨by with_reducible assumption, ?_⟩
+        cases h₁ : s₁.dit <;> cases h₂ : s₂.dit <;> simp_all
+      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+        contract, abi, argRegs] [sat] using sat }
 
 theorem clear_verified : Verified target clear (Spec.Dit.clearContract abi) := by
   apply Verified.of_correct (k := contract)
