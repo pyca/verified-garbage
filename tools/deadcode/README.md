@@ -24,7 +24,14 @@ invisible and the rules below keep them:
 2. **Tactics, macros and notation.** A module that defines syntax is never
    deleted (`plan2.py`); its dead declarations may be trimmed. (ECDSA's
    `JacChecks` looked dead but defines tactics live proofs use.)
-3. **Attributes and instances.** A declaration with an attribute (simp sets,
+3. **Names inside syntax.** Declarations named only inside `macro_rules`,
+   `macro`, `elab` or `syntax` bodies, or quotations (`` `(...) ``,
+   `` ``name ``), and the auxiliary declarations a `notation` generates,
+   have no `.ilean` reference either. Before applying, grep the removal
+   set's short names against every `macro`/`elab`/`syntax`/`notation`
+   module and quotation in the tree, and keep the hits. (Found by the
+   Bignum and Framework passes: e.g. RISC-V `MRun.read_four`.)
+4. **Attributes and instances.** A declaration with an attribute (simp sets,
    instances, ...) in a module the roots import is live. `irreducible`,
    `inline` and the like do not count.
 
