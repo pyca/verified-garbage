@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
+public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Framework.Omega
@@ -110,5 +111,23 @@ theorem GeneratorSearchPlan.remaining_step (p : GeneratorSearchPlan) {used : Nat
     simp only [List.length_drop]; omega)]
   simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
     remaining, List.drop_drop]
+
+/-- The `h` candidates the search reads from offset `used` of the tape. -/
+def GeneratorSearchPlan.count (p : GeneratorSearchPlan) (used : Nat) : Nat :=
+  VG.Proof.Dsa.Generation.generatorCount (Spec.Dsa.decodeBE p.core.pb) p.q
+    ((Spec.Dsa.generationChunks p.core.len (p.tape.drop used)).map Spec.Dsa.decodeBE)
+
+theorem GeneratorSearchPlan.count_done (p : GeneratorSearchPlan) {used : Nat}
+    (h : p.tape.length - used < p.core.len) : p.count used = 0 :=
+  VG.Proof.Dsa.Generation.generatorCount_chunks_done (by simpa only [List.length_drop] using h)
+
+theorem GeneratorSearchPlan.count_step (p : GeneratorSearchPlan) {used : Nat}
+    (room : used + p.core.len ≤ p.tape.length) :
+    p.count used = if (p.chunk used room).accepts then 1 else p.count (used + p.core.len) + 1 := by
+  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega
+  rw [count, VG.Proof.Dsa.Generation.generatorCount_chunks_step hw (by
+    simp only [List.length_drop]; omega)]
+  simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
+    count, List.drop_drop]
 
 end VG.Proof.Dsa.AArch64.Generation

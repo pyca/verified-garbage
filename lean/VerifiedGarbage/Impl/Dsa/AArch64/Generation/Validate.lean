@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 
-/-! Validate the generated domain using the existing native DSA checker. -/
+/-! Validate the generated domain using the existing native DSA checker:
+the status 1 for a valid domain, 2 for an invalid one. -/
 @[expose] public section
 namespace VG.Impl.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Impl.Bignum.AArch64
@@ -15,6 +16,6 @@ def validateArgs (pLen qLen : Nat) : List Instr :=
 
 def validate (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.seq (.block (validateArgs pLen qLen)) (Generate.checkParameters mul))
-    (.ite (.zero .x .x0) (.block (stackStatus 3)) (.block (stackStatus 1)))
+    (.ite (.zero .x .x0) (.block (stackStatus 2)) (.block (stackStatus 1)))
 
 end VG.Impl.Dsa.AArch64.Generation

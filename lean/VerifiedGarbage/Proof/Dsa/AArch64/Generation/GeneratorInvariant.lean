@@ -12,14 +12,17 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
-def GeneratorInvariant (p : GeneratorSearchPlan) (expected : Option Nat) (initial : State)
-    (used : Nat) (s : State) : Prop :=
+/-- `final` is the tape offset the search stops at, the octets of the
+candidates it reads. -/
+def GeneratorInvariant (p : GeneratorSearchPlan) (expected : Option Nat) (final : Nat)
+    (initial : State) (used : Nat) (s : State) : Prop :=
   ∃ W, GeneratorSearchMemory p W s ∧ W 20 = BitVec.ofNat 64 used ∧
-    expected = p.remaining used ∧ Frame p.core.changed initial.mem s.mem ∧
-    s.rd = initial.rd ∧ s.wr = initial.wr
+    expected = p.remaining used ∧ final = used + p.core.len * p.count used ∧
+    Frame p.core.changed initial.mem s.mem ∧ s.rd = initial.rd ∧ s.wr = initial.wr
 
-def GeneratorFinished (p : GeneratorSearchPlan) (expected : Option Nat) (initial s : State) : Prop :=
-  ∃ W, GeneratorSearchMemory p W s ∧
+def GeneratorFinished (p : GeneratorSearchPlan) (expected : Option Nat) (final : Nat)
+    (initial s : State) : Prop :=
+  ∃ W, GeneratorSearchMemory p W s ∧ W 20 = BitVec.ofNat 64 final ∧
     ((W 19 = 3 ∧ expected = none) ∨
       ∃ value, W 19 = 1 ∧ expected = some value ∧
         Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.core.B g) p.core.len = Spec.Dsa.encodeBE p.core.len value) ∧
@@ -33,15 +36,15 @@ theorem generatorMemory_congr {p : GeneratorSearchPlan} {W : Nat → BitVec 64} 
   exact h.frame (lay_of_rep h.layout R Rt rfl hk.sp hk.wr)
     ⟨V, Rt⟩ (fun _ _ => rfl) (by rw [hm]; exact Frame.refl _ _) hk.rd hk.wr
 
-theorem generatorInvariant_stable (p : GeneratorSearchPlan) (expected : Option Nat)
-    (initial : State) (used : Nat) : TapeStable (GeneratorInvariant p expected initial used) := by
-  rintro s t ⟨W, h, h20, he, hf, hr, hw⟩ hm hk
-  exact ⟨W, generatorMemory_congr h hm hk, h20, he, hm ▸ hf, hk.rd.trans hr, hk.wr.trans hw⟩
+theorem generatorInvariant_stable (p : GeneratorSearchPlan) (expected : Option Nat) (final : Nat)
+    (initial : State) (used : Nat) : TapeStable (GeneratorInvariant p expected final initial used) := by
+  rintro s t ⟨W, h, h20, he, hc, hf, hr, hw⟩ hm hk
+  exact ⟨W, generatorMemory_congr h hm hk, h20, he, hc, hm ▸ hf, hk.rd.trans hr, hk.wr.trans hw⟩
 
-theorem generatorFinished_stable (p : GeneratorSearchPlan) (expected : Option Nat)
-    (initial : State) : TapeStable (GeneratorFinished p expected initial) := by
-  rintro s t ⟨W, h, result, hf, hr, hw⟩ hm hk
-  refine ⟨W, generatorMemory_congr h hm hk, ?_, hm ▸ hf, hk.rd.trans hr, hk.wr.trans hw⟩
+theorem generatorFinished_stable (p : GeneratorSearchPlan) (expected : Option Nat) (final : Nat)
+    (initial : State) : TapeStable (GeneratorFinished p expected final initial) := by
+  rintro s t ⟨W, h, h20, result, hf, hr, hw⟩ hm hk
+  refine ⟨W, generatorMemory_congr h hm hk, h20, ?_, hm ▸ hf, hk.rd.trans hr, hk.wr.trans hw⟩
   rcases result with fail | ⟨value, h19, he, hg⟩
   · exact Or.inl fail
   · exact Or.inr ⟨value, h19, he, hm ▸ hg⟩
@@ -56,18 +59,20 @@ theorem generator_frame_write {p : GeneratorSearchPlan} {m m' : Mem}
   unfold frameBytes at hn
   omega
 
-theorem generator_done {p : GeneratorSearchPlan} {expected : Option Nat} {initial : State}
+theorem generator_done {p : GeneratorSearchPlan} {expected : Option Nat} {final : Nat} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
-    (hi : GeneratorInvariant p expected initial used s) (hex : p.tape.length - used < p.core.len)
+    (hi : GeneratorInvariant p expected final initial used s) (hex : p.tape.length - used < p.core.len)
     (R : Rep s.mem p.core.F p.core.S V W)
     (Lt : Lay t p.core.F p.core.S) (Rt : Rep t.mem p.core.F p.core.S V (upd W 19 3))
     (ft : Outside p.core.F 152 8 s.mem t.mem) (kt : Keep [.x0, .x15] s t) :
-    GeneratorFinished p expected initial t := by
-  obtain ⟨Wi, h, _, he, fi, ri, wi⟩ := hi
+    GeneratorFinished p expected final initial t := by
+  obtain ⟨Wi, h, h20, he, hc, fi, ri, wi⟩ := hi
   obtain ⟨Vi, Ri⟩ := h.rep
   have words : ∀ k < 34, W k = Wi k := fun k hk => (R.fr k hk).symm.trans (Ri.fr k hk)
   have ff := generator_frame_write ft
   refine ⟨upd W 19 3, h.frame Lt ⟨V, Rt⟩ ?_ ff kt.rd kt.wr,
+    by simp only [upd, show (20 : Nat) ≠ 19 by decide, ite_false, words 20 (by decide), h20, hc,
+      p.count_done hex, Nat.mul_zero, Nat.add_zero],
     Or.inl ⟨by simp [upd], he.trans (p.remaining_done hex)⟩, fi.trans ff,
     kt.rd.trans ri, kt.wr.trans wi⟩
   intro k hk
