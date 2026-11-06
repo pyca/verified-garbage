@@ -1,4 +1,5 @@
-use super::{Search, Searcher, select_backends};
+use super::{Search, Searcher};
+use crate::arch::dsa::vg_dsa_parameter_search_init;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
     VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
@@ -10,19 +11,20 @@ use crate::arch::dsa::{
     VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_ADX_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES,
-    VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_ADX_FEATURES, vg_dsa_parameter_search_mr_adx,
-    vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_mr_adx,
-    vg_dsa_parameter_search_sha1_shani_sha256_avx2,
+    VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_ADX_FEATURES, vg_dsa_parameter_search,
+    vg_dsa_parameter_search_mr_adx, vg_dsa_parameter_search_sha1_shani,
+    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_sha256_avx2,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
     vg_dsa_parameter_search_sha1_shani_sha256_shani,
     vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx, vg_dsa_parameter_search_sha256_avx2,
     vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_shani,
     vg_dsa_parameter_search_sha256_shani_mr_adx,
 };
-use crate::arch::dsa::{vg_dsa_parameter_search, vg_dsa_parameter_search_init};
 use crate::cpu::detected;
+#[cfg(target_arch = "x86_64")]
 use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
 use alloc::vec;
+#[cfg(target_arch = "x86_64")]
 use verified_garbage_cpu::Features;
 
 const WIDTHS: [(usize, usize); 3] = [(128, 20), (256, 32), (384, 32)];
@@ -74,6 +76,7 @@ fn check(search: Search) {
 #[test]
 #[cfg(target_arch = "x86_64")]
 fn backend_combinations() {
+    use super::select_backends;
     // Some of these pairs cannot be selected by a real CPU, since the hash
     // instructions share feature requirements. Check the complete dispatch
     // table against the emitted feature sets, at every width.
@@ -173,14 +176,24 @@ fn backend_combinations() {
 }
 
 #[test]
+#[cfg(target_arch = "powerpc64")]
+fn baseline() {
+    check(super::select(detected()));
+}
+
+#[test]
 #[cfg(target_arch = "aarch64")]
 fn backend_combinations() {
+    use super::select_backends;
     use crate::arch::dsa::{
         VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_FEATURES,
         VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES,
-        VG_DSA_PARAMETER_SEARCH_SHA256_SHA2_FEATURES, vg_dsa_parameter_search_sha1_sha2,
-        vg_dsa_parameter_search_sha1_sha2_sha256_sha2, vg_dsa_parameter_search_sha256_sha2,
+        VG_DSA_PARAMETER_SEARCH_SHA256_SHA2_FEATURES, vg_dsa_parameter_search,
+        vg_dsa_parameter_search_sha1_sha2, vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
+        vg_dsa_parameter_search_sha256_sha2,
     };
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    use verified_garbage_cpu::Features;
     // The mixed SHA pairs cannot be selected by a real CPU, since both hashes
     // need the same feature. Check the complete dispatch table against the
     // emitted feature sets, at every width.

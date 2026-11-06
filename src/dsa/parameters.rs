@@ -9,25 +9,42 @@
 ))]
 
 // Hashing, primality tests, retries, generator selection and the final
-// validation are all verified code. On x86-64 and AArch64 the Rust refills one
-// tape as the search asks (`search`); elsewhere it supplies the three entropy tapes. It
+// validation are all verified code. Where the refillable-tape search is
+// emitted, the Rust refills one tape as it asks (`search`); elsewhere it
+// supplies the three entropy tapes. It
 // allocates the output and working space, and chooses the implementation.
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{Error, Secret};
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 use crate::arch::dsa::vg_dsa_generate_parameters;
 #[cfg(target_arch = "x86")]
 use crate::arch::dsa::{
     vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
     vg_dsa_generate_parameters_sha256_shani,
 };
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 use crate::cpu::detected;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 use verified_garbage_cpu::Features;
 
 mod search;
@@ -84,9 +101,17 @@ impl Parameters {
             3072 => (384, 32),
             _ => return Err(Error::Length),
         };
-        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "aarch64"
+        ))]
         let packed = search::generate(p_len, q_len, random)?;
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+        #[cfg(not(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "aarch64"
+        )))]
         let packed = tapes(p_len, q_len, random)?;
         Ok(Self {
             packed,
@@ -111,7 +136,11 @@ impl Parameters {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -129,7 +158,11 @@ type Generate = unsafe extern "C" fn(
 
 /// The finite search over three fixed tapes (`VG.Spec.Dsa.generateParametersBytes`),
 /// on the targets that do not have the refillable-tape search yet.
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "aarch64"
+)))]
 fn tapes(
     p_len: usize,
     q_len: usize,
@@ -193,17 +226,6 @@ fn select_backends(
         (H1::Scalar, H256::ShaNi) => vg_dsa_generate_parameters_sha256_shani,
         (H1::ShaNi, H256::Scalar) => vg_dsa_generate_parameters_sha1_shani,
         (H1::ShaNi, H256::ShaNi) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-    }
-}
-
-/// The PPC64LE implementation: neither hash has a variant there, so the
-/// match names only their baselines, and a new hash backend does not compile
-/// until generation handles it.
-#[cfg(target_arch = "powerpc64")]
-fn select(features: Features) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    match (H1::select(features), H256::select(features)) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
     }
 }
 

@@ -35,7 +35,7 @@ def testCfg (c : Cfg) (cl : Claims) (witLen : Nat) : Option (Bool × Spec.RsaKey
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
 
-theorem varOk_of {o : Nat} (h : o + 8 ≤ fSave ∧ o % 8 = 0 ∧ o ≠ fLR ∧ o ∉ [fOut, fWit, fWitLen, fHs, fHsLen]) :
+theorem varOk_of {o : Nat} (h : o + 8 ≤ fSave ∧ o % 8 = 0 ∧ o ≠ fLR ∧ o ∉ [fOut, fWit, fWitLen, fUsedP, fStP]) :
     VarOk G o := by
   refine ⟨h.1, h.2.1, h.2.2.1, fun p hp e => h.2.2.2 ?_⟩
   simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
