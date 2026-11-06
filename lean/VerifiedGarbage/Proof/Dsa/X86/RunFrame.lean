@@ -52,14 +52,4 @@ theorem runFrame_pointer {s t : State} {base : Addr} {rs : List Reg} {p : Pointe
   | signatureS =>
     simp only [pointerValue, runFrame_field O (f := .signature) (by decide), runFrame_field O (f := .qLen) (by decide)]
 
-theorem OperandReady.keep_pointer {s t : State} {base : Addr} {n len : Nat} {rs : List Reg} {p : Pointer}
-    (R : OperandReady s base n p len) (K : Keeps rs s t) (P : pointerValue base t p = pointerValue base s p) :
-    OperandReady t base n p len :=
-  ⟨⟨by rw [P]; exact R.fits, by rw [P, K.2.1, K.2.2]; exact R.reads⟩, by rw [P]; exact R.apart⟩
-
-theorem OperandReady.keep_run {s t : State} {base : Addr} {n len : Nat} {rs : List Reg} {p : Pointer}
-    (R : OperandReady s base n p len) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
-    (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) : OperandReady t base n p len :=
-  R.keep_pointer K (runFrame_pointer O K hdi hp)
-
 end VG.Proof.Dsa.X86

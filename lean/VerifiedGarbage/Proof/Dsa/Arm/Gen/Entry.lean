@@ -55,14 +55,6 @@ theorem wmem_sep (m : Mem) (B : Addr) {d : Nat} (hd : d + 4 ≤ 4096) :
     rw [wmem_cons_sep m B v l this.1 this.2 hd]
     exact wmem_sep m B hd l fun q hq => h q (List.mem_cons_of_mem _ hq)
 
-theorem wmem_frame (m : Mem) (B : Addr) {R : Region} (hR : ∀ o < 128, o % 4 = 0 → R.Contains (B + BitVec.ofNat 64 o) 4) :
-    ∀ l : List (Nat × BitVec 32), (∀ q ∈ l, q.1 < 128 ∧ q.1 % 4 = 0) → Frame [R] m (wmem m B l)
-  | [], _ => Frame.refl _ _
-  | (o, v) :: l, h => by
-    have := h (o, v) List.mem_cons_self
-    exact (wmem_frame m B hR l fun q hq => h q (List.mem_cons_of_mem _ hq)).writeW List.mem_cons_self _
-      (hR o this.1 this.2)
-
 /-! ## The entry's frame words -/
 
 /-- The variable frame words the entry writes. -/

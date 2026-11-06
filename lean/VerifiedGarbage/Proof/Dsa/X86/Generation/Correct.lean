@@ -53,11 +53,6 @@ structure GPost (E : Env) (g : Geo) (t u : State) : Prop where
   rd : u.rd = t.rd
   wr : u.wr = t.wr
 
-theorem GPost.pre {E : Env} {g : Geo} {t t' u : State} (P : GPost E g t' u) (hm : t'.mem = t.mem)
-    (esp : t'.gpr .esp = t.gpr .esp) (rd : t'.rd = t.rd) (wr : t'.wr = t.wr) : GPost E g t u :=
-  ⟨by rw [← hm]; exact P.fr, P.out, P.st0, by rw [P.st1, hm], by rw [P.st2, hm], P.st3, P.used, P.eax,
-    P.esp.trans esp, P.rd.trans rd, P.wr.trans wr⟩
-
 theorem generate_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
     {t : State} (B : Base E t)
     (hL : t.mem.readW (off E.base fSeedLeft) 32 = BitVec.ofNat 32 E.k0)

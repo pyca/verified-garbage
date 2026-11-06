@@ -148,22 +148,6 @@ theorem verifyTail_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat}
       fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
 
-theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
-    {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
-    (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
-    (my : (.input .y, pLen) ∈ ins) (mr : (.input .signature, qLen) ∈ ins) (ms : (.signatureS, qLen) ∈ ins)
-    (md : (.input .digest, c) ∈ ins)
-    (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
-    (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (SignVerify.verifyCompute pLen qLen) s₁ s₂ := by
-  unfold SignVerify.verifyCompute Core.sequence
-  dsimp only [List.foldr]
-  exact SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
-    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
-    fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => verifyTail_trace (X.run A₁ A₂) mp mq mg my mr ms md
-      ((countValue_run A₁).trans hc₁) ((countValue_run A₂).trans hc₂) L₁ L₂ D₁ D₂
-
 /-- The output's pointer, and the flag in `r3`. -/
 theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base size) (hz : 120 ≤ size)
     (hq : qLen < 2 ^ 16) (second : Bool) :
@@ -274,21 +258,5 @@ theorem signBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
     fun w₁ w₂ ⟨_, _, _, _, _, _, Bdw₁⟩ ⟨_, _, _, _, _, _, Bdw₂⟩ => ?_
   exact SameTrace.of_relCT result_relCT
     (agree0 (wv₁.of_rest Bdw₁.rest (by decide)) (wv₂.of_rest Bdw₂.rest (by decide)))
-
-theorem verifyBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
-    {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
-    (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
-    (my : (.input .y, pLen) ∈ ins) (mr : (.input .signature, qLen) ∈ ins) (ms : (.signatureS, qLen) ∈ ins)
-    (md : (.input .digest, c) ∈ ins)
-    (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
-    (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (SignVerify.verifyBody pLen qLen) s₁ s₂ := by
-  unfold SignVerify.verifyBody
-  exact SameTrace.seq (verifyCompute_trace X mp mq mg my mr ms md hc₁ hc₂ D₁ D₂)
-    (verifyCompute_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) (X.C₁.inp mr) (X.C₁.inp ms)
-      (X.C₁.inp md) hc₁ D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (verifyCompute_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) (X.C₂.inp mr) (X.C₂.inp ms)
-      (X.C₂.inp md) hc₂ D₂.hP D₂.hPo D₂.hQ D₂.hQo)
-    fun _ _ ⟨_, A₁⟩ ⟨_, A₂⟩ => SameTrace.of_relCT result_relCT (agree0 (A₁.ws X.C₁.S.ws) (A₂.ws X.C₂.S.ws))
 
 end VG.Proof.Dsa.Arm

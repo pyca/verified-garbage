@@ -13,12 +13,6 @@ retries, output clearing and the declared leakage trace.
 namespace VG.Impl.Dsa.X86_64.RandomSign
 open VG VG.X86_64 Random
 
-/-- Incoming stack argument j, after allocating the frame. -/
-def arg (j : Nat) : MemOp := sp (frameBytes + 8 + 8 * j)
-
-def copyArg (j slot : Nat) : List Instr :=
-  copySlot (frameBytes + 8 + 8 * j) slot
-
 /-- Preserve all arguments across calls and start with no consumed bytes. -/
 def entryHeader : List Instr :=
   [.store (sp oOut) .rdi, .store (sp oOutLen) .rsi, .store (sp oUsedPtr) .rdx,

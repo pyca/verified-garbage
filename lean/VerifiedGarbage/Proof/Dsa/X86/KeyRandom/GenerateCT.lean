@@ -80,16 +80,4 @@ theorem generateWith_ct {I : State → Mem → Prop} (F : DeriveInvoke I)
   rw [← draw_spl] at O₁ ax₁ O₂ ax₂
   have ed := sampledWith_ct F stable timing A₁ A₂ e hk hc₁ hc₂ hr (sample_status_eq e htr) O₁ O₂ ax₁ ax₂ (stable os₁ (by decide) ip₁) (stable os₂ (by decide) ip₂) sd₁ sd₂
   simp only [ep, ec, es, ed]
-theorem generate_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
-    (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
-    (hk : keyLeak s₁ = keyLeak s₂) (hc₁ : checked s₁ = true) (hc₂ : checked s₂ = true)
-    (hr : (rResult s₁).status = (rResult s₂).status) (ht : (rResult s₁).trace = (rResult s₂).trace)
-    (R₁ : Ready s₁ t₁) (R₂ : Ready s₂ t₂)
-    (used₁ : slot t₁.mem (rBase s₁) oUsed = 0) (used₂ : slot t₂.mem (rBase s₂) oUsed = 0)
-    {tr₁ tr₂ : List Leak} {u₁ u₂ : State}
-    (x₁ : Exec isa (generate F.name F.code) t₁ tr₁ u₁)
-    (x₂ : Exec isa (generate F.name F.code) t₂ tr₂ u₂) : tr₁ = tr₂ :=
-  generateWith_ct F.invoke (fun _ _ _ => trivial) F.invoke_ct A₁ A₂ e hk hc₁ hc₂ hr ht R₁ R₂
-    used₁ used₂ trivial trivial x₁ x₂
-
 end VG.Proof.Dsa.X86.KeyRandom

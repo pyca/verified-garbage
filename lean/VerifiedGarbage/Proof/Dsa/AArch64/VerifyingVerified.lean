@@ -27,8 +27,4 @@ def verifyingSatState : State where
   rd := [⟨0x2000, 404⟩, ⟨0x4000, 40⟩, ⟨0x5000, 0⟩, ⟨0x10000, 16⟩]
   wr := [⟨0x8000, 16384⟩]
 
-theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi).pre s := by
-  sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, dsaVerifyStackArgs]
-    [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
-
 end VG.Proof.Dsa.AArch64

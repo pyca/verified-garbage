@@ -79,10 +79,6 @@ theorem loadQ_ok {s : State} {L : Lay} {key sig dig N : Addr} {k j : Nat} (h : Q
 theorem QArr.arr0 {L : Lay} {m m' : Mem} (h : QArr L m m') : arrQ m' L 0 = arrQ m L 0 :=
   Outside.val32 h (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
 
-theorem QArr.top0 {L : Lay} {m m' : Mem} (h : QArr L m m') :
-    word m' L.Q (slot 4 0 + 32) = word m L.Q (slot 4 0 + 32) :=
-  Outside.word h (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
-
 /-- The registers `ranges` writes. -/
 def rangesRegs : List Reg := enterRegs ++ [.r6, .r12] ++ loadRegs ++ inRangeRegs
 
@@ -203,15 +199,6 @@ theorem QBuf.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') : Body L 
 
 theorem QBuf.arr0 {L : Lay} {m m' : Mem} (h : QBuf L m m') : arrQ m' L 0 = arrQ m L 0 :=
   Outside.val32 h (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
-
-theorem QBuf.top0 {L : Lay} {m m' : Mem} (h : QBuf L m m') :
-    word m' L.Q (slot 4 0 + 32) = word m L.Q (slot 4 0 + 32) :=
-  Outside.word h (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)
-
-/-- `QS` after a change in the registers apart from those it reads. -/
-theorem QS.stepB {s t : State} {L : Lay} {key sig dig : Addr} {rs : List Reg} (h : QS s L key sig dig)
-    (k : Keep rs s t) (hr : ∀ r ∈ inRegs ++ regsRegs, r ∉ rs) : QS t L key sig dig :=
-  h.step k hr
 
 /-- The buffer's bytes are past the Q space. -/
 theorem buf_sepQ (L : Lay) {n : Nat} (hn : n ≤ 2 ^ 64 - 1600) :

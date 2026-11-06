@@ -40,10 +40,6 @@ theorem checkParameters_depth_bound (sq : Prog isa) (mul : Nat → Nat → Nat �
   and_intros
   all_goals first | exact hs | apply hm | exact (Nat.zero_le n)
 
-theorem checkParameters_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
-    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) :
-    generationDepth (Generate.checkParameters sq mul) := checkParameters_depth_bound sq mul hs hm
-
 theorem validate_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (hc : generationDepth (.call checkName (Generate.checkParameters sq mul))) (pLen qLen : Nat) :
     generationDepth (validate (checkName := checkName) sq mul pLen qLen) := by

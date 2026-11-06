@@ -146,8 +146,4 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .a
   · rw [mt, ← m1]
     exact (f1.mono (Nat.zero_le _) (by omega)).trans (w16.mono (Nat.zero_le _) (by omega))
 
-theorem pfront_ok {s : State} (h : pcContract.pre s) :
-    WP isa (.block Params.entry) s fun t => PFront s t ∧ Keep pentryRegs s t :=
-  pfront_ok_of (playOf_ok h) h.2.1 h.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1
-
 end VG.Proof.Dsa.RISCV64

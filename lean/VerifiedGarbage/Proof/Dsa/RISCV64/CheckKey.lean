@@ -49,8 +49,6 @@ header. -/
 def Kept (L : Lay) (m m' : Mem) : Prop :=
   ∀ x, (ofs L.S x < hLens ∨ (hLens + 8 ≤ ofs L.S x ∧ ofs L.S x < 256) ∨ L.Z ≤ ofs L.S x) → m' x = m x
 
-theorem Kept.refl (L : Lay) (m : Mem) : Kept L m m := fun _ _ => rfl
-
 theorem Kept.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : Kept L m₁ m₂) (h₂ : Kept L m₂ m₃) : Kept L m₁ m₃ :=
   fun x hx => (h₂ x hx).trans (h₁ x hx)
 

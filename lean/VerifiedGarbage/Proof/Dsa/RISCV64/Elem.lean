@@ -37,10 +37,6 @@ abbrev arrP (m : Mem) (L : Lay) (j : Nat) : Nat := wordsVal m L.S (slot L.wp j) 
 /-- Array `j` of the Q space. -/
 abbrev arrQ (m : Mem) (L : Lay) (j : Nat) : Nat := wordsVal m L.Q (slot L.wq j) L.wq
 
-theorem unmask_eq (b : Bool) :
-    (mask b &&& BitVec.ofInt 64 1) ^^^ BitVec.ofInt 64 1 = BitVec.ofNat 64 (if b then 0 else 1) := by
-  cases b <;> rfl
-
 /-- `unmask`: `a0 = 0` exactly when the mask of `b` in `a0` is all ones. -/
 theorem unmask_ok (s : State) {b : Bool} (h0 : s.gpr .a0 = mask b) :
     WP isa (.block unmask) s fun t => ((t.gpr .a0 = 0 ↔ b = true) ∧ t.mem = s.mem) ∧ Keep [.a0] s t := by
@@ -226,8 +222,6 @@ theorem clear_ok (s : State) {a b : Bool} (h1 : s.gpr .a1 = mask a) (h2 : s.gpr 
 
 /-- The registers `elemRange` writes. -/
 def elemRangeRegs : List Reg := [.s0, .t3, .t5] ++ belowRegs ++ eqRegs .a2 ++ [.a0, .a1]
-
-theorem slots_lt {w : Nat} : slot w 3 + 5 * (8 * (w + 2)) = slot w 8 := by simp only [Lay.slot_eq]; omega
 
 /-- `elemRange`: `a0 = 0` exactly when `1 < [4] < [0]`, with `[4]`'s word `w`
 zero; arrays 3, 5 and 7 change. -/

@@ -45,12 +45,6 @@ theorem argList_fits {bits : Nat} (hb : bits ≤ 3072) : ∀ a ∈ argList bits,
   · decide
   · decide
 
-theorem ofNat32_setWidth {n : Nat} (h : n < 2 ^ 32) :
-    (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
-
 /-- The arithmetic's words, from the size in `r8`, which `cmp` keeps. -/
 theorem sizeWords_ok {bits : Nat} (hb : Supported bits) {s : State} (h8 : s.gpr .r8 = BitVec.ofNat 64 bits) :
     WP isa (.block sizeWords) s fun t => t.gpr .r12 = BitVec.ofNat 64 (words bits) ∧

@@ -43,24 +43,4 @@ def Keeps (ws : Addr) (wsLen : Nat) (rs : List (Nat × Nat)) (m m' : Mem) : Prop
   ∀ i < 8 * wsLen, (∀ r ∈ rs, i < r.1 ∨ r.1 + r.2 ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- The working space, in 64-bit words; its address and length are public. -/
-def sig : Sig where
-  params := [("ws", .slice true .u64 "ws_len")]
-
-/-- For a working space of at least `L.size` bytes and an odd modulus `M`
-above 1: the number at `L.result` is `b ^ x mod M`, for the base `b` and the
-exponent `x` on entry. Only the bytes of `L.scratch` may change. The address
-and length of the working space are public; the numbers, the modulus among
-them, are secret. -/
-def powContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws wsLen m =>
-      let M := numAt m ws L.modulus (8 * L.n)
-      L.size ≤ 8 * wsLen.toNat ∧ M % 2 = 1 ∧ 1 < M)
-    (post := fun ws wsLen m m' _ =>
-      numAt m' ws L.result (8 * L.n) =
-        numAt m ws L.base (8 * L.n) ^ numAt m ws L.exponent (4 * L.e) % numAt m ws L.modulus (8 * L.n) ∧
-      Keeps ws wsLen.toNat L.scratch m m')
-    (stack := stack)
-
 end VG.Proof.Dsa.ModPow

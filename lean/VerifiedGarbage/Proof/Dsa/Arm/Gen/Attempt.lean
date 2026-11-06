@@ -99,9 +99,6 @@ def aOut (G : GP) (HO : HashOk Gh) (k : Nat) (n : BitVec 32) : Option (Option Sp
     (({ aBase G HO k n with cl := [(sPacked, Spec.Dsa.encodeParams G.pLen G.qLen a)] }).setV fUsed
       (BitVec.ofNat 32 (G.witLen - rest.length))).setV fStatus 1
 
-theorem aBase_LS (G : GP) (HO : HashOk Gh) (k : Nat) (n : BitVec 32) :
-    (aBase G HO k n).LS = [fStatus, fSeedLeft, fSeed, fC] := rfl
-
 theorem aBase_pnot (G : GP) (HO : HashOk Gh) (k : Nat) (n : BitVec 32) : PNot (aBase G HO k n) := by
   simp only [PNot]; decide
 

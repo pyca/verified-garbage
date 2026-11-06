@@ -103,9 +103,6 @@ theorem finish_vp {r : Nat} {u : State → Nat}
       simp
       omega
 
-theorem slot_lt (m : Mem) (B : BitVec 32) (d : Nat) : slot m B d < 2 ^ 32 := by
-  simp only [slot, w32]; exact BitVec.isLt _
-
 /-- The status from Miller–Rabin's result. -/
 def statS : Option (Bool × Spec.RsaKeyGen.Rand) → Nat
   | none => 0
@@ -115,9 +112,6 @@ def statS : Option (Bool × Spec.RsaKeyGen.Rand) → Nat
 theorem statQ_eq {σ : State} (pre : In P σ) : statQ P σ = statS (resQ P) := by
   unfold statQ; rw [resP_eq pre]
   rcases resQ P with _ | ⟨_ | _, _⟩ <;> rfl
-
-theorem statS_vals (x : Option (Bool × Spec.RsaKeyGen.Rand)) : statS x = 0 ∨ statS x = 1 ∨ statS x = 3 := by
-  rcases x with _ | ⟨_ | _, _⟩ <;> simp [statS]
 
 /-- The comparison of `sStat` with `c`, keeping `X`. -/
 theorem statCmp_vp {c : BitVec 32} {k : Nat} {X : State → State → Prop}

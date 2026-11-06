@@ -84,19 +84,4 @@ theorem VerifyingBodyPre.schedule {p : SchedulePublic} {s : State} (h : Verifyin
   · exact ⟨data.signatureS, ho.signatureS, ho.sLength⟩
   · exact ⟨data.digest, ho.digest, hd⟩
 
-theorem verifyingComputeReturn_ok (M : Mont) {p : SchedulePublic} {s : State} (h : VerifyingBodyPre p s) :
-    WP isa (verifyCompute M.mm) s (fun t => t.gpr .x0 = p.layout.base) := by
-  obtain ⟨hr, ⟨data, qb, ho, _⟩, ⟨valid, hm⟩⟩ := h
-  refine WP.mono (verifyCompute_ok M hr p.pGreater p.qGreater p.pOdd p.qOdd p.pFits p.qFits data
-    ho.generator ho.publicValue ho.subgroup ho.signatureR ho.signatureS ho.digest
-    ho.generatorLength ho.publicLength ho.subgroupLength ho.rLength ho.sLength
-    ho.digestBound ho.subgroupValue hm) fun _ h => h.1.parent.x0
-
-theorem verifyBody_ct (M : Mont) : RelCT isa (Two VerifyingBodyPre) (verifyBody M.mm) (fun _ _ => True) := by
-  refine RelCT.seq (R := Two (fun p : SchedulePublic => fun t => t.gpr .x0 = p.layout.base)) ?_ ?_
-  · refine two_post ((two_map (fun p => p) (fun _ _ h => h.schedule) (verifyCompute_ct M)).mono
-      (fun _ _ h => h) (fun _ _ _ => trivial)) ?_
-    exact fun _ _ h => verifyingComputeReturn_ok M h
-  · exact two_map (fun p => p.layout.base) (fun _ _ h => h) result_ct
-
 end VG.Proof.Dsa.AArch64

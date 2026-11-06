@@ -85,9 +85,4 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p)⟩) h8).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
 
-theorem coreVerify_ct (M : Mont) : RelCT isa (Two (ScheduleState verifyInputs))
-    (Core.verify M.mm) (fun _ _ => True) :=
-  (coreVerifySchedule_ct M verifyInputs verifyInputs_stable (fun _ _ h => h)).mono
-    (fun _ _ h => h) (fun _ _ _ => True.intro)
-
 end VG.Proof.Dsa.AArch64

@@ -28,10 +28,4 @@ theorem wide_bounds {a : Nat} (ha : a ∈ wideValues) :
   simp only [wideValues, List.mem_cons, List.not_mem_nil, or_false] at ha
   rcases ha with rfl | rfl <;> decide
 
-theorem scratch_bound {pLen qLen : Nat} (h : VG.Spec.Dsa.lengthsValid pLen qLen) :
-    usedBytes ≤ 8 * VG.Spec.Dsa.scratchWords pLen := by
-  unfold VG.Spec.Dsa.lengthsValid at h
-  unfold VG.Spec.Dsa.scratchWords usedBytes
-  rcases h with ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> decide
-
 end VG.Proof.Dsa.X86.Layout

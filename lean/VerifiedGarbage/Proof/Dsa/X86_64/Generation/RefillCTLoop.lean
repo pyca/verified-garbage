@@ -226,11 +226,6 @@ theorem two_image {α β : Type} {Φ : β → State → Prop} (f : α → β) {s
 theorem loopBefore_rsp {n pLen qLen : Nat} {P : LoopPublic} {t : State} (h : RefillLoopBefore n pLen qLen P t) :
     t.gpr .rsp = P.ctx.geo.F := h.2.2.1.rsp
 
-theorem loopBefore_pins (n pLen qLen : Nat) : Pins (RefillLoopBefore n pLen qLen) [.rsp] := by
-  intro P s t hs ht r hr
-  obtain rfl := List.mem_singleton.mp hr
-  exact (loopBefore_rsp hs).trans (loopBefore_rsp ht).symm
-
 /-- `RefillLoopBefore` across a step that keeps the memory but `rax` and `rcx`. -/
 theorem loopBefore_keep {n pLen qLen : Nat} {P : LoopPublic} {s t : State} (h : RefillLoopBefore n pLen qLen P s)
     (hm : t.mem = s.mem) (hk : Keep [.rax, .rcx] s t) : RefillLoopBefore n pLen qLen P t := by

@@ -120,12 +120,4 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .r
     rw [mt, ← m1]
     exact f2.mono (Nat.zero_le _) (by decide)
 
-theorem pfront_ok {s : State} (h : pcContract.pre s) :
-    WP isa (.block Params.entry) s fun t =>
-      (Regs t (playOf s) (s.gpr .r3) 0 0 ∧ ScrL t (playOf s) ∧
-        t.gpr .r2 = pack (playOf s).pl (playOf s).ql 0 0 ∧
-        (∀ i < 19, word t.mem (s.gpr .r7) (saveOff i) = s.gpr (saved i)) ∧
-        Outside (s.gpr .r7) 0 256 s.mem t.mem) ∧ Keep pentryRegs s t :=
-  pfront_ok_of (playOf_ok h) h.2.1 h.2.2.2.2.1
-
 end VG.Proof.Dsa.PPC64LE

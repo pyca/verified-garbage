@@ -98,7 +98,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Exp6.lean": 3,
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Exp7.lean": 7,
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Fin.lean": 1,
-    "VerifiedGarbage/Proof/Dsa/Arm/Prime/Inv.lean": 5,
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Load1.lean": 4,
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Mont10.lean": 3,
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Mont5.lean": 1,

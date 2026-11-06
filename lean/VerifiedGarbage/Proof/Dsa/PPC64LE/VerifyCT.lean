@@ -45,10 +45,6 @@ theorem checkKey_rel {rest : Prog isa} (hrest : RelCT isa (Two K9) rest (Two End
   sizes_rel (oddsTail_rel (fun _ _ _ h => h) (hrest.mono (fun _ _ => two_mono fun _ _ h => h.1)
       fun _ _ h => h) fun _ h => fail_rel fun v s h' => (h v s h').1) fun _ h => fail_rel fun v s h' => (h v s h').1
 
-theorem verify_rel : RelCT isa (Two C0) Verify.verify fun _ _ => True := by
-  unfold Verify.verify
-  exact RelCT.seq entry_rel (RelCT.seq (checkKey_rel body_rel) (two_taint _ pins_End (by taint_decide)))
-
 /-- Runs that agree on the contract's public data have the same public data `vdOf`. -/
 theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : vdOf s = vdOf t := by
   obtain ⟨-, h3, h4, h5, h6, h7, -, h9, h10, a0, a1, hl⟩ := hp
@@ -58,9 +54,5 @@ theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : 
   have e := map_toNat_inj e
   rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega)] at e
   simp only [vdOf, layOf, ← h3, ← h5, ← h6, ← h7, ← h9, ← h10, ← a0, ← a1, e]
-
-theorem verify_ct : ConstantTime isa vContract.pre vContract.pub Verify.verify :=
-  RelCT.constantTime (verify_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
-    ⟨vdOf s, ⟨hs, rfl⟩, ⟨ht, (vdOf_eq hs hp).symm⟩, hp.1⟩) fun _ _ h => h)
 
 end VG.Proof.Dsa.PPC64LE
