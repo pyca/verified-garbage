@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCkCT
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCckCT
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # `vg_rsa_check_key` and `vg_rsa_check_crt_key` on PPC64LE: verified against the shared contracts -/
 
@@ -26,7 +27,7 @@ theorem ck_verified :
 
 /-- `vg_rsa_check_crt_key`. -/
 theorem cck_verified :
-    Verified target VG.Impl.Rsa.PPC64LE.CheckCrtKey.code (Spec.Rsa.checkCrtKeyContract abi) :=
+    Verified target VG.Impl.Rsa.PPC64LE.CheckCrtKey.code (Proof.Rsa.checkCrtKeyContract abi) :=
   Verified.of_correct cck_correct cck_ct cck_implies
 
 end VG.Proof.Rsa.PPC64LE.KeyCheck

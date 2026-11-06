@@ -58,7 +58,7 @@ bne %cr0, 24b
 .base64 "AAAEmAEAhDj//2s5AAArKA=="
 bne %cr0, 25b
 .base64 "AACBOZAADOimAwh8cACM63gArOuAAMzriADs67AIITggAIBO""#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -151,7 +151,7 @@ bne %cr0, 26b
 .base64 "AADLiAAAiol4YsZ8OCjGfHhixnxQSIN94A+MeVAAjH14Qox9OCCMfThgxnwAAMuYAQApOQEAazkBAEo5///nOAAAJyg="
 bne %cr0, 27b
 .base64 "AACBORABbOgoAQzopgMIfDABITggAIBO""#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,

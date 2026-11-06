@@ -15,7 +15,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86.Ver
 open VG VG.X86
 
 def baseline : PublicImpl where
-  name := Spec.Rsa.publicPrecomputedCheckedApi.name
+  name := "vg_rsa_public_precomputed_checked"
   code := Impl.Bignum.X86.PrecomputedRt.code
   verified := VG.Proof.Bignum.X86.PrecomputedRt.verified
   stack := by rw [VG.Proof.Rsa.X86.RtShape.precomputed_stack]

@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCT
 import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: verified against the shared contract
@@ -26,9 +28,9 @@ open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 
 /-- The shared contract, its postcondition on the registers and the stack. -/
 def fnContract : Contract isa where
-  pre := (Spec.Rsa.privateCheckedContract abi frameBytes).pre
+  pre := (Proof.Rsa.privateCheckedContract abi frameBytes).pre
   post := fnPost
-  pub := (Spec.Rsa.privateCheckedContract abi frameBytes).pub
+  pub := (Proof.Rsa.privateCheckedContract abi frameBytes).pub
 
 /-- A state meeting the precondition: a 64-byte modulus, input and `out`, a
 one-byte exponent, primes, exponents and `qInv`, and the stack arguments at
@@ -48,19 +50,19 @@ def satState : State where
     ⟨0x4500, 1⟩, ⟨0x10060, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
-theorem priv_implies : fnContract.Implies (Spec.Rsa.privateCheckedContract abi frameBytes) where
+theorem priv_implies : fnContract.Implies (Proof.Rsa.privateCheckedContract abi frameBytes) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, fnContract,
+    sig_implies_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, fnContract,
       fnPost, stackArgs_twelve, List.append_eq]
   pub := fun _ _ _ _ h => h
   sat := by
-    sig_implies_sat [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, fnContract,
+    sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, fnContract,
       stackArgs_twelve, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW,
       Mem.read] using satState
 
 /-- `vg_rsa_private_checked`. -/
-theorem priv_verified : Verified target code (Spec.Rsa.privateCheckedContract abi frameBytes) :=
+theorem priv_verified : Verified target code (Proof.Rsa.privateCheckedContract abi frameBytes) :=
   Verified.of_correct code_correct code_ct priv_implies
 
 end VG.Proof.Rsa.PPC64LE.Priv

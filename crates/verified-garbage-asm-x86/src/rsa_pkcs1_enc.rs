@@ -60,7 +60,7 @@ jne 24b
 jne 25b
 .base64 "ifiNpCQwBAAAizwki3QkBItsJAhbW1tbww=="
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -156,7 +156,7 @@ jne 26b
 jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
@@ -261,7 +261,7 @@ jne 26b
 jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,

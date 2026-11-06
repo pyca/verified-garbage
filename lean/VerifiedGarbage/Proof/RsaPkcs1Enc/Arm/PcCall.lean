@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: the call and the masks
@@ -155,7 +156,7 @@ theorem inpA (P : EP) {σ : State} (h : In P σ) : State.addr (P.B + BitVec.ofNa
   h.ok.addrB (by show oEM < frameBytes + 56 + 40; decide)
 
 theorem call_pre {σ s : State} (h : G7 P σ s) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e (P.B + BitVec.ofNat 32 oEM) P.K P.el P.rl)
         (pdWr P.out P.scr P.K P.sl)) := by
   have hs := h.1.1

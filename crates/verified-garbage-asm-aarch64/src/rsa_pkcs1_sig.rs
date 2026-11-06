@@ -299,7 +299,7 @@ cbnz x13, 257b
 255:
 .inst 0x910003f0,0xf9403213,0xf940361e,0x9111c3ff,0xd65f03c0
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
 
@@ -601,7 +601,7 @@ b 21f
 21:
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -921,6 +921,6 @@ cbnz x13, 262b
 21:
 .inst 0xd65f03c0
 .p2align 6",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

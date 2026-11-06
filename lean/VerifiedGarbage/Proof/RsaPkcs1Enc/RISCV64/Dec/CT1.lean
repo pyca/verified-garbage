@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
 import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on RISC-V: constant time up to `KDK`
@@ -51,7 +53,7 @@ theorem bytes_call {s u : State} (A : AtCall s u) {p : Addr} {n : Nat} (hd : Reg
   bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
 
 theorem priv_pub {u₁ u₂ : State} (A₁ : AtCall e.s₁ u₁) (A₂ : AtCall e.s₂ u₂) :
-    (Spec.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE e.s₁ u₁)
+    (Proof.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE e.s₁ u₁)
       (callE e.s₂ u₂) := by
   have m : ∀ {s u : State}, (callE s u).mem = u.mem := fun {_ _} => rfl
   refine Rsa.RISCV64.Priv.pub_of (by rw [show (callE e.s₁ u₁).sp = fb e.s₁ from A₁.sp,

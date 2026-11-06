@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocalArgument
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.Contract
 /-! # The precomputed public call is safe after the signature-length check -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyArguments.lean`, which only this module imported.
@@ -151,13 +152,13 @@ theorem publicArgs_values {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
 
 theorem publicCall_pre {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) (a : Arguments g (publicArgument g) 10 s) (siglen : g.signatureLength = g.length) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre (s.callEntry.withRegions (publicRd g) (publicWr g)) := by
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre (s.callEntry.withRegions (publicRd g) (publicWr g)) := by
   have sa := fun {j} (hj : j < 10) => publicArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
   have pfit : g.preLength < 2 ^ 32 := by have := h.valid.sourceFits 4; change (g.sources 4).toNat + 8 * g.preLength ≤ 2 ^ 32 at this; omega
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa (by decide : 0 < 10), sa (by decide : 1 < 10), sa (by decide : 2 < 10),
     sa (by decide : 3 < 10), sa (by decide : 4 < 10), sa (by decide : 5 < 10),
     sa (by decide : 6 < 10), sa (by decide : 7 < 10), sa (by decide : 8 < 10), sa (by decide : 9 < 10),

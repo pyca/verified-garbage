@@ -48,23 +48,23 @@ theorem pub_stack : (Proof.Rsa.publicCheckedContract abi).Implies (Proof.Rsa.pub
     using pubSatState
 
 theorem pd_stack :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi).Implies (Spec.Rsa.publicPrecomputedCheckedContract abi 16) where
+    (Proof.Rsa.publicPrecomputedCheckedContract abi).Implies (Proof.Rsa.publicPrecomputedCheckedContract abi 16) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq]
-    sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+    sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
       Proof.Rsa.AArch64.stackArgs_two, List.append_eq]
     sig_split h
     sig_and_intros
     all_goals with_reducible assumption
   post := fun _ _ _ h => h
   pub := fun _ _ _ _ h => h
-  sat := by sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi,
+  sat := by sig_implies_sat [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi,
     argRegs, Proof.Rsa.AArch64.stackArgs_two, List.append_eq] [pdSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using pdSatState
 
@@ -93,7 +93,7 @@ def pdOf (v : PublicImpl) : PdChecked where
   features := v.features
 
 /-- `vg_rsa_private_checked` calling the implementation `v` of
-`vg_rsa_private_crt`, as `Generic/RsaPrivateCrt/AArch64/Rsa.lean` emits it. -/
+`vg_rsa_private_crt`, the internal function the padding functions call. -/
 def privOf (v : CrtImpl) : PrivChecked where
   name := privName v
   code := privCode v

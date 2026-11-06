@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_private_checked`
@@ -91,14 +92,14 @@ theorem priv_pre {sp : BitVec 32} (h : PrivArgs s out n e inp p q dp dq qinv scr
     (dLow : ∀ r ∈ privWr out scr K sl ++ privRd sp n e inp p q dp dq qinv K el pl ql,
       Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3440, 3440⟩ r)
     (fit : ∀ r ∈ privBufs out n e inp p q dp dq qinv scr K el pl ql sl, r.base.toNat + r.len ≤ 2 ^ 32) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd sp n e inp p q dp dq qinv K el pl ql) (privWr out scr K sl)) := by
   subst hspE
   have k32 := h.k32
   have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
   have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
   have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2, h.a3, h.a4, h.a5,
     h.a6, h.a7, h.a8, h.a9, h.a10, h.a11, h.a12, h.a13, h.a14, h.a15, BitVec.toNat_ofNat,
@@ -127,11 +128,11 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     (hn : Spec.Rsa.bytesAt s₁.mem (State.addr n) K = Spec.Rsa.bytesAt s₂.mem (State.addr n) K)
     (he : Spec.Rsa.bytesAt s₁.mem (State.addr e) el = Spec.Rsa.bytesAt s₂.mem (State.addr e) el)
     (rd wr : List Region) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
   have el32 : el < 2 ^ 32 := by have := h₁.elK; omega_arith
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₁.a6, h₁.a7,
     h₁.a8, h₁.a9, h₁.a10, h₁.a11, h₁.a12, h₁.a13, h₁.a14, h₁.a15,
@@ -147,7 +148,7 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
 /-- The call's result: what it writes to `out` and returns. -/
 theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     {rd wr : List Region}
-    (hp : (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).post (s.callEntry.withRegions rd wr)
+    (hp : (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).post (s.callEntry.withRegions rd wr)
       (t.withRegions rd wr)) :
     Spec.Rsa.writtenOutcome t.mem (State.addr out) K (t.gpr .r0)
       (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (State.addr n) K)
@@ -159,7 +160,7 @@ theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K
   have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
   have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
   have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
-  sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
+  sig_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r2, h.r3, h.a0, h.a1, h.a2, h.a4, h.a5, h.a6, h.a7, h.a8,
     h.a10, h.a12, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32,

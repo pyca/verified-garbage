@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # `vg_rsa_public_precomputed_checked` on RISC-V -/
 
@@ -32,8 +34,8 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 896⟩]
 
 theorem publicChecked_implies :
-    fnContract.Implies (Spec.Rsa.publicPrecomputedCheckedContract RISCV64.abi) := by
-  sig_implies [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, RISCV64.abi,
+    fnContract.Implies (Proof.Rsa.publicPrecomputedCheckedContract RISCV64.abi) := by
+  sig_implies [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, RISCV64.abi,
     RISCV64.argRegs, fnContract, stackArgs_two, List.append_eq, List.getD_cons_succ, List.getD_cons_zero,
     Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true,
     Bool.or_false, List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append,
@@ -42,7 +44,7 @@ theorem publicChecked_implies :
 
 /-- `vg_rsa_public_precomputed_checked`. -/
 theorem publicChecked_verified :
-    Verified RISCV64.target publicChecked (Spec.Rsa.publicPrecomputedCheckedContract RISCV64.abi) :=
+    Verified RISCV64.target publicChecked (Proof.Rsa.publicPrecomputedCheckedContract RISCV64.abi) :=
   Verified.of_correct fn_correct fn_ct publicChecked_implies
 
 end VG.Proof.Bignum.RISCV64.Pub

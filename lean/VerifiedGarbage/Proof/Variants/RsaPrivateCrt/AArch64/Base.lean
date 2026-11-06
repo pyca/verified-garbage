@@ -320,7 +320,7 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
   pcVerified := precompute_verified Mont.base
   pcNoFrames := by decide +kernel
-  pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
+  pdName := "vg_rsa_public_precomputed_checked"
   pd := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
   pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
   pdNoFrames := by decide +kernel
