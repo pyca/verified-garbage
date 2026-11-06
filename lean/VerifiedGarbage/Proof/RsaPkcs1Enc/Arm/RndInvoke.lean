@@ -90,7 +90,7 @@ theorem call_pre (h : C2 P σ s) : Pc.spec.pre (s.callEntry.withRegions (cRd P) 
   have q0 : State.addr P.B = P.lay.fr 0 := by simp
   have hps : oBuf + P.pl ≤ frameBytes + 56 := by simp only [oBuf, frameBytes]; have := hs.1.pl_le; omega
   sig_pre [Pc.spec, Pc.stackBytes, Impl.RsaPkcs1Enc.Arm.Precomputed.frameBytes,
-    Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+    Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, r0, r1, r2, r3, a0, a1, a2, a3,
     a4, a5, a6, a7, a8, a9, sa, hs.2.sp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt el32,
@@ -162,7 +162,7 @@ theorem call_pub {σ₁ σ₂ s₁ s₂ : State} (h₁ : C2 P σ₁ s₁) (h₂ 
   have ql32 : P.ql < 2 ^ 32 := by
     rw [hs₁.1.qlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega
   sig_pub [Pc.spec, Pc.stackBytes, Impl.RsaPkcs1Enc.Arm.Precomputed.frameBytes,
-    Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+    Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2.1, h₁.2.2.2.2.2, h₂.2.2.1, h₂.2.2.2.1, h₂.2.2.2.2.1,
     h₂.2.2.2.2.2, a₁ 0 (by decide), a₁ 1 (by decide), a₁ 2 (by decide), a₁ 3 (by decide), a₁ 4 (by decide),
@@ -213,7 +213,7 @@ theorem call_post {s' : State} (h : C2 P σ s) (rd : s'.rd = s.rd) (wr : s'.wr =
     · exact hs.1.dTS
     · exact hs.1.tapeLow
   · sig_post [Pc.spec, Pc.stackBytes, Impl.RsaPkcs1Enc.Arm.Precomputed.frameBytes,
-      Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+      Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
       reduceClassify, Loc.val] at po
     simp only [stackArg_call, r0, r2, r3, a 0 (by decide), a 1 (by decide), a 2 (by decide), a 3 (by decide),
       a 4 (by decide), a 5 (by decide), a 8 (by decide), a 9 (by decide), List.getD_cons_zero, List.getD_cons_succ,

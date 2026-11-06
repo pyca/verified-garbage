@@ -249,63 +249,6 @@ cbnz x12, 27b
     )
 }
 
-/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string given by the caller. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes) and the padding string `PS` (`ps_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` or `e` is not such a number or `PS` has a zero byte. RFC 8017 requires `PS` to be pseudo-randomly generated nonzero bytes, freshly for every encryption.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.encryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the message or the padding string.
-///
-/// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
-///
-/// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ps` must be valid for reads of `ps_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `out_len` must be `n_len`.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `msg_len + 11` must be at most `n_len`.
-/// * `ps_len` must be `n_len - msg_len - 3`.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `msg`, `ps`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `msg`, `ps`, `scratch` and `pre` may overlap the 1104 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pkcs1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, ps: *const u8, ps_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd110c3ff,0xf9422bea,0xf9422feb,0x910003e9,0xf900012a,0xf900052b,0xf9000920
-.inst 0xf9000d23,0xd280000a,0x3900a12a,0xd280004a,0x3900a52a,0xf94223eb,0xf94227ec,0x9100a92d
-.inst 0xd280000e,0xd280002f
-20:
-.inst 0x3940016a,0x390001aa,0xeb0f0150,0xda0a0150,0xaa1001ce,0x9100056b,0x910005ad,0xd100058c
-cbnz x12, 20b
-.inst 0xd280000a,0x390001aa,0x910005ad,0x910003e9,0xf900112e
-cbnz x7, 21f
-b 22f
-21:
-23:
-.inst 0x394000ca,0x390001aa,0x910004c6,0x910005ad,0xd10004e7
-cbnz x7, 23b
-22:
-.inst 0x9100a3e6,0xaa030067,0xf94233e2,0xf94237e3
-bl {vg_rsa_public_precomputed_checked}
-.inst 0xf94013ee,0x8aee0000,0xf9400beb,0xf9400fec,0x9100a3ed,0xd280000f
-24:
-.inst 0x3940016a,0x8aee014a,0x3900016a,0x390001af,0x9100056b,0x910005ad,0xd100058c
-cbnz x12, 24b
-.inst 0x9110c3ff,0xf84107fe,0xd65f03c0
-.p2align 6",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
-    )
-}
-
 /// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
@@ -374,6 +317,6 @@ cbnz x12, 29b
 26:
 .inst 0x911103ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed,
+        vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed::vg_rsa_pkcs1_encrypt_precomputed,
     )
 }

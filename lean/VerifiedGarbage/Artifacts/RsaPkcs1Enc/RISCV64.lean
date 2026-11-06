@@ -13,10 +13,6 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.RsaPkcs1Enc.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact RISCV64.target {
-    code := Impl.RsaPkcs1Enc.RISCV64.Precomputed.code
-    stack := 2128
-    verified := Proof.RsaPkcs1Enc.RISCV64.Enc.code_verified },
   Spec.RsaPkcs1Enc.decryptApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Decrypt.code
     stack := Proof.RsaPkcs1Enc.RISCV64.Dec.stackBytes

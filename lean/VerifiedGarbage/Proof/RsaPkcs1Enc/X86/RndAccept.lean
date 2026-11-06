@@ -270,7 +270,7 @@ theorem written_congr {m m' : Mem} {a : Addr} {K : Nat} {r : BitVec 32} {o : Opt
 theorem call_vp (encName : String) (c : Ver.PublicImpl) :
     VP (AC3 P) (.call encName (Impl.RsaPkcs1Enc.X86.Precomputed.code c.name c.code)) (AC4 P) := by
   have hv := Pc.code_verified c
-  refine VP.call (k := Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) hv.1 hv.2.1 (Pc.code_noSp c)
+  refine VP.call (k := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) hv.1 hv.2.1 (Pc.code_noSp c)
     (encRd P.n P.e P.msg (P.B + BitVec.ofNat 32 oBuf) P.pre P.K P.el P.ml P.pl P.rl) (encWr P.B P.out P.scr P.K P.sl)
     (fun σ s h => ?_) (fun σ s h => ?_) (fun σ s h => ?_)
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.1.hs.2.sp, h₂.1.hs.2.sp]) (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_)

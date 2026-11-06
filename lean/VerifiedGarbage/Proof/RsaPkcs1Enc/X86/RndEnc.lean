@@ -2,7 +2,7 @@ module
 
 -- separate module: the unfolding of the callee's contract builds in parallel with `RndBase` and `RndScan`
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -77,7 +77,7 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
       Region.Disjoint (below (s.gpr .esp) (encStack + 4)) r)
     (fit : ∀ r ∈ encWr (s.gpr .esp) out scr K sl ++ encRd n e msg ps pre K el ml pl rl,
       r.base.toNat + r.len ≤ 2 ^ 32) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
       (s.callEntry.withRegions (encRd n e msg ps pre K el ml pl rl) (encWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
   have rl32 := h.rl32
@@ -88,7 +88,7 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
   have hsp := h.sp
   have hfit := h.fit
   have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes, stackBelow]
   simp only [a (by decide : 0 < 14), a (by decide : 1 < 14), a (by decide : 2 < 14), a (by decide : 3 < 14),
     a (by decide : 4 < 14), a (by decide : 5 < 14), a (by decide : 6 < 14), a (by decide : 7 < 14),
@@ -140,14 +140,14 @@ theorem enc_pub {s₁ s₂ : State} (h₁ : EncArgs s₁ out n e msg ps scr pre 
     (hde : (below (s₁.gpr .esp) (encStack + 4)).Disjoint ⟨e.setWidth 64, el⟩)
     (hdp : (below (s₁.gpr .esp) (encStack + 4)).Disjoint ⟨pre.setWidth 64, rl * 8⟩)
     (rd wr : List Region) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have rl32 := h₁.rl32
   have k32 := h₁.k32
   have el32 : el < 2 ^ 32 := by have := h₁.elK; omega
   have a₁ := fun {i} (hi : i < 14) => h₁.arg rd wr hi
   have a₂ := fun {i} (hi : i < 14) => h₂.arg rd wr hi
-  sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+  sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes]
   simp only [a₁ (by decide : 0 < 14), a₁ (by decide : 1 < 14), a₁ (by decide : 2 < 14), a₁ (by decide : 3 < 14),
     a₁ (by decide : 4 < 14), a₁ (by decide : 5 < 14), a₁ (by decide : 6 < 14), a₁ (by decide : 7 < 14),
@@ -180,7 +180,7 @@ theorem enc_pub {s₁ s₂ : State} (h₁ : EncArgs s₁ out n e msg ps scr pre 
 
 /-- The call's result: what it writes to `out` and returns. -/
 theorem enc_post {s t : State} (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl) {rd wr : List Region}
-    (hp : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).post (s.callEntry.withRegions rd wr) t) :
+    (hp : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).post (s.callEntry.withRegions rd wr) t) :
     Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.callEntry.mem (n.setWidth 64) K) =
         some (Spec.Rsa.wordsAt s.callEntry.mem (pre.setWidth 64) rl) →
       Spec.Rsa.written t.mem (out.setWidth 64) K (t.gpr .eax)
@@ -194,7 +194,7 @@ theorem enc_post {s t : State} (h : EncArgs s out n e msg ps scr pre K el ml pl 
   have el32 : el < 2 ^ 32 := by have := h.elK; omega
   have ml32 : ml < 2 ^ 32 := by have := h.mlK; omega
   have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
-  sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+  sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes] at hp
   simp only [a (by decide : 0 < 14), a (by decide : 2 < 14), a (by decide : 3 < 14),
     a (by decide : 4 < 14), a (by decide : 5 < 14), a (by decide : 6 < 14), a (by decide : 7 < 14),

@@ -13,11 +13,6 @@ namespace VG.Artifacts.RsaPkcs1Enc.X86
 open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact VG.X86.target {
-    code := Impl.RsaPkcs1Enc.X86.Precomputed.code baseline.name baseline.code
-    stack := Proof.RsaPkcs1Enc.X86.Pc.stackBytes
-    verified := Proof.RsaPkcs1Enc.X86.Pc.code_verified baseline
-    spSafe := Proof.RsaPkcs1Enc.X86.Pc.code_sp baseline },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Enc.X86.Random.code Proof.RsaPkcs1Enc.X86.Rnd.encName (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline)
     stack := Proof.RsaPkcs1Enc.X86.Rnd.stackBytes
