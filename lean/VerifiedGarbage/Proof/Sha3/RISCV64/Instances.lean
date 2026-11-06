@@ -486,7 +486,7 @@ theorem finPadCall {st op sc sp : Addr} {len rate : Nat} (hL : Lay st op sc sp l
     {t : State} (hwr : t.wr = [⟨st, 200⟩, ⟨op, len⟩, ⟨sc, 32⟩])
     (h0 : t.gpr .a0 = st) (h1 : t.gpr .a1 = BitVec.ofNat 64 rate) (h2 : (t.gpr .a2).toNat < rate)
     (h3 : t.gpr .a3 = BitVec.ofNat 64 0x06) (hsp : t.sp = sp) :
-    WP isa (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad) t fun u =>
+    WP isa (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
       Frame [⟨st, 200⟩, ⟨sp - 1168, 1168⟩] t.mem u.mem ∧
       ∀ msg, Repr t.mem st rate msg → (t.gpr .a2).toNat = msg.length % rate →
@@ -533,7 +533,7 @@ theorem finSqzCall {st op sc sp : Addr} {len rate : Nat} (hL : Lay st op sc sp l
     (hl : len < 2048) {t : State} (hwr : t.wr = [⟨st, 200⟩, ⟨op, len⟩, ⟨sc, 32⟩])
     (h0 : t.gpr .a0 = st) (h1 : t.gpr .a1 = BitVec.ofNat 64 rate) (h2 : t.gpr .a2 = BitVec.ofNat 64 0)
     (h3 : t.gpr .a3 = op) (h4 : t.gpr .a4 = BitVec.ofNat 64 len) (hsp : t.sp = sp) :
-    WP isa (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze) t fun u =>
+    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
       Frame [⟨st, 200⟩, ⟨op, len⟩, ⟨sp - 1168, 1168⟩] t.mem u.mem ∧
       bytesAt u.mem op len = Spec.Sha3.squeezeFrom rate (stateAt t.mem st) 0 len := by
@@ -712,7 +712,7 @@ theorem g1_ok {H : Spec.Sha3.HashFn} (hr : H.rate < 2048) {σ : State} (hp : (fi
 
 theorem g2_ok {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) {σ t : State} (hp : (finRISCV64 H).pre σ)
     (h : G1 H.rate σ t) :
-    WP isa (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad) t (G2 σ) := by
+    WP isa (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad) t (G2 σ) := by
   have hL := lay_of_pre hp
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
   refine WP.mono (finPadCall hL hr (by rw [h2, hp.2.1]) h3 h4 (by rw [h5]; exact hp.2.2.2.2.2.2.2.2.2.2.2.2)
@@ -729,7 +729,7 @@ theorem g3_ok {H : Spec.Sha3.HashFn} (hr : H.rate < 2048) (hl : H.len < 2048) {�
 
 theorem g4_ok {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2048) {σ v : State}
     (hp : (finRISCV64 H).pre σ) (h : G3 H.rate H.len σ v) :
-    WP isa (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze) v
+    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze) v
       fun w => w.gpr .s4 = σ.gpr .a3 ∧ w.sp = σ.sp := by
   have hL := lay_of_pre hp
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h

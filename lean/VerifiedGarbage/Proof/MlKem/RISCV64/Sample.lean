@@ -350,7 +350,7 @@ theorem padArgs_ok {s : State} (h : SEnv s₀ s) (h0 : (s.gpr .a0).toNat = 34) :
   rw [sp, h.sp]; exact stk_st hp
 
 theorem pad_phase {s : State} (h : SEnv s₀ s) (hr : Repr s.mem (S s₀) 168 (B s₀)) (h0 : (s.gpr .a0).toNat = 34) :
-    WP isa (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad)) s
+    WP isa (.seq (.block padArgs) (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad)) s
       fun s' => SEnv s₀ s' ∧ stateAt s'.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀) := by
   refine WP.seq (WP.mono (padArgs_ok hp h h0) fun t ⟨ht, hm, ha, a3⟩ => ?_)
   obtain ⟨hc, hw⟩ := call_covers hp ht (rd := []) (wr := [⟨S s₀, 200⟩])
@@ -394,7 +394,7 @@ theorem squeezeArgs_ok {s : State} {len : Nat} (hl : len ≤ 840) (h : SEnv s₀
 
 theorem squeeze_phase {s : State} {len : Nat} (hl : len ≤ 840) (h : SEnv s₀ s)
     (hst : stateAt s.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀)) :
-    WP isa (.seq (.block (squeezeArgs len)) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze)) s
+    WP isa (.seq (.block (squeezeArgs len)) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze)) s
       fun s' => SEnv s₀ s' ∧ Spec.Sha3.bytesAt s'.mem (S s₀ + BitVec.ofNat 64 840) len = xof (B s₀) len := by
   refine WP.seq (WP.mono (squeezeArgs_ok hp hl h) fun t ⟨ht, hm, ha⟩ => ?_)
   obtain ⟨hc, hw⟩ := call_covers hp ht (rd := []) (wr := [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 840, len⟩])

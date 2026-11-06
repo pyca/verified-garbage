@@ -188,7 +188,7 @@ def absStack : List Value := [.const 57, .caller 2 KSCR]
 
 theorem abs_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hz : stateAt t.mem (State.addr L.scr) = Spec.Sha3.zero) :
-    WP isa (callWith absorbArgs Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) t fun u =>
+    WP isa (callWith absorbArgs "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) t fun u =>
       Ctx L g m₀ u ∧ Spec.Sha3.Repr u.mem (State.addr L.scr) 136
         (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := absValues) (stk := absStack)
