@@ -128,6 +128,4 @@ theorem sa_writeW32 (scr : BitVec 32) (m : Mem) {o i : Nat} (v : BitVec 32) (ho 
 
 /-! ## The parameters and the stages of an iteration -/
 
-variable {lo db : Nat} {seed : State → List Byte} {Inv : State → Mem → Prop} {dbv : State → Nat → Byte}
-
 end VG.Proof.RsaPss.X86

@@ -59,7 +59,4 @@ theorem candidate_shape {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
   · exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.mod_lt _ (Nat.two_pow_pos _)) (by omega))
       (Nat.one_lt_two_pow (by omega))
 
-
-
-
 end VG.Proof.RsaKeyGen

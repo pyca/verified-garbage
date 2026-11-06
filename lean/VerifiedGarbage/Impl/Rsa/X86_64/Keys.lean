@@ -466,7 +466,6 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
 /-- The mask's low bit returned, and the saved registers restored. -/
 def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit
 
-
 end VG.Impl.Rsa.X86_64.Keys
 
 namespace VG.Impl.Rsa.X86_64.WordDivide

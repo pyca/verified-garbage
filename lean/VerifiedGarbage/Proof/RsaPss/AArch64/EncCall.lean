@@ -24,6 +24,4 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (Callee ArgsEq argsEq_regs)
 /-- The `K` bytes below the stack pointer. -/
 abbrev stkR (K : Nat) (t : State) : Region := ⟨t.sp - BitVec.ofNat 64 K, K⟩
 
-
-
 end VG.Proof.RsaPss.AArch64

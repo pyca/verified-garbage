@@ -54,8 +54,6 @@ theorem altLength_le (k : Nat) (CL : List Byte) : altLength k CL ≤ k - 11 := b
     · exact hal
 
 
-/-! ## Round trip -/
-
 theorem i2osp_length (x n : Nat) : (Spec.Rsa.i2osp x n).length = n := by simp [Spec.Rsa.i2osp]
 
 end VG.Proof.RsaPkcs1Enc

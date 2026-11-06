@@ -46,10 +46,4 @@ theorem bytesAt_view (m : Mem) (S : Addr) (src n : Nat) :
   simp only [Spec.Rsa.bytesAt, srcB, view]
   exact List.map_congr_left fun i _ => by rw [off_add]
 
-section
-variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
-include P
-
-end
-
 end VG.Proof.RsaOaep.PPC64LE

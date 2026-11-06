@@ -18,12 +18,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 /-! # Two secret factor pairs reach the retry comparison with the same public state -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyPrepareExponent.lean`, which only this module imported.
-section
-
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyPrepareTiming.lean`, which only this module imported.
 section
 

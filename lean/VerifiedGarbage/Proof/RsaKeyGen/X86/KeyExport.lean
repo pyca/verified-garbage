@@ -48,12 +48,6 @@ end
 
 end
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyWriteOutputs.lean`, which only this module imported.
-section
-
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/TruncatedOctets.lean`, which only this module imported.
 section
 

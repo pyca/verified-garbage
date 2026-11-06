@@ -203,10 +203,4 @@ theorem repr_congr {R : Mem → Addr → List Byte → Prop} {m : Mem} {p : Addr
 
 /-! ## One counter -/
 
-section
-variable {G : Hash} (hG : StreamOK G.stream)
-
-
-end
-
 end VG.Proof.RsaOaep.AArch64

@@ -20,7 +20,7 @@ open VG.Proof.MlKem.X86_64 (Keep)
 def sharedRoundRanges (w : Nat) : List (Nat × Nat) :=
   sharedMidRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
-/-- `mrRound`. -/
+/-- `mrRoundWith`. -/
 theorem sharedRound_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} {sp : Addr}
     (hd : MrDims B Z w) (hZ : slot w 28 ≤ Z) (henv : SharedEnv B Z sp s) (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hc1 : 1 < c)

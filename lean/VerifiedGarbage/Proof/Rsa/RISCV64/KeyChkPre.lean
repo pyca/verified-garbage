@@ -87,5 +87,4 @@ theorem ck_kpre {s : State} (h : CkP s) :
   exact ⟨by rw [h.hwr]; simp, h.ws, h.al, by omega, lv.1, lv.2, by have := h.sp2; omega, h.sp16,
     by rw [h.hrd]; simp, h.dsa, rfl, by decide, rfl⟩
 
-
 end VG.Proof.Rsa.RISCV64.KeyCheck

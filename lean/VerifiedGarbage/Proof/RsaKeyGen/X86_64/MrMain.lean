@@ -63,5 +63,4 @@ theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_arith)]
   omega_arith
 
-
 end VG.Proof.RsaKeyGen.X86_64

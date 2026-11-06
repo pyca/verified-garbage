@@ -66,8 +66,4 @@ theorem verify_encode₂ {nB eB mHash sB : List Byte} {sLen : Option Nat} {eb : 
     simp
   | some x => simp
 
-variable {H G}
-
-variable (G : Hash)
-
 end VG.Proof.RsaPss

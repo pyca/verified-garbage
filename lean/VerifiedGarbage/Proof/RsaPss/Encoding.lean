@@ -24,8 +24,4 @@ theorem clearTop_length (z : Nat) : ∀ bs : List Byte, (clearTop z bs).length =
   | [] => rfl
   | _ :: _ => rfl
 
-/-! ## The round trip -/
-
-variable {H G : Hash}
-
 end VG.Proof.RsaPss

@@ -68,7 +68,4 @@ theorem encode_eq₂ (hH : Valid H) (hG : Valid G) {mHash salt : List Byte} (hm 
     · simp only [h4, ↓reduceIte]
       rw [show i - (db + H.len) = 0 by omega_arith]; rfl
 
-
-variable (G : Hash)
-
 end VG.Proof.RsaPss

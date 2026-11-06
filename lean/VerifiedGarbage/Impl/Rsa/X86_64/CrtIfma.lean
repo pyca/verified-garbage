@@ -589,7 +589,6 @@ def sizes : List Instr :=
     .alu .add .rdx (.imm 7), .shift .shr .rdx 3, .alu .xor .rdx (.imm (BitVec.ofNat 32 l.W)),
     .alu .or .rax (.reg .rdx)]
 
-
 end VG.Impl.Rsa.X86_64.CrtIfma
 
 namespace VG.Impl.Rsa.X86_64.CrtIfma

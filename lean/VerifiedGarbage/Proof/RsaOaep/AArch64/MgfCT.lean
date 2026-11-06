@@ -49,6 +49,4 @@ theorem updCtrArgs_eq : updCtrArgs lay = Mgf1.scr lay .x2 lay.oCtr ++ (([.ldrSp 
     List Instr) ++ Mgf1.scr lay .x4 lay.oW) := by
   simp only [updCtrArgs, List.append_assoc]
 
-variable {G : Hash} (hG : StreamOK G.stream)
-
 end VG.Proof.RsaOaep.AArch64

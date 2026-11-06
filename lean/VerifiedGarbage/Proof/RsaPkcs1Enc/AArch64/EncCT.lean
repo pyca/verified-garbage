@@ -147,5 +147,4 @@ theorem maskLoop_ct (S : Nat) :
       rintro r (rfl | rfl | rfl)
       exacts [f₁.x11.trans f₂.x11.symm, f₁.x12.trans f₂.x12.symm, f₁.x13.trans f₂.x13.symm]⟩
 
-
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc

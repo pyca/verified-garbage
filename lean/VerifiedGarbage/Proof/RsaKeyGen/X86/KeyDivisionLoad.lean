@@ -10,12 +10,6 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Mont.X86.Instr
 /-! # Load the native division bank without clearing its temporary arrays -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyDivisionClear.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

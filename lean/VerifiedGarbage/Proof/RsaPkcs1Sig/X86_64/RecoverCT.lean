@@ -174,7 +174,4 @@ theorem copyOut_ct {J : State → State → Prop} (hJ : ∀ s t, J s t → Env s
   · exact pin (fun s => s.gpr .rdi) (fun _ _ h => h.2.1) (fun _ _ S => S.gpr (by decide)) h₁ h₂
   · exact pin (fun s => s.gpr .rsi) (fun _ _ h => h.2.2) (fun _ _ S => S.gpr (by decide)) h₁ h₂
 
-
-
-
 end VG.Proof.RsaPkcs1Sig.X86_64.Rec

@@ -41,5 +41,4 @@ theorem wv_mod (m : Mem) (B : Addr) (e : Nat) {j w : Nat} (hj : j ≤ w) :
   rw [show j + (w - j) = w by omega] at e1
   rw [e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wv_lt _ _ _ _)]
 
-
 end VG.Proof.Rsa

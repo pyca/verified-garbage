@@ -43,6 +43,4 @@ def encodingScratchWords : Nat := 1024
 /-- The most bits of an encoding: that of a modulus of 8192 bits. -/
 def maxEmBits : Nat := 8191
 
-
-
 end VG.Proof.RsaPss

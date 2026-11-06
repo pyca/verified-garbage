@@ -13,12 +13,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import Aesop.BuiltinRules
 /-! # Compute both CRT exponents with safe fixed-schedule division -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyDivisor.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

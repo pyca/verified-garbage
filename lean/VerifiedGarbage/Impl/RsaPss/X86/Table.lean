@@ -11,7 +11,7 @@ MGF1's `G` as a table of `Hash` (`Spec/HashTable.lean`), their argument
 `mgf1`, the last two. They run the pieces of `Impl/RsaPss/X86.lean` in its
 frames and slots, with these differences:
 
-* `ctHashT` hashes as `ctHash` does, with `H`'s streaming `init`, its
+* `ctHashT` hashes in constant time, with `H`'s streaming `init`, its
   compression function and its digest (`Impl/MdHashTable/X86.lean`) the
   table's functions 0, 3 and 4, each called indirectly through the table,
   whose address it first copies to the slot `sTab`
@@ -49,7 +49,7 @@ structure MdFns where
 
 variable (f : MdFns) (H : Hash)
 
-/-! ## `ctHash` through the table of `MdHash` -/
+/-! ## Constant-time hashing through the table of `MdHash` -/
 
 /-- The table that is our argument `j` to `sTab`. -/
 def hTab (j : Nat) : List Instr := [ld .eax (arg j), st .eax sTab]
@@ -73,7 +73,8 @@ def compLoopT : Prog isa := .seq (.block compInit) (.loop (compBodyT f H) .ne)
 hash value at `ebx` and the digest's place at `eax`. -/
 def outPartT : Prog isa := .seq (.block outSet) (tcall 4 f.dig [.ebx])
 
-/-- `ctHash`, with the hash function of the table that is our argument `j`. -/
+/-- Constant-time hashing, with the hash function of the table that is our
+argument `j`. -/
 def ctHashT (j : Nat) : Prog isa :=
   seqs [.block (hTab j), initPartT f, lenPart H, padPart H, compLoopT f H, outPartT f]
 

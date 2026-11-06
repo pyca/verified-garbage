@@ -117,5 +117,4 @@ def mulXR : List (Prog isa) := [
     [mov .x13 .x12, movi .x7 0]),
   Crt.mulRows]
 
-
 end VG.Impl.Rsa.AArch64.CheckKey

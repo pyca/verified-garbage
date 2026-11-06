@@ -129,5 +129,4 @@ theorem code_correct (v : CrtImpl) (s : State) (h : chkA.pre s) :
 
 end
 
-
 end VG.Proof.Rsa.AArch64

@@ -246,10 +246,4 @@ theorem two_seq {α : Type} {Φ Ψ : α → State → Prop} {R : State → State
     (h₂ : RelCT isa (Two Ψ) c₂ R) : RelCT isa (Two Φ) (.seq c₁ c₂) R :=
   RelCT.seq (two_post h₁ hw) h₂
 
-section
-variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
-  (X : Ok S vf Pre Pub) {H : Hash} (hH : HashOK H) (cH : HashCT hH) (hF : H.F ≤ 208)
-
-end
-
 end VG.Proof.RsaOaep.RISCV64

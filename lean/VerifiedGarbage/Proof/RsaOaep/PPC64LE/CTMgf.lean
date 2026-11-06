@@ -34,14 +34,4 @@ theorem pins_mono {α : Type} {Φ : α → State → Prop} {rs rs' : List Reg} (
 
 end
 
-section
-variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
-  (X : OkS S Pre Pub) {G : Hash} (hG : HashOK G) (cG : HashCT hG) {src srcLen dst dstLen : Nat}
-  (hf : MFit src srcLen dst dstLen)
-
-variable {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
-  (hGv : Proof.Mgf1.Valid Gs)
-
-end
-
 end VG.Proof.RsaOaep.PPC64LE

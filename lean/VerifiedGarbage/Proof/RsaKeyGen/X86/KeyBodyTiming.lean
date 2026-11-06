@@ -23,36 +23,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 import VerifiedGarbage.Proof.Framework.X86.Wp
 /-! # The complete native key body obeys the shared public exponent and retry leak -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyClearExport.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyExportTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeySizedTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyDispatchTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyWidthTiming.lean`, which only this module imported.
-section
-
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyEntryTiming.lean`, which only this module imported.
 section
 

@@ -72,5 +72,4 @@ theorem leak_eq4 {a b c d a' b' c' d' : List Byte} (ha : a.length = a'.length) (
   obtain ⟨rfl, rfl⟩ := List.append_inj h₂ ha
   exact ⟨rfl, rfl, rfl, rfl⟩
 
-
 end VG.Proof.RsaPkcs1Sig.AArch64.Ver

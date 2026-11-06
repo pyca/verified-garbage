@@ -106,6 +106,4 @@ theorem pins_sub {α : Type} {Φ : α → State → Prop} {rs rs' : List Reg} (h
 theorem pins_and {α : Type} {Φ : α → State → Prop} {P : State → Prop} {rs : List Reg} (h : Pins Φ rs) :
     Pins (fun a s => Φ a s ∧ P s) rs := fun a s₁ s₂ h₁ h₂ => h a s₁ s₂ h₁.1 h₂.1
 
-
-
 end VG.Proof.RsaPkcs1Sig.AArch64.Rec

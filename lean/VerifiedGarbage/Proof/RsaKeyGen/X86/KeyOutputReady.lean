@@ -21,30 +21,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 /-! # Completed numeric key derivation retains the public output environment and a boolean validity mask -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRetryTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyFinalTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyPartTiming.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyDeriveTiming.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

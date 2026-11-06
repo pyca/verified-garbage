@@ -509,7 +509,6 @@ theorem exec_umov_x {d : Reg} {n : VReg} {i : Nat} (h : i < 2) :
     exec (.umov .x d n i) s = some (s.write .x d ((s.v n).extractLsb' (64 * i) 64)) := by
   simp only [exec, Size.bits, show i * 64 < 128 by omega, ite_true]
 
-
 end
 
 /-- Code that writes no vector register keeps them all. -/

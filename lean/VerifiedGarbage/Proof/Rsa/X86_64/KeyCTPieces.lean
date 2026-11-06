@@ -195,5 +195,4 @@ theorem mulXRK_ct : RelCT isa (Two KK) (seqs mulXR) (Two KK) := by
   · obtain ⟨s₀, minv, N, c, hs⟩ := h
     exact WP.mono (mulXRK c) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩
 
-
 end VG.Proof.Rsa.X86_64.Key

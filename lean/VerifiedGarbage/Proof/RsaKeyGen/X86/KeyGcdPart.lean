@@ -12,18 +12,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 /-! # Complete native GCD stage for the RSA LCM -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyEvenFlag.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyOddSecond.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

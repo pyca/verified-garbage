@@ -8,18 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Mont.X86.Instr
 /-! # Native cdecl argument entry composes with the complete key body -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyDispatch.lean`, which only this module imported.
-section
-
-
-end
-
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyFront.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

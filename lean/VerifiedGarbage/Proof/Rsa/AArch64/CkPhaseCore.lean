@@ -79,5 +79,4 @@ theorem e_word {I : CkIn} {m : Mem} (hE : I.av m aE = I.E) (hE64 : I.E < 2 ^ 64)
   rw [← wv_mod64 m I.B (slot (wW I.cap) aE) (n := wW I.cap) (by simp only [wW]; omega), show wv m I.B (slot (wW I.cap) aE) (wW I.cap) = I.E
     from hE, Nat.mod_eq_of_lt hE64]
 
-
 end VG.Proof.Rsa.AArch64

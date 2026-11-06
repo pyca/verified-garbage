@@ -40,12 +40,6 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 import VerifiedGarbage.Proof.Mont.X86.Words
 /-! # Callable native key assembly restores all cdecl registers and the return address -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Frame.lean`, which only this module imported.
-section
-
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/IOFront.lean`, which only this module imported.
 section
 

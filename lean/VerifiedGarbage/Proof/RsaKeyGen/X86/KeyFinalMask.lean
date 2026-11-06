@@ -12,12 +12,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.TopWord32
 import VerifiedGarbage.Proof.Mont.X86.Instr
 /-! # The final native mask is exactly the RSA key shape check -/
 
--- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyTopBit.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys

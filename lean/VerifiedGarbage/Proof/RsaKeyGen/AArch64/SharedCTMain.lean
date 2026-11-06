@@ -138,7 +138,7 @@ theorem sharedLoop_ct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) : Rel
     rw [← hu'] at hI'
     exact ⟨h4, h128, hEZ, hrl, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, hE, by rw [hu']; omega_using [hit, hc]⟩
 
-/-- `millerRabin` leaks the same in runs that agree on the public data. -/
+/-- `millerRabinWith` leaks the same in runs that agree on the public data. -/
 theorem sharedMillerRabin_ct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) : RelCT isa (Two MrPre) (seqs (millerRabinWith M.mm R.run)) (Two SharedLoopEnd) := by
   unfold millerRabinWith
   refine RelCT.seq (two_piece [.x0] (pins_ws' (fun q : FPub => q.B) (fun q : FPub => q.Z) (fun q : FPub => q.w)

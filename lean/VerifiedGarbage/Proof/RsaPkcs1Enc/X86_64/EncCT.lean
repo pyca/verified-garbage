@@ -206,6 +206,4 @@ theorem entryBytes {s t : State} (h : PreCall s t) (rd wr : List Region) {p : Ad
   exact bytes_of_frame (frame_call (frame_of_outside h.out) (callEntry_frame h.rsp) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact .inl (ret_sub s)) hk ho hs hl
 
-
-
 end VG.Proof.RsaPkcs1Enc.X86_64

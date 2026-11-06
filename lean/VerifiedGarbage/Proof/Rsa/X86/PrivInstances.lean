@@ -15,12 +15,6 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 import VerifiedGarbage.Proof.Framework.GetElem
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 
--- Formerly `VerifiedGarbage/Proof/Bignum/X86/CrtStackSafety.lean`, which only this module imported.
-section
-
-
-end
-
 @[expose] public section
 namespace VG.Proof.Rsa.X86.PrivChecked
 open VG VG.X86

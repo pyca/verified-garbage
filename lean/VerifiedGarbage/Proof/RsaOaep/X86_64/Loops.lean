@@ -220,5 +220,4 @@ theorem xor_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte}
     exact ⟨I.L.of_rep I.R R'' (by rw [k'.gpr (by decide), k.gpr (by decide)]) (k'.2.2.trans k.2.2),
       (I.keep.trans (k.trans k')).mono (by decide), h8'', R''⟩
 
-
 end VG.Proof.RsaOaep.X86_64

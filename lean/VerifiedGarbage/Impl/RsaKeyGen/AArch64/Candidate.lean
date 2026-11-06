@@ -313,5 +313,4 @@ def codeWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog is
   seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
     .ite (.zero .x .x5) finNone (kMainWith mul roundCode)]
 
-
 end VG.Impl.RsaKeyGen.AArch64.Candidate

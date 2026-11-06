@@ -62,5 +62,4 @@ theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI 
         have := L.ql1; have := L.qcap
         exact ⟨by simp only [CkIn.pub]; omega, by simp only [CkIn.pub, wW, wk]; omega⟩) (by taint_decide) (by taint_decide) (by taint_decide)))))))
 
-
 end VG.Proof.Rsa.AArch64

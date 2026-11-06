@@ -97,5 +97,4 @@ theorem relCT_alloc {body : Prog isa} {P R : State → State → Prop}
       obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ b₁ b₂
       exact ⟨rfl, trivial⟩
 
-
 end VG.Proof.RsaPkcs1Sig.X86_64.Ver

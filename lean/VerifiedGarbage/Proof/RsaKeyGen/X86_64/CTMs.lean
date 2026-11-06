@@ -204,7 +204,7 @@ theorem doubles_ct' : RelCT isa (Two fun q s => MsMid q s ∧ s.gpr .rcx = BitVe
     · rw [hI.frm.wv_eq (fun r hr => by
         have := harr (show aOne < 8 by decide) (by decide) (by decide) (by decide) r hr; omega_arith) (by omega_arith)]; exact hone
 
-/-- What `montSetup` needs, and what `millerRabin` will. -/
+/-- What `montSetup` needs, and what `millerRabinWith` will. -/
 def MsPre (q : TPub) (s : State) : Prop :=
   GW q s ∧ q.rl < 2 ^ 64 ∧ ∃ (mi : BitVec 64) (c : Nat) (r : List Byte), Good s q.B q.Z q.w mi ∧
     wv s.mem q.B (slot q.w aN) q.w = c ∧ VG.Proof.RsaKeyGen.PrimeShape (64 * q.w) c ∧
@@ -213,7 +213,7 @@ def MsPre (q : TPub) (s : State) : Prop :=
     word s.mem q.B (8 * kUsed) = BitVec.ofNat 64 (8 * q.w) ∧ Src s q.B q.Z q.rP r ∧ r.length = q.rl ∧
     8 * q.w ≤ r.length ∧ VG.Proof.RsaKeyGen.shapeOf (mrRest c (Proof.RsaKeyGen.checksW q.w) r 1 0 (8 * q.w)) = q.S
 
-/-- What `montSetup` leaves for `expSetup`: `millerRabin`'s needs but the
+/-- What `montSetup` leaves for `expSetup`: `millerRabinWith`'s needs but the
 exponent. -/
 def MrPre0 (a : LPub) (s : State) : Prop :=
   KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr [] s ∧ MrDims a.p.B a.p.Z a.p.w ∧ a.p.ch < 2 ^ 62 ∧ a.p.rl < 2 ^ 64 ∧
@@ -386,7 +386,7 @@ theorem expSetup_ct : RelCT isa (Two MrPre0) (seqs expSetup) (Two MrPre) :=
 
 /-! ## The result -/
 
-/-- The status `millerRabin` leaves, from the shape of its result. -/
+/-- The status `millerRabinWith` leaves, from the shape of its result. -/
 def statOf (S : Option (Bool × Nat)) : Nat :=
   match S with
   | none => 0
