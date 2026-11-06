@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseL
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
@@ -114,11 +117,11 @@ theorem rest_piece (F : PrimsOk P) (ps : PS p) :
     SP p (fun s₀ s => (∃ s', IA p F.rejF (p.k * p.ℓ) s₀ s' ∧ Ctx (Y p) s₀ s ∧ s.mem = s'.mem) ∧
       okE p F.rejF s₀ (p.k * p.ℓ) = true) (RD p F) (rest P p) := by
   unfold rest
-  refine Piece.seq (B := fun s₀ s => KD p s₀ s ∧ Good p F s₀) ((sp_pure (Good p F) (decode_piece F ps)).mono
+  refine Piece.seq (B := fun s₀ s => KD p s₀ s ∧ Good p F s₀) ((sp_pure (Good p F) (rpp_piece ps)).mono
     (fun s₀ s _ h => ?_) fun _ _ _ h => h) ?_
   · obtain ⟨⟨s', ia, c, m⟩, hg⟩ := h
-    exact ⟨⟨c, ⟨by rw [m]; exact ia.fam hg, fun j hj => absurd hj (Nat.not_lt_zero _),
-      fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _)⟩⟩, hg⟩
+    exact ⟨⟨c, ⟨by rw [m]; exact ia.fam hg, by rw [m]; exact ia.dk.f1, by rw [m]; exact ia.dk.f2,
+      by rw [m]; exact ia.dk.f0⟩⟩, hg⟩
   refine Piece.seq (signLoop_piece F ps) ?_
   refine okIte_piece (sc_ok' ps (by decide) (by decide)) (lastB p F) (fun s₀ s _ h => ⟨h.ctx, ?_⟩)
     (fun s₀ s₀' _ _ hq => lastB_eq ps hq) ?_ ?_
@@ -185,15 +188,94 @@ theorem ldsc_tt : (VG.X86.taint.check (τr [.esp]) (.block [.mov .esi (.mem (at_
     (VG.X86.taint.hintOf (τr [.esp]) (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))]))).isSome = true := by
   native_taint_decide
 
+/-- `esi ← scratch`, which leaves memory as the leaf's push did. -/
+theorem ldscM_piece :
+    SP p (fun s₀ s => s = P0 s₀) (fun s₀ s => Ctx (Y p) s₀ s ∧ s.mem = (P0 s₀).mem)
+      (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))]) where
+  wp s₀ s hp e := by
+    subst e
+    have ea : (P0 s₀).ea (at_ .esp (20 + 4 * SC)) = argAddr s₀ SC := VG.Proof.MlKem.X86.P0_argAddr s₀ SC
+    refine wp_movm' (by rw [ea]; exact VG.Proof.MlKem.X86.P0_argIn hp.sc_lt hp.sp' hp.gwr) fun s₁ o₁ v₁ => WP.block_nil_iff.mpr ?_
+    refine ⟨⟨by rw [o₁.gpr _ (by decide)], o₁.rd, o₁.wr, ?_, by rw [o₁.mem]; exact Frame.refl _ _⟩, o₁.mem⟩
+    rw [v₁, ea]
+    exact VG.Proof.MlKem.X86.P0_arg hp.E0_big hp.sc_lt hp.sp' (by rw [hp.fr16]; exact hp.stk_g.sub_left hp.frame_sub)
+  ct := (lift (p := p) (ldsc_piece (Y := Y p) (lk := lk0) ldsc_tt)).ct
+
+/-- The bytes of a buffer, after the leaf's push, as on entry. -/
+theorem p0_keep {s₀ : State} (hp : TPre (Y p) s₀) {b : Buf} (hb : (Y p).ok b = true) :
+    ∀ i < b.len, (P0 s₀).mem (b.addr s₀ + BitVec.ofNat 64 i) = s₀.mem (b.addr s₀ + BitVec.ofNat 64 i) := by
+  obtain ⟨h₁, -, -⟩ := Lay.ok_iff.mp hb
+  exact VG.Proof.MlKem.bytes_frame (VG.Proof.MlKem.X86.P0_mem hp.E0_big) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact (((hp.stk_a _ h₁).sub_left hp.frame_sub).sub_right (Buf.sub hp hb)).symm)
+    (by have := Buf.fit hp hb; omega)
+
+/-- `KEYS` is 0, or `scratch` holds the private key's polynomials on entry. -/
+def KeysPre (p : Params) (s₀ : State) : Prop := keysW s₀ = 0 ∨ DKs p p.ℓ p.k p.k s₀ s₀.mem
+
+theorem dks_p0 {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) (h : DKs p p.ℓ p.k p.k s₀ s₀.mem) :
+    DKs p p.ℓ p.k p.k s₀ (P0 s₀).mem := by
+  have fam : ∀ {b n : Nat} {f : Nat → Poly}, b + n ≤ nS p → Fam s₀ s₀.mem b n f → Fam s₀ (P0 s₀).mem b n f :=
+    fun hb hf j hj => VG.Proof.MlDsa.Sign.polyIs_congr (p0_keep hp (slot_ok' ps (by omega))) (hf j hj)
+  exact ⟨fam (by simp only [nS, s1B]; omega_arith) h.f1, fam (by simp only [nS, s2B]; omega_arith) h.f2,
+    fam (by simp only [nS, t0B]; omega_arith) h.f0⟩
+
+/-- The branch on `KEYS`, which is nonzero as on entry. -/
+theorem keysIte_piece {A B : State → State → Prop} (ps : PS p) {t e : Prog isa}
+    (hA : ∀ s₀ s, TPre (Y p) s₀ → A s₀ s → Ctx (Y p) s₀ s ∧ scw s₀ s oKEYS = keysW s₀)
+    (ht : SP p (fun s₀ s₁ => (∃ s, A s₀ s ∧ Ctx (Y p) s₀ s₁ ∧ s₁.mem = s.mem) ∧ (keysW s₀ != 0) = true) B t)
+    (he : SP p (fun s₀ s₁ => (∃ s, A s₀ s ∧ Ctx (Y p) s₀ s₁ ∧ s₁.mem = s.mem) ∧ (keysW s₀ != 0) = false) B e) :
+    SP p A B (ifKeysElse t e) := by
+  refine Piece.seq (B := fun s₀ s₁ => (∃ s, A s₀ s ∧ Ctx (Y p) s₀ s₁ ∧ s₁.mem = s.mem) ∧
+    s₁.zf = some (!(keysW s₀ != 0))) (blk_piece (fun s₀ s hp ha => (hA s₀ s hp ha).1) (fun s₀ s hp ha => ?_) rfl) ?_
+  · obtain ⟨h, hk⟩ := hA s₀ s hp ha
+    refine wp_ldsc hp h (sc_ok' ps (by decide) (by decide)) fun s₁ o₁ v₁ => wp_test fun s₂ o₂ z₂ =>
+      WP.block_nil_iff.mpr ?_
+    have o := o₁.trans o₂
+    refine ⟨⟨s, ha, h.only o (by simp) (by simp), o.mem⟩, ?_⟩
+    rw [z₂, v₁, hk, BitVec.and_self]
+    simp [bne]
+  · refine Piece.ite (fun s₀ => keysW s₀ != 0) (fun s₀ s₁ hp ha => ?_) (fun s₀ s₀' _ _ hq => ?_)
+      (ht.mono (fun _ _ _ h => ⟨h.1.1, h.2⟩) fun _ _ _ h => h)
+      (he.mono (fun _ _ _ h => ⟨h.1.1, h.2⟩) fun _ _ _ h => h)
+    · show s₁.zf.map (!·) = _
+      rw [ha.2]; cases (keysW s₀ != 0) <;> rfl
+    · have e := hq.1.2.2
+      simp only [keysOf, List.cons.injEq, and_true] at e
+      by_cases h₁ : keysW s₀ = 0 <;> by_cases h₂ : keysW s₀' = 0 <;> simp only [h₁, h₂, ↓reduceIte] at e ⊢
+      · cases e
+      · cases e
+      · rw [bne_iff_ne.mpr h₁, bne_iff_ne.mpr h₂]
+
+/-- The private key's polynomials: decoded, or as `scratch` holds them on entry. -/
+theorem keysOpt_piece (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => (Ctx (Y p) s₀ s ∧ s.mem = (P0 s₀).mem) ∧ KeysPre p s₀)
+      (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k p.k s₀ s.mem) (keysOpt P p) := by
+  unfold keysOpt
+  refine keysIte_piece ps (fun s₀ s hp h => ⟨h.1.1, ?_⟩) (nil_piece fun s₀ s hp h => ?_)
+    ((keys_piece F ps).mono (fun s₀ s _ h => ⟨h.1.choose_spec.2.1, ?_⟩) fun _ _ _ h => h)
+  · rw [scw, h.1.2]
+    exact Mem.readW_congr fun i hi => p0_keep hp (sc_ok' ps (by decide) (by decide)) i hi
+  · obtain ⟨⟨s', ⟨⟨_, m⟩, kp⟩, c', m'⟩, hb⟩ := h
+    refine ⟨c', ?_⟩
+    rw [m', m]
+    rcases kp with kp | kp
+    · rw [kp] at hb; cases hb
+    · exact dks_p0 hp ps kp
+  · exact ⟨fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
+      fun j hj => absurd hj (Nat.not_lt_zero _)⟩
+
 /-- The body of `vg_mldsa*_sign`. -/
 theorem body_piece (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => s = P0 s₀) (fun s₀ s => Ctx (Y p) s₀ s ∧ Done p s₀ s) (body P p) := by
+    SP p (fun s₀ s => s = P0 s₀ ∧ KeysPre p s₀) (fun s₀ s => Ctx (Y p) s₀ s ∧ Done p s₀ s) (body P p) := by
   unfold body
-  refine Piece.seq (lift (ldsc_piece (Y := Y p) (lk := lk0) ldsc_tt)) ?_
-  refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1)
-    (blk_piece (fun _ _ _ h => h) (fun s₀ s hp h => ?_) rfl) ?_
+  refine Piece.seq (sp_pure (KeysPre p) ldscM_piece) ?_
+  refine Piece.seq (keysOpt_piece F ps) ?_
+  refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1 ∧ DKs p p.ℓ p.k p.k s₀ s.mem)
+    (blk_piece (fun _ _ _ h => h.1) (fun s₀ s hp h => ?_) rfl) ?_
   · rw [← List.append_nil (st32 oOK 1)]
-    exact wp_st32 hp h (sc_ok ps (by decide) (by decide)) 1 fun s' c' _ v => WP.block_nil_iff.mpr ⟨c', v⟩
+    exact wp_st32 hp h.1 (sc_ok ps (by decide) (by decide)) 1 fun s' c' fr v => WP.block_nil_iff.mpr
+      ⟨c', v, h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr (by ofsd)⟩
   refine Piece.seq (expandA_piece F ps) ?_
   refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ Outcome (fun b => signMu p b (skOf p s₀) (muOf s₀) (rndOf s₀))
       (scw s₀ s oOK) (bytesAt s.mem (Buf.addr s₀ (bSig 0 p.sigLen)) p.sigLen))
