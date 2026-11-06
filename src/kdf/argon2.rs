@@ -249,7 +249,9 @@ struct Inputs<'a> {
 }
 
 /// A derivation whose costs and lengths [`Derivation::new`] checked, with
-/// the memory Argon2 works in.
+/// the memory Argon2 works in, wiped when it is dropped: `vg_argon2` leaves
+/// values derived from the password in it (its contract leaves its contents
+/// unspecified).
 struct Derivation<'a> {
     /// The costs.
     params: Params,
@@ -261,6 +263,13 @@ struct Derivation<'a> {
     scratch: Vec<[u64; 2048]>,
     /// The length of the key to derive.
     len: usize,
+}
+
+impl Drop for Derivation<'_> {
+    fn drop(&mut self) {
+        crate::zeroize::zeroize(self.matrix.as_flattened_mut());
+        crate::zeroize::zeroize(self.scratch.as_flattened_mut());
+    }
 }
 
 impl<'a> Derivation<'a> {

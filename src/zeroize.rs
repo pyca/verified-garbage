@@ -13,7 +13,8 @@
 // ciphers', AEADs', MACs' and hash functions' states, which hold the key under
 // HMAC, PBKDF2 or keyed BLAKE2) when it is dropped; the asymmetric operations'
 // intermediate values and working space (FIPS 203 §3.3, FIPS 204 §3.6.3); and
-// the key the password KDFs' `verify` functions derive, once compared.
+// the password KDFs' working memory (scrypt's and Argon2's) and the key their
+// `verify` functions derive, once compared.
 //
 // What is not: the symmetric algorithms' `scratch`; the verified functions'
 // stack, which their contracts do not promise to wipe (but RC4's); copies of
