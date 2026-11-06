@@ -37,7 +37,9 @@ returns: with its return address, a call uses at most 24 bytes below `esp`
 functions use 32 bytes of stack below their return address.
 
 Only the pointers and the lengths can affect timing: the branches are on the
-lengths, and the tags are compared without a branch.
+lengths, and the tags are compared without a branch; but `open` then branches
+on whether they are equal, which its contract lets it leak, to zero the
+data if they are not.
 -/
 
 @[expose] public section
@@ -170,7 +172,26 @@ def compare : List Instr :=
   diff .ecx 3 ++ ([.alu .or .eax (.reg .ecx), .alu .cmp .eax (.imm 1), .mov .eax (.imm 0),
     .alu .adc .eax (.imm 0)] : List Instr)
 
-def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+/-- `data` into `ecx` and `len` into `edx`, and whether `len` is zero into
+`ZF`. -/
+def zeroArgs : List Instr :=
+  [.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24)), .alu .cmp .edx (.imm 0)]
+
+/-- The `edx` bytes at `ecx` zeroed, a byte at a time, from `al`, which is
+zero. -/
+def zeroLoop : Prog isa :=
+  .loop (.block [.store8 { base := .ecx } .al, .alu .add .ecx (.imm 1), .alu .sub .edx (.imm 1)]) .ne
+
+/-- The `len` bytes at `data` zeroed, with `eax` zero. -/
+def zeroData : Prog isa := .seq (.block zeroArgs) (.ite .e (.block []) zeroLoop)
+
+/-- If the tag is wrong (`eax` is 0, which `ZF` then says), the data
+zeroed; then the registers restored. -/
+def openTail : Prog isa := .seq (.ite .e zeroData (.block [])) (.block restore)
+
+/-- Up to the tags compared without a branch: `eax` is 1 if they are
+equal and 0 if not, and `ZF` says which. -/
+def openBody (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue
   (.seq (macPad 12 16)
   (.seq (macPad 20 24)
@@ -179,6 +200,10 @@ def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   (.seq (crypt v)
   (.seq (finalizeTo 16)
   (.seq (.block loadTag)
-    (.block (compare ++ restore)))))))))
+    (.block (compare ++ [.alu .cmp .eax (.imm 0)])))))))))
+
+/-- `open` zeroes the data if the tags differ, branching on the result,
+which its contract lets it leak. -/
+def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (openBody v) openTail
 
 end VG.Impl.ChaCha20Poly1305.X86
