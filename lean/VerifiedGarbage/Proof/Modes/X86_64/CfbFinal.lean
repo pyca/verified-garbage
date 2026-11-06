@@ -109,6 +109,27 @@ theorem slots_keep {s₀ u u' : State} {wr : List Region} {d : Nat} (hsp : u.gpr
   · simp only [List.mem_singleton] at hr; subst hr
     exact slot_below s₀ hj hd
 
+/-- The first function, inlined from a state `Call₁` describes. -/
+theorem whole_wp {a : FinalArgs} (ha : FinalOk a) {whole : Prog isa} {kW : Contract isa}
+    (hW : ∀ s, kW.pre s → ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ kW.post s s')
+    (spW : SpSafe whole) (dW : whole.x86_64Depth + 80 ≤ 2 ^ 64) {s₀ : State} {len : Nat}
+    {rdW wrW : List Region} (slotsW : ∀ r ∈ wrW, r.Disjoint (slotsRegion s₀)) {u : State}
+    (hu : Call₁ a s₀ len u) (hmx : u.mxcsr = s₀.mxcsr)
+    (hpre : kW.pre (u.withRegions rdW wrW)) (hc : Covers (rdW ++ wrW) (u.rd ++ u.wr)) (hw : Covers wrW u.wr) :
+    WP isa whole u (After₁ a s₀ len kW rdW wrW whole.x86_64Depth) := by
+  refine WP.inlineF hW spW (by omega) hpre hc hw fun s' rd' wr' ab f _ post => ?_
+  refine ⟨⟨u, hu, post, by rw [hu.rsp] at f; exact f⟩, fun i hi => ?_, ?_, fun j hj => ?_, by rw [rd', hu.rd],
+    by rw [wr', hu.wr], by rw [ab.2.2, hmx]⟩
+  · rw [ab.1 _ (saved_mem i (by have := ha.length; omega)), hu.saved i hi]
+  · rw [ab.1 _ (by decide), hu.rsp]
+  · rw [slots_keep hu.rsp f slotsW dW hj, hu.slots j hj]
+
+/-- `entry ++ toBlocks` keeps MXCSR. -/
+theorem entry_mxcsr (a : FinalArgs) : ∀ i ∈ a.entry ++ a.toBlocks, loadsMxcsr i = false := by
+  intro i hi
+  simp only [FinalArgs.entry, FinalArgs.toBlocks, List.mem_append, List.mem_map, List.mem_singleton] at hi
+  rcases hi with ⟨_, _, rfl⟩ | rfl <;> rfl
+
 /-- The frame's push, `entry ++ toBlocks` and the first function. -/
 theorem first_wp {a : FinalArgs} (ha : FinalOk a) {whole : Prog isa} {kW : Contract isa}
     (hW : ∀ s, kW.pre s → ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ kW.post s s')
@@ -121,19 +142,9 @@ theorem first_wp {a : FinalArgs} (ha : FinalOk a) {whole : Prog isa} {kW : Contr
     WP isa (.seq (.block (a.entry ++ a.toBlocks)) whole) (pushed FinalArgs.pushRegs s₀)
       (After₁ a s₀ len kW rdW wrW whole.x86_64Depth) := by
   obtain ⟨u, e, hu⟩ := entry_ok ha hL hlen h80
-  have hmx : u.mxcsr = s₀.mxcsr := by
-    rw [runBlock_mxcsr _ _ _ (by
-      intro i hi
-      simp only [FinalArgs.entry, FinalArgs.toBlocks, List.mem_append, List.mem_map, List.mem_singleton] at hi
-      rcases hi with ⟨_, _, rfl⟩ | rfl <;> rfl) e, pushed_mxcsr]
+  have hmx : u.mxcsr = s₀.mxcsr := by rw [runBlock_mxcsr _ _ _ (entry_mxcsr a) e, pushed_mxcsr]
   obtain ⟨hpre, hc, hw⟩ := preW u hu
-  refine WP.seq (WP.of_runBlock ⟨u, e, WP.inlineF hW spW (by omega) hpre hc hw fun s' rd' wr' ab f _ post => ?_⟩)
-  have hd : whole.x86_64Depth + 80 ≤ 2 ^ 64 := dW
-  refine ⟨⟨u, hu, post, by rw [hu.rsp] at f; exact f⟩, fun i hi => ?_, ?_, fun j hj => ?_, by rw [rd', hu.rd],
-    by rw [wr', hu.wr], by rw [ab.2.2, hmx]⟩
-  · rw [ab.1 _ (saved_mem i (by have := ha.length; omega)), hu.saved i hi]
-  · rw [ab.1 _ (by decide), hu.rsp]
-  · rw [slots_keep hu.rsp f slotsW hd hj, hu.slots j hj]
+  exact WP.seq (WP.of_runBlock ⟨u, e, whole_wp ha hW spW dW slotsW hu hmx hpre hc hw⟩)
 
 /-- What the tail leaves (see `tail_wp`). -/
 structure TailDone (a : FinalArgs) (s₀ v : State) (D : Addr) (len : Nat) (kE : Contract isa)
