@@ -100,15 +100,22 @@ theorem length_keystream (S : CState) (n : Nat) : (keystream S n).length = n := 
   rw [length_flatMap_const _ (n := 64) (fun _ => length_serialize _), List.length_range]
   omega
 
-/-- XORing the keystream into data in memory, byte by byte. -/
-theorem bytesAt_xor {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
-    (h : ∀ k < n, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0) :
-    bytesAt m' p n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks := by
+/-- XORing the keystream into data in memory, byte by byte, from `p` to
+`q` (`p` itself in place). -/
+theorem bytesAt_xor_to {m m' : Mem} {p q : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
+    (h : ∀ k < n, m' (q + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0) :
+    bytesAt m' q n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks := by
   apply List.ext_getElem
   · simp [bytesAt, hks]
   · intro k h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
     simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith]
     rw [h k h₁, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+
+/-- XORing the keystream into data in memory, byte by byte. -/
+theorem bytesAt_xor {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
+    (h : ∀ k < n, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0) :
+    bytesAt m' p n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks :=
+  bytesAt_xor_to hks h
 
 end VG.Proof.ChaCha20

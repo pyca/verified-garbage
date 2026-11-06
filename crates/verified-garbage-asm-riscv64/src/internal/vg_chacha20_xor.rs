@@ -18,8 +18,10 @@ pub(crate) unsafe extern "C" fn vg_chacha20_xor() {
 .insn 4, 0x0152b023
 .insn 4, 0x0162b423
 .insn 4, 0x0012b823
+.insn 4, 0x0172bc23
 .insn 2, 0x8aae
 .insn 2, 0x8b32
+.insn 2, 0x8bba
 .insn 2, 0x85b6
 beqz s6, 20f
 22:
@@ -35,14 +37,16 @@ j 24f
 .insn 2, 0x83ae
 .insn 4, 0x007aee33
 .insn 4, 0x00ce6e33
+.insn 4, 0x017e6e33
 .insn 4, 0x007e7e13
 beqz t3, 25f
 27:
 .insn 4, 0x000ace03
 .insn 4, 0x0003ce83
 .insn 4, 0x01de4e33
-.insn 4, 0x01ca8023
+.insn 4, 0x01cb8023
 .insn 2, 0x0a85
+.insn 2, 0x0b85
 .insn 2, 0x0385
 .insn 2, 0x167d
 bnez a2, 27b
@@ -52,8 +56,9 @@ j 26f
 .insn 4, 0x000abe03
 .insn 4, 0x0003be83
 .insn 4, 0x01de4e33
-.insn 4, 0x01cab023
+.insn 4, 0x01cbb023
 .insn 2, 0x0aa1
+.insn 2, 0x0ba1
 .insn 2, 0x03a1
 .insn 2, 0x1661
 bnez a2, 28b
@@ -70,6 +75,7 @@ j 21f
 .insn 4, 0x0102b083
 .insn 4, 0x0002ba83
 .insn 4, 0x0082bb03
+.insn 4, 0x0182bb83
 .insn 2, 0x8082
 .option pop",
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,

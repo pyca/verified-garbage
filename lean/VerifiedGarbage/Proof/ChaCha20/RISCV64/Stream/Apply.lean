@@ -559,6 +559,37 @@ structure ArgsPost (p : Addr) (s s' : State) : Prop where
   keep : ∀ r ∈ kept, s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
+  /-- `vg_chacha20_xor` in place: `dst = src`. -/
+  a4 : s'.gpr .a4 = s.gpr .s6
+
+/-- `ArgsPost` but for `a4`. -/
+structure ArgsPre (p : Addr) (s s' : State) : Prop where
+  copy : ∀ i < 64, s'.mem (p + BitVec.ofNat 64 (192 + i)) = s.mem (p + BitVec.ofNat 64 i)
+  state : stateAt s'.mem p =
+    (stateAt s.mem p).set 12 ((stateAt s.mem p)[12] + (s.gpr .a2 >>> 6).setWidth 32)
+  frame : Frame [⟨p, 64⟩, ⟨p + BitVec.ofNat 64 192, 64⟩] s.mem s'.mem
+  a0 : s'.gpr .a0 = p + BitVec.ofNat 64 192
+  a1 : s'.gpr .a1 = s.gpr .s6
+  a2 : s'.gpr .a2 = s.gpr .a2
+  a3 : s'.gpr .a3 = p + BitVec.ofNat 64 256
+  s5 : s'.gpr .s5 = p
+  s6 : s'.gpr .s6 = s.gpr .s6 + s.gpr .a2
+  s7 : s'.gpr .s7 = s.gpr .s7 - s.gpr .a2
+  s8 : s'.gpr .s8 = s.gpr .s8
+  keep : ∀ r ∈ kept, s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+/-- The last instruction, `mv a4, a1`. -/
+theorem ArgsPre.mv {p : Addr} {s s' s'' : State} (h : ArgsPre p s s') (u : Upd s' s'' .a4 (s'.gpr .a1)) :
+    ArgsPost p s s'' :=
+  ⟨fun i hi => by rw [u.mem]; exact h.copy i hi, by rw [u.mem]; exact h.state, by rw [u.mem]; exact h.frame,
+    by rw [u.other _ (by decide), h.a0], by rw [u.other _ (by decide), h.a1],
+    by rw [u.other _ (by decide), h.a2], by rw [u.other _ (by decide), h.a3],
+    by rw [u.other _ (by decide), h.s5], by rw [u.other _ (by decide), h.s6],
+    by rw [u.other _ (by decide), h.s7], by rw [u.other _ (by decide), h.s8],
+    fun r hr => by rw [u.other r (kept_ne hr), h.keep r hr], by rw [u.rd, h.rd], by rw [u.wr, h.wr],
+    by rw [u.gpr, h.a1]⟩
 
 theorem args_exec {s : State} {p : Addr} (hs5 : s.gpr .s5 = p)
     (hw : ∀ d n, d + n ≤ 768 → InRegions s.wr (p + BitVec.ofNat 64 d) n) (hrd : s.rd = []) :
@@ -612,7 +643,7 @@ theorem args_exec {s : State} {p : Addr} (hs5 : s.gpr .s5 = p)
     show s₄.gpr r = _
     rw [u₄.other r h₁', g₃ r h₁' h₂, u₂.other r h₃, h₁.gpr r h₁']
   refine wp_addi (by decide) fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_addi (by decide) fun s₈ u₈ =>
-    wp_add fun s₉ u₉ => wp_sub fun s₁₀ u₁₀ => WP.block_nil ?_
+    wp_add fun s₉ u₉ => wp_sub fun s₁₀ u₁₀ => wp_mv fun s₁₁ u₁₁ => WP.block_nil (ArgsPre.mv ?_ u₁₁)
   have gm : s₁₀.mem = s₅.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
   have g₉ : ∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a3 → r ≠ .s6 → r ≠ .s7 → s₁₀.gpr r = s₅.gpr r :=
     fun r h0 h1 h3 h6 h7 => by rw [u₁₀.other r h7, u₉.other r h6, u₈.other r h3, u₇.other r h1, u₆.other r h0]
@@ -721,7 +752,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
     omega
   refine xor_call (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
     (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) A.a0 (by rw [A.a1, h.s6]) (by rw [A.a2, h.a2])
-    A.a3 (by omega) dSD dSB dDB hwrap (hp.al (by decide)) (hp.al (by decide))
+    A.a3 (by rw [A.a4, h.s6]) (by omega) dSD dSB dDB hwrap (hp.al (by decide)) (hp.al (by decide))
     (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
     (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
   intro s₂ k₂ x₂

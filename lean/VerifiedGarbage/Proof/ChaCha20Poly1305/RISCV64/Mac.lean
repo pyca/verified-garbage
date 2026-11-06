@@ -272,21 +272,21 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
   have a0₁ : s₁.gpr .a0 = cx s₀ := by rw [u₁.gpr, ha, ps, BitVec.add_sub_cancel]
   refine wp_sb (a := off (cx s₀) 48) (by decide) (by rw [u₂.other _ (by decide), a0₁])
     (by rw [u₂.wr, u₁.wr, h.wr]; exact hp.in_w (by decide)) fun s₃ g₃ => ?_
-  refine wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_addi (imm := bufOff) (by decide) fun s₆ u₆ =>
-    WP.block_nil ?_
+  refine wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_addi (imm := bufOff) (by decide) fun s₅' u₅' =>
+    wp_mv fun s₆ u₆ => WP.block_nil ?_
   have m₆ : s₆.mem = s.mem.writeW (off (cx s₀) 48) (BitVec.ofNat 8 1) := by
-    rw [u₆.mem, u₅.mem, u₄.mem, g₃.mem, u₂.gpr, VG.RISCV64.Bytes.setWidth_ofNat_byte, u₂.mem, u₁.mem]
+    rw [u₆.mem, u₅'.mem, u₅.mem, u₄.mem, g₃.mem, u₂.gpr, VG.RISCV64.Bytes.setWidth_ofNat_byte, u₂.mem, u₁.mem]
   have f₆ : Frame [sub s₀ 0 64] s.mem s₆.mem := by
     rw [m₆]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (contains_sub s₀ (w := 8 / 8) (by decide) (by decide) (by decide))
   have a0₆ : s₆.gpr .a0 = cx s₀ := by
-    rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide),
+    rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide),
       a0₁]
-  have g₆ : ∀ r, r ≠ .a0 → r ≠ .t0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → s₆.gpr r = s.gpr r :=
-    fun r h0 ht h1 h2 h3 => by
-      rw [u₆.other r h3, u₅.other r h2, u₄.other r h1, g₃.gpr, u₂.other r ht, u₁.other r h0]
-  have w₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, u₄.wr, g₃.wr, u₂.wr, u₁.wr, h.wr]
+  have g₆ : ∀ r, r ≠ .a0 → r ≠ .t0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → r ≠ .a4 → s₆.gpr r = s.gpr r :=
+    fun r h0 ht h1 h2 h3 h4 => by
+      rw [u₆.other r h4, u₅'.other r h3, u₅.other r h2, u₄.other r h1, g₃.gpr, u₂.other r ht, u₁.other r h0]
+  have w₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅'.wr, u₅.wr, u₄.wr, g₃.wr, u₂.wr, u₁.wr, h.wr]
   have hS : (⟨cx s₀, 64⟩ : Region).Disjoint (dR s₀) := by
     rw [st_sub]; exact (APre.w_sub (s₀ := s₀) hp.d_w (k := 0) (n := 64) (by decide)).symm
   have hcov : Covers [⟨cx s₀, 64⟩, dR s₀, sub s₀ 64 320] s₆.wr := by
@@ -300,11 +300,14 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
         by show pad (wk s₀) + 64 + 320 ≤ 616; omega⟩
   refine WP.seq (xor_call (S := cx s₀) (D := dp s₀) (n := L s₀) (B := off (cx s₀) 64)
     (hSa := cx_al4 s₀) (hBa := off_al4 s₀ (by decide)) a0₆
-    (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, g₃.gpr, u₂.other _ (by decide),
-      u₁.other _ (by decide), h.regs.s9])
-    (by rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide),
-      u₁.other _ (by decide), h.regs.s10, a5_eq])
-    (by rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide), a0₁]; rfl)
+    (by rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.other _ (by decide), u₄.gpr, g₃.gpr,
+      u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
+    (by rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.gpr, u₄.other _ (by decide), g₃.gpr,
+      u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s10, a5_eq])
+    (by rw [u₆.other _ (by decide), u₅'.gpr, u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr,
+      u₂.other _ (by decide), a0₁]; rfl)
+    (by rw [u₆.gpr, u₅'.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr,
+      u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
     (fit_d' s₀) hS (Offset.base_disjoint (cx s₀) (k := 64) (e := 64) (n := 320) (by decide) (by decide))
     (APre.w_sub (s₀ := s₀) hp.d_w (k := 64) (n := 320) (by decide)) hp.fit_d
     (covers_right (by rw [List.nil_append]; exact hcov)) hcov fun s₇ k₇ hx => ?_)
@@ -312,8 +315,8 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
   refine ⟨?_, by rw [u₈.gpr, k₇.a0, a0₆], ?_⟩
   · have st₆ : Step [sub s₀ 0 64, dR s₀, sub s₀ 64 320] s s₆ :=
       ⟨fun r hr => g₆ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide),
-        by rw [u₆.sp, u₅.sp, u₄.sp, g₃.sp, u₂.sp, u₁.sp], by rw [u₆.rd, u₅.rd, u₄.rd, g₃.rd, u₂.rd, u₁.rd],
+        (by revert r; decide) (by revert r; decide) (by revert r; decide),
+        by rw [u₆.sp, u₅'.sp, u₅.sp, u₄.sp, g₃.sp, u₂.sp, u₁.sp], by rw [u₆.rd, u₅'.rd, u₅.rd, u₄.rd, g₃.rd, u₂.rd, u₁.rd],
         by rw [w₆, h.wr], f₆.mono (by simp)⟩
     refine (st₆.trans ?_).trans (Step.upd _ u₈)
     have := k₇.step
