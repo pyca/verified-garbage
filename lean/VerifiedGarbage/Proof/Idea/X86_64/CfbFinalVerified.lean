@@ -49,8 +49,18 @@ with the data `len = rcx` bytes long, and the 80 bytes below `rsp`, which
 the frame takes, outside the buffers. -/
 def finalPre (s : State) : Prop :=
   fbPre (fun s => (s.gpr .rcx).toNat) s ∧ 80 ≤ (s.gpr .rsp).toNat ∧
+    (frameRegion s).Disjoint ⟨s.gpr .rdi, 104⟩ ∧ (frameRegion s).Disjoint ⟨s.gpr .rsi, 8⟩ ∧
+    (frameRegion s).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ ∧ (frameRegion s).Disjoint ⟨s.gpr .r8, 8 * 22⟩
+
+/-- The frame is apart from every buffer. -/
+theorem finalPre_frame {s : State} (hp : finalPre s) :
     ∀ r ∈ ([⟨s.gpr .rdi, 104⟩, ⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, 8 * 22⟩] : List Region),
-      (frameRegion s).Disjoint r
+      (frameRegion s).Disjoint r := by
+  obtain ⟨-, -, h1, h2, h3, h4⟩ := hp
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  exacts [h1, h2, h3, h4]
 
 theorem finalArgs_ok : FinalOk finalArgs :=
   ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
@@ -72,7 +82,8 @@ theorem sub_self_mem {r : Region} {rs : List Region} (h : r ∈ rs) :
 theorem call₁_pre {s₀ : State} (hp : finalPre s₀) {u : State} (hu : Call₁ finalArgs s₀ (s₀.gpr .rcx).toNat u) :
     fbPre blkLen (u.withRegions (rdW s₀) (wrW s₀)) ∧ Covers (rdW s₀ ++ wrW s₀) (u.rd ++ u.wr) ∧
       Covers (wrW s₀) u.wr := by
-  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp
+  have hfr := finalPre_frame hp
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, -⟩ := hp
   have g0 : u.gpr .rdi = s₀.gpr .rdi := hu.args 0 (by decide) (by decide)
   have g1 : u.gpr .rsi = s₀.gpr .rsi := hu.args 1 (by decide) (by decide)
   have g2 : u.gpr .rdx = s₀.gpr .rdx := hu.args 2 (by decide) (by decide)
@@ -124,7 +135,8 @@ theorem call₂_pre {s₀ : State} (hp : finalPre s₀) {u₁' v u : State}
     (vrd : v.rd = u₁'.rd) (vwr : v.wr = u₁'.wr) (hu : Call₂ finalArgs s₀ v u) :
     fbPre blkLen (u.withRegions (rdW s₀) (wrE s₀)) ∧ Covers (rdW s₀ ++ wrE s₀) (u.rd ++ u.wr) ∧
       Covers (wrE s₀) u.wr := by
-  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp
+  have hfr := finalPre_frame hp
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, -⟩ := hp
   have hurd : u.rd = s₀.rd := by rw [hu.rd, vrd]; rcases hA with h | h <;> exact h.rd
   have huwr : u.wr = frameRegion s₀ :: s₀.wr := by rw [hu.wr, vwr]; rcases hA with h | h <;> exact h.wr
   have g0 : u.gpr .rdi = s₀.gpr .rdi := hu.args 0 (by decide) (by decide) (by decide)
@@ -227,7 +239,8 @@ theorem cfbEncrypt_spSafe : SpSafe cfbEncrypt := SpSafe.of_all (Code.all_of_allI
 theorem cfbEncryptFinal_wp {s₀ : State} (hp : finalPre s₀) :
     WP isa cfbEncryptFinal s₀ fun s' => gprPreserved s₀ s' ∧ cfbEncFinalX86_64.post s₀ s' := by
   have hp' := hp
-  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp'
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, -⟩ := hp'
+  have hfr := finalPre_frame hp
   have fitD' : (s₀.gpr .rdx).toNat + (s₀.gpr .rcx).toNat ≤ 2 ^ 64 := fitD
   have hlen := (s₀.gpr .rcx).isLt
   have hmul : 8 * ((s₀.gpr .rcx).toNat / 8) ≤ (s₀.gpr .rcx).toNat := by
@@ -423,7 +436,8 @@ def cfbDecFinalX86_64 : Contract isa where
 theorem cfbDecryptFinal_wp {s₀ : State} (hp : finalPre s₀) :
     WP isa cfbDecryptFinal s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecFinalX86_64.post s₀ s' := by
   have hp' := hp
-  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp'
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, -⟩ := hp'
+  have hfr := finalPre_frame hp
   have fitD' : (s₀.gpr .rdx).toNat + (s₀.gpr .rcx).toNat ≤ 2 ^ 64 := fitD
   have hlen := (s₀.gpr .rcx).isLt
   have hmul : 8 * ((s₀.gpr .rcx).toNat / 8) ≤ (s₀.gpr .rcx).toNat := by

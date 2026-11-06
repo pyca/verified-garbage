@@ -6,6 +6,20 @@ import VerifiedGarbage.Proof.Idea.X86_64.CfbFinalLit
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Spec.Idea.CfbFinal
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Spec.Idea.CfbFinal
+meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Idea.X86_64.CfbFinalVerified
 meta import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalCT
 meta import VerifiedGarbage.Proof.Idea.X86_64.CfbFinalLit
@@ -34,7 +48,7 @@ open VG.Proof.Modes.X86_64 (FinalOk FinalHyps FinalTaint Call₁ Call₂ After�
   frameSp slots_sub_frame block_slots cfbFinal_ct lenOf dataOf)
 
 theorem slotsW_ok {s₀ : State} (hp : finalPre s₀) : ∀ r ∈ wrW s₀, r.Disjoint (slotsRegion s₀) := by
-  obtain ⟨-, -, hfr⟩ := hp
+  have hfr := finalPre_frame hp
   have fK : ∀ r ∈ ([⟨s₀.gpr .rdi, 104⟩, ⟨s₀.gpr .rsi, 8⟩, ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, ⟨s₀.gpr .r8, 8 * 22⟩] :
       List Region), Region.Disjoint (slotsRegion s₀) r := fun r hr => (hfr r hr).sub_left (slots_sub_frame s₀)
   have hsubD : Region.Sub ⟨s₀.gpr .rdx, 8 * ((s₀.gpr .rcx).toNat / 8)⟩ ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩ :=
@@ -47,7 +61,7 @@ theorem slotsW_ok {s₀ : State} (hp : finalPre s₀) : ∀ r ∈ wrW s₀, r.Di
   · exact (fK _ (by simp)).symm
 
 theorem slotsE_ok {s₀ : State} (hp : finalPre s₀) : ∀ r ∈ wrE s₀, r.Disjoint (slotsRegion s₀) := by
-  obtain ⟨-, -, hfr⟩ := hp
+  have hfr := finalPre_frame hp
   have fK : ∀ r ∈ ([⟨s₀.gpr .rdi, 104⟩, ⟨s₀.gpr .rsi, 8⟩, ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, ⟨s₀.gpr .r8, 8 * 22⟩] :
       List Region), Region.Disjoint (slotsRegion s₀) r := fun r hr => (hfr r hr).sub_left (slots_sub_frame s₀)
   intro r hr
@@ -64,7 +78,8 @@ theorem lenOf_final (s : State) : lenOf finalArgs s = (s.gpr .rcx).toNat := rfl
 theorem finalHyps_enc {s₀ : State} (hp : finalPre s₀) :
     FinalHyps finalArgs cfbEncrypt cfbEncX86_64 cfbEncX86_64 rdW wrW rdW wrE s₀ := by
   have hp' := hp
-  obtain ⟨⟨-, hwr, -, -, -, -, -, -, -, -, -, -, -, fitD, -⟩, h80, hfr⟩ := hp'
+  obtain ⟨⟨-, hwr, -, -, -, -, -, -, -, -, -, -, -, fitD, -⟩, h80, -⟩ := hp'
+  have hfr := finalPre_frame hp
   exact ⟨h80, by rw [hwr, dataOf_final, lenOf_final]; simp, by rw [dataOf_final, lenOf_final]; exact fitD,
     by rw [dataOf_final, lenOf_final]; exact (hfr _ (by simp)).symm, fun u hu => call₁_pre hp hu, slotsW_ok hp,
     fun u₁' v u hA _ vrd vwr hu => call₂_pre hp (.inl hA) vrd vwr hu, slotsE_ok hp⟩
@@ -73,7 +88,8 @@ theorem finalHyps_enc {s₀ : State} (hp : finalPre s₀) :
 theorem finalHyps_dec {s₀ : State} (hp : finalPre s₀) :
     FinalHyps finalArgs cfbDecrypt cfbDecX86_64 cfbEncX86_64 rdW wrW rdW wrE s₀ := by
   have hp' := hp
-  obtain ⟨⟨-, hwr, -, -, -, -, -, -, -, -, -, -, -, fitD, -⟩, h80, hfr⟩ := hp'
+  obtain ⟨⟨-, hwr, -, -, -, -, -, -, -, -, -, -, -, fitD, -⟩, h80, -⟩ := hp'
+  have hfr := finalPre_frame hp
   exact ⟨h80, by rw [hwr, dataOf_final, lenOf_final]; simp, by rw [dataOf_final, lenOf_final]; exact fitD,
     by rw [dataOf_final, lenOf_final]; exact (hfr _ (by simp)).symm, fun u hu => call₁_pre hp hu, slotsW_ok hp,
     fun u₁' v u hA _ vrd vwr hu => call₂_pre hp (.inr hA) vrd vwr hu, slotsE_ok hp⟩
@@ -134,5 +150,69 @@ theorem cfbDecryptFinal_ct : ConstantTime isa finalPre fbPub cfbDecryptFinal :=
     (by rw [cfbDecrypt_depth]; decide) (by rw [cfbEncrypt_depth]; decide) cfbDecrypt_ct cfbEncrypt_ct finalTaint
     (fun _ hp => finalHyps_dec hp) (fun _ _ _ _ hq => final_pub hq)
     (fun _ _ _ _ _ _ hq c₁ c₂ => final_pubW hq c₁ c₂) (fun _ _ _ _ _ _ _ _ hq c₁ c₂ => final_pubE hq c₁ c₂)
+
+/-! ## Verified -/
+
+/-- A state satisfying the precondition (one byte). -/
+def finalSat : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 1 | .r8 => 0x4000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 104⟩]
+  wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩, ⟨0x4000, 8 * 22⟩]
+
+/-- IDEA's cipher of the schedule at `k`. -/
+abbrev ciphAt (m : Mem) (k : Addr) : Spec.Cbc.Cipher := Spec.Idea.cipher (Spec.Idea.scheduleAt m k)
+
+/-- The final functions' signature with their scratch buffer. -/
+abbrev finalSig : Sig := Proof.Modes.finalSig "schedule" .u8 104 8
+
+theorem cfbEncryptFinal_verified :
+    Verified X86_64.target cfbEncryptFinal (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 22
+      (Curry.const (fun _ => True) _) (Proof.Modes.encFinalPost ciphAt 8 X86_64.abi.ptrBits) true 80) :=
+  Verified.of_correct (k := cfbEncFinalX86_64) (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := cfbEncryptFinal_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncryptFinal) (by lit_decide) he hg, hpost⟩)
+    cfbEncryptFinal_ct (by
+    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.encFinalPost, cfbEncFinalX86_64, finalPre, frameRegion, fbPre, fbPub, X86_64.abi,
+      X86_64.argRegs] [finalSat] using finalSat)
+
+theorem cfbDecryptFinal_verified :
+    Verified X86_64.target cfbDecryptFinal (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 22
+      (Curry.const (fun _ => True) _) (Proof.Modes.decFinalPost ciphAt 8 X86_64.abi.ptrBits) true 80) :=
+  Verified.of_correct (k := cfbDecFinalX86_64) (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := cfbDecryptFinal_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecryptFinal) (by lit_decide) he hg, hpost⟩)
+    cfbDecryptFinal_ct (by
+    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.decFinalPost, cfbDecFinalX86_64, finalPre, frameRegion, fbPre, fbPub, X86_64.abi,
+      X86_64.argRegs] [finalSat] using finalSat)
+
+/-- The final CFB64 encryption with its working space on the stack. -/
+theorem cfbEncryptFinal_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 cfbEncryptFinal)
+      (Spec.Idea.cfbEncryptFinalContract X86_64.abi 264) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 22) (post := Proof.Modes.encFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 80)
+    (bytes := 184) cfbEncryptFinal_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Proof.Modes.encFinalPost_local _)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- The final CFB64 decryption with its working space on the stack. -/
+theorem cfbDecryptFinal_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 cfbDecryptFinal)
+      (Spec.Idea.cfbDecryptFinalContract X86_64.abi 264) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 22) (post := Proof.Modes.decFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 80)
+    (bytes := 184) cfbDecryptFinal_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Proof.Modes.decFinalPost_local _)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Idea.X86_64

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalSteps
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # CFB of a message's last piece on x86-64: in constant time
@@ -76,6 +77,16 @@ holds in with the same public data. -/
 theorem ct_of {pre : State → Prop} {pub : State → State → Prop} {c : Prog isa}
     (h : ∀ σ₁ σ₂, pre σ₁ → pre σ₂ → pub σ₁ σ₂ → RelCT isa (Eq2 σ₁ σ₂) c TT) : ConstantTime isa pre pub c :=
   fun s₁ s₂ _ _ _ _ h₁ h₂ hp e₁ e₂ => (h s₁ s₂ h₁ h₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+/-- A call of code verified against `k` and constant time under it is
+constant time under `calledK k`. -/
+theorem called_ct {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) : ConstantTime isa (calledK k).pre (calledK k).pub (.call n c) :=
+  ct_of fun σ₁ σ₂ p₁ p₂ hq => RelCT.callEx hv hct fun x₁ x₂ ⟨e₁, e₂⟩ => by
+    subst e₁ e₂
+    exact ⟨x₁.rd, x₁.wr, x₂.rd, x₂.wr, p₁.1, p₂.1, hq.1, Covers.refl _, Covers.refl _, Covers.refl _,
+      Covers.refl _, hq.2⟩
 
 /-- Inlined verified code, constant time from its contract, narrowed in each
 run to regions the run's permit. -/

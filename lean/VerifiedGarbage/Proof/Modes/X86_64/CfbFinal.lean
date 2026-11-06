@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalCalls
 public import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalTail
 public import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -30,6 +31,33 @@ namespace VG.Proof.Modes.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Modes.X86_64
 open VG.Impl.Aes.X86_64 (movR)
+
+/-- The contract of a call of code verified against `k`, on the caller's
+state: `k` from the callee's entry state, if the 8 bytes at `rsp`, which the
+caller's convention keeps, are apart from the regions it may write; and the
+state `k` leaves, but for `rsp`, which the return moves back up. -/
+def calledK (k : Contract isa) : Contract isa where
+  pre s := k.pre s.callEntry ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨s.gpr .rsp, 8⟩ r
+  post s s' := ∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post s.callEntry s₂
+  pub s₁ s₂ := k.pub s₁.callEntry s₂.callEntry ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- A call of code verified against `k` is verified against `calledK k`. -/
+theorem called_correct {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : SpSafe c) (hd : c.x86_64Depth + 16 < 2 ^ 64) :
+    ∀ s, (calledK k).pre s → ∃ t s', Exec isa (.call n c) s t s' ∧ abiPreserved s s' ∧ (calledK k).post s s' := by
+  intro s ⟨hpre, hret⟩
+  refine WP.callF (n := n) hv hsp hd (s := s) (rd := s.rd) (wr := s.wr) hpre (Covers.refl _) (Covers.refl _)
+    fun s' _ _ cs f post mx => ⟨⟨cs, f.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide), mx⟩, post⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact hret r hr
+  · simp only [List.mem_singleton] at hr; subst hr
+    have := VG.Offset.disjoint_below (s.gpr .rsp) (n := c.x86_64Depth + 8) (d := 0) (k := 8) (by omega)
+    rwa [BitVec.add_zero] at this
+
+theorem called_spSafe {n : String} {c : Prog isa} (hsp : SpSafe c) : SpSafe (.call n c) := hsp
+
+theorem called_depth (n : String) (c : Prog isa) : (Code.call n c : Prog isa).x86_64Depth = c.x86_64Depth + 8 := rfl
 
 /-- The frame's `rsp`. -/
 abbrev frameSp (s₀ : State) : Addr := s₀.gpr .rsp - BitVec.ofNat 64 80
