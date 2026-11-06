@@ -507,3 +507,151 @@ vg_rsa_pkcs1_decrypt:
 	mtlr %r0
 	addi %r1, %r1, 304
 	blr
+
+vg_rsa_pkcs1_encrypt_random:
+	stdu %r1, -1216(%r1)
+	addi %r12, %r1, 0
+	std %r28, 144(%r12)
+	std %r29, 152(%r12)
+	std %r30, 160(%r12)
+	std %r31, 168(%r12)
+	mflr %r0
+	std %r0, 176(%r12)
+	or %r31, %r3, %r3
+	or %r30, %r5, %r5
+	or %r29, %r7, %r7
+	ld %r0, 1312(%r12)
+	subf %r28, %r0, %r7
+	addi %r28, %r28, -3
+	ld %r3, 1320(%r12)
+	ld %r11, 1328(%r12)
+	addi %r7, %r12, 192
+	li %r4, 0
+	li %r5, 0
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 20f
+	b 21f
+20:
+22:
+	add %r12, %r3, %r4
+	lbz %r0, 0(%r12)
+	addi %r4, %r4, 1
+	cmpldi %cr0, %r0, 0
+	bne %cr0, 23f
+	b 24f
+23:
+	add %r12, %r7, %r5
+	stb %r0, 0(%r12)
+	addi %r5, %r5, 1
+24:
+	subf %r12, %r5, %r28
+	cmpldi %cr0, %r12, 0
+	bne %cr0, 25f
+	b 26f
+25:
+	subf %r12, %r4, %r11
+26:
+	cmpldi %cr0, %r12, 0
+	bne %cr0, 22b
+21:
+	subf %r12, %r5, %r28
+	cmpldi %cr0, %r12, 0
+	beq %cr0, 27f
+	or %r10, %r4, %r4
+	or %r4, %r31, %r31
+	or %r11, %r29, %r29
+	li %r0, 0
+29:
+	stb %r0, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 29b
+	addi %r12, %r1, 0
+	addi %r4, %r12, 192
+	or %r11, %r5, %r5
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 210f
+	b 211f
+210:
+212:
+	stb %r0, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 212b
+211:
+	addi %r12, %r28, 128
+	subf %r0, %r10, %r12
+	cmpldi %cr0, %r0, 0
+	beq %cr0, 213f
+	li %r0, 0
+	std %r0, 0(%r30)
+	subf %r4, %r5, %r10
+	addi %r4, %r4, -129
+	rldicl %r4, %r4, 1, 63
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 215f
+	or %r0, %r12, %r12
+	b 216f
+215:
+	add %r0, %r28, %r10
+	subf %r0, %r5, %r0
+216:
+	std %r0, 8(%r30)
+	li %r3, 0
+	b 214f
+213:
+	std %r10, 0(%r30)
+	li %r0, 0
+	std %r0, 8(%r30)
+	li %r3, 3
+214:
+	b 28f
+27:
+	std %r4, 0(%r30)
+	li %r0, 0
+	std %r0, 8(%r30)
+	addi %r12, %r1, 0
+	std %r7, 96(%r12)
+	std %r28, 104(%r12)
+	ld %r0, 1336(%r12)
+	std %r0, 112(%r12)
+	ld %r0, 1344(%r12)
+	std %r0, 120(%r12)
+	ld %r0, 1352(%r12)
+	std %r0, 128(%r12)
+	ld %r0, 1360(%r12)
+	std %r0, 136(%r12)
+	or %r3, %r31, %r31
+	or %r4, %r29, %r29
+	or %r5, %r6, %r6
+	or %r6, %r29, %r29
+	or %r7, %r8, %r8
+	or %r8, %r9, %r9
+	or %r9, %r10, %r10
+	ld %r10, 1312(%r12)
+	bl {vg_rsa_pkcs1_encrypt_precomputed}
+	li %r5, 2
+	subf %r5, %r3, %r5
+	addi %r12, %r1, 0
+	addi %r4, %r12, 192
+	or %r11, %r28, %r28
+	li %r0, 0
+217:
+	stb %r0, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r11, %r11, -1
+	cmpldi %cr0, %r11, 0
+	bne %cr0, 217b
+	or %r3, %r5, %r5
+28:
+	addi %r12, %r1, 0
+	ld %r0, 176(%r12)
+	mtlr %r0
+	ld %r28, 144(%r12)
+	ld %r29, 152(%r12)
+	ld %r30, 160(%r12)
+	ld %r31, 168(%r12)
+	addi %r1, %r1, 1216
+	blr

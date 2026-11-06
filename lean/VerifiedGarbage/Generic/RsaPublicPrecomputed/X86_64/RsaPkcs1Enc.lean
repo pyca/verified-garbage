@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCT
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.LazyMath
 public import VerifiedGarbage.Proof.Bignum.Octets
@@ -90,6 +91,13 @@ def artifacts (v : PublicImpl) : List Artifact := [
     stack := encStack
     verified := PcCT.code_verified v
     spSafe := PcCT.code_spSafe v
+    features := v.features },
+  Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
+    stack := Rnd.rndStack
+    verified := Rnd.code_verified v
+    spSafe := Rnd.code_spSafe v
     features := v.features }]
 
 end VG.Generic.RsaPublicPrecomputed.X86_64.RsaPkcs1Enc
