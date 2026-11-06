@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.Classify
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
