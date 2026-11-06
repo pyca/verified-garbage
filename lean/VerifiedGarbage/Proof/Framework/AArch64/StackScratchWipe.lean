@@ -186,10 +186,6 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb :
       simp [exec, addrs, State.write, State.store, State.read, wipeTrace, h0, hoff, hin]
     · rw [hg q h₁ h₂]; simp [State.write, h₂]
 
-theorem wipe_spSafe (words : Nat) : (wipe words).all (fun i => !isa.writesSp i) = true := by
-  simp only [wipe, wipePairChunks]
-  split <;> split <;> simp [wipePairChunk, wipePairStores]
-
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}

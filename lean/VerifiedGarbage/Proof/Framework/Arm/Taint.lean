@@ -594,10 +594,6 @@ theorem Agree.write {τ τ' : T} {i : Instr} {d : Reg} (hd : dst i = some d) {s�
   exact ha.keep hrf hl hs hargs hab hw₁ hw₂ hm₁ hm₂ hsp₁ hsp₂
     (fun p h => kill_bases ha.wf₁ hw₁ hg₁ p (hb p h)) (fun p h => kill_bases ha.wf₂ hw₂ hg₂ p (hb p h))
 
-theorem setReg_flags (s : State) (d : Reg) (x : BitVec 32) :
-    (s.setReg d x).n = s.n ∧ (s.setReg d x).z = s.z ∧ (s.setReg d x).c = s.c ∧ (s.setReg d x).v = s.v :=
-  ⟨rfl, rfl, rfl, rfl⟩
-
 theorem spBases_ok {τ : T} {s : State} (hw : Wf τ s) {t : Reg} {off : Nat} :
     ∀ p ∈ spBases τ t off, State.addr ((s.setReg t (s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 off)) 32)).gpr p.1) =
       (region (s.setReg t (s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 off)) 32)) p.2).base := by

@@ -91,9 +91,6 @@ theorem store_widen (hc : Covers s.wr wr) {a : Addr} {n : Nat} {v : BitVec (8 * 
   cases h
   simp only [State.store, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
 
-theorem write_withRegions (d : Reg) (v : BitVec 64) :
-    (s.withRegions rd wr).write d v = (s.write d v).withRegions rd wr := rfl
-
 theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) {i : Instr}
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
   cases i with
@@ -477,16 +474,6 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dstOf i ≠ 
     · obtain ⟨-, -, -, hg, -⟩ := push_eq hp
       rw [(pop_eq hq).2.2.2.1 r (hc _ (by simp [instrs])),
         ih (fun i hi => hc i (by simp [instrs, hi])) (.inr hn), hg]
-
-/-- A register that no instruction writes keeps its value, as a
-postcondition. -/
-theorem WP.gpr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {r : Reg}
-    (hc : ∀ i ∈ instrs c, dstOf i ≠ some r)
-    (hn : c.noCalls = true ∨ r ∉ linkRegs :=
-      by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
-    WP isa c s fun s' => Q s' ∧ s'.gpr r = s.gpr r := by
-  obtain ⟨t, s', he, hq⟩ := h
-  exact ⟨t, s', he, hq, Exec.gpr hc he hn⟩
 
 /-- Inlining verified code: from a state `s` in which the code's precondition
 holds once its permissions are narrowed to `rd` and `wr`, the code

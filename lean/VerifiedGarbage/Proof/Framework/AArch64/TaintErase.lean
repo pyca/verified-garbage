@@ -95,31 +95,4 @@ theorem Taint.isSome_check_of_eraseImm {c c' : Prog isa} (he : Code.eraseImm c =
     (taint.check τ c hc).isSome = true := by
   rw [← Taint.check_eraseImm, he]; exact h
 
-/-- `allInstrs p` of the code without its immediates, for a `p` that does not read them. -/
-theorem Code.allInstrs_eraseImm {p : Instr → Bool} (hp : ∀ i, p i.eraseImm = p i)
-    (c : Prog isa) : (Code.eraseImm c).allInstrs p = c.allInstrs p := by
-  induction c with
-  | icall => rfl
-  | block is =>
-    show Code.allInstrs p (.block (is.map Instr.eraseImm)) = Code.allInstrs p (.block is)
-    rw [Code.allInstrs_eq, Code.allInstrs_eq]
-    simp only [instrs, List.all_map, Function.comp_def, hp]
-  | seq a b iha ihb => simp only [Code.eraseImm, Code.allInstrs, iha, ihb]
-  | ite c t e iht ihe => simp only [Code.eraseImm, Code.allInstrs, iht, ihe]
-  | loop b c ih => simp only [Code.eraseImm, Code.allInstrs, ih]
-  | call n b ih => simp only [Code.eraseImm, Code.allInstrs, ih]
-  | frame i b j ih => simp only [Code.eraseImm, Code.allInstrs, ih]
-
-theorem keepsV_eraseImm (i : Instr) : keepsV i.eraseImm = keepsV i := by
-  cases i <;> rfl
-
-/-- `keepsV` of `c` from that of `c'`, which is `c` without its immediates. -/
-theorem Code.allInstrs_keepsV_of_eraseImm {c c' : Prog isa} (he : Code.eraseImm c = c')
-    (h : c'.allInstrs keepsV = true) : c.allInstrs keepsV = true := by
-  rw [← Code.allInstrs_eraseImm keepsV_eraseImm, he]; exact h
-
-/-- Whether code has no frames does not depend on its immediates. -/
-theorem Code.noFrames_eraseImm (c : Prog isa) : (Code.eraseImm c).noFrames = c.noFrames := by
-  induction c <;> simp_all [Code.eraseImm, Code.noFrames]
-
 end VG.AArch64

@@ -231,11 +231,6 @@ theorem loc_some_ext {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some (
       · cases h
   · cases h
 
-theorem addr_word {s : State} {n : Reg} {k : Nat} (hk : 8 * k < 32768) :
-    addr s 8 n (8 * k) = some (wordAddr (s.gpr n) k) := by
-  simp only [addr, wordAddr]
-  rw [ite_eq_left ⟨by omega, by omega⟩]
-
 section
 variable {D : Dom α 64} {R : α → BitVec 64 → Prop} {c : Cfg} {ext : Nat → Option α}
 

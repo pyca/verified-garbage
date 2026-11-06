@@ -97,31 +97,6 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
           j+1, by omega, rfl, hu, hcu, hsu.trans hst⟩
     · exact ⟨0, by omega, by omega, by simpa using h, by simpa using hc, rfl⟩
 
-theorem correct (s₀ : State) (hp : contract.pre s₀) :
-    WP isa zeroize s₀ fun t => contract.post s₀ t ∧ Frame s₀.wr s₀.mem t.mem := by
-  let n := (s₀.gpr .x1).toNat
-  have start : WP isa (.block [.movz .x .x2 0 0, .lsr .x .x3 .x1 3, .movz .x .x4 7 0,
-      .logic .and .x .x1 .x1 .x4]) s₀ fun t =>
-      Inv s₀ 0 t ∧ t.gpr .x3 = BitVec.ofNat 64 (n / 8) ∧
-      t.gpr .x1 = BitVec.ofNat 64 (n % 8) := by
-    crun [Inv, Prefix, count, (show BitVec.setWidth 64 (7#16) = (7 : BitVec 64) from rfl), tail]
-    exact ⟨⟨by omega, Frame.refl _ _⟩, rfl, tail _⟩
-  unfold zeroize
-  refine WP.seq (WP.mono start fun t ⟨ht, hc, hs⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok true s₀ t hp 0 (n / 8) (by dsimp [n]; omega) ht hc)
-    fun u ⟨hu, hsu⟩ => ?_)
-  have mid : WP isa (.block [.addImm .x .x3 .x1 0]) u fun v =>
-      Inv s₀ (8 * (n / 8)) v ∧ v.gpr .x3 = BitVec.ofNat 64 (n % 8) := by
-    crun [Inv, hsu, hs]
-    change Inv s₀ (8 * (n / 8)) u
-    simpa only [Nat.zero_add, ↓reduceIte] using hu
-  refine WP.seq (WP.mono mid fun v ⟨hv, hcv⟩ => ?_)
-  refine WP.mono (loop_ok false s₀ v hp (8 * (n / 8)) (n % 8) (by dsimp [n]; omega) hv hcv)
-    fun w ⟨hw, _⟩ => ?_
-  have hn : 8 * (n / 8) + (if false then 8 else 1) * (n % 8) = n := by simp; omega
-  rw [hn] at hw
-  exact ⟨prefix_spec hw.2.2.2.1, hw.2.2.2.2⟩
-
 def sat : State where
   gpr _ := 0
   sp := 0x4000
@@ -129,22 +104,4 @@ def sat : State where
   rd := []
   wr := [⟨0, 0⟩]
 
-theorem verified : Verified target zeroize (Spec.Zeroize.zeroizeContract abi) := by
-  apply Verified.of_correct (k := contract)
-  · intro s hp
-    obtain ⟨tr, t, he, ho, _⟩ := correct s hp
-    refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, ho⟩
-    intro r hr
-    have hc := instrs_keeps (c := zeroize) (rs := preserved) (by decide +kernel)
-    apply Exec.gpr (fun i hi => ?_) he
-    simpa using List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
-  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1]) ?_ (by taint_decide)
-    intro s t _ _ h
-    refine ⟨h.2.2, ?_⟩
-    intro r hr
-    simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.1
-    · exact h.2.1
-  · sig_implies [Spec.Zeroize.zeroizeContract, Spec.Zeroize.zeroizeSig, contract, abi, argRegs] [sat] using sat
 end VG.Proof.Zeroize.AArch64

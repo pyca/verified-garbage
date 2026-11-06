@@ -58,14 +58,6 @@ theorem movz_movk (x : BitVec 32) :
 theorem exec_add {sz : Size} {s : State} {d n m : Reg} :
     exec (.add sz d n m) s = some (s.write sz d (s.read sz n + s.read sz m)) := rfl
 
-theorem exec_adc {sz : Size} {s : State} {d n m : Reg} :
-    exec (.adc sz d n m) s =
-      some (s.write sz d (s.read sz n + s.read sz m + BitVec.ofNat sz.bits s.c.toNat)) := rfl
-
-theorem exec_sbc {sz : Size} {s : State} {d n m : Reg} :
-    exec (.sbc sz d n m) s =
-      some (s.write sz d (s.read sz n + ~~~s.read sz m + BitVec.ofNat sz.bits s.c.toNat)) := rfl
-
 theorem exec_csel {sz : Size} {s : State} {d n m : Reg} :
     exec (.csel sz d n m) s =
       some (s.write sz d (if s.c then s.read sz n else s.read sz m)) := rfl
