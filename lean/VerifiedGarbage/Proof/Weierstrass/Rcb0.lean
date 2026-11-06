@@ -85,8 +85,6 @@ def rcb0mN : List FOp := rcb0m ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ �
 
 theorem rcb0mN_ok : NumOk rcb0mN := ⟨by decide, by decide, by decide⟩
 
-theorem rcb0m_eq (S : RcbSlots) (p q o : Pt) : rcb0m S p q o = ofN rcb0mN S p q o := rfl
-
 theorem rcb0mN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps rcb0mN e 6, runOps rcb0mN e 7, runOps rcb0mN e 8) =
       rcbAdd0m (e 10) (e 11) (e 12) (e 13) (e 14) (e 15) := rfl
@@ -95,8 +93,6 @@ theorem rcb0mN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
 def dbl0N : List FOp := dbl0 ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨6, 7, 8⟩
 
 theorem dbl0N_ok : NumOk dbl0N := ⟨by decide, by decide, by decide⟩
-
-theorem dbl0_eq (S : RcbSlots) (p o : Pt) : dbl0 S p o = ofN dbl0N S p p o := rfl
 
 theorem dbl0N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dbl0N e 6, runOps dbl0N e 7, runOps dbl0N e 8) = rcbDbl0 (e 10) (e 11) (e 12) (e 13) := rfl

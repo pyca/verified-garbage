@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed

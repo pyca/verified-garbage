@@ -4,8 +4,6 @@ import VerifiedGarbage.Impl.EcKey.Compressed.Root
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.EcKey.Compressed.Root
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.Weierstrass.RootParity
-meta import VerifiedGarbage.Proof.Weierstrass.RootParity
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 meta import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.P224.Sqrt

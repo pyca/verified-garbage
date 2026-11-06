@@ -41,19 +41,4 @@ def combSatState : State where
   wr := [⟨0x10000,64⟩,⟨0,8192⟩]
   syms _ := 0x100000
 
-theorem combSat_stackArg : stackArg combSatState 0=0 := by
-  have bytes : ∀ i<4,combSatMem (0x20000+BitVec.ofNat 64 i)=0 := by
-    intro i hi
-    unfold combSatMem constMem
-    rw [comb_words_length]
-    obtain rfl|rfl|rfl|rfl : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega
-    all_goals decide
-
-  change (combSatMem.read 0x20000 4).setWidth 32=0
-  rw [Mem.read_eq_of_bytes (n := 4) (v := 0#32) (fun i hi => by
-    rw [bytes i (by omega)]
-    obtain rfl|rfl|rfl|rfl : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega
-    all_goals decide)]
-  rfl
-
 end VG.Proof.Secp256k1.Arm

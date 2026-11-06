@@ -64,11 +64,6 @@ structure SelPost (K : TCombCfg) (base : Addr) (s : State) (a : Nat) (X : Addr) 
   keep : Keeps [.eax, .ecx, .edx] s t
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem
 
-/-- The words of `v < 2^(64 k)`, word by word, are `v`. -/
-theorem wordsVal_wordOf {m : Mem} {b : Addr} {o k v : Nat} (hv : v < 2 ^ (64 * k))
-    (h : ∀ i < k, word m b (o + 8 * i) = wordOf v i) : wordsVal m b o k = v :=
-  wordsVal_of_shifts m b o k v hv h
-
 /-- Zero words. -/
 theorem wordsVal_zeros {m : Mem} {b : Addr} {o k : Nat} (h : ∀ i < k, word m b (o + 8 * i) = 0) :
     wordsVal m b o k = 0 :=

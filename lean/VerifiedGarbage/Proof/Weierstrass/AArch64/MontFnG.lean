@@ -46,29 +46,6 @@ structure ModOkG (n m : Nat) : Prop where
 /-- What the function needs of the modulus: either form's hypotheses. -/
 def ModOk (n m : Nat) : Prop := ModOkS n m ∨ ModOkG n m
 
-theorem ModOk.n9 {n m : Nat} (h : ModOk n m) : n ≤ 9 := by
-  rcases h with h | h
-  · exact h.n9
-  · rcases h.hn with h | h | h <;> omega
-
-theorem ModOk.n4 {n m : Nat} (h : ModOk n m) : 4 ≤ n := by
-  rcases h with h | h
-  · exact h.n4
-  · rcases h.hn with h | h | h <;> omega
-
-theorem ModOk.hn' {n m : Nat} (h : ModOk n m) : n = 4 ∨ n = 6 ∨ n = 8 ∨ n = 9 := by
-  rcases h with h | h
-  · rcases h.hn' with h | h | h
-    · exact .inl h
-    · exact .inr (.inl h)
-    · exact .inr (.inr (.inr h))
-  · exact .inr h.hn
-
-theorem ModOk.inv {n m : Nat} (h : ModOk n m) : (m * minv m + 1) % 2 ^ 64 = 0 := by
-  rcases h with h | h
-  · exact h.inv
-  · exact h.inv
-
 /-- What the general form needs of its registers. -/
 structure RegsG (n : Nat) : Prop where
   n10 : n < 10

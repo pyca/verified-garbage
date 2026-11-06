@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Weierstrass.MulBaseContract
 /-!
 # The multiplication of a point, in a curve's working space, as an internal function
 
-Not trusted: the contract of one function for each
+Not trusted: what one function for each
 curve of `curves` (so far P-192, P-224, P-256, P-384, P-521, secp256k1,
-brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working space where the x86-64 code of the curve's
+brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1) computes, on the working space where the x86-64 code of the curve's
 ECDSA signature and verification, public key derivation and ECDH keeps its
 numbers, so that all of them can call one copy of the multiplication instead
 of repeating it:
@@ -48,7 +48,7 @@ keeps its value but the result's (`Keeps`).
 The code of P-224, P-256, P-384 and P-521 multiplies by windows of `k`'s
 digits rather than by a ladder, from a table of multiples of `Q`, with the
 addition formulas for `a = -3`, which read `b R mod p` (which the function
-stores itself, as `Proof/Weierstrass/PointOpsContract.lean` has it, in slot 40). For
+stores itself, in slot 40). For
 those curves, slot 40 and every byte from slot 45 on, where each target's
 code keeps its tables, its working areas and the temporary areas of its
 products, are the function's own working space too (`tail`); and the result
@@ -58,9 +58,6 @@ their Jacobian additions): for any other `k` the coordinates are
 unspecified, but every byte outside the own working space and the result
 keeps its value as above. A caller whose scalar may be outside that range
 discards the result, or handles that scalar itself.
-
-Everything is secret but the pointer, which is public, and the function is
-constant time.
 
 These are internal functions (`Rust.Internal`): only verified code calls them, so
 only their callers' contracts, in `Spec/`, are trusted. The structures, the
@@ -120,39 +117,13 @@ def point (ws : Addr) (m : Mem) : Point C.W :=
 def PointOk (ws : Addr) (m : Mem) : Prop :=
   (C.qCoords ws m).1 < C.W.p ∧ (C.qCoords ws m).2 < C.W.p ∧ onCurve C.W (C.point ws m) = true
 
-/-- The result: the point at `pAt` has its coordinates below `p` and stands
-for `P`, and every byte of `ws` but its and the own working space's keeps
-its value. -/
-def Result (P : Point C.W) (ws : Addr) (m m' : Mem) : Prop :=
-  let c := C.toPoint.pointAt m' ws C.pAt
-  C.toPoint.Below c ∧
-    Represents (W := C.W) (C.toPoint.dec c.1) (C.toPoint.dec c.2.1) (C.toPoint.dec c.2.2) P ∧
-    C.Keeps ws m m'
-
-/-- `mul`: `P = [k]Q`. -/
-def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A (pre := fun ws m => C.ConstsOk ws m ∧ C.PointOk ws m)
-    (post := fun ws m m' _ => C.Result (mul (C.scalar ws m) (C.point ws m)) ws m m')
-    (stack := stack)
-
-/-- The result for `k` in `[1, n - 1]`: there, `Result`'s coordinates of
-`P = [k]Q`; for every `k`, its `Keeps`. -/
+/-- The result for `k` in `[1, n - 1]`: there, coordinates below `p` of
+`P = [k]Q`; for every `k`, `Keeps`. -/
 def ResultInRange (k : Nat) (Q : Point C.W) (ws : Addr) (m m' : Mem) : Prop :=
   let c := C.toPoint.pointAt m' ws C.pAt
   (1 ≤ k → k < C.W.n → C.toPoint.Below c ∧
     Represents (W := C.W) (C.toPoint.dec c.1) (C.toPoint.dec c.2.1) (C.toPoint.dec c.2.2) (mul k Q)) ∧
     C.Keeps ws m m'
-
-/-- `mul` for a curve with `inRange`: `P = [k]Q` for `k` in `[1, n - 1]`. -/
-def mulInRangeContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A (pre := fun ws m => C.ConstsOk ws m ∧ C.PointOk ws m)
-    (post := fun ws m m' _ => C.ResultInRange (C.scalar ws m) (C.point ws m) ws m m')
-    (stack := stack)
-
-/-- The function's contract: `mulInRangeContract` with `inRange`, else
-`mulContract`. -/
-def contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  if C.inRange then C.mulInRangeContract A stack else C.mulContract A stack
 
 end Curve
 

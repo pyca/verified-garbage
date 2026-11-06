@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.Point
 
 Not trusted: what the code of the curves' internal functions (`Rust.Internal`),
 which only verified code calls, is generated from, and where it keeps its
-numbers. Their contracts are in `Proof/Weierstrass/MulBaseContract.lean`, in these
-namespaces.
+numbers. The definitions their proofs share are in
+`Proof/Weierstrass/MulBaseContract.lean`, in these namespaces.
 -/
 
 @[expose] public section
@@ -32,9 +32,6 @@ structure Curve where
 namespace Curve
 
 variable (C : Curve)
-
-/-- The curve's coordinates, as `Proof/Weierstrass/PointContract.lean` has them. -/
-def toPoint : Point.Curve := { curve := C.curve, p := C.W.p, k := C.k, desc := C.desc }
 
 /-- Byte offset of slot `i`: `64 + 8 k i`. -/
 def slot (i : Nat) : Nat := 64 + 8 * C.k * i

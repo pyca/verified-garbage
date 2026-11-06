@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 namespace VG.Proof.EcKey.Compressed.X86
 
-
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Impl.Weierstrass
 open VG.Impl.Ecdh.X86 (R2P BP QXM QYM QY W0 W1 W2 W3)
 open VG.Impl.EcKey.Compressed.X86 (rhsOps)
@@ -33,9 +32,6 @@ abbrev rhsSlots : List Nat := [QXM, AP, BP, W1, W2, W3]
 def rhsTail : List FOp :=
   [.mul W1 QXM QXM, .mul W2 W1 QXM, .mul W1 AP QXM,
     .add W3 W2 W1, .add W2 W3 BP]
-
-theorem rhsOps_eq (c : Cfg) : rhsOps c =
-    .mul (c.sl QXM) (c.sl E) (c.sl R2P) :: rhsTail.map (FOp.rename c.sl) := rfl
 
 theorem rhsTail_run {F : Type} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps rhsTail e W2 = e QXM * e QXM * e QXM + e AP * e QXM + e BP := by

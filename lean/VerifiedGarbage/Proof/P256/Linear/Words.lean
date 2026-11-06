@@ -24,10 +24,6 @@ theorem four_lt (a b c d : BitVec 64) : four a b c d<2^256 := by
   have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt
   unfold four; omega_arith
 
-theorem five_lt (a b c d e : BitVec 64) : five a b c d e<2^320 := by
-  have := four_lt a b c d; have := e.isLt
-  unfold five; omega_arith
-
 /-- The small shifts used here keep a full fifth carry word. -/
 theorem leftShift_value (k : Nat) (hk : k=1 ∨ k=2 ∨ k=3)
     (a b c d : BitVec 64) :

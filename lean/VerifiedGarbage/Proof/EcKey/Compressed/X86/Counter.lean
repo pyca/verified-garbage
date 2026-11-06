@@ -17,12 +17,6 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Ecdsa.X86 VG.Impl.Weierstrass.X86
 open VG.Proof.Ecdsa.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.X86
 
-theorem decCounter_ok {j : Nat} (s : State) (hj : 1 ≤ j)
-    (hb : s.gpr .esi = BitVec.ofNat 32 j) :
-    WP isa (.block [decCounter]) s fun t =>
-      t.gpr .esi = BitVec.ofNat 32 (j - 1) ∧ Keeps [.esi] s t ∧ t.mem = s.mem :=
-  wp_decCounter hj hb fun _ hb K hm => WP.block_nil ⟨hb, K, hm⟩
-
 theorem testCounter_ok {j : Nat} (s : State) (hj : j < 2 ^ 32)
     (hb : s.gpr .esi = BitVec.ofNat 32 j) :
     WP isa (.block [testCounter]) s fun t =>

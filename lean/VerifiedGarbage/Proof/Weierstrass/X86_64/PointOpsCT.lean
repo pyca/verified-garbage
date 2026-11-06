@@ -1,22 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
-# Point operations as functions on x86-64: the additions' timing
+# Point operations as functions on x86-64: the cached addition's timing
 
-The Jacobian additions branch on the values they read: two runs from states
-whose slots `V` hold the same values `E` (`FieldPair`) leak the same trace,
-as `cachedJacAdd_relCT` and `jacMixedForward_relCT` show for the joint
-verifier, here for any values (`CachedLay`, `MixedLay`: the programs read
-only `V` or what they wrote), with the pieces' taint checks
-(`CachedJacChecks`, `JacMixedChecks`).
+The cached Jacobian addition branches on the values it reads: two runs from
+states whose slots `V` hold the same values `E` (`FieldPair`) leak the same
+trace, as `cachedJacAdd_relCT` shows for the joint verifier, here for any
+values (`CachedLay`: the program reads only `V` or what it wrote), with the
+pieces' taint checks (`CachedJacChecks`).
 -/
 
 @[expose] public section
@@ -134,84 +133,6 @@ theorem addCachedBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Ca
       rcases List.mem_append.mp hx with hx | hx
       · exact List.mem_append_left _ hx
       · exact List.mem_append_right _ (List.mem_append_right _ hx)⟩)
-
-end
-
-section
-variable {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
-
-theorem mixedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    (hOne : K.one < m) (hc : JacMixedChecks K K.R K.E K.D dbl) {E : Nat → Fin m}
-    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
-    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (Jacobian.jacMixedForward K K.R K.E K.D dbl).inline
-      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ mV K) E' s t) := by
-  have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
-    intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl <;> simp [rcbW]
-  have dSl : ∀ x ∈ jacCoords K.D, Sl x := fun x hx => hC.sl x (List.mem_append_left _ (dW x hx))
-  have rV : ∀ x ∈ jacCoords K.R, x ∈ mV K := fun x hx => by simp [mV, hx]
-  have eV : ∀ x ∈ jacCoords K.E, x ∈ mV K := fun x hx => by simp [mV, hx]
-  rw [Jacobian.jacMixedForward]
-  apply fieldBranch_relCT hC.lay hm (rV _ (by simp [jacCoords])) hc.zeroP
-  · intro _
-    exact (copyPoint_relCT hC.lay dSl eV hc.copyQ).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
-  intro _
-  apply RelCT.seq (fieldProgram_relCT hc.init (fun s hi =>
-    WP.mono (mixedInit_val hC hi) (fun _ ht => ht.2)))
-  apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
-    WP.mono (mixedHead_val hC hm hi) (fun _ ht => ht.2.1)))
-  have oldV : ∀ x ∈ mV K, x ∈ validAfter (jacMixedHead K.S K.R K.E) (K.S.t4 :: K.S.t2 :: mV K) :=
-    fun x hx => (mem_validAfter _ _).mpr (Or.inl (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx)))
-  have subV : ∀ x ∈ jacCoords K.D ++ mV K, x ∈ jacCoords K.D ++
-      validAfter (jacMixedHead K.S K.R K.E) (K.S.t4 :: K.S.t2 :: mV K) := by
-    intro x hx
-    rcases List.mem_append.mp hx with hx | hx
-    · exact List.mem_append_left _ hx
-    · exact List.mem_append_right _ (oldV x hx)
-  apply fieldBranch_relCT hC.lay hm (a := K.S.t3) (by
-    rw [mem_validAfter]; right; simp [jacMixedHead, FOp.out]) hc.zeroH
-  · intro _
-    apply fieldBranch_relCT hC.lay hm (a := K.S.t5) (by
-      rw [mem_validAfter]; right; simp [jacMixedHead, FOp.out]) hc.zeroR
-    · intro _
-      obtain ⟨N, hN, hE⟩ := hds
-      have he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
-      refine (programB_relCT hC.lay hm (fun op hop x hx => hC.sl x (by
-          rw [he] at hop
-          rcases List.mem_append.mp (ofN_slots op hop x hx) with h | h
-          · exact List.mem_append_left _ h
-          · exact List.mem_append_right _ (rcbR_self_mem _ _ _ h)))
-        (readsOk_mono hC.dbl fun x hx => oldV x (rV x hx)) hc.double).mono (fun _ _ h => h)
-        (fun _ _ h => ⟨_, (h.sub (validAfter_sub fun x hx => by
-          rw [he]; exact ofN_out_mem hN (by simpa [jacCoords] using hx))).sub subV⟩)
-    · intro _
-      exact (infinity_relCT hC.lay dSl hOne hc.infinity).mono
-        (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub subV⟩)
-  · intro _
-    have he : jacMixedTail K.S K.R K.E K.D = ofN jacMixedTailN K.S K.R K.E K.D := rfl
-    refine (programB_relCT hC.lay hm (fun op hop x hx => hC.sl x (by
-        rw [he] at hop
-        exact ofN_slots op hop x hx)) hC.tail hc.tail).mono (fun _ _ h => h)
-      (fun _ _ h => ⟨_, (h.sub (validAfter_sub fun x hx => by
-        simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> simp [jacMixedTail, jacTail, FOp.out])).sub subV⟩)
-
-/-- The mixed addition's body, its sum copied to `R`. -/
-theorem addAffineBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    (hOne : K.one < m)
-    (hc : JacMixedChecks K K.R K.E K.D dbl) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
-    {E : Nat → Fin m} (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
-    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (PointOps.addAffineBody K dbl).inline
-      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.R) E' s t) := by
-  rw [PointOps.addAffineBody]
-  apply RelCT.seq (mixedAdd_relCT hC hm hOne hc hds)
-  apply RelCT.exists_
-  intro E'
-  have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hC.sl x (List.mem_append_right _ (by
-      simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> simp [rcbR]))
-  exact (copyPoint_relCT (E := E') hC.lay rSl (fun x hx => List.mem_append_left _ hx) hcp).mono
-    (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub fun x hx => List.mem_append_left _ hx⟩)
 
 end
 

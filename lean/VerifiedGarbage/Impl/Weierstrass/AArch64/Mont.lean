@@ -178,9 +178,6 @@ def entryRest (n m : Nat) : List Instr :=
     [.add .x (roF n) .x0 .x1, .add .x (raF n) .x0 .x2, .add .x .x3 .x0 .x3] ++
     loadsR .x3 (bRegsF n) 0 ++ mulConst (mod n m) ++ zero7 :: zeros (acc n)
 
-/-- The entry. -/
-def entry (n m : Nat) : List Instr := zextCode ++ entryRest n m
-
 /-- The low words of the accumulator after the rounds. -/
 def lowF (n : Nat) : List Reg := (List.range n).map (win n n)
 

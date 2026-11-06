@@ -263,7 +263,6 @@ theorem sqChain_ok : ∀ (n : Nat) {w d f st : Nat} {s : State} {base bA : Addr}
       · rw [k₃.rd, rd₂, k₁.2.2.1]
       · rw [k₃.wr, wr₂, k₁.2.2.2]
 
-
 /-! ## Row 0 -/
 
 /-- `xor t32, t32`: `t` and both carries clear. -/
@@ -364,7 +363,6 @@ theorem mulAccs_ok : ∀ (n : Nat) {w d : Nat} {s : State} {bA : Addr} {o : Bool
         · exact Or.inl rfl
         · exact Or.inr (Or.inr ht)
 
-
 /-- The temporary area's words `w … w + n - 1`. -/
 def tsum (m : Mem) (base : Addr) (w : Nat) : Nat → Nat
   | 0 => 0
@@ -390,13 +388,6 @@ theorem q_mem (w : Nat) : q w ∈ sqRegs := by
   generalize w % 8 = a at *
   revert a
   decide
-
-theorem qs_mem {w n : Nat} {r : Reg} (h : r ∈ qs w n) : r ∈ sqRegs := by
-  obtain ⟨i, -, rfl⟩ := mem_qs.mp h
-  exact q_mem _
-
-theorem rowRegs_of_sq {t : Reg} (h : t ∈ sqRegs) (h' : t ≠ .r14) : t ∈ rowRegs := by
-  revert t; decide
 
 /-- The operand's words, apart from the temporary area. -/
 theorem opnd_eq {base bA : Addr} {m m' : Mem} {a k d n : Nat} (hap : Apart bA 0 72 base fnTmp 72)
@@ -556,11 +547,7 @@ theorem sqRow0_ok {s : State} {base bA : Addr} (hZ : 4096 ≤ Z) (hs : Scr s bas
   · rw [hm₈]
     exact (O₄.mono (Nat.le_refl _) (by omega)).trans O₅₆
 
-
 /-! ## Rows 1 to 3 -/
-
-theorem q_ne_win {a b : Nat} (h : a ≠ b) (h1 : a < b + 8) (h2 : b < a + 8) : q a ≠ q b :=
-  q_ne_of (by omega)
 
 /-- Row `r` of `1 … 3` (`sqRow`), as its two chains and the last carry:
 what each adds, and the words each leaves alone. -/
@@ -679,7 +666,6 @@ theorem sqRow_skel {r w1 n1 w2 st : Nat} (hr1 : 1 ≤ r) (hr3 : r ≤ 3) (hw1 : 
     · rw [k₃.2.2.2, k₂.wr, kc.2.2.2, k₁.wr, k₀.2.2.2]
   · rw [hm₃]; exact O₁'
 
-
 /-- The products of two different words, row by row: `a_r [a_{r+1} … a_7]`
 and (rows 1 to 3) `a_{r+4} [a_4 … a_{r+3}]` at their words. -/
 def rowP (m : Mem) (bA : Addr) : Nat → Nat
@@ -723,7 +709,6 @@ theorem sqRowN_ok {r : Nat} (hr1 : 1 ≤ r) (hr3 : r ≤ 3) {s : State} {base bA
   · rw [show max (3 - 1) 1 = 2 from rfl] at E2
     qv_simp at E1 E2 E3 F1 F2 F3 hB ⊢
     omega_arith
-
 
 /-! ## The squares -/
 
@@ -826,7 +811,6 @@ theorem sqDiagM_ok {s : State} {base bA : Addr} (hZ : 4096 ≤ Z) (hs : Scr s ba
       k₂.1 r (by simpa using hr.2.2), k₁.1 r (by simpa using hr.1)]
   · rw [show (16 : Nat) = 8 + 8 from rfl]
     exact (O₅.mono (Nat.le_refl _) (by omega)).trans (O₈.mono (by rw [T_eq, T_eq]; omega) (by rw [T_eq, T_eq]; omega))
-
 
 /-- Step `k` of `4 … 6` of the squares (`sqDiagR`). -/
 theorem sqDiagR_ok {s : State} {bA : Addr} (hp : PtrC s .rbx bA 72 0) {k : Nat}
@@ -963,7 +947,6 @@ theorem sqDiag7_ok {s : State} {bA : Addr} (hp : PtrC s .rbx bA 72 0) (hz : s.gp
     omega_using [e₃, e₄, e₅, e₆, h0]
   · refine ((k₂.mono ?_).trans (k₃.mono ?_)).trans ((k₄.mono ?_).trans ((k₅.mono ?_).trans (k₆.mono ?_))) <;> decide
 
-
 /-! ## The top word's row -/
 
 /-- `maddM x y src`: `rdx · src` added at `x` (CF) and `y` (OF). -/
@@ -1095,7 +1078,6 @@ theorem addSelf_ok (s : State) (r : Reg) (h : (s.gpr r).toNat < 2 ^ 62) :
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
 
-
 /-! ## The squares, all eight steps -/
 
 /-- One more step of the squares, at weight `Q`. -/
@@ -1114,7 +1096,6 @@ def dg (f : Nat → Nat) : Nat → Nat
 /-- Expands `dg` over literal counts. -/
 macro "dg_simp" loc:(Lean.Parser.Tactic.location)? : tactic => `(tactic| simp only [dg, Nat.reduceMul,
   Nat.reduceAdd, Nat.zero_add, Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one] $[$loc]?)
-
 
 /-- `sqDiag`: twice the products (words `1 … 7` in the temporary area and
 `8 … 14` in their registers) plus the squares, into words `0 … 15`, if that
@@ -1261,7 +1242,6 @@ theorem sqDiag_ok {s : State} {base bA : Addr} (hZ : 4096 ≤ Z) (hs : Scr s bas
     exact ((O₀.mono (T_le' 0 0) (by t_omega)).trans (O₁.mono (T_le' 0 2) (by t_omega))).trans
       ((O₂.mono (T_le' 0 4) (by t_omega)).trans (O₃.mono (T_le' 0 6) (by t_omega)))
 
-
 theorem q_lit : q 8 = .r15 ∧ q 9 = .rbp ∧ q 10 = .r8 ∧ q 11 = .r9 ∧ q 12 = .r10 ∧ q 13 = .r11 ∧ q 14 = .r12 ∧
     q 15 = .r13 := by decide
 
@@ -1322,7 +1302,6 @@ theorem sqTop_ok {s : State} {bA : Addr} (hp : PtrC s .rbx bA 72 0) (h8 : (word 
     · rw [xWin8]; decide
     · rw [xWin8]; decide
     · rw [xWin8]; decide
-
 
 /-! ## The rows together -/
 
@@ -1443,7 +1422,6 @@ theorem sqRows_ok {s : State} {base bA : Addr} (hZ : 4096 ≤ Z) (hs : Scr s bas
     omega_using [R0, sp0, R1, sp1, R2, sp2, R3, sp3]
   · exact (O13.mono (Nat.le_refl _) (by t_omega)).trans (O₄.mono (T_le' 1 7) (by t_omega))
 
-
 /-! ## The square -/
 
 /-- Twice the rows' products plus the squares is `[a_0 … a_7]²`. -/
@@ -1463,7 +1441,6 @@ theorem sq_ident1 (m : Mem) (bA : Addr) :
   generalize (word m bA 56).toNat = a7
   generalize (2 : Nat) ^ 64 = X
   grind
-
 
 theorem sq_add (L a Y : Nat) : (L + Y * a) * (L + Y * a) = L * L + Y * (2 * a * L) + Y * (Y * (a * a)) := by
   grind

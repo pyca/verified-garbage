@@ -14,11 +14,6 @@ open VerifyArithmetic
 
 def raw (k : Kind) : List Instr := (operations k).flatMap VerifySparse.op
 
-/-- Doubling exposes only the new accumulator. The addition headers expose
-their final scratch values too, since their tails consume them. -/
-def keep (k : Kind) (off : Nat) : Bool :=
-  if k == .doubleRR then VerifyDouble.R.x ≤ off && off < VerifyDouble.R.z+32 else true
-
 def code : Kind → List Instr
   | .mixedHead => VerifyAllocatedCode.mixedHead
   | .mixedTail => VerifyAllocatedCode.mixedTail
