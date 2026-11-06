@@ -27,8 +27,6 @@ open VG.Proof.RsaPss.AArch64 (off)
 /-- The argument registers kept in slots of the frame. -/
 def regSlots : List (Reg × Nat) := [(.x0, sOut), (.x2, sN), (.x4, sE), (.x5, sEl), (.x6, sP), (.x7, sPl)]
 
-theorem regSlots_ho : ∀ p ∈ regSlots, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
-
 theorem fits : Spill.Fits (saved ++ regSlots) := by decide
 
 /-- The frame's slots that the code reads: the saved registers, the

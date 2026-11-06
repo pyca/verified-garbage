@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Words

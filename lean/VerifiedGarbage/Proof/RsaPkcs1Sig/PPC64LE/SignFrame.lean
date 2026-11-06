@@ -26,8 +26,6 @@ abbrev kb (s : State) : Addr := s.sp - BitVec.ofNat 64 stackBytes
 /-- Our frame's local variable space, which its push makes writable. -/
 abbrev fr (s : State) : Region := ⟨fb s + BitVec.ofNat 64 32, frameBytes - 32⟩
 
-theorem frameR_eq (s : State) : frameR frameBytes s = fr s := rfl
-
 theorem fb_eq (s : State) : fb s = kb s + BitVec.ofNat 64 Impl.Rsa.PPC64LE.Priv.frameBytes := by
   simp only [fb, kb, stackBytes, frameBytes, Impl.Rsa.PPC64LE.Priv.frameBytes]
   bv_omega

@@ -43,22 +43,6 @@ import VerifiedGarbage.Proof.Mont.X86.Words
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Frame.lean`, which only this module imported.
 section
 
-/-! # The established input adapters preserve the runtime argument records -/
-
-section
-namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
-open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
-
-theorem Ws.afterFrame {s t : State} {B : Addr} {Z n N : Nat} {rs : List Reg}
-    (h : Ws s B Z n N) (K : Keeps rs s t) (F : Frame [⟨B, Z⟩] s.mem t.mem)
-    (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) : Ws t B Z n N := by
-  have frame : Frame [⟨off B 0, Z⟩] s.mem t.mem := by
-    simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using F
-  exact h.keep K (VG.Proof.RsaKeyGen.frame_outside frame
-    (by have := h.old.workspace.nowrap; omega)) edi esp
-
-end VG.Proof.RsaKeyGen.X86.KeyRuntime
-end
 
 end
 
@@ -215,7 +199,7 @@ theorem saved_below {s : State} (h : contract.pre s) :
   rw [Taint.sub_setWidth low]
   exact Offset.base_disjoint_below _ (by decide)
 
-/-- `Key.saved_read`, when the body also writes the stack a call uses. -/
+/-- The saved registers' words, when the body also writes the stack a call uses. -/
 theorem saved_read {s t : State} (h : contract.pre s)
     (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem)
     {i : Nat} (hi : i < 4) :
@@ -240,7 +224,7 @@ theorem saved_read {s t : State} (h : contract.pre s)
   rw [Compact.entered, pushed_esp] at word
   exact same.trans word
 
-/-- `Key.return_read`, when the body also writes the stack a call uses. -/
+/-- The return address's word, when the body also writes the stack a call uses. -/
 theorem return_read {s t : State} (h : contract.pre s)
     (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by

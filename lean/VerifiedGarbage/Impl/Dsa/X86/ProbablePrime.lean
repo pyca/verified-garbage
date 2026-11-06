@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateLoad
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSave
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest

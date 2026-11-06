@@ -79,25 +79,4 @@ def copyOut : Prog isa :=
   .seq (.block ([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] ++ valPtr))
     (.seq copyLoop (.block [.mov32 .rax (.imm 1)]))
 
-/-- After the comparison, its result in `rdx`. -/
-def release : Prog isa := .seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .ne zeroSlots copyOut)
-
-/-- After the encoding. -/
-def tail : Prog isa :=
-  .seq (.block test0) (.ite .e zeroSlots (.seq (.block Verify.cmpArgs) (.seq compare release)))
-
-/-- After the call. -/
-def afterPub : Prog isa :=
-  .seq (.block test0) (.ite .e zeroSlots (.seq (.block encArgs) (.seq encode tail)))
-
-/-- The body of the frame. -/
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block pubArgs) (.seq (.call pubName pub) afterPub)
-
-/-- `vg_rsa_pkcs1_recover`, calling `vg_rsa_public_checked` (`pub`) by its
-name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block lenCheck)
-    (.ite .ne zeroOut (.frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)))
-
 end VG.Impl.RsaPkcs1Sig.X86_64.Recover

@@ -75,9 +75,6 @@ abbrev lay : Lay where
   rw := P.rw
   C := 100
 
-/-- `EM`. -/
-abbrev EM : Region := ⟨P.lay.fr oEM, P.K⟩
-
 end EP
 
 /-- The state the body starts from. -/

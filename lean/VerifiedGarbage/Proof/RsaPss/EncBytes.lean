@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # EMSA-PSS: the encoding, a byte at a time
 
 For a modulus `n₀ ‖ rest` (`n₀ ≠ 0`, so `k - emLen` is `lo = [n₀ = 1]`),
-`encodeK` is the `k` bytes `emT …` (`encodeK_eq`): `lo` zeros, then
+`encodeK` is the `k` bytes `emT …` (`encodeK_eq₂`): `lo` zeros, then
 `maskedDB` (`DB ⊕ mask`, its first byte ANDed with `0xFF >>> z`), `H` and
 `0xbc`, byte by byte as the implementations write them.
 -/
@@ -130,16 +130,5 @@ theorem encodeK_eq₂ (H : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {re
     · simp only [h4, ↓reduceIte]
     · simp only [h4, ↓reduceIte]
       rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
-
-theorem encodeK_eq (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
-    (hm : mHash.length = G.len) {emBits emLen lo db : Nat}
-    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hlo : (n₀ :: rest).length - emLen = lo) (hdb : emLen - G.len - 1 = db)
-    (hfit : G.len + salt.length + 2 ≤ emLen) :
-    encodeK G G (n₀ :: rest) mHash salt =
-      some ((List.range (n₀ :: rest).length).map
-        (emT lo db salt.length salt (G.hash (zeros 8 ++ mHash ++ salt))
-          (mgf1 G (G.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) :=
-  encodeK_eq₂ G G hG hG h0 hm hb he hlo hdb hfit
 
 end VG.Proof.RsaPss

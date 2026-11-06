@@ -63,26 +63,6 @@ theorem nz_some {f : Nat → Byte} : ∀ {j i : Nat}, nz f j = some i → i < j 
         cases h
         exact ⟨by omega, e, nz_none h'⟩
 
-/-- `lz` from its characterization. -/
-theorem lz_eq : ∀ {l : List Byte} {n : Nat}, (∀ j < n, l.getD j 0 = 0) →
-    (n = l.length ∨ (n < l.length ∧ l.getD n 0 ≠ 0)) → lz l = n
-  | [], n, _, h => by
-    simp only [List.length_nil, Nat.not_lt_zero, false_and, or_false] at h
-    subst h; rfl
-  | b :: bs, 0, _, h => by
-    simp at h
-    simp only [lz]
-    rw [ite_eq_right (by simpa using h)]
-  | b :: bs, n + 1, hz, h => by
-    have hb : b = 0 := by simpa using hz 0 (by omega)
-    simp only [lz, ite_eq_left hb]
-    congr 1
-    refine lz_eq (fun j hj => by simpa using hz (j + 1) (by omega)) ?_
-    simp only [List.length_cons] at h
-    rcases h with h | ⟨h₁, h₂⟩
-    · exact .inl (by omega)
-    · exact .inr ⟨by omega, by simpa using h₂⟩
-
 /-- The value of the first nonzero byte, or 0. -/
 def nzV (f : Nat → Byte) (j : Nat) : Byte :=
   match nz f j with

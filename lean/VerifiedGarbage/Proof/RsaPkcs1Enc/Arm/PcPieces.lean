@@ -62,9 +62,6 @@ theorem start_wp {σ s : State} (hs : S P σ s) : WP isa (.block start) s (G1 P 
   · rw [u4.other _ (by decide), u3.gpr]; rfl
   · rw [u4.gpr]; rfl
 
-theorem enc0 (P : EP) (σ : State) : (enc P σ).getD 0 0 = 0 := rfl
-theorem enc1 (P : EP) (σ : State) : (enc P σ).getD 1 0 = 2 := rfl
-
 theorem head_wp {σ s : State} (h : G1 P σ s) : WP isa (.block head) s (PsI P P.pl σ) := by
   obtain ⟨hs, r0, r1, lr⟩ := h
   have hk := hs.1.k64

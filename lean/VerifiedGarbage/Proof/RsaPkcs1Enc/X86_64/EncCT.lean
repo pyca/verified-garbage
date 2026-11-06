@@ -50,8 +50,6 @@ theorem Sib.gpr {a s : State} (h : Sib a s) {r : Reg} (hr : r ∈ [Reg.rdi, .rsi
 theorem Sib.arg {a s : State} (h : Sib a s) {i : Nat} (hi : i < 6) : stackArg s i = stackArg a i :=
   ((List.map_inj_left.mp h.2.2.1) i (List.mem_range.mpr hi)).symm
 
-theorem Sib.n {a s : State} (h : Sib a s) : nB s = nB a := h.2.2.2.1.symm
-
 theorem Sib.e {a s : State} (h : Sib a s) : eB s = eB a := h.2.2.2.2.symm
 
 theorem Sib.fb {a s : State} (h : Sib a s) : fb s = fb a := by
@@ -153,19 +151,6 @@ theorem copy_two : RelCT isa (Two (At R Mid)) msgCopy (Two (At R PreCall)) := by
     simp only [Option.some.injEq, Bool.not_eq_eq_eq_not, Bool.not_false, beq_iff_eq] at hc
     rw [hc]; rfl
 
-/-- Before the call, with its arguments in registers. -/
-def J5 (s t : State) : Prop :=
-  PreCall s t ∧ t.gpr .rdi = s.gpr .rdi ∧ t.gpr .rsi = s.gpr .rcx ∧ t.gpr .rdx = s.gpr .rdx ∧
-    t.gpr .rcx = s.gpr .rcx ∧ t.gpr .r8 = s.gpr .r8 ∧ t.gpr .r9 = s.gpr .r9
-
-theorem callArgs_two : RelCT isa (Two (At R PreCall)) (.block callArgs) (Two (At R J5)) :=
-  two_piece [.rsp] (pins (J := PreCall) hR [(.rsp, fb)] (by
-        simp only [List.mem_singleton]; rintro p rfl s t h; exact h.rsp) (by
-        simp only [List.mem_singleton]; rintro p rfl; exact fb_pin)) (by taint_decide)
-    fun _ _ ⟨s, S, h⟩ => WP.mono (callArgs_run (hR _ _ S).1 h)
-      fun t' ⟨hm, hdi, hsi, hdx, hcx, h8, h9, k⟩ => ⟨s, S, ⟨(k.gpr (by decide)).trans h.rsp, k.2.1.trans h.rd,
-        k.2.2.trans h.wr, hm ▸ h.out, hm ▸ h.slots, hm ▸ h.sZ, hm ▸ h.em⟩, hdi, hsi, hdx, hcx, h8, h9⟩
-
 /-! ## The mask -/
 
 def J7 (s t : State) : Prop :=
@@ -198,11 +183,6 @@ end
 
 /-! ## The call -/
 
-/-- The relation of the anchor to an entry state of `encK`. -/
-def EncR (a s : State) : Prop := encK.pre s ∧ encK.pub a s
-
-theorem encR_sib : ∀ a s, EncR a s → Sib a s := fun _ _ h => ⟨ePre_of h.1, h.2⟩
-
 /-- The registers a callee sees, from the caller's. -/
 theorem entry_regs (t : State) (rd wr : List Region) :
     [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions rd wr).gpr =
@@ -226,82 +206,6 @@ theorem entryBytes {s t : State} (h : PreCall s t) (rd wr : List Region) {p : Ad
   exact bytes_of_frame (frame_call (frame_of_outside h.out) (callEntry_frame h.rsp) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact .inl (ret_sub s)) hk ho hs hl
 
-/-- What the callee's contract makes public, from the entry state. -/
-theorem pub_view {a s t : State} (S : Sib a s) (h : J5 s t) :
-    [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions (pubRd s) (pubWr s)).gpr =
-      [a.gpr .rdi, a.gpr .rcx, a.gpr .rdx, a.gpr .rcx, a.gpr .r8, a.gpr .r9, fb a - 8] ∧
-    stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = off (fb a) oEM ∧
-    stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 1 = a.gpr .rcx ∧
-    stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 2 = stackArg a 4 ∧
-    stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 3 = stackArg a 5 ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (pubRd s) (pubWr s)).mem
-      ((t.callEntry.withRegions (pubRd s) (pubWr s)).gpr .rdx)
-      ((t.callEntry.withRegions (pubRd s) (pubWr s)).gpr .rcx).toNat = nB a ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (pubRd s) (pubWr s)).mem
-      ((t.callEntry.withRegions (pubRd s) (pubWr s)).gpr .r8)
-      ((t.callEntry.withRegions (pubRd s) (pubWr s)).gpr .r9).toNat = eB a := by
-  obtain ⟨hpc, hdi, hsi, hdx, hcx, h8, h9⟩ := h
-  have hp := S.1
-  have rcx := S.gpr (r := .rcx) (by decide)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [entry_regs, hdi, hsi, hdx, hcx, h8, h9, hpc.rsp, S.fb, rcx, S.gpr (r := .rdi) (by decide),
-      S.gpr (r := .rdx) (by decide), S.gpr (r := .r8) (by decide), S.gpr (r := .r9) (by decide)]
-  · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.fb]
-    have := hpc.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
-  · rw [stackArg_entry hpc.rsp _ _ (by decide), ← rcx]; exact hpc.slots.a1
-  · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.arg (by decide)]; exact hpc.slots.a2
-  · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.arg (by decide)]; exact hpc.slots.a3
-  · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
-      State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), hdx, hcx]
-    rw [entryBytes hpc _ _ hp.dKn (by have := hp.dOn; rw [outR]; exact this) hp.dns.symm
-      (by have := hp.wN; omega)]
-    exact S.n
-  · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
-      State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
-    rw [entryBytes hpc _ _ hp.dKe (by have := hp.dOe; rw [outR]; exact this) hp.des.symm
-      (by have := hp.wE; omega)]
-    exact S.e
 
-theorem pub_ct (v : PubImpl) : RelCT isa (Two (At EncR J5)) (.call v.name v.code) fun _ _ => True := by
-  refine RelCT.callEx (k := pubChkK) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
-  obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, n₁, e₁⟩ := pub_view (encR_sib _ _ S₁) j₁
-  obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, n₂, e₂⟩ := pub_view (encR_sib _ _ S₂) j₂
-  obtain ⟨c₁, w₁⟩ := pub_covers (ePre_of S₁.1) j₁.1
-  obtain ⟨c₂, w₂⟩ := pub_covers (ePre_of S₂.1) j₂.1
-  obtain ⟨h₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁⟩ := j₁
-  obtain ⟨h₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
-  exact ⟨pubRd s₁, pubWr s₁, pubRd s₂, pubWr s₂, pub_pre (ePre_of S₁.1) h₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁,
-    pub_pre (ePre_of S₂.1) h₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂,
-    ⟨regs_eq (r₁.trans r₂.symm), a0₁.trans a0₂.symm, a1₁.trans a1₂.symm, a2₁.trans a2₂.symm,
-      a3₁.trans a3₂.symm, n₁.trans n₂.symm, e₁.trans e₂.symm⟩, c₁, w₁, c₂, w₂,
-    by rw [h₁.rsp, h₂.rsp, (encR_sib _ _ S₁).fb, (encR_sib _ _ S₂).fb]⟩
-
-theorem call_two (v : PubImpl) : RelCT isa (Two (At EncR J5)) (.call v.name v.code) (Two (At EncR AfterCall)) :=
-  two_post (pub_ct v) fun _ _ ⟨s, S, h, hdi, hsi, hdx, hcx, h8, h9⟩ =>
-    WP.mono (pub_call v (ePre_of S.1) h hdi hsi hdx hcx h8 h9) fun _ h => ⟨s, S, h.1.toAfterCall⟩
-
-/-! ## The whole function -/
-
-theorem body_ct (v : PubImpl) : RelCT isa (Two (At EncR J0)) (body v.name v.code) fun _ _ => True := by
-  rw [body_eq]
-  exact RelCT.seq (setup_two encR_sib) (RelCT.seq (ps_two encR_sib) (RelCT.seq (sep_two encR_sib)
-    (RelCT.seq (copy_two encR_sib) (RelCT.seq (callArgs_two encR_sib) (RelCT.seq (call_two v)
-      (RelCT.seq (maskArgs_two encR_sib) (mask_ct encR_sib)))))))
-
-theorem enc_constantTime (v : PubImpl) : ConstantTime isa encK.pre encK.pub (code v.name v.code) :=
-  RelCT.constantTime (relCT_alloc ((body_ct v).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
-    fun _ _ h => h))
-
-/-! ## `Verified` -/
-
-theorem enc_verified (v : PubImpl) :
-    Verified target (code v.name v.code) (Spec.RsaPkcs1Enc.encryptContract abi encStack) :=
-  Verified.of_correct (k := encK) (enc_correct v) (enc_constantTime v) encrypt_implies
-
-/-- It writes `rsp` only in its frame's push and pop. -/
-theorem enc_spSafe (v : PubImpl) : (code v.name v.code).all (fun i => !isa.writesSp i) = true := by
-  simp only [code, body, Code.all, v.spSafe, Bool.true_and]
-  decide +kernel
 
 end VG.Proof.RsaPkcs1Enc.X86_64

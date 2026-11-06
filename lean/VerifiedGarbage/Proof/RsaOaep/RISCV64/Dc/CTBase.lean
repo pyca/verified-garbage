@@ -19,8 +19,7 @@ shared code compares runs whose `Base` has the same functions of the base
 state: the working space at `stackArg x 13` (`SX`) and the values of
 `s1`–`s4` read from `x`, with the result in its `t6` (`VX`), which no slot
 holds; the base state of a run is its entry state with the memory after the
-private operation and the result in `t6` (`bx`, `toX`), for which the stack
-pointer and `S` are public data (`okX`).
+private operation and the result in `t6` (`bx`, `toX`).
 -/
 
 @[expose] public section
@@ -94,8 +93,6 @@ def PreX (x : State) : Prop := Fits SX x
 /-- The base state's public data: the stack pointer and the working space. -/
 def PubX (a x : State) : Prop := x.sp = a.sp ∧ stackArg x 13 = stackArg a 13
 
-theorem okX : OkS SX PreX PubX := ⟨id, fun p => p.1, fun p => p.2⟩
-
 section
 variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
 include P hm
@@ -137,13 +134,6 @@ def DX (a t : State) : Prop :=
   ∃ s m, PreD s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
     Base (SD s) (VD s (rcOf (privO s))) (withMem s m) t
 
-theorem DX.of_after {a s v : State} (P : PreD s) (p : PubD a s) (A : AfterPriv s v) : DX a v :=
-  ⟨s, v.mem, P, p, A.mem, A.base⟩
-
-theorem DX.only {a t t' : State} {rs : List Reg} (h : DX a t) (o : Only rs t t')
-    (hrs : ∀ r ∈ rs, r ∉ fixed := by decide) : DX a t' :=
-  let ⟨s, m, P, p, hm, b⟩ := h; ⟨s, m, P, p, hm, b.only (fits P rfl rfl) o hrs⟩
-
 /-- What `DX` fixes, from the anchor. -/
 theorem DX.pins {a t : State} (h : DX a t) :
     t.sp = fb a ∧ t.gpr .s0 = stackArg a 13 ∧ t.gpr .s1 = a.gpr .a4 ∧ t.gpr .s2 = a.gpr .a0 ∧
@@ -164,11 +154,5 @@ theorem dx_pins {α : Type} {Φ : α → State → Prop} {an : α → State} (h 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at this
     rcases this with rfl | rfl | rfl | rfl
     exacts [a₁.trans a₂.symm, b₁.trans b₂.symm, c₁.trans c₂.symm, d₁.trans d₂.symm]
-
-/-- The base state of a run for the shared code. -/
-theorem DX.toB {a t : State} (h : DX a t) : B SX VX PreX PubX a t := by
-  obtain ⟨s, m, P, p, hm, b⟩ := h
-  obtain ⟨pX, bX⟩ := toX P hm _ (rcOf_le _) b
-  exact ⟨_, pX, ⟨p.sp, (stackArg_bx P hm _ (by decide)).trans (p.args 13 (by decide))⟩, bX⟩
 
 end VG.Proof.RsaOaep.RISCV64.Dec

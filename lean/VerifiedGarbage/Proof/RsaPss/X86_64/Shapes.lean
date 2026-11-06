@@ -30,11 +30,6 @@ namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Impl.MdStream.X86_64 (Params)
 
-/-- The checks, for the parameters `P` and the digest length `D`. -/
-theorem pss_of {P : Params} {D : Nat}
-    (h1 : HashChecks P D 1) (h2 : HashChecks P D 2) (v : VerifyChecks P D) (s : SignChecks P D) :
-    PssChecks P D := ⟨h1, h2, v, s⟩
-
 theorem pss_md5 : PssChecks Impl.Md5.X86_64.Stream.params 16 :=
   ⟨⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,

@@ -41,9 +41,6 @@ open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask)
 /-- The base of array `j`. -/
 abbrev kb (p : KPub) (j : Nat) : BitVec 64 := off p.B (slot p.w j)
 
-theorem KK.ctx {p : KPub} {t : State} (h : KK p t) :
-    ∃ s minv N, KCtx s t p.B p.Z p.w minv N ∧ KS p s := h
-
 /-- What a piece's header loads read, from `KK`. -/
 theorem KK.lds {p : KPub} {t : State} (h : KK p t) : t.gpr .rdi = p.B ∧
     (∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8) ∧
@@ -198,48 +195,5 @@ theorem mulXRK_ct : RelCT isa (Two KK) (seqs mulXR) (Two KK) := by
   · obtain ⟨s₀, minv, N, c, hs⟩ := h
     exact WP.mono (mulXRK c) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩
 
-/-! ## Remainders -/
-
-theorem reduceK_ct {cnt : List Instr} (cn : Nat → Nat)
-    (hcnt : ∀ (t : State) (w : Nat), t.gpr .r13 = BitVec.ofNat 64 w →
-      WP isa (.block cnt) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 (cn w) ∧ t'.mem = t.mem ∧ Keep [.r13] t t')
-    (hok : ∀ p s, KK p s → WP isa (seqs (reduce cnt)) s (KK p))
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (([.mov .rbx (.mem (hdr (sArr aR))),
-      .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))), .mov .r12 (.mem (hdr sW)),
-      .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))), .mov .r13 (.reg .r12)] : List Instr) ++
-      cnt)) hc₁).isSome = true)
-    (hB : (taint.check (Taint.ofRegs [.rbx, .r10, .r8, .r12, .rsi, .r9, .r13]) (.loop wordStep .ne) hc₂).isSome = true) :
-    RelCT isa (Two KK) (seqs (reduce cnt)) (Two KK) := by
-  refine kk_ct ?_ hok
-  simp only [reduce, seqs]
-  refine RelCT.seq ((zeroArrK_ct (j := aR) (by decide) (by decide) (by decide) (by taint_decide)).mono
-    (fun _ _ h => h) fun _ _ h => two_mono (fun _ _ h => h.1) h)
-    (hdr_ct pins_kk (rs := [.rbx, .r10, .r8, .r12, .rsi, .r9, .r13]) (fun p => [(.rbx, kb p aR), (.r10, kb p aM), (.r8, kb p aX), (.r12, BitVec.ofNat 64 p.w),
-      (.rsi, kb p aT), (.r9, kb p aAcc), (.r13, BitVec.ofNat 64 (cn p.w))]) (fun _ => rfl) hT hB fun p s h => ?_)
-  obtain ⟨hdi, hl, hw, hb'⟩ := h.lds
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.rbx, .r10, .r8, .r12, .rsi, .r9, .r13] (Q := fun t => t.gpr .rbx = kb p aR ∧
-      t.gpr .r10 = kb p aM ∧ t.gpr .r8 = kb p aX ∧ t.gpr .r12 = BitVec.ofNat 64 p.w ∧ t.gpr .rsi = kb p aT ∧
-      t.gpr .r9 = kb p aAcc ∧ t.gpr .r13 = BitVec.ofNat 64 p.w)
-    (by xrun [State.ea, hdr, hdi, hdrOff, hl sW (by decide), hl (sArr aR) (by decide), hl (sArr aM) (by decide),
-      hl (sArr aX) (by decide), hl (sArr aT) (by decide), hl (sArr aAcc) (by decide), hw, hb' aR (by decide),
-      hb' aM (by decide), hb' aX (by decide), hb' aT (by decide), hb' aAcc (by decide)]) rfl)
-    fun t ⟨⟨a, b, c, d, e, f, g⟩, _⟩ => ?_
-  refine WP.mono (hcnt t p.w g) fun t' ⟨g', _, k⟩ => ?_
-  exact regsAre_cons ((k.gpr (by decide)).trans a) (regsAre_cons ((k.gpr (by decide)).trans b)
-    (regsAre_cons ((k.gpr (by decide)).trans c) (regsAre_cons ((k.gpr (by decide)).trans d)
-    (regsAre_cons ((k.gpr (by decide)).trans e) (regsAre_cons ((k.gpr (by decide)).trans f)
-    (regsAre_cons g' regsAre_nil))))))
-
-theorem reduceEK_ct : RelCT isa (Two KK) (seqs (reduce cntE)) (Two KK) :=
-  reduceK_ct (· + 2) (fun t _ h => cntE_ok t h)
-    (fun _ _ h => let ⟨s₀, minv, N, c, hs⟩ := h; WP.mono (reduceEK c) fun _ ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩)
-    (by taint_decide) (by taint_decide)
-
-theorem reduceXRK_ct : RelCT isa (Two KK) (seqs (reduce cntXR)) (Two KK) :=
-  reduceK_ct (fun w => 2 * w + 2) (fun t _ h => cntXR_ok t h)
-    (fun _ _ h => let ⟨s₀, minv, N, c, hs⟩ := h; WP.mono (reduceXRK c) fun _ ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩)
-    (by taint_decide) (by taint_decide)
 
 end VG.Proof.Rsa.X86_64.Key

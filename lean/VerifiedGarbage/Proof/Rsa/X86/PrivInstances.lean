@@ -18,16 +18,6 @@ import VerifiedGarbage.Proof.Framework.GetElem
 -- Formerly `VerifiedGarbage/Proof/Bignum/X86/CrtStackSafety.lean`, which only this module imported.
 section
 
-/-! # Instructions that keep the stack pointer, for compositional stack-pointer safety -/
-
-section
-namespace VG.Proof.Bignum.X86.Crt
-open VG VG.X86
-
-def stackSafe (i : Instr) : Bool := !isa.writesSp i
-
-end VG.Proof.Bignum.X86.Crt
-end
 
 end
 

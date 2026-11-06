@@ -136,11 +136,6 @@ theorem copySalt_ct (d : State → Nat) :
   refine two_ite (fun a t₁ t₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.2.2.2, h₂.2.2.2])
     (copy_taint (pins3 (fun _ _ h => h.1.1.1) _ _ _ fun _ _ h => h.1.2)) (skip_taint (mpin (fun _ _ h => h.1.1.1) []))
 
-theorem copySalt_wp {d : State → Nat} {a t : State} (h : M D Z a t) (h5 : t.gpr .r5 = off (Ss a) (d a))
-    (hd : d a + (stackArg a 11).toNat ≤ oRsa) : WP isa copySalt t (M D Z a) :=
-  h.step fun s P p b _ _ => WP.mono (copySalt_ok P b (d := d a) (by rw [h5, ss_eq p])
-    (by rw [p.1.args 11 (by decide)]; exact hd)) fun _ h => h.1
-
 variable {H : Hash} (hD : H.D = D) (hD0 : 0 < D) (hD64 : D ≤ 64)
 include hD hD0 hD64
 

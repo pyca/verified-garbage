@@ -15,9 +15,8 @@ the stages `G` (`ct`). The stages carry the public parameters both runs
 share, so that a piece checked by the taint analysis needs only that the
 registers it takes as public are determined by them (`VP.taint`), and
 pieces compose by `seq`, `ite` and `loop` (whose number of iterations is
-public). A call of verified code (`VP.call`), and a call in a frame of its
-arguments (`VP.callWith`), are pieces when their contract holds in every
-state of the stage and its public data agrees in two.
+public). A call of verified code (`VP.call`) is a piece when its contract
+holds in every state of the stage and its public data agrees in two.
 -/
 
 @[expose] public section
@@ -132,26 +131,6 @@ theorem call {n : String} {c : Prog isa} {k : Contract isa}
         (cov _ _ h.2).2, esp _ _ _ _ h.1 h.2⟩)
     fun σ s h => WP.call hv hsp (room σ s h) (pre σ s h) (cov σ s h).1 (cov σ s h).2
       fun s' r w cs f _ po => post σ s s' h r w cs f po
-
-/-- A call of verified code `c` in a frame of its arguments `rs`, given the
-regions `rd` and `wr`, the same in both runs, with the same `esp`. -/
-theorem callWith {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa}
-    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hct : ConstantTime isa k.pre k.pub c) (hsp : NoSp c) (hne : rs ≠ []) (hrs : Reg.esp ∉ rs)
-    (rd wr : List Region)
-    (pre : ∀ σ s, F σ s → CallPre k rs rd wr s)
-    (room : ∀ σ s, F σ s → 4 * rs.length + stackUse c + 4 ≤ (s.gpr .esp).toNat)
-    (esp : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → s₁.gpr .esp = s₂.gpr .esp)
-    (pub : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ →
-      k.pub ((pushed rs s₁).callEntry.withRegions rd wr) ((pushed rs s₂).callEntry.withRegions rd wr))
-    (post : ∀ σ s s', F σ s → s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
-      Frame (wr ++ [below (s.gpr .esp) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) → G σ s') :
-    VP F (.frame (.push rs) (.call n c) (.pop .eax rs.length)) G :=
-  of_ct (fun _ _ => RelCT.callWith hv hct rd wr fun _ _ h =>
-      ⟨pre _ _ h.1, pre _ _ h.2, esp _ _ _ _ h.1 h.2, pub _ _ _ _ h.1 h.2⟩)
-    fun σ s h => WP.callWith hv hsp hne hrs (room σ s h) (pre σ s h)
-      fun s' r w cs f po => post σ s s' h r w cs f po
 
 end VP
 

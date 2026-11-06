@@ -118,10 +118,4 @@ theorem Keep.slot {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
     slot m' B e = slot m B e :=
   VG.Proof.Rsa.KeyWorkspace.Keep.slot h he hd
 
-/-- Memory outside the working space. -/
-theorem Keep.out {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
-    (h : Keep B w js ds m m') {Z : Nat} (hj : ∀ j ∈ js, arr w j + S w ≤ Z) (hd : ∀ d ∈ ds, d + 4 ≤ Z)
-    {x : Addr} (hx : Z ≤ ofs B x) : m' x = m x :=
-  VG.Proof.Rsa.KeyWorkspace.Keep.out h hj hd hx
-
 end VG.Proof.Rsa.X86.Keys

@@ -13,11 +13,12 @@ baseline `Public.mm` or one for other CPU features.
 
 * `vg_rsa_public_precompute` (`Precompute.code`) writes what Montgomery
   multiplication needs of a modulus, `m` and `R² mod m`, once per key.
-* `vg_rsa_public_precomputed_checked` (`Checked.precomputedChecked`)
-  computes RSAEP from them, for an exponent within BoringSSL's limits.
-* `vg_rsa_public_checked` (`Checked.publicChecked`) runs `Precompute`'s
-  steps and then `Precomputed`'s in one working space: `m` and `R² mod m`
-  are already in the arrays where `Precomputed` loads them.
+* `Precomputed.code` computes RSAEP from them.
+* `Public.code` runs `Precompute`'s steps and then `Precomputed`'s in one
+  working space: `m` and `R² mod m` are already in the arrays where
+  `Precomputed` loads them.
+* `Checked.guarded c` runs `c` only for an exponent within BoringSSL's
+  limits.
 
 The arguments are those of x86-64's (`Impl/Rsa/X86_64.lean`), in `x0`–`x7`
 and, from the ninth, on the stack (AAPCS64): the working space `scratch` is
@@ -286,13 +287,6 @@ def failOut : Prog isa :=
 
 /-- `c`, if `e` is within BoringSSL's limits. -/
 def guarded (c : Prog isa) : Prog isa := .seq expCheck (.ite (.zero .x .x9) failOut c)
-
-/-- `vg_rsa_public_checked`. -/
-def publicChecked : Prog isa := guarded Public.code
-
-/-- `vg_rsa_public_precomputed_checked`, with Montgomery multiplication `mul`. -/
-def precomputedChecked (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  guarded (Precomputed.code mul)
 
 end Checked
 

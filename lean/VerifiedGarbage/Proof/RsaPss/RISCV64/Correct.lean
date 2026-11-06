@@ -25,11 +25,11 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Correct.lean`): the checks (`checks_done`), a
-modulus whose first byte is zero (`verify_zero`), and an encoding too short
+modulus whose first byte is zero (`verify_zero₂`), and an encoding too short
 for the digest (`chkEm`) or the salt length expected (`expLen`, `chkSalt`:
-`verify_short`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
+`verify_short₂`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
 the checks of `EM` (`post_ok`) return 1 exactly when EMSA-PSS-VERIFY accepts
-it (`res_iff`, `verify_bytes`), if `pre` holds the modulus' values.
+it (`res_iff`, `verify_bytes₂`), if `pre` holds the modulus' values.
 `code_correct`: the function against its shared contract.
 -/
 
@@ -261,8 +261,7 @@ theorem verify_short₂ (Gs Hs : Spec.Mgf1.Hash) {nB : List Byte} (eB mHash sB :
       rw [ifp (Or.inr (Or.inr h))]
     simp [this]
 
-/-- `verify`, byte by byte, as `Proof.RsaPss.verify_bytes`, with the hash
-function `Hs` and MGF1's `Gs`. -/
+/-- `verify`, byte by byte, with the hash function `Hs` and MGF1's `Gs`. -/
 theorem verify_bytes₂ (Gs Hs : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid Gs) {n₀ : Byte} {rest eB mHash sB : List Byte}
     {sLen : Option Nat} (hm : mHash.length = Hs.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
     (hb : bitLength (Spec.Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)

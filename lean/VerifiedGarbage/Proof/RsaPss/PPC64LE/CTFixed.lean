@@ -107,34 +107,8 @@ theorem fin_twoG {α : Type} {Φ : α → State → Prop} {an : α → State}
     · rw [x6, y6]
 
 include X hH in
-/-- `update` keeps `B` and the callee-saved registers. -/
-theorem upd_wpG {a t : State} (h : B S vf Pre Pub a t) {o len : Nat} (ho : oW + 1024 ≤ o) (hl : o + len ≤ oRsa)
-    (h3 : t.gpr .r3 = off (S a) oSt) (h5 : t.gpr .r5 = off (S a) o) (h6 : (t.gpr .r6).toNat = len)
-    (h7 : t.gpr .r7 = off (S a) oW) :
-    WP isa H.callUpd t fun t' => B S vf Pre Pub a t' ∧ ∀ r ∈ preserved, t'.gpr r = t.gpr r := by
-  obtain ⟨s, P, p, A⟩ := upd_argsG X hH h ho hl h3 h5 h6 h7
-  exact WP.mono (upd_ok A.P hH A.b A.h3 A.h5 A.h6 A.h7 A.hdc A.hd₁ A.hd₂ A.hd₃) fun t' ⟨b', g', _⟩ =>
-    ⟨⟨s, P, p, b'⟩, g'⟩
-
 include X in
-/-- `r3 := S + oSt`, `r7 := S + oW`. -/
-theorem updRegs_wpG {a t : State} (h : B S vf Pre Pub a t) :
-    WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) t fun t' => B S vf Pre Pub a t' ∧
-      Only [.r3, .r7] t t' ∧ t'.gpr .r3 = off (S a) oSt ∧ t'.gpr .r7 = off (S a) oW :=
-  wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_nil ⟨(h.only X o₁).only X o₂, (o₁.trans o₂).mono,
-    by rw [o₂.get .r3, e₁, (h.agree X).2.1], by rw [e₂, o₁.get .r14, (h.agree X).2.1]⟩
-
 include X in
-/-- `r3 := S + oSt`, `r5 := S + oDig`, `r6 := S + oW`. -/
-theorem finRegs_wpG {a t : State} (h : B S vf Pre Pub a t) :
-    WP isa (.block [.addi .r3 .r14 oSt, .addi .r5 .r14 oDig, .addi .r6 .r14 oW]) t fun t' =>
-      B S vf Pre Pub a t' ∧ Only [.r3, .r5, .r6] t t' ∧ t'.gpr .r3 = off (S a) oSt ∧
-      t'.gpr .r5 = off (S a) oDig ∧ t'.gpr .r6 = off (S a) oW :=
-  wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_addi fun t₃ o₃ e₃ =>
-    wp_nil ⟨((h.only X o₁).only X o₂).only X o₃, (o₁.trans (o₂.trans o₃)).mono,
-      by rw [o₃.get .r3, o₂.get .r3, e₁, (h.agree X).2.1], by rw [o₃.get .r5, e₂, o₁.get .r14, (h.agree X).2.1],
-      by rw [e₃, o₂.get .r14, o₁.get .r14, (h.agree X).2.1]⟩
-
 section
 variable {cn dn : String} {cc dc : Prog isa} {f : MdFns} {j : Nat} (A : MdTabA H cn cc dn dc f j S Pre Pub)
 

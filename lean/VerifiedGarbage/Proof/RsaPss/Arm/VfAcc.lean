@@ -32,7 +32,7 @@ The pieces after the call are proven over the state `τ` the call leaves
 (`VQ.reidx`), so that `EM`'s bytes are those of `τ` (`emv`). `acc` (`accW`):
 `EM`'s last byte `⊕ 0xbc`, its first if `lo = 1`, and the top bits of
 `maskedDB`'s first byte (`acc_vp`); then `DB = maskedDB ⊕ MGF1(H, dbLen)`
-with its top bits cleared (`unmask_vp`).
+with its top bits cleared.
 -/
 
 @[expose] public section
@@ -352,12 +352,5 @@ theorem vtop_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
           Nat.add_zero]
       · rw [ite_eq_right (by omega_arith), ite_eq_right e, hd i hi]
     · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), hh i hi]
-
-/-- `DB = maskedDB ⊕ MGF1(H, dbLen)`, its top bits cleared. -/
-theorem unmask_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String} (P : EP)
-    (Q : TF h g f fg dn P) (hP : ∃ σ, In h.D P σ) :
-    VP (fun τ s => Ku h P τ s ∧ s.syms = τ.syms) (.seq (mgfPart fg h.sh 15) (.seq (.block topSet) (.block topAnd)))
-      (fun τ s => U0 h P τ s ∧ s.syms = τ.syms) :=
-  (vmask_vp h P Q hP).seq (VP.syms (vtop_vp h P hP))
 
 end VG.Proof.RsaPss.Arm.Vf

@@ -26,7 +26,7 @@ whose shared code compares runs through an anchor `a` (`Ok S vf Pre Pub`,
 `B`) and keeps a salt length `sl a` in `s6`: the arguments of the hash calls
 from the anchor's (`upd_argsG`, `fin_argsG`), the calls in both runs
 (`upd_twoG`, `fin_twoG`), and `hashFixedG_ct`, the hash of `M'` for a given
-salt length, its blocks by the taint analysis and its calls by `init_two`,
+salt length, its blocks by the taint analysis and its calls by `hInit_two`,
 `upd_ct` and `fin_ct`. After the public operation of verification, two runs
 are compared through the anchor with `BL`: `Base` from entry states whose
 encoding parameters are those of their registers (`PreL`) and that agree

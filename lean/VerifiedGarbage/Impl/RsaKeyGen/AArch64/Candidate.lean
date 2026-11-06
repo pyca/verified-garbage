@@ -270,47 +270,12 @@ def mrWitness : List (Prog isa) := [
     .lsl .x .x5 .x12 3, .add .x .x16 .x16 .x5, .subImm .x .x16 .x16 8, .movz .x .x4 0x8000 3,
     .logic .and .x .x4 .x4 .x9, .logic .eor .x .x4 .x4 .x8, ld .x3 .x16, .logic .and .x .x3 .x3 .x4, st .x3 .x16])]
 
-/-- One witness: its Montgomery form into `aXm` and `aB`, the table, `y := 1`,
-the flag; `kStat := 3` if it is clear; otherwise the witness counts, and
-`kStat := 4` to go on (fewer than 16 witnesses, or fewer uniform ones than
-needed) or 1. -/
-def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  mrWitness ++ [mul aXm aX aR2, copyA aB aXm] ++ preparedRound mul ++ ([
-  .block [ldh .x3 kFlag],
-  .ite (.zero .x .x3) (.block [movi .x3 3, sth .x3 kStat])
-    (.block [ldh .x3 kI, .addImm .x .x3 .x3 1, sth .x3 kI, ldh .x4 kU, movi .x5 1, .logic .and .x .x4 .x4 .x5,
-      ldh .x5 kUni, .add .x .x4 .x4 .x5, sth .x4 kUni,
-      -- `x13 := 4` if `i ≤ 16` or `uniform < checks`, else 1.
-      movi .x9 4, movi .x10 1, movi .x5 17, .subs .x .x6 .x3 .x5, .csel .x .x13 .x10 .x9, ldh .x5 kChecks,
-      .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])] : List (Prog isa))
-
-/-- Miller–Rabin: witnesses while `kStat = 4`; 0 when fewer than `out_len`
-octets of `rand` are left (`rand_len − used`, which does not wrap). -/
-def millerRabin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  .block [movi .x3 1, sth .x3 kI, movi .x3 0, sth .x3 kUni],
-  .loop (seqs [
-    .block ([ldh .x3 kRandLen, ldh .x4 kUsed, .sub .x .x3 .x3 .x4, ldh .x4 kLen] ++ geFlag),
-    .ite (.zero .x .x5) (.block [movi .x3 0, sth .x3 kStat]) (seqs (mrRound mul)),
-    .block [ldh .x3 kStat, .subImm .x .x3 .x3 4]]) (.zero .x .x3)]
-
 /-! ## `vg_rsa_keygen_candidate` -/
 
 /-- The result of Miller–Rabin, from `kStat`. -/
 def mrResult : Prog isa :=
   .seq (.block [ldh .x3 kStat])
     (.ite (.zero .x .x3) finNone (.seq (.block [.subImm .x .x3 .x3 1]) (.ite (.zero .x .x3) finPrime (finUsed 3))))
-
-/-- Once `rand` has the candidate's octets. -/
-def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (loadC ++ closeCheck ++ ([.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
-    ([.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
-      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabin mul ++
-        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
-
-/-- `vg_rsa_keygen_candidate`. -/
-def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
-    .ite (.zero .x .x5) finNone (kMain mul)]
 
 /-! ## Generic prepared-round callers
 

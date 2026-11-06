@@ -475,15 +475,4 @@ theorem mrResult_ct : RelCT isa (Two LoopEnd) mrResult fun _ _ => True := by
       rcases (show statOf a.S = 0 ∨ statOf a.S = 1 ∨ statOf a.S = 2 ∨ statOf a.S = 3 by omega_arith) with
         e | e | e | e <;> rw [e] <;> decide) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨h.congr hm k (by decide), hz⟩
 
-/-- The tail, from `montSetup` to the result. -/
-theorem tail_ct (M : Mont) :
-    RelCT isa (Two MsPre) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True :=
-  RelCT.seqs_app (by simp [montSetup]) (List.cons_ne_nil _ _)
-    (RelCT.seq (RelCT.seqs_app (by simp [montSetup]) (by simp [millerRabin])
-      (RelCT.seq (RelCT.seqs_app (by simp [montSetup]) (by simp [expSetup, lowWord])
-        (RelCT.seq (montSetup_ct M) ((expSetup_ct).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨q.lp, h₁, h₂⟩) h)
-          fun _ _ h => h)))
-        (millerRabin_ct M)))
-      mrResult_ct)
-
 end VG.Proof.RsaKeyGen.X86_64

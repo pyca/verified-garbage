@@ -84,9 +84,6 @@ theorem DW.words (h : DW s t) : ∀ k ∈ decKs, word t.mem (fb s) (8 * k) = dec
   exact hW k hk
 
 omit hp in
-theorem DWM.dw {src srcLen dst dstLen : Nat} (h : DWM s t src srcLen dst dstLen) : DW s t :=
-  let ⟨V, W, R, hW, _⟩ := h.rep; ⟨h.he, h.L, V, W, R, hW⟩
-
 /-- The label, where `hashLabel` finds it. -/
 theorem DW.lab (h : DW s t) {W : Nat → BitVec 64} (hW : ArgsD s W) :
     LabAt t (fb s) (stackArg s 15) W (stackArg s 11) (stackArg s 12).toNat := by
@@ -142,18 +139,6 @@ theorem dw_dbArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr 
         fun k hk => (mW_other (by have := decKs_iff hk; omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-theorem dw_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm hG) {src srcLen dst dstLen : Nat}
-    (hf : MFit src srcLen dst dstLen) {t : State} (h : DWM s t src srcLen dst dstLen) :
-    WP isa (mgfXor lay Gm.stream) t (DW s) := by
-  obtain ⟨V, W, R, hW, A⟩ := h.rep
-  exact WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG) h.L R hf A))
-    fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
-      ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
-        have := decKs_iff hk
-        rw [hW1 k (decKs_lt k hk) (by omega) (by omega)]
-        exact hW k hk⟩
-
 omit hp in
 theorem dw_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
     (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)

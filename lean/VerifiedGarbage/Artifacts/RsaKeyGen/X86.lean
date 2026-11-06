@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Safety
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Safety
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SearchInit
 public import VerifiedGarbage.TCB.X86.Print
 

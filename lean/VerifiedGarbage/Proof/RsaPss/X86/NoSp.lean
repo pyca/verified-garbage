@@ -7,10 +7,8 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 /-!
 # RSASSA-PSS on x86: code that keeps `esp`
 
-`NoSp` of the pieces both functions share: those whose immediates depend on
-the hash function (`spOk`, from `Certs.sp`), the hash of a message of secret
-length (`ctHash_noSp`) and MGF1's mask (`mgfXor_noSp`), which write `esp`
-only through the frames of their calls.
+`NoSp` of the pieces both functions share whose immediates depend on the
+hash function (`spOk`, from `Certs.sp`).
 -/
 
 @[expose] public section
@@ -93,25 +91,5 @@ theorem spOk : SpOk h.H := by
   obtain ⟨s25, s26⟩ := noSp_seq_inv hsp
   exact ⟨s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20, s21, s22,
     s23, s24, s25, s26⟩
-
-theorem ctHash_noSp : NoSp (ctHash h.H) := by
-  obtain ⟨s1, s2, s3, s4, s5, s6, s7, s8, s9, -⟩ := spOk h
-  have hi : NoSp h.H.st.initC := h.ok.hH.initSp
-  have hc : NoSp h.H.compC := h.ok.comp.nosp
-  simp only [ctHash, initPart, lenPart, padPart, compLoop, compBody, countLoop, seqs, Impl.Pbkdf2.Md.X86.Hash.cmp,
-    Impl.MdStream.X86.compressAt, Impl.MdStream.X86.compressWith, Impl.Pbkdf2.Stream.X86.Hash.callInit]
-  repeat' (first
-    | with_reducible apply noSp_seq | with_reducible apply noSp_loop | with_reducible apply noSp_pushCall
-    | with_reducible assumption
-    | exact NoSp.of_all (by decide +kernel))
-
-theorem mgfXor_noSp : NoSp (mgfXor h.H) := by
-  obtain ⟨-, -, s3, -, -, -, -, -, -, s10, s11, s12, s13, -⟩ := spOk h
-  have hct := ctHash_noSp h
-  simp only [mgfXor, mgfBody, seqs, countLoop]
-  repeat' (first
-    | with_reducible apply noSp_seq | with_reducible apply noSp_loop
-    | with_reducible assumption
-    | exact NoSp.of_all (by decide +kernel))
 
 end VG.Proof.RsaPss.X86

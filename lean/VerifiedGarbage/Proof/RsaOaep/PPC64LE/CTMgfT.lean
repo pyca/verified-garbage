@@ -85,25 +85,12 @@ theorem mgfRT_pins (X : OkS S Pre Pub) {Φ : State × Nat → State → Prop}
   · exact (b₁.b.r14S X).trans (b₂.b.r14S X).symm
   exacts [x26.trans y26.symm, x27.trans y27.symm, x29.trans y29.symm]
 
-theorem mgfRT_base {Φ : State × Nat → State → Prop} (h : ∀ ac t, Φ ac t → MgfRT S vf Pre Pub Dg src srcLen dst dstLen ac t) :
-    ∀ ac t, Φ ac t → B S vf Pre Pub ac.1 t := fun ac t hp => (h ac t hp).1.b
-
 end
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
   (X : OkS S Pre Pub) {G : Hash} (hG : HashOK G) (cG : HashCT hG) {src srcLen dst dstLen : Nat}
   (hf : MFit src srcLen dst dstLen)
-
-/-- Two runs with `B` for anchors agreeing on what an argument is. -/
-theorem two_argsT {Φ : State × Nat → State → Prop} {t₁ t₂ : State} (h : Two Φ t₁ t₂)
-    (hb : ∀ ac t, Φ ac t → B S vf Pre Pub ac.1 t) :
-    ∃ ac s₁ s₂, Φ ac t₁ ∧ Φ ac t₂ ∧ Pre s₁ ∧ Pub ac.1 s₁ ∧ Base S vf s₁ t₁ ∧ Pre s₂ ∧ Pub ac.1 s₂ ∧
-      Base S vf s₂ t₂ := by
-  obtain ⟨ac, h₁, h₂⟩ := h
-  obtain ⟨s₁, P₁, p₁, b₁⟩ := hb ac t₁ h₁
-  obtain ⟨s₂, P₂, p₂, b₂⟩ := hb ac t₂ h₂
-  exact ⟨ac, s₁, s₂, h₁, h₂, P₁, p₁, b₁, P₂, p₂, b₂⟩
 
 /-! ## The table's words and calls, in two runs -/
 

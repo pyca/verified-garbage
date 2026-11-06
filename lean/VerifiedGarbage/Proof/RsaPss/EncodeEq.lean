@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.Framework.GetElem
 # EMSA-PSS: the encoding, a byte at a time, without a modulus
 
 `encode` is the `emLen` bytes `emT 0 …` (`encode_eq₂`, with the hash
-function `H` and MGF1's `G`; `encode_eq`, the same for both), when the salt
-fits, and `none` otherwise (`encode_none₂`, `encode_none`): `encodeK_eq` for `lo = 0`, from
+function `H` and MGF1's `G`), when the salt fits, and `none` otherwise
+(`encode_none₂`): `encodeK_eq₂` for `lo = 0`, from
 `emBits` rather than a modulus.
 -/
 
@@ -70,17 +70,5 @@ theorem encode_eq₂ (hH : Valid H) (hG : Valid G) {mHash salt : List Byte} (hm 
 
 
 variable (G : Hash)
-
-theorem encode_none {mHash salt : List Byte} {emBits : Nat}
-    (h : emLength emBits < G.len + salt.length + 2) : encode G G mHash salt emBits = none :=
-  encode_none₂ G G h
-
-theorem encode_eq (hG : Valid G) {mHash salt : List Byte} (hm : mHash.length = G.len) {emBits emLen db : Nat}
-    (he : emLength emBits = emLen) (hdb : emLen - G.len - 1 = db) (hfit : G.len + salt.length + 2 ≤ emLen) :
-    encode G G mHash salt emBits =
-      some ((List.range emLen).map
-        (emT 0 db salt.length salt (G.hash (zeros 8 ++ mHash ++ salt))
-          (mgf1 G (G.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) :=
-  encode_eq₂ G G hG hG hm he hdb hfit
 
 end VG.Proof.RsaPss

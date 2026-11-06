@@ -15,9 +15,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Encode
 
 Untrusted: everything here is checked by Lean. The blocks of MGF1's round
 (`Impl.RsaOaep.PPC64LE.round`) between the calls: the counter written
-big-endian to `S + oCtr` (`ctr_ok`, as `ctrV`), the selection of how many
-digest bytes go into `dst` (`xorHead_ok`), their exclusive-or into it
-(`xorLoop_ok`), and the next counter (`nextCtr_ok`).
+big-endian to `S + oCtr` (`ctr_ok`, as `ctrV`) and the exclusive-or of
+digest bytes into `dst` (`xorLoop_ok`).
 -/
 
 @[expose] public section
@@ -117,48 +116,6 @@ theorem ctr_ok {t : State} (h : Base S vf s t) {c : Nat} (h28 : t.gpr .r28 = Bit
       o₄.get .r14, m₃.gpr, k₂.get .r14, h.r14]
 
 end
-
-/-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`. -/
-theorem xorHead_ok {G : Impl.Hmac.Stream.PPC64LE.Hash} {t : State} {S : Addr} {dst dstLen done : Nat}
-    (hD : G.D < 2 ^ 15) (h14 : t.gpr .r14 = S) (h26 : t.gpr .r26 = off S dst) (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen)
-    (h29 : t.gpr .r29 = BitVec.ofNat 64 done) (hlt : done < dstLen) (hdl : dstLen < 2 ^ 63) :
-    WP isa (.block (xorHead G)) t fun t' => Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t t' ∧
-      t'.gpr .r11 = off S oDig ∧ t'.gpr .r12 = off S (dst + done) ∧
-      t'.gpr .r9 = BitVec.ofNat 64 (min G.D (dstLen - done)) := by
-  simp only [xorHead]
-  refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_li hD fun u₄ o₄ e₄ =>
-    wp_sub fun u₅ o₅ e₅ => wp_lsr fun u₆ o₆ e₆ => wp_li (by decide) fun u₇ o₇ e₇ => wp_sub fun u₈ o₈ e₈ =>
-    wp_and fun u₉ o₉ e₉ => wp_add fun u₁₀ o₁₀ e₁₀ => wp_nil ?_
-  have k : Only [.r6, .r7, .r8, .r9, .r10, .r11, .r12] t u₁₀ :=
-    (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans (o₉.trans o₁₀))))))))).mono
-  have r8 : u₃.gpr .r8 = BitVec.ofNat 64 (dstLen - done) := by
-    rw [e₃, o₂.get .r27, o₂.get .r29, o₁.get .r27, o₁.get .r29, h27, h29, Offset.ofNat_sub_ofNat (by omega_arith)]
-  have r10 : u₅.gpr .r10 = BitVec.ofNat 64 (dstLen - done) - BitVec.ofNat 64 G.D := by
-    rw [e₅, o₄.get .r8, r8, e₄]
-  refine ⟨k, ?_, ?_, ?_⟩
-  · rw [o₁₀.get .r11, o₉.get .r11, o₈.get .r11, o₇.get .r11, o₆.get .r11, o₅.get .r11, o₄.get .r11, o₃.get .r11,
-      o₂.get .r11, e₁, h14]
-  · rw [o₁₀.get .r12, o₉.get .r12, o₈.get .r12, o₇.get .r12, o₆.get .r12, o₅.get .r12, o₄.get .r12, o₃.get .r12, e₂,
-      o₁.get .r26, o₁.get .r29, h26, h29, off_add]
-  · rw [e₁₀, o₉.get .r9, o₈.get .r9, o₇.get .r9, o₆.get .r9, o₅.get .r9, e₄, e₉, o₈.get .r10, o₇.get .r10,
-      o₆.get .r10, r10, e₈, e₇, o₇.get .r6, e₆, r10]
-    exact minSel (by omega_arith) (by omega_arith)
-
-/-- `nextCtr`: the next counter and `done`, and in `r12` whether `done` is
-still below `dstLen`. -/
-theorem nextCtr_ok {G : Impl.Hmac.Stream.PPC64LE.Hash} {t : State} {c done dstLen : Nat}
-    (h28 : t.gpr .r28 = BitVec.ofNat 64 c) (h29 : t.gpr .r29 = BitVec.ofNat 64 done)
-    (h27 : t.gpr .r27 = BitVec.ofNat 64 dstLen) (hD : G.D < 2 ^ 15) (hd : done + G.D < 2 ^ 63) (hdl : dstLen < 2 ^ 63) :
-    WP isa (.block (nextCtr G)) t fun t' => Only [.r28, .r29, .r12] t t' ∧
-      t'.gpr .r28 = BitVec.ofNat 64 (c + 1) ∧ t'.gpr .r29 = BitVec.ofNat 64 (done + G.D) ∧
-      (t'.gpr .r12 != 0) = decide (done + G.D < dstLen) := by
-  simp only [nextCtr]
-  refine wp_addi fun u₁ o₁ e₁ => wp_addi (h := hD) fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr fun u₄ o₄ e₄ =>
-    wp_nil ⟨(o₁.trans (o₂.trans (o₃.trans o₄))).mono, ?_, ?_, ?_⟩
-  · rw [o₄.get .r28, o₃.get .r28, o₂.get .r28, e₁, h28, BitVec.ofNat_add]
-  · rw [o₄.get .r29, o₃.get .r29, e₂, o₁.get .r29, h29, BitVec.ofNat_add]
-  · rw [e₄, e₃, o₂.get .r27, e₂, o₁.get .r29, o₁.get .r27, h29, h27, ← BitVec.ofNat_add]
-    exact ne_zero_ltBit hd hdl
 
 /-- The `n` bytes at `p` XORed with those at `q`. -/
 def xorAt (m : Mem) (p q : Addr) (n : Nat) : List Byte :=

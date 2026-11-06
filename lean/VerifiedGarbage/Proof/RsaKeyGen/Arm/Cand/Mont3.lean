@@ -82,45 +82,6 @@ theorem KS.w0 (h : KS P σ A live V ls s) (v : BitVec 32) (ht : t.mem = s.mem.wr
   exact pre.sF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 84) (by decide) |>
     fun h => by simpa using h)
 
-/-- The working space's context restored. -/
-theorem KS.ctx_ok (h : KS P σ A live V ls s) {rest : List Instr} {Q : State → Prop}
-    (k : ∀ t, Ws t P.B P.Z P.W nArr → t.mem = s.mem → Rest [.r7, .r8, .r9] s t → WP isa (.block rest) t Q) :
-    WP isa (.block (ctx ++ rest)) s Q := by
-  have pre := h.pre
-  simp only [ctx, ctxB, ctxW, stride, List.cons_append, List.nil_append]
-  refine h.ldrSp (o := aoS) (by decide) fun s1 u1 => ?_
-  rw [pre.aS] at u1
-  have hz := pre.hdr_Z
-  have hf := pre.fS
-  have ea : State.addr (s1.gpr .r8 + BitVec.ofNat 32 16) = off (State.addr P.B) 16 := by
-    rw [u1.gpr]; exact addr_add (by simp only [hdr] at hz; omega_arith)
-  have rd : InRegions (s1.rd ++ s1.wr) (off (State.addr P.B) 16) 4 :=
-    ⟨P.rS, List.mem_append_right _ (by rw [u1.wr, h.wr]; exact pre.rS_mem),
-      Offset.contains_base _ (by simp only [hdr] at hz; omega_arith) (by omega_arith)⟩
-  refine wp_ldr (by decide) ea rd fun s2 u2 => ?_
-  refine wp_dp (op2_imm (by decide)) fun s3 u3 => wp_mov (op2_lsl (by decide)) fun s4 u4 => ?_
-  have m4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  have r4 : Rest [.r7, .r8, .r9] s s4 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
-    ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  have wl := pre.wle
-  have e9 : s4.gpr .r9 = BitVec.ofNat 32 P.W := by
-    rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, u1.mem]
-    apply BitVec.eq_of_toNat_eq
-    have := h.cnt
-    simp only [slot, w32] at this
-    rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have e7 : s4.gpr .r7 = BitVec.ofNat 32 (S P.W) := by
-    rw [u4.gpr, u3.gpr, dpVal, u2.gpr, u1.mem]
-    apply BitVec.eq_of_toNat_eq
-    have := h.cnt
-    simp only [slot, w32] at this
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, this, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    simp only [show (2 : BitVec 32).toNat = 2 from rfl, S]
-    omega_arith
-  have e8 : s4.gpr .r8 = P.B := by rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr]
-  have h4 := h.of_rest r4 m4
-  exact k s4 (h4.ws e7 e8 e9) m4 r4
-
 end
 
 /-- `clrTop j`: the two top words of `[j]` cleared, and nothing else written. -/

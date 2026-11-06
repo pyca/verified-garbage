@@ -59,11 +59,6 @@ open VG.Impl.RsaOaep.RISCV64.Dec (privBytes prologue)
 open VG.Proof.RsaOaep.RISCV64 (Base Fits SC off fx kR fb fr save_ok Saves fb_al stackArgAddr_eq)
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only wp_ld wp_mov wp_addSp wp_nil)
 
-theorem stackArgs_fifteen (s : State) :
-    List.map (stackArg s) (List.range 15) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14] := rfl
-
 theorem stackArgs_seventeen (s : State) :
     List.map (stackArg s) (List.range 17) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
@@ -447,10 +442,6 @@ theorem pb_sub {d n : Nat} (h : d + n ≤ privBytes) : Region.Sub ⟨pb s + BitV
 
 theorem PB_sub : Region.Sub (PB s) (kD s) := by
   have := pb_sub P (d := 0) (n := privBytes) (by decide); rwa [BitVec.add_zero] at this
-
-theorem fr_subD : Region.Sub (fr s) (kD s) := by
-  show Region.Sub ⟨fb s, frameBytes⟩ _
-  rw [fb_kb P]; exact kb_sub (by decide)
 
 omit P in theorem kR_subD : Region.Sub (kR s) (kD s) := kR_sub
 

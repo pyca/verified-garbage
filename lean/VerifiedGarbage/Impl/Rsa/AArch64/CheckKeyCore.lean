@@ -117,8 +117,5 @@ def mulXR : List (Prog isa) := [
     [mov .x13 .x12, movi .x7 0]),
   Crt.mulRows]
 
-/-- `sMask &= ` the mask of `[aA] mod [aM] = 1`. -/
-def modOne : List (Prog isa) := [divmod aA aRem aM aT] ++ eqA aRem aOne ++ [.block andZero]
-
 
 end VG.Impl.Rsa.AArch64.CheckKey

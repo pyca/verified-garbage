@@ -37,10 +37,6 @@ theorem search_implies_pre (s : State) (h : (primeSearchContract abi stackUse).p
     | omega
     | with_reducible exact Region.Disjoint.symm ‹_›
 
-theorem stackArgs_eight (s : State) : List.map (stackArg s) (List.range 8) =
-    [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6,
-      stackArg s 7] := rfl
-
 theorem search_implies_post : ∀ s t, (primeSearchContract abi stackUse).pre s →
     searchContract.post s t → (primeSearchContract abi stackUse).post s t := by
   sig_implies_post [primeSearchContract, primeSearchSig, abi, argRegs, reduceClassify, Loc.val,

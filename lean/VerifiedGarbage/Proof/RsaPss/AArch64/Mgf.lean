@@ -55,15 +55,6 @@ theorem slot_keep {F : Addr} {d : Nat} {rs : List Region} {m m' : Mem} (hf : Fra
     m'.readW (off F d) 64 = m.readW (off F d) 64 :=
   hf.readW (r := slotR F d) (Region.contains_self _ _) hd (by decide)
 
-theorem Lay.doneD {t : State} {F S : Addr} (L : Lay t F S) :
-    ∀ r ∈ [(⟨S, oRsa⟩ : Region), below F 16, slotR F sNb], Region.Disjoint (slotR F sDone) r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact L.dFS.sub_left (Offset.sub_base F (by decide))
-  · exact slot_not_below F (by decide)
-  · exact Offset.disjoint F (by decide) (by decide) (by decide)
-
 theorem byte_of_bytesAt {m : Mem} {p : Addr} {n : Nat} {xs : List Byte} (h : Spec.Rsa.bytesAt m p n = xs)
     {k : Nat} (hk : k < n) : m (p + BitVec.ofNat 64 k) = xs.getD k 0 := by
   subst h

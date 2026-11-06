@@ -99,10 +99,6 @@ theorem EW.words (h : EW s t) : ∀ k ∈ encKs, word t.mem (fb s) (8 * k) = enc
   rw [R.fr k (encKs_lt k hk)]
   exact hW k (encKs_iff hk)
 
-omit hp in
-theorem EWM.ew {src srcLen dst dstLen : Nat} (h : EWM s t src srcLen dst dstLen) : EW s t :=
-  let ⟨V, W, R, hW, _⟩ := h.rep; ⟨h.he, h.L, V, W, R, hW⟩
-
 end
 
 /-! ## The steps -/
@@ -200,17 +196,6 @@ theorem ew_seedArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gp
         fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-theorem ew_mgf {Gm : Hash} (hG : HashOK Gm) (KG : Callees Gm) (mG : MgfLink Gm hG) {src srcLen dst dstLen : Nat}
-    (hf : MFit src srcLen dst dstLen) {t : State} (h : EWM s t src srcLen dst dstLen) :
-    WP isa (mgfXor lay Gm.stream) t (EW s) := by
-  obtain ⟨V, W, R, hW, A⟩ := h.rep
-  exact WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
-    (valid_of_link hG mG) h.L R hf A))
-    fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
-      ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
-        rw [hW1 k (by rcases hk with rfl | hk <;> unfold nW frameBytes <;> omega) (by omega) (by omega)]
-        exact hW k hk⟩
-
 omit hp in
 theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
     (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)

@@ -131,10 +131,4 @@ theorem live_pins (p : SearchPublic) (T : List Nat) :
   rcases hr with rfl | rfl | rfl | rfl
   exacts [h₁.sp.trans h₂.sp.symm, h₁.esi.trans h₂.esi.symm, h₁.edi.trans h₂.edi.symm, h₁.ebx.trans h₂.ebx.symm]
 
-/-- The stack pointer, which every state of the search's body fixes. -/
-theorem base_pins (p : SearchPublic) : Pins (fun (_ : Unit) s => ∃ o, SearchBase p o s) [.esp] := by
-  rintro _ s₁ s₂ ⟨_, h₁⟩ ⟨_, h₂⟩ r hr
-  obtain rfl := List.mem_singleton.mp hr
-  exact h₁.sp.trans h₂.sp.symm
-
 end VG.Proof.RsaKeyGen.X86.Search

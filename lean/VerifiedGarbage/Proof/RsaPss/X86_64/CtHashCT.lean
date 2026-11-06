@@ -128,12 +128,6 @@ table of `MdHash`. -/
 def hws (a : HA) : List (Nat × BitVec 64) :=
   [(21, a.S), (28, BitVec.ofNat 64 a.nbm), (8, a.sy H.initN), (9, a.sy H.compN), (10, a.sy dn)]
 
-theorem w21 {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem F S V W) : W 21 = S := by
-  have := L.slot
-  rw [slot_eq sScr 21 rfl] at this
-  rw [← R.fr 21 (by decide)]; exact this
-
 variable (H dn f) in
 /-- The anchor fits `ctHash`, and the calls of `f` reach `H`'s functions. -/
 def HOk (a : HA) : Prop := RestOk n a.F a.rest ∧ 1 ≤ a.nbm ∧ a.nbm * H.P.B ≤ 2048

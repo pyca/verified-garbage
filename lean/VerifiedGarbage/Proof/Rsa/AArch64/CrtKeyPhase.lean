@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 # `vg_rsa_check_crt_key` on AArch64: the phases
 
 `vg_rsa_check_key`'s phases (`Proof/Rsa/AArch64/CkPhase.lean`) without the
-checks of `d`, and with `reduceTop` for `divmod`: modulo `X - 1`
-(`phModC_ok`) and `qInv` (`phQIC_ok`).
+checks of `d`, and with `reduceTop` for `divmod`: `qInv` (`phQIC_ok`).
 -/
 
 @[expose] public section
@@ -100,78 +99,6 @@ theorem ckModOneTop_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) {c
 most the other factor. -/
 theorem mul_div_top_le {a b k : Nat} (hb : b < 2 ^ (64 * k)) : a * b / 2 ^ (64 * k) ≤ a :=
   Nat.div_le_of_le_mul (by rw [Nat.mul_comm (2 ^ _)]; exact Nat.mul_le_mul_left a (Nat.le_of_lt hb))
-
-theorem ckcModChecks_eq (sX sXlen sDX : Nat) : modChecks sX sXlen sDX =
-    loadA aM sX sXlen ++ (([.block (decA aM)] : List (Prog isa)) ++ (loadA aX sDX sXlen ++ (ltA aX aM ++
-      (mulE ++ modOne topE)))) := by
-  simp only [modChecks, List.append_assoc]
-
-/-- The checks modulo `X - 1` of `vg_rsa_check_crt_key`, for the prime `X`
-(the bytes `xb`) and its exponent `dX` (the bytes `dxb`). -/
-theorem phModC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c s) (L : CkLens I) (hE64 : I.E < 2 ^ 64)
-    {sX sXlen sDX xl : Nat} {pX pDX : Addr} {xb dxb : List Byte} (hsX : sX < 32) (hsL : sXlen < 32)
-    (hsD : sDX < 32) (hxl1 : 1 ≤ xl) (hxl2 : xl < I.k) (hxc : xl ≤ I.cap) (hxb : xb.length = xl) (hdxb : dxb.length = xl)
-    (hA : ∀ t, CkS I m₀ t → word t.mem I.B (8 * sX) = pX ∧ word t.mem I.B (8 * sXlen) = BitVec.ofNat 64 xl ∧
-      Src t I.B I.Z pX xb ∧ word t.mem I.B (8 * sDX) = pDX ∧ Src t I.B I.Z pDX dxb) :
-    WP isa (seqs (modChecks sX sXlen sDX)) s fun t => ∃ g : Bool, KS I m₀ (g && c) t ∧
-      (Spec.Rsa.os2ip xb % 2 = 1 → 1 < Spec.Rsa.os2ip xb →
-        g = (decide (Spec.Rsa.os2ip dxb < Spec.Rsa.os2ip xb - 1) &&
-          decide (I.E * Spec.Rsa.os2ip dxb % (Spec.Rsa.os2ip xb - 1) = 1))) := by
-  obtain ⟨hs, hm, hN, hE, hO⟩ := h
-  rw [ckcModChecks_eq]
-  -- `[aM] := X - 1`.
-  obtain ⟨a1, a2, a3, -, -⟩ := hA s hs
-  refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (ckLoad_ok hs (j := aM) (by decide) hsX hsL a1 a2 a3
-    hxb hxl1 (Nat.le_of_lt hxl2)) fun s₁ ⟨h₁, m₁, v₁, o₁⟩ => ?_)
-  refine wp_seqs_append (a := [.block (decA aM)]) (by simp) (by simp [loadA]) (WP.mono (ckDec_ok h₁)
-    fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
-  rw [v₁] at v₂
-  -- `dX < X - 1`.
-  obtain ⟨-, b2, -, b4, b5⟩ := hA s₂ h₂
-  refine wp_seqs_append (by simp [loadA]) (by simp [ltA]) (WP.mono (ckLoad_ok h₂ (j := aX) (by decide) hsD hsL b4
-    b2 b5 hdxb hxl1 (Nat.le_of_lt hxl2)) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
-  have M₃ : I.av s₃.mem aM = I.av s₂.mem aM := o₃ aM (by decide) (by decide)
-  refine wp_seqs_append (by simp [ltA]) (by simp [mulE]) (WP.mono (ckLt_ok h₃ (a := aX) (b := aM) (by decide)
-    (by decide) (m₃.trans (m₂.trans (m₁.trans hm)))) fun s₄ ⟨h₄, m₄, o₄⟩ => ?_)
-  rw [v₃, M₃] at m₄
-  -- `e dX mod (X - 1) = 1`.
-  have E₄ : I.av s₄.mem aE = I.E := by
-    rw [o₄ aE (by decide), o₃ aE (by decide) (by decide), o₂ aE (by decide) (by decide),
-      o₁ aE (by decide) (by decide), hE]
-  have X₄ : I.av s₄.mem aX = Spec.Rsa.os2ip dxb := by rw [o₄ aX (by decide), v₃]
-  refine wp_seqs_append (by simp [mulE]) (by simp [modOne]) (WP.mono (ckMulE_ok h₄ L
-    (by rw [X₄]; exact lt_w (by rw [hdxb]; exact hxc))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
-  rw [X₄, e_word E₄ hE64] at v₅
-  have O₅ : I.av s₅.mem aOne = 1 := by
-    rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide), o₃ aOne (by decide) (by decide),
-      o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
-  have hw1 : 1 < wW I.cap := by simp only [wW, wk]; omega_using []
-  refine WP.mono (ckModOneTop_ok h₅ (m₅.trans m₄) O₅ (topE_ok _ _ _) (Nat.le_refl _) hw1)
-    fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_
-  have M₅ : I.av s₅.mem aM = I.av s₂.mem aM := by
-    rw [o₅ aM (by decide) (by decide), o₄ aM (by decide), M₃]
-  rw [v₅, M₅] at hr
-  have keep : ∀ i, i = 0 ∨ i = aE ∨ i = aOne → I.av t.mem i = I.av s.mem i := by
-    intro i hi
-    have h16 : i < 16 := by rcases hi with rfl | rfl | rfl <;> decide
-    have d1 : i ≠ aM := by rcases hi with rfl | rfl | rfl <;> decide
-    have d2 : i ≠ aX := by rcases hi with rfl | rfl | rfl <;> decide
-    have d3 : i ≠ aA := by rcases hi with rfl | rfl | rfl <;> decide
-    have d4 : i ≠ aRem := by rcases hi with rfl | rfl | rfl <;> decide
-    have d5 : i ≠ aT := by rcases hi with rfl | rfl | rfl <;> decide
-    have d6 : i ≠ aQ := by rcases hi with rfl | rfl | rfl <;> decide
-    rw [ot i h16 d4 d6 d5, o₅ i h16 d3, o₄ i h16, o₃ i h16 d2, o₂ i h16 d1, o₁ i h16 d1]
-  refine ⟨decide (Spec.Rsa.os2ip dxb < I.av s₂.mem aM) && decide (r = 1), ⟨ht, ?_,
-    by rw [keep 0 (.inl rfl), hN], by rw [keep aE (.inr (.inl rfl)), hE], by rw [keep aOne (.inr (.inr rfl)), hO]⟩,
-    fun ho h1 => ?_⟩
-  · rw [mt]
-    cases decide (r = 1) <;> cases decide (Spec.Rsa.os2ip dxb < I.av s₂.mem aM) <;> cases c <;> rfl
-  · have hM : I.av s₂.mem aM = Spec.Rsa.os2ip xb - 1 := v₂ ho
-    rw [hM]
-    by_cases hlt : Spec.Rsa.os2ip dxb < Spec.Rsa.os2ip xb - 1
-    · rw [hr (by rw [hM]; exact Nat.lt_of_le_of_lt (mul_div_top_le (k := 1) (by simpa using hE64)) hlt),
-        hM, Nat.mul_comm (Spec.Rsa.os2ip dxb) I.E]
-    · simp only [hlt, decide_false, Bool.false_and]
 
 /-- `qInv < p` and `q qInv ≡ 1 (mod p)`, by the shortened remainder. -/
 theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c s) (L : CkLens I) :

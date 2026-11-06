@@ -12,8 +12,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # A candidate on x86-64: correctness
 
-`code`, from a state `candContract` allows, ends as `candidateOp`
-(`code_correct`).
+The front of `codeWith`, from a state `candContract` allows: what it uses
+of its precondition (`KCtx`), and the zeros to `out` and the length check
+(`front_ok`).
 -/
 
 @[expose] public section
@@ -24,7 +25,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- What `code` uses of its precondition, for the scratch space `B`
+/-- What `codeWith` uses of its precondition, for the scratch space `B`
 (`arg 3`) of `Z` bytes and the prime's length `L`. -/
 structure KCtx (s : State) : Prop where
   k1 : 32 ≤ (s.gpr .rsi).toNat
@@ -90,61 +91,6 @@ theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
   exact ⟨out_scr dRs hc, fun c hc' he => dRu _ hc (by rw [he]; exact contains_byte _ (by omega_using [hc']) (by omega_using [])),
     fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_using [hj]) (by omega_using []))⟩
 
-/-- The postcondition, from how the candidate ended after the entry and the
-zeros to `out`. -/
-theorem candEnd_post {s t₃ t : State} (c : KCtx s)
-    (hsv : ∀ i < 6, word t₃.mem (arg s 3) (8 * i) = s.gpr (saved.getD i .rax))
-    (hz : ∀ i < (s.gpr .rsi).toNat, t₃.mem (s.gpr .rdi + BitVec.ofNat 64 i) = 0)
-    (hret : ∀ b < 8, t₃.mem (s.gpr .rsp + BitVec.ofNat 64 b) = s.mem (s.gpr .rsp + BitVec.ofNat 64 b))
-    (hsp : t₃.gpr .rsp = s.gpr .rsp)
-    (h : CandEnd t₃ t (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat
-      (Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat) (candRes s)) :
-    gprPreserved s t ∧ candPost s t := by
-  have key : ∀ {st u : Nat} {outv : Option Nat}, st < 4 →
-      KEnd t₃ t (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat st u outv →
-      gprPreserved s t ∧ ((t.gpr .rax).setWidth 32).toNat = st ∧
-      Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rsi).toNat = (match outv with
-        | some c => Spec.Rsa.i2osp c (s.gpr .rsi).toNat
-        | none => List.replicate (s.gpr .rsi).toNat 0) ∧
-      Spec.Rsa.wordsAt t.mem (s.gpr .rdx) 1 = [BitVec.ofNat 64 u] := by
-    intro st u outv hst hk
-    refine ⟨⟨fun reg hreg => ?_, Mem.readW_congr fun b hb => ?_⟩, ?_, ?_, ?_⟩
-    · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hreg
-      rcases hreg with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact (hk.saved 0 (by decide)).trans (hsv 0 (by decide))
-      · exact (hk.saved 1 (by decide)).trans (hsv 1 (by decide))
-      · exact (hk.keep.gpr (by decide)).trans hsp
-      · exact (hk.saved 2 (by decide)).trans (hsv 2 (by decide))
-      · exact (hk.saved 3 (by decide)).trans (hsv 3 (by decide))
-      · exact (hk.saved 4 (by decide)).trans (hsv 4 (by decide))
-      · exact (hk.saved 5 (by decide)).trans (hsv 5 (by decide))
-    · obtain ⟨hZx, hnu, hno⟩ := c.hret b (by omega_using [hb])
-      rw [hk.frame _ hZx hnu hno, hret b (by omega_using [hb])]
-    · rw [hk.rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hst]
-    · show outBytes t.mem _ _ = _
-      have := hk.out
-      cases outv
-      · rw [this]
-        show List.map _ _ = _
-        rw [List.map_congr_left fun i hi => hz i (List.mem_range.mp hi)]; simp [List.map_const']
-      · exact this
-    · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
-        hk.used]
-  unfold candPost
-  rcases hres : candRes s with _ | ⟨_ | _ | _, rest⟩ <;> rw [hres] at h <;> simp only [CandEnd] at h
-  · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
-    exact ⟨hg, by rw [hst]; rfl, hb, hw⟩
-  · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
-    exact ⟨hg, by rw [hst]; rfl, hb, by rw [hw, bytesAt_length]⟩
-  · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
-    exact ⟨hg, by rw [hst]; rfl, hb, by rw [hw, bytesAt_length]⟩
-  · obtain ⟨hg, hst, hb, hw⟩ := key (by decide) h
-    exact ⟨hg, by rw [hst]; rfl, hb, by rw [hw, bytesAt_length]⟩
-
-theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : k ≤ n) :
-    (Spec.Rsa.bytesAt m p n).take k = Spec.Rsa.bytesAt m p k := by
-  simp only [Spec.Rsa.bytesAt, ← List.map_take, List.take_range, Nat.min_eq_left h]
-
 /-- A buffer whose octets did not change. -/
 theorem Src.congr' {s t : State} {B : Addr} {Z : Nat} {p : Addr} {bs : List Byte} (h : Src s B Z p bs)
     (hm : ∀ i < bs.length, t.mem (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i)) (hrd : t.rd = s.rd)
@@ -193,7 +139,7 @@ theorem Front.word {s t₁ t₃ : State} (c : KCtx s) (h : Front s t₁ t₃) {i
   exact Mem.readW_congr fun b hb => h.frame _ fun j hj he' => by
     have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hi, hZ, hk1, hb, this]
 
-/-- What `kMain` needs, after the entry, the zeros and the length check. -/
+/-- What `kMainWith` needs, after the entry, the zeros and the length check. -/
 theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost s t₁ (arg s 3)) (h : Front s t₁ t₃)
     (hw : (s.gpr .rsi).toNat = 8 * w) (hlt : (s.gpr .rsi).toNat ≤ (arg s 2).toNat) :
     MainCtx t₃ (arg s 3) ((arg s 4).toNat * 8) (8 * w) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r9)
@@ -231,64 +177,5 @@ theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost 
   · rw [hrs _ (by decide), he.elen, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hrs _ (by decide), he.plen, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hrs _ (by decide), he.rlen, bytesAt_length, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-
-theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
-    (h : candContract.pre s) : ∃ t s', Exec isa (VG.Impl.RsaKeyGen.X86_64.Candidate.code M.mm) s t s' ∧ abiPreserved s s' ∧ candContract.post s s' := by
-  have c := kctx_of h
-  suffices hwp : WP isa (VG.Impl.RsaKeyGen.X86_64.Candidate.code M.mm) s fun s' => gprPreserved s s' ∧ candPost s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-  have hs := c.hs
-  have hn := hs.nowrap
-  have hZ := c.hZ
-  have hk1 := c.k1
-  have hk2 := c.k2
-  have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .rsi).toNat = 8 * w := ⟨(s.gpr .rsi).toNat / 8, by omega_using [hk8]⟩
-  have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => hs.st (by omega_using [hZ, hk1, hi])
-  unfold VG.Impl.RsaKeyGen.X86_64.Candidate.code
-  simp only [seqs]
-  refine WP.seq (WP.mono (kEntry_ok rfl hhw c.ha c.hsep) fun t₁ he => ?_)
-  refine WP.assoc (WP.seq (WP.mono (front_ok c he) fun t₃ hf => ?_))
-  -- Facts at `t₃`.
-  have k13 : Keep [.r11, .rax, .rdi, .rsi, .rcx] s t₃ := (he.keep.trans hf.keep).mono (by decide)
-  have hs₃ := hs.congr k13.2.2
-  have hdi₃ : t₃.gpr .rdi = arg s 3 := (hf.keep.gpr (by decide)).trans he.rdi
-  have hw₃ : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => hf.word c hi
-  have hsv : ∀ i < 6, word t₃.mem (arg s 3) (8 * i) = s.gpr (saved.getD i .rax) := fun i hi =>
-    (hw₃ i (by omega_using [hi])).trans (he.saved i hi)
-  have hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
-      t₃.mem x = s.mem x := fun x hx hx' => by
-    rw [hf.frame x hx', he.frame x (Or.inr (by omega_using [hx]))]
-  have hret : ∀ b < 8, t₃.mem (s.gpr .rsp + BitVec.ofNat 64 b) = s.mem (s.gpr .rsp + BitVec.ofNat 64 b) :=
-    fun b hb => hhi _ (by have := (c.hret b hb).1; omega_using [hZ, hk1, this]) (c.hret b hb).2.2
-  have hsp : t₃.gpr .rsp = s.gpr .rsp := k13.gpr (by decide)
-  have ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
-    c.ou.congr k13.2.2
-  have h8 : 8 * 32 ≤ (arg s 4).toNat * 8 := by omega_using [hZ, hk1]
-  refine WP.ite (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) (by simp [eval, hf.cf]) (fun hlt => ?_) (fun hlt => ?_)
-  · -- Too few octets.
-    simp only [decide_eq_true_eq] at hlt
-    refine WP.mono (finNone_ok hs₃ hdi₃ h8 (by rw [hw₃ kUsedP (by decide)]; exact he.usedP) ho₃.upw ho₃.upZ)
-      fun t ht => candEnd_post c hsv hf.zero hret hsp ?_
-    have hnone : candRes s = none := by
-      unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hlt]), ite_f (by rw [bytesAt_length]; omega_using [hlt])]
-    rw [hnone]; exact KEnd.of_fin ho₃ ht
-  · -- `kMain`.
-    simp only [decide_eq_false_iff_not, Nat.not_lt] at hlt
-    refine WP.mono (kMain_ok M (mainCtx_of c he hf hw hlt)) fun t ht => candEnd_post c hsv hf.zero hret hsp ?_
-    have hres : candRes s = VG.Proof.RsaKeyGen.afterDraw (64 * w)
-        (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat))
-        (Spec.RsaKeyGen.otherPrime (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (arg s 0).toNat))
-        (Spec.RsaKeyGen.candidate (64 * w)
-          (Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).take (8 * w))))
-        ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).drop (8 * w)) := by
-      unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1, hw]), ite_t (by rw [bytesAt_length]; omega_using [hw, hlt]),
-        seg_zero, show 8 * (8 * w) = 64 * w by omega_using []]
-    rw [hres, ← hw]
-    rw [← hw] at ht
-    exact ht
 
 end VG.Proof.RsaKeyGen.X86_64

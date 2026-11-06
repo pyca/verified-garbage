@@ -22,13 +22,13 @@ header's `sMask`, which is returned as 0 or 1 at the end.
 * `p q = n`: the product, compared with `n` (`Crt.eqCheck`).
 * `d e ≡ 1 (mod p - 1)` and the others: the product `x` of `d`, `dP` or
   `dQ` and `e` (`w + 2` words), or of `q` and `qInv` (`2 w + 2` words), is
-  reduced modulo `m` (`p - 1`, `q - 1` or `p`) by restoring division
-  (`reduce` provides the full-width form): from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
+  reduced modulo `m` (`p - 1`, `q - 1` or `p`) by restoring division:
+  from the top bit of `x` down, `r := 2 r + b mod m` (`dblIn`,
   `vg_rsa_public`'s doubling with the bit as the carry into the low word),
   and `r` compared with 1 (`eqOne`).
 
 The drivers in `CheckKey.lean` and `CheckCrtKey.lean` use bounded-quotient,
-factor-width reductions in place of the full-width `reduce`.
+factor-width reductions.
 
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
 which is at least `256^(n_len - 1)`.
@@ -175,20 +175,6 @@ bits. -/
 def wordStep : Prog isa :=
   .seq (.block [.alu .sub .r13 (.imm 1), .mov .r15 (.mem (ix .r9 .r13)), .mov32 .r11 (.imm 64)])
     (.seq (.loop bitStep .ne) (.block [.alu .test .r13 (.reg .r13)]))
-
-/-- `[aR] := acc mod [aM]` for the accumulator's `r13 = cnt` words (`cnt`
-the instructions that compute it from `w` in `r13`), by restoring division:
-`r := 0`, then `wordStep` for each word, from the top. -/
-def reduce (cnt : List Instr) : List (Prog isa) := [
-  Crt.zeroArr aR,
-  .block (([.mov .rbx (.mem (hdr (sArr aR))), .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))),
-    .mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))),
-    .mov .r13 (.reg .r12)] : List Instr) ++ cnt),
-  .loop wordStep .ne]
-
-/-- `w + 2` and `2 w + 2` words, from `w` in `r13`. -/
-def cntE : List Instr := [.alu .add .r13 (.imm 2)]
-def cntXR : List Instr := [.alu .add .r13 (.reg .r13), .alu .add .r13 (.imm 2)]
 
 /-- `sMask &= ` the mask of `[aR] = 1` over `w` words: the OR of the words of
 `[aR] XOR [aOne]` is zero. -/

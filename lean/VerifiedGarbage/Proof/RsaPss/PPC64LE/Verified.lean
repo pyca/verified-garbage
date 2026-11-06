@@ -557,9 +557,6 @@ theorem withTabs_arg (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) (w
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   simp only [tabMem, Nat.blt_eq.mpr this, Bool.cond_true]
 
-theorem withTabs_addr (s : State) (vs : List MVar) (gs : List TVar) (w : MVar) (w' : TVar) (j : Nat) :
-    stackArgAddr (withTabs s vs gs w w') j = stackArgAddr s j := rfl
-
 /-- Above `0x300000`, the tables' memory. -/
 theorem tabMem_above {m : Mem} {vs : List MVar} {gs : List TVar} {w : MVar} {w' : TVar} {p : Addr} {ws : List (BitVec 64)}
     (hp : 0x300000 ≤ p.toNat) (hl : p.toNat + 8 * ws.length < 2 ^ 64)

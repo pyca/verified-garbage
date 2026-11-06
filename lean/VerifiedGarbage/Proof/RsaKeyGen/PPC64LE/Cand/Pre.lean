@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 `CIn s`: the shared contract's precondition (`Proof.RsaKeyGen.candidateContract`,
 with 400 bytes of stack), without the table of small primes, as the proof
-uses it (`cin_of_pre`): `(out, out_len, used, e, e_len, p, p_len, rand)` in
+uses it: `(out, out_len, used, e, e_len, p, p_len, rand)` in
 `r3`–`r10`, and `rand_len`, `scratch` and `scratch_len` the stack arguments
 0–2.
 -/
@@ -79,15 +79,5 @@ structure CIn (s : State) : Prop where
 theorem stackArgs_three (s : State) :
     List.map (PPC64LE.stackArg s) (List.range 3) = [PPC64LE.stackArg s 0, PPC64LE.stackArg s 1,
       PPC64LE.stackArg s 2] := rfl
-
-theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 400).pre s) : CIn s := by
-  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
-    List.append_eq, List.range, List.range.loop] at h
-  sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
-    List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
-    fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h
-  exact ⟨spLo, spHi, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
-    fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

@@ -186,12 +186,6 @@ theorem ttSt_eq {a : KD} {s0 s0' : State} (k : KR a s0) (k' : KR a s0') (h : TtR
   obtain ⟨q', C'⟩ := h'.lctx k'
   rw [ttSt_shape, ttSt_shape, shape_eq C C']
 
-theorem ttSt_lt (s0 : State) : ttSt s0 < 3 := by
-  unfold ttSt
-  split
-  · decide
-  · split <;> decide
-
 /-- After the witnesses. -/
 def TtD (s0 s : State) : Prop := TtR s0 ∧ T4 s0 (cw s0) (candOf s0) s
 
@@ -199,9 +193,6 @@ def TtD (s0 s : State) : Prop := TtR s0 ∧ T4 s0 (cw s0) (candOf s0) s
 def TtS (k : Nat) (s0 t : State) : Prop :=
   TtR s0 ∧ Ctx s0 t ∧ Env t (stackArg s0 1) (8 * sL s0) (cw s0) ∧
     t.gpr .t2 = BitVec.ofNat 64 (ttSt s0) - BitVec.ofNat 64 k
-
-theorem TtS.envFr {k : Nat} {s0 t : State} (h : TtS k s0 t) : ∃ Z, Env t (stackArg s0 1) Z (cw s0) ∧ Fr s0 t :=
-  ⟨_, h.2.2.1, h.2.1.fr⟩
 
 theorem TtD.envFr {s0 t : State} (h : TtD s0 t) : ∃ Z, Env t (stackArg s0 1) Z (cw s0) ∧ Fr s0 t :=
   ⟨_, h.2.prep.env, h.2.ctx.fr⟩

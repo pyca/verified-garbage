@@ -130,8 +130,6 @@ def SCI (P : EP) (j : Nat) (σ s : State) : Prop :=
     s.gpr .ecx = BitVec.ofNat 32 (P.K - 2 - j) ∧ s.gpr .ebx = mk (fz P σ (2 + j)).isSome ∧
     s.gpr .edi = BitVec.ofNat 32 ((fz P σ (2 + j)).getD 0)
 
-theorem firstZero_two (EM : List Byte) : firstZero EM 2 = none := rfl
-
 theorem scanInit_vp : VP (AL P) (.block scanInit) (SCI P 0) :=
   VP.taint [.esp] scanInit_taint (sp_agree fun _ _ h => h.1.1.1) fun σ s h => by
     have hb := h.sb
@@ -183,9 +181,6 @@ theorem scan_step (EM : List Byte) {i : Nat} (hi : 2 ≤ i) :
     · simp only [e, decide_false, Bool.false_eq_true, ↓reduceIte, and_false, Option.getD_none,
         Option.isSome_none, BitVec.zero_and]
       constructor <;> first | trivial | rfl
-
-theorem ofNat_beq_zero' {n : Nat} (hn : n < 2 ^ 32) : (BitVec.ofNat 32 n == 0) = decide (n = 0) :=
-  ofNat_beq_zero hn
 
 theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
     isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → SCQ P σ s) ∧ (0 < n → SCM P n σ s) := by

@@ -60,14 +60,6 @@ theorem leak_eq2 {a b a' b' : List Byte} (ha : a.length = a'.length)
 /-- An entry state with the anchor's public data. -/
 def E (tsH tsG : List FnTable) (K : Nat) (a s : State) : Prop := PreV tsH tsG K s ∧ PubV a s
 
-/-- `J` at a point of the code, from an entry state with the anchor `a`'s
-public data. -/
-def At (tsH tsG : List FnTable) (K : Nat) (J : State → State → Prop) (a t : State) : Prop :=
-  ∃ s, E tsH tsG K a s ∧ J s t
-
-/-- The first byte of `n`. -/
-abbrev nxV (s : State) : Nat := (s.mem (s.gpr .x0)).toNat
-
 namespace E
 variable {tsH tsG : List FnTable} {K : Nat} {a s : State} (h : E tsH tsG K a s)
 include h
@@ -78,8 +70,6 @@ theorem fb : fb s = fb a := by show s.sp - _ = a.sp - _; rw [h.2.sp]
 
 theorem scr : scr s = scr a := h.2.args 2 (by decide) (by decide)
 
-theorem k : (s.gpr .x1).toNat = (a.gpr .x1).toNat := by rw [h.gpr (r := .x1) (by decide)]
-
 theorem n0 : s.mem (s.gpr .x0) = a.mem (a.gpr .x0) := by
   have hk := h.1.k1
   have e1 := h.gpr (r := .x1) (by decide)
@@ -88,11 +78,7 @@ theorem n0 : s.mem (s.gpr .x0) = a.mem (a.gpr .x0) := by
     bytesAt_cons a.mem (a.gpr .x0) (k := (a.gpr .x1).toNat) (by rw [← e1]; omega)] at this
   exact (List.cons.inj this).1
 
-theorem nx : nxV s = nxV a := congrArg BitVec.toNat h.n0
-
 theorem any : anyV s = anyV a := by rw [anyV, anyV, h.2.a1]
-
-theorem sLen : sLenV s = sLenV a := by rw [sLenV, sLenV, h.any, h.2.args 0 (by decide) (by decide)]
 
 end E
 

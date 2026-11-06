@@ -72,20 +72,11 @@ theorem AS3_e : AS3 P σ aE = P.e := by simp (config := {decide := true}) only [
 theorem AS3_zero : AS3 P σ aZero = 0 := by
   simp (config := {decide := true}) only [AH, A1, A0, Aload, upd, ↓reduceIte]
 theorem AS3_one : AS3 P σ aOne = 1 := by simp (config := {decide := true}) only [AH, A1, A0, upd, ↓reduceIte]
-theorem AS3_two : AS3 P σ aTwo = 2 := by simp (config := {decide := true}) only [AH, A1, A0, upd, ↓reduceIte]
-theorem AS3_three : AS3 P σ aThree = 3 := by simp (config := {decide := true}) only [AH, A1, A0, upd, ↓reduceIte]
-theorem AS3_mod : AS3 P σ aMod = 2 ^ (32 * P.W - 1) := by
-  simp (config := {decide := true}) only [AH, A1, A0, upd, ↓reduceIte]
 theorem AS3_L : AS3 P σ aL = lv P σ := by simp (config := {decide := true}) only [upd, ↓reduceIte]
-theorem AS3_D : AS3 P σ aD = 0 := by
-  simp (config := {decide := true}) only [AH, A1, A0, Aload, upd, ↓reduceIte]
 theorem VE_0 : VE P sE0 = b2n (decide (P.e = 0)) := by simp (config := {decide := true}) only [VE, upd, ↓reduceIte]
 theorem VE_1 : VE P sE1 = b2n (decide (P.e = 1)) := by simp (config := {decide := true}) only [VE, upd, ↓reduceIte]
 theorem VE_o : VE P sEo = b2n (decide (P.e % 2 = 1)) := by
   simp (config := {decide := true}) only [VE, upd, ↓reduceIte]
-
-theorem b2n_eq_one_iff (p : Prop) [Decidable p] : b2n (decide p) = 1 ↔ p := by
-  by_cases h : p <;> simp [h, b2n]
 
 /-- `e`'s flags. -/
 theorem eFlags_vp {E : State → Prop} : VP (S3 P E) eFlags (SE P E) := by

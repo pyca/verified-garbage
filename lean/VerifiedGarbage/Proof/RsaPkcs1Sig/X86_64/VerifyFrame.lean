@@ -66,13 +66,6 @@ structure PreV (s : State) : Prop where
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat
   hsl : Spec.Rsa.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
 
-theorem preV_of {s : State} (h : verContract.pre s) : PreV s := by
-  simp only [verContract] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dns, des, dds, dgs, dsa, -, -, -, -, dRs, -, dKn, dKe, dKd, dKg, dKs, dKa,
-    wN, wE, wD, wG, wS, ⟨k1, k2⟩, L1, L2, hsl⟩ := h
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dns, des, dds, dgs, dsa, dRs, dKn, dKe, dKd, dKg, dKs, dKa, wN, wE, wD, wG, wS,
-    k1, k2, L1, L2, hsl⟩
-
 /-! ## The frame -/
 
 /-- The frame's base: `rsp` in the frame. -/
@@ -208,8 +201,5 @@ theorem arg_in {s t : State} (hp : PreV s) (hrd : t.rd = s.rd) {j : Nat} (hj : j
 theorem arg_ea {s t : State} (h : t.gpr .rsp = fb s) (j : Nat) :
     t.ea (arg j) = stackArgAddr s j := by
   rw [arg, ea_sp, h, stackArgAddr_fb]
-
-theorem ofNat_lt32 {d : Nat} (h : d < 2 ^ 31) : BitVec.signExtend 64 (BitVec.ofNat 32 d) = BitVec.ofNat 64 d :=
-  sx_ofNat h
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Ver

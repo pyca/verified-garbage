@@ -350,10 +350,6 @@ theorem first_value (L : Nat) (hL : L ≤ 512) (c : Bool) :
     congr 1
     omega
 
-theorem rd_subFlags (s : State) (a b : BitVec 32) : (subFlags s a b).rd = s.rd := rfl
-theorem wr_subFlags (s : State) (a b : BitVec 32) : (subFlags s a b).wr = s.wr := rfl
-theorem sp_subFlags (s : State) (a b : BitVec 32) : (subFlags s a b).sp = s.sp := rfl
-
 theorem first_ok {B : BitVec 32} {s : State} (h : Space B s) {L : Nat} (hL : L ≤ 512)
     (hm : s.mem.readW (off (State.addr B) 8) 32 = BitVec.ofNat 32 L) :
     WP isa (.block first) s fun t =>

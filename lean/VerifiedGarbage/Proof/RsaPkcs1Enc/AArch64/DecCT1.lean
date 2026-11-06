@@ -103,11 +103,6 @@ theorem priv_ct (v : PrivImpl) : RelCT isa (Two v.S CtxReady) (.call v.name v.co
 
 /-! ## `D` -/
 
-theorem regs_eq {a b : State} {rs : List (Reg × BitVec 64)} (ha : ∀ p ∈ rs, a.gpr p.1 = p.2)
-    (hb : ∀ p ∈ rs, b.gpr p.1 = p.2) : ∀ r ∈ rs.map (·.1), a.gpr r = b.gpr r := fun r hr => by
-  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
-  exact (ha p hp).trans (hb p hp).symm
-
 theorem dBuild_ct (S : Nat) :
     RelCT isa (Two S Called) dBuild (Two S fun L g vv m₀ t => ∃ R EM, DB L g vv m₀ R EM t) := by
   refine (two (Ψ := fun L g vv m₀ t => ∃ R EM, ZInv L g vv m₀ R EM 0 t) [] (by taint_decide)

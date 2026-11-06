@@ -117,10 +117,6 @@ theorem rel_step {P P' : State → State → Prop} {c : Prog isa} (rs : List Reg
     (hw : ∀ s u, DPre s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') :=
   rel_post (rel_of h fun a b hab => hpin a b hab.1 hab.2) hw
 
-theorem rel_mono {P P' : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
-    (h : RelCT isa (Rel e P) c (Rel e Q)) (hq : ∀ s u, Q s u → P' s u) : RelCT isa (Rel e P) c (Rel e P') :=
-  h.mono (fun _ _ h => h) fun _ _ ⟨a, b⟩ => ⟨hq _ _ a, hq _ _ b⟩
-
 /-- Two `Post` states agree on the stack pointer and on what `Mid` fixes. -/
 theorem post_agree {R₁ R₂ : BitVec 64} {E₁ E₂ : List Byte} {a b : State} (ha : Post e.s₁ R₁ E₁ a)
     (hb : Post e.s₂ R₂ E₂ b) : a.sp = b.sp ∧ a.gpr .s0 = b.gpr .s0 ∧ a.gpr .s1 = b.gpr .s1 ∧

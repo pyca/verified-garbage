@@ -78,21 +78,6 @@ def msR2 (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 def msR2Ranges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aR2, 8 * (w + 2)), (8 * kT0, 8)]
 
-/-- `msR2Ranges`'s ranges, in the header and in the arrays. -/
-theorem msR2Ranges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8)]
-    [(2, 1), (3, 1), (4, 1)] (msR2Ranges w) := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false,
-    msR2Ranges, Public.aAcc, Public.aTmp, Public.aR2, aAcc, aTmp, aR2, kT0, sFn] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inl (by decide)
-
 /-- `R² mod c` for the odd `c` of `w` words, its top bit set. -/
 theorem msR2_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {N : Nat} (hg : Good s B Z w mi)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw30 : w < 2 ^ 30) (hn : wv s.mem B (slot w aN) w = N)

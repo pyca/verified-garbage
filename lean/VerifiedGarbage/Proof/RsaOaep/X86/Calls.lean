@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Framework.Covers
 
 In the setting of the x86 RSASSA-PSS proofs (`Proof/RsaPss/X86/Base.lean`:
 `Ctx L scr σ s`, a state of the body with our part of `scratch` at `scr` in
-`ebp`), the streaming `init` (`init_vp`), `update` in its frame (`upd_vp`,
-of any public range of bytes the body may read) and `finalize` in its frame
+`ebp`), the streaming `init` (`initArgs_vp`, `initCall_vp`), `update` in its
+frame (`upd_vp`, of any public range of bytes the body may read) and `finalize` in its frame
 (`fin_vp`) of a hash function `G` (a `Pbkdf2.Stream.X86.HashOK`), on the
 state at `scratch + oSt` with the working space at `scratch` itself: each
 keeps any fact about memory (`Inv`) that its writes (the state, the working
@@ -131,12 +131,6 @@ theorem initArgs_vp {Inv : State → Mem → Prop} :
   refine VP.taint [.esp, .ebp] initArgs_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hi⟩ => ?_
   exact wp_mov fun t1 u1 => wp_addi fun t2 u2 => WP.block_nil ⟨(hc.upd u1 (by decide) (by decide)).upd u2
     (by decide) (by decide), by rw [u2.mem, u1.mem]; exact hi, by rw [u2.gpr, u1.gpr, hc.ebp]⟩
-
-theorem init_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {Inv : State → Mem → Prop}
-    (hI : ∀ σ m m', Inv σ m → Frame [sR scr oSt G.S, L.LOW] m m' → Inv σ m') :
-    VP (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem) (.seq (.block initArgs) (hInit G))
-      (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) []) :=
-  VP.seq initArgs_vp (initCall_vp hg G hG hI)
 
 /-! ## `update`, in its frame -/
 

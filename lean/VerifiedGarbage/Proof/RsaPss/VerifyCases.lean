@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 `verifyEncoding` holds exactly when the last octet is `0xbc`, `maskedDB`'s
 top bits are zero, the first nonzero octet of `DB` (after `lz DB` zeros) is
 `0x01`, the salt after it has the expected length, and its `H'` is `H`
-(`verifyEncoding_bytes`): what the implementations check, a byte at a time.
+(`verifyEncoding_bytes₂`): what the implementations check, a byte at a time.
 -/
 
 @[expose] public section
@@ -118,10 +118,6 @@ def EncOk₂ (H : Hash) (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) :
     H.hash (zeros 8 ++ mHash ++ (vDb₂ G H em (E - H.len - 1) z).drop (lz (vDb₂ G H em (E - H.len - 1) z) + 1)) =
       vH H em (E - H.len - 1)
 
-theorem vDb_eq : vDb G = vDb₂ G G := rfl
-
-theorem EncOk_eq : EncOk G = EncOk₂ G G := rfl
-
 theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
     (hm : mHash.length = H.len) (hl : em.length = emLength emBits)
     (hfit : H.len + sLen.getD 0 + 2 ≤ emLength emBits) :
@@ -179,13 +175,6 @@ theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte}
   · rw [ifp (by rw [getLast?_eq hne, hl]; simpa using h1)]
     simp only [h1, false_and, Bool.false_eq_true]
 
-theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
-    (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
-    (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
-    verifyEncoding G G mHash em emBits sLen = true ↔
-      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen :=
-  verifyEncoding_bytes₂ G G hG hm hl hfit
-
 theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :: rest) eB sB = none := by
   have := os2ip_lt' rest
   simp only [Rsa.publicOpChecked, Rsa.publicOp, Rsa.modulusValid, os2ip_zero_cons, List.length_cons,
@@ -203,10 +192,6 @@ theorem verify_zero₂ (H : Hash) (rest eB mHash sB : List Byte) (sLen : Option 
   rw [publicOpChecked_zero]
   simp
 
-theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
-    verify G G (0 :: rest) eB mHash sB sLen = false :=
-  verify_zero₂ G G rest eB mHash sB sLen
-
 /-- Nor does an encoding too short for the digest and the salt. -/
 theorem verify_short₂ (H : Hash) {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
     (h : emLength (bitLength (Rsa.os2ip nB) - 1) < H.len + sLen.getD 0 + 2) :
@@ -220,11 +205,6 @@ theorem verify_short₂ (H : Hash) {nB : List Byte} (eB mHash sB : List Byte) {s
       unfold verifyEncoding
       rw [ifp (Or.inr (Or.inr h))]
     simp [this]
-
-theorem verify_short {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
-    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + sLen.getD 0 + 2) :
-    verify G G nB eB mHash sB sLen = false :=
-  verify_short₂ G G eB mHash sB h
 
 theorem publicOpChecked_length' {nB eB sB x : List Byte} (h : Rsa.publicOpChecked nB eB sB = some x) :
     x.length = nB.length := by
@@ -265,15 +245,5 @@ theorem verify_bytes₂ (H : Hash) (hG : Valid G) {n₀ : Byte} {rest eB mHash s
     · simp [zeros]
     · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
       simp [zeros]
-
-theorem verify_bytes (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte} {sLen : Option Nat}
-    (hm : mHash.length = G.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
-    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
-    (hk : emLen + lo = (n₀ :: rest).length) (hlo : lo ≤ 1) (hfit : G.len + sLen.getD 0 + 2 ≤ emLen) :
-    verify G G (n₀ :: rest) eB mHash sB sLen = true ↔
-      (lo = 1 → ((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).getD 0 0 = 0) ∧
-      EncOk G mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
-        emLen (8 * emLen - emBits) sLen :=
-  verify_bytes₂ G G hG hm hs hb he hk hlo hfit
 
 end VG.Proof.RsaPss

@@ -99,13 +99,6 @@ theorem save2_ok (s₀ : State) {B : Addr} {Z : Nat} (hs : Scr s₀ B Z) (hZ : 9
 
 /-! ## Two runs -/
 
-theorem wp_true_of {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
-    WP isa c s fun _ => True := WP.mono h fun _ _ => trivial
-
-theorem pins_of {α : Type} {Φ : α → State → Prop} {rs : List Reg} {f : α → Reg → BitVec 64}
-    (h : ∀ a s, Φ a s → ∀ r ∈ rs, s.gpr r = f a r) : Pins Φ rs :=
-  fun a s₁ s₂ h₁ h₂ r hr => (h a s₁ h₁ r hr).trans (h a s₂ h₂ r hr).symm
-
 /-- `t0` holds 0 exactly when `e` and `n` are valid, after the tail. -/
 theorem t0_iff (b : Bool) (x : BitVec 64) {P : Prop} (h : x = 0 ↔ P) :
     (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) + BitVec.ofNat 64 1) ||| x = 0 ↔
@@ -207,9 +200,6 @@ theorem KC.M2.bytesN {F : KC β} {oS na : Nat} {moves : List Instr} {T : List (P
 theorem argRegs_ne_t0 : ∀ r ∈ argRegs, r ∉ ([.t0] : List Reg) := by decide
 
 theorem zero_of_eval {s : State} (h : isa.eval (.zero .t0) s = some true) : s.gpr .t0 = 0 := by
-  rw [Steps.eval_zero] at h; simpa using h
-
-theorem ne_of_eval {s : State} (h : isa.eval (.zero .t0) s = some false) : s.gpr .t0 ≠ 0 := by
   rw [Steps.eval_zero] at h; simpa using h
 
 /-- `KeyCheck.fn` is constant time, from the function's pieces. -/

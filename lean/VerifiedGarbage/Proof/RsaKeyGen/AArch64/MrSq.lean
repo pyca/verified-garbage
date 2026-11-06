@@ -67,21 +67,6 @@ tactic_template "w_mut" : tactic => `(tactic| first | hdr_disj | (
 def sqRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (8 * kFlag, 8)]
 
-/-- `sqRanges`'s ranges, in the header and in the arrays. -/
-theorem sqRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(184, 8)]
-    [(2, 1), (3, 1), (6, 1)] (sqRanges w) := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false,
-    sqRanges, Public.aAcc, Public.aTmp, Public.aY, aAcc, aTmp, aY, sFn, kFlag, kPlen] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inl (by decide)
-
 theorem mrSq_eq (mul : Nat → Nat → Nat → Prog isa) : mrSq mul =
     ([mul aY aY aY] : List (Prog isa)) ++ (eqMask aRm1 ++
       ([.block [ldh .x4 kFlag, .logic .orr .x .x4 .x4 .x15, sth .x4 kFlag]] : List (Prog isa))) := rfl

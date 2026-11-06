@@ -26,7 +26,6 @@ theorem allocated_lr (n : Nat) (s : State) : (allocated n s).lr = s.lr := rfl
 theorem allocated_mem (n : Nat) (s : State) :
     (allocated n s).mem = s.mem.write (s.sp - BitVec.ofNat 64 n) 8 s.sp := rfl
 
-theorem freed_lr (n : Nat) (s : State) : (freed n s).lr = s.lr := rfl
 theorem freed_gpr (n : Nat) (s : State) : (freed n s).gpr = s.gpr := rfl
 theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
 

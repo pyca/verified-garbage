@@ -11,11 +11,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 Once `PS` and `M` are copied, the frame holds
 `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` (`em_bytes`). `callArgs` sets the call's
-`input` and `input_len` (`CallReady`); `pub_pre'` is the precondition of
-`vg_rsa_public_checked` on the call's entry, which it is given `n`, `e`, `EM`
-and its stack arguments to read and `out` and `scratch` to write; and
-`pub_call` runs it (`call_ok`): `Ctx` holds again, and `out` holds
-`EM^e mod n` or zeros.
+`input` and `input_len` (`CallReady`); after the call, whatever it wrote to
+`out`, `Ctx` holds again (`CalledF`).
 -/
 
 @[expose] public section
@@ -62,10 +59,6 @@ theorem em_bytes {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bi
       exact h.msg i hi
   rw [e2, eP, eS, eM]
 
-/-- The regions the call reads and writes. -/
-abbrev pubRd (L : Lay) : List Region := [L.N, L.E, L.EM, ⟨L.Q + BitVec.ofNat 64 0, 16⟩]
-abbrev pubWr (L : Lay) : List Region := [⟨L.out, L.ol.toNat⟩, L.SCR]
-
 /-- Before the call. -/
 structure CallReady (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop where
   ctx : Ctx L g vv m₀ t
@@ -111,132 +104,9 @@ theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) 
 theorem stackArg_ce (t : State) (rd wr : List Region) (i : Nat) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (t.sp + BitVec.ofNat 64 (8 * i)) 64 := rfl
 
-theorem pub_pre' {L : Lay} (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) {g : Reg → BitVec 64}
-    {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (h : CallReady L g vv m₀ t) :
-    (pubK S).pre (t.callEntry.withRegions (pubRd L) (pubWr L)) := by
-  have hc := h.ctx
-  have hnQ := hL.nQ
-  have hpQ := hL.pQ
-  have hk := hL.k1024
-  have olk := hL.olk
-  rw [hP] at hpQ
-  have hlow : (⟨L.Q - BitVec.ofNat 64 (S + 1), S + 1⟩ : Region) = L.LOW := by
-    show _ = (⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩ : Region); rw [hP]
-  have hQ40 : (L.Q + BitVec.ofNat 64 oEM).toNat = L.Q.toNat + oEM := by
-    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by unfold oEM; omega_arith), Nat.mod_eq_of_lt (by unfold oEM; omega_arith)]
-  -- The call's stack arguments are the frame's first two words.
-  have a0 : stackArg (t.callEntry.withRegions (pubRd L) (pubWr L)) 0 = L.scr := by
-    rw [stackArg_ce, hc.sp]; exact hc.kept.scr
-  have a1 : stackArg (t.callEntry.withRegions (pubRd L) (pubWr L)) 1 = L.sl := by
-    rw [stackArg_ce, hc.sp]; exact hc.kept.sl
-  have aa : stackArgAddr (t.callEntry.withRegions (pubRd L) (pubWr L)) 0 = L.Q + BitVec.ofNat 64 0 := by
-    simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hc.sp]
-  have emS : Region.Sub L.EM L.STK := Lay.Ok.sub_stk (by unfold oEM; omega_arith)
-  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 16⟩ L.STK := Lay.Ok.sub_stk (by omega_arith)
-  simp only [pubK, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
-    hc.sp, gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
-    gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
-    h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, h.x6, h.x7, a0, a1, aa, hlow, olk]
-  refine ⟨by omega_arith, by omega_arith, trivial, by rw [pubWr, olk], hL.oN, hL.oE, hL.kO.symm.sub_right emS, hL.oS,
-    hL.kO.symm.sub_right arS, hL.nS, hL.eS, hL.kS.sub_left emS,
-    (hL.kS.sub_left arS).symm, ?_, ?_, ?_, ?_, ?_, ?_, hL.bO, hL.bN, hL.bE, by rw [hQ40]; unfold oEM; omega_arith,
-    hL.bS, hL.kv, trivial, trivial, hL.el1, hL.elk, hL.slk⟩
-  · exact hL.kO.sub_left (Lay.Ok.low_stk (L := L))
-  · exact hL.kN.sub_left (Lay.Ok.low_stk (L := L))
-  · exact hL.kE.sub_left (Lay.Ok.low_stk (L := L))
-  · exact (hL.fr_low (by unfold oEM; omega_arith)).symm
-  · exact hL.kS.sub_left (Lay.Ok.low_stk (L := L))
-  · exact (hL.fr_low (by omega_arith)).symm
-
-theorem covers_pub {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (hc : Ctx L g vv m₀ t) :
-    Covers (pubRd L ++ pubWr L) (t.rd ++ t.wr) ∧ Covers (pubWr L) t.wr := by
-  have hk := hL.k1024
-  have olk := hL.olk
-  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
-  rw [hc.rd, hc.wr]
-  refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => ?_⟩
-  · simp only [pubRd, pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.N, by simp, 0, z _, by simp⟩
-    · exact ⟨L.E, by simp, 0, z _, by simp⟩
-    · exact ⟨L.FR, by simp, oEM, rfl, by show oEM + L.k.toNat ≤ frameBytes; unfold oEM frameBytes; omega_arith⟩
-    · exact ⟨L.FR, by simp, 0, rfl, by show 0 + 16 ≤ frameBytes; decide⟩
-    · exact ⟨L.OUT, by simp, 0, z _, by simp [olk]⟩
-    · exact ⟨L.SCR, by simp, 0, z _, by simp⟩
-  · simp only [pubWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨L.OUT, by simp, 0, z _, by simp [olk]⟩
-    · exact ⟨L.SCR, by simp, 0, z _, by simp⟩
-
 /-- After the call, whatever it wrote to `out`. -/
 structure CalledF (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t' : State) : Prop where
   ctx : Ctx L g vv m₀ t'
   z : t'.mem.readW (L.Q + BitVec.ofNat 64 oZ) 64 = zmask (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)
-
-/-- After the call. -/
-structure Called (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t' : State) : Prop
-    extends CalledF L g vv m₀ t' where
-  out : Spec.Rsa.written t'.mem L.out L.k.toNat ((t'.gpr .x0).setWidth 32)
-    (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
-      (Spec.RsaPkcs1Enc.encode (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)))
-
-theorem pub_call (v : PubImpl) {L : Lay} (hL : L.Ok) (hP : L.P = v.S + 1) {g : Reg → BitVec 64}
-    {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (h : CallReady L g vv m₀ t) :
-    WP isa (.call v.name v.code) t (Called L g vv m₀) := by
-  have hc := h.ctx
-  have hnQ := hL.nQ
-  have hk := hL.k1024
-  have hdp := v.depth'
-  have hpQ := hL.pQ
-  rw [hP] at hpQ
-  obtain ⟨hcov, hcovw⟩ := covers_pub hL hc
-  refine WP.callFV v.correct (pub_pre' hL hP h) hcov hcovw
-    (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
-  -- What the call may change: `out`, `scratch` and the stack below the frame.
-  have hlow : Region.Sub (below t.sp (16 * v.code.aarch64Depth)) L.LOW := by
-    rw [hc.sp]
-    show Region.Sub _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
-    rw [hP]; exact Offset.sub_below _ hdp (by omega_arith)
-  have hws : ∀ r ∈ pubWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
-      (Region.Sub r L.OUT ∨ Region.Sub r L.SCR) ∨ Region.Sub r L.LOW := fun r hr => by
-    simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inl (.inl (Region.sub_prefix (by rw [hL.olk])))
-    · exact .inl (.inr fun _ h => h)
-    · exact .inr hlow
-  have hkept : ∀ d, keptOff d → ∀ R ∈ pubWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
-      Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := fun d hd R hR => by
-    rcases hws R hR with hs | hs
-    · exact hL.kept_buf hd hs
-    · exact (hL.fr_low (by unfold keptOff at hd; omega_arith)).sub_right hs
-  have hzr : ∀ R ∈ pubWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
-      Region.Disjoint ⟨L.Q + BitVec.ofNat 64 oZ, 8⟩ R := fun R hR => by
-    rcases hws R hR with hs | hs
-    · rcases hs with hs | hs
-      · exact (hL.stk_buf (by decide) (.inl rfl)).sub_right hs
-      · exact (hL.stk_buf (by decide) (.inr (.inr (.inr (.inr (.inr rfl)))))).sub_right hs
-    · exact (hL.fr_low (by decide)).sub_right hs
-  refine ⟨⟨⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
-    fun r hr => (hvs r hr).trans (hc.vs r hr), hc.kept.frame hf hkept, hc.frame.trans (hf.sub fun r hr => ?_)⟩,
-    ?_⟩, ?_⟩
-  · rcases hws r hr with (hs | hs) | hs
-    · exact ⟨L.OUT, by simp, hs⟩
-    · exact ⟨L.SCR, by simp, hs⟩
-    · exact ⟨L.STK, by simp, fun x hx => (Lay.Ok.low_stk (L := L)) x (hs x hx)⟩
-  · rw [hf.readW (Region.contains_self _ _) hzr (by decide)]; exact h.z
-  · have hp := hpost
-    simp only [pubK, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr,
-      gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs),
-      gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs),
-      h.x0, h.x2, h.x3, h.x4, h.x5, h.x6, h.em] at hp
-    rw [bytesAt_eq (n := L.k.toNat) (fun i hi => hc.byte_ro (R := L.N) hL.oN.symm hL.nS hL.kN.symm
-        (Nat.le_of_lt L.k.isLt) hi),
-      bytesAt_eq (n := L.el.toNat) (fun i hi => hc.byte_ro (R := L.E) hL.oE.symm hL.eS hL.kE.symm
-        (Nat.le_of_lt L.el.isLt) hi)] at hp
-    exact hp
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc

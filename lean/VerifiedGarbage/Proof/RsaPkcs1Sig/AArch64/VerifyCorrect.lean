@@ -10,10 +10,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: correctness
 
-After the call (`AfterCall`), the padding check (`afterPub_ok`): if RSAVP1
-failed, 0; otherwise `encode` writes the encoding of the hash value to
-`EM₂`, and the result is whether it is `EM₁` (`compare`), which is
-RFC 8017 §8.2.2 (`verifyId_true_iff`).
+The padding check (`padCheck_ok`): `encode` writes the encoding of the
+hash value to `EM₂`, and the result is whether it is `EM₁` (`compare`),
+which is RFC 8017 §8.2.2 (`verifyId_true_iff`).
 -/
 
 @[expose] public section
@@ -233,26 +232,6 @@ theorem padCheck_ok {K : Nat} {s t : State} (hp : PreV K s) (hm : Mid K s t) :
       simp [he]; exact this
 
 
-theorem afterPub_ok {K : Nat} {s t : State} (hp : PreV K s) (hsig : stackArg s 0 = s.gpr .x1)
-    (ha : AfterCall K s t) :
-    WP isa afterPub t fun w => Mid K s w ∧ (w.gpr .x0).setWidth 32 = if verOut s then 1 else 0 := by
-  rw [verOut_eq hsig]
-  have hres := ha.res
-  unfold afterPub
-  cases hpo : pubOut s with
-  | none =>
-    rw [hpo] at hres
-    obtain ⟨hr, -⟩ := hres
-    refine WP.ite true (by simp [eval, State.read, hr]) (fun _ => WP.mono (ret0_ok t) fun w ⟨o, e⟩ =>
-      ⟨ha.toMid.only o, by rw [e]; rfl⟩) (by simp)
-  | some em =>
-    rw [hpo] at hres
-    obtain ⟨hr, hem⟩ := hres
-    refine WP.ite false (by simp [eval, State.read, hr]) (by simp) fun _ => ?_
-    refine WP.mono (padCheck_ok hp ha.toMid) fun w ⟨m, _, r⟩ => ⟨m, ?_⟩
-    rw [r, hem]
-    cases encOut s <;> rfl
-
 /-! ## The restores, and the whole function -/
 
 /-- The restores, then the frame's release: the caller's registers are back,
@@ -288,10 +267,6 @@ theorem restore_ok {K : Nat} {s w : State} (hm : Mid K s w) :
   · simp only [freed]
     rw [hr.other .x0 (by decide), o₁.get .x0]
 
-/-- `vg_rsa_pkcs1_verify`'s result, and the calling convention. -/
-def Post (s s' : State) : Prop :=
-  abiPreserved s s' ∧ (s'.gpr .x0).setWidth 32 = if verOut s then 1 else 0
-
 theorem verOut_len {s : State} (h : stackArg s 0 ≠ s.gpr .x1) : verOut s = false := by
   apply Bool.eq_false_iff.mpr
   intro hv
@@ -313,31 +288,5 @@ theorem eval_len {s t : State} (e : t.gpr .x8 = stackArg s 0 - s.gpr .x1) :
   refine congrArg some (decide_eq_decide.mpr ⟨fun h e => ?_, fun h e => h ?_⟩)
   · rw [e] at h; omega_arith
   · apply BitVec.eq_of_toNat_eq; omega_arith
-
-theorem code_ok (c : PubChecked) {s : State} (hp : PreV c.stack s) :
-    WP isa (code c.name c.code) s (Post s) := by
-  unfold code
-  refine WP.seq (WP.mono (lenCheck_ok hp) fun t₁ ⟨o₁, e₁⟩ => ?_)
-  have hne := eval_len e₁
-  by_cases hsig : stackArg s 0 = s.gpr .x1
-  · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.alloc (by decide) (by rw [o₁.sp]; have := hp.sp1; unfold stk at this; omega_arith) ?_
-    unfold body
-    refine WP.seq (WP.mono (pubArgs_ok hp (by simp [allocated, o₁.sp]) (by simp [allocated, o₁.rd])
-      (by simp [allocated, o₁.sp, o₁.wr]) (by simp [allocated, o₁.mem]) (fun r hr => by
-        simp only [allocated]; exact o₁.gpr r (by simpa using hr)) (fun r hr => o₁.vcs r hr))
-      fun t₂ h₂ => ?_)
-    refine WP.seq (WP.mono (call_ok c hp h₂ hsig) fun t₃ h₃ => ?_)
-    refine WP.seq (WP.mono (afterPub_ok hp hsig h₃) fun t₄ ⟨m₄, r₄⟩ => ?_)
-    exact WP.mono (restore_ok m₄) fun w ⟨habi, hx0⟩ => ⟨habi, by rw [hx0]; exact r₄⟩
-  · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (ret0_ok t₁) fun w ⟨o, e⟩ =>
-      ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩) (by simp)
-    · have h8 : r ∉ [Reg.x8] ++ [Reg.x0] := by
-        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with h | h | h | h | h | h | h | h | h | h | h <;> subst h <;> decide
-      exact (o₁.trans o).gpr r h8
-    · rw [o.sp, o₁.sp]
-    · rw [o.vcs r hr, o₁.vcs r hr]
-    · rw [e, verOut_len hsig]; rfl
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Ver

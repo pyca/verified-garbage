@@ -91,17 +91,6 @@ theorem clr_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · rw [u4.other _ (by decide), u3.gpr]; rfl
   · rw [u4.gpr]; rfl
 
-/-- The bounds of the encoding when everything fits. -/
-theorem fit_bounds {P : EP} {σ : State} {m : Mem} (hk : Kp h P σ m) :
-    lo P ≤ 1 ∧ P.sl + 1 ≤ dbN h P ∧ lo P + dbN h P + h.D + 1 = P.K ∧ P.K ≤ 1024 ∧ h.D ≤ 64 ∧ 0 < h.D := by
-  have := hk.2.1.2
-  have := hk.1.k1024
-  have := h.D_le
-  have := h.N_le
-  have := h.D_pos
-  have : lo P ≤ 1 := by unfold lo; split <;> omega_arith
-  refine ⟨this, ?_, ?_, hk.1.k1024, by omega_arith, h.D_pos⟩ <;> unfold dbN <;> omega_arith
-
 /-- `0x01` before the salt's place at the end of `DB`. -/
 theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧ EMv P s.mem fun _ => 0)

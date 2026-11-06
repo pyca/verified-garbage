@@ -7,10 +7,10 @@ import VerifiedGarbage.Proof.RsaPss.Params
 # RSASSA-PSS: signing and verification through the encoding
 
 `sign` is the private-key operation on `zeros lo ++ encode …`, or a refusal
-if the encoding fails (`sign_encode`), with `lo = k - emLen`; and `verify`,
+if the encoding fails (`sign_encode₂`), with `lo = k - emLen`; and `verify`,
 for a modulus whose first octet is not zero, is whether the first `lo`
 octets of RSAVP1's result (zeros if it fails) are zero and the rest a
-consistent encoding (`verify_encode`).
+consistent encoding (`verify_encode₂`).
 -/
 
 @[expose] public section
@@ -69,32 +69,5 @@ theorem verify_encode₂ {nB eB mHash sB : List Byte} {sLen : Option Nat} {eb : 
 variable {H G}
 
 variable (G : Hash)
-
-theorem sign_encode {nB eB pB qB dPB dQB qInvB mHash salt : List Byte} {eb : Nat}
-    (heb : bitLength (Rsa.os2ip nB) - 1 = eb) :
-    sign G G nB eB pB qB dPB dQB qInvB mHash salt =
-      match encode G G mHash salt eb with
-      | some e => Rsa.privateChecked nB eB (zeros (nB.length - emLength eb) ++ e) pB qB dPB dQB qInvB
-      | none => .invalid :=
-  sign_encode₂ G G heb
-
-/-- Whether the encoding fits: lengths alone. -/
-theorem encode_isSome {mHash salt : List Byte} {eb : Nat} (hm : mHash.length = G.len) :
-    (encode G G mHash salt eb).isSome = decide (G.len + salt.length + 2 ≤ emLength eb) :=
-  encode_isSome₂ G G hm
-
-/-- No encoding of zeros is consistent. -/
-theorem verifyEncoding_zeros (mHash : List Byte) {n eb : Nat} (hn : 1 ≤ n) (sLen : Option Nat) :
-    verifyEncoding G G mHash (zeros n) eb sLen = false :=
-  verifyEncoding_zeros₂ G G mHash hn sLen
-
-theorem verify_encode {nB eB mHash sB : List Byte} {sLen : Option Nat} {eb : Nat}
-    (heb : bitLength (Rsa.os2ip nB) - 1 = eb) (hs : sB.length = nB.length) (hlo : 1 ≤ nB.length - (nB.length - emLength eb)) :
-    verify G G nB eB mHash sB sLen =
-      (((Rsa.publicOpChecked nB eB sB).getD (zeros nB.length)).take (nB.length - emLength eb) ==
-          zeros (nB.length - emLength eb) &&
-        verifyEncoding G G mHash (((Rsa.publicOpChecked nB eB sB).getD (zeros nB.length)).drop
-          (nB.length - emLength eb)) eb sLen) :=
-  verify_encode₂ G G heb hs hlo
 
 end VG.Proof.RsaPss

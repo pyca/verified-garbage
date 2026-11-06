@@ -95,9 +95,6 @@ omit P in
 theorem kb_sub {d n : Nat} (h : d + n ≤ stackBytes) : Region.Sub ⟨kb s + BitVec.ofNat 64 d, n⟩ (kS s) :=
   Offset.sub_base _ h
 
-omit P in theorem kb_contains {d n : Nat} (h : d + n ≤ stackBytes) : (kS s).Contains (kb s + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by rw [stackBytes_eq] at h; omega)
-
 theorem pb_al : (pb s).toNat % 16 = 0 := by
   have := P.sp1; have := P.spal
   simp only [pb, fb, BitVec.toNat_sub, BitVec.toNat_ofNat, stackBytes_eq, frameBytes, privBytes] at *

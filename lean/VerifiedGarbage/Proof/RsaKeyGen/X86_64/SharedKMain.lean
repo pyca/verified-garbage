@@ -28,7 +28,7 @@ theorem kMainWith_eq (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa) 
         ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabinWith mul body ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
   unfold kMainWith; rw [List.append_assoc]
 
-/-- `kMain`. -/
+/-- `kMainWith`. -/
 theorem sharedKMain_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
     (henv : SharedEnv B Z sp s) (hZ28 : slot w 28 ≤ Z) (h : MainCtx s B Z (8 * w) op up eP pP rP eB pB r) :
     WP isa (kMainWith mm R.run) s fun t => SharedCandEnd s t B sp Z op up (8 * w) r

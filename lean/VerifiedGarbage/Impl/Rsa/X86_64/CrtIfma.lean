@@ -106,9 +106,6 @@ def oFin : Nat := l.oV + 32
 def D : Nat := l.oFin + l.NB
 /-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after both regions. -/
 def oMx : Nat := 2 * l.D
-/-- The size of the area. -/
-def areaBytes : Nat := 2 * l.D + 8
-
 /-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`. -/
 def dbls : Nat := 104 * l.S - 128 * l.W
 

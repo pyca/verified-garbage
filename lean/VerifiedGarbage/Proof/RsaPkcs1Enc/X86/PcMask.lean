@@ -247,9 +247,6 @@ theorem ret_wp {σ s : State} (h : G10 P σ s) : WP isa (.block [.mov .eax (.reg
 theorem maskArgs_vp : VP (G8 P) (.block maskArgs) (MI P P.K) :=
   VP.taint [.esp] maskArgs_taint (sp_agree fun _ _ h => h.1) fun _ _ h => maskArgs_wp h
 
-theorem mask_vp : VP (G8 P) (.seq (.block maskArgs) maskLoop) (G10 P) :=
-  maskArgs_vp.seq (maskLoop_vp.mono (fun _ _ h => h) fun _ _ h => masked_g10 h)
-
 theorem wipeArgs_vp : VP (G10 P) (.block wipeArgs) (G11 P) :=
   VP.taint [.esp] wipeArgs_taint (sp_agree fun _ _ h => h.1) fun _ _ h => wipeArgs_wp h
 

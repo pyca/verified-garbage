@@ -7,10 +7,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the call of `vg_rsa_public_checked`
 
-The call's arguments from the slots (`callArgs_run`), its precondition
-with the stack arguments in the frame (`pub_pre`), and what it leaves
-(`pub_call`): `out` holds `vg_rsa_public_checked`'s result for `EM`, and the
-frame its slots and `EM`.
+The call's arguments from the slots (`callArgs_run`), what the callee reads
+and writes (`pubRd`, `pubWr`), and what holds after the call (`AfterCall`,
+`PostCall`).
 -/
 
 @[expose] public section
@@ -76,58 +75,6 @@ def pubRd (s : State) : List Region :=
 /-- What it writes: `out` and the working space. -/
 def pubWr (s : State) : List Region :=
   [⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩]
-
-theorem pub_pre {s t : State} (hp : EPre s) (h : PreCall s t) (hdi : t.gpr .rdi = s.gpr .rdi)
-    (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
-    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    pubChkK.pre (t.callEntry.withRegions (pubRd s) (pubWr s)) := by
-  have e0 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = off (fb s) oEM := by
-    rw [stackArg_entry h.rsp _ _ (by decide)]
-    have := h.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
-  have e1 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 1 = s.gpr .rcx := by
-    rw [stackArg_entry h.rsp _ _ (by decide)]; exact h.slots.a1
-  have e2 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 2 = stackArg s 4 := by
-    rw [stackArg_entry h.rsp _ _ (by decide)]; exact h.slots.a2
-  have e3 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 3 = stackArg s 5 := by
-    rw [stackArg_entry h.rsp _ _ (by decide)]; exact h.slots.a3
-  simp only [pubChkK, pubContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.callEntry_rsp, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hsi, hdx, hcx, h8, h9, h.rsp,
-    stackArgAddr_entry h.rsp, e0, e1, e2, e3, fb_sub8]
-  have ⟨hK1, hK2⟩ := kb_toNat hp
-  have hk1 := hp.k1
-  have hk2 := hp.k2
-  have hsi' := hp.hsi
-  have e5 : encStack = 1120 := rfl
-  have e6 : oEM = 80 := rfl
-  have e7 : frameBytes = 1112 := rfl
-  have hfb : fb s = off (kb s) 8 := fb_eq s
-  have sM : Region.Sub ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩ (stkR s) := frame_sub s (by omega_arith)
-  have sA : Region.Sub ⟨fb s, 32⟩ (stkR s) := by
-    have := frame_sub s (d := 0) (n := 32) (by decide); simpa only [off, BitVec.add_zero] using this
-  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := Region.sub_prefix (by decide)
-  have dMA : (⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨fb s, 32⟩ :=
-    Offset.disjoint_base _ (by decide) (by omega_arith)
-  have dRM : (⟨kb s, 8⟩ : Region).Disjoint ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩ := by
-    rw [hfb, off_off]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
-  have dRA : (⟨kb s, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
-    rw [hfb]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
-  have wM : (off (fb s) oEM).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := by
-    rw [hfb, off_off]; simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
-  have dKo : (stkR s).Disjoint ⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ := by have := hp.dKo; rwa [hsi'] at this
-  have dOn : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ := by
-    have := hp.dOn; rwa [hsi'] at this
-  have dOe : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩ := by
-    have := hp.dOe; rwa [hsi'] at this
-  have dOs : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ := by
-    have := hp.dOs; rwa [hsi'] at this
-  have wO : (s.gpr .rdi).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := by have := hp.wO; omega_arith
-  refine ⟨by omega_arith, rfl, rfl, dOn, dOe, (dKo.sub_left sM).symm, dOs, (dKo.sub_left sA).symm, hp.dns, hp.des,
-    (hp.dKs.sub_left sM), (hp.dKs.sub_left sA).symm, dKo.sub_left sR, hp.dKn.sub_left sR, hp.dKe.sub_left sR,
-    dRM, hp.dKs.sub_left sR, dRA, wO, hp.wN, hp.wE, wM, hp.wS, ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2,
-    hp.hsl⟩
 
 theorem pub_covers {s t : State} (hp : EPre s) (h : PreCall s t) :
     Covers (pubRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by
@@ -225,59 +172,5 @@ theorem slot_apart {s : State} (hp : EPre s) {d n : Nat} (hd : d + n ≤ frameBy
   · exact hp.dKs.sub_left (frame_sub s hd)
   · rw [below_eq, fb_eq, off_off]
     exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-
-theorem pub_call (v : PubImpl) {s t : State} (hp : EPre s) (h : PreCall s t) (hdi : t.gpr .rdi = s.gpr .rdi)
-    (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
-    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call v.name v.code) t fun t' => PostCall s t' ∧ (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
-      t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hw⟩ := pub_covers hp h
-  refine WP.call_mx (k := pubChkK) v.ok v.nosp (by rw [v.depth]; decide)
-    (pub_pre hp h hdi hsi hdx hcx h8 h9) hc hw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
-  rw [v.depth, h.rsp] at hf
-  have hk2 := hp.k2
-  have hsi' := hp.hsi
-  have e6 : oEM = 80 := rfl
-  have e7 : frameBytes = 1112 := rfl
-  have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
-    frame_call (frame_of_outside h.out) (callEntry_frame h.rsp) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact .inl (ret_sub s)
-  have hE0 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = off (fb s) oEM := by
-    rw [stackArg_entry h.rsp _ _ (by decide)]
-    have := h.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
-  have hem : Spec.Rsa.bytesAt t.callEntry.mem (off (fb s) oEM) (s.gpr .rcx).toNat =
-      Spec.RsaPkcs1Enc.encode (msgB s) (psB s) := by
-    rw [← h.em]
-    simp only [Spec.Rsa.bytesAt]
-    refine List.map_congr_left fun i hi => (callEntry_frame h.rsp).bytes (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩)
-      (fun r hr => ?_) (by show (s.gpr .rcx).toNat ≤ 2 ^ 64; omega_arith) (List.mem_range.mp hi)
-    rw [List.mem_singleton.mp hr]
-    exact slot_apart hp (d := oEM) (n := (s.gpr .rcx).toNat) (by omega_arith) _
-      (List.mem_append_right _ (List.mem_singleton_self _))
-  simp only [pubChkK, State.withRegions_gpr, State.withRegions_mem,
-    State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
-    State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hdx, hcx, h8, h9, hE0, hem, hm₂,
-    hg₂ .rax (by decide)] at hpost
-  rw [bytes_of_frame hfE hp.dKn (by have := hp.dOn; rw [outR]; exact this) hp.dns.symm (by have := hp.wN; omega_arith),
-    bytes_of_frame hfE hp.dKe (by have := hp.dOe; rw [outR]; exact this) hp.des.symm (by have := hp.wE; omega_arith)]
-    at hpost
-  have hkeep : ∀ {d : Nat}, d + 8 ≤ oEM → word s'.mem (fb s) d = word t.mem (fb s) d := fun hd =>
-    hf.readW (Region.contains_self _ _) (slot_apart hp (by omega_arith)) (by decide)
-  have hkeep0 : s'.mem.readW (fb s) 64 = t.mem.readW (fb s) 64 := by
-    have := hkeep (d := 0) (by decide); simp only [Bignum.word, off_zero] at this; exact this
-  refine ⟨⟨⟨(hcs .rsp (by decide)).trans h.rsp, hrd.trans h.rd, hwr.trans h.wr,
-    frame_call (frame_of_outside h.out) hf fun r hr => ?_,
-    ⟨(hkeep (by decide)).trans h.slots.sOut, (hkeep (by decide)).trans h.slots.sN,
-      (hkeep (by decide)).trans h.slots.sK, (hkeep (by decide)).trans h.slots.sE,
-      (hkeep (by decide)).trans h.slots.sEl, hkeep0.trans h.slots.a0, (hkeep (by decide)).trans h.slots.a1,
-      (hkeep (by decide)).trans h.slots.a2, (hkeep (by decide)).trans h.slots.a3⟩,
-    (hkeep (by decide)).trans h.sZ⟩, hpost⟩, hcs, hmx⟩
-  simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact .inr (.inl (by rw [outR, hsi']; exact sub_refl _))
-  · exact .inr (.inr (sub_refl _))
-  · exact .inl (ret_sub s)
 
 end VG.Proof.RsaPkcs1Enc.X86_64

@@ -200,13 +200,6 @@ theorem arg_outside {s : State} (hp : DPre s) {m : Mem} (h : Outside (fb s) 0 fr
   rw [stackArgAddr_fb]
   exact h.word (.inr (by unfold frameBytes; omega_arith)) (by unfold frameBytes at *; omega_arith)
 
-/-- A byte of a buffer apart from the stack the function uses, past changes
-to the frame. -/
-theorem byte_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {p : Addr} {n : Nat}
-    (hd : (stkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < n) :
-    m (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) :=
-  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega_arith) (by omega_arith))))
-
 /-! ## The first block -/
 
 theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64 d := by
@@ -289,16 +282,6 @@ structure Slots (s : State) (m : Mem) : Prop where
   sDl : word m (fb s) oDl = stackArg s 2
   sIn : word m (fb s) oIn = stackArg s 3
   sScr : word m (fb s) oScr = stackArg s 15
-
-/-- Changes from offset `oR` on keep the slots. -/
-theorem Slots.outside {s : State} {m m' : Mem} (h : Slots s m) {o n : Nat} (ho : oR ≤ o)
-    (h' : Outside (fb s) o n m m') : Slots s m' := by
-  have w : ∀ {d : Nat}, d + 8 ≤ oR → word m' (fb s) d = word m (fb s) d := fun hd =>
-    h'.word (.inl (by omega_arith)) (by unfold oR at hd; omega_arith)
-  exact ⟨(w (by decide)).trans h.sOut, (w (by decide)).trans h.sML, (w (by decide)).trans h.sN,
-    (w (by decide)).trans h.sK, (w (by decide)).trans h.sE, (w (by decide)).trans h.sEl,
-    (w (by decide)).trans h.sD, (w (by decide)).trans h.sDl, (w (by decide)).trans h.sIn,
-    (w (by decide)).trans h.sScr⟩
 
 /-- What the first block leaves. -/
 structure Setup (s t : State) : Prop where

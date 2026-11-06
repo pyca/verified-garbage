@@ -12,11 +12,11 @@ import VerifiedGarbage.Proof.Framework.Mem
 # The RSA operations the signatures call, on AArch64
 
 The signature functions call verified implementations of the RSA operations
-(`vg_rsa_public_checked`, `vg_rsa_public_precomputed_checked` and
-`vg_rsa_private_checked`, or a variant of one of them), of which they need
-only what their artifacts state: that the code is `Verified` for the shared
-contract of `Spec/Rsa/Contract.lean` with some `stack`, and that its frames
-fit in that stack (`Callee`). The call lemmas (`pubCall`, …) evaluate those
+(`vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked`, or a
+variant of one of them), of which they need only what their artifacts
+state: that the code is `Verified` for the shared contract of
+`Spec/Rsa/Contract.lean` with some `stack`, and that its frames fit in that
+stack (`Callee`). The call lemmas (`pdCall`, `privCall`) evaluate those
 contracts (`sig_pre`, `sig_post`) into facts about the registers at the
 call, so the callers' proofs never see `Sig.contract`.
 -/
@@ -43,17 +43,8 @@ structure Callee (k : Nat → Contract isa) where
   suffix : String
   features : List String
 
-/-- `vg_rsa_public_checked`. -/
-abbrev PubChecked := Callee fun K => Proof.Rsa.publicCheckedContract abi K
-
 theorem stackArgs_two (s : State) :
     List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
-
-theorem stackArg_entry (t : State) (rd wr : List Region) (i : Nat) :
-    stackArg (t.callEntry.withRegions rd wr) i = stackArg t i := rfl
-
-theorem stackArgAddr_entry (t : State) (rd wr : List Region) (i : Nat) :
-    stackArgAddr (t.callEntry.withRegions rd wr) i = stackArgAddr t i := rfl
 
 theorem sa0 (t : State) : stackArgAddr t 0 = t.sp := by simp [stackArgAddr]
 
@@ -87,62 +78,12 @@ structure PubLay (sp : Addr) (K : Nat) (o n e i sc : Addr) (ol nl el il sl : Nat
   wi : i.toNat + il ≤ 2 ^ 64
   ws : sc.toNat + sl ≤ 2 ^ 64
 
-/-- The regions a call of `vg_rsa_public_checked` (or of a precomputed
-public operation: `pdRd`) reads and writes. -/
-abbrev pubRd (t : State) : List Region :=
-  [⟨t.gpr .x2, (t.gpr .x3).toNat⟩, ⟨t.gpr .x4, (t.gpr .x5).toNat⟩, ⟨t.gpr .x6, (t.gpr .x7).toNat⟩,
-    ⟨t.sp, 16⟩]
-
 abbrev pdRd (t : State) : List Region :=
   [⟨t.gpr .x2, (t.gpr .x3).toNat * 8⟩, ⟨t.gpr .x4, (t.gpr .x5).toNat⟩, ⟨t.gpr .x6, (t.gpr .x7).toNat⟩,
     ⟨t.sp, 16⟩]
 
 abbrev pubWr (t : State) : List Region :=
   [⟨t.gpr .x0, (t.gpr .x1).toNat⟩, ⟨stackArg t 0, (stackArg t 1).toNat * 8⟩]
-
-/-- What a call of `vg_rsa_public_checked` needs at the call: the modulus
-`n` of `k` bytes at `x2`, `e` (`el` bytes) at `x4` and the input at `x6`,
-`out` at `x0`; the working space and its length in words are the two words
-at `sp`. -/
-structure PubOk (K : Nat) (t : State) : Prop where
-  hl : PubLay t.sp K (t.gpr .x0) (t.gpr .x2) (t.gpr .x4) (t.gpr .x6) (stackArg t 0)
-    (t.gpr .x1).toNat (t.gpr .x3).toNat (t.gpr .x5).toNat (t.gpr .x7).toNat ((stackArg t 1).toNat * 8)
-  hrd : Covers (pubRd t) (t.rd ++ t.wr)
-  hwr : Covers (pubWr t) t.wr
-  hk : Spec.Rsa.lenValid (t.gpr .x3).toNat
-  h1 : (t.gpr .x1).toNat = (t.gpr .x3).toNat
-  h7 : (t.gpr .x7).toNat = (t.gpr .x3).toNat
-  he1 : 1 ≤ (t.gpr .x5).toNat
-  he2 : (t.gpr .x5).toNat ≤ (t.gpr .x3).toNat
-  hs : Spec.Rsa.publicScratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
-
-theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
-    (Proof.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
-  obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
-  have hl := h.hl
-  sig_pre [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
-  simp only [sa0]
-  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa,
-    hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h1, h.h7, h.he1,
-    h.he2, h.hs⟩
-
-/-- A call of `vg_rsa_public_checked`. -/
-theorem pubCall (c : PubChecked) {t : State} {Q : State → Prop} (h : PubOk c.stack t)
-    (hQ : ∀ s', s'.rd = t.rd → s'.wr = t.wr → s'.sp = t.sp →
-      Frame (pubWr t ++ [below t.sp (16 * c.code.aarch64Depth)]) t.mem s'.mem →
-      (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = t.gpr r) →
-      (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) →
-      Spec.Rsa.written s'.mem (t.gpr .x0) (t.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
-        (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt t.mem (t.gpr .x2) (t.gpr .x3).toNat)
-          (Spec.Rsa.bytesAt t.mem (t.gpr .x4) (t.gpr .x5).toNat)
-          (Spec.Rsa.bytesAt t.mem (t.gpr .x6) (t.gpr .x3).toNat)) → Q s') :
-    WP isa (.call c.name c.code) t Q := by
-  refine WP.callFV (k := Proof.Rsa.publicCheckedContract abi c.stack) c.verified.1 (h.pre c.pos)
-    (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
-    (by have := c.le; have := c.depth; omega)
-  intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
-  exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- What two runs agree on at a call of an RSA operation: the stack
 pointer, the argument registers, the first `n` arguments on the stack, and
@@ -159,30 +100,13 @@ theorem argsEq_regs {n : Nat} {t₁ t₂ : State} (h : ArgsEq n t₁ t₂) :
   ⟨h.gpr _ (by decide), h.gpr _ (by decide), h.gpr _ (by decide), h.gpr _ (by decide),
     h.gpr _ (by decide), h.gpr _ (by decide), h.gpr _ (by decide), h.gpr _ (by decide)⟩
 
-/-- Two calls of `vg_rsa_public_checked` leak alike if their arguments and
-the bytes of `n` and `e` agree. -/
-theorem pubCallCT (c : PubChecked) {P : State → State → Prop}
-    (hP : ∀ t₁ t₂, P t₁ t₂ → PubOk c.stack t₁ ∧ PubOk c.stack t₂ ∧ ArgsEq 2 t₁ t₂ ∧
-      Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x2) (t₁.gpr .x3).toNat =
-        Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x2) (t₂.gpr .x3).toNat ∧
-      Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x4) (t₁.gpr .x5).toNat =
-        Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x4) (t₂.gpr .x5).toNat) :
-    RelCT isa P (.call c.name c.code) fun _ _ => True := by
-  refine RelCT.callEx c.verified.1 c.verified.2.1 fun t₁ t₂ hp => ?_
-  obtain ⟨h₁, h₂, he, hn, hE⟩ := hP t₁ t₂ hp
-  refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
-    Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
-    Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Proof.Rsa.publicCheckedContract, Proof.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
-  obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
-  exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
-
 /-- `vg_rsa_public_precomputed_checked` and its variants. -/
 abbrev PdChecked := Callee fun K => Proof.Rsa.publicPrecomputedCheckedContract abi K
 
-/-- What a call of a precomputed public operation needs: as `PubOk`, with
-the precomputed values of a modulus (`x3` words at `x2`) for the modulus,
-and `k` in `x1`. -/
+/-- What a call of a precomputed public operation needs at the call: the
+precomputed values of a modulus (`x3` words at `x2`), `k` in `x1`, `e`
+(`el` bytes) at `x4` and the input at `x6`, `out` at `x0`; the working
+space and its length in words are the two words at `sp`. -/
 structure PdOk (K : Nat) (t : State) : Prop where
   hl : PubLay t.sp K (t.gpr .x0) (t.gpr .x2) (t.gpr .x4) (t.gpr .x6) (stackArg t 0)
     (t.gpr .x1).toNat ((t.gpr .x3).toNat * 8) (t.gpr .x5).toNat (t.gpr .x7).toNat ((stackArg t 1).toNat * 8)

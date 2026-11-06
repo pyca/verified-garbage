@@ -15,8 +15,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The frames' pushes, the CRT's arguments and call (`crtArgs_ok`,
 `crt_call`), the check (`check_ok`) and the pops: `code_correct`, for every
-implementation of the CRT, and `check_faultTolerant`, the release's
-soundness whatever the CRT computed.
+implementation of the CRT.
 -/
 
 @[expose] public section
@@ -130,38 +129,5 @@ theorem code_correct (v : CrtImpl) (s : State) (h : chkA.pre s) :
 
 end
 
-/-! ## Fault tolerance -/
-
-/-- The check and the release are correct whatever the CRT left in `M` and
-returned: they release `M` (returning 1) only if `M` is below `n` and
-`M^e mod n` is the input, and write zeros otherwise; `M` is zeroed either
-way. A fault in the CRT's computation (of the result, of its return value,
-or of both) is never released. -/
-theorem check_faultTolerant (v : CrtImpl) {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128}
-    {m₀ : Mem} (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t.mem) :
-    WP isa (seqs (check v.pcName v.pc v.pdName v.pd)) t fun t' =>
-      (t'.gpr .x0 = 1 →
-        Spec.Rsa.bytesAt t'.mem L.out L.k.toNat = Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat ∧
-        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat) <
-          Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) ∧
-        Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat) ^
-            Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.e L.el.toNat) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) =
-          Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat)) ∧
-      (t'.gpr .x0 ≠ 1 → Spec.Rsa.bytesAt t'.mem L.out L.k.toNat = List.replicate L.k.toNat 0) ∧
-      Spec.Rsa.bytesAt t'.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat = List.replicate L.k.toNat 0 :=
-  WP.mono (check_ok v hL ha hc hs) fun t' ⟨_, hax, hout, hM⟩ => by
-    have hx : (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat).length = (Spec.Rsa.bytesAt m₀ L.n L.k.toNat).length := by
-      rw [Proof.Rsa.bytesAt_length', Proof.Rsa.bytesAt_length']
-    refine ⟨fun h1 => ?_, fun h1 => ?_, hM⟩
-    · obtain ⟨hrel, hsnd⟩ := Proof.Rsa.checkResult_sound hx (hax ▸ h1)
-      rw [hout, ite_pos' hrel]
-      exact ⟨rfl, hsnd⟩
-    · have hrel : ¬ released (t.gpr .x0) (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
-          (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat)
-          (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat) := fun h => by
-        apply h1
-        rw [hax]
-        simp only [checkResult, h.1, h.2.1, h.2.2, Option.isSome_some, and_self, ite_true]
-      rw [hout, ite_neg' hrel]
 
 end VG.Proof.Rsa.AArch64
