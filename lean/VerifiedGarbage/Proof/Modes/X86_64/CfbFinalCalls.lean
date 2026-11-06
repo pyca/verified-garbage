@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Impl.Modes.X86_64.CfbFinal
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalSteps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -32,6 +35,7 @@ arguments (`FinalArgs.Ok`), and the states its inlined functions run from:
 namespace VG.Proof.Modes.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Modes.X86_64
+open VG.Impl.Aes.X86_64 (movR)
 
 /-- What `cfbFinal` asks of where the whole-block functions take their
 arguments: at most six argument registers, distinct, the data's and the
@@ -177,5 +181,94 @@ theorem entry_ok {a : FinalArgs} (ha : FinalOk a) {s₀ : State} {len : Nat}
     exact this
   · rw [rd₂, rd₁]; exact (pushRegs_eq s₀ _).1
   · rw [wr₂, wr₁, pushed_wr, pushRegs_length]; rfl
+
+/-- `mov r, imm32`. -/
+theorem movImm32_ok (s : State) (r : Reg) (v : BitVec 32) :
+    ∃ s', runBlock isa [.mov r (.imm v)] s = some s' ∧ s'.gpr r = v.signExtend 64 ∧
+      (∀ x, x ≠ r → s'.gpr x = s.gpr x) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨s.setReg r (v.signExtend 64), ?_, RegUpd.gpr_setReg_self _ _ _, fun _ h => RegUpd.gpr_setReg_of_ne _ _ h,
+    rfl, rfl, rfl⟩
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]
+
+theorem eight_signExtend : (8 : BitVec 32).signExtend 64 = 8 := by decide
+
+/-- `reload` is the moves of the callee-saved registers back to the
+arguments. -/
+theorem reload_eq (a : FinalArgs) :
+    a.reload = movs ((List.range a.regs.length).map fun i => (a.arg i, FinalArgs.saved i)) := by
+  simp only [FinalArgs.reload, movs, List.map_map]; rfl
+
+/-- `zeroBlock ++ oneBlock`, from a state `v` whose callee-saved registers
+hold the arguments of `s₀` (but the data's address and the length) and whose
+`rsp` is the frame's: the state the second function runs from, with the
+callee-saved registers as in `v`. -/
+theorem tailSetup_ok {a : FinalArgs} (ha : FinalOk a) {s₀ v : State}
+    (hsv : ∀ i < a.regs.length, i ≠ a.lenIx → i ≠ a.dataIx → v.gpr (FinalArgs.saved i) = s₀.gpr (a.arg i))
+    (hsp : v.gpr .rsp = s₀.gpr .rsp - BitVec.ofNat 64 80) (hfr : frameRegion s₀ ∈ v.wr) :
+    ∃ u, runBlock isa (a.zeroBlock ++ a.oneBlock) v = some u ∧ Call₂ a s₀ v u ∧
+      (∀ i < 6, u.gpr (FinalArgs.saved i) = v.gpr (FinalArgs.saved i)) := by
+  have hlen6 := ha.length
+  have hb := ha.blk_eq
+  have hw8 : 8 + 8 * (a.blk / 8) ≤ 2 ^ 64 := by omega
+  have hK : v.gpr .rsp + BitVec.ofNat 64 8 = blockAddr s₀ := by
+    rw [hsp, blockAddr, sub_add_ofNat _ (by decide)]
+  have hKk : ∀ k, v.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k) = blockAddr s₀ + BitVec.ofNat 64 (8 * k) := fun k => by
+    rw [← VG.Offset.add_add, hK]
+  have hfr' : frameRegion s₀ = ⟨v.gpr .rsp, 80⟩ := by rw [frameRegion, hsp]
+  obtain ⟨s₁, e₁, f₁, z₁, g₁, r₁, rd₁, wr₁⟩ := wipe_zero ⟨blockAddr s₀, a.blk⟩ (frameRegion s₀) v hfr (a.blk / 8) hw8
+    (fun k hk => by rw [hKk]; exact Offset.contains_base _ (by omega) (by omega))
+    (fun k hk => by rw [hfr']; exact Offset.contains_base _ (by omega) (by omega))
+  -- `reload`.
+  let l := (List.range a.regs.length).map fun i => (a.arg i, FinalArgs.saved i)
+  have hdst : (l.map Prod.fst).Nodup := by
+    simp only [l, List.map_map, Function.comp_def]
+    exact nodup_map_range _ _ fun i hi j hj h => ha.distinct i hi j hj h
+  have hsrc : ∀ q ∈ l, q.1 ∉ l.map Prod.snd := by
+    intro q hq h
+    simp only [l, List.mem_map, List.mem_range] at hq h
+    obtain ⟨i, hi, rfl⟩ := hq
+    obtain ⟨⟨_, r⟩, ⟨j, hj, e⟩, e'⟩ := h
+    simp only [Prod.mk.injEq] at e
+    simp only at e'
+    exact saved_not_arg j (by omega) (e.2 ▸ e' ▸ ha.args i hi)
+  obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂, -⟩ := movs_ok l s₁ hdst hsrc
+  have notDst : ∀ x, (x = .rsp ∨ ∃ i < 6, x = FinalArgs.saved i) → x ∉ l.map Prod.fst := by
+    intro x hx h
+    simp only [l, List.map_map, Function.comp_def, List.mem_map, List.mem_range] at h
+    obtain ⟨j, hj, rfl⟩ := h
+    rcases hx with h | ⟨i, hi, h⟩
+    · exact (argRegs_scratch' _ (ha.args j hj)).1 h
+    · exact saved_not_arg i hi (h ▸ ha.args j hj)
+  have hD := ha.data
+  have hL := ha.len
+  obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ (a.arg a.dataIx) .rsp
+  obtain ⟨s₄, e₄, v₄, o₄, m₄, rd₄, wr₄⟩ := addImm_ok s₃ (a.arg a.dataIx) 8
+  obtain ⟨u, e₅, v₅, o₅, m₅, rd₅, wr₅⟩ := movImm32_ok s₄ (a.arg a.lenIx) 1
+  have dl : a.arg a.lenIx ≠ a.arg a.dataIx := fun h => ha.dl (ha.distinct _ hD _ hL h.symm)
+  have hrsp₂ : s₂.gpr .rsp = v.gpr .rsp := by rw [o₂ _ (notDst _ (.inl rfl)), g₁ _ (by decide)]
+  have hsav : ∀ i < 6, u.gpr (FinalArgs.saved i) = v.gpr (FinalArgs.saved i) := fun i hi => by
+    have h1 : FinalArgs.saved i ≠ a.arg a.lenIx := fun h => saved_not_arg i hi (h ▸ ha.args _ hL)
+    have h2 : FinalArgs.saved i ≠ a.arg a.dataIx := fun h => saved_not_arg i hi (h ▸ ha.args _ hD)
+    rw [o₅ _ h1, o₄ _ h2, o₃ _ h2, o₂ _ (notDst _ (.inr ⟨i, hi, rfl⟩)), g₁ _ (saved_scratch i hi).2.2]
+  refine ⟨u, ?_, ⟨fun i hi h1 h2 => ?_, ?_, ?_, ?_, fun k hk => ?_, ?_, ?_, ?_⟩, hsav⟩
+  · have h : a.oneBlock = movs l ++ [movR (a.arg a.dataIx) .rsp] ++ [.alu .add (a.arg a.dataIx) (.imm 8)] ++
+        [.mov (a.arg a.lenIx) (.imm 1)] := by
+      simp only [FinalArgs.oneBlock, reload_eq, List.append_assoc]; rfl
+    rw [runBlock_app, FinalArgs.zeroBlock, e₁, Option.bind_some, h, runBlock_app, runBlock_app, runBlock_app, e₂, Option.bind_some, e₃,
+      Option.bind_some, e₄, Option.bind_some, e₅]
+  · have n1 : a.arg i ≠ a.arg a.lenIx := fun h => h1 (ha.distinct i hi _ hL h)
+    have n2 : a.arg i ≠ a.arg a.dataIx := fun h => h2 (ha.distinct i hi _ hD h)
+    rw [o₅ _ n1, o₄ _ n2, o₃ _ n2, v₂ (a.arg i, FinalArgs.saved i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩),
+      g₁ _ (saved_scratch i (by omega)).2.2]
+    exact hsv i hi h1 h2
+  · rw [o₅ _ (Ne.symm dl), v₄, v₃, hrsp₂, eight_signExtend]; exact hK
+  · rw [v₅]; rfl
+  · rw [o₅ _ (Ne.symm (argRegs_scratch' _ (ha.args _ hL)).1), o₄ _ (Ne.symm (argRegs_scratch' _ (ha.args _ hD)).1),
+      o₃ _ (Ne.symm (argRegs_scratch' _ (ha.args _ hD)).1), hrsp₂, hsp]
+  · rw [m₅, m₄, m₃, m₂, ← hKk]
+    exact z₁ k hk
+  · rw [m₅, m₄, m₃, m₂]; exact f₁
+  · rw [rd₅, rd₄, rd₃, rd₂, rd₁]
+  · rw [wr₅, wr₄, wr₃, wr₂, wr₁]
 
 end VG.Proof.Modes.X86_64

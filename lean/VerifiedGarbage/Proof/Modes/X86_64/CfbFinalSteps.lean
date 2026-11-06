@@ -152,21 +152,25 @@ theorem rest_ok (s : State) {Rd Rl : Reg} {lg : Nat} (h1 : 1 ≤ lg) (h2 : lg �
   · rw [o₅ _ h3, o₄ _ h2, o₃ _ h1, o₂ _ h1, o₁ _ h1]
 
 /-- `wipe words` from `u`, with the `words` quadwords at `rsp + 8` in the
-writable region `R`: zero, and nothing else changed. -/
-theorem wipe_zero (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 8 + 8 * words ≤ 2 ^ 64 →
+region `R` and in the region `P` that `u` may write: zero, and nothing else
+changed. -/
+theorem wipe_zero (R P : Region) (u : State) (hP : P ∈ u.wr) : ∀ words, 8 + 8 * words ≤ 2 ^ 64 →
     (∀ k < words, R.Contains (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k)) 8) →
+    (∀ k < words, P.Contains (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k)) 8) →
     ∃ s', runBlock isa (Impl.StackScratch.X86_64.wipe words) u = some s' ∧ Frame [R] u.mem s'.mem ∧
       (∀ k < words, s'.mem.readW (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k)) 64 = 0) ∧
       (∀ x, x ≠ .r11 → s'.gpr x = u.gpr x) ∧ s'.gpr .r11 = 0 ∧ s'.rd = u.rd ∧ s'.wr = u.wr
-  | 0, _, _ => ⟨u.setReg32 .r11 0, by
+  | 0, _, _, _ => ⟨u.setReg32 .r11 0, by
       simp only [Impl.StackScratch.X86_64.wipe, Impl.StackScratch.X86_64.wipeStores, List.range_zero,
         List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some],
       Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       fun x hx => by simp [State.setReg32, State.setReg, hx], by simp [State.setReg32, State.setReg], rfl, rfl⟩
-  | w + 1, hw, hc => by
-    obtain ⟨s₁, e₁, f₁, z₁, g₁, r₁, rd₁, wr₁⟩ := wipe_zero R u hR w (by omega) fun k hk => hc k (by omega)
+  | w + 1, hw, hc, hcP => by
+    obtain ⟨s₁, e₁, f₁, z₁, g₁, r₁, rd₁, wr₁⟩ :=
+      wipe_zero R P u hP w (by omega) (fun k hk => hc k (by omega)) (fun k hk => hcP k (by omega))
     have hsp : s₁.gpr .rsp = u.gpr .rsp := g₁ _ (by decide)
-    have hin : InRegions s₁.wr (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * w)) 8 := ⟨R, by rw [wr₁]; exact hR, hc w (by omega)⟩
+    have hin : InRegions s₁.wr (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * w)) 8 :=
+      ⟨P, by rw [wr₁]; exact hP, hcP w (by omega)⟩
     refine ⟨{ s₁ with mem := s₁.mem.writeW (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * w)) (s₁.gpr .r11) }, ?_,
       f₁.writeW (List.mem_singleton_self _) _ (hc w (by omega)), fun k hk => ?_, g₁, r₁, rd₁, wr₁⟩
     · have h : Impl.StackScratch.X86_64.wipe (w + 1) = Impl.StackScratch.X86_64.wipe w ++
@@ -180,5 +184,11 @@ theorem wipe_zero (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 8 + 8 
       by_cases hkw : k = w
       · subst hkw; rw [Mem.readW_writeW_self64, r₁]
       · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), z₁ k (by omega)]
+
+/-- `x - a + b = x - (a - b)`, for `b ≤ a`. -/
+theorem sub_add_ofNat (x : Addr) {a b : Nat} (h : b ≤ a) :
+    x - BitVec.ofNat 64 a + BitVec.ofNat 64 b = x - BitVec.ofNat 64 (a - b) := by
+  rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
+    rw [← BitVec.ofNat_add, Nat.sub_add_cancel h], ← BitVec.sub_sub, BitVec.sub_add_cancel]
 
 end VG.Proof.Modes.X86_64
