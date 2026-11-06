@@ -13,7 +13,8 @@ bytes 256 through 383 of `PreparedPowersRepr`'s 1024-byte format, in a buffer
 of its own (`PreparedPowersRepr.powers8`). It is a storage convention, not a
 change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
-No function computes the buffer on its own. Each `*_store_powers` function is
+`vg_aes_gcm_store_powers` computes the buffer from a key context alone, when
+the key is set up. Each other `*_store_powers` function is
 a plain function (`vg_aes_gcm_seal`, `vg_aes_gcm_open`, or GHASH over whole blocks), with its
 unchanged postcondition, that also writes to a 128-byte buffer the powers of
 the hash subkey that it computes for its own GHASH. `vg_aes_gcm_seal_store_powers`
@@ -85,6 +86,38 @@ def withPowersSafety : String :=
     contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey)."
 
 /-! ## Writing the powers -/
+
+/-- `vg_aes_gcm_store_powers(ctx: *const [u64; 32], pw: *mut [u64; 16])`:
+a key context and the powers' buffer. -/
+def storePowersSig : Sig where
+  params := [("ctx", .array false .u64 32), storePowersParam]
+
+/-- The powers of the hash subkey of the key context at `ctx` (its bytes
+240–255, `ctxH`) at `pw`. -/
+def storePowersPost (pb : Nat) : storePowersSig.Post pb := fun ctx pw m m' _ =>
+  Powers8Repr m' pw (ctxH m ctx)
+
+/-- No precondition: the powers are those of whatever hash subkey the
+context holds, as for `prepareContract`. -/
+def storePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  storePowersSig.contract A (post := storePowersPost A.ptrBits) (stack := stack)
+
+/-- `vg_aes_gcm_store_powers` on every target. -/
+def storePowersApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_store_powers"
+  sig := storePowersSig
+  contracts := some fun A stack => storePowersContract A stack
+  summary := "Writes to `*pw` the 8 prepared powers of the hash subkey `H` of the key context \
+    `*ctx` of `vg_aes_gcm_init` (its bytes 240 to 255, `VG.Spec.Gcm.ctxH`): at byte `32*k`, \
+    for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two \
+    little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`), \
+    as the `*_with_powers` functions require for that key context. It reads only `*ctx` \
+    and writes only `*pw`. The key context and the powers are secret: only the pointers may \
+    affect timing.\n\n\
+    Contract: `VG.Spec.Gcm.storePowersContract`."
+  safety := []
+
 
 /-- What `vg_aes_gcm_seal_store_powers` and `vg_aes_gcm_open_store_powers`
 require beyond the plain functions: a 12-byte nonce and at most 16 bytes of
