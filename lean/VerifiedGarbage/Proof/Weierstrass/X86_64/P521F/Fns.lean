@@ -6,9 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P521F.Mul
 
 /-!
 # P-521 on x86-64: the products and the square by light calls
@@ -27,10 +25,10 @@ or the stores. They change only the registers but `rdi`, `rsi` and `rsp`,
 namespace VG.Proof.Weierstrass.X86_64.P521F
 
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64.P521F
-open VG.Impl.Weierstrass.X86_64.Mont (fnTmp copyW fnMod)
+open VG.Impl.Weierstrass.X86_64.Mont (fnTmp fnMod)
 open VG.Proof.Mont VG.Proof.Mont.X86_64
 open VG.Proof.Weierstrass.X86_64.Mont (ptrC_of apart_off wordsVal_off word_off off_off rdiRsi_ok xCanon_at
-  storesC_shift copyW_ok movReg_ok)
+  storesC_shift)
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 variable {Z : Nat}
@@ -246,107 +244,40 @@ theorem sqrFn_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z)
   rw [O₂ x (by rw [T_eq]; simp only [fnTmp] at ht; omega), O₁ x (by rw [T_eq]; simp only [fnTmp] at ht; omega)]
 
 
-/-- A block that writes no vector register keeps them. -/
-private theorem runBlock_xmm : ∀ (is : List Instr) {s s' : State}, is.all (fun i => !KeepReg.writesVec i) = true →
-    runBlock isa is s = some s' → s'.xmm = s.xmm
-  | [], s, s', _, h => by rw [runBlock_nil, Option.some.injEq] at h; rw [h]
-  | i :: is, s, s', hw, h => by
-    simp only [List.all_cons, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at hw
-    rw [runBlock_cons] at h
-    cases he : exec i s with
-    | none => rw [he, runStep, Option.bind_none] at h; cases h
-    | some t =>
-      rw [he, runStep_some] at h
-      rw [runBlock_xmm is hw.2 h, KeepReg.exec_xmm hw.1 he]
-
-private theorem WP.keep_xmm {is : List Instr} (hw : is.all (fun i => !KeepReg.writesVec i) = true) {s : State}
-    {Q : State → Prop} (h : WP isa (.block is) s Q) : WP isa (.block is) s fun s' => Q s' ∧ s'.xmm = s.xmm := by
-  obtain ⟨s', hr, hq⟩ := WP.runBlock_of h
-  exact WP.of_runBlock ⟨s', hr, hq, runBlock_xmm is hw hr⟩
-
-/-- `mulRows`' first two instructions: the output's offset into `xmm13`, `rsi = rcx`. -/
-theorem mulPro_ok (s : State) :
-    WP isa (.block [.xop (.movq .xmm13 .rsi), .mov .rsi (.reg .rcx)]) s fun s' =>
-      s'.gpr .rsi = s.gpr .rcx ∧ (∀ r, r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr ∧ (s'.xmm .xmm13).extractLsb' 0 64 = s.gpr .rsi := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, readSrc, Option.map_some]
-  refine ⟨_, rfl, ?_, fun r hr => ?_, rfl, rfl, rfl, ?_⟩
-  · simp only [RegUpd.gpr_setReg_self, RegUpd.gpr_setXmm]
-  · simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setXmm]
-  · simp only [RegUpd.xmm_setReg, RegUpd.xmm_setXmm_self, BitVec.extractLsb'_append_eq_right]
-
-/-- `mulRows`' last instruction: `rsi` from `xmm13`. -/
-theorem mulEpi_ok (s : State) :
-    WP isa (.block [.movqR .rsi .xmm13]) s fun s' =>
-      s'.gpr .rsi = (s.xmm .xmm13).extractLsb' 0 64 ∧ (∀ r, r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
-        s'.rd = s.rd ∧ s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, exec]
-  exact ⟨_, rfl, RegUpd.gpr_setReg_self .., fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, rfl, rfl⟩
-
-/-- `mulRows`: `[a] [b]` with its words `0 … 8` in the temporary area and `9 … 17` in `xWin 9`,
-for `rbx = ws + a` and `rcx = ws + b`. -/
-theorem mulRows_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) {a b : Nat}
-    (hbx : s.gpr .rbx = off base a) (hcx : s.gpr .rcx = off base b) (ha : a + 72 ≤ 3520) (hb : b + 72 ≤ 3520) :
-    WP isa (.block mulRows) s fun s' =>
-      wordsVal s'.mem base fnTmp 9 + (2 ^ 64) ^ 9 * hval (xg s') 9 9 = wordsVal s.mem base a 9 * wordsVal s.mem base b 9 ∧
-      KeepRegs (.rax :: .rcx :: .rdx :: .rbx :: xRegs) s s' ∧ Outside base fnTmp 72 s.mem s'.mem := by
-  have hnw := hs.nowrap
-  have hft : (fnMod true).tmp = fnTmp := rfl
-  have hft' : fnTmp = 4024 := rfl
-  rw [mulRows, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (mulPro_ok s) fun s₁ ⟨v₁, k₁, m₁, rd₁, wr₁, x₁⟩ => ?_
-  have hs₁ : Scr s₁ base Z := ⟨by rw [k₁ _ (by decide)]; exact hs.rdi, wr₁ ▸ hs.wr, hnw⟩
-  have hbx₁ : s₁.gpr .rbx = off base a := by rw [k₁ _ (by decide), hbx]
-  have hsi₁ : s₁.gpr .rsi = off base b := by rw [v₁, hcx]
-  have hpa := ptrC_of hs₁ hbx₁ (show a + 72 ≤ Z by omega) (by decide) (Or.inr (Or.inr rfl))
-  have hpb := ptrC_of hs₁ hsi₁ (show b + 72 ≤ Z by omega) (by decide) (Or.inr (Or.inl rfl))
-  have hat : ∀ n < 9, Apart (off base a) (0 + 8 * n) 8 base (fnMod true).tmp (8 * n) := fun n hn i hi => by
-    rw [show off (off base a) (0 + 8 * n) + BitVec.ofNat 64 i = off base (a + (0 + 8 * n) + i) by
-      rw [off_off]; exact Offset.add_add base _ i, ofs_off0 base (by omega), hft, hft']
-    omega
-  have hbt : Apart (off base b) 0 72 base (fnMod true).tmp 72 :=
-    apart_off base (by rw [hft, hft']; omega) (by omega)
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep_xmm (by rw [List.all_flatMap, List.all_eq_true]; decide) (xRows_ok hs₁.toC hpa hpb (M := fnMod true) (a := 0) (b := 0) (by omega)
-    (by omega) (by rw [hft, hft']; omega) hat hbt 8 (Nat.le_refl _))) fun s₂ ⟨⟨k₂, O₂, e₂⟩, x₂⟩ => ?_
-  refine WP.mono (mulEpi_ok s₂) fun s₃ ⟨v₃, k₃, m₃, rd₃, wr₃⟩ => ?_
-  have hA₁ : wordsVal s₁.mem (off base a) 0 9 = wordsVal s.mem base a 9 := by rw [wordsVal_off, Nat.add_zero, m₁]
-  have hB₁ : wordsVal s₁.mem (off base b) 0 9 = wordsVal s.mem base b 9 := by rw [wordsVal_off, Nat.add_zero, m₁]
-  have hx : ∀ j, xg s₃ j = xg s₂ j := fun j => by
-    simp only [xg]; rw [k₃ _ (fun h => absurd (h ▸ (xAcc_ne j).2.2.2.2) (by decide))]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [m₃, hval_congr fun j _ _ => hx j, ← hft, e₂, hA₁, hB₁]
-  · refine ⟨fun r hr => ?_, by rw [rd₃, k₂.rd, rd₁], by rw [wr₃, k₂.wr, wr₁]⟩
-    simp only [List.mem_cons, not_or] at hr
-    by_cases hrs : r = .rsi
-    · subst hrs; rw [v₃, x₂, x₁]
-    · rw [k₃ r hrs, k₂.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.2]), k₁ r hrs]
-  · intro x hx'
-    rw [m₃, O₂ x (by rw [hft]; exact hx'), m₁]
-
 /-- `vg_p521_mul_adx` (`weak = false`) and `vg_p521_mulw_adx` (`weak`): `[o] = [a] [b] 2⁻⁵⁷⁶ mod p`. -/
 theorem mulFnG_ok (weak : Bool) (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) {a b o m : Nat}
     (hbx : s.gpr .rbx = off base a) (hcx : s.gpr .rcx = off base b) (hso : s.gpr .rsi = BitVec.ofNat 64 o)
     (ha : a + 72 ≤ 3520) (hb : b + 72 ≤ 3520) (ho : o + 72 ≤ 3520)
     (hm : m + 1 = 512 * (2 ^ 64) ^ 8) (hA : wordsVal s.mem base a 9 < m) (hB : wordsVal s.mem base b 9 < m) :
-    WP isa (.block (mulRows ++ (redS (!weak) ++ (if weak then exitW else exitS)))) s
+    WP isa (.block (mulS ++ (([.store (sc (T 8)) .r15] : List Instr) ++ (redS (!weak) ++ (if weak then exitW else exitS))))) s
       (FnPost m weak base o (wordsVal s.mem base a 9 * wordsVal s.mem base b 9) s) := by
   have hnw := hs.nowrap
+  have h8a : (word s.mem (off base a) 64).toNat < 2 ^ 9 := by rw [off_word_eq]; exact a8_lt hm hA
+  have h8b : (word s.mem (off base b) 64).toNat < 2 ^ 9 := by rw [off_word_eq]; exact a8_lt hm hB
   rw [WP.block_append_iff]
-  refine WP.mono (mulRows_ok hZ hs hbx hcx ha hb) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  refine WP.mono (mulS_ok hZ hs hbx hcx ha hb h8a h8b) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ : Scr s₁ base Z := hs.of_keepRegs' k₁ (by decide)
-  have hso₁ : s₁.gpr .rsi = BitVec.ofNat 64 o := by rw [k₁.gpr _ (by decide), hso]
+  rw [WP.block_append_iff]
+  refine WP.mono (storeX_ok hs₁ .r15 (d := T 8) (by rw [T_eq]; omega)) fun s₂ ⟨m₂, g₂, _, _, rd₂, wr₂⟩ => ?_
+  have hs₂ : Scr s₂ base Z := ⟨by rw [g₂]; exact hs₁.rdi, by rw [wr₂]; exact hs₁.wr, hnw⟩
+  have hso₂ : s₂.gpr .rsi = BitVec.ofNat 64 o := by rw [g₂, k₁.gpr _ (by decide), hso]
+  have O₂ : Outside base (T 8) 8 s₁.mem s₂.mem := by rw [m₂]; exact writeW_outside _ _ _ (by rw [T_eq]; omega)
+  -- The product, as the reduction reads it.
+  have ht8 : tsum s₂.mem base 0 8 = tsum s₁.mem base 0 8 := by
+    rw [tsum_eq, tsum_eq]; exact O₂.wordsVal (by rw [T_eq, T_eq]; omega) (by rw [T_eq]; omega)
+  have hw8 : (word s₂.mem base (T 8)).toNat = xg s₁ 8 := by rw [m₂, word_writeW_self]; rfl
+  have hx : hval (xg s₂) 9 8 = hval (xg s₁) 9 8 := hval_congr fun c _ _ => by simp only [xg]; rw [g₂]
+  have hr : regsVal s₁ (xWin 8) = xg s₁ 8 + 2 ^ 64 * hval (xg s₁) 9 8 := by
+    rw [regsVal_xWin, hval]
+  have hP : tsum s₂.mem base 0 9 + 2 ^ 576 * hval (xg s₂) 9 8 =
+      wordsVal s.mem base a 9 * wordsVal s.mem base b 9 := by
+    rw [tsum_succ8, ht8, hw8, hx, ← e₁, hr]
+    omega
   have hle := mul_le_sq (A := wordsVal s.mem base a 9) (B := wordsVal s.mem base b 9) (by omega) (by omega)
-  have hl := hval_succ_last (xg s₁) 9 8
-  simp only [Nat.reduceAdd] at hl
-  have hT : tsum s₁.mem base 0 9 = wordsVal s₁.mem base fnTmp 9 := tsum_eq _ _ _ _
-  have hP : tsum s₁.mem base 0 9 + 2 ^ 576 * hval (xg s₁) 9 8 = wordsVal s.mem base a 9 * wordsVal s.mem base b 9 := by
-    rw [hT]; omega
-  refine WP.mono (redExit_ok hZ hs₁ ho hso₁ hm weak (by rw [hP]; exact hle)) fun s₂ h => ?_
+  refine WP.mono (redExit_ok hZ hs₂ ho hso₂ hm weak (by rw [hP]; exact hle)) fun s₃ h => ?_
   rw [hP] at h
-  exact FnPost.pre (k₁.mono (by decide)) (fun x ht => O₁ x (by simp only [fnTmp] at ht ⊢; omega)) h
+  refine FnPost.pre ((keepRegs_of_keeps' k₁ g₂ rd₂ wr₂).mono (by decide)) (fun x ht => ?_) h
+  rw [O₂ x (by rw [T_eq]; simp only [fnTmp] at ht; omega), O₁ x (by rw [T_eq]; simp only [fnTmp] at ht; omega)]
 
 theorem mulFn_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) {a b o m : Nat}
     (hbx : s.gpr .rbx = off base a) (hcx : s.gpr .rcx = off base b) (hso : s.gpr .rsi = BitVec.ofNat 64 o)
@@ -355,7 +286,7 @@ theorem mulFn_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z)
     WP isa mulFn s (FnPost m false base o (wordsVal s.mem base a 9 * wordsVal s.mem base b 9) s) := by
   have h := mulFnG_ok false hZ hs hbx hcx hso ha hb ho hm hA hB
   simp only [Bool.not_false, Bool.false_eq_true, ite_false] at h
-  rw [mulFn, List.append_assoc]; exact h
+  rw [mulFn]; simp only [List.append_assoc]; exact h
 
 theorem mulFnW_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) {a b o m : Nat}
     (hbx : s.gpr .rbx = off base a) (hcx : s.gpr .rcx = off base b) (hso : s.gpr .rsi = BitVec.ofNat 64 o)
@@ -364,6 +295,6 @@ theorem mulFnW_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z
     WP isa mulFnW s (FnPost m true base o (wordsVal s.mem base a 9 * wordsVal s.mem base b 9) s) := by
   have h := mulFnG_ok true hZ hs hbx hcx hso ha hb ho hm hA hB
   simp only [Bool.not_true, ite_true] at h
-  rw [mulFnW, List.append_assoc]; exact h
+  rw [mulFnW]; simp only [List.append_assoc]; exact h
 
 end VG.Proof.Weierstrass.X86_64.P521F

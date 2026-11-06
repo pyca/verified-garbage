@@ -153,20 +153,49 @@ def exitS : List Instr := [.alu .add .rdi (.reg .rsi)] ++ xCanon 0 0 ++ [.alu .s
 /-- The result, below `2p`, at `[rdi + rsi]`. -/
 def exitW : List Instr := [.alu .add .rdi (.reg .rsi)] ++ storesC 0 (xWin 9) 0 ++ [.alu .sub .rdi (.reg .rsi)]
 
-/-- `mulPX`'s rows: `[rbx]`'s words times `[rcx]` (through `rsi`, the
-output's offset kept in `xmm13` meanwhile). -/
-def mulRows : List Instr :=
-  [.xop (.movq .xmm13 .rsi), .mov .rsi (.reg .rcx)] ++ (List.range 9).flatMap (xRowV (fnMod true) .rbx .rsi 0 0 0) ++
-    [.movqR .rsi .xmm13]
+/-- The word at `[rsi + d]`: the second factor's, in the products. -/
+def bsrc (d : Nat) : Src := .mem (rcR .rsi 0 d)
+
+/-- `maddStepsM` through the register `r`. -/
+def maddStepsMR (r : Reg) : Nat → List Reg → Nat → List Instr
+  | k + 1, x :: y :: rest, d => maddM x y (.mem (rcR r 0 d)) ++ maddStepsMR r k (y :: rest) (d + 8)
+  | _, _, _ => []
+
+/-- Row 0 of the product, s2n-bignum's `bignum_mul_p521`'s: `b_0 [a_0 … a_7]`
+at the words `0 … 8` (one carry chain), word 0 stored. -/
+def prodRow0 : List Instr :=
+  [.alu32 .xor .r14 (.reg .r14), .mov .rdx (bsrc 0), .mulx (q 1) .rax (asrc 0), .store (sc (T 0)) .rax] ++
+  mulAccsL (qs 1 8) 8 ++ [.adox (q 8) (.reg .r14)]
+
+/-- Row `i` of `1 … 7`: `b_i [a_0 … a_7]` added at the words `i … i + 8`, the
+top one fresh in the register of word `i`, which is stored once final. -/
+def prodRow (i : Nat) : List Instr :=
+  [.alu32 .xor .r14 (.reg .r14), .mov .rdx (bsrc (8 * i))] ++ sqChain 7 i 0 8 1 ++ sqChain 1 (i + 7) 56 0 0 ++
+  [.adox (q (i + 8)) (.reg .r14)]
+
+/-- The top words' rows: `a_8 b_8` at word 16, `b_8 [a_0 … a_7]` and
+`a_8 [b_0 … b_7]` at word 8, added to the words `8 … 15`. -/
+def prodTop : List Instr :=
+  [.mov .rdx (bsrc 64), .mov .r14 (asrc 64), .imul .r14 .rdx, .alu32 .xor .rax (.reg .rax)] ++
+  maddStepsM 8 [.r15, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14] 0 ++ [.alu .adc .r14 (.imm 0)] ++
+  [.mov .rdx (asrc 64), .alu32 .xor .rax (.reg .rax)] ++
+  maddStepsMR .rsi 8 [.r15, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14] 0 ++ [.alu .adc .r14 (.imm 0)]
+
+/-- `[rbx] [rcx]` as `sqrS` leaves a square: its words `0 … 7` in the
+temporary area, `8` in `r15` and `9 … 16` in `xAcc 9 … 16`; `[rcx]` read
+through `rsi`, the output's offset kept in `xmm13` meanwhile. -/
+def mulS : List Instr :=
+  [.xop (.movq .xmm13 .rsi), .mov .rsi (.reg .rcx)] ++ prodRow0 ++ (List.range 7).flatMap (fun i => prodRow (i + 1)) ++
+    prodTop ++ [.movqR .rsi .xmm13]
 
 /-- `vg_p521_sqr_adx`. -/
 def sqrFn : Prog isa := .block (sqrS ++ [.store (sc (T 8)) .r15] ++ redS true ++ exitS)
 
 /-- `vg_p521_mul_adx`. -/
-def mulFn : Prog isa := .block (mulRows ++ redS true ++ exitS)
+def mulFn : Prog isa := .block (mulS ++ [.store (sc (T 8)) .r15] ++ redS true ++ exitS)
 
 /-- `vg_p521_mulw_adx`. -/
-def mulFnW : Prog isa := .block (mulRows ++ redS false ++ exitW)
+def mulFnW : Prog isa := .block (mulS ++ [.store (sc (T 8)) .r15] ++ redS false ++ exitW)
 
 /-- A call's arguments: `rbx = ws + a`, `rcx = ws + b`, `rsi = o`. -/
 def args (o a b : Nat) : List Instr :=
