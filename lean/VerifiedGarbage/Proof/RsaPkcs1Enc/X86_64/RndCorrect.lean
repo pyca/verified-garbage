@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
 import VerifiedGarbage.Proof.Framework.Offset
@@ -1091,7 +1091,7 @@ theorem outR_eq {s : State} (hp : RPre s) : (⟨s.gpr .rdi, (s.gpr .r8).toNat⟩
   rw [outR, hp.hsi]
 
 theorem call_pre {s w : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h : Args s w i ps) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre
       (w.callEntry.withRegions (callRd s) (callWr s)) := by
   have hE (j : Nat) (hj : j < 8) :
       stackArg (w.callEntry.withRegions (callRd s) (callWr s)) j = callArg s j :=
@@ -1099,7 +1099,7 @@ theorem call_pre {s w : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h : Arg
   have hP := hp.ps
   have hpsN : (BitVec.ofNat 64 (psLen s)).toNat = psLen s := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     abi, argRegs, VG.Proof.RsaPkcs1Enc.X86_64.Pc.stackArgs_eight, List.append_eq, List.range, List.range.loop]
   simp only [h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rsp, fb_sub8, stackArgAddr_entry h.rsp,
     hE 0 (by decide), hE 1 (by decide), hE 2 (by decide), hE 3 (by decide), hE 4 (by decide),
@@ -1247,11 +1247,11 @@ theorem call_ok (v : PublicImpl) {s w : State} (hp : RPre s) {i : Nat} {ps : Lis
   obtain ⟨hc, hw⟩ := call_covers hp h
   have hv := (PcCT.code_verified v).1
   have hd : (Impl.RsaPkcs1Enc.X86_64.Precomputed.code v.name v.code).x86_64Depth = encStack := enc_depth v
-  refine WP.call_sp_mx (k := Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) (rd := callRd s)
+  refine WP.call_sp_mx (k := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi encStack) (rd := callRd s)
     (wr := callWr s) hv (SpSafe.of_all (PcCT.code_spSafe v)) (by rw [hd]; decide) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [hd, h.rsp, below_fb] at hf
-  sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+  sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     abi, argRegs, VG.Proof.RsaPkcs1Enc.X86_64.Pc.stackArgs_eight, List.append_eq, List.range, List.range.loop] at hpost
   have hE (j : Nat) (hj : j < 8) :
       stackArg (w.callEntry.withRegions (callRd s) (callWr s)) j = callArg s j :=

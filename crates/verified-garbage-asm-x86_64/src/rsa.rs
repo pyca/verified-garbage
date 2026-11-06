@@ -1926,6 +1926,18 @@ pub(crate) mod vg_rsa_mont_mul;
 pub(crate) mod vg_rsa_mont_mul_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed_adx.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed_ifma.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed_ifma;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]
 pub(crate) mod vg_rsa_private_checked;
 

@@ -463,7 +463,7 @@ theorem callArg_eq {a s₁ s₂ : State} (h₁ : E a s₁) (h₂ : E a s₂) (j 
 
 theorem encPub {a s₁ s₂ w₁ w₂ : State} (h₁ : E a s₁) (h₂ : E a s₂) {i₁ i₂ : Nat} {ps₁ ps₂ : List Byte}
     (hw₁ : Args s₁ w₁ i₁ ps₁) (hw₂ : Args s₂ w₂ i₂ ps₂) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pub
       (w₁.callEntry.withRegions (callRd s₁) (callWr s₁)) (w₂.callEntry.withRegions (callRd s₂) (callWr s₂)) := by
   have hp₁ := h₁.1; have hp₂ := h₂.1
   have mem : ∀ {w : State} {rd wr : List Region}, (w.callEntry.withRegions rd wr).mem = w.mem := rfl
@@ -481,7 +481,7 @@ theorem encPub {a s₁ s₂ w₁ w₂ : State} (h₁ : E a s₁) (h₂ : E a s�
   have qE : ∀ {s w : State} {i : Nat} {ps : List Byte}, RPre s → Args s w i ps →
       Spec.Rsa.wordsAt w.mem (stackArg s 5) (stackArg s 6).toNat = preW s := fun {s} {_} {_} {_} hp hw =>
     words_mem hw.fr (k_dis hp.kp) hp.tp hp.op hp.sp (low_dis hp.kp) hp.wp
-  sig_pub [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_pub [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     Enc.stackArgs_six, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
   simp only [entry_arg hw₁ _ _ (j := 0) (by decide), entry_arg hw₁ _ _ (j := 1) (by decide),

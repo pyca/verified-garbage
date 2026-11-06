@@ -43,7 +43,7 @@ theorem ready_of {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
   simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁]
 
 theorem accept_ok (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
     {s t₀ u : State} (hp : RPre c.stack s) (hb : Before s t₀) {i : Nat}
     (hI : At s t₀ i u) (hf : (kept s i).length = psLen s)
     (hpre : Spec.RsaPkcs1Enc.nonzeroPrefix (psLen s) (randB s) = some (kept s i, i)) :
@@ -59,7 +59,7 @@ theorem accept_ok (c : PdChecked)
   exact ⟨⟨0, ht0, ht1, rfl⟩, hres⟩
 
 theorem body_ok (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
     {s : State} (hp : RPre c.stack s) :
     WP isa (body (encName c) (encCode c)) (entered s) fun x => Fin c.stack s x ∧ post s x := by
   have hP := hp.ps
@@ -94,7 +94,7 @@ theorem rd8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp only [Mem.readW, Nat.reduceDiv, BitVec.setWidth_eq]
 
 theorem code_ok (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
     {s : State} (hp : RPre c.stack s) :
     WP isa (code (encName c) (encCode c)) s fun s' => abiPreserved s s' ∧ post s s' := by
   have hQ := Q_toNat hp

@@ -85,13 +85,6 @@ open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Proof.RsaPkcs1Enc.X86_64
 
 def artifacts (v : PublicImpl) : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Enc.X86_64.Precomputed.code v.name v.code
-    stack := encStack
-    verified := PcCT.code_verified v
-    spSafe := PcCT.code_spSafe v
-    features := v.features },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)

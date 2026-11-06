@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Offset
@@ -104,7 +104,7 @@ end In
 abbrev stackBytes : Nat := 56 + frameBytes + 56
 
 /-- The shared contract, with that stack. -/
-abbrev spec : Contract isa := Spec.RsaPkcs1Enc.encryptPrecomputedContract abi stackBytes
+abbrev spec : Contract isa := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi stackBytes
 
 /-- The public parameters of an entry state. -/
 def ep (s : State) : EP where
@@ -130,7 +130,7 @@ theorem ep_lay (s : State) :
       [(ep s).OUT, (ep s).SCR] s := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i hsp hsa hrd hwr oN oE oM oP oS oR oA nS eS mS pS sR sA kO kN kE kM kP kS kR kA fO fN fE fM fP fS

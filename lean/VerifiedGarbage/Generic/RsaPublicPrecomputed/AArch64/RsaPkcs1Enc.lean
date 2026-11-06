@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcVerified
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
@@ -30,12 +30,6 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Enc
 open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.rndStack Rnd.code_verified Rnd.sat)
 
 def artifacts (v : PublicImpl) : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptPrecomputedApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Enc.AArch64.Precomputed.code (pdOf v).name (pdOf v).code
-    stack := (pdOf v).stack + 1088
-    verified := Pc.code_verified (pdOf v) Pc.sat
-    features := v.features },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))

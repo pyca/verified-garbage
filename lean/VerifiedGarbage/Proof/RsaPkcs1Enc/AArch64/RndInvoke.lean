@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcVerified
 import VerifiedGarbage.Proof.Framework.Sig
@@ -45,7 +45,7 @@ theorem Q_sub (P : Nat) (s : State) : Q s - BitVec.ofNat 64 (P + 1087 + 1) = kb 
   rw [Q_kb P s, off]; exact BitVec.add_sub_cancel _ _
 
 theorem call_pre {P : Nat} {s w : State} (hp : RPre P s) {i : Nat} {pad : List Byte} (h : Args s w i pad) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre
       (w.callEntry.withRegions (callRd s) (callWr s)) := by
   have hP := hp.ps
   have hQ := Q_toNat hp
@@ -67,7 +67,7 @@ theorem call_pre {P : Nat} {s w : State} (hp : RPre P s) {i : Nat} {pad : List B
     have := Offset.base_disjoint (kb P s) (e := P + 1088) (n := 48) (k := P + 1087 + 1) (by omega)
       (by omega)
     rwa [show kb P s + BitVec.ofNat 64 (P + 1088) = Q s from (Q_kb P s).symm] at this
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
   have hP := hp.ps
   have hQ := Q_toNat hp
@@ -172,7 +172,7 @@ structure AfterCall (P : Nat) (s u : State) (i : Nat) (pad : List Byte) : Prop w
       (Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) pad)
 
 theorem call_ok (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
     {s w : State} (hp : RPre c.stack s) {i : Nat} {pad : List Byte} (h : Args s w i pad) :
     WP isa (.call (encName c) (encCode c)) w (AfterCall c.stack s · i pad) := by
   have hpre := call_pre hp h
@@ -185,7 +185,7 @@ theorem call_ok (c : PdChecked)
   have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (add_zero' p).symm
   refine WP.callFV hv hpre (Covers.append_left cr cw.right) cw (fun u hrd hwr hsp hf hcs hvs hpost => ?_)
     (by show 16 * (encCode c).aarch64Depth < 2 ^ 64; have := c.le; omega)
-  sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
+  sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hpost
   have hpsN : (BitVec.ofNat 64 (psLen s)).toNat = psLen s := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)

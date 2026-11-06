@@ -35,7 +35,7 @@ theorem consistent_iff (P : Nat) (s : State) :
   rw [Consistent, preW_layP, prlW_layP]; rfl
 
 theorem code_ok (c : PdChecked) {s : State}
-    (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     WP isa (Impl.RsaPkcs1Enc.AArch64.Precomputed.code c.name c.code) s fun s' =>
       abiPreserved s s' ∧ post c.stack s s' := by
   obtain ⟨hL, hrd, hwr, hpl, hsp⟩ := pre_of h

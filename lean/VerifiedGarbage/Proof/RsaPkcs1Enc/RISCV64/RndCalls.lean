@@ -360,10 +360,10 @@ abbrev callRd (s : State) : List Region := [nR s, eR s, mR s, psR s, pR s, cR s]
 abbrev callWr (s : State) : List Region := [oR' s, scR s]
 
 theorem encPre_of {c : State} (h : Enc.PreE c) :
-    (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre c := by
+    (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre c := by
   have e : frameBytes = 2127 + 1 := rfl
   rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     Enc.stackArgs_six, List.append_eq, List.range, List.range.loop]
   exact ⟨h.spal, h.sp1, h.sp2, h.hrd, h.hwr, h.on, h.oe, h.om, h.ops, h.osc, h.op, h.oa, h.ns, h.es, h.ms,
     h.pss, h.sp, h.sa, h.ko, h.kn, h.ke, h.km, h.kps, h.ksc, h.kp, h.ka, h.wo, h.wn, h.we, h.wm, h.wps, h.wsc,
@@ -528,7 +528,7 @@ theorem call_ok {s z : State} (hp : RPre s) {i : Nat} {ps : List Byte} (hz : Pre
   refine WP.allocLe (by decide) (by rw [hz.sp]; omega) ?_
   refine WP.seq (WP.mono (stack_ok hp hz) fun w hw => ?_)
   obtain ⟨hc, hcw⟩ := call_covers hp hw
-  refine WP.callAny (k := Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) Enc.code_correct
+  refine WP.callAny (k := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) Enc.code_correct
     (rd := callRd s) (wr := callWr s) (encPre_of (preE_c hp hw)) hc hcw
     (fun s' hrd hwr hsp hf hpres hpost => ?_) (by rw [enc_sdepth]; decide)
   rw [enc_sdepth, hw.sp] at hf
@@ -563,7 +563,7 @@ theorem call_ok {s z : State} (hp : RPre s) {i : Nat} {ps : List Byte} (hz : Pre
       show s'.mem.readW _ 64 = _; rw [this]; exact hw.tape0
     tape1 := by show s'.mem.readW _ 64 = _; rw [tC (by decide)]; exact hw.tape1
     res := fun hq => ?_ }
-  sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     Enc.stackArgs_six, List.append_eq] at hpost
   rw [entry_arg hw _ _ (j := 0) (by decide), entry_arg hw _ _ (j := 1) (by decide),
     entry_arg hw _ _ (j := 4) (by decide), entry_arg hw _ _ (j := 5) (by decide)] at hpost

@@ -6,13 +6,12 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: the contracts, on every target
 
-**Trusted** (as every file in `Spec/`). In the module `rsa_pkcs1_enc`:
-
-* `vg_rsa_pkcs1_encrypt`: RSAES-PKCS1-V1_5-ENCRYPT (`RsaPkcs1Enc.encrypt`),
-  with the padding string drawn by the caller;
-* `vg_rsa_pkcs1_decrypt`: RSAES-PKCS1-V1_5-DECRYPT with implicit rejection
-  (`RsaPkcs1Enc.decrypt`), with RSADP checked against `e`
-  (`Rsa.privateChecked`).
+**Trusted** (as every file in `Spec/`). In the module `rsa_pkcs1_enc`,
+`vg_rsa_pkcs1_decrypt`: RSAES-PKCS1-V1_5-DECRYPT with implicit rejection
+(`RsaPkcs1Enc.decrypt`), with RSADP checked against `e`
+(`Rsa.privateChecked`). Encryption, `vg_rsa_pkcs1_encrypt_random`, is in
+`Spec/RsaPkcs1Enc/Random.lean`; the arguments it shares with decryption are
+as here.
 
 Every number is a slice of octets, most significant first, with a length of
 its own, as in `Spec/Rsa/Contract.lean`: the modulus `n` is `n_len` octets,
@@ -49,56 +48,6 @@ namespace VG.Spec.RsaPkcs1Enc
 
 open Rsa (bytesAt wordsAt lenValid scratchWords publicScratchWords written scratchSafety
   publicScratchSafety exponentDoc Outcome)
-
-/-! ## `vg_rsa_pkcs1_encrypt` -/
-
-/-- `vg_rsa_pkcs1_encrypt(out: *mut u8, out_len: usize, n: *const u8,
-n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize,
-ps: *const u8, ps_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
-def encryptSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
-    ("e", .slice false .u8 "e_len"), ("msg", .slice false .u8 "msg_len"),
-    ("ps", .slice false .u8 "ps_len"), ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-/-- RSAES-PKCS1-V1_5-ENCRYPT of the message with the public key `(n, e)` and
-the padding string `ps` (`encrypt`), for a message of at most `n_len - 11`
-octets and a padding string of `n_len - msg_len - 3`. Constant time but for
-the public key. -/
-def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _msg msgLen _ps psLen _scratch scratchLen _ =>
-      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
-        eLen.toNat ≤ nLen.toNat ∧ msgLen.toNat + 11 ≤ nLen.toNat ∧
-        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun out _outLen n nLen e eLen msg msgLen ps psLen _scratch _scratchLen m m' r =>
-      written m' out nLen.toNat r
-        (encrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m msg msgLen.toNat)
-          (bytesAt m ps psLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen n nLen e eLen _msg _msgLen _ps _psLen _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
-
-/-- The summary of `encrypt` in the documentation of the functions built on it. -/
-def encryptSummary : String :=
-  s!"RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with \
-    the padding string given by the caller. With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
-    {exponentDoc}, encrypts the encoded message \
-    `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes) and the padding \
-    string `PS` (`ps_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most \
-    significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` or `e` is \
-    not such a number or `PS` has a zero byte. RFC 8017 requires `PS` to be pseudo-randomly \
-    generated nonzero bytes, freshly for every encryption.\n\n\
-    Contract: `VG.Spec.RsaPkcs1Enc.encryptContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on \
-    the message or the padding string."
-
-/-- The `# Safety` items of `encrypt` but for what the signature gives. -/
-def encryptSafety : List String :=
-  ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`msg_len + 11` must be at most `n_len`.",
-    "`ps_len` must be `n_len - msg_len - 3`."] ++ publicScratchSafety
 
 /-! ## `vg_rsa_pkcs1_decrypt` -/
 

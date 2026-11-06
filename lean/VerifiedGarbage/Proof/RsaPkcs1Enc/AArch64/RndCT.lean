@@ -120,7 +120,7 @@ theorem call_ct (c : PdChecked) :
     rw [q₁, q₂, S₁.2.2.2.2.2.2.1.symm.trans S₂.2.2.2.2.2.2.1]
 
 theorem call_two (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     RelCT isa (Two (ArgsPt c.stack)) (.call (encName c) (encCode c)) (Two (AfterPt c.stack)) :=
   two_post (call_ct c) fun _ _ ⟨s, S, A⟩ => WP.mono (call_ok c hsat S.pre A) fun _ h => ⟨s, S, h⟩
 
@@ -128,7 +128,7 @@ theorem tail_two : RelCT isa (Two (AfterPt P)) (.seq (.block status) wipe) fun _
   two_taint [] (fun _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
 
 theorem accept_ct (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     RelCT isa (Two (AccPt c.stack)) (accept (encName c) (encCode c)) fun _ _ => True :=
   RelCT.seq args_two (RelCT.seq (call_two c hsat) tail_two)
 
@@ -148,7 +148,7 @@ theorem x16_eq {a s t₀ u : State} (S : PR P a s) (I : At s t₀ (N a) u) :
   rw [I.x16, S.psEq, S.keptEq (Nat.le_refl _)]
 
 theorem body_ct (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     RelCT isa (Two (AllocPt c.stack)) (body (encName c) (encCode c)) fun _ _ => True := by
   refine RelCT.seq setup_two (RelCT.seq scan_two (two_ite
     (fun a w₁ w₂ ⟨s₁, t₁, S₁, _, I₁⟩ ⟨s₂, t₂, S₂, _, I₂⟩ => by
@@ -173,7 +173,7 @@ theorem pub_refl (s : State) : pub s s :=
   ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 theorem code_constantTime (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s) :
     ConstantTime isa (contract c.stack).pre (contract c.stack).pub (code (encName c) (encCode c)) := by
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => h.2.2.1) (RelCT.alloc (R := fun _ _ => True)
     ((body_ct c hsat).mono ?_ fun _ _ h => h)))
@@ -190,7 +190,7 @@ theorem code_constantTime (c : PdChecked)
 precomputed public operation `c`, meets the shared contract with `c.stack + 2192`
 bytes of stack. -/
 theorem code_verified (c : PdChecked)
-    (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
+    (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
     (hsat' : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack c.stack)).pre s) :
     Verified AArch64.target (code (encName c) (encCode c))
       (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack c.stack)) :=
