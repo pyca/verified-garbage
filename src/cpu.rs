@@ -35,7 +35,7 @@ use verified_garbage_cpu::feature;
 /// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
 /// tests: bit `i` is `NAMES[i]`'s.
 #[cfg(any(test, feature = "cpu-features-env"))]
-pub(crate) const NAMES: [(&str, u32); 22] = [
+pub(crate) const NAMES: [(&str, u32); 23] = [
     ("ssse3", feature::SSSE3),
     ("sha", feature::SHA),
     ("aes", feature::AES),
@@ -58,6 +58,7 @@ pub(crate) const NAMES: [(&str, u32); 22] = [
     ("avx512bw", feature::AVX512BW),
     ("umaal", feature::UMAAL),
     ("dit", feature::DIT),
+    ("sb", feature::SB),
 ];
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known.
@@ -260,7 +261,8 @@ fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32
 /// AArch64 feature groups, using the same Rust names as the generated
 /// artifacts: `aes` covers FEAT_AES and FEAT_PMULL, `sha2` covers FEAT_SHA1
 /// and FEAT_SHA256, `sha3` covers FEAT_SHA512 and FEAT_SHA3, `sve2` is
-/// FEAT_SVE2, and `dit` is FEAT_DIT (data independent timing, PSTATE.DIT).
+/// FEAT_SVE2, `dit` is FEAT_DIT (data independent timing, PSTATE.DIT), and
+/// `sb` is FEAT_SB (the speculation barrier SB).
 #[cfg(target_arch = "aarch64")]
 fn runtime() -> u32 {
     (u32::from(aarch64_aes()) * feature::AES)
@@ -268,6 +270,7 @@ fn runtime() -> u32 {
         | (u32::from(aarch64_sha3()) * feature::SHA3)
         | (u32::from(aarch64_sve2()) * feature::SVE2)
         | (u32::from(aarch64_dit()) * feature::DIT)
+        | (u32::from(aarch64_sb()) * feature::SB)
         // AdvSIMD is the AArch64 baseline used by the verified ISA.
         // Keep a mask bit so tests and benchmarks can turn off the variants
         // that name it.
@@ -337,6 +340,19 @@ fn aarch64_dit() -> bool {
 #[cfg(all(target_arch = "aarch64", not(feature = "std")))]
 fn aarch64_dit() -> bool {
     cfg!(target_feature = "dit")
+}
+
+/// Whether the CPU has FEAT_SB, asked of the operating system.
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
+fn aarch64_sb() -> bool {
+    std::arch::is_aarch64_feature_detected!("sb")
+}
+
+/// Without `std`, use only features guaranteed by the compilation target
+/// (`aarch64-apple-darwin`'s Apple M1 baseline has FEAT_SB).
+#[cfg(all(target_arch = "aarch64", not(feature = "std")))]
+fn aarch64_sb() -> bool {
+    cfg!(target_feature = "sb")
 }
 
 /// ARMv7's `umaal`: every ARMv7-A (and ARMv8-A AArch32) core has it, and

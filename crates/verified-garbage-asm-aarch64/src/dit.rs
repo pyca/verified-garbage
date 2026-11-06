@@ -21,6 +21,42 @@ pub unsafe fn vg_dit_enter(_dit: verified_garbage_cpu::Dit<'_>) -> u32 {
     unsafe { raw::vg_dit_enter() }
 }
 
+/// The CPU features `vg_dit_enter_dsb` requires (`Artifact.features`).
+pub const VG_DIT_ENTER_DSB_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::DIT);
+
+/// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
+///
+/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
+///
+/// # Safety
+///
+///
+/// * The CPU must support the `dit` target feature.
+#[inline(always)]
+pub unsafe fn vg_dit_enter_dsb(_dit: verified_garbage_cpu::Dit<'_>) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dit_enter_dsb() }
+}
+
+/// The CPU features `vg_dit_enter_sb` requires (`Artifact.features`).
+pub const VG_DIT_ENTER_SB_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::DIT | verified_garbage_cpu::feature::SB);
+
+/// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
+///
+/// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
+///
+/// # Safety
+///
+///
+/// * The CPU must support the `dit` and `sb` target features.
+#[inline(always)]
+pub unsafe fn vg_dit_enter_sb(_dit: verified_garbage_cpu::Dit<'_>) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dit_enter_sb() }
+}
+
 /// The CPU features `vg_dit_clear` requires (`Artifact.features`).
 pub const VG_DIT_CLEAR_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::DIT);
 
@@ -51,6 +87,36 @@ cbz x0, 20f
 b 21f
 20:
 .inst 0xd503415f
+21:
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_dit_enter_dsb`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dit_enter_dsb() -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd53b42a0,0xd358fc00
+cbz x0, 20f
+b 21f
+20:
+.inst 0xd503415f,0xd5033f9f,0xd5033fdf
+21:
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_dit_enter_sb`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dit_enter_sb() -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd53b42a0,0xd358fc00
+cbz x0, 20f
+b 21f
+20:
+.inst 0xd503415f,0xd50330ff
 21:
 .inst 0xd65f03c0
 .p2align 6",
