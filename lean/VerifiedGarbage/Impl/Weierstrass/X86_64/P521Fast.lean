@@ -132,16 +132,25 @@ def sqTop : List Instr :=
 `9 … 16` in `xAcc 9 … 16`. -/
 def sqrS : List Instr := sqRow0 ++ sqRow 1 ++ sqRow 2 ++ sqRow 3 ++ sqDiag ++ sqTop
 
+/-- Two steps of `P_lo >> 55`, words `2j + 1` and `2j`, from the top down:
+`rax` holds word `2j + 2` before and word `2j` after, each `shld` writing the
+register of the word it no longer needs. -/
+def redPair (j : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc (T (2 * j + 1)))), .shld .rax .rcx 9, .store (sc (T (2 * j + 1))) .rax,
+    .mov .rax (.mem (sc (T (2 * j)))), .shld .rcx .rax 9, .store (sc (T (2 * j))) .rcx]
+
 /-- `P R⁻¹` (plus one if `carry`) into `xWin 9`, for `P` with its words
 `0 … 8` in the temporary area and `9 … 16` in `xAcc 9 … 16` (`17` zero):
 `T = P_hi + (P₀ mod 2⁵⁵) 2⁴⁶⁶` (the two apart, `P` below `2¹⁰⁴²`), and
-`q = P_lo >> 55` (by `shld`, word by word over the temporary area), added. -/
+`q = P_lo >> 55` (by `shld`, word by word over the temporary area, from the
+top word down: `redPair`), added. Each word is loaded rather than copied
+between registers, which costs an ALU port on cores without move
+elimination. -/
 def redS (carry : Bool) : List Instr :=
-  [.mov .rax (.mem (sc (T 0))), .mov .rcx (.reg .rax), .shift .shl .rcx 18, .alu .or .r14 (.reg .rcx),
-    .mov .r15 (.reg .rax), .shift .shr .r15 46, .alu32 .and .r15 (.imm 511)] ++
-  (List.range 8).flatMap (fun i => [.mov .rcx (.mem (sc (T (i + 1)))), .mov .rdx (.reg .rcx), .shld .rcx .rax 9,
-    .store (sc (T i)) .rcx, .mov .rax (.reg .rdx)]) ++
-  [.shift .shr .rax 55] ++
+  [.mov .rcx (.mem (sc (T 0))), .shift .shl .rcx 18, .alu .or .r14 (.reg .rcx),
+    .mov .r15 (.mem (sc (T 0))), .shift .shr .r15 46, .alu32 .and .r15 (.imm 511), .mov .rax (.mem (sc (T 8)))] ++
+  (List.range 4).reverse.flatMap redPair ++
+  [.mov .rax (.mem (sc (T 8))), .shift .shr .rax 55] ++
   (if carry then [.alu32 .xor .rdx (.reg .rdx), .alu .cmp .rdx (.imm (-1))] else [.alu32 .xor .rdx (.reg .rdx)]) ++
   ((List.range 8).map fun i => .alu .adc (xAcc (9 + i)) (.mem (sc (T i)))) ++ [.alu .adc .r15 (.reg .rax)]
 
