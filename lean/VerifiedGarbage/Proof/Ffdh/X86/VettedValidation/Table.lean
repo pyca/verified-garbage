@@ -84,12 +84,4 @@ theorem consts_read {s : State} {stack : Nat} (hc : ConstsOk tableConsts stack s
   have read := singleton_read (name := tableSym) (words := tableWords) hc
   simpa only [tableWords_length, tableBytes_length] using read
 
-theorem consts_table {s : State} {stack : Nat} (hc : ConstsOk tableConsts stack s) :
-    TableAt (symAddr s tableSym) groups s := by
-  apply tableOfBytes groups _ s (consts_read hc) (consts_bytes hc)
-    (by change tableBytes.length ≤ 17744; rw [tableBytes_length])
-  intro g hg
-  simp only [groups, List.mem_cons, List.not_mem_nil, or_false] at hg
-  rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-
 end VG.Proof.Ffdh.X86.VettedValidation

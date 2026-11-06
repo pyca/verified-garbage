@@ -41,9 +41,6 @@ abbrev bodyIn (s : State) : State := (pcPushed s).withRegions (pcPushed s).rd (x
 section
 variable {s : State}
 
-theorem roundPre.spAddr (h : roundPre s) : State.addr (s.sp - BitVec.ofNat 32 56) = State.addr s.sp - 56#64 :=
-  FrameStack.addr_sub' h.2.2.2.1
-
 /-- The push writes only the frame, apart from the working space. -/
 theorem roundPre.pushedWs (h : roundPre s) :
     ∀ i < 8 * (s.gpr .r1).toNat, (pcPushed s).mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) =

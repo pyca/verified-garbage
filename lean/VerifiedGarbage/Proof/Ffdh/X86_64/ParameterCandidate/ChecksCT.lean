@@ -37,14 +37,6 @@ theorem sieve_ct : RelCT isa (Two fun (a : CheckPub × BitVec 64) s => CheckHead
     (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁.2.trans h₂.2.symm)
     (by taint_decide)
 
-theorem generator2_ct : RelCT isa (Two CheckHeader) generator2 fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
-
-theorem generator5_ct : RelCT isa (Two CheckHeader) generator5 fun _ _ => True :=
-  kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [] (by decide)
-    (fun q => gvs_fst q.B q.w) (fun _ _ h => h) (pins_nil _) (by taint_decide)
-
 theorem generatorCheck_ct : RelCT isa (Two fun q s => CheckHeader q s ∧ s.gpr .rdx = q.generator)
     generatorCheck fun _ _ => True :=
   kt_ct CheckPub.B CheckPub.wr gS (fun q => gvs q.B q.w) [.rdx] (by decide)

@@ -669,17 +669,6 @@ theorem alloc_contains {sp : BitVec 32} (low : 96 ≤ sp.toNat) {d : Nat} (hd : 
     BitVec.toNat_ofNat]
   omega
 
-/-- The frame of 16 bytes below `sp`, within the 96 bytes below it. -/
-theorem alloc_sub {sp : BitVec 32} (low : 96 ≤ sp.toNat) :
-    Region.Sub ⟨(sp - BitVec.ofNat 32 16).setWidth 64, 16⟩ (below sp 96) := by
-  have e16 : (sp - BitVec.ofNat 32 16).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 16 :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  have e96 : (sp - BitVec.ofNat 32 96).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 96 :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  simp only [below]
-  rw [e16, e96]
-  exact Offset.sub_below _ (by decide) (by decide)
-
 /-- The four bytes below `sp`, within the 96 below it. -/
 theorem below4_sub {sp : BitVec 32} (low : 96 ≤ sp.toNat) : Region.Sub (below sp 4) (below sp 96) := by
   have e4 : (sp - BitVec.ofNat 32 4).setWidth 64 = sp.setWidth 64 - BitVec.ofNat 64 4 :=
@@ -1507,19 +1496,6 @@ theorem storePre_ok {P : Nat} (Cx : CtxOk Ex base bytes len args .wide P s) (C :
   exact (Outside.frame_span O (by omega)).sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨ctxR args len, List.mem_singleton_self _, Offset.sub_base _ rf⟩
-
-/-- The domain's bytes through writes of the context, the working space and the stack. -/
-theorem dom_keepC (h : In Ex base bytes len args s) {dlen : Nat} {rd wr : List Region}
-    (G : DomGeo args base bytes len dlen rd wr) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96))
-    (domC : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (ctxR args len)) {m m' : Mem}
-    (F : Frame (ctxR args len :: frameR base sp (fR len)) m m') :
-    Spec.Rsa.bytesAt m' (byteAddr (args 2)) dlen = Spec.Rsa.bytesAt m (byteAddr (args 2)) dlen := by
-  have := G.fit
-  refine frame_bytes F (fun r hr => ?_) (by omega)
-  rcases List.mem_cons.mp hr with rfl | hr
-  · exact domC
-  · exact dom_frame h G hb40 r hr
 
 /-- A component of the domain through writes of the context, the working space and the stack. -/
 theorem comp_keepC (h : In Ex base bytes len args s) {dlen : Nat} {rd wr : List Region}

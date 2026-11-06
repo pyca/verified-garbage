@@ -29,18 +29,4 @@ theorem import_ok {base src ep : BitVec 32} {len w M : Nat} {P : State → Prop}
   rintro t ⟨input, frame, rest⟩
   exact ⟨⟨input, A.stable frame rest h.persistent, h.separate⟩, frame, rest⟩
 
-theorem power_ok {base src ep : BitVec 32} {len w M : Nat} {P : State → Prop}
-    {regions : List Region} {bb eb : List Byte}
-    (A : TwoExp.Montgomery base len w P regions) (fallback : Fallback base len w P regions)
-    (s : State) (h : Input base src ep len w M P regions bb eb s) :
-    WP isa (VG.Impl.Ffdh.Arm.KeyPower.power A.phase fallback.code) s
-      (PhaseResult base len w M (Spec.Rsa.os2ip bb) P regions eb s) := by
-  rw [VG.Impl.Ffdh.Arm.KeyPower.power, WP.seq_iff]
-  refine WP.mono (import_ok A s h) ?_
-  rintro u ⟨input, frameU, restU⟩
-  refine WP.mono (phase_ok A fallback u input) ?_
-  rintro t ⟨ready, result, modulus, r2, one, p, frameT, restT⟩
-  exact ⟨ready, result, modulus, r2, one, p, (frameU.mono (by simpa using A.workspace)).trans frameT,
-    restU.trans restT⟩
-
 end VG.Proof.Ffdh.Arm.KeyPower

@@ -301,9 +301,6 @@ theorem dom_apart {o : State} (A : KeySearchABI o) : ∀ r ∈ frameR o, (dR o).
 theorem rand_apart {o : State} (A : KeySearchABI o) : ∀ r ∈ frameR o, (rR o).Disjoint r :=
   apart A A.xr.symm A.yr.symm A.ur.symm A.rb A.rs A.ra A.lowRand.symm
 
-/-- The state, through the call's writes. -/
-theorem stR_eq {o : State} : stR (arg o 12) = sR o := rfl
-
 /-- The call's return address. -/
 theorem ret_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
     (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 172 := by

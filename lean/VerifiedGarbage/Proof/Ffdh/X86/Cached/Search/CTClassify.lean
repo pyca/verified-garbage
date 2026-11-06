@@ -47,8 +47,6 @@ def ClsAt (k : Ap) (u : State) : Prop :=
 def CmpAt (j : Nat) (k : Ap) (t : State) : Prop :=
   Any k.1.1 t ∧ (1 ≤ k.2 ∧ k.2 ≤ 3) ∧ t.gpr .edx = BitVec.ofNat 32 k.2 ∧ isa.eval .e t = some (decide (k.2 = j))
 
-theorem cmpAt_pins (j : Nat) : Pins (CmpAt j) [.esi, .esp] := any_pins (fun k => k.1.1) fun _ _ h => h.1
-
 theorem cmp_ok {k : Ap} {t : State} {i : Nat} (h : CmpAt i k t) (j : Nat) (hj : j ≤ 3) :
     WP isa (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 j))]) t (CmpAt j k) := by
   obtain ⟨⟨o, ds, f, e, S⟩, hk, he, _⟩ := h

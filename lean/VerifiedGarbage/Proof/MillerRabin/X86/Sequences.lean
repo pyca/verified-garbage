@@ -32,7 +32,4 @@ theorem seqs_range_ok (n : Nat) (code : Nat → Prog isa) (P : Nat → State →
     refine WP.mono (ih (fun j hj => step j (by omega)) s initial) fun t Pt => ?_
     exact step n (by omega) t Pt
 
-theorem seqs_pair (a b : Prog isa) (s : State) (Q : State → Prop) :
-    WP isa (seqs [a, b]) s Q ↔ WP isa a s (fun t => WP isa b t Q) := WP.seq_iff
-
 end VG.Proof.MillerRabin.X86

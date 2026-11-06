@@ -42,8 +42,6 @@ abbrev LT : List Nat := [aY, aX, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 def TS (P : MP) (k : Nat) (σ s : State) : Prop :=
   k ≤ 14 ∧ St P (In P) (AT P (14 - k)) LT (fun _ => upd (fun _ => 0) sK k) [sK] σ s
 
-theorem LT_tab : ∀ k < 16, aT0 + k ∈ LT := by decide
-
 theorem tv_lt {P : MP} {σ : State} (h : In P σ) (k : Nat) : tv P σ k < cOf P σ.mem := by
   have := h.c3
   exact tp_lt (by omega) h.x5 (by show numAt σ.mem (State.addr P.ws) P.w 9 < _; rw [h.one]; exact Nat.mod_lt _ (by omega)) k

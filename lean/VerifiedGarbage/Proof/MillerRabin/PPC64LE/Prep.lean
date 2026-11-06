@@ -60,14 +60,6 @@ theorem z64_mask (x : BitVec 64) :
     rw [hs, show decide (x = 0) = false from decide_eq_false e]
     rfl
 
-/-- `zeroMask`: `r5 :=` the mask of `r3 = 0`. -/
-theorem zeroMask_ok (s : State) :
-    WP isa (.block zeroMask) s fun t => (t.gpr .r5 = mask (decide (s.gpr .r3 = 0)) ∧ t.mem = s.mem) ∧
-      Keep [.r0, .r5] s t := by
-  refine WP.keep _ ?_ (by decide)
-  unfold zeroMask
-  prun [z64_mask]
-
 /-- Word `j` of `c − 1`, as the scan reads it: `c`'s, bit 0 of the first
 flipped. -/
 def cw (m : Mem) (B : Addr) (w j : Nat) : BitVec 64 :=

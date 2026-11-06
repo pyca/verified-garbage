@@ -352,8 +352,6 @@ theorem TbAt.kept {q : TabP × Addr × Nat} {s t : State} (h : TbAt q s) (he : E
   exact ⟨gb, he, hr, hr', hG, by rw [hk.outer _ (by decide)]; exact hsG, by rw [hk.outer _ (by decide)]; exact hsK,
     hl, Src.of_only hsrc hk.only hgsep hrd hwr, hgsep, hgl, hgw⟩
 
-theorem pins_tb : Pins TbAt [.rdi] := pins_env (fun q => q.1) fun _ _ h => h.choose_spec.1
-
 /-- `rax := n`, an immediate. -/
 theorem rax_imm_ok {T : TabP} {s : State} (he : Env T s) (n : Nat) (hn : n < 2 ^ 32) :
     WP isa (.block [.mov32 .rax (.imm (BitVec.ofNat 32 n))]) s fun t =>

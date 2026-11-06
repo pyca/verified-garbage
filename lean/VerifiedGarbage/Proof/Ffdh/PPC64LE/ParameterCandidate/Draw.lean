@@ -122,17 +122,6 @@ theorem dLoadN_ok {C : Nat} {p : PP} {mb N u : Nat} {s t : State} (h : DPre p mb
     exact Mem.readW_writeW_self64 _ _ _
 
 
-/-- The head and the load: the witness's octets in array 4. -/
-theorem dLoad_ok {C : Nat} {p : PP} {mb N u : Nat} {s : State} (h : DPre p mb N u C s) :
-    WP isa (.seq (.block ([ldh .r12 hRand, ldh .r3 hUsed, .add .r12 .r12 .r3, ldh .r6 hK, .add .r3 .r3 .r6,
-        sth .r3 hUsed] ++ base .r10 4)) loadN) s fun t =>
-      (val32 t.mem p.B (slot (wOf mb) 4) (2 * wOf mb) = Spec.Rsa.os2ip ((p.r.drop u).take ((mb + 7) / 8)) ∧
-        t.gpr .r10 = off p.B (slot (wOf mb) 4) ∧
-        Frm p.B [(152, 8), (slot (wOf mb) 4, 8 * wOf mb)] s.mem t.mem ∧
-        t.mem.readW (p.B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 (u + (mb + 7) / 8)) ∧
-      Keep (([.r3, .r6, .r12, .r10] : List Reg) ++ ([.r0, .r14, .r15, .r16, .r17] : List Reg)) s t :=
-  WP.seq (WP.mono (dHead_ok h) fun _ ht => dLoadN_ok h ht)
-
 /-- The cut: array 4's top word and'ed with `hTop`, so it holds its number
 modulo `2^mb`; then `r24 :=` its low word halved, for the scan of the rest
 (`r5`, `r6`), and `r10 :=` array 0. -/

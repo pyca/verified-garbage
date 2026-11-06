@@ -418,13 +418,6 @@ def AttemptPost (p : KeyPublic) (rand : List Byte) (used : Nat) (t : State) : Pr
     else Spec.Rsa.bytesAt t.mem p.xp p.len = List.replicate p.len 0 ∧
       Spec.Rsa.bytesAt t.mem p.yp p.len = List.replicate p.len 0
 
-theorem AttemptPost.keep {p : KeyPublic} {rand : List Byte} {used : Nat} {s t : State}
-    (h : AttemptPost p rand used s) (hm : t.mem = s.mem)
-    (hr : (t.gpr .r3).setWidth 32 = (s.gpr .r3).setWidth 32) : AttemptPost p rand used t := by
-  unfold AttemptPost at h ⊢
-  rw [hm, hr]
-  exact h
-
 section
 
 variable {p : KeyPublic} {original s : State} {used keys scalars : Nat}

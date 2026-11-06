@@ -89,8 +89,6 @@ def DrawFrame (p : WitnessParams) (m m' : Mem) : Prop :=
 def DrawSaved (p : WitnessParams) (m m' : Mem) : Prop :=
   ∀ j < 32, j ≠ 12 → j ≠ 13 → j ≠ 14 → j ≠ 19 → word m' p.O (8 * j) = word m p.O (8 * j)
 
-theorem DrawSaved.refl (p : WitnessParams) (m : Mem) : DrawSaved p m m := fun _ _ _ _ _ _ => rfl
-
 theorem DrawSaved.trans {p : WitnessParams} {m₁ m₂ m₃ : Mem}
     (h : DrawSaved p m₁ m₂) (h' : DrawSaved p m₂ m₃) : DrawSaved p m₁ m₃ :=
   fun j hj h12 h13 h14 h19 => (h' j hj h12 h13 h14 h19).trans (h j hj h12 h13 h14 h19)

@@ -240,10 +240,6 @@ theorem ABI.read {s : State} (A : ABI s) {i : Nat} (hi : i < 2) :
   (VG.Proof.Dsa.X86.stackArgument_of (count := 2) (by have := A.stackBound; omega) hi
     (by rw [A.rd]; exact List.mem_append_left _ (List.mem_singleton_self _)) A.outArgs.symm).readSrc
 
-/-- The words stored, as numbers. -/
-def values (valid : Bool) (len : BitVec 32) : List (BitVec 32) :=
-  if valid then [128, 128, len, len] else [0, 0, 0, 0]
-
 theorem code_ok {s : State} (A : ABI s) :
     WP isa code s fun t =>
       t.gpr .eax = (if 64 ≤ (arg s 1).toNat ∧ (arg s 1).toNat ≤ 1024 then 1 else 0) ∧

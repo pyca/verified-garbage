@@ -20,11 +20,6 @@ def CandidatePhaseResult (q : Bool) (p : CandidatePoint) (s : State) : Prop :=
   (∃ next, CandidateContext p.params next s) ∧
   s.gpr .r3 = BitVec.ofNat 32 (witnessResultStatus (witnessRemaining (candidatePhase p.params q) p.used 0))
 
-theorem candidateTestResult_ct (v : RoundImpl) (q : Bool) : RelCT isa (Two (CandidateTestStart q))
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.test q v.name v.code) (Two (CandidatePhaseResult q)) :=
-  two_post (candidateTest_ct v q) (fun _ _ h => WP.mono (candidateTest_ok v h.1 h.2.1 h.2.2)
-    (fun _ ⟨next, ctx, _, status, _, _, _, _⟩ => ⟨⟨next, ctx⟩, status⟩))
-
 theorem candidatePhaseResult_ct (q : Bool) : RelCT isa (Two (CandidatePhaseResult q))
     VG.Impl.Ffdh.Arm.ParameterCandidate.result (fun _ _ => True) := by
   refine two_map (fun p => (⟨p.params.out, p.params.usedPtr, p.params.length⟩,
