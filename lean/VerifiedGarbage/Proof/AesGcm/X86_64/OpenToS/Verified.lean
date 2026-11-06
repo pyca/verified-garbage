@@ -116,6 +116,14 @@ theorem openToS_xdepth (f : Impl.AesGcm.X86_64.Fn) (h : f.code.x86_64Depth ≤ 5
     List.length_cons, List.length_nil, Nat.max_le]
   omega
 
+theorem openToL_spAll (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (f fS : Impl.AesGcm.X86_64.Fn)
+    (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true)
+    (hS : fS.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.AesGcm.X86_64.OpenToS.openToL thr w f fS).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.AesGcm.X86_64.OpenToS.openToL, Code.iteCold, Code.all,
+    X86_64.withStackArgScratch_spSafe (openToS_spAll fS hS), OpenTo.openTo_spAll w f h, Bool.and_true]
+  rfl
+
 /-! ## The contracts with the working space -/
 
 theorem toPost_prepared {s s' : State} (h : OpenTo.toPost s s') :
@@ -328,8 +336,8 @@ theorem pub_narrow {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 /-- `vg_aes_gcm_open_to_prepared`: by a copy below `thr` bytes, and in one
 pass from `thr` on. -/
-theorem openToLPrepared_verified (thr : Nat) (hT : thr < 2 ^ 31) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
-    (F : OpenTo.OpenFn CtxMode.prepared) (FS : OpenSplitFn CtxMode.prepared) :
+theorem openToLPrepared_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+    (F : OpenTo.OpenFn CtxMode.prepared) (FS : OpenSplitFn CtxMode.prepared) (hT : thr < 2 ^ 31 := by decide) :
     Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToL thr w F.fn FS.fn)
       (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) := by
   have run (s : State) (hs : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s) :
@@ -554,8 +562,8 @@ theorem pub_narrow16 {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 /-- `vg_aes_gcm_open_to_prepared16`: by a copy below `thr` bytes, and in one
 pass from `thr` on. -/
-theorem openToLPrepared16_verified (thr : Nat) (hT : thr < 2 ^ 31) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
-    (F : OpenTo.OpenFn CtxMode.prepared16) (FS : OpenSplitFn CtxMode.prepared16) :
+theorem openToLPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+    (F : OpenTo.OpenFn CtxMode.prepared16) (FS : OpenSplitFn CtxMode.prepared16) (hT : thr < 2 ^ 31 := by decide) :
     Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToL thr w F.fn FS.fn)
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) := by
   have run (s : State) (hs : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s) :

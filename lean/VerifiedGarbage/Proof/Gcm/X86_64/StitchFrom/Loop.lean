@@ -1,5 +1,7 @@
 module
 
+-- separate module: the loop's proof, which needs none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild it
+
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchFrom
 public import VerifiedGarbage.Proof.Framework.Semantics

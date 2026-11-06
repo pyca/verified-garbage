@@ -52,6 +52,10 @@ return address, a copy of the six stack arguments, the address of the
 working space and its 2560 bytes. -/
 abbrev scratchBytes : Nat := 2624
 
+/-- The length from which `vg_aes_gcm_open_to_prepared` decrypts in one
+pass. -/
+abbrev thr : Nat := 1024
+
 /-- `len` against `thr`. -/
 def cmpLen (thr : Nat) : List Instr :=
   [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (.imm (BitVec.ofNat 32 thr))]

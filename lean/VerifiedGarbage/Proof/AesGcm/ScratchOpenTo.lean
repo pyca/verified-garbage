@@ -1,5 +1,7 @@
 module
 
+-- separate module: the target-independent contracts with the working space and their locality, as `ScratchSplit.lean`, apart from the x86-64 proof that uses them
+
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo

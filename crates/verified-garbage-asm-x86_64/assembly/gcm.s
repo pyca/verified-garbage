@@ -29257,6 +29257,9 @@ vg_aes_gcm_open_prepared16_vaes_vpclmul:
 	.p2align 6
 
 vg_aes_gcm_open_to_prepared16_vaes_vpclmul:
+	mov rax, QWORD PTR [rsp+16]
+	cmp rax, 1024
+	jae 20f
 	push rdi
 	push rsi
 	push rdx
@@ -29272,7 +29275,7 @@ vg_aes_gcm_open_to_prepared16_vaes_vpclmul:
 	mov rdi, QWORD PTR [rsp+112]
 	mov rcx, QWORD PTR [rsp+104]
 	cmp rcx, 64
-	jb 20f
+	jb 22f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	mov r10d, 0
@@ -29281,73 +29284,73 @@ vg_aes_gcm_open_to_prepared16_vaes_vpclmul:
 	mov r8, rcx
 	sub r8, 64
 	cmp r8, r10
-	jb 22f
-24:
+	jb 24f
+26:
 	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
 	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
 	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
 	add r10, 64
 	cmp r8, r10
-	jae 24b
-	jmp 23f
-22:
-23:
+	jae 26b
+	jmp 25f
+24:
+25:
 	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 21f
-20:
+	jmp 23f
+22:
 	cmp rcx, 32
-	jb 25f
+	jb 27f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 26f
-25:
+	jmp 28f
+27:
 	cmp rcx, 16
-	jb 27f
+	jb 29f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 28f
-27:
+	jmp 210f
+29:
 	cmp rcx, 8
-	jb 29f
+	jb 211f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 210f
-29:
+	jmp 212f
+211:
 	cmp rcx, 4
-	jb 211f
+	jb 213f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 212f
-211:
+	jmp 214f
+213:
 	mov r10d, 0
 	cmp r10, rcx
-	je 213f
-215:
+	je 215f
+217:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 215b
-	jmp 214f
-213:
+	jne 217b
+	jmp 216f
+215:
+216:
 214:
 212:
 210:
 28:
-26:
-21:
+23:
 	vzeroupper
 	mov rdi, QWORD PTR [rsp+80]
 	mov rsi, QWORD PTR [rsp+72]
@@ -29365,24 +29368,24 @@ vg_aes_gcm_open_to_prepared16_vaes_vpclmul:
 	mov QWORD PTR [rsp+24], rax
 	call {vg_aes_gcm_open_prepared16_vaes_vpclmul}
 	test eax, eax
-	je 216f
-	jmp 217f
-216:
+	je 218f
+	jmp 219f
+218:
 	mov rdi, QWORD PTR [rsp+112]
 	mov rcx, QWORD PTR [rsp+104]
 	mov eax, 0
 	mov r10d, 0
 	cmp r10, rcx
-	je 218f
-220:
+	je 220f
+222:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 220b
-	jmp 219f
-218:
+	jne 222b
+	jmp 221f
+220:
+221:
 219:
-217:
 	pop r11
 	pop r11
 	pop r11
@@ -29394,7 +29397,83 @@ vg_aes_gcm_open_to_prepared16_vaes_vpclmul:
 	pop r11
 	pop r11
 	pop r11
+21:
 	ret
+20:
+	lea rsp, [rsp-2624]
+	mov rax, QWORD PTR [rsp+2632]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, QWORD PTR [rsp+2640]
+	mov QWORD PTR [rsp+16], rax
+	mov rax, QWORD PTR [rsp+2648]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+2656]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+2664]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+2672]
+	mov QWORD PTR [rsp+48], rax
+	mov rax, rsp
+	add rax, 64
+	mov QWORD PTR [rsp+56], rax
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push rax
+	push rax
+	push rax
+	push rax
+	push rax
+	mov rax, QWORD PTR [rsp+112]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, QWORD PTR [rsp+128]
+	mov QWORD PTR [rsp+16], rax
+	mov rax, QWORD PTR [rsp+136]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+96]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+144]
+	mov QWORD PTR [rsp+48], rax
+	call {vg_aes_gcm_open_split_prepared16_vaes_vpclmul}
+	test eax, eax
+	je 223f
+	jmp 224f
+223:
+	mov rdi, QWORD PTR [rsp+112]
+	mov rcx, QWORD PTR [rsp+104]
+	mov eax, 0
+	mov r10d, 0
+	cmp r10, rcx
+	je 225f
+227:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 227b
+	jmp 226f
+225:
+226:
+224:
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	lea rsp, [rsp+2624]
+	jmp 21b
 	.p2align 6
 
 vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul:
