@@ -34,6 +34,11 @@ structure LoopPub where
   ctx : GenerationContext
   n : Nat
   c : Nat
+  st : BitVec 64
+  us : BitVec 64
+
+/-- The pointers to `state` and `used` the search was called with. -/
+def PtrsAt (s₀ : State) (P : LoopPub) : Prop := s₀.gpr .x7 = P.st ∧ s₀.gpr .x2 = P.us
 
 /-- Fewer octets than a seed's are left from `c`. -/
 def ctxShort (p : GenerationContext) (c : Nat) : Prop := p.rand.bytes.length - c < p.geo.qLen
@@ -76,12 +81,12 @@ end
 
 /-- The controller's state, for some entry of the search. -/
 def LoopAt (pBytes : Nat) (P : LoopPub) (t : State) : Prop :=
-  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧
+  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧ PtrsAt s₀ P ∧
     v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ LoopState h v P.n P.c t
 
 /-- How the controller ended. -/
 def DoneAt (pBytes : Nat) (P : LoopPub) (t : State) : Prop :=
-  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧
+  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧ PtrsAt s₀ P ∧
     v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ LoopDone h v P.n P.c t
 
 /-! ## One iteration -/
@@ -94,19 +99,19 @@ theorem two_sp {α : Type} {Φ : α → State → Prop} {c : Prog isa} (hct : Re
   exact ⟨ht, (), True.intro, True.intro, by rw [(Exec.rdwr e₁).2.2, (Exec.rdwr e₂).2.2, hsp]⟩
 
 def Started (pBytes : Nat) (P : LoopPub) (t : State) : Prop :=
-  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧
+  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧ PtrsAt s₀ P ∧
     v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ LoopState h v P.n P.c t ∧
     ctlWord t.mem (refillBase s₀) 3 = BitVec.ofNat 64 P.c ∧ t.gpr .x0 = BitVec.ofNat 64 P.c ∧
     t.gpr .x3 = BitVec.ofNat 64 P.n
 
 theorem started_wp {pBytes : Nat} {P : LoopPub} {t : State} (hl : LoopAt pBytes P t) :
     WP isa (.block Impl.Dsa.AArch64.Generation.Refill.iterStart) t (Started pBytes P) := by
-  obtain ⟨s₀, h, v, hc, hv, hi⟩ := hl
+  obtain ⟨s₀, h, v, hc, hp, hv, hi⟩ := hl
   exact WP.mono (iterStart_ok h (by rw [hv]; exact List.mem_cons_self ..) hi) fun t₁ ⟨a, b, c, d⟩ =>
-    ⟨s₀, h, v, hc, hv, a, b, c, d⟩
+    ⟨s₀, h, v, hc, hp, hv, a, b, c, d⟩
 
 def Roomed (pBytes : Nat) (P : LoopPub) (t : State) : Prop :=
-  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧
+  ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State), refillContext h = P.ctx ∧ PtrsAt s₀ P ∧
     v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ LoopState h v P.n P.c t ∧
     ctlWord t.mem (refillBase s₀) 3 = BitVec.ofNat 64 P.c ∧ t.gpr .x0 = BitVec.ofNat 64 P.c ∧
     t.gpr .x3 = BitVec.ofNat 64 (if ctxShort P.ctx P.c then 1 else 0)
@@ -114,11 +119,11 @@ def Roomed (pBytes : Nat) (P : LoopPub) (t : State) : Prop :=
 theorem roomed_wp {pBytes : Nat} {P : LoopPub} {t : State} (hl : Started pBytes P t) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.roomCheck (Spec.Dsa.generationQLen pBytes))) t
       (Roomed pBytes P) := by
-  obtain ⟨ctx, n, c⟩ := P
-  obtain ⟨s₀, h, v, hc, hv, hi, c3, x0, -⟩ := hl
+  obtain ⟨ctx, n, c, st, us⟩ := P
+  obtain ⟨s₀, h, v, hc, hp, hv, hi, c3, x0, -⟩ := hl
   subst hc
   exact WP.mono (roomCheck_ok h hi x0) fun t₂ ⟨hi₂, mem₂, x0₂, x3₂⟩ =>
-    ⟨s₀, h, v, rfl, hv, hi₂, by rw [ctlWord_eq_of_mem mem₂]; exact c3, x0₂, x3₂⟩
+    ⟨s₀, h, v, rfl, hp, hv, hi₂, by rw [ctlWord_eq_of_mem mem₂]; exact c3, x0₂, x3₂⟩
 
 def LoopPub.seedPub (P : LoopPub) (room : P.c + P.ctx.geo.qLen ≤ P.ctx.rand.bytes.length) : SeedPublic where
   context := P.ctx
@@ -137,8 +142,8 @@ theorem seeded_wp {pBytes : Nat} {P : LoopPub} {t : State}
     (hl : Roomed pBytes P t ∧ isa.eval (.nonzero .x .x3) t = some false) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.seedStart (Spec.Dsa.generationQLen pBytes))) t
       (SeededPub pBytes P) := by
-  obtain ⟨ctx, n, c⟩ := P
-  obtain ⟨⟨s₀, h, v, hc, hv, hi, c3, x0, x3⟩, ev⟩ := hl
+  obtain ⟨ctx, n, c, st, us⟩ := P
+  obtain ⟨⟨s₀, h, v, hc, -, hv, hi, c3, x0, x3⟩, ev⟩ := hl
   subst hc
   have hq2 : Spec.Dsa.generationQLen pBytes = 20 ∨ Spec.Dsa.generationQLen pBytes = 32 := by
     unfold Spec.Dsa.generationQLen; split <;> simp
@@ -167,7 +172,7 @@ theorem attempt_wp (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) {
     {t : State} (hl : SeededPub pBytes P t) :
     WP isa (Impl.Dsa.AArch64.Generation.Refill.refillAttempt H.sha1 H.sha256 G.run T.run pBytes
       (Spec.Dsa.generationQLen pBytes)) t (AfterAttempt P) := by
-  obtain ⟨ctx, n, c⟩ := P
+  obtain ⟨ctx, n, c, st, us⟩ := P
   obtain ⟨⟨room, ⟨⟨W, hm, h1, h16, _⟩, seed, hq⟩, hp⟩, hsub⟩ := hl
   change ctx.geo.pLen = pBytes at hp
   change ctx.geo.qLen = Spec.Dsa.generationQLen pBytes at hq
@@ -234,7 +239,7 @@ theorem iteration_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
 /-- After an iteration from `k` seeds left. -/
 def StepAt (pBytes k : Nat) (P : LoopPub) (t : State) : Prop :=
   ∃ (s₀ : State) (h : RefillABI pBytes s₀) (v : State),
-    refillContext h = P.ctx ∧ v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ P.n = k ∧ StepPost h v P.n P.c t
+    refillContext h = P.ctx ∧ PtrsAt s₀ P ∧ v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr ∧ P.n = k ∧ StepPost h v P.n P.c t
 
 /-- The loop's invariant with `k` seeds left. -/
 def LoopInv (pBytes k : Nat) : State → State → Prop := Two fun P t => P.n = k ∧ LoopAt pBytes P t
@@ -261,13 +266,14 @@ theorem controller_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest
           (Impl.Dsa.AArch64.Generation.Refill.refillAttempt H.sha1 H.sha256 G.run T.run pBytes
             (Spec.Dsa.generationQLen pBytes)) (Spec.Dsa.generationQLen pBytes)) t
           (StepAt pBytes k P) := by
-      intro P t ⟨hk, s₀, h, v, hc, hv, hi⟩
-      refine WP.mono (step_ok h (hA h) ?_ P.n P.c t hi) fun t' hp => ⟨s₀, h, v, hc, hv, hk, hp⟩
+      intro P t ⟨hk, s₀, h, v, hc, hx, hv, hi⟩
+      refine WP.mono (step_ok h (hA h) ?_ P.n P.c t hi) fun t' hp => ⟨s₀, h, v, hc, hx, hv, hk, hp⟩
       rw [hv]; exact List.mem_cons_self ..
     have post := two_post (two_map (Φ := fun P t => P.n = k ∧ LoopAt pBytes P t) id (fun _ _ h => h.2)
       (iteration_ct H G T pBytes sizes)) hw
     refine RelCT.mono (P' := LoopInv pBytes k) post (fun _ _ h => h) ?_
-    rintro s t ⟨⟨ctx, n, c⟩, ⟨s₀, h, v, hc, hv, hk, e, d, k'⟩, ⟨s₀', h', v', hc', hv', -, e', d', k''⟩, hsp⟩
+    rintro s t ⟨⟨ctx, n, c, sp, us⟩, ⟨s₀, h, v, hc, hx, hv, hk, e, d, k'⟩, ⟨s₀', h', v', hc', hx', hv', -, e', d', k''⟩,
+      hsp⟩
     change refillContext h = ctx at hc
     change refillContext h' = ctx at hc'
     have es : isa.eval (.zero .x .x0) s = some (ctxContinues ctx n c) := by
@@ -276,15 +282,15 @@ theorem controller_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest
       rw [← hc']; exact e'
     refine ⟨es.trans et.symm, fun ef => ?_, fun et' => ?_⟩
     · have hf : ctxContinues ctx n c = false := Option.some.inj (es.symm.trans ef)
-      exact ⟨⟨ctx, n, c⟩, ⟨s₀, h, v, hc, hv, d (by rw [continues_eq, hc]; exact hf)⟩,
-        ⟨s₀', h', v', hc', hv', d' (by rw [continues_eq, hc']; exact hf)⟩, hsp⟩
+      exact ⟨⟨ctx, n, c, sp, us⟩, ⟨s₀, h, v, hc, hx, hv, d (by rw [continues_eq, hc]; exact hf)⟩,
+        ⟨s₀', h', v', hc', hx', hv', d' (by rw [continues_eq, hc']; exact hf)⟩, hsp⟩
     · have ht : ctxContinues ctx n c = true := Option.some.inj (es.symm.trans et')
       obtain ⟨m, hm, st⟩ := k' (by rw [continues_eq, hc]; exact ht)
       obtain ⟨m', hm', st'⟩ := k'' (by rw [continues_eq, hc']; exact ht)
       have e₁ : m' = m := by simp only at hm hm'; omega
       rw [e₁] at st'
-      refine ⟨m, by simp only at hk hm; omega, ⟨ctx, m, ctxNext ctx c⟩, ⟨rfl, s₀, h, v, hc, hv, ?_⟩,
-        ⟨rfl, s₀', h', v', hc', hv', ?_⟩, hsp⟩
+      refine ⟨m, by simp only at hk hm; omega, ⟨ctx, m, ctxNext ctx c, sp, us⟩, ⟨rfl, s₀, h, v, hc, hx, hv, ?_⟩,
+        ⟨rfl, s₀', h', v', hc', hx', hv', ?_⟩, hsp⟩
       · rw [nextUsed_eq, hc] at st; exact st
       · rw [nextUsed_eq, hc'] at st'; exact st'
   rintro s t a b s' t' ⟨P, hs, ht, hsp⟩ es et

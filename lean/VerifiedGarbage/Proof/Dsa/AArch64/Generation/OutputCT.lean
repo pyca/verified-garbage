@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputArgs
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
@@ -60,8 +61,17 @@ structure OutputPublic where
   context : GenerationContext
   accepted : Bool
 
+/-- The frame words the output reads: the arena, `out` and its length, and
+the status. -/
 def OutputBefore (p : OutputPublic) (s : State) : Prop :=
-  ∃ W, GenerationMemory p.context W s ∧ (W 19 == (1#64)) = p.accepted
+  ∃ V W, Lay s p.context.geo.F p.context.geo.hash ∧ Rep s.mem p.context.geo.F p.context.geo.hash V W ∧
+    W 5 = p.context.saved 5 ∧ W 6 = p.context.saved 6 ∧ W 7 = p.context.saved 7 ∧ (W 19 == (1#64)) = p.accepted
+
+theorem outputBefore_of {p : GenerationContext} {W : Nat → BitVec 64} {s : State} (h : GenerationMemory p W s)
+    {a : Bool} (hs : (W 19 == (1#64)) = a) : OutputBefore ⟨p, a⟩ s := by
+  obtain ⟨V, R⟩ := h.rep
+  exact ⟨V, W, h.layout, R, h.slots 5 (by simp [generationSlots]), h.slots 6 (by simp [generationSlots]),
+    h.slots 7 (by simp [generationSlots]), hs⟩
 
 def OutputCopyReady (p : OutputPublic) (s : State) : Prop :=
   s.gpr .x12 = VG.Proof.Bignum.off (p.context.saved 5) Impl.Dsa.Generation.Layout.packed ∧
@@ -72,13 +82,12 @@ theorem outputCopy_ct : RelCT isa (Two OutputBefore) Impl.Dsa.AArch64.Generation
   unfold Impl.Dsa.AArch64.Generation.outputCopy
   refine RelCT.seq (two_post (Ψ := OutputCopyReady) (two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)) ?_)
     (two_taint [.x12, .x2, .x9] ?_ (by taint_decide))
-  · intro p s ⟨W, h, _⟩
-    obtain ⟨V, R⟩ := h.rep
+  · intro p s ⟨V, W, L, R, h5, h6, h7', _⟩
     have h7 : W 7 = BitVec.ofNat 64 (p.context.saved 7).toNat := by
-      simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using h.slots 7 (by simp [generationSlots])
-    exact WP.mono (outputArgs_ok h.layout R h7) fun t ⟨a, b, c, _, _⟩ =>
-      show OutputCopyReady p t from ⟨by simpa only [h.slots 5 (by simp [generationSlots])] using a,
-        b.trans (h.slots 6 (by simp [generationSlots])), by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using c⟩
+      simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using h7'
+    exact WP.mono (outputArgs_ok L R h7) fun t ⟨a, b, c, _, _⟩ =>
+      show OutputCopyReady p t from ⟨by simpa only [h5] using a,
+        b.trans h6, by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using c⟩
   · intro p s t hs ht r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -98,11 +107,9 @@ theorem outputZero_ct : RelCT isa (Two OutputBefore) Impl.Dsa.AArch64.Generation
       s.gpr .x11 = p.context.saved 6 ∧ s.gpr .x12 = p.context.saved 7)
       (two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)) ?_)
       (two_taint [.x11, .x12] ?_ (by taint_decide))))
-  · intro p s ⟨W, h, _⟩
-    obtain ⟨V, R⟩ := h.rep
-    exact WP.mono (zeroArgs_ok h.layout R) fun t ⟨L, R', _, _⟩ =>
-      show OutputZeroReady p t from ⟨L, V, _, R', by simpa [upd] using h.slots 6 (by simp [generationSlots]),
-        by simpa [upd] using h.slots 7 (by simp [generationSlots])⟩
+  · intro p s ⟨V, W, L, R, _, h6, h7, _⟩
+    exact WP.mono (zeroArgs_ok L R) fun t ⟨L, R', _, _⟩ =>
+      show OutputZeroReady p t from ⟨L, V, _, R', by simpa [upd] using h6, by simpa [upd] using h7⟩
   · intro p s ⟨L, V, W, R, h19, h21⟩
     have ho : s.mem.readW (p.context.geo.F + BitVec.ofNat 64 sOut) 64 = p.context.saved 6 :=
       (R.fr 19 (by decide)).trans h19
@@ -119,10 +126,9 @@ theorem outputZero_ct : RelCT isa (Two OutputBefore) Impl.Dsa.AArch64.Generation
 theorem output_check {p : OutputPublic} {s : State} (h : OutputBefore p s) :
     WP isa (.block Impl.Dsa.AArch64.Generation.successStatus) s
       (fun t => OutputBefore p t ∧ isa.eval (.zero .x .x3) t = some p.accepted) := by
-  obtain ⟨W, hm, hs⟩ := h
-  obtain ⟨V, R⟩ := hm.rep
-  exact WP.mono (successStatus_ok hm.layout R) fun t ⟨hz, he, hk⟩ =>
-    ⟨⟨W, hm.congr he hk, hs⟩, hz.trans (congrArg some hs)⟩
+  obtain ⟨V, W, L, R, h5, h6, h7, hs⟩ := h
+  exact WP.mono (successStatus_ok L R) fun t ⟨hz, he, hk⟩ =>
+    ⟨⟨V, W, lay_of_rep L R (he ▸ R) rfl hk.sp hk.wr, he ▸ R, h5, h6, h7, hs⟩, hz.trans (congrArg some hs)⟩
 
 theorem finishOutput_ct : RelCT isa (Two OutputBefore) Impl.Dsa.AArch64.Generation.finishOutput
     (fun _ _ => True) := by

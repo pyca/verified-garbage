@@ -130,9 +130,9 @@ def request : List Instr :=
   [.lsl .x .x12 .x9 8, .subs .x .x13 .x10 .x12, .csel .x .x10 .x10 .x12,
    .add .x .x10 .x10 .x10, .subs .x .x13 .x10 .x11, .csel .x .x10 .x11 .x10]
 
-/-- `state[0]`, `state[3]` and `used[0]` from `x11`, `x10` and `x12`. -/
-def stores : List Instr :=
-  [.ldrSp .x9 (ctl 1), .ldrSp .x13 (ctl 0), st .x11 .x9 0, st .x10 .x9 24, st .x12 .x13 0]
+/-- `state[0]`, `state[3]` and `used[0]` from `x11`, `x10` and `x12`, at
+`x14` (`state`) and `x15` (`used`). -/
+def stores : List Instr := [st .x11 .x14 0, st .x10 .x14 24, st .x12 .x15 0]
 
 /-- The status the search returns, kept in `ctl 3` while the output is written. -/
 def statusWord (status : Nat) : List Instr := [movi .x9 status, .strSp .x9 (ctl 3)]
@@ -146,11 +146,15 @@ def exhaustedWords : List Instr := [movi .x11 0, movi .x10 0, .ldrSp .x12 (ctl 3
 /-- Parameters: no seeds left, no request, and the octets consumed; status 1. -/
 def acceptedWords : List Instr := [movi .x11 0, movi .x10 0, .ldrSp .x12 128] ++ stores ++ statusWord 1
 
+/-- The pointers to `state` and `used` into `x14` and `x15`, and the
+controller's status into `x3`. -/
+def resultsStart : List Instr := [.ldrSp .x14 (ctl 1), .ldrSp .x15 (ctl 0), .ldrSp .x3 152]
+
 /-- The words written and the status for each way the controller ended
 (`W 19`: 0 ran out, 1 parameters, 2 no seeds left), a seed that ran out
 with its whole budget exhausting the search. -/
 def results (pLen : Nat) : Prog isa :=
-  .seq (.block [.ldrSp .x3 152])
+  .seq (.block resultsStart)
     (.ite (.zero .x .x3)
       (.seq (.block (ranOutCheck pLen))
         (.ite (.zero .x .x12) (.block (request ++ entropyWords)) (.block exhaustedWords)))
