@@ -322,6 +322,31 @@ theorem keys_rel (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP
     fun t₁ t₂ h => ⟨one_exp h.1, one_exp h.2⟩
   exact RelCT.seq r₂ (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨h.2.1, h.2.2, fun _ h => nomatch h⟩) hkey_check)
 
+/-- `keysS`, in two runs with the same public arguments. -/
+theorem keysS_rel (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ N 12) ∧
+      (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ N 12)) :
+    RelCT isa P (keysS ⟨eb.enc.name, eb.enc.code⟩) fun _ _ => True :=
+  RelCT.seq (derive_rel eb L hR hDW hn hP)
+    (rel_taintC [] hDW hn (fun _ _ h => ⟨h.1, h.2, fun _ h => nomatch h⟩) hkey_check)
+
+/-- `expand`, in two runs with the same public arguments. -/
+theorem expand_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → One K W SP R N A D al n t₁ ∧ One K W SP R N A D al n t₂) :
+    RelCT isa P (expand v.callees) fun _ _ => True := by
+  have r₁ := (rel_taintC [] (P := fun t₁ t₂ => One K W SP R N A D al n t₁ ∧
+      One K W SP R N A D al n t₂) hDW hn (fun t₁ t₂ h => ⟨h.1, h.2, fun _ h => nomatch h⟩)
+    expArgs_check).wp
+    (F₁ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 248)
+      (W + BitVec.ofNat 64 1768) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
+    (F₂ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 248)
+      (W + BitVec.ofNat 64 1768) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
+    fun t₁ t₂ h => ⟨expArgs_wp L hR h.1, expArgs_wp L hR h.2⟩
+  exact (RelCT.seq r₁ (key_rel v.key fun t₁ t₂ h =>
+    ⟨_, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)).mono hP fun _ _ _ => trivial
+
 end VG.Proof.AesGcmSiv.X86_64
 
 /-!

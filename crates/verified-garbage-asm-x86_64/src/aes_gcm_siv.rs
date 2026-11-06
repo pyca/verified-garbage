@@ -36,8 +36,6 @@ call {vg_aes_encrypt_blocks_aesni}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -149,6 +147,8 @@ jmp 232f
 call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -189,8 +189,8 @@ jmp 242f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
@@ -437,8 +437,6 @@ call {vg_aes_encrypt_blocks_aesni}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -618,6 +616,8 @@ jmp 256f
 call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -673,8 +673,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -1006,8 +1006,6 @@ call {vg_aes_encrypt_blocks_aesni}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -1119,6 +1117,8 @@ jmp 232f
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -1159,8 +1159,8 @@ jmp 242f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
@@ -1407,8 +1407,6 @@ call {vg_aes_encrypt_blocks_aesni}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -1588,6 +1586,8 @@ jmp 256f
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -1643,8 +1643,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -2076,8 +2076,6 @@ call {vg_aes_encrypt_blocks_aesni}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -2257,6 +2255,8 @@ jmp 256f
 call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -2312,8 +2312,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -2695,8 +2695,6 @@ call {vg_aes_encrypt_blocks}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -2808,6 +2806,8 @@ jmp 232f
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -2848,8 +2848,8 @@ jmp 242f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -3096,8 +3096,6 @@ call {vg_aes_encrypt_blocks}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -3277,6 +3275,8 @@ jmp 256f
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -3332,8 +3332,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -3661,8 +3661,6 @@ call {vg_aes_encrypt_blocks}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -3774,6 +3772,8 @@ jmp 232f
 call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -3814,8 +3814,8 @@ jmp 242f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -4058,8 +4058,6 @@ call {vg_aes_encrypt_blocks}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -4239,6 +4237,8 @@ jmp 256f
 call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -4294,8 +4294,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -4627,8 +4627,6 @@ call {vg_aes_encrypt_blocks_vaes}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -4808,6 +4806,8 @@ jmp 256f
 call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_vaes}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -4863,8 +4863,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -5246,8 +5246,6 @@ call {vg_aes_encrypt_blocks_vaes}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -5427,6 +5425,8 @@ jmp 256f
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_vaes}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -5482,8 +5482,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -5865,8 +5865,6 @@ call {vg_aes_encrypt_blocks_vaes}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
 jb 22f
 .base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
@@ -6160,6 +6158,8 @@ call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 236:
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32_vaes}
 .base64 "SYuH8AAAAEg9AAEAAA=="
@@ -6298,8 +6298,8 @@ jmp 2132f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -6993,8 +6993,6 @@ call {vg_aes_encrypt_blocks}
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
@@ -7174,6 +7172,8 @@ jmp 256f
 call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
 call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
@@ -7229,8 +7229,8 @@ jmp 272f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )

@@ -155,28 +155,34 @@ impl AesGcmSiv {
         if !matches!(key.len(), 16 | 32) {
             return Err(InvalidKeyLength);
         }
-        let mut k = AesGcmSiv {
-            schedule: [0; 240],
-            rounds: key.len() / 4 + 6,
-            backend: select(detected()),
-        };
+        let backend = select(detected());
         // The variants whose suffix names `aesni` or `vaes` take
         // `vg_aes_expand_key_aesni`'s schedule, AArch64's
         // `vg_aes_expand_key_aes`'s.
-        let expand = instance!(k.backend.gcm(), vg_aes_expand_key,
+        let expand = instance!(backend.gcm(), vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
             aarch64: [vg_aes_expand_key_aes, vg_aes_expand_key_aes]);
-        // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 32, and `k.schedule` for reads and writes of 240 bytes. They are
-        // distinct objects, so they do not overlap, nor do they overlap the
-        // return address on the stack or the stack below it, and neither
-        // wraps around the end of the address space. The CPU has the
-        // features of the implementation selected.
-        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
-        Ok(k)
+        // The schedule is written in the value returned, not copied into it
+        // after: a copy reads the schedule's 16-byte stores with wider loads,
+        // which cannot take them from the store buffer and wait for them.
+        let mut k = Ok(AesGcmSiv {
+            schedule: [0; 240],
+            rounds: key.len() / 4 + 6,
+            backend,
+        });
+        if let Ok(k) = &mut k {
+            // SAFETY: `key` is valid for reads of `key.len()` bytes, which is
+            // 16 or 32, and `k.schedule` for reads and writes of 240 bytes.
+            // They are distinct objects, so they do not overlap, nor do they
+            // overlap the return address on the stack or the stack below it,
+            // and neither wraps around the end of the address space. The CPU
+            // has the features of the implementation selected.
+            unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
+        }
+        k
     }
 
     /// Encryption (§4): encrypts `data` in place under the 12-byte `nonce`,
